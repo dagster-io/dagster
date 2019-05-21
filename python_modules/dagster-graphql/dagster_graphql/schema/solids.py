@@ -198,12 +198,12 @@ class DauphinSolidHandle(dauphin.ObjectType):
 
     handleID = dauphin.NonNull(dauphin.String)
     solid = dauphin.NonNull('Solid')
-    parent = dauphin.Field('Solid')
+    parent = dauphin.Field('SolidHandle')
 
     def __init__(self, handle, solid, parent):
         self.handleID = check.inst_param(handle, 'handle', SolidHandle)
         self.solid = check.inst_param(solid, 'solid', DauphinSolid)
-        self.parent = check.opt_inst_param(parent, 'parent', DauphinSolid)
+        self.parent = check.opt_inst_param(parent, 'parent', DauphinSolidHandle)
 
 
 class DauphinInputDefinition(dauphin.ObjectType):
@@ -382,7 +382,7 @@ def build_dauphin_solid_handles(container, parent=None):
             handle=SolidHandle(
                 solid.name, solid.definition.name, parent.handleID if parent else None
             ),
-            parent=parent.solid if parent else None,
+            parent=parent if parent else None,
         )
         if isinstance(solid.definition, IContainSolids):
             all_handle += build_dauphin_solid_handles(solid.definition, handle)

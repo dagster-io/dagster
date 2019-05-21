@@ -1,6 +1,6 @@
-ARG pyver
+ARG PYTHON_VERSION
 
-FROM python:$pyver
+FROM python:$PYTHON_VERSION
 
 # install node
 RUN apt-get update; \
@@ -98,3 +98,15 @@ RUN curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_V
     apt-get update && \
     apt-get install sbt && \
     sbt sbtVersion
+
+# pip install all the downstream deps to speed up our CI jobs
+#
+# to update (from root):
+#
+# create a new virtual env
+# make install_dev_python_modules
+# pip freeze --exclude-editable > .buildkite/images/integration/snapshot-reqs.txt
+ARG PYTHON_MAJOR_VERSION
+ADD snapshot-reqs-$PYTHON_MAJOR_VERSION.txt /tmp/snapshot-reqs.txt
+RUN pip install --upgrade pip;\
+    pip install -r /tmp/snapshot-reqs.txt

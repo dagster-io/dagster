@@ -165,7 +165,7 @@ def test_basic_int_execution_plan():
 
     steps = execution_plan.topological_steps()
 
-    assert steps[0].key == 'return_one.transform'
+    assert steps[0].key == 'return_one.compute'
     assert steps[1].key == 'return_one.outputs.result.materialize.0'
     assert steps[2].key == 'return_one.outputs.result.materialize.join'
 
@@ -220,7 +220,7 @@ def test_basic_int_and_string_execution_plan():
 
     assert len(execution_plan.steps) == 5
     steps = execution_plan.topological_steps()
-    assert steps[0].key == 'return_one_and_foo.transform'
+    assert steps[0].key == 'return_one_and_foo.compute'
 
     assert_plan_topological_level(
         steps,
@@ -240,7 +240,7 @@ def test_basic_int_and_string_execution_plan():
         ],
     )
 
-    transform_step = execution_plan.get_step_by_key('return_one_and_foo.transform')
+    transform_step = execution_plan.get_step_by_key('return_one_and_foo.compute')
 
     string_mat_step = execution_plan.get_step_by_key(
         'return_one_and_foo.outputs.string.materialize.0'
@@ -408,7 +408,7 @@ def test_basic_int_multiple_serializations_execution_plan():
     assert len(execution_plan.steps) == 4
 
     steps = execution_plan.topological_steps()
-    assert steps[0].key == 'return_one.transform'
+    assert steps[0].key == 'return_one.compute'
 
     assert_plan_topological_level(
         steps,

@@ -27,7 +27,7 @@ def create_root_success_solid(name):
         return passed_rows
 
     return single_output_transform(
-        name=name, inputs=[], transform_fn=root_transform, output=OutputDefinition()
+        name=name, inputs=[], compute_fn=root_transform, output=OutputDefinition()
     )
 
 
@@ -36,7 +36,7 @@ def create_root_transform_failure_solid(name):
         raise Exception('Transform failed')
 
     return single_output_transform(
-        name=name, inputs=[], transform_fn=failed_transform, output=OutputDefinition()
+        name=name, inputs=[], compute_fn=failed_transform, output=OutputDefinition()
     )
 
 
@@ -75,14 +75,14 @@ def test_failure_midstream():
     solid_c = single_output_transform(
         name='C',
         inputs=[InputDefinition(name='A'), InputDefinition(name='B')],
-        transform_fn=fail_fn,
+        compute_fn=fail_fn,
         output=OutputDefinition(),
     )
 
     solid_d = single_output_transform(
         name='D',
         inputs=[InputDefinition(name='C')],
-        transform_fn=success_fn,
+        compute_fn=success_fn,
         output=OutputDefinition(),
     )
 
@@ -124,35 +124,32 @@ def test_failure_propagation():
     solid_b = single_output_transform(
         name='B',
         inputs=[InputDefinition(name='A')],
-        transform_fn=success_fn,
+        compute_fn=success_fn,
         output=OutputDefinition(),
     )
 
     solid_c = single_output_transform(
         name='C',
         inputs=[InputDefinition(name='B')],
-        transform_fn=success_fn,
+        compute_fn=success_fn,
         output=OutputDefinition(),
     )
 
     solid_d = single_output_transform(
-        name='D',
-        inputs=[InputDefinition(name='A')],
-        transform_fn=fail_fn,
-        output=OutputDefinition(),
+        name='D', inputs=[InputDefinition(name='A')], compute_fn=fail_fn, output=OutputDefinition()
     )
 
     solid_e = single_output_transform(
         name='E',
         inputs=[InputDefinition(name='D')],
-        transform_fn=success_fn,
+        compute_fn=success_fn,
         output=OutputDefinition(),
     )
 
     solid_f = single_output_transform(
         name='F',
         inputs=[InputDefinition(name='C'), InputDefinition(name='E')],
-        transform_fn=success_fn,
+        compute_fn=success_fn,
         output=OutputDefinition(),
     )
 
@@ -191,7 +188,7 @@ def test_do_not_yield_result():
         name='do_not_yield_result',
         inputs=[],
         outputs=[OutputDefinition()],
-        transform_fn=lambda *_args, **_kwargs: Result('foo'),
+        compute_fn=lambda *_args, **_kwargs: Result('foo'),
     )
 
     with pytest.raises(
@@ -206,7 +203,7 @@ def test_yield_non_result():
         yield 'foo'
 
     solid_inst = SolidDefinition(
-        name='yield_wrong_thing', inputs=[], outputs=[OutputDefinition()], transform_fn=_tn
+        name='yield_wrong_thing', inputs=[], outputs=[OutputDefinition()], compute_fn=_tn
     )
 
     with pytest.raises(
@@ -219,7 +216,7 @@ def test_single_transform_returning_result():
     solid_inst = single_output_transform(
         'test_return_result',
         inputs=[],
-        transform_fn=lambda *_args, **_kwargs: Result(None),
+        compute_fn=lambda *_args, **_kwargs: Result(None),
         output=OutputDefinition(),
     )
 
@@ -256,12 +253,12 @@ def test_user_error_propogation():
 
     assert isinstance(e_info.value.__cause__, UserError)
     # meta data on the exception
-    assert e_info.value.step_key == 'throws_user_error.transform'
+    assert e_info.value.step_key == 'throws_user_error.compute'
     assert e_info.value.solid_name == 'throws_user_error'
     assert e_info.value.solid_def_name == 'throws_user_error'
 
     # and in the message
-    assert 'step key: "throws_user_error.transform"' in str(e_info.value)
+    assert 'step key: "throws_user_error.compute"' in str(e_info.value)
     assert 'solid instance: "throws_user_error"' in str(e_info.value)
     assert 'solid definition: "throws_user_error"' in str(e_info.value)
 

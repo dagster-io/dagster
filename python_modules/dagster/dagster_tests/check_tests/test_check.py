@@ -799,6 +799,15 @@ def test_subclass_param():
     with pytest.raises(CheckError):
         assert check.subclass_param('value', 'foo', Super)
 
+    assert check.opt_subclass_param(Sub, 'foo', Super)
+    assert check.opt_subclass_param(None, 'foo', Super) is None
+
+    with pytest.raises(CheckError):
+        assert check.opt_subclass_param(Alone, 'foo', Super)
+
+    with pytest.raises(CheckError):
+        assert check.opt_subclass_param('value', 'foo', Super)
+
 
 @contextmanager
 def raises_with_message(exc_type, message_text):

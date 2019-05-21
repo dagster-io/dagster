@@ -251,7 +251,7 @@ def test_execute_mode_command():
     )
 
     # this is quite horrific and fragile easiest way to check for correcness
-    assert 'Step apply_to_three.transform emitted 5 for output result' in add_result.stdout
+    assert 'Step apply_to_three.compute emitted 5 for output result' in add_result.stdout
 
     mult_result = runner_pipeline_execute(
         runner,
@@ -266,7 +266,7 @@ def test_execute_mode_command():
         ],
     )
 
-    assert 'Step apply_to_three.transform emitted 12 for output result' in mult_result.stdout
+    assert 'Step apply_to_three.compute emitted 12 for output result' in mult_result.stdout
 
     double_adder_result = runner_pipeline_execute(
         runner,
@@ -281,9 +281,7 @@ def test_execute_mode_command():
         ],
     )
 
-    assert (
-        'Step apply_to_three.transform emitted 25 for output result' in double_adder_result.stdout
-    )
+    assert 'Step apply_to_three.compute emitted 25 for output result' in double_adder_result.stdout
 
 
 def test_execute_command():

@@ -29,13 +29,12 @@ Then just run dagit from the root of the repo:
 
     dagit
 
-
 ## Pipelines and config
 
 The demo defines a single repository with two pipelines, in `airline_demo/pipelines.py`:
 
 - **airline_demo_ingest_pipeline** grabs data archives from S3 and unzips them, reads the raw data
-into Spark, performs some typical manipulations on the data, and then loads tables into a data warehouse.
+  into Spark, performs some typical manipulations on the data, and then loads tables into a data warehouse.
 - **airline_demo_warehouse_pipeline** performs typical in-warehouse analysis and manipulations
   using SQL, and then generates and archives analysis artifacts and plots using Jupyter notebooks.
 
@@ -64,7 +63,7 @@ For instance, to run only those tests that do not require Spark, you can run:
 <!-- ![Download pipeline](img/ingest_pipeline.png) -->
 
 The `airline_demo_ingest_pipeline` models the first stage of most project-oriented data science
-workflows, in which raw data is consumed from a variety of sources. 
+workflows, in which raw data is consumed from a variety of sources.
 
 For demo purposes, we've put our source files in a publicly-readable S3 repository. In practice,
 these might be files in S3 or other cloud storage systems; publicly available datasets downloaded
@@ -109,12 +108,12 @@ The config for each of our solids specifies everything it needs in order to inte
 external environment. In YAML, an entry in the config for one of our solids aliasing
 `download_from_s3` looks like this:
 
-  download_master_cord_data:
-    config:
-      bucket: dagster-airline-demo-source-data
-      key: 954834304_T_MASTER_CORD.zip
-      skip_if_present: true
-      target_path: source_data/954834304_T_MASTER_CORD.zip
+download_master_cord_data:
+config:
+bucket: dagster-airline-demo-source-data
+key: 954834304_T_MASTER_CORD.zip
+skip_if_present: true
+target_path: source_data/954834304_T_MASTER_CORD.zip
 
 Because each of these values is strongly typed, we'll get rich error information in the dagit
 config editor (or when running pipelines from the command line) when a config value is incorrectly
@@ -230,7 +229,7 @@ This resource exposes a SQLAlchemy engine, the URL of the database (in two forms
 the SQL dialect that the database speaks, and a utility function, `load_table`, which loads a
 Spark data frame into the target database. In practice, we would probably find that over time we
 wanted to add or subtract from this interface, rework its implementations, or factor it into
-multiple resources. Because the type definition, config definitions, and implementations are 
+multiple resources. Because the type definition, config definitions, and implementations are
 centralized -- rather than spread out across the internals of many solids -- this is a relatively
 easy task.
 
@@ -360,13 +359,13 @@ The bulk of this pipeline is built out of generic library solids, which are pres
 of the kind of reusable abstract building blocks you'll be able to write to simplify the expression
 of common workloads:
 
-- **union_spark_data_frames** (2x) just performs the operation 
+- **union_spark_data_frames** (2x) just performs the operation
   `left_data_frame.union(right_data_frame)`. Abstracting this operation makes it very clear where
   you're working with component datasets and where you're working with unions -- especially useful
   if different outputs of the DAG depend on each. You might extend this solid in practice to chain
   union operations, with the signature
   `left_data_frame: SparkDataFrame, right_data_frames: [SparkDataFrame] -> SparkDataFrame`.
-- **subsample_spark_dataset** (4x) randomly subsamples a dataset using  `data_frame.sample`. 
+- **subsample_spark_dataset** (4x) randomly subsamples a dataset using `data_frame.sample`.
   Abstracting this out makes it clear which datasets may be subsampled and which may not be (e.g.,
   lookup tables like the `master_cord_data`) in this pipeline). Because subsampling is now
   controlled by config, it's easy to turn off in production (by sampling 100% of the rows) or to
@@ -376,9 +375,9 @@ of common workloads:
   frame, adding a prefix to avoid collisions and for clarity when columns with the same name are
   joined from two separate source data frames.
 - **join_spark_data_frames** (2x) wraps `data_frame.join`, allowing users to set the join parameters
-  in config. You can use abstractions like this and  strongly typed config to guard against common
+  in config. You can use abstractions like this and strongly typed config to guard against common
   errors: for example, by specifying a `joinType` config value as an `Enum`, you could enforce
-  Spark's restriction on join types *at config time*.
+  Spark's restriction on join types _at config time_.
 
 Throughout, we work with Spark data frames, but it's straightforward to write similar solids that
 manipulate .csv files, parquet files, Pandas data frames, and other common data formats.
@@ -426,7 +425,7 @@ The `airline_demo_warehouse_pipeline` models the analytics stage of a typical da
 This is a heterogeneous-by-design process in which analysts, data scientists, and ML engineers
 incrementally derive and formalize insights and analytic products (charts, data frames, models, and
 metrics) using a wide range of tools -- from SQL run directly against the warehouse to Jupyter
-notebooks in Python, R, or Scala. 
+notebooks in Python, R, or Scala.
 
 ### The sql_solid: wrapping foreign code in a solid
 
@@ -552,7 +551,7 @@ to write or maintain many separate copies of the boilerplate around the select s
 make the change once and expose the new functionality everywhere we execute SQL in our pipelines.
 
 Third, note how straightforward the interface to `sql_statement` is. To define a new solid executing
-a relatively complex transform against the data warehouse, an analyst need only write the following
+a relatively complex computation against the data warehouse, an analyst need only write the following
 code:
 
     delays_vs_fares = sql_solid(
@@ -593,6 +592,7 @@ code:
             InputDefinition('tickets_with_destination', SqlTableName),
             InputDefinition('average_sfo_outbound_avg_delays_by_destination', SqlTableName),
         ],
+
 )
 
 This kind of interface can supercharge the work of analysts who are highly skilled in SQL, but

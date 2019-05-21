@@ -12,9 +12,9 @@ def test_topological_sort():
 
     assert len(levels) == 3
 
-    assert [step.key for step in levels[0]] == ['return_two.transform']
-    assert [step.key for step in levels[1]] == ['add_three.transform', 'mult_three.transform']
-    assert [step.key for step in levels[2]] == ['adder.transform']
+    assert [step.key for step in levels[0]] == ['return_two.compute']
+    assert [step.key for step in levels[1]] == ['add_three.compute', 'mult_three.compute']
+    assert [step.key for step in levels[2]] == ['adder.compute']
 
 
 def test_create_execution_plan_with_bad_inputs():

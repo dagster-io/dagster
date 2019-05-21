@@ -24,7 +24,7 @@ def test_multiple_outputs():
         name='multiple_outputs',
         inputs=[],
         outputs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
-        transform_fn=_t_fn,
+        compute_fn=_t_fn,
     )
 
     pipeline = PipelineDefinition(solids=[solid])
@@ -53,7 +53,7 @@ def test_multiple_outputs_expectations():
         called['expectation_two'] = True
         return ExpectationResult(success=True)
 
-    def _transform_fn(*_args, **_kwargs):
+    def _compute_fn(*_args, **_kwargs):
         yield Result('foo', 'output_one')
         yield Result('bar', 'output_two')
 
@@ -76,7 +76,7 @@ def test_multiple_outputs_expectations():
                 ],
             ),
         ],
-        transform_fn=_transform_fn,
+        compute_fn=_compute_fn,
     )
 
     pipeline = PipelineDefinition(solids=[solid])
@@ -96,7 +96,7 @@ def test_wrong_multiple_output():
         name='multiple_outputs',
         inputs=[],
         outputs=[OutputDefinition(name='output_one')],
-        transform_fn=_t_fn,
+        compute_fn=_t_fn,
     )
 
     pipeline = PipelineDefinition(solids=[solid])
@@ -116,7 +116,7 @@ def test_multiple_outputs_of_same_name_disallowed():
         name='multiple_outputs',
         inputs=[],
         outputs=[OutputDefinition(name='output_one')],
-        transform_fn=_t_fn,
+        compute_fn=_t_fn,
     )
 
     pipeline = PipelineDefinition(solids=[solid])
@@ -136,29 +136,29 @@ def test_multiple_outputs_only_emit_one():
             OutputDefinition(name='output_one'),
             OutputDefinition(name='output_two', is_optional=True),
         ],
-        transform_fn=_t_fn,
+        compute_fn=_t_fn,
     )
 
     called = {}
 
-    def _transform_fn_one(*_args, **_kwargs):
+    def _compute_fn_one(*_args, **_kwargs):
         called['one'] = True
 
     downstream_one = SolidDefinition(
         name='downstream_one',
         inputs=[InputDefinition('some_input')],
         outputs=[],
-        transform_fn=_transform_fn_one,
+        compute_fn=_compute_fn_one,
     )
 
-    def _transform_fn_two(*_args, **_kwargs):
+    def _compute_fn_two(*_args, **_kwargs):
         raise Exception('do not call me')
 
     downstream_two = SolidDefinition(
         name='downstream_two',
         inputs=[InputDefinition('some_input')],
         outputs=[],
-        transform_fn=_transform_fn_two,
+        compute_fn=_compute_fn_two,
     )
 
     pipeline = PipelineDefinition(
@@ -201,7 +201,7 @@ def test_missing_non_optional_output_fails():
         name='multiple_outputs',
         inputs=[],
         outputs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
-        transform_fn=_t_fn,
+        compute_fn=_t_fn,
     )
 
     pipeline = PipelineDefinition(solids=[solid])

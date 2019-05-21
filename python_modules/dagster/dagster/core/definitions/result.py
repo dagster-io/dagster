@@ -6,8 +6,8 @@ from .utils import DEFAULT_OUTPUT
 
 
 class Result(namedtuple('_Result', 'value output_name')):
-    '''A solid transform function return a stream of Result objects.
-    An implementator of a SolidDefinition must provide a transform that
+    '''A solid compute function return a stream of Result objects.
+    An implementator of a SolidDefinition must provide a compute that
     yields objects of this type.
 
     Attributes:

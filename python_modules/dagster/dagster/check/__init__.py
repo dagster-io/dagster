@@ -512,6 +512,14 @@ def subclass_param(obj, param_name, superclass):
     return obj
 
 
+def opt_subclass_param(obj, param_name, superclass):
+    opt_type_param(obj, param_name)
+    if obj is not None and not issubclass(obj, superclass):
+        raise_with_traceback(_param_subclass_mismatch_exception(obj, superclass, param_name))
+
+    return obj
+
+
 def _element_check_error(key, value, ddict, ttype):
     return ElementCheckError(
         'Value {value} from key {key} is not a {ttype}. Dict: {ddict}'.format(

@@ -60,11 +60,11 @@ def _get_pipelines(graphene_info):
                 )
             )
 
-    return process_pipelines(graphene_info.context.exc_target_handle.build_repository_definition())
+    return process_pipelines(graphene_info.context.handle.build_repository_definition())
 
 
 def _pipeline_or_error_from_repository(graphene_info, selector):
-    repository = graphene_info.context.exc_target_handle.build_repository_definition()
+    repository = graphene_info.context.handle.build_repository_definition()
 
     if not repository.has_pipeline(selector.name):
         return EitherError(

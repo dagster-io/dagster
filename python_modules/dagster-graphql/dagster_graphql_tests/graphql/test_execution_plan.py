@@ -144,12 +144,12 @@ def test_success_whole_execution_plan(snapshot):
     step_events = {
         step_event['step']['key']: step_event for step_event in query_result['stepEvents']
     }
-    assert 'sum_solid.transform' in step_events
-    assert 'sum_sq_solid.transform' in step_events
+    assert 'sum_solid.compute' in step_events
+    assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(result.data)
-    assert has_filesystem_intermediate(run_id, 'sum_solid.transform')
-    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
+    assert has_filesystem_intermediate(run_id, 'sum_solid.compute')
+    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.compute')
 
 
 def test_success_whole_execution_plan_with_filesystem_config(snapshot):
@@ -174,12 +174,12 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
     step_events = {
         step_event['step']['key']: step_event for step_event in query_result['stepEvents']
     }
-    assert 'sum_solid.transform' in step_events
-    assert 'sum_sq_solid.transform' in step_events
+    assert 'sum_solid.compute' in step_events
+    assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(result.data)
-    assert has_filesystem_intermediate(run_id, 'sum_solid.transform')
-    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
+    assert has_filesystem_intermediate(run_id, 'sum_solid.compute')
+    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.compute')
 
 
 def test_success_whole_execution_plan_with_in_memory_config(snapshot):
@@ -204,12 +204,12 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
     step_events = {
         step_event['step']['key']: step_event for step_event in query_result['stepEvents']
     }
-    assert 'sum_solid.transform' in step_events
-    assert 'sum_sq_solid.transform' in step_events
+    assert 'sum_solid.compute' in step_events
+    assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(result.data)
-    assert not has_filesystem_intermediate(run_id, 'sum_solid.transform')
-    assert not has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
+    assert not has_filesystem_intermediate(run_id, 'sum_solid.compute')
+    assert not has_filesystem_intermediate(run_id, 'sum_sq_solid.compute')
 
 
 def test_successful_one_part_execute_plan(snapshot):
@@ -220,7 +220,7 @@ def test_successful_one_part_execute_plan(snapshot):
         variables={
             'pipelineName': 'csv_hello_world',
             'config': csv_hello_world_solids_config_fs_storage(),
-            'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.transform'],
+            'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.compute'],
             'executionMetadata': {'runId': run_id},
             'mode': 'default',
         },
@@ -234,7 +234,7 @@ def test_successful_one_part_execute_plan(snapshot):
 
     step_events = query_result['stepEvents']
     # 0-2 are sum_solid.num.input_thunk
-    assert step_events[3]['step']['key'] == 'sum_solid.transform'
+    assert step_events[3]['step']['key'] == 'sum_solid.compute'
     assert step_events[4]['__typename'] == 'ExecutionStepOutputEvent'
     assert step_events[4]['outputName'] == 'result'
     expected_value_repr = (
@@ -246,9 +246,9 @@ def test_successful_one_part_execute_plan(snapshot):
 
     snapshot.assert_match(result.data)
 
-    assert has_filesystem_intermediate(run_id, 'sum_solid.transform')
+    assert has_filesystem_intermediate(run_id, 'sum_solid.compute')
     assert (
-        str(get_filesystem_intermediate(run_id, 'sum_solid.transform', PoorMansDataFrame))
+        str(get_filesystem_intermediate(run_id, 'sum_solid.compute', PoorMansDataFrame))
         == expected_value_repr
     )
 
@@ -261,7 +261,7 @@ def test_successful_two_part_execute_plan(snapshot):
         variables={
             'pipelineName': 'csv_hello_world',
             'config': csv_hello_world_solids_config_fs_storage(),
-            'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.transform'],
+            'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.compute'],
             'executionMetadata': {'runId': run_id},
             'mode': 'default',
         },
@@ -277,7 +277,7 @@ def test_successful_two_part_execute_plan(snapshot):
         variables={
             'pipelineName': 'csv_hello_world',
             'config': csv_hello_world_solids_config_fs_storage(),
-            'stepKeys': ['sum_sq_solid.transform'],
+            'stepKeys': ['sum_sq_solid.compute'],
             'executionMetadata': {'runId': run_id},
             'mode': 'default',
         },
@@ -289,7 +289,7 @@ def test_successful_two_part_execute_plan(snapshot):
     assert query_result['hasFailures'] is False
     step_events = query_result['stepEvents']
     assert step_events[0]['__typename'] == 'ExecutionStepStartEvent'
-    assert step_events[0]['step']['key'] == 'sum_sq_solid.transform'
+    assert step_events[0]['step']['key'] == 'sum_sq_solid.compute'
     assert step_events[1]['__typename'] == 'ExecutionStepOutputEvent'
     assert step_events[1]['outputName'] == 'result'
     assert step_events[2]['__typename'] == 'ExecutionStepSuccessEvent'
@@ -302,9 +302,9 @@ def test_successful_two_part_execute_plan(snapshot):
         '''('sum_sq', 49)])]'''
     )
 
-    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
+    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.compute')
     assert (
-        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.transform', PoorMansDataFrame))
+        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.compute', PoorMansDataFrame))
         == expected_value_repr
     )
 
@@ -316,11 +316,7 @@ def test_invalid_config_execute_plan(snapshot):
         variables={
             'pipelineName': 'csv_hello_world',
             'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
-            'stepKeys': [
-                'sum_solid.num.input_thunk',
-                'sum_solid.transform',
-                'sum_sq_solid.transform',
-            ],
+            'stepKeys': ['sum_solid.num.input_thunk', 'sum_solid.compute', 'sum_sq_solid.compute'],
             'executionMetadata': {'runId': 'kdjkfjdfd'},
             'mode': 'default',
         },
@@ -340,11 +336,7 @@ def test_pipeline_not_found_error_execute_plan(snapshot):
         variables={
             'pipelineName': 'nope',
             'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 'ok'}}}}}},
-            'stepKeys': [
-                'sum_solid.num.input_thunk',
-                'sum_solid.transform',
-                'sum_sq_solid.transform',
-            ],
+            'stepKeys': ['sum_solid.num.input_thunk', 'sum_solid.compute', 'sum_sq_solid.compute'],
             'executionMetadata': {'runId': 'kdjkfjdfd'},
             'mode': 'default',
         },
@@ -370,7 +362,7 @@ def test_pipeline_with_execution_metadata(snapshot):
     steps_data = result.data['executionPlan']['steps']
     assert len(steps_data) == 1
     step_data = steps_data[0]
-    assert step_data['key'] == 'solid_metadata_creation.transform'
+    assert step_data['key'] == 'solid_metadata_creation.compute'
     assert len(step_data['metadata']) == 1
     assert step_data['metadata'][0] == {'key': 'computed', 'value': 'foobar1'}
 
@@ -403,10 +395,10 @@ def test_basic_execute_plan_with_materialization():
 
         assert [step_data['key'] for step_data in steps_data] == [
             'sum_solid.inputs.num.read',
-            'sum_solid.transform',
+            'sum_solid.compute',
             'sum_solid.outputs.result.materialize.0',
             'sum_solid.outputs.result.materialize.join',
-            'sum_sq_solid.transform',
+            'sum_sq_solid.compute',
         ]
 
         result = execute_dagster_graphql(
@@ -417,10 +409,10 @@ def test_basic_execute_plan_with_materialization():
                 'config': environment_dict,
                 'stepKeys': [
                     'sum_solid.inputs.num.read',
-                    'sum_solid.transform',
+                    'sum_solid.compute',
                     'sum_solid.outputs.result.materialize.0',
                     'sum_solid.outputs.result.materialize.join',
-                    'sum_sq_solid.transform',
+                    'sum_sq_solid.compute',
                 ],
                 'executionMetadata': {'runId': 'kdjkfjdfd'},
                 'mode': 'default',

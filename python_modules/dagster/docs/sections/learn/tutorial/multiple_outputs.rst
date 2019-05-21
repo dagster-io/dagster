@@ -2,7 +2,7 @@ Multiple Outputs
 ----------------
 
 So far all of our examples have been solids that have a single output. But
-solids can have an arbitrary number of outputs. Downstream solids can 
+solids can have an arbitrary number of outputs. Downstream solids can
 depend on any number of these outputs. Additionally, these outputs do
 not *necessarily* have to be fired, therefore unlocking the ability for
 downstream solids to be invoked conditionally based on something that
@@ -27,16 +27,16 @@ Notice how ``return_dict_results`` has two outputs. For the first time
 we have provided the name argument to an :py:class:`OutputDefinition <dagster.OutputDefinition>`.
 (The name of an output defaults to ``'result'``, as it does for a
 :py:class:`DependencyDefinition <dagster.DependencyDefinition>`) Output names must be unique
-and each result returned by a solid's transform function must have a name that corresponds to
+and each result returned by a solid's compute function must have a name that corresponds to
 one of these outputs.
 
 So from ``return_dict_results`` we used :py:class:`MultipleResults <dagster.MultipleResults>`
-to return all outputs from this transform.
+to return all outputs from this compute.
 
 Just as this tutorial gives us the first example of a named
 :py:class:`OutputDefinition <dagster.OutputDefinition>`, this is also the first time that we've
 seen a named :py:class:`DependencyDefinition <dagster.DependencyDefinition>`. Recall that dependencies
-point to a particular **output** of a solid, rather than to the solid itself. 
+point to a particular **output** of a solid, rather than to the solid itself.
 
 With this we can run the pipeline (condensed here for brevity):
 
@@ -61,9 +61,9 @@ Iterator of ``Result``
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The :py:class:`MultipleResults <dagster.MultipleResults>` class is not the only way
-to return multiple results from a solid transform function. You can also yield
+to return multiple results from a solid compute function. You can also yield
 multiple instances of the ``Result`` object. (Note: this is actually the core
-specification of the transform function: all other forms are implemented in terms of
+specification of the compute function: all other forms are implemented in terms of
 the iterator form.)
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py

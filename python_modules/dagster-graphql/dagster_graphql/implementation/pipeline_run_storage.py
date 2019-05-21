@@ -70,7 +70,7 @@ class PipelineRun(object):
         self._run_id = check.str_param(run_id, 'run_id')
         self._selector = check.inst_param(selector, 'selector', ExecutionSelector)
         self._env_config = check.opt_dict_param(env_config, 'environment_config', key_type=str)
-        self._mode = check.opt_str_param(mode, 'mode')
+        self._mode = check.str_param(mode, 'mode')
         self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
         self._reexecution_config = check.opt_inst_param(
             reexecution_config, 'reexecution_config', ReexecutionConfig

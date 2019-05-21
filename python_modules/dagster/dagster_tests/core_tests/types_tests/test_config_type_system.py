@@ -354,7 +354,7 @@ def test_wrong_solid_name():
                 inputs=[],
                 outputs=[],
                 config_field=Field(Int),
-                transform_fn=lambda *_args: None,
+                compute_fn=lambda *_args: None,
             )
         ],
     )
@@ -410,7 +410,7 @@ def test_solid_list_config():
                 inputs=[],
                 outputs=[],
                 config_field=Field(List(Int)),
-                transform_fn=_test_config,
+                compute_fn=_test_config,
             )
         ],
     )
@@ -434,7 +434,7 @@ def test_two_list_types():
                 config_field=Field(
                     Dict({'list_one': Field(List(Int)), 'list_two': Field(List(Int))})
                 ),
-                transform_fn=lambda *_args: None,
+                compute_fn=lambda *_args: None,
             )
         ],
     )

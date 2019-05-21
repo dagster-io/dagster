@@ -96,7 +96,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         'drop table if exists {table_name};\n' 'create table {table_name} as {select_statement};'
     ).format(table_name=table_name, select_statement=select_statement)
 
-    def transform_fn(context, _inputs):
+    def compute_fn(context, _inputs):
         '''Inner function defining the new solid.
 
         Args:
@@ -123,7 +123,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
                 description=output_description,
             )
         ],
-        transform_fn=transform_fn,
+        compute_fn=compute_fn,
         description=description,
         metadata={'kind': 'sql', 'sql': sql_statement},
     )

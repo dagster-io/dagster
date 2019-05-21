@@ -101,12 +101,12 @@ class SolidExecutionResult(object):
 
     @property
     def transform(self):
-        check.invariant(len(self.step_events_by_kind[StepKind.TRANSFORM]) == 1)
-        return self.step_events_by_kind[StepKind.TRANSFORM][0]
+        check.invariant(len(self.step_events_by_kind[StepKind.COMPUTE]) == 1)
+        return self.step_events_by_kind[StepKind.COMPUTE][0]
 
     @property
     def transforms(self):
-        return self.step_events_by_kind.get(StepKind.TRANSFORM, [])
+        return self.step_events_by_kind.get(StepKind.COMPUTE, [])
 
     @property
     def input_expectations(self):

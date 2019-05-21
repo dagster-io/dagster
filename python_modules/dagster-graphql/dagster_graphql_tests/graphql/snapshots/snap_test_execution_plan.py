@@ -44,7 +44,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -53,7 +53,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 },
@@ -62,7 +62,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -70,7 +70,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform',
+                    'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -79,7 +79,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_sq_solid.transform',
+                    'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
                 },
@@ -88,7 +88,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform',
+                    'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -134,7 +134,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -143,7 +143,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 },
@@ -152,7 +152,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -160,7 +160,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform',
+                    'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -169,7 +169,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_sq_solid.transform',
+                    'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
                 },
@@ -178,7 +178,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform',
+                    'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -224,7 +224,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -233,7 +233,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 },
@@ -242,7 +242,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -250,7 +250,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform',
+                    'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -259,7 +259,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_sq_solid.transform',
+                    'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
                 },
@@ -268,7 +268,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform',
+                    'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -314,7 +314,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -323,7 +323,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 },
@@ -332,7 +332,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -378,7 +378,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -387,7 +387,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 },
@@ -396,7 +396,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.transform',
+                    'key': 'sum_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -416,7 +416,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform',
+                    'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -425,7 +425,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_sq_solid.transform',
+                    'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
                 },
@@ -434,7 +434,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform',
+                    'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
                 }
@@ -474,15 +474,15 @@ snapshots['test_pipeline_with_execution_metadata 1'] = {
             {
                 'inputs': [
                 ],
-                'key': 'solid_metadata_creation.transform',
-                'kind': 'TRANSFORM',
+                'key': 'solid_metadata_creation.compute',
+                'kind': 'COMPUTE',
                 'metadata': [
                     {
                         'key': 'computed',
                         'value': 'foobar1'
                     }
                 ],
-                'name': 'solid_metadata_creation.transform',
+                'name': 'solid_metadata_creation.compute',
                 'outputs': [
                 ],
                 'solidHandleID': 'solid_metadata_creation'

@@ -34,7 +34,7 @@ def test_step_metadata():
     environment_dict = yaml.load(CONFIG_FILE.format(path=script_relative_path('fake.jar')))
     execution_plan = create_execution_plan(pipeline, environment_dict)
 
-    step = execution_plan.get_step_by_key('spark_solid.transform')
+    step = execution_plan.get_step_by_key('spark_solid.compute')
     assert step.metadata == {
         'spark_submit_command': (
             '/your/spark_home/bin/spark-submit --class something '

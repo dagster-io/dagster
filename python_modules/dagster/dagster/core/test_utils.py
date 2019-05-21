@@ -8,15 +8,15 @@ from dagster import (
 from dagster.core.types.evaluator import evaluate_config_value
 
 
-def single_output_transform(name, inputs, transform_fn, output, description=None):
+def single_output_transform(name, inputs, compute_fn, output, description=None):
     '''It is commmon to want a Solid that has only inputs, a single output (with the default
-    name), and no config. So this is a helper function to do that. This transform function
+    name), and no config. So this is a helper function to do that. This compute function
     must return the naked return value (as opposed to a Result object).
 
     Args:
         name (str): Name of the solid.
         inputs (List[InputDefinition]): Inputs of solid.
-        transform_fn (callable):
+        compute_fn (callable):
             Callable with the signature
             (context: ExecutionContext, inputs: Dict[str, Any]) : Any
         output (OutputDefinition): Output of the solid.
@@ -33,16 +33,16 @@ def single_output_transform(name, inputs, transform_fn, output, description=None
                 'add_one',
                 inputs=InputDefinition('num', types.Int),
                 output=OutputDefinition(types.Int),
-                transform_fn=lambda context, inputs: inputs['num'] + 1
+                compute_fn=lambda context, inputs: inputs['num'] + 1
             )
 
     '''
 
-    def _new_transform_fn(context, inputs):
-        value = transform_fn(context, inputs)
+    def _new_compute_fn(context, inputs):
+        value = compute_fn(context, inputs)
         if isinstance(value, Result):
             raise DagsterInvariantViolationError(
-                '''Single output transform Solid {name} returned a Result. Just return
+                '''Single output compute Solid {name} returned a Result. Just return
                 value directly without wrapping it in Result'''
             )
         yield Result(value=value)
@@ -50,7 +50,7 @@ def single_output_transform(name, inputs, transform_fn, output, description=None
     return SolidDefinition(
         name=name,
         inputs=inputs,
-        transform_fn=_new_transform_fn,
+        compute_fn=_new_compute_fn,
         outputs=[output],
         description=description,
     )
