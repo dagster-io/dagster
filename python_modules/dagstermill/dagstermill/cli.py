@@ -1,7 +1,6 @@
 from collections import namedtuple
 import copy
 import os
-import re
 
 import click
 from papermill.iorw import load_notebook_node, write_ipynb
@@ -122,22 +121,13 @@ def get_register_repo_info(cli_args, allow_none=True):
             )
         else:
             raise click.UsageError(
-                "Cannot instantiate notebook with repository definition given by a function from a file"
+                "Cannot instantiate notebook with repository definition given by a "
+                "function from a file"
             )
     return register_repo_info
 
 
 def execute_create_notebook(notebook, force_overwrite, **kwargs):
-    if not re.match(r'^[a-zA-Z0-9\-_\\/]+$', notebook):
-        raise click.BadOptionUsage(
-            notebook,
-            (
-                'Notebook name {name} is not valid, '
-                'cannot contain anything except alphanumeric characters, '
-                '-, _, \\ and / for path manipulation'
-            ).format(name=notebook),
-        )
-
     notebook_path = os.path.join(
         os.getcwd(), notebook if notebook.endswith('.ipynb') else notebook + ".ipynb"
     )
