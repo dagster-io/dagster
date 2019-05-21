@@ -21,7 +21,7 @@ from dagster_airflow_tests.test_project.dagster_airflow_demo import define_demo_
 
 
 class TestExecuteDagPythonFilesystemStorage(object):
-    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
+    handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
@@ -59,7 +59,7 @@ class TestExecuteDagPythonFilesystemStorage(object):
 
 
 class TestExecuteDagPythonS3Storage(object):
-    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
+    handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
@@ -99,7 +99,7 @@ class TestExecuteDagPythonS3Storage(object):
 
 @nettest
 class TestExecuteDagContainerizedS3Storage(object):
-    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
+    handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
@@ -137,7 +137,7 @@ class TestExecuteDagContainerizedS3Storage(object):
 
 
 class TestExecuteDagContainerizedFilesystemStorage(object):
-    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
+    handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),

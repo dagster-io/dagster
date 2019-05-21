@@ -28,16 +28,16 @@ so that their inputs can be read from external configuration files. Solids can a
 Solids are defined using the :func:`@lambda_solid <dagster.lambda_solid>` or
 :func:`@solid <dagster.solid>` decorators, or using the underlying
 :class:`SolidDefinition <dagster.SolidDefinition>` class. These APIs wrap an underlying
-`transform function`, making its metadata queryable by higher-level tools.
+`compute function`, making its metadata queryable by higher-level tools.
 
-Transform Function
+Compute Function
 ^^^^^^^^^^^^^^^^^^
 
 .. image:: transform_fn.png
     :scale: 40 %
     :align: center
 
-The user-supplied function which forms the heart of a solid definition. The transform functions are 
+The user-supplied function which forms the heart of a solid definition. The compute functions are
 the business logic defined by you as the user; this business logic is what will be executed when the
 solid is invoked by the Dagster engine.
 
@@ -49,10 +49,10 @@ Result
     :scale: 40 %
     :align: center
 
-A result is how a solid's transform function communicates the value of an output, and its
+A result is how a solid's compute function communicates the value of an output, and its
 name, to Dagster.
 
-Solid transform functions are expected to yield a stream of results. Implementers of a solid must
+Solid compute functions are expected to yield a stream of results. Implementers of a solid must
 ensure their tranform yields :class:`Result <dagster.Result>` objects.
 
 In the common case where only a single result is yielded, the machinery provides sugar allowing
@@ -232,7 +232,7 @@ Execution Step
 
 Execution steps are concrete computations, one or more of which corresponds to a solid in a pipeline
 that has been compiled with a config. Some execution steps are generated in order to compute the
-core transform functions of solids, but execution steps may also be generated in order to
+core compute functions of solids, but execution steps may also be generated in order to
 materialize outputs, check expectations against outputs, etc.
 
 Users do not directly instantiate or manipulate execution steps.

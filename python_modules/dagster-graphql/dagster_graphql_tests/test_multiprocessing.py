@@ -67,7 +67,7 @@ def get_events_of_type(events, event_type):
 
 def test_running():
     run_id = make_new_run_id()
-    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_passing_pipeline)
+    handle = ExecutionTargetHandle.for_pipeline_fn(define_passing_pipeline)
     pipeline = define_passing_pipeline()
     env_config = {
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
@@ -77,15 +77,13 @@ def test_running():
         run_id,
         selector,
         env_config,
-        mode=None,
+        mode='default',
         execution_plan=create_execution_plan(pipeline, env_config),
         reexecution_config=None,
         step_keys_to_execute=None,
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(
-        exc_target_handle, pipeline, pipeline_run, raise_on_error=False
-    )
+    execution_manager.execute_pipeline(handle, pipeline, pipeline_run, raise_on_error=False)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.SUCCESS
     events = pipeline_run.all_logs()
@@ -100,7 +98,7 @@ def test_running():
 
 def test_failing():
     run_id = make_new_run_id()
-    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_failing_pipeline)
+    handle = ExecutionTargetHandle.for_pipeline_fn(define_failing_pipeline)
     pipeline = define_failing_pipeline()
     env_config = {
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
@@ -110,15 +108,13 @@ def test_failing():
         run_id,
         selector,
         env_config,
-        mode=None,
+        mode='default',
         execution_plan=create_execution_plan(pipeline, env_config),
         reexecution_config=None,
         step_keys_to_execute=None,
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(
-        exc_target_handle, pipeline, pipeline_run, raise_on_error=False
-    )
+    execution_manager.execute_pipeline(handle, pipeline, pipeline_run, raise_on_error=False)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
     assert pipeline_run.all_logs()
@@ -126,7 +122,7 @@ def test_failing():
 
 def test_execution_crash():
     run_id = make_new_run_id()
-    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_crashy_pipeline)
+    handle = ExecutionTargetHandle.for_pipeline_fn(define_crashy_pipeline)
     pipeline = define_crashy_pipeline()
     env_config = {
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
@@ -136,15 +132,13 @@ def test_execution_crash():
         run_id,
         selector,
         env_config,
-        mode=None,
+        mode='default',
         execution_plan=create_execution_plan(pipeline, env_config),
         reexecution_config=None,
         step_keys_to_execute=None,
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(
-        exc_target_handle, pipeline, pipeline_run, raise_on_error=False
-    )
+    execution_manager.execute_pipeline(handle, pipeline, pipeline_run, raise_on_error=False)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
     last_log = pipeline_run.all_logs()[-1]

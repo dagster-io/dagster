@@ -7,7 +7,6 @@ from contextlib2 import ExitStack
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, create_environment_type
-from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ResourcesBuilder
 from dagster.core.errors import (
@@ -84,7 +83,7 @@ def create_environment_config(pipeline, environment_dict=None, mode=None):
     if not result.success:
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment_dict)
 
-    return construct_environment_config(result.value)
+    return EnvironmentConfig.from_dict(result.value)
 
 
 def construct_run_storage(run_config, environment_config):
@@ -127,12 +126,18 @@ def construct_run_storage(run_config, environment_config):
 
 
 @contextmanager
-def scoped_pipeline_context(pipeline_def, environment_config, run_config, intermediates_manager):
+def scoped_pipeline_context(pipeline_def, environment_dict, run_config, intermediates_manager=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
+    check.dict_param(environment_dict, 'environment_dict', key_type=str)
     check.inst_param(run_config, 'run_config', RunConfig)
-    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
+    environment_config = create_environment_config(
+        pipeline_def, environment_dict, mode=run_config.mode
+    )
+
+    intermediates_manager = intermediates_manager or construct_intermediates_manager(
+        run_config, environment_config, pipeline_def
+    )
     run_storage = construct_run_storage(run_config, environment_config)
 
     run_storage.write_dagster_run_meta(
@@ -182,24 +187,6 @@ def scoped_pipeline_context(pipeline_def, environment_config, run_config, interm
             failure_data=PipelineInitFailureData(error=error_info),
             log_manager=_create_context_free_log_manager(run_config, pipeline_def),
         )
-
-
-@contextmanager
-def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.dict_param(environment_dict, 'environment_dict', key_type=str)
-    check.inst_param(run_config, 'run_config', RunConfig)
-
-    environment_config = create_environment_config(
-        pipeline_def, environment_dict, mode=run_config.mode
-    )
-    intermediates_manager = construct_intermediates_manager(
-        run_config, environment_config, pipeline_def
-    )
-    with scoped_pipeline_context(
-        pipeline_def, environment_config, run_config, intermediates_manager
-    ) as context:
-        yield context
 
 
 def construct_pipeline_execution_context(

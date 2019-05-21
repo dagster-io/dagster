@@ -65,7 +65,7 @@ class StepSuccessData(namedtuple('_StepSuccessData', 'duration_ms')):
 
 
 class StepKind(Enum):
-    TRANSFORM = 'TRANSFORM'
+    COMPUTE = 'COMPUTE'
     INPUT_EXPECTATION = 'INPUT_EXPECTATION'
     OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
     JOIN = 'JOIN'

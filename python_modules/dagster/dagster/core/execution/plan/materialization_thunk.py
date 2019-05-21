@@ -46,7 +46,7 @@ def _create_materialization_lambda(output_def, config_spec):
         yield Materialization(
             path=path,
             description=('Materialization of {solid_name}.{output_name}').format(
-                output_name=output_def.name, solid_name=step_context.solid_handle.name
+                output_name=output_def.name, solid_name=str(step_context.solid_handle)
             ),
         )
 

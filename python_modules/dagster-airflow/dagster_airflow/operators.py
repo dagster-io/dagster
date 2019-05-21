@@ -74,16 +74,7 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
     @classmethod
     @abstractmethod
     def operator_for_solid(
-        cls,
-        exc_target_handle,
-        pipeline_name,
-        env_config,
-        mode,
-        solid_name,
-        step_keys,
-        dag,
-        dag_id,
-        op_kwargs,
+        cls, handle, pipeline_name, env_config, mode, solid_name, step_keys, dag, dag_id, op_kwargs
     ):
         pass
 
@@ -317,16 +308,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
     @classmethod
     def operator_for_solid(
-        cls,
-        exc_target_handle,
-        pipeline_name,
-        env_config,
-        mode,
-        solid_name,
-        step_keys,
-        dag,
-        dag_id,
-        op_kwargs,
+        cls, handle, pipeline_name, env_config, mode, solid_name, step_keys, dag, dag_id, op_kwargs
     ):
         tmp_dir = op_kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
         host_tmp_dir = op_kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
@@ -429,7 +411,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
 class DagsterPythonOperator(PythonOperator, DagsterOperator):
     @classmethod
-    def make_python_callable(cls, exc_target_handle, pipeline_name, mode, env_config, step_keys):
+    def make_python_callable(cls, handle, pipeline_name, mode, env_config, step_keys):
         try:
             from dagster_graphql.cli import execute_query_from_cli
         except ImportError:
@@ -462,7 +444,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 )
             )
 
-            res = json.loads(execute_query_from_cli(exc_target_handle, query, variables=None))
+            res = json.loads(execute_query_from_cli(handle, query, variables=None))
             cls.handle_errors(res, None)
             return cls.handle_result(res)
 
@@ -470,16 +452,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
 
     @classmethod
     def operator_for_solid(
-        cls,
-        exc_target_handle,
-        pipeline_name,
-        env_config,
-        mode,
-        solid_name,
-        step_keys,
-        dag,
-        dag_id,
-        op_kwargs,
+        cls, handle, pipeline_name, env_config, mode, solid_name, step_keys, dag, dag_id, op_kwargs
     ):
         if 'storage' not in env_config:
             raise airflow_storage_exception('/tmp/special_place')
@@ -493,7 +466,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
             task_id=solid_name,
             provide_context=True,
             python_callable=cls.make_python_callable(
-                exc_target_handle,
+                handle,
                 pipeline_name,
                 mode,
                 format_config_for_graphql(env_config),

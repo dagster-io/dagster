@@ -28,7 +28,7 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
     '''A shortcut to output multiple results.
 
     When using the :py:func:`@solid <dagster.solid>` API, you may return an instance of
-    ``MultipleResults`` from a decorated transform function instead of yielding multiple results.
+    ``MultipleResults`` from a decorated compute function instead of yielding multiple results.
 
     Attributes:
       results (list[Result]): list of :py:class:`Result`
@@ -100,13 +100,13 @@ class _LambdaSolid(object):
         if not self.name:
             self.name = fn.__name__
 
-        _validate_transform_fn(self.name, fn, self.input_defs)
-        transform_fn = _create_lambda_solid_transform_wrapper(fn, self.input_defs, self.output_def)
+        _validate_compute_fn(self.name, fn, self.input_defs)
+        compute_fn = _create_lambda_solid_transform_wrapper(fn, self.input_defs, self.output_def)
         return SolidDefinition(
             name=self.name,
             inputs=self.input_defs,
             outputs=[self.output_def],
-            transform_fn=transform_fn,
+            compute_fn=compute_fn,
             description=self.description,
         )
 
@@ -139,13 +139,13 @@ class _Solid(object):
         if not self.name:
             self.name = fn.__name__
 
-        _validate_transform_fn(self.name, fn, self.input_defs, [('context',)])
-        transform_fn = _create_solid_transform_wrapper(fn, self.input_defs, self.outputs)
+        _validate_compute_fn(self.name, fn, self.input_defs, [('context',)])
+        compute_fn = _create_solid_transform_wrapper(fn, self.input_defs, self.outputs)
         return SolidDefinition(
             name=self.name,
             inputs=self.input_defs,
             outputs=self.outputs,
-            transform_fn=transform_fn,
+            compute_fn=compute_fn,
             config_field=self.config_field,
             description=self.description,
             resources=self.resources,
@@ -196,18 +196,18 @@ def solid(
     '''(decorator) Create a solid with specified parameters.
 
     This shortcut simplifies the core solid API by exploding arguments into kwargs of the
-    transform function and omitting additional parameters when they are not needed.
+    compute function and omitting additional parameters when they are not needed.
     Parameters are otherwise as in the core API, :py:class:`SolidDefinition`.
 
-    The decorated function will be used as the solid's transform function. Unlike in the core API,
-    the transform function does not have to yield :py:class:`Result` object directly. Several
+    The decorated function will be used as the solid's compute function. Unlike in the core API,
+    the compute function does not have to yield :py:class:`Result` object directly. Several
     simpler alternatives are available:
 
     1. Return a value. This is returned as a :py:class:`Result` for a single output solid.
     2. Return a :py:class:`Result`. Works like yielding result.
     3. Return an instance of :py:class:`MultipleResults`. Works like yielding several results for
        multiple outputs. Useful for solids that have multiple outputs.
-    4. Yield :py:class:`Result`. Same as default transform behaviour.
+    4. Yield :py:class:`Result`. Same as default compute behaviour.
 
     Args:
         name (str): Name of solid.
@@ -402,9 +402,9 @@ class FunctionValidationError(Exception):
         self.missing_names = missing_names
 
 
-def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positionals=None):
+def _validate_compute_fn(solid_name, compute_fn, inputs, expected_positionals=None):
     check.str_param(solid_name, 'solid_name')
-    check.callable_param(transform_fn, 'transform_fn')
+    check.callable_param(compute_fn, 'compute_fn')
     check.list_param(inputs, 'inputs', of_type=InputDefinition)
     expected_positionals = check.opt_list_param(
         expected_positionals, 'expected_positionals', of_type=(str, tuple)
@@ -413,28 +413,28 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positional
     names = set(inp.name for inp in inputs if not inp.runtime_type.is_nothing)
     # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
     try:
-        _validate_decorated_fn(transform_fn, names, expected_positionals)
+        _validate_decorated_fn(compute_fn, names, expected_positionals)
     except FunctionValidationError as e:
         if e.error_type == FunctionValidationError.TYPES['vararg']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function has positional vararg parameter "
-                "'{e.param}'. Transform functions should only have keyword arguments that match "
+                "solid '{solid_name}' compute function has positional vararg parameter "
+                "'{e.param}'. Compute functions should only have keyword arguments that match "
                 "input names and a first positional parameter named 'context'.".format(
                     solid_name=solid_name, e=e
                 )
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_name']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function has parameter '{e.param}' that is not "
-                "one of the solid inputs. Transform functions should only have keyword arguments "
+                "solid '{solid_name}' compute function has parameter '{e.param}' that is not "
+                "one of the solid inputs. Compute functions should only have keyword arguments "
                 "that match input names and a first positional parameter named 'context'.".format(
                     solid_name=solid_name, e=e
                 )
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function do not have required positional "
-                "parameter '{e.param}'. Transform functions should only have keyword arguments "
+                "solid '{solid_name}' compute function do not have required positional "
+                "parameter '{e.param}'. Compute functions should only have keyword arguments "
                 "that match input names and a first positional parameter named 'context'.".format(
                     solid_name=solid_name, e=e
                 )
@@ -442,8 +442,8 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positional
         elif e.error_type == FunctionValidationError.TYPES['extra']:
             undeclared_inputs_printed = ", '".join(e.missing_names)
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function do not have parameter(s) "
-                "'{undeclared_inputs_printed}', which are in solid's inputs. Transform functions "
+                "solid '{solid_name}' compute function do not have parameter(s) "
+                "'{undeclared_inputs_printed}', which are in solid's inputs. Compute functions "
                 "should only have keyword arguments that match input names and a first positional "
                 "parameter named 'context'.".format(
                     solid_name=solid_name, undeclared_inputs_printed=undeclared_inputs_printed

@@ -1,4 +1,4 @@
-from .exc_target_handle import ExecutionTargetHandle
+from .handle import ExecutionTargetHandle
 
 from .dependency import (
     DependencyDefinition,

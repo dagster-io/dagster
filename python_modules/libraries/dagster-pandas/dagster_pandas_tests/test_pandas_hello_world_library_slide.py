@@ -49,7 +49,7 @@ def run_hello_world(hello_world):
 def create_definition_based_solid():
     table_input = InputDefinition('num_csv', DataFrame)
 
-    def transform_fn(_context, inputs):
+    def compute_fn(_context, inputs):
         num_csv = inputs['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
@@ -58,7 +58,7 @@ def create_definition_based_solid():
     hello_world = single_output_transform(
         name='hello_world',
         inputs=[table_input],
-        transform_fn=transform_fn,
+        compute_fn=compute_fn,
         output=OutputDefinition(DataFrame),
     )
     return hello_world

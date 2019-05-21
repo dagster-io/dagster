@@ -5,6 +5,7 @@ import six
 
 from dagster import check
 from dagster.utils import camelcase
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .input import InputDefinition
 from .output import OutputDefinition
@@ -338,9 +339,18 @@ class MultiDependencyDefinition(
     namedtuple('_MultiDependencyDefinition', 'dependencies'), IDependencyDefinition
 ):
     def __new__(cls, dependencies):
-        return super(MultiDependencyDefinition, cls).__new__(
-            cls, check.list_param(dependencies, 'dependencies', of_type=DependencyDefinition)
-        )
+        deps = check.list_param(dependencies, 'dependencies', of_type=DependencyDefinition)
+        seen = {}
+        for dep in deps:
+            key = dep.solid + ':' + dep.output
+            if key in seen:
+                raise DagsterInvalidDefinitionError(
+                    'Duplicate dependencies on solid "{dep.solid}" output "{dep.output}" '
+                    'used in the same MultiDependencyDefinition.'.format(dep=dep)
+                )
+            seen[key] = True
+
+        return super(MultiDependencyDefinition, cls).__new__(cls, deps)
 
     def get_definitions(self):
         return self.dependencies

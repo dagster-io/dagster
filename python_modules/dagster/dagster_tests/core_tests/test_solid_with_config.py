@@ -22,7 +22,7 @@ def test_basic_solid_with_config():
         inputs=[],
         outputs=[],
         config_field=Field(Dict({'some_config': Field(String)})),
-        transform_fn=_t_fn,
+        compute_fn=_t_fn,
     )
 
     pipeline = PipelineDefinition(solids=[solid])
@@ -44,7 +44,7 @@ def test_config_arg_mismatch():
         inputs=[],
         outputs=[],
         config_field=Field(Dict({'some_config': Field(String)})),
-        transform_fn=_t_fn,
+        compute_fn=_t_fn,
     )
 
     pipeline = PipelineDefinition(solids=[solid])
@@ -59,7 +59,7 @@ def test_solid_not_found():
     def _t_fn(*_args):
         raise Exception('should not reach')
 
-    solid = SolidDefinition(name='find_me_solid', inputs=[], outputs=[], transform_fn=_t_fn)
+    solid = SolidDefinition(name='find_me_solid', inputs=[], outputs=[], compute_fn=_t_fn)
 
     pipeline = PipelineDefinition(solids=[solid])
 
@@ -71,7 +71,7 @@ def test_config_for_no_config():
     def _t_fn(*_args):
         raise Exception('should not reach')
 
-    solid_def = SolidDefinition(name='no_config_solid', inputs=[], outputs=[], transform_fn=_t_fn)
+    solid_def = SolidDefinition(name='no_config_solid', inputs=[], outputs=[], compute_fn=_t_fn)
 
     pipeline = PipelineDefinition(solids=[solid_def])
 

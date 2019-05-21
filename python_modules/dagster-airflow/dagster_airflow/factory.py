@@ -43,7 +43,7 @@ def _rename_for_airflow(name):
 
 
 def _make_airflow_dag(
-    exc_target_handle,
+    handle,
     pipeline_name,
     env_config=None,
     mode=None,
@@ -54,7 +54,7 @@ def _make_airflow_dag(
     operator=DagsterPythonOperator,
 ):
 
-    check.inst_param(exc_target_handle, 'exc_target_handle', ExecutionTargetHandle)
+    check.inst_param(handle, 'handle', ExecutionTargetHandle)
     env_config = check.opt_dict_param(env_config, 'env_config', key_type=str)
     mode = check.opt_str_param(mode, 'mode')
 
@@ -80,7 +80,7 @@ def _make_airflow_dag(
 
     dag = DAG(dag_id=dag_id, description=dag_description, **dag_kwargs)
 
-    pipeline = exc_target_handle.build_pipeline_definition()
+    pipeline = handle.build_pipeline_definition()
     if mode is None:
         mode = pipeline.get_default_mode_name()
     execution_plan = create_execution_plan(pipeline, env_config, mode=mode)
@@ -94,7 +94,7 @@ def _make_airflow_dag(
         step_keys = [step.key for step in solid_steps]
 
         task = operator.operator_for_solid(
-            exc_target_handle=exc_target_handle,
+            handle=handle,
             pipeline_name=pipeline_name,
             env_config=env_config,
             mode=mode,
@@ -119,7 +119,7 @@ def _make_airflow_dag(
 
 
 def make_airflow_dag(
-    exc_target_handle,
+    handle,
     pipeline_name,
     env_config=None,
     mode=None,
@@ -129,7 +129,7 @@ def make_airflow_dag(
     op_kwargs=None,
 ):
     return _make_airflow_dag(
-        exc_target_handle=exc_target_handle,
+        handle=handle,
         pipeline_name=pipeline_name,
         env_config=env_config,
         mode=mode,
@@ -141,7 +141,7 @@ def make_airflow_dag(
 
 
 def make_airflow_dag_containerized(
-    exc_target_handle,
+    handle,
     pipeline_name,
     image,
     env_config=None,
@@ -154,7 +154,7 @@ def make_airflow_dag_containerized(
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
     op_kwargs['image'] = image
     return _make_airflow_dag(
-        exc_target_handle=exc_target_handle,
+        handle=handle,
         pipeline_name=pipeline_name,
         env_config=env_config,
         mode=mode,

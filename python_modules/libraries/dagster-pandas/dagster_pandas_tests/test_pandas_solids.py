@@ -15,9 +15,9 @@ from dagster.core.test_utils import single_output_transform
 from dagster_pandas import DataFrame
 
 
-def _dataframe_solid(name, inputs, transform_fn):
+def _dataframe_solid(name, inputs, compute_fn):
     return single_output_transform(
-        name=name, inputs=inputs, transform_fn=transform_fn, output=OutputDefinition(DataFrame)
+        name=name, inputs=inputs, compute_fn=compute_fn, output=OutputDefinition(DataFrame)
     )
 
 
@@ -50,7 +50,7 @@ def create_sum_table():
         return num_csv
 
     return _dataframe_solid(
-        name='sum_table', inputs=[InputDefinition('num_csv', DataFrame)], transform_fn=transform
+        name='sum_table', inputs=[InputDefinition('num_csv', DataFrame)], compute_fn=transform
     )
 
 
@@ -97,7 +97,7 @@ def test_two_input_solid():
     two_input_solid = _dataframe_solid(
         name='two_input_solid',
         inputs=[InputDefinition('num_csv1', DataFrame), InputDefinition('num_csv2', DataFrame)],
-        transform_fn=transform,
+        compute_fn=transform,
     )
 
     pipeline = PipelineDefinition(
@@ -123,7 +123,7 @@ def test_no_transform_solid():
     num_table = _dataframe_solid(
         name='num_table',
         inputs=[InputDefinition('num_csv', DataFrame)],
-        transform_fn=lambda _context, inputs: inputs['num_csv'],
+        compute_fn=lambda _context, inputs: inputs['num_csv'],
     )
     df = get_solid_transformed_value(num_table)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
@@ -158,13 +158,13 @@ def load_num_csv_solid(name):
 
 
 def test_pandas_multiple_inputs():
-    def transform_fn(_context, inputs):
+    def compute_fn(_context, inputs):
         return inputs['num_csv1'] + inputs['num_csv2']
 
     double_sum = _dataframe_solid(
         name='double_sum',
         inputs=[InputDefinition('num_csv1', DataFrame), InputDefinition('num_csv2', DataFrame)],
-        transform_fn=transform_fn,
+        compute_fn=compute_fn,
     )
 
     pipeline = PipelineDefinition(

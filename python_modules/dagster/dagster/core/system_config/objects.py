@@ -2,8 +2,23 @@ from collections import namedtuple
 
 from dagster import check
 
+from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.runs import InMemoryRunStorage, FileSystemRunStorage
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.utils import single_item
+
+
+def construct_solid_dictionary(solid_dict_value, parent_handle=None, config_map=None):
+    config_map = config_map or {}
+    for name, value in solid_dict_value.items():
+        key = SolidHandle(name, None, parent_handle)
+        config_map[str(key)] = SolidConfig.from_dict(value)
+
+        # solids implies a composite solid config
+        if value.get('solids'):
+            construct_solid_dictionary(value['solids'], key, config_map)
+
+    return config_map
 
 
 class SolidConfig(namedtuple('_SolidConfig', 'config inputs outputs')):
@@ -13,6 +28,16 @@ class SolidConfig(namedtuple('_SolidConfig', 'config inputs outputs')):
             config,
             check.opt_dict_param(inputs, 'inputs', key_type=str),
             check.opt_list_param(outputs, 'outputs', of_type=dict),
+        )
+
+    @staticmethod
+    def from_dict(config):
+        check.dict_param(config, 'config', key_type=str)
+
+        return SolidConfig(
+            config=config.get('config'),
+            inputs=config.get('inputs', {}),
+            outputs=config.get('outputs', []),
         )
 
 
@@ -55,6 +80,20 @@ class EnvironmentConfig(
             original_config_dict=original_config_dict,
         )
 
+    @staticmethod
+    def from_dict(config):
+        check.dict_param(config, 'config', key_type=str)
+
+        return EnvironmentConfig(
+            solids=construct_solid_dictionary(config['solids']),
+            execution=ExecutionConfig(**config['execution']),
+            expectations=ExpectationsConfig(**config['expectations']),
+            storage=StorageConfig.from_dict(config.get('storage')),
+            loggers=config.get('loggers'),
+            original_config_dict=config,
+            resources=config.get('resources'),
+        )
+
 
 class ExpectationsConfig(namedtuple('_ExpecationsConfig', 'evaluate')):
     def __new__(cls, evaluate):
@@ -90,3 +129,11 @@ class StorageConfig(namedtuple('_FilesConfig', 'storage_mode storage_config')):
             raise DagsterInvariantViolationError(
                 'Invalid storage specified {}'.format(self.storage_mode)
             )
+
+    @staticmethod
+    def from_dict(config=None):
+        check.opt_dict_param(config, 'config', key_type=str)
+        if config:
+            storage_mode, storage_config = single_item(config)
+            return StorageConfig(storage_mode, storage_config)
+        return StorageConfig(None, None)

@@ -3,13 +3,6 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.definitions import SolidHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.system_config.objects import (
-    EnvironmentConfig,
-    ExecutionConfig,
-    ExpectationsConfig,
-    SolidConfig,
-    StorageConfig,
-)
 from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector, String
 from dagster.core.types.config import ALL_CONFIG_BUILTINS, ConfigType, ConfigTypeAttributes
 from dagster.core.types.default_applier import apply_default_values
@@ -372,43 +365,6 @@ def define_solid_dictionary_cls(
 def define_execution_config_cls(name):
     check.str_param(name, 'name')
     return SystemNamedDict(name, {})
-
-
-def construct_environment_config(config_value):
-    check.dict_param(config_value, 'config_value')
-
-    return EnvironmentConfig(
-        solids=construct_solid_dictionary(config_value['solids']),
-        execution=ExecutionConfig(**config_value['execution']),
-        expectations=ExpectationsConfig(**config_value['expectations']),
-        storage=construct_storage_config(config_value.get('storage')),
-        loggers=config_value.get('loggers'),
-        original_config_dict=config_value,
-        resources=config_value.get('resources'),
-    )
-
-
-def construct_storage_config(config_value):
-    check.opt_dict_param(config_value, 'config_value', key_type=str)
-    if config_value:
-        storage_mode, storage_config = single_item(config_value)
-        return StorageConfig(storage_mode, storage_config)
-    return StorageConfig(None, None)
-
-
-def construct_solid_dictionary(solid_dict_value, parent_handle=None, config_map=None):
-    config_map = {} if config_map is None else config_map
-    for name, value in solid_dict_value.items():
-        key = SolidHandle(name, None, parent_handle)
-        config = value.get('config')
-        config_map[str(key)] = SolidConfig(
-            config=config, inputs=value.get('inputs', {}), outputs=value.get('outputs', [])
-        )
-        # solids implies a composite solid config
-        if value.get('solids'):
-            construct_solid_dictionary(value['solids'], key, config_map)
-
-    return config_map
 
 
 def iterate_solid_def_types(solid_def):

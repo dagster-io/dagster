@@ -121,7 +121,7 @@ if __name__ == '__main__':
         pipeline,
         run_config=RunConfig(
             executor_config=MultiprocessExecutorConfig(
-                exc_target_handle=ExecutionTargetHandle.for_pipeline_fn(define_hammer_pipeline)
+                handle=ExecutionTargetHandle.for_pipeline_fn(define_hammer_pipeline)
             ),
             storage_mode=RunStorageMode.FILESYSTEM,
         ),

@@ -36,18 +36,18 @@ def test_execution_plan_simple_two_steps():
     assert isinstance(execution_plan.steps, list)
     assert len(execution_plan.steps) == 2
 
-    assert execution_plan.get_step_by_key('return_one.transform')
-    assert execution_plan.get_step_by_key('add_one.transform')
+    assert execution_plan.get_step_by_key('return_one.compute')
+    assert execution_plan.get_step_by_key('add_one.compute')
 
     step_events = execute_plan(execution_plan)
     # start, out, success, start, out, success
     assert len(step_events) == 6
 
-    assert step_events[1].step_key == 'return_one.transform'
+    assert step_events[1].step_key == 'return_one.compute'
     assert step_events[1].is_successful_output
     assert step_events[1].step_output_data.value_repr == '1'
 
-    assert step_events[4].step_key == 'add_one.transform'
+    assert step_events[4].step_key == 'add_one.compute'
     assert step_events[4].is_successful_output
     assert step_events[4].step_output_data.value_repr == '2'
 
@@ -64,10 +64,10 @@ def test_execution_plan_two_outputs():
 
     step_events = execute_plan(execution_plan)
 
-    assert step_events[1].step_key == 'return_one_two.transform'
+    assert step_events[1].step_key == 'return_one_two.compute'
     assert step_events[1].step_output_data.value_repr == '1'
     assert step_events[1].step_output_data.output_name == 'num_one'
-    assert step_events[2].step_key == 'return_one_two.transform'
+    assert step_events[2].step_key == 'return_one_two.compute'
     assert step_events[2].step_output_data.value_repr == '2'
     assert step_events[2].step_output_data.output_name == 'num_two'
 

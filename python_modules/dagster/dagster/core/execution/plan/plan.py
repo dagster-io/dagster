@@ -21,7 +21,7 @@ from .expectations import create_expectations_subplan, decorate_with_expectation
 from .input_thunk import create_input_thunk_execution_step
 from .materialization_thunk import decorate_with_output_materializations
 from .objects import ExecutionStep, ExecutionValueSubplan, StepInput, StepKind, StepOutputHandle
-from .transform import create_transform_step
+from .compute import create_compute_step
 
 
 class _PlanBuilder:
@@ -141,11 +141,11 @@ class _PlanBuilder:
                     )
                 )
 
-            ### 2. TRANSFORM FUNCTION OR RECURSE
-            # Create and add execution plan step for the solid transform function or
+            ### 2. COMPUTE FUNCTION OR RECURSE
+            # Create and add execution plan step for the solid compute function or
             # recurse over the solids in a CompositeSolid
             if isinstance(solid.definition, SolidDefinition):
-                solid_transform_step = create_transform_step(
+                solid_transform_step = create_compute_step(
                     self.pipeline_name, self.environment_config, solid, step_inputs, handle
                 )
                 self.add_step(solid_transform_step)

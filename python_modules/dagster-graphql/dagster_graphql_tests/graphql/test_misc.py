@@ -129,7 +129,7 @@ def define_circular_dependency_pipeline():
                 name='csolid',
                 inputs=[InputDefinition('num', PoorMansDataFrame)],
                 outputs=[OutputDefinition(PoorMansDataFrame)],
-                transform_fn=lambda *_args: None,
+                compute_fn=lambda *_args: None,
             )
         ],
         dependencies={'csolid': {'num': DependencyDefinition('csolid')}},
@@ -167,7 +167,7 @@ def define_test_repository():
 def test_pipelines_or_error_invalid():
 
     context = DagsterGraphQLContext(
-        exc_target_handle=ExecutionTargetHandle.for_repo_fn(define_test_repository),
+        handle=ExecutionTargetHandle.for_repo_fn(define_test_repository),
         pipeline_runs=PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
     )

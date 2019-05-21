@@ -63,8 +63,8 @@ def test_execution_plan_reexecution():
     )
 
     assert result.success
-    assert get_filesystem_intermediate(result.run_id, 'add_one.transform', Int) == 4
-    assert get_filesystem_intermediate(result.run_id, 'add_two.transform', Int) == 6
+    assert get_filesystem_intermediate(result.run_id, 'add_one.compute', Int) == 4
+    assert get_filesystem_intermediate(result.run_id, 'add_two.compute', Int) == 6
 
     ## re-execute add_two
 
@@ -73,8 +73,7 @@ def test_execution_plan_reexecution():
     run_config = RunConfig(
         run_id=new_run_id,
         reexecution_config=ReexecutionConfig(
-            previous_run_id=result.run_id,
-            step_output_handles=[StepOutputHandle('add_one.transform')],
+            previous_run_id=result.run_id, step_output_handles=[StepOutputHandle('add_one.compute')]
         ),
         storage_mode=RunStorageMode.FILESYSTEM,
     )
@@ -85,14 +84,14 @@ def test_execution_plan_reexecution():
         execution_plan,
         environment_dict=environment_dict,
         run_config=run_config,
-        step_keys_to_execute=['add_two.transform'],
+        step_keys_to_execute=['add_two.compute'],
     )
 
-    assert get_filesystem_intermediate(new_run_id, 'add_one.transform', Int) == 4
-    assert get_filesystem_intermediate(new_run_id, 'add_two.transform', Int) == 6
+    assert get_filesystem_intermediate(new_run_id, 'add_one.compute', Int) == 4
+    assert get_filesystem_intermediate(new_run_id, 'add_two.compute', Int) == 6
 
-    assert not get_step_output_event(step_events, 'add_one.transform')
-    assert get_step_output_event(step_events, 'add_two.transform')
+    assert not get_step_output_event(step_events, 'add_one.compute')
+    assert get_step_output_event(step_events, 'add_two.compute')
 
 
 def test_execution_plan_wrong_run_id():
@@ -111,7 +110,7 @@ def test_execution_plan_wrong_run_id():
                 storage_mode=RunStorageMode.FILESYSTEM,
                 reexecution_config=ReexecutionConfig(
                     previous_run_id=unrun_id,
-                    step_output_handles=[StepOutputHandle('add_one.transform')],
+                    step_output_handles=[StepOutputHandle('add_one.compute')],
                 ),
             ),
         )
@@ -140,7 +139,7 @@ def test_execution_plan_wrong_invalid_step_key():
         run_id=new_run_id,
         reexecution_config=ReexecutionConfig(
             previous_run_id=result.run_id,
-            step_output_handles=[StepOutputHandle('not_valid.transform')],
+            step_output_handles=[StepOutputHandle('not_valid.compute')],
         ),
         storage_mode=RunStorageMode.FILESYSTEM,
     )
@@ -152,12 +151,11 @@ def test_execution_plan_wrong_invalid_step_key():
             execution_plan,
             environment_dict=environment_dict,
             run_config=run_config,
-            step_keys_to_execute=['add_two.transform'],
+            step_keys_to_execute=['add_two.compute'],
         )
 
     assert str(exc_info.value) == (
-        'Step not_valid.transform was specified as a step from a previous run. '
-        'It does not exist.'
+        'Step not_valid.compute was specified as a step from a previous run. ' 'It does not exist.'
     )
 
 
@@ -178,7 +176,7 @@ def test_execution_plan_wrong_invalid_output_name():
         run_id=new_run_id,
         reexecution_config=ReexecutionConfig(
             previous_run_id=result.run_id,
-            step_output_handles=[StepOutputHandle('add_one.transform', 'not_an_output')],
+            step_output_handles=[StepOutputHandle('add_one.compute', 'not_an_output')],
         ),
         storage_mode=RunStorageMode.FILESYSTEM,
     )
@@ -190,15 +188,15 @@ def test_execution_plan_wrong_invalid_output_name():
             execution_plan,
             environment_dict=environment_dict,
             run_config=run_config,
-            step_keys_to_execute=['add_two.transform'],
+            step_keys_to_execute=['add_two.compute'],
         )
 
     assert str(exc_info.value) == (
         'You specified a step_output_handle in the ReexecutionConfig that does not exist: '
-        'Step add_one.transform does not have output not_an_output.'
+        'Step add_one.compute does not have output not_an_output.'
     )
 
-    assert exc_info.value.step_key == 'add_one.transform'
+    assert exc_info.value.step_key == 'add_one.compute'
     assert exc_info.value.output_name == 'not_an_output'
 
 
@@ -222,8 +220,7 @@ def test_execution_plan_reexecution_with_in_memory():
     in_memory_run_config = RunConfig(
         run_id=new_run_id,
         reexecution_config=ReexecutionConfig(
-            previous_run_id=result.run_id,
-            step_output_handles=[StepOutputHandle('add_one.transform')],
+            previous_run_id=result.run_id, step_output_handles=[StepOutputHandle('add_one.compute')]
         ),
         storage_mode=RunStorageMode.IN_MEMORY,
     )
@@ -235,7 +232,7 @@ def test_execution_plan_reexecution_with_in_memory():
             execution_plan,
             environment_dict=environment_dict,
             run_config=in_memory_run_config,
-            step_keys_to_execute=['add_two.transform'],
+            step_keys_to_execute=['add_two.compute'],
         )
 
 
@@ -251,8 +248,8 @@ def test_pipeline_step_key_subset_execution():
     )
 
     assert result.success
-    assert get_filesystem_intermediate(result.run_id, 'add_one.transform', Int) == 4
-    assert get_filesystem_intermediate(result.run_id, 'add_two.transform', Int) == 6
+    assert get_filesystem_intermediate(result.run_id, 'add_one.compute', Int) == 4
+    assert get_filesystem_intermediate(result.run_id, 'add_two.compute', Int) == 6
 
     ## re-execute add_two
 
@@ -265,10 +262,10 @@ def test_pipeline_step_key_subset_execution():
             run_id=new_run_id,
             reexecution_config=ReexecutionConfig(
                 previous_run_id=result.run_id,
-                step_output_handles=[StepOutputHandle('add_one.transform')],
+                step_output_handles=[StepOutputHandle('add_one.compute')],
             ),
             storage_mode=RunStorageMode.FILESYSTEM,
-            step_keys_to_execute=['add_two.transform'],
+            step_keys_to_execute=['add_two.compute'],
         ),
     )
 
@@ -277,11 +274,11 @@ def test_pipeline_step_key_subset_execution():
     step_events = pipeline_reexecution_result.step_event_list
     assert step_events
 
-    assert get_filesystem_intermediate(new_run_id, 'add_one.transform', Int) == 4
-    assert get_filesystem_intermediate(new_run_id, 'add_two.transform', Int) == 6
+    assert get_filesystem_intermediate(new_run_id, 'add_one.compute', Int) == 4
+    assert get_filesystem_intermediate(new_run_id, 'add_two.compute', Int) == 6
 
-    assert not get_step_output_event(step_events, 'add_one.transform')
-    assert get_step_output_event(step_events, 'add_two.transform')
+    assert not get_step_output_event(step_events, 'add_one.compute')
+    assert get_step_output_event(step_events, 'add_two.compute')
 
 
 def test_pipeline_step_key_subset_execution_wrong_step_key_in_subset():
@@ -305,7 +302,7 @@ def test_pipeline_step_key_subset_execution_wrong_step_key_in_subset():
                 run_id=new_run_id,
                 reexecution_config=ReexecutionConfig(
                     previous_run_id=result.run_id,
-                    step_output_handles=[StepOutputHandle('add_one.transform')],
+                    step_output_handles=[StepOutputHandle('add_one.compute')],
                 ),
                 storage_mode=RunStorageMode.FILESYSTEM,
                 step_keys_to_execute=['nope'],
@@ -337,7 +334,7 @@ def test_pipeline_step_key_subset_execution_wrong_step_key_in_step_output_handle
                     step_output_handles=[StepOutputHandle('invalid_in_step_output_handles')],
                 ),
                 storage_mode=RunStorageMode.FILESYSTEM,
-                step_keys_to_execute=['add_two.transform'],
+                step_keys_to_execute=['add_two.compute'],
             ),
         )
 
@@ -363,9 +360,9 @@ def test_pipeline_step_key_subset_execution_wrong_output_name_in_step_output_han
                 run_id=new_run_id,
                 reexecution_config=ReexecutionConfig(
                     previous_run_id=result.run_id,
-                    step_output_handles=[StepOutputHandle('add_one.transform', 'invalid_output')],
+                    step_output_handles=[StepOutputHandle('add_one.compute', 'invalid_output')],
                 ),
                 storage_mode=RunStorageMode.FILESYSTEM,
-                step_keys_to_execute=['add_two.transform'],
+                step_keys_to_execute=['add_two.compute'],
             ),
         )
