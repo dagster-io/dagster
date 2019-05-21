@@ -3,9 +3,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import base64
 import copy
 import json
+import logging
 import os
 import pickle
-import subprocess
 import uuid
 
 from builtins import *  # pylint: disable=W0622,W0401
@@ -18,9 +18,11 @@ import six
 from future.utils import raise_from
 
 import papermill as pm
+from papermill.exceptions import PapermillExecutionError
 from papermill.parameterize import _find_first_tagged_cell_index
 from papermill.translators import translate_parameters
 from papermill.iorw import load_notebook_node, write_ipynb
+from papermill.log import logger as pm_logger
 
 import scrapbook as sb
 
@@ -40,7 +42,7 @@ from dagster import (
     types,
 )
 from dagster.core.definitions.dependency import Solid
-from dagster.core.errors import DagsterSubprocessExecutionError
+from dagster.core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
 from dagster.core.events.log import construct_json_event_logger, EventRecord
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import scoped_pipeline_context
@@ -67,6 +69,16 @@ from dagster.utils import mkdir_p
 # I don't claim to understand it.
 # ipython kernel install --name "dagster" --user
 # python3 -m ipykernel install --user
+
+
+class EventCallbackHandler(logging.Handler):
+    def __init__(self, event_callback):
+        self._event_callback = event_callback
+        super(EventCallbackHandler, self).__init__()
+
+    def emit(self, record):
+        event_record_dict = json.loads(record)
+        self._event_callback(EventRecord(**event_record_dict))
 
 
 class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
@@ -117,7 +129,11 @@ class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
         check.not_implemented('Cannot access solid in dagstermill exploratory context')
 
 
-class DagstermillError(DagsterSubprocessExecutionError):
+class DagstermillError(Exception):
+    pass
+
+
+class DagstermillExecutionError(DagstermillError, DagsterUserCodeExecutionError):
     pass
 
 
@@ -620,33 +636,19 @@ def _dm_solid_transform(name, notebook_path):
             with open(output_log_path, 'a') as f:
                 f.close()
 
-            process = subprocess.Popen(
-                ['papermill', '--log-output', '--log-level', 'ERROR', intermediate_path, temp_path],
-                stderr=subprocess.PIPE,
-            )
-            _stdout, stderr = process.communicate()
-            while process.poll() is None:  # while subprocess alive
-                if system_transform_context.event_callback:
-                    with open(output_log_path, 'r') as ff:
-                        current_time = os.path.getmtime(output_log_path)
-                        while process.poll() is None:
-                            new_time = os.path.getmtime(output_log_path)
-                            if new_time != current_time:
-                                line = ff.readline()
-                                if not line:
-                                    break
-                                event_record_dict = json.loads(line)
+            # get the logger
+            # attach a handler to the logger
+            if system_transform_context.event_callback:
+                pm_logger.addHandler(EventCallbackHandler(system_transform_context.event_callback))
 
-                                system_transform_context.event_callback(
-                                    EventRecord(**event_record_dict)
-                                )
-                                current_time = new_time
-
-            if process.returncode != 0:
-                raise DagstermillError(
-                    'There was an error when Papermill tried to execute the notebook. '
-                    'The process stderr is \'{stderr}\''.format(stderr=stderr)
-                )
+            with user_code_error_boundary(
+                DagstermillExecutionError,
+                'Error occurred during the execution of Dagstermill solid '
+                '{solid_name}: {notebook_path}'.format(
+                    solid_name=name, notebook_path=notebook_path
+                ),
+            ):
+                pm.execute_notebook(intermediate_path, temp_path, log_output=True)
 
             output_nb = sb.read_notebook(temp_path)
 
