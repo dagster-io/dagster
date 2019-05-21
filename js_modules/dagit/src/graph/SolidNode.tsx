@@ -320,36 +320,51 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   renderSolid() {
+    const { solid, layout, minified } = this.props;
+    const composite =
+      solid.definition.__typename === "CompositeSolidDefinition";
+
     return (
       <SVGFlowLayoutRect
-        {...this.props.layout.solid}
-        fill={PipelineColorScale("solid")}
+        {...layout.solid}
+        fill={PipelineColorScale(composite ? "solidComposite" : "solid")}
         stroke="#979797"
         strokeWidth={1}
         spacing={0}
         padding={12}
       >
         <SVGMonospaceText
-          size={this.props.minified ? 30 : 16}
-          text={this.props.solid.name}
+          size={minified ? 30 : 16}
+          text={solid.name}
           fill={"#222"}
         />
       </SVGFlowLayoutRect>
     );
   }
 
-  public renderCompositeMark() {
+  public renderSolidCompositeIndicator() {
     const { x, y, width, height } = this.props.layout.solid;
     return (
-      <rect
-        x={x - 6}
-        y={y - 6}
-        width={width + 12}
-        height={height + 12}
-        fill={PipelineColorScale("solid")}
-        stroke="#979797"
-        strokeWidth={1}
-      />
+      <>
+        <rect
+          x={x - 6}
+          y={y - 6}
+          width={width + 12}
+          height={height + 12}
+          fill={PipelineColorScale("solidComposite")}
+          stroke="#979797"
+          strokeWidth={1}
+        />
+        <rect
+          x={x - 3}
+          y={y - 3}
+          width={width + 6}
+          height={height + 6}
+          fill={PipelineColorScale("solidComposite")}
+          stroke="#979797"
+          strokeWidth={1}
+        />
+      </>
     );
   }
 
@@ -357,8 +372,6 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     const { solid, layout, dim, selected, minified } = this.props;
     const { metadata } = solid.definition;
     const { x, y, width, height } = layout.solid;
-
-    console.log(solid);
 
     let configDefinition = null;
     if (solid.definition.__typename === "SolidDefinition") {
@@ -375,7 +388,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       >
         {selected && this.renderSelectedBox()}
         {solid.definition.__typename === "CompositeSolidDefinition" &&
-          this.renderCompositeMark()}
+          this.renderSolidCompositeIndicator()}
         {this.renderSolid()}
         {this.renderIO("input", solid.inputs, layout.inputs)}
         {this.renderIO("output", solid.outputs, layout.outputs)}
@@ -418,16 +431,16 @@ const ExternalMappingDot = ({
   const dotRadius = 10;
   const dotCX = rx - length;
   const dotCY = ry + length * direction;
-
+  const path = [];
   return (
     <g>
-      <line
+      <polyline
         stroke={Colors.VIOLET3}
         strokeWidth={4}
-        x1={rx}
-        y1={ry}
-        x2={dotCX}
-        y2={dotCY}
+        points={`${dotCX},${dotCY} ${rx},${ry}`}
+        markerStart={
+          direction === -1 ? "url(#mapping-arrow-in)" : "url(#mapping-arrow-out)"
+        }
       />
       {!minified && (
         <SVGMonospaceText

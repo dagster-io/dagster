@@ -14,6 +14,7 @@ export interface SVGViewportInteractor {
 interface SVGViewportProps {
   graphWidth: number;
   graphHeight: number;
+  backgroundColor?: string;
   interactor: SVGViewportInteractor;
   onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   children: (state: SVGViewportState) => React.ReactNode;
@@ -196,13 +197,13 @@ export default class SVGViewport extends React.Component<
   };
 
   render() {
-    const { children, onKeyDown, interactor } = this.props;
+    const { children, onKeyDown, interactor, backgroundColor } = this.props;
     const { x, y, scale } = this.state;
 
     return (
       <div
         ref={this.element}
-        style={SVGViewportStyles}
+        style={Object.assign({ backgroundColor }, SVGViewportStyles)}
         onMouseDown={e => interactor.onMouseDown(this, e)}
         onWheel={e => interactor.onWheel(this, e)}
         onKeyDown={onKeyDown}
@@ -231,6 +232,5 @@ const SVGViewportStyles: React.CSSProperties = {
   height: "100%",
   position: "relative",
   overflow: "hidden",
-  userSelect: "none",
-  backgroundColor: Colors.LIGHT_GRAY5
+  userSelect: "none"
 };

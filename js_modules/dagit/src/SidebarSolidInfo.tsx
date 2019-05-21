@@ -175,12 +175,16 @@ export default class SidebarSolidInfo extends React.Component<
           {inputs.map((input, idx) => (
             <SectionItemContainer key={idx}>
               <SectionItemHeader>
-                {input.definition.name}
-                {inputMappings[input.definition.name] && (
-                  <IOMapping>
-                    <Icon icon="arrow-right" style={{ padding: "0 6px" }} />
+                {inputMappings[input.definition.name] ? (
+                  <>
+                    <IOMapping>
+                      {input.definition.name}
+                      <Icon icon="arrow-right" style={{ padding: "0 6px" }} />
+                    </IOMapping>
                     {inputMappings[input.definition.name]}
-                  </IOMapping>
+                  </>
+                ) : (
+                  input.definition.name
                 )}
               </SectionItemHeader>
               <TypeWrapper>
@@ -209,13 +213,17 @@ export default class SidebarSolidInfo extends React.Component<
           {outputs.map((output, idx) => (
             <SectionItemContainer key={idx}>
               <SectionItemHeader>
-                {outputMappings[output.definition.name] && (
-                  <IOMapping>
+                {outputMappings[output.definition.name] ? (
+                  <>
+                    <IOMapping>
+                      {output.definition.name}
+                      <Icon icon="arrow-right" style={{ padding: "0 6px" }} />
+                    </IOMapping>
                     {outputMappings[output.definition.name]}
-                    <Icon icon="arrow-right" style={{ padding: "0 6px" }} />
-                  </IOMapping>
+                  </>
+                ) : (
+                  output.definition.name
                 )}
-                {output.definition.name}
               </SectionItemHeader>
               <TypeWrapper>
                 <TypeWithTooltip type={output.definition.type} />

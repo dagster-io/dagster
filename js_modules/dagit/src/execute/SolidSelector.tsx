@@ -205,6 +205,7 @@ class SolidSelector extends React.PureComponent<
             }}
           >
             <PipelineGraph
+              backgroundColor={Colors.LIGHT_GRAY5}
               pipelineName={pipeline.name}
               solids={pipeline.solids}
               interactor={{

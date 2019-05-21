@@ -276,24 +276,27 @@ interface SVGLabeledRectProps {
   width: number;
   height: number;
   label: string;
+  fill: string;
 }
-export const SVGLabeledRect: React.FunctionComponent<
-  SVGLabeledRectProps
-> = props => (
+export const SVGLabeledRect: React.FunctionComponent<SVGLabeledRectProps> = ({
+  minified,
+  label,
+  fill,
+  ...rect
+}) => (
   <g>
     <SVGMonospaceText
-      x={props.x}
-      y={props.y}
-      width={props.width}
-      size={props.minified ? 30 : 16}
-      text={props.label}
+      {...rect}
+      height={undefined}
+      size={minified ? 30 : 16}
+      text={label}
       fill={"#979797"}
     />
     <rect
-      {...props}
-      y={props.y + (props.minified ? 34 : 20)}
-      height={props.height - (props.minified ? 34 : 20)}
-      fill={"transparent"}
+      {...rect}
+      y={rect.y + (minified ? 34 : 20)}
+      height={rect.height - (minified ? 34 : 20)}
+      fill={fill}
       stroke="#979797"
       strokeWidth={1}
     />
