@@ -111,7 +111,7 @@ def test_pipeline_module():
 
 
 def test_yaml_file():
-    module = importlib.import_module('dagster.tutorials.intro_tutorial.repos')
+    module = importlib.import_module('dagster_examples.intro_tutorial.repos')
 
     handle = ExecutionTargetHandle.for_pipeline_cli_args(
         {
@@ -124,7 +124,7 @@ def test_yaml_file():
     )
     assert handle.mode == _ExecutionTargetMode.REPOSITORY
     assert handle.entrypoint == LoaderEntrypoint(
-        module, 'dagster.tutorials.intro_tutorial.repos', 'define_repo'
+        module, 'dagster_examples.intro_tutorial.repos', 'define_repo'
     )
     assert handle.data.pipeline_name == 'foobar'
 
@@ -160,7 +160,7 @@ def test_load_from_repository_file():
 def test_load_from_repository_module():
     pipeline = ExecutionTargetHandle.for_pipeline_cli_args(
         {
-            'module_name': 'dagster.tutorials.intro_tutorial.repos',
+            'module_name': 'dagster_examples.intro_tutorial.repos',
             'pipeline_name': 'repo_demo_pipeline',
             'fn_name': 'define_repo',
         }
@@ -182,7 +182,7 @@ def test_load_from_pipeline_file():
 def test_load_from_pipeline_module():
     pipeline = ExecutionTargetHandle.for_pipeline_cli_args(
         {
-            'module_name': 'dagster.tutorials.intro_tutorial.repos',
+            'module_name': 'dagster_examples.intro_tutorial.repos',
             'fn_name': 'define_repo_demo_pipeline',
         }
     ).build_pipeline_definition()
@@ -213,12 +213,10 @@ def test_loader_from_default_repository_file_yaml():
 
 
 def test_repo_entrypoints():
-    module = importlib.import_module('dagster.tutorials.intro_tutorial.repos')
+    module = importlib.import_module('dagster_examples.intro_tutorial.repos')
     assert ExecutionTargetHandle.for_repo_yaml(
         script_relative_path('repository.yml')
-    ).entrypoint == LoaderEntrypoint(
-        module, 'dagster.tutorials.intro_tutorial.repos', 'define_repo'
-    )
+    ).entrypoint == LoaderEntrypoint(module, 'dagster_examples.intro_tutorial.repos', 'define_repo')
 
     module = importlib.import_module('dagster')
     assert ExecutionTargetHandle.for_repo_module(
@@ -252,7 +250,7 @@ def test_repo_yaml_file_dynamic_load():
 
 def test_repo_module_dynamic_load():
     repository = ExecutionTargetHandle.for_pipeline_module(
-        module_name='dagster.tutorials.intro_tutorial.repos', fn_name='define_repo_demo_pipeline'
+        module_name='dagster_examples.intro_tutorial.repos', fn_name='define_repo_demo_pipeline'
     ).build_repository_definition()
 
     assert isinstance(repository, RepositoryDefinition)
@@ -270,7 +268,7 @@ def test_repo_file_dynamic_load():
 
 def test_repo_module_dynamic_load_from_pipeline():
     repository = ExecutionTargetHandle.for_pipeline_module(
-        module_name='dagster.tutorials.intro_tutorial.repos', fn_name='define_repo_demo_pipeline'
+        module_name='dagster_examples.intro_tutorial.repos', fn_name='define_repo_demo_pipeline'
     ).build_repository_definition()
 
     assert isinstance(repository, RepositoryDefinition)

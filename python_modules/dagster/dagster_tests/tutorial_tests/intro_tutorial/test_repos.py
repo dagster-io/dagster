@@ -1,5 +1,5 @@
 from dagster import execute_pipeline
-from dagster.tutorials.intro_tutorial.repos import define_repo
+from dagster_examples.intro_tutorial.repos import define_repo
 
 
 def test_define_repo():

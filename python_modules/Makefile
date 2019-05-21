@@ -41,6 +41,5 @@ docs:
 
 clean:
 	find . -name \*.pyc -delete
-	rm -rf ./dagster/docs/_build
 	rm -rf ./dagster/htmlcov/
 	rm -rf ./dagster/build/

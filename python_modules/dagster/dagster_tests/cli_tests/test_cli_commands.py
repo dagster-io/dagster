@@ -70,14 +70,14 @@ def test_list_command():
         {
             'repository_yaml': None,
             'python_file': None,
-            'module_name': 'dagster.tutorials.intro_tutorial.repos',
+            'module_name': 'dagster_examples.intro_tutorial.repos',
             'fn_name': 'define_repo',
         },
         no_print,
     )
 
     result = runner.invoke(
-        pipeline_list_command, ['-m', 'dagster.tutorials.intro_tutorial.repos', '-n', 'define_repo']
+        pipeline_list_command, ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo']
     )
     assert result.exit_code == 0
     assert result.output == (
@@ -113,7 +113,7 @@ def test_list_command():
             {
                 'repository_yaml': None,
                 'python_file': 'foo.py',
-                'module_name': 'dagster.tutorials.intro_tutorial.repos',
+                'module_name': 'dagster_examples.intro_tutorial.repos',
                 'fn_name': 'define_repo',
             },
             no_print,
@@ -121,7 +121,7 @@ def test_list_command():
 
     result = runner.invoke(
         pipeline_list_command,
-        ['-f', 'foo.py', '-m', 'dagster.tutorials.intro_tutorial.repos', '-n', 'define_repo'],
+        ['-f', 'foo.py', '-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo'],
     )
     assert result.exit_code == 1
     assert isinstance(result.exception, InvalidRepositoryLoadingComboError)
@@ -131,13 +131,13 @@ def test_list_command():
             {
                 'repository_yaml': None,
                 'python_file': None,
-                'module_name': 'dagster.tutorials.intro_tutorial.repos',
+                'module_name': 'dagster_examples.intro_tutorial.repos',
                 'fn_name': None,
             },
             no_print,
         )
 
-    result = runner.invoke(pipeline_list_command, ['-m', 'dagster.tutorials.intro_tutorial.repos'])
+    result = runner.invoke(pipeline_list_command, ['-m', 'dagster_examples.intro_tutorial.repos'])
     assert result.exit_code == 1
     assert isinstance(result.exception, InvalidRepositoryLoadingComboError)
 
@@ -186,14 +186,14 @@ def valid_execute_args():
             'repository_yaml': None,
             'pipeline_name': ('repo_demo_pipeline',),
             'python_file': None,
-            'module_name': 'dagster.tutorials.intro_tutorial.repos',
+            'module_name': 'dagster_examples.intro_tutorial.repos',
             'fn_name': 'define_repo',
         },
         {
             'repository_yaml': None,
             'pipeline_name': (),
             'python_file': None,
-            'module_name': 'dagster.tutorials.intro_tutorial.repos',
+            'module_name': 'dagster_examples.intro_tutorial.repos',
             'fn_name': 'define_repo_demo_pipeline',
         },
         {
@@ -211,8 +211,8 @@ def valid_cli_args():
         ['-y', script_relative_path('repository_file.yml'), 'foo'],
         ['-y', script_relative_path('repository_module.yml'), 'repo_demo_pipeline'],
         ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_bar_repo', 'foo'],
-        ['-m', 'dagster.tutorials.intro_tutorial.repos', '-n', 'define_repo', 'repo_demo_pipeline'],
-        ['-m', 'dagster.tutorials.intro_tutorial.repos', '-n', 'define_repo_demo_pipeline'],
+        ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo', 'repo_demo_pipeline'],
+        ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo_demo_pipeline'],
         ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_foo_pipeline'],
     ]
 

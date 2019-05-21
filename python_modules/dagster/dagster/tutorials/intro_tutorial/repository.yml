@@ -1,3 +1,0 @@
-repository:
-  module: dagster.tutorials.intro_tutorial.tutorial_repository
-  fn: define_repository

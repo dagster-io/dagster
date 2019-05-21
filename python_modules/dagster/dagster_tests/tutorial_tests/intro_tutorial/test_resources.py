@@ -3,7 +3,7 @@ import sys
 import warnings
 
 from dagster import execute_pipeline, RunConfig
-from dagster.tutorials.intro_tutorial.resources import define_resource_test_pipeline
+from dagster_examples.intro_tutorial.resources import define_resource_test_pipeline
 
 
 def has_message(events, message):
@@ -66,4 +66,4 @@ def test_resources():
     if not sys.warnoptions:  # allow overriding with `-W` option
         warnings.filterwarnings('ignore', category=RuntimeWarning, module='runpy')
 
-    runpy.run_module('dagster.tutorials.intro_tutorial.resources', run_name='__main__')
+    runpy.run_module('dagster_examples.intro_tutorial.resources', run_name='__main__')

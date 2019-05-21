@@ -4,12 +4,14 @@ import inspect
 import multiprocessing
 import os
 import re
+import subprocess
 
 import yaml
 
 from dagster import check
 from dagster.seven.abc import Mapping
-from .yaml_utils import load_yaml_from_path, load_yaml_from_globs, load_yaml_from_glob_list
+
+from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
 
 PICKLE_PROTOCOL = 2
@@ -171,3 +173,21 @@ def all_none(kwargs):
         if value is not None:
             return False
     return True
+
+
+def check_script(path):
+    subprocess.check_output(['python', path])
+
+
+def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
+    cli_cmd = ['python', '-m', 'dagster', 'pipeline', 'execute', '-f', path, '-n', pipeline_fn_name]
+
+    if env_file:
+        cli_cmd.append('-e')
+        cli_cmd.append(env_file)
+
+    try:
+        subprocess.check_output(cli_cmd)
+    except subprocess.CalledProcessError as cpe:
+        print(cpe)
+        raise cpe

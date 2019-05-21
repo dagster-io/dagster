@@ -82,8 +82,8 @@ def wait_step():
     return "wait"
 
 
-def python_modules_tox_tests(directory, prereqs=None, label=None, on_integration_image=False):
-    label = label if label else directory.replace("/", "-")
+def python_modules_tox_tests(directory, prereqs=None):
+    label = directory.replace("/", "-")
     tests = []
     for version in SupportedPythons:
         coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
@@ -99,13 +99,11 @@ def python_modules_tox_tests(directory, prereqs=None, label=None, on_integration
             "mv .coverage {file}".format(file=coverage),
             "buildkite-agent artifact upload {file}".format(file=coverage),
         ]
-        builder = StepBuilder(
-            "{label} tests ({ver})".format(label=label, ver=TOX_MAP[version])
-        ).run(*tox_command)
-        if on_integration_image:
-            builder.on_integration_image(version, ['AWS_DEFAULT_REGION'])
-        else:
-            builder.on_python_image(version, ['AWS_DEFAULT_REGION'])
+        builder = (
+            StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
+            .run(*tox_command)
+            .on_python_image(version, ['AWS_DEFAULT_REGION'])
+        )
         tests.append(builder.build())
 
     return tests
@@ -118,20 +116,22 @@ def airline_demo_tests():
         tests.append(
             StepBuilder('airline-demo tests ({version})'.format(version=TOX_MAP[version]))
             .run(
-                "cd examples/airline-demo",
+                "cd examples",
                 # Build the image we use for airflow in the demo tests
-                "./build.sh",
+                "./build_airline_demo_image.sh",
                 "mkdir -p /home/circleci/airflow",
                 # Run the postgres db. We are in docker running docker
                 # so this will be a sibling container.
-                "docker-compose up -d --remove-orphans",
+                "docker-compose stop",
+                "docker-compose rm -f",
+                "docker-compose up -d",
                 # Can't use host networking on buildkite and communicate via localhost
                 # between these sibling containers, so pass along the ip.
                 "export DAGSTER_AIRLINE_DEMO_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' airline-demo-db`",
                 "pip install tox",
                 "apt-get update",
                 "apt-get -y install libpq-dev",
-                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "tox -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
@@ -149,12 +149,13 @@ def events_demo_tests():
             StepBuilder('events-demo tests ({version})'.format(version=TOX_MAP[version]))
             .run(
                 "mkdir -p /tmp/dagster/events",
-                "cd scala_modules",
+                "pushd scala_modules",
                 "sbt events/assembly",
                 "cp ./events/target/scala-2.11/events-assembly-0.1.0-SNAPSHOT.jar /tmp/dagster/events/",
-                "cd ../examples/event-pipeline-demo",
+                "popd",
+                "pushd examples",
                 "pip install tox",
-                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "tox -c event.tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
@@ -189,6 +190,25 @@ def airflow_tests():
     return tests
 
 
+def examples_tests():
+    tests = []
+    for version in SupportedPythons:
+        coverage = ".coverage.examples.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        tests.append(
+            StepBuilder("examples tests ({ver})".format(ver=TOX_MAP[version]))
+            .run(
+                "pushd examples",
+                "pip install tox",
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+            )
+            .on_integration_image(version)
+            .build()
+        )
+    return tests
+
+
 if __name__ == "__main__":
     steps = [
         StepBuilder("pylint")
@@ -207,7 +227,7 @@ if __name__ == "__main__":
         .run(
             "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
             "pip install -e python_modules/dagster -qqq",
-            "pytest -vv python_modules/dagster/docs",
+            "pytest -vv docs",
         )
         .on_python_image(SupportedPython.V3_7)
         .build(),
@@ -242,10 +262,7 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("libraries/dagster-slack")
     steps += python_modules_tox_tests("libraries/dagster-snowflake")
     steps += python_modules_tox_tests("libraries/dagster-spark")
-    steps += python_modules_tox_tests("../examples/toys", label='examples-toys')
-    steps += python_modules_tox_tests(
-        "../examples/pyspark-pagerank", label='examples-pyspark-pagerank', on_integration_image=True
-    )
+    steps += examples_tests()
     steps += airline_demo_tests()
     steps += events_demo_tests()
     steps += airflow_tests()
