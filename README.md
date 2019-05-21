@@ -1,14 +1,11 @@
-<span style="display: block; text-align: center"><img align="center" src="https://user-images.githubusercontent.com/609349/57987382-7e294500-7a35-11e9-9c6a-f73e0f1d3a1c.png" />
+<p align="center">
+<img src="https://user-images.githubusercontent.com/609349/57987382-7e294500-7a35-11e9-9c6a-f73e0f1d3a1c.png" />
 <br /><br />
-<span style="text-align: center; display: inline-block">
-[<img src="https://badge.fury.io/py/dagster.svg">](https://badge.fury.io/py/dagster)
-[<img src="https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master">](https://coveralls.io/github/dagster-io/dagster?branch=master)
-[<img src="https://badge.buildkite.com/888545beab829e41e5d7303db15525a2bc3b0f0e33a72759ac.svg?branch=master">](https://buildkite.com/dagster/dagster)
-[<img src="https://readthedocs.org/projects/dagster/badge/?version=master">](https://dagster.readthedocs.io/en/master/)
-</span>
-
-</span>
-
+<a href="https://badge.fury.io/py/dagster"><img src="https://badge.fury.io/py/dagster.svg"></>
+<a href="https://coveralls.io/github/dagster-io/dagster?branch=master"><img src="https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master"></a>
+<a href="https://buildkite.com/dagster/dagster"><img src="https://badge.buildkite.com/888545beab829e41e5d7303db15525a2bc3b0f0e33a72759ac.svg?branch=master"></a>
+<a href="https://dagster.readthedocs.io/en/master/"><img src="https://readthedocs.org/projects/dagster/badge/?version=master"></a>
+</p>
 
 # Introduction
 
@@ -19,12 +16,13 @@ Combining an elegant programming model and beautiful tools, Dagster allows infra
 ### Install
 To get started:
 <br />
-<span align="center" style="display: block; font-size:20px;">
-``pip install dagster dagit``
-</span>
+<p align="center">
+<code>pip install dagster dagit</code>
+</p>
 <br />
 This installs two modules:
-<br/>
+<br />
+<br />
 
 * **dagster** | The core programming model and abstraction stack; stateless, single-node,
   single-process and multi-process execution engines; and a CLI tool for driving those engines.
