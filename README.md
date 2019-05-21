@@ -53,7 +53,6 @@ Dagster works with the tools and systems that you're already using with your dat
 			<td style="border-left: 0px"> <b>Apache Airflow</b></td>
 			<td><a href="https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-airflow" />dagster-airflow</a><br />Allows Dagster pipelines to be scheduled and executed, either containerized or uncontainerized, as <a href="https://github.com/apache/airflow">Apache Airflow DAGs</a>.</td>
 		</tr>
-
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/57987976-5ccc5700-7a3d-11e9-9fa5-1a51299b1ccb.png"></td>
 			<td style="border-left: 0px"> <b>Apache Spark</b></td>
@@ -61,7 +60,6 @@ Dagster works with the tools and systems that you're already using with your dat
 			<br />Libraries for interacting with Apache Spark and Pyspark.
 			</td>
 		</tr>
-
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/57987766-1a097f80-7a3b-11e9-8a47-985bb9bcf458.png"></td>
 			<td style="border-left: 0px"> <b>DataDog</b></td>
@@ -69,7 +67,6 @@ Dagster works with the tools and systems that you're already using with your dat
 			<br />Provides a Dagster resource for publishing metrics to DataDog.
 			</td>
 		</tr>
-
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/57987783-48875a80-7a3b-11e9-8ad0-41d16d7af4d2.png"></td>
 			<td style="border-left: 0px"> <b>Great Expectations</b></td>
@@ -77,7 +74,6 @@ Dagster works with the tools and systems that you're already using with your dat
 			The <a href="https://github.com/great-expectations/great_expectations">Great Expectations</a> framework is designed to promote data quality checks for data warehouses. In Dagster, expectations are a first-class citizen.
 			</td>
 		</tr>
-
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/57987809-bf245800-7a3b-11e9-8905-494ed99d0852.png" />
 			&nbsp;/&nbsp; <img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/57987827-fa268b80-7a3b-11e9-8a18-b675d76c19aa.png">
@@ -85,8 +81,6 @@ Dagster works with the tools and systems that you're already using with your dat
 			<td style="border-left: 0px"> <b>Jupyter / Papermill</b></td>
 			<td><a href="https://github.com/dagster-io/dagster/tree/master/python_modules/dagstermill" />dagstermill</a><br />Built on the <a href=https://github.com/nteract/papermill">papermill library</a>, dagstermill is meant for integrating productionized Jupyter notebooks into dagster pipelines.</td>
 		</tr>
-
-
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/57988016-f431aa00-7a3d-11e9-8cb6-1309d4246b27.png"></td>
 			<td style="border-left: 0px"> <b>PagerDuty</b></td>
@@ -94,7 +88,6 @@ Dagster works with the tools and systems that you're already using with your dat
 			<br />A library for creating PagerDuty alerts from Dagster workflows.
 			</td>
 		</tr>
-
 		<tr>
 			<td align="center" style="border-right: 0px"><img src="https://user-images.githubusercontent.com/609349/57988042-2f33dd80-7a3e-11e9-882c-5776925fd4d2.png"></td>
 			<td style="border-left: 0px"> <b>Snowflake</b></td>
@@ -102,14 +95,10 @@ Dagster works with the tools and systems that you're already using with your dat
 			<br />A library for interacting with the Snowflake Data Warehouse.
 			</td>
 		</tr>
-
-
-
 		<tr style="background-color: #ddd">
 			<td colspan=2 align="center"><b>Cloud Providers</b></td>
 			<td><b></b></td>
 		</tr>
-
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/57987557-c2b5e000-7a37-11e9-9310-c274481a4682.png"> </td>
 			<td style="border-left: 0px"><b>AWS</b></td>
@@ -117,7 +106,6 @@ Dagster works with the tools and systems that you're already using with your dat
 			<br />A library for interacting with Amazon Web Services. Provides integrations with S3, EMR, and (coming soon!) Redshift.
 			</td>
 		</tr>
-
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/57987566-f98bf600-7a37-11e9-81fa-b8ca1ea6cc1e.png"> </td>
 			<td style="border-left: 0px"><b>GCP</b></td>
@@ -125,7 +113,6 @@ Dagster works with the tools and systems that you're already using with your dat
 			<br />A library for interacting with Google Cloud Platform. Provides integrations with BigQuery and Cloud Dataproc.
 			</td>
 		</tr>
-
 	</tbody>
 </table>
 
