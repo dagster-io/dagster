@@ -215,11 +215,11 @@ export default class SidebarSolidInfo extends React.Component<
               <SectionItemHeader>
                 {outputMappings[output.definition.name] ? (
                   <>
-                    <IOMapping>
-                      {output.definition.name}
-                      <Icon icon="arrow-right" style={{ padding: "0 6px" }} />
-                    </IOMapping>
                     {outputMappings[output.definition.name]}
+                    <IOMapping>
+                      <Icon icon="arrow-right" style={{ padding: "0 6px" }} />
+                      {output.definition.name}
+                    </IOMapping>
                   </>
                 ) : (
                   output.definition.name
