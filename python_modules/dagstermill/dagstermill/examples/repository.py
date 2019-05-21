@@ -180,12 +180,14 @@ def define_tutorial_pipeline():
     )
 
 
+# Placeholder class to cause the unregistered notebook solid to fail -- custom serialization
+# strategies require repository registration
 class ComplexSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize_value(self, context, value, write_file_obj):
-        pass
+        pass  # pragma: nocover
 
     def deserialize_value(self, context, read_file_obj):
-        pass
+        pass  # pragma: nocover
 
 
 complex_serialization_strategy = ComplexSerializationStrategy()

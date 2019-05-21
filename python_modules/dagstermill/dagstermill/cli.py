@@ -8,7 +8,7 @@ import nbformat
 
 from dagster import check, ExecutionTargetHandle
 from dagster.cli.pipeline import repository_target_argument
-from dagster.utils import all_none, safe_isfile
+from dagster.utils import all_none, safe_isfile, mkdir_p
 
 
 def get_notebook_scaffolding(register_repo_info):
@@ -104,26 +104,27 @@ def get_register_repo_info(cli_args, allow_none=True):
         elif allow_none:  # register_repo_info can remain None
             scaffolding_with_repo = False
 
+    if (
+        cli_args['python_file']
+        and cli_args['fn_name']
+        and not cli_args['module_name']
+        and not cli_args['repository_yaml']
+    ):
+        raise click.UsageError(
+            "Cannot instantiate notebook with repository definition given by a "
+            "function from a file"
+        )
+
     register_repo_info = None
     if scaffolding_with_repo:
         handle = ExecutionTargetHandle.for_repo_cli_args(cli_args)
-        entrypoint = handle.entrypoint
-
-        if entrypoint:
-            module = entrypoint.module_name
-            fn_name = entrypoint.fn_name
-            RegisterRepoInfo = namedtuple(
-                'RegisterRepoInfo', 'import_statement declaration_statement'
-            )
-            register_repo_info = RegisterRepoInfo(
-                "from {module} import {fn_name}".format(module=module, fn_name=fn_name),
-                "dm.register_repository({fn_name}())".format(fn_name=fn_name),
-            )
-        else:
-            raise click.UsageError(
-                "Cannot instantiate notebook with repository definition given by a "
-                "function from a file"
-            )
+        module = handle.entrypoint.module_name
+        fn_name = handle.entrypoint.fn_name
+        RegisterRepoInfo = namedtuple('RegisterRepoInfo', 'import_statement declaration_statement')
+        register_repo_info = RegisterRepoInfo(
+            "from {module} import {fn_name}".format(module=module, fn_name=fn_name),
+            "dm.register_repository({fn_name}())".format(fn_name=fn_name),
+        )
     return register_repo_info
 
 
@@ -133,8 +134,7 @@ def execute_create_notebook(notebook, force_overwrite, **kwargs):
     )
 
     notebook_dir = os.path.dirname(notebook_path)
-    if not os.path.exists(notebook_dir):
-        os.makedirs(notebook_dir)
+    mkdir_p(notebook_dir)
 
     if not force_overwrite and safe_isfile(notebook_path):
         click.confirm(

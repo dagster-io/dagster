@@ -61,6 +61,7 @@ from dagster.core.types.marshal import (
     PickleSerializationStrategy,
 )
 from dagster.core.types.runtime import RuntimeType
+from dagster.utils import mkdir_p
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.
@@ -70,6 +71,7 @@ from dagster.core.types.runtime import RuntimeType
 
 class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
     def __init__(self, pipeline_context):
+        check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         self._pipeline_context = pipeline_context
 
     def has_tag(self, key):
@@ -471,8 +473,7 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
     mode = transform_context.mode
 
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
-    if not os.path.exists(marshal_dir):
-        os.makedirs(marshal_dir)
+    mkdir_p(marshal_dir)
 
     if not transform_context.has_event_callback:
         transform_context.log.info('get_papermill_parameters.context has no event_callback!')
@@ -596,9 +597,7 @@ def _dm_solid_transform(name, notebook_path):
 
         base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=transform_context.run_id)
         output_notebook_dir = os.path.join(base_dir, 'output_notebooks/')
-
-        if not os.path.exists(output_notebook_dir):
-            os.makedirs(output_notebook_dir)
+        mkdir_p(output_notebook_dir)
 
         temp_path = os.path.join(
             output_notebook_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4()))
