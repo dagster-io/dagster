@@ -4,6 +4,7 @@ import pickle
 import six
 
 from dagster import check
+from dagster.utils import PICKLE_PROTOCOL
 
 
 class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
@@ -18,7 +19,7 @@ class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-
 
 class PickleSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize_value(self, _context, value, write_file_obj):
-        pickle.dump(value, write_file_obj)
+        pickle.dump(value, write_file_obj, PICKLE_PROTOCOL)
 
     def deserialize_value(self, _context, read_file_obj):
         return pickle.load(read_file_obj)

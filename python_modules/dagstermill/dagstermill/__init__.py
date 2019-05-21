@@ -63,7 +63,7 @@ from dagster.core.types.marshal import (
     PickleSerializationStrategy,
 )
 from dagster.core.types.runtime import RuntimeType
-from dagster.utils import mkdir_p
+from dagster.utils import mkdir_p, PICKLE_PROTOCOL
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.
@@ -222,7 +222,7 @@ class Manager:
         )
         out_file_path = os.path.join(self.marshal_dir, materialization_id)
         with open(out_file_path, 'wb') as fd:
-            fd.write(pickle.dumps(Materialization(path, description)))
+            fd.write(pickle.dumps(Materialization(path, description), PICKLE_PROTOCOL))
 
         sb.glue(materialization_id, out_file_path)
 
@@ -666,7 +666,6 @@ def _dm_solid_transform(name, notebook_path):
             for output_name, output_def in system_transform_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
                 if output_name in data_dict:
-
                     value = read_value(output_def.runtime_type, data_dict[output_name])
 
                     yield Result(value, output_name)
