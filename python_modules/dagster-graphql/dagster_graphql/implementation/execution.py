@@ -14,10 +14,12 @@ from dagster.core.utils import make_new_run_id
 
 from dagster_graphql.schema.runs import from_event_record, from_dagster_event_record
 
-from .fetch_runs import _config_or_error_from_pipeline
-from .fetch_pipelines import _pipeline_or_error_from_repository
+from .fetch_runs import get_validated_config
+from .fetch_pipelines import get_dauphin_pipeline_from_selector
+from .utils import capture_dauphin_error, UserFacingGraphQLError
 
 
+@capture_dauphin_error
 def start_pipeline_execution(
     graphene_info,
     selector,
@@ -27,6 +29,7 @@ def start_pipeline_execution(
     reexecution_config,
     graphql_execution_metadata,
 ):
+
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
@@ -40,63 +43,65 @@ def start_pipeline_execution(
 
     pipeline_run_storage = graphene_info.context.pipeline_runs
 
-    def get_config_and_start_execution(pipeline):
-        def _start_execution(validated_config_either):
-            new_run_id = run_id if run_id else make_new_run_id()
-            execution_plan = create_execution_plan(
-                pipeline.get_dagster_pipeline(), validated_config_either.value, mode=mode
-            )
-            run = pipeline_run_storage.create_run(
-                new_run_id,
-                selector,
-                environment_dict,
-                mode,
-                execution_plan,
-                reexecution_config,
-                step_keys_to_execute,
-            )
-            pipeline_run_storage.add_run(run)
+    dauphin_pipeline = get_dauphin_pipeline_from_selector(graphene_info, selector)
 
-            if step_keys_to_execute:
-                for step_key in step_keys_to_execute:
-                    if not execution_plan.has_step(step_key):
-                        return graphene_info.schema.type_named('InvalidStepError')(
-                            invalid_step_key=step_key
-                        )
+    validated_config = get_validated_config(
+        graphene_info, dauphin_pipeline, environment_dict, mode=mode
+    )
 
-            if reexecution_config and reexecution_config.step_output_handles:
-                for step_output_handle in reexecution_config.step_output_handles:
-                    if not execution_plan.has_step(step_output_handle.step_key):
-                        return graphene_info.schema.type_named('InvalidStepError')(
-                            invalid_step_key=step_output_handle.step_key
-                        )
+    new_run_id = run_id if run_id else make_new_run_id()
 
-                    step = execution_plan.get_step_by_key(step_output_handle.step_key)
+    execution_plan = create_execution_plan(
+        dauphin_pipeline.get_dagster_pipeline(), validated_config.value, mode=mode
+    )
 
-                    if not step.has_step_output(step_output_handle.output_name):
-                        return graphene_info.schema.type_named('InvalidOutputError')(
-                            step_key=step_output_handle.step_key,
-                            invalid_output_name=step_output_handle.output_name,
-                        )
+    run = pipeline_run_storage.create_run(
+        new_run_id,
+        selector,
+        environment_dict,
+        mode,
+        execution_plan,
+        reexecution_config,
+        step_keys_to_execute,
+    )
+    pipeline_run_storage.add_run(run)
 
-            graphene_info.context.execution_manager.execute_pipeline(
-                graphene_info.context.handle,
-                pipeline.get_dagster_pipeline(),
-                run,
-                raise_on_error=graphene_info.context.raise_on_error,
-            )
+    if step_keys_to_execute:
+        for step_key in step_keys_to_execute:
+            if not execution_plan.has_step(step_key):
+                raise UserFacingGraphQLError(
+                    graphene_info.schema.type_named('InvalidStepError')(invalid_step_key=step_key)
+                )
 
-            return graphene_info.schema.type_named('StartPipelineExecutionSuccess')(
-                run=graphene_info.schema.type_named('PipelineRun')(run)
-            )
+    if reexecution_config and reexecution_config.step_output_handles:
+        for step_output_handle in reexecution_config.step_output_handles:
+            if not execution_plan.has_step(step_output_handle.step_key):
+                raise UserFacingGraphQLError(
+                    graphene_info.schema.type_named('InvalidStepError')(
+                        invalid_step_key=step_output_handle.step_key
+                    )
+                )
 
-        config_or_error = _config_or_error_from_pipeline(
-            graphene_info, pipeline, environment_dict, mode=mode
-        )
-        return config_or_error.chain(_start_execution)
+            step = execution_plan.get_step_by_key(step_output_handle.step_key)
 
-    pipeline_or_error = _pipeline_or_error_from_repository(graphene_info, selector)
-    return pipeline_or_error.chain(get_config_and_start_execution).value()
+            if not step.has_step_output(step_output_handle.output_name):
+                raise UserFacingGraphQLError(
+                    graphene_info.schema.type_named('InvalidOutputError')(
+                        step_key=step_output_handle.step_key,
+                        invalid_output_name=step_output_handle.output_name,
+                    )
+                )
+
+    graphene_info.context.execution_manager.execute_pipeline(
+        graphene_info.context.handle,
+        dauphin_pipeline.get_dagster_pipeline(),
+        run,
+        raise_on_error=graphene_info.context.raise_on_error,
+    )
+
+    return graphene_info.schema.type_named('StartPipelineExecutionSuccess')(
+        run=graphene_info.schema.type_named('PipelineRun')(run)
+    )
 
 
 def get_pipeline_run_observable(graphene_info, run_id, after=None):
@@ -128,11 +133,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
             )
         )
 
-    return (
-        _pipeline_or_error_from_repository(graphene_info, run.selector)
-        .chain(get_observable)
-        .value_or_raise()
-    )
+    return get_observable(get_dauphin_pipeline_from_selector(graphene_info, run.selector))
 
 
 ExecutePlanArgs = namedtuple(
@@ -141,6 +142,7 @@ ExecutePlanArgs = namedtuple(
 )
 
 
+@capture_dauphin_error
 def do_execute_plan(
     graphene_info, pipeline_name, environment_dict, mode, execution_metadata, step_keys
 ):
@@ -154,33 +156,22 @@ def do_execute_plan(
         execution_metadata=execution_metadata,
         step_keys=step_keys,
     )
-    return (
-        _pipeline_or_error_from_repository(graphene_info, ExecutionSelector(pipeline_name))
-        .chain(
-            lambda dauphin_pipeline: _execute_plan_resolve_config(
-                execute_plan_args, dauphin_pipeline
-            )
-        )
-        .value()
+
+    return _execute_plan_resolve_config(
+        execute_plan_args,
+        get_dauphin_pipeline_from_selector(graphene_info, ExecutionSelector(pipeline_name)),
     )
 
 
 def _execute_plan_resolve_config(execute_plan_args, dauphin_pipeline):
     check.inst_param(execute_plan_args, 'execute_plan_args', ExecutePlanArgs)
-    return (
-        _config_or_error_from_pipeline(
-            execute_plan_args.graphene_info,
-            dauphin_pipeline,
-            execute_plan_args.environment_dict,
-            execute_plan_args.mode,
-        )
-        .chain(
-            lambda evaluate_env_config_result: _execute_plan_chain_actual_execute_or_error(
-                execute_plan_args, dauphin_pipeline, evaluate_env_config_result
-            )
-        )
-        .value()
+    validated_config = get_validated_config(
+        execute_plan_args.graphene_info,
+        dauphin_pipeline,
+        execute_plan_args.environment_dict,
+        execute_plan_args.mode,
     )
+    return _do_execute_plan(execute_plan_args, dauphin_pipeline, validated_config)
 
 
 def tags_from_graphql_execution_metadata(graphql_execution_metadata):
@@ -191,9 +182,7 @@ def tags_from_graphql_execution_metadata(graphql_execution_metadata):
     return tags
 
 
-def _execute_plan_chain_actual_execute_or_error(
-    execute_plan_args, dauphin_pipeline, _evaluate_env_config_result
-):
+def _do_execute_plan(execute_plan_args, dauphin_pipeline, _evaluate_env_config_result):
     check.inst_param(execute_plan_args, 'execute_plan_args', ExecutePlanArgs)
 
     graphql_execution_metadata = execute_plan_args.execution_metadata
@@ -208,8 +197,10 @@ def _execute_plan_chain_actual_execute_or_error(
     if execute_plan_args.step_keys:
         for step_key in execute_plan_args.step_keys:
             if not execution_plan.has_step(step_key):
-                return execute_plan_args.graphene_info.schema.type_named('InvalidStepError')(
-                    invalid_step_key=step_key
+                raise UserFacingGraphQLError(
+                    execute_plan_args.graphene_info.schema.type_named('InvalidStepError')(
+                        invalid_step_key=step_key
+                    )
                 )
 
     event_records = []
