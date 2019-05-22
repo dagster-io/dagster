@@ -787,6 +787,8 @@ snapshots['test_build_all_docs 3'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/solids.html#dagster.Materialization">Materialization (class in dagster)</a>
 </li>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.ModeDefinition">ModeDefinition (class in dagster)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/solids.html#dagster.MultipleResults">MultipleResults (class in dagster)</a>
@@ -1103,7 +1105,7 @@ snapshots['test_build_all_docs 4'] = '''
 <li class="toctree-l1"><a class="reference internal" href="sections/api/api.html">API Docs</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/solids.html">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/execution.html">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/types.html">Types</a></li>
@@ -1462,6 +1464,7 @@ snapshots['test_build_all_docs 7'] = '''
 <li><a href="dagster/core/definitions/input.html">dagster.core.definitions.input</a></li>
 <li><a href="dagster/core/definitions/logger.html">dagster.core.definitions.logger</a></li>
 <li><a href="dagster/core/definitions/materialization.html">dagster.core.definitions.materialization</a></li>
+<li><a href="dagster/core/definitions/mode.html">dagster.core.definitions.mode</a></li>
 <li><a href="dagster/core/definitions/output.html">dagster.core.definitions.output</a></li>
 <li><a href="dagster/core/definitions/pipeline.html">dagster.core.definitions.pipeline</a></li>
 <li><a href="dagster/core/definitions/repository.html">dagster.core.definitions.repository</a></li>
@@ -19118,7 +19121,7 @@ snapshots['test_build_all_docs 49'] = '''
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/solids.html">Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/pipeline.html">Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apidocs/pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/types.html">Types</a></li>
@@ -19159,7 +19162,7 @@ snapshots['test_build_all_docs 49'] = '''
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API Docs</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/solids.html">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="apidocs/pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apidocs/pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/types.html">Types</a></li>
@@ -19327,7 +19330,7 @@ argument to the ctor is meant to be a sys.exc_info at the site of constructor.</
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
@@ -19719,7 +19722,7 @@ Returns None if execution result isn’t a success.</p>
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
@@ -20013,8 +20016,8 @@ of the same solid.</p></li>
 
 </div>
 <hr class="docutils" />
-<div class="section" id="contexts-resources-and-logging">
-<h1>Contexts, Resources, and Logging<a class="headerlink" href="#contexts-resources-and-logging" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="resources-logging-and-modes">
+<h1>Resources, Logging, and Modes<a class="headerlink" href="#resources-logging-and-modes" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="dagster.ResourceDefinition">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ResourceDefinition</code><span class="sig-paren">(</span><em>resource_fn</em>, <em>config_field=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/resource.html#ResourceDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.ResourceDefinition" title="Permalink to this definition">¶</a></dt>
@@ -20179,6 +20182,23 @@ schema for this data is defined by <code class="docutils literal notranslate"><s
 
 </dd></dl>
 
+<dl class="class">
+<dt id="dagster.ModeDefinition">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ModeDefinition</code><span class="sig-paren">(</span><em>name=\'default\'</em>, <em>resources=None</em>, <em>loggers=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/mode.html#ModeDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.ModeDefinition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a “mode” in which a pipeline can operate.
+A mode provides a set of resource implementations as well as configuration for logging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the mode, defaults to ‘default’.</p></li>
+<li><p><strong>resources</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><a class="reference internal" href="#dagster.ResourceDefinition" title="dagster.ResourceDefinition"><em>ResourceDefinition</em></a><em>]</em><em>]</em>) – The set of resources for this mode.</p></li>
+<li><p><strong>loggers</strong> (<em>Optiona</em><em>[</em><em>List</em><em>[</em><a class="reference internal" href="#dagster.LoggerDefinition" title="dagster.LoggerDefinition"><em>LoggerDefinition</em></a><em>]</em><em>]</em>) – The set of loggers to use in this mode.</p></li>
+<li><p><strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 <hr class="docutils" />
 <div class="section" id="repositories">
@@ -20276,7 +20296,7 @@ handle constructing the dictionary of pipeline name to functions for you</p>
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
@@ -20838,7 +20858,7 @@ you can assume that value is a <code class="docutils literal notranslate"><span 
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
@@ -21204,7 +21224,7 @@ of a <code class="docutils literal notranslate"><span class="pre">config_value</
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Types</a></li>
@@ -21337,7 +21357,7 @@ snapshots['test_build_all_docs 55'] = '''
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
@@ -27303,8 +27323,8 @@ configuration specified for a given resource is passed to its constructor under 
     <span class="p">)</span>
 </pre></div>
 </div>
-<p>Resources are attached to a set of <code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code> defined on the pipeline.
-A <code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code> is the way that a pipeline can declare the different
+<p>Resources are attached to a set of <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.ModeDefinition" title="dagster.ModeDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code></a> defined on the pipeline.
+A <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.ModeDefinition" title="dagster.ModeDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code></a> is the way that a pipeline can declare the different
 “modes” it can operate in. For example, you may have “unittest”, “local”,
 or “production” modes that allow you to swap out implementations of
 resources by altering configuration, while not changing your code.</p>
@@ -27348,7 +27368,7 @@ store; this version can be used in testing contexts without touching the public 
 <span class="s1">        no configuration. Useful for unit testing.&#39;&#39;&#39;</span><span class="p">,</span>
 </pre></div>
 </div>
-<p>And lastly add a new <code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code> to represent this:</p>
+<p>And lastly add a new <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.ModeDefinition" title="dagster.ModeDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code></a> to represent this:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
 <span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
