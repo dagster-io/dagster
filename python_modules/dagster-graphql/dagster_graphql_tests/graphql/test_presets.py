@@ -9,7 +9,7 @@ def execute_preset_query(pipeline_name):
                     __typename
                     name
                     solidSubset
-                    environment
+                    environmentConfigYaml
                     mode
                 }
             }

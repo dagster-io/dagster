@@ -50,7 +50,7 @@ export class PipelineRun extends React.Component<
         ...RunStatusPipelineRunFragment
         ...RunSubscriptionPipelineRunFragment
 
-        config
+        environmentConfigYaml
         runId
         mode
         pipeline {
@@ -165,7 +165,7 @@ export class PipelineRun extends React.Component<
           name: run.pipeline.name,
           solidSubset: run.pipeline.solids.map(s => s.name)
         },
-        config: yaml.parse(run.config),
+        environmentConfigData: yaml.parse(run.environmentConfigYaml),
         stepKeys: [stepKey],
         reexecutionConfig: reexecutionConfig,
         mode: run.mode
@@ -263,14 +263,14 @@ const LogsContainer = styled.div`
 const REEXECUTE_STEP_MUTATION = gql`
   mutation ReexecuteStep(
     $pipeline: ExecutionSelector!
-    $config: PipelineConfig!
+    $environmentConfigData: EnvironmentConfigData!
     $mode: String!
     $stepKeys: [String!]
     $reexecutionConfig: ReexecutionConfig
   ) {
     startPipelineExecution(
       pipeline: $pipeline
-      config: $config
+      environmentConfigData: $environmentConfigData
       mode: $mode
       stepKeys: $stepKeys
       reexecutionConfig: $reexecutionConfig

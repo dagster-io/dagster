@@ -7,6 +7,20 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
+snapshots['test_invalid_config_execute_plan 1'] = {
+    'executePlan': {
+        '__typename': 'PipelineConfigValidationInvalid',
+        'errors': [
+            {
+                'message': 'Value at path root:solids:sum_solid:inputs:num is not valid. Expected "Path"'
+            }
+        ],
+        'pipeline': {
+            'name': 'csv_hello_world'
+        }
+    }
+}
+
 snapshots['test_success_whole_execution_plan 1'] = {
     'executePlan': {
         '__typename': 'ExecutePlanSuccess',
@@ -440,20 +454,6 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
                 }
             }
         ]
-    }
-}
-
-snapshots['test_invalid_config_execute_plan 1'] = {
-    'executePlan': {
-        '__typename': 'PipelineConfigValidationInvalid',
-        'errors': [
-            {
-                'message': 'Value at path root:solids:sum_solid:inputs:num is not valid. Expected "Path"'
-            }
-        ],
-        'pipeline': {
-            'name': 'csv_hello_world'
-        }
     }
 }
 

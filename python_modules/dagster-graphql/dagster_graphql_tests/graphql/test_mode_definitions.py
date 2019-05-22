@@ -16,7 +16,7 @@ def test_multi_mode_successful():
         {
             'pipeline': {'name': 'multi_mode_with_resources'},
             'mode': 'add_mode',
-            'config': {'resources': {'op': {'config': 2}}},
+            'environmentConfigData': {'resources': {'op': {'config': 2}}},
         }
     )
     assert get_step_output(add_mode_logs, 'apply_to_three.compute')['valueRepr'] == '5'
@@ -25,7 +25,7 @@ def test_multi_mode_successful():
         {
             'pipeline': {'name': 'multi_mode_with_resources'},
             'mode': 'mult_mode',
-            'config': {'resources': {'op': {'config': 2}}},
+            'environmentConfigData': {'resources': {'op': {'config': 2}}},
         }
     )
     assert get_step_output(mult_mode_logs, 'apply_to_three.compute')['valueRepr'] == '6'
@@ -34,7 +34,9 @@ def test_multi_mode_successful():
         {
             'pipeline': {'name': 'multi_mode_with_resources'},
             'mode': 'double_adder',
-            'config': {'resources': {'op': {'config': {'num_one': 2, 'num_two': 4}}}},
+            'environmentConfigData': {
+                'resources': {'op': {'config': {'num_one': 2, 'num_two': 4}}}
+            },
         }
     )
     assert get_step_output(double_adder_mode_logs, 'apply_to_three.compute')['valueRepr'] == '9'

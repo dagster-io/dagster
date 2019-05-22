@@ -20,7 +20,7 @@ export interface IExecutionSessionPlan {
 export interface IExecutionSession {
   key: string;
   name: string;
-  config: string;
+  environmentConfigYaml: string;
   mode: string | null;
   solidSubset: string[] | null;
 
@@ -34,7 +34,7 @@ export type IExecutionSessionChanges = Partial<IExecutionSession>;
 const DEFAULT_SESSION: IExecutionSession = {
   key: "default",
   name: "Workspace",
-  config: "",
+  environmentConfigYaml: "",
   mode: null,
   solidSubset: null,
   runId: undefined,
@@ -62,7 +62,11 @@ export function applyChangesToSession(
   changes: IExecutionSessionChanges
 ) {
   const saved = data.sessions[key];
-  if (changes.config && changes.config !== saved.config && saved.runId) {
+  if (
+    changes.environmentConfigYaml &&
+    changes.environmentConfigYaml !== saved.environmentConfigYaml &&
+    saved.runId
+  ) {
     changes.configChangedSinceRun = true;
   }
 

@@ -186,7 +186,7 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun {
   status: PipelineRunStatus;
   pipeline: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline;
   logs: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs;
-  config: string;
+  environmentConfigYaml: string;
   mode: string;
   executionPlan: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan;
 }

@@ -47,13 +47,15 @@ def get_runs(graphene_info):
     ]
 
 
-def validate_pipeline_config(graphene_info, selector, config, mode):
+def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
     check.opt_str_param(mode, 'mode')
 
     def do_validation(pipeline):
-        config_or_error = _config_or_error_from_pipeline(graphene_info, pipeline, config, mode)
+        config_or_error = _config_or_error_from_pipeline(
+            graphene_info, pipeline, environment_dict, mode
+        )
         return config_or_error.chain(
             lambda config: graphene_info.schema.type_named('PipelineConfigValidationValid')(
                 pipeline
@@ -64,13 +66,15 @@ def validate_pipeline_config(graphene_info, selector, config, mode):
     return pipeline_or_error.chain(do_validation).value()
 
 
-def get_execution_plan(graphene_info, selector, config, mode):
+def get_execution_plan(graphene_info, selector, environment_dict, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
     check.opt_str_param(mode, 'mode')
 
     def create_plan(pipeline):
-        config_or_error = _config_or_error_from_pipeline(graphene_info, pipeline, config, mode)
+        config_or_error = _config_or_error_from_pipeline(
+            graphene_info, pipeline, environment_dict, mode
+        )
         return config_or_error.chain(
             lambda evaluate_value_result: graphene_info.schema.type_named('ExecutionPlan')(
                 pipeline,

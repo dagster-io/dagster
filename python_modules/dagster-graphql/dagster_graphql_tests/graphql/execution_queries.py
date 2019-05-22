@@ -1,7 +1,7 @@
 START_PIPELINE_EXECUTION_QUERY = '''
 mutation (
     $pipeline: ExecutionSelector!,
-    $config: PipelineConfig,
+    $environmentConfigData: EnvironmentConfigData,
     $mode: String!,
     $stepKeys: [String!],
     $executionMetadata: ExecutionMetadata,
@@ -9,7 +9,7 @@ mutation (
 ) {
     startPipelineExecution(
         pipeline: $pipeline,
-        config: $config,
+        environmentConfigData: $environmentConfigData,
         mode: $mode,
         stepKeys: $stepKeys,
         executionMetadata: $executionMetadata,
@@ -64,7 +64,7 @@ mutation (
 START_PIPELINE_EXECUTION_SNAPSHOT_QUERY = '''
 mutation (
     $pipeline: ExecutionSelector!,
-    $config: PipelineConfig,
+    $environmentConfigData: EnvironmentConfigData,
     $stepKeys: [String!],
     $mode: String!,
     $executionMetadata: ExecutionMetadata,
@@ -72,7 +72,7 @@ mutation (
 ) {
     startPipelineExecution(
         pipeline: $pipeline,
-        config: $config,
+        environmentConfigData: $environmentConfigData,
         mode: $mode,
         stepKeys: $stepKeys,
         executionMetadata: $executionMetadata,
@@ -125,6 +125,7 @@ subscription subscribeTest($runId: ID!) {
     pipelineRunLogs(runId: $runId) {
         __typename
         ... on PipelineRunLogsSubscriptionSuccess {
+            runId,
             messages {
                 __typename
                 ... on ExecutionStepOutputEvent {

@@ -57,7 +57,7 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('PipelineConfigValidationResult'),
         args={
             'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
-            'config': dauphin.Argument('PipelineConfig'),
+            'environmentConfigData': dauphin.Argument('EnvironmentConfigData'),
             'mode': dauphin.Argument(dauphin.NonNull(dauphin.String)),
         },
     )
@@ -66,7 +66,7 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('ExecutionPlanResult'),
         args={
             'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
-            'config': dauphin.Argument('PipelineConfig'),
+            'environmentConfigData': dauphin.Argument('EnvironmentConfigData'),
             'mode': dauphin.Argument(dauphin.NonNull(dauphin.String)),
         },
     )
@@ -100,13 +100,21 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_pipelineRunOrError(self, graphene_info, runId):
         return get_run(graphene_info, runId)
 
-    def resolve_isPipelineConfigValid(self, graphene_info, pipeline, config, **kwargs):
+    def resolve_isPipelineConfigValid(self, graphene_info, pipeline, **kwargs):
         return validate_pipeline_config(
-            graphene_info, pipeline.to_selector(), config, kwargs.get('mode')
+            graphene_info,
+            pipeline.to_selector(),
+            kwargs.get('environmentConfigData'),
+            kwargs.get('mode'),
         )
 
-    def resolve_executionPlan(self, graphene_info, pipeline, config, **kwargs):
-        return get_execution_plan(graphene_info, pipeline.to_selector(), config, kwargs.get('mode'))
+    def resolve_executionPlan(self, graphene_info, pipeline, **kwargs):
+        return get_execution_plan(
+            graphene_info,
+            pipeline.to_selector(),
+            kwargs.get('environmentConfigData'),
+            kwargs.get('mode'),
+        )
 
 
 class DauphinStepOutputHandle(dauphin.InputObjectType):
@@ -140,7 +148,7 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
 
     class Arguments:
         pipeline = dauphin.NonNull('ExecutionSelector')
-        config = dauphin.Argument('PipelineConfig')
+        environmentConfigData = dauphin.Argument('EnvironmentConfigData')
         mode = dauphin.Argument(dauphin.NonNull(dauphin.String))
         stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
         executionMetadata = dauphin.Argument('ExecutionMetadata')
@@ -157,7 +165,7 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
         return start_pipeline_execution(
             graphene_info,
             kwargs['pipeline'].to_selector(),
-            kwargs.get('config'),
+            kwargs.get('environmentConfigData'),
             kwargs.get('mode'),
             kwargs.get('stepKeys'),
             reexecution_config,
@@ -212,7 +220,7 @@ class DauphinExecutePlan(dauphin.Mutation):
 
     class Arguments:
         pipelineName = dauphin.NonNull(dauphin.String)
-        config = dauphin.Argument('PipelineConfig')
+        environmentConfigData = dauphin.Argument('EnvironmentConfigData')
         mode = dauphin.Argument(dauphin.NonNull(dauphin.String))
         stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
         executionMetadata = dauphin.Argument(DauphinExecutionMetadata)
@@ -223,7 +231,7 @@ class DauphinExecutePlan(dauphin.Mutation):
         return do_execute_plan(
             graphene_info,
             kwargs['pipelineName'],
-            kwargs.get('config'),
+            kwargs.get('environmentConfigData'),
             kwargs.get('mode'),
             kwargs.get('executionMetadata'),
             kwargs.get('stepKeys'),
@@ -252,9 +260,9 @@ class DauphinSubscription(dauphin.ObjectType):
         return get_pipeline_run_observable(graphene_info, runId, after)
 
 
-class DauphinPipelineConfig(dauphin.GenericScalar, dauphin.Scalar):
+class DauphinEnvironmentConfigData(dauphin.GenericScalar, dauphin.Scalar):
     class Meta:
-        name = 'PipelineConfig'
+        name = 'EnvironmentConfigData'
         description = '''This type is used when passing in a configuration object
         for pipeline configuration. This is any-typed in the GraphQL type system,
         but must conform to the constraints of the dagster config type system'''

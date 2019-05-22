@@ -12,7 +12,7 @@ snapshots['test_basic_preset_query_with_presets 1'] = {
         'presets': [
             {
                 '__typename': 'PipelinePreset',
-                'environment': '''solids:
+                'environmentConfigYaml': '''solids:
   sum_solid:
     inputs:
       num: data/num_prod.csv
@@ -23,7 +23,7 @@ snapshots['test_basic_preset_query_with_presets 1'] = {
             },
             {
                 '__typename': 'PipelinePreset',
-                'environment': '''solids:
+                'environmentConfigYaml': '''solids:
   sum_solid:
     inputs:
       num: data/num.csv

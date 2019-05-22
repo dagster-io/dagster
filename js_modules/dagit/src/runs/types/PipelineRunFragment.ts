@@ -182,7 +182,7 @@ export interface PipelineRunFragment {
   status: PipelineRunStatus;
   pipeline: PipelineRunFragment_pipeline;
   logs: PipelineRunFragment_logs;
-  config: string;
+  environmentConfigYaml: string;
   mode: string;
   executionPlan: PipelineRunFragment_executionPlan;
 }

@@ -29,7 +29,6 @@ def start_pipeline_execution(
 ):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
-    check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
     check.opt_str_param(mode, 'mode')
     check.opt_inst_param(reexecution_config, 'reexecution_config', ReexecutionConfig)
@@ -121,10 +120,11 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     def get_observable(pipeline):
         return run.observable_after_cursor(after).map(
             lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
+                runId=run_id,
                 messages=[
                     from_event_record(graphene_info, event, pipeline, run.execution_plan)
                     for event in events
-                ]
+                ],
             )
         )
 

@@ -31,7 +31,7 @@ def test_basic_start_pipeline_execution():
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'csv_hello_world'},
-            'config': csv_hello_world_solids_config(),
+            'environmentConfigData': csv_hello_world_solids_config(),
             'mode': 'default',
         },
     )
@@ -51,7 +51,7 @@ def test_basic_start_pipeline_execution_config_failure():
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'csv_hello_world'},
-            'config': {'solids': {'sum_solid': {'inputs': {'num': 384938439}}}},
+            'environmentConfigData': {'solids': {'sum_solid': {'inputs': {'num': 384938439}}}},
             'mode': 'default',
         },
     )
@@ -67,7 +67,7 @@ def test_basis_start_pipeline_not_found_error():
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'sjkdfkdjkf'},
-            'config': {'solids': {'sum_solid': {'inputs': {'num': 'test.csv'}}}},
+            'environmentConfigData': {'solids': {'sum_solid': {'inputs': {'num': 'test.csv'}}}},
             'mode': 'default',
         },
     )
@@ -84,7 +84,7 @@ def test_basic_start_pipeline_execution_and_subscribe():
     run_logs = sync_execute_get_run_log_data(
         variables={
             'pipeline': {'name': 'csv_hello_world'},
-            'config': {
+            'environmentConfigData': {
                 'solids': {
                     'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}
                 }
@@ -166,7 +166,11 @@ def test_basic_sync_execution_no_config():
     result = execute_dagster_graphql(
         context,
         START_PIPELINE_EXECUTION_QUERY,
-        variables={'pipeline': {'name': 'no_config_pipeline'}, 'config': None, 'mode': 'default'},
+        variables={
+            'pipeline': {'name': 'no_config_pipeline'},
+            'environmentConfigData': None,
+            'mode': 'default',
+        },
     )
 
     assert not result.errors
@@ -184,7 +188,7 @@ def test_basic_inmemory_sync_execution():
         context,
         START_PIPELINE_EXECUTION_QUERY,
         variables={
-            'config': csv_hello_world_solids_config(),
+            'environmentConfigData': csv_hello_world_solids_config(),
             'pipeline': {'name': 'csv_hello_world'},
             'mode': 'default',
         },
@@ -211,7 +215,9 @@ def test_basic_filesystem_sync_execution():
         context,
         START_PIPELINE_EXECUTION_QUERY,
         variables={
-            'config': merge_dicts(csv_hello_world_solids_config(), {'storage': {'filesystem': {}}}),
+            'environmentConfigData': merge_dicts(
+                csv_hello_world_solids_config(), {'storage': {'filesystem': {}}}
+            ),
             'pipeline': {'name': 'csv_hello_world'},
             'mode': 'default',
         },
@@ -274,7 +280,7 @@ def test_successful_pipeline_reexecution(snapshot):
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'pipeline': {'name': 'csv_hello_world'},
-            'config': csv_hello_world_solids_config_fs_storage(),
+            'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
             'executionMetadata': {'runId': run_id},
             'mode': 'default',
         },
@@ -307,7 +313,7 @@ def test_successful_pipeline_reexecution(snapshot):
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'pipeline': {'name': 'csv_hello_world'},
-            'config': csv_hello_world_solids_config_fs_storage(),
+            'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
             'stepKeys': ['sum_sq_solid.compute'],
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {
@@ -350,7 +356,7 @@ def test_pipeline_reexecution_invalid_step_in_subset():
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'pipeline': {'name': 'csv_hello_world'},
-            'config': csv_hello_world_solids_config(),
+            'environmentConfigData': csv_hello_world_solids_config(),
             'executionMetadata': {'runId': run_id},
             'mode': 'default',
         },
@@ -363,7 +369,7 @@ def test_pipeline_reexecution_invalid_step_in_subset():
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'pipeline': {'name': 'csv_hello_world'},
-            'config': csv_hello_world_solids_config(),
+            'environmentConfigData': csv_hello_world_solids_config(),
             'stepKeys': ['nope'],
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {
@@ -386,7 +392,7 @@ def test_pipeline_reexecution_invalid_step_in_step_output_handle():
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'pipeline': {'name': 'csv_hello_world'},
-            'config': csv_hello_world_solids_config(),
+            'environmentConfigData': csv_hello_world_solids_config(),
             'executionMetadata': {'runId': run_id},
             'mode': 'default',
         },
@@ -399,7 +405,7 @@ def test_pipeline_reexecution_invalid_step_in_step_output_handle():
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'pipeline': {'name': 'csv_hello_world'},
-            'config': csv_hello_world_solids_config(),
+            'environmentConfigData': csv_hello_world_solids_config(),
             'stepKeys': ['sum_sq_solid.compute'],
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {
@@ -424,7 +430,7 @@ def test_pipeline_reexecution_invalid_output_in_step_output_handle():
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'pipeline': {'name': 'csv_hello_world'},
-            'config': csv_hello_world_solids_config(),
+            'environmentConfigData': csv_hello_world_solids_config(),
             'executionMetadata': {'runId': run_id},
             'mode': 'default',
         },
@@ -437,7 +443,7 @@ def test_pipeline_reexecution_invalid_output_in_step_output_handle():
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'pipeline': {'name': 'csv_hello_world'},
-            'config': csv_hello_world_solids_config(),
+            'environmentConfigData': csv_hello_world_solids_config(),
             'stepKeys': ['sum_sq_solid.compute'],
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {
@@ -472,7 +478,7 @@ def test_basic_start_pipeline_execution_with_materialization():
         run_logs = sync_execute_get_run_log_data(
             variables={
                 'pipeline': {'name': 'csv_hello_world'},
-                'config': environment_dict,
+                'environmentConfigData': environment_dict,
                 'mode': 'default',
             }
         )

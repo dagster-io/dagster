@@ -2,8 +2,10 @@ from .execution_queries import START_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUER
 from .setup import define_context, execute_dagster_graphql
 
 
-def sync_execute_get_run_log_data(variables, raise_on_error=True):
-    context = define_context(raise_on_error=raise_on_error)
+def sync_execute_get_payload(variables, raise_on_error=True, context=None):
+    if not context:
+        context = define_context(raise_on_error=raise_on_error)
+
     result = execute_dagster_graphql(context, START_PIPELINE_EXECUTION_QUERY, variables=variables)
 
     assert result.data
@@ -21,9 +23,16 @@ def sync_execute_get_run_log_data(variables, raise_on_error=True):
     subscribe_result = subscribe_results[0]
     assert not subscribe_result.errors
     assert subscribe_result.data
-    assert subscribe_result.data['pipelineRunLogs']
-    return subscribe_result.data['pipelineRunLogs']
+    return subscribe_result.data
 
 
-def sync_execute_get_events(variables):
-    return sync_execute_get_run_log_data(variables)['messages']
+def sync_execute_get_run_log_data(variables, raise_on_error=True, context=None):
+    payload_data = sync_execute_get_payload(
+        variables, raise_on_error=raise_on_error, context=context
+    )
+    assert payload_data['pipelineRunLogs']
+    return payload_data['pipelineRunLogs']
+
+
+def sync_execute_get_events(variables, context=None):
+    return sync_execute_get_run_log_data(variables, context=context)['messages']

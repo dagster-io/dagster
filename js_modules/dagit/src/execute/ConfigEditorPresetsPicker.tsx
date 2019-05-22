@@ -57,7 +57,7 @@ export default class ConfigEditorPresetsPicker extends React.Component<
                 onItemSelect={p =>
                   onCreateSession({
                     name: p.name,
-                    config: p.environment || "",
+                    environmentConfigYaml: p.environmentConfigYaml || "",
                     solidSubset: p.solidSubset,
                     mode: p.mode
                   })
@@ -80,7 +80,7 @@ export const CONFIG_PRESETS_QUERY = gql`
       presets {
         name
         solidSubset
-        environment
+        environmentConfigYaml
         mode
       }
     }

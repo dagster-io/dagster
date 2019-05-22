@@ -38,7 +38,6 @@ export interface PipelineRunsRootQuery_pipeline_runs {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
-  config: string;
   pipeline: PipelineRunsRootQuery_pipeline_runs_pipeline;
   logs: PipelineRunsRootQuery_pipeline_runs_logs;
   executionPlan: PipelineRunsRootQuery_pipeline_runs_executionPlan;

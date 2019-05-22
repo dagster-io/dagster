@@ -1,14 +1,14 @@
 # TODO need to enrich error handling as we enrich the ultimate union type for executePlan
 QUERY_TEMPLATE = ''' '
 mutation(
-  $config: PipelineConfig = {config},
+  $environmentConfigData: EnvironmentConfigData = {config},
   $pipelineName: String = "{pipeline_name}",
   $runId: String = "{run_id}",
   $mode: String = "{mode}",
   $stepKeys: [String!] = {step_keys}
 ) {{
   executePlan(
-    config: $config,
+    environmentConfigData: $environmentConfigData,
     mode: $mode,
     executionMetadata: {{
       runId: $runId

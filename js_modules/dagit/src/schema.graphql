@@ -72,6 +72,8 @@ type EnumConfigValue {
   description: String
 }
 
+scalar EnvironmentConfigData
+
 interface Error {
   message: String!
   stack: [String!]!
@@ -365,8 +367,8 @@ type Mode {
 }
 
 type Mutation {
-  startPipelineExecution(config: PipelineConfig, executionMetadata: ExecutionMetadata, mode: String!, pipeline: ExecutionSelector!, reexecutionConfig: ReexecutionConfig, stepKeys: [String!]): StartPipelineExecutionResult!
-  executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata, mode: String!, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
+  startPipelineExecution(environmentConfigData: EnvironmentConfigData, executionMetadata: ExecutionMetadata, mode: String!, pipeline: ExecutionSelector!, reexecutionConfig: ReexecutionConfig, stepKeys: [String!]): StartPipelineExecutionResult!
+  executePlan(environmentConfigData: EnvironmentConfigData, executionMetadata: ExecutionMetadata, mode: String!, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -437,8 +439,6 @@ type Pipeline implements SolidContainer {
   presets: [PipelinePreset!]!
 }
 
-scalar PipelineConfig
-
 interface PipelineConfigValidationError {
   message: String!
   path: [String!]!
@@ -495,7 +495,7 @@ union PipelineOrError = Pipeline | PythonError | PipelineNotFoundError | SolidNo
 type PipelinePreset {
   name: String!
   solidSubset: [String!]
-  environment: String
+  environmentConfigYaml: String!
   mode: String!
 }
 
@@ -524,7 +524,7 @@ type PipelineRun {
   pipeline: Pipeline!
   logs: LogMessageConnection!
   executionPlan: ExecutionPlan!
-  config: String!
+  environmentConfigYaml: String!
   mode: String!
 }
 
@@ -537,6 +537,7 @@ type PipelineRunLogsSubscriptionMissingRunIdFailure {
 union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscriptionMissingRunIdFailure
 
 type PipelineRunLogsSubscriptionSuccess {
+  runId: String!
   messages: [PipelineRunEvent!]!
 }
 
@@ -590,8 +591,8 @@ type Query {
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   pipelineRuns: [PipelineRun!]!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
-  isPipelineConfigValid(pipeline: ExecutionSelector!, config: PipelineConfig, mode: String!): PipelineConfigValidationResult!
-  executionPlan(pipeline: ExecutionSelector!, config: PipelineConfig, mode: String!): ExecutionPlanResult!
+  isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
+  executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
 }
 
 input ReexecutionConfig {
