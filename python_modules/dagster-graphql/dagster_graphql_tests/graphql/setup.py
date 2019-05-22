@@ -456,6 +456,7 @@ def define_multi_mode_with_resources_pipeline():
     return PipelineDefinition(
         name='multi_mode_with_resources',
         solids=[apply_to_three],
+        preset_definitions=[PresetDefinition("add", mode="add_mode")],
         mode_definitions=[
             ModeDefinition(
                 name='add_mode',

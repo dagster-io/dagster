@@ -85,9 +85,9 @@ class InProcessEngine(IEngine):  # pylint: disable=no-init
                 ]
                 if failed_inputs:
                     step_context.log.info(
-                        'Dependencies for step {step} failed: {failed_inputs}. Not executing.'.format(
-                            step=step.key, failed_inputs=failed_inputs
-                        )
+                        (
+                            'Dependencies for step {step} failed: {failed_inputs}. Not executing.'
+                        ).format(step=step.key, failed_inputs=failed_inputs)
                     )
                     failed_or_skipped_steps.add(step.key)
                     yield DagsterEvent.step_skipped_event(step_context)
@@ -215,18 +215,20 @@ def _error_check_step_outputs(step, step_output_iter):
         step_output_value = step_output
         if not step.has_step_output(step_output_value.output_name):
             raise DagsterInvariantViolationError(
-                'Core compute for solid "{step.solid_handle.name}" returned an output '
+                'Core compute for solid "{handle}" returned an output '
                 '"{step_output_value.output_name}" that does not exist. The available '
                 'outputs are {output_names}'.format(
-                    step=step, step_output_value=step_output_value, output_names=output_names
+                    handle=str(step.solid_handle),
+                    step_output_value=step_output_value,
+                    output_names=output_names,
                 )
             )
 
         if step_output_value.output_name in seen_outputs:
             raise DagsterInvariantViolationError(
-                'Core compute for solid "{step.solid_handle.name}" returned an output '
+                'Core compute for solid "{handle}" returned an output '
                 '"{step_output_value.output_name}" multiple times'.format(
-                    step=step, step_output_value=step_output_value
+                    handle=str(step.solid_handle), step_output_value=step_output_value
                 )
             )
 
@@ -240,9 +242,9 @@ def _error_check_step_outputs(step, step_output_iter):
             and not step_output_def.runtime_type.is_nothing
         ):
             raise DagsterStepOutputNotFoundError(
-                'Core compute for solid "{step.solid_handle.name}" did not return an output '
+                'Core compute for solid "{handle}" did not return an output '
                 'for non-optional output "{step_output_def.name}"'.format(
-                    step=step, step_output_def=step_output_def
+                    handle=str(step.solid_handle), step_output_def=step_output_def
                 ),
                 step_key=step.key,
                 output_name=step_output_def.name,
@@ -322,10 +324,12 @@ def _create_step_output_event(step_context, step_output_value, intermediates_man
     except DagsterRuntimeCoercionError as e:
         raise DagsterInvariantViolationError(
             (
-                'In solid "{step.solid_handle.name}" the output "{output_name}" returned '
+                'In solid "{handle}" the output "{output_name}" returned '
                 'an invalid type: {error_msg}.'
             ).format(
-                step=step, error_msg=','.join(e.args), output_name=step_output_value.output_name
+                handle=str(step.solid_handle),
+                error_msg=','.join(e.args),
+                output_name=step_output_value.output_name,
             )
         )
 
@@ -341,10 +345,11 @@ def _get_evaluated_input(step, input_name, input_value):
         raise_from(
             DagsterTypeError(
                 (
-                    'In solid "{step.solid_handle.name}" the input "{input_name}" received value {input_value} '
+                    'In solid "{handle}" the input "{input_name}" received value {input_value} '
                     'of Python type {input_type} which does not pass the typecheck for '
                     'Dagster type {step_input.runtime_type.name}. Step {step.key}.'
                 ).format(
+                    handle=str(step.solid_handle),
                     step=step,
                     input_name=input_name,
                     input_value=input_value,

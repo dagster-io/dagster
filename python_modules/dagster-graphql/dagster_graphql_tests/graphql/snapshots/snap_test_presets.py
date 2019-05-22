@@ -17,6 +17,7 @@ snapshots['test_basic_preset_query_with_presets 1'] = {
     inputs:
       num: data/num_prod.csv
 ''',
+                'mode': 'default',
                 'name': 'prod',
                 'solidSubset': None
             },
@@ -27,6 +28,7 @@ snapshots['test_basic_preset_query_with_presets 1'] = {
     inputs:
       num: data/num.csv
 ''',
+                'mode': 'default',
                 'name': 'test',
                 'solidSubset': None
             }

@@ -497,6 +497,7 @@ type PipelinePreset {
   name: String!
   solidSubset: [String!]
   environment: String
+  mode: String!
 }
 
 type PipelineProcessStartedEvent implements MessageEvent & PipelineEvent {

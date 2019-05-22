@@ -96,7 +96,9 @@ def define_error_monster_pipeline():
             )
         ],
         preset_definitions=[
-            PresetDefinition('passing', environment_files=['environments/error.yml'])
+            PresetDefinition(
+                'passing', environment_files=['environments/error.yml'], mode='errorable_mode'
+            )
         ],
     )
 

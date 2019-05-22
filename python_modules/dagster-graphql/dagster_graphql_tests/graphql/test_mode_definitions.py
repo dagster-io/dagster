@@ -57,6 +57,10 @@ query ModesQuery($pipelineName: String!, $mode: String!)
         }
       }
     }
+    presets {
+      name
+      mode
+    }
     modes {
       name
       description

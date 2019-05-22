@@ -12,6 +12,7 @@ export interface ConfigPresetsQuery_pipeline_presets {
   name: string;
   solidSubset: string[] | null;
   environment: string | null;
+  mode: string;
 }
 
 export interface ConfigPresetsQuery_pipeline {

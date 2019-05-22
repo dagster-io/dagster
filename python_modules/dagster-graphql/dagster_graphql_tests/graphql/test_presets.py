@@ -10,6 +10,7 @@ def execute_preset_query(pipeline_name):
                     name
                     solidSubset
                     environment
+                    mode
                 }
             }
         }

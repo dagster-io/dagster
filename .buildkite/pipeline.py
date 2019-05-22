@@ -263,7 +263,7 @@ if __name__ == "__main__":
             "cd tmp",
             "coverage combine",
             "coveralls-lcov -v -n lcov.* > coverage.js.json",
-            "coveralls-merge coverage.js.json",
+            "coveralls --merge=coverage.js.json",
         )
         .on_python_image(
             SupportedPython.V3_7,

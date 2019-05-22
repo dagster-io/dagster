@@ -48,6 +48,21 @@ def define_hello_world_with_output_pipeline():
     )
 
 
+def define_hello_world_explicit_yield():
+    return dm.define_dagstermill_solid(
+        'hello_world_explicit_yield_pipeline',
+        nb_test_path('hello_world_explicit_yield'),
+        [],
+        [OutputDefinition()],
+    )
+
+
+def define_hello_world_explicit_yield_pipeline():
+    return PipelineDefinition(
+        name='hello_world_explicit_yield_pipeline', solids=[define_hello_world_explicit_yield()]
+    )
+
+
 # This probably should be moved to a library because it is immensely useful for testing
 def solid_definition(fn):
     return check.inst(fn(), SolidDefinition)
@@ -165,12 +180,14 @@ def define_tutorial_pipeline():
     )
 
 
+# Placeholder class to cause the unregistered notebook solid to fail -- custom serialization
+# strategies require repository registration
 class ComplexSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize_value(self, context, value, write_file_obj):
-        pass
+        pass  # pragma: nocover
 
     def deserialize_value(self, context, read_file_obj):
-        pass
+        pass  # pragma: nocover
 
 
 complex_serialization_strategy = ComplexSerializationStrategy()

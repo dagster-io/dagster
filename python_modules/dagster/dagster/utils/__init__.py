@@ -12,6 +12,9 @@ from dagster.seven.abc import Mapping
 from .yaml_utils import load_yaml_from_path, load_yaml_from_globs, load_yaml_from_glob_list
 
 
+PICKLE_PROTOCOL = 2
+
+
 def script_relative_path(file_path):
     '''
     Useful for testing with local files. Use a path relative to where the

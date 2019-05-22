@@ -58,7 +58,8 @@ export default class ConfigEditorPresetsPicker extends React.Component<
                   onCreateSession({
                     name: p.name,
                     config: p.environment || "",
-                    solidSubset: p.solidSubset
+                    solidSubset: p.solidSubset,
+                    mode: p.mode
                   })
                 }
               >
@@ -80,6 +81,7 @@ export const CONFIG_PRESETS_QUERY = gql`
         name
         solidSubset
         environment
+        mode
       }
     }
   }

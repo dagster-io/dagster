@@ -7,15 +7,17 @@ import yaml
 from dagster import check
 from dagster.utils.yaml_utils import merge_yamls
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from .mode import DEFAULT_MODE_NAME
 
 
 class PresetDefinition:
-    def __init__(self, name, environment_files=None, solid_subset=None):
+    def __init__(self, name, environment_files=None, solid_subset=None, mode=None):
         self.name = check.str_param(name, 'name')
         self.environment_files = check.opt_list_param(
             environment_files, 'environment_files', of_type=str
         )
         self.solid_subset = check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+        self.mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
 
     @property
     def environment_dict(self):

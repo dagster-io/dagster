@@ -3,8 +3,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import base64
 import copy
 import json
+import logging
 import os
-import subprocess
+import pickle
 import uuid
 
 from builtins import *  # pylint: disable=W0622,W0401
@@ -17,28 +18,31 @@ import six
 from future.utils import raise_from
 
 import papermill as pm
+from papermill.exceptions import PapermillExecutionError
 from papermill.parameterize import _find_first_tagged_cell_index
 from papermill.translators import translate_parameters
 from papermill.iorw import load_notebook_node, write_ipynb
+from papermill.log import logger as pm_logger
 
 import scrapbook as sb
 
 from dagster import (
+    check,
     DagsterRuntimeCoercionError,
+    ExpectationResult,
     InputDefinition,
-    OutputDefinition,
-    RepositoryDefinition,
-    Result,
     Materialization,
     ModeDefinition,
+    OutputDefinition,
     PipelineDefinition,
-    SolidDefinition,
-    check,
+    RepositoryDefinition,
+    Result,
     seven,
+    SolidDefinition,
     types,
 )
 from dagster.core.definitions.dependency import Solid
-from dagster.core.errors import DagsterSubprocessExecutionError
+from dagster.core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
 from dagster.core.events.log import construct_json_event_logger, EventRecord
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import scoped_pipeline_context
@@ -59,6 +63,7 @@ from dagster.core.types.marshal import (
     PickleSerializationStrategy,
 )
 from dagster.core.types.runtime import RuntimeType
+from dagster.utils import mkdir_p, PICKLE_PROTOCOL
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.
@@ -66,8 +71,19 @@ from dagster.core.types.runtime import RuntimeType
 # python3 -m ipykernel install --user
 
 
+class EventCallbackHandler(logging.Handler):
+    def __init__(self, event_callback):
+        self._event_callback = event_callback
+        super(EventCallbackHandler, self).__init__()
+
+    def emit(self, record):
+        event_record_dict = json.loads(record)
+        self._event_callback(EventRecord(**event_record_dict))
+
+
 class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
     def __init__(self, pipeline_context):
+        check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         self._pipeline_context = pipeline_context
 
     def has_tag(self, key):
@@ -113,7 +129,11 @@ class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
         check.not_implemented('Cannot access solid in dagstermill exploratory context')
 
 
-class DagstermillError(DagsterSubprocessExecutionError):
+class DagstermillError(Exception):
+    pass
+
+
+class DagstermillExecutionError(DagstermillError, DagsterUserCodeExecutionError):
     pass
 
 
@@ -147,7 +167,7 @@ class Manager:
             self.context = DagstermillInNotebookExecutionContext(pipeline_context)
         return self.context
 
-    def yield_result(self, value, output_name):
+    def yield_result(self, value, output_name='result'):
         if not self.populated_by_papermill:
             return value
 
@@ -174,6 +194,9 @@ class Manager:
                 sb.glue(output_name, out_file)
             else:
                 raise DagstermillError(
+                    # Discuss this in the docs and improve error message
+                    # https://github.com/dagster-io/dagster/issues/1275
+                    # https://github.com/dagster-io/dagster/issues/1276
                     'Output Definition for output {output_name} requires repo registration '
                     'since it has a complex serialization format'.format(output_name=output_name)
                 )
@@ -189,6 +212,19 @@ class Manager:
 
             out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
             sb.glue(output_name, write_value(runtime_type, value, out_file))
+
+    def yield_materialization(self, path, description):
+        if not self.populated_by_papermill:
+            return Materialization(path, description)
+
+        materialization_id = 'materialization-{materialization_uuid}'.format(
+            materialization_uuid=str(uuid.uuid4())
+        )
+        out_file_path = os.path.join(self.marshal_dir, materialization_id)
+        with open(out_file_path, 'wb') as fd:
+            fd.write(pickle.dumps(Materialization(path, description), PICKLE_PROTOCOL))
+
+        sb.glue(materialization_id, out_file_path)
 
     def populate_context(
         self,
@@ -357,7 +393,26 @@ def register_repository(repo_def):
 
 
 def yield_result(value, output_name='result'):
+    '''Explicitly yield a Result.
+    
+    Args:
+        value (Any): The value of the Result to yield.
+        output_name (Optional[str]): The name of the Result to yield. Default: 'result'.
+
+    '''
     return MANAGER_FOR_NOTEBOOK_INSTANCE.yield_result(value, output_name)
+
+
+def yield_materialization(path, description=''):
+    '''Explicitly yield an additional Materialization.
+
+    Args:
+        path (str): The path to the materialized artifact.
+        description (Optional[str]): A description of the materialized artifact.
+
+    '''
+
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.yield_materialization(path, description)
 
 
 def populate_context(dm_context_data):
@@ -434,8 +489,7 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
     mode = transform_context.mode
 
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
-    if not os.path.exists(marshal_dir):
-        os.makedirs(marshal_dir)
+    mkdir_p(marshal_dir)
 
     if not transform_context.has_event_callback:
         transform_context.log.info('get_papermill_parameters.context has no event_callback!')
@@ -559,9 +613,7 @@ def _dm_solid_transform(name, notebook_path):
 
         base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=transform_context.run_id)
         output_notebook_dir = os.path.join(base_dir, 'output_notebooks/')
-
-        if not os.path.exists(output_notebook_dir):
-            os.makedirs(output_notebook_dir)
+        mkdir_p(output_notebook_dir)
 
         temp_path = os.path.join(
             output_notebook_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4()))
@@ -584,33 +636,19 @@ def _dm_solid_transform(name, notebook_path):
             with open(output_log_path, 'a') as f:
                 f.close()
 
-            process = subprocess.Popen(
-                ['papermill', '--log-output', '--log-level', 'ERROR', intermediate_path, temp_path],
-                stderr=subprocess.PIPE,
-            )
-            _stdout, stderr = process.communicate()
-            while process.poll() is None:  # while subprocess alive
-                if system_transform_context.event_callback:
-                    with open(output_log_path, 'r') as ff:
-                        current_time = os.path.getmtime(output_log_path)
-                        while process.poll() is None:
-                            new_time = os.path.getmtime(output_log_path)
-                            if new_time != current_time:
-                                line = ff.readline()
-                                if not line:
-                                    break
-                                event_record_dict = json.loads(line)
+            # get the logger
+            # attach a handler to the logger
+            if system_transform_context.event_callback:
+                pm_logger.addHandler(EventCallbackHandler(system_transform_context.event_callback))
 
-                                system_transform_context.event_callback(
-                                    EventRecord(**event_record_dict)
-                                )
-                                current_time = new_time
-
-            if process.returncode != 0:
-                raise DagstermillError(
-                    'There was an error when Papermill tried to execute the notebook. '
-                    'The process stderr is \'{stderr}\''.format(stderr=stderr)
-                )
+            with user_code_error_boundary(
+                DagstermillExecutionError,
+                'Error occurred during the execution of Dagstermill solid '
+                '{solid_name}: {notebook_path}'.format(
+                    solid_name=name, notebook_path=notebook_path
+                ),
+            ):
+                pm.execute_notebook(intermediate_path, temp_path, log_output=True)
 
             output_nb = sb.read_notebook(temp_path)
 
@@ -628,10 +666,15 @@ def _dm_solid_transform(name, notebook_path):
             for output_name, output_def in system_transform_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
                 if output_name in data_dict:
-
                     value = read_value(output_def.runtime_type, data_dict[output_name])
 
                     yield Result(value, output_name)
+
+            for key, value in output_nb.scraps.items():
+                print(output_nb.scraps)
+                if key.startswith('materialization-'):
+                    with open(value.data, 'rb') as fd:
+                        yield pickle.loads(fd.read())
 
         finally:
             if do_cleanup and os.path.exists(temp_path):
