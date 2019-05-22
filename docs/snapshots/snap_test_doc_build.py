@@ -4309,29 +4309,26 @@ configuration specified for a given resource is passed to its constructor under 
 Let's now attach this resource to a pipeline and use it in a solid.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
-   :lines: 68-75, 76-88
+   :lines: 68-75, 77-84, 86-87
 
-Resources are attached to pipeline context definitions. A pipeline context
-definition is way that a pipeline can declare the different "modes" it can
-operate in. For example, a common context definition would be "unittest"
-or "production". So, you can swap out implementations of these resources
-by altering configuration, while not changing your code.
+Resources are attached to a set of :py:class:`ModeDefinition <dagster.ModeDefinition>` defined on the pipeline.
+A :py:class:`ModeDefinition <dagster.ModeDefinition>` is the way that a pipeline can declare the different
+"modes" it can operate in. For example, you may have "unittest", "local",
+or "production" modes that allow you to swap out implementations of
+resources by altering configuration, while not changing your code.
 
-In this case we have a single context definition, ``cloud``, and that context definition has a
-single resource, the cloud store resource.
-
-In order to invoke this pipeline, we pass it the following configuration:
+In order to invoke this pipeline, we invoke it in this way:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
-   :lines: 94-103
+   :lines: 91-100
    :dedent: 8
 
-Note how we are telling the configuration to create a cloud context by
-using the ``cloud`` key under ``context`` and then parameterizing the store resource
-with the appropriate config. As a config, any user-provided configuration for
-an artifact (in this case the ``store`` resoource) is placed under the ``config`` key.
+Note how we are selecting the "cloud" mode via the :py:class:`RunConfig <dagster.RunConfig>` and then parameterizing
+the store resource with the appropriate config for cloud mode. As a config,
+any user-provided configuration for an artifact (in this case the ``store`` resource)
+is placed under the ``config`` key.
 
-So this works, but imagine we wanted to have a test mode, where we interacted
+So this works, but imagine we wanted to have a local mode, where we interacted
 with an in memory version of that key value store and not develop against the live
 public cloud version.
 
@@ -4346,18 +4343,18 @@ Next we package this up as a resource.
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
    :lines: 48-53
 
-And lastly add a new context definition to represent this new operating "mode":
+And lastly add a new :py:class:`ModeDefinition <dagster.ModeDefinition>` to represent this:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
    :lines: 78-88
-   :emphasize-lines: 6-8
+   :emphasize-lines: 8
 
-Now we can simply change configuration and the "in-memory" version of the
+Now we can simply change the mode via :py:class:`RunConfig <dagster.RunConfig>` and the "in-memory" version of the
 resource will be used instead of the cloud version:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
-   :lines: 106-112
-   :emphasize-lines: 4
+   :lines: 102-109
+   :emphasize-lines: 3
    :dedent: 4
 
 In the next section, we'll see how to declaratively specify :doc:`Repositories <repos>` to
@@ -4428,7 +4425,7 @@ Basic Typing
 ^^^^^^^^^^^^
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 1, 84-92, 94
+   :lines: 1, 84-91, 94
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can
 include this type and use it as an input or output of a solid. The system will do a typecheck
@@ -4523,7 +4520,7 @@ that key and value for you and calls the provided function.
 Finally insert this into the original declaration:
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 84-92
+   :lines: 86-92, 94
    :emphasize-lines: 7
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
@@ -4551,7 +4548,7 @@ how to materialize the value.
 One connects the output schema to the type as follows:
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 84-92
+   :lines: 86-94
    :emphasize-lines: 8
 
 Now we can provide a list of materializations to a given execution.
@@ -27294,7 +27291,6 @@ configuration specified for a given resource is passed to its constructor under 
 <span class="k">def</span> <span class="nf">add_ints</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">num_one</span><span class="p">,</span> <span class="n">num_two</span><span class="p">):</span>
     <span class="n">sum_ints</span> <span class="o">=</span> <span class="n">num_one</span> <span class="o">+</span> <span class="n">num_two</span>
     <span class="n">context</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">record_value</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="n">sum_ints</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">sum_ints</span>
 
 
 <span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
@@ -27302,38 +27298,34 @@ configuration specified for a given resource is passed to its constructor under 
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resource_test_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">add_ints</span><span class="p">],</span>
         <span class="n">mode_definitions</span><span class="o">=</span><span class="p">[</span>
-            <span class="n">ModeDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;local&#39;</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_in_memory_store_resource</span><span class="p">()}),</span>
             <span class="n">ModeDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;cloud&#39;</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}),</span>
         <span class="p">],</span>
     <span class="p">)</span>
-
 </pre></div>
 </div>
-<p>Resources are attached to pipeline context definitions. A pipeline context
-definition is way that a pipeline can declare the different “modes” it can
-operate in. For example, a common context definition would be “unittest”
-or “production”. So, you can swap out implementations of these resources
-by altering configuration, while not changing your code.</p>
-<p>In this case we have a single context definition, <code class="docutils literal notranslate"><span class="pre">cloud</span></code>, and that context definition has a
-single resource, the cloud store resource.</p>
-<p>In order to invoke this pipeline, we pass it the following configuration:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">environment_dict</span><span class="o">=</span><span class="p">{</span>
+<p>Resources are attached to a set of <code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code> defined on the pipeline.
+A <code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code> is the way that a pipeline can declare the different
+“modes” it can operate in. For example, you may have “unittest”, “local”,
+or “production” modes that allow you to swap out implementations of
+resources by altering configuration, while not changing your code.</p>
+<p>In order to invoke this pipeline, we invoke it in this way:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">lt</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
+<span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
+<span class="n">run_config</span><span class="o">=</span><span class="n">RunConfig</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;cloud&#39;</span><span class="p">),</span>
+<span class="n">environment_dict</span><span class="o">=</span><span class="p">{</span>
     <span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="s1">&#39;some_user&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="s1">&#39;some_password&#39;</span><span class="p">}}</span>
     <span class="p">},</span>
     <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}}}},</span>
 <span class="p">},</span>
 
-
-<span class="n">lt</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
-<span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
 </pre></div>
 </div>
-<p>Note how we are telling the configuration to create a cloud context by
-using the <code class="docutils literal notranslate"><span class="pre">cloud</span></code> key under <code class="docutils literal notranslate"><span class="pre">context</span></code> and then parameterizing the store resource
-with the appropriate config. As a config, any user-provided configuration for
-an artifact (in this case the <code class="docutils literal notranslate"><span class="pre">store</span></code> resoource) is placed under the <code class="docutils literal notranslate"><span class="pre">config</span></code> key.</p>
-<p>So this works, but imagine we wanted to have a test mode, where we interacted
+<p>Note how we are selecting the “cloud” mode via the <a class="reference internal" href="../../api/apidocs/execution.html#dagster.RunConfig" title="dagster.RunConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunConfig</span></code></a> and then parameterizing
+the store resource with the appropriate config for cloud mode. As a config,
+any user-provided configuration for an artifact (in this case the <code class="docutils literal notranslate"><span class="pre">store</span></code> resource)
+is placed under the <code class="docutils literal notranslate"><span class="pre">config</span></code> key.</p>
+<p>So this works, but imagine we wanted to have a local mode, where we interacted
 with an in memory version of that key value store and not develop against the live
 public cloud version.</p>
 <p>First, we need a version of the store that implements the same interface as the production key-value
@@ -27352,27 +27344,31 @@ store; this version can be used in testing contexts without touching the public 
 <span class="k">def</span> <span class="nf">define_in_memory_store_resource</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">ResourceDefinition</span><span class="p">(</span>
         <span class="n">resource_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">InMemoryStore</span><span class="p">(),</span>
-        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;An in-memory key value store that requires </span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;An in-memory key value store that requires</span>
 <span class="s1">        no configuration. Useful for unit testing.&#39;&#39;&#39;</span><span class="p">,</span>
 </pre></div>
 </div>
-<p>And lastly add a new context definition to represent this new operating “mode”:</p>
+<p>And lastly add a new <code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code> to represent this:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
 <span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resource_test_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">add_ints</span><span class="p">],</span>
-<span class="hll">        <span class="n">mode_definitions</span><span class="o">=</span><span class="p">[</span>
-</span><span class="hll">            <span class="n">ModeDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;local&#39;</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_in_memory_store_resource</span><span class="p">()}),</span>
-</span><span class="hll">            <span class="n">ModeDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;cloud&#39;</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}),</span>
+        <span class="n">mode_definitions</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">ModeDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;cloud&#39;</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}),</span>
+<span class="hll">            <span class="n">ModeDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;local&#39;</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_in_memory_store_resource</span><span class="p">()}),</span>
 </span>        <span class="p">],</span>
     <span class="p">)</span>
 
 </pre></div>
 </div>
-<p>Now we can simply change configuration and the “in-memory” version of the
+<p>Now we can simply change the mode via <a class="reference internal" href="../../api/apidocs/execution.html#dagster.RunConfig" title="dagster.RunConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunConfig</span></code></a> and the “in-memory” version of the
 resource will be used instead of the cloud version:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}}}}</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
+    <span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
+<span class="hll">    <span class="n">run_config</span><span class="o">=</span><span class="n">RunConfig</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;local&#39;</span><span class="p">),</span>
+</span>    <span class="n">environment_dict</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}}}}</span>
     <span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
@@ -27775,7 +27771,6 @@ in the dagster-pandas library, building it step by step along the way.</p>
     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
 <span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
 <span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
-    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -27881,15 +27876,14 @@ case of a selector, the config_value dictionary has only 1 (key, value) pair.</p
 <p>You’ll note that we no longer need to manipulate the <code class="docutils literal notranslate"><span class="pre">config_value</span></code> dictionary. It grabs
 that key and value for you and calls the provided function.</p>
 <p>Finally insert this into the original declaration:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
-
-<span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
-<span class="hll"><span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
-</span><span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
-    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+<span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
+<span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
+<span class="hll">    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now if you run a pipeline with this solid from dagit you will be able to provide sources for
@@ -27934,15 +27928,15 @@ it takes a third argument, <code class="docutils literal notranslate"><span clas
 outputted from the solid in question. It then takes the configuration data as “instructions” as to
 how to materialize the value.</p>
 <p>One connects the output schema to the type as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
-
-<span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
 <span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
-<span class="hll"><span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
-</span>    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+<span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+<span class="hll">    <span class="n">output_schema</span><span class="o">=</span><span class="n">dataframe_output_schema</span><span class="p">,</span>
+</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now we can provide a list of materializations to a given execution.</p>

@@ -49,7 +49,7 @@ class InMemoryStore:
 def define_in_memory_store_resource():
     return ResourceDefinition(
         resource_fn=lambda _: InMemoryStore(),
-        description='''An in-memory key value store that requires 
+        description='''An in-memory key value store that requires
         no configuration. Useful for unit testing.''',
     )
 
@@ -81,8 +81,8 @@ def define_resource_test_pipeline():
         name='resource_test_pipeline',
         solids=[add_ints],
         mode_definitions=[
-            ModeDefinition(name='local', resources={'store': define_in_memory_store_resource()}),
             ModeDefinition(name='cloud', resources={'store': define_cloud_store_resource()}),
+            ModeDefinition(name='local', resources={'store': define_in_memory_store_resource()}),
         ],
     )
 

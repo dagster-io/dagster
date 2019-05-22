@@ -26,29 +26,26 @@ configuration specified for a given resource is passed to its constructor under 
 Let's now attach this resource to a pipeline and use it in a solid.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
-   :lines: 68-75, 76-88
+   :lines: 68-75, 77-84, 86-87
 
-Resources are attached to pipeline context definitions. A pipeline context
-definition is way that a pipeline can declare the different "modes" it can
-operate in. For example, a common context definition would be "unittest"
-or "production". So, you can swap out implementations of these resources
-by altering configuration, while not changing your code.
+Resources are attached to a set of :py:class:`ModeDefinition <dagster.ModeDefinition>` defined on the pipeline.
+A :py:class:`ModeDefinition <dagster.ModeDefinition>` is the way that a pipeline can declare the different
+"modes" it can operate in. For example, you may have "unittest", "local",
+or "production" modes that allow you to swap out implementations of
+resources by altering configuration, while not changing your code.
 
-In this case we have a single context definition, ``cloud``, and that context definition has a
-single resource, the cloud store resource.
-
-In order to invoke this pipeline, we pass it the following configuration:
+In order to invoke this pipeline, we invoke it in this way:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
-   :lines: 94-103
+   :lines: 91-100
    :dedent: 8
 
-Note how we are telling the configuration to create a cloud context by
-using the ``cloud`` key under ``context`` and then parameterizing the store resource
-with the appropriate config. As a config, any user-provided configuration for
-an artifact (in this case the ``store`` resoource) is placed under the ``config`` key.
+Note how we are selecting the "cloud" mode via the :py:class:`RunConfig <dagster.RunConfig>` and then parameterizing
+the store resource with the appropriate config for cloud mode. As a config,
+any user-provided configuration for an artifact (in this case the ``store`` resource)
+is placed under the ``config`` key.
 
-So this works, but imagine we wanted to have a test mode, where we interacted
+So this works, but imagine we wanted to have a local mode, where we interacted
 with an in memory version of that key value store and not develop against the live
 public cloud version.
 
@@ -63,18 +60,18 @@ Next we package this up as a resource.
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
    :lines: 48-53
 
-And lastly add a new context definition to represent this new operating "mode":
+And lastly add a new :py:class:`ModeDefinition <dagster.ModeDefinition>` to represent this:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
    :lines: 78-88
-   :emphasize-lines: 6-8
+   :emphasize-lines: 8
 
-Now we can simply change configuration and the "in-memory" version of the
+Now we can simply change the mode via :py:class:`RunConfig <dagster.RunConfig>` and the "in-memory" version of the
 resource will be used instead of the cloud version:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
-   :lines: 106-112
-   :emphasize-lines: 4
+   :lines: 102-109
+   :emphasize-lines: 3
    :dedent: 4
 
 In the next section, we'll see how to declaratively specify :doc:`Repositories <repos>` to

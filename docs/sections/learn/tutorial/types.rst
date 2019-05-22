@@ -12,7 +12,7 @@ Basic Typing
 ^^^^^^^^^^^^
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 1, 84-92, 94
+   :lines: 1, 84-91, 94
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can
 include this type and use it as an input or output of a solid. The system will do a typecheck
@@ -107,7 +107,7 @@ that key and value for you and calls the provided function.
 Finally insert this into the original declaration:
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 84-92
+   :lines: 86-92, 94
    :emphasize-lines: 7
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
@@ -135,7 +135,7 @@ how to materialize the value.
 One connects the output schema to the type as follows:
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 84-92
+   :lines: 86-94
    :emphasize-lines: 8
 
 Now we can provide a list of materializations to a given execution.
