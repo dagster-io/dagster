@@ -252,6 +252,9 @@ if __name__ == "__main__":
         .on_integration_image(SupportedPython.V3_7)
         .build(),
     ]
+    steps += airline_demo_tests()
+    steps += events_demo_tests()
+    steps += airflow_tests()
     steps += python_modules_tox_tests("dagster")
     steps += python_modules_tox_tests("dagit", ["apt-get update", "apt-get install -y xdg-utils"])
     steps += python_modules_tox_tests("dagster-graphql")
@@ -263,9 +266,6 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("libraries/dagster-snowflake")
     steps += python_modules_tox_tests("libraries/dagster-spark")
     steps += examples_tests()
-    steps += airline_demo_tests()
-    steps += events_demo_tests()
-    steps += airflow_tests()
     steps += [
         wait_step(),  # wait for all previous steps to finish
         StepBuilder("coverage")
