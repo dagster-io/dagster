@@ -8,22 +8,22 @@ import { IconNames } from "@blueprintjs/icons";
 
 interface IExecutionPlanBoxProps {
   state: IStepState;
-  name: string;
+  stepKey: string;
   start: number | undefined;
   elapsed: number | undefined;
   delay: number;
   displayEvents: IStepDisplayEvent[];
-  onShowStateDetails?: (stepName: string) => void;
-  onApplyStepFilter?: (stepName: string) => void;
+  onShowStateDetails?: (stepKey: string) => void;
+  onApplyStepFilter?: (stepKey: string) => void;
   executionArtifactsPersisted: boolean;
-  onReexecuteStep?: (stepName: string) => void;
+  onReexecuteStep?: (stepKey: string) => void;
 }
 
 interface ReexecuteButtonProps {
-  name: string;
+  stepKey: string;
   state: IStepState;
   executionArtifactsPersisted: boolean;
-  onReexecuteStep?: (stepName: string) => void;
+  onReexecuteStep?: (stepKey: string) => void;
 }
 
 interface IExecutionPlanBoxState {
@@ -32,7 +32,12 @@ interface IExecutionPlanBoxState {
 }
 
 function ReexecuteButton(props: ReexecuteButtonProps) {
-  const { onReexecuteStep, state, executionArtifactsPersisted, name } = props;
+  const {
+    onReexecuteStep,
+    state,
+    executionArtifactsPersisted,
+    stepKey
+  } = props;
 
   // If callback isnt provided, or the step does not fail or succeed - dont render anything
   if (
@@ -62,7 +67,7 @@ function ReexecuteButton(props: ReexecuteButtonProps) {
       className="reexecute"
       title="Re-run just this step with existing configuration."
       style={{ border: `1px solid white` }}
-      onClick={() => onReexecuteStep(name)}
+      onClick={() => onReexecuteStep(stepKey)}
     >
       <Icon icon={IconNames.PLAY} iconSize={15} />
     </ReExecuteContainer>
@@ -86,7 +91,7 @@ export class ExecutionPlanBox extends React.Component<
   ) {
     return (
       nextProps.state !== this.props.state ||
-      nextProps.name !== this.props.name ||
+      nextProps.stepKey !== this.props.stepKey ||
       nextProps.elapsed !== this.props.elapsed ||
       nextState.expanded !== this.state.expanded ||
       nextState.v !== this.state.v
@@ -133,7 +138,7 @@ export class ExecutionPlanBox extends React.Component<
     const {
       state,
       start,
-      name,
+      stepKey: stepKey,
       delay,
       displayEvents,
       onApplyStepFilter,
@@ -156,7 +161,7 @@ export class ExecutionPlanBox extends React.Component<
             state={state}
             className={state}
             style={{ transitionDelay: `${delay}ms` }}
-            onClick={() => onApplyStepFilter && onApplyStepFilter(name)}
+            onClick={() => onApplyStepFilter && onApplyStepFilter(stepKey)}
           >
             <ExecutionFinishedFlash
               style={{ transitionDelay: `${delay}ms` }}
@@ -169,7 +174,9 @@ export class ExecutionPlanBox extends React.Component<
               }}
             >
               <ExeuctionStateWrap
-                onClick={() => onShowStateDetails && onShowStateDetails(name)}
+                onClick={() =>
+                  onShowStateDetails && onShowStateDetails(stepKey)
+                }
               >
                 {state === IStepState.RUNNING ? (
                   <Spinner intent={Intent.NONE} size={11} />
@@ -188,7 +195,9 @@ export class ExecutionPlanBox extends React.Component<
                   />
                 )}
               </ExeuctionStateWrap>
-              <ExecutionPlanBoxName title={name}>{name}</ExecutionPlanBoxName>
+              <ExecutionPlanBoxName title={stepKey}>
+                {stepKey}
+              </ExecutionPlanBoxName>
               {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
             </div>
             {expanded && (
@@ -203,7 +212,7 @@ export class ExecutionPlanBox extends React.Component<
             onReexecuteStep={onReexecuteStep}
             state={state}
             executionArtifactsPersisted={executionArtifactsPersisted}
-            name={name}
+            stepKey={stepKey}
           />
         </ExecutionPlanRowContainer>
       </>

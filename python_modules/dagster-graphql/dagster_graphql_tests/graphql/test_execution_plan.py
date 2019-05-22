@@ -22,7 +22,6 @@ query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!, $mod
       pipeline { name }
       steps {
         key
-        name
         solidHandleID
         kind
         inputs {
@@ -31,7 +30,7 @@ query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!, $mod
             name
           }
           dependsOn {
-            name
+            key
           }
         }
         outputs {

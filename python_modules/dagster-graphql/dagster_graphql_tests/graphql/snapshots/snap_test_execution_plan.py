@@ -482,7 +482,6 @@ snapshots['test_pipeline_with_execution_metadata 1'] = {
                         'value': 'foobar1'
                     }
                 ],
-                'name': 'solid_metadata_creation.compute',
                 'outputs': [
                 ],
                 'solidHandleID': 'solid_metadata_creation'

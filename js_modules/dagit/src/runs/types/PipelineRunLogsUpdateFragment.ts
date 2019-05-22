@@ -27,7 +27,7 @@ export interface PipelineRunLogsUpdateFragment_logs_pageInfo {
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent {
@@ -40,7 +40,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent {
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_error {
@@ -60,7 +60,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEve
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_error {
@@ -80,7 +80,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEv
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent {
@@ -94,7 +94,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStarted
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_materialization {
@@ -114,7 +114,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEve
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent_expectationResult {
@@ -165,9 +165,8 @@ export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs {
 
 export interface PipelineRunLogsUpdateFragment_executionPlan_steps {
   __typename: "ExecutionStep";
-  name: string;
-  kind: StepKind;
   key: string;
+  kind: StepKind;
   inputs: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs[];
 }
 

@@ -60,7 +60,7 @@ export default class LogsScrollingTable extends React.Component<
           message
           level
           step {
-            name
+            key
           }
           error {
             stack

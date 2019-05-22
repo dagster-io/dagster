@@ -11,7 +11,7 @@ import { LogLevel } from "./../../types/globalTypes";
 
 export interface PipelineRunPipelineRunEventFragment_LogMessageEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunPipelineRunEventFragment_LogMessageEvent {
@@ -30,7 +30,7 @@ export interface PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent_er
 
 export interface PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent {
@@ -44,7 +44,7 @@ export interface PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent {
 
 export interface PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_error {
@@ -64,7 +64,7 @@ export interface PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent {
 
 export interface PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent {
@@ -78,7 +78,7 @@ export interface PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent
 
 export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent_materialization {
@@ -98,7 +98,7 @@ export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent {
 
 export interface PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult {

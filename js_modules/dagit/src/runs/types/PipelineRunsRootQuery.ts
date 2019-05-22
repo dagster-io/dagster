@@ -26,7 +26,7 @@ export interface PipelineRunsRootQuery_pipeline_runs_logs {
 
 export interface PipelineRunsRootQuery_pipeline_runs_executionPlan_steps {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunsRootQuery_pipeline_runs_executionPlan {

@@ -45,7 +45,7 @@ export interface IRunMetadataDict {
   processId?: number;
   initFailed?: boolean;
   steps: {
-    [stepName: string]: IStepMetadata;
+    [stepKey: string]: IStepMetadata;
   };
 }
 
@@ -79,79 +79,93 @@ function extractMetadataFromLogs(
     }
 
     if (log.step) {
-      const name = log.step.name;
+      const stepKey = log.step.key;
       const timestamp = Number.parseInt(log.timestamp, 10);
 
       if (log.__typename === "ExecutionStepStartEvent") {
-        metadata.steps[name] = {
+        metadata.steps[stepKey] = {
           state: IStepState.RUNNING,
           start: timestamp,
           transitionedAt: timestamp,
           displayEvents: []
         };
       } else if (log.__typename === "ExecutionStepSuccessEvent") {
-        metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
-          step.state = IStepState.SUCCEEDED;
-          if (step.start) {
-            step.transitionedAt = timestamp;
-            step.elapsed = timestamp - step.start;
+        metadata.steps[stepKey] = produce(
+          metadata.steps[stepKey] || {},
+          step => {
+            step.state = IStepState.SUCCEEDED;
+            if (step.start) {
+              step.transitionedAt = timestamp;
+              step.elapsed = timestamp - step.start;
+            }
           }
-        });
+        );
       } else if (log.__typename === "ExecutionStepSkippedEvent") {
-        metadata.steps[name] = {
+        metadata.steps[stepKey] = {
           state: IStepState.SKIPPED,
           transitionedAt: timestamp,
           displayEvents: []
         };
       } else if (log.__typename === "StepMaterializationEvent") {
-        metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
-          step.displayEvents.push({
-            icon: "link",
-            text: "Materialization",
-            items: [
-              {
-                text: (log.materialization.path || "").split("/").pop()!,
-                actionText: "[Copy Path]",
-                action: "copy",
-                actionValue: log.materialization.path || ""
-              }
-            ]
-          });
-        });
-      } else if (log.__typename == "StepExpectationResultEvent") {
-        metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
-          step.displayEvents.push({
-            icon: log.expectationResult.success ? "dot-success" : "dot-failure",
-            text: log.expectationResult.name
-              ? "Expectation: " + log.expectationResult.name
-              : "Expectation",
-            items: log.expectationResult.resultMetadataJsonString
-              ? [
-                  {
-                    text: "",
-                    actionText: "[Show Metadata]",
-                    action: "show-in-modal",
-                    // take JSON string, parse, and then pretty print
-                    actionValue: JSON.stringify(
-                      JSON.parse(
-                        log.expectationResult.resultMetadataJsonString
-                      ),
-                      null,
-                      2
-                    )
-                  }
-                ]
-              : []
-          });
-        });
-      } else if (log.__typename === "ExecutionStepFailureEvent") {
-        metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
-          step.state = IStepState.FAILED;
-          if (step.start) {
-            step.transitionedAt = timestamp;
-            step.elapsed = timestamp - step.start;
+        metadata.steps[stepKey] = produce(
+          metadata.steps[stepKey] || {},
+          step => {
+            step.displayEvents.push({
+              icon: "link",
+              text: "Materialization",
+              items: [
+                {
+                  text: (log.materialization.path || "").split("/").pop()!,
+                  actionText: "[Copy Path]",
+                  action: "copy",
+                  actionValue: log.materialization.path || ""
+                }
+              ]
+            });
           }
-        });
+        );
+      } else if (log.__typename == "StepExpectationResultEvent") {
+        metadata.steps[stepKey] = produce(
+          metadata.steps[stepKey] || {},
+          step => {
+            step.displayEvents.push({
+              icon: log.expectationResult.success
+                ? "dot-success"
+                : "dot-failure",
+              text: log.expectationResult.name
+                ? "Expectation: " + log.expectationResult.name
+                : "Expectation",
+              items: log.expectationResult.resultMetadataJsonString
+                ? [
+                    {
+                      text: "",
+                      actionText: "[Show Metadata]",
+                      action: "show-in-modal",
+                      // take JSON string, parse, and then pretty print
+                      actionValue: JSON.stringify(
+                        JSON.parse(
+                          log.expectationResult.resultMetadataJsonString
+                        ),
+                        null,
+                        2
+                      )
+                    }
+                  ]
+                : []
+            });
+          }
+        );
+      } else if (log.__typename === "ExecutionStepFailureEvent") {
+        metadata.steps[stepKey] = produce(
+          metadata.steps[stepKey] || {},
+          step => {
+            step.state = IStepState.FAILED;
+            if (step.start) {
+              step.transitionedAt = timestamp;
+              step.elapsed = timestamp - step.start;
+            }
+          }
+        );
       }
     }
   });
@@ -174,7 +188,7 @@ export default class RunMetadataProvider extends React.Component<
           message
           timestamp
           step {
-            name
+            key
           }
         }
         ... on PipelineProcessStartedEvent {
@@ -182,7 +196,7 @@ export default class RunMetadataProvider extends React.Component<
         }
         ... on StepMaterializationEvent {
           step {
-            name
+            key
           }
           materialization {
             path

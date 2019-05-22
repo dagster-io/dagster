@@ -38,7 +38,7 @@ export default class ExecutionPlan extends React.PureComponent<
     ExecutionPlanFragment: gql`
       fragment ExecutionPlanFragment on ExecutionPlan {
         steps {
-          name
+          key
           kind
         }
         artifactsPersisted
@@ -106,17 +106,16 @@ export default class ExecutionPlan extends React.PureComponent<
             <ExecutionTimelineDot completed={startDone} /> {startText}
           </ExecutionTimelineMessage>
           {executionPlan.steps.map(step => {
-            const delay = stepsOrderedByTransitionTime.indexOf(step.name) * 100;
-            const metadata =
-              runMetadata.steps[step.name] || EMPTY_STEP_METADATA;
+            const delay = stepsOrderedByTransitionTime.indexOf(step.key) * 100;
+            const metadata = runMetadata.steps[step.key] || EMPTY_STEP_METADATA;
 
             return (
               <ExecutionPlanBox
-                key={step.name}
+                key={step.key}
                 state={metadata.state}
                 start={metadata.start}
                 elapsed={metadata.elapsed}
-                name={step.name}
+                stepKey={step.key}
                 displayEvents={metadata.displayEvents}
                 onShowStateDetails={onShowStateDetails}
                 onApplyStepFilter={onApplyStepFilter}

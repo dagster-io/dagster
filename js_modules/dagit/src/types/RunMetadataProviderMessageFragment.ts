@@ -9,7 +9,7 @@
 
 export interface RunMetadataProviderMessageFragment_LogMessageEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface RunMetadataProviderMessageFragment_LogMessageEvent {
@@ -21,7 +21,7 @@ export interface RunMetadataProviderMessageFragment_LogMessageEvent {
 
 export interface RunMetadataProviderMessageFragment_PipelineProcessStartedEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface RunMetadataProviderMessageFragment_PipelineProcessStartedEvent {
@@ -34,7 +34,7 @@ export interface RunMetadataProviderMessageFragment_PipelineProcessStartedEvent 
 
 export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization {
@@ -53,7 +53,7 @@ export interface RunMetadataProviderMessageFragment_StepMaterializationEvent {
 
 export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult {

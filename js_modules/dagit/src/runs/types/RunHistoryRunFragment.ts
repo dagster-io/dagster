@@ -26,7 +26,7 @@ export interface RunHistoryRunFragment_logs {
 
 export interface RunHistoryRunFragment_executionPlan_steps {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface RunHistoryRunFragment_executionPlan {

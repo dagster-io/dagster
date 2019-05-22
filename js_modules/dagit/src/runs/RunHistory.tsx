@@ -99,7 +99,7 @@ export default class RunHistory extends React.Component<
         }
         executionPlan {
           steps {
-            name
+            key
           }
         }
       }

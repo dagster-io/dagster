@@ -31,7 +31,7 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_pageIn
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_LogMessageEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_LogMessageEvent {
@@ -44,7 +44,7 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent_error {
@@ -64,7 +64,7 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent_error {
@@ -84,7 +84,7 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineProcessStartedEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineProcessStartedEvent {
@@ -98,7 +98,7 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepMaterializationEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepMaterializationEvent_materialization {
@@ -118,7 +118,7 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepExpectationResultEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepExpectationResultEvent_expectationResult {
@@ -169,9 +169,8 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPl
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps {
   __typename: "ExecutionStep";
-  name: string;
-  kind: StepKind;
   key: string;
+  kind: StepKind;
   inputs: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs[];
 }
 

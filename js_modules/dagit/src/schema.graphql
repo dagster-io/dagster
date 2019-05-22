@@ -127,7 +127,6 @@ input ExecutionSelector {
 }
 
 type ExecutionStep {
-  name: String! @deprecated(reason: "Use key")
   key: String!
   inputs: [ExecutionStepInput!]!
   outputs: [ExecutionStepOutput!]!
