@@ -38,7 +38,7 @@ install_dev_python_modules:
 	pip install -e python_modules/libraries/dagster-spark
 	pip install -e python_modules/libraries/dagster-pyspark
 	pip install -e python_modules/automation
-	pip install -e examples
+	pip install -e examples[full]
 
 graphql:
 	cd js_modules/dagit/; make generate-types
