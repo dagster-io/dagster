@@ -13,12 +13,6 @@ Execution Functions
 Results
 -------
 
-.. autoclass:: InProcessExecutorConfig
-   :members:
-
-.. autoclass:: MultiprocessExecutorConfig
-   :members:
-
 .. autoclass:: PipelineExecutionResult
    :members:
 
@@ -27,16 +21,6 @@ Results
 
 Configuration
 -------------
-
-.. autoclass:: RunConfig
-   :members:
-
-.. autoclass:: RunStorageMode 
-   :members:
-
-.. autoclass:: SolidExecutionResult
-   :members:
-
 **Environment Dict Schema**
   The ``environment_dict`` used by ``execute_pipeline`` and
   ``execute_pipeline_iterator`` has the following schema:
@@ -58,3 +42,15 @@ Configuration
         }
       }
     }
+
+.. autoclass:: RunConfig
+   :members:
+
+.. autoclass:: RunStorageMode
+   :members:
+
+.. autoclass:: InProcessExecutorConfig
+   :members:
+
+.. autoclass:: MultiprocessExecutorConfig
+   :members:
