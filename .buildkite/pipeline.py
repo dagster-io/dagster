@@ -285,10 +285,30 @@ if __name__ == "__main__":
         )
         .on_python_image(
             SupportedPython.V3_7,
-            # COVERALLS_REPO_TOKEN exported by /env in ManagedSecretsBucket
-            ['COVERALLS_REPO_TOKEN', 'BUILDKITE_PULL_REQUEST', 'BUILDKITE_JOB_ID', 'BUILDKITE'],
+            [
+                'COVERALLS_REPO_TOKEN',  # exported by /env in ManagedSecretsBucket
+                'CI_NAME',
+                'CI_BUILD_NUMBER',
+                'CI_BUILD_URL',
+                'CI_BRANCH',
+                'CI_PULL_REQUEST',
+            ],
         )
         .build(),
     ]
 
-    print(yaml.dump({"steps": steps}, default_flow_style=False))
+    print(
+        yaml.dump(
+            {
+                "env": {
+                    "CI_NAME": "buildkite",
+                    "CI_BUILD_NUMBER": "$BUILDKITE_BUILD_NUMBER",
+                    "CI_BUILD_URL": "$BUILDKITE_BUILD_URL",
+                    "CI_BRANCH": "$BUILDKITE_BRANCH",
+                    "CI_PULL_REQUEST": "$BUILDKITE_PULL_REQUEST",
+                },
+                "steps": steps,
+            },
+            default_flow_style=False,
+        )
+    )
