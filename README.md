@@ -121,5 +121,5 @@ This list is growing as we are actively building more integrations, and we welco
 # Example Projects
 Several example projects are provided under the examples folder demonstrating how to use Dagster, including:
 
-1. [**examples/airline-demo**](https://github.com/dagster-io/dagster/tree/master/examples/airline-demo): A substantial demo project illustrating how these tools can be used together to manage a realistic data pipeline.
-2. [**examples/event-pipeline-demo**](https://github.com/dagster-io/dagster/tree/master/examples/event-pipeline-demo): An example illustrating a typical web event processing pipeline with S3, Scala Spark, and Snowflake.
+1. [**examples/airline-demo**](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/airline_demo): A substantial demo project illustrating how these tools can be used together to manage a realistic data pipeline.
+2. [**examples/event-pipeline-demo**](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/event_pipeline_demo): An example illustrating a typical web event processing pipeline with S3, Scala Spark, and Snowflake.
