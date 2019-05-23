@@ -82,8 +82,8 @@ def test_basic_variables():
 
 
 START_PIPELINE_EXECUTION_QUERY = '''
-mutation ($pipeline: ExecutionSelector!, $environmentConfigData: EnvironmentConfigData, $mode: String!) {
-    startPipelineExecution(pipeline: $pipeline, environmentConfigData: $environmentConfigData, mode: $mode) {
+mutation ($executionParams: ExecutionParams!) {
+    startPipelineExecution(executionParams: $executionParams) {
         __typename
         ... on StartPipelineExecutionSuccess {
             run {
@@ -118,9 +118,13 @@ mutation ($pipeline: ExecutionSelector!, $environmentConfigData: EnvironmentConf
 def test_start_execution():
     variables = seven.json.dumps(
         {
-            "pipeline": {"name": "math"},
-            "config": {"solids": {"add_one": {"inputs": {"num": {"value": 123}}}}},
-            "mode": "default",
+            'executionParams': {
+                'selector': {'name': 'math'},
+                'environmentConfigData': {
+                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
+                },
+                'mode': 'default',
+            }
         }
     )
 

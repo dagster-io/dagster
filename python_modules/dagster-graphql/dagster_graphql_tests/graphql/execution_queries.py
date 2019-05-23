@@ -1,18 +1,10 @@
 START_PIPELINE_EXECUTION_QUERY = '''
 mutation (
-    $pipeline: ExecutionSelector!,
-    $environmentConfigData: EnvironmentConfigData,
-    $mode: String!,
-    $stepKeys: [String!],
-    $executionMetadata: ExecutionMetadata,
+    $executionParams: ExecutionParams!
     $reexecutionConfig: ReexecutionConfig
 ) {
     startPipelineExecution(
-        pipeline: $pipeline,
-        environmentConfigData: $environmentConfigData,
-        mode: $mode,
-        stepKeys: $stepKeys,
-        executionMetadata: $executionMetadata,
+        executionParams: $executionParams
         reexecutionConfig: $reexecutionConfig
     ) {
         __typename
@@ -63,19 +55,11 @@ mutation (
 
 START_PIPELINE_EXECUTION_SNAPSHOT_QUERY = '''
 mutation (
-    $pipeline: ExecutionSelector!,
-    $environmentConfigData: EnvironmentConfigData,
-    $stepKeys: [String!],
-    $mode: String!,
-    $executionMetadata: ExecutionMetadata,
+    $executionParams: ExecutionParams!
     $reexecutionConfig: ReexecutionConfig
 ) {
     startPipelineExecution(
-        pipeline: $pipeline,
-        environmentConfigData: $environmentConfigData,
-        mode: $mode,
-        stepKeys: $stepKeys,
-        executionMetadata: $executionMetadata,
+        executionParams: $executionParams
         reexecutionConfig: $reexecutionConfig
     ) {
         __typename

@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ExecutionSelector, ReexecutionConfig } from "./../../types/globalTypes";
+import { ExecutionParams, ReexecutionConfig } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: ReexecuteStep
@@ -45,9 +45,6 @@ export interface ReexecuteStep {
 }
 
 export interface ReexecuteStepVariables {
-  pipeline: ExecutionSelector;
-  environmentConfigData: any;
-  mode: string;
-  stepKeys?: string[] | null;
+  executionParams: ExecutionParams;
   reexecutionConfig?: ReexecutionConfig | null;
 }

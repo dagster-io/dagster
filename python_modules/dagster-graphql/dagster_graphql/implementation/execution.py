@@ -136,8 +136,8 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     return get_observable(get_dauphin_pipeline_from_selector(graphene_info, run.selector))
 
 
-ExecutePlanArgs = namedtuple(
-    'ExecutePlanArgs',
+ExecutionParams = namedtuple(
+    'ExecutionParams',
     'graphene_info pipeline_name environment_dict mode execution_metadata step_keys',
 )
 
@@ -148,7 +148,7 @@ def do_execute_plan(
 ):
     check.opt_str_param(mode, 'mode')
 
-    execute_plan_args = ExecutePlanArgs(
+    execute_plan_args = ExecutionParams(
         graphene_info=graphene_info,
         pipeline_name=pipeline_name,
         environment_dict=environment_dict,
@@ -164,7 +164,7 @@ def do_execute_plan(
 
 
 def _execute_plan_resolve_config(execute_plan_args, dauphin_pipeline):
-    check.inst_param(execute_plan_args, 'execute_plan_args', ExecutePlanArgs)
+    check.inst_param(execute_plan_args, 'execute_plan_args', ExecutionParams)
     validated_config = get_validated_config(
         execute_plan_args.graphene_info,
         dauphin_pipeline,
@@ -183,7 +183,7 @@ def tags_from_graphql_execution_metadata(graphql_execution_metadata):
 
 
 def _do_execute_plan(execute_plan_args, dauphin_pipeline, _evaluate_env_config_result):
-    check.inst_param(execute_plan_args, 'execute_plan_args', ExecutePlanArgs)
+    check.inst_param(execute_plan_args, 'execute_plan_args', ExecutionParams)
 
     graphql_execution_metadata = execute_plan_args.execution_metadata
     run_id = graphql_execution_metadata.get('runId') if graphql_execution_metadata else None

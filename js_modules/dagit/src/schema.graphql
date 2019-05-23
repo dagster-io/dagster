@@ -115,6 +115,14 @@ input ExecutionMetadata {
   tags: [ExecutionTag!]
 }
 
+input ExecutionParams {
+  selector: ExecutionSelector!
+  environmentConfigData: EnvironmentConfigData
+  mode: String!
+  executionMetadata: ExecutionMetadata
+  stepKeys: [String!]
+}
+
 type ExecutionPlan {
   steps: [ExecutionStep!]!
   pipeline: Pipeline!
@@ -367,7 +375,7 @@ type Mode {
 }
 
 type Mutation {
-  startPipelineExecution(environmentConfigData: EnvironmentConfigData, executionMetadata: ExecutionMetadata, mode: String!, pipeline: ExecutionSelector!, reexecutionConfig: ReexecutionConfig, stepKeys: [String!]): StartPipelineExecutionResult!
+  startPipelineExecution(executionParams: ExecutionParams!, reexecutionConfig: ReexecutionConfig): StartPipelineExecutionResult!
   executePlan(environmentConfigData: EnvironmentConfigData, executionMetadata: ExecutionMetadata, mode: String!, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
 }
 
