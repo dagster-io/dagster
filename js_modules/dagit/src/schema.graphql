@@ -376,7 +376,7 @@ type Mode {
 
 type Mutation {
   startPipelineExecution(executionParams: ExecutionParams!, reexecutionConfig: ReexecutionConfig): StartPipelineExecutionResult!
-  executePlan(environmentConfigData: EnvironmentConfigData, executionMetadata: ExecutionMetadata, mode: String!, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
+  executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {

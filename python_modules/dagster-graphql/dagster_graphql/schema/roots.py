@@ -216,22 +216,19 @@ class DauphinExecutePlan(dauphin.Mutation):
         name = 'ExecutePlan'
 
     class Arguments:
-        pipelineName = dauphin.NonNull(dauphin.String)
-        environmentConfigData = dauphin.Argument('EnvironmentConfigData')
-        mode = dauphin.Argument(dauphin.NonNull(dauphin.String))
-        stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
-        executionMetadata = dauphin.Argument(DauphinExecutionMetadata)
+        executionParams = dauphin.NonNull('ExecutionParams')
 
     Output = dauphin.NonNull('ExecutePlanResult')
 
     def mutate(self, graphene_info, **kwargs):
+        execution_params = kwargs['executionParams']
         return do_execute_plan(
             graphene_info,
-            kwargs['pipelineName'],
-            kwargs.get('environmentConfigData'),
-            kwargs.get('mode'),
-            kwargs.get('executionMetadata'),
-            kwargs.get('stepKeys'),
+            pipeline_name=execution_params['selector'].to_selector().name,
+            environment_dict=execution_params.get('environmentConfigData'),
+            mode=execution_params['mode'],
+            execution_metadata=execution_params.get('executionMetadata'),
+            step_keys=execution_params.get('stepKeys'),
         )
 
 
