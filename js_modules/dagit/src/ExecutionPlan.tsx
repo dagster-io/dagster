@@ -115,6 +115,7 @@ export default class ExecutionPlan extends React.PureComponent<
                 state={metadata.state}
                 start={metadata.start}
                 elapsed={metadata.elapsed}
+                key={step.key}
                 stepKey={step.key}
                 expectationResults={metadata.expectationResults}
                 materializations={metadata.materializations}
