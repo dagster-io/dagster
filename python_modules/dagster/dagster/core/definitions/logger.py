@@ -9,7 +9,7 @@ class LoggerDefinition(object):
     solids in a pipeline log messages.
 
     Args:
-        logger_fn (Callable[[InitResourceContext], logging.Logger]):
+        logger_fn (Callable[[InitLoggerContext], logging.Logger]):
             User provided function to instantiate the logger. This logger will be automatically
             invoked whenever the methods on ``context.log`` are called.
         config_field (Field):

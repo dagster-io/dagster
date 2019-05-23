@@ -5,14 +5,14 @@ import warnings
 
 import scrapbook
 
-from dagster import check, Materialization, PipelineDefinition, RunConfig
+from dagster import check, Materialization, ModeDefinition, PipelineDefinition, RunConfig
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context.logger import InitLoggerContext
-from dagster.core.events.log import construct_json_event_logger
 from dagster.core.types.marshal import PickleSerializationStrategy
 
-from .errors import DagstermillError
 from .context import DagstermillInNotebookExecutionContext
+from .errors import DagstermillError
+from .logger import construct_logger
 from .serialize import (
     dict_to_enum,
     is_json_serializable,
@@ -132,18 +132,25 @@ class Manager:
         pipeline_def_name,
         marshal_dir,
         environment_dict,
-        output_log_path,
         input_name_type_dict,
         output_name_type_dict,
+        output_log_path,
     ):
         check.dict_param(environment_dict, 'environment_dict')
         self.populated_by_papermill = True
         self.solid_def_name = solid_def_name
         self.marshal_dir = marshal_dir
 
+        logger_def = construct_logger(output_log_path)
+        loggers = {'dagstermill': logger_def}
+
         if self.repository_def is None:
             self.solid_def = None
-            self.pipeline_def = PipelineDefinition([], name='Dummy Pipeline (No Repo Registration)')
+            self.pipeline_def = PipelineDefinition(
+                [],
+                mode_definitions=[ModeDefinition(loggers=loggers)],
+                name='Dummy Pipeline (No Repo Registration)',
+            )
             self.input_name_type_dict = dict_to_enum(input_name_type_dict)
             self.output_name_type_dict = dict_to_enum(output_name_type_dict)
             for _, runtime_type_enum in self.input_name_type_dict.items():
@@ -161,7 +168,9 @@ class Manager:
                         'notebook by calling dm.register_repository(repository_def).'
                     )
             with scoped_pipeline_context(
-                self.pipeline_def, {}, RunConfig(run_id=run_id, mode=mode)
+                self.pipeline_def,
+                {'loggers': {'dagstermill': {}}},
+                RunConfig(run_id=run_id, mode=mode),
             ) as pipeline_context:
                 self.context = DagstermillInNotebookExecutionContext(pipeline_context)
         else:
@@ -169,17 +178,11 @@ class Manager:
             check.invariant(self.pipeline_def.has_solid_def(solid_def_name))
             self.solid_def = self.pipeline_def.solid_def_named(solid_def_name)
 
-            loggers = None
-            if output_log_path != 0:  # there is no output log
-                event_logger_def = construct_json_event_logger(output_log_path)
-                init_logger_context = InitLoggerContext(
-                    {}, self.pipeline_def, event_logger_def, run_id
-                )
-                event_logger = event_logger_def.logger_fn(init_logger_context)
-                loggers = [event_logger]
-            # do not include event_callback in ExecutionMetadata,
-            # since that'll be taken care of by side-channel established by event_logger
-            run_config = RunConfig(run_id, loggers=loggers, mode=mode)
+            logger = logger_def.logger_fn(
+                InitLoggerContext({}, self.pipeline_def, logger_def, run_id)
+            )
+
+            run_config = RunConfig(run_id, loggers=[logger], mode=mode)
             # See block comment above referencing this issue
             # See https://github.com/dagster-io/dagster/issues/796
             with scoped_pipeline_context(

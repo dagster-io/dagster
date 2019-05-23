@@ -114,6 +114,7 @@ def construct_single_handler_logger(name, level, handler):
         klass = logging.getLoggerClass()
         logger_ = klass(name, level=level)
         logger_.addHandler(handler)
+        handler.setLevel(level)
         return logger_
 
     return single_handler_logger

@@ -20084,7 +20084,7 @@ solids in a pipeline log messages.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>logger_fn</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#dagster.InitResourceContext" title="dagster.InitResourceContext"><em>InitResourceContext</em></a><em>]</em><em>, </em><em>logging.Logger</em><em>]</em>) – User provided function to instantiate the logger. This logger will be automatically
+<li><p><strong>logger_fn</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#dagster.InitLoggerContext" title="dagster.InitLoggerContext"><em>InitLoggerContext</em></a><em>]</em><em>, </em><em>logging.Logger</em><em>]</em>) – User provided function to instantiate the logger. This logger will be automatically
 invoked whenever the methods on <code class="docutils literal notranslate"><span class="pre">context.log</span></code> are called.</p></li>
 <li><p><strong>config_field</strong> (<em>Field</em>) – The type for the configuration data for this logger, if any. Will be passed to
 <code class="docutils literal notranslate"><span class="pre">logger_fn</span></code> as <code class="docutils literal notranslate"><span class="pre">init_context.logger_config</span></code></p></li>

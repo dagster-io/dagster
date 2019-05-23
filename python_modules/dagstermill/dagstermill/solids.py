@@ -1,6 +1,8 @@
 import copy
 import os
 import pickle
+import tempfile
+import threading
 import uuid
 
 import nbformat
@@ -26,6 +28,7 @@ from dagster.core.execution.context.transform import TransformExecutionContext
 from dagster.utils import mkdir_p
 
 from .errors import DagstermillExecutionError
+from .logger import init_db, JsonSqlite3LogWatcher
 from .serialize import (
     input_name_serialization_enum,
     output_name_serialization_enum,
@@ -101,10 +104,6 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
     mkdir_p(marshal_dir)
 
-    if not transform_context.has_event_callback:
-        transform_context.log.info('get_papermill_parameters.context has no event_callback!')
-        output_log_path = 0  # stands for null, since None gets json encoded as 'null'
-
     dm_context_dict = {
         'run_id': run_id,
         'mode': mode,
@@ -172,57 +171,77 @@ def _dm_solid_transform(name, notebook_path):
             output_notebook_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4()))
         )
 
-        output_log_path = os.path.join(base_dir, 'run.log')
-
         try:
-            nb = load_notebook_node(notebook_path)
-            nb_no_parameters = replace_parameters(
-                system_transform_context,
-                nb,
-                get_papermill_parameters(system_transform_context, inputs, output_log_path),
-            )
-            intermediate_path = os.path.join(
-                output_notebook_dir, '{prefix}-inter.ipynb'.format(prefix=str(uuid.uuid4()))
-            )
-            write_ipynb(nb_no_parameters, intermediate_path)
+            with tempfile.NamedTemporaryFile() as output_log_file:
+                output_log_path = output_log_file.name
+                init_db(output_log_path)
 
-            with open(output_log_path, 'a') as f:
-                f.close()
-
-            with user_code_error_boundary(
-                DagstermillExecutionError,
-                'Error occurred during the execution of Dagstermill solid '
-                '{solid_name}: {notebook_path}'.format(
-                    solid_name=name, notebook_path=notebook_path
-                ),
-            ):
-                papermill.execute_notebook(intermediate_path, temp_path, log_output=True)
-
-            output_nb = scrapbook.read_notebook(temp_path)
-
-            system_transform_context.log.debug(
-                'Notebook execution complete for {name}. Data is {data}'.format(
-                    name=name, data=output_nb.scraps
+                nb = load_notebook_node(notebook_path)
+                nb_no_parameters = replace_parameters(
+                    system_transform_context,
+                    nb,
+                    get_papermill_parameters(system_transform_context, inputs, output_log_path),
                 )
-            )
+                intermediate_path = os.path.join(
+                    output_notebook_dir, '{prefix}-inter.ipynb'.format(prefix=str(uuid.uuid4()))
+                )
+                write_ipynb(nb_no_parameters, intermediate_path)
 
-            yield Materialization(
-                path=temp_path,
-                description='{name} output notebook'.format(name=transform_context.solid.name),
-            )
+                # Although the type of is_done is threading._Event in py2, not threading.Event,
+                # it is still constructed using the threading.Event() factory
+                is_done = threading.Event()
 
-            for output_name, output_def in system_transform_context.solid_def.output_dict.items():
-                data_dict = output_nb.scraps.data_dict
-                if output_name in data_dict:
-                    value = read_value(output_def.runtime_type, data_dict[output_name])
+                def log_watcher_thread_target():
+                    log_watcher = JsonSqlite3LogWatcher(
+                        output_log_path, system_transform_context.log, is_done
+                    )
+                    log_watcher.watch()
 
-                    yield Result(value, output_name)
+                log_watcher_thread = threading.Thread(target=log_watcher_thread_target)
 
-            for key, value in output_nb.scraps.items():
-                print(output_nb.scraps)
-                if key.startswith('materialization-'):
-                    with open(value.data, 'rb') as fd:
-                        yield pickle.loads(fd.read())
+                log_watcher_thread.start()
+
+                with user_code_error_boundary(
+                    DagstermillExecutionError,
+                    'Error occurred during the execution of Dagstermill solid '
+                    '{solid_name}: {notebook_path}'.format(
+                        solid_name=name, notebook_path=notebook_path
+                    ),
+                ):
+                    try:
+                        papermill.execute_notebook(intermediate_path, temp_path, log_output=True)
+                    finally:
+                        is_done.set()
+                        log_watcher_thread.join()
+
+                output_nb = scrapbook.read_notebook(temp_path)
+
+                system_transform_context.log.debug(
+                    'Notebook execution complete for {name}. Data is {data}'.format(
+                        name=name, data=output_nb.scraps
+                    )
+                )
+
+                yield Materialization(
+                    path=temp_path,
+                    description='{name} output notebook'.format(name=transform_context.solid.name),
+                )
+
+                for (
+                    output_name,
+                    output_def,
+                ) in system_transform_context.solid_def.output_dict.items():
+                    data_dict = output_nb.scraps.data_dict
+                    if output_name in data_dict:
+                        value = read_value(output_def.runtime_type, data_dict[output_name])
+
+                        yield Result(value, output_name)
+
+                for key, value in output_nb.scraps.items():
+                    print(output_nb.scraps)
+                    if key.startswith('materialization-'):
+                        with open(value.data, 'rb') as fd:
+                            yield pickle.loads(fd.read())
 
         finally:
             if do_cleanup and os.path.exists(temp_path):
