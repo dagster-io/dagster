@@ -11,7 +11,7 @@ import { LogLevel } from "./../../types/globalTypes";
 
 export interface LogsFilterProviderMessageFragment_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface LogsFilterProviderMessageFragment {

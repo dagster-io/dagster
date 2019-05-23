@@ -53,7 +53,7 @@ export default class LogsFilterProvider<
           timestamp
           level
           step {
-            name
+            key
           }
         }
       }
@@ -93,7 +93,7 @@ export default class LogsFilterProvider<
 
       if (filter.text) {
         if (filter.text.startsWith("step:")) {
-          return node.step && node.step.name === filter.text.substr(5);
+          return node.step && node.step.key === filter.text.substr(5);
         } else {
           return node.message.toLowerCase().includes(textLower);
         }

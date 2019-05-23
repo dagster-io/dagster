@@ -11,7 +11,7 @@ import { StepKind } from "./globalTypes";
 
 export interface ExecutionPlanFragment_steps {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
   kind: StepKind;
 }
 

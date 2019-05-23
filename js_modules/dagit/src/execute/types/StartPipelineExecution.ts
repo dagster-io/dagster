@@ -46,6 +46,6 @@ export interface StartPipelineExecution {
 
 export interface StartPipelineExecutionVariables {
   pipeline: ExecutionSelector;
-  config: any;
+  environmentConfigData: any;
   mode: string;
 }

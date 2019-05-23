@@ -11,7 +11,7 @@ export interface ConfigPresetsQuery_pipeline_presets {
   __typename: "PipelinePreset";
   name: string;
   solidSubset: string[] | null;
-  environment: string | null;
+  environmentConfigYaml: string;
   mode: string;
 }
 

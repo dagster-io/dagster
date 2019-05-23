@@ -32,7 +32,7 @@ export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent {
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_step {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error {

@@ -63,6 +63,14 @@ def define_hello_world_explicit_yield_pipeline():
     )
 
 
+def define_hello_logging_solid():
+    return dm.define_dagstermill_solid('hello_logging', nb_test_path('hello_logging'))
+
+
+def define_hello_logging_pipeline():
+    return PipelineDefinition(name='hello_logging_pipeline', solids=[define_hello_logging_solid()])
+
+
 # This probably should be moved to a library because it is immensely useful for testing
 def solid_definition(fn):
     return check.inst(fn(), SolidDefinition)
@@ -216,6 +224,7 @@ def define_example_repository():
             'error_pipeline': define_error_pipeline,
             'hello_world_pipeline': define_hello_world_pipeline,
             'hello_world_with_output_pipeline': define_hello_world_with_output_pipeline,
+            'hello_logging_pipeline': define_hello_logging_pipeline,
             'test_add_pipeline': define_add_pipeline,
             'test_notebook_dag': define_test_notebook_dag_pipeline,
             'tutorial_pipeline': define_tutorial_pipeline,

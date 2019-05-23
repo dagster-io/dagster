@@ -10,7 +10,7 @@ def test_smoke_app():
     pipeline_run_storage = PipelineRunStorage()
     flask_app = app.create_app(
         ExecutionTargetHandle.for_repo_module(
-            module_name='dagster.tutorials.intro_tutorial.repos', fn_name='define_repo'
+            module_name='dagster_examples.intro_tutorial.repos', fn_name='define_repo'
         ),
         pipeline_run_storage,
     )

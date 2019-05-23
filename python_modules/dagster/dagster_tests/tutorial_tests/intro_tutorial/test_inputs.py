@@ -1,12 +1,11 @@
 import pytest
 
 from dagster import PipelineConfigEvaluationError, execute_pipeline
-from dagster.tutorials.intro_tutorial.inputs import (
-    execute_with_another_world,
+from dagster.utils import check_cli_execute_file_pipeline, script_relative_path
+from dagster_examples.intro_tutorial.inputs import (
     define_hello_typed_inputs_pipeline,
+    execute_with_another_world,
 )
-from dagster.tutorials.utils import check_cli_execute_file_pipeline
-from dagster.utils import script_relative_path
 
 
 def test_hello_inputs_parameterized_pipeline():
@@ -18,9 +17,11 @@ def test_hello_inputs_parameterized_pipeline():
 
 def test_hello_inputs_parameterized_cli_pipeline():
     check_cli_execute_file_pipeline(
-        script_relative_path('../../../dagster/tutorials/intro_tutorial/inputs.py'),
+        script_relative_path('../../../../../examples/dagster_examples/intro_tutorial/inputs.py'),
         'define_hello_inputs_pipeline',
-        script_relative_path('../../../dagster/tutorials/intro_tutorial/inputs_env.yml'),
+        script_relative_path(
+            '../../../../../examples/dagster_examples/intro_tutorial/inputs_env.yml'
+        ),
     )
 
 

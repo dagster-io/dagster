@@ -101,7 +101,9 @@ export default class PipelineExecutionContainer extends React.Component<
   }
 
   onConfigChange = (config: any) => {
-    this.onSaveSession(this.props.currentSession.key, { config });
+    this.onSaveSession(this.props.currentSession.key, {
+      environmentConfigYaml: config
+    });
   };
 
   onSolidSubsetChange = (solidSubset: string[] | null) => {
@@ -155,18 +157,20 @@ export default class PipelineExecutionContainer extends React.Component<
     const { currentSession, pipeline } = this.props;
     if (!currentSession || !pipeline || !currentSession.mode) return;
 
-    let config = {};
+    let environmentConfigData = {};
     try {
       // Note: parsing `` returns null rather than an empty object,
       // which is preferable for representing empty config.
-      config = yaml.parse(currentSession.config) || {};
+      console.log(currentSession.environmentConfigYaml);
+      environmentConfigData =
+        yaml.parse(currentSession.environmentConfigYaml) || {};
     } catch (err) {
       alert(YAML_SYNTAX_INVALID);
       return;
     }
 
     return {
-      config,
+      environmentConfigData,
       pipeline: {
         name: pipeline.name,
         solidSubset: currentSession.solidSubset
@@ -221,9 +225,9 @@ export default class PipelineExecutionContainer extends React.Component<
                   <ConfigEditor
                     readOnly={false}
                     pipeline={pipeline}
-                    configCode={currentSession.config}
+                    configCode={currentSession.environmentConfigYaml}
                     onConfigChange={this.onConfigChange}
-                    checkConfig={async config => {
+                    checkConfig={async environmentConfigData => {
                       if (!pipeline) return { isValid: true };
                       if (!currentSession.mode) {
                         return {
@@ -246,7 +250,7 @@ export default class PipelineExecutionContainer extends React.Component<
                         fetchPolicy: "no-cache",
                         query: PREVIEW_CONFIG_QUERY,
                         variables: {
-                          config,
+                          environmentConfigData,
                           pipeline: {
                             name: pipeline.name,
                             solidSubset: currentSession.solidSubset
@@ -258,7 +262,7 @@ export default class PipelineExecutionContainer extends React.Component<
                       this.setState({ preview: data });
 
                       return responseToValidationResult(
-                        config,
+                        environmentConfigData,
                         data.isPipelineConfigValid
                       );
                     }}
@@ -307,10 +311,14 @@ export default class PipelineExecutionContainer extends React.Component<
 const START_PIPELINE_EXECUTION_MUTATION = gql`
   mutation StartPipelineExecution(
     $pipeline: ExecutionSelector!
-    $config: PipelineConfig!
+    $environmentConfigData: EnvironmentConfigData!
     $mode: String!
   ) {
-    startPipelineExecution(pipeline: $pipeline, config: $config, mode: $mode) {
+    startPipelineExecution(
+      pipeline: $pipeline
+      environmentConfigData: $environmentConfigData
+      mode: $mode
+    ) {
       __typename
 
       ... on StartPipelineExecutionSuccess {
@@ -333,14 +341,22 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(
     $pipeline: ExecutionSelector!
-    $config: PipelineConfig!
+    $environmentConfigData: EnvironmentConfigData!
     $mode: String!
   ) {
-    isPipelineConfigValid(pipeline: $pipeline, config: $config, mode: $mode) {
+    isPipelineConfigValid(
+      pipeline: $pipeline
+      environmentConfigData: $environmentConfigData
+      mode: $mode
+    ) {
       ...ConfigEditorValidationFragment
       ...RunPreviewConfigValidationFragment
     }
-    executionPlan(pipeline: $pipeline, config: $config, mode: $mode) {
+    executionPlan(
+      pipeline: $pipeline
+      environmentConfigData: $environmentConfigData
+      mode: $mode
+    ) {
       ...RunPreviewExecutionPlanResultFragment
     }
   }

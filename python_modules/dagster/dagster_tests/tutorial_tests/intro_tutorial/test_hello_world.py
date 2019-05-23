@@ -1,7 +1,6 @@
 from dagster import execute_pipeline
-from dagster.tutorials.intro_tutorial.hello_world import define_hello_world_pipeline
-from dagster.tutorials.utils import check_script, check_cli_execute_file_pipeline
-from dagster.utils import script_relative_path
+from dagster.utils import check_cli_execute_file_pipeline, check_script, script_relative_path
+from dagster_examples.intro_tutorial.hello_world import define_hello_world_pipeline
 
 
 def test_tutorial_intro_tutorial_hello_world():
@@ -16,11 +15,17 @@ def test_tutorial_intro_tutorial_hello_world():
 
 
 def test_tutorial_intro_tutorial_hello_world_script():
-    check_script(script_relative_path('../../../dagster/tutorials/intro_tutorial/hello_world.py'))
+    check_script(
+        script_relative_path(
+            '../../../../../examples/dagster_examples/intro_tutorial/hello_world.py'
+        )
+    )
 
 
 def test_tutorial_intro_tutorial_hello_world_cli():
     check_cli_execute_file_pipeline(
-        script_relative_path('../../../dagster/tutorials/intro_tutorial/hello_world.py'),
+        script_relative_path(
+            '../../../../../examples/dagster_examples/intro_tutorial/hello_world.py'
+        ),
         'define_hello_world_pipeline',
     )

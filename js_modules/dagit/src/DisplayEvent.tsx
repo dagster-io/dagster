@@ -65,12 +65,7 @@ const DisplayEventItem: React.FunctionComponent<
       </DisplayEventLink>
     );
   }
-  return (
-    <DisplayEventItemContainer>
-      {text && <span style={{ opacity: 0.7, paddingRight: 4 }}>{text}</span>}
-      {actionEl}
-    </DisplayEventItemContainer>
-  );
+  return <DisplayEventItemContainer>{actionEl}</DisplayEventItemContainer>;
 };
 
 export const DisplayEvent: React.FunctionComponent<DisplayEventProps> = ({

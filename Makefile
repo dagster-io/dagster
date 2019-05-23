@@ -12,7 +12,7 @@ pylint:
 	pylint -j 0 `cat .pylint_targets` --rcfile=.pylintrc --disable=R,C
 
 update_doc_snapshot:
-	pytest python_modules/dagster/docs --snapshot-update
+	pytest docs --snapshot-update
 
 black:
 	black examples python_modules --line-length 100 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/" -N
@@ -38,10 +38,7 @@ install_dev_python_modules:
 	pip install -e python_modules/libraries/dagster-spark
 	pip install -e python_modules/libraries/dagster-pyspark
 	pip install -e python_modules/automation
-	pip install -e examples/event-pipeline-demo
-	pip install -e examples/airline-demo
-	pip install -e examples/toys
-	pip install -e examples/pyspark-pagerank
+	pip install -e examples
 
 graphql:
 	cd js_modules/dagit/; make generate-types

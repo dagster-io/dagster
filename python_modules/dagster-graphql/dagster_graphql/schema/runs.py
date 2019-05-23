@@ -27,7 +27,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     pipeline = dauphin.NonNull('Pipeline')
     logs = dauphin.NonNull('LogMessageConnection')
     executionPlan = dauphin.NonNull('ExecutionPlan')
-    config = dauphin.NonNull(dauphin.String)
+    environmentConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
 
     def __init__(self, pipeline_run):
@@ -48,7 +48,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
             pipeline, self._pipeline_run.execution_plan
         )
 
-    def resolve_config(self, _graphene_info):
+    def resolve_environmentConfigYaml(self, _graphene_info):
         return yaml.dump(self._pipeline_run.config, default_flow_style=False)
 
     @property
@@ -130,6 +130,7 @@ class DauphinPipelineRunLogsSubscriptionSuccess(dauphin.ObjectType):
     class Meta:
         name = 'PipelineRunLogsSubscriptionSuccess'
 
+    runId = dauphin.NonNull(dauphin.String)
     messages = dauphin.non_null_list('PipelineRunEvent')
 
 

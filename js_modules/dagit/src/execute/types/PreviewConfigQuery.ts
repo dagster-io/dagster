@@ -55,7 +55,7 @@ export interface PreviewConfigQuery_executionPlan_PipelineConfigValidationInvali
 
 export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
   kind: StepKind;
 }
 
@@ -79,6 +79,6 @@ export interface PreviewConfigQuery {
 
 export interface PreviewConfigQueryVariables {
   pipeline: ExecutionSelector;
-  config: any;
+  environmentConfigData: any;
   mode: string;
 }

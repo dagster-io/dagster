@@ -1,4 +1,4 @@
-from dagster.tutorials.intro_tutorial.unittesting import (
+from dagster_examples.intro_tutorial.unittesting import (
     execute_test_only_final,
     execute_test_a_plus_b_final_subdag,
 )

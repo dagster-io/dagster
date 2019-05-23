@@ -1,6 +1,16 @@
+from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.types import BuiltinEnum
+
+
 class WrappingType(object):
     def __init__(self, inner_type):
         # Cannot check inner_type because of circular references and no fwd declarations
+
+        if inner_type == BuiltinEnum.NOTHING:
+            raise DagsterInvalidDefinitionError(
+                'Type Nothing can not be wrapped in List or Nullable'
+            )
+
         self.inner_type = inner_type
 
 

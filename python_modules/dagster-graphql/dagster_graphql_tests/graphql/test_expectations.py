@@ -59,7 +59,7 @@ def test_basic_input_output_expectations(snapshot):
     logs = sync_execute_get_events(
         variables={
             'pipeline': {'name': 'csv_hello_world_with_expectations'},
-            'config': {
+            'environmentConfigData': {
                 'solids': {
                     'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}
                 }

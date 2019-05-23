@@ -85,7 +85,6 @@ export default class RunHistory extends React.Component<
       fragment RunHistoryRunFragment on PipelineRun {
         runId
         status
-        config
         pipeline {
           name
         }
@@ -99,7 +98,7 @@ export default class RunHistory extends React.Component<
         }
         executionPlan {
           steps {
-            name
+            key
           }
         }
       }

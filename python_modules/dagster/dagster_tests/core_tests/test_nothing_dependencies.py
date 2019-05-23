@@ -9,6 +9,8 @@ from dagster import (
     InputDefinition,
     Int,
     Materialization,
+    List,
+    Nullable,
     MultiDependencyDefinition,
     Nothing,
     OutputDefinition,
@@ -19,6 +21,7 @@ from dagster import (
     lambda_solid,
     solid,
 )
+from dagster.core.execution.api import create_execution_plan
 
 
 def _define_nothing_dep_pipeline():
@@ -216,33 +219,6 @@ def test_fanin_deps():
     assert called['emit_nothing'] == 3
 
 
-def test_invalid_fanin():
-    @solid(inputs=[InputDefinition('num', Int)])
-    def adder(_context, num):
-        return num + 1
-
-    @lambda_solid()
-    def emit_nothing():
-        pass
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match='FanInDependency only supports type "Nothing"'
-    ):
-        PipelineDefinition(
-            name='input_test',
-            solids=[emit_nothing, adder],
-            dependencies={
-                SolidInstance('emit_nothing', '_one'): {},
-                SolidInstance('emit_nothing', '_two'): {},
-                'adder': {
-                    'num': MultiDependencyDefinition(
-                        [DependencyDefinition('_one'), DependencyDefinition('_two')]
-                    )
-                },
-            },
-        )
-
-
 def test_valid_nothing_fns():
     @lambda_solid(output=OutputDefinition(Nothing))
     def just_pass():
@@ -285,3 +261,53 @@ def test_invalid_nothing_fns():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_pipeline(PipelineDefinition(name='fn_test', solids=[yield_val]))
+
+
+def test_wrapping_nothing():
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @lambda_solid(output=OutputDefinition(List(Nothing)))
+        def _():
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @lambda_solid(inputs=[InputDefinition(List(Nothing))])
+        def _():
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @lambda_solid(output=OutputDefinition(Nullable(Nothing)))
+        def _():
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @lambda_solid(inputs=[InputDefinition(Nullable(Nothing))])
+        def _():
+            pass
+
+
+def test_execution_plan():
+    @solid(outputs=[OutputDefinition(Nothing)])
+    def emit_nothing(_context):
+        yield Materialization(path='/path/')
+
+    @lambda_solid(inputs=[InputDefinition('ready', Nothing)])
+    def consume_nothing():
+        pass
+
+    pipe = PipelineDefinition(
+        name='execution_plan_test',
+        solids=[emit_nothing, consume_nothing],
+        dependencies={'consume_nothing': {'ready': DependencyDefinition('emit_nothing')}},
+    )
+    plan = create_execution_plan(pipe)
+
+    levels = plan.topological_step_levels()
+
+    assert 'emit_nothing' in levels[0][0].key
+    assert 'consume_nothing' in levels[1][0].key
+
+    assert execute_pipeline(pipe).success

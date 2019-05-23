@@ -26,7 +26,7 @@ export interface PipelineRunsRootQuery_pipeline_runs_logs {
 
 export interface PipelineRunsRootQuery_pipeline_runs_executionPlan_steps {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface PipelineRunsRootQuery_pipeline_runs_executionPlan {
@@ -38,7 +38,6 @@ export interface PipelineRunsRootQuery_pipeline_runs {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
-  config: string;
   pipeline: PipelineRunsRootQuery_pipeline_runs_pipeline;
   logs: PipelineRunsRootQuery_pipeline_runs_logs;
   executionPlan: PipelineRunsRootQuery_pipeline_runs_executionPlan;

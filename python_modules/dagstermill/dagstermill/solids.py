@@ -1,0 +1,256 @@
+import copy
+import os
+import pickle
+import uuid
+
+import nbformat
+import papermill
+import scrapbook
+import six
+
+from papermill.parameterize import _find_first_tagged_cell_index
+from papermill.iorw import load_notebook_node, write_ipynb
+
+from dagster import (
+    check,
+    InputDefinition,
+    Materialization,
+    OutputDefinition,
+    Result,
+    seven,
+    SolidDefinition,
+)
+from dagster.core.errors import user_code_error_boundary
+from dagster.core.execution.context.system import SystemTransformExecutionContext
+from dagster.core.execution.context.transform import TransformExecutionContext
+from dagster.utils import mkdir_p
+
+from .errors import DagstermillExecutionError
+from .manager import MANAGER_FOR_NOTEBOOK_INSTANCE
+from .serialize import (
+    input_name_serialization_enum,
+    output_name_serialization_enum,
+    read_value,
+    write_value,
+)
+from .translator import DagsterTranslator
+
+
+def replace_parameters(context, nb, parameters):
+    # Uma: This is a copy-paste from papermill papermill/execute.py:104 (execute_parameters).
+    # Typically, papermill injects the injected-parameters cell *below* the parameters cell
+    # but we want to *replace* the parameters cell, which is what this function does.
+
+    '''Assigned parameters into the appropiate place in the input notebook
+    Args:
+        nb (NotebookNode): Executable notebook object
+        parameters (dict): Arbitrary keyword arguments to pass to the notebook parameters.
+    '''
+
+    # Copy the nb object to avoid polluting the input
+    nb = copy.deepcopy(nb)
+
+    # Generate parameter content based on the kernel_name
+    param_content = DagsterTranslator.codify(parameters)
+    # papermill method choosed translator based on kernel_name and language,
+    # but we just call the DagsterTranslator
+    # translate_parameters(kernel_name, language, parameters)
+    newcell = nbformat.v4.new_code_cell(source=param_content)
+    newcell.metadata['tags'] = ['injected-parameters']
+
+    param_cell_index = _find_first_tagged_cell_index(nb, 'parameters')
+    injected_cell_index = _find_first_tagged_cell_index(nb, 'injected-parameters')
+    if injected_cell_index >= 0:
+        # Replace the injected cell with a new version
+        before = nb.cells[:injected_cell_index]
+        after = nb.cells[injected_cell_index + 1 :]
+        check.int_value_param(param_cell_index, -1, 'param_cell_index')
+        # We should have blown away the parameters cell if there is an injected-parameters cell
+    elif param_cell_index >= 0:
+        # Replace the parameter cell with the injected-parameters cell
+        before = nb.cells[:param_cell_index]
+        after = nb.cells[param_cell_index + 1 :]
+    else:
+        # Inject to the top of the notebook, presumably first cell includes dagstermill import
+        context.log.debug(
+            (
+                'Warning notebook has no parameters cell, '
+                'so first cell must import dagstermill and call dm.register_repository()'
+            )
+        )
+        before = nb.cells[:1]
+        after = nb.cells[1:]
+
+    nb.cells = before + [newcell] + after
+    nb.metadata.papermill['parameters'] = parameters
+
+    return nb
+
+
+def get_papermill_parameters(transform_context, inputs, output_log_path):
+    check.inst_param(transform_context, 'transform_context', SystemTransformExecutionContext)
+    check.param_invariant(
+        isinstance(transform_context.environment_dict, dict),
+        'transform_context',
+        'SystemTransformExecutionContext must have valid environment_dict',
+    )
+    check.dict_param(inputs, 'inputs', key_type=six.string_types)
+
+    run_id = transform_context.run_id
+    mode = transform_context.mode
+
+    marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
+    mkdir_p(marshal_dir)
+
+    if not transform_context.has_event_callback:
+        transform_context.log.info('get_papermill_parameters.context has no event_callback!')
+        output_log_path = 0  # stands for null, since None gets json encoded as 'null'
+
+    dm_context_dict = {
+        'run_id': run_id,
+        'mode': mode,
+        'pipeline_name': transform_context.pipeline_def.name,
+        'solid_def_name': transform_context.solid_def.name,
+        'marshal_dir': marshal_dir,
+        # TODO rename to environment_dict
+        'environment_config': transform_context.environment_dict,
+        'output_log_path': output_log_path,
+    }
+
+    parameters = {}
+
+    input_name_type_dict = {}
+
+    input_def_dict = transform_context.solid_def.input_dict
+    for input_name, input_value in inputs.items():
+        assert (
+            input_name != 'dm_context'
+        ), 'Dagstermill solids cannot have inputs named "dm_context"'
+        runtime_type = input_def_dict[input_name].runtime_type
+        parameter_value = write_value(
+            MANAGER_FOR_NOTEBOOK_INSTANCE.context,
+            runtime_type,
+            input_value,
+            os.path.join(marshal_dir, 'input-{}'.format(input_name)),
+        )
+        parameters[input_name] = parameter_value
+        input_name_type_dict[input_name] = input_name_serialization_enum(
+            runtime_type, input_value
+        ).value
+
+    dm_context_dict['input_name_type_dict'] = input_name_type_dict
+
+    output_name_type_dict = {
+        name: output_name_serialization_enum(output_def.runtime_type).value
+        for name, output_def in transform_context.solid_def.output_dict.items()
+    }
+
+    dm_context_dict['output_name_type_dict'] = output_name_type_dict
+
+    parameters['dm_context'] = seven.json.dumps(dm_context_dict)
+
+    return parameters
+
+
+def _dm_solid_transform(name, notebook_path):
+    check.str_param(name, 'name')
+    check.str_param(notebook_path, 'notebook_path')
+
+    do_cleanup = False  # for now
+
+    def _t_fn(transform_context, inputs):
+        check.inst_param(transform_context, 'transform_context', TransformExecutionContext)
+        check.param_invariant(
+            isinstance(transform_context.environment_dict, dict),
+            'context',
+            'SystemTransformExecutionContext must have valid environment_dict',
+        )
+
+        system_transform_context = transform_context.get_system_context()
+
+        base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=transform_context.run_id)
+        output_notebook_dir = os.path.join(base_dir, 'output_notebooks/')
+        mkdir_p(output_notebook_dir)
+
+        temp_path = os.path.join(
+            output_notebook_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4()))
+        )
+
+        output_log_path = os.path.join(base_dir, 'run.log')
+
+        try:
+            nb = load_notebook_node(notebook_path)
+            nb_no_parameters = replace_parameters(
+                system_transform_context,
+                nb,
+                get_papermill_parameters(system_transform_context, inputs, output_log_path),
+            )
+            intermediate_path = os.path.join(
+                output_notebook_dir, '{prefix}-inter.ipynb'.format(prefix=str(uuid.uuid4()))
+            )
+            write_ipynb(nb_no_parameters, intermediate_path)
+
+            with open(output_log_path, 'a') as f:
+                f.close()
+
+            with user_code_error_boundary(
+                DagstermillExecutionError,
+                'Error occurred during the execution of Dagstermill solid '
+                '{solid_name}: {notebook_path}'.format(
+                    solid_name=name, notebook_path=notebook_path
+                ),
+            ):
+                papermill.execute_notebook(intermediate_path, temp_path, log_output=True)
+
+            output_nb = scrapbook.read_notebook(temp_path)
+
+            system_transform_context.log.debug(
+                'Notebook execution complete for {name}. Data is {data}'.format(
+                    name=name, data=output_nb.scraps
+                )
+            )
+
+            yield Materialization(
+                path=temp_path,
+                description='{name} output notebook'.format(name=transform_context.solid.name),
+            )
+
+            for output_name, output_def in system_transform_context.solid_def.output_dict.items():
+                data_dict = output_nb.scraps.data_dict
+                if output_name in data_dict:
+                    value = read_value(
+                        MANAGER_FOR_NOTEBOOK_INSTANCE.context,
+                        output_def.runtime_type,
+                        data_dict[output_name],
+                    )
+
+                    yield Result(value, output_name)
+
+            for key, value in output_nb.scraps.items():
+                print(output_nb.scraps)
+                if key.startswith('materialization-'):
+                    with open(value.data, 'rb') as fd:
+                        yield pickle.loads(fd.read())
+
+        finally:
+            if do_cleanup and os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    return _t_fn
+
+
+def define_dagstermill_solid(name, notebook_path, inputs=None, outputs=None, config_field=None):
+    check.str_param(name, 'name')
+    check.str_param(notebook_path, 'notebook_path')
+    inputs = check.opt_list_param(inputs, 'input_defs', of_type=InputDefinition)
+    outputs = check.opt_list_param(outputs, 'output_defs', of_type=OutputDefinition)
+
+    return SolidDefinition(
+        name=name,
+        inputs=inputs,
+        compute_fn=_dm_solid_transform(name, notebook_path),
+        outputs=outputs,
+        config_field=config_field,
+        description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
+        metadata={'notebook_path': notebook_path, 'kind': 'ipynb'},
+    )

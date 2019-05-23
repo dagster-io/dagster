@@ -26,7 +26,7 @@ export interface RunHistoryRunFragment_logs {
 
 export interface RunHistoryRunFragment_executionPlan_steps {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
 }
 
 export interface RunHistoryRunFragment_executionPlan {
@@ -38,7 +38,6 @@ export interface RunHistoryRunFragment {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
-  config: string;
   pipeline: RunHistoryRunFragment_pipeline;
   logs: RunHistoryRunFragment_logs;
   executionPlan: RunHistoryRunFragment_executionPlan;

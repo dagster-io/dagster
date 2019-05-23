@@ -3,7 +3,7 @@ import pytest
 
 
 from dagster import DagsterInvariantViolationError, execute_pipeline
-from dagster.tutorials.intro_tutorial.multiple_outputs import (
+from dagster_examples.intro_tutorial.multiple_outputs import (
     define_multiple_outputs_step_one_pipeline,
     define_multiple_outputs_step_two_pipeline,
     define_multiple_outputs_step_three_pipeline,

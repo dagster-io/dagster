@@ -28,7 +28,8 @@ const EMPTY_STEP_METADATA: IStepMetadata = {
   start: undefined,
   elapsed: undefined,
   transitionedAt: 0,
-  displayEvents: []
+  expectationResults: [],
+  materializations: []
 };
 
 export default class ExecutionPlan extends React.PureComponent<
@@ -38,7 +39,7 @@ export default class ExecutionPlan extends React.PureComponent<
     ExecutionPlanFragment: gql`
       fragment ExecutionPlanFragment on ExecutionPlan {
         steps {
-          name
+          key
           kind
         }
         artifactsPersisted
@@ -106,18 +107,18 @@ export default class ExecutionPlan extends React.PureComponent<
             <ExecutionTimelineDot completed={startDone} /> {startText}
           </ExecutionTimelineMessage>
           {executionPlan.steps.map(step => {
-            const delay = stepsOrderedByTransitionTime.indexOf(step.name) * 100;
-            const metadata =
-              runMetadata.steps[step.name] || EMPTY_STEP_METADATA;
+            const delay = stepsOrderedByTransitionTime.indexOf(step.key) * 100;
+            const metadata = runMetadata.steps[step.key] || EMPTY_STEP_METADATA;
 
             return (
               <ExecutionPlanBox
-                key={step.name}
                 state={metadata.state}
                 start={metadata.start}
                 elapsed={metadata.elapsed}
-                name={step.name}
-                displayEvents={metadata.displayEvents}
+                key={step.key}
+                stepKey={step.key}
+                expectationResults={metadata.expectationResults}
+                materializations={metadata.materializations}
                 onShowStateDetails={onShowStateDetails}
                 onApplyStepFilter={onApplyStepFilter}
                 onReexecuteStep={onReexecuteStep}

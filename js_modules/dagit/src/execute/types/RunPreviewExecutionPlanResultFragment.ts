@@ -15,7 +15,7 @@ export interface RunPreviewExecutionPlanResultFragment_PipelineConfigValidationI
 
 export interface RunPreviewExecutionPlanResultFragment_ExecutionPlan_steps {
   __typename: "ExecutionStep";
-  name: string;
+  key: string;
   kind: StepKind;
 }
 

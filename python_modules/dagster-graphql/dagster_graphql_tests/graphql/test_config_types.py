@@ -5,9 +5,16 @@ from dagster.core.types.config import ALL_CONFIG_BUILTINS
 from .setup import execute_dagster_graphql, define_context, csv_hello_world_solids_config
 
 CONFIG_VALIDATION_QUERY = '''
-query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!, $mode: String!)
-{
-    isPipelineConfigValid(config: $config, pipeline: $pipeline, mode: $mode) {
+query PipelineQuery(
+    $environmentConfigData: EnvironmentConfigData,
+    $pipeline: ExecutionSelector!,
+    $mode: String!
+) {
+    isPipelineConfigValid(
+        environmentConfigData: $environmentConfigData,
+        pipeline: $pipeline,
+        mode: $mode
+    ) {
         __typename
         ... on PipelineConfigValidationValid {
             pipeline { name }
@@ -93,7 +100,7 @@ def execute_config_graphql(pipeline_name, env_config, mode):
     return execute_dagster_graphql(
         define_context(),
         CONFIG_VALIDATION_QUERY,
-        {'config': env_config, 'pipeline': {'name': pipeline_name}, 'mode': mode},
+        {'environmentConfigData': env_config, 'pipeline': {'name': pipeline_name}, 'mode': mode},
     )
 
 

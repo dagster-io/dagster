@@ -82,8 +82,8 @@ def test_basic_variables():
 
 
 START_PIPELINE_EXECUTION_QUERY = '''
-mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig, $mode: String!) {
-    startPipelineExecution(pipeline: $pipeline, config: $config, mode: $mode) {
+mutation ($pipeline: ExecutionSelector!, $environmentConfigData: EnvironmentConfigData, $mode: String!) {
+    startPipelineExecution(pipeline: $pipeline, environmentConfigData: $environmentConfigData, mode: $mode) {
         __typename
         ... on StartPipelineExecutionSuccess {
             run {

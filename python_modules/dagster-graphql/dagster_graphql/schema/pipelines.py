@@ -211,7 +211,7 @@ class DauphinPipelinePreset(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
-    environment = dauphin.String()
+    environmentConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
 
     def __init__(self, preset):
@@ -223,8 +223,8 @@ class DauphinPipelinePreset(dauphin.ObjectType):
     def resolve_solidSubset(self, _graphene_info):
         return self._preset.solid_subset
 
-    def resolve_environment(self, _graphene_info):
-        return self._preset.environment_yaml
+    def resolve_environmentConfigYaml(self, _graphene_info):
+        return self._preset.environment_yaml if self._preset.environment_yaml else ''
 
     def resolve_mode(self, _graphene_info):
         return self._preset.mode

@@ -124,7 +124,6 @@ class DauphinExecutionStep(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStep'
 
-    name = dauphin.Field(dauphin.NonNull(dauphin.String), deprecation_reason='Use key')
     key = dauphin.NonNull(dauphin.String)
     inputs = dauphin.non_null_list('ExecutionStepInput')
     outputs = dauphin.non_null_list('ExecutionStepOutput')
@@ -156,9 +155,6 @@ class DauphinExecutionStep(dauphin.ObjectType):
         ]
 
     def resolve_key(self, _graphene_info):
-        return self._execution_step.key
-
-    def resolve_name(self, _graphene_info):
         return self._execution_step.key
 
     def resolve_solidHandleID(self, _graphene_info):

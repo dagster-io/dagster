@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import DagsterExpectationFailedError, execute_pipeline, RunConfig
-from dagster.tutorials.intro_tutorial.expectations import define_expectations_tutorial_pipeline
+from dagster_examples.intro_tutorial.expectations import define_expectations_tutorial_pipeline
 
 
 def test_intro_tutorial_expectations_step_one():

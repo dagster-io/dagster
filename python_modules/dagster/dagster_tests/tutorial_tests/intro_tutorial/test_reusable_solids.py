@@ -1,6 +1,6 @@
 from dagster import execute_pipeline
 
-from dagster.tutorials.intro_tutorial.reusable_solids import define_reusable_solids_pipeline
+from dagster_examples.intro_tutorial.reusable_solids import define_reusable_solids_pipeline
 
 
 def test_run_whole_pipeline():

@@ -50,7 +50,7 @@ export class PipelineRun extends React.Component<
         ...RunStatusPipelineRunFragment
         ...RunSubscriptionPipelineRunFragment
 
-        config
+        environmentConfigYaml
         runId
         mode
         pipeline {
@@ -66,7 +66,7 @@ export class PipelineRun extends React.Component<
             ...RunMetadataProviderMessageFragment
             ... on ExecutionStepFailureEvent {
               step {
-                name
+                key
               }
               error {
                 stack
@@ -120,7 +120,7 @@ export class PipelineRun extends React.Component<
     highlightedError: undefined
   };
 
-  onShowStateDetails = (step: string) => {
+  onShowStateDetails = (stepKey: string) => {
     const { run } = this.props;
     if (!run) return;
 
@@ -128,7 +128,7 @@ export class PipelineRun extends React.Component<
       node =>
         node.__typename === "ExecutionStepFailureEvent" &&
         node.step != null &&
-        node.step.name === step
+        node.step.key === stepKey
     ) as PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent;
 
     if (errorNode) {
@@ -138,11 +138,11 @@ export class PipelineRun extends React.Component<
 
   onReexecuteStep = async (
     mutation: MutationFn<ReexecuteStep, ReexecuteStepVariables>,
-    stepName: string
+    stepKey: string
   ) => {
     const { run } = this.props;
     if (!run) return;
-    const step = run.executionPlan.steps.find(s => s.key === stepName);
+    const step = run.executionPlan.steps.find(s => s.key === stepKey);
     if (!step) return;
 
     const reexecutionConfig: ReexecutionConfig = {
@@ -165,8 +165,8 @@ export class PipelineRun extends React.Component<
           name: run.pipeline.name,
           solidSubset: run.pipeline.solids.map(s => s.name)
         },
-        config: yaml.parse(run.config),
-        stepKeys: [stepName],
+        environmentConfigData: yaml.parse(run.environmentConfigYaml),
+        stepKeys: [stepKey],
         reexecutionConfig: reexecutionConfig,
         mode: run.mode
       }
@@ -218,12 +218,12 @@ export class PipelineRun extends React.Component<
                   runMetadata={metadata}
                   executionPlan={executionPlan}
                   onShowStateDetails={this.onShowStateDetails}
-                  onReexecuteStep={stepName =>
-                    this.onReexecuteStep(reexecuteMutation, stepName)
+                  onReexecuteStep={stepKey =>
+                    this.onReexecuteStep(reexecuteMutation, stepKey)
                   }
-                  onApplyStepFilter={stepName =>
+                  onApplyStepFilter={stepKey =>
                     this.setState({
-                      logsFilter: { ...logsFilter, text: `step:${stepName}` }
+                      logsFilter: { ...logsFilter, text: `step:${stepKey}` }
                     })
                   }
                 />
@@ -263,14 +263,14 @@ const LogsContainer = styled.div`
 const REEXECUTE_STEP_MUTATION = gql`
   mutation ReexecuteStep(
     $pipeline: ExecutionSelector!
-    $config: PipelineConfig!
+    $environmentConfigData: EnvironmentConfigData!
     $mode: String!
     $stepKeys: [String!]
     $reexecutionConfig: ReexecutionConfig
   ) {
     startPipelineExecution(
       pipeline: $pipeline
-      config: $config
+      environmentConfigData: $environmentConfigData
       mode: $mode
       stepKeys: $stepKeys
       reexecutionConfig: $reexecutionConfig

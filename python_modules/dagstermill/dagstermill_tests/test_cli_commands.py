@@ -78,6 +78,9 @@ def scaffold(file_name=None, module_name=None, fn_name=None, notebook_name=None)
     if os.path.exists(notebook_name):
         os.unlink(notebook_name)
 
+    if os.path.exists(notebook_name + '.ipynb'):
+        os.unlink(notebook_name + '.ipynb')
+
 
 def test_module_example():
     with pushd(script_relative_path('.')):
