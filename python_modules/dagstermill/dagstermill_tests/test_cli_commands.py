@@ -177,15 +177,20 @@ def test_retroactive_scaffold():
 
 
 def test_double_scaffold():
-    notebook_path = script_relative_path('notebooks/overwrite.ipynb')
-    with open(notebook_path, 'w') as fd:
-        fd.write('print(\'Hello, world!\')')
+    try:
+        notebook_path = script_relative_path('notebooks/overwrite.ipynb')
+        with open(notebook_path, 'w') as fd:
+            fd.write('print(\'Hello, world!\')')
 
-    runner = CliRunner()
-    args = ['--notebook', notebook_path]
+        runner = CliRunner()
+        args = ['--notebook', notebook_path]
 
-    res = runner.invoke(create_notebook, args)
+        res = runner.invoke(create_notebook, args)
 
-    assert isinstance(res.exception, SystemExit)
-    assert res.exception.code == 1
-    assert 'already exists and continuing will overwrite the existing notebook.' in res.output
+        assert isinstance(res.exception, SystemExit)
+        assert res.exception.code == 1
+        assert 'already exists and continuing will overwrite the existing notebook.' in res.output
+
+    finally:
+        if os.path.exists(notebook_path):
+            os.unlink(notebook_path)

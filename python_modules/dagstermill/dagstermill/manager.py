@@ -1,6 +1,7 @@
 import os
 import pickle
 import uuid
+import warnings
 
 import scrapbook
 
@@ -36,19 +37,37 @@ class Manager:
     def register_repository(self, repository_def):
         self.repository_def = repository_def
 
-    def define_out_of_pipeline_context(self, context_config):
+    def deregister_repository(self):
+        self.repository_def = None
+
+    def define_out_of_pipeline_context(self, config=None):
+        '''Defines a context to be used in a notebook (i.e., not in pipeline execution).
+
+        '''
+        config = check.opt_dict_param(config, 'config')
         pipeline_def = PipelineDefinition([], name='Ephemeral Notebook Pipeline')
 
         # BUG: If the context cleans up after itself (e.g. closes a db connection or similar)
         # This will instigate that process *before* return. We are going to have to
         # manage this manually (without an if block) in order to make this work.
         # See https://github.com/dagster-io/dagster/issues/796
+
+        if config.keys():
+            warnings.warn(
+                'Config keys will not be respected for in-notebook '
+                'execution: [{keys}]'.format(
+                    keys=', '.join(['\'{key}\''.format(key=key) for key in config.keys()])
+                )
+            )
+
+            config = {}
+
         with scoped_pipeline_context(
-            pipeline_def,
-            {} if context_config is None else {'context': context_config},
-            RunConfig(run_id=''),
+            pipeline_def, config, RunConfig(run_id='')
         ) as pipeline_context:
-            self.context = DagstermillInNotebookExecutionContext(pipeline_context)
+            self.context = DagstermillInNotebookExecutionContext(
+                pipeline_context, out_of_pipeline=True
+            )
         return self.context
 
     def yield_result(self, value, output_name='result'):
@@ -131,6 +150,7 @@ class Manager:
         self.marshal_dir = marshal_dir
 
         if self.repository_def is None:
+            self.solid_def = None
             self.pipeline_def = PipelineDefinition([], name='Dummy Pipeline (No Repo Registration)')
             self.input_name_type_dict = dict_to_enum(input_name_type_dict)
             self.output_name_type_dict = dict_to_enum(output_name_type_dict)

@@ -16,6 +16,10 @@ def register_repository(repo_def):
     return MANAGER_FOR_NOTEBOOK_INSTANCE.register_repository(repo_def)
 
 
+def deregister_repository():
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.deregister_repository()
+
+
 def yield_result(value, output_name='result'):
     '''Explicitly yield a Result.
 
