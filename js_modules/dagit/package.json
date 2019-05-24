@@ -7,7 +7,6 @@
     "@blueprintjs/icons": "^3.3.0",
     "@blueprintjs/select": "^3.3.0",
     "@blueprintjs/table": "^3.5.0",
-    "@types/color": "^3.0.0",
     "@vx/gradient": "^0.0.165",
     "@vx/group": "^0.0.170",
     "@vx/legend": "^0.0.170",
@@ -44,6 +43,7 @@
   },
   "devDependencies": {
     "@types/ajv": "^1.0.0",
+    "@types/color": "^3.0.0",
     "@types/codemirror": "^0.0.60",
     "@types/dagre": "^0.7.40",
     "@types/graphql": "^14.0.5",
