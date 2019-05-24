@@ -14,15 +14,12 @@ import inspect
 import os
 import re
 
-# import shlex
 import subprocess
-import sys
 import tempfile
 
 # https://github.com/PyCQA/pylint/issues/73
 from distutils import spawn  # pylint: disable=no-name-in-module
 from itertools import groupby
-from threading import Thread
 
 import click
 import packaging.version
@@ -76,7 +73,7 @@ def construct_publish_comands(additional_steps=None, nightly=False):
     return publish_commands
 
 
-'''For dagit, we need to build the JS assets.'''
+# For dagit, we need to build the JS assets.
 DAGIT_ADDITIONAL_STEPS = [
     'pushd ../../js_modules/dagit; yarn install && yarn build-for-python; popd'
 ]
@@ -199,7 +196,7 @@ def set_git_tag(tag, signed=False):
             )
 
         match = re.search(
-            'fatal: tag \'(?P<tag>[\.a-z0-9]+)\' already exists', str(exc_info.output)
+            r'fatal: tag \'(?P<tag>[\.a-z0-9]+)\' already exists', str(exc_info.output)
         )
         if match:
             raise Exception(
@@ -212,7 +209,7 @@ def set_git_tag(tag, signed=False):
     return tag
 
 
-def format_module_versions(module_versions, nightly=False):
+def format_module_versions(module_versions):
     return '\n'.join(
         [
             '    {module_name}: {version} {nightly}'.format(
@@ -371,7 +368,9 @@ def check_new_version(new_version):
     parsed_version = packaging.version.parse(new_version)
     module_versions = check_existing_version()
     errors = {}
+    last_version = None
     for module_name, module_version in module_versions.items():
+        last_version = module_version
         if packaging.version.parse(module_version['__version__']) >= parsed_version:
             errors[module_name] = module_version['__version__']
     if errors:
@@ -387,13 +386,13 @@ def check_new_version(new_version):
         or parsed_version.is_postrelease
         or parsed_version.is_devrelease
     ):
-        parsed_previous_version = packaging.version.parse(module_version['__version__'])
+        parsed_previous_version = packaging.version.parse(last_version['__version__'])
         if not (parsed_previous_version.release == parsed_version.release):
             should_continue = input(
                 'You appear to be releasing a new version, {new_version}, without having '
                 'previously run a prerelease.\n(Last version found was {previous_version})\n'
                 'Are you sure you know what you\'re doing? (Y/n)'.format(
-                    new_version=new_version, previous_version=module_version['__version__']
+                    new_version=new_version, previous_version=last_version['__version__']
                 )
             )
             if not should_continue == 'Y':
@@ -687,20 +686,20 @@ def publish(nightly, autoclean):
 
 @cli.command()
 @click.argument('version')
-def release(version):
+def release(ver):
     """Tags all submodules for a new release.
 
     Ensures that git tags, as well as the version.py files in each submodule, agree and that the
     new version is strictly greater than the current version. Will fail if the new version
     is not an increment (following PEP 440). Creates a new git tag and commit.
     """
-    check_new_version(version)
-    set_new_version(version)
-    commit_new_version(version)
-    set_git_tag(version)
+    check_new_version(ver)
+    set_new_version(ver)
+    commit_new_version(ver)
+    set_git_tag(ver)
     print(
         'Successfully set new version and created git tag {version}. You may continue with the '
-        'release checklist.'.format(version=version)
+        'release checklist.'.format(version=ver)
     )
 
 
@@ -722,12 +721,16 @@ def version():
             )
         )
     else:
-        print('All modules in lockstep with most recent tagged version: {git_tag}'.format(git_tag))
+        print(
+            'All modules in lockstep with most recent tagged version: {git_tag}'.format(
+                git_tag=git_tag
+            )
+        )
 
 
 @cli.command()
 @click.argument('version')
-def audit(version):
+def audit(ver):
     """Checks that the given version is installable from PyPI in a new virtualenv."""
 
     bootstrap_text = '''
@@ -746,7 +749,7 @@ def after_install(options, home_dir):
                 for module_name in MODULE_NAMES + LIBRARY_MODULES
             ]
         ),
-        version=version,
+        version=ver,
     )
 
     bootstrap_script = virtualenv.create_bootstrap_script(bootstrap_text)

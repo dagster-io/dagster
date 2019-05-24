@@ -1,15 +1,5 @@
-# This is a hack because we are getting timeouts on CircleCI running pylint on all the targets
-# at once
-pylint-iterative:
-	set -e;
-	for target in `cat .pylint_targets` ; do \
-		echo $$target; \
-		pylint -j 0 $$target --rcfile=.pylintrc --disable=R,C || exit 1;\
-	done;
-	set +e;
-
 pylint:
-	pylint -j 0 `cat .pylint_targets` --rcfile=.pylintrc --disable=R,C
+	pylint -j 0 `find . -name '*.py'` --rcfile=.pylintrc
 
 update_doc_snapshot:
 	pytest docs --snapshot-update
@@ -40,8 +30,12 @@ install_dev_python_modules:
 	pip install -e python_modules/libraries/dagster-snowflake
 	pip install -e python_modules/libraries/dagster-spark
 	pip install -e python_modules/libraries/dagster-pyspark
+	pip install -e python_modules/libraries/dagster-pagerduty
+	pip install -e python_modules/libraries/dagster-slack
+	pip install -e python_modules/libraries/dagster-datadog
 	pip install -e python_modules/automation
 	pip install -e examples[full]
+	pip install -r bin/requirements.txt
 
 graphql:
 	cd js_modules/dagit/; make generate-types
