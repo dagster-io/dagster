@@ -17,7 +17,7 @@ import {
 
 import SolidTags from "./SolidTags";
 import SolidConfigPort from "./SolidConfigPort";
-import { DEFAULT_RESULT_NAME } from "../Util";
+import { DEFAULT_RESULT_NAME, titleOfIO } from "../Util";
 import { number } from "prop-types";
 
 interface ISolidNodeProps {
@@ -174,26 +174,11 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       const connections: Array<{ a: string; b: string }> = [];
       let title = `${name}: ${type.displayName}`;
       let clickTarget: string | null = null;
-      let mapping: { definition: { name: string } } | undefined = undefined;
 
-      if ("dependsOn" in item && item.dependsOn) {
-        title +=
-          `\n\nFrom:\n` +
-          item.dependsOn
-            .map(o => `${o.solid.name}: ${o.definition.name}`)
-            .join("\n");
+      if ("dependsOn" in item && item.dependsOn.length) {
+        title += `\n\nFrom:\n` + item.dependsOn.map(titleOfIO).join("\n");
         clickTarget =
           item.dependsOn.length === 1 ? item.dependsOn[0].solid.name : null;
-
-        mapping =
-          parentSolid &&
-          parentSolid.definition.__typename === "CompositeSolidDefinition"
-            ? parentSolid.definition.inputMappings.find(
-                m =>
-                  m.mappedInput.solid.name === solid.name &&
-                  m.mappedInput.definition.name === key
-              )
-            : undefined;
 
         connections.push(
           ...item.dependsOn.map(o => ({
@@ -202,24 +187,11 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           }))
         );
       }
-      if ("dependedBy" in item) {
+      if ("dependedBy" in item && item.dependedBy.length) {
         title +=
-          "\n\nUsed By:\n" +
-          item.dependedBy
-            .map(o => `${o.solid.name} ${o.definition.name}`)
-            .join("\n");
+          "\n\nUsed By:\n" + item.dependedBy.map(o => titleOfIO(o)).join("\n");
         clickTarget =
           item.dependedBy.length === 1 ? item.dependedBy[0].solid.name : null;
-
-        mapping =
-          parentSolid &&
-          parentSolid.definition.__typename === "CompositeSolidDefinition"
-            ? parentSolid.definition.outputMappings.find(
-                m =>
-                  m.mappedOutput.solid.name === solid.name &&
-                  m.mappedOutput.definition.name === key
-              )
-            : undefined;
 
         connections.push(
           ...item.dependedBy.map(o => ({
@@ -227,6 +199,22 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             b: solid.name
           }))
         );
+      }
+
+      if (solid.definition.__typename === "CompositeSolidDefinition") {
+        const mappedTo = solid.definition.outputMappings
+          .filter(o => o.definition.name === key)
+          .map(o => o.mappedOutput);
+        if (mappedTo.length) {
+          title += "\n\nMapped From Inner:\n" + mappedTo.map(titleOfIO);
+        }
+
+        const mappedFrom = solid.definition.inputMappings
+          .filter(o => o.definition.name === key)
+          .map(o => o.mappedInput);
+        if (mappedFrom.length) {
+          title += "\n\nMapped To Inner:\n" + mappedFrom.map(titleOfIO);
+        }
       }
 
       const highlighted = connections.some(
@@ -244,16 +232,6 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           onClick={() => clickTarget && this.props.onDoubleClick(clickTarget)}
         >
           <title>{title}</title>
-          {mapping && (
-            <ExternalMappingDot
-              rx={x + 8 + 7}
-              ry={y + 8 + 7}
-              length={45}
-              direction={"dependedBy" in item ? 1 : -1}
-              minified={minified}
-              text={mapping.definition.name}
-            />
-          )}
           <SVGFlowLayoutRect
             x={x}
             y={y}
@@ -409,55 +387,3 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     );
   }
 }
-
-interface ExternalMappingDotProps {
-  rx: number;
-  ry: number;
-  minified: boolean;
-  length: number;
-  direction: -1 | 1;
-  text: string;
-}
-
-const ExternalMappingDot = ({
-  rx,
-  ry,
-  minified,
-  length,
-  direction,
-  text
-}: ExternalMappingDotProps) => {
-  const textSize = SVGMonospaceText.intrinsicSizeForProps({ size: 14, text });
-  const dotRadius = 10;
-  const dotCX = rx - length;
-  const dotCY = ry + length * direction;
-  const path = [];
-  return (
-    <g>
-      <polyline
-        stroke={Colors.VIOLET3}
-        strokeWidth={4}
-        points={`${dotCX},${dotCY} ${rx},${ry}`}
-        markerStart={
-          direction === -1 ? "url(#mapping-arrow-in)" : "url(#mapping-arrow-out)"
-        }
-      />
-      {!minified && (
-        <SVGMonospaceText
-          x={dotCX - (textSize.width + dotRadius + 4)}
-          y={dotCY - textSize.height / 2}
-          text={text}
-          fill={Colors.VIOLET3}
-          size={14}
-        />
-      )}
-      <ellipse
-        fill={Colors.VIOLET3}
-        cx={dotCX}
-        cy={dotCY}
-        rx={dotRadius}
-        ry={dotRadius}
-      />
-    </g>
-  );
-};

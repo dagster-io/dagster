@@ -19,6 +19,15 @@ import Description from "./Description";
 import ConfigTypeSchema from "./ConfigTypeSchema";
 import { SidebarSolidInfoFragment } from "./types/SidebarSolidInfoFragment";
 
+type SolidLinkInfo = {
+  solid: { name: string };
+  definition: { name: string };
+};
+
+type SolidMappingTable = {
+  [key: string]: SolidLinkInfo[];
+};
+
 interface ISidebarSolidInfoProps {
   solid: SidebarSolidInfoFragment;
   showingSubsolids: boolean;
@@ -129,17 +138,26 @@ export default class SidebarSolidInfo extends React.Component<
         ? definition.configDefinition
         : null;
 
-    const inputMappings = {};
-    const outputMappings = {};
+    const inputMappings: SolidMappingTable = {};
+    const outputMappings: SolidMappingTable = {};
+
     if (
       showingSubsolids &&
       definition.__typename == "CompositeSolidDefinition"
     ) {
       definition.inputMappings.forEach(
-        m => (inputMappings[m.definition.name] = titleOfIO(m.mappedInput))
+        m =>
+          (inputMappings[m.definition.name] = [
+            ...(inputMappings[m.definition.name] || []),
+            m.mappedInput
+          ])
       );
       definition.outputMappings.forEach(
-        m => (outputMappings[m.definition.name] = titleOfIO(m.mappedOutput))
+        m =>
+          (outputMappings[m.definition.name] = [
+            ...(outputMappings[m.definition.name] || []),
+            m.mappedOutput
+          ])
       );
     }
 
@@ -174,37 +192,16 @@ export default class SidebarSolidInfo extends React.Component<
         <SidebarSection title={"Inputs"}>
           {inputs.map((input, idx) => (
             <SectionItemContainer key={idx}>
-              <SectionItemHeader>
-                {inputMappings[input.definition.name] ? (
-                  <>
-                    <IOMapping>
-                      {input.definition.name}
-                      <Icon icon="arrow-right" style={{ padding: "0 6px" }} />
-                    </IOMapping>
-                    {inputMappings[input.definition.name]}
-                  </>
-                ) : (
-                  input.definition.name
-                )}
-              </SectionItemHeader>
+              <SectionItemHeader>{input.definition.name}</SectionItemHeader>
               <TypeWrapper>
                 <TypeWithTooltip type={input.definition.type} />
               </TypeWrapper>
               <Description description={input.definition.description} />
-              {input.dependsOn && (
-                <Text>
-                  {"Depends on: "}
-                  {input.dependsOn.map(i => (
-                    <Link
-                      key={`${i.solid.name}:${i.definition.name}`}
-                      to={`./${i.solid.name}`}
-                      style={{ display: "block" }}
-                    >
-                      <Code>{titleOfIO(i)}</Code>
-                    </Link>
-                  ))}
-                </Text>
-              )}
+              <SolidLinks title="Depends on: " items={input.dependsOn} />
+              <SolidLinks
+                title="Mapped to:"
+                items={inputMappings[input.definition.name]}
+              />
               <Expectations items={input.definition.expectations} />
             </SectionItemContainer>
           ))}
@@ -212,22 +209,14 @@ export default class SidebarSolidInfo extends React.Component<
         <SidebarSection title={"Outputs"}>
           {outputs.map((output, idx) => (
             <SectionItemContainer key={idx}>
-              <SectionItemHeader>
-                {outputMappings[output.definition.name] ? (
-                  <>
-                    {outputMappings[output.definition.name]}
-                    <IOMapping>
-                      <Icon icon="arrow-right" style={{ padding: "0 6px" }} />
-                      {output.definition.name}
-                    </IOMapping>
-                  </>
-                ) : (
-                  output.definition.name
-                )}
-              </SectionItemHeader>
+              <SectionItemHeader>{output.definition.name}</SectionItemHeader>
               <TypeWrapper>
                 <TypeWithTooltip type={output.definition.type} />
               </TypeWrapper>
+              <SolidLinks
+                title="Mapped from:"
+                items={outputMappings[output.definition.name]}
+              />
               <Description description={output.definition.description} />
               <Expectations items={output.definition.expectations} />
             </SectionItemContainer>
@@ -242,9 +231,21 @@ const TypeWrapper = styled.div`
   margin-bottom: 10px;
 `;
 
-const IOMapping = styled.span`
-  color: ${Colors.VIOLET3};
-`;
+const SolidLink = (props: SolidLinkInfo) => (
+  <Link to={`./${props.solid.name}`} style={{ display: "block" }}>
+    <Code>{titleOfIO(props)}</Code>
+  </Link>
+);
+
+const SolidLinks = (props: { title: string; items: SolidLinkInfo[] }) =>
+  props.items && props.items.length ? (
+    <Text>
+      {props.title}
+      {props.items.map((i, idx) => (
+        <SolidLink key={idx} {...i} />
+      ))}
+    </Text>
+  ) : null;
 
 const Expectations = (props: {
   items: { name: string; description: string | null }[];
