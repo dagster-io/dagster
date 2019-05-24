@@ -1,5 +1,4 @@
 import * as React from "react";
-import { uniqBy } from "lodash";
 import { match } from "react-router";
 import gql from "graphql-tag";
 import { History } from "history";
@@ -20,8 +19,8 @@ const PipelineExplorerRoot: React.FunctionComponent<
   const pathSolids = props.location.pathname
     .substr(props.location.pathname.indexOf("explore") + 8)
     .split("/");
-  const parentSolidName = pathSolids[pathSolids.length - 2];
-  const selectedSolidName = pathSolids[pathSolids.length - 1];
+  const parentHandleID = pathSolids[pathSolids.length - 2];
+  const selectedHandleID = pathSolids[pathSolids.length - 1];
 
   return (
     <Query
@@ -33,37 +32,28 @@ const PipelineExplorerRoot: React.FunctionComponent<
       {(queryResult: QueryResult<PipelineExplorerRootQuery, any>) => (
         <Loading queryResult={queryResult}>
           {({ pipeline }) => {
-            let names = pipeline.solids.map(s => s.name);
+            let displayedHandles = pipeline.solidHandles.filter(h => !h.parent);
             let parent = undefined;
 
-            if (parentSolidName) {
+            if (parentHandleID) {
               parent = pipeline.solidHandles.find(
-                h => h.solid.name === parentSolidName
-              )!.solid;
-              if (parent.definition.__typename === "CompositeSolidDefinition") {
-                names = parent.definition.solids.map(s => s.name);
-              }
+                h => h.handleID === parentHandleID
+              );
+              displayedHandles = pipeline.solidHandles.filter(
+                h => h.parent && h.parent.handleID === parentHandleID
+              );
             }
-
-            let solids = pipeline.solidHandles
-              .filter(h => names.includes(h.solid.name))
-              .map(h => h.solid);
-
-            // TODO: Currently solidHandles returns lots of duplicate entries
-            solids = uniqBy(solids, a => a.name);
-
-            const selected = selectedSolidName
-              ? solids.find(s => s.name === selectedSolidName)
-              : undefined;
 
             return (
               <PipelineExplorer
                 history={props.history}
                 path={pathSolids}
                 pipeline={pipeline}
-                solids={solids}
-                solid={selected}
-                parentSolid={parent}
+                handles={displayedHandles}
+                parentHandle={parent}
+                selectedHandle={displayedHandles.find(
+                  h => h.handleID === selectedHandleID
+                )}
               />
             );
           }}
@@ -82,24 +72,20 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
         name
       }
       solidHandles {
+        handleID
+        parent {
+          handleID
+        }
         solid {
           name
-          ...PipelineExplorerSolidFragment
-          definition {
-            __typename
-            ... on CompositeSolidDefinition {
-              solids {
-                name
-              }
-            }
-          }
         }
+        ...PipelineExplorerSolidHandleFragment
       }
     }
   }
 
   ${PipelineExplorer.fragments.PipelineExplorerFragment}
-  ${PipelineExplorer.fragments.PipelineExplorerSolidFragment}
+  ${PipelineExplorer.fragments.PipelineExplorerSolidHandleFragment}
 `;
 
 export default PipelineExplorerRoot;
