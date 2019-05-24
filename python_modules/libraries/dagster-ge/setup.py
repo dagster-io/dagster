@@ -49,7 +49,7 @@ def _do_setup(name='dagster-ge'):
             'enum-compat==0.0.2',
             'future>=0.16.0',
             'dagster>=0.2.0',
-            'great-expectations>=0.4.2',
+            'great-expectations>=0.4.2,<=0.5.1',
         ],
     )
 
