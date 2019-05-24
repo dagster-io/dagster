@@ -1,6 +1,6 @@
 # dagster-dask
 
-##Introduction
+## Introduction
 This library provides an integration with Dask / Dask.Distributed, to support distributed execution of Dagster workloads. It is still early, and has some limitations which are discussed below.
 
 Presently, it provides a single API, `execute_on_dask`, which can execute a Dagster pipeline on either local Dask or a remote Dask cluster.

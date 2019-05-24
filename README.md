@@ -59,14 +59,21 @@ Dagster works with the tools and systems that you're already using with your dat
 			</td>
 		</tr>
 		<tr>
-			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/57987766-1a097f80-7a3b-11e9-8a47-985bb9bcf458.png"></td>
+			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/58348728-48f66b80-7e16-11e9-9e9f-1a0fea9a49b4.png"></td>
+			<td style="border-left: 0px"> <b>Dask</b></td>
+			<td><a href="https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-dask" />dagster-dask</a>
+			<br />Provides a Dagster integration with Dask / Dask.Distributed.
+			</td>
+		</tr>
+		<tr>
+			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/58349731-f36f8e00-7e18-11e9-8a2e-86e086caab66.png"></td>
 			<td style="border-left: 0px"> <b>DataDog</b></td>
 			<td><a href="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datadog" />dagster-datadog</a>
 			<br />Provides a Dagster resource for publishing metrics to DataDog.
 			</td>
 		</tr>
 		<tr>
-			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/57987783-48875a80-7a3b-11e9-8ad0-41d16d7af4d2.png"></td>
+			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/58349454-3846f500-7e18-11e9-84f0-6c9c75ae9993.png"></td>
 			<td style="border-left: 0px"> <b>Great Expectations</b></td>
 			<td><a href="https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/expectations.html" />Expectations in Dagster</a><br />
 			The <a href="https://github.com/great-expectations/great_expectations">Great Expectations</a> framework is designed to promote data quality checks for data warehouses. In Dagster, expectations are a first-class citizen.
@@ -87,7 +94,7 @@ Dagster works with the tools and systems that you're already using with your dat
 			</td>
 		</tr>
 		<tr>
-			<td align="center" style="border-right: 0px"><img src="https://user-images.githubusercontent.com/609349/57988042-2f33dd80-7a3e-11e9-882c-5776925fd4d2.png"></td>
+			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/58349397-fcac2b00-7e17-11e9-900c-9ab8cf7cb64a.png"></td>
 			<td style="border-left: 0px"> <b>Snowflake</b></td>
 			<td><a href="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-snowflake" />dagster-snowflake</a>
 			<br />A library for interacting with the Snowflake Data Warehouse.
