@@ -7,11 +7,6 @@
 // GraphQL fragment: SidebarTabbedContainerPipelineFragment
 // ====================================================
 
-export interface SidebarTabbedContainerPipelineFragment_environmentType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  name: string | null;
-}
-
 export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
@@ -315,7 +310,6 @@ export interface SidebarTabbedContainerPipelineFragment_modes {
 export interface SidebarTabbedContainerPipelineFragment {
   __typename: "Pipeline";
   name: string;
-  environmentType: SidebarTabbedContainerPipelineFragment_environmentType;
   description: string | null;
   modes: SidebarTabbedContainerPipelineFragment_modes[];
 }

@@ -7,11 +7,6 @@
 // GraphQL fragment: PipelineExplorerFragment
 // ====================================================
 
-export interface PipelineExplorerFragment_environmentType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  name: string | null;
-}
-
 export interface PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
@@ -316,6 +311,5 @@ export interface PipelineExplorerFragment {
   __typename: "Pipeline";
   name: string;
   description: string | null;
-  environmentType: PipelineExplorerFragment_environmentType;
   modes: PipelineExplorerFragment_modes[];
 }

@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import check
 from dagster.utils import script_relative_path
 from dagster.core.types.config import ALL_CONFIG_BUILTINS

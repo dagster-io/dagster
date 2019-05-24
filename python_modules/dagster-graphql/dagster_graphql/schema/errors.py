@@ -81,6 +81,20 @@ class DauphinSolidNotFoundError(dauphin.ObjectType):
         self.message = 'Solid {solid_name} does not exist'.format(solid_name=solid_name)
 
 
+class DauphinModeNotFoundError(dauphin.ObjectType):
+    class Meta:
+        name = 'ModeNotFoundError'
+        interfaces = (DauphinError,)
+
+    mode = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, mode, selector):
+        self.mode = check.str_param(mode, 'mode')
+        self.message = 'Mode {mode} not found in pipeline {pipeline}.'.format(
+            mode=mode, pipeline=selector.name
+        )
+
+
 class DauphinInvalidDefinitionError(dauphin.ObjectType):
     class Meta:
         name = 'InvalidDefinitionError'

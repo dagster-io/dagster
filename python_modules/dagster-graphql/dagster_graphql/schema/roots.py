@@ -1,5 +1,6 @@
 from dagster.core.execution.api import ExecutionSelector
 
+from dagster import check
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.execution import (
     ExecutionMetadata,
@@ -21,6 +22,14 @@ from dagster_graphql.implementation.fetch_runs import (
     get_runs,
     validate_pipeline_config,
 )
+from dagster_graphql.implementation.environment_schema import (
+    resolve_environment_schema_or_error,
+    resolve_config_type_or_error,
+    resolve_is_environment_config_valid,
+)
+
+
+from .config_types import to_dauphin_config_type
 
 
 class DauphinQuery(dauphin.ObjectType):
@@ -73,6 +82,16 @@ class DauphinQuery(dauphin.ObjectType):
         },
     )
 
+    environmentSchemaOrError = dauphin.Field(
+        dauphin.NonNull('EnvironmentSchemaOrError'),
+        args={
+            'selector': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
+            'mode': dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        },
+        description='''Fetch an environment schema given an execution selection and a mode.
+        See the descripton on EnvironmentSchema for more information.''',
+    )
+
     def resolve_configTypeOrError(self, graphene_info, **kwargs):
         return get_config_type(
             graphene_info, kwargs['pipelineName'], kwargs['configTypeName'], kwargs.get('mode')
@@ -116,6 +135,11 @@ class DauphinQuery(dauphin.ObjectType):
             pipeline.to_selector(),
             kwargs.get('environmentConfigData'),
             kwargs.get('mode'),
+        )
+
+    def resolve_environmentSchemaOrError(self, graphene_info, **kwargs):
+        return resolve_environment_schema_or_error(
+            graphene_info, kwargs['selector'].to_selector(), kwargs['mode']
         )
 
 
@@ -293,3 +317,90 @@ class DauphinExecutionSelector(dauphin.InputObjectType):
 
     def to_selector(self):
         return ExecutionSelector(self.name, self.solidSubset)
+
+
+class DauphinEnvironmentSchema(dauphin.ObjectType):
+    def __init__(self, environment_schema, dagster_pipeline):
+        from dagster.core.definitions.environment_schema import EnvironmentSchema
+        from dagster.core.definitions.pipeline import PipelineDefinition
+
+        self._environment_schema = check.inst_param(
+            environment_schema, 'environment_schema', EnvironmentSchema
+        )
+
+        self._dagster_pipeline = check.inst_param(
+            dagster_pipeline, 'dagster_pipeline', PipelineDefinition
+        )
+
+    class Meta:
+        name = 'EnvironmentSchema'
+        description = '''The environment schema represents the all the config type
+        information given a certain execution selection and mode of execution of that
+        selection. All config interactions (e.g. checking config validity, fetching
+        all config types, fetching in a particular config type) should be done
+        through this type '''
+
+    rootEnvironmentType = dauphin.Field(
+        dauphin.NonNull('ConfigType'),
+        description='''Fetch the root environment type. Concretely this is the type that
+        is in scope at the root of configuration document for a particular execution selection.
+        It is the type that is in scope initially with a blank config editor.''',
+    )
+    allConfigTypes = dauphin.Field(
+        dauphin.non_null_list('ConfigType'),
+        description='''Fetch all the named config types that are in the schema. Useful
+        for things like a type browser UI, or for fetching all the types are in the
+        scope of a document so that the index can be built for the autocompleting editor.
+    ''',
+    )
+    configTypeOrError = dauphin.Field(
+        dauphin.NonNull('ConfigTypeOrError'),
+        configTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        description='''Fetch a particular config type''',
+    )
+
+    isEnvironmentConfigValid = dauphin.Field(
+        dauphin.NonNull('PipelineConfigValidationResult'),
+        args={'environmentConfigData': dauphin.Argument('EnvironmentConfigData')},
+        description='''Parse a particular environment config result. The return value
+        either indicates that the validation succeeded by returning
+        `PipelineConfigValidationValid` or that there are configuration errors
+        by returning `PipelineConfigValidationInvalid' which containers a list errors
+        so that can be rendered for the user''',
+    )
+
+    def resolve_allConfigTypes(self, _graphene_info):
+        return sorted(
+            list(map(to_dauphin_config_type, self._environment_schema.all_config_types())),
+            key=lambda ct: ct.name if ct.name else '',
+        )
+
+    def resolve_rootEnvironmentType(self, _graphene_info):
+        return to_dauphin_config_type(self._environment_schema.environment_type)
+
+    def resolve_configTypeOrError(self, graphene_info, **kwargs):
+        return resolve_config_type_or_error(
+            graphene_info,
+            self._environment_schema,
+            self._dagster_pipeline,
+            kwargs['configTypeName'],
+        )
+
+    def resolve_isEnvironmentConfigValid(self, graphene_info, **kwargs):
+        return resolve_is_environment_config_valid(
+            graphene_info,
+            self._environment_schema,
+            self._dagster_pipeline,
+            kwargs.get('environmentConfigData'),
+        )
+
+
+class DauphinEnvironmentSchemaOrError(dauphin.Union):
+    class Meta:
+        name = 'EnvironmentSchemaOrError'
+        types = (
+            'EnvironmentSchema',
+            'PipelineNotFoundError',
+            'SolidNotFoundError',
+            'ModeNotFoundError',
+        )
