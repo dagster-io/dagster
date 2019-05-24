@@ -69,7 +69,8 @@ def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
     host_dagit_ui(log, log_dir, handle, sync, host, port)
 
 
-def host_dagit_ui(log, log_dir, handle, sync, host, port):
+def host_dagit_ui(log, log_dir, handle, use_sync, host, port):
+    check.inst_param(handle, 'handle', ExecutionTargetHandle)
     if log:
 
         def create_pipeline_run(*args, **kwargs):
@@ -80,7 +81,7 @@ def host_dagit_ui(log, log_dir, handle, sync, host, port):
 
     pipeline_run_storage = PipelineRunStorage(create_pipeline_run=create_pipeline_run)
 
-    app = create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=sync)
+    app = create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=use_sync)
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
     print('Serving on http://{host}:{port}'.format(host=host, port=port))
     try:
