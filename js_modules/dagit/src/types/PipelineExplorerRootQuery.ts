@@ -317,6 +317,11 @@ export interface PipelineExplorerRootQuery_pipeline_solids {
   name: string;
 }
 
+export interface PipelineExplorerRootQuery_pipeline_solidHandles_parent {
+  __typename: "SolidHandle";
+  handleID: string;
+}
+
 export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_SolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
@@ -529,18 +534,12 @@ export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_definitio
   mappedOutput: PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings_mappedOutput;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_CompositeSolidDefinition_solids {
-  __typename: "Solid";
-  name: string;
-}
-
 export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
   metadata: PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_CompositeSolidDefinition_metadata[];
   inputMappings: PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings[];
   description: string | null;
-  solids: PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_CompositeSolidDefinition_solids[];
 }
 
 export type PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition = PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_SolidDefinition | PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_CompositeSolidDefinition;
@@ -655,6 +654,8 @@ export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid {
 
 export interface PipelineExplorerRootQuery_pipeline_solidHandles {
   __typename: "SolidHandle";
+  handleID: string;
+  parent: PipelineExplorerRootQuery_pipeline_solidHandles_parent | null;
   solid: PipelineExplorerRootQuery_pipeline_solidHandles_solid;
 }
 
