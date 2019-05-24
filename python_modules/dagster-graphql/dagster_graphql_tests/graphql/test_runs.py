@@ -49,9 +49,11 @@ def test_get_runs_over_graphql(snapshot):
     context = define_context()
     payload_one = sync_execute_get_run_log_data(
         {
-            'pipeline': {'name': 'multi_mode_with_resources'},
-            'mode': 'add_mode',
-            'environmentConfigData': {'resources': {'op': {'config': 2}}},
+            'executionParams': {
+                'selector': {'name': 'multi_mode_with_resources'},
+                'mode': 'add_mode',
+                'environmentConfigData': {'resources': {'op': {'config': 2}}},
+            }
         },
         context=context,
     )
@@ -59,10 +61,17 @@ def test_get_runs_over_graphql(snapshot):
 
     payload_two = sync_execute_get_run_log_data(
         {
-            'pipeline': {'name': 'multi_mode_with_resources'},
-            'mode': 'add_mode',
-            'environmentConfigData': {'resources': {'op': {'config': 3}}},
+            'executionParams': {
+                'selector': {'name': 'multi_mode_with_resources'},
+                'mode': 'add_mode',
+                'environmentConfigData': {'resources': {'op': {'config': 3}}},
+            }
         },
+        #
+        #     'pipeline': {'name': 'multi_mode_with_resources'},
+        #     'mode': 'add_mode',
+        #     'environmentConfigData': {'resources': {'op': {'config': 3}}},
+        # },
         context=context,
     )
 

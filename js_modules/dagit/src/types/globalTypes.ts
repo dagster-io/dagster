@@ -43,9 +43,27 @@ export enum StepKind {
   UNMARSHAL_INPUT = "UNMARSHAL_INPUT",
 }
 
+export interface ExecutionMetadata {
+  runId?: string | null;
+  tags?: ExecutionTag[] | null;
+}
+
+export interface ExecutionParams {
+  selector: ExecutionSelector;
+  environmentConfigData?: any | null;
+  mode: string;
+  executionMetadata?: ExecutionMetadata | null;
+  stepKeys?: string[] | null;
+}
+
 export interface ExecutionSelector {
   name: string;
   solidSubset?: string[] | null;
+}
+
+export interface ExecutionTag {
+  key: string;
+  value: string;
 }
 
 export interface ReexecutionConfig {

@@ -26,7 +26,12 @@ def get_expectation_result(logs, solid_name):
 
 def test_basic_expectations_within_transforms():
     logs = sync_execute_get_events(
-        variables={'pipeline': {'name': 'pipeline_with_expectations'}, 'mode': 'default'}
+        variables={
+            'executionParams': {
+                'selector': {'name': 'pipeline_with_expectations'},
+                'mode': 'default',
+            }
+        }
     )
 
     emit_failed_expectation_event = get_expectation_result(logs, 'emit_failed_expectation')
@@ -58,13 +63,15 @@ def test_basic_expectations_within_transforms():
 def test_basic_input_output_expectations(snapshot):
     logs = sync_execute_get_events(
         variables={
-            'pipeline': {'name': 'csv_hello_world_with_expectations'},
-            'environmentConfigData': {
-                'solids': {
-                    'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}
-                }
-            },
-            'mode': 'default',
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world_with_expectations'},
+                'environmentConfigData': {
+                    'solids': {
+                        'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}
+                    }
+                },
+                'mode': 'default',
+            }
         }
     )
 

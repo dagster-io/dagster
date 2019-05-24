@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ExecutionSelector } from "./../../types/globalTypes";
+import { ExecutionParams } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: StartPipelineExecution
@@ -45,7 +45,5 @@ export interface StartPipelineExecution {
 }
 
 export interface StartPipelineExecutionVariables {
-  pipeline: ExecutionSelector;
-  environmentConfigData: any;
-  mode: string;
+  executionParams: ExecutionParams;
 }

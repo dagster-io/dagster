@@ -53,20 +53,8 @@ query PipelineQuery($environmentConfigData: EnvironmentConfigData, $pipeline: Ex
 '''
 
 EXECUTE_PLAN_QUERY = '''
-mutation (
-    $pipelineName: String!
-    $environmentConfigData: EnvironmentConfigData 
-    $stepKeys: [String!]
-    $mode: String!
-    $executionMetadata: ExecutionMetadata
-) {
-    executePlan(
-        pipelineName: $pipelineName
-        environmentConfigData: $environmentConfigData
-        stepKeys: $stepKeys
-        mode: $mode
-        executionMetadata: $executionMetadata
-    ) {
+mutation ($executionParams: ExecutionParams!) {
+    executePlan(executionParams: $executionParams) {
         __typename
         ... on ExecutePlanSuccess {
             pipeline { name }
@@ -127,11 +115,13 @@ def test_success_whole_execution_plan(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'csv_hello_world',
-            'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
-            'stepKeys': None,
-            'executionMetadata': {'runId': run_id},
-            'mode': 'default',
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'stepKeys': None,
+                'executionMetadata': {'runId': run_id},
+                'mode': 'default',
+            }
         },
     )
 
@@ -157,13 +147,15 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'csv_hello_world',
-            'environmentConfigData': merge_dicts(
-                csv_hello_world_solids_config(), {'storage': {'filesystem': {}}}
-            ),
-            'stepKeys': None,
-            'executionMetadata': {'runId': run_id},
-            'mode': 'default',
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': merge_dicts(
+                    csv_hello_world_solids_config(), {'storage': {'filesystem': {}}}
+                ),
+                'stepKeys': None,
+                'executionMetadata': {'runId': run_id},
+                'mode': 'default',
+            }
         },
     )
 
@@ -189,13 +181,15 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'csv_hello_world',
-            'environmentConfigData': merge_dicts(
-                csv_hello_world_solids_config(), {'storage': {'in_memory': {}}}
-            ),
-            'stepKeys': None,
-            'executionMetadata': {'runId': run_id},
-            'mode': 'default',
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': merge_dicts(
+                    csv_hello_world_solids_config(), {'storage': {'in_memory': {}}}
+                ),
+                'stepKeys': None,
+                'executionMetadata': {'runId': run_id},
+                'mode': 'default',
+            }
         },
     )
 
@@ -221,11 +215,13 @@ def test_successful_one_part_execute_plan(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'csv_hello_world',
-            'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
-            'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.compute'],
-            'executionMetadata': {'runId': run_id},
-            'mode': 'default',
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.compute'],
+                'executionMetadata': {'runId': run_id},
+                'mode': 'default',
+            }
         },
     )
 
@@ -262,11 +258,13 @@ def test_successful_two_part_execute_plan(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'csv_hello_world',
-            'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
-            'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.compute'],
-            'executionMetadata': {'runId': run_id},
-            'mode': 'default',
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.compute'],
+                'executionMetadata': {'runId': run_id},
+                'mode': 'default',
+            }
         },
     )
 
@@ -278,11 +276,13 @@ def test_successful_two_part_execute_plan(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'csv_hello_world',
-            'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
-            'stepKeys': ['sum_sq_solid.compute'],
-            'executionMetadata': {'runId': run_id},
-            'mode': 'default',
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'stepKeys': ['sum_sq_solid.compute'],
+                'executionMetadata': {'runId': run_id},
+                'mode': 'default',
+            }
         },
     )
 
@@ -317,13 +317,19 @@ def test_invalid_config_execute_plan(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'csv_hello_world',
-            'environmentConfigData': {
-                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}
-            },
-            'stepKeys': ['sum_solid.num.input_thunk', 'sum_solid.compute', 'sum_sq_solid.compute'],
-            'executionMetadata': {'runId': 'kdjkfjdfd'},
-            'mode': 'default',
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': {
+                    'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}
+                },
+                'stepKeys': [
+                    'sum_solid.num.input_thunk',
+                    'sum_solid.compute',
+                    'sum_sq_solid.compute',
+                ],
+                'executionMetadata': {'runId': 'kdjkfjdfd'},
+                'mode': 'default',
+            }
         },
     )
 
@@ -344,13 +350,19 @@ def test_pipeline_not_found_error_execute_plan(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'nope',
-            'environmentConfigData': {
-                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 'ok'}}}}}
-            },
-            'stepKeys': ['sum_solid.num.input_thunk', 'sum_solid.compute', 'sum_sq_solid.compute'],
-            'executionMetadata': {'runId': 'kdjkfjdfd'},
-            'mode': 'default',
+            'executionParams': {
+                'selector': {'name': 'nope'},
+                'environmentConfigData': {
+                    'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 'ok'}}}}}
+                },
+                'stepKeys': [
+                    'sum_solid.num.input_thunk',
+                    'sum_solid.compute',
+                    'sum_sq_solid.compute',
+                ],
+                'executionMetadata': {'runId': 'kdjkfjdfd'},
+                'mode': 'default',
+            }
         },
     )
 
@@ -417,17 +429,19 @@ def test_basic_execute_plan_with_materialization():
             define_context(),
             EXECUTE_PLAN_QUERY,
             variables={
-                'pipelineName': 'csv_hello_world',
-                'environmentConfigData': environment_dict,
-                'stepKeys': [
-                    'sum_solid.inputs.num.read',
-                    'sum_solid.compute',
-                    'sum_solid.outputs.result.materialize.0',
-                    'sum_solid.outputs.result.materialize.join',
-                    'sum_sq_solid.compute',
-                ],
-                'executionMetadata': {'runId': 'kdjkfjdfd'},
-                'mode': 'default',
+                'executionParams': {
+                    'selector': {'name': 'csv_hello_world'},
+                    'environmentConfigData': environment_dict,
+                    'stepKeys': [
+                        'sum_solid.inputs.num.read',
+                        'sum_solid.compute',
+                        'sum_solid.outputs.result.materialize.0',
+                        'sum_solid.outputs.result.materialize.join',
+                        'sum_sq_solid.compute',
+                    ],
+                    'executionMetadata': {'runId': 'kdjkfjdfd'},
+                    'mode': 'default',
+                }
             },
         )
 

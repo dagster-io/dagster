@@ -8,13 +8,15 @@ mutation(
   $stepKeys: [String!] = {step_keys}
 ) {{
   executePlan(
-    environmentConfigData: $environmentConfigData,
-    mode: $mode,
-    executionMetadata: {{
-      runId: $runId
-    }},
-    pipelineName: $pipelineName,
-    stepKeys: $stepKeys,
+    executionParams: {{
+      environmentConfigData: $environmentConfigData,
+      mode: $mode,
+      executionMetadata: {{
+        runId: $runId
+      }},
+      selector: {{name: $pipelineName}},
+      stepKeys: $stepKeys,
+    }}
   ) {{
     __typename
     ... on PipelineConfigValidationInvalid {{

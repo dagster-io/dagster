@@ -11,7 +11,7 @@ deps =
   -e ../python_modules/dagster-airflow
 commands =
   coverage erase
-  pip install -e .[airflow]
+  pip install -e .[full,airflow]
   ipython kernel install --name "dagster" --user
   pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow"
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered
@@ -21,7 +21,7 @@ commands =
 [testenv:py27]
 commands =
   coverage erase
-  pip install -e .[airflow]
+  pip install -e .[full,airflow]
   ipython kernel install --name "python3" --user
   pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow and not py3"
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered
@@ -36,7 +36,7 @@ deps =
   -e ../python_modules/libraries/dagster-aws
 commands =
   coverage erase
-  pip install -e .
+  pip install -e .[full]
   pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow and not airflow"
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered
   coverage html --omit='.tox/*,**/test_*.py'

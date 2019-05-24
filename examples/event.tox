@@ -13,7 +13,8 @@ deps =
   -e ../python_modules/dagster-graphql
   -e ../python_modules/dagit
   -e ../python_modules/dagster-airflow
-  -e .
+  -e .[full]
+
 commands =
   coverage erase
   pytest dagster_examples_tests/event_pipeline_demo_tests/ -vv --junitxml=test_results.xml --cov=dagster_examples --cov-append --cov-report=

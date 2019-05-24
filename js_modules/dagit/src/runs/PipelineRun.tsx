@@ -161,14 +161,16 @@ export class PipelineRun extends React.Component<
 
     const result = await mutation({
       variables: {
-        pipeline: {
-          name: run.pipeline.name,
-          solidSubset: run.pipeline.solids.map(s => s.name)
+        executionParams: {
+          selector: {
+            name: run.pipeline.name,
+            solidSubset: run.pipeline.solids.map(s => s.name)
+          },
+          environmentConfigData: yaml.parse(run.environmentConfigYaml),
+          stepKeys: [stepKey],
+          mode: run.mode
         },
-        environmentConfigData: yaml.parse(run.environmentConfigYaml),
-        stepKeys: [stepKey],
-        reexecutionConfig: reexecutionConfig,
-        mode: run.mode
+        reexecutionConfig: reexecutionConfig
       }
     });
 
@@ -262,17 +264,11 @@ const LogsContainer = styled.div`
 
 const REEXECUTE_STEP_MUTATION = gql`
   mutation ReexecuteStep(
-    $pipeline: ExecutionSelector!
-    $environmentConfigData: EnvironmentConfigData!
-    $mode: String!
-    $stepKeys: [String!]
+    $executionParams: ExecutionParams!
     $reexecutionConfig: ReexecutionConfig
   ) {
     startPipelineExecution(
-      pipeline: $pipeline
-      environmentConfigData: $environmentConfigData
-      mode: $mode
-      stepKeys: $stepKeys
+      executionParams: $executionParams
       reexecutionConfig: $reexecutionConfig
     ) {
       ...HandleStartExecutionFragment

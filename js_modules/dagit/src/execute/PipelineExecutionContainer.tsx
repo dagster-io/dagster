@@ -170,12 +170,14 @@ export default class PipelineExecutionContainer extends React.Component<
     }
 
     return {
-      environmentConfigData,
-      pipeline: {
-        name: pipeline.name,
-        solidSubset: currentSession.solidSubset
-      },
-      mode: currentSession.mode
+      executionParams: {
+        environmentConfigData,
+        selector: {
+          name: pipeline.name,
+          solidSubset: currentSession.solidSubset
+        },
+        mode: currentSession.mode
+      }
     };
   };
 
@@ -309,16 +311,8 @@ export default class PipelineExecutionContainer extends React.Component<
 }
 
 const START_PIPELINE_EXECUTION_MUTATION = gql`
-  mutation StartPipelineExecution(
-    $pipeline: ExecutionSelector!
-    $environmentConfigData: EnvironmentConfigData!
-    $mode: String!
-  ) {
-    startPipelineExecution(
-      pipeline: $pipeline
-      environmentConfigData: $environmentConfigData
-      mode: $mode
-    ) {
+  mutation StartPipelineExecution($executionParams: ExecutionParams!) {
+    startPipelineExecution(executionParams: $executionParams) {
       __typename
 
       ... on StartPipelineExecutionSuccess {
