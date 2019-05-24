@@ -252,42 +252,6 @@ export default class PipelineGraph extends React.Component<
             onClick={onClickBackground}
             onDoubleClick={this.unfocus}
           >
-            <defs>
-              <marker
-                id="mapping-arrow-in"
-                markerWidth="2"
-                markerHeight="4"
-                refX="-7"
-                refY="0"
-                orient="auto"
-                markerUnits="strokeWidth"
-                viewBox="0,-2,2,4"
-              >
-                <path
-                  d="M0,-2 L2,0 L0,2"
-                  stroke="#8F398F"
-                  strokeWidth="0.75"
-                  fill="transparent"
-                />
-              </marker>
-              <marker
-                id="mapping-arrow-out"
-                markerWidth="2"
-                markerHeight="4"
-                refX="-4"
-                refY="0"
-                orient="auto"
-                markerUnits="strokeWidth"
-                viewBox="0,-2,2,4"
-              >
-                <path
-                  d="M2,-2 L0,0 L2,2"
-                  stroke="#8F398F"
-                  strokeWidth="0.75"
-                  fill="transparent"
-                />
-              </marker>
-            </defs>
             <PipelineGraphContents
               layout={layout}
               minified={scale < 0.99}
