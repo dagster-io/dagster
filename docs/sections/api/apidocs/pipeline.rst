@@ -14,8 +14,9 @@ Pipelines
 
 ----
 
-Contexts, Resources, and Logging
+Resources, Logging, and Modes
 ================================
+
 
 .. autoclass:: ResourceDefinition
     :members:
@@ -33,6 +34,9 @@ Contexts, Resources, and Logging
 .. autoclass:: InitLoggerContext
     :members:
 
+.. autoclass:: ModeDefinition
+    :members:
+
 ----
 
 Repositories
@@ -40,4 +44,3 @@ Repositories
 
 .. autoclass:: RepositoryDefinition
     :members:
-

@@ -625,7 +625,7 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.context">context (dagster.SolidExecutionResult attribute)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.context">[1]</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.context">context (dagster.SolidExecutionResult attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -701,13 +701,13 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.failure_data">failure_data (dagster.SolidExecutionResult attribute)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.failure_data">[1]</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.failure_data">failure_data (dagster.SolidExecutionResult attribute)</a>
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.Field">Field() (in module dagster)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.FIXME">FIXME (dagster.SolidExecutionResult attribute)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.FIXME">[1]</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.FIXME">FIXME (dagster.SolidExecutionResult attribute)</a>
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.Float">Float (in module dagster)</a>
 </li>
@@ -786,6 +786,8 @@ snapshots['test_build_all_docs 3'] = '''
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/solids.html#dagster.Materialization">Materialization (class in dagster)</a>
+</li>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.ModeDefinition">ModeDefinition (class in dagster)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -909,9 +911,9 @@ snapshots['test_build_all_docs 3'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/types.html#dagster.Selector">Selector() (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.skipped">skipped (dagster.SolidExecutionResult attribute)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.skipped">[1]</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.skipped">skipped (dagster.SolidExecutionResult attribute)</a>
 </li>
-      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.solid">solid (dagster.SolidExecutionResult attribute)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.solid">[1]</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.solid">solid (dagster.SolidExecutionResult attribute)</a>
 </li>
       <li><a href="sections/api/apidocs/solids.html#dagster.solid">solid() (in module dagster)</a>
 </li>
@@ -921,7 +923,7 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult">SolidExecutionResult (class in dagster)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult">[1]</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult">SolidExecutionResult (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.SolidInstance">SolidInstance (class in dagster)</a>
 </li>
@@ -932,7 +934,7 @@ snapshots['test_build_all_docs 3'] = '''
       <li><a href="sections/api/apidocs/execution.html#dagster.PipelineExecutionResult.success">success (dagster.PipelineExecutionResult attribute)</a>
 
       <ul>
-        <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.success">(dagster.SolidExecutionResult attribute)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.success">[1]</a>
+        <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.success">(dagster.SolidExecutionResult attribute)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -941,11 +943,11 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.transformed_value">transformed_value() (dagster.SolidExecutionResult method)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.transformed_value">[1]</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.transformed_value">transformed_value() (dagster.SolidExecutionResult method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.transformed_values">transformed_values (dagster.SolidExecutionResult attribute)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.transformed_values">[1]</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.transformed_values">transformed_values (dagster.SolidExecutionResult attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1103,7 +1105,7 @@ snapshots['test_build_all_docs 4'] = '''
 <li class="toctree-l1"><a class="reference internal" href="sections/api/api.html">API Docs</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/solids.html">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/execution.html">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/types.html">Types</a></li>
@@ -1462,6 +1464,7 @@ snapshots['test_build_all_docs 7'] = '''
 <li><a href="dagster/core/definitions/input.html">dagster.core.definitions.input</a></li>
 <li><a href="dagster/core/definitions/logger.html">dagster.core.definitions.logger</a></li>
 <li><a href="dagster/core/definitions/materialization.html">dagster.core.definitions.materialization</a></li>
+<li><a href="dagster/core/definitions/mode.html">dagster.core.definitions.mode</a></li>
 <li><a href="dagster/core/definitions/output.html">dagster.core.definitions.output</a></li>
 <li><a href="dagster/core/definitions/pipeline.html">dagster.core.definitions.pipeline</a></li>
 <li><a href="dagster/core/definitions/repository.html">dagster.core.definitions.repository</a></li>
@@ -18821,25 +18824,21 @@ function(){var a=i.call(arguments);H.call(a,this._wrapped);return v(c.apply(b,a)
 true;return this};m.prototype.value=function(){return this._wrapped}}).call(this);
 '''
 
-snapshots['test_build_all_docs 48'] = '''
-/*
+snapshots['test_build_all_docs 48'] = '''/*
  *
  *  First, theme overrides
  *
  */
 
-
-@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600');
-
+@import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600");
 
 body {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 300;
-    color: #1C2844;
-    font-size: 17px;
-    line-height: 25px;
+  font-family: "Source Sans Pro", sans-serif;
+  font-weight: 300;
+  color: #1c2844;
+  font-size: 17px;
+  line-height: 25px;
 }
-
 
 div.body h1,
 div.body h2,
@@ -18849,130 +18848,144 @@ div.body h5,
 div.body h6,
 div.sphinxsidebar h3,
 div.sphinxsidebar h4 {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 600;
-    color: #1C2844;
+  font-family: "Source Sans Pro", sans-serif;
+  font-weight: 600;
+  color: #1c2844;
 }
 
-div.body h1 { margin-top: 0; padding-top: 0; font-size: 140%; }
-div.body h2 { font-size: 110%; }
-div.body h3 { font-size: 100%; }
-div.body h4 { font-size: 100%; }
-div.body h5 { font-size: 100%; }
-div.body h6 { font-size: 100%; }
+div.body h1 {
+  margin-top: 0;
+  padding-top: 0;
+  font-size: 140%;
+}
+div.body h2 {
+  font-size: 110%;
+}
+div.body h3 {
+  font-size: 100%;
+}
+div.body h4 {
+  font-size: 100%;
+}
+div.body h5 {
+  font-size: 100%;
+}
+div.body h6 {
+  font-size: 100%;
+}
 
 div.sphinxsidebar a {
-    border-bottom: none;
+  border-bottom: none;
 }
 
 a.reference {
-    border-bottom: none;
+  border-bottom: none;
 }
 
-.bodywrapper { padding-top: 21px; }
+.bodywrapper {
+  padding-top: 21px;
+}
 
 #documentation {
-    display: none;
+  display: none;
 }
 
 .sphinxsidebar h3 > a {
-    -webkit-transition: color 0.3s ease-in-out;
-    -moz-transition: color 0.3s ease-in-out;
-    -o-transition: color 0.3s ease-in-out;
-    transition: color 0.3s ease-in-out;
-    padding-left: 6px;
+  -webkit-transition: color 0.3s ease-in-out;
+  -moz-transition: color 0.3s ease-in-out;
+  -o-transition: color 0.3s ease-in-out;
+  transition: color 0.3s ease-in-out;
+  padding-left: 6px;
 }
 
 .sphinxsidebar h3 > a:hover {
-    color: #2391EB;
+  color: #2391eb;
 }
 
 .sphinxsidebar li.toctree-l1 > a {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    margin: 0 8px;
-    -webkit-transition: color 0.2s ease-in-out;
-    -moz-transition: color 0.2s ease-in-out;
-    -o-transition: color 0.2s ease-in-out;
-    transition: color 0.2s ease-in-out;
+  font-family: "Source Sans Pro", sans-serif;
+  font-weight: 400;
+  margin: 0 8px;
+  -webkit-transition: color 0.2s ease-in-out;
+  -moz-transition: color 0.2s ease-in-out;
+  -o-transition: color 0.2s ease-in-out;
+  transition: color 0.2s ease-in-out;
 }
 
 .sphinxsidebar li.toctree-l1 > a:hover {
-    color: #2391EB;
-    border-bottom: 1px solid #2391EB;
+  color: #2391eb;
+  border-bottom: 1px solid #2391eb;
 }
 
 .sphinxsidebar li.toctree-l1 > a.current {
-    color: #2391EB;
+  color: #2391eb;
 }
 
 .sphinxsidebar li.toctree-l1 > ul {
-    list-style: none;
-  }
+  list-style: none;
+}
 
 .sphinxsidebar li.toctree-l1 > ul li::before {
+  content: "\\2022";
+  color: #1c2844;
+  display: inline-block;
+  width: 10px;
+  margin-left: -7px;
+}
+
+@media screen and (max-width: 875px) {
+  body {
+    padding-right: 30px;
+  }
+
+  .sphinxsidebar li.toctree-l1 > ul li::before {
     content: "\\2022";
-    color: #1C2844;
+    color: rgb(170, 170, 170);
     display: inline-block;
     width: 10px;
     margin-left: -7px;
+  }
+
+  div.sphinxsidebar {
+    display: block;
+    float: none;
+    width: 110%;
+    margin: 50px -30px -10px -30px;
+    background: #333;
+  }
+
+  body .why_dagster {
+    width: 90%;
+  }
+
+  body .value_prop_block {
+    flex: 0 0 90%;
+  }
 }
-
-
-@media screen and (max-width: 875px) {
-    body {
-        padding-right: 30px;
-    }
-
-    .sphinxsidebar li.toctree-l1 > ul li::before {
-        content: "\\2022";
-        color: rgb(170, 170, 170);
-        display: inline-block;
-        width: 10px;
-        margin-left: -7px;
-    }
-
-    div.sphinxsidebar {
-        display: block;
-        float: none;
-        width: 110%;
-        margin: 50px -30px -10px -30px;
-        background: #333;
-    }
-
-    body .why_dagster {
-        width: 90%;
-    }
-
-    body .value_prop_block {
-        flex: 0 0 90%;
-    }
-}
-
 
 #rellinks {
-    color: #1C2844;
+  color: #1c2844;
 }
 
 #rellinks a {
-    color: #2391EB;
-    text-decoration: none;
+  color: #2391eb;
+  text-decoration: none;
 }
 
 #rellinks a:hover {
-    text-decoration: underline;
-    text-decoration-color: #2391EB;
+  text-decoration: underline;
+  text-decoration-color: #2391eb;
 }
 
 .body a.reference {
-    color: #2391EB;
-    text-decoration: none;
+  color: #2391eb;
+  text-decoration: none;
 }
 
 .body a.reference:hover {
-    text-decoration: underline;
-    text-decoration-color: #2391EB;
-    border-bottom: none;
+  text-decoration: underline;
+  text-decoration-color: #2391eb;
+  border-bottom: none;
 }
 
 /*
@@ -18981,79 +18994,107 @@ a.reference {
  *
  */
 
- .logo_img {
-    height: 42%;
-    width: 42%;
-    padding: 30px 0 30px 0;
-    display: block;
-    margin: 0 auto;
+.logo_img {
+  height: 42%;
+  width: 42%;
+  padding: 30px 0 30px 0;
+  display: block;
+  margin: 0 auto;
 }
 
 .dagster {
-    text-align: center;
+  text-align: center;
 }
 
 .why_dagster {
-    width: 50%;
-    margin: 0 auto;
-    padding-bottom: 33px;
+  width: 50%;
+  margin: 0 auto;
+  padding-bottom: 33px;
 }
 
 .why_dagster h1 {
-    font-size: 29px;
-    line-height: 44px;
-    margin: 0;
-    padding: 0;
+  font-size: 29px;
+  line-height: 44px;
+  margin: 0;
+  padding: 0;
 }
 
 .get_started {
-\tbackground-color:hsl(205, 85%, 55%);
-\t-moz-border-radius:30px;
-\t-webkit-border-radius:30px;
-\tborder-radius:30px;
-\tborder:1px solid hsl(205, 60%, 45%);
-\tdisplay:inline-block;
-\tcursor:pointer;
-\tcolor:#ffffff;
-\tfont-size:17px;
-\tpadding:10px 28px;
-\ttext-decoration:none;
-    text-shadow:0px 1px 1px #2f6627;
+  background-color: hsl(205, 85%, 55%);
+  -moz-border-radius: 30px;
+  -webkit-border-radius: 30px;
+  border-radius: 30px;
+  border: 1px solid hsl(205, 60%, 45%);
+  display: inline-block;
+  cursor: pointer;
+  color: #ffffff;
+  font-size: 17px;
+  padding: 10px 28px;
+  text-decoration: none;
+  text-shadow: 0px 1px 1px #2f6627;
 }
 .get_started:hover {
-\tbackground-color: hsl(205, 85%, 60%);
-    color:#ffffff;
-    border: 1px solid hsl(205, 60%, 50%);
-    text-decoration: none;
+  background-color: hsl(205, 85%, 60%);
+  color: #ffffff;
+  border: 1px solid hsl(205, 60%, 50%);
+  text-decoration: none;
 }
 .get_started:active {
-\tposition:relative;
-    top:1px;
-    text-decoration: none;
+  position: relative;
+  top: 1px;
+  text-decoration: none;
 }
-
 
 .value_prop_blocks {
-    display: flex;
-    flex-wrap: wrap;
-    padding-top: 20px;
-    justify-content: center;
+  display: flex;
+  flex-wrap: wrap;
+  padding-top: 20px;
+  justify-content: center;
 }
 
-
 .value_prop_block {
-    width: calc(33.3333% + -30px);
-    margin: 15px;
-    padding: 0px;
-    flex: 0 0 210px;
-    text-align: left;
+  width: calc(33.3333% + -30px);
+  margin: 15px;
+  padding: 0px;
+  flex: 0 0 210px;
+  text-align: left;
 }
 
 .value_prop_block h1 {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 600;
-    font-size: 100%;
-    text-align: center;
+  font-family: "Source Sans Pro", sans-serif;
+  font-weight: 600;
+  font-size: 100%;
+  text-align: center;
+}
+
+div.section > dl.class {
+  background: rgb(250, 250, 250);
+  margin: 15px 0px;
+  padding: 5px;
+}
+
+div.section > dl.class > dt {
+  background: rgb(240, 240, 240);
+}
+
+div.section > dl.function {
+  background: rgb(250, 250, 250);
+  margin: 15px 0px;
+  padding: 5px;
+}
+
+div.section > dl.function > dt {
+  background: rgb(240, 240, 240);
+}
+
+div.section > dl.attribute {
+  background: rgb(250, 250, 250);
+  margin: 15px 0px;
+  padding: 5px;
+}
+
+div.section > dl.attribute > dt {
+  background: rgb(240, 240, 240);
 }
 '''
 
@@ -19118,7 +19159,7 @@ snapshots['test_build_all_docs 49'] = '''
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/solids.html">Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/pipeline.html">Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apidocs/pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/types.html">Types</a></li>
@@ -19159,7 +19200,7 @@ snapshots['test_build_all_docs 49'] = '''
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API Docs</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/solids.html">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="apidocs/pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apidocs/pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/types.html">Types</a></li>
@@ -19327,7 +19368,7 @@ argument to the ctor is meant to be a sys.exc_info at the site of constructor.</
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
@@ -19466,16 +19507,6 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 <div class="section" id="results">
 <h2>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="dagster.InProcessExecutorConfig">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InProcessExecutorConfig</code><span class="sig-paren">(</span><em>raise_on_error=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/config.html#InProcessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InProcessExecutorConfig" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="dagster.MultiprocessExecutorConfig">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">MultiprocessExecutorConfig</code><span class="sig-paren">(</span><em>handle</em>, <em>max_concurrent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/config.html#MultiprocessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.MultiprocessExecutorConfig" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
 <dt id="dagster.PipelineExecutionResult">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>event_list</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/results.html#PipelineExecutionResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Result of execution of the whole pipeline. Returned eg by <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
@@ -19564,6 +19595,30 @@ Returns None if execution result isn’t a success.</p>
 </div>
 <div class="section" id="configuration">
 <h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<dl>
+<dt><strong>Environment Dict Schema</strong></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">environment_dict</span></code> used by <code class="docutils literal notranslate"><span class="pre">execute_pipeline</span></code> and
+<code class="docutils literal notranslate"><span class="pre">execute_pipeline_iterator</span></code> has the following schema:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="c1"># configuration for Solids</span>
+  <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
+
+    <span class="c1"># these keys align with the names of the solids, or their alias in this pipeline</span>
+    <span class="s1">&#39;_solid_name_&#39;</span><span class="p">:</span> <span class="p">{</span>
+
+      <span class="c1"># pass any data that was defined via config_field</span>
+      <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">,</span>
+
+       <span class="c1"># materialize input values, keyed by input name</span>
+      <span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;_input_name_&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">_value_</span><span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
 <dl class="class">
 <dt id="dagster.RunConfig">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunConfig</code><a class="reference internal" href="../../../_modules/dagster/core/execution/config.html#RunConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RunConfig" title="Permalink to this definition">¶</a></dt>
@@ -19594,97 +19649,15 @@ for subset rexecution.</p></li>
 </dd></dl>
 
 <dl class="class">
-<dt>
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/results.html#SolidExecutionResult"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Execution result for one solid of the pipeline.</p>
-<dl class="attribute">
-<dt>
-<code class="descname">FIXME</code></dt>
-<dd><p>This is very inaccurate!</p>
-</dd></dl>
+<dt id="dagster.InProcessExecutorConfig">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InProcessExecutorConfig</code><span class="sig-paren">(</span><em>raise_on_error=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/config.html#InProcessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InProcessExecutorConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
-<dl class="attribute">
-<dt>
-<code class="descname">context</code></dt>
-<dd><p>ExecutionContext of that particular Pipeline run.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>ExecutionContext</p>
-</dd>
-</dl>
-</dd></dl>
+<dl class="class">
+<dt id="dagster.MultiprocessExecutorConfig">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">MultiprocessExecutorConfig</code><span class="sig-paren">(</span><em>handle</em>, <em>max_concurrent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/config.html#MultiprocessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.MultiprocessExecutorConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
-<dl class="attribute">
-<dt>
-<code class="descname">solid</code></dt>
-<dd><p>Solid for which this result is</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="solids.html#dagster.SolidDefinition" title="dagster.SolidDefinition">SolidDefinition</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">failure_data</code></dt>
-<dd><p>Returns the failing step’s data that happened during this solid’s execution, if any</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">skipped</code></dt>
-<dd><p>Whether the solid execution was skipped</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">success</code></dt>
-<dd><p>Whether the solid execution was successful</p>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<code class="descname">transformed_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/results.html#SolidExecutionResult.transformed_value"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Returns transformed value either for DEFAULT_OUTPUT or for the output
-given as output_name. Returns None if execution result isn’t a success.</p>
-<p>Reconstructs the pipeline context to materialize value.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">transformed_values</code></dt>
-<dd><p>Return dictionary of transformed results, with keys being output names.
-Returns None if execution result isn’t a success.</p>
-<p>Reconstructs the pipeline context to materialize values.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl>
-<dt><strong>Environment Dict Schema</strong></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">environment_dict</span></code> used by <code class="docutils literal notranslate"><span class="pre">execute_pipeline</span></code> and
-<code class="docutils literal notranslate"><span class="pre">execute_pipeline_iterator</span></code> has the following schema:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-  <span class="c1"># configuration for Solids</span>
-  <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
-
-    <span class="c1"># these keys align with the names of the solids, or their alias in this pipeline</span>
-    <span class="s1">&#39;_solid_name_&#39;</span><span class="p">:</span> <span class="p">{</span>
-
-      <span class="c1"># pass any data that was defined via config_field</span>
-      <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">,</span>
-
-       <span class="c1"># materialize input values, keyed by input name</span>
-      <span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;_input_name_&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">_value_</span><span class="p">}</span>
-      <span class="p">}</span>
-    <span class="p">}</span>
-  <span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</dd>
-</dl>
 </div>
 </div>
 
@@ -19719,7 +19692,7 @@ Returns None if execution result isn’t a success.</p>
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
@@ -20013,8 +19986,8 @@ of the same solid.</p></li>
 
 </div>
 <hr class="docutils" />
-<div class="section" id="contexts-resources-and-logging">
-<h1>Contexts, Resources, and Logging<a class="headerlink" href="#contexts-resources-and-logging" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="resources-logging-and-modes">
+<h1>Resources, Logging, and Modes<a class="headerlink" href="#resources-logging-and-modes" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="dagster.ResourceDefinition">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ResourceDefinition</code><span class="sig-paren">(</span><em>resource_fn</em>, <em>config_field=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/resource.html#ResourceDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.ResourceDefinition" title="Permalink to this definition">¶</a></dt>
@@ -20179,6 +20152,23 @@ schema for this data is defined by <code class="docutils literal notranslate"><s
 
 </dd></dl>
 
+<dl class="class">
+<dt id="dagster.ModeDefinition">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ModeDefinition</code><span class="sig-paren">(</span><em>name=\'default\'</em>, <em>resources=None</em>, <em>loggers=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/mode.html#ModeDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.ModeDefinition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a “mode” in which a pipeline can operate.
+A mode provides a set of resource implementations as well as configuration for logging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the mode, defaults to ‘default’.</p></li>
+<li><p><strong>resources</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><a class="reference internal" href="#dagster.ResourceDefinition" title="dagster.ResourceDefinition"><em>ResourceDefinition</em></a><em>]</em><em>]</em>) – The set of resources for this mode.</p></li>
+<li><p><strong>loggers</strong> (<em>Optiona</em><em>[</em><em>List</em><em>[</em><a class="reference internal" href="#dagster.LoggerDefinition" title="dagster.LoggerDefinition"><em>LoggerDefinition</em></a><em>]</em><em>]</em>) – The set of loggers to use in this mode.</p></li>
+<li><p><strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 <hr class="docutils" />
 <div class="section" id="repositories">
@@ -20276,7 +20266,7 @@ handle constructing the dictionary of pipeline name to functions for you</p>
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
@@ -20838,7 +20828,7 @@ you can assume that value is a <code class="docutils literal notranslate"><span 
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
@@ -20934,49 +20924,49 @@ snapshots['test_build_all_docs 54'] = '''
 <dl class="attribute">
 <dt id="dagster.Any">
 <code class="descclassname">dagster.</code><code class="descname">Any</code><a class="headerlink" href="#dagster.Any" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>No rules. No fear. No limits.</p>
+</dd></dl>
 
-<p>No rules. No fear. No limits.</p>
 <dl class="attribute">
 <dt id="dagster.Bool">
 <code class="descclassname">dagster.</code><code class="descname">Bool</code><a class="headerlink" href="#dagster.Bool" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Validates at runtime time that <code class="docutils literal notranslate"><span class="pre">isinstance(value,</span> <span class="pre">bool)</span></code></p>
+</dd></dl>
 
-<p>Validates at runtime time that <code class="docutils literal notranslate"><span class="pre">isinstance(value,</span> <span class="pre">bool)</span></code></p>
 <dl class="attribute">
 <dt id="dagster.Int">
 <code class="descclassname">dagster.</code><code class="descname">Int</code><a class="headerlink" href="#dagster.Int" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Validates at runtime time that <code class="docutils literal notranslate"><span class="pre">isinstance(value,</span> <span class="pre">six.integer_types)</span></code></p>
+</dd></dl>
 
-<p>Validates at runtime time that <code class="docutils literal notranslate"><span class="pre">isinstance(value,</span> <span class="pre">six.integer_types)</span></code></p>
 <dl class="attribute">
 <dt id="dagster.Float">
 <code class="descclassname">dagster.</code><code class="descname">Float</code><a class="headerlink" href="#dagster.Float" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Validates at runtime time that <code class="docutils literal notranslate"><span class="pre">isinstance(value,</span> <span class="pre">float)</span></code></p>
+</dd></dl>
 
-<p>Validates at runtime time that <code class="docutils literal notranslate"><span class="pre">isinstance(value,</span> <span class="pre">float)</span></code></p>
 <dl class="attribute">
 <dt id="dagster.String">
 <code class="descclassname">dagster.</code><code class="descname">String</code><a class="headerlink" href="#dagster.String" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Validates at runtime time that <code class="docutils literal notranslate"><span class="pre">isinstance(value,</span> <span class="pre">six.string_types)</span></code></p>
+</dd></dl>
 
-<p>Validates at runtime time that <code class="docutils literal notranslate"><span class="pre">isinstance(value,</span> <span class="pre">six.string_types)</span></code></p>
 <dl class="attribute">
 <dt id="dagster.Path">
 <code class="descclassname">dagster.</code><code class="descname">Path</code><a class="headerlink" href="#dagster.Path" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<p>Same validation as <code class="docutils literal notranslate"><span class="pre">String</span></code>, useful for communicating that this string
+<dd><p>Same validation as <code class="docutils literal notranslate"><span class="pre">String</span></code>, useful for communicating that this string
 represents a file path.</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="dagster.Nothing">
 <code class="descclassname">dagster.</code><code class="descname">Nothing</code><a class="headerlink" href="#dagster.Nothing" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<p>A way to establish execution dependencies without communicating
+<dd><p>A way to establish execution dependencies without communicating
 values. When a solid uses <a class="reference internal" href="solids.html#dagster.InputDefinition" title="dagster.InputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">InputDefinition</span></code></a> of type
 <code class="docutils literal notranslate"><span class="pre">Nothing</span></code>, no parameters are passed to to the <code class="docutils literal notranslate"><span class="pre">transform_fn</span></code>
 for that input.</p>
+</dd></dl>
+
 <dl class="function">
 <dt id="dagster.Nullable">
 <code class="descclassname">dagster.</code><code class="descname">Nullable</code><span class="sig-paren">(</span><em>inner_type</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/types/wrapping.html#Nullable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.Nullable" title="Permalink to this definition">¶</a></dt>
@@ -21204,7 +21194,7 @@ of a <code class="docutils literal notranslate"><span class="pre">config_value</
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Types</a></li>
@@ -21337,7 +21327,7 @@ snapshots['test_build_all_docs 55'] = '''
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pipeline.html#contexts-resources-and-logging">Contexts, Resources, and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html#resources-logging-and-modes">Resources, Logging, and Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html#repositories">Repositories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
@@ -27303,8 +27293,8 @@ configuration specified for a given resource is passed to its constructor under 
     <span class="p">)</span>
 </pre></div>
 </div>
-<p>Resources are attached to a set of <code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code> defined on the pipeline.
-A <code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code> is the way that a pipeline can declare the different
+<p>Resources are attached to a set of <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.ModeDefinition" title="dagster.ModeDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code></a> defined on the pipeline.
+A <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.ModeDefinition" title="dagster.ModeDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code></a> is the way that a pipeline can declare the different
 “modes” it can operate in. For example, you may have “unittest”, “local”,
 or “production” modes that allow you to swap out implementations of
 resources by altering configuration, while not changing your code.</p>
@@ -27348,7 +27338,7 @@ store; this version can be used in testing contexts without touching the public 
 <span class="s1">        no configuration. Useful for unit testing.&#39;&#39;&#39;</span><span class="p">,</span>
 </pre></div>
 </div>
-<p>And lastly add a new <code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code> to represent this:</p>
+<p>And lastly add a new <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.ModeDefinition" title="dagster.ModeDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">ModeDefinition</span></code></a> to represent this:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
 <span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>

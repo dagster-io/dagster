@@ -2,6 +2,8 @@ from dagster.core.execution.api import ExecutionSelector
 
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.execution import (
+    ExecutionMetadata,
+    ExecutionParams,
     do_execute_plan,
     get_pipeline_run_observable,
     start_pipeline_execution,
@@ -153,20 +155,12 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
     Output = dauphin.NonNull('StartPipelineExecutionResult')
 
     def mutate(self, graphene_info, **kwargs):
-        execution_params = kwargs['executionParams']
-        reexecution_config = (
-            kwargs['reexecutionConfig'].to_reexecution_config()
-            if 'reexecutionConfig' in kwargs
-            else None
-        )
         return start_pipeline_execution(
             graphene_info,
-            execution_params['selector'].to_selector(),
-            execution_params.get('environmentConfigData'),
-            execution_params['mode'],
-            execution_params.get('stepKeys'),
-            reexecution_config,
-            execution_params.get('executionMetadata'),
+            execution_params=create_execution_params(kwargs['executionParams']),
+            reexecution_config=kwargs['reexecutionConfig'].to_reexecution_config()
+            if 'reexecutionConfig' in kwargs
+            else None,
         )
 
 
@@ -211,6 +205,29 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
     tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
 
 
+def create_execution_params(graphql_execution_params):
+    return ExecutionParams(
+        selector=graphql_execution_params['selector'].to_selector(),
+        environment_dict=graphql_execution_params.get('environmentConfigData'),
+        mode=graphql_execution_params['mode'],
+        execution_metadata=create_execution_metadata(
+            graphql_execution_params.get('executionMetadata')
+        ),
+        step_keys=graphql_execution_params.get('stepKeys'),
+    )
+
+
+def create_execution_metadata(graphql_execution_metadata):
+    return (
+        ExecutionMetadata(
+            graphql_execution_metadata.get('runId'),
+            {t['key']: t['value'] for t in graphql_execution_metadata.get('tags', [])},
+        )
+        if graphql_execution_metadata
+        else ExecutionMetadata(run_id=None, tags={})
+    )
+
+
 class DauphinExecutePlan(dauphin.Mutation):
     class Meta:
         name = 'ExecutePlan'
@@ -221,15 +238,7 @@ class DauphinExecutePlan(dauphin.Mutation):
     Output = dauphin.NonNull('ExecutePlanResult')
 
     def mutate(self, graphene_info, **kwargs):
-        execution_params = kwargs['executionParams']
-        return do_execute_plan(
-            graphene_info,
-            pipeline_name=execution_params['selector'].to_selector().name,
-            environment_dict=execution_params.get('environmentConfigData'),
-            mode=execution_params['mode'],
-            execution_metadata=execution_params.get('executionMetadata'),
-            step_keys=execution_params.get('stepKeys'),
-        )
+        return do_execute_plan(graphene_info, create_execution_params(kwargs['executionParams']))
 
 
 class DauphinMutation(dauphin.ObjectType):

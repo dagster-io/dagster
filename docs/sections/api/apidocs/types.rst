@@ -8,38 +8,37 @@ Dagster type system.
 Builtin Types
 -------------
 
-.. autoclass:: Any
+.. attribute:: Any
 
-No rules. No fear. No limits.
+    No rules. No fear. No limits.
 
-.. autoclass:: Bool
+.. attribute:: Bool
 
-Validates at runtime time that ``isinstance(value, bool)``
+    Validates at runtime time that ``isinstance(value, bool)``
 
-.. autoclass:: Int
+.. attribute:: Int
 
-Validates at runtime time that ``isinstance(value, six.integer_types)``
+    Validates at runtime time that ``isinstance(value, six.integer_types)``
 
-.. autoclass:: Float
+.. attribute:: Float
 
-Validates at runtime time that ``isinstance(value, float)``
+    Validates at runtime time that ``isinstance(value, float)``
 
-.. autoclass:: String
+.. attribute:: String
 
+    Validates at runtime time that ``isinstance(value, six.string_types)``
 
-Validates at runtime time that ``isinstance(value, six.string_types)``
+.. attribute:: Path
 
-.. autoclass:: Path
+    Same validation as ``String``, useful for communicating that this string
+    represents a file path.
 
-Same validation as ``String``, useful for communicating that this string
-represents a file path.
+.. attribute:: Nothing
 
-.. autoclass:: Nothing
-
-A way to establish execution dependencies without communicating
-values. When a solid uses :py:class:`InputDefinition` of type
-``Nothing``, no parameters are passed to to the ``transform_fn``
-for that input.
+    A way to establish execution dependencies without communicating
+    values. When a solid uses :py:class:`InputDefinition` of type
+    ``Nothing``, no parameters are passed to to the ``transform_fn``
+    for that input.
 
 .. autofunction:: Nullable
 
@@ -92,5 +91,3 @@ Schema
 .. autofunction:: output_schema
 
 .. autofunction:: output_selector_schema
-
-
