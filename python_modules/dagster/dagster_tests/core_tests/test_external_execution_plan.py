@@ -17,7 +17,7 @@ from dagster import (
 )
 
 from dagster.core.execution.api import DagsterEventType, create_execution_plan, execute_plan
-from dagster.core.storage.object_store import (
+from dagster.core.storage.intermediate_store import (
     get_filesystem_intermediate,
     has_filesystem_intermediate,
 )

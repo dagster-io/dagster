@@ -1,6 +1,6 @@
 import uuid
 from dagster import check
-from dagster.core.storage.object_store import (
+from dagster.core.storage.intermediate_store import (
     has_filesystem_intermediate,
     get_filesystem_intermediate,
 )

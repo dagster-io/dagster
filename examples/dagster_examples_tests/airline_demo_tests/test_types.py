@@ -13,9 +13,9 @@ from dagster import (
     lambda_solid,
 )
 
-from dagster.core.storage.object_store import FileSystemObjectStore
+from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 
-from dagster_aws.s3.object_store import S3ObjectStore
+from dagster_aws.s3.intermediate_store import S3IntermediateStore
 
 from dagster_examples.airline_demo.solids import ingest_csv_to_spark
 
@@ -39,7 +39,7 @@ def test_spark_data_frame_serialization_file_system():
     run_id = str(uuid.uuid4())
 
     storage_mode = RunStorageMode.FILESYSTEM
-    object_store = FileSystemObjectStore(run_id=run_id)
+    intermediate_store = FileSystemIntermediateStore(run_id=run_id)
 
     result = execute_pipeline(
         pipeline_def, run_config=RunConfig(run_id=run_id, storage_mode=storage_mode, mode='spark')
@@ -47,7 +47,7 @@ def test_spark_data_frame_serialization_file_system():
 
     assert result.success
     result_dir = os.path.join(
-        object_store.root, 'intermediates', 'ingest_csv_to_spark.compute', 'result'
+        intermediate_store.root, 'intermediates', 'ingest_csv_to_spark.compute', 'result'
     )
 
     assert '_SUCCESS' in os.listdir(result_dir)
@@ -76,7 +76,7 @@ def test_spark_data_frame_serialization_s3():
     run_id = str(uuid.uuid4())
 
     storage_mode = RunStorageMode.S3
-    object_store = S3ObjectStore(s3_bucket='dagster-airflow-scratch', run_id=run_id)
+    intermediate_store = S3IntermediateStore(s3_bucket='dagster-airflow-scratch', run_id=run_id)
 
     result = execute_pipeline(
         pipeline_def,
@@ -88,7 +88,7 @@ def test_spark_data_frame_serialization_s3():
 
     success_key = '/'.join(
         [
-            object_store.root.strip('/'),
+            intermediate_store.root.strip('/'),
             'intermediates',
             'ingest_csv_to_spark.compute',
             'result',
@@ -96,6 +96,6 @@ def test_spark_data_frame_serialization_s3():
         ]
     )
     try:
-        assert object_store.s3.get_object(Bucket=object_store.bucket, Key=success_key)
+        assert intermediate_store.s3.get_object(Bucket=intermediate_store.bucket, Key=success_key)
     except botocore.exceptions.ClientError:
         raise Exception('Couldn\'t find object at {success_key}'.format(success_key=success_key))

@@ -2,7 +2,7 @@ from io import BytesIO
 
 
 from dagster import check, Enum, EnumValue
-from dagster.core.storage.object_store import TypeStoragePlugin
+from dagster.core.storage.intermediate_store import TypeStoragePlugin
 from dagster.core.types.runtime import Stringish
 from dagster.utils import safe_isfile
 
@@ -22,23 +22,23 @@ S3ACL = Enum(
 
 class BytesIOS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
-    def set_object(cls, object_store, obj, context, runtime_type, paths):
+    def set_object(cls, intermediate_store, obj, context, runtime_type, paths):
         if isinstance(obj, bytes):
             return super(BytesIOS3StoragePlugin, cls).set_object(
-                object_store, obj, context, runtime_type, paths
+                intermediate_store, obj, context, runtime_type, paths
             )
         elif isinstance(obj, BytesIO):
             return super(BytesIOS3StoragePlugin, cls).set_object(
-                object_store, obj.read(), context, runtime_type, paths
+                intermediate_store, obj.read(), context, runtime_type, paths
             )
         else:
             check.invariant('Shouldn\'t be here')
 
     @classmethod
-    def get_object(cls, object_store, context, runtime_type, paths):
+    def get_object(cls, intermediate_store, context, runtime_type, paths):
         return BytesIO(
             super(BytesIOS3StoragePlugin, cls).get_object(
-                object_store, context, runtime_type, paths
+                intermediate_store, context, runtime_type, paths
             )
         )
 

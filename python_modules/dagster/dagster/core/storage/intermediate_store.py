@@ -21,18 +21,18 @@ class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
     @classmethod
     @abstractmethod
-    def set_object(cls, object_store, obj, context, runtime_type, paths):
-        check.subclass_param(object_store, 'object_store', ObjectStore)
-        return object_store.set_object(obj, context, runtime_type, paths)
+    def set_object(cls, intermediate_store, obj, context, runtime_type, paths):
+        check.subclass_param(intermediate_store, 'intermediate_store', IntermediateStore)
+        return intermediate_store.set_object(obj, context, runtime_type, paths)
 
     @classmethod
     @abstractmethod
-    def get_object(cls, object_store, context, runtime_type, paths):
-        check.subclass_param(object_store, 'object_store', ObjectStore)
-        return object_store.get_object(context, runtime_type, paths)
+    def get_object(cls, intermediate_store, context, runtime_type, paths):
+        check.subclass_param(intermediate_store, 'intermediate_store', IntermediateStore)
+        return intermediate_store.get_object(context, runtime_type, paths)
 
 
-class ObjectStore(six.with_metaclass(ABCMeta)):
+class IntermediateStore(six.with_metaclass(ABCMeta)):
     def __init__(self, types_to_register=None):
         types_to_register = check.opt_dict_param(
             types_to_register,
@@ -143,7 +143,7 @@ def get_valid_target_path(base_dir, paths):
         return os.path.join(target_dir, paths[0])
 
 
-class FileSystemObjectStore(ObjectStore):
+class FileSystemIntermediateStore(IntermediateStore):
     def __init__(self, run_id, types_to_register=None, base_dir=None):
         self.run_id = check.str_param(run_id, 'run_id')
         self.storage_mode = RunStorageMode.FILESYSTEM
@@ -156,12 +156,12 @@ class FileSystemObjectStore(ObjectStore):
         )
         check.invariant(
             os.path.isdir(self._base_dir),
-            'Could not find a directory at the base_dir supplied to FileSystemObjectStore: '
+            'Could not find a directory at the base_dir supplied to FileSystemIntermediateStore: '
             '{base_dir}'.format(base_dir=self._base_dir),
         )
         self.root = get_run_files_directory(self.base_dir, run_id)
 
-        super(FileSystemObjectStore, self).__init__(types_to_register)
+        super(FileSystemIntermediateStore, self).__init__(types_to_register)
 
     @property
     def base_dir(self):
@@ -241,8 +241,8 @@ def get_fs_paths(step_key, output_name):
 
 
 def get_filesystem_intermediate(run_id, step_key, dagster_type, output_name='result'):
-    object_store = FileSystemObjectStore(run_id)
-    return object_store.get_object(
+    intermediate_store = FileSystemIntermediateStore(run_id)
+    return intermediate_store.get_object(
         context=None,
         runtime_type=resolve_to_runtime_type(dagster_type),
         paths=get_fs_paths(step_key, output_name),
@@ -250,8 +250,8 @@ def get_filesystem_intermediate(run_id, step_key, dagster_type, output_name='res
 
 
 def has_filesystem_intermediate(run_id, step_key, output_name='result'):
-    object_store = FileSystemObjectStore(run_id)
-    return object_store.has_object(context=None, paths=get_fs_paths(step_key, output_name))
+    intermediate_store = FileSystemIntermediateStore(run_id)
+    return intermediate_store.has_object(context=None, paths=get_fs_paths(step_key, output_name))
 
 
 def construct_type_storage_plugin_registry(pipeline_def, storage_mode):

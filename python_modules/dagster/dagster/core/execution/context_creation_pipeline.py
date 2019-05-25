@@ -21,12 +21,12 @@ from dagster.core.events.log import construct_event_logger
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.loggers import default_loggers, default_system_loggers
 from dagster.core.storage.intermediates_manager import (
-    ObjectStoreIntermediatesManager,
+    IntermediateStoreIntermediatesManager,
     InMemoryIntermediatesManager,
     IntermediatesManager,
 )
-from dagster.core.storage.object_store import (
-    FileSystemObjectStore,
+from dagster.core.storage.intermediate_store import (
+    FileSystemIntermediateStore,
     construct_type_storage_plugin_registry,
 )
 from dagster.core.storage.runs import (
@@ -276,7 +276,8 @@ def ensure_dagster_aws_requirements():
         import dagster_aws
     except (ImportError, ModuleNotFoundError):
         raise check.CheckError(
-            'dagster_aws must be available for import in order to make use of an S3ObjectStore'
+            'dagster_aws must be available for import in order to make use of an'
+            ' S3IntermediateStore'
         )
 
     return dagster_aws
@@ -289,8 +290,8 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
 
     if run_config.storage_mode:
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
-            return ObjectStoreIntermediatesManager(
-                FileSystemObjectStore(
+            return IntermediateStoreIntermediatesManager(
+                FileSystemIntermediateStore(
                     run_config.run_id,
                     construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.FILESYSTEM),
                 )
@@ -299,10 +300,10 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
             return InMemoryIntermediatesManager()
         elif run_config.storage_mode == RunStorageMode.S3:
             _dagster_aws = ensure_dagster_aws_requirements()
-            from dagster_aws.s3.object_store import S3ObjectStore
+            from dagster_aws.s3.intermediate_store import S3IntermediateStore
 
-            return ObjectStoreIntermediatesManager(
-                S3ObjectStore(
+            return IntermediateStoreIntermediatesManager(
+                S3IntermediateStore(
                     environment_config.storage.storage_config['s3_bucket'],
                     run_config.run_id,
                     construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.S3),
@@ -311,8 +312,8 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
-        return ObjectStoreIntermediatesManager(
-            FileSystemObjectStore(
+        return IntermediateStoreIntermediatesManager(
+            FileSystemIntermediateStore(
                 run_config.run_id,
                 construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.FILESYSTEM),
             )
@@ -321,10 +322,10 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
         return InMemoryIntermediatesManager()
     elif environment_config.storage.storage_mode == 's3':
         _dagster_aws = ensure_dagster_aws_requirements()
-        from dagster_aws.s3.object_store import S3ObjectStore
+        from dagster_aws.s3.intermediate_store import S3IntermediateStore
 
-        return ObjectStoreIntermediatesManager(
-            S3ObjectStore(
+        return IntermediateStoreIntermediatesManager(
+            S3IntermediateStore(
                 environment_config.storage.storage_config['s3_bucket'],
                 run_config.run_id,
                 construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.S3),

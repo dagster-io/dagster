@@ -4,11 +4,11 @@ import boto3
 
 from dagster import RunStorageMode, check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.storage.object_store import ObjectStore
+from dagster.core.storage.intermediate_store import IntermediateStore
 from dagster.core.types.runtime import resolve_to_runtime_type, RuntimeType
 
 
-class S3ObjectStore(ObjectStore):
+class S3IntermediateStore(IntermediateStore):
     def __init__(self, s3_bucket, run_id, types_to_register=None):
         check.str_param(run_id, 'run_id')
 
@@ -21,7 +21,7 @@ class S3ObjectStore(ObjectStore):
         self.root = 'dagster/runs/{run_id}/files'.format(run_id=self.run_id)
         self.storage_mode = RunStorageMode.S3
 
-        super(S3ObjectStore, self).__init__(types_to_register)
+        super(S3IntermediateStore, self).__init__(types_to_register)
 
     def url_for_paths(self, paths, protocol='s3://'):
         return protocol + self.bucket + '/' + self.key_for_paths(paths)
@@ -70,8 +70,8 @@ class S3ObjectStore(ObjectStore):
         return False
 
     def rm_object(self, context, paths):
-        def delete_for_results(object_store, results):
-            object_store.s3.delete_objects(
+        def delete_for_results(intermediate_store, results):
+            intermediate_store.s3.delete_objects(
                 Bucket=self.bucket,
                 Delete={'Objects': [{'Key': result['Key']} for result in results['Contents']]},
             )
@@ -101,8 +101,8 @@ class S3ObjectStore(ObjectStore):
 
 
 def get_s3_intermediate(context, s3_bucket, run_id, step_key, dagster_type, output_name='result'):
-    object_store = S3ObjectStore(s3_bucket, run_id)
-    return object_store.get_object(
+    intermediate_store = S3IntermediateStore(s3_bucket, run_id)
+    return intermediate_store.get_object(
         context=context,
         runtime_type=resolve_to_runtime_type(dagster_type),
         paths=get_fs_paths(step_key, output_name),
@@ -110,13 +110,13 @@ def get_s3_intermediate(context, s3_bucket, run_id, step_key, dagster_type, outp
 
 
 def has_s3_intermediate(context, s3_bucket, run_id, step_key, output_name='result'):
-    object_store = S3ObjectStore(s3_bucket, run_id)
-    return object_store.has_object(context=context, paths=get_fs_paths(step_key, output_name))
+    intermediate_store = S3IntermediateStore(s3_bucket, run_id)
+    return intermediate_store.has_object(context=context, paths=get_fs_paths(step_key, output_name))
 
 
 def rm_s3_intermediate(context, s3_bucket, run_id, step_key, output_name='result'):
-    object_store = S3ObjectStore(s3_bucket, run_id)
-    return object_store.rm_object(context=context, paths=get_fs_paths(step_key, output_name))
+    intermediate_store = S3IntermediateStore(s3_bucket, run_id)
+    return intermediate_store.rm_object(context=context, paths=get_fs_paths(step_key, output_name))
 
 
 def get_fs_paths(step_key, output_name):
