@@ -32,9 +32,11 @@ install_dev_python_modules:
 	pip install -e python_modules/dagster-dask
 	pip install -e python_modules/libraries/dagster-aws
 	pip install -r python_modules/libraries/dagster-aws/dev-requirements.txt
+	pip install -e python_modules/libraries/dagster-datadog
 	pip install -e python_modules/libraries/dagster-gcp
 	pip install -e python_modules/libraries/dagster-ge
 	pip install -e python_modules/libraries/dagster-pandas
+	pip install -e python_modules/libraries/dagster-slack
 	pip install -e python_modules/libraries/dagster-snowflake
 	pip install -e python_modules/libraries/dagster-spark
 	pip install -e python_modules/libraries/dagster-pyspark
