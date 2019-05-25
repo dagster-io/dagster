@@ -5,10 +5,24 @@ from enum import Enum
 from dagster import check
 from dagster.core.definitions import SolidHandle
 from dagster.core.definitions.materialization import Materialization
-from dagster.core.intermediates_manager import StepOutputHandle
 from dagster.core.types.runtime import RuntimeType
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
+
+
+class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
+    @staticmethod
+    def from_step(step, output_name='result'):
+        check.inst_param(step, 'step', ExecutionStep)
+
+        return StepOutputHandle(step.key, output_name)
+
+    def __new__(cls, step_key, output_name='result'):
+        return super(StepOutputHandle, cls).__new__(
+            cls,
+            step_key=check.str_param(step_key, 'step_key'),
+            output_name=check.str_param(output_name, 'output_name'),
+        )
 
 
 class StepOutputValue(namedtuple('_StepOutputValue', 'output_name value')):

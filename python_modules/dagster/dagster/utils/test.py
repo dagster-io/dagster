@@ -23,9 +23,9 @@ from dagster.core.execution.context_creation_pipeline import (
     create_environment_config,
     construct_pipeline_execution_context,
 )
-from dagster.core.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.runs import InMemoryRunStorage
+from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
+from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.utility_solids import define_stub_solid
 
 

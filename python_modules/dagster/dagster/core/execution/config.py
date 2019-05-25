@@ -5,7 +5,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.utils import merge_dicts
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.runs import RunStorageMode
+from dagster.core.storage.runs import RunStorageMode
 from dagster.core.utils import make_new_run_id
 
 

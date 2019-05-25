@@ -1,6 +1,9 @@
 import uuid
 from dagster import check
-from dagster.core.object_store import has_filesystem_intermediate, get_filesystem_intermediate
+from dagster.core.storage.object_store import (
+    has_filesystem_intermediate,
+    get_filesystem_intermediate,
+)
 from dagster.utils import merge_dicts, script_relative_path
 from dagster.utils.test import get_temp_file_name
 

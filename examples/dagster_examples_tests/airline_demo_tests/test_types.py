@@ -13,7 +13,7 @@ from dagster import (
     lambda_solid,
 )
 
-from dagster.core.object_store import FileSystemObjectStore
+from dagster.core.storage.object_store import FileSystemObjectStore
 
 from dagster_aws.s3.object_store import S3ObjectStore
 

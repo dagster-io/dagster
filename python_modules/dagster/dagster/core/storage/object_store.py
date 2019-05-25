@@ -7,10 +7,10 @@ import six
 
 from dagster import check, seven
 from dagster.utils import mkdir_p
-
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
+
 from .runs import RunStorageMode
-from .types.runtime import RuntimeType, resolve_to_runtime_type
 
 
 class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init

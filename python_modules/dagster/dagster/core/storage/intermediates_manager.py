@@ -1,31 +1,15 @@
 from abc import ABCMeta, abstractmethod
-from collections import namedtuple
 
 import six
 
 from dagster import check
 
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.plan.objects import StepOutputHandle
+from dagster.core.types.runtime import RuntimeType
+
 from .object_store import ObjectStore
 from .runs import RunStorageMode
-from .types.runtime import RuntimeType
-
-
-class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
-    @staticmethod
-    def from_step(step, output_name='result'):
-        from .execution.plan.objects import ExecutionStep
-
-        check.inst_param(step, 'step', ExecutionStep)
-
-        return StepOutputHandle(step.key, output_name)
-
-    def __new__(cls, step_key, output_name='result'):
-        return super(StepOutputHandle, cls).__new__(
-            cls,
-            step_key=check.str_param(step_key, 'step_key'),
-            output_name=check.str_param(output_name, 'output_name'),
-        )
 
 
 class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
@@ -49,7 +33,7 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
         return len(self.uncovered_inputs(context, step)) == 0
 
     def uncovered_inputs(self, context, step):
-        from .execution.plan.objects import ExecutionStep
+        from dagster.core.execution.plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
         uncovered_inputs = []

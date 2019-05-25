@@ -2,7 +2,7 @@ from io import BytesIO
 
 
 from dagster import check, Enum, EnumValue
-from dagster.core.object_store import TypeStoragePlugin
+from dagster.core.storage.object_store import TypeStoragePlugin
 from dagster.core.types.runtime import Stringish
 from dagster.utils import safe_isfile
 

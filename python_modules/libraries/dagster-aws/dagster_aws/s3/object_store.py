@@ -4,8 +4,8 @@ import boto3
 
 from dagster import RunStorageMode, check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.storage.object_store import ObjectStore
 from dagster.core.types.runtime import resolve_to_runtime_type, RuntimeType
-from dagster.core.object_store import ObjectStore
 
 
 class S3ObjectStore(ObjectStore):

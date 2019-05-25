@@ -1,6 +1,6 @@
 from dagster import solid, ExecutionTargetHandle, ModeDefinition, PipelineDefinition
 from dagster.core.execution.config import RunConfig
-from dagster.core.runs import RunStorageMode
+from dagster.core.storage.runs import RunStorageMode
 
 from dagster_dask import execute_on_dask
 

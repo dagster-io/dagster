@@ -22,8 +22,8 @@ from dagster.core.errors import (
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.config import ReexecutionConfig
-from dagster.core.intermediates_manager import StepOutputHandle
-from dagster.core.object_store import get_filesystem_intermediate
+from dagster.core.storage.intermediates_manager import StepOutputHandle
+from dagster.core.storage.object_store import get_filesystem_intermediate
 from dagster.core.events import get_step_output_event
 
 

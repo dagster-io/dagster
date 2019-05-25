@@ -136,7 +136,7 @@ class DauphinReexecutionConfig(dauphin.InputObjectType):
 
     def to_reexecution_config(self):
         from dagster.core.execution.config import ReexecutionConfig
-        from dagster.core.intermediates_manager import StepOutputHandle
+        from dagster.core.execution.plan.objects import StepOutputHandle
 
         return ReexecutionConfig(
             self.previousRunId,

@@ -1478,7 +1478,7 @@ snapshots['test_build_all_docs 7'] = '''
 <li><a href="dagster/core/execution/context/logger.html">dagster.core.execution.context.logger</a></li>
 <li><a href="dagster/core/execution/context_creation_pipeline.html">dagster.core.execution.context_creation_pipeline</a></li>
 <li><a href="dagster/core/execution/results.html">dagster.core.execution.results</a></li>
-<li><a href="dagster/core/runs.html">dagster.core.runs</a></li>
+<li><a href="dagster/core/storage/runs.html">dagster.core.storage.runs</a></li>
 <li><a href="dagster/core/types/builtin_enum.html">dagster.core.types.builtin_enum</a></li>
 <li><a href="dagster/core/types/config.html">dagster.core.types.config</a></li>
 <li><a href="dagster/core/types/config_schema.html">dagster.core.types.config_schema</a></li>
@@ -19644,7 +19644,7 @@ for subset rexecution.</p></li>
 
 <dl class="class">
 <dt id="dagster.RunStorageMode">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunStorageMode</code><a class="reference internal" href="../../../_modules/dagster/core/runs.html#RunStorageMode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RunStorageMode" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunStorageMode</code><a class="reference internal" href="../../../_modules/dagster/core/storage/runs.html#RunStorageMode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RunStorageMode" title="Permalink to this definition">¶</a></dt>
 <dd><p>An enumeration.</p>
 </dd></dl>
 

@@ -7,7 +7,7 @@ import pytest
 from click.testing import CliRunner
 
 from dagster import lambda_solid, PipelineDefinition, RepositoryDefinition
-from dagster.core.runs import base_run_directory
+from dagster.core.storage.runs import base_run_directory
 from dagster.cli.pipeline import (
     execute_print_command,
     execute_list_command,
@@ -19,7 +19,6 @@ from dagster.cli.pipeline import (
     pipeline_scaffold_command,
 )
 from dagster.core.errors import InvalidRepositoryLoadingComboError
-
 from dagster.utils import script_relative_path
 
 
