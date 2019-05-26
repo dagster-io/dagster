@@ -19,7 +19,7 @@ from dagster.utils import safe_isfile, mkdir_p
 
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.solids import download_from_s3_to_file
-from dagster_snowflake import SnowflakeSolidDefinition, SnowflakeLoadSolidDefinition
+from dagster_snowflake import snowflake_resource, SnowflakeLoadSolidDefinition
 from dagster_spark import SparkSolidDefinition
 
 
@@ -66,8 +66,10 @@ def define_event_ingest_pipeline():
             },
             SolidInstance('event_ingest'): {'spark_inputs': DependencyDefinition('gunzipper')},
             SolidInstance('snowflake_load'): {
-                SnowflakeSolidDefinition.INPUT_READY: DependencyDefinition('event_ingest', 'paths')
+                'start': DependencyDefinition('event_ingest', 'paths')
             },
         },
-        mode_definitions=[ModeDefinition(resources={'s3': s3_resource})],
+        mode_definitions=[
+            ModeDefinition(resources={'s3': s3_resource, 'snowflake': snowflake_resource})
+        ],
     )
