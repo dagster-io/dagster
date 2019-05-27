@@ -398,7 +398,7 @@ def define_bigquery_create_dataset_config():
 
     exists_ok = Field(
         Bool,
-        description='''Defaults to False. If True, ignore “already exists” errors when creating the
+        description='''Defaults to False. If True, ignore "already exists" errors when creating the
         dataset.''',
         is_optional=True,
     )
@@ -421,7 +421,7 @@ def define_bigquery_delete_dataset_config():
 
     not_found_ok = Field(
         Bool,
-        description='''Defaults to False. If True, ignore “not found” errors when deleting the
+        description='''Defaults to False. If True, ignore "not found" errors when deleting the
         dataset.''',
         is_optional=True,
     )

@@ -1,7 +1,8 @@
-import sys
 import datetime
-import pytest
+import sys
+import uuid
 
+import pytest
 import pandas as pd
 
 try:
@@ -35,6 +36,12 @@ from dagster_gcp import (
     BigQueryLoadSolidDefinition,
     BigQueryLoadSource,
 )
+
+
+def get_dataset():
+    '''Creates unique dataset names of the form: test_ds_83791a53
+    '''
+    return 'test_ds_' + str(uuid.uuid4()).replace('-', '_')
 
 
 def bq_modes():
@@ -133,41 +140,46 @@ def test_bad_config():
 
 
 def test_create_delete_dataset():
+    dataset = get_dataset()
+
     create_solid = BigQueryCreateDatasetSolidDefinition('test')
     create_pipeline = PipelineDefinition(solids=[create_solid], mode_definitions=bq_modes())
-    config = {'solids': {'test': {'config': {'dataset': 'foo', 'exists_ok': True}}}}
+    config = {'solids': {'test': {'config': {'dataset': dataset, 'exists_ok': True}}}}
 
     assert execute_pipeline(create_pipeline, config).result_for_solid(create_solid.name).success
 
-    config = {'solids': {'test': {'config': {'dataset': 'foo', 'exists_ok': False}}}}
+    config = {'solids': {'test': {'config': {'dataset': dataset, 'exists_ok': False}}}}
     with pytest.raises(BigQueryError) as exc_info:
         execute_pipeline(create_pipeline, config)
-    assert 'Dataset "foo" already exists and exists_ok is false' in str(exc_info.value)
+    assert 'Dataset "%s" already exists and exists_ok is false' % dataset in str(exc_info.value)
 
     delete_solid = BigQueryDeleteDatasetSolidDefinition('test')
     delete_pipeline = PipelineDefinition(solids=[delete_solid], mode_definitions=bq_modes())
-    config = {'solids': {'test': {'config': {'dataset': 'foo'}}}}
+    config = {'solids': {'test': {'config': {'dataset': dataset}}}}
 
     # Delete should succeed
     assert execute_pipeline(delete_pipeline, config).result_for_solid(delete_solid.name).success
 
     # Delete non-existent with "not_found_ok" should succeed
-    config = {'solids': {'test': {'config': {'dataset': 'foo', 'not_found_ok': True}}}}
+    config = {'solids': {'test': {'config': {'dataset': dataset, 'not_found_ok': True}}}}
     assert execute_pipeline(delete_pipeline, config).result_for_solid(delete_solid.name).success
 
     # Delete non-existent with "not_found_ok" False should fail
-    config = {'solids': {'test': {'config': {'dataset': 'foo', 'not_found_ok': False}}}}
+    config = {'solids': {'test': {'config': {'dataset': dataset, 'not_found_ok': False}}}}
     with pytest.raises(BigQueryError) as exc_info:
         execute_pipeline(delete_pipeline, config)
-    assert 'Dataset "foo" does not exist and not_found_ok is false' in str(exc_info.value)
+    assert 'Dataset "%s" does not exist and not_found_ok is false' % dataset in str(exc_info.value)
 
 
 def test_pd_df_load():
+    dataset = get_dataset()
+    table = '%s.%s' % (dataset, 'df')
+
     test_df = pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
     create_solid = BigQueryCreateDatasetSolidDefinition('create_solid')
     load_solid = BigQueryLoadSolidDefinition('load_solid', BigQueryLoadSource.DataFrame)
-    query_solid = BigQuerySolidDefinition('query_solid', ['SELECT num1, num2 FROM foo.df'])
+    query_solid = BigQuerySolidDefinition('query_solid', ['SELECT num1, num2 FROM %s' % table])
     delete_solid = BigQueryDeleteDatasetSolidDefinition('delete_solid')
 
     @solid(inputs=[InputDefinition('success', Nothing)], outputs=[OutputDefinition(DataFrame)])
@@ -176,9 +188,9 @@ def test_pd_df_load():
 
     config = {
         'solids': {
-            'create_solid': {'config': {'dataset': 'foo', 'exists_ok': True}},
-            'load_solid': {'config': {'destination': 'foo.df'}},
-            'delete_solid': {'config': {'dataset': 'foo', 'delete_contents': True}},
+            'create_solid': {'config': {'dataset': dataset, 'exists_ok': True}},
+            'load_solid': {'config': {'destination': table}},
+            'delete_solid': {'config': {'dataset': dataset, 'delete_contents': True}},
         }
     }
     pipeline = PipelineDefinition(
@@ -208,11 +220,17 @@ def test_pd_df_load():
 
 
 def test_gcs_load():
+    dataset = get_dataset()
+    table = '%s.%s' % (dataset, 'df')
+
     create_solid = BigQueryCreateDatasetSolidDefinition('create_solid')
     load_solid = BigQueryLoadSolidDefinition('load_solid', BigQueryLoadSource.Gcs)
     query_solid = BigQuerySolidDefinition(
         'query_solid',
-        ['SELECT string_field_0, string_field_1 FROM foo.df ORDER BY string_field_0 ASC LIMIT 1'],
+        [
+            'SELECT string_field_0, string_field_1 FROM %s ORDER BY string_field_0 ASC LIMIT 1'
+            % table
+        ],
     )
     delete_solid = BigQueryDeleteDatasetSolidDefinition('delete_solid')
 
@@ -222,10 +240,10 @@ def test_gcs_load():
 
     config = {
         'solids': {
-            'create_solid': {'config': {'dataset': 'foo', 'exists_ok': True}},
+            'create_solid': {'config': {'dataset': dataset, 'exists_ok': True}},
             'load_solid': {
                 'config': {
-                    'destination': 'foo.df',
+                    'destination': table,
                     'load_job_config': {
                         'autodetect': True,
                         'skip_leading_rows': 1,
@@ -234,7 +252,7 @@ def test_gcs_load():
                     },
                 }
             },
-            'delete_solid': {'config': {'dataset': 'foo', 'delete_contents': True}},
+            'delete_solid': {'config': {'dataset': dataset, 'delete_contents': True}},
         }
     }
     pipeline = PipelineDefinition(

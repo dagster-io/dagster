@@ -1,3 +1,4 @@
+import os
 import yaml
 
 DOCKER_PLUGIN = "docker#v3.2.0"
@@ -39,6 +40,14 @@ TOX_MAP = {
     SupportedPython.V3_5: "py35",
     SupportedPython.V2_7: "py27",
 }
+
+SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
+LIBRARY_PATH = os.path.join(SCRIPT_PATH, '..', 'python_modules/libraries/')
+LIBRARY_MODULES = set(os.listdir(LIBRARY_PATH))
+
+# Skip these two. dagster-gcp is handled separately by gcp_tests() below, dagster-pyspark does not
+# have tests
+LIBRARY_MODULES -= {'dagster-gcp', 'dagster-pyspark'}
 
 
 class StepBuilder:
@@ -82,7 +91,7 @@ def wait_step():
     return "wait"
 
 
-def python_modules_tox_tests(directory, prereqs=None):
+def python_modules_tox_tests(directory, prereqs=None, env=None):
     label = directory.replace("/", "-")
     tests = []
     for version in SupportedPythons:
@@ -99,10 +108,13 @@ def python_modules_tox_tests(directory, prereqs=None):
             "mv .coverage {file}".format(file=coverage),
             "buildkite-agent artifact upload {file}".format(file=coverage),
         ]
+
+        env_vars = ['AWS_DEFAULT_REGION'] + (env or [])
+
         builder = (
             StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
             .run(*tox_command)
-            .on_python_image(version, ['AWS_DEFAULT_REGION'])
+            .on_python_image(version, env_vars)
         )
         tests.append(builder.build())
 
@@ -209,6 +221,22 @@ def examples_tests():
     return tests
 
 
+def gcp_tests():
+    # GCP tests need appropriate credentials
+    creds_local_file = "/tmp/gcp-key-elementl-dev.json"
+
+    return python_modules_tox_tests(
+        "libraries/dagster-gcp",
+        prereqs=[
+            "pip install awscli",
+            "aws s3 cp s3://${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
+            + creds_local_file,
+            "export GOOGLE_APPLICATION_CREDENTIALS=" + creds_local_file,
+        ],
+        env=['BUILDKITE_SECRETS_BUCKET', 'GCP_PROJECT_ID'],
+    )
+
+
 if __name__ == "__main__":
     steps = [
         StepBuilder("pylint")
@@ -217,9 +245,9 @@ if __name__ == "__main__":
         .build(),
         StepBuilder("black")
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
-        # the trailing comma after **check.opt_dict_param...) -- black 19.3b0 supports multiple python
-        # versions, but currently doesn't know what to do with from __future__ import print_function --
-        # see https://github.com/ambv/black/issues/768
+        # the trailing comma after **check.opt_dict_param...) -- black 19.3b0 supports multiple
+        # python versions, but currently doesn't know what to do with from __future__ import
+        # print_function -- see https://github.com/ambv/black/issues/768
         .run("pip install black==18.9b0", "make check_black")
         .on_python_image(SupportedPython.V3_7)
         .build(),
@@ -261,12 +289,11 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("dagster-graphql")
     steps += python_modules_tox_tests("dagster-dask")
     steps += python_modules_tox_tests("dagstermill")
-    steps += python_modules_tox_tests("libraries/dagster-pandas")
-    steps += python_modules_tox_tests("libraries/dagster-ge")
-    steps += python_modules_tox_tests("libraries/dagster-aws")
-    steps += python_modules_tox_tests("libraries/dagster-slack")
-    steps += python_modules_tox_tests("libraries/dagster-snowflake")
-    steps += python_modules_tox_tests("libraries/dagster-spark")
+
+    for library in LIBRARY_MODULES:
+        steps += python_modules_tox_tests("libraries/{library}".format(library=library))
+
+    steps += gcp_tests()
     steps += examples_tests()
     steps += [
         wait_step(),  # wait for all previous steps to finish

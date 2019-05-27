@@ -52,6 +52,7 @@ def _do_setup(name='dagster-gcp'):
             'oauth2client',
         ],
         extras_require={'pyarrow': ['pyarrow']},
+        tests_require=['mock==2.0.*'],
         zip_safe=False,
     )
 
