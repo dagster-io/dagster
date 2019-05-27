@@ -134,11 +134,13 @@ def as_dagster_type(
     check.opt_str_param(description, 'description')
     check.opt_inst_param(input_schema, 'input_schema', InputSchema)
     check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
-    check.opt_inst_param(serialization_strategy, 'serialization_strategy', SerializationStrategy)
+    check.opt_inst_param(
+        serialization_strategy,
+        'serialization_strategy',
+        SerializationStrategy,
+        default=PickleSerializationStrategy(),
+    )
     storage_plugins = check.opt_dict_param(storage_plugins, 'storage_plugins')
-
-    if serialization_strategy is None:
-        serialization_strategy = PickleSerializationStrategy()
 
     name = existing_type.__name__ if name is None else name
 

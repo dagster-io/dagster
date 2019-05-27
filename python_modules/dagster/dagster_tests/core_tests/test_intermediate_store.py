@@ -19,10 +19,10 @@ from dagster.utils.test import yield_empty_pipeline_context
 
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
-    def serialize_value(self, _context, value, write_file_obj):
+    def serialize(self, value, write_file_obj):
         return write_file_obj.write(bytes(value.upper().encode('utf-8')))
 
-    def deserialize_value(self, _context, read_file_obj):
+    def deserialize(self, read_file_obj):
         return read_file_obj.read().decode('utf-8').lower()
 
 

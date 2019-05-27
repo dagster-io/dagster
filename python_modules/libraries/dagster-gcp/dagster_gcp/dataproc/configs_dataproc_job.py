@@ -339,7 +339,7 @@ def define_dataproc_job_config():
                                 List(String),
                                 description='''Optional. HCFS URIs of jar files to add to the
                                 CLASSPATH of the Hive server and Hadoop MapReduce (MR) tasks. Can
-                                contain Hive SerDes and UDFs.''',
+                                contain Hive SerializationStrategys and UDFs.''',
                                 is_optional=True,
                             ),
                             'scriptVariables': Field(

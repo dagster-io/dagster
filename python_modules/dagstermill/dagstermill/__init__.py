@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.types.marshal import deserialize_from_file, PickleSerializationStrategy
+from dagster.core.types.marshal import PickleSerializationStrategy
 
 from .errors import DagstermillError, DagsterUserCodeExecutionError
 from .manager import Manager, MANAGER_FOR_NOTEBOOK_INSTANCE
@@ -73,9 +73,7 @@ def load_parameter(input_name, input_value):
         ):
             return input_value
         elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZABLE:
-            return deserialize_from_file(
-                MANAGER_FOR_NOTEBOOK_INSTANCE.context, PickleSerializationStrategy(), input_value
-            )
+            return PickleSerializationStrategy().deserialize_from_file(input_value)
         else:
             raise DagstermillError(
                 "loading parameter {input_name} resulted in an error".format(input_name=input_name)
@@ -83,9 +81,7 @@ def load_parameter(input_name, input_value):
     else:
         solid_def = MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def
         input_def = solid_def.input_def_named(input_name)
-        return read_value(
-            MANAGER_FOR_NOTEBOOK_INSTANCE.context, input_def.runtime_type, input_value
-        )
+        return read_value(input_def.runtime_type, input_value)
 
 
 def get_context(config=None):

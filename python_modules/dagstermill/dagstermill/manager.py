@@ -9,7 +9,7 @@ from dagster import check, Materialization, PipelineDefinition, RunConfig
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.events.log import construct_json_event_logger
-from dagster.core.types.marshal import serialize_to_file, PickleSerializationStrategy
+from dagster.core.types.marshal import PickleSerializationStrategy
 
 from .errors import DagstermillError
 from .context import DagstermillInNotebookExecutionContext
@@ -88,12 +88,7 @@ class Manager:
                 scrapbook.glue(output_name, value)
             elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZABLE:
                 out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
-                serialize_to_file(
-                    MANAGER_FOR_NOTEBOOK_INSTANCE.context,
-                    PickleSerializationStrategy(),
-                    value,
-                    out_file,
-                )
+                PickleSerializationStrategy().serialize_to_file(value, out_file)
                 scrapbook.glue(output_name, out_file)
             else:
                 raise DagstermillError(
@@ -114,10 +109,7 @@ class Manager:
             runtime_type = self.solid_def.output_def_named(output_name).runtime_type
 
             out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
-            scrapbook.glue(
-                output_name,
-                write_value(MANAGER_FOR_NOTEBOOK_INSTANCE.context, runtime_type, value, out_file),
-            )
+            scrapbook.glue(output_name, write_value(runtime_type, value, out_file))
 
     def yield_materialization(self, path, description):
         if not self.populated_by_papermill:

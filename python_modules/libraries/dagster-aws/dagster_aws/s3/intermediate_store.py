@@ -42,7 +42,7 @@ class S3IntermediateStore(IntermediateStore):
             self.rm_object(context, paths)
 
         with BytesIO() as bytes_io:
-            runtime_type.serialization_strategy.serialize_value(context, obj, bytes_io)
+            runtime_type.serialization_strategy.serialize(obj, bytes_io)
             bytes_io.seek(0)
             self.s3.put_object(Bucket=self.bucket, Key=key, Body=bytes_io)
 
@@ -57,8 +57,8 @@ class S3IntermediateStore(IntermediateStore):
         key = self.key_for_paths(paths)
 
         # FIXME we need better error handling for object store
-        return runtime_type.serialization_strategy.deserialize_value(
-            context, BytesIO(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
+        return runtime_type.serialization_strategy.deserialize(
+            BytesIO(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
         )
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument

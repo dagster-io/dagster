@@ -187,8 +187,7 @@ class FileSystemIntermediateStore(IntermediateStore):
         # union(parquet_file, directory([parquet_file])) -- we will need a) to pass the
         # object store into the serializer and b) to provide sugar for the common case where
         # we don't need to do anything other than open the target path as a binary file
-        with open(target_path, 'wb') as ff:
-            runtime_type.serialization_strategy.serialize_value(context, obj, ff)
+        runtime_type.serialization_strategy.serialize_to_file(obj, target_path)
 
         return target_path
 
@@ -198,8 +197,7 @@ class FileSystemIntermediateStore(IntermediateStore):
 
         check.param_invariant(len(paths) > 0, 'paths')
         target_path = os.path.join(self.root, *paths)
-        with open(target_path, 'rb') as ff:
-            return runtime_type.serialization_strategy.deserialize_value(context, ff)
+        return runtime_type.serialization_strategy.deserialize_from_file(target_path)
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
         target_path = os.path.join(self.root, *paths)

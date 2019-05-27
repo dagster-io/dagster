@@ -26,7 +26,6 @@ from dagster.core.execution.context.transform import TransformExecutionContext
 from dagster.utils import mkdir_p
 
 from .errors import DagstermillExecutionError
-from .manager import MANAGER_FOR_NOTEBOOK_INSTANCE
 from .serialize import (
     input_name_serialization_enum,
     output_name_serialization_enum,
@@ -128,10 +127,7 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
         ), 'Dagstermill solids cannot have inputs named "dm_context"'
         runtime_type = input_def_dict[input_name].runtime_type
         parameter_value = write_value(
-            MANAGER_FOR_NOTEBOOK_INSTANCE.context,
-            runtime_type,
-            input_value,
-            os.path.join(marshal_dir, 'input-{}'.format(input_name)),
+            runtime_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
         )
         parameters[input_name] = parameter_value
         input_name_type_dict[input_name] = input_name_serialization_enum(
@@ -218,11 +214,7 @@ def _dm_solid_transform(name, notebook_path):
             for output_name, output_def in system_transform_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
                 if output_name in data_dict:
-                    value = read_value(
-                        MANAGER_FOR_NOTEBOOK_INSTANCE.context,
-                        output_def.runtime_type,
-                        data_dict[output_name],
-                    )
+                    value = read_value(output_def.runtime_type, data_dict[output_name])
 
                     yield Result(value, output_name)
 
