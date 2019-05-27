@@ -23,7 +23,7 @@ from dagster.core.errors import (
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.storage.intermediates_manager import StepOutputHandle
-from dagster.core.storage.intermediate_store import get_filesystem_intermediate
+from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.core.events import get_step_output_event
 
 
@@ -63,8 +63,10 @@ def test_execution_plan_reexecution():
     )
 
     assert result.success
-    assert get_filesystem_intermediate(result.run_id, 'add_one.compute', Int) == 4
-    assert get_filesystem_intermediate(result.run_id, 'add_two.compute', Int) == 6
+
+    store = FileSystemIntermediateStore(result.run_id)
+    assert store.get_intermediate(None, 'add_one.compute', Int) == 4
+    assert store.get_intermediate(None, 'add_two.compute', Int) == 6
 
     ## re-execute add_two
 
@@ -87,8 +89,9 @@ def test_execution_plan_reexecution():
         step_keys_to_execute=['add_two.compute'],
     )
 
-    assert get_filesystem_intermediate(new_run_id, 'add_one.compute', Int) == 4
-    assert get_filesystem_intermediate(new_run_id, 'add_two.compute', Int) == 6
+    store = FileSystemIntermediateStore(new_run_id)
+    assert store.get_intermediate(None, 'add_one.compute', Int) == 4
+    assert store.get_intermediate(None, 'add_two.compute', Int) == 6
 
     assert not get_step_output_event(step_events, 'add_one.compute')
     assert get_step_output_event(step_events, 'add_two.compute')
@@ -248,8 +251,10 @@ def test_pipeline_step_key_subset_execution():
     )
 
     assert result.success
-    assert get_filesystem_intermediate(result.run_id, 'add_one.compute', Int) == 4
-    assert get_filesystem_intermediate(result.run_id, 'add_two.compute', Int) == 6
+
+    store = FileSystemIntermediateStore(result.run_id)
+    assert store.get_intermediate(None, 'add_one.compute', Int) == 4
+    assert store.get_intermediate(None, 'add_two.compute', Int) == 6
 
     ## re-execute add_two
 
@@ -274,8 +279,9 @@ def test_pipeline_step_key_subset_execution():
     step_events = pipeline_reexecution_result.step_event_list
     assert step_events
 
-    assert get_filesystem_intermediate(new_run_id, 'add_one.compute', Int) == 4
-    assert get_filesystem_intermediate(new_run_id, 'add_two.compute', Int) == 6
+    store = FileSystemIntermediateStore(new_run_id)
+    assert store.get_intermediate(None, 'add_one.compute', Int) == 4
+    assert store.get_intermediate(None, 'add_two.compute', Int) == 6
 
     assert not get_step_output_event(step_events, 'add_one.compute')
     assert get_step_output_event(step_events, 'add_two.compute')

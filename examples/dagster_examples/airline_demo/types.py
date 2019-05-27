@@ -1,5 +1,5 @@
 """Type definitions for the airline_demo."""
-
+import os
 
 from collections import namedtuple
 from io import BytesIO
@@ -9,7 +9,7 @@ import sqlalchemy
 from pyspark.sql import DataFrame
 
 from dagster import as_dagster_type, Dict, Field, String
-from dagster.core.storage.intermediate_store import get_valid_target_path, TypeStoragePlugin
+from dagster.core.storage.intermediate_store import TypeStoragePlugin
 from dagster.core.storage.runs import RunStorageMode
 from dagster.core.types.runtime import Stringish, RuntimeType
 
@@ -24,29 +24,27 @@ AirlineDemoResources = namedtuple(
 class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
     def set_object(cls, intermediate_store, obj, _context, _runtime_type, paths):
-        target_path = intermediate_store.key_for_paths(paths)
-        obj.write.parquet(intermediate_store.url_for_paths(paths, protocol='s3a://'))
+        target_path = intermediate_store.object_store.key_for_paths(paths)
+        obj.write.parquet(intermediate_store.uri_for_paths(paths, protocol='s3a://'))
         return target_path
 
     @classmethod
     def get_object(cls, intermediate_store, context, _runtime_type, paths):
         return context.resources.spark.read.parquet(
-            intermediate_store.url_for_paths(paths, protocol='s3a://')
+            intermediate_store.uri_for_paths(paths, protocol='s3a://')
         )
 
 
 class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
     def set_object(cls, intermediate_store, obj, _context, _runtime_type, paths):
-        target_path = get_valid_target_path(intermediate_store.root, paths)
-        obj.write.parquet(intermediate_store.url_for_paths(paths))
+        target_path = os.path.join(intermediate_store.root, *paths)
+        obj.write.parquet(intermediate_store.uri_for_paths(paths))
         return target_path
 
     @classmethod
     def get_object(cls, intermediate_store, context, _runtime_type, paths):
-        return context.resources.spark.read.parquet(
-            get_valid_target_path(intermediate_store.root, paths)
-        )
+        return context.resources.spark.read.parquet(os.path.join(intermediate_store.root, *paths))
 
 
 SparkDataFrameType = as_dagster_type(

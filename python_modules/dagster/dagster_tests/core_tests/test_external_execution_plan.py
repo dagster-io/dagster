@@ -17,10 +17,7 @@ from dagster import (
 )
 
 from dagster.core.execution.api import DagsterEventType, create_execution_plan, execute_plan
-from dagster.core.storage.intermediate_store import (
-    get_filesystem_intermediate,
-    has_filesystem_intermediate,
-)
+from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 
 
 def define_inty_pipeline():
@@ -77,9 +74,10 @@ def test_using_file_system_for_subplan():
         )
     )
 
+    store = FileSystemIntermediateStore(run_id)
     assert get_step_output(return_one_step_events, 'return_one.compute')
-    assert has_filesystem_intermediate(run_id, 'return_one.compute')
-    assert get_filesystem_intermediate(run_id, 'return_one.compute', Int) == 1
+    assert store.has_intermediate(None, 'return_one.compute')
+    assert store.get_intermediate(None, 'return_one.compute', Int) == 1
 
     add_one_step_events = list(
         execute_plan(
@@ -91,8 +89,8 @@ def test_using_file_system_for_subplan():
     )
 
     assert get_step_output(add_one_step_events, 'add_one.compute')
-    assert has_filesystem_intermediate(run_id, 'add_one.compute')
-    assert get_filesystem_intermediate(run_id, 'add_one.compute', Int) == 2
+    assert store.has_intermediate(None, 'add_one.compute')
+    assert store.get_intermediate(None, 'add_one.compute', Int) == 2
 
 
 def test_using_file_system_for_subplan_multiprocessing():
@@ -122,9 +120,11 @@ def test_using_file_system_for_subplan_multiprocessing():
         )
     )
 
+    store = FileSystemIntermediateStore(run_id)
+
     assert get_step_output(return_one_step_events, 'return_one.compute')
-    assert has_filesystem_intermediate(run_id, 'return_one.compute')
-    assert get_filesystem_intermediate(run_id, 'return_one.compute', Int) == 1
+    assert store.has_intermediate(None, 'return_one.compute')
+    assert store.get_intermediate(None, 'return_one.compute', Int) == 1
 
     add_one_step_events = list(
         execute_plan(
@@ -141,8 +141,8 @@ def test_using_file_system_for_subplan_multiprocessing():
     )
 
     assert get_step_output(add_one_step_events, 'add_one.compute')
-    assert has_filesystem_intermediate(run_id, 'add_one.compute')
-    assert get_filesystem_intermediate(run_id, 'add_one.compute', Int) == 2
+    assert store.has_intermediate(None, 'add_one.compute')
+    assert store.get_intermediate(None, 'add_one.compute', Int) == 2
 
 
 def test_execute_step_wrong_step_key():

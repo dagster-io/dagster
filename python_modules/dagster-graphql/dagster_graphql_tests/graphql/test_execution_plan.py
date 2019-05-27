@@ -1,9 +1,6 @@
 import uuid
 from dagster import check
-from dagster.core.storage.intermediate_store import (
-    has_filesystem_intermediate,
-    get_filesystem_intermediate,
-)
+from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.utils import merge_dicts, script_relative_path
 from dagster.utils.test import get_temp_file_name
 
@@ -140,8 +137,9 @@ def test_success_whole_execution_plan(snapshot):
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(result.data)
-    assert has_filesystem_intermediate(run_id, 'sum_solid.compute')
-    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.compute')
+    store = FileSystemIntermediateStore(run_id)
+    assert store.has_intermediate(None, 'sum_solid.compute')
+    assert store.has_intermediate(None, 'sum_sq_solid.compute')
 
 
 def test_success_whole_execution_plan_with_filesystem_config(snapshot):
@@ -174,8 +172,9 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(result.data)
-    assert has_filesystem_intermediate(run_id, 'sum_solid.compute')
-    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.compute')
+    store = FileSystemIntermediateStore(run_id)
+    assert store.has_intermediate(None, 'sum_solid.compute')
+    assert store.has_intermediate(None, 'sum_sq_solid.compute')
 
 
 def test_success_whole_execution_plan_with_in_memory_config(snapshot):
@@ -208,8 +207,9 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(result.data)
-    assert not has_filesystem_intermediate(run_id, 'sum_solid.compute')
-    assert not has_filesystem_intermediate(run_id, 'sum_sq_solid.compute')
+    store = FileSystemIntermediateStore(run_id)
+    assert not store.has_intermediate(None, 'sum_solid.compute')
+    assert not store.has_intermediate(None, 'sum_sq_solid.compute')
 
 
 def test_successful_one_part_execute_plan(snapshot):
@@ -248,9 +248,10 @@ def test_successful_one_part_execute_plan(snapshot):
 
     snapshot.assert_match(result.data)
 
-    assert has_filesystem_intermediate(run_id, 'sum_solid.compute')
+    store = FileSystemIntermediateStore(run_id)
+    assert store.has_intermediate(None, 'sum_solid.compute')
     assert (
-        str(get_filesystem_intermediate(run_id, 'sum_solid.compute', PoorMansDataFrame))
+        str(store.get_intermediate(None, 'sum_solid.compute', PoorMansDataFrame))
         == expected_value_repr
     )
 
@@ -308,9 +309,10 @@ def test_successful_two_part_execute_plan(snapshot):
         '''('sum_sq', 49)])]'''
     )
 
-    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.compute')
+    store = FileSystemIntermediateStore(run_id)
+    assert store.has_intermediate(None, 'sum_sq_solid.compute')
     assert (
-        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.compute', PoorMansDataFrame))
+        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame))
         == expected_value_repr
     )
 

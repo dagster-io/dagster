@@ -4,10 +4,7 @@ import uuid
 
 from graphql import parse
 
-from dagster.core.storage.intermediate_store import (
-    has_filesystem_intermediate,
-    get_filesystem_intermediate,
-)
+from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.utils import script_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
@@ -322,11 +319,12 @@ def test_successful_pipeline_reexecution(snapshot):
         '''('sum_sq', 49)])]'''
     )
 
-    assert has_filesystem_intermediate(run_id, 'sum_solid.inputs.num.read', 'input_thunk_output')
-    assert has_filesystem_intermediate(run_id, 'sum_solid.compute')
-    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.compute')
+    store = FileSystemIntermediateStore(run_id)
+    assert store.has_intermediate(None, 'sum_solid.inputs.num.read', 'input_thunk_output')
+    assert store.has_intermediate(None, 'sum_solid.compute')
+    assert store.has_intermediate(None, 'sum_sq_solid.compute')
     assert (
-        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.compute', PoorMansDataFrame))
+        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame))
         == expected_value_repr
     )
 
@@ -364,13 +362,12 @@ def test_successful_pipeline_reexecution(snapshot):
 
     snapshot.assert_match(result_two.data)
 
-    assert not has_filesystem_intermediate(
-        new_run_id, 'sum_solid.inputs.num.read', 'input_thunk_output'
-    )
-    assert has_filesystem_intermediate(new_run_id, 'sum_solid.compute')
-    assert has_filesystem_intermediate(new_run_id, 'sum_sq_solid.compute')
+    store = FileSystemIntermediateStore(new_run_id)
+    assert not store.has_intermediate(None, 'sum_solid.inputs.num.read', 'input_thunk_output')
+    assert store.has_intermediate(None, 'sum_solid.compute')
+    assert store.has_intermediate(None, 'sum_sq_solid.compute')
     assert (
-        str(get_filesystem_intermediate(new_run_id, 'sum_sq_solid.compute', PoorMansDataFrame))
+        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame))
         == expected_value_repr
     )
 

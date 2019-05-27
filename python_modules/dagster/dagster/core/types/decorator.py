@@ -142,7 +142,7 @@ def as_dagster_type(
     )
     storage_plugins = check.opt_dict_param(storage_plugins, 'storage_plugins')
 
-    name = existing_type.__name__ if name is None else name
+    name = name or existing_type.__name__
 
     return _decorate_as_dagster_type(
         existing_type,

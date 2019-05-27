@@ -33,12 +33,7 @@ from dagster.core.types.runtime import (
 
 from dagster.utils.test import yield_empty_pipeline_context
 
-from dagster_aws.s3.intermediate_store import (
-    get_s3_intermediate,
-    has_s3_intermediate,
-    rm_s3_intermediate,
-    S3IntermediateStore,
-)
+from dagster_aws.s3.intermediate_store import S3IntermediateStore
 
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
@@ -114,6 +109,8 @@ def test_using_s3_for_subplan(s3_bucket):
 
     run_id = str(uuid.uuid4())
 
+    store = S3IntermediateStore(s3_bucket, run_id)
+
     try:
         return_one_step_events = list(
             execute_plan(
@@ -128,8 +125,8 @@ def test_using_s3_for_subplan(s3_bucket):
         with scoped_pipeline_context(
             pipeline, environment_dict, RunConfig(run_id=run_id)
         ) as context:
-            assert has_s3_intermediate(context, s3_bucket, run_id, 'return_one.compute')
-            assert get_s3_intermediate(context, s3_bucket, run_id, 'return_one.compute', Int) == 1
+            assert store.has_intermediate(context, 'return_one.compute')
+            assert store.get_intermediate(context, 'return_one.compute', Int) == 1
 
         add_one_step_events = list(
             execute_plan(
@@ -144,14 +141,14 @@ def test_using_s3_for_subplan(s3_bucket):
         with scoped_pipeline_context(
             pipeline, environment_dict, RunConfig(run_id=run_id)
         ) as context:
-            assert has_s3_intermediate(context, s3_bucket, run_id, 'add_one.compute')
-            assert get_s3_intermediate(context, s3_bucket, run_id, 'add_one.compute', Int) == 2
+            assert store.has_intermediate(context, 'add_one.compute')
+            assert store.get_intermediate(context, 'add_one.compute', Int) == 2
     finally:
         with scoped_pipeline_context(
             pipeline, environment_dict, RunConfig(run_id=run_id)
         ) as context:
-            rm_s3_intermediate(context, s3_bucket, run_id, 'return_one.compute')
-            rm_s3_intermediate(context, s3_bucket, run_id, 'add_one.compute')
+            store.rm_intermediate(context, 'return_one.compute')
+            store.rm_intermediate(context, 'add_one.compute')
 
 
 class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
@@ -164,8 +161,9 @@ class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-in
     @classmethod
     def get_object(cls, intermediate_store, _context, _runtime_type, paths):
         check.inst_param(intermediate_store, 'intermediate_store', S3IntermediateStore)
-        return intermediate_store.s3.list_objects(
-            Bucket=intermediate_store.bucket, Prefix=intermediate_store.key_for_paths(paths)
+        return intermediate_store.object_store.s3.list_objects(
+            Bucket=intermediate_store.object_store.bucket,
+            Prefix=intermediate_store.key_for_paths(paths),
         )['Contents'][0]['Key'].split('/')[-1]
 
 
@@ -249,8 +247,8 @@ def test_s3_intermediate_store_with_custom_serializer():
             intermediate_store.set_object('foo', context, LowercaseString.inst(), ['foo'])
 
             assert (
-                intermediate_store.s3.get_object(
-                    Bucket=intermediate_store.bucket,
+                intermediate_store.object_store.s3.get_object(
+                    Bucket=intermediate_store.object_store.bucket,
                     Key='/'.join([intermediate_store.root] + ['foo']),
                 )['Body']
                 .read()
@@ -279,7 +277,7 @@ def test_s3_intermediate_store():
 
             assert intermediate_store.has_object(context, ['true'])
             assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']) is True
-            assert intermediate_store.url_for_paths(['true']).startswith('s3://')
+            assert intermediate_store.uri_for_paths(['true']).startswith('s3://')
 
         finally:
             intermediate_store.rm_object(context, ['true'])

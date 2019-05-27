@@ -1,15 +1,14 @@
 import os
-import shutil
 
 from abc import ABCMeta, abstractmethod
 
 import six
 
 from dagster import check, seven
-from dagster.utils import mkdir_p
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
 
+from .object_store import ObjectStore, FileSystemObjectStore
 from .runs import RunStorageMode
 
 
@@ -33,7 +32,11 @@ class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 
 class IntermediateStore(six.with_metaclass(ABCMeta)):
-    def __init__(self, types_to_register=None):
+    def __init__(self, object_store, root, types_to_register=None):
+        self.root = check.str_param(root, 'root')
+
+        self.object_store = check.inst_param(object_store, 'object_store', ObjectStore)
+
         types_to_register = check.opt_dict_param(
             types_to_register,
             'types_to_register',
@@ -54,20 +57,48 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
         )
         self.TYPE_STORAGE_PLUGIN_REGISTRY[type_to_register.name] = type_storage_plugin
 
-    @abstractmethod
+    def uri_for_paths(self, paths, protocol=None):
+        check.list_param(paths, 'paths', of_type=str)
+        check.param_invariant(len(paths) > 0, 'paths')
+        key = self.object_store.key_for_paths([self.root] + paths)
+        return self.object_store.uri_for_key(key, protocol)
+
     def set_object(self, obj, context, runtime_type, paths):
-        pass
+        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+        check.list_param(paths, 'paths', of_type=str)
+        check.param_invariant(len(paths) > 0, 'paths')
+        key = self.object_store.key_for_paths([self.root] + paths)
+        return self.object_store.set_object(
+            key, obj, serialization_strategy=runtime_type.serialization_strategy
+        )
 
-    @abstractmethod
     def get_object(self, context, runtime_type, paths):
-        pass
+        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.list_param(paths, 'paths', of_type=str)
+        check.param_invariant(len(paths) > 0, 'paths')
+        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+        key = self.object_store.key_for_paths([self.root] + paths)
+        return self.object_store.get_object(
+            key, serialization_strategy=runtime_type.serialization_strategy
+        )
 
-    @abstractmethod
     def has_object(self, context, paths):
-        pass
+        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.list_param(paths, 'paths', of_type=str)
+        check.param_invariant(len(paths) > 0, 'paths')
+        key = self.object_store.key_for_paths([self.root] + paths)
+        return self.object_store.has_object(key)
+
+    def rm_object(self, context, paths):
+        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.list_param(paths, 'paths', of_type=str)
+        check.param_invariant(len(paths) > 0, 'paths')
+        key = self.object_store.key_for_paths([self.root] + paths)
+        self.object_store.rm_object(key)
 
     @abstractmethod
-    def rm_object(self, context, paths):
+    def copy_object_from_prev_run(self, context, previous_run_id, paths):
         pass
 
     def _check_for_unsupported_composite_overrides(self, runtime_type):
@@ -126,27 +157,41 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
             self._check_for_unsupported_composite_overrides(runtime_type)
         return self.get_object(context, runtime_type, paths)
 
+    @staticmethod
+    def paths_for_intermediate(step_key, output_name):
+        return ['intermediates', step_key, output_name]
 
-def get_run_files_directory(base_dir, run_id):
-    return os.path.join(base_dir, 'dagster', 'runs', run_id, 'files')
+    def get_intermediate(self, context, step_key, dagster_type, output_name='result'):
+        return self.get_object(
+            context=context,
+            runtime_type=resolve_to_runtime_type(dagster_type),
+            paths=self.paths_for_intermediate(step_key, output_name),
+        )
+
+    def has_intermediate(self, context, step_key, output_name='result'):
+        return self.has_object(
+            context=context, paths=self.paths_for_intermediate(step_key, output_name)
+        )
+
+    def rm_intermediate(self, context, step_key, output_name='result'):
+        return self.rm_object(
+            context=context, paths=self.paths_for_intermediate(step_key, output_name)
+        )
 
 
-def get_valid_target_path(base_dir, paths):
-    if len(paths) > 1:
-        target_dir = os.path.join(base_dir, *paths[:-1])
-        mkdir_p(target_dir)
-        return os.path.join(target_dir, paths[-1])
-    else:
-        check.invariant(len(paths) == 1)
-        target_dir = base_dir
-        mkdir_p(target_dir)
-        return os.path.join(target_dir, paths[0])
+def construct_type_storage_plugin_registry(pipeline_def, storage_mode):
+    return {
+        type_obj: type_obj.storage_plugins.get(storage_mode)
+        for type_obj in pipeline_def.all_runtime_types()
+        if type_obj.storage_plugins.get(storage_mode)
+    }
 
 
 class FileSystemIntermediateStore(IntermediateStore):
     def __init__(self, run_id, types_to_register=None, base_dir=None):
         self.run_id = check.str_param(run_id, 'run_id')
         self.storage_mode = RunStorageMode.FILESYSTEM
+
         self._base_dir = os.path.abspath(
             os.path.expanduser(
                 check.opt_nonempty_str_param(
@@ -159,102 +204,32 @@ class FileSystemIntermediateStore(IntermediateStore):
             'Could not find a directory at the base_dir supplied to FileSystemIntermediateStore: '
             '{base_dir}'.format(base_dir=self._base_dir),
         )
-        self.root = get_run_files_directory(self.base_dir, run_id)
 
-        super(FileSystemIntermediateStore, self).__init__(types_to_register)
+        object_store = FileSystemObjectStore()
+
+        root = object_store.key_for_paths([self.base_dir, 'dagster', 'runs', run_id, 'files'])
+
+        super(FileSystemIntermediateStore, self).__init__(
+            object_store, root=root, types_to_register=types_to_register
+        )
 
     @property
     def base_dir(self):
         return self._base_dir
 
-    def url_for_paths(self, paths):
-        return 'file:///' + '/'.join([self.root] + paths)
-
-    def set_object(self, obj, context, runtime_type, paths):  # pylint: disable=unused-argument
-        check.inst_param(context, 'context', SystemPipelineExecutionContext)
-        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
-        check.list_param(paths, 'paths', of_type=str)
-        check.param_invariant(len(paths) > 0, 'paths')
-
-        target_path = get_valid_target_path(self.root, paths)
-
-        if os.path.exists(target_path):
-            context.log.warning('Removing existing path {path}'.format(path=target_path))
-            os.unlink(target_path)
-
-        # This is not going to be right in the general case, e.g. for types like Spark
-        # datasets/dataframes, which naturally serialize to
-        # union(parquet_file, directory([parquet_file])) -- we will need a) to pass the
-        # object store into the serializer and b) to provide sugar for the common case where
-        # we don't need to do anything other than open the target path as a binary file
-        runtime_type.serialization_strategy.serialize_to_file(obj, target_path)
-
-        return target_path
-
-    def get_object(self, context, runtime_type, paths):  # pylint: disable=unused-argument
-        check.list_param(paths, 'paths', of_type=str)
-        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
-
-        check.param_invariant(len(paths) > 0, 'paths')
-        target_path = os.path.join(self.root, *paths)
-        return runtime_type.serialization_strategy.deserialize_from_file(target_path)
-
-    def has_object(self, context, paths):  # pylint: disable=unused-argument
-        target_path = os.path.join(self.root, *paths)
-        return os.path.exists(target_path)
-
-    def rm_object(self, context, paths):  # pylint: disable=unused-argument
-        target_path = os.path.join(self.root, *paths)
-        if not self.has_object(context, paths):
-            return
-        if os.path.isfile(target_path):
-            os.unlink(target_path)
-        elif os.path.isdir(target_path):
-            shutil.rmtree(target_path)
-        return
-
     def copy_object_from_prev_run(
         self, context, previous_run_id, paths
     ):  # pylint: disable=unused-argument
-        prev_run_files_dir = get_run_files_directory(self.base_dir, previous_run_id)
-        check.invariant(os.path.isdir(prev_run_files_dir))
+        check.str_param(previous_run_id, 'previous_run_id')
+        check.list_param(paths, 'paths', of_type=str)
+        check.param_invariant(len(paths) > 0, 'paths')
 
-        copy_from_path = os.path.join(prev_run_files_dir, *paths)
-        copy_to_path = get_valid_target_path(self.root, paths)
-
-        check.invariant(
-            not os.path.exists(copy_to_path), 'Path already exists {}'.format(copy_to_path)
+        prev_run_files_dir = self.object_store.key_for_paths(
+            [self.base_dir, 'dagster', 'runs', previous_run_id, 'files']
         )
 
-        if os.path.isfile(copy_from_path):
-            shutil.copy(copy_from_path, copy_to_path)
-        elif os.path.isdir(copy_from_path):
-            shutil.copytree(copy_from_path, copy_to_path)
-        else:
-            check.failed('should not get here')
+        check.invariant(os.path.isdir(prev_run_files_dir))
 
-
-def get_fs_paths(step_key, output_name):
-    return ['intermediates', step_key, output_name]
-
-
-def get_filesystem_intermediate(run_id, step_key, dagster_type, output_name='result'):
-    intermediate_store = FileSystemIntermediateStore(run_id)
-    return intermediate_store.get_object(
-        context=None,
-        runtime_type=resolve_to_runtime_type(dagster_type),
-        paths=get_fs_paths(step_key, output_name),
-    )
-
-
-def has_filesystem_intermediate(run_id, step_key, output_name='result'):
-    intermediate_store = FileSystemIntermediateStore(run_id)
-    return intermediate_store.has_object(context=None, paths=get_fs_paths(step_key, output_name))
-
-
-def construct_type_storage_plugin_registry(pipeline_def, storage_mode):
-    return {
-        type_obj: type_obj.storage_plugins.get(storage_mode)
-        for type_obj in pipeline_def.all_runtime_types()
-        if type_obj.storage_plugins.get(storage_mode)
-    }
+        src = os.path.join(prev_run_files_dir, *paths)
+        dst = os.path.join(self.root, *paths)
+        self.object_store.cp_object(src, dst)

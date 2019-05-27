@@ -26,8 +26,8 @@ from dagster.core.storage.intermediates_manager import (
     IntermediatesManager,
 )
 from dagster.core.storage.intermediate_store import (
-    FileSystemIntermediateStore,
     construct_type_storage_plugin_registry,
+    FileSystemIntermediateStore,
 )
 from dagster.core.storage.runs import (
     DagsterRunMeta,
