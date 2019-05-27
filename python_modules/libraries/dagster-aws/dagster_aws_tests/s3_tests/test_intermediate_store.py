@@ -22,7 +22,7 @@ from dagster.core.events import DagsterEventType
 
 from dagster.core.execution.api import create_execution_plan, execute_plan, scoped_pipeline_context
 
-from dagster.core.storage.intermediate_store import TypeStoragePlugin
+from dagster.core.storage.type_storage import TypeStoragePlugin
 
 from dagster.core.types.runtime import (
     String as RuntimeString,

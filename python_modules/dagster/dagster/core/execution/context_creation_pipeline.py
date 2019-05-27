@@ -25,10 +25,7 @@ from dagster.core.storage.intermediates_manager import (
     InMemoryIntermediatesManager,
     IntermediatesManager,
 )
-from dagster.core.storage.intermediate_store import (
-    construct_type_storage_plugin_registry,
-    FileSystemIntermediateStore,
-)
+from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.core.storage.runs import (
     DagsterRunMeta,
     FileSystemRunStorage,
@@ -36,6 +33,7 @@ from dagster.core.storage.runs import (
     RunStorage,
     RunStorageMode,
 )
+from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import (
     EvaluationError,

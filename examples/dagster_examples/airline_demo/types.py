@@ -9,8 +9,8 @@ import sqlalchemy
 from pyspark.sql import DataFrame
 
 from dagster import as_dagster_type, Dict, Field, String
-from dagster.core.storage.intermediate_store import TypeStoragePlugin
 from dagster.core.storage.runs import RunStorageMode
+from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.runtime import Stringish, RuntimeType
 
 from dagster_aws.s3.types import BytesIOS3StoragePlugin
