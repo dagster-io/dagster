@@ -14,8 +14,6 @@ def test_execution_context_invocation_as_script():
     subprocess.check_output(
         [
             'python',
-            script_relative_path(
-                '../../../../../examples/dagster_examples/intro_tutorial/execution_context.py'
-            ),
+            script_relative_path('../../dagster_examples/intro_tutorial/execution_context.py'),
         ]
     )

@@ -12,7 +12,7 @@ def test_execute_pipeline():
         'python_file': None,
         'fn_name': None,
     }
-    with pushd(script_relative_path('../../../../../examples/dagster_examples/intro_tutorial/')):
+    with pushd(script_relative_path('../../dagster_examples/intro_tutorial/')):
         execute_execute_command(
             ['pipeline_execution_env.yml'], raise_on_error=True, cli_args=execute_kwargs
         )

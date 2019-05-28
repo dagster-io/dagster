@@ -17,8 +17,6 @@ def test_intro_tutorial_hello_dag():
 
 def test_tutorial_cli_hello_dag():
     check_cli_execute_file_pipeline(
-        script_relative_path(
-            '../../../../../examples/dagster_examples/intro_tutorial/hello_dag.py'
-        ),
+        script_relative_path('../../dagster_examples/intro_tutorial/hello_dag.py'),
         'define_hello_dag_pipeline',
     )

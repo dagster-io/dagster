@@ -12,9 +12,7 @@ from dagster.core.errors import DagsterExecutionStepExecutionError
 
 
 def intro_tutorial_path(path):
-    return script_relative_path(
-        '../../../../../examples/dagster_examples/intro_tutorial/{}'.format(path)
-    )
+    return script_relative_path('../../dagster_examples/intro_tutorial/{}'.format(path))
 
 
 def test_demo_configuration_schema_pipeline_correct_yaml():
@@ -81,7 +79,7 @@ def test_typed_demo_configuration_schema_type_mismatch_error():
             load_yaml_from_path(
                 script_relative_path(
                     (
-                        '../../../../../examples/dagster_examples/intro_tutorial/'
+                        '../../dagster_examples/intro_tutorial/'
                         'configuration_schemas_type_mismatch_error.yml'
                     )
                 )
