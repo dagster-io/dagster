@@ -17,7 +17,8 @@ const PipelineExplorerRoot: React.FunctionComponent<
   IPipelineExplorerRootProps
 > = props => {
   const pathSolids = props.location.pathname
-    .substr(props.location.pathname.indexOf("explore") + 8)
+    .split(/\/explore\/?/)
+    .pop()!
     .split("/");
   const parentHandleID = pathSolids[pathSolids.length - 2];
   const selectedHandleID = pathSolids[pathSolids.length - 1];
