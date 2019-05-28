@@ -11,7 +11,6 @@ from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ResourcesBuilder
 from dagster.core.errors import (
     DagsterError,
-    DagsterInvariantViolationError,
     DagsterUserCodeExecutionError,
     DagsterResourceFunctionError,
     user_code_error_boundary,
@@ -21,19 +20,15 @@ from dagster.core.events.log import construct_event_logger
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.loggers import default_loggers, default_system_loggers
 from dagster.core.storage.intermediates_manager import (
-    IntermediateStoreIntermediatesManager,
-    InMemoryIntermediatesManager,
+    construct_intermediates_manager,
     IntermediatesManager,
 )
-from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.core.storage.runs import (
+    construct_run_storage,
     DagsterRunMeta,
-    FileSystemRunStorage,
-    InMemoryRunStorage,
     RunStorage,
     RunStorageMode,
 )
-from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import (
     EvaluationError,
@@ -87,45 +82,6 @@ def create_environment_config(pipeline, environment_dict=None, mode=None):
     return EnvironmentConfig.from_dict(result.value)
 
 
-def construct_run_storage(run_config, environment_config):
-    '''
-    Construct the run storage for this pipeline. Our rules are the following:
-
-    If the RunConfig has a storage_mode provided, we use that.
-
-    Then we fallback to environment config.
-
-    If there is no config, we default to in memory storage. This is mostly so
-    that tests default to in-memory.
-    '''
-    check.inst_param(run_config, 'run_config', RunConfig)
-    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
-
-    if run_config.storage_mode:
-        if run_config.storage_mode == RunStorageMode.FILESYSTEM:
-            return FileSystemRunStorage()
-        elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
-            return InMemoryRunStorage()
-        elif run_config.storage_mode == RunStorageMode.S3:
-            # TODO: Revisit whether we want to use S3 run storage
-            return FileSystemRunStorage()
-        else:
-            check.failed('Unexpected enum {}'.format(run_config.storage_mode))
-    elif environment_config.storage.storage_mode == 'filesystem':
-        return FileSystemRunStorage()
-    elif environment_config.storage.storage_mode == 'in_memory':
-        return InMemoryRunStorage()
-    elif environment_config.storage.storage_mode == 's3':
-        # TODO: Revisit whether we want to use S3 run storage
-        return FileSystemRunStorage()
-    elif environment_config.storage.storage_mode is None:
-        return InMemoryRunStorage()
-    else:
-        raise DagsterInvariantViolationError(
-            'Invalid storage specified {}'.format(environment_config.storage.storage_mode)
-        )
-
-
 @contextmanager
 def scoped_pipeline_context(pipeline_def, environment_dict, run_config, intermediates_manager=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
@@ -136,10 +92,17 @@ def scoped_pipeline_context(pipeline_def, environment_dict, run_config, intermed
         pipeline_def, environment_dict, mode=run_config.mode
     )
 
-    intermediates_manager = intermediates_manager or construct_intermediates_manager(
-        run_config, environment_config, pipeline_def
+    # The run storage mode will be provided by RunConfig or from the "storage" field in the user's
+    # environment config, with preference given to the former if provided.
+    storage_mode = run_config.storage_mode or RunStorageMode.from_environment_config(
+        environment_config.storage.storage_mode
     )
-    run_storage = construct_run_storage(run_config, environment_config)
+
+    intermediates_manager = intermediates_manager or construct_intermediates_manager(
+        storage_mode, run_config.run_id, environment_config, pipeline_def
+    )
+
+    run_storage = construct_run_storage(storage_mode)
 
     run_storage.write_dagster_run_meta(
         DagsterRunMeta(
@@ -267,74 +230,6 @@ def _create_resource_fn_lambda(pipeline_def, resource_def, resource_config, run_
             log_manager=log_manager,
         )
     )
-
-
-def ensure_dagster_aws_requirements():
-    try:
-        import dagster_aws
-    except (ImportError, ModuleNotFoundError):
-        raise check.CheckError(
-            'dagster_aws must be available for import in order to make use of an'
-            ' S3IntermediateStore'
-        )
-
-    return dagster_aws
-
-
-def construct_intermediates_manager(run_config, environment_config, pipeline_def):
-    check.inst_param(run_config, 'run_config', RunConfig)
-    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-
-    if run_config.storage_mode:
-        if run_config.storage_mode == RunStorageMode.FILESYSTEM:
-            return IntermediateStoreIntermediatesManager(
-                FileSystemIntermediateStore(
-                    run_config.run_id,
-                    construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.FILESYSTEM),
-                )
-            )
-        elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
-            return InMemoryIntermediatesManager()
-        elif run_config.storage_mode == RunStorageMode.S3:
-            _dagster_aws = ensure_dagster_aws_requirements()
-            from dagster_aws.s3.intermediate_store import S3IntermediateStore
-
-            return IntermediateStoreIntermediatesManager(
-                S3IntermediateStore(
-                    environment_config.storage.storage_config['s3_bucket'],
-                    run_config.run_id,
-                    construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.S3),
-                )
-            )
-        else:
-            check.failed('Unexpected enum {}'.format(run_config.storage_mode))
-    elif environment_config.storage.storage_mode == 'filesystem':
-        return IntermediateStoreIntermediatesManager(
-            FileSystemIntermediateStore(
-                run_config.run_id,
-                construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.FILESYSTEM),
-            )
-        )
-    elif environment_config.storage.storage_mode == 'in_memory':
-        return InMemoryIntermediatesManager()
-    elif environment_config.storage.storage_mode == 's3':
-        _dagster_aws = ensure_dagster_aws_requirements()
-        from dagster_aws.s3.intermediate_store import S3IntermediateStore
-
-        return IntermediateStoreIntermediatesManager(
-            S3IntermediateStore(
-                environment_config.storage.storage_config['s3_bucket'],
-                run_config.run_id,
-                construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.S3),
-            )
-        )
-    elif environment_config.storage.storage_mode is None:
-        return InMemoryIntermediatesManager()
-    else:
-        raise DagsterInvariantViolationError(
-            'Invalid storage specified {}'.format(environment_config.storage.storage_mode)
-        )
 
 
 def _create_loggers(environment_config, run_config, pipeline_def, mode_def):
