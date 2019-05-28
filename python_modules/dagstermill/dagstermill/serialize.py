@@ -21,14 +21,8 @@ def read_value(runtime_type, value):
         return value
     elif runtime_type.is_any and is_json_serializable(value):
         return value
-    elif runtime_type.serialization_strategy:
-        return runtime_type.serialization_strategy.deserialize_from_file(value)
     else:
-        check.failed(
-            'Unsupported type {name}: no persistence strategy defined'.format(
-                name=runtime_type.name
-            )
-        )
+        return runtime_type.serialization_strategy.deserialize_from_file(value)
 
 
 def write_value(runtime_type, value, target_file):
@@ -37,11 +31,9 @@ def write_value(runtime_type, value, target_file):
         return value
     elif runtime_type.is_any and is_json_serializable(value):
         return value
-    elif runtime_type.serialization_strategy:
+    else:
         runtime_type.serialization_strategy.serialize_to_file(value, target_file)
         return target_file
-    else:
-        check.failed('Unsupported type {name}'.format(name=runtime_type.name))
 
 
 class SerializableRuntimeType(Enum):

@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+import os
 import sqlite3
 import tempfile
 import threading
@@ -31,6 +32,8 @@ def test_json_sqlite3_handler():
     with tempfile.NamedTemporaryFile() as sqlite3_db:
         sqlite3_db_path = sqlite3_db.name
 
+    # Test that the handler works even if the file does not yet exist
+    try:
         sqlite3_handler = JsonSqlite3Handler(sqlite3_db_path)
         sqlite3_logger_def = construct_single_handler_logger('sqlite3', 'debug', sqlite3_handler)
         sqlite3_logger = sqlite3_logger_def.logger_fn(
@@ -45,6 +48,9 @@ def test_json_sqlite3_handler():
         cursor = conn.cursor()
         count = cursor.execute('select count(1) from logs').fetchall()
         assert count[0][0] == 1000
+    finally:
+        if os.path.exists(sqlite3_db_path):
+            os.unlink(sqlite3_db_path)
 
 
 def test_json_sqlite3_watcher():
@@ -213,3 +219,29 @@ def test_concurrent_multiprocessing_logging():
         for i, record in enumerate(records):
             json_record = record[1]
             assert json_record == seven.json.dumps(test_log_records[i].__dict__)
+
+
+def test_error_during_logging(caplog):
+    run_id = str(uuid.uuid4())
+    with tempfile.NamedTemporaryFile() as sqlite3_db:
+        sqlite3_db_path = sqlite3_db.name
+
+        sqlite3_handler = JsonSqlite3Handler(sqlite3_db_path)
+
+        class MockCursor:
+            def execute(self, *args, **kwargs):
+                raise Exception('Bailing!')
+
+        sqlite3_handler.cursor = MockCursor()
+        sqlite3_logger_def = construct_single_handler_logger('sqlite3', 'debug', sqlite3_handler)
+        sqlite3_logger = sqlite3_logger_def.logger_fn(
+            dummy_init_logger_context(sqlite3_logger_def, run_id)
+        )
+        sqlite3_log_manager = DagsterLogManager(run_id, {}, [sqlite3_logger])
+
+        sqlite3_log_manager.info('Testing error handling')
+
+        assert caplog.record_tuples == [
+            ('root', 50, 'Error during logging!'),
+            ('root', 40, 'Bailing!'),
+        ]

@@ -49,10 +49,8 @@ class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
     def solid_def(self):
         if self.out_of_pipeline:
             check.failed('Cannot access solid_def in dagstermill exploratory context')
-        return self._pipeline_context.solid_def
 
     @property
     def solid(self):
         if self.out_of_pipeline:
             check.failed('Cannot access solid in dagstermill exploratory context')
-        return self._pipeline_context.solid

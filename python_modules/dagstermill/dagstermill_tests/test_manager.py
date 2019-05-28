@@ -4,6 +4,8 @@ import shutil
 import tempfile
 import uuid
 
+from collections import OrderedDict
+
 import pytest
 
 from dagster import Materialization
@@ -58,12 +60,32 @@ def test_out_of_pipeline_manager_yield_result():
     assert manager.yield_result('foo') == 'foo'
 
 
+def test_out_of_pipeline_manager_yield_complex_result():
+    class Foo:
+        pass
+
+    manager = Manager()
+    assert isinstance(manager.yield_result(Foo()), Foo)
+
+
 def test_dummy_pipeline_manager_yield_bad_result():
     with in_pipeline_manager(register=False) as manager:
         with pytest.raises(
             DagstermillError, match='Solid hello_world does not have output named result'
         ):
             assert manager.yield_result('foo') == 'foo'
+
+
+def test_dummy_manager_yield_complex_result():
+    with in_pipeline_manager(
+        register=False, output_name_type_dict={'result': SerializableRuntimeType.ANY}
+    ) as manager:
+
+        class Foo:
+            pass
+
+        with pytest.raises(DagstermillError, match='since it has a complex serialization format'):
+            manager.yield_result(Foo())
 
 
 def test_out_of_pipeline_manager_yield_materialization():
@@ -109,6 +131,39 @@ def test_in_notebook_manager_bad_load_parameter():
 
             with pytest.raises(KeyError):
                 dagstermill.load_parameter('garble', Foo())
+    finally:
+        shutil.rmtree(marshal_dir)
+
+
+def test_in_notebook_manager_bad_complex_load_parameter():
+
+    run_id = str(uuid.uuid4())
+
+    marshal_dir = tempfile.mkdtemp()
+
+    try:
+        with tempfile.NamedTemporaryFile() as output_log_file:
+            dagstermill.deregister_repository()
+
+            context_dict = {
+                'run_id': run_id,
+                'mode': 'default',
+                'solid_def_name': 'hello_world',
+                'pipeline_name': 'hello_world_pipeline',
+                'marshal_dir': marshal_dir,
+                'environment_config': {},
+                'output_log_path': output_log_file.name,
+                'input_name_type_dict': {'a': SerializableRuntimeType.NONE},
+                'output_name_type_dict': {},
+            }
+            with pytest.raises(
+                DagstermillError,
+                match=(
+                    'If Dagstermill solids have inputs that require serialization strategies that '
+                ),
+            ):
+                dagstermill.populate_context(context_dict)
+
     finally:
         shutil.rmtree(marshal_dir)
 
@@ -180,3 +235,8 @@ def test_in_notebook_manager_load_parameter_pickleable():
 
     finally:
         shutil.rmtree(marshal_dir)
+
+
+def test_in_pipeline_manager_resources():
+    with in_pipeline_manager() as manager:
+        assert manager.context.resources._asdict() == OrderedDict([])

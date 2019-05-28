@@ -41,7 +41,6 @@ import time
 
 from dagster import check, seven
 from dagster.core.log_manager import DagsterLogManager
-from dagster.utils import safe_isfile
 from dagster.utils.log import construct_single_handler_logger
 
 
@@ -68,10 +67,6 @@ else:
 
 
 def init_db(sqlite_db_path):
-    if not safe_isfile(sqlite_db_path):
-        # touch
-        with open(sqlite_db_path, 'w') as _fd:
-            pass
     conn = sqlite3.connect(sqlite_db_path)
     cursor = conn.cursor()
     cursor.execute(CREATE_LOG_TABLE_STATEMENT)
