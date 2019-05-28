@@ -1,8 +1,9 @@
+from collections import namedtuple
+
 import inspect
 import os
 import sys
 
-from collections import namedtuple
 from enum import Enum
 
 import six

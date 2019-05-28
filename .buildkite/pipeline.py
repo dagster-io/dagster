@@ -238,6 +238,7 @@ if __name__ == "__main__":
             "pip install -e python_modules/dagster-graphql -qqq",
             "pip install -e python_modules/dagit -qqq",
             "pip install -r python_modules/dagit/dev-requirements.txt -qqq",
+            "pip install -e examples -qqq",
             "cd js_modules/dagit",
             "yarn install --offline",
             "yarn run ts",
