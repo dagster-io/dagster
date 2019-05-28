@@ -1,10 +1,11 @@
+from __future__ import print_function
+
 import os
 import pprint
 
 import requests
 
 from printer import IndentingBufferPrinter
-
 
 SCALAR_TYPES = {
     'string': 'String',
@@ -26,7 +27,7 @@ class Enum:
         self.enum_names = enum_names
         self.enum_descriptions = enum_descriptions
 
-    def print(self, printer):
+    def write(self, printer):
         printer.line(self.name.title() + ' = Enum(')
         with printer.with_indent():
             printer.line('name=\'{}\','.format(self.name.title()))
@@ -70,7 +71,7 @@ class Field:
         # Lists
         elif isinstance(self.fields, List):
             printer.line('List(')
-            self.fields.inner_type.print(printer, field_wrapped=False)
+            self.fields.inner_type.write(printer, field_wrapped=False)
             printer.line('),')
         # Dicts
         else:
@@ -91,12 +92,12 @@ class Field:
                         else:
                             with printer.with_indent():
                                 printer.append("'{}': ".format(k))
-                            v.print(printer)
+                            v.write(printer)
                             printer.append(',')
                 printer.line('},')
             printer.line('),')
 
-    def print(self, printer, field_wrapped=True):
+    def write(self, printer, field_wrapped=True):
         '''Use field_wrapped=False for Lists that should not be wrapped in Field()
         '''
         if not field_wrapped:
@@ -148,7 +149,7 @@ class ConfigParser:
             printer.line('def define_%s_config():' % suffix)
             with printer.with_indent():
                 printer.append('return ')
-                base_field.print(printer)
+                base_field.write(printer)
 
             with open(os.path.join(self.base_path, 'configs_%s.py' % suffix), 'wb') as f:
                 f.write(printer.read().strip().encode())
@@ -162,7 +163,7 @@ class ConfigParser:
             printer.line('from dagster import Enum, EnumValue')
             printer.blank_line()
             for enum in self.all_enums:
-                self.all_enums[enum].print(printer)
+                self.all_enums[enum].write(printer)
                 printer.blank_line()
 
             with open(os.path.join(self.base_path, 'types_%s.py' % suffix), 'wb') as f:
