@@ -184,13 +184,11 @@ def test_double_scaffold():
 
         runner = CliRunner()
         args = ['--notebook', notebook_path]
-
         res = runner.invoke(create_notebook, args)
 
         assert isinstance(res.exception, SystemExit)
         assert res.exception.code == 1
         assert 'already exists and continuing will overwrite the existing notebook.' in res.output
-
     finally:
         if os.path.exists(notebook_path):
             os.unlink(notebook_path)

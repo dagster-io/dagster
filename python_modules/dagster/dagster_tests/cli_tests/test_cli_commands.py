@@ -8,6 +8,7 @@ from click.testing import CliRunner
 
 from dagster import lambda_solid, PipelineDefinition, RepositoryDefinition
 from dagster.core.storage.runs import base_run_directory
+from dagster.cli.load_handle import CliUsageError
 from dagster.cli.pipeline import (
     execute_print_command,
     execute_list_command,
@@ -18,7 +19,6 @@ from dagster.cli.pipeline import (
     pipeline_print_command,
     pipeline_scaffold_command,
 )
-from dagster.core.errors import InvalidRepositoryLoadingComboError
 from dagster.utils import script_relative_path
 
 
@@ -107,7 +107,7 @@ def test_list_command():
         '    hello_world\n'
     )
 
-    with pytest.raises(InvalidRepositoryLoadingComboError):
+    with pytest.raises(CliUsageError):
         execute_list_command(
             {
                 'repository_yaml': None,
@@ -123,9 +123,9 @@ def test_list_command():
         ['-f', 'foo.py', '-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo'],
     )
     assert result.exit_code == 1
-    assert isinstance(result.exception, InvalidRepositoryLoadingComboError)
+    assert isinstance(result.exception, CliUsageError)
 
-    with pytest.raises(InvalidRepositoryLoadingComboError):
+    with pytest.raises(CliUsageError):
         execute_list_command(
             {
                 'repository_yaml': None,
@@ -138,9 +138,9 @@ def test_list_command():
 
     result = runner.invoke(pipeline_list_command, ['-m', 'dagster_examples.intro_tutorial.repos'])
     assert result.exit_code == 1
-    assert isinstance(result.exception, InvalidRepositoryLoadingComboError)
+    assert isinstance(result.exception, CliUsageError)
 
-    with pytest.raises(InvalidRepositoryLoadingComboError):
+    with pytest.raises(CliUsageError):
         execute_list_command(
             {
                 'repository_yaml': None,
@@ -155,7 +155,7 @@ def test_list_command():
         pipeline_list_command, ['-f', script_relative_path('test_cli_commands.py')]
     )
     assert result.exit_code == 1
-    assert isinstance(result.exception, InvalidRepositoryLoadingComboError)
+    assert isinstance(result.exception, CliUsageError)
 
 
 def valid_execute_args():

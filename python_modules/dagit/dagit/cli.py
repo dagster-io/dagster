@@ -9,6 +9,7 @@ from geventwebsocket.handler import WebSocketHandler
 
 from dagster import check, ExecutionTargetHandle
 from dagster.cli.pipeline import repository_target_argument
+from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster_graphql.implementation.pipeline_run_storage import (
     PipelineRunStorage,
     LogFilePipelineRun,
@@ -56,7 +57,7 @@ REPO_TARGET_WARNING = (
 )
 @click.version_option(version=__version__, prog_name='dagit')
 def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
-    handle = ExecutionTargetHandle.for_repo_cli_args(kwargs)
+    handle = handle_for_repo_cli_args(kwargs)
 
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())

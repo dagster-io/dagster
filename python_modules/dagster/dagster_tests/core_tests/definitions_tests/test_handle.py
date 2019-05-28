@@ -2,17 +2,15 @@ import imp
 import importlib
 import os
 
-import pytest
 
 from dagster import ExecutionTargetHandle, PipelineDefinition, RepositoryDefinition, lambda_solid
 
 from dagster.core.definitions import LoaderEntrypoint
 from dagster.core.definitions.handle import (
     EPHEMERAL_NAME,
-    _ExecutionTargetMode,
     _get_python_file_from_previous_stack_frame,
 )
-from dagster.core.errors import InvalidPipelineLoadingComboError
+
 from dagster.utils import script_relative_path
 
 
@@ -24,192 +22,6 @@ def test_exc_target_handle():
     res = ExecutionTargetHandle.for_pipeline_fn(define_pipeline)
     assert res.data.python_file == __file__
     assert res.data.fn_name == 'define_pipeline'
-
-
-def test_repository_python_file():
-    python_file = script_relative_path('bar_repo.py')
-    module = imp.load_source('bar_repo', python_file)
-
-    handle = ExecutionTargetHandle.for_pipeline_cli_args(
-        {'pipeline_name': 'foo', 'python_file': python_file, 'fn_name': 'define_bar_repo'}
-    )
-    assert handle.mode == _ExecutionTargetMode.REPOSITORY
-    assert handle.entrypoint == LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo')
-    assert handle.data.pipeline_name == 'foo'
-
-    with pytest.raises(InvalidPipelineLoadingComboError):
-        ExecutionTargetHandle.for_pipeline_cli_args(
-            {
-                'module_name': 'kdjfkd',
-                'pipeline_name': 'foo',
-                'python_file': script_relative_path('bar_repo.py'),
-                'fn_name': 'define_bar_repo',
-                'repository_yaml': None,
-            }
-        )
-
-    with pytest.raises(InvalidPipelineLoadingComboError):
-        ExecutionTargetHandle.for_pipeline_cli_args(
-            {
-                'module_name': None,
-                'pipeline_name': 'foo',
-                'python_file': script_relative_path('bar_repo.py'),
-                'fn_name': 'define_bar_repo',
-                'repository_yaml': 'kjdfkdjf',
-            }
-        )
-
-
-def test_repository_module():
-    module = importlib.import_module('dagster')
-
-    handle = ExecutionTargetHandle.for_pipeline_cli_args(
-        {
-            'module_name': 'dagster',
-            'pipeline_name': 'foo',
-            'python_file': None,
-            'fn_name': 'define_bar_repo',
-            'repository_yaml': None,
-        }
-    )
-    assert handle.mode == _ExecutionTargetMode.REPOSITORY
-    assert handle.entrypoint == LoaderEntrypoint(module, 'dagster', 'define_bar_repo')
-    assert handle.data.pipeline_name == 'foo'
-
-
-def test_pipeline_python_file():
-    python_file = script_relative_path('foo_pipeline.py')
-    module = imp.load_source('foo_pipeline', python_file)
-
-    handle = ExecutionTargetHandle.for_pipeline_cli_args(
-        {
-            'module_name': None,
-            'fn_name': 'define_pipeline',
-            'pipeline_name': None,
-            'python_file': python_file,
-            'repository_yaml': None,
-        }
-    )
-    assert handle.mode == _ExecutionTargetMode.PIPELINE
-    assert handle.entrypoint == LoaderEntrypoint(module, 'foo_pipeline', 'define_pipeline')
-
-
-def test_pipeline_module():
-    handle = ExecutionTargetHandle.for_pipeline_cli_args(
-        {
-            'module_name': 'dagster',
-            'fn_name': 'define_pipeline',
-            'pipeline_name': None,
-            'python_file': None,
-            'repository_yaml': None,
-        }
-    )
-    assert handle.mode == _ExecutionTargetMode.PIPELINE
-    assert handle.entrypoint == LoaderEntrypoint(
-        importlib.import_module('dagster'), 'dagster', 'define_pipeline'
-    )
-
-
-def test_yaml_file():
-    module = importlib.import_module('dagster_examples.intro_tutorial.repos')
-
-    handle = ExecutionTargetHandle.for_pipeline_cli_args(
-        {
-            'module_name': None,
-            'pipeline_name': 'foobar',
-            'python_file': None,
-            'fn_name': None,
-            'repository_yaml': script_relative_path('repository.yml'),
-        }
-    )
-    assert handle.mode == _ExecutionTargetMode.REPOSITORY
-    assert handle.entrypoint == LoaderEntrypoint(
-        module, 'dagster_examples.intro_tutorial.repos', 'define_repo'
-    )
-    assert handle.data.pipeline_name == 'foobar'
-
-    with pytest.raises(InvalidPipelineLoadingComboError):
-        assert ExecutionTargetHandle.for_pipeline_cli_args(
-            {'module_name': 'kdjfdk', 'pipeline_name': 'foobar'}
-        )
-
-    with pytest.raises(InvalidPipelineLoadingComboError):
-        assert ExecutionTargetHandle.for_pipeline_cli_args(
-            {'fn_name': 'kjdfkd', 'pipeline_name': 'foobar'}
-        )
-
-    with pytest.raises(InvalidPipelineLoadingComboError):
-        assert ExecutionTargetHandle.for_pipeline_cli_args(
-            {'pipeline_name': 'foobar', 'python_file': 'kjdfkdj'}
-        )
-
-
-def test_load_from_repository_file():
-    pipeline = ExecutionTargetHandle.for_pipeline_cli_args(
-        {
-            'pipeline_name': 'foo',
-            'python_file': script_relative_path('test_handle.py'),
-            'fn_name': 'define_bar_repo',
-        }
-    ).build_pipeline_definition()
-
-    assert isinstance(pipeline, PipelineDefinition)
-    assert pipeline.name == 'foo'
-
-
-def test_load_from_repository_module():
-    pipeline = ExecutionTargetHandle.for_pipeline_cli_args(
-        {
-            'module_name': 'dagster_examples.intro_tutorial.repos',
-            'pipeline_name': 'repo_demo_pipeline',
-            'fn_name': 'define_repo',
-        }
-    ).build_pipeline_definition()
-
-    assert isinstance(pipeline, PipelineDefinition)
-    assert pipeline.name == 'repo_demo_pipeline'
-
-
-def test_load_from_pipeline_file():
-    pipeline = ExecutionTargetHandle.for_pipeline_cli_args(
-        {'fn_name': 'define_foo_pipeline', 'python_file': script_relative_path('test_handle.py')}
-    ).build_pipeline_definition()
-
-    assert isinstance(pipeline, PipelineDefinition)
-    assert pipeline.name == 'foo'
-
-
-def test_load_from_pipeline_module():
-    pipeline = ExecutionTargetHandle.for_pipeline_cli_args(
-        {
-            'module_name': 'dagster_examples.intro_tutorial.repos',
-            'fn_name': 'define_repo_demo_pipeline',
-        }
-    ).build_pipeline_definition()
-
-    assert isinstance(pipeline, PipelineDefinition)
-    assert pipeline.name == 'repo_demo_pipeline'
-
-
-def test_loader_from_default_repository_module_yaml():
-    pipeline = ExecutionTargetHandle.for_pipeline_cli_args(
-        {
-            'pipeline_name': 'repo_demo_pipeline',
-            'repository_yaml': script_relative_path('repository_module.yml'),
-        }
-    ).build_pipeline_definition()
-
-    assert isinstance(pipeline, PipelineDefinition)
-    assert pipeline.name == 'repo_demo_pipeline'
-
-
-def test_loader_from_default_repository_file_yaml():
-    pipeline = ExecutionTargetHandle.for_pipeline_cli_args(
-        {'pipeline_name': 'foo', 'repository_yaml': script_relative_path('repository_file.yml')}
-    ).build_pipeline_definition()
-
-    assert isinstance(pipeline, PipelineDefinition)
-    assert pipeline.name == 'foo'
 
 
 def test_repo_entrypoints():

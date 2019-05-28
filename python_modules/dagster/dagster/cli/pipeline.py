@@ -6,14 +6,8 @@ import textwrap
 import click
 import yaml
 
-from dagster import (
-    ExecutionTargetHandle,
-    InProcessExecutorConfig,
-    PipelineDefinition,
-    RunConfig,
-    check,
-    execute_pipeline,
-)
+from dagster import InProcessExecutorConfig, PipelineDefinition, RunConfig, check, execute_pipeline
+from dagster.cli.load_handle import handle_for_pipeline_cli_args, handle_for_repo_cli_args
 from dagster.core.definitions import solids_in_topological_order, Solid
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
@@ -100,7 +94,7 @@ def pipeline_list_command(**kwargs):
 
 
 def execute_list_command(cli_args, print_fn):
-    repository = ExecutionTargetHandle.for_repo_cli_args(cli_args).build_repository_definition()
+    repository = handle_for_repo_cli_args(cli_args).build_repository_definition()
 
     title = 'Repository {name}'.format(name=repository.name)
     print_fn(title)
@@ -133,7 +127,7 @@ def format_description(desc, indent):
 
 
 def create_pipeline_from_cli_args(kwargs):
-    return ExecutionTargetHandle.for_pipeline_cli_args(kwargs).build_pipeline_definition()
+    return handle_for_pipeline_cli_args(kwargs).build_pipeline_definition()
 
 
 def get_pipeline_instructions(command_name):
@@ -308,9 +302,9 @@ def execute_execute_command(env, raise_on_error, cli_args, mode=None):
 
 
 def execute_execute_command_with_preset(preset, raise_on_error, cli_args, mode):
-    pipeline = ExecutionTargetHandle.for_pipeline_cli_args(cli_args).build_pipeline_definition()
+    pipeline = handle_for_pipeline_cli_args(cli_args).build_pipeline_definition()
     cli_args.pop('pipeline_name')
-    repository = ExecutionTargetHandle.for_repo_cli_args(cli_args).build_repository_definition()
+    repository = handle_for_repo_cli_args(cli_args).build_repository_definition()
     kwargs = repository.get_preset_pipeline(pipeline.name, preset)
 
     return execute_pipeline(
