@@ -87,6 +87,7 @@ MODULE_NAMES = ['dagster', 'dagit', 'dagster-graphql', 'dagstermill', 'dagster-a
 
 LIBRARY_MODULES = [
     'dagster-aws',
+    'dagster-dask',
     'dagster-datadog',
     'dagster-gcp',
     'dagster-ge',
