@@ -14,4 +14,4 @@ yapf==0.22.0
 # these via setup.py in the local tox environment
 Flask-Sockets>=0.2.1
 graphql-ws>=0.3.0
-
+mock

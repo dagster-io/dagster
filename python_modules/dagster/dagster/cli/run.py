@@ -1,7 +1,7 @@
 import datetime
 import click
 
-from dagster.core.runs import FileSystemRunStorage
+from dagster.core.storage.runs import FileSystemRunStorage
 
 
 def create_run_cli_group():

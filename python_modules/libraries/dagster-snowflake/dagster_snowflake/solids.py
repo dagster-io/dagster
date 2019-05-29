@@ -3,12 +3,10 @@ import sys
 from contextlib import closing
 
 import pandas as pd
-import snowflake.connector
 
-import dagster_pandas as dagster_pd
 from dagster import check, InputDefinition, List, OutputDefinition, Result, SolidDefinition, Nothing
 
-from .configs import define_snowflake_config
+import dagster_pandas as dagster_pd
 
 
 class SnowflakeSolidDefinition(SolidDefinition):
@@ -27,7 +25,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
         parameters (Dict[str, str]): Query parameters to bind to the parameterized query (expects
             query to be parameterized). Note that the parameters will be shared across all of the
             queries provided in the sql_queries argument. See the Snowflake docs at
-            https://bit.ly/2JZBr6C for how to format these parameters. 
+            https://bit.ly/2JZBr6C for how to format these parameters.
         description (str): Description of the solid.
 
     Examples:
@@ -38,8 +36,6 @@ class SnowflakeSolidDefinition(SolidDefinition):
                 sql_queries=['select 1;']
             )
     '''
-
-    INPUT_READY = 'input_ready_sentinel'
 
     def __init__(self, name, sql_queries, parameters=None, description=None):
         name = check.str_param(name, 'name')
@@ -56,108 +52,29 @@ class SnowflakeSolidDefinition(SolidDefinition):
 
             This function defines how we'll execute the Snowflake SQL query.
             '''
-            # Extract parameters from config
-            (
-                account,
-                user,
-                password,
-                database,
-                schema,
-                role,
-                warehouse,
-                autocommit,
-                client_prefetch_threads,
-                client_session_keep_alive,
-                login_timeout,
-                network_timeout,
-                ocsp_response_cache_filename,
-                validate_default_parameters,
-                paramstyle,
-                timezone,
-            ) = [
-                context.solid_config.get(k)
-                for k in (
-                    'account',
-                    'user',
-                    'password',
-                    'database',
-                    'schema',
-                    'role',
-                    'warehouse',
-                    'autocommit',
-                    'client_prefetch_threads',
-                    'client_session_keep_alive',
-                    'login_timeout',
-                    'network_timeout',
-                    'ocsp_response_cache_filename',
-                    'validate_default_parameters',
-                    'paramstyle',
-                    'timezone',
-                )
-            ]
+            with context.resources.snowflake.get_connection(context.log) as conn:
+                with closing(conn.cursor()) as cursor:
+                    results = []
+                    for query in sql_queries:
+                        if sys.version_info[0] < 3:
+                            query = query.encode('utf-8')
 
-            conn_args = {
-                'user': user,
-                'password': password,
-                'account': account,
-                'schema': schema,
-                'database': database,
-                'role': role,
-                'warehouse': warehouse,
-                'autocommit': autocommit,
-                'client_prefetch_threads': client_prefetch_threads,
-                'client_session_keep_alive': client_session_keep_alive,
-                'login_timeout': login_timeout,
-                'network_timeout': network_timeout,
-                'ocsp_response_cache_filename': ocsp_response_cache_filename,
-                'validate_default_parameters': validate_default_parameters,
-                'paramstyle': paramstyle,
-                'timezone': timezone,
-            }
+                        context.log.info(
+                            'Executing SQL query %s %s'
+                            % (query, 'with parameters ' + str(parameters) if parameters else '')
+                        )
+                        cursor.execute(query, parameters)  # pylint: disable=E1101
+                        fetchall_results = cursor.fetchall()  # pylint: disable=E1101
+                        results.append(pd.DataFrame(fetchall_results))
 
-            # We can't pass None values to snowflake.connector.connect() because they will override
-            # the default values set within the connector; remove them from the conn_args dict
-            conn_args = {k: v for k, v in conn_args.items() if v is not None}
-
-            def _filter_password(conn_args):
-                '''Remove password from connection args for logging'''
-                return {k: v for k, v in conn_args.items() if k != 'password'}
-
-            context.log.info(
-                '''Connecting to Snowflake with conn_args %s and
-                    [warehouse %s database %s schema %s role %s]'''
-                % (str(_filter_password(conn_args)), warehouse, database, schema, role)
-            )
-
-            conn = snowflake.connector.connect(**conn_args)
-
-            with closing(conn.cursor()) as cursor:
-                results = []
-                for query in sql_queries:
-                    if sys.version_info[0] < 3:
-                        query = query.encode('utf-8')
-
-                    context.log.info(
-                        'Executing SQL query %s %s'
-                        % (query, 'with parameters ' + str(parameters) if parameters else '')
-                    )
-                    cursor.execute(query, parameters)  # pylint: disable=E1101
-                    fetchall_results = cursor.fetchall()  # pylint: disable=E1101
-                    results.append(pd.DataFrame(fetchall_results))
-
-                if not autocommit:
-                    conn.commit()
-
-                context.log.info(str(results))
-                yield Result(results)
+                    yield Result(results)
 
         super(SnowflakeSolidDefinition, self).__init__(
             name=name,
             description=description,
-            inputs=[InputDefinition(SnowflakeSolidDefinition.INPUT_READY, Nothing)],
+            inputs=[InputDefinition('start', Nothing)],
             outputs=[OutputDefinition(List(dagster_pd.DataFrame))],
             compute_fn=_snowflake_compute_fn,
-            config_field=define_snowflake_config(),
             metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
         )
 

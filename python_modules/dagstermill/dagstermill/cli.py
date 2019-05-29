@@ -6,8 +6,9 @@ import click
 from papermill.iorw import load_notebook_node, write_ipynb
 import nbformat
 
-from dagster import check, ExecutionTargetHandle
+from dagster import check
 from dagster.cli.pipeline import repository_target_argument
+from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.utils import all_none, safe_isfile, mkdir_p
 
 
@@ -117,7 +118,7 @@ def get_register_repo_info(cli_args, allow_none=True):
 
     register_repo_info = None
     if scaffolding_with_repo:
-        handle = ExecutionTargetHandle.for_repo_cli_args(cli_args)
+        handle = handle_for_repo_cli_args(cli_args)
         module = handle.entrypoint.module_name
         fn_name = handle.entrypoint.fn_name
         RegisterRepoInfo = namedtuple('RegisterRepoInfo', 'import_statement declaration_statement')

@@ -15,6 +15,7 @@ deps =
   -e ../python_modules/dagster-airflow
   -e .[full]
 
+usedevelop = true
 commands =
   coverage erase
   pytest dagster_examples_tests/event_pipeline_demo_tests/ -vv --junitxml=test_results.xml --cov=dagster_examples --cov-append --cov-report=

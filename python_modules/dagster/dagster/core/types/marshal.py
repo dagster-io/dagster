@@ -8,34 +8,35 @@ from dagster.utils import PICKLE_PROTOCOL
 
 
 class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    '''This is the base class for serialization / deserialization of dagster objects. The primary
+    use case is serialize to / from files, but any file-like objects (e.g. byte buffers) are
+    supported.
+    '''
+
     @abstractmethod
-    def serialize_value(self, context, value, write_file_obj):
+    def serialize(self, value, write_file_obj):
         pass
 
     @abstractmethod
-    def deserialize_value(self, context, read_file_obj):
+    def deserialize(self, read_file_obj):
         pass
+
+    def serialize_to_file(self, value, write_path):
+        check.str_param(write_path, 'write_path')
+
+        with open(write_path, 'wb') as write_obj:
+            return self.serialize(value, write_obj)
+
+    def deserialize_from_file(self, read_path):
+        check.str_param(read_path, 'read_path')
+
+        with open(read_path, 'rb') as read_obj:
+            return self.deserialize(read_obj)
 
 
 class PickleSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
-    def serialize_value(self, _context, value, write_file_obj):
+    def serialize(self, value, write_file_obj):
         pickle.dump(value, write_file_obj, PICKLE_PROTOCOL)
 
-    def deserialize_value(self, _context, read_file_obj):
+    def deserialize(self, read_file_obj):
         return pickle.load(read_file_obj)
-
-
-def serialize_to_file(context, serialization_strategy, value, write_path):
-    check.inst_param(serialization_strategy, 'serialization_strategy', SerializationStrategy)
-    check.str_param(write_path, 'write_path')
-
-    with open(write_path, 'wb') as write_obj:
-        return serialization_strategy.serialize_value(context, value, write_obj)
-
-
-def deserialize_from_file(context, serialization_strategy, read_path):
-    check.inst_param(serialization_strategy, 'serialization_strategy', SerializationStrategy)
-    check.str_param(read_path, 'read_path')
-
-    with open(read_path, 'rb') as read_obj:
-        return serialization_strategy.deserialize_value(context, read_obj)

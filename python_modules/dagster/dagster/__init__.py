@@ -56,7 +56,7 @@ from dagster.core.errors import (
     DagsterStepOutputNotFoundError,
 )
 
-from dagster.core.runs import RunStorageMode
+from dagster.core.storage.runs import RunStorageMode
 
 from dagster.core.types import (
     Any,

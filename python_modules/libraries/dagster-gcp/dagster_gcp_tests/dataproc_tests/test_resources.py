@@ -52,7 +52,7 @@ EXPECTED_RESULTS = [
 
 class HttpSnooper(httplib2.Http):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(HttpSnooper, self).__init__(*args, **kwargs)
 
     def request(
         self, uri, method="GET", body=None, headers=None, redirections=5, connection_type=None

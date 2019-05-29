@@ -6,7 +6,7 @@ import time
 import shutil
 
 from dagster import PipelineDefinition, solid, RunConfig, execute_pipeline
-from dagster.core.runs import (
+from dagster.core.storage.runs import (
     DagsterRunMeta,
     FileSystemRunStorage,
     InMemoryRunStorage,

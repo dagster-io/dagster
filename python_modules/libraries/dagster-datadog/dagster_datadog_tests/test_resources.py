@@ -7,10 +7,6 @@ except ImportError:
     import mock
 
 
-# To support this test, we need to do the following:
-# 1. Have CircleCI publish Scala/Spark jars when that code changes
-# 2. Ensure we have Spark available to CircleCI
-# 3. Include example / test data in this repository
 @mock.patch('datadog.statsd.timing')
 @mock.patch('datadog.statsd.timed')
 @mock.patch('datadog.statsd.service_check')
@@ -68,12 +64,12 @@ def test_datadog_resource(
         context.resources.datadog.timing("query.response.time", 1234)
         timing.assert_called_with("query.response.time", 1234)
 
-        @context.resources.datadog.timed
+        @context.resources.datadog.timed('run_fn')
         def run_fn():
             pass
 
         run_fn()
-        timed.assert_called()
+        timed.assert_called_with('run_fn')
 
     pipeline = PipelineDefinition(
         name='test_datadog_resource',

@@ -10,7 +10,7 @@ from dagster import (
     lambda_solid,
 )
 
-from dagster.core.runs import RunStorageMode
+from dagster.core.storage.runs import RunStorageMode
 
 
 def test_diamond_simple_execution():

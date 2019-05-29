@@ -31,18 +31,14 @@ def test_tutorial_part_four():
 
 
 def test_tutorial_script_part_four():
-    check_script(
-        script_relative_path('../../../../../examples/dagster_examples/intro_tutorial/config.py')
-    )
+    check_script(script_relative_path('../../dagster_examples/intro_tutorial/config.py'))
 
 
 def test_tutorial_cli_part_four():
     check_cli_execute_file_pipeline(
-        script_relative_path('../../../../../examples/dagster_examples/intro_tutorial/config.py'),
+        script_relative_path('../../dagster_examples/intro_tutorial/config.py'),
         'define_configurable_hello_pipeline',
-        script_relative_path(
-            '../../../../../examples/dagster_examples/intro_tutorial/config_env.yml'
-        ),
+        script_relative_path('../../dagster_examples/intro_tutorial/config_env.yml'),
     )
 
 

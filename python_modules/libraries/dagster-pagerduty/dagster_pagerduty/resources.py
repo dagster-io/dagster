@@ -99,8 +99,8 @@ class PagerDutyService:
                                   "wqueue"
 
             group {string} -- A cluster or grouping of sources. For example, sources
-                              “prod-datapipe-02” and “prod-datapipe-03” might both be part of
-                              “prod-datapipe”
+                              "prod-datapipe-02" and "prod-datapipe-03" might both be part of
+                              "prod-datapipe"
 
                               Examples:
                               "prod-datapipe"

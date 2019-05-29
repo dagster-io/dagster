@@ -1,11 +1,5 @@
-solids:
-  download_from_s3_to_file:
-    config:
-      bucket: "elementl-public"
-      key: "example-json.gz"
-      skip_if_present: true
-      target_folder: "/tmp/dagster/events/data"
-  snowflake_load:
+resources:
+  snowflake:
     config:
       account: "<< SET ME >>"
       user: "<< SET ME >>"
@@ -13,6 +7,14 @@ solids:
       warehouse: "TINY_WAREHOUSE"
       database: "TESTDB"
       schema: "TESTSCHEMA"
+
+solids:
+  download_from_s3_to_file:
+    config:
+      bucket: "elementl-public"
+      key: "example-json.gz"
+      skip_if_present: true
+      target_folder: "/tmp/dagster/events/data"
   event_ingest:
     config:
       spark_outputs: ["/tmp/dagster/events/data"]

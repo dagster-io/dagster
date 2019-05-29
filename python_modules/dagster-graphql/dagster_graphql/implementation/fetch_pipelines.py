@@ -35,7 +35,7 @@ def get_pipelines_or_raise(graphene_info):
 def _get_pipelines(graphene_info):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
 
-    repository = graphene_info.context.handle.build_repository_definition()
+    repository = graphene_info.context.repository_definition
 
     try:
         pipeline_instances = []
@@ -61,7 +61,7 @@ def _get_pipelines(graphene_info):
 def get_dagster_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
-    repository = graphene_info.context.handle.build_repository_definition()
+    repository = graphene_info.context.repository_definition
     if not repository.has_pipeline(selector.name):
         raise UserFacingGraphQLError(
             graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=selector.name)

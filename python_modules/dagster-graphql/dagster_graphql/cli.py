@@ -7,6 +7,7 @@ from graphql.execution.executors.gevent import GeventExecutor as Executor
 
 from dagster import check, seven, ExecutionTargetHandle
 from dagster.cli.pipeline import repository_target_argument
+from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.utils.log import get_stack_trace_array
 
 from .implementation.context import DagsterGraphQLContext
@@ -109,7 +110,7 @@ def execute_query_from_cli(handle, query, variables=None):
 @click.version_option(version=__version__)
 @click.argument('query', type=click.STRING)
 def ui(variables, query, **kwargs):
-    handle = ExecutionTargetHandle.for_repo_cli_args(kwargs)
+    handle = handle_for_repo_cli_args(kwargs)
 
     query = query.strip('\'" \n\t')
 

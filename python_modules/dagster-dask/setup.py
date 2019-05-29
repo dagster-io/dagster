@@ -51,6 +51,10 @@ def _do_setup(name='dagster-dask'):
 if __name__ == '__main__':
     parsed, unparsed = parser.parse_known_args()
     sys.argv = [sys.argv[0]] + unparsed
+
+    if sys.version_info[0] < 3 and sys.platform == "darwin":
+        raise Exception('dagster-dask does not work on Python 2 + macOS')
+
     if parsed.nightly:
         _do_setup('dagster-dask-nightly')
     else:

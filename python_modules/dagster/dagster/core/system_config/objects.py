@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 
 from dagster.core.definitions.dependency import SolidHandle
-from dagster.core.runs import InMemoryRunStorage, FileSystemRunStorage
+from dagster.core.storage.runs import InMemoryRunStorage, FileSystemRunStorage
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils import single_item
 

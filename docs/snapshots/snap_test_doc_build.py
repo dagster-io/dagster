@@ -1478,7 +1478,7 @@ snapshots['test_build_all_docs 7'] = '''
 <li><a href="dagster/core/execution/context/logger.html">dagster.core.execution.context.logger</a></li>
 <li><a href="dagster/core/execution/context_creation_pipeline.html">dagster.core.execution.context_creation_pipeline</a></li>
 <li><a href="dagster/core/execution/results.html">dagster.core.execution.results</a></li>
-<li><a href="dagster/core/runs.html">dagster.core.runs</a></li>
+<li><a href="dagster/core/storage/runs.html">dagster.core.storage.runs</a></li>
 <li><a href="dagster/core/types/builtin_enum.html">dagster.core.types.builtin_enum</a></li>
 <li><a href="dagster/core/types/config.html">dagster.core.types.config</a></li>
 <li><a href="dagster/core/types/config_schema.html">dagster.core.types.config_schema</a></li>
@@ -19644,7 +19644,7 @@ for subset rexecution.</p></li>
 
 <dl class="class">
 <dt id="dagster.RunStorageMode">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunStorageMode</code><a class="reference internal" href="../../../_modules/dagster/core/runs.html#RunStorageMode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RunStorageMode" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunStorageMode</code><a class="reference internal" href="../../../_modules/dagster/core/storage/runs.html#RunStorageMode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RunStorageMode" title="Permalink to this definition">¶</a></dt>
 <dd><p>An enumeration.</p>
 </dd></dl>
 
@@ -20084,7 +20084,7 @@ solids in a pipeline log messages.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>logger_fn</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#dagster.InitResourceContext" title="dagster.InitResourceContext"><em>InitResourceContext</em></a><em>]</em><em>, </em><em>logging.Logger</em><em>]</em>) – User provided function to instantiate the logger. This logger will be automatically
+<li><p><strong>logger_fn</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#dagster.InitLoggerContext" title="dagster.InitLoggerContext"><em>InitLoggerContext</em></a><em>]</em><em>, </em><em>logging.Logger</em><em>]</em>) – User provided function to instantiate the logger. This logger will be automatically
 invoked whenever the methods on <code class="docutils literal notranslate"><span class="pre">context.log</span></code> are called.</p></li>
 <li><p><strong>config_field</strong> (<em>Field</em>) – The type for the configuration data for this logger, if any. Will be passed to
 <code class="docutils literal notranslate"><span class="pre">logger_fn</span></code> as <code class="docutils literal notranslate"><span class="pre">init_context.logger_config</span></code></p></li>

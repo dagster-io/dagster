@@ -27,7 +27,7 @@ from dagster.core.definitions import Materialization, ExpectationResult
 
 from dagster.core.events import DagsterEvent, DagsterEventType
 
-from dagster.core.intermediates_manager import IntermediatesManager
+from dagster.core.storage.intermediates_manager import IntermediatesManager
 
 from dagster.utils.error import serializable_error_info_from_exc_info
 

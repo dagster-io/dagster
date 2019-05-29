@@ -27,7 +27,7 @@ def define_snowflake_config():
 
     schema = Field(
         String,
-        description='''Name of the default schema to use. After login, you can use USE SCHEMA to 
+        description='''Name of the default schema to use. After login, you can use USE SCHEMA to
          change the schema.''',
         is_optional=True,
     )
