@@ -12,7 +12,7 @@ def test_init_modified_docker_operator():
         image='dagster-airflow-demo',
         api_version='auto',
         task_id='nonce',
-        config={},
+        environment_dict={},
         pipeline_name='',
     )
 
@@ -24,7 +24,7 @@ def test_modified_docker_operator_bad_docker_conn():
         task_id='nonce',
         docker_conn_id='foo_conn',
         command='--help',
-        config={},
+        environment_dict={},
         pipeline_name='',
     )
 
@@ -38,7 +38,7 @@ def test_modified_docker_operator_env():
         api_version='auto',
         task_id='nonce',
         command='--help',
-        config={},
+        environment_dict={},
         pipeline_name='',
     )
     with pytest.raises(AirflowException, match='Unhandled error type'):
@@ -51,7 +51,7 @@ def test_modified_docker_operator_bad_command():
         api_version='auto',
         task_id='nonce',
         command='gargle bargle',
-        config={},
+        environment_dict={},
         pipeline_name='',
     )
     with pytest.raises(AirflowException, match='\'StatusCode\': 2'):
@@ -78,7 +78,7 @@ def test_modified_docker_operator_url():
             tls_hostname=docker_host if docker_tls_verify else False,
             tls_ca_cert=docker_cert_path,
             command='--help',
-            config={},
+            environment_dict={},
             pipeline_name='',
         )
 

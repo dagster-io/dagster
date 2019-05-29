@@ -40,7 +40,7 @@ in the directory in which Airflow looks for DAGs -- this is typically `$AIRFLOW_
 
     dag, steps = make_airflow_dag(
         pipeline,
-        env_config={'storage': {'filesystem': {'base_dir': '/tmp'}}},
+        environment_dict={'storage': {'filesystem': {'base_dir': '/tmp'}}},
         dag_id=None,
         dag_description=None,
         dag_kwargs=None,
@@ -53,9 +53,9 @@ Airflow objects, and you can do eveything you would expect with them -- for inst
 DAG as a sub-DAG in another Airflow DAG, or adding dependencies between the dynamically generated
 Airflow steps and steps that you define in your own code.
 
-Note the extra `storage` parameter in the config. You can set this for any Dagster pipeline (and
-intermediate values will be automatically materialized in either `filesystem` or `s3` storage), but
-you **must** set it when converting a pipeline to an Airflow DAG.
+Note the extra `storage` parameter in the environment dict. You can set this for any Dagster
+pipeline (and intermediate values will be automatically materialized in either `filesystem` or `s3`
+storage), but you **must** set it when converting a pipeline to an Airflow DAG.
 
 ## Running containerized (DagsterDockerOperator)
 
@@ -135,7 +135,7 @@ which Airflow looks for DAGs.
     dag, steps = make_airflow_dag(
         pipeline,
         image,
-        env_config={'storage': {'filesystem': {'base_dir': '/tmp'}}},
+        environment_dict={'storage': {'filesystem': {'base_dir': '/tmp'}}},
         dag_id=None,
         dag_description=None,
         dag_kwargs=None,
@@ -156,7 +156,7 @@ use this volume for interediate storage, you can run:
     dag, steps = make_airflow_dag(
         pipeline,
         image,
-        env_config={'storage': {'filesystem': {'base_dir': '/container_tmp'}}},
+        environment_dict={'storage': {'filesystem': {'base_dir': '/container_tmp'}}},
         dag_id=None,
         dag_description=None,
         dag_kwargs=None,

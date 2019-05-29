@@ -73,7 +73,16 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
     @classmethod
     @abstractmethod
     def operator_for_solid(
-        cls, handle, pipeline_name, env_config, mode, solid_name, step_keys, dag, dag_id, op_kwargs
+        cls,
+        handle,
+        pipeline_name,
+        environment_dict,
+        mode,
+        solid_name,
+        step_keys,
+        dag,
+        dag_id,
+        op_kwargs,
     ):
         pass
 
@@ -233,7 +242,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
     def __init__(
         self,
         step=None,
-        config=None,
+        environment_dict=None,
         pipeline_name=None,
         mode=None,
         step_keys=None,
@@ -243,10 +252,10 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
     ):
         check.str_param(pipeline_name, 'pipeline_name')
         step_keys = check.opt_list_param(step_keys, 'step_keys', of_type=str)
-        config = check.opt_dict_param(config, 'config', key_type=str)
+        environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
 
         self.step = step
-        self.config = config
+        self.environment_dict = environment_dict
         self.pipeline_name = pipeline_name
         self.mode = mode
         self.step_keys = step_keys
@@ -276,12 +285,21 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
     @classmethod
     def operator_for_solid(
-        cls, handle, pipeline_name, env_config, mode, solid_name, step_keys, dag, dag_id, op_kwargs
+        cls,
+        handle,
+        pipeline_name,
+        environment_dict,
+        mode,
+        solid_name,
+        step_keys,
+        dag,
+        dag_id,
+        op_kwargs,
     ):
         tmp_dir = op_kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
         host_tmp_dir = op_kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
 
-        if 'storage' not in env_config:
+        if 'storage' not in environment_dict:
             raise airflow_storage_exception(tmp_dir)
 
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
@@ -291,7 +309,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         # fmt: off
         return DagsterDockerOperator(
             step=solid_name,
-            config=env_config,
+            environment_dict=environment_dict,
             dag=dag,
             tmp_dir=tmp_dir,
             pipeline_name=pipeline_name,
@@ -314,7 +332,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
     def query(self):
         variables = {
             'executionParams': {
-                'environmentConfigData': self.config,
+                'environmentConfigData': self.environment_dict,
                 'mode': self.mode,
                 'selector': {'name': self.pipeline_name},
                 'executionMetadata': {'runId': self.run_id},
@@ -379,7 +397,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
 class DagsterPythonOperator(PythonOperator, DagsterOperator):
     @classmethod
-    def make_python_callable(cls, handle, pipeline_name, mode, env_config, step_keys):
+    def make_python_callable(cls, handle, pipeline_name, mode, environment_dict, step_keys):
         try:
             from dagster_graphql.cli import execute_query_from_cli
         except ImportError:
@@ -392,7 +410,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
             run_id = kwargs.get('dag_run').run_id
             variables = {
                 'executionParams': {
-                    'environmentConfigData': env_config,
+                    'environmentConfigData': environment_dict,
                     'mode': mode,
                     'selector': {'name': pipeline_name},
                     'executionMetadata': {'runId': run_id},
@@ -400,9 +418,9 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 }
             }
 
-            # TODO: This removes config that we need to scrub for secrets, but it's very useful
-            # for debugging to understand the GraphQL query that's being executed. We should update
-            # to include the sanitized config.
+            # TODO: This removes the environment, pending an effective way to scrub it for secrets:
+            # it's very useful for debugging to understand the GraphQL query that's being executed.
+            # We should update to include the sanitized environment_dict.
             logging.info(
                 'Executing GraphQL query:\n'
                 + QUERY
@@ -421,9 +439,18 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
 
     @classmethod
     def operator_for_solid(
-        cls, handle, pipeline_name, env_config, mode, solid_name, step_keys, dag, dag_id, op_kwargs
+        cls,
+        handle,
+        pipeline_name,
+        environment_dict,
+        mode,
+        solid_name,
+        step_keys,
+        dag,
+        dag_id,
+        op_kwargs,
     ):
-        if 'storage' not in env_config:
+        if 'storage' not in environment_dict:
             raise airflow_storage_exception('/tmp/special_place')
 
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
@@ -438,7 +465,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 handle,
                 pipeline_name,
                 mode,
-                env_config,
+                environment_dict,
                 step_keys
             ),
             dag=dag,
