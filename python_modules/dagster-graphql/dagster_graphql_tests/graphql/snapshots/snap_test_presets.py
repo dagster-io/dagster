@@ -9,6 +9,7 @@ snapshots = Snapshot()
 
 snapshots['test_basic_preset_query_with_presets 1'] = {
     'pipeline': {
+        'name': 'csv_hello_world',
         'presets': [
             {
                 '__typename': 'PipelinePreset',

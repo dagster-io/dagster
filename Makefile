@@ -44,3 +44,6 @@ rebuild_dagit:
 	cd js_modules/dagit/; yarn install && yarn build-for-python
 
 dev_install: install_dev_python_modules rebuild_dagit
+
+graphql_tests:
+	pytest examples/dagster_examples_tests/graphql_tests/ python_modules/dagster-graphql/dagster_graphql_tests/graphql/ -s -vv

@@ -16,7 +16,7 @@ from dagster_graphql.implementation.pipeline_execution_manager import Synchronou
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 from dagster_graphql.schema.errors import DauphinPythonError
 
-from dagster_graphql_tests.graphql.setup import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql
 
 
 def test_python_error():

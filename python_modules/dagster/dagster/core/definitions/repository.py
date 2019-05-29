@@ -40,6 +40,10 @@ class RepositoryDefinition(object):
             enforce_solid_def_uniqueness, 'enforce_solid_def_uniqueness'
         )
 
+    @property
+    def pipeline_names(self):
+        return list(self.pipeline_dict.keys())
+
     @staticmethod
     def eager_construction(name, pipelines, *args, **kwargs):
         '''Useful help when you are unconcerned about the the performance of

@@ -17,12 +17,9 @@ from dagster.utils import script_relative_path
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.test.utils import execute_dagster_graphql
 
-from dagster_graphql_tests.graphql.setup import (
-    define_context,
-    define_repository,
-    execute_dagster_graphql,
-)
+from dagster_graphql_tests.graphql.setup import define_context, define_repository
 
 # This is needed to find production query in all cases
 sys.path.insert(0, os.path.abspath(script_relative_path('.')))

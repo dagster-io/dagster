@@ -1,4 +1,5 @@
-from .setup import execute_dagster_graphql, define_context
+from dagster_graphql.test.utils import execute_dagster_graphql
+from .setup import define_context
 
 RUNTIME_TYPE_QUERY = '''
 query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)

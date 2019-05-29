@@ -1,4 +1,5 @@
-from .setup import define_context, execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql
+from .setup import define_context
 
 PIPELINE_OR_ERROR_SUBSET_QUERY = '''
 query PipelineQuery($name: String! $solidSubset: [String!])

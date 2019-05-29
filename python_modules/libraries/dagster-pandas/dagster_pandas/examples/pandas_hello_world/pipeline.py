@@ -5,6 +5,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     PresetDefinition,
+    file_relative_path,
     lambda_solid,
 )
 import dagster_pandas as dagster_pd
@@ -59,10 +60,16 @@ def define_pandas_hello_world_pipeline():
         },
         preset_definitions=[
             PresetDefinition(
-                'test', environment_files=['environments/pandas_hello_world_test.yaml']
+                'test',
+                environment_files=[
+                    file_relative_path(__file__, 'environments/pandas_hello_world_test.yaml')
+                ],
             ),
             PresetDefinition(
-                'prod', environment_files=['environments/pandas_hello_world_prod.yaml']
+                'prod',
+                environment_files=[
+                    file_relative_path(__file__, 'environments/pandas_hello_world_prod.yaml')
+                ],
             ),
         ],
     )

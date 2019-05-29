@@ -13,6 +13,7 @@ from dagster import (
     RepositoryDefinition,
     PresetDefinition,
     execute_pipeline,
+    file_relative_path,
     types,
 )
 
@@ -54,10 +55,22 @@ def define_papermill_pandas_hello_world_pipeline():
         solids=[define_papermill_pandas_hello_world_solid()],
         preset_definitions=[
             PresetDefinition(
-                'test', environment_files=['environments/papermill_pandas_hello_world_test.yaml']
+                'test',
+                environment_files=[
+                    file_relative_path(
+                        __file__,
+                        'pandas_hello_world/environments/papermill_pandas_hello_world_test.yaml',
+                    )
+                ],
             ),
             PresetDefinition(
-                'prod', environment_files=['environments/papermill_pandas_hello_world_prod.yaml']
+                'prod',
+                environment_files=[
+                    file_relative_path(
+                        __file__,
+                        'pandas_hello_world/environments/papermill_pandas_hello_world_prod.yaml',
+                    )
+                ],
             ),
         ],
     )

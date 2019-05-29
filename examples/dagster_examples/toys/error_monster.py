@@ -13,6 +13,7 @@ from dagster import (
     SolidInstance,
     String,
     execute_pipeline,
+    file_relative_path,
     solid,
 )
 
@@ -97,7 +98,9 @@ def define_error_monster_pipeline():
         ],
         preset_definitions=[
             PresetDefinition(
-                'passing', environment_files=['environments/error.yaml'], mode='errorable_mode'
+                'passing',
+                environment_files=[file_relative_path(__file__, 'environments/error.yaml')],
+                mode='errorable_mode',
             )
         ],
     )

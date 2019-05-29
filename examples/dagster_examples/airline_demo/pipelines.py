@@ -4,8 +4,9 @@ from dagster import (
     DependencyDefinition,
     ModeDefinition,
     PipelineDefinition,
-    SolidInstance,
     PresetDefinition,
+    SolidInstance,
+    file_relative_path,
 )
 
 from dagster_aws.s3.resources import s3_resource
@@ -218,16 +219,16 @@ def define_airline_demo_ingest_pipeline():
                 name='local_fast',
                 mode='local',
                 environment_files=[
-                    'environments/local_base.yaml',
-                    'environments/local_fast_ingest.yaml',
+                    file_relative_path(__file__, 'environments/local_base.yaml'),
+                    file_relative_path(__file__, 'environments/local_fast_ingest.yaml'),
                 ],
             ),
             PresetDefinition(
                 name='local_full',
                 mode='local',
                 environment_files=[
-                    'environments/local_base.yaml',
-                    'environments/local_full_ingest.yaml',
+                    file_relative_path(__file__, 'environments/local_base.yaml'),
+                    file_relative_path(__file__, 'environments/local_full_ingest.yaml'),
                 ],
             ),
         ],
@@ -287,8 +288,8 @@ def define_airline_demo_warehouse_pipeline():
                 name='local',
                 mode='local',
                 environment_files=[
-                    'environments/local_base.yaml',
-                    'environments/local_warehouse.yaml',
+                    file_relative_path(__file__, 'environments/local_base.yaml'),
+                    file_relative_path(__file__, 'environments/local_warehouse.yaml'),
                 ],
             )
         ],
