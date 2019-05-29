@@ -88,11 +88,11 @@ RUN pip install dagster_graphql
 ADD /path/to/requirements.txt .
 RUN pip install -r requirements.txt
 
-# Add your repository.yml file so that dagster_graphql knows where to look to find your repository,
+# Add your repository.yaml file so that dagster_graphql knows where to look to find your repository,
 # the Python file in which your repository is defined, and any local dependencies (e.g., unpackaged
 # Python files from which your repository definition imports, or local packages that cannot be
 # installed using the requirements.txt).
-ADD /path/to/repository.yml .
+ADD /path/to/repository.yaml .
 ADD /path/to/repository_definition.py .
 # ADD /path/to/additional_file.py .
 
@@ -144,7 +144,7 @@ which Airflow looks for DAGs.
 
 You can pass `op_kwargs` through to the the DagsterDockerOperator to use custom TLS settings, the
 private registry of your choice, etc., just as you would configure the ordinary Airflow
-DockerOperator. 
+DockerOperator.
 
 ### Docker bind-mount for filesystem intermediate storage
 
@@ -162,7 +162,6 @@ use this volume for interediate storage, you can run:
         dag_kwargs=None,
         op_kwargs={'host_tmp_dir': '/host_tmp', 'tmp_dir': '/container_tmp'}
     )
-
 
 ### Using S3 with dagster-airflow
 

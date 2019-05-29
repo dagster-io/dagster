@@ -7,12 +7,12 @@ from dagster.utils import pushd, script_relative_path
 def test_execute_pipeline():
     execute_kwargs = {
         'pipeline_name': ['demo_pipeline'],
-        'repository_yaml': 'pipeline_execution_repository.yml',
+        'repository_yaml': 'pipeline_execution_repository.yaml',
         'module_name': None,
         'python_file': None,
         'fn_name': None,
     }
     with pushd(script_relative_path('../../dagster_examples/intro_tutorial/')):
         execute_execute_command(
-            ['pipeline_execution_env.yml'], raise_on_error=True, cli_args=execute_kwargs
+            ['pipeline_execution_env.yaml'], raise_on_error=True, cli_args=execute_kwargs
         )

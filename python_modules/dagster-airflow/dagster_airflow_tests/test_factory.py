@@ -24,8 +24,8 @@ class TestExecuteDagPythonFilesystemStorage(object):
     handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
-        script_relative_path('test_project/env.yml'),
-        script_relative_path('test_project/env_filesystem.yml'),
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_filesystem.yaml'),
     ]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
@@ -62,8 +62,8 @@ class TestExecuteDagPythonS3Storage(object):
     handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
-        script_relative_path('test_project/env.yml'),
-        script_relative_path('test_project/env_s3.yml'),
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_s3.yaml'),
     ]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
@@ -102,8 +102,8 @@ class TestExecuteDagContainerizedS3Storage(object):
     handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
-        script_relative_path('test_project/env.yml'),
-        script_relative_path('test_project/env_s3.yml'),
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_s3.yaml'),
     ]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
@@ -140,8 +140,8 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
     handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
-        script_relative_path('test_project/env.yml'),
-        script_relative_path('test_project/env_filesystem.yml'),
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_filesystem.yaml'),
     ]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()

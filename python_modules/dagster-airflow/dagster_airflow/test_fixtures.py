@@ -27,7 +27,7 @@ def dagster_airflow_python_operator_pipeline(request):
             handle = ExecutionTargetHandle.for_pipeline_fn(define_pipeline)
             config = {'solids': {'my_solid': 'foo'}}
             # alternatively, pass a list of globs to be assembled into a config yaml
-            # config_yaml = ['environments/test_*.yml']
+            # config_yaml = ['environments/test_*.yaml']
             run_id = 'test_run_3'
             execution_date = datetime.datetime(2019, 1, 1)
 
@@ -80,7 +80,7 @@ def dagster_airflow_docker_operator_pipeline(request):
             pipeline = define_my_pipeline()
             config = {'solids': {'my_solid': 'foo'}}
             # alternatively, pass a list of globs to be assembled into a config yaml
-            # config_yaml = ['environments/test_*.yml']
+            # config_yaml = ['environments/test_*.yaml']
             run_id = 'test_run_3'
             execution_date = datetime.datetime(2019, 1, 1)
             image = 'my_pipeline_image'

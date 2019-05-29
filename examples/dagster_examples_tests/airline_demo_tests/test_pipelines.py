@@ -29,9 +29,9 @@ def enviroment_overrides(config):
 @spark
 def test_airline_pipeline_0_ingest(docker_compose_db):
     ingest_config_object = load_yaml_from_globs(
-        script_relative_path('../../dagster_examples/airline_demo/environments/local_base.yml'),
+        script_relative_path('../../dagster_examples/airline_demo/environments/local_base.yaml'),
         script_relative_path(
-            '../../dagster_examples/airline_demo/environments/local_fast_ingest.yml'
+            '../../dagster_examples/airline_demo/environments/local_fast_ingest.yaml'
         ),
     )
     ingest_config_object = enviroment_overrides(ingest_config_object)
@@ -50,9 +50,9 @@ def test_airline_pipeline_0_ingest(docker_compose_db):
 @spark
 def test_airline_pipeline_1_warehouse(docker_compose_db):
     warehouse_config_object = load_yaml_from_globs(
-        script_relative_path('../../dagster_examples/airline_demo/environments/local_base.yml'),
+        script_relative_path('../../dagster_examples/airline_demo/environments/local_base.yaml'),
         script_relative_path(
-            '../../dagster_examples/airline_demo/environments/local_warehouse.yml'
+            '../../dagster_examples/airline_demo/environments/local_warehouse.yaml'
         ),
     )
     warehouse_config_object = enviroment_overrides(warehouse_config_object)
@@ -70,10 +70,10 @@ def test_airline_pipeline_1_warehouse(docker_compose_db):
 @pytest.mark.skip
 def test_airline_pipeline_s3_0_ingest(docker_compose_db):
     ingest_config_object = load_yaml_from_globs(
-        script_relative_path('../../dagster_examples/airline_demo/environments/local_base.yml'),
-        script_relative_path('../../dagster_examples/airline_demo/environments/local_airflow.yml'),
+        script_relative_path('../../dagster_examples/airline_demo/environments/local_base.yaml'),
+        script_relative_path('../../dagster_examples/airline_demo/environments/local_airflow.yaml'),
         script_relative_path(
-            '../../dagster_examples/airline_demo/environments/local_fast_ingest.yml'
+            '../../dagster_examples/airline_demo/environments/local_fast_ingest.yaml'
         ),
     )
 
@@ -85,10 +85,10 @@ def test_airline_pipeline_s3_0_ingest(docker_compose_db):
 @pytest.mark.skip
 def test_airline_pipeline_s3_1_warehouse(docker_compose_db):
     warehouse_config_object = load_yaml_from_globs(
-        script_relative_path('../../dagster_examples/airline_demo/environments/local_base.yml'),
-        script_relative_path('../../dagster_examples/airline_demo/environments/local_airflow.yml'),
+        script_relative_path('../../dagster_examples/airline_demo/environments/local_base.yaml'),
+        script_relative_path('../../dagster_examples/airline_demo/environments/local_airflow.yaml'),
         script_relative_path(
-            '../../dagster_examples/airline_demo/environments/local_warehouse.yml'
+            '../../dagster_examples/airline_demo/environments/local_warehouse.yaml'
         ),
     )
 

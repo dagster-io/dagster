@@ -59,10 +59,10 @@ def define_pandas_hello_world_pipeline():
         },
         preset_definitions=[
             PresetDefinition(
-                'test', environment_files=['environments/pandas_hello_world_test.yml']
+                'test', environment_files=['environments/pandas_hello_world_test.yaml']
             ),
             PresetDefinition(
-                'prod', environment_files=['environments/pandas_hello_world_prod.yml']
+                'prod', environment_files=['environments/pandas_hello_world_prod.yaml']
             ),
         ],
     )

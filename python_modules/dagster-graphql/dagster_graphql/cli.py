@@ -8,6 +8,7 @@ from graphql.execution.executors.gevent import GeventExecutor as Executor
 from dagster import check, seven, ExecutionTargetHandle
 from dagster.cli.pipeline import repository_target_argument
 from dagster.cli.load_handle import handle_for_repo_cli_args
+from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 from dagster.utils.log import get_stack_trace_array
 
 from .implementation.context import DagsterGraphQLContext
@@ -98,13 +99,15 @@ def execute_query_from_cli(handle, query, variables=None):
         'Run a GraphQL query against the dagster interface to a specified repository or pipeline.'
         '\n\n{warning}'.format(warning=REPO_TARGET_WARNING)
     )
-    + '\n\n Examples:'
-    '\n\n1. dagster-graphql'
-    '\n\n2. dagster-graphql -y path/to/repository.yml'
-    '\n\n3. dagster-graphql -f path/to/file.py -n define_repo'
-    '\n\n4. dagster-graphql -m some_module -n define_repo'
-    '\n\n5. dagster-graphql -f path/to/file.py -n define_pipeline'
-    '\n\n6. dagster-graphql -m some_module -n define_pipeline',
+    + (
+        '\n\n Examples:'
+        '\n\n1. dagster-graphql'
+        '\n\n2. dagster-graphql -y path/to/{default_filename}'
+        '\n\n3. dagster-graphql -f path/to/file.py -n define_repo'
+        '\n\n4. dagster-graphql -m some_module -n define_repo'
+        '\n\n5. dagster-graphql -f path/to/file.py -n define_pipeline'
+        '\n\n6. dagster-graphql -m some_module -n define_pipeline'
+    ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
 )
 @click.option('--variables', '-v', type=click.STRING)
 @click.version_option(version=__version__)

@@ -169,7 +169,7 @@ def plugins_path(airflow_home):
 
 @pytest.fixture(scope='module')
 def env_config(s3_bucket):
-    config = load_yaml_from_path(script_relative_path('test_project/env.yml'))
+    config = load_yaml_from_path(script_relative_path('test_project/env.yaml'))
     config['storage'] = {'s3': {'s3_bucket': s3_bucket}}
     yield config
 

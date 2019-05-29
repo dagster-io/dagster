@@ -18,7 +18,7 @@ def intro_tutorial_path(path):
 def test_demo_configuration_schema_pipeline_correct_yaml():
     result = execute_pipeline(
         define_demo_configuration_schema_pipeline(),
-        load_yaml_from_path(intro_tutorial_path('configuration_schemas.yml')),
+        load_yaml_from_path(intro_tutorial_path('configuration_schemas.yaml')),
     )
     assert result.success
     assert len(result.solid_result_list) == 2
@@ -34,7 +34,7 @@ def test_demo_configuration_schema_pipeline_runtime_error():
     with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
         execute_pipeline(
             define_demo_configuration_schema_pipeline(),
-            load_yaml_from_path(intro_tutorial_path('configuration_schemas_runtime_error.yml')),
+            load_yaml_from_path(intro_tutorial_path('configuration_schemas_runtime_error.yaml')),
         )
 
     assert isinstance(e_info.value.__cause__, TypeError)
@@ -47,14 +47,14 @@ def test_demo_configuration_schema_pipeline_wrong_field():
     ):
         execute_pipeline(
             define_demo_configuration_schema_pipeline(),
-            load_yaml_from_path(intro_tutorial_path('configuration_schemas_wrong_field.yml')),
+            load_yaml_from_path(intro_tutorial_path('configuration_schemas_wrong_field.yaml')),
         )
 
 
 def test_typed_demo_configuration_schema_pipeline_correct_yaml():
     result = execute_pipeline(
         define_typed_demo_configuration_schema_pipeline(),
-        load_yaml_from_path(intro_tutorial_path('configuration_schemas_typed.yml')),
+        load_yaml_from_path(intro_tutorial_path('configuration_schemas_typed.yaml')),
     )
     assert result.success
     assert len(result.solid_result_list) == 2
@@ -80,7 +80,7 @@ def test_typed_demo_configuration_schema_type_mismatch_error():
                 script_relative_path(
                     (
                         '../../dagster_examples/intro_tutorial/'
-                        'configuration_schemas_type_mismatch_error.yml'
+                        'configuration_schemas_type_mismatch_error.yaml'
                     )
                 )
             ),

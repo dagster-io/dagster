@@ -102,7 +102,7 @@ def test_yaml_file():
             'pipeline_name': 'foobar',
             'python_file': None,
             'fn_name': None,
-            'repository_yaml': script_relative_path('repository.yml'),
+            'repository_yaml': script_relative_path('repository.yaml'),
         }
     )
     assert handle.mode == _ExecutionTargetMode.REPOSITORY
@@ -168,7 +168,7 @@ def test_loader_from_default_repository_module_yaml():
     pipeline = handle_for_pipeline_cli_args(
         {
             'pipeline_name': 'repo_demo_pipeline',
-            'repository_yaml': script_relative_path('repository_module.yml'),
+            'repository_yaml': script_relative_path('repository_module.yaml'),
         }
     ).build_pipeline_definition()
 
@@ -178,7 +178,7 @@ def test_loader_from_default_repository_module_yaml():
 
 def test_loader_from_default_repository_file_yaml():
     pipeline = handle_for_pipeline_cli_args(
-        {'pipeline_name': 'foo', 'repository_yaml': script_relative_path('repository_file.yml')}
+        {'pipeline_name': 'foo', 'repository_yaml': script_relative_path('repository_file.yaml')}
     ).build_pipeline_definition()
 
     assert isinstance(pipeline, PipelineDefinition)

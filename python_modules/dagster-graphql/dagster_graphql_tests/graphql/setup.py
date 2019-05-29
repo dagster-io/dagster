@@ -307,13 +307,13 @@ def define_csv_hello_world():
             PresetDefinition(
                 name='prod',
                 environment_files=[
-                    script_relative_path('../environments/csv_hello_world_prod.yml')
+                    script_relative_path('../environments/csv_hello_world_prod.yaml')
                 ],
             ),
             PresetDefinition(
                 name='test',
                 environment_files=[
-                    script_relative_path('../environments/csv_hello_world_test.yml')
+                    script_relative_path('../environments/csv_hello_world_test.yaml')
                 ],
             ),
         ],

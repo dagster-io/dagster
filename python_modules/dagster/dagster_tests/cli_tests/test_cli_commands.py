@@ -89,7 +89,7 @@ def test_list_command():
 
     execute_list_command(
         {
-            'repository_yaml': script_relative_path('repository.yml'),
+            'repository_yaml': script_relative_path('repository.yaml'),
             'python_file': None,
             'module_name': None,
             'fn_name': None,
@@ -97,7 +97,7 @@ def test_list_command():
         no_print,
     )
 
-    result = runner.invoke(pipeline_list_command, ['-y', script_relative_path('repository.yml')])
+    result = runner.invoke(pipeline_list_command, ['-y', script_relative_path('repository.yaml')])
     assert result.exit_code == 0
     assert result.output == (
         'Repository demo_repository\n'
@@ -161,14 +161,14 @@ def test_list_command():
 def valid_execute_args():
     return [
         {
-            'repository_yaml': script_relative_path('repository_file.yml'),
+            'repository_yaml': script_relative_path('repository_file.yaml'),
             'pipeline_name': ('foo',),
             'python_file': None,
             'module_name': None,
             'fn_name': None,
         },
         {
-            'repository_yaml': script_relative_path('repository_module.yml'),
+            'repository_yaml': script_relative_path('repository_module.yaml'),
             'pipeline_name': ('repo_demo_pipeline',),
             'python_file': None,
             'module_name': None,
@@ -207,8 +207,8 @@ def valid_execute_args():
 
 def valid_cli_args():
     return [
-        ['-y', script_relative_path('repository_file.yml'), 'foo'],
-        ['-y', script_relative_path('repository_module.yml'), 'repo_demo_pipeline'],
+        ['-y', script_relative_path('repository_file.yaml'), 'foo'],
+        ['-y', script_relative_path('repository_module.yaml'), 'repo_demo_pipeline'],
         ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_bar_repo', 'foo'],
         ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo', 'repo_demo_pipeline'],
         ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo_demo_pipeline'],
@@ -240,9 +240,9 @@ def test_execute_mode_command():
         runner,
         [
             '-y',
-            script_relative_path('../repository.yml'),
+            script_relative_path('../repository.yaml'),
             '--env',
-            script_relative_path('../environments/multi_mode_with_resources/add_mode.yml'),
+            script_relative_path('../environments/multi_mode_with_resources/add_mode.yaml'),
             '-d',
             'add_mode',
             'multi_mode_with_resources',  # pipeline name
@@ -256,9 +256,9 @@ def test_execute_mode_command():
         runner,
         [
             '-y',
-            script_relative_path('../repository.yml'),
+            script_relative_path('../repository.yaml'),
             '--env',
-            script_relative_path('../environments/multi_mode_with_resources/mult_mode.yml'),
+            script_relative_path('../environments/multi_mode_with_resources/mult_mode.yaml'),
             '-d',
             'mult_mode',
             'multi_mode_with_resources',  # pipeline name
@@ -271,9 +271,11 @@ def test_execute_mode_command():
         runner,
         [
             '-y',
-            script_relative_path('../repository.yml'),
+            script_relative_path('../repository.yaml'),
             '--env',
-            script_relative_path('../environments/multi_mode_with_resources/double_adder_mode.yml'),
+            script_relative_path(
+                '../environments/multi_mode_with_resources/double_adder_mode.yaml'
+            ),
             '-d',
             'double_adder_mode',
             'multi_mode_with_resources',  # pipeline name
@@ -289,7 +291,7 @@ def test_execute_command():
 
     for cli_args in valid_execute_args():
         execute_execute_command(
-            env=[script_relative_path('default_log_error_env.yml')],
+            env=[script_relative_path('default_log_error_env.yaml')],
             raise_on_error=True,
             cli_args=cli_args,
         )
@@ -300,7 +302,7 @@ def test_execute_command():
         runner_pipeline_execute(runner, cli_args)
 
         runner_pipeline_execute(
-            runner, ['--env', script_relative_path('default_log_error_env.yml')] + cli_args
+            runner, ['--env', script_relative_path('default_log_error_env.yaml')] + cli_args
         )
 
 
@@ -340,7 +342,7 @@ def test_scaffold_command():
 
 def test_default_memory_run_storage():
     cli_args = {
-        'repository_yaml': script_relative_path('repository_file.yml'),
+        'repository_yaml': script_relative_path('repository_file.yaml'),
         'pipeline_name': ('foo',),
         'python_file': None,
         'module_name': None,
@@ -356,14 +358,14 @@ def test_default_memory_run_storage():
 
 def test_override_with_in_memory_storage():
     cli_args = {
-        'repository_yaml': script_relative_path('repository_file.yml'),
+        'repository_yaml': script_relative_path('repository_file.yaml'),
         'pipeline_name': ('foo',),
         'python_file': None,
         'module_name': None,
         'fn_name': None,
     }
     result = execute_execute_command(
-        env=[script_relative_path('in_memory_env.yml')], raise_on_error=True, cli_args=cli_args
+        env=[script_relative_path('in_memory_env.yaml')], raise_on_error=True, cli_args=cli_args
     )
     assert result.success
 
@@ -374,14 +376,14 @@ def test_override_with_in_memory_storage():
 
 def test_override_with_filesystem_storage():
     cli_args = {
-        'repository_yaml': script_relative_path('repository_file.yml'),
+        'repository_yaml': script_relative_path('repository_file.yaml'),
         'pipeline_name': ('foo',),
         'python_file': None,
         'module_name': None,
         'fn_name': None,
     }
     result = execute_execute_command(
-        env=[script_relative_path('filesystem_env.yml')], raise_on_error=True, cli_args=cli_args
+        env=[script_relative_path('filesystem_env.yaml')], raise_on_error=True, cli_args=cli_args
     )
     assert result.success
 

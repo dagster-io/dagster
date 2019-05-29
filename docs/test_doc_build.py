@@ -14,6 +14,7 @@ BUILT_DOCS_RELATIVE_PATH = '_build/'
 
 IGNORE_FILES = [
     '.DS_Store',
+    '.pytest_cache',
     'objects.inv',
     '[A-Z0-9a-z_-]*\\.png',
     '[A-Z0-9a-z_-]*\\.gif',

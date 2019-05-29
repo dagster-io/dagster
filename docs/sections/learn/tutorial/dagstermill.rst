@@ -210,11 +210,11 @@ Dagstermill CLI
 
 To assist you in productionizing notebooks, the dagstermill CLI will be helpful in adding boilerplate to existing notebooks to turn them into dagster solids (or creating notebooks from scratch with the requisite boilerplate).
 
-To create a notebook when you know the repository, use the ``dagstermill create-notebook`` command. The notebook name is provided with the ``--notebook`` argument. A repository can be provided using the ``.yml`` file or the other command line options for specifying the location of a repository definition. If the repository is not provided, then the scaffolding ``dm.register_repository()`` is not inserted.
+To create a notebook when you know the repository, use the ``dagstermill create-notebook`` command. The notebook name is provided with the ``--notebook`` argument. A repository can be provided using the ``.yaml`` file or the other command line options for specifying the location of a repository definition. If the repository is not provided, then the scaffolding ``dm.register_repository()`` is not inserted.
 
 .. code-block:: console
     
-    $ dagstermill create-notebook --notebook "notebook_name" -y repository.yml
+    $ dagstermill create-notebook --notebook "notebook_name" -y repository.yaml
 
 Normally, the ``create-notebook`` command will prompt to ask if you want to over-write an existing notebook with the same name (if such a notebook exists). The ``--force-overwrite`` flag forces the over-write.
 
@@ -234,7 +234,7 @@ Normally, the ``create-notebook`` command will prompt to ask if you want to over
     -f, --python-file TEXT      Specify python file where repository or pipeline
                                 function lives.
     -y, --repository-yaml TEXT  Path to config file. Defaults to
-                                ./repository.yml. if --python-file and --module-
+                                ./repository.yaml. if --python-file and --module-
                                 name are not specified
     -note, --notebook TEXT      Name of notebook
     --force-overwrite           Will force overwrite any existing notebook or
@@ -259,13 +259,13 @@ Gives the following notebook--notice how there is no call to ``register_reposito
 
 .. image:: pre_boilerplate_notebook.png
 
-After a while, say you finally have a repository file (``repository.yml``). Then you register the notebook, giving the following: 
+After a while, say you finally have a repository file (``repository.yaml``). Then you register the notebook, giving the following: 
 
 .. code-block:: console
 
     $ ls
-    test_notebook.ipynb repository.yml
-    $ dagstermill register-notebook --notebook test_notebook.ipynb -y repository.yml
+    test_notebook.ipynb repository.yaml
+    $ dagstermill register-notebook --notebook test_notebook.ipynb -y repository.yaml
 
 .. image:: post_boilerplate_notebook.png
 

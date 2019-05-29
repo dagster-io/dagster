@@ -14,26 +14,26 @@ a yaml file to tell the CLI tool about the repository.
 
 And now the repository file:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_repository.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_repository.yaml
    :linenos:
    :language: YAML
-   :caption: repository.yml
+   :caption: repository.yaml
 
 Finally, we'll need to define the pipeline config in a yaml file in order to
 execute our pipeline from the command line.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yaml
    :linenos:
    :language: YAML
-   :caption: env.yml
+   :caption: env.yaml
 
 With these elements in place we can now drive execution from the CLI specifying only the pipeline
-name. The tool loads the repository using the ``repository.yml`` file and looks up the pipeline by
+name. The tool loads the repository using the ``repository.yaml`` file and looks up the pipeline by
 name.
 
 .. code-block:: console
 
-    $ dagster pipeline execute demo_pipeline -e env.yml
+    $ dagster pipeline execute demo_pipeline -e env.yaml
 
 Config Splitting
 ^^^^^^^^^^^^^^^^
@@ -44,23 +44,23 @@ copy the broadly-applicable settings into each of our config yamls, and error-pr
 those copies in sync. So the command line tools allow us to specify more than one yaml file to use
 for config.
 
-Let's split up our env.yml into two parts:
+Let's split up our env.yaml into two parts:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yaml
    :lines: 1-4
    :language: YAML
-   :caption: constant_env.yml
+   :caption: constant_env.yaml
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yaml
    :lines: 6-12
    :language: YAML
-   :caption: specific_env.yml
+   :caption: specific_env.yaml
 
 Now we can run our pipeline as follows:
 
 .. code-block:: console
 
-    $ dagster pipeline execute part_seven -e constant_env.yml -e specific_env.yml
+    $ dagster pipeline execute part_seven -e constant_env.yaml -e specific_env.yaml
 
 Order matters when specifying yaml files to use -- values specified in later files will override
 values in earlier files, which can be useful. You can also use globs in the CLI arguments to consume

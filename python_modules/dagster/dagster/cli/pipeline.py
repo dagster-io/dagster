@@ -9,7 +9,7 @@ import yaml
 from dagster import InProcessExecutorConfig, PipelineDefinition, RunConfig, check, execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args, handle_for_repo_cli_args
 from dagster.core.definitions import solids_in_topological_order, Solid
-from dagster.utils import load_yaml_from_glob_list
+from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.visualize import build_graphviz_graph
 
@@ -45,9 +45,9 @@ def repository_target_argument(f):
             '-y',
             type=click.STRING,
             help=(
-                'Path to config file. Defaults to ./repository.yml. if --python-file '
+                'Path to config file. Defaults to ./{default_filename} if --python-file '
                 'and --module-name are not specified'
-            ),
+            ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
         ),
         click.option(
             '--python-file',
@@ -73,9 +73,9 @@ def pipeline_target_command(f):
             '-y',
             type=click.STRING,
             help=(
-                'Path to config file. Defaults to ./repository.yml. if --python-file '
+                'Path to config file. Defaults to ./{default_filename} if --python-file '
                 'and --module-name are not specified'
-            ),
+            ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
         ),
         click.argument('pipeline_name', nargs=-1),
         click.option('--python-file', '-f'),
@@ -133,13 +133,13 @@ def create_pipeline_from_cli_args(kwargs):
 def get_pipeline_instructions(command_name):
     return (
         'This commands targets a pipeline. The pipeline can be specified in a number of ways:'
-        '\n\n1. dagster {command_name} <<pipeline_name>> (works if .repository.yml exists)'
-        '\n\n2. dagster {command_name} <<pipeline_name>> -y path/to/repository.yml'
+        '\n\n1. dagster {command_name} <<pipeline_name>> (works if .{default_filename} exists)'
+        '\n\n2. dagster {command_name} <<pipeline_name>> -y path/to/{default_filename}'
         '\n\n3. dagster {command_name} -f /path/to/file.py -n define_some_pipeline'
         '\n\n4. dagster {command_name} -m a_module.submodule  -n define_some_pipeline'
         '\n\n5. dagster {command_name} -f /path/to/file.py -n define_some_repo <<pipeline_name>>'
         '\n\n6. dagster {command_name} -m a_module.submodule -n define_some_repo <<pipeline_name>>'
-    ).format(command_name=command_name)
+    ).format(command_name=command_name, default_filename=DEFAULT_REPOSITORY_YAML_FILENAME)
 
 
 @click.command(
@@ -266,11 +266,11 @@ def pipeline_graphviz_command(only_solids, **kwargs):
         'files at the key-level granularity. If the file is a pattern then you must '
         'enclose it in double quotes'
         '\n\nExample: '
-        'dagster pipeline execute pandas_hello_world -e "pandas_hello_world/*.yml"'
+        'dagster pipeline execute pandas_hello_world -e "pandas_hello_world/*.yaml"'
         '\n\nYou can also specifiy multiple files:'
         '\n\nExample: '
-        'dagster pipeline execute pandas_hello_world -e pandas_hello_world/solids.yml '
-        '-e pandas_hello_world/env.yml'
+        'dagster pipeline execute pandas_hello_world -e pandas_hello_world/solids.yaml '
+        '-e pandas_hello_world/env.yaml'
     ),
 )
 @click.option('--raise-on-error/--no-raise-on-error', default=True)
@@ -280,8 +280,8 @@ def pipeline_graphviz_command(only_solids, **kwargs):
     type=click.STRING,
     help=(
         'Specify a preset to use for this pipeline. Presets are defined on the repo_config '
-        'on RepositoryDefinition, typically managed under the config key in repository.yml.'
-    ),
+        'on RepositoryDefinition, typically managed under the config key in {default_filename}.'
+    ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
 )
 @click.option('-d', '--mode', type=click.STRING)
 def pipeline_execute_command(env, raise_on_error, preset, mode, **kwargs):

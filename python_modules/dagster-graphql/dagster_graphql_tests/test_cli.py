@@ -42,7 +42,7 @@ def define_repository():
 def test_basic_introspection():
     query = '{ __schema { types { name } } }'
 
-    repo_path = script_relative_path('./cli_test_repository.yml')
+    repo_path = script_relative_path('./cli_test_repository.yaml')
 
     runner = CliRunner()
     result = runner.invoke(ui, ['-y', repo_path, query])
@@ -56,7 +56,7 @@ def test_basic_introspection():
 def test_basic_pipelines():
     query = '{ pipelines { nodes { name } } }'
 
-    repo_path = script_relative_path('./cli_test_repository.yml')
+    repo_path = script_relative_path('./cli_test_repository.yaml')
 
     runner = CliRunner()
     result = runner.invoke(ui, ['-y', repo_path, query])
@@ -70,7 +70,7 @@ def test_basic_pipelines():
 def test_basic_variables():
     query = 'query FooBar($pipelineName: String!){ pipeline(params:{name: $pipelineName}){ name} }'
     variables = '{"pipelineName": "math"}'
-    repo_path = script_relative_path('./cli_test_repository.yml')
+    repo_path = script_relative_path('./cli_test_repository.yaml')
 
     runner = CliRunner()
     result = runner.invoke(ui, ['-y', repo_path, '-v', variables, query])
@@ -128,7 +128,7 @@ def test_start_execution():
         }
     )
 
-    repo_path = script_relative_path('./repository.yml')
+    repo_path = script_relative_path('./repository.yaml')
 
     runner = CliRunner()
     result = runner.invoke(ui, ['-y', repo_path, '-v', variables, START_PIPELINE_EXECUTION_QUERY])

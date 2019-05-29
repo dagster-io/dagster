@@ -218,16 +218,16 @@ def define_airline_demo_ingest_pipeline():
                 name='local_fast',
                 mode='local',
                 environment_files=[
-                    'environments/local_base.yml',
-                    'environments/local_fast_ingest.yml',
+                    'environments/local_base.yaml',
+                    'environments/local_fast_ingest.yaml',
                 ],
             ),
             PresetDefinition(
                 name='local_full',
                 mode='local',
                 environment_files=[
-                    'environments/local_base.yml',
-                    'environments/local_full_ingest.yml',
+                    'environments/local_base.yaml',
+                    'environments/local_full_ingest.yaml',
                 ],
             ),
         ],
@@ -287,8 +287,8 @@ def define_airline_demo_warehouse_pipeline():
                 name='local',
                 mode='local',
                 environment_files=[
-                    'environments/local_base.yml',
-                    'environments/local_warehouse.yml',
+                    'environments/local_base.yaml',
+                    'environments/local_warehouse.yaml',
                 ],
             )
         ],

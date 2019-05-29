@@ -19,7 +19,7 @@ def test_hello_inputs_parameterized_cli_pipeline():
     check_cli_execute_file_pipeline(
         script_relative_path('../../dagster_examples/intro_tutorial/inputs.py'),
         'define_hello_inputs_pipeline',
-        script_relative_path('../../dagster_examples/intro_tutorial/inputs_env.yml'),
+        script_relative_path('../../dagster_examples/intro_tutorial/inputs_env.yaml'),
     )
 
 

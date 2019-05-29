@@ -9,7 +9,7 @@ import nbformat
 from dagster import check
 from dagster.cli.pipeline import repository_target_argument
 from dagster.cli.load_handle import handle_for_repo_cli_args
-from dagster.utils import all_none, safe_isfile, mkdir_p
+from dagster.utils import all_none, DEFAULT_REPOSITORY_YAML_FILENAME, safe_isfile, mkdir_p
 
 
 def get_notebook_scaffolding(register_repo_info):
@@ -100,8 +100,8 @@ def create_notebook(notebook, force_overwrite, **kwargs):
 def get_register_repo_info(cli_args, allow_none=True):
     scaffolding_with_repo = True
     if all_none(cli_args):
-        if os.path.exists(os.path.join(os.getcwd(), 'repository.yml')):
-            cli_args['repository_yaml'] = 'repository.yml'
+        if os.path.exists(os.path.join(os.getcwd(), DEFAULT_REPOSITORY_YAML_FILENAME)):
+            cli_args['repository_yaml'] = DEFAULT_REPOSITORY_YAML_FILENAME
         elif allow_none:  # register_repo_info can remain None
             scaffolding_with_repo = False
 

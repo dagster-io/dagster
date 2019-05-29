@@ -167,7 +167,7 @@ Repository
 A repository is a collection of pipelines that can be made available to the Dagit UI and other
 higher-level tools. Repositories are defined using the
 :class:`RepositoryDefinition <dagster.RepositoryDefinition>` class, and made available to
-higher-level tools with a special ``repository.yml`` file that tells the tools where to look for a
+higher-level tools with a special ``repository.yaml`` file that tells the tools where to look for a
 repository definition.
 
 Dagster Types

@@ -1707,7 +1707,7 @@ Lastly there is always the option to run `make black` from the `python_modules/`
 Running dagit webapp in development
 -------------------------------------
 For development, run the dagit GraphQL server on a different port than the
-webapp, from any directory that contains a repository.yml file. For example:
+webapp, from any directory that contains a repository.yaml file. For example:
 
 .. code-block:: console
 
@@ -3131,16 +3131,16 @@ In this case, we've defined a single scalar string value as config.
 Let's see how to run this pipeline, with config, from the command line. In order to do this you
 must provide config in the form of a yaml file:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config_env.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config_env.yaml
    :linenos:
-   :caption: config_env.yml
+   :caption: config_env.yaml
 
 Now you can run this pipeline with this config file like so:
 
 .. code-block:: console
 
    $ dagster pipeline execute -f config.py \\
-   -n define_configurable_hello_pipeline -e config_env.yml
+   -n define_configurable_hello_pipeline -e config_env.yaml
 
 To run this example from dagit, use the following command:
 
@@ -3174,16 +3174,16 @@ We'll replace the config field in our solid definition with a structured, strong
 
 The configuration YAML file works as before:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas.yaml
    :linenos:
-   :caption: configuration_schemas.yml
+   :caption: configuration_schemas.yaml
 
 Now let's imagine we made a mistake and passed a ``string`` in our configuration:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_runtime_error.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_runtime_error.yaml
    :linenos:
    :emphasize-lines: 12
-   :caption: configuration_schemas_runtime_error.yml
+   :caption: configuration_schemas_runtime_error.yaml
 
 And then ran it:
 
@@ -3192,7 +3192,7 @@ And then ran it:
     $ dagster pipeline execute -f configuration_schemas.py \\
     -n define_demo_configuration_schema_repo \\
     demo_configuration_schema \\
-    -e configuration_schemas_runtime_error.yml
+    -e configuration_schemas_runtime_error.yaml
     ...
     Traceback (most recent call last):
     ...
@@ -3215,10 +3215,10 @@ to catch this before execution.
 
 In order to do that, let us use the typed config solid.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_type_mismatch_error.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_type_mismatch_error.yaml
    :linenos:
    :emphasize-lines: 12
-   :caption: configuration_schemas_runtime_error.yml
+   :caption: configuration_schemas_runtime_error.yaml
 
 And then run the pipeline
 
@@ -3227,7 +3227,7 @@ And then run the pipeline
     $ dagster pipeline execute -f configuration_schemas.py \\
     -n define_demo_configuration_schema_repo \\
     typed_demo_configuration_schema \\
-    -e configuration_schemas_type_mismatch_error.yml
+    -e configuration_schemas_type_mismatch_error.yaml
 
 And you'll get a nice error *prior* to execution:
 
@@ -3243,17 +3243,17 @@ actionable error message before the pipeline is ever executed.
 
 Let's see what happens if we pass config with the wrong structure:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_wrong_field.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_wrong_field.yaml
    :linenos:
    :emphasize-lines: 9
-   :caption: configuration_schemas_wrong_field.yml
+   :caption: configuration_schemas_wrong_field.yaml
 
 And then run the pipeline:
 
 .. code-block:: console
 
     $ dagster pipeline execute -f configuration_schemas.py \\
-    -n define_demo_configuration_schema_pipeline -e configuration_schemas_wrong_field.yml
+    -n define_demo_configuration_schema_pipeline -e configuration_schemas_wrong_field.yaml
     ...
     dagster.core.execution.PipelineConfigEvaluationError: Pipeline "demo_configuration_schema" config errors:
     Error 1: Undefined field "multiply_the_word_with_typed_config" at path root:solids
@@ -3475,11 +3475,11 @@ Dagstermill CLI
 
 To assist you in productionizing notebooks, the dagstermill CLI will be helpful in adding boilerplate to existing notebooks to turn them into dagster solids (or creating notebooks from scratch with the requisite boilerplate).
 
-To create a notebook when you know the repository, use the ``dagstermill create-notebook`` command. The notebook name is provided with the ``--notebook`` argument. A repository can be provided using the ``.yml`` file or the other command line options for specifying the location of a repository definition. If the repository is not provided, then the scaffolding ``dm.register_repository()`` is not inserted.
+To create a notebook when you know the repository, use the ``dagstermill create-notebook`` command. The notebook name is provided with the ``--notebook`` argument. A repository can be provided using the ``.yaml`` file or the other command line options for specifying the location of a repository definition. If the repository is not provided, then the scaffolding ``dm.register_repository()`` is not inserted.
 
 .. code-block:: console
     
-    $ dagstermill create-notebook --notebook "notebook_name" -y repository.yml
+    $ dagstermill create-notebook --notebook "notebook_name" -y repository.yaml
 
 Normally, the ``create-notebook`` command will prompt to ask if you want to over-write an existing notebook with the same name (if such a notebook exists). The ``--force-overwrite`` flag forces the over-write.
 
@@ -3499,7 +3499,7 @@ Normally, the ``create-notebook`` command will prompt to ask if you want to over
     -f, --python-file TEXT      Specify python file where repository or pipeline
                                 function lives.
     -y, --repository-yaml TEXT  Path to config file. Defaults to
-                                ./repository.yml. if --python-file and --module-
+                                ./repository.yaml. if --python-file and --module-
                                 name are not specified
     -note, --notebook TEXT      Name of notebook
     --force-overwrite           Will force overwrite any existing notebook or
@@ -3524,13 +3524,13 @@ Gives the following notebook--notice how there is no call to ``register_reposito
 
 .. image:: pre_boilerplate_notebook.png
 
-After a while, say you finally have a repository file (``repository.yml``). Then you register the notebook, giving the following: 
+After a while, say you finally have a repository file (``repository.yaml``). Then you register the notebook, giving the following: 
 
 .. code-block:: console
 
     $ ls
-    test_notebook.ipynb repository.yml
-    $ dagstermill register-notebook --notebook test_notebook.ipynb -y repository.yml
+    test_notebook.ipynb repository.yaml
+    $ dagstermill register-notebook --notebook test_notebook.ipynb -y repository.yaml
 
 .. image:: post_boilerplate_notebook.png
 
@@ -3600,19 +3600,19 @@ is because the default log level is ``INFO``, so debug-level messages will not a
 
 Let's change that by specifying some config.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/execution_context.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/execution_context.yaml
    :language: YAML
    :linenos:
-   :caption: execution_context.yml
+   :caption: execution_context.yaml
 
-Save it as execution_context.yml and then run:
+Save it as execution_context.yaml and then run:
 
 .. code-block:: console
 
     $ dagster pipeline execute  \\
     -m dagster_examples.intro_tutorial.tutorial_repository \\
     -n define_repository execution_context_pipeline \\
-    -e execution_context.yml
+    -e execution_context.yaml
 
 You'll see now that debug messages print out to the console.
 
@@ -3664,9 +3664,9 @@ was processed
 
 We'll use this config file.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_pass.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_pass.yaml
    :linenos:
-   :caption: expectations_pass.yml
+   :caption: expectations_pass.yaml
 
 And then run:
 
@@ -3674,7 +3674,7 @@ And then run:
 
     $ dagster pipeline execute -f expectations.py \\
     -n define_expectations_tutorial_pipeline -e \\
-    expectations_pass.yml
+    expectations_pass.yaml
 
 In that execution you'll notice a passing expectation:
 
@@ -3685,9 +3685,9 @@ In that execution you'll notice a passing expectation:
 Now let's make this fail. Currently the default behavior is to throw an error and halt execution
 when an expectation fails. So:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_fail.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_fail.yaml
    :linenos:
-   :caption: expectations_fail.yml
+   :caption: expectations_fail.yaml
 
 And then:
 
@@ -3695,7 +3695,7 @@ And then:
 
     $ dagster pipeline execute -f expectations.py \\
     -n define_expectations_tutorial_pipeline \\
-    -e expectations_fail.yml
+    -e expectations_fail.yaml
 
     dagster.core.errors.DagsterExpectationFailedError:
     DagsterExpectationFailedError(solid=add_ints,
@@ -3710,15 +3710,15 @@ feature right now is the ability to skip expectations entirely. This is useful i
 expectations are expensive and you have a time-critical job you must execute. In that case you can
 configure the pipeline to skip expectations entirely:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_skip_failed.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_skip_failed.yaml
    :linenos:
-   :caption: expectations_skip_fail.yml
+   :caption: expectations_skip_fail.yaml
 
 .. code-block:: sh
 
     $ dagster pipeline execute -f expectations.py \\
     -n define_expectations_tutorial_pipeline \\
-    -e expectations_skip_failed.yml
+    -e expectations_skip_failed.yaml
 '''
 
 snapshots['test_build_all_docs 24'] = '''Hello, DAG
@@ -3962,17 +3962,17 @@ Next let's use the CLI. In order to do that we'll need to provide the environmen
 information via a config file. We'll use the same values as before, but in the form
 of YAML rather than python dictionaries:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_env.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_env.yaml
    :language: YAML
    :linenos:
-   :caption: inputs_env.yml
+   :caption: inputs_env.yaml
 
 And now specify that config file via the ``-e`` flag.
 
 .. code-block:: console
 
     $ dagster pipeline execute -f inputs.py \\
-    -n define_hello_inputs_pipeline -e inputs_env.yml
+    -n define_hello_inputs_pipeline -e inputs_env.yaml
 
 Dagit
 ~~~~~
@@ -4001,10 +4001,10 @@ are often not surfaced until the pipeline is executed.
 
 For example, imagine if our environment for our pipeline was:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_env_bad.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_env_bad.yaml
    :language: YAML
    :linenos:
-   :caption: inputs_env_bad.yml
+   :caption: inputs_env_bad.yaml
 
 If we execute this pipeline with this config, it'll fail at runtime.
 
@@ -4121,9 +4121,9 @@ and then execute that pipeline.
 
 You must create a config file
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/conditional_outputs.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/conditional_outputs.yaml
     :linenos:
-    :caption: conditional_outputs.yml
+    :caption: conditional_outputs.yaml
 
 And then run it.
 
@@ -4131,7 +4131,7 @@ And then run it.
 
     $ dagster pipeline execute -f multiple_outputs.py \\
     -n define_multiple_outputs_step_three_pipeline \\
-    -e conditional_outputs.yml
+    -e conditional_outputs.yaml
 
     ... log spew
     2019-04-05 22:29:31 - dagster - INFO -
@@ -4166,26 +4166,26 @@ a yaml file to tell the CLI tool about the repository.
 
 And now the repository file:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_repository.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_repository.yaml
    :linenos:
    :language: YAML
-   :caption: repository.yml
+   :caption: repository.yaml
 
 Finally, we'll need to define the pipeline config in a yaml file in order to
 execute our pipeline from the command line.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yaml
    :linenos:
    :language: YAML
-   :caption: env.yml
+   :caption: env.yaml
 
 With these elements in place we can now drive execution from the CLI specifying only the pipeline
-name. The tool loads the repository using the ``repository.yml`` file and looks up the pipeline by
+name. The tool loads the repository using the ``repository.yaml`` file and looks up the pipeline by
 name.
 
 .. code-block:: console
 
-    $ dagster pipeline execute demo_pipeline -e env.yml
+    $ dagster pipeline execute demo_pipeline -e env.yaml
 
 Config Splitting
 ^^^^^^^^^^^^^^^^
@@ -4196,23 +4196,23 @@ copy the broadly-applicable settings into each of our config yamls, and error-pr
 those copies in sync. So the command line tools allow us to specify more than one yaml file to use
 for config.
 
-Let's split up our env.yml into two parts:
+Let's split up our env.yaml into two parts:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yaml
    :lines: 1-4
    :language: YAML
-   :caption: constant_env.yml
+   :caption: constant_env.yaml
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yaml
    :lines: 6-12
    :language: YAML
-   :caption: specific_env.yml
+   :caption: specific_env.yaml
 
 Now we can run our pipeline as follows:
 
 .. code-block:: console
 
-    $ dagster pipeline execute part_seven -e constant_env.yml -e specific_env.yml
+    $ dagster pipeline execute part_seven -e constant_env.yaml -e specific_env.yaml
 
 Order matters when specifying yaml files to use -- values specified in later files will override
 values in earlier files, which can be useful. You can also use globs in the CLI arguments to consume
@@ -4265,13 +4265,13 @@ Now you can see the list of all pipelines in the repo via the dropdown at the to
 
 Typing the name of the file and function defining the repository gets tiresome and repetitive, so
 let's create a declarative config file with this information to make using the command line tools
-easier. Save this file as ``repository.yml``. This is the default name for a repository config file,
+easier. Save this file as ``repository.yaml``. This is the default name for a repository config file,
 although you can tell the CLI tools to use any file you like.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/repos_1.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/repos_1.yaml
    :linenos:
    :language: YAML
-   :caption: repository.yml
+   :caption: repository.yaml
 
 Now you should be able to list the pipelines in this repo without all the typing:
 
@@ -4397,9 +4397,9 @@ If you inspect this in dagit, you'll see those two instances:
 You also use the aliases in the environment config. In order to execute this pipeline, use
 the following config file:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusable_solids.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusable_solids.yaml
    :linenos:
-   :caption: reusable_solids.yml
+   :caption: reusable_solids.yaml
 
 
 Load this in dagit and you'll see that the node are the graph are labeled with
@@ -4778,7 +4778,7 @@ Repository
 A repository is a collection of pipelines that can be made available to the Dagit UI and other
 higher-level tools. Repositories are defined using the
 :class:`RepositoryDefinition <dagster.RepositoryDefinition>` class, and made available to
-higher-level tools with a special ``repository.yml`` file that tells the tools where to look for a
+higher-level tools with a special ``repository.yaml`` file that tells the tools where to look for a
 repository definition.
 
 Dagster Types
@@ -21787,7 +21787,7 @@ take a few minutes.</p></li>
 <div class="section" id="running-dagit-webapp-in-development">
 <h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
 <p>For development, run the dagit GraphQL server on a different port than the
-webapp, from any directory that contains a repository.yml file. For example:</p>
+webapp, from any directory that contains a repository.yaml file. For example:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster/dagster/tutorials/intro_tutorial
 <span class="gp">$</span> dagit -p <span class="m">3333</span>
 </pre></div>
@@ -24083,7 +24083,7 @@ we’ll get a helpful error message.</p>
 <p>Let’s see how to run this pipeline, with config, from the command line. In order to do this you
 must provide config in the form of a yaml file:</p>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">config_env.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">config_env.yaml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">solids</span><span class="p">:</span>
@@ -24094,7 +24094,7 @@ must provide config in the form of a yaml file:</p>
 </div>
 <p>Now you can run this pipeline with this config file like so:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f config.py <span class="se">\\</span>
--n define_configurable_hello_pipeline -e config_env.yml
+-n define_configurable_hello_pipeline -e config_env.yaml
 </pre></div>
 </div>
 <p>To run this example from dagit, use the following command:</p>
@@ -24389,7 +24389,7 @@ We’ll replace the config field in our solid definition with a structured, stro
 </div>
 <p>The configuration YAML file works as before:</p>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">configuration_schemas.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">configuration_schemas.yaml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
  2
  3
@@ -24418,7 +24418,7 @@ We’ll replace the config field in our solid definition with a structured, stro
 </div>
 <p>Now let’s imagine we made a mistake and passed a <code class="docutils literal notranslate"><span class="pre">string</span></code> in our configuration:</p>
 <div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">configuration_schemas_runtime_error.yml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">configuration_schemas_runtime_error.yaml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
  2
  3
@@ -24449,7 +24449,7 @@ We’ll replace the config field in our solid definition with a structured, stro
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f configuration_schemas.py <span class="se">\\</span>
 -n define_demo_configuration_schema_repo <span class="se">\\</span>
 demo_configuration_schema <span class="se">\\</span>
--e configuration_schemas_runtime_error.yml
+-e configuration_schemas_runtime_error.yaml
 <span class="go">...</span>
 <span class="go">Traceback (most recent call last):</span>
 <span class="go">...</span>
@@ -24471,7 +24471,7 @@ demo_configuration_schema <span class="se">\\</span>
 to catch this before execution.</p>
 <p>In order to do that, let us use the typed config solid.</p>
 <div class="literal-block-wrapper docutils container" id="id4">
-<div class="code-block-caption"><span class="caption-text">configuration_schemas_runtime_error.yml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">configuration_schemas_runtime_error.yaml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
  2
  3
@@ -24502,7 +24502,7 @@ to catch this before execution.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f configuration_schemas.py <span class="se">\\</span>
 -n define_demo_configuration_schema_repo <span class="se">\\</span>
 typed_demo_configuration_schema <span class="se">\\</span>
--e configuration_schemas_type_mismatch_error.yml
+-e configuration_schemas_type_mismatch_error.yaml
 </pre></div>
 </div>
 <p>And you’ll get a nice error <em>prior</em> to execution:</p>
@@ -24515,7 +24515,7 @@ pipeline execution, and which might be tedious to trace back to its root cause, 
 actionable error message before the pipeline is ever executed.</p>
 <p>Let’s see what happens if we pass config with the wrong structure:</p>
 <div class="literal-block-wrapper docutils container" id="id5">
-<div class="code-block-caption"><span class="caption-text">configuration_schemas_wrong_field.yml</span><a class="headerlink" href="#id5" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">configuration_schemas_wrong_field.yaml</span><a class="headerlink" href="#id5" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
  2
  3
@@ -24544,7 +24544,7 @@ actionable error message before the pipeline is ever executed.</p>
 </div>
 <p>And then run the pipeline:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f configuration_schemas.py <span class="se">\\</span>
--n define_demo_configuration_schema_pipeline -e configuration_schemas_wrong_field.yml
+-n define_demo_configuration_schema_pipeline -e configuration_schemas_wrong_field.yaml
 <span class="go">...</span>
 <span class="go">dagster.core.execution.PipelineConfigEvaluationError: Pipeline &quot;demo_configuration_schema&quot; config errors:</span>
 <span class="go">Error 1: Undefined field &quot;multiply_the_word_with_typed_config&quot; at path root:solids</span>
@@ -24832,8 +24832,8 @@ We can also look at the input that was flowed into the notebook (i.e. the filter
 <div class="section" id="dagstermill-cli">
 <h1>Dagstermill CLI<a class="headerlink" href="#dagstermill-cli" title="Permalink to this headline">¶</a></h1>
 <p>To assist you in productionizing notebooks, the dagstermill CLI will be helpful in adding boilerplate to existing notebooks to turn them into dagster solids (or creating notebooks from scratch with the requisite boilerplate).</p>
-<p>To create a notebook when you know the repository, use the <code class="docutils literal notranslate"><span class="pre">dagstermill</span> <span class="pre">create-notebook</span></code> command. The notebook name is provided with the <code class="docutils literal notranslate"><span class="pre">--notebook</span></code> argument. A repository can be provided using the <code class="docutils literal notranslate"><span class="pre">.yml</span></code> file or the other command line options for specifying the location of a repository definition. If the repository is not provided, then the scaffolding <code class="docutils literal notranslate"><span class="pre">dm.register_repository()</span></code> is not inserted.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagstermill create-notebook --notebook <span class="s2">&quot;notebook_name&quot;</span> -y repository.yml
+<p>To create a notebook when you know the repository, use the <code class="docutils literal notranslate"><span class="pre">dagstermill</span> <span class="pre">create-notebook</span></code> command. The notebook name is provided with the <code class="docutils literal notranslate"><span class="pre">--notebook</span></code> argument. A repository can be provided using the <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> file or the other command line options for specifying the location of a repository definition. If the repository is not provided, then the scaffolding <code class="docutils literal notranslate"><span class="pre">dm.register_repository()</span></code> is not inserted.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagstermill create-notebook --notebook <span class="s2">&quot;notebook_name&quot;</span> -y repository.yaml
 </pre></div>
 </div>
 <p>Normally, the <code class="docutils literal notranslate"><span class="pre">create-notebook</span></code> command will prompt to ask if you want to over-write an existing notebook with the same name (if such a notebook exists). The <code class="docutils literal notranslate"><span class="pre">--force-overwrite</span></code> flag forces the over-write.</p>
@@ -24851,7 +24851,7 @@ We can also look at the input that was flowed into the notebook (i.e. the filter
 <span class="go">-f, --python-file TEXT      Specify python file where repository or pipeline</span>
 <span class="go">                            function lives.</span>
 <span class="go">-y, --repository-yaml TEXT  Path to config file. Defaults to</span>
-<span class="go">                            ./repository.yml. if --python-file and --module-</span>
+<span class="go">                            ./repository.yaml. if --python-file and --module-</span>
 <span class="go">                            name are not specified</span>
 <span class="go">-note, --notebook TEXT      Name of notebook</span>
 <span class="go">--force-overwrite           Will force overwrite any existing notebook or</span>
@@ -24870,10 +24870,10 @@ We can also look at the input that was flowed into the notebook (i.e. the filter
 </div>
 <p>Gives the following notebook–notice how there is no call to <code class="docutils literal notranslate"><span class="pre">register_repository</span></code> within the notebook.</p>
 <img alt="../../../_images/pre_boilerplate_notebook.png" src="../../../_images/pre_boilerplate_notebook.png" />
-<p>After a while, say you finally have a repository file (<code class="docutils literal notranslate"><span class="pre">repository.yml</span></code>). Then you register the notebook, giving the following:</p>
+<p>After a while, say you finally have a repository file (<code class="docutils literal notranslate"><span class="pre">repository.yaml</span></code>). Then you register the notebook, giving the following:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> ls
-<span class="go">test_notebook.ipynb repository.yml</span>
-<span class="gp">$</span> dagstermill register-notebook --notebook test_notebook.ipynb -y repository.yml
+<span class="go">test_notebook.ipynb repository.yaml</span>
+<span class="gp">$</span> dagstermill register-notebook --notebook test_notebook.ipynb -y repository.yaml
 </pre></div>
 </div>
 <img alt="../../../_images/post_boilerplate_notebook.png" src="../../../_images/post_boilerplate_notebook.png" />
@@ -25055,7 +25055,7 @@ solid and a timestamp – in a semi-structured format.</p>
 is because the default log level is <code class="docutils literal notranslate"><span class="pre">INFO</span></code>, so debug-level messages will not appear.</p>
 <p>Let’s change that by specifying some config.</p>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">execution_context.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">execution_context.yaml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
 <div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">loggers</span><span class="p">:</span>
@@ -25064,11 +25064,11 @@ is because the default log level is <code class="docutils literal notranslate"><
 </pre></div>
 </td></tr></table></div>
 </div>
-<p>Save it as execution_context.yml and then run:</p>
+<p>Save it as execution_context.yaml and then run:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute  <span class="se">\\</span>
 -m dagster_examples.intro_tutorial.tutorial_repository <span class="se">\\</span>
 -n define_repository execution_context_pipeline <span class="se">\\</span>
--e execution_context.yml
+-e execution_context.yaml
 </pre></div>
 </div>
 <p>You’ll see now that debug messages print out to the console.</p>
@@ -25290,7 +25290,7 @@ checking thresholds of distrbutions or querying lookup tables.</p>
 was processed</p>
 <p>We’ll use this config file.</p>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">expectations_pass.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">expectations_pass.yaml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3
@@ -25312,7 +25312,7 @@ was processed</p>
 <p>And then run:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f expectations.py <span class="se">\\</span>
 -n define_expectations_tutorial_pipeline -e <span class="se">\\</span>
-expectations_pass.yml
+expectations_pass.yaml
 </pre></div>
 </div>
 <p>In that execution you’ll notice a passing expectation:</p>
@@ -25322,7 +25322,7 @@ expectations_pass.yml
 <p>Now let’s make this fail. Currently the default behavior is to throw an error and halt execution
 when an expectation fails. So:</p>
 <div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">expectations_fail.yml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">expectations_fail.yaml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3
@@ -25344,7 +25344,7 @@ when an expectation fails. So:</p>
 <p>And then:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ dagster pipeline execute -f expectations.py <span class="se">\\</span>
 -n define_expectations_tutorial_pipeline <span class="se">\\</span>
--e expectations_fail.yml
+-e expectations_fail.yaml
 
 dagster.core.errors.DagsterExpectationFailedError:
 DagsterExpectationFailedError<span class="o">(</span><span class="nv">solid</span><span class="o">=</span>add_ints,
@@ -25359,7 +25359,7 @@ feature right now is the ability to skip expectations entirely. This is useful i
 expectations are expensive and you have a time-critical job you must execute. In that case you can
 configure the pipeline to skip expectations entirely:</p>
 <div class="literal-block-wrapper docutils container" id="id4">
-<div class="code-block-caption"><span class="caption-text">expectations_skip_fail.yml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">expectations_skip_fail.yaml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
  2
  3
@@ -25384,7 +25384,7 @@ configure the pipeline to skip expectations entirely:</p>
 </div>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ dagster pipeline execute -f expectations.py <span class="se">\\</span>
 -n define_expectations_tutorial_pipeline <span class="se">\\</span>
--e expectations_skip_failed.yml
+-e expectations_skip_failed.yaml
 </pre></div>
 </div>
 </div>
@@ -26191,7 +26191,7 @@ using the python API:</p>
 information via a config file. We’ll use the same values as before, but in the form
 of YAML rather than python dictionaries:</p>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">inputs_env.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">inputs_env.yaml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
 <div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3
@@ -26206,7 +26206,7 @@ of YAML rather than python dictionaries:</p>
 </div>
 <p>And now specify that config file via the <code class="docutils literal notranslate"><span class="pre">-e</span></code> flag.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f inputs.py <span class="se">\\</span>
--n define_hello_inputs_pipeline -e inputs_env.yml
+-n define_hello_inputs_pipeline -e inputs_env.yaml
 </pre></div>
 </div>
 </div>
@@ -26229,7 +26229,7 @@ without a type is automatically assigned the <code class="docutils literal notra
 are often not surfaced until the pipeline is executed.</p>
 <p>For example, imagine if our environment for our pipeline was:</p>
 <div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">inputs_env_bad.yml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">inputs_env_bad.yaml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
 <div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3
@@ -26589,7 +26589,7 @@ and then execute that pipeline.</p>
 </div>
 <p>You must create a config file</p>
 <div class="literal-block-wrapper docutils container" id="id4">
-<div class="code-block-caption"><span class="caption-text">conditional_outputs.yml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">conditional_outputs.yaml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">solids</span><span class="p">:</span>
@@ -26601,7 +26601,7 @@ and then execute that pipeline.</p>
 <p>And then run it.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f multiple_outputs.py <span class="se">\\</span>
 -n define_multiple_outputs_step_three_pipeline <span class="se">\\</span>
--e conditional_outputs.yml
+-e conditional_outputs.yaml
 
 <span class="go">... log spew</span>
 <span class="go">2019-04-05 22:29:31 - dagster - INFO -</span>
@@ -26830,7 +26830,7 @@ a yaml file to tell the CLI tool about the repository.</p>
 </div>
 <p>And now the repository file:</p>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">repository.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">repository.yaml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
 <div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">repository</span><span class="p">:</span>
@@ -26842,7 +26842,7 @@ a yaml file to tell the CLI tool about the repository.</p>
 <p>Finally, we’ll need to define the pipeline config in a yaml file in order to
 execute our pipeline from the command line.</p>
 <div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">env.yml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">env.yaml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
 <div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
  2
  3
@@ -26870,9 +26870,9 @@ execute our pipeline from the command line.</p>
 </td></tr></table></div>
 </div>
 <p>With these elements in place we can now drive execution from the CLI specifying only the pipeline
-name. The tool loads the repository using the <code class="docutils literal notranslate"><span class="pre">repository.yml</span></code> file and looks up the pipeline by
+name. The tool loads the repository using the <code class="docutils literal notranslate"><span class="pre">repository.yaml</span></code> file and looks up the pipeline by
 name.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute demo_pipeline -e env.yml
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute demo_pipeline -e env.yaml
 </pre></div>
 </div>
 <div class="section" id="config-splitting">
@@ -26882,9 +26882,9 @@ a bunch of our pipeline executions, and vary only pipeline-specific settings. It
 copy the broadly-applicable settings into each of our config yamls, and error-prone to try to keep
 those copies in sync. So the command line tools allow us to specify more than one yaml file to use
 for config.</p>
-<p>Let’s split up our env.yml into two parts:</p>
+<p>Let’s split up our env.yaml into two parts:</p>
 <div class="literal-block-wrapper docutils container" id="id4">
-<div class="code-block-caption"><span class="caption-text">constant_env.yml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">constant_env.yaml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
 <div class="highlight-YAML notranslate"><div class="highlight"><pre><span></span><span class="nt">loggers</span><span class="p">:</span>
   <span class="nt">console</span><span class="p">:</span>
     <span class="nt">config</span><span class="p">:</span>
@@ -26893,7 +26893,7 @@ for config.</p>
 </div>
 </div>
 <div class="literal-block-wrapper docutils container" id="id5">
-<div class="code-block-caption"><span class="caption-text">specific_env.yml</span><a class="headerlink" href="#id5" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">specific_env.yaml</span><a class="headerlink" href="#id5" title="Permalink to this code">¶</a></div>
 <div class="highlight-YAML notranslate"><div class="highlight"><pre><span></span><span class="nt">solids</span><span class="p">:</span>
   <span class="nt">multiply_the_word</span><span class="p">:</span>
     <span class="nt">inputs</span><span class="p">:</span>
@@ -26905,7 +26905,7 @@ for config.</p>
 </div>
 </div>
 <p>Now we can run our pipeline as follows:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute part_seven -e constant_env.yml -e specific_env.yml
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute part_seven -e constant_env.yaml -e specific_env.yaml
 </pre></div>
 </div>
 <p>Order matters when specifying yaml files to use – values specified in later files will override
@@ -27100,10 +27100,10 @@ error message.</p>
 <img alt="../../../_images/repos_figure_one.png" src="../../../_images/repos_figure_one.png" />
 <p>Typing the name of the file and function defining the repository gets tiresome and repetitive, so
 let’s create a declarative config file with this information to make using the command line tools
-easier. Save this file as <code class="docutils literal notranslate"><span class="pre">repository.yml</span></code>. This is the default name for a repository config file,
+easier. Save this file as <code class="docutils literal notranslate"><span class="pre">repository.yaml</span></code>. This is the default name for a repository config file,
 although you can tell the CLI tools to use any file you like.</p>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">repository.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">repository.yaml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
 <div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">repository</span><span class="p">:</span>
@@ -27590,7 +27590,7 @@ particular instance is used, rather than the name of the definition.</p>
 <p>You also use the aliases in the environment config. In order to execute this pipeline, use
 the following config file:</p>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">reusable_solids.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">reusable_solids.yaml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
  2
  3
@@ -28428,7 +28428,7 @@ decorator or using the <code class="xref py py-class docutils literal notranslat
 <p>A repository is a collection of pipelines that can be made available to the Dagit UI and other
 higher-level tools. Repositories are defined using the
 <a class="reference internal" href="../api/apidocs/pipeline.html#dagster.RepositoryDefinition" title="dagster.RepositoryDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">RepositoryDefinition</span></code></a> class, and made available to
-higher-level tools with a special <code class="docutils literal notranslate"><span class="pre">repository.yml</span></code> file that tells the tools where to look for a
+higher-level tools with a special <code class="docutils literal notranslate"><span class="pre">repository.yaml</span></code> file that tells the tools where to look for a
 repository definition.</p>
 </div>
 <div class="section" id="dagster-types">

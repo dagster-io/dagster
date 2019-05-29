@@ -24,9 +24,9 @@ class TestAirflowPython_0IngestExecution:
     handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_ingest_pipeline)
     pipeline_name = 'airline_demo_ingest_pipeline'
     config_yaml = [
-        script_relative_path(os.path.join('..', 'environments', 'local_base.yml')),
-        script_relative_path(os.path.join('..', 'environments', 'local_airflow.yml')),
-        script_relative_path(os.path.join('..', 'environments', 'local_fast_ingest.yml')),
+        script_relative_path(os.path.join('..', 'environments', 'local_base.yaml')),
+        script_relative_path(os.path.join('..', 'environments', 'local_airflow.yaml')),
+        script_relative_path(os.path.join('..', 'environments', 'local_fast_ingest.yaml')),
     ]
     mode = 'local'
 
@@ -40,9 +40,9 @@ class TestAirflowPython_1WarehouseExecution:
     handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_warehouse_pipeline)
     pipeline_name = 'airline_demo_warehouse_pipeline'
     config_yaml = [
-        script_relative_path(os.path.join('..', 'environments', 'local_base.yml')),
-        script_relative_path(os.path.join('..', 'environments', 'local_airflow.yml')),
-        script_relative_path(os.path.join('..', 'environments', 'local_warehouse.yml')),
+        script_relative_path(os.path.join('..', 'environments', 'local_base.yaml')),
+        script_relative_path(os.path.join('..', 'environments', 'local_airflow.yaml')),
+        script_relative_path(os.path.join('..', 'environments', 'local_warehouse.yaml')),
     ]
     mode = 'local'
 

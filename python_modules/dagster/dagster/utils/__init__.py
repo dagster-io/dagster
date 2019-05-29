@@ -17,6 +17,9 @@ from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yam
 PICKLE_PROTOCOL = 2
 
 
+DEFAULT_REPOSITORY_YAML_FILENAME = 'repository.yaml'
+
+
 def file_relative_path(dunderfile, relative_path):
     '''
     This function is useful when one needs to load a file that is
