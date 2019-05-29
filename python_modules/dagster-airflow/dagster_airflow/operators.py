@@ -7,7 +7,7 @@ import os
 from abc import ABCMeta, abstractmethod
 from contextlib import contextmanager
 
-from six import string_types, with_metaclass
+from six import with_metaclass
 
 from airflow.exceptions import AirflowException
 from airflow.operators.docker_operator import DockerOperator
@@ -15,11 +15,10 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, from_env
 
-from dagster import seven
+from dagster import check, seven
 from dagster.seven.json import JSONDecodeError
 
-from .format import format_config_for_graphql
-from .query import QUERY_TEMPLATE
+from .query import QUERY
 
 
 DOCKER_TEMPDIR = '/tmp'
@@ -242,6 +241,10 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         *args,
         **kwargs
     ):
+        check.str_param(pipeline_name, 'pipeline_name')
+        step_keys = check.opt_list_param(step_keys, 'step_keys', of_type=str)
+        config = check.opt_dict_param(config, 'config', key_type=str)
+
         self.step = step
         self.config = config
         self.pipeline_name = pipeline_name
@@ -250,41 +253,6 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
         self.s3_bucket_name = s3_bucket_name
         self._run_id = None
-
-        # We don't use dagster.check here to avoid taking the dependency.
-        for attr_ in ['config', 'pipeline_name']:
-            assert isinstance(getattr(self, attr_), string_types), (
-                'Bad value for DagsterDockerOperator {attr_}: expected a string and got {value} of '
-                'type {type_}'.format(
-                    attr_=attr_, value=getattr(self, attr_), type_=type(getattr(self, attr_))
-                )
-            )
-
-        if self.step_keys is None:
-            self.step_keys = []
-
-        assert isinstance(self.step_keys, list), (
-            'Bad value for DagsterDockerOperator step_keys: expected a list and got {value} of '
-            'type {type_}'.format(value=self.step_keys, type_=type(self.step_keys))
-        )
-
-        bad_keys = []
-        for ix, step_key in enumerate(self.step_keys):
-            if not isinstance(step, string_types):
-                bad_keys.append((ix, step_key))
-        assert not bad_keys, (
-            'Bad values for DagsterDockerOperator step_keys (expected only strings): '
-            '{bad_values}'
-        ).format(
-            bad_values=', '.join(
-                [
-                    '{value} of type {type_} at index {idx}'.format(
-                        value=bad_key[1], type_=type(bad_key[1]), idx=bad_key[0]
-                    )
-                    for bad_key in bad_keys
-                ]
-            )
-        )
 
         # These shenanigans are so we can override DockerOperator.get_hook in order to configure
         # a docker client using docker.from_env, rather than messing with the logic of
@@ -323,7 +291,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         # fmt: off
         return DagsterDockerOperator(
             step=solid_name,
-            config=format_config_for_graphql(env_config),
+            config=env_config,
             dag=dag,
             tmp_dir=tmp_dir,
             pipeline_name=pipeline_name,
@@ -344,17 +312,17 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
     @property
     def query(self):
-        step_keys = '[{quoted_step_keys}]'.format(
-            quoted_step_keys=', '.join(
-                ['"{step_key}"'.format(step_key=step_key) for step_key in self.step_keys]
-            )
-        )
-        return QUERY_TEMPLATE.format(
-            config=self.config.strip('\n'),
-            run_id=self.run_id,
-            mode=self.mode,
-            step_keys=step_keys,
-            pipeline_name=self.pipeline_name,
+        variables = {
+            'executionParams': {
+                'environmentConfigData': self.config,
+                'mode': self.mode,
+                'selector': {'name': self.pipeline_name},
+                'executionMetadata': {'runId': self.run_id},
+                'stepKeys': self.step_keys,
+            }
+        }
+        return '-v \'{variables}\' {query}'.format(
+            variables=seven.json.dumps(variables), query=QUERY
         )
 
     def get_command(self):
@@ -422,29 +390,30 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
 
         def python_callable(**kwargs):
             run_id = kwargs.get('dag_run').run_id
-            query = QUERY_TEMPLATE.format(
-                config=env_config,
-                run_id=run_id,
-                mode=mode,
-                step_keys=json.dumps(step_keys),
-                pipeline_name=pipeline_name,
-            )
+            variables = {
+                'executionParams': {
+                    'environmentConfigData': env_config,
+                    'mode': mode,
+                    'selector': {'name': pipeline_name},
+                    'executionMetadata': {'runId': run_id},
+                    'stepKeys': step_keys,
+                }
+            }
 
             # TODO: This removes config that we need to scrub for secrets, but it's very useful
             # for debugging to understand the GraphQL query that's being executed. We should update
             # to include the sanitized config.
             logging.info(
                 'Executing GraphQL query:\n'
-                + QUERY_TEMPLATE.format(
-                    config='REDACTED',
-                    run_id=run_id,
-                    mode=mode,
-                    step_keys=json.dumps(step_keys),
-                    pipeline_name=pipeline_name,
-                )
+                + QUERY
+                + '\n'
+                + 'with variables:\n'
+                + seven.json.dumps(dict(variables, environmentConfigData='REDACTED'))
             )
 
-            res = json.loads(execute_query_from_cli(handle, query, variables=None))
+            res = json.loads(
+                execute_query_from_cli(handle, QUERY, variables=seven.json.dumps(variables))
+            )
             cls.handle_errors(res, None)
             return cls.handle_result(res)
 
@@ -469,7 +438,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 handle,
                 pipeline_name,
                 mode,
-                format_config_for_graphql(env_config),
+                env_config,
                 step_keys
             ),
             dag=dag,

@@ -92,7 +92,9 @@ class TestExecuteDagPythonS3Storage(object):
             assert json.loads(
                 # pylint: disable=anomalous-backslash-in-string
                 re.sub(
-                    '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
+                    r'\{u\'',
+                    '{\'',
+                    re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr'])),
                 ).replace('\'', '"')
             ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
@@ -131,7 +133,9 @@ class TestExecuteDagContainerizedS3Storage(object):
             assert json.loads(
                 # pylint: disable=anomalous-backslash-in-string
                 re.sub(
-                    '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
+                    r'\{u\'',
+                    '{\'',
+                    re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr'])),
                 ).replace('\'', '"')
             ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 

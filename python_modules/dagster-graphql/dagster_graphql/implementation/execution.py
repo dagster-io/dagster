@@ -194,9 +194,7 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
         for step_key in execution_params.step_keys:
             if not execution_plan.has_step(step_key):
                 raise UserFacingGraphQLError(
-                    execution_params.graphene_info.schema.type_named('InvalidStepError')(
-                        invalid_step_key=step_key
-                    )
+                    graphene_info.schema.type_named('InvalidStepError')(invalid_step_key=step_key)
                 )
 
     event_records = []
