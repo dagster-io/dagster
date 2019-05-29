@@ -43,7 +43,13 @@ def _do_setup(name='dagster-dask'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster', 'dagster_graphql', 'dask==1.2.2', 'distributed==1.28.1'],
+        install_requires=[
+            'bokeh',
+            'dagster',
+            'dagster_graphql',
+            'dask==1.2.2',
+            'distributed==1.28.1',
+        ],
         zip_safe=False,
     )
 

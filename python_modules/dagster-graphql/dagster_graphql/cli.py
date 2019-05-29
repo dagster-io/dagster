@@ -29,7 +29,7 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query(handle, query, variables=None, pipeline_run_storage=None):
+def execute_query(handle, query, variables=None, pipeline_run_storage=None, raise_on_error=False):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.str_param(query, 'query')
     check.opt_dict_param(variables, 'variables')
@@ -46,6 +46,7 @@ def execute_query(handle, query, variables=None, pipeline_run_storage=None):
         handle=handle,
         pipeline_runs=pipeline_run_storage,
         execution_manager=execution_manager,
+        raise_on_error=raise_on_error,
         version=__version__,
     )
 

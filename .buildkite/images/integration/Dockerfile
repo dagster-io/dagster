@@ -7,6 +7,9 @@ RUN apt-get update; \
     curl -sL https://deb.nodesource.com/setup_11.x | bash -; \
     apt-get install -y nodejs
 
+# install rsync
+RUN apt-get install -y rsync
+
 # install yarn
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -; \
     echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list; \

@@ -22,8 +22,12 @@ from .query import QUERY_TEMPLATE
 def query_on_dask_worker(handle, query, variables, dependencies):  # pylint: disable=unused-argument
     '''Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
+
+    We also pass in 'raise_on_error' here, because otherwise (currently) very little information
+    is propagated to the dask master from the workers about the state of execution; we should at
+    least inform the user of exceptions.
     '''
-    res = execute_query(handle, query, variables)
+    res = execute_query(handle, query, variables, raise_on_error=True)
     handle_errors(res)
     return handle_result(res)
 

@@ -41,7 +41,7 @@ ENV JAVA_HOME /docker-java-home
 
 # Updated from base image
 ENV JAVA_VERSION 8u212
-ENV JAVA_DEBIAN_VERSION 8u212-b01-1~deb9u1
+ENV JAVA_DEBIAN_VERSION 8u212-b03-2~deb9u1
 
 RUN set -ex; \
 	# deal with slim variants not having man page directories (which causes "update-alternatives" to fail)

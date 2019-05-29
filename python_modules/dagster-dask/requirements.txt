@@ -1,3 +1,4 @@
+bokeh
 dagster
 dagster_graphql
 dask==1.2.2
