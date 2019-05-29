@@ -36,6 +36,14 @@ if not watch:
 # Issue:
 # https://github.com/gorakhargosh/watchdog/issues/543
 
+# Handle SIGTERM in the same manner as SIGINT so that this program has a chance to stop the
+# child process.
+# Following: https://programtalk.com/vs2/python/14327/MongoApp/libs/watchdog/watchmedo.py/
+def handle_sigterm(_signum, _frame):
+    raise KeyboardInterrupt()
+ 
+signal.signal(signal.SIGTERM, handle_sigterm)
+
 handler = AutoRestartTrick(
     command=command,
     patterns=['*.py'],
@@ -53,6 +61,8 @@ observer.start()
 
 try:
     while True:
+        if handler.process.poll():
+            raise KeyboardInterrupt()
         time.sleep(1)
 except KeyboardInterrupt:
     handler.stop()
