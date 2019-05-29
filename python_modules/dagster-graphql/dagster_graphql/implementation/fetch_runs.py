@@ -69,6 +69,7 @@ def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     return graphene_info.schema.type_named('PipelineConfigValidationValid')(dauphin_pipeline)
 
 
+@capture_dauphin_error
 def get_execution_plan(graphene_info, selector, environment_dict, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)

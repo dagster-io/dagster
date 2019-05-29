@@ -489,3 +489,17 @@ snapshots['test_pipeline_with_execution_metadata 1'] = {
         ]
     }
 }
+
+snapshots['test_invalid_config_fetch_execute_plan 1'] = {
+    'executionPlan': {
+        '__typename': 'PipelineConfigValidationInvalid',
+        'errors': [
+            {
+                'message': 'Value at path root:solids:sum_solid:inputs:num is not valid. Expected "Path"'
+            }
+        ],
+        'pipeline': {
+            'name': 'csv_hello_world'
+        }
+    }
+}
