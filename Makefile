@@ -1,5 +1,5 @@
 pylint:
-	pylint -j 0 `find . -name '*.py'` --rcfile=.pylintrc
+	pylint -j 0 `git ls-files '*.py'` --rcfile=.pylintrc
 
 update_doc_snapshot:
 	pytest docs --snapshot-update
