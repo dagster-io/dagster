@@ -15,7 +15,6 @@ from dagstermill.examples.repository import (
     define_tutorial_pipeline,
     define_no_repo_registration_error_pipeline,
 )
-from dagstermill.test_utils import notebook_test
 
 
 def cleanup_result_notebook(result):
@@ -28,7 +27,6 @@ def cleanup_result_notebook(result):
             os.unlink(result_path)
 
 
-@notebook_test
 def test_hello_world():
     try:
         result = execute_pipeline(define_hello_world_pipeline())
@@ -37,7 +35,6 @@ def test_hello_world():
         cleanup_result_notebook(result)
 
 
-@notebook_test
 def test_hello_world_with_output():
     try:
         pipeline = define_hello_world_with_output_pipeline()
@@ -48,7 +45,6 @@ def test_hello_world_with_output():
         cleanup_result_notebook(result)
 
 
-@notebook_test
 def test_hello_world_explicit_yield():
     try:
         result = execute_pipeline(define_hello_world_explicit_yield_pipeline())
@@ -64,7 +60,6 @@ def test_hello_world_explicit_yield():
         cleanup_result_notebook(result)
 
 
-@notebook_test
 def test_add_pipeline():
     try:
         pipeline = define_add_pipeline()
@@ -77,7 +72,6 @@ def test_add_pipeline():
         cleanup_result_notebook(result)
 
 
-@notebook_test
 def test_notebook_dag():
     try:
         pipeline_result = execute_pipeline(
@@ -91,7 +85,6 @@ def test_notebook_dag():
         cleanup_result_notebook(pipeline_result)
 
 
-@notebook_test
 def test_error_notebook():
     try:
         with pytest.raises(
@@ -108,7 +101,6 @@ def test_error_notebook():
         cleanup_result_notebook(res)
 
 
-@notebook_test
 def test_tutorial_pipeline():
     try:
         pipeline = define_tutorial_pipeline()
@@ -120,7 +112,6 @@ def test_tutorial_pipeline():
         cleanup_result_notebook(result)
 
 
-@notebook_test
 def test_no_repo_registration_error():
     try:
         with pytest.raises(
@@ -141,7 +132,6 @@ def test_no_repo_registration_error():
         cleanup_result_notebook(res)
 
 
-@notebook_test
 def test_hello_world_reexecution():
     try:
         result = execute_pipeline(define_hello_world_pipeline())

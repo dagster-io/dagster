@@ -5,10 +5,7 @@ from dagster.utils import script_relative_path
 
 from dagster_pandas.examples import define_papermill_pandas_hello_world_pipeline
 
-from dagstermill.test_utils import notebook_test
 
-
-@notebook_test
 def test_papermill_pandas_hello_world_pipeline():
     pipeline = define_papermill_pandas_hello_world_pipeline()
     pipeline_result = execute_pipeline(
