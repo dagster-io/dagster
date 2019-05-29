@@ -130,19 +130,19 @@ Pipeline
 
 Data pipelines are directed acyclic graphs (DAGs) of solids -- that is, they are made up of a number
 of solids which have data `dependencies <#dependency-definition>`__ on each other (but no circular
-dependencies), along with a set of associated pipeline context definitions, which declare the various
-environments in which a pipeline can execute.
+dependencies), along with a set of associated mode definitions, which declare the various
+modes in which a pipeline can execute.
 
 Pipelines are defined using the :class:`PipelineDefinition <dagster.PipelineDefinition>` class.
 
-When a pipeline is combined with a given config conforming to one of its declared contexts, it can
+When a pipeline is combined with a given config conforming to one of its declared modes, it can
 be compiled by the Dagster engine into an execution plan that can be executed on various compute
 substrates.
 
-Concretely, a pipeline might include context definitions for local testing (where databases and
+Concretely, a pipeline might include mode definitions for local testing (where databases and
 other resources will be mocked, in-memory, or local) and for running in production (where resources
 will require different credentials and expose configuration options). When a pipeline is compiled
-with a config corresponding to one of these contexts, it yields an execution plan suitable for the
+with a config corresponding to one of these modes, it yields an execution plan suitable for the
 given environment.
 
 Resources
@@ -204,7 +204,7 @@ Configuration Schemas
 
 Configuration schemas define how users can config pipelines (using either Python dicts, YAML,
 or JSON). They tell the Dagster engine how to type check environment config provided in one of
-these formats against the pipeline context and enable many errors to be caught with rich messaging
+these formats against the pipeline and enable many errors to be caught with rich messaging
 at compile time.
 
 Config fields are defined using the :class:`Field <dagster.Field>` class.

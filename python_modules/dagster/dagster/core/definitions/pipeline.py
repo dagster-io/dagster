@@ -58,20 +58,12 @@ class PipelineDefinition(IContainSolids, object):
             A structure that declares where each solid gets its inputs. The keys at the top
             level dict are either string names of solids or SolidInstances. The values
             are dicts that map input names to DependencyDefinitions.
-
-    Attributes:
-        name (str):
-            Name of the pipeline. Must be unique per-repository.
-        description (str):
-            Description of the pipeline. Optional.
-        solids (List[SolidDefinition]):
-            List of the solids in this pipeline.
-        dependencies (Dict[str, Dict[str, DependencyDefinition]]) :
-            Dependencies that constitute the structure of the pipeline. This is a two-dimensional
-            array that maps solid_name => input_name => DependencyDefinition instance
-        dependency_structure (DependencyStructure):
-            Used mostly internally. This has the same information as the dependencies data
-            structure, but indexed for fast usage.
+        mode_definitions (Optional[List[ModeDefinition]]):
+            The set of modes this pipeline can operate in. Modes can be used for example to vary
+            resources and logging implementations for local testing and running in production.
+        preset_definitions (Optional[List[PresetDefinition]]):
+            Given the different ways a pipeline may execute, presets give you a way to provide
+            specific valid collections of configuration.
     '''
 
     def __init__(

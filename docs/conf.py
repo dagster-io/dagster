@@ -96,6 +96,7 @@ html_theme_options = {
     'body_max_width': 'auto',
     'page_width': '80%',
     'code_font_size': '0.8em',
+    'fixed_sidebar': True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

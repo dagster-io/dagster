@@ -1,7 +1,7 @@
 .. title:: Home
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 3
   :name: Documentation
 
   Install <sections/install/install>

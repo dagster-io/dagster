@@ -11,6 +11,26 @@ from .mode import DEFAULT_MODE_NAME
 
 
 class PresetDefinition:
+    '''Defines a preset configuration that a pipeline can execute in. Presets can be used in Dagit to
+    load the predefined configuration in to the tool, or in a script or test as follows:
+
+    .. code-block:: python
+
+        execute_pipeline(**pipeline_def.get_preset('example'))
+
+
+    Args:
+        name (str):
+            Name of this preset, must be unique amongst presets for a pipeline.
+        environment_files (Optional[List[str]]):
+            List of paths or glob patterns for yaml files to load and parse as the enivornment
+            config for this preset.
+        solid_subset (Optional[List[str]]):
+            The list of names of solid instances to execute for this preset.
+        mode (Optional[str]):
+            The mode to apply when executing this preset. Defaults to 'default'.
+    '''
+
     def __init__(self, name, environment_files=None, solid_subset=None, mode=None):
         self.name = check.str_param(name, 'name')
         self.environment_files = check.opt_list_param(
