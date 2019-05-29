@@ -17,12 +17,37 @@ from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yam
 PICKLE_PROTOCOL = 2
 
 
+def file_relative_path(dunderfile, relative_path):
+    '''
+    This function is useful when one needs to load a file that is
+    relative to the position of the current file. (Such as when
+    you encode a configuration file path in source file and want
+    in runnable in any current working directory)
+
+    It is meant to be used like the following:
+
+    file_relative_path(__file__, 'path/relative/to/file')
+
+    '''
+
+    check.str_param(dunderfile, 'dunderfile')
+    check.str_param(relative_path, 'relative_path')
+
+    return os.path.join(os.path.dirname(dunderfile), relative_path)
+
+
 def script_relative_path(file_path):
     '''
     Useful for testing with local files. Use a path relative to where the
     test resides and this function will return the absolute path
     of that file. Otherwise it will be relative to script that
     ran the test
+
+    Note: this is function is very, very expensive (on the order of 1
+    millisecond per invocation) so this should only be used in performance
+    insensitive contexts. Prefer file_relative_path for anything with
+    performance constraints.
+
     '''
     # from http://bit.ly/2snyC6s
 
