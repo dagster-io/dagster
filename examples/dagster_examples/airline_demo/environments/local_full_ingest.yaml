@@ -59,11 +59,6 @@ solids:
     inputs:
       archive_member:
         value: Origin_and_Destination_Survey_DB1BTicket_2018_2.csv
-  join_q2_on_time_data_to_origin_cord_data:
-    config:
-      how: left_outer
-      on_left: OriginAirportSeqID
-      on_right: ORIGIN_AIRPORT_SEQ_ID
   load_q2_coupon_data:
     config:
       table_name: q2_coupon_data
@@ -79,8 +74,6 @@ solids:
   load_q2_ticket_data:
     config:
       table_name: q2_ticket_data
-  prefix_origin_cord_data:
-    config: ORIGIN_
   subsample_q2_coupon_data:
     config:
       subsample_pct: 100

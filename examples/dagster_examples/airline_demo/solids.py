@@ -173,24 +173,6 @@ def ingest_csv_to_spark(context, input_csv_file):
     )
 
 
-@solid(
-    name='prefix_column_names',
-    inputs=[
-        InputDefinition(
-            'data_frame',
-            SparkDataFrameType,
-            description='The data frame whose columns should be prefixed',
-        )
-    ],
-    config_field=Field(String, description='Prefix to append.'),
-    outputs=[OutputDefinition(SparkDataFrameType)],
-)
-def prefix_column_names(context, data_frame):
-    return rename_spark_dataframe_columns(
-        data_frame, lambda c: '{prefix}{c}'.format(prefix=context.solid_config, c=c)
-    )
-
-
 def do_prefix_column_names(df, prefix):
     check.inst_param(df, 'df', DataFrame)
     check.str_param(prefix, 'prefix')
@@ -274,42 +256,6 @@ def load_data_to_database_from_spark(context, data_frame):
 def subsample_spark_dataset(context, data_frame):
     return data_frame.sample(
         withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
-    )
-
-
-@solid(
-    name='join_spark_data_frames',
-    inputs=[
-        InputDefinition(
-            'left_data_frame', SparkDataFrameType, description='The left DataFrame to join.'
-        ),
-        InputDefinition(
-            'right_data_frame', SparkDataFrameType, description='The right DataFrame to join.'
-        ),
-    ],
-    outputs=[
-        OutputDefinition(
-            SparkDataFrameType,
-            # description='A pyspark DataFrame containing a subsample of the input rows.',
-        )
-    ],
-    config_field=Field(
-        Dict(
-            fields={
-                'on_left': Field(String, description='', default_value='id', is_optional=True),
-                'on_right': Field(String, description='', default_value='id', is_optional=True),
-                'how': Field(String, description='', default_value='inner', is_optional=True),
-            }
-        )
-    ),
-)
-def join_spark_data_frames(context, left_data_frame, right_data_frame):
-    return do_join_spark_data_frames(
-        left_data_frame,
-        right_data_frame,
-        on_left_col=context.solid_config['on_left'],
-        on_right_col=context.solid_config['on_right'],
-        how=context.solid_config['how'],
     )
 
 
@@ -563,13 +509,26 @@ def process_q2_data(context, april_data, may_data, june_data, master_cord_data):
     sampled_q2_data = q2_data.sample(
         withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
     )
-    prefixed_master_cord_data = do_prefix_column_names(master_cord_data, 'DEST_')
+    dest_prefixed_master_cord_data = do_prefix_column_names(master_cord_data, 'DEST_')
 
     # Consider using spark SQL
-    return do_join_spark_data_frames(
+
+    master_q2_dest_data = do_join_spark_data_frames(
         sampled_q2_data,
-        prefixed_master_cord_data,
+        dest_prefixed_master_cord_data,
         on_left_col='DestAirportSeqID',
         on_right_col='DEST_AIRPORT_SEQ_ID',
         how='left_outer',
     )
+
+    origin_prefixed_master_cord_data = do_prefix_column_names(master_cord_data, 'ORIGIN_')
+
+    full_data = do_join_spark_data_frames(
+        master_q2_dest_data,
+        origin_prefixed_master_cord_data,
+        on_left_col='OriginAirportSeqID',
+        on_right_col='ORIGIN_AIRPORT_SEQ_ID',
+        how='left_outer',
+    )
+
+    return rename_spark_dataframe_columns(full_data, lambda c: c.lower())

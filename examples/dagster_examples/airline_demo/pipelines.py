@@ -26,10 +26,8 @@ from .solids import (
     delays_vs_fares_nb,
     eastbound_delays,
     ingest_csv_to_spark,
-    join_spark_data_frames,
     load_data_to_database_from_spark,
     normalize_weather_na_values,
-    prefix_column_names,
     process_q2_data,
     q2_sfo_outbound_flights,
     sfo_delays_by_destination,
@@ -78,10 +76,8 @@ def define_airline_demo_ingest_pipeline():
         canonicalize_column_names,
         download_from_s3_to_bytes,
         ingest_csv_to_spark,
-        join_spark_data_frames,
         load_data_to_database_from_spark,
         normalize_weather_na_values,
-        prefix_column_names,
         process_q2_data,
         subsample_spark_dataset,
         unzip_file,
@@ -158,16 +154,6 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('normalize_weather_na_values', alias='normalize_q2_weather_na_values'): {
             'data_frame': DependencyDefinition('ingest_q2_sfo_weather')
         },
-        SolidInstance('prefix_column_names', alias='prefix_origin_cord_data'): {
-            'data_frame': DependencyDefinition('ingest_master_cord_data')
-        },
-        SolidInstance('join_spark_data_frames', alias='join_q2_on_time_data_to_origin_cord_data'): {
-            'left_data_frame': DependencyDefinition('process_q2_data'),
-            'right_data_frame': DependencyDefinition('prefix_origin_cord_data'),
-        },
-        SolidInstance('canonicalize_column_names', alias='canonicalize_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('join_q2_on_time_data_to_origin_cord_data')
-        },
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_coupon_data'): {
             'data_frame': DependencyDefinition('subsample_q2_coupon_data')
         },
@@ -181,7 +167,7 @@ def define_airline_demo_ingest_pipeline():
             'data_frame': DependencyDefinition('normalize_q2_weather_na_values')
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('canonicalize_q2_on_time_data')
+            'data_frame': DependencyDefinition('process_q2_data')
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_coupon_data'): {
             'data_frame': DependencyDefinition('canonicalize_q2_coupon_data')
