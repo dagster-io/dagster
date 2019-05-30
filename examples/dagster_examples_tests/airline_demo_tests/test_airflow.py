@@ -1,6 +1,8 @@
 # pylint: disable=redefined-outer-name
 import os
 
+import pytest
+
 from dagster import ExecutionTargetHandle
 from dagster.utils import script_relative_path
 
@@ -15,11 +17,9 @@ from dagster_examples.airline_demo.pipelines import (  # pylint: disable=unused-
     define_airline_demo_warehouse_pipeline,
 )
 
-from .marks import airflow, slow  # pylint: disable=wrong-import-position
 
-
-@slow
-@airflow
+@pytest.mark.slow
+@pytest.mark.airflow
 class TestAirflowPython_0IngestExecution:
     handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_ingest_pipeline)
     pipeline_name = 'airline_demo_ingest_pipeline'
@@ -34,8 +34,8 @@ class TestAirflowPython_0IngestExecution:
         pass
 
 
-@slow
-@airflow
+@pytest.mark.slow
+@pytest.mark.airflow
 class TestAirflowPython_1WarehouseExecution:
     handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_warehouse_pipeline)
     pipeline_name = 'airline_demo_warehouse_pipeline'
