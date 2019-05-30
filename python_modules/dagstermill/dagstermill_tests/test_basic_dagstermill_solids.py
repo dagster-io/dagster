@@ -96,7 +96,8 @@ def test_error_notebook():
             define_error_pipeline(), run_config=RunConfig.nonthrowing_in_process()
         )
         assert not res.success
-        assert res.step_event_list[1].event_type.value == 'STEP_FAILURE'
+        assert res.step_event_list[1].event_type.value == 'STEP_MATERIALIZATION'
+        assert res.step_event_list[2].event_type.value == 'STEP_FAILURE'
     finally:
         cleanup_result_notebook(res)
 
