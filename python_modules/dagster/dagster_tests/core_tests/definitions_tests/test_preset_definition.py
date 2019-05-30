@@ -34,17 +34,19 @@ def test_presets():
         preset_definitions=[
             PresetDefinition(
                 'passing',
-                environment_files=[script_relative_path('pass_env.yml')],
+                environment_files=[script_relative_path('pass_env.yaml')],
                 solid_subset=['can_fail'],
             ),
             PresetDefinition(
                 'failing_1',
-                environment_files=[script_relative_path('fail_env.yml')],
+                environment_files=[script_relative_path('fail_env.yaml')],
                 solid_subset=['can_fail'],
             ),
-            PresetDefinition('failing_2', environment_files=[script_relative_path('pass_env.yml')]),
             PresetDefinition(
-                'invalid_1', environment_files=[script_relative_path('not_a_file.yml')]
+                'failing_2', environment_files=[script_relative_path('pass_env.yaml')]
+            ),
+            PresetDefinition(
+                'invalid_1', environment_files=[script_relative_path('not_a_file.yaml')]
             ),
             PresetDefinition(
                 'invalid_2',
@@ -61,7 +63,7 @@ def test_presets():
     with pytest.raises(DagsterExecutionStepExecutionError):
         execute_pipeline(**(pipeline.get_preset('failing_2')))
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="not_a_file.yml"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="not_a_file.yaml"):
         execute_pipeline(**(pipeline.get_preset('invalid_1')))
 
     with pytest.raises(DagsterInvariantViolationError, match="error attempting to parse yaml"):

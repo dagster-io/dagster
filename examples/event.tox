@@ -18,7 +18,7 @@ deps =
 usedevelop = true
 commands =
   coverage erase
-  pytest dagster_examples_tests/event_pipeline_demo_tests/ -vv --junitxml=test_results.xml --cov=dagster_examples --cov-append --cov-report=
+  pytest dagster_examples_tests/event_pipeline_demo_tests/ -vv --junitxml=test_results.xml --cov=dagster_examples --cov=../python_modules --cov-append --cov-report=
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered
   coverage html --omit='.tox/*,**/test_*.py'
   coverage xml --omit='.tox/*,**/test_*.py'

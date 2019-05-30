@@ -42,7 +42,7 @@ Sample configuration files for running the demo pipelines are provided under `en
 the pipelines locally, use the configuration files that begin with the prefix `local_`.
 
 To avoid unnecessary duplication, the config that is common to all of the pipelines is factored
-out into `local_base.yml` file. Recall that when running a pipeline using `dagster pipeline execute`
+out into `local_base.yaml` file. Recall that when running a pipeline using `dagster pipeline execute`
 you can pass more than one yaml file using the `-e` flag, and these will be combined.
 
 ## Running tests
@@ -72,7 +72,7 @@ over http; or batch files in an SFTP drop.
 ### Running the pipeline locally with test config
 
 If you want to start by running this pipeline, try the config fragment in
-`environments/local_fast_ingest.yml`. The first time you run this pipeline, you'll likely see a
+`environments/local_fast_ingest.yaml`. The first time you run this pipeline, you'll likely see a
 bunch of log lines in the terminal running dagit as Spark dependencies are resolved.
 
 This config fragment points to cut-down versions of the original data files on S3. It can be good
@@ -175,7 +175,7 @@ with a short feedback cycle and to write and run tests against pipeline code.
 ### Running on production data
 
 Don't worry, we've got plenty of big(gish) data to run through this pipeline. Instead of the
-`local_fast_ingest.yml` config fragment, use `local_full_ingest.yml` -- but be prepared to wait!
+`local_fast_ingest.yaml` config fragment, use `local_full_ingest.yaml` -- but be prepared to wait!
 In practice, you can use this pattern to run your Dagster pipelines against synthetic, anonymized,
 or subsampled datasets in test and development environments.
 

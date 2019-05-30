@@ -55,7 +55,7 @@ def test_cli_execute():
         do_execute_command(
             pipeline=define_pandas_hello_world_pipeline(),
             env_file_list=[
-                script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yml')
+                script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yaml')
             ],
             raise_on_error=True,
         )
@@ -77,7 +77,7 @@ def test_cli_execute_failure():
             do_execute_command(
                 pipeline=define_failure_pipeline(),
                 env_file_list=[
-                    script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yml')
+                    script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yaml')
                 ],
                 raise_on_error=True,
             )

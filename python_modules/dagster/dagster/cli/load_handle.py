@@ -2,7 +2,7 @@ import six
 
 from dagster import check
 from dagster.core.definitions import ExecutionTargetHandle
-from dagster.utils import all_none
+from dagster.utils import all_none, DEFAULT_REPOSITORY_YAML_FILENAME
 
 
 class CliUsageError(Exception):
@@ -36,7 +36,7 @@ def handle_for_pipeline_cli_args(kwargs):
     if pipeline_name and kwargs.get('module_name') is None and kwargs.get('python_file') is None:
         _cli_load_invariant(kwargs.get('fn_name') is None)
         return ExecutionTargetHandle.for_repo_yaml(
-            repository_yaml=kwargs.get('repository_yaml') or 'repository.yml'
+            repository_yaml=kwargs.get('repository_yaml') or DEFAULT_REPOSITORY_YAML_FILENAME
         ).with_pipeline_name(pipeline_name)
 
     # Pipeline from repository python file
@@ -87,7 +87,7 @@ def handle_for_repo_cli_args(kwargs):
         _cli_load_invariant(kwargs.get('python_file') is None)
         _cli_load_invariant(kwargs.get('fn_name') is None)
         return ExecutionTargetHandle.for_repo_yaml(
-            repository_yaml=kwargs.get('repository_yaml') or 'repository.yml'
+            repository_yaml=kwargs.get('repository_yaml') or DEFAULT_REPOSITORY_YAML_FILENAME
         )
     elif kwargs.get('module_name') and kwargs.get('fn_name'):
         _cli_load_invariant(kwargs.get('repository_yaml') is None)

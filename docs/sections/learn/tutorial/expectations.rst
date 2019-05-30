@@ -34,9 +34,9 @@ was processed
 
 We'll use this config file.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_pass.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_pass.yaml
    :linenos:
-   :caption: expectations_pass.yml
+   :caption: expectations_pass.yaml
 
 And then run:
 
@@ -44,7 +44,7 @@ And then run:
 
     $ dagster pipeline execute -f expectations.py \
     -n define_expectations_tutorial_pipeline -e \
-    expectations_pass.yml
+    expectations_pass.yaml
 
 In that execution you'll notice a passing expectation:
 
@@ -55,9 +55,9 @@ In that execution you'll notice a passing expectation:
 Now let's make this fail. Currently the default behavior is to throw an error and halt execution
 when an expectation fails. So:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_fail.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_fail.yaml
    :linenos:
-   :caption: expectations_fail.yml
+   :caption: expectations_fail.yaml
 
 And then:
 
@@ -65,7 +65,7 @@ And then:
 
     $ dagster pipeline execute -f expectations.py \
     -n define_expectations_tutorial_pipeline \
-    -e expectations_fail.yml
+    -e expectations_fail.yaml
 
     dagster.core.errors.DagsterExpectationFailedError:
     DagsterExpectationFailedError(solid=add_ints,
@@ -80,12 +80,12 @@ feature right now is the ability to skip expectations entirely. This is useful i
 expectations are expensive and you have a time-critical job you must execute. In that case you can
 configure the pipeline to skip expectations entirely:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_skip_failed.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_skip_failed.yaml
    :linenos:
-   :caption: expectations_skip_fail.yml
+   :caption: expectations_skip_fail.yaml
 
 .. code-block:: sh
 
     $ dagster pipeline execute -f expectations.py \
     -n define_expectations_tutorial_pipeline \
-    -e expectations_skip_failed.yml
+    -e expectations_skip_failed.yaml

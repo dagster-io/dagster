@@ -3,7 +3,7 @@ import { getIntrospectionQuery, buildClientSchema, printSchema } from "graphql";
 import { writeFileSync } from "fs";
 
 const result = execSync(
-  `dagster-graphql -y ../../examples/dagster_examples/intro_tutorial/repository.yml '${getIntrospectionQuery(
+  `dagster-graphql -y ../../examples/dagster_examples/intro_tutorial/repository.yaml '${getIntrospectionQuery(
     {
       descriptions: false
     }

@@ -27,7 +27,7 @@ def dagster_airflow_python_operator_pipeline(request):
             handle = ExecutionTargetHandle.for_pipeline_fn(define_pipeline)
             config = {'solids': {'my_solid': 'foo'}}
             # alternatively, pass a list of globs to be assembled into a config yaml
-            # config_yaml = ['environments/test_*.yml']
+            # config_yaml = ['environments/test_*.yaml']
             run_id = 'test_run_3'
             execution_date = datetime.datetime(2019, 1, 1)
 
@@ -39,17 +39,19 @@ def dagster_airflow_python_operator_pipeline(request):
     '''
     handle = getattr(request.cls, 'handle')
     pipeline_name = getattr(request.cls, 'pipeline_name')
-    config = getattr(request.cls, 'config', None)
-    config_yaml = getattr(request.cls, 'config_yaml', None)
+    environment_dict = getattr(request.cls, 'environment_dict', None)
+    environment_yaml = getattr(request.cls, 'environment_yaml', None)
     op_kwargs = getattr(request.cls, 'op_kwargs', {})
     mode = getattr(request.cls, 'mode', None)
 
-    if config is None and config_yaml is not None:
-        config = load_yaml_from_glob_list(config_yaml)
+    if environment_dict is None and environment_yaml is not None:
+        environment_dict = load_yaml_from_glob_list(environment_yaml)
     run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
     execution_date = getattr(request.cls, 'execution_date', datetime.datetime.utcnow())
 
-    dag, tasks = make_airflow_dag(handle, pipeline_name, config, mode=mode, op_kwargs=op_kwargs)
+    dag, tasks = make_airflow_dag(
+        handle, pipeline_name, environment_dict, mode=mode, op_kwargs=op_kwargs
+    )
 
     assert isinstance(dag, DAG)
 
@@ -80,7 +82,7 @@ def dagster_airflow_docker_operator_pipeline(request):
             pipeline = define_my_pipeline()
             config = {'solids': {'my_solid': 'foo'}}
             # alternatively, pass a list of globs to be assembled into a config yaml
-            # config_yaml = ['environments/test_*.yml']
+            # config_yaml = ['environments/test_*.yaml']
             run_id = 'test_run_3'
             execution_date = datetime.datetime(2019, 1, 1)
             image = 'my_pipeline_image'
@@ -95,17 +97,17 @@ def dagster_airflow_docker_operator_pipeline(request):
     handle = getattr(request.cls, 'handle')
     pipeline_name = getattr(request.cls, 'pipeline_name')
     image = getattr(request.cls, 'image')
-    config = getattr(request.cls, 'config', None)
-    config_yaml = getattr(request.cls, 'config_yaml', [])
+    environment_dict = getattr(request.cls, 'environment_dict', None)
+    environment_yaml = getattr(request.cls, 'environment_yaml', [])
     op_kwargs = getattr(request.cls, 'op_kwargs', {})
 
-    if config is None and config_yaml is not None:
-        config = load_yaml_from_glob_list(config_yaml)
+    if environment_dict is None and environment_yaml is not None:
+        environment_dict = load_yaml_from_glob_list(environment_yaml)
     run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
     execution_date = getattr(request.cls, 'execution_date', datetime.datetime.utcnow())
 
     dag, tasks = make_airflow_dag_containerized(
-        handle, pipeline_name, image, config, op_kwargs=op_kwargs
+        handle, pipeline_name, image, environment_dict, op_kwargs=op_kwargs
     )
 
     assert isinstance(dag, DAG)

@@ -3,8 +3,9 @@ import pytest
 from dagster import check
 from dagster.utils import script_relative_path
 from dagster.core.types.config import ALL_CONFIG_BUILTINS
+from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .setup import execute_dagster_graphql, define_context, csv_hello_world_solids_config
+from .setup import define_context, csv_hello_world_solids_config
 
 CONFIG_VALIDATION_QUERY = '''
 query PipelineQuery(

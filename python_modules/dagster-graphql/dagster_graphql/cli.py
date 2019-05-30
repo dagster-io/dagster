@@ -8,6 +8,7 @@ from graphql.execution.executors.gevent import GeventExecutor as Executor
 from dagster import check, seven, ExecutionTargetHandle
 from dagster.cli.pipeline import repository_target_argument
 from dagster.cli.load_handle import handle_for_repo_cli_args
+from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 from dagster.utils.log import get_stack_trace_array
 
 from .implementation.context import DagsterGraphQLContext
@@ -28,7 +29,7 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query(handle, query, variables=None, pipeline_run_storage=None):
+def execute_query(handle, query, variables=None, pipeline_run_storage=None, raise_on_error=False):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.str_param(query, 'query')
     check.opt_dict_param(variables, 'variables')
@@ -45,6 +46,7 @@ def execute_query(handle, query, variables=None, pipeline_run_storage=None):
         handle=handle,
         pipeline_runs=pipeline_run_storage,
         execution_manager=execution_manager,
+        raise_on_error=raise_on_error,
         version=__version__,
     )
 
@@ -98,13 +100,15 @@ def execute_query_from_cli(handle, query, variables=None):
         'Run a GraphQL query against the dagster interface to a specified repository or pipeline.'
         '\n\n{warning}'.format(warning=REPO_TARGET_WARNING)
     )
-    + '\n\n Examples:'
-    '\n\n1. dagster-graphql'
-    '\n\n2. dagster-graphql -y path/to/repository.yml'
-    '\n\n3. dagster-graphql -f path/to/file.py -n define_repo'
-    '\n\n4. dagster-graphql -m some_module -n define_repo'
-    '\n\n5. dagster-graphql -f path/to/file.py -n define_pipeline'
-    '\n\n6. dagster-graphql -m some_module -n define_pipeline',
+    + (
+        '\n\n Examples:'
+        '\n\n1. dagster-graphql'
+        '\n\n2. dagster-graphql -y path/to/{default_filename}'
+        '\n\n3. dagster-graphql -f path/to/file.py -n define_repo'
+        '\n\n4. dagster-graphql -m some_module -n define_repo'
+        '\n\n5. dagster-graphql -f path/to/file.py -n define_pipeline'
+        '\n\n6. dagster-graphql -m some_module -n define_pipeline'
+    ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
 )
 @click.option('--variables', '-v', type=click.STRING)
 @click.version_option(version=__version__)

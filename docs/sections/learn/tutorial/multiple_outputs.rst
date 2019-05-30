@@ -85,9 +85,9 @@ and then execute that pipeline.
 
 You must create a config file
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/conditional_outputs.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/conditional_outputs.yaml
     :linenos:
-    :caption: conditional_outputs.yml
+    :caption: conditional_outputs.yaml
 
 And then run it.
 
@@ -95,7 +95,7 @@ And then run it.
 
     $ dagster pipeline execute -f multiple_outputs.py \
     -n define_multiple_outputs_step_three_pipeline \
-    -e conditional_outputs.yml
+    -e conditional_outputs.yaml
 
     ... log spew
     2019-04-05 22:29:31 - dagster - INFO -

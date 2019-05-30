@@ -7,7 +7,7 @@ import os
 from abc import ABCMeta, abstractmethod
 from contextlib import contextmanager
 
-from six import string_types, with_metaclass
+from six import with_metaclass
 
 from airflow.exceptions import AirflowException
 from airflow.operators.docker_operator import DockerOperator
@@ -15,11 +15,10 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, from_env
 
-from dagster import seven
+from dagster import check, seven
 from dagster.seven.json import JSONDecodeError
 
-from .format import format_config_for_graphql
-from .query import QUERY_TEMPLATE
+from .query import QUERY
 
 
 DOCKER_TEMPDIR = '/tmp'
@@ -74,7 +73,16 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
     @classmethod
     @abstractmethod
     def operator_for_solid(
-        cls, handle, pipeline_name, env_config, mode, solid_name, step_keys, dag, dag_id, op_kwargs
+        cls,
+        handle,
+        pipeline_name,
+        environment_dict,
+        mode,
+        solid_name,
+        step_keys,
+        dag,
+        dag_id,
+        op_kwargs,
     ):
         pass
 
@@ -234,7 +242,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
     def __init__(
         self,
         step=None,
-        config=None,
+        environment_dict=None,
         pipeline_name=None,
         mode=None,
         step_keys=None,
@@ -242,49 +250,18 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         *args,
         **kwargs
     ):
+        check.str_param(pipeline_name, 'pipeline_name')
+        step_keys = check.opt_list_param(step_keys, 'step_keys', of_type=str)
+        environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
+
         self.step = step
-        self.config = config
+        self.environment_dict = environment_dict
         self.pipeline_name = pipeline_name
         self.mode = mode
         self.step_keys = step_keys
         self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
         self.s3_bucket_name = s3_bucket_name
         self._run_id = None
-
-        # We don't use dagster.check here to avoid taking the dependency.
-        for attr_ in ['config', 'pipeline_name']:
-            assert isinstance(getattr(self, attr_), string_types), (
-                'Bad value for DagsterDockerOperator {attr_}: expected a string and got {value} of '
-                'type {type_}'.format(
-                    attr_=attr_, value=getattr(self, attr_), type_=type(getattr(self, attr_))
-                )
-            )
-
-        if self.step_keys is None:
-            self.step_keys = []
-
-        assert isinstance(self.step_keys, list), (
-            'Bad value for DagsterDockerOperator step_keys: expected a list and got {value} of '
-            'type {type_}'.format(value=self.step_keys, type_=type(self.step_keys))
-        )
-
-        bad_keys = []
-        for ix, step_key in enumerate(self.step_keys):
-            if not isinstance(step, string_types):
-                bad_keys.append((ix, step_key))
-        assert not bad_keys, (
-            'Bad values for DagsterDockerOperator step_keys (expected only strings): '
-            '{bad_values}'
-        ).format(
-            bad_values=', '.join(
-                [
-                    '{value} of type {type_} at index {idx}'.format(
-                        value=bad_key[1], type_=type(bad_key[1]), idx=bad_key[0]
-                    )
-                    for bad_key in bad_keys
-                ]
-            )
-        )
 
         # These shenanigans are so we can override DockerOperator.get_hook in order to configure
         # a docker client using docker.from_env, rather than messing with the logic of
@@ -308,12 +285,21 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
     @classmethod
     def operator_for_solid(
-        cls, handle, pipeline_name, env_config, mode, solid_name, step_keys, dag, dag_id, op_kwargs
+        cls,
+        handle,
+        pipeline_name,
+        environment_dict,
+        mode,
+        solid_name,
+        step_keys,
+        dag,
+        dag_id,
+        op_kwargs,
     ):
         tmp_dir = op_kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
         host_tmp_dir = op_kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
 
-        if 'storage' not in env_config:
+        if 'storage' not in environment_dict:
             raise airflow_storage_exception(tmp_dir)
 
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
@@ -323,7 +309,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         # fmt: off
         return DagsterDockerOperator(
             step=solid_name,
-            config=format_config_for_graphql(env_config),
+            environment_dict=environment_dict,
             dag=dag,
             tmp_dir=tmp_dir,
             pipeline_name=pipeline_name,
@@ -344,17 +330,17 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
     @property
     def query(self):
-        step_keys = '[{quoted_step_keys}]'.format(
-            quoted_step_keys=', '.join(
-                ['"{step_key}"'.format(step_key=step_key) for step_key in self.step_keys]
-            )
-        )
-        return QUERY_TEMPLATE.format(
-            config=self.config.strip('\n'),
-            run_id=self.run_id,
-            mode=self.mode,
-            step_keys=step_keys,
-            pipeline_name=self.pipeline_name,
+        variables = {
+            'executionParams': {
+                'environmentConfigData': self.environment_dict,
+                'mode': self.mode,
+                'selector': {'name': self.pipeline_name},
+                'executionMetadata': {'runId': self.run_id},
+                'stepKeys': self.step_keys,
+            }
+        }
+        return '-v \'{variables}\' {query}'.format(
+            variables=seven.json.dumps(variables), query=QUERY
         )
 
     def get_command(self):
@@ -411,7 +397,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
 class DagsterPythonOperator(PythonOperator, DagsterOperator):
     @classmethod
-    def make_python_callable(cls, handle, pipeline_name, mode, env_config, step_keys):
+    def make_python_callable(cls, handle, pipeline_name, mode, environment_dict, step_keys):
         try:
             from dagster_graphql.cli import execute_query_from_cli
         except ImportError:
@@ -422,29 +408,30 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
 
         def python_callable(**kwargs):
             run_id = kwargs.get('dag_run').run_id
-            query = QUERY_TEMPLATE.format(
-                config=env_config,
-                run_id=run_id,
-                mode=mode,
-                step_keys=json.dumps(step_keys),
-                pipeline_name=pipeline_name,
-            )
+            variables = {
+                'executionParams': {
+                    'environmentConfigData': environment_dict,
+                    'mode': mode,
+                    'selector': {'name': pipeline_name},
+                    'executionMetadata': {'runId': run_id},
+                    'stepKeys': step_keys,
+                }
+            }
 
-            # TODO: This removes config that we need to scrub for secrets, but it's very useful
-            # for debugging to understand the GraphQL query that's being executed. We should update
-            # to include the sanitized config.
+            # TODO: This removes the environment, pending an effective way to scrub it for secrets:
+            # it's very useful for debugging to understand the GraphQL query that's being executed.
+            # We should update to include the sanitized environment_dict.
             logging.info(
                 'Executing GraphQL query:\n'
-                + QUERY_TEMPLATE.format(
-                    config='REDACTED',
-                    run_id=run_id,
-                    mode=mode,
-                    step_keys=json.dumps(step_keys),
-                    pipeline_name=pipeline_name,
-                )
+                + QUERY
+                + '\n'
+                + 'with variables:\n'
+                + seven.json.dumps(dict(variables, environmentConfigData='REDACTED'))
             )
 
-            res = json.loads(execute_query_from_cli(handle, query, variables=None))
+            res = json.loads(
+                execute_query_from_cli(handle, QUERY, variables=seven.json.dumps(variables))
+            )
             cls.handle_errors(res, None)
             return cls.handle_result(res)
 
@@ -452,9 +439,18 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
 
     @classmethod
     def operator_for_solid(
-        cls, handle, pipeline_name, env_config, mode, solid_name, step_keys, dag, dag_id, op_kwargs
+        cls,
+        handle,
+        pipeline_name,
+        environment_dict,
+        mode,
+        solid_name,
+        step_keys,
+        dag,
+        dag_id,
+        op_kwargs,
     ):
-        if 'storage' not in env_config:
+        if 'storage' not in environment_dict:
             raise airflow_storage_exception('/tmp/special_place')
 
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
@@ -469,7 +465,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 handle,
                 pipeline_name,
                 mode,
-                format_config_for_graphql(env_config),
+                environment_dict,
                 step_keys
             ),
             dag=dag,

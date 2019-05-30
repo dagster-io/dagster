@@ -10,6 +10,8 @@ from geventwebsocket.handler import WebSocketHandler
 from dagster import check, ExecutionTargetHandle
 from dagster.cli.pipeline import repository_target_argument
 from dagster.cli.load_handle import handle_for_repo_cli_args
+from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
+
 from dagster_graphql.implementation.pipeline_run_storage import (
     PipelineRunStorage,
     LogFilePipelineRun,
@@ -35,13 +37,15 @@ REPO_TARGET_WARNING = (
         'Run dagit. Loads a repository or pipeline.\n\n{warning}'.format(
             warning=REPO_TARGET_WARNING
         )
-        + '\n\n Examples:'
-        '\n\n1. dagit'
-        '\n\n2. dagit -y path/to/repository.yml'
-        '\n\n3. dagit -f path/to/file.py -n define_repo'
-        '\n\n4. dagit -m some_module -n define_repo'
-        '\n\n5. dagit -f path/to/file.py -n define_pipeline'
-        '\n\n6. dagit -m some_module -n define_pipeline'
+        + (
+            '\n\n Examples:'
+            '\n\n1. dagit'
+            '\n\n2. dagit -y path/to/{default_filename}'
+            '\n\n3. dagit -f path/to/file.py -n define_repo'
+            '\n\n4. dagit -m some_module -n define_repo'
+            '\n\n5. dagit -f path/to/file.py -n define_pipeline'
+            '\n\n6. dagit -m some_module -n define_pipeline'
+        ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME)
     ),
 )
 @repository_target_argument

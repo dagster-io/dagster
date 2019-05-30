@@ -45,7 +45,7 @@ def _rename_for_airflow(name):
 def _make_airflow_dag(
     handle,
     pipeline_name,
-    env_config=None,
+    environment_dict=None,
     mode=None,
     dag_id=None,
     dag_description=None,
@@ -55,7 +55,7 @@ def _make_airflow_dag(
 ):
 
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
-    env_config = check.opt_dict_param(env_config, 'env_config', key_type=str)
+    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     mode = check.opt_str_param(mode, 'mode')
 
     # Only used for Airflow; internally we continue to use pipeline.name
@@ -83,7 +83,7 @@ def _make_airflow_dag(
     pipeline = handle.build_pipeline_definition()
     if mode is None:
         mode = pipeline.get_default_mode_name()
-    execution_plan = create_execution_plan(pipeline, env_config, mode=mode)
+    execution_plan = create_execution_plan(pipeline, environment_dict, mode=mode)
 
     tasks = {}
 
@@ -96,7 +96,7 @@ def _make_airflow_dag(
         task = operator.operator_for_solid(
             handle=handle,
             pipeline_name=pipeline_name,
-            env_config=env_config,
+            environment_dict=environment_dict,
             mode=mode,
             solid_name=solid_name,
             step_keys=step_keys,
@@ -121,7 +121,7 @@ def _make_airflow_dag(
 def make_airflow_dag(
     handle,
     pipeline_name,
-    env_config=None,
+    environment_dict=None,
     mode=None,
     dag_id=None,
     dag_description=None,
@@ -131,7 +131,7 @@ def make_airflow_dag(
     return _make_airflow_dag(
         handle=handle,
         pipeline_name=pipeline_name,
-        env_config=env_config,
+        environment_dict=environment_dict,
         mode=mode,
         dag_id=dag_id,
         dag_description=dag_description,
@@ -144,7 +144,7 @@ def make_airflow_dag_containerized(
     handle,
     pipeline_name,
     image,
-    env_config=None,
+    environment_dict=None,
     mode=None,
     dag_id=None,
     dag_description=None,
@@ -156,7 +156,7 @@ def make_airflow_dag_containerized(
     return _make_airflow_dag(
         handle=handle,
         pipeline_name=pipeline_name,
-        env_config=env_config,
+        environment_dict=environment_dict,
         mode=mode,
         dag_id=dag_id,
         dag_description=dag_description,

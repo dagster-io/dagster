@@ -1,5 +1,6 @@
+from dagster_graphql.test.utils import execute_dagster_graphql
 from .execution_queries import START_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUERY
-from .setup import define_context, execute_dagster_graphql
+from .setup import define_context
 
 
 def sync_execute_get_payload(variables, raise_on_error=True, context=None):

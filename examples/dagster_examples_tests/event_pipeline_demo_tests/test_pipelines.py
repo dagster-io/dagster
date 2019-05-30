@@ -59,7 +59,7 @@ def test_event_pipeline(snowflake_connect):
 
         config = load_yaml_from_globs(
             script_relative_path(
-                '../../dagster_examples/event_pipeline_demo/environments/default.yml'
+                '../../dagster_examples/event_pipeline_demo/environments/default.yaml'
             )
         )
         result_pipeline = execute_pipeline(define_event_ingest_pipeline(), config)

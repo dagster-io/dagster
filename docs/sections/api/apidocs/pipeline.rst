@@ -4,7 +4,6 @@ Pipelines
 =========
 
 .. autoclass:: PipelineDefinition
-    :members:
 
 .. autoclass:: DependencyDefinition
     :members:
@@ -14,9 +13,17 @@ Pipelines
 
 ----
 
-Resources, Logging, and Modes
-================================
 
+Modes
+=====
+
+.. autoclass:: ModeDefinition
+    :members:
+
+----
+
+Resources
+=========
 
 .. autoclass:: ResourceDefinition
     :members:
@@ -26,6 +33,11 @@ Resources, Logging, and Modes
 .. autoclass:: InitResourceContext
     :members:
 
+----
+
+Logging
+=======
+
 .. autoclass:: LoggerDefinition
     :members:
 
@@ -34,7 +46,12 @@ Resources, Logging, and Modes
 .. autoclass:: InitLoggerContext
     :members:
 
-.. autoclass:: ModeDefinition
+----
+
+Presets
+=======
+
+.. autoclass:: PresetDefinition
     :members:
 
 ----

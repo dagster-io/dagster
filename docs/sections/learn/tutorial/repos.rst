@@ -41,13 +41,13 @@ Now you can see the list of all pipelines in the repo via the dropdown at the to
 
 Typing the name of the file and function defining the repository gets tiresome and repetitive, so
 let's create a declarative config file with this information to make using the command line tools
-easier. Save this file as ``repository.yml``. This is the default name for a repository config file,
+easier. Save this file as ``repository.yaml``. This is the default name for a repository config file,
 although you can tell the CLI tools to use any file you like.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/repos_1.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/repos_1.yaml
    :linenos:
    :language: YAML
-   :caption: repository.yml
+   :caption: repository.yaml
 
 Now you should be able to list the pipelines in this repo without all the typing:
 

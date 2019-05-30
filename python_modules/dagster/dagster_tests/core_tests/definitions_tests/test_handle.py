@@ -27,7 +27,7 @@ def test_exc_target_handle():
 def test_repo_entrypoints():
     module = importlib.import_module('dagster_examples.intro_tutorial.repos')
     assert ExecutionTargetHandle.for_repo_yaml(
-        script_relative_path('repository.yml')
+        script_relative_path('repository.yaml')
     ).entrypoint == LoaderEntrypoint(module, 'dagster_examples.intro_tutorial.repos', 'define_repo')
 
     module = importlib.import_module('dagster')
@@ -44,7 +44,7 @@ def test_repo_entrypoints():
 
 def test_repo_yaml_module_dynamic_load():
     repository = ExecutionTargetHandle.for_repo_yaml(
-        repository_yaml=script_relative_path('repository_module.yml')
+        repository_yaml=script_relative_path('repository_module.yaml')
     ).build_repository_definition()
 
     assert isinstance(repository, RepositoryDefinition)
@@ -53,7 +53,7 @@ def test_repo_yaml_module_dynamic_load():
 
 def test_repo_yaml_file_dynamic_load():
     repository = ExecutionTargetHandle.for_repo_yaml(
-        repository_yaml=script_relative_path('repository_file.yml')
+        repository_yaml=script_relative_path('repository_file.yaml')
     ).build_repository_definition()
 
     assert isinstance(repository, RepositoryDefinition)

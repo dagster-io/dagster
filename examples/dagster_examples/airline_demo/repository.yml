@@ -1,3 +1,0 @@
-repository:
-  module: airline_demo.repository
-  fn: define_repo

@@ -53,16 +53,16 @@ In this case, we've defined a single scalar string value as config.
 Let's see how to run this pipeline, with config, from the command line. In order to do this you
 must provide config in the form of a yaml file:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config_env.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config_env.yaml
    :linenos:
-   :caption: config_env.yml
+   :caption: config_env.yaml
 
 Now you can run this pipeline with this config file like so:
 
 .. code-block:: console
 
    $ dagster pipeline execute -f config.py \
-   -n define_configurable_hello_pipeline -e config_env.yml
+   -n define_configurable_hello_pipeline -e config_env.yaml
 
 To run this example from dagit, use the following command:
 

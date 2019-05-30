@@ -1,33 +1,14 @@
-from .setup import execute_dagster_graphql, define_context
-
-
-def execute_preset_query(pipeline_name):
-    pipeline_query = '''
-        query PresetsQuery($name: String!) {
-            pipeline(params: { name: $name }) {
-                presets {
-                    __typename
-                    name
-                    solidSubset
-                    environmentConfigYaml
-                    mode
-                }
-            }
-        }
-    '''
-
-    return execute_dagster_graphql(
-        define_context(), pipeline_query, variables={'name': pipeline_name}
-    )
+from dagster_graphql.test.preset_query import execute_preset_query
+from .setup import define_context
 
 
 def test_basic_preset_query_no_presets():
-    result = execute_preset_query('csv_hello_world_two')
-    assert result.data == {'pipeline': {'presets': []}}
+    result = execute_preset_query('csv_hello_world_two', define_context())
+    assert result.data == {'pipeline': {'name': 'csv_hello_world_two', 'presets': []}}
 
 
 def test_basic_preset_query_with_presets(snapshot):
-    result = execute_preset_query('csv_hello_world')
+    result = execute_preset_query('csv_hello_world', define_context())
 
     assert [preset_data['name'] for preset_data in result.data['pipeline']['presets']] == [
         'prod',

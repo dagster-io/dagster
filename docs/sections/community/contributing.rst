@@ -58,7 +58,7 @@ Lastly there is always the option to run `make black` from the `python_modules/`
 Running dagit webapp in development
 -------------------------------------
 For development, run the dagit GraphQL server on a different port than the
-webapp, from any directory that contains a repository.yml file. For example:
+webapp, from any directory that contains a repository.yaml file. For example:
 
 .. code-block:: console
 

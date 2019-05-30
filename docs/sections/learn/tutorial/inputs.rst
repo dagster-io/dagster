@@ -50,17 +50,17 @@ Next let's use the CLI. In order to do that we'll need to provide the environmen
 information via a config file. We'll use the same values as before, but in the form
 of YAML rather than python dictionaries:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_env.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_env.yaml
    :language: YAML
    :linenos:
-   :caption: inputs_env.yml
+   :caption: inputs_env.yaml
 
 And now specify that config file via the ``-e`` flag.
 
 .. code-block:: console
 
     $ dagster pipeline execute -f inputs.py \
-    -n define_hello_inputs_pipeline -e inputs_env.yml
+    -n define_hello_inputs_pipeline -e inputs_env.yaml
 
 Dagit
 ~~~~~
@@ -89,10 +89,10 @@ are often not surfaced until the pipeline is executed.
 
 For example, imagine if our environment for our pipeline was:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_env_bad.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_env_bad.yaml
    :language: YAML
    :linenos:
-   :caption: inputs_env_bad.yml
+   :caption: inputs_env_bad.yaml
 
 If we execute this pipeline with this config, it'll fail at runtime.
 

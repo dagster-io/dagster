@@ -55,19 +55,19 @@ is because the default log level is ``INFO``, so debug-level messages will not a
 
 Let's change that by specifying some config.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/execution_context.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/execution_context.yaml
    :language: YAML
    :linenos:
-   :caption: execution_context.yml
+   :caption: execution_context.yaml
 
-Save it as execution_context.yml and then run:
+Save it as execution_context.yaml and then run:
 
 .. code-block:: console
 
     $ dagster pipeline execute  \
     -m dagster_examples.intro_tutorial.tutorial_repository \
     -n define_repository execution_context_pipeline \
-    -e execution_context.yml
+    -e execution_context.yaml
 
 You'll see now that debug messages print out to the console.
 

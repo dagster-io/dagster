@@ -14,20 +14,20 @@ else:
     from StringIO import StringIO  # pylint:disable=import-error
 
 
-def _construct_yml(config_file, dag_name):
-    configs = {}
-    if config_file is not None:
-        with open(config_file, 'rb') as f:
-            configs = yaml.safe_load(f)
+def _construct_yml(environment_yaml_file, dag_name):
+    environment_dict = {}
+    if environment_yaml_file is not None:
+        with open(environment_yaml_file, 'rb') as f:
+            environment_dict = yaml.safe_load(f)
 
-    if 'storage' not in configs:
-        configs['storage'] = {
+    if 'storage' not in environment_dict:
+        environment_dict['storage'] = {
             'filesystem': {'base_dir': '/tmp/dagster-airflow/{}'.format(dag_name)}
         }
 
     # See http://bit.ly/309sTOu
     with contextlib.closing(StringIO()) as f:
-        yaml.dump(configs, f, default_flow_style=False, allow_unicode=True)
+        yaml.dump(environment_dict, f, default_flow_style=False, allow_unicode=True)
         return f.getvalue()
 
 
@@ -47,9 +47,11 @@ def main():
     default=os.getenv('AIRFLOW_HOME'),
 )
 @click.option(
-    '--config-file', '-c', help='''Optional. Path to a Dagster configuration YAML to install.'''
+    '--environment-file',
+    '-c',
+    help='''Optional. Path to a YAML file to install into the Dagster environment.''',
 )
-def scaffold(dag_name, module_name, fn_name, output_path, config_file):
+def scaffold(dag_name, module_name, fn_name, output_path, environment_file):
     '''Creates a DAG file for a specified dagster pipeline'''
 
     # Validate output path
@@ -60,8 +62,8 @@ def scaffold(dag_name, module_name, fn_name, output_path, config_file):
     pipeline = LoaderEntrypoint.from_module_target(module_name, fn_name).perform_load()
     pipeline_name = pipeline.name
 
-    # We construct the YAML config and then put it directly in the DAG file
-    yml = _construct_yml(config_file, dag_name)
+    # We construct the YAML environment and then put it directly in the DAG file
+    environment_yaml = _construct_yml(environment_file, dag_name)
 
     printer = IndentingStringIoPrinter(indent_level=4)
     printer.line('\'\'\'')
@@ -82,12 +84,12 @@ def scaffold(dag_name, module_name, fn_name, output_path, config_file):
     printer.line('from dagster_airflow.factory import make_airflow_dag')
     printer.blank_line()
     printer.blank_line()
-    printer.line('CONFIG = \'\'\'')
-    printer.line(yml)
+    printer.line('ENVIRONMENT = \'\'\'')
+    printer.line(environment_yaml)
     printer.line('\'\'\'')
     printer.blank_line()
     printer.blank_line()
-    printer.comment('NOTE: these configurations should be edited for your environment')
+    printer.comment('NOTE: these arguments should be edited for your environment')
     printer.line('DEFAULT_ARGS = {')
     with printer.with_indent():
         printer.line("'owner': 'airflow',")
@@ -115,7 +117,7 @@ def scaffold(dag_name, module_name, fn_name, output_path, config_file):
             )
         printer.line('),')
         printer.line('pipeline_name=\'{pipeline_name}\','.format(pipeline_name=pipeline_name))
-        printer.line("env_config=yaml.load(CONFIG),")
+        printer.line("environment_dict=yaml.load(ENVIRONMENT),")
         printer.line("dag_kwargs={'default_args': DEFAULT_ARGS, 'max_active_runs': 1}")
     printer.line(')')
 

@@ -23,9 +23,9 @@ from dagster_airflow_tests.test_project.dagster_airflow_demo import define_demo_
 class TestExecuteDagPythonFilesystemStorage(object):
     handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
-    config_yaml = [
-        script_relative_path('test_project/env.yml'),
-        script_relative_path('test_project/env_filesystem.yml'),
+    environment_yaml = [
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_filesystem.yaml'),
     ]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
@@ -61,9 +61,9 @@ class TestExecuteDagPythonFilesystemStorage(object):
 class TestExecuteDagPythonS3Storage(object):
     handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
-    config_yaml = [
-        script_relative_path('test_project/env.yml'),
-        script_relative_path('test_project/env_s3.yml'),
+    environment_yaml = [
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_s3.yaml'),
     ]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
@@ -92,7 +92,9 @@ class TestExecuteDagPythonS3Storage(object):
             assert json.loads(
                 # pylint: disable=anomalous-backslash-in-string
                 re.sub(
-                    '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
+                    r'\{u\'',
+                    '{\'',
+                    re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr'])),
                 ).replace('\'', '"')
             ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
@@ -101,9 +103,9 @@ class TestExecuteDagPythonS3Storage(object):
 class TestExecuteDagContainerizedS3Storage(object):
     handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
-    config_yaml = [
-        script_relative_path('test_project/env.yml'),
-        script_relative_path('test_project/env_s3.yml'),
+    environment_yaml = [
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_s3.yaml'),
     ]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
@@ -131,7 +133,9 @@ class TestExecuteDagContainerizedS3Storage(object):
             assert json.loads(
                 # pylint: disable=anomalous-backslash-in-string
                 re.sub(
-                    '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
+                    r'\{u\'',
+                    '{\'',
+                    re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr'])),
                 ).replace('\'', '"')
             ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
@@ -139,9 +143,9 @@ class TestExecuteDagContainerizedS3Storage(object):
 class TestExecuteDagContainerizedFilesystemStorage(object):
     handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
-    config_yaml = [
-        script_relative_path('test_project/env.yml'),
-        script_relative_path('test_project/env_filesystem.yml'),
+    environment_yaml = [
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_filesystem.yaml'),
     ]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()

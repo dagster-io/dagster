@@ -15,16 +15,16 @@ We'll replace the config field in our solid definition with a structured, strong
 
 The configuration YAML file works as before:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas.yaml
    :linenos:
-   :caption: configuration_schemas.yml
+   :caption: configuration_schemas.yaml
 
 Now let's imagine we made a mistake and passed a ``string`` in our configuration:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_runtime_error.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_runtime_error.yaml
    :linenos:
    :emphasize-lines: 12
-   :caption: configuration_schemas_runtime_error.yml
+   :caption: configuration_schemas_runtime_error.yaml
 
 And then ran it:
 
@@ -33,7 +33,7 @@ And then ran it:
     $ dagster pipeline execute -f configuration_schemas.py \
     -n define_demo_configuration_schema_repo \
     demo_configuration_schema \
-    -e configuration_schemas_runtime_error.yml
+    -e configuration_schemas_runtime_error.yaml
     ...
     Traceback (most recent call last):
     ...
@@ -56,10 +56,10 @@ to catch this before execution.
 
 In order to do that, let us use the typed config solid.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_type_mismatch_error.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_type_mismatch_error.yaml
    :linenos:
    :emphasize-lines: 12
-   :caption: configuration_schemas_runtime_error.yml
+   :caption: configuration_schemas_runtime_error.yaml
 
 And then run the pipeline
 
@@ -68,7 +68,7 @@ And then run the pipeline
     $ dagster pipeline execute -f configuration_schemas.py \
     -n define_demo_configuration_schema_repo \
     typed_demo_configuration_schema \
-    -e configuration_schemas_type_mismatch_error.yml
+    -e configuration_schemas_type_mismatch_error.yaml
 
 And you'll get a nice error *prior* to execution:
 
@@ -84,17 +84,17 @@ actionable error message before the pipeline is ever executed.
 
 Let's see what happens if we pass config with the wrong structure:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_wrong_field.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_wrong_field.yaml
    :linenos:
    :emphasize-lines: 9
-   :caption: configuration_schemas_wrong_field.yml
+   :caption: configuration_schemas_wrong_field.yaml
 
 And then run the pipeline:
 
 .. code-block:: console
 
     $ dagster pipeline execute -f configuration_schemas.py \
-    -n define_demo_configuration_schema_pipeline -e configuration_schemas_wrong_field.yml
+    -n define_demo_configuration_schema_pipeline -e configuration_schemas_wrong_field.yaml
     ...
     dagster.core.execution.PipelineConfigEvaluationError: Pipeline "demo_configuration_schema" config errors:
     Error 1: Undefined field "multiply_the_word_with_typed_config" at path root:solids

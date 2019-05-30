@@ -27,11 +27,11 @@ PY_IMAGE_MAP = {
     SupportedPython.V2_7: "python:2.7.16-stretch",
 }
 
-INTEGRATION_IMAGE_MAP = {
-    SupportedPython.V3_7: "dagster/buildkite-integration:py3.7.3",
-    SupportedPython.V3_6: "dagster/buildkite-integration:py3.6.8",
-    SupportedPython.V3_5: "dagster/buildkite-integration:py3.5.7",
-    SupportedPython.V2_7: "dagster/buildkite-integration:py2.7.16",
+IMAGE_VERSION_MAP = {
+    SupportedPython.V3_7: "3.7.3",
+    SupportedPython.V3_6: "3.6.8",
+    SupportedPython.V3_5: "3.5.7",
+    SupportedPython.V2_7: "2.7.16",
 }
 
 TOX_MAP = {
@@ -73,7 +73,8 @@ class StepBuilder:
 
     def on_integration_image(self, ver, env=None):
         settings = self.base_docker_settings()
-        settings["image"] = INTEGRATION_IMAGE_MAP[ver]
+        # version like dagster/buildkite-integration:py3.7.3
+        settings["image"] = "dagster/buildkite-integration:py" + IMAGE_VERSION_MAP[ver]
         # map the docker socket to enable docker to be run from inside docker
         settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock"]
 
@@ -81,6 +82,14 @@ class StepBuilder:
             settings['environment'] = env
 
         self._step["plugins"] = [{DOCKER_PLUGIN: settings}]
+        return self
+
+    def with_timeout(self, num_minutes):
+        self._step["timeout_in_minutes"] = num_minutes
+        return self
+
+    def with_retry(self, num_retries):
+        self._step["retry"] = {'automatic': {'limit': num_retries}}
         return self
 
     def build(self):
@@ -237,6 +246,45 @@ def gcp_tests():
     )
 
 
+def dask_tests():
+    tests = []
+    for version in SupportedPythons:
+        coverage = ".coverage.dagster-dask.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        tests.append(
+            StepBuilder("dagster-dask tests ({ver})".format(ver=TOX_MAP[version]))
+            .run(
+                "pushd python_modules/dagster-dask/dagster_dask_tests/dask-docker",
+                "./build.sh " + IMAGE_VERSION_MAP[version],
+                # Run the docker-compose dask cluster
+                "export PYTHON_VERSION=\"{ver}\"".format(ver=IMAGE_VERSION_MAP[version]),
+                "docker-compose up -d --remove-orphans",
+                # hold onto your hats, this is docker networking at its best. First, we figure out
+                # the name of the currently running container...
+                "export CONTAINER_ID=`cut -c9- < /proc/1/cpuset`",
+                r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
+                # then, we dynamically bind this container into the dask user-defined bridge
+                # network to make the dask containers visible...
+                r"docker network connect dask \${CONTAINER_NAME}",
+                # Now, we grab the IP address of the dask-scheduler container from within the dask
+                # bridge network and export it; this will let the tox tests talk to the scheduler.
+                "export DASK_ADDRESS=`docker inspect --format '{{ .NetworkSettings.Networks.dask.IPAddress }}' dask-scheduler`",
+                "popd",
+                "pushd python_modules/dagster-dask/",
+                "pip install tox",
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+            )
+            .on_integration_image(
+                version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
+            )
+            .with_timeout(5)
+            .with_retry(3)
+            .build()
+        )
+    return tests
+
+
 if __name__ == "__main__":
     steps = [
         StepBuilder("pylint")
@@ -284,10 +332,11 @@ if __name__ == "__main__":
     steps += airline_demo_tests()
     steps += events_demo_tests()
     steps += airflow_tests()
+    steps += dask_tests()
+
     steps += python_modules_tox_tests("dagster")
     steps += python_modules_tox_tests("dagit", ["apt-get update", "apt-get install -y xdg-utils"])
     steps += python_modules_tox_tests("dagster-graphql")
-    steps += python_modules_tox_tests("dagster-dask")
     steps += python_modules_tox_tests("dagstermill")
 
     for library in LIBRARY_MODULES:

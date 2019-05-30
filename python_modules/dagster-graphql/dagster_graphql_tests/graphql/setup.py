@@ -3,7 +3,6 @@ import logging
 from collections import OrderedDict
 from copy import deepcopy
 
-from graphql import graphql
 
 from dagster import (
     Any,
@@ -44,7 +43,6 @@ from dagster.utils import script_relative_path
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
-from dagster_graphql.schema import create_schema
 
 
 class PoorMansDataFrame_(list):
@@ -72,28 +70,6 @@ def df_output_schema(_context, path, value):
 PoorMansDataFrame = as_dagster_type(
     PoorMansDataFrame_, input_schema=df_input_schema, output_schema=df_output_schema
 )
-
-
-def execute_dagster_graphql(context, query, variables=None):
-    result = graphql(
-        create_schema(),
-        query,
-        context=context,
-        variables=variables,
-        # executor=GeventObservableExecutor(),
-        allow_subscriptions=True,
-        return_promise=False,
-    )
-
-    # has to check attr because in subscription case it returns AnonymousObservable
-    if hasattr(result, 'errors') and result.errors:
-        first_error = result.errors[0]
-        if hasattr(first_error, 'original_error') and first_error.original_error:
-            raise result.errors[0].original_error
-
-        raise result.errors[0]
-
-    return result
 
 
 def define_context(raise_on_error=True):
@@ -307,13 +283,13 @@ def define_csv_hello_world():
             PresetDefinition(
                 name='prod',
                 environment_files=[
-                    script_relative_path('../environments/csv_hello_world_prod.yml')
+                    script_relative_path('../environments/csv_hello_world_prod.yaml')
                 ],
             ),
             PresetDefinition(
                 name='test',
                 environment_files=[
-                    script_relative_path('../environments/csv_hello_world_test.yml')
+                    script_relative_path('../environments/csv_hello_world_test.yaml')
                 ],
             ),
         ],

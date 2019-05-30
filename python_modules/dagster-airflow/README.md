@@ -40,7 +40,7 @@ in the directory in which Airflow looks for DAGs -- this is typically `$AIRFLOW_
 
     dag, steps = make_airflow_dag(
         pipeline,
-        env_config={'storage': {'filesystem': {'base_dir': '/tmp'}}},
+        environment_dict={'storage': {'filesystem': {'base_dir': '/tmp'}}},
         dag_id=None,
         dag_description=None,
         dag_kwargs=None,
@@ -53,9 +53,9 @@ Airflow objects, and you can do eveything you would expect with them -- for inst
 DAG as a sub-DAG in another Airflow DAG, or adding dependencies between the dynamically generated
 Airflow steps and steps that you define in your own code.
 
-Note the extra `storage` parameter in the config. You can set this for any Dagster pipeline (and
-intermediate values will be automatically materialized in either `filesystem` or `s3` storage), but
-you **must** set it when converting a pipeline to an Airflow DAG.
+Note the extra `storage` parameter in the environment dict. You can set this for any Dagster
+pipeline (and intermediate values will be automatically materialized in either `filesystem` or `s3`
+storage), but you **must** set it when converting a pipeline to an Airflow DAG.
 
 ## Running containerized (DagsterDockerOperator)
 
@@ -88,11 +88,11 @@ RUN pip install dagster_graphql
 ADD /path/to/requirements.txt .
 RUN pip install -r requirements.txt
 
-# Add your repository.yml file so that dagster_graphql knows where to look to find your repository,
+# Add your repository.yaml file so that dagster_graphql knows where to look to find your repository,
 # the Python file in which your repository is defined, and any local dependencies (e.g., unpackaged
 # Python files from which your repository definition imports, or local packages that cannot be
 # installed using the requirements.txt).
-ADD /path/to/repository.yml .
+ADD /path/to/repository.yaml .
 ADD /path/to/repository_definition.py .
 # ADD /path/to/additional_file.py .
 
@@ -135,7 +135,7 @@ which Airflow looks for DAGs.
     dag, steps = make_airflow_dag(
         pipeline,
         image,
-        env_config={'storage': {'filesystem': {'base_dir': '/tmp'}}},
+        environment_dict={'storage': {'filesystem': {'base_dir': '/tmp'}}},
         dag_id=None,
         dag_description=None,
         dag_kwargs=None,
@@ -144,7 +144,7 @@ which Airflow looks for DAGs.
 
 You can pass `op_kwargs` through to the the DagsterDockerOperator to use custom TLS settings, the
 private registry of your choice, etc., just as you would configure the ordinary Airflow
-DockerOperator. 
+DockerOperator.
 
 ### Docker bind-mount for filesystem intermediate storage
 
@@ -156,13 +156,12 @@ use this volume for interediate storage, you can run:
     dag, steps = make_airflow_dag(
         pipeline,
         image,
-        env_config={'storage': {'filesystem': {'base_dir': '/container_tmp'}}},
+        environment_dict={'storage': {'filesystem': {'base_dir': '/container_tmp'}}},
         dag_id=None,
         dag_description=None,
         dag_kwargs=None,
         op_kwargs={'host_tmp_dir': '/host_tmp', 'tmp_dir': '/container_tmp'}
     )
-
 
 ### Using S3 with dagster-airflow
 

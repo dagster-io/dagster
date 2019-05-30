@@ -31,9 +31,9 @@ If you inspect this in dagit, you'll see those two instances:
 You also use the aliases in the environment config. In order to execute this pipeline, use
 the following config file:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusable_solids.yml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusable_solids.yaml
    :linenos:
-   :caption: reusable_solids.yml
+   :caption: reusable_solids.yaml
 
 
 Load this in dagit and you'll see that the node are the graph are labeled with

@@ -1,5 +1,6 @@
 import copy
-from .utils import sync_execute_get_run_log_data, execute_dagster_graphql, define_context
+from dagster_graphql.test.utils import execute_dagster_graphql
+from .utils import sync_execute_get_run_log_data, define_context
 
 RUNS_QUERY = '''
 query PipelineRunsRootQuery($name: String!) {
