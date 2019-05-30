@@ -16,6 +16,7 @@ from dagster import (
     InputDefinition,
     Int,
     OutputDefinition,
+    Materialization,
     Result,
     SolidDefinition,
     String,
@@ -197,24 +198,12 @@ def replace_values_spark(data_frame, old, new):
 
 
 @solid(
-    name='normalize_weather_na_values',
-    description="Normalizes the given NA values by replacing them with None",
-    # FIXME can this be optional
-    # config_field=Field(
-    #     String,
-    #     # description='The string NA value to normalize to None.'
-    # ),
-    inputs=[
-        InputDefinition(
-            'data_frame',
-            SparkDataFrameType,
-            description='The pyspark DataFrame containing NA values to normalize.',
-        )
-    ],
+    inputs=[InputDefinition('sfo_weather_data', SparkDataFrameType)],
     outputs=[OutputDefinition(SparkDataFrameType)],
 )
-def normalize_weather_na_values(_context, data_frame):
-    return replace_values_spark(data_frame, 'M', None)
+def process_sfo_weather_data(_context, sfo_weather_data):
+    normalized_sfo_weather_data = replace_values_spark(sfo_weather_data, 'M', None)
+    return rename_spark_dataframe_columns(normalized_sfo_weather_data, lambda c: c.lower())
 
 
 @solid(
@@ -231,7 +220,15 @@ def normalize_weather_na_values(_context, data_frame):
 )
 def load_data_to_database_from_spark(context, data_frame):
     context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
-    return data_frame
+    # TODO Flow more information down to the client
+    # We should be able to flow multiple key value pairs down to dagit
+    # See https://github.com/dagster-io/dagster/issues/1408
+    yield Materialization(
+        path='Persisted Db Table: {table_name}'.format(
+            table_name=context.solid_config['table_name']
+        )
+    )
+    yield Result(data_frame)
 
 
 @solid(
