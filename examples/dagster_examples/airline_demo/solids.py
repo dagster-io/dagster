@@ -6,6 +6,7 @@ import zipfile
 
 from io import BytesIO
 
+from pyspark.sql import DataFrame
 from sqlalchemy import text
 
 from dagster import (
@@ -190,6 +191,12 @@ def prefix_column_names(context, data_frame):
     )
 
 
+def do_prefix_column_names(df, prefix):
+    check.inst_param(df, 'df', DataFrame)
+    check.str_param(prefix, 'prefix')
+    return rename_spark_dataframe_columns(df, lambda c: '{prefix}{c}'.format(prefix=prefix, c=c))
+
+
 @solid(
     name='canonicalize_column_names',
     inputs=[
@@ -297,13 +304,18 @@ def subsample_spark_dataset(context, data_frame):
     ),
 )
 def join_spark_data_frames(context, left_data_frame, right_data_frame):
-    return left_data_frame.join(
+    return do_join_spark_data_frames(
+        left_data_frame,
         right_data_frame,
-        on=(
-            getattr(left_data_frame, context.solid_config['on_left'])
-            == getattr(right_data_frame, context.solid_config['on_right'])
-        ),
+        on_left_col=context.solid_config['on_left'],
+        on_right_col=context.solid_config['on_right'],
         how=context.solid_config['how'],
+    )
+
+
+def do_join_spark_data_frames(left, right, on_left_col='id', on_right_col='id', how='inner'):
+    return left.join(
+        right, on=(getattr(left, on_left_col) == getattr(right, on_right_col)), how=how
     )
 
 
@@ -538,6 +550,7 @@ sfo_delays_by_destination = notebook_solid(
         InputDefinition('april_data', SparkDataFrameType),
         InputDefinition('may_data', SparkDataFrameType),
         InputDefinition('june_data', SparkDataFrameType),
+        InputDefinition('master_cord_data', SparkDataFrameType),
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
     config_field=Field(
@@ -545,8 +558,18 @@ sfo_delays_by_destination = notebook_solid(
         # description='The integer percentage of rows to sample from the input dataset.'
     ),
 )
-def process_q2_data(context, april_data, may_data, june_data):
+def process_q2_data(context, april_data, may_data, june_data, master_cord_data):
     q2_data = april_data.union(may_data).union(june_data)
-    return q2_data.sample(
+    sampled_q2_data = q2_data.sample(
         withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
+    )
+    prefixed_master_cord_data = do_prefix_column_names(master_cord_data, 'DEST_')
+
+    # Consider using spark SQL
+    return do_join_spark_data_frames(
+        sampled_q2_data,
+        prefixed_master_cord_data,
+        on_left_col='DestAirportSeqID',
+        on_right_col='DEST_AIRPORT_SEQ_ID',
+        how='left_outer',
     )
