@@ -145,9 +145,6 @@ def define_airline_demo_ingest_pipeline():
             'may_data': DependencyDefinition('ingest_may_on_time_data'),
             'june_data': DependencyDefinition('ingest_june_on_time_data'),
         },
-        SolidInstance('subsample_spark_dataset', alias='subsample_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('process_q2_data')
-        },
         SolidInstance('subsample_spark_dataset', alias='subsample_q2_ticket_data'): {
             'data_frame': DependencyDefinition('ingest_q2_ticket_data')
         },
@@ -167,7 +164,7 @@ def define_airline_demo_ingest_pipeline():
             'data_frame': DependencyDefinition('ingest_master_cord_data')
         },
         SolidInstance('join_spark_data_frames', alias='join_q2_on_time_data_to_dest_cord_data'): {
-            'left_data_frame': DependencyDefinition('subsample_q2_on_time_data'),
+            'left_data_frame': DependencyDefinition('process_q2_data'),
             'right_data_frame': DependencyDefinition('prefix_dest_cord_data'),
         },
         SolidInstance('join_spark_data_frames', alias='join_q2_on_time_data_to_origin_cord_data'): {

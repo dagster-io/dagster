@@ -265,7 +265,9 @@ def load_data_to_database_from_spark(context, data_frame):
     ],
 )
 def subsample_spark_dataset(context, data_frame):
-    return data_frame.sample(False, context.solid_config['subsample_pct'] / 100.0)
+    return data_frame.sample(
+        withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
+    )
 
 
 @solid(
@@ -538,6 +540,13 @@ sfo_delays_by_destination = notebook_solid(
         InputDefinition('june_data', SparkDataFrameType),
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
+    config_field=Field(
+        Dict(fields={'subsample_pct': Field(Int, description='')})
+        # description='The integer percentage of rows to sample from the input dataset.'
+    ),
 )
-def process_q2_data(_context, april_data, may_data, june_data):
-    return april_data.union(may_data).union(june_data)
+def process_q2_data(context, april_data, may_data, june_data):
+    q2_data = april_data.union(may_data).union(june_data)
+    return q2_data.sample(
+        withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
+    )
