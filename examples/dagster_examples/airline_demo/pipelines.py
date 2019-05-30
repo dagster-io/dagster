@@ -30,11 +30,11 @@ from .solids import (
     load_data_to_database_from_spark,
     normalize_weather_na_values,
     prefix_column_names,
+    process_q2_data,
     q2_sfo_outbound_flights,
     sfo_delays_by_destination,
     subsample_spark_dataset,
     tickets_with_destination,
-    union_spark_data_frames,
     unzip_file,
     westbound_delays,
 )
@@ -82,8 +82,8 @@ def define_airline_demo_ingest_pipeline():
         load_data_to_database_from_spark,
         normalize_weather_na_values,
         prefix_column_names,
+        process_q2_data,
         subsample_spark_dataset,
-        union_spark_data_frames,
         unzip_file,
     ]
     dependencies = {
@@ -140,16 +140,13 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('ingest_csv_to_spark', alias='ingest_master_cord_data'): {
             'input_csv_file': DependencyDefinition('unzip_master_cord_data')
         },
-        SolidInstance('union_spark_data_frames', alias='combine_april_may_on_time_data'): {
-            'left_data_frame': DependencyDefinition('ingest_april_on_time_data'),
-            'right_data_frame': DependencyDefinition('ingest_may_on_time_data'),
-        },
-        SolidInstance('union_spark_data_frames', alias='combine_q2_on_time_data'): {
-            'left_data_frame': DependencyDefinition('combine_april_may_on_time_data'),
-            'right_data_frame': DependencyDefinition('ingest_june_on_time_data'),
+        'process_q2_data': {
+            'april_data': DependencyDefinition('ingest_april_on_time_data'),
+            'may_data': DependencyDefinition('ingest_may_on_time_data'),
+            'june_data': DependencyDefinition('ingest_june_on_time_data'),
         },
         SolidInstance('subsample_spark_dataset', alias='subsample_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('combine_q2_on_time_data')
+            'data_frame': DependencyDefinition('process_q2_data')
         },
         SolidInstance('subsample_spark_dataset', alias='subsample_q2_ticket_data'): {
             'data_frame': DependencyDefinition('ingest_q2_ticket_data')

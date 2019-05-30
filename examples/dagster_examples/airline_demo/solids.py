@@ -305,27 +305,6 @@ def join_spark_data_frames(context, left_data_frame, right_data_frame):
     )
 
 
-@solid(
-    name='union_spark_data_frames',
-    inputs=[
-        InputDefinition(
-            'left_data_frame', SparkDataFrameType, description='The left DataFrame to union.'
-        ),
-        InputDefinition(
-            'right_data_frame', SparkDataFrameType, description='The right DataFrame to union.'
-        ),
-    ],
-    outputs=[
-        OutputDefinition(
-            SparkDataFrameType,
-            description='A pyspark DataFrame containing the union of the input data frames.',
-        )
-    ],
-)
-def union_spark_data_frames(_context, left_data_frame, right_data_frame):
-    return left_data_frame.union(right_data_frame)
-
-
 q2_sfo_outbound_flights = sql_solid(
     'q2_sfo_outbound_flights',
     '''
@@ -550,3 +529,15 @@ sfo_delays_by_destination = notebook_solid(
         )
     ],
 )
+
+
+@solid(
+    inputs=[
+        InputDefinition('april_data', SparkDataFrameType),
+        InputDefinition('may_data', SparkDataFrameType),
+        InputDefinition('june_data', SparkDataFrameType),
+    ],
+    outputs=[OutputDefinition(SparkDataFrameType)],
+)
+def process_q2_data(_context, april_data, may_data, june_data):
+    return april_data.union(may_data).union(june_data)
