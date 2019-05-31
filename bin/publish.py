@@ -23,13 +23,13 @@ from itertools import groupby
 
 import click
 import packaging.version
-import slack
+import slackclient
 import virtualenv
 
 from pypirc import ConfigFileError, RCParser
 
 assert os.getenv('SLACK_RELEASE_BOT_TOKEN'), 'No SLACK_RELEASE_BOT_TOKEN env variable found.'
-slack_client = slack.WebClient(token=os.environ['SLACK_RELEASE_BOT_TOKEN'])
+slack_client = slackclient.SlackClient(os.environ['SLACK_RELEASE_BOT_TOKEN'])
 
 
 PYPIRC_EXCEPTION_MESSAGE = '''You must have credentials available to PyPI in the form of a
@@ -675,7 +675,8 @@ def publish(nightly, autoclean):
         subprocess.check_output(['git', 'config', '--get', 'user.name']).decode('utf-8').strip()
     )
     if not nightly:
-        slack_client.chat_postMessage(
+        slack_client.api_call(
+            'chat.postMessage',
             channel='#general',
             text='{git_user} just published a new version: {version}. Don\'t forget to switch the '
             'active version of the docs at ReadTheDocs!'.format(
