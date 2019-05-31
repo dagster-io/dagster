@@ -295,6 +295,6 @@ const SVGContainer = styled.svg`
 `;
 
 const SVGLabeledCompositeRect = styled(SVGLabeledRect)`
-  transition: x 200ms ease-out, y 200ms ease-out, width 200ms ease-out,
-    height 200ms ease-out;
+  transition: x 250ms ease-out, y 250ms ease-out, width 250ms ease-out,
+    height 250ms ease-out;
 `;
