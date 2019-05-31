@@ -25,13 +25,6 @@ class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
         )
 
 
-class StepOutputValue(namedtuple('_StepOutputValue', 'output_name value')):
-    def __new__(cls, output_name, value):
-        return super(StepOutputValue, cls).__new__(
-            cls, output_name=check.str_param(output_name, 'output_name'), value=value
-        )
-
-
 class SingleOutputStepCreationData(namedtuple('SingleOutputStepCreationData', 'step output_name')):
     '''
     It is very common for step creation to involve processing a single value (e.g. an input thunk).
