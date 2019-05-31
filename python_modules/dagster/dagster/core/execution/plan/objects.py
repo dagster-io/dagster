@@ -3,8 +3,7 @@ from enum import Enum
 
 
 from dagster import check
-from dagster.core.definitions import SolidHandle
-from dagster.core.definitions.materialization import Materialization
+from dagster.core.definitions import SolidHandle, Materialization
 from dagster.core.types.runtime import RuntimeType
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
