@@ -7,19 +7,20 @@ import { Icon, Colors } from "@blueprintjs/core";
 import { Route } from "react-router";
 import { Link } from "react-router-dom";
 import { parse as parseQueryString } from "query-string";
+
 import { PipelineExplorerFragment } from "./types/PipelineExplorerFragment";
+import PipelineGraph from "./graph/PipelineGraph";
+import { PanelDivider } from "./PanelDivider";
+import SidebarTabbedContainer from "./SidebarTabbedContainer";
+import { SolidJumpBar } from "./PipelineJumpComponents";
 import {
   PipelineExplorerSolidHandleFragment,
   PipelineExplorerSolidHandleFragment_solid
 } from "./types/PipelineExplorerSolidHandleFragment";
-import PipelineGraph from "./graph/PipelineGraph";
 import {
   getDagrePipelineLayout,
   IFullPipelineLayout
 } from "./graph/getFullSolidLayout";
-import { PanelDivider } from "./PanelDivider";
-import SidebarTabbedContainer from "./SidebarTabbedContainer";
-import { SolidJumpBar } from "./PipelineJumpComponents";
 
 interface IPipelineExplorerProps {
   history: History;
@@ -34,6 +35,7 @@ interface IPipelineExplorerState {
   filter: string;
   graphVW: number;
 }
+
 export default class PipelineExplorer extends React.Component<
   IPipelineExplorerProps,
   IPipelineExplorerState
@@ -63,13 +65,10 @@ export default class PipelineExplorer extends React.Component<
     `
   };
 
-  constructor(props: IPipelineExplorerProps) {
-    super(props);
-    this.state = {
-      filter: "",
-      graphVW: 70
-    };
-  }
+  state = {
+    filter: "",
+    graphVW: 70
+  };
 
   nameToHandleID = (solidName: string) => {
     if (solidName === "") return "";
@@ -118,16 +117,10 @@ export default class PipelineExplorer extends React.Component<
   };
 
   public render() {
-    const {
-      pipeline,
-      parentHandle,
-      handles,
-      selectedHandle,
-      path
-    } = this.props;
+    const { pipeline, parentHandle, selectedHandle, path } = this.props;
     const { filter, graphVW } = this.state;
 
-    const solids = handles.map(h => h.solid);
+    const solids = this.props.handles.map(h => h.solid);
 
     const backgroundColor = parentHandle
       ? Colors.LIGHT_GRAY3
@@ -190,11 +183,7 @@ export default class PipelineExplorer extends React.Component<
         </PipelinePanel>
         <PanelDivider
           axis="horizontal"
-          onMove={(vw: number) =>
-            this.setState({
-              graphVW: vw
-            })
-          }
+          onMove={(graphVW: number) => this.setState({ graphVW })}
         />
         <RightInfoPanel style={{ width: `${100 - graphVW}vw` }}>
           <Route
