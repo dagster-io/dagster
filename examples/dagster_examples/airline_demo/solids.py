@@ -12,6 +12,7 @@ from sqlalchemy import text
 from dagster import (
     Bytes,
     Dict,
+    ExpectationResult,
     Field,
     InputDefinition,
     Int,
@@ -494,8 +495,36 @@ sfo_delays_by_destination = notebook_solid(
         Dict(fields={'subsample_pct': Field(Int, description='')})
         # description='The integer percentage of rows to sample from the input dataset.'
     ),
+    description='''
+    This solid takes April, May, and June data and coalesces it into a q2 data set.
+    It then joins the that origin and destination airport with the data in the
+    master_cord_data.
+    ''',
 )
 def process_q2_data(context, april_data, may_data, june_data, master_cord_data):
+
+    dfs = {'april': april_data, 'may': may_data, 'june': june_data}
+
+    missing_things = []
+
+    for required_column in ['DestAirportSeqID', 'OriginAirportSeqID']:
+        for month, df in dfs.items():
+            if required_column not in df.columns:
+                missing_things.append({'month': month, 'missing_column': required_column})
+
+    yield ExpectationResult(
+        success=not bool(missing_things),
+        name='airport_ids_present',
+        message='Sequence IDs present in incoming monthly flight data.',
+        result_metadata={'missing_columns': missing_things},
+    )
+
+    yield ExpectationResult(
+        success=set(april_data.columns) == set(may_data.columns) == set(june_data.columns),
+        name='flight_data_same_shape',
+        result_metadata={'columns': april_data.columns},
+    )
+
     q2_data = april_data.union(may_data).union(june_data)
     sampled_q2_data = q2_data.sample(
         withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
@@ -520,4 +549,4 @@ def process_q2_data(context, april_data, may_data, june_data, master_cord_data):
         '''
     )
 
-    return rename_spark_dataframe_columns(full_data, lambda c: c.lower())
+    yield Result(rename_spark_dataframe_columns(full_data, lambda c: c.lower()))
