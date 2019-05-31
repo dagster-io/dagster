@@ -155,15 +155,7 @@ export default class SVGViewport extends React.Component<
     x = -x * scale + ownerRect.width / 2;
     y = -y * scale + ownerRect.height / 2;
 
-    if (
-      Math.abs(this.state.scale - scale) < 0.01 &&
-      Math.abs(this.state.x - x) < 1 &&
-      Math.abs(this.state.y - y) < 1
-    ) {
-      return false;
-    }
     this.smoothZoom({ x, y, scale });
-    return true;
   }
 
   public smoothZoom(to: { x: number; y: number; scale: number }) {

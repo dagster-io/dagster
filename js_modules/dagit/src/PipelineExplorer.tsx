@@ -169,7 +169,9 @@ export default class PipelineExplorer extends React.Component<
             pipelineName={pipeline.name}
             backgroundColor={backgroundColor}
             solids={solids}
+            selectedHandleID={selectedHandle && selectedHandle.handleID}
             selectedSolid={selectedHandle && selectedHandle.solid}
+            parentHandleID={parentHandle && parentHandle.handleID}
             parentSolid={parentHandle && parentHandle.solid}
             onClickSolid={this.handleClickSolid}
             onClickBackground={this.handleClickBackground}

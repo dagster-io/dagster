@@ -20,7 +20,9 @@ interface IPipelineGraphProps {
   backgroundColor: string;
   layout: IFullPipelineLayout;
   solids: PipelineGraphSolidFragment[];
+  parentHandleID?: string;
   parentSolid?: PipelineGraphSolidFragment;
+  selectedHandleID?: string;
   selectedSolid?: PipelineGraphSolidFragment;
   highlightedSolids: Array<PipelineGraphSolidFragment>;
   interactor?: SVGViewportInteractor;
@@ -58,10 +60,13 @@ class PipelineGraphContents extends React.PureComponent<
       minified,
       solids,
       parentSolid,
+      parentHandleID,
       onClickSolid = NoOp,
       onDoubleClickSolid = NoOp,
+      onEnterCompositeSolid = NoOp,
       highlightedSolids,
-      selectedSolid
+      selectedSolid,
+      selectedHandleID
     } = this.props;
 
     const { highlightedConnections } = this.state;
@@ -80,7 +85,7 @@ class PipelineGraphContents extends React.PureComponent<
           <SVGLabeledCompositeRect
             x={1}
             y={1}
-            key={`composite-rect-${parentSolid.name}`}
+            key={`composite-rect-${parentHandleID}`}
             width={layout.width - 1}
             height={layout.height - 1}
             label={parentSolid ? parentSolid.name : ""}
@@ -95,7 +100,7 @@ class PipelineGraphContents extends React.PureComponent<
           // bounds from the parent layout to the inner layout with no React state.
           <SVGLabeledCompositeRect
             {...layout.solids[selectedSolid.name].solid}
-            key={`composite-rect-${selectedSolid.name}`}
+            key={`composite-rect-${selectedHandleID}`}
             label={""}
             fill={Colors.LIGHT_GRAY5}
             minified={true}
@@ -121,6 +126,7 @@ class PipelineGraphContents extends React.PureComponent<
             minified={minified}
             onClick={onClickSolid}
             onDoubleClick={onDoubleClickSolid}
+            onEnterComposite={onEnterCompositeSolid}
             onHighlightConnections={this.onHighlightConnections}
             layout={layout.solids[solid.name]}
             selected={selectedSolid === solid}
@@ -159,24 +165,14 @@ export default class PipelineGraph extends React.Component<
   viewportEl: React.RefObject<SVGViewport> = React.createRef();
 
   focusOnSolid = (solidName: string) => {
-    const { layout, solids, onEnterCompositeSolid } = this.props;
-
-    const solidLayout = layout.solids[solidName];
+    const solidLayout = this.props.layout.solids[solidName];
     if (!solidLayout) {
       return;
     }
     const cx = solidLayout.boundingBox.x + solidLayout.boundingBox.width / 2;
     const cy = solidLayout.boundingBox.y + solidLayout.boundingBox.height / 2;
 
-    const solid = solids.find(s => s.name === solidName);
-    const started = this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, 1);
-    if (
-      !started &&
-      onEnterCompositeSolid &&
-      solid!.definition.__typename === "CompositeSolidDefinition"
-    ) {
-      onEnterCompositeSolid(solidName);
-    }
+    this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, 1);
   };
 
   closestSolidInDirection = (dir: string): string | undefined => {
