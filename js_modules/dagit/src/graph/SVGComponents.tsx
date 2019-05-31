@@ -279,6 +279,7 @@ interface SVGLabeledRectProps {
   fill: string;
   className?: string;
 }
+
 export const SVGLabeledRect: React.FunctionComponent<SVGLabeledRectProps> = ({
   minified,
   label,

@@ -1,7 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { isEqual, omitBy } from "lodash";
-import { Colors } from "@blueprintjs/core";
 import PipelineColorScale from "./PipelineColorScale";
 import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
 import {
@@ -15,10 +14,9 @@ import {
   SVGMonospaceText
 } from "./SVGComponents";
 
-import SolidTags from "./SolidTags";
+import SolidTags, { ISolidTag } from "./SolidTags";
 import SolidConfigPort from "./SolidConfigPort";
 import { DEFAULT_RESULT_NAME, titleOfIO } from "../Util";
-import { number } from "prop-types";
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
@@ -30,6 +28,7 @@ interface ISolidNodeProps {
   dim: boolean;
   onClick: (solidName: string) => void;
   onDoubleClick: (solidName: string) => void;
+  onEnterComposite: (solidName: string) => void;
   onHighlightConnections: (conns: { a: string; b: string }[]) => void;
 }
 
@@ -148,7 +147,13 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     this.props.onDoubleClick(this.props.solid.name);
   };
 
-  handleKindClicked = (e: React.MouseEvent, kind: string) => {
+  handleEnterComposite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    this.props.onEnterComposite(this.props.solid.name);
+  };
+
+  handleKindClicked = (e: React.MouseEvent) => {
     this.handleClick(e);
     window.requestAnimationFrame(() =>
       document.dispatchEvent(new Event("show-kind-info"))
@@ -160,7 +165,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     items: Array<SolidNodeFragment_inputs | SolidNodeFragment_outputs>,
     layout: { [ioName: string]: { layout: ILayout } }
   ) {
-    const { solid, parentSolid, minified, highlightedConnections } = this.props;
+    const { solid, minified, highlightedConnections } = this.props;
 
     return Object.keys(layout).map((key, i) => {
       const { x, y, width, height } = layout[key].layout;
@@ -356,7 +361,15 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       configDefinition = solid.definition.configDefinition;
     }
 
+    const tags: ISolidTag[] = [];
+
     const kind = metadata.find(m => m.key === "kind");
+    if (kind) {
+      tags.push({ label: kind.value, onClick: this.handleKindClicked });
+    }
+    if (solid.definition.__typename === "CompositeSolidDefinition") {
+      tags.push({ label: "Expand", onClick: this.handleEnterComposite });
+    }
 
     return (
       <g
@@ -373,14 +386,13 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         {configDefinition && (
           <SolidConfigPort x={x + width - 33} y={y - 13} minified={minified} />
         )}
-        {kind && kind.value && (
+        {tags.length > 0 && (
           <SolidTags
             x={x}
             y={y + height}
             width={width + 5}
             minified={minified}
-            tags={[kind.value]}
-            onTagClicked={this.handleKindClicked}
+            tags={tags}
           />
         )}
       </g>
