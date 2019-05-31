@@ -63,9 +63,7 @@ def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     check.opt_str_param(mode, 'mode')
 
     dauphin_pipeline = get_dauphin_pipeline_from_selector(graphene_info, selector)
-    _validated_config = get_validated_config(
-        graphene_info, dauphin_pipeline, environment_dict, mode
-    )
+    get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode)
     return graphene_info.schema.type_named('PipelineConfigValidationValid')(dauphin_pipeline)
 
 

@@ -170,7 +170,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         with self._processes_lock:
             processes = copy.copy(self._processes)
             self._processes = []
-            for process in processes:
+            for _ in processes:
                 self._processing_semaphore.release()
 
         for process in processes:

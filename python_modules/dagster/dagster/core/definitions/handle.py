@@ -226,9 +226,7 @@ def _get_python_file_from_previous_stack_frame():
 
     # See: https://docs.python.org/3/library/inspect.html
     if sys.version_info.major == 3 and sys.version_info.minor >= 5:
-        from inspect import FrameInfo
-
-        check.inst(previous_stack_frame, FrameInfo)
+        check.inst(previous_stack_frame, inspect.FrameInfo)
     else:
         check.inst(previous_stack_frame, tuple)
 
