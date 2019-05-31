@@ -1,6 +1,5 @@
 from dagster import check
-
-from dagster.core.loggers import default_loggers
+from dagster.loggers import default_loggers
 
 from .logger import LoggerDefinition
 from .resource import ResourceDefinition

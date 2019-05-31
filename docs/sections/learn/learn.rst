@@ -7,6 +7,7 @@ Learn
   tutorial/index
   principles
 
+  guides/logging/logging
 Other Guides
 *****************
 .. toctree::

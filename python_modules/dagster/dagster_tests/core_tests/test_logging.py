@@ -6,13 +6,13 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import check, execute_pipeline, PipelineDefinition, solid
+from dagster import check, execute_pipeline, ModeDefinition, PipelineDefinition, solid
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.loggers import colored_console_logger
+from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo
 
 REGEX_UUID = r'[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}'
@@ -224,3 +224,27 @@ def test_colored_console_logger_with_integer_log_level():
             {'name': 'dagster', 'log_level': 4}, PipelineDefinition([]), colored_console_logger, ''
         )
     )
+
+
+def test_json_console_logger(capsys):
+    @solid
+    def hello_world(context):
+        context.log.info('Hello, world!')
+
+    execute_pipeline(
+        PipelineDefinition(
+            [hello_world], mode_definitions=[ModeDefinition(loggers={'json': json_console_logger})]
+        ),
+        {'loggers': {'json': {'config': {}}}},
+    )
+
+    captured = capsys.readouterr()
+
+    found_msg = False
+    for line in captured.err.split('\n'):
+        if line:
+            parsed = json.loads(line)
+            if parsed['dagster_meta']['orig_message'] == 'Hello, world!':
+                found_msg = True
+
+    assert found_msg
