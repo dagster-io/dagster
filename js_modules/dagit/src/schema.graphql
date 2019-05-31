@@ -366,8 +366,8 @@ type Mode {
 }
 
 type Mutation {
-  startPipelineExecution(config: PipelineConfig, reexecutionConfig: ReexecutionConfig, pipeline: ExecutionSelector!, executionMetadata: ExecutionMetadata, mode: String!, stepKeys: [String!]): StartPipelineExecutionResult!
-  executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata, mode: String!, stepKeys: [String!], pipelineName: String!): ExecutePlanResult!
+  startPipelineExecution(mode: String!, executionMetadata: ExecutionMetadata, config: PipelineConfig, pipeline: ExecutionSelector!, stepKeys: [String!], reexecutionConfig: ReexecutionConfig): StartPipelineExecutionResult!
+  executePlan(mode: String!, stepKeys: [String!], executionMetadata: ExecutionMetadata, pipelineName: String!, config: PipelineConfig): ExecutePlanResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -590,8 +590,8 @@ type Query {
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   pipelineRuns: [PipelineRun!]!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
-  isPipelineConfigValid(config: PipelineConfig, pipeline: ExecutionSelector!, mode: String!): PipelineConfigValidationResult!
-  executionPlan(config: PipelineConfig, pipeline: ExecutionSelector!, mode: String!): ExecutionPlanResult!
+  isPipelineConfigValid(mode: String!, pipeline: ExecutionSelector!, config: PipelineConfig): PipelineConfigValidationResult!
+  executionPlan(mode: String!, pipeline: ExecutionSelector!, config: PipelineConfig): ExecutionPlanResult!
 }
 
 input ReexecutionConfig {
