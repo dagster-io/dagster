@@ -2,7 +2,6 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
-import { LinkVertical as Link } from "@vx/shape";
 import SVGViewport, { SVGViewportInteractor } from "./SVGViewport";
 import { SVGLabeledRect } from "./SVGComponents";
 import SolidNode from "./SolidNode";
@@ -12,6 +11,7 @@ import {
   IFullSolidLayout
 } from "./getFullSolidLayout";
 import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
+import { SolidLinks, IConnHighlight } from "./SolidLinks";
 
 const NoOp = () => {};
 
@@ -36,7 +36,6 @@ interface IPipelineContentsProps extends IPipelineGraphProps {
   layout: IFullPipelineLayout;
 }
 
-type IConnHighlight = { a: string; b: string };
 interface IPipelineContentsState {
   highlightedConnections: IConnHighlight[];
 }
@@ -78,14 +77,28 @@ class PipelineGraphContents extends React.PureComponent<
     return (
       <g>
         {parentSolid && (
-          <SVGLabeledRect
+          <SVGLabeledCompositeRect
             x={1}
             y={1}
+            key={`composite-rect-${parentSolid.name}`}
             width={layout.width - 1}
             height={layout.height - 1}
-            label={parentSolid.name}
+            label={parentSolid ? parentSolid.name : ""}
             fill={Colors.LIGHT_GRAY5}
             minified={minified}
+          />
+        )}
+        {selectedSolid && (
+          // this rect is hidden beneath the user's selection with a React key so that
+          // when they expand the composite solid React sees this component becoming
+          // the one above and re-uses the DOM node. This allows us to animate the rect's
+          // bounds from the parent layout to the inner layout with no React state.
+          <SVGLabeledCompositeRect
+            {...layout.solids[selectedSolid.name].solid}
+            key={`composite-rect-${selectedSolid.name}`}
+            label={""}
+            fill={Colors.LIGHT_GRAY5}
+            minified={true}
           />
         )}
         <SolidLinks
@@ -234,22 +247,26 @@ export default class PipelineGraph extends React.Component<
     }
   };
 
+  componentDidUpdate(prevProps: IPipelineGraphProps) {
+    if (prevProps.parentSolid !== this.props.parentSolid) {
+      this.viewportEl.current!.autocenter();
+    }
+  }
+
   render() {
     const {
       layout,
       interactor,
       pipelineName,
-      parentSolid,
       backgroundColor,
       onClickBackground,
-      onLeaveCompositeSolid,
       onDoubleClickSolid
     } = this.props;
 
     return (
       <SVGViewport
         ref={this.viewportEl}
-        key={`${pipelineName}-${parentSolid ? parentSolid.name : ""}`}
+        key={pipelineName}
         interactor={interactor || SVGViewport.Interactors.PanAndZoom}
         backgroundColor={backgroundColor}
         graphWidth={layout.width}
@@ -277,49 +294,11 @@ export default class PipelineGraph extends React.Component<
   }
 }
 
-const SolidLinks = React.memo(
-  (props: {
-    opacity: number;
-    layout: IFullPipelineLayout;
-    connections: ILayoutConnection[];
-    onHighlight: (arr: IConnHighlight[]) => void;
-  }) => {
-    const solids = props.layout.solids;
-
-    return (
-      <g style={{ opacity: props.opacity }}>
-        {props.connections.map(({ from, to }, i) => (
-          <g
-            key={i}
-            onMouseLeave={() => props.onHighlight([])}
-            onMouseEnter={() =>
-              props.onHighlight([{ a: from.solidName, b: to.solidName }])
-            }
-          >
-            <StyledLink
-              data={{
-                // can also use from.point for the "Dagre" closest point on node
-                source: solids[from.solidName].outputs[from.edgeName].port,
-                target: solids[to.solidName].inputs[to.edgeName].port
-              }}
-            >
-              <title>{`${from.solidName} - ${to.solidName}`}</title>
-            </StyledLink>
-          </g>
-        ))}
-      </g>
-    );
-  }
-);
-
-SolidLinks.displayName = "SolidLinks";
-
 const SVGContainer = styled.svg`
   border-radius: 0;
 `;
 
-const StyledLink = styled(Link)`
-  stroke-width: 6;
-  stroke: ${Colors.BLACK}
-  fill: none;
+const SVGLabeledCompositeRect = styled(SVGLabeledRect)`
+  transition: x 200ms ease-out, y 200ms ease-out, width 200ms ease-out,
+    height 200ms ease-out;
 `;

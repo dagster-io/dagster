@@ -277,11 +277,13 @@ interface SVGLabeledRectProps {
   height: number;
   label: string;
   fill: string;
+  className?: string;
 }
 export const SVGLabeledRect: React.FunctionComponent<SVGLabeledRectProps> = ({
   minified,
   label,
   fill,
+  className,
   ...rect
 }) => (
   <g>
@@ -299,6 +301,7 @@ export const SVGLabeledRect: React.FunctionComponent<SVGLabeledRectProps> = ({
       fill={fill}
       stroke="#979797"
       strokeWidth={1}
+      className={className}
     />
   </g>
 );
