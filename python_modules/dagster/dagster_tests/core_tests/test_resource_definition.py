@@ -348,3 +348,70 @@ def test_no_config_resource_definition():
 
     assert called['resource']
     assert called['solid']
+
+
+def test_resource_cleanup():
+    called = {}
+
+    def _cleanup_resource_fn(_init_context):
+        called['creation'] = True
+        yield True
+        called['cleanup'] = True
+
+    @solid(resources={'resource_with_cleanup'})
+    def check_resource_created(context):
+        called['solid'] = True
+        assert context.resources.resource_with_cleanup is True
+
+    pipeline = PipelineDefinition(
+        name='test_resource_cleanup',
+        solids=[check_resource_created],
+        mode_definitions=[
+            ModeDefinition(
+                resources={'resource_with_cleanup': ResourceDefinition(_cleanup_resource_fn)}
+            )
+        ],
+    )
+
+    execute_pipeline(pipeline)
+
+    assert called['creation'] is True
+    assert called['solid'] is True
+    assert called['cleanup'] is True
+
+
+def test_stacked_resource_cleanup():
+    called = []
+
+    def _cleanup_resource_fn_1(_init_context):
+        called.append('creation_1')
+        yield True
+        called.append('cleanup_1')
+
+    def _cleanup_resource_fn_2(_init_context):
+        called.append('creation_2')
+        yield True
+        called.append('cleanup_2')
+
+    @solid(resources={'resource_with_cleanup_1', 'resource_with_cleanup_2'})
+    def check_resource_created(context):
+        called.append('solid')
+        assert context.resources.resource_with_cleanup_1 is True
+        assert context.resources.resource_with_cleanup_2 is True
+
+    pipeline = PipelineDefinition(
+        name='test_resource_cleanup',
+        solids=[check_resource_created],
+        mode_definitions=[
+            ModeDefinition(
+                resources={
+                    'resource_with_cleanup_1': ResourceDefinition(_cleanup_resource_fn_1),
+                    'resource_with_cleanup_2': ResourceDefinition(_cleanup_resource_fn_2),
+                }
+            )
+        ],
+    )
+
+    execute_pipeline(pipeline)
+
+    assert called == ['creation_1', 'creation_2', 'solid', 'cleanup_2', 'cleanup_1']

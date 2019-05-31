@@ -359,12 +359,6 @@ The bulk of this pipeline is built out of generic library solids, which are pres
 of the kind of reusable abstract building blocks you'll be able to write to simplify the expression
 of common workloads:
 
-- **union_spark_data_frames** (2x) just performs the operation
-  `left_data_frame.union(right_data_frame)`. Abstracting this operation makes it very clear where
-  you're working with component datasets and where you're working with unions -- especially useful
-  if different outputs of the DAG depend on each. You might extend this solid in practice to chain
-  union operations, with the signature
-  `left_data_frame: SparkDataFrame, right_data_frames: [SparkDataFrame] -> SparkDataFrame`.
 - **subsample_spark_dataset** (4x) randomly subsamples a dataset using `data_frame.sample`.
   Abstracting this out makes it clear which datasets may be subsampled and which may not be (e.g.,
   lookup tables like the `master_cord_data`) in this pipeline). Because subsampling is now

@@ -44,7 +44,6 @@ export default class ConfigEditor extends React.Component<IConfigEditorProps> {
   componentDidUpdate(prevProps: IConfigEditorProps) {
     if (!this._editor) return;
     if (prevProps.pipeline === this.props.pipeline) return;
-    console.log("performLint pipeline assigned");
     performLint(this._editor);
   }
 

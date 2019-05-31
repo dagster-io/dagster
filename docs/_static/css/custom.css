@@ -6,6 +6,12 @@
 
 @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600");
 
+html, body {
+  margin: 0;
+  padding:0;
+}
+
+
 body {
   font-family: "Source Sans Pro", sans-serif;
   font-weight: 300;
@@ -64,67 +70,90 @@ a.reference {
   display: none;
 }
 
+/* This is the "Dagster" sidebar header */
 .sphinxsidebar h3 > a {
   -webkit-transition: color 0.3s ease-in-out;
   -moz-transition: color 0.3s ease-in-out;
   -o-transition: color 0.3s ease-in-out;
   transition: color 0.3s ease-in-out;
-  padding-left: 6px;
+  padding-left: -2px;
 }
-
 .sphinxsidebar h3 > a:hover {
   color: #2391eb;
 }
 
-.sphinxsidebar li.toctree-l1 > a {
+/* Main sections - install, learn, etc. */
+div.sphinxsidebar ul li.toctree-l1 > a {
   font-family: "Source Sans Pro", sans-serif;
-  font-weight: 400;
-  margin: 0 8px;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+  color: #555;
   -webkit-transition: color 0.2s ease-in-out;
   -moz-transition: color 0.2s ease-in-out;
   -o-transition: color 0.2s ease-in-out;
   transition: color 0.2s ease-in-out;
 }
 
-.sphinxsidebar li.toctree-l1 > a:hover {
+div.sphinxsidebar li.toctree-l1 > a:hover {
   color: #2391eb;
   border-bottom: 1px solid #2391eb;
 }
 
-.sphinxsidebar li.toctree-l1 > a.current {
+/* Currently selected main section */
+div.sphinxsidebar > div > ul > li.toctree-l1.current > ul {
+  padding-bottom: 18px;
+}
+
+div.sphinxsidebar > div > ul > li > ul {
+  margin-left: 0px;
+
+}
+
+div.sphinxsidebar li.toctree-l1 > a.current {
   color: #2391eb;
 }
 
-.sphinxsidebar li.toctree-l1 > ul {
+div.sphinxsidebar li.toctree-l1 > ul {
   list-style: none;
 }
 
-.sphinxsidebar li.toctree-l1 > ul li::before {
+div.sphinxsidebar li.toctree-l2 > ul {
+  list-style: none;
+}
+
+div.sphinxsidebar li.toctree-l3::before {
   content: "\2022";
   color: #1c2844;
   display: inline-block;
   width: 10px;
-  margin-left: -7px;
+  margin-left: -15px;
 }
+
 
 @media screen and (max-width: 875px) {
   body {
-    padding-right: 30px;
+    margin: 0;
+    padding: 20px 30px;
   }
 
-  .sphinxsidebar li.toctree-l1 > ul li::before {
+  div.sphinxsidebar ul li.toctree-l1 > a {
+    color: rgb(170, 170, 170);
+  }
+
+  div.sphinxsidebar li.toctree-l3::before {
     content: "\2022";
     color: rgb(170, 170, 170);
     display: inline-block;
     width: 10px;
-    margin-left: -7px;
+    margin-left: -15px;
   }
 
   div.sphinxsidebar {
     display: block;
     float: none;
     width: 110%;
-    margin: 50px -30px -10px -30px;
     background: #333;
   }
 
@@ -169,11 +198,13 @@ a.reference {
  */
 
 .logo_img {
-  height: 42%;
-  width: 42%;
   padding: 30px 0 30px 0;
   display: block;
   margin: 0 auto;
+}
+
+.logo_img > img {
+  max-height: 220px;
 }
 
 .dagster {

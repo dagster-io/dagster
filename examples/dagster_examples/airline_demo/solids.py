@@ -6,6 +6,7 @@ import zipfile
 
 from io import BytesIO
 
+from pyspark.sql import DataFrame
 from sqlalchemy import text
 
 from dagster import (
@@ -172,22 +173,10 @@ def ingest_csv_to_spark(context, input_csv_file):
     )
 
 
-@solid(
-    name='prefix_column_names',
-    inputs=[
-        InputDefinition(
-            'data_frame',
-            SparkDataFrameType,
-            description='The data frame whose columns should be prefixed',
-        )
-    ],
-    config_field=Field(String, description='Prefix to append.'),
-    outputs=[OutputDefinition(SparkDataFrameType)],
-)
-def prefix_column_names(context, data_frame):
-    return rename_spark_dataframe_columns(
-        data_frame, lambda c: '{prefix}{c}'.format(prefix=context.solid_config, c=c)
-    )
+def do_prefix_column_names(df, prefix):
+    check.inst_param(df, 'df', DataFrame)
+    check.str_param(prefix, 'prefix')
+    return rename_spark_dataframe_columns(df, lambda c: '{prefix}{c}'.format(prefix=prefix, c=c))
 
 
 @solid(
@@ -265,65 +254,9 @@ def load_data_to_database_from_spark(context, data_frame):
     ],
 )
 def subsample_spark_dataset(context, data_frame):
-    return data_frame.sample(False, context.solid_config['subsample_pct'] / 100.0)
-
-
-@solid(
-    name='join_spark_data_frames',
-    inputs=[
-        InputDefinition(
-            'left_data_frame', SparkDataFrameType, description='The left DataFrame to join.'
-        ),
-        InputDefinition(
-            'right_data_frame', SparkDataFrameType, description='The right DataFrame to join.'
-        ),
-    ],
-    outputs=[
-        OutputDefinition(
-            SparkDataFrameType,
-            # description='A pyspark DataFrame containing a subsample of the input rows.',
-        )
-    ],
-    config_field=Field(
-        Dict(
-            fields={
-                'on_left': Field(String, description='', default_value='id', is_optional=True),
-                'on_right': Field(String, description='', default_value='id', is_optional=True),
-                'how': Field(String, description='', default_value='inner', is_optional=True),
-            }
-        )
-    ),
-)
-def join_spark_data_frames(context, left_data_frame, right_data_frame):
-    return left_data_frame.join(
-        right_data_frame,
-        on=(
-            getattr(left_data_frame, context.solid_config['on_left'])
-            == getattr(right_data_frame, context.solid_config['on_right'])
-        ),
-        how=context.solid_config['how'],
+    return data_frame.sample(
+        withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
     )
-
-
-@solid(
-    name='union_spark_data_frames',
-    inputs=[
-        InputDefinition(
-            'left_data_frame', SparkDataFrameType, description='The left DataFrame to union.'
-        ),
-        InputDefinition(
-            'right_data_frame', SparkDataFrameType, description='The right DataFrame to union.'
-        ),
-    ],
-    outputs=[
-        OutputDefinition(
-            SparkDataFrameType,
-            description='A pyspark DataFrame containing the union of the input data frames.',
-        )
-    ],
-)
-def union_spark_data_frames(_context, left_data_frame, right_data_frame):
-    return left_data_frame.union(right_data_frame)
 
 
 q2_sfo_outbound_flights = sql_solid(
@@ -550,3 +483,44 @@ sfo_delays_by_destination = notebook_solid(
         )
     ],
 )
+
+
+@solid(
+    inputs=[
+        InputDefinition('april_data', SparkDataFrameType),
+        InputDefinition('may_data', SparkDataFrameType),
+        InputDefinition('june_data', SparkDataFrameType),
+        InputDefinition('master_cord_data', SparkDataFrameType),
+    ],
+    outputs=[OutputDefinition(SparkDataFrameType)],
+    config_field=Field(
+        Dict(fields={'subsample_pct': Field(Int, description='')})
+        # description='The integer percentage of rows to sample from the input dataset.'
+    ),
+)
+def process_q2_data(context, april_data, may_data, june_data, master_cord_data):
+    q2_data = april_data.union(may_data).union(june_data)
+    sampled_q2_data = q2_data.sample(
+        withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
+    )
+    sampled_q2_data.createOrReplaceTempView('q2_data')
+
+    dest_prefixed_master_cord_data = do_prefix_column_names(master_cord_data, 'DEST_')
+    dest_prefixed_master_cord_data.createOrReplaceTempView('dest_cord_data')
+
+    origin_prefixed_master_cord_data = do_prefix_column_names(master_cord_data, 'ORIGIN_')
+    origin_prefixed_master_cord_data.createOrReplaceTempView('origin_cord_data')
+
+    full_data = context.resources.spark.sql(
+        '''
+        SELECT * FROM origin_cord_data
+        LEFT JOIN (
+            SELECT * FROM q2_data
+            LEFT JOIN dest_cord_data ON
+            q2_data.DestAirportSeqID = dest_cord_data.DEST_AIRPORT_SEQ_ID
+        ) q2_dest_data 
+        ON origin_cord_data.ORIGIN_AIRPORT_SEQ_ID = q2_dest_data.OriginAirportSeqID
+        '''
+    )
+
+    return rename_spark_dataframe_columns(full_data, lambda c: c.lower())

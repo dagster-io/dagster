@@ -23,7 +23,6 @@ from dagster import (
 from dagster_examples.airline_demo.solids import sql_solid, ingest_csv_to_spark, unzip_file
 from dagster_examples.airline_demo.resources import spark_session_local, tempfile_resource
 
-from .marks import nettest, postgres, redshift, skip, spark
 
 tempfile_mode = ModeDefinition(name='tempfile', resources={'tempfile': tempfile_resource})
 
@@ -80,7 +79,7 @@ def test_unzip_file_tempfile():
     assert result.transformed_value().read() == b'test\n'
 
 
-@spark
+@pytest.mark.spark
 def test_ingest_csv_to_spark():
     @lambda_solid
     def nonce():
@@ -106,28 +105,28 @@ def test_ingest_csv_to_spark():
     # assert result.transformed_value().head()[0] == '1'
 
 
-@postgres
-@skip
-@spark
+@pytest.mark.postgres
+@pytest.mark.skip
+@pytest.mark.spark
 def test_load_data_to_postgres_from_spark_postgres():
     raise NotImplementedError()
 
 
-@nettest
-@redshift
-@skip
-@spark
+@pytest.mark.nettest
+@pytest.mark.redshift
+@pytest.mark.skip
+@pytest.mark.spark
 def test_load_data_to_redshift_from_spark():
     raise NotImplementedError()
 
 
-@skip
-@spark
+@pytest.mark.skip
+@pytest.mark.spark
 def test_subsample_spark_dataset():
     raise NotImplementedError()
 
 
-@skip
-@spark
+@pytest.mark.skip
+@pytest.mark.spark
 def test_join_spark_data_frame():
     raise NotImplementedError()

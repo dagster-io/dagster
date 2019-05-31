@@ -197,7 +197,7 @@ def _create_resources(pipeline_def, environment_config, run_config, log_manager)
     # something. We do this so that resources can cleanup after themselves. We
     # can potentially have many resources so we need to use this abstraction.
     with ExitStack() as stack:
-        for resource_name, resource_def in mode_definition.resource_defs.items():
+        for resource_name, resource_def in sorted(mode_definition.resource_defs.items()):
             user_fn = _create_resource_fn_lambda(
                 pipeline_def,
                 resource_def,

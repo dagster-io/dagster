@@ -2,6 +2,8 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { injectGlobal } from "styled-components";
 import ApolloClient from "apollo-client";
+import { ApolloLink } from "apollo-link";
+import { onError } from "apollo-link-error";
 import { ApolloProvider } from "react-apollo";
 import { SubscriptionClient } from "subscriptions-transport-ws";
 import { WebSocketLink } from "apollo-link-ws";
@@ -9,11 +11,14 @@ import { WebsocketStatusProvider } from "./WebsocketStatus";
 import App from "./App";
 import ApiResultRenderer from "./ApiResultRenderer";
 import AppCache from "./AppCache";
+import { Toaster, Position, Intent } from "@blueprintjs/core";
 
 import "@blueprintjs/core/lib/css/blueprint.css";
 import "@blueprintjs/table/lib/css/table.css";
 import "@blueprintjs/icons/lib/css/blueprint-icons.css";
 import "@blueprintjs/select/lib/css/blueprint-select.css";
+
+const ErrorToaster = Toaster.create({ position: Position.TOP_RIGHT });
 
 const websocketClient = new SubscriptionClient(
   process.env.REACT_APP_GRAPHQL_URI || `ws://${document.location.host}/graphql`,
@@ -22,9 +27,28 @@ const websocketClient = new SubscriptionClient(
   }
 );
 
+const errorLink = onError(({ graphQLErrors, networkError }) => {
+  if (graphQLErrors)
+    graphQLErrors.map(error => {
+      ErrorToaster.show({
+        message: `[GraphQL error] ${error.message}`,
+        intent: Intent.DANGER
+      });
+      console.error("[GraphQL error]", error);
+    });
+
+  if (networkError) {
+    ErrorToaster.show({
+      message: `[Network error] ${networkError}`,
+      intent: Intent.DANGER
+    });
+    console.error("[Network error]", networkError);
+  }
+});
+
 const client = new ApolloClient({
   cache: AppCache,
-  link: new WebSocketLink(websocketClient)
+  link: ApolloLink.from([errorLink, new WebSocketLink(websocketClient)])
 });
 
 if (process.env.REACT_APP_RENDER_API_RESULTS) {

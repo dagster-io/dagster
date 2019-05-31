@@ -12,8 +12,6 @@ from dagster_examples.airline_demo.pipelines import (
     define_airline_demo_warehouse_pipeline,
 )
 
-from .marks import db, nettest, py3, spark
-
 
 def enviroment_overrides(config):
     if os.environ.get('DAGSTER_AIRLINE_DEMO_DB_HOST'):
@@ -23,10 +21,10 @@ def enviroment_overrides(config):
     return config
 
 
-@db
-@nettest
-@py3
-@spark
+@pytest.mark.db
+@pytest.mark.nettest
+@pytest.mark.py3
+@pytest.mark.spark
 def test_airline_pipeline_0_ingest(docker_compose_db):
     ingest_config_object = load_yaml_from_globs(
         script_relative_path('../../dagster_examples/airline_demo/environments/local_base.yaml'),
@@ -44,10 +42,10 @@ def test_airline_pipeline_0_ingest(docker_compose_db):
     assert result_ingest.success
 
 
-@db
-@nettest
-@py3
-@spark
+@pytest.mark.db
+@pytest.mark.nettest
+@pytest.mark.py3
+@pytest.mark.spark
 def test_airline_pipeline_1_warehouse(docker_compose_db):
     warehouse_config_object = load_yaml_from_globs(
         script_relative_path('../../dagster_examples/airline_demo/environments/local_base.yaml'),

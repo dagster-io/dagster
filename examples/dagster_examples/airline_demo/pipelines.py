@@ -26,15 +26,13 @@ from .solids import (
     delays_vs_fares_nb,
     eastbound_delays,
     ingest_csv_to_spark,
-    join_spark_data_frames,
     load_data_to_database_from_spark,
     normalize_weather_na_values,
-    prefix_column_names,
+    process_q2_data,
     q2_sfo_outbound_flights,
     sfo_delays_by_destination,
     subsample_spark_dataset,
     tickets_with_destination,
-    union_spark_data_frames,
     unzip_file,
     westbound_delays,
 )
@@ -78,12 +76,10 @@ def define_airline_demo_ingest_pipeline():
         canonicalize_column_names,
         download_from_s3_to_bytes,
         ingest_csv_to_spark,
-        join_spark_data_frames,
         load_data_to_database_from_spark,
         normalize_weather_na_values,
-        prefix_column_names,
+        process_q2_data,
         subsample_spark_dataset,
-        union_spark_data_frames,
         unzip_file,
     ]
     dependencies = {
@@ -140,16 +136,11 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('ingest_csv_to_spark', alias='ingest_master_cord_data'): {
             'input_csv_file': DependencyDefinition('unzip_master_cord_data')
         },
-        SolidInstance('union_spark_data_frames', alias='combine_april_may_on_time_data'): {
-            'left_data_frame': DependencyDefinition('ingest_april_on_time_data'),
-            'right_data_frame': DependencyDefinition('ingest_may_on_time_data'),
-        },
-        SolidInstance('union_spark_data_frames', alias='combine_q2_on_time_data'): {
-            'left_data_frame': DependencyDefinition('combine_april_may_on_time_data'),
-            'right_data_frame': DependencyDefinition('ingest_june_on_time_data'),
-        },
-        SolidInstance('subsample_spark_dataset', alias='subsample_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('combine_q2_on_time_data')
+        'process_q2_data': {
+            'april_data': DependencyDefinition('ingest_april_on_time_data'),
+            'may_data': DependencyDefinition('ingest_may_on_time_data'),
+            'june_data': DependencyDefinition('ingest_june_on_time_data'),
+            'master_cord_data': DependencyDefinition('ingest_master_cord_data'),
         },
         SolidInstance('subsample_spark_dataset', alias='subsample_q2_ticket_data'): {
             'data_frame': DependencyDefinition('ingest_q2_ticket_data')
@@ -162,23 +153,6 @@ def define_airline_demo_ingest_pipeline():
         },
         SolidInstance('normalize_weather_na_values', alias='normalize_q2_weather_na_values'): {
             'data_frame': DependencyDefinition('ingest_q2_sfo_weather')
-        },
-        SolidInstance('prefix_column_names', alias='prefix_dest_cord_data'): {
-            'data_frame': DependencyDefinition('ingest_master_cord_data')
-        },
-        SolidInstance('prefix_column_names', alias='prefix_origin_cord_data'): {
-            'data_frame': DependencyDefinition('ingest_master_cord_data')
-        },
-        SolidInstance('join_spark_data_frames', alias='join_q2_on_time_data_to_dest_cord_data'): {
-            'left_data_frame': DependencyDefinition('subsample_q2_on_time_data'),
-            'right_data_frame': DependencyDefinition('prefix_dest_cord_data'),
-        },
-        SolidInstance('join_spark_data_frames', alias='join_q2_on_time_data_to_origin_cord_data'): {
-            'left_data_frame': DependencyDefinition('join_q2_on_time_data_to_dest_cord_data'),
-            'right_data_frame': DependencyDefinition('prefix_origin_cord_data'),
-        },
-        SolidInstance('canonicalize_column_names', alias='canonicalize_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('join_q2_on_time_data_to_origin_cord_data')
         },
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_coupon_data'): {
             'data_frame': DependencyDefinition('subsample_q2_coupon_data')
@@ -193,7 +167,7 @@ def define_airline_demo_ingest_pipeline():
             'data_frame': DependencyDefinition('normalize_q2_weather_na_values')
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('canonicalize_q2_on_time_data')
+            'data_frame': DependencyDefinition('process_q2_data')
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_coupon_data'): {
             'data_frame': DependencyDefinition('canonicalize_q2_coupon_data')
