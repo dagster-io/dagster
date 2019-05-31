@@ -89,9 +89,16 @@ export default class PipelineExplorer extends React.Component<
   };
 
   handleEnterCompositeSolid = (solidName: string) => {
-    this.handleAdjustPath(handleIds => {
-      handleIds[handleIds.length - 1] = this.nameToHandleID(solidName);
-      handleIds.push("");
+    // To animate the rect of the composite solid expanding correctly, we need
+    // to select it before entering it so we can draw the "initial state" of the
+    // labeled rectangle.
+    this.handleClickSolid(solidName);
+
+    window.requestAnimationFrame(() => {
+      this.handleAdjustPath(handleIds => {
+        handleIds[handleIds.length - 1] = this.nameToHandleID(solidName);
+        handleIds.push("");
+      });
     });
   };
 
