@@ -26,7 +26,8 @@ interface IPipelineGraphProps {
   interactor?: SVGViewportInteractor;
   onClickSolid?: (solidName: string) => void;
   onDoubleClickSolid?: (solidName: string) => void;
-  onExpandCompositeSolid?: (solidName: string) => void;
+  onEnterCompositeSolid?: (solidName: string) => void;
+  onLeaveCompositeSolid?: () => void;
   onClickBackground?: () => void;
 }
 
@@ -145,7 +146,7 @@ export default class PipelineGraph extends React.Component<
   viewportEl: React.RefObject<SVGViewport> = React.createRef();
 
   focusOnSolid = (solidName: string) => {
-    const { layout, solids, onExpandCompositeSolid } = this.props;
+    const { layout, solids, onEnterCompositeSolid } = this.props;
 
     const solidLayout = layout.solids[solidName];
     if (!solidLayout) {
@@ -158,10 +159,10 @@ export default class PipelineGraph extends React.Component<
     const started = this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, 1);
     if (
       !started &&
-      onExpandCompositeSolid &&
+      onEnterCompositeSolid &&
       solid!.definition.__typename === "CompositeSolidDefinition"
     ) {
-      onExpandCompositeSolid(solidName);
+      onEnterCompositeSolid(solidName);
     }
   };
 
@@ -220,8 +221,17 @@ export default class PipelineGraph extends React.Component<
     }
   };
 
-  unfocus = () => {
+  unfocus = (e: React.MouseEvent<any>) => {
     this.viewportEl.current!.autocenter(true);
+    e.stopPropagation();
+  };
+
+  unfocusOutsideContainer = (e: React.MouseEvent<any>) => {
+    if (this.props.parentSolid && this.props.onLeaveCompositeSolid) {
+      this.props.onLeaveCompositeSolid();
+    } else {
+      this.unfocus(e);
+    }
   };
 
   render() {
@@ -232,18 +242,20 @@ export default class PipelineGraph extends React.Component<
       parentSolid,
       backgroundColor,
       onClickBackground,
+      onLeaveCompositeSolid,
       onDoubleClickSolid
     } = this.props;
 
     return (
       <SVGViewport
         ref={this.viewportEl}
-        key={pipelineName}
+        key={`${pipelineName}-${parentSolid ? parentSolid.name : ""}`}
         interactor={interactor || SVGViewport.Interactors.PanAndZoom}
         backgroundColor={backgroundColor}
         graphWidth={layout.width}
         graphHeight={layout.height}
         onKeyDown={this.onKeyDown}
+        onDoubleClick={this.unfocusOutsideContainer}
       >
         {({ scale }: any) => (
           <SVGContainer

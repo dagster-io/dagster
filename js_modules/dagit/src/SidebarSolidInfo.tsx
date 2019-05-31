@@ -31,7 +31,7 @@ type SolidMappingTable = {
 interface ISidebarSolidInfoProps {
   solid: SidebarSolidInfoFragment;
   showingSubsolids: boolean;
-  onExpandCompositeSolid: (solidName: string) => void;
+  onEnterCompositeSolid: (solidName: string) => void;
 }
 
 export default class SidebarSolidInfo extends React.Component<
@@ -127,7 +127,7 @@ export default class SidebarSolidInfo extends React.Component<
   };
 
   public render() {
-    const { solid, showingSubsolids, onExpandCompositeSolid } = this.props;
+    const { solid, showingSubsolids, onEnterCompositeSolid } = this.props;
     const { name, definition, inputs, outputs } = solid;
 
     const Plugin = pluginForMetadata(definition.metadata);
@@ -168,7 +168,7 @@ export default class SidebarSolidInfo extends React.Component<
             icon="zoom-in"
             text="Expand"
             style={{ float: "right", margin: "0 15px" }}
-            onClick={() => onExpandCompositeSolid(name)}
+            onClick={() => onEnterCompositeSolid(name)}
           />
         )}
         <SidebarSubhead>
