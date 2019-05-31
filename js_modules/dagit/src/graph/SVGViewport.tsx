@@ -1,6 +1,5 @@
 import * as React from "react";
 import animate from "amator";
-import { Colors } from "@blueprintjs/core";
 
 export interface SVGViewportInteractor {
   onMouseDown(
@@ -16,6 +15,7 @@ interface SVGViewportProps {
   graphHeight: number;
   backgroundColor?: string;
   interactor: SVGViewportInteractor;
+  onDoubleClick: (event: React.MouseEvent<HTMLDivElement>) => void;
   onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   children: (state: SVGViewportState) => React.ReactNode;
 }
@@ -105,7 +105,7 @@ export default class SVGViewport extends React.Component<
   state = {
     x: 0,
     y: 0,
-    scale: 1,
+    scale: DETAIL_ZOOM,
     minScale: 0
   };
 
@@ -189,15 +189,21 @@ export default class SVGViewport extends React.Component<
 
   onZoomAndCenter = (event: React.MouseEvent<HTMLDivElement>) => {
     var offset = this.screenToSVGCoords(this.getOffsetXY(event));
-    if (Math.abs(1 - this.state.scale) < 0.01) {
+    if (Math.abs(DETAIL_ZOOM - this.state.scale) < 0.01) {
       this.smoothZoomToSVGCoords(offset.x, offset.y, this.state.minScale);
     } else {
-      this.smoothZoomToSVGCoords(offset.x, offset.y, 1);
+      this.smoothZoomToSVGCoords(offset.x, offset.y, DETAIL_ZOOM);
     }
   };
 
   render() {
-    const { children, onKeyDown, interactor, backgroundColor } = this.props;
+    const {
+      children,
+      onKeyDown,
+      onDoubleClick,
+      interactor,
+      backgroundColor
+    } = this.props;
     const { x, y, scale } = this.state;
 
     return (
@@ -206,6 +212,7 @@ export default class SVGViewport extends React.Component<
         style={Object.assign({ backgroundColor }, SVGViewportStyles)}
         onMouseDown={e => interactor.onMouseDown(this, e)}
         onWheel={e => interactor.onWheel(this, e)}
+        onDoubleClick={onDoubleClick}
         onKeyDown={onKeyDown}
         tabIndex={-1}
       >

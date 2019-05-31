@@ -16,7 +16,7 @@ interface ISidebarTabbedContainerProps {
   pipeline: SidebarTabbedContainerPipelineFragment;
   solid?: SidebarTabbedContainerSolidFragment;
   parentSolid?: SidebarTabbedContainerSolidFragment;
-  onExpandCompositeSolid: (solidName: string) => void;
+  onEnterCompositeSolid: (solidName: string) => void;
 }
 
 interface ITabInfo {
@@ -87,7 +87,7 @@ export default class SidebarTabbedContainer extends React.Component<
           solid={solid}
           key={solid.name}
           showingSubsolids={false}
-          onExpandCompositeSolid={this.props.onExpandCompositeSolid}
+          onEnterCompositeSolid={this.props.onEnterCompositeSolid}
         />
       );
     } else if (parentSolid) {
@@ -96,7 +96,7 @@ export default class SidebarTabbedContainer extends React.Component<
           solid={parentSolid}
           key={parentSolid.name}
           showingSubsolids={true}
-          onExpandCompositeSolid={this.props.onExpandCompositeSolid}
+          onEnterCompositeSolid={this.props.onEnterCompositeSolid}
         />
       );
     } else {

@@ -76,19 +76,28 @@ export default class PipelineExplorer extends React.Component<
     return this.props.handles.find(h => h.solid.name === solidName)!.handleID;
   };
 
-  handleClickSolid = (solidName: string) => {
+  handleAdjustPath = (fn: (handleIDs: string[]) => void) => {
     const { history, pipeline, path } = this.props;
-    const next = [...path];
-    next[next.length - 1] = this.nameToHandleID(solidName);
+    let next = [...path];
+    fn(next);
     history.push(`/${pipeline.name}/explore/${next.join("/")}`);
   };
 
-  handleExpandCompositeSolid = (solidName: string) => {
-    const { history, pipeline, path } = this.props;
-    const next = [...path];
-    next[next.length - 1] = this.nameToHandleID(solidName);
-    next.push("");
-    history.push(`/${pipeline.name}/explore/${next.join("/")}`);
+  handleClickSolid = (solidName: string) => {
+    this.handleAdjustPath(handleIds => {
+      handleIds[handleIds.length - 1] = this.nameToHandleID(solidName);
+    });
+  };
+
+  handleEnterCompositeSolid = (solidName: string) => {
+    this.handleAdjustPath(handleIds => {
+      handleIds[handleIds.length - 1] = this.nameToHandleID(solidName);
+      handleIds.push("");
+    });
+  };
+
+  handleLeaveCompositeSolid = () => {
+    this.handleAdjustPath(handleIds => handleIds.pop());
   };
 
   handleClickBackground = () => {
@@ -171,7 +180,8 @@ export default class PipelineExplorer extends React.Component<
             parentSolid={parentHandle && parentHandle.solid}
             onClickSolid={this.handleClickSolid}
             onClickBackground={this.handleClickBackground}
-            onExpandCompositeSolid={this.handleExpandCompositeSolid}
+            onEnterCompositeSolid={this.handleEnterCompositeSolid}
+            onLeaveCompositeSolid={this.handleLeaveCompositeSolid}
             layout={this.getLayout(solids)}
             highlightedSolids={solids.filter(
               s => filter && s.name.includes(filter)
@@ -193,7 +203,7 @@ export default class PipelineExplorer extends React.Component<
                 pipeline={pipeline}
                 solid={selectedHandle && selectedHandle.solid}
                 parentSolid={parentHandle && parentHandle.solid}
-                onExpandCompositeSolid={this.handleExpandCompositeSolid}
+                onEnterCompositeSolid={this.handleEnterCompositeSolid}
                 {...parseQueryString(location.search || "")}
               />
             )}
