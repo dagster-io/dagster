@@ -11,7 +11,15 @@ check_black:
 	black examples python_modules --check --line-length 100 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/" -N
 
 install_dev_python_modules:
-	pip install --upgrade pip
+	# NOTE: previously, we did a pip install --upgrade pip here. We have removed that and instead
+	# depend on the user to ensure an up-to-date pip is installed and available. For context, there
+	# is a lengthy discussion here:
+	# https://github.com/pypa/pip/issues/5599
+
+	# On machines with less memory, pyspark install will fail... see:
+	# https://stackoverflow.com/a/31526029/11295366
+	pip --no-cache-dir install pyspark==2.4.0
+
 	pip install -r python_modules/dagster/dev-requirements.txt
 	pip install -e python_modules/dagster
 	pip install -e python_modules/dagster-graphql
