@@ -5,7 +5,7 @@ ThisBuild / scalaVersion     := "2.11.12"
 ThisBuild / version          := "0.1.0-SNAPSHOT"
 ThisBuild / organization     := "io.dagster"
 ThisBuild / organizationName := "dagster"
-ThisBuild / licenses         := List("Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+ThisBuild / licenses         := List("Apache-2.0" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 ThisBuild / homepage         := Some(url("https://github.com/dagster-io/dagster"))
 
 lazy val global = (project in file("."))
@@ -73,5 +73,7 @@ lazy val events = project
       "com.google.cloud" % "google-cloud-storage" % "1.76.0"
     ),
     scalacOptions ++= Seq("-Xmax-classfile-name", "240"),
-    Compile / scalacOptions ++= Seq("-Xmax-classfile-name", "240")
+    Compile / scalacOptions ++= Seq("-Xmax-classfile-name", "240"),
+    bintrayOrganization := Some("dagster-io"),
+    bintrayRepository := "dagster"
   )
