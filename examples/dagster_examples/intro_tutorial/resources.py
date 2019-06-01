@@ -88,7 +88,7 @@ def define_resource_test_pipeline():
 
 
 if __name__ == '__main__':
-    result = execute_pipeline(
+    execute_pipeline(
         define_resource_test_pipeline(),
         run_config=RunConfig(mode='cloud'),
         environment_dict={
@@ -99,7 +99,7 @@ if __name__ == '__main__':
         },
     )
 
-    result = execute_pipeline(
+    execute_pipeline(
         define_resource_test_pipeline(),
         run_config=RunConfig(mode='local'),
         environment_dict={

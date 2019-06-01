@@ -8,7 +8,17 @@ import sqlalchemy
 
 from pyspark.sql import DataFrame
 
-from dagster import as_dagster_type, Dict, Field, String
+from dagster import (
+    Bool,
+    Dict,
+    Field,
+    Path,
+    Selector,
+    String,
+    as_dagster_type,
+    check,
+    output_selector_schema,
+)
 from dagster.core.storage.runs import RunStorageMode
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.runtime import Stringish, RuntimeType
@@ -47,6 +57,31 @@ class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disab
         return context.resources.spark.read.parquet(os.path.join(intermediate_store.root, *paths))
 
 
+@output_selector_schema(
+    Selector(
+        {
+            'csv': Field(
+                Dict(
+                    {
+                        'path': Field(Path),
+                        'sep': Field(String, is_optional=True),
+                        'header': Field(Bool, is_optional=True),
+                    }
+                )
+            )
+        }
+    )
+)
+def spark_df_output_schema(_context, file_type, file_options, spark_df):
+    if file_type == 'csv':
+        spark_df.write.csv(
+            file_options['path'], header=file_options.get('header'), sep=file_options.get('sep')
+        )
+        return file_options['path']
+    else:
+        check.failed('Unsupported file type: {}'.format(file_type))
+
+
 SparkDataFrameType = as_dagster_type(
     DataFrame,
     name='SparkDataFrameType',
@@ -55,6 +90,7 @@ SparkDataFrameType = as_dagster_type(
         RunStorageMode.S3: SparkDataFrameS3StoragePlugin,
         RunStorageMode.FILESYSTEM: SparkDataFrameFilesystemStoragePlugin,
     },
+    output_schema=spark_df_output_schema,
 )
 
 

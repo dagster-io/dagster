@@ -12,10 +12,12 @@ from sqlalchemy import text
 from dagster import (
     Bytes,
     Dict,
+    ExpectationResult,
     Field,
     InputDefinition,
     Int,
     OutputDefinition,
+    Materialization,
     Result,
     SolidDefinition,
     String,
@@ -197,24 +199,12 @@ def replace_values_spark(data_frame, old, new):
 
 
 @solid(
-    name='normalize_weather_na_values',
-    description="Normalizes the given NA values by replacing them with None",
-    # FIXME can this be optional
-    # config_field=Field(
-    #     String,
-    #     # description='The string NA value to normalize to None.'
-    # ),
-    inputs=[
-        InputDefinition(
-            'data_frame',
-            SparkDataFrameType,
-            description='The pyspark DataFrame containing NA values to normalize.',
-        )
-    ],
+    inputs=[InputDefinition('sfo_weather_data', SparkDataFrameType)],
     outputs=[OutputDefinition(SparkDataFrameType)],
 )
-def normalize_weather_na_values(_context, data_frame):
-    return replace_values_spark(data_frame, 'M', None)
+def process_sfo_weather_data(_context, sfo_weather_data):
+    normalized_sfo_weather_data = replace_values_spark(sfo_weather_data, 'M', None)
+    return rename_spark_dataframe_columns(normalized_sfo_weather_data, lambda c: c.lower())
 
 
 @solid(
@@ -231,7 +221,15 @@ def normalize_weather_na_values(_context, data_frame):
 )
 def load_data_to_database_from_spark(context, data_frame):
     context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
-    return data_frame
+    # TODO Flow more information down to the client
+    # We should be able to flow multiple key value pairs down to dagit
+    # See https://github.com/dagster-io/dagster/issues/1408
+    yield Materialization(
+        path='Persisted Db Table: {table_name}'.format(
+            table_name=context.solid_config['table_name']
+        )
+    )
+    yield Result(data_frame)
 
 
 @solid(
@@ -497,8 +495,36 @@ sfo_delays_by_destination = notebook_solid(
         Dict(fields={'subsample_pct': Field(Int, description='')})
         # description='The integer percentage of rows to sample from the input dataset.'
     ),
+    description='''
+    This solid takes April, May, and June data and coalesces it into a q2 data set.
+    It then joins the that origin and destination airport with the data in the
+    master_cord_data.
+    ''',
 )
 def process_q2_data(context, april_data, may_data, june_data, master_cord_data):
+
+    dfs = {'april': april_data, 'may': may_data, 'june': june_data}
+
+    missing_things = []
+
+    for required_column in ['DestAirportSeqID', 'OriginAirportSeqID']:
+        for month, df in dfs.items():
+            if required_column not in df.columns:
+                missing_things.append({'month': month, 'missing_column': required_column})
+
+    yield ExpectationResult(
+        success=not bool(missing_things),
+        name='airport_ids_present',
+        message='Sequence IDs present in incoming monthly flight data.',
+        result_metadata={'missing_columns': missing_things},
+    )
+
+    yield ExpectationResult(
+        success=set(april_data.columns) == set(may_data.columns) == set(june_data.columns),
+        name='flight_data_same_shape',
+        result_metadata={'columns': april_data.columns},
+    )
+
     q2_data = april_data.union(may_data).union(june_data)
     sampled_q2_data = q2_data.sample(
         withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
@@ -523,4 +549,4 @@ def process_q2_data(context, april_data, may_data, june_data, master_cord_data):
         '''
     )
 
-    return rename_spark_dataframe_columns(full_data, lambda c: c.lower())
+    yield Result(rename_spark_dataframe_columns(full_data, lambda c: c.lower()))

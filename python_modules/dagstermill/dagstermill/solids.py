@@ -207,6 +207,14 @@ def _dm_solid_transform(name, notebook_path):
             ):
                 try:
                     papermill.execute_notebook(intermediate_path, temp_path, log_output=True)
+                except Exception as exc:
+                    yield Materialization(
+                        path=temp_path,
+                        description='{name} output notebook'.format(
+                            name=transform_context.solid.name
+                        ),
+                    )
+                    raise exc
                 finally:
                     is_done.set()
                     log_watcher_thread.join()

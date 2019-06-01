@@ -27,8 +27,8 @@ from .solids import (
     eastbound_delays,
     ingest_csv_to_spark,
     load_data_to_database_from_spark,
-    normalize_weather_na_values,
     process_q2_data,
+    process_sfo_weather_data,
     q2_sfo_outbound_flights,
     sfo_delays_by_destination,
     subsample_spark_dataset,
@@ -77,8 +77,8 @@ def define_airline_demo_ingest_pipeline():
         download_from_s3_to_bytes,
         ingest_csv_to_spark,
         load_data_to_database_from_spark,
-        normalize_weather_na_values,
         process_q2_data,
+        process_sfo_weather_data,
         subsample_spark_dataset,
         unzip_file,
     ]
@@ -151,8 +151,8 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('subsample_spark_dataset', alias='subsample_q2_coupon_data'): {
             'data_frame': DependencyDefinition('ingest_q2_coupon_data')
         },
-        SolidInstance('normalize_weather_na_values', alias='normalize_q2_weather_na_values'): {
-            'data_frame': DependencyDefinition('ingest_q2_sfo_weather')
+        'process_sfo_weather_data': {
+            'sfo_weather_data': DependencyDefinition('ingest_q2_sfo_weather')
         },
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_coupon_data'): {
             'data_frame': DependencyDefinition('subsample_q2_coupon_data')
@@ -162,9 +162,6 @@ def define_airline_demo_ingest_pipeline():
         },
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_ticket_data'): {
             'data_frame': DependencyDefinition('subsample_q2_ticket_data')
-        },
-        SolidInstance('canonicalize_column_names', alias='canonicalize_q2_sfo_weather'): {
-            'data_frame': DependencyDefinition('normalize_q2_weather_na_values')
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_on_time_data'): {
             'data_frame': DependencyDefinition('process_q2_data')
@@ -179,7 +176,7 @@ def define_airline_demo_ingest_pipeline():
             'data_frame': DependencyDefinition('canonicalize_q2_ticket_data')
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_sfo_weather'): {
-            'data_frame': DependencyDefinition('canonicalize_q2_sfo_weather')
+            'data_frame': DependencyDefinition('process_sfo_weather_data')
         },
     }
 

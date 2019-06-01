@@ -56,7 +56,7 @@ def scaffold(dag_name, module_name, fn_name, output_path, environment_file):
 
     # Validate output path
     if not output_path:
-        raise 'You must specify --output-path or set AIRFLOW_HOME to use this script.'
+        raise Exception('You must specify --output-path or set AIRFLOW_HOME to use this script.')
 
     # Load the pipeline to determine the pipeline name
     pipeline = LoaderEntrypoint.from_module_target(module_name, fn_name).perform_load()

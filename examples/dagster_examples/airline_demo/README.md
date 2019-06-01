@@ -376,13 +376,6 @@ of common workloads:
 Throughout, we work with Spark data frames, but it's straightforward to write similar solids that
 manipulate .csv files, parquet files, Pandas data frames, and other common data formats.
 
-Each of your pipelines will also have idiosyncratic operations that don't necessarily abstract
-well. Here, for instance, our weather data uses the value `M` to specify a missing value. The
-`normalize_weather_na_values` solid handles this operation for us, cleanly separating the weather
-data-specific cleanup operations from the rest of our logic. (Of course, in practice, you may want
-to write a more generic `normalize_na_values` solid that allows the user to specify the source
-data's missing value representation[s] in config.)
-
 ### Loading data to the warehouse
 
 The terminal nodes of this pipeline are all aliased instances of `load_data_to_database_from_spark`,
