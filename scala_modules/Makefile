@@ -12,3 +12,6 @@ all:
 
 clean:
 	sbt clean clean-files
+
+deploy: all
+	scripts/deploy.py
