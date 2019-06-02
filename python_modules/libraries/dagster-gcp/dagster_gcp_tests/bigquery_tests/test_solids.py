@@ -5,6 +5,14 @@ import uuid
 import pytest
 import pandas as pd
 
+try:
+    import unittest.mock as mock
+except ImportError:
+    import mock
+
+from google.cloud import bigquery
+from google.cloud.exceptions import NotFound
+
 from dagster_pandas import DataFrame
 
 from dagster import (
@@ -32,6 +40,19 @@ from dagster_gcp import (
     BigQueryLoadSolidDefinition,
     BigQueryLoadSource,
 )
+
+
+def dataset_exists(name):
+    '''Check if dataset exists - ensures we have properly cleaned up after tests and haven't leaked
+    any datasets'''
+    client = bigquery.Client()
+    dataset_ref = client.dataset(name)
+
+    try:
+        client.get_dataset(dataset_ref)
+        return True
+    except NotFound:
+        return False
 
 
 def get_dataset():
@@ -166,6 +187,8 @@ def test_create_delete_dataset():
         execute_pipeline(delete_pipeline, config)
     assert 'Dataset "%s" does not exist and not_found_ok is false' % dataset in str(exc_info.value)
 
+    assert not dataset_exists(dataset)
+
 
 def test_pd_df_load():
     dataset = get_dataset()
@@ -213,6 +236,13 @@ def test_pd_df_load():
             'loading data to BigQuery from pandas DataFrames requires either pyarrow or fastparquet'
             ' to be installed' in str(exc_info.value)
         )
+        cleanup_config = {
+            'solids': {'delete_solid': {'config': {'dataset': dataset, 'delete_contents': True}}}
+        }
+        cleanup = PipelineDefinition(solids=[delete_solid], mode_definitions=bq_modes())
+        assert execute_pipeline(cleanup, cleanup_config).success
+
+    assert not dataset_exists(dataset)
 
 
 def test_gcs_load():
@@ -266,3 +296,5 @@ def test_gcs_load():
 
     values = result.result_for_solid(query_solid.name).result_value()
     assert values[0].to_dict() == {'string_field_0': {0: 'Alabama'}, 'string_field_1': {0: 'AL'}}
+
+    assert not dataset_exists(dataset)
