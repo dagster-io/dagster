@@ -50,9 +50,11 @@ def test_download_from_s3_to_bytes():
         environment_dict={
             'solids': {
                 'download_from_s3_to_bytes': {
-                    'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
-                        'key': 'test/test_file',
+                    'inputs': {
+                        'bucket_data': {
+                            'bucket': 'dagster-airline-demo-source-data',
+                            'key': 'test/test_file',
+                        }
                     }
                 }
             }
