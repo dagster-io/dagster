@@ -273,22 +273,25 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
         step_output_iterator = check.generator(
             _iterate_step_outputs_within_boundary(step_context, evaluated_inputs)
         )
-    for step_output in check.generator(
-        _error_check_step_outputs(step_context, step_output_iterator)
-    ):
 
-        if isinstance(step_output, StepOutputValue):
-            yield _create_step_output_event(step_context, step_output, intermediates_manager)
-        elif isinstance(step_output, Materialization):
-            yield DagsterEvent.step_materialization(step_context, step_output)
-        elif isinstance(step_output, ExpectationResult):
-            yield DagsterEvent.step_expectation_result(step_context, step_output)
-        else:
-            check.failed(
-                'Unexpected step_output {step_output}, should have been caught earlier'.format(
-                    step_output=step_output
+        # It is important for this loop to be indented within the
+        # timer block above in order for time to be recorded accurately.
+        for step_output in check.generator(
+            _error_check_step_outputs(step_context, step_output_iterator)
+        ):
+
+            if isinstance(step_output, StepOutputValue):
+                yield _create_step_output_event(step_context, step_output, intermediates_manager)
+            elif isinstance(step_output, Materialization):
+                yield DagsterEvent.step_materialization(step_context, step_output)
+            elif isinstance(step_output, ExpectationResult):
+                yield DagsterEvent.step_expectation_result(step_context, step_output)
+            else:
+                check.failed(
+                    'Unexpected step_output {step_output}, should have been caught earlier'.format(
+                        step_output=step_output
+                    )
                 )
-            )
 
     yield DagsterEvent.step_success_event(
         step_context, StepSuccessData(duration_ms=timer_result.millis)

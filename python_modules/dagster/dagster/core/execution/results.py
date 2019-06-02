@@ -108,6 +108,13 @@ class SolidExecutionResult(object):
     def transforms(self):
         return self.step_events_by_kind.get(StepKind.COMPUTE, [])
 
+    def get_step_success_event(self):
+        for step_event in self.transforms:
+            if step_event.event_type == DagsterEventType.STEP_SUCCESS:
+                return step_event
+
+        check.failed('Step success not found for solid {}'.format(self.solid.name))
+
     @property
     def input_expectations(self):
         return self.step_events_by_kind.get(StepKind.INPUT_EXPECTATION, [])

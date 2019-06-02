@@ -52,13 +52,7 @@ observer.schedule(handler, '.', True)
 observer.start()
 
 try:
-    # We want to let the AutoRestartTrick do its thing (stopping dagit and restarting it on every
-    # observed filesystem change) until either a user interrupts it or dagit exits on its own.
     while True:
-        # handler.process is None during an auto restart, so we keep looping; otherwise we check
-        # to see whether the dagit process has exited.
-        if handler.process and handler.process.poll():
-            raise KeyboardInterrupt()
         time.sleep(1)
 except KeyboardInterrupt:
     handler.stop()
