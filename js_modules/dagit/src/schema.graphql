@@ -375,7 +375,7 @@ type Mode {
 }
 
 type Mutation {
-  startPipelineExecution(executionParams: ExecutionParams!, reexecutionConfig: ReexecutionConfig): StartPipelineExecutionResult!
+  startPipelineExecution(reexecutionConfig: ReexecutionConfig, executionParams: ExecutionParams!): StartPipelineExecutionResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
 }
 
@@ -599,8 +599,8 @@ type Query {
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   pipelineRuns: [PipelineRun!]!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
-  isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
-  executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
+  isPipelineConfigValid(mode: String!, environmentConfigData: EnvironmentConfigData, pipeline: ExecutionSelector!): PipelineConfigValidationResult!
+  executionPlan(mode: String!, environmentConfigData: EnvironmentConfigData, pipeline: ExecutionSelector!): ExecutionPlanResult!
 }
 
 input ReexecutionConfig {
