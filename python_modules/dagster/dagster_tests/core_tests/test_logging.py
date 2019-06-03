@@ -136,7 +136,7 @@ def test_multiline_logging_complex():
                     message="FileNotFoundError: [Errno 2] No such file or directory: '/path/to/file'\n",
                     stack=[
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/errors.py", line 186, in user_code_error_boundary\n    yield\n',
-                        '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/simple_engine.py", line 365, in _iterate_step_outputs_within_boundary\n    for step_output in gen:\n',
+                        '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/simple_engine.py", line 365, in _event_sequence_for_step_compute_fn\n    for step_output in gen:\n',
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/materialization_thunk.py", line 28, in _fn\n    runtime_type.output_schema.materialize_runtime_value(config_spec, runtime_value)\n',
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/config_schema.py", line 93, in materialize_runtime_value\n    return func(config_value, runtime_value)\n',
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/config_schema.py", line 110, in _selector\n    return func(selector_key, selector_value, runtime_value)\n',
@@ -176,7 +176,7 @@ def test_multiline_logging_complex():
                 "FileNotFoundError: [Errno 2] No such file or directory: '/path/to/file'\n",
                 [
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/errors.py", line 186, in user_code_error_boundary\n    yield\n',
-                    '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/simple_engine.py", line 365, in _iterate_step_outputs_within_boundary\n    for step_output in gen:\n',
+                    '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/simple_engine.py", line 365, in _event_sequence_for_step_compute_fn\n    for step_output in gen:\n',
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/materialization_thunk.py", line 28, in _fn\n    runtime_type.output_schema.materialize_runtime_value(config_spec, runtime_value)\n',
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/config_schema.py", line 93, in materialize_runtime_value\n    return func(config_value, runtime_value)\n',
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/config_schema.py", line 110, in _selector\n    return func(selector_key, selector_value, runtime_value)\n',

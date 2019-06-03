@@ -111,7 +111,9 @@ class InProcessEngine(IEngine):  # pylint: disable=no-init
                 input_values = _create_input_values(step_context, intermediates_manager)
 
                 for step_event in check.generator(
-                    execute_step_in_memory(step_context, input_values, intermediates_manager)
+                    dagster_event_sequence_for_step(
+                        step_context, input_values, intermediates_manager
+                    )
                 ):
                     check.inst(step_event, DagsterEvent)
                     if step_event.is_step_failure:
@@ -153,14 +155,27 @@ def _create_input_values(step_context, intermediates_manager):
     return input_values
 
 
-def execute_step_in_memory(step_context, inputs, intermediates_manager):
+def dagster_event_sequence_for_step(step_context, inputs, intermediates_manager):
+    '''
+    Yield a sequence of dagster events for the given step with the step context.
+
+    This function yields the events that directly result from the computation
+    in the non-throwing case, and then also wraps that in an error boundary, so that
+    any thrown exception gets translated in a step failure event, and then halts computation
+    for that step.
+
+    Additionally, if the pipeline is configured to reraise that error up through
+    the execute_pipeline call (configured in the InProcessExecutorConfig) that
+    reraise happens here.
+    '''
+
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
     try:
         for step_event in check.generator(
-            _execute_steps_core_loop(step_context, inputs, intermediates_manager)
+            _core_dagster_event_sequence_for_step(step_context, inputs, intermediates_manager)
         ):
             if step_event.event_type is DagsterEventType.STEP_OUTPUT:
                 step_context.log.info(
@@ -198,21 +213,27 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
         raise
 
 
-def _error_check_step_outputs(step_context, step_output_iter):
+def _step_output_error_checked_event_sequence(step_context, event_sequence):
+    '''
+    Process the event sequence to check for invariant violations in the event
+    sequence related to Result events emitted from the compute_fn.
+
+    This consumes and emits an event sequence.
+    '''
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.generator_param(step_output_iter, 'step_output_iter')
+    check.generator_param(event_sequence, 'event_sequence')
 
     step = step_context.step
     output_names = list([output_def.name for output_def in step.step_outputs])
     seen_outputs = set()
 
-    for step_output in step_output_iter:
-        if not isinstance(step_output, Result):
-            yield step_output
+    for event in event_sequence:
+        if not isinstance(event, Result):
+            yield event
             continue
 
         # do additional processing on Results
-        result = step_output
+        result = event
         if not step.has_step_output(result.output_name):
             raise DagsterInvariantViolationError(
                 'Core compute for solid "{handle}" returned an output '
@@ -253,7 +274,13 @@ def _error_check_step_outputs(step_context, step_output_iter):
                 )
 
 
-def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
+def _core_dagster_event_sequence_for_step(step_context, inputs, intermediates_manager):
+    '''
+    Execute the step within the step_context argument given the in-memory
+    events. This function yields a sequence of DagsterEvents, but without
+    catching any exceptions that have bubbled up during the computation
+    of the step.
+    '''
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
@@ -267,27 +294,25 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
     yield DagsterEvent.step_start_event(step_context)
 
     with time_execution_scope() as timer_result:
-        step_output_iterator = check.generator(
-            _iterate_step_outputs_within_boundary(step_context, evaluated_inputs)
+        event_sequence = check.generator(
+            _event_sequence_for_step_compute_fn(step_context, evaluated_inputs)
         )
 
         # It is important for this loop to be indented within the
         # timer block above in order for time to be recorded accurately.
-        for step_output in check.generator(
-            _error_check_step_outputs(step_context, step_output_iterator)
+        for event in check.generator(
+            _step_output_error_checked_event_sequence(step_context, event_sequence)
         ):
 
-            if isinstance(step_output, Result):
-                yield _create_step_output_event(step_context, step_output, intermediates_manager)
-            elif isinstance(step_output, Materialization):
-                yield DagsterEvent.step_materialization(step_context, step_output)
-            elif isinstance(step_output, ExpectationResult):
-                yield DagsterEvent.step_expectation_result(step_context, step_output)
+            if isinstance(event, Result):
+                yield _create_step_output_event(step_context, event, intermediates_manager)
+            elif isinstance(event, Materialization):
+                yield DagsterEvent.step_materialization(step_context, event)
+            elif isinstance(event, ExpectationResult):
+                yield DagsterEvent.step_expectation_result(step_context, event)
             else:
                 check.failed(
-                    'Unexpected step_output {step_output}, should have been caught earlier'.format(
-                        step_output=step_output
-                    )
+                    'Unexpected event {event}, should have been caught earlier'.format(event=event)
                 )
 
     yield DagsterEvent.step_success_event(
@@ -364,7 +389,7 @@ def _get_evaluated_input(step, input_name, input_value):
         )
 
 
-def _iterate_step_outputs_within_boundary(step_context, evaluated_inputs):
+def _event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(evaluated_inputs, 'evaluated_inputs', key_type=str)
 
@@ -388,5 +413,5 @@ def _iterate_step_outputs_within_boundary(step_context, evaluated_inputs):
         gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
 
         if gen is not None:
-            for step_output in gen:
-                yield step_output
+            for event in gen:
+                yield event
