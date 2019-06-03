@@ -1,4 +1,6 @@
+import sys
 import time
+
 import pytest
 
 from dagster import (
@@ -12,6 +14,9 @@ from dagster import (
 )
 
 
+@pytest.mark.skipif(
+    sys.platform == 'win32', reason='https://github.com/dagster-io/dagster/issues/1421'
+)
 def test_event_timing_before_yield():
     @solid
     def before_yield_solid(_context):
@@ -24,6 +29,9 @@ def test_event_timing_before_yield():
     assert success_event.event_specific_data.duration_ms >= 10.0
 
 
+@pytest.mark.skipif(
+    sys.platform == 'win32', reason='https://github.com/dagster-io/dagster/issues/1421'
+)
 def test_event_timing_after_yield():
     @solid
     def after_yield_solid(_context):
@@ -36,6 +44,9 @@ def test_event_timing_after_yield():
     assert success_event.event_specific_data.duration_ms >= 10.0
 
 
+@pytest.mark.skipif(
+    sys.platform == 'win32', reason='https://github.com/dagster-io/dagster/issues/1421'
+)
 def test_event_timing_direct_return():
     @solid
     def direct_return_solid(_context):
