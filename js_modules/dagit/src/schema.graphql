@@ -599,8 +599,8 @@ type Query {
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   pipelineRuns: [PipelineRun!]!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
-  isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
-  executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
+  isPipelineConfigValid(pipeline: ExecutionSelector!, mode: String!, environmentConfigData: EnvironmentConfigData): PipelineConfigValidationResult!
+  executionPlan(pipeline: ExecutionSelector!, mode: String!, environmentConfigData: EnvironmentConfigData): ExecutionPlanResult!
 }
 
 input ReexecutionConfig {
