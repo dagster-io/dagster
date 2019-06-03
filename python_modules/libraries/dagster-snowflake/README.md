@@ -3,7 +3,7 @@
 ##Introduction
 This library provides an integration with the [Snowflake](https://www.snowflake.com/) data warehouse.
 
-Presently, it provides two solids for interacting with Snowflake, `SnowflakeSolidDefinition` for issuing SQL queries, and `SnowflakeSolidDefinition` for loading Parquet files into Snowflake.
+Presently, it provides two solids for interacting with Snowflake, `SnowflakeSolidDefinition` for issuing SQL queries, and `SnowflakeLoadSolidDefinition` for loading Parquet files into Snowflake.
 
 Both of these solids depend on `snowflake_resource`, which is a Dagster resource for configuring Snowflake connections.
 
