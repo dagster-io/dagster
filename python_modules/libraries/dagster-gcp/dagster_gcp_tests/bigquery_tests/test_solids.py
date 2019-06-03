@@ -216,7 +216,7 @@ def test_pd_df_load():
         solid_defs=[return_df, create_solid, load_solid, query_solid, delete_solid],
         dependencies={
             'return_df': {'success': DependencyDefinition('create_solid')},
-            'load_solid': {'df': DependencyDefinition('return_df')},
+            'load_solid': {'source': DependencyDefinition('return_df')},
             'query_solid': {'start': DependencyDefinition('load_solid')},
             'delete_solid': {'start': DependencyDefinition('query_solid')},
         },
@@ -250,7 +250,7 @@ def test_gcs_load():
     table = '%s.%s' % (dataset, 'df')
 
     create_solid = BigQueryCreateDatasetSolidDefinition('create_solid')
-    load_solid = BigQueryLoadSolidDefinition('load_solid', BigQueryLoadSource.Gcs)
+    load_solid = BigQueryLoadSolidDefinition('load_solid', BigQueryLoadSource.GCS)
     query_solid = BigQuerySolidDefinition(
         'query_solid',
         [
@@ -285,7 +285,7 @@ def test_gcs_load():
         solid_defs=[create_solid, return_gcs_uri, load_solid, query_solid, delete_solid],
         dependencies={
             'return_gcs_uri': {'success': DependencyDefinition('create_solid')},
-            'load_solid': {'source_uris': DependencyDefinition('return_gcs_uri')},
+            'load_solid': {'source': DependencyDefinition('return_gcs_uri')},
             'query_solid': {'start': DependencyDefinition('load_solid')},
             'delete_solid': {'start': DependencyDefinition('query_solid')},
         },

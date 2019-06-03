@@ -18,7 +18,7 @@ from dagster import DagsterUserError, Enum, EnumValue, ConfigScalar
 
 class BigQueryLoadSource(PyEnum):
     DataFrame = 'DATA_FRAME'
-    Gcs = 'GCS'
+    GCS = 'GCS'
     File = 'FILE'
 
 
@@ -82,31 +82,37 @@ RE_PROJECT = r'[\w\d\-\_]{1,1024}'
 # 1024 characters
 RE_DS_TABLE = r'[\w\d\_]{1,1024}'
 
+# BigQuery supports writes directly to date partitions with the syntax foo.bar$20190101
+RE_PARTITION_SUFFIX = r'(\$\d{8})?'
+
 
 def _is_valid_dataset(config_value):
     '''Datasets must be of form "project.dataset" or "dataset"
     '''
     return re.match(
-        # regex matches: project.table -- OR -- table
+        # regex matches: project.dataset -- OR -- dataset
         r'^' + RE_PROJECT + r'\.' + RE_DS_TABLE + r'$|^' + RE_DS_TABLE + r'$',
         config_value,
     )
 
 
 def _is_valid_table(config_value):
-    '''Tables must be of form "project.dataset.table" or "dataset.table"
+    '''Tables must be of form "project.dataset.table" or "dataset.table" with optional
+    date-partition suffix
     '''
     return re.match(
         r'^'
-        + RE_PROJECT  #  project
-        + r'\.'  #       .
-        + RE_DS_TABLE  # dataset
-        + r'\.'  #       .
-        + RE_DS_TABLE  # table
-        + r'$|^'  #      -- OR --
-        + RE_DS_TABLE  # dataset
-        + r'\.'  #       .
-        + RE_DS_TABLE  # table
+        + RE_PROJECT  #          project
+        + r'\.'  #               .
+        + RE_DS_TABLE  #         dataset
+        + r'\.'  #               .
+        + RE_DS_TABLE  #         table
+        + RE_PARTITION_SUFFIX  # date partition suffix
+        + r'$|^'  #              -- OR --
+        + RE_DS_TABLE  #         dataset
+        + r'\.'  #               .
+        + RE_DS_TABLE  #         table
+        + RE_PARTITION_SUFFIX  # date partition suffix
         + r'$',
         config_value,
     )

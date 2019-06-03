@@ -29,14 +29,16 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
 
     dauphin_pipeline = get_dauphin_pipeline_from_selector(graphene_info, execution_params.selector)
 
+    get_validated_config(
+        graphene_info,
+        dauphin_pipeline,
+        environment_dict=execution_params.environment_dict,
+        mode=execution_params.mode,
+    )
+
     execution_plan = create_execution_plan(
         dauphin_pipeline.get_dagster_pipeline(),
-        get_validated_config(
-            graphene_info,
-            dauphin_pipeline,
-            environment_dict=execution_params.environment_dict,
-            mode=execution_params.mode,
-        ).value,
+        execution_params.environment_dict,
         mode=execution_params.mode,
     )
 

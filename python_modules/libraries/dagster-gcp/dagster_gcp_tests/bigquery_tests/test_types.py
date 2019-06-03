@@ -31,6 +31,8 @@ def test_table():
     good_table_1 = 'project.dataset.table'
     good_table_2 = 'project.dataset_underscores.table_underscores'
     good_table_3 = 'project-with-hyphens.dataset_with_underscores.table_with_underscores'
+    good_table_4 = 'dataset.date_partitioned$20190101'
+    good_table_5 = 'project.dataset.date_partitioned$20190101'
 
     bad_table_1 = 'project.dataset.table-hyphens-not-allowed'
     bad_table_2 = 'project.dataset.table@special@chars@not@allowed'
@@ -39,6 +41,8 @@ def test_table():
     assert _is_valid_table(good_table_1)
     assert _is_valid_table(good_table_2)
     assert _is_valid_table(good_table_3)
+    assert _is_valid_table(good_table_4)
+    assert _is_valid_table(good_table_5)
 
     assert not _is_valid_table(bad_table_1)
     assert not _is_valid_table(bad_table_2)
