@@ -7,6 +7,9 @@ import subprocess
 from google.cloud import storage
 
 
+SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
+
+
 def deploy():
     bucket_name = os.getenv('GCP_DEPLOY_BUCKET')
 
@@ -15,7 +18,7 @@ def deploy():
             'bucket not provided; did you forget to export GCP_DEPLOY_BUCKET in your environment?'
         )
 
-    git_commit_hash = subprocess.check_output(['git', 'rev-parse', 'head']).strip()
+    git_commit_hash = subprocess.check_output(['git', 'rev-parse', 'head'], cwd=SCRIPT_PATH).strip()
 
     if sys.version_info.major >= 3:
         git_commit_hash = git_commit_hash.decode()
