@@ -18,7 +18,7 @@ def deploy():
             'bucket not provided; did you forget to export GCP_DEPLOY_BUCKET in your environment?'
         )
 
-    git_commit_hash = subprocess.check_output(['git', 'rev-parse', 'head'], cwd=SCRIPT_PATH).strip()
+    git_commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=SCRIPT_PATH).strip()
 
     if sys.version_info.major >= 3:
         git_commit_hash = git_commit_hash.decode()
