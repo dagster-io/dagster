@@ -102,6 +102,10 @@ LIBRARY_MODULES = [
     'dagster-spark',
 ]
 
+EXPECTED_PYTHON_MODULES = ['automation', 'libraries'] + MODULE_NAMES
+
+EXPECTED_LIBRARIES = LIBRARY_MODULES
+
 
 def normalize_module_name(name):
     '''Our package convention is to find the source for module foo_bar in foo-bar/foo_bar.'''
@@ -485,17 +489,6 @@ def check_for_cruft(autoclean):
 
 
 def check_directory_structure():
-    EXPECTED_PYTHON_MODULES = [
-        'automation',
-        'dagit',
-        'dagster',
-        'dagster-airflow',
-        'dagster-graphql',
-        'dagstermill',
-        'libraries',
-    ]
-    EXPECTED_LIBRARIES = LIBRARY_MODULES
-
     unexpected_modules = []
     expected_modules_not_found = []
     unexpected_libraries = []
