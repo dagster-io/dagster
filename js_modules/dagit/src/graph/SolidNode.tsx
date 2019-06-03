@@ -1,7 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { isEqual, omitBy } from "lodash";
-import { Colors } from "@blueprintjs/core";
 import PipelineColorScale from "./PipelineColorScale";
 import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
 import {
@@ -15,19 +14,21 @@ import {
   SVGMonospaceText
 } from "./SVGComponents";
 
-import SolidTags from "./SolidTags";
+import SolidTags, { ISolidTag } from "./SolidTags";
 import SolidConfigPort from "./SolidConfigPort";
-import { DEFAULT_RESULT_NAME } from "../Util";
+import { DEFAULT_RESULT_NAME, titleOfIO } from "../Util";
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
   solid: SolidNodeFragment;
+  parentSolid?: SolidNodeFragment;
   highlightedConnections: { a: string; b: string }[];
   minified: boolean;
   selected: boolean;
   dim: boolean;
   onClick: (solidName: string) => void;
   onDoubleClick: (solidName: string) => void;
+  onEnterComposite: (solidName: string) => void;
   onHighlightConnections: (conns: { a: string; b: string }[]) => void;
 }
 
@@ -37,6 +38,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       fragment SolidNodeFragment on Solid {
         name
         definition {
+          __typename
           metadata {
             key
             value
@@ -46,6 +48,34 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
               configType {
                 name
                 description
+              }
+            }
+          }
+          ... on CompositeSolidDefinition {
+            inputMappings {
+              definition {
+                name
+              }
+              mappedInput {
+                definition {
+                  name
+                }
+                solid {
+                  name
+                }
+              }
+            }
+            outputMappings {
+              definition {
+                name
+              }
+              mappedOutput {
+                definition {
+                  name
+                }
+                solid {
+                  name
+                }
               }
             }
           }
@@ -117,7 +147,13 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     this.props.onDoubleClick(this.props.solid.name);
   };
 
-  handleKindClicked = (e: React.MouseEvent, kind: string) => {
+  handleEnterComposite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    this.props.onEnterComposite(this.props.solid.name);
+  };
+
+  handleKindClicked = (e: React.MouseEvent) => {
     this.handleClick(e);
     window.requestAnimationFrame(() =>
       document.dispatchEvent(new Event("show-kind-info"))
@@ -144,12 +180,8 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       let title = `${name}: ${type.displayName}`;
       let clickTarget: string | null = null;
 
-      if ("dependsOn" in item && item.dependsOn) {
-        title +=
-          `\n\nFrom:\n` +
-          item.dependsOn
-            .map(o => `${o.solid.name}: ${o.definition.name}`)
-            .join("\n");
+      if ("dependsOn" in item && item.dependsOn.length) {
+        title += `\n\nFrom:\n` + item.dependsOn.map(titleOfIO).join("\n");
         clickTarget =
           item.dependsOn.length === 1 ? item.dependsOn[0].solid.name : null;
 
@@ -160,12 +192,9 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           }))
         );
       }
-      if ("dependedBy" in item) {
+      if ("dependedBy" in item && item.dependedBy.length) {
         title +=
-          "\n\nUsed By:\n" +
-          item.dependedBy
-            .map(o => `${o.solid.name} ${o.definition.name}`)
-            .join("\n");
+          "\n\nUsed By:\n" + item.dependedBy.map(o => titleOfIO(o)).join("\n");
         clickTarget =
           item.dependedBy.length === 1 ? item.dependedBy[0].solid.name : null;
 
@@ -175,6 +204,22 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             b: solid.name
           }))
         );
+      }
+
+      if (solid.definition.__typename === "CompositeSolidDefinition") {
+        const mappedTo = solid.definition.outputMappings
+          .filter(o => o.definition.name === key)
+          .map(o => o.mappedOutput);
+        if (mappedTo.length) {
+          title += "\n\nMapped From Inner:\n" + mappedTo.map(titleOfIO);
+        }
+
+        const mappedFrom = solid.definition.inputMappings
+          .filter(o => o.definition.name === key)
+          .map(o => o.mappedInput);
+        if (mappedFrom.length) {
+          title += "\n\nMapped To Inner:\n" + mappedFrom.map(titleOfIO);
+        }
       }
 
       const highlighted = connections.some(
@@ -258,21 +303,51 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   renderSolid() {
+    const { solid, layout, minified } = this.props;
+    const composite =
+      solid.definition.__typename === "CompositeSolidDefinition";
+
     return (
       <SVGFlowLayoutRect
-        {...this.props.layout.solid}
-        fill={PipelineColorScale("solid")}
+        {...layout.solid}
+        fill={PipelineColorScale(composite ? "solidComposite" : "solid")}
         stroke="#979797"
         strokeWidth={1}
         spacing={0}
         padding={12}
       >
         <SVGMonospaceText
-          size={this.props.minified ? 30 : 16}
-          text={this.props.solid.name}
+          size={minified ? 30 : 16}
+          text={solid.name}
           fill={"#222"}
         />
       </SVGFlowLayoutRect>
+    );
+  }
+
+  public renderSolidCompositeIndicator() {
+    const { x, y, width, height } = this.props.layout.solid;
+    return (
+      <>
+        <rect
+          x={x - 6}
+          y={y - 6}
+          width={width + 12}
+          height={height + 12}
+          fill={PipelineColorScale("solidComposite")}
+          stroke="#979797"
+          strokeWidth={1}
+        />
+        <rect
+          x={x - 3}
+          y={y - 3}
+          width={width + 6}
+          height={height + 6}
+          fill={PipelineColorScale("solidComposite")}
+          stroke="#979797"
+          strokeWidth={1}
+        />
+      </>
     );
   }
 
@@ -286,7 +361,15 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       configDefinition = solid.definition.configDefinition;
     }
 
+    const tags: ISolidTag[] = [];
+
     const kind = metadata.find(m => m.key === "kind");
+    if (kind) {
+      tags.push({ label: kind.value, onClick: this.handleKindClicked });
+    }
+    if (solid.definition.__typename === "CompositeSolidDefinition") {
+      tags.push({ label: "Expand", onClick: this.handleEnterComposite });
+    }
 
     return (
       <g
@@ -295,20 +378,21 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         opacity={dim ? 0.3 : 1}
       >
         {selected && this.renderSelectedBox()}
+        {solid.definition.__typename === "CompositeSolidDefinition" &&
+          this.renderSolidCompositeIndicator()}
         {this.renderSolid()}
         {this.renderIO("input", solid.inputs, layout.inputs)}
         {this.renderIO("output", solid.outputs, layout.outputs)}
         {configDefinition && (
           <SolidConfigPort x={x + width - 33} y={y - 13} minified={minified} />
         )}
-        {kind && kind.value && (
+        {tags.length > 0 && (
           <SolidTags
             x={x}
             y={y + height}
             width={width + 5}
             minified={minified}
-            tags={[kind.value]}
-            onTagClicked={this.handleKindClicked}
+            tags={tags}
           />
         )}
       </g>

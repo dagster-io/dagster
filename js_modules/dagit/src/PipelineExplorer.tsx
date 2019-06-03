@@ -1,28 +1,41 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import * as Color from "color";
 import styled from "styled-components";
 import { History } from "history";
-import { Colors } from "@blueprintjs/core";
+import { Icon, Colors } from "@blueprintjs/core";
 import { Route } from "react-router";
+import { Link } from "react-router-dom";
 import { parse as parseQueryString } from "query-string";
+
 import { PipelineExplorerFragment } from "./types/PipelineExplorerFragment";
-import { PipelineExplorerSolidFragment } from "./types/PipelineExplorerSolidFragment";
 import PipelineGraph from "./graph/PipelineGraph";
-import { getDagrePipelineLayout } from "./graph/getFullSolidLayout";
 import { PanelDivider } from "./PanelDivider";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
 import { SolidJumpBar } from "./PipelineJumpComponents";
+import {
+  PipelineExplorerSolidHandleFragment,
+  PipelineExplorerSolidHandleFragment_solid
+} from "./types/PipelineExplorerSolidHandleFragment";
+import {
+  getDagrePipelineLayout,
+  IFullPipelineLayout
+} from "./graph/getFullSolidLayout";
 
 interface IPipelineExplorerProps {
   history: History;
+  path: string[];
   pipeline: PipelineExplorerFragment;
-  solid: PipelineExplorerSolidFragment | undefined;
+  handles: PipelineExplorerSolidHandleFragment[];
+  selectedHandle: PipelineExplorerSolidHandleFragment | undefined;
+  parentHandle: PipelineExplorerSolidHandleFragment | undefined;
 }
 
 interface IPipelineExplorerState {
   filter: string;
   graphVW: number;
 }
+
 export default class PipelineExplorer extends React.Component<
   IPipelineExplorerProps,
   IPipelineExplorerState
@@ -32,18 +45,19 @@ export default class PipelineExplorer extends React.Component<
       fragment PipelineExplorerFragment on Pipeline {
         name
         description
-        ...PipelineGraphFragment
         ...SidebarTabbedContainerPipelineFragment
       }
 
-      ${PipelineGraph.fragments.PipelineGraphFragment}
       ${SidebarTabbedContainer.fragments.SidebarTabbedContainerPipelineFragment}
     `,
-    PipelineExplorerSolidFragment: gql`
-      fragment PipelineExplorerSolidFragment on Solid {
-        name
-        ...PipelineGraphSolidFragment
-        ...SidebarTabbedContainerSolidFragment
+    PipelineExplorerSolidHandleFragment: gql`
+      fragment PipelineExplorerSolidHandleFragment on SolidHandle {
+        handleID
+        solid {
+          name
+          ...PipelineGraphSolidFragment
+          ...SidebarTabbedContainerSolidFragment
+        }
       }
 
       ${PipelineGraph.fragments.PipelineGraphSolidFragment}
@@ -51,37 +65,106 @@ export default class PipelineExplorer extends React.Component<
     `
   };
 
-  constructor(props: IPipelineExplorerProps) {
-    super(props);
-    this.state = {
-      filter: "",
-      graphVW: 70
-    };
-  }
+  state = {
+    filter: "",
+    graphVW: 70
+  };
+
+  nameToHandleID = (solidName: string) => {
+    if (solidName === "") return "";
+    return this.props.handles.find(h => h.solid.name === solidName)!.handleID;
+  };
+
+  handleAdjustPath = (fn: (handleIDs: string[]) => void) => {
+    const { history, pipeline, path } = this.props;
+    let next = [...path];
+    fn(next);
+    history.push(`/${pipeline.name}/explore/${next.join("/")}`);
+  };
 
   handleClickSolid = (solidName: string) => {
-    const { history, pipeline } = this.props;
-    history.push(`/${pipeline.name}/explore/${solidName}`);
+    this.handleAdjustPath(handleIds => {
+      handleIds[handleIds.length - 1] = this.nameToHandleID(solidName);
+    });
+  };
+
+  handleEnterCompositeSolid = (solidName: string) => {
+    // To animate the rect of the composite solid expanding correctly, we need
+    // to select it before entering it so we can draw the "initial state" of the
+    // labeled rectangle.
+    this.handleClickSolid(solidName);
+
+    window.requestAnimationFrame(() => {
+      this.handleAdjustPath(handleIds => {
+        handleIds[handleIds.length - 1] = this.nameToHandleID(solidName);
+        handleIds.push("");
+      });
+    });
+  };
+
+  handleLeaveCompositeSolid = () => {
+    this.handleAdjustPath(handleIds => handleIds.pop());
   };
 
   handleClickBackground = () => {
-    const { history, pipeline } = this.props;
-    history.push(`/${pipeline.name}/explore`);
+    this.handleClickSolid("");
+  };
+
+  _layoutCacheKey: string | undefined;
+  _layoutCache: IFullPipelineLayout | undefined;
+
+  getLayout = (solids: PipelineExplorerSolidHandleFragment_solid[]) => {
+    const key = solids.map(s => s.name).join("|");
+    if (this._layoutCacheKey === key && this._layoutCache) {
+      return this._layoutCache;
+    }
+    this._layoutCache = getDagrePipelineLayout(solids);
+    this._layoutCacheKey = key;
+    return this._layoutCache;
   };
 
   public render() {
-    const { pipeline, solid } = this.props;
+    const { pipeline, parentHandle, selectedHandle, path } = this.props;
     const { filter, graphVW } = this.state;
+
+    const solids = this.props.handles.map(h => h.solid);
+
+    const backgroundColor = parentHandle
+      ? Colors.LIGHT_GRAY3
+      : Colors.LIGHT_GRAY5;
+
+    const backgroundTranslucent = Color(backgroundColor)
+      .fade(0.6)
+      .toString();
 
     return (
       <PipelinesContainer>
         <PipelinePanel key="graph" style={{ width: `${graphVW}vw` }}>
-          <SearchOverlay>
+          <PathOverlay style={{ background: backgroundTranslucent }}>
+            <Link style={{ padding: 3 }} to={`/${pipeline.name}/explore/`}>
+              <Icon icon="diagram-tree" />
+            </Link>
+            <Icon icon="chevron-right" />
+            {path.slice(0, path.length - 1).map((name, idx) => (
+              <React.Fragment key={idx}>
+                <Link
+                  style={{ padding: 3 }}
+                  to={`/${pipeline.name}/explore/${path
+                    .slice(0, idx + 1)
+                    .join("/")}`}
+                >
+                  {name}
+                </Link>
+                <Icon icon="chevron-right" />
+              </React.Fragment>
+            ))}
             <SolidJumpBar
-              solids={pipeline.solids}
-              selectedSolid={solid}
+              solids={solids}
+              selectedSolid={selectedHandle && selectedHandle.solid}
               onItemSelect={solid => this.handleClickSolid(solid.name)}
             />
+          </PathOverlay>
+          <SearchOverlay style={{ background: backgroundTranslucent }}>
             <SolidSearchInput
               type="text"
               placeholder="Filter..."
@@ -90,30 +173,35 @@ export default class PipelineExplorer extends React.Component<
             />
           </SearchOverlay>
           <PipelineGraph
-            pipeline={pipeline}
+            pipelineName={pipeline.name}
+            backgroundColor={backgroundColor}
+            solids={solids}
+            selectedHandleID={selectedHandle && selectedHandle.handleID}
+            selectedSolid={selectedHandle && selectedHandle.solid}
+            parentHandleID={parentHandle && parentHandle.handleID}
+            parentSolid={parentHandle && parentHandle.solid}
             onClickSolid={this.handleClickSolid}
             onClickBackground={this.handleClickBackground}
-            layout={getDagrePipelineLayout(pipeline)}
-            selectedSolid={solid}
-            highlightedSolids={pipeline.solids.filter(
+            onEnterCompositeSolid={this.handleEnterCompositeSolid}
+            onLeaveCompositeSolid={this.handleLeaveCompositeSolid}
+            layout={this.getLayout(solids)}
+            highlightedSolids={solids.filter(
               s => filter && s.name.includes(filter)
             )}
           />
         </PipelinePanel>
         <PanelDivider
           axis="horizontal"
-          onMove={(vw: number) =>
-            this.setState({
-              graphVW: vw
-            })
-          }
+          onMove={(graphVW: number) => this.setState({ graphVW })}
         />
         <RightInfoPanel style={{ width: `${100 - graphVW}vw` }}>
           <Route
             children={({ location }: { location: any }) => (
               <SidebarTabbedContainer
                 pipeline={pipeline}
-                solid={solid}
+                solid={selectedHandle && selectedHandle.solid}
+                parentSolid={parentHandle && parentHandle.solid}
+                onEnterCompositeSolid={this.handleEnterCompositeSolid}
                 {...parseQueryString(location.search || "")}
               />
             )}
@@ -122,10 +210,6 @@ export default class PipelineExplorer extends React.Component<
       </PipelinesContainer>
     );
   }
-}
-
-function getConfigStorageKey(pipeline: PipelineExplorerFragment) {
-  return `dagit.pipelineConfigStorage.${pipeline.name}`;
 }
 
 const PipelinesContainer = styled.div`
@@ -150,13 +234,23 @@ const RightInfoPanel = styled.div`
 `;
 
 const SearchOverlay = styled.div`
-  background: rgba(0, 0, 0, 0.2);
   z-index: 2;
-  padding: 7px;
+  padding: 7px 5px;
   display: inline-flex;
   align-items: stretch;
   position: absolute;
   right: 0;
+`;
+
+const PathOverlay = styled.div`
+  z-index: 2;
+  padding: 7px;
+  padding-left: 10px;
+  max-width: 80%;
+  display: inline-flex;
+  align-items: center;
+  position: absolute;
+  left: 0;
 `;
 
 const SolidSearchInput = styled.input`

@@ -5,13 +5,17 @@ import {
   SVGMonospaceText
 } from "./SVGComponents";
 
-export interface ISolidTagsProps {
+export interface ISolidTag {
+  label: string;
+  onClick: (e: React.MouseEvent) => void;
+}
+
+interface ISolidTagsProps {
   x: number;
   y: number;
   width: number;
   minified: boolean;
-  tags: string[];
-  onTagClicked: (e: React.MouseEvent, tag: string) => void;
+  tags: ISolidTag[];
 }
 
 function hueForTag(text = "") {
@@ -29,8 +33,7 @@ const SolidTags: React.FunctionComponent<ISolidTagsProps> = ({
   x,
   y,
   width,
-  minified,
-  onTagClicked
+  minified
 }) => {
   const height = minified ? 32 : 20;
   const overhang = 6;
@@ -48,22 +51,22 @@ const SolidTags: React.FunctionComponent<ISolidTagsProps> = ({
     >
       <SVGFlowLayoutFiller />
       {tags.map(tag => {
-        const hue = hueForTag(tag);
+        const hue = hueForTag(tag.label);
         return (
           <SVGFlowLayoutRect
-            key={tag}
+            key={tag.label}
             rx={0}
             ry={0}
             height={height}
             padding={minified ? 8 : 4}
             fill={`hsl(${hue}, 10%, 95%)`}
             stroke={`hsl(${hue}, 75%, 55%)`}
-            onClick={e => onTagClicked(e, tag)}
+            onClick={tag.onClick}
             strokeWidth={1}
             spacing={0}
           >
             <SVGMonospaceText
-              text={tag}
+              text={tag.label}
               fill={`hsl(${hue}, 75%, 55%)`}
               size={minified ? 24 : 14}
             />
