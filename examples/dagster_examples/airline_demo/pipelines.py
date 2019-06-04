@@ -20,7 +20,6 @@ from .resources import (
 )
 from .solids import (
     average_sfo_outbound_avg_delays_by_destination,
-    canonicalize_column_names,
     delays_by_geography,
     delays_vs_fares,
     delays_vs_fares_nb,
@@ -31,10 +30,10 @@ from .solids import (
     process_sfo_weather_data,
     q2_sfo_outbound_flights,
     sfo_delays_by_destination,
-    subsample_spark_dataset,
     tickets_with_destination,
     unzip_file,
     westbound_delays,
+    s3_to_dw_table,
 )
 
 
@@ -73,23 +72,22 @@ prod_mode = ModeDefinition(
 
 def define_airline_demo_ingest_pipeline():
     solids = [
-        canonicalize_column_names,
         download_from_s3_to_bytes,
         ingest_csv_to_spark,
         load_data_to_database_from_spark,
         process_q2_data,
         process_sfo_weather_data,
-        subsample_spark_dataset,
         unzip_file,
+        s3_to_dw_table,
     ]
     dependencies = {
+        SolidInstance('s3_to_dw_table', alias='process_q2_coupon_data'): {},
+        SolidInstance('s3_to_dw_table', alias='process_q2_market_data'): {},
+        SolidInstance('s3_to_dw_table', alias='process_q2_ticket_data'): {},
         SolidInstance('download_from_s3_to_bytes', alias='download_april_on_time_data'): {},
         SolidInstance('download_from_s3_to_bytes', alias='download_may_on_time_data'): {},
         SolidInstance('download_from_s3_to_bytes', alias='download_june_on_time_data'): {},
         SolidInstance('download_from_s3_to_bytes', alias='download_master_cord_data'): {},
-        SolidInstance('download_from_s3_to_bytes', alias='download_q2_coupon_data'): {},
-        SolidInstance('download_from_s3_to_bytes', alias='download_q2_market_data'): {},
-        SolidInstance('download_from_s3_to_bytes', alias='download_q2_ticket_data'): {},
         SolidInstance('download_from_s3_to_bytes', alias='download_q2_sfo_weather'): {},
         SolidInstance('unzip_file', alias='unzip_april_on_time_data'): {
             'archive_file': DependencyDefinition('download_april_on_time_data')
@@ -103,15 +101,6 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('unzip_file', alias='unzip_master_cord_data'): {
             'archive_file': DependencyDefinition('download_master_cord_data')
         },
-        SolidInstance('unzip_file', alias='unzip_q2_coupon_data'): {
-            'archive_file': DependencyDefinition('download_q2_coupon_data')
-        },
-        SolidInstance('unzip_file', alias='unzip_q2_market_data'): {
-            'archive_file': DependencyDefinition('download_q2_market_data')
-        },
-        SolidInstance('unzip_file', alias='unzip_q2_ticket_data'): {
-            'archive_file': DependencyDefinition('download_q2_ticket_data')
-        },
         SolidInstance('ingest_csv_to_spark', alias='ingest_april_on_time_data'): {
             'input_csv_file': DependencyDefinition('unzip_april_on_time_data')
         },
@@ -124,15 +113,6 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('ingest_csv_to_spark', alias='ingest_q2_sfo_weather'): {
             'input_csv_file': DependencyDefinition('download_q2_sfo_weather')
         },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_coupon_data'): {
-            'input_csv_file': DependencyDefinition('unzip_q2_coupon_data')
-        },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_market_data'): {
-            'input_csv_file': DependencyDefinition('unzip_q2_market_data')
-        },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_ticket_data'): {
-            'input_csv_file': DependencyDefinition('unzip_q2_ticket_data')
-        },
         SolidInstance('ingest_csv_to_spark', alias='ingest_master_cord_data'): {
             'input_csv_file': DependencyDefinition('unzip_master_cord_data')
         },
@@ -142,38 +122,11 @@ def define_airline_demo_ingest_pipeline():
             'june_data': DependencyDefinition('ingest_june_on_time_data'),
             'master_cord_data': DependencyDefinition('ingest_master_cord_data'),
         },
-        SolidInstance('subsample_spark_dataset', alias='subsample_q2_ticket_data'): {
-            'data_frame': DependencyDefinition('ingest_q2_ticket_data')
-        },
-        SolidInstance('subsample_spark_dataset', alias='subsample_q2_market_data'): {
-            'data_frame': DependencyDefinition('ingest_q2_market_data')
-        },
-        SolidInstance('subsample_spark_dataset', alias='subsample_q2_coupon_data'): {
-            'data_frame': DependencyDefinition('ingest_q2_coupon_data')
-        },
         'process_sfo_weather_data': {
             'sfo_weather_data': DependencyDefinition('ingest_q2_sfo_weather')
         },
-        SolidInstance('canonicalize_column_names', alias='canonicalize_q2_coupon_data'): {
-            'data_frame': DependencyDefinition('subsample_q2_coupon_data')
-        },
-        SolidInstance('canonicalize_column_names', alias='canonicalize_q2_market_data'): {
-            'data_frame': DependencyDefinition('subsample_q2_market_data')
-        },
-        SolidInstance('canonicalize_column_names', alias='canonicalize_q2_ticket_data'): {
-            'data_frame': DependencyDefinition('subsample_q2_ticket_data')
-        },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_on_time_data'): {
             'data_frame': DependencyDefinition('process_q2_data')
-        },
-        SolidInstance('load_data_to_database_from_spark', alias='load_q2_coupon_data'): {
-            'data_frame': DependencyDefinition('canonicalize_q2_coupon_data')
-        },
-        SolidInstance('load_data_to_database_from_spark', alias='load_q2_market_data'): {
-            'data_frame': DependencyDefinition('canonicalize_q2_market_data')
-        },
-        SolidInstance('load_data_to_database_from_spark', alias='load_q2_ticket_data'): {
-            'data_frame': DependencyDefinition('canonicalize_q2_ticket_data')
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_sfo_weather'): {
             'data_frame': DependencyDefinition('process_sfo_weather_data')

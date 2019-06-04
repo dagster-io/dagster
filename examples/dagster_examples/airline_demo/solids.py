@@ -10,7 +10,9 @@ from pyspark.sql import DataFrame
 from sqlalchemy import text
 
 from dagster import (
+    DependencyDefinition,
     Bytes,
+    CompositeSolidDefinition,
     Dict,
     ExpectationResult,
     Field,
@@ -24,6 +26,7 @@ from dagster import (
     check,
     solid,
 )
+from dagster_aws.s3.solids import download_from_s3_to_bytes
 from dagstermill import define_dagstermill_solid
 
 from .types import FileFromPath, SparkDataFrameType, SqlTableName
@@ -255,6 +258,30 @@ def subsample_spark_dataset(context, data_frame):
     return data_frame.sample(
         withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
     )
+
+
+s3_to_dw_table = CompositeSolidDefinition(
+    name='s3_to_dw_table',
+    solids=[
+        download_from_s3_to_bytes,
+        unzip_file,
+        ingest_csv_to_spark,
+        subsample_spark_dataset,
+        canonicalize_column_names,
+        load_data_to_database_from_spark,
+    ],
+    dependencies={
+        'unzip_file': {'archive_file': DependencyDefinition('download_from_s3_to_bytes')},
+        'ingest_csv_to_spark': {'input_csv_file': DependencyDefinition('unzip_file')},
+        'subsample_spark_dataset': {'data_frame': DependencyDefinition('ingest_csv_to_spark')},
+        'canonicalize_column_names': {
+            'data_frame': DependencyDefinition('subsample_spark_dataset')
+        },
+        'load_data_to_database_from_spark': {
+            'data_frame': DependencyDefinition('canonicalize_column_names')
+        },
+    },
+)
 
 
 q2_sfo_outbound_flights = sql_solid(
