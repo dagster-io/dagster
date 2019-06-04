@@ -74,7 +74,7 @@ solids:
           bucket_data:
             bucket: dagster-airline-demo-source-data
             key: test/954834304_T_MASTER_CORD.zip
-      process_q2_data:
+      join_q2_data:
         config:
           subsample_pct: 100
       load_q2_on_time_data:

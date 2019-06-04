@@ -540,7 +540,7 @@ sfo_delays_by_destination = notebook_solid(
     master_cord_data.
     ''',
 )
-def process_q2_data(context, april_data, may_data, june_data, master_cord_data):
+def join_q2_data(context, april_data, may_data, june_data, master_cord_data):
 
     dfs = {'april': april_data, 'may': may_data, 'june': june_data}
 

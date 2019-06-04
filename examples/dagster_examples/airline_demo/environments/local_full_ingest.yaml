@@ -67,7 +67,7 @@ solids:
             key: test/source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip
           archive_member:
             value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv
-      process_q2_data:
+      join_q2_data:
         config:
           subsample_pct: 100
       load_q2_on_time_data:

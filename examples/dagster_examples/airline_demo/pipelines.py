@@ -27,7 +27,7 @@ from .solids import (
     eastbound_delays,
     ingest_csv_to_spark,
     load_data_to_database_from_spark,
-    process_q2_data,
+    join_q2_data,
     process_sfo_weather_data,
     q2_sfo_outbound_flights,
     sfo_delays_by_destination,
@@ -72,20 +72,20 @@ prod_mode = ModeDefinition(
 
 process_on_time_data = CompositeSolidDefinition(
     name='process_on_time_data',
-    solids=[s3_to_df, process_q2_data, load_data_to_database_from_spark],
+    solids=[s3_to_df, join_q2_data, load_data_to_database_from_spark],
     dependencies={
         SolidInstance('s3_to_df', alias='april_on_time_s3_to_df'): {},
         SolidInstance('s3_to_df', alias='may_on_time_s3_to_df'): {},
         SolidInstance('s3_to_df', alias='june_on_time_s3_to_df'): {},
         SolidInstance('s3_to_df', alias='master_cord_s3_to_df'): {},
-        'process_q2_data': {
+        'join_q2_data': {
             'april_data': DependencyDefinition('april_on_time_s3_to_df'),
             'may_data': DependencyDefinition('may_on_time_s3_to_df'),
             'june_data': DependencyDefinition('june_on_time_s3_to_df'),
             'master_cord_data': DependencyDefinition('master_cord_s3_to_df'),
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('process_q2_data')
+            'data_frame': DependencyDefinition('join_q2_data')
         },
     },
 )
