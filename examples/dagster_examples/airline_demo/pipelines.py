@@ -90,20 +90,15 @@ process_on_time_data = CompositeSolidDefinition(
     },
 )
 
-
-def define_airline_demo_ingest_pipeline():
-    solids = [
+sfo_weather_data = CompositeSolidDefinition(
+    name='sfo_weather_data',
+    solids=[
         download_from_s3_to_bytes,
         ingest_csv_to_spark,
-        load_data_to_database_from_spark,
-        process_on_time_data,
         process_sfo_weather_data,
-        s3_to_dw_table,
-    ]
-    dependencies = {
-        SolidInstance('s3_to_dw_table', alias='process_q2_coupon_data'): {},
-        SolidInstance('s3_to_dw_table', alias='process_q2_market_data'): {},
-        SolidInstance('s3_to_dw_table', alias='process_q2_ticket_data'): {},
+        load_data_to_database_from_spark,
+    ],
+    dependencies={
         SolidInstance('download_from_s3_to_bytes', alias='download_q2_sfo_weather'): {},
         SolidInstance('ingest_csv_to_spark', alias='ingest_q2_sfo_weather'): {
             'input_csv_file': DependencyDefinition('download_q2_sfo_weather')
@@ -114,6 +109,16 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_sfo_weather'): {
             'data_frame': DependencyDefinition('process_sfo_weather_data')
         },
+    },
+)
+
+
+def define_airline_demo_ingest_pipeline():
+    solids = [process_on_time_data, sfo_weather_data, s3_to_dw_table]
+    dependencies = {
+        SolidInstance('s3_to_dw_table', alias='process_q2_coupon_data'): {},
+        SolidInstance('s3_to_dw_table', alias='process_q2_market_data'): {},
+        SolidInstance('s3_to_dw_table', alias='process_q2_ticket_data'): {},
     }
 
     return PipelineDefinition(

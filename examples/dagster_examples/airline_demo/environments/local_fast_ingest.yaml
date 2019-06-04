@@ -81,11 +81,13 @@ solids:
         config:
           table_name: q2_on_time_data
 
-  download_q2_sfo_weather:
-    inputs:
-      bucket_data:
-        bucket: dagster-airline-demo-source-data
-        key: test/sfo_q2_weather.txt
-  load_q2_sfo_weather:
-    config:
-      table_name: q2_sfo_weather
+  sfo_weather_data:
+    solids:
+      download_q2_sfo_weather:
+        inputs:
+          bucket_data:
+            bucket: dagster-airline-demo-source-data
+            key: test/sfo_q2_weather.txt
+      load_q2_sfo_weather:
+        config:
+          table_name: q2_sfo_weather
