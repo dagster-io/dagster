@@ -303,7 +303,7 @@ def set_version(module_name, new_version, nightly, library=False):
 
 
 def get_nightly_version():
-    return datetime.datetime.utcnow().strftime('%Y.%m.%d')
+    return 'nightly-' + datetime.datetime.utcnow().strftime('%Y.%m.%d')
 
 
 def increment_nightly_version(module_name, module_version, library=False):
