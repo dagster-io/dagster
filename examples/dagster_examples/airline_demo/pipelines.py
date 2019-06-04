@@ -31,9 +31,9 @@ from .solids import (
     q2_sfo_outbound_flights,
     sfo_delays_by_destination,
     tickets_with_destination,
-    unzip_file,
     westbound_delays,
     s3_to_dw_table,
+    s3_to_df,
 )
 
 
@@ -77,50 +77,26 @@ def define_airline_demo_ingest_pipeline():
         load_data_to_database_from_spark,
         process_q2_data,
         process_sfo_weather_data,
-        unzip_file,
         s3_to_dw_table,
+        s3_to_df,
     ]
     dependencies = {
         SolidInstance('s3_to_dw_table', alias='process_q2_coupon_data'): {},
         SolidInstance('s3_to_dw_table', alias='process_q2_market_data'): {},
         SolidInstance('s3_to_dw_table', alias='process_q2_ticket_data'): {},
-        SolidInstance('download_from_s3_to_bytes', alias='download_april_on_time_data'): {},
-        SolidInstance('download_from_s3_to_bytes', alias='download_may_on_time_data'): {},
-        SolidInstance('download_from_s3_to_bytes', alias='download_june_on_time_data'): {},
-        SolidInstance('download_from_s3_to_bytes', alias='download_master_cord_data'): {},
+        SolidInstance('s3_to_df', alias='april_on_time_s3_to_df'): {},
+        SolidInstance('s3_to_df', alias='may_on_time_s3_to_df'): {},
+        SolidInstance('s3_to_df', alias='june_on_time_s3_to_df'): {},
+        SolidInstance('s3_to_df', alias='master_cord_s3_to_df'): {},
         SolidInstance('download_from_s3_to_bytes', alias='download_q2_sfo_weather'): {},
-        SolidInstance('unzip_file', alias='unzip_april_on_time_data'): {
-            'archive_file': DependencyDefinition('download_april_on_time_data')
-        },
-        SolidInstance('unzip_file', alias='unzip_may_on_time_data'): {
-            'archive_file': DependencyDefinition('download_may_on_time_data')
-        },
-        SolidInstance('unzip_file', alias='unzip_june_on_time_data'): {
-            'archive_file': DependencyDefinition('download_june_on_time_data')
-        },
-        SolidInstance('unzip_file', alias='unzip_master_cord_data'): {
-            'archive_file': DependencyDefinition('download_master_cord_data')
-        },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_april_on_time_data'): {
-            'input_csv_file': DependencyDefinition('unzip_april_on_time_data')
-        },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_may_on_time_data'): {
-            'input_csv_file': DependencyDefinition('unzip_may_on_time_data')
-        },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_june_on_time_data'): {
-            'input_csv_file': DependencyDefinition('unzip_june_on_time_data')
-        },
         SolidInstance('ingest_csv_to_spark', alias='ingest_q2_sfo_weather'): {
             'input_csv_file': DependencyDefinition('download_q2_sfo_weather')
         },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_master_cord_data'): {
-            'input_csv_file': DependencyDefinition('unzip_master_cord_data')
-        },
         'process_q2_data': {
-            'april_data': DependencyDefinition('ingest_april_on_time_data'),
-            'may_data': DependencyDefinition('ingest_may_on_time_data'),
-            'june_data': DependencyDefinition('ingest_june_on_time_data'),
-            'master_cord_data': DependencyDefinition('ingest_master_cord_data'),
+            'april_data': DependencyDefinition('april_on_time_s3_to_df'),
+            'may_data': DependencyDefinition('may_on_time_s3_to_df'),
+            'june_data': DependencyDefinition('june_on_time_s3_to_df'),
+            'master_cord_data': DependencyDefinition('master_cord_s3_to_df'),
         },
         'process_sfo_weather_data': {
             'sfo_weather_data': DependencyDefinition('ingest_q2_sfo_weather')

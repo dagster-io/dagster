@@ -1,96 +1,83 @@
 solids:
   process_q2_coupon_data:
     solids:
-      download_from_s3_to_bytes:
+      s3_to_df:
         inputs:
           bucket_data:
             bucket: dagster-airline-demo-source-data
             key: test/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip
+          archive_member:
+            value: Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv
       subsample_spark_dataset:
         config:
           subsample_pct: 100
       load_data_to_database_from_spark:
         config:
           table_name: q2_coupon_data
-      unzip_file:
-        inputs:
-          archive_member:
-            value: Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv
   process_q2_market_data:
     solids:
-      download_from_s3_to_bytes:
+      s3_to_df:
         inputs:
           bucket_data:
             bucket: dagster-airline-demo-source-data
             key: test/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip
+          archive_member:
+            value: Origin_and_Destination_Survey_DB1BMarket_2018_2.csv
       subsample_spark_dataset:
         config:
           subsample_pct: 100
       load_data_to_database_from_spark:
         config:
           table_name: q2_market_data
-      unzip_file:
-        inputs:
-          archive_member:
-            value: Origin_and_Destination_Survey_DB1BMarket_2018_2.csv
   process_q2_ticket_data:
     solids:
-      download_from_s3_to_bytes:
+      s3_to_df:
         inputs:
           bucket_data:
             bucket: dagster-airline-demo-source-data
             key: test/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip
+          archive_member:
+            value: Origin_and_Destination_Survey_DB1BTicket_2018_2.csv
       subsample_spark_dataset:
         config:
           subsample_pct: 100
       load_data_to_database_from_spark:
         config:
           table_name: q2_ticket_data
-      unzip_file:
-        inputs:
-          archive_member:
-            value: Origin_and_Destination_Survey_DB1BTicket_2018_2.csv
-  download_april_on_time_data:
+  april_on_time_s3_to_df:
     inputs:
       bucket_data:
         bucket: dagster-airline-demo-source-data
         key: test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip
-  download_may_on_time_data:
+      archive_member:
+        value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv
+  may_on_time_s3_to_df:
     inputs:
       bucket_data:
         bucket: dagster-airline-demo-source-data
         key: test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip
-  download_june_on_time_data:
+      archive_member:
+        value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv
+  june_on_time_s3_to_df:
     inputs:
       bucket_data:
         bucket: dagster-airline-demo-source-data
         key: test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip
-  download_master_cord_data:
+      archive_member:
+        value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv
+  master_cord_s3_to_df:
     inputs:
+      archive_member:
+        value: "954834304_T_MASTER_CORD.csv"
       bucket_data:
         bucket: dagster-airline-demo-source-data
         key: test/954834304_T_MASTER_CORD.zip
+
   download_q2_sfo_weather:
     inputs:
       bucket_data:
         bucket: dagster-airline-demo-source-data
         key: test/sfo_q2_weather.txt
-  unzip_april_on_time_data:
-    inputs:
-      archive_member:
-        value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv
-  unzip_may_on_time_data:
-    inputs:
-      archive_member:
-        value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv
-  unzip_june_on_time_data:
-    inputs:
-      archive_member:
-        value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv
-  unzip_master_cord_data:
-    inputs:
-      archive_member:
-        value: 954834304_T_MASTER_CORD.csv
   load_q2_on_time_data:
     config:
       table_name: q2_on_time_data

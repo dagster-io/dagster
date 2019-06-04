@@ -26,7 +26,7 @@ from dagster import (
     check,
     solid,
 )
-from dagster_aws.s3.solids import download_from_s3_to_bytes
+from dagster_aws.s3.solids import download_from_s3_to_bytes, S3BucketData
 from dagstermill import define_dagstermill_solid
 
 from .types import FileFromPath, SparkDataFrameType, SqlTableName
@@ -260,20 +260,32 @@ def subsample_spark_dataset(context, data_frame):
     )
 
 
+s3_to_df = CompositeSolidDefinition(
+    name='s3_to_df',
+    solids=[download_from_s3_to_bytes, unzip_file, ingest_csv_to_spark],
+    dependencies={
+        'unzip_file': {'archive_file': DependencyDefinition('download_from_s3_to_bytes')},
+        'ingest_csv_to_spark': {'input_csv_file': DependencyDefinition('unzip_file')},
+    },
+    input_mappings=[
+        InputDefinition('bucket_data', S3BucketData).mapping_to(
+            'download_from_s3_to_bytes', 'bucket_data'
+        ),
+        InputDefinition('archive_member', String).mapping_to('unzip_file', 'archive_member'),
+    ],
+    output_mappings=[OutputDefinition(SparkDataFrameType).mapping_from('ingest_csv_to_spark')],
+)
+
 s3_to_dw_table = CompositeSolidDefinition(
     name='s3_to_dw_table',
     solids=[
-        download_from_s3_to_bytes,
-        unzip_file,
-        ingest_csv_to_spark,
+        s3_to_df,
         subsample_spark_dataset,
         canonicalize_column_names,
         load_data_to_database_from_spark,
     ],
     dependencies={
-        'unzip_file': {'archive_file': DependencyDefinition('download_from_s3_to_bytes')},
-        'ingest_csv_to_spark': {'input_csv_file': DependencyDefinition('unzip_file')},
-        'subsample_spark_dataset': {'data_frame': DependencyDefinition('ingest_csv_to_spark')},
+        'subsample_spark_dataset': {'data_frame': DependencyDefinition('s3_to_df')},
         'canonicalize_column_names': {
             'data_frame': DependencyDefinition('subsample_spark_dataset')
         },
