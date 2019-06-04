@@ -59,6 +59,6 @@ def test_run_emr_job():
         'JobFlowRole': 'EMR_EC2_DefaultRole',
         'ServiceRole': 'EMR_DefaultRole',
     }
-    config = {'solids': {'test': {'config': emr_config}}}
+    config = {'solids': {'test': {'config': {'job_config': emr_config, 'aws_region': 'us-east-1'}}}}
     result = execute_pipeline(pipeline, config)
     assert result.success
