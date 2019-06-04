@@ -10,7 +10,7 @@ from dagster import (
 )
 
 from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.solids import download_from_s3_to_bytes, put_object_to_s3_bytes
+from dagster_aws.s3.solids import put_object_to_s3_bytes, download_from_s3_to_bytes
 
 from .resources import (
     postgres_db_info_resource,

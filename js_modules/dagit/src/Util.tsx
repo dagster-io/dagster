@@ -88,3 +88,12 @@ export function weakmapMemoize<T extends object, R>(
     return r;
   };
 }
+
+export function titleOfIO(i: {
+  solid: { name: string };
+  definition: { name: string };
+}) {
+  return i.solid.name !== DEFAULT_RESULT_NAME
+    ? `${i.solid.name}:${i.definition.name}`
+    : i.solid.name;
+}

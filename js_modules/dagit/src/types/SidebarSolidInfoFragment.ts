@@ -78,18 +78,6 @@ export interface SidebarSolidInfoFragment_inputs {
   dependsOn: SidebarSolidInfoFragment_inputs_dependsOn[];
 }
 
-export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_metadata {
-  __typename: "MetadataItemDefinition";
-  key: string;
-  value: string;
-}
-
-export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition {
-  __typename: "CompositeSolidDefinition";
-  description: string | null;
-  metadata: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_metadata[];
-}
-
 export interface SidebarSolidInfoFragment_definition_SolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
@@ -242,7 +230,75 @@ export interface SidebarSolidInfoFragment_definition_SolidDefinition {
   configDefinition: SidebarSolidInfoFragment_definition_SolidDefinition_configDefinition | null;
 }
 
-export type SidebarSolidInfoFragment_definition = SidebarSolidInfoFragment_definition_CompositeSolidDefinition | SidebarSolidInfoFragment_definition_SolidDefinition;
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput {
+  __typename: "Input";
+  definition: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition;
+  solid: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid;
+}
+
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings {
+  __typename: "InputMapping";
+  definition: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings_definition;
+  mappedInput: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput;
+}
+
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_outputMappings_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput {
+  __typename: "Output";
+  definition: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition;
+  solid: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid;
+}
+
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_outputMappings {
+  __typename: "OutputMapping";
+  definition: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_outputMappings_definition;
+  mappedOutput: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput;
+}
+
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition {
+  __typename: "CompositeSolidDefinition";
+  description: string | null;
+  metadata: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_metadata[];
+  inputMappings: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings[];
+  outputMappings: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_outputMappings[];
+}
+
+export type SidebarSolidInfoFragment_definition = SidebarSolidInfoFragment_definition_SolidDefinition | SidebarSolidInfoFragment_definition_CompositeSolidDefinition;
 
 export interface SidebarSolidInfoFragment {
   __typename: "Solid";

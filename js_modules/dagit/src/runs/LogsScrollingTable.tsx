@@ -372,7 +372,7 @@ class OverflowDetectingCell extends React.Component<
     const el = ReactDOM.findDOMNode(this) as HTMLElement;
     const message = el.firstChild && el.firstChild.textContent;
     if (!message) return;
-    showCustomAlert({ message });
+    showCustomAlert({ message: message, pre: true });
   };
 
   render() {

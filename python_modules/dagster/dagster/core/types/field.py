@@ -47,7 +47,7 @@ def Field(
         default_value (Any):
             A default value to use that respects the schema provided via dagster_type
         is_optional (bool): Whether the presence of this field is optional
-        despcription (str):
+        description (str):
     '''
     config_type = resolve_to_config_type(dagster_type)
     if not config_type:
@@ -58,7 +58,7 @@ def Field(
             ).format(value_repr=repr(dagster_type))
         )
     return FieldImpl(
-        config_type=resolve_to_config_type(dagster_type),
+        config_type=config_type,
         default_value=default_value,
         is_optional=is_optional,
         is_secret=is_secret,

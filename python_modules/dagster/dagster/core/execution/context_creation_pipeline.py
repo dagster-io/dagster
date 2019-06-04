@@ -18,7 +18,6 @@ from dagster.core.errors import (
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
 from dagster.core.events.log import construct_event_logger
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.loggers import default_loggers, default_system_loggers
 from dagster.core.storage.intermediates_manager import (
     construct_intermediates_manager,
     IntermediatesManager,
@@ -35,6 +34,7 @@ from dagster.core.types.evaluator import (
     evaluate_config_value,
     friendly_string_for_error,
 )
+from dagster.loggers import default_loggers, default_system_loggers
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 

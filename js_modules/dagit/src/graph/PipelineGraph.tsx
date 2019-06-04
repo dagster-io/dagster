@@ -2,27 +2,34 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
-import { LinkVertical as Link } from "@vx/shape";
 import SVGViewport, { SVGViewportInteractor } from "./SVGViewport";
+import { SVGLabeledRect } from "./SVGComponents";
 import SolidNode from "./SolidNode";
 import {
   ILayoutConnection,
   IFullPipelineLayout,
   IFullSolidLayout
 } from "./getFullSolidLayout";
-import { PipelineGraphFragment } from "./types/PipelineGraphFragment";
 import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
+import { SolidLinks, IConnHighlight } from "./SolidLinks";
 
 const NoOp = () => {};
 
 interface IPipelineGraphProps {
-  pipeline: PipelineGraphFragment;
+  pipelineName: string;
+  backgroundColor: string;
   layout: IFullPipelineLayout;
+  solids: PipelineGraphSolidFragment[];
+  parentHandleID?: string;
+  parentSolid?: PipelineGraphSolidFragment;
+  selectedHandleID?: string;
   selectedSolid?: PipelineGraphSolidFragment;
   highlightedSolids: Array<PipelineGraphSolidFragment>;
   interactor?: SVGViewportInteractor;
   onClickSolid?: (solidName: string) => void;
   onDoubleClickSolid?: (solidName: string) => void;
+  onEnterCompositeSolid?: (solidName: string) => void;
+  onLeaveCompositeSolid?: () => void;
   onClickBackground?: () => void;
 }
 
@@ -31,7 +38,6 @@ interface IPipelineContentsProps extends IPipelineGraphProps {
   layout: IFullPipelineLayout;
 }
 
-type IConnHighlight = { a: string; b: string };
 interface IPipelineContentsState {
   highlightedConnections: IConnHighlight[];
 }
@@ -52,11 +58,15 @@ class PipelineGraphContents extends React.PureComponent<
     const {
       layout,
       minified,
-      pipeline,
+      solids,
+      parentSolid,
+      parentHandleID,
       onClickSolid = NoOp,
       onDoubleClickSolid = NoOp,
+      onEnterCompositeSolid = NoOp,
       highlightedSolids,
-      selectedSolid
+      selectedSolid,
+      selectedHandleID
     } = this.props;
 
     const { highlightedConnections } = this.state;
@@ -71,6 +81,31 @@ class PipelineGraphContents extends React.PureComponent<
 
     return (
       <g>
+        {parentSolid && (
+          <SVGLabeledCompositeRect
+            x={1}
+            y={1}
+            key={`composite-rect-${parentHandleID}`}
+            width={layout.width - 1}
+            height={layout.height - 1}
+            label={parentSolid ? parentSolid.name : ""}
+            fill={Colors.LIGHT_GRAY5}
+            minified={minified}
+          />
+        )}
+        {selectedSolid && (
+          // this rect is hidden beneath the user's selection with a React key so that
+          // when they expand the composite solid React sees this component becoming
+          // the one above and re-uses the DOM node. This allows us to animate the rect's
+          // bounds from the parent layout to the inner layout with no React state.
+          <SVGLabeledCompositeRect
+            {...layout.solids[selectedSolid.name].solid}
+            key={`composite-rect-${selectedHandleID}`}
+            label={""}
+            fill={Colors.LIGHT_GRAY5}
+            minified={true}
+          />
+        )}
         <SolidLinks
           layout={layout}
           opacity={0.2}
@@ -83,13 +118,15 @@ class PipelineGraphContents extends React.PureComponent<
           connections={layout.connections.filter(c => isHighlighted(c))}
           onHighlight={this.onHighlightConnections}
         />
-        {pipeline.solids.map(solid => (
+        {solids.map(solid => (
           <SolidNode
             key={solid.name}
             solid={solid}
+            parentSolid={parentSolid}
             minified={minified}
             onClick={onClickSolid}
             onDoubleClick={onDoubleClickSolid}
+            onEnterComposite={onEnterCompositeSolid}
             onHighlightConnections={this.onHighlightConnections}
             layout={layout.solids[solid.name]}
             selected={selectedSolid === solid}
@@ -115,16 +152,6 @@ export default class PipelineGraph extends React.Component<
   IPipelineGraphProps
 > {
   static fragments = {
-    PipelineGraphFragment: gql`
-      fragment PipelineGraphFragment on Pipeline {
-        name
-        solids {
-          ...SolidNodeFragment
-        }
-      }
-
-      ${SolidNode.fragments.SolidNodeFragment}
-    `,
     PipelineGraphSolidFragment: gql`
       fragment PipelineGraphSolidFragment on Solid {
         name
@@ -144,6 +171,7 @@ export default class PipelineGraph extends React.Component<
     }
     const cx = solidLayout.boundingBox.x + solidLayout.boundingBox.width / 2;
     const cy = solidLayout.boundingBox.y + solidLayout.boundingBox.height / 2;
+
     this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, 1);
   };
 
@@ -202,14 +230,31 @@ export default class PipelineGraph extends React.Component<
     }
   };
 
-  unfocus = () => {
+  unfocus = (e: React.MouseEvent<any>) => {
     this.viewportEl.current!.autocenter(true);
+    e.stopPropagation();
   };
+
+  unfocusOutsideContainer = (e: React.MouseEvent<any>) => {
+    if (this.props.parentSolid && this.props.onLeaveCompositeSolid) {
+      this.props.onLeaveCompositeSolid();
+    } else {
+      this.unfocus(e);
+    }
+  };
+
+  componentDidUpdate(prevProps: IPipelineGraphProps) {
+    if (prevProps.parentSolid !== this.props.parentSolid) {
+      this.viewportEl.current!.autocenter();
+    }
+  }
 
   render() {
     const {
       layout,
       interactor,
+      pipelineName,
+      backgroundColor,
       onClickBackground,
       onDoubleClickSolid
     } = this.props;
@@ -217,11 +262,13 @@ export default class PipelineGraph extends React.Component<
     return (
       <SVGViewport
         ref={this.viewportEl}
-        key={this.props.pipeline.name}
+        key={pipelineName}
         interactor={interactor || SVGViewport.Interactors.PanAndZoom}
+        backgroundColor={backgroundColor}
         graphWidth={layout.width}
         graphHeight={layout.height}
         onKeyDown={this.onKeyDown}
+        onDoubleClick={this.unfocusOutsideContainer}
       >
         {({ scale }: any) => (
           <SVGContainer
@@ -243,49 +290,11 @@ export default class PipelineGraph extends React.Component<
   }
 }
 
-const SolidLinks = React.memo(
-  (props: {
-    opacity: number;
-    layout: IFullPipelineLayout;
-    connections: ILayoutConnection[];
-    onHighlight: (arr: IConnHighlight[]) => void;
-  }) => {
-    const solids = props.layout.solids;
-
-    return (
-      <g style={{ opacity: props.opacity }}>
-        {props.connections.map(({ from, to }, i) => (
-          <g
-            key={i}
-            onMouseLeave={() => props.onHighlight([])}
-            onMouseEnter={() =>
-              props.onHighlight([{ a: from.solidName, b: to.solidName }])
-            }
-          >
-            <StyledLink
-              data={{
-                // can also use from.point for the "Dagre" closest point on node
-                source: solids[from.solidName].outputs[from.edgeName].port,
-                target: solids[to.solidName].inputs[to.edgeName].port
-              }}
-            >
-              <title>{`${from.solidName} - ${to.solidName}`}</title>
-            </StyledLink>
-          </g>
-        ))}
-      </g>
-    );
-  }
-);
-
-SolidLinks.displayName = "SolidLinks";
-
 const SVGContainer = styled.svg`
   border-radius: 0;
 `;
 
-const StyledLink = styled(Link)`
-  stroke-width: 6;
-  stroke: ${Colors.BLACK}
-  fill: none;
+const SVGLabeledCompositeRect = styled(SVGLabeledRect)`
+  transition: x 250ms ease-out, y 250ms ease-out, width 250ms ease-out,
+    height 250ms ease-out;
 `;

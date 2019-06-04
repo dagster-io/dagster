@@ -3,8 +3,7 @@ from enum import Enum
 
 
 from dagster import check
-from dagster.core.definitions import SolidHandle
-from dagster.core.definitions.materialization import Materialization
+from dagster.core.definitions import SolidHandle, Materialization
 from dagster.core.types.runtime import RuntimeType
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
@@ -22,13 +21,6 @@ class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
             cls,
             step_key=check.str_param(step_key, 'step_key'),
             output_name=check.str_param(output_name, 'output_name'),
-        )
-
-
-class StepOutputValue(namedtuple('_StepOutputValue', 'output_name value')):
-    def __new__(cls, output_name, value):
-        return super(StepOutputValue, cls).__new__(
-            cls, output_name=check.str_param(output_name, 'output_name'), value=value
         )
 
 

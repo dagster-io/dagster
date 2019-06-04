@@ -4,6 +4,8 @@ import boto3
 
 from dagster import (
     check,
+    Dict,
+    Field,
     InputDefinition,
     Nothing,
     OutputDefinition,
@@ -35,10 +37,10 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
         description = check.opt_str_param(description, 'description', 'EMR create job flow solid.')
 
         def _compute_fn(context, _):  # pylint: disable=too-many-locals
-            client = boto3.client('emr')
+            client = boto3.client('emr', region_name=context.solid_config.get('aws_region'))
 
             # kick off the EMR job flow
-            response = client.run_job_flow(**context.solid_config)
+            response = client.run_job_flow(**context.solid_config['job_config'])
 
             # Job flow IDs and cluster IDs are interchangable
             job_flow_id = response.get('JobFlowId')
@@ -86,5 +88,12 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
             inputs=[InputDefinition(_START, Nothing)],
             outputs=[OutputDefinition(String)],
             compute_fn=_compute_fn,
-            config_field=define_emr_run_job_flow_config(),
+            config_field=Field(
+                Dict(
+                    {
+                        'aws_region': Field(String, is_optional=True),
+                        'job_config': define_emr_run_job_flow_config(),
+                    }
+                )
+            ),
         )

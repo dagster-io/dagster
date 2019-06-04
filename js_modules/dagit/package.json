@@ -19,6 +19,7 @@
     "apollo-boost": "^0.1.27",
     "apollo-link-ws": "^1.0.12",
     "codemirror": "^5.40.2",
+    "color": "^3.1.1",
     "d3-hierarchy": "^1.1.6",
     "dagre": "^0.8.2",
     "graphql": "^14.1.1",
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "@types/ajv": "^1.0.0",
+    "@types/color": "^3.0.0",
     "@types/codemirror": "^0.0.60",
     "@types/dagre": "^0.7.40",
     "@types/graphql": "^14.0.5",
@@ -86,7 +88,7 @@
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
     "ts": "tsc -p .",
     "download-schema": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/DownloadSchema.ts",
-    "generate-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql --globalTypesFile ./src/types/globalTypes.ts && python append_generated.py",
+    "generate-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql --globalTypesFile ./src/types/globalTypes.ts && python3.7 append_generated.py",
     "watch-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql  --globalTypesFile ./src/types/globalTypes.ts --watch"
   },
   "jest": {

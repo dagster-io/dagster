@@ -161,10 +161,11 @@ class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-in
     @classmethod
     def get_object(cls, intermediate_store, _context, _runtime_type, paths):
         check.inst_param(intermediate_store, 'intermediate_store', S3IntermediateStore)
-        return intermediate_store.object_store.s3.list_objects(
+        res = intermediate_store.object_store.s3.list_objects(
             Bucket=intermediate_store.object_store.bucket,
             Prefix=intermediate_store.key_for_paths(paths),
-        )['Contents'][0]['Key'].split('/')[-1]
+        )
+        return res['Contents'][0]['Key'].split('/')[-1]
 
 
 @aws

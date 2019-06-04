@@ -1,17 +1,10 @@
 import six
 
 from dagster import check
-from dagster.core.definitions import Materialization, OutputDefinition, Solid, SolidHandle
+from dagster.core.definitions import Materialization, OutputDefinition, Solid, SolidHandle, Result
 
 from dagster.core.errors import DagsterInvariantViolationError
-from .objects import (
-    ExecutionStep,
-    ExecutionValueSubplan,
-    StepInput,
-    StepKind,
-    StepOutput,
-    StepOutputValue,
-)
+from .objects import ExecutionStep, ExecutionValueSubplan, StepInput, StepKind, StepOutput
 
 from .utility import create_joining_subplan
 
@@ -42,7 +35,7 @@ def _create_materialization_lambda(output_def, config_spec):
                 )
             )
 
-        yield StepOutputValue(output_name=MATERIALIZATION_THUNK_OUTPUT, value=runtime_value)
+        yield Result(output_name=MATERIALIZATION_THUNK_OUTPUT, value=runtime_value)
         yield Materialization(
             path=path,
             description=('Materialization of {solid_name}.{output_name}').format(

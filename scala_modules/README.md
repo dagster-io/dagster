@@ -22,3 +22,17 @@ Use homebrew:
 
     brew install scala@2.11
     brew install sbt
+
+### References
+* Spark + S3: http://deploymentzone.com/2015/12/20/s3a-on-spark-on-aws-ec2/
+* Spark reading from S3: https://tech.kinja.com/how-not-to-pull-from-s3-using-apache-spark-1704509219
+* Spark + GCS: https://stackoverflow.com/a/56400126/11295366
+
+### Notes
+Getting AWS S3 to play nice with Spark is complicated, because it involves a dependency on both aws-java-sdk and
+hadoop-aws, and these two libraries need to be compatible versions (and compatible with Spark) or else everything
+explodes:
+
+https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html#Missing_method_in_com.amazonaws_class
+
+We currently use AWS 1.7.4 and hadoop-aws 2.7.1 as these are known to be compatible and work with Spark 2.4.0+

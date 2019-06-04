@@ -7,17 +7,6 @@
 // GraphQL fragment: SolidNodeFragment
 // ====================================================
 
-export interface SolidNodeFragment_definition_CompositeSolidDefinition_metadata {
-  __typename: "MetadataItemDefinition";
-  key: string;
-  value: string;
-}
-
-export interface SolidNodeFragment_definition_CompositeSolidDefinition {
-  __typename: "CompositeSolidDefinition";
-  metadata: SolidNodeFragment_definition_CompositeSolidDefinition_metadata[];
-}
-
 export interface SolidNodeFragment_definition_SolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
@@ -41,7 +30,74 @@ export interface SolidNodeFragment_definition_SolidDefinition {
   configDefinition: SolidNodeFragment_definition_SolidDefinition_configDefinition | null;
 }
 
-export type SolidNodeFragment_definition = SolidNodeFragment_definition_CompositeSolidDefinition | SolidNodeFragment_definition_SolidDefinition;
+export interface SolidNodeFragment_definition_CompositeSolidDefinition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface SolidNodeFragment_definition_CompositeSolidDefinition_inputMappings_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface SolidNodeFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface SolidNodeFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface SolidNodeFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput {
+  __typename: "Input";
+  definition: SolidNodeFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition;
+  solid: SolidNodeFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid;
+}
+
+export interface SolidNodeFragment_definition_CompositeSolidDefinition_inputMappings {
+  __typename: "InputMapping";
+  definition: SolidNodeFragment_definition_CompositeSolidDefinition_inputMappings_definition;
+  mappedInput: SolidNodeFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput;
+}
+
+export interface SolidNodeFragment_definition_CompositeSolidDefinition_outputMappings_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface SolidNodeFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface SolidNodeFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface SolidNodeFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput {
+  __typename: "Output";
+  definition: SolidNodeFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition;
+  solid: SolidNodeFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid;
+}
+
+export interface SolidNodeFragment_definition_CompositeSolidDefinition_outputMappings {
+  __typename: "OutputMapping";
+  definition: SolidNodeFragment_definition_CompositeSolidDefinition_outputMappings_definition;
+  mappedOutput: SolidNodeFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput;
+}
+
+export interface SolidNodeFragment_definition_CompositeSolidDefinition {
+  __typename: "CompositeSolidDefinition";
+  metadata: SolidNodeFragment_definition_CompositeSolidDefinition_metadata[];
+  inputMappings: SolidNodeFragment_definition_CompositeSolidDefinition_inputMappings[];
+  outputMappings: SolidNodeFragment_definition_CompositeSolidDefinition_outputMappings[];
+}
+
+export type SolidNodeFragment_definition = SolidNodeFragment_definition_SolidDefinition | SolidNodeFragment_definition_CompositeSolidDefinition;
 
 export interface SolidNodeFragment_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";

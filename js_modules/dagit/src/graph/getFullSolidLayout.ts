@@ -38,10 +38,6 @@ export interface IFullSolidLayout {
   };
 }
 
-export interface ILayoutPipeline {
-  solids: Array<ILayoutSolid>;
-}
-
 interface ILayoutSolid {
   name: string;
   inputs: Array<{
@@ -86,15 +82,15 @@ const PORT_INSET_X = 15;
 const PORT_INSET_Y = IO_HEIGHT / 2;
 
 function getDagrePipelineLayoutHeavy(
-  pipeline: ILayoutPipeline
+  pipelineSolids: ILayoutSolid[]
 ): IFullPipelineLayout {
   const g = new dagre.graphlib.Graph();
 
   // Define a new top-down, left to right graph layout
   g.setGraph({
     rankdir: "TB",
-    marginx: 100,
-    marginy: 100
+    marginx: 120,
+    marginy: 120
   });
   g.setDefaultEdgeLabel(function() {
     return {};
@@ -102,7 +98,7 @@ function getDagrePipelineLayoutHeavy(
 
   const connections: Array<ILayoutConnection> = [];
 
-  pipeline.solids.forEach(solid => {
+  pipelineSolids.forEach(solid => {
     // Lay out each solid individually to get it's width and height based on it's
     // inputs and outputs, and then attach it to the graph. Dagre will give us it's
     // x,y position.
@@ -148,7 +144,7 @@ function getDagrePipelineLayoutHeavy(
   // X,Y coordinates this time.
   g.nodes().forEach(function(solidName) {
     const node = g.node(solidName);
-    const solid = pipeline.solids.find(({ name }) => name === solidName);
+    const solid = pipelineSolids.find(({ name }) => name === solidName);
     if (solid) {
       solids[solidName] = layoutSolid(solid, {
         x: node.x - node.width / 2, // Dagre's x/y is the center, we want top left

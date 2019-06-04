@@ -6,13 +6,13 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import check, execute_pipeline, PipelineDefinition, solid
+from dagster import check, execute_pipeline, ModeDefinition, PipelineDefinition, solid
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.loggers import colored_console_logger
+from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo
 
 REGEX_UUID = r'[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}'
@@ -136,7 +136,7 @@ def test_multiline_logging_complex():
                     message="FileNotFoundError: [Errno 2] No such file or directory: '/path/to/file'\n",
                     stack=[
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/errors.py", line 186, in user_code_error_boundary\n    yield\n',
-                        '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/simple_engine.py", line 365, in _iterate_step_outputs_within_boundary\n    for step_output in gen:\n',
+                        '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/simple_engine.py", line 365, in _event_sequence_for_step_compute_fn\n    for step_output in gen:\n',
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/materialization_thunk.py", line 28, in _fn\n    runtime_type.output_schema.materialize_runtime_value(config_spec, runtime_value)\n',
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/config_schema.py", line 93, in materialize_runtime_value\n    return func(config_value, runtime_value)\n',
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/config_schema.py", line 110, in _selector\n    return func(selector_key, selector_value, runtime_value)\n',
@@ -176,7 +176,7 @@ def test_multiline_logging_complex():
                 "FileNotFoundError: [Errno 2] No such file or directory: '/path/to/file'\n",
                 [
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/errors.py", line 186, in user_code_error_boundary\n    yield\n',
-                    '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/simple_engine.py", line 365, in _iterate_step_outputs_within_boundary\n    for step_output in gen:\n',
+                    '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/simple_engine.py", line 365, in _event_sequence_for_step_compute_fn\n    for step_output in gen:\n',
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/materialization_thunk.py", line 28, in _fn\n    runtime_type.output_schema.materialize_runtime_value(config_spec, runtime_value)\n',
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/config_schema.py", line 93, in materialize_runtime_value\n    return func(config_value, runtime_value)\n',
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/config_schema.py", line 110, in _selector\n    return func(selector_key, selector_value, runtime_value)\n',
@@ -224,3 +224,27 @@ def test_colored_console_logger_with_integer_log_level():
             {'name': 'dagster', 'log_level': 4}, PipelineDefinition([]), colored_console_logger, ''
         )
     )
+
+
+def test_json_console_logger(capsys):
+    @solid
+    def hello_world(context):
+        context.log.info('Hello, world!')
+
+    execute_pipeline(
+        PipelineDefinition(
+            [hello_world], mode_definitions=[ModeDefinition(loggers={'json': json_console_logger})]
+        ),
+        {'loggers': {'json': {'config': {}}}},
+    )
+
+    captured = capsys.readouterr()
+
+    found_msg = False
+    for line in captured.err.split('\n'):
+        if line:
+            parsed = json.loads(line)
+            if parsed['dagster_meta']['orig_message'] == 'Hello, world!':
+                found_msg = True
+
+    assert found_msg

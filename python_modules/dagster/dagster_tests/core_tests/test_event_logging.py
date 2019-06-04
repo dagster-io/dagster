@@ -13,7 +13,7 @@ from dagster import (
 
 from dagster.core.events.log import construct_event_logger, EventRecord
 from dagster.core.events import DagsterEventType
-from dagster.core.loggers import colored_console_logger
+from dagster.loggers import colored_console_logger
 
 
 def mode_def(event_callback):

@@ -1,31 +1,6 @@
-from collections import namedtuple
 from dagster import check
 
 from .utils import check_valid_name
-
-
-class ExpectationResult(namedtuple('_ExpectationResult', 'success name message result_metadata')):
-    ''' Result of an expectation callback.
-
-    When Expectations are evaluated in the callback passed to ExpectationDefinitions,
-    the user must return an ExpectationResult object from the callback.
-
-    Attributes:
-
-        success (bool): Whether the expectation passed or not.
-        name (str): Short display name for expectation
-        message (str): Information about the computation. Typically only used in the failure case.
-        result_metadata (dict): Arbitrary information about the expectation result.
-    '''
-
-    def __new__(cls, success, name=None, message=None, result_metadata=None):
-        return super(ExpectationResult, cls).__new__(
-            cls,
-            success=check.bool_param(success, 'success'),
-            name=check.opt_str_param(name, 'name'),
-            message=check.opt_str_param(message, 'message'),
-            result_metadata=check.opt_dict_param(result_metadata, 'result_metadata'),
-        )
 
 
 class ExpectationDefinition(object):

@@ -18,7 +18,9 @@ from .environment_schema import (
 
 from .entrypoint import LoaderEntrypoint
 
-from .expectation import ExpectationDefinition, ExpectationResult
+from .expectation import ExpectationDefinition
+
+from .events import ExpectationResult, Result, Materialization
 
 from .input import InputDefinition, InputMapping
 
@@ -27,10 +29,6 @@ from .logger import LoggerDefinition
 from .output import OutputDefinition, OutputMapping
 
 from .resource import ResourceDefinition
-
-from .result import Result
-
-from .materialization import Materialization
 
 from .mode import ModeDefinition
 

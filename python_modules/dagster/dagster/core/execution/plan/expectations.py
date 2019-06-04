@@ -5,6 +5,7 @@ from dagster.core.definitions import (
     ExpectationResult,
     InputDefinition,
     OutputDefinition,
+    Result,
     Solid,
     SolidHandle,
 )
@@ -23,7 +24,6 @@ from .objects import (
     StepInput,
     StepOutput,
     StepOutputHandle,
-    StepOutputValue,
     StepKind,
 )
 
@@ -66,7 +66,7 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
                 )
             )
             yield expt_result
-            yield StepOutputValue(output_name=internal_output_name, value=inputs[EXPECTATION_INPUT])
+            yield Result(output_name=internal_output_name, value=inputs[EXPECTATION_INPUT])
         else:
             expectation_context.log.debug(
                 'Expectation {key} failed on {value}.'.format(

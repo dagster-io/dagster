@@ -2,6 +2,7 @@ import logging
 
 import coloredlogs
 
+from dagster import seven
 from dagster.core.types import Dict, Field, String
 from dagster.core.definitions.logger import logger
 from dagster.core.log_manager import coerce_valid_log_level
@@ -26,6 +27,36 @@ def colored_console_logger(init_context):
     klass = logging.getLoggerClass()
     logger_ = klass(name, level=level)
     coloredlogs.install(logger=logger_, level=level, fmt=default_format_string())
+    return logger_
+
+
+@logger(
+    config_field=Field(
+        Dict(
+            {
+                'log_level': Field(String, is_optional=True, default_value='INFO'),
+                'name': Field(String, is_optional=True, default_value='dagster'),
+            }
+        )
+    ),
+    description='A JSON-formatted console logger',
+)
+def json_console_logger(init_context):
+    level = coerce_valid_log_level(init_context.logger_config['log_level'])
+    name = init_context.logger_config['name']
+
+    klass = logging.getLoggerClass()
+    logger_ = klass(name, level=level)
+
+    handler = coloredlogs.StandardErrorHandler()
+
+    class JsonFormatter(logging.Formatter):
+        def format(self, record):
+            return seven.json.dumps(record.__dict__)
+
+    handler.setFormatter(JsonFormatter())
+    logger_.addHandler(handler)
+
     return logger_
 
 

@@ -4,7 +4,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.system import SystemTransformExecutionContext
 from dagster.core.execution.context.transform import TransformExecutionContext
 
-from .objects import ExecutionStep, StepInput, StepKind, StepOutput, StepOutputValue
+from .objects import ExecutionStep, StepInput, StepKind, StepOutput
 
 
 def create_compute_step(pipeline_name, environment_config, solid, step_inputs, handle):
@@ -58,7 +58,7 @@ def _yield_transform_results(transform_context, inputs, compute_fn):
                     value=repr(result.value),
                 )
             )
-            yield StepOutputValue(output_name=result.output_name, value=result.value)
+            yield Result(output_name=result.output_name, value=result.value)
 
         elif isinstance(result, (Materialization, ExpectationResult)):
             yield result
@@ -89,7 +89,7 @@ def _execute_core_transform(transform_context, inputs, compute_fn):
     all_results = []
     for step_output in _yield_transform_results(transform_context, inputs, compute_fn):
         yield step_output
-        if isinstance(step_output, StepOutputValue):
+        if isinstance(step_output, Result):
             all_results.append(step_output)
 
     if len(all_results) != len(step.step_outputs):

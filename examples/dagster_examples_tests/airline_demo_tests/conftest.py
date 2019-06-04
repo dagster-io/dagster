@@ -21,6 +21,11 @@ def docker_compose_db():
         return
 
     with pushd(script_relative_path('../')):
+        try:
+            subprocess.check_output(['docker-compose', 'stop', 'airline-demo-db'])
+            subprocess.check_output(['docker-compose', 'rm', '-f', 'airline-demo-db'])
+        except:  # pylint: disable=bare-except
+            pass
         subprocess.check_output(['docker-compose', 'up', '-d', 'airline-demo-db'])
 
     yield

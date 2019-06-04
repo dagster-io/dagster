@@ -20,12 +20,7 @@ from dagster import (
     lambda_solid,
     types,
 )
-
-
-from dagster.core.system_config.objects import EnvironmentConfig, ExpectationsConfig, SolidConfig
-
 from dagster.core.definitions import create_environment_type, create_environment_schema
-
 from dagster.core.definitions.environment_configs import (
     define_resource_cls,
     define_expectations_config_cls,
@@ -33,11 +28,15 @@ from dagster.core.definitions.environment_configs import (
     define_solid_dictionary_cls,
     EnvironmentClassCreationData,
 )
-from dagster.core.loggers import default_loggers
-from dagster.core.system_config.objects import construct_solid_dictionary
-from dagster.core.types.evaluator import evaluate_config_value
-
+from dagster.core.system_config.objects import (
+    construct_solid_dictionary,
+    EnvironmentConfig,
+    ExpectationsConfig,
+    SolidConfig,
+)
 from dagster.core.test_utils import throwing_evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config_value
+from dagster.loggers import default_loggers
 
 
 def create_creation_data(pipeline_def):

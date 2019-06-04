@@ -121,7 +121,7 @@ class SolidSelector extends React.PureComponent<
   };
 
   handleSelectSolidsInToolRect = (viewport: SVGViewport) => {
-    const layout = getDagrePipelineLayout(this.props.pipeline);
+    const layout = getDagrePipelineLayout(this.props.pipeline.solids);
     const { toolRectEnd, toolRectStart } = this.state;
     if (!toolRectEnd || !toolRectStart) return;
 
@@ -205,7 +205,9 @@ class SolidSelector extends React.PureComponent<
             }}
           >
             <PipelineGraph
-              pipeline={pipeline}
+              backgroundColor={Colors.LIGHT_GRAY5}
+              pipelineName={pipeline.name}
+              solids={pipeline.solids}
               interactor={{
                 onMouseDown: this.handleSVGMouseDown,
                 onWheel: () => {},
@@ -226,7 +228,7 @@ class SolidSelector extends React.PureComponent<
                   );
                 }
               }}
-              layout={getDagrePipelineLayout(pipeline)}
+              layout={getDagrePipelineLayout(pipeline.solids)}
               highlightedSolids={pipeline.solids.filter(
                 (s: any) => highlighted.indexOf(s.name) !== -1
               )}
@@ -268,11 +270,11 @@ export const SOLID_SELECTOR_QUERY = gql`
       name
       solids {
         name
+        ...PipelineGraphSolidFragment
       }
-      ...PipelineGraphFragment
     }
   }
-  ${PipelineGraph.fragments.PipelineGraphFragment}
+  ${PipelineGraph.fragments.PipelineGraphSolidFragment}
 `;
 
 export default (props: ISolidSelectorProps) => (
