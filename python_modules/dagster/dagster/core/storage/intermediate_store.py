@@ -22,8 +22,11 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
     def uri_for_paths(self, paths, protocol=None):
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
-        key = self.object_store.key_for_paths([self.root] + paths)
+        key = self.key_for_paths(paths)
         return self.object_store.uri_for_key(key, protocol)
+
+    def key_for_paths(self, paths):
+        return self.object_store.key_for_paths([self.root] + paths)
 
     def set_object(self, obj, context, runtime_type, paths):
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
