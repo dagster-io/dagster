@@ -49,6 +49,17 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
     def has_config_entry(self):
         raise NotImplementedError()
 
+    def all_input_output_types(self):
+        for input_def in self.input_dict.values():
+            yield input_def.runtime_type
+            for inner_type in input_def.runtime_type.inner_types:
+                yield inner_type
+
+        for output_def in self.output_dict.values():
+            yield output_def.runtime_type
+            for inner_type in output_def.runtime_type.inner_types:
+                yield inner_type
+
 
 class SolidDefinition(ISolidDefinition):
     '''A solid (a name extracted from the acronym of "software-structured data" (SSD)) represents
@@ -141,6 +152,10 @@ class SolidDefinition(ISolidDefinition):
     def has_config_entry(self):
         return self.config_field or self.has_configurable_inputs or self.has_configurable_outputs
 
+    def all_runtime_types(self):
+        for tt in self.all_input_output_types():
+            yield tt
+
 
 class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
     def __init__(
@@ -153,10 +168,16 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         description=None,
         metadata=None,
     ):
-        self.input_mappings = check.opt_list_param(input_mappings, 'input_mappings')
-        self.output_mappings = check.opt_list_param(output_mappings, 'input_mappings')
-        _validate_in_mappings(self.input_mappings)
-        _validate_out_mappings(self.output_mappings)
+        check.list_param(solids, 'solids', of_type=ISolidDefinition)
+
+        # List[InputMapping]
+        self.input_mappings = _validate_in_mappings(
+            check.opt_list_param(input_mappings, 'input_mappings')
+        )
+        # List[OutputMapping]
+        self.output_mappings = _validate_out_mappings(
+            check.opt_list_param(output_mappings, 'output_mappings')
+        )
 
         self.dependencies = validate_dependency_dict(dependencies)
         dependency_structure, pipeline_solid_dict = create_execution_structure(
@@ -175,6 +196,8 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
             output_mapping.definition.name: output_mapping.definition
             for output_mapping in self.output_mappings
         }
+
+        self._solid_defs = solids
 
         super(CompositeSolidDefinition, self).__init__(
             name, input_dict, output_dict, description, metadata
@@ -210,6 +233,14 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
                 return mapping
         return None
 
+    def all_runtime_types(self):
+        for tt in self.all_input_output_types():
+            yield tt
+
+        for solid_def in self._solid_defs:
+            for ttype in solid_def.all_runtime_types():
+                yield ttype
+
 
 def _validate_in_mappings(input_mappings):
     for mapping in input_mappings:
@@ -229,6 +260,8 @@ def _validate_in_mappings(input_mappings):
                 )
             )
 
+    return input_mappings
+
 
 def _validate_out_mappings(output_mappings):
     for mapping in output_mappings:
@@ -247,3 +280,4 @@ def _validate_out_mappings(output_mappings):
                     type=type(mapping)
                 )
             )
+    return output_mappings
