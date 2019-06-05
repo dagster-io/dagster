@@ -100,8 +100,10 @@ class TypeStoragePluginRegistry:
 
 
 def construct_type_storage_plugin_registry(pipeline_def, storage_mode):
-    return {
-        type_obj: type_obj.storage_plugins.get(storage_mode)
-        for type_obj in pipeline_def.all_runtime_types()
-        if type_obj.storage_plugins.get(storage_mode)
-    }
+    type_plugins = {}
+    for type_obj in pipeline_def.all_runtime_types():
+        storage_plugin = type_obj.storage_plugins.get(storage_mode)
+        if storage_plugin:
+            type_plugins[type_obj] = storage_plugin
+
+    return type_plugins

@@ -10,7 +10,9 @@ from pyspark.sql import DataFrame
 from sqlalchemy import text
 
 from dagster import (
+    DependencyDefinition,
     Bytes,
+    CompositeSolidDefinition,
     Dict,
     ExpectationResult,
     Field,
@@ -24,6 +26,7 @@ from dagster import (
     check,
     solid,
 )
+from dagster_aws.s3.solids import download_from_s3_to_bytes, S3BucketData
 from dagstermill import define_dagstermill_solid
 
 from .types import FileFromPath, SparkDataFrameType, SqlTableName
@@ -255,6 +258,42 @@ def subsample_spark_dataset(context, data_frame):
     return data_frame.sample(
         withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
     )
+
+
+s3_to_df = CompositeSolidDefinition(
+    name='s3_to_df',
+    solids=[download_from_s3_to_bytes, unzip_file, ingest_csv_to_spark],
+    dependencies={
+        'unzip_file': {'archive_file': DependencyDefinition('download_from_s3_to_bytes')},
+        'ingest_csv_to_spark': {'input_csv_file': DependencyDefinition('unzip_file')},
+    },
+    input_mappings=[
+        InputDefinition('bucket_data', S3BucketData).mapping_to(
+            'download_from_s3_to_bytes', 'bucket_data'
+        ),
+        InputDefinition('archive_member', String).mapping_to('unzip_file', 'archive_member'),
+    ],
+    output_mappings=[OutputDefinition(SparkDataFrameType).mapping_from('ingest_csv_to_spark')],
+)
+
+s3_to_dw_table = CompositeSolidDefinition(
+    name='s3_to_dw_table',
+    solids=[
+        s3_to_df,
+        subsample_spark_dataset,
+        canonicalize_column_names,
+        load_data_to_database_from_spark,
+    ],
+    dependencies={
+        'subsample_spark_dataset': {'data_frame': DependencyDefinition('s3_to_df')},
+        'canonicalize_column_names': {
+            'data_frame': DependencyDefinition('subsample_spark_dataset')
+        },
+        'load_data_to_database_from_spark': {
+            'data_frame': DependencyDefinition('canonicalize_column_names')
+        },
+    },
+)
 
 
 q2_sfo_outbound_flights = sql_solid(
@@ -501,7 +540,7 @@ sfo_delays_by_destination = notebook_solid(
     master_cord_data.
     ''',
 )
-def process_q2_data(context, april_data, may_data, june_data, master_cord_data):
+def join_q2_data(context, april_data, may_data, june_data, master_cord_data):
 
     dfs = {'april': april_data, 'may': may_data, 'june': june_data}
 

@@ -14,8 +14,10 @@ Dagster is a system for building modern data applications.
 Combining an elegant programming model and beautiful tools, Dagster allows infrastructure engineers, data engineers, and data scientists to seamlessly collaborate to process and produce the trusted, reliable data needed in today's world.
 
 ### Install
+
 To get started:
 <br />
+
 <p align="center">
 <code>pip install dagster dagit</code>
 </p>
@@ -24,18 +26,21 @@ This installs two modules:
 <br />
 <br />
 
-* **dagster** | The core programming model and abstraction stack; stateless, single-node,
+- **dagster** | The core programming model and abstraction stack; stateless, single-node,
   single-process and multi-process execution engines; and a CLI tool for driving those engines.
-* **dagit** | A UI and rich development environment for Dagster, including a DAG browser, a type-aware config editor, and a streaming execution interface.
-<br/>
+- **dagit** | A UI and rich development environment for Dagster, including a DAG browser, a type-aware config editor, and a streaming execution interface.
+  <br/>
 
 ### Learn
-Next, jump right into our [tutorial](https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/index.html), or read our [complete documentation](https://dagster.readthedocs.io). If you're actively using Dagster or have questions on getting started, we'd love to hear from you; [come join our slack!](https://tinyurl.com/dagsterslack)
+
+Next, jump right into our [tutorial](https://dagster.readthedocs.io/en/stable/sections/learn/tutorial/index.html), or read our [complete documentation](https://dagster.readthedocs.io). If you're actively using Dagster or have questions on getting started, we'd love to hear from you; [come join our slack!](https://tinyurl.com/dagsterslack)
 
 ### Contributing
-For details on contributing or running the project for development, check out our [contributing guide](https://dagster.readthedocs.io/en/latest/sections/community/contributing.html).
+
+For details on contributing or running the project for development, check out our [contributing guide](https://dagster.readthedocs.io/en/stable/sections/community/contributing.html).
 
 # Integrations
+
 Dagster works with the tools and systems that you're already using with your data, including:
 
 <table>
@@ -75,7 +80,7 @@ Dagster works with the tools and systems that you're already using with your dat
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/58349454-3846f500-7e18-11e9-84f0-6c9c75ae9993.png"></td>
 			<td style="border-left: 0px"> <b>Great Expectations</b></td>
-			<td><a href="https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/expectations.html" />Expectations in Dagster</a><br />
+			<td><a href="https://dagster.readthedocs.io/en/stable/sections/learn/tutorial/expectations.html" />Expectations in Dagster</a><br />
 			The <a href="https://github.com/great-expectations/great_expectations">Great Expectations</a> framework is designed to promote data quality checks for data warehouses. In Dagster, expectations are a first-class citizen.
 			</td>
 		</tr>
@@ -121,11 +126,10 @@ Dagster works with the tools and systems that you're already using with your dat
 	</tbody>
 </table>
 
-
 This list is growing as we are actively building more integrations, and we welcome contributions!
 
-
 # Example Projects
+
 Several example projects are provided under the examples folder demonstrating how to use Dagster, including:
 
 1. [**examples/airline-demo**](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/airline_demo): A substantial demo project illustrating how these tools can be used together to manage a realistic data pipeline.

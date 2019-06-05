@@ -73,6 +73,7 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
             )
         elif runtime_type.name is None:
             self.registry.check_for_unsupported_composite_overrides(runtime_type)
+
         return self.set_object(obj, context, runtime_type, paths)
 
     def get_value(self, context, runtime_type, paths):

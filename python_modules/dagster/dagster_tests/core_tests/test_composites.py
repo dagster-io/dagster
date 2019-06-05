@@ -2,18 +2,19 @@ import pytest
 
 from dagster import (
     CompositeSolidDefinition,
+    DagsterInvalidDefinitionError,
     DependencyDefinition,
-    PipelineDefinition,
-    SolidInstance,
-    execute_pipeline,
-    Field,
-    String,
-    solid,
-    InputDefinition,
-    OutputDefinition,
     ExpectationDefinition,
     ExpectationResult,
-    DagsterInvalidDefinitionError,
+    Field,
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    SolidInstance,
+    String,
+    dagster_type,
+    execute_pipeline,
+    solid,
 )
 from dagster.core.utility_solids import (
     create_root_solid,
@@ -246,3 +247,21 @@ def test_io_error_is_decent():
         CompositeSolidDefinition(
             name='comp_a_outer', solids=[], output_mappings=[OutputDefinition()]
         )
+
+
+def test_types_descent():
+    @dagster_type
+    class Foo(object):
+        pass
+
+    @solid(outputs=[OutputDefinition(Foo)])
+    def inner_solid(_context):
+        return Foo()
+
+    middle_solid = CompositeSolidDefinition(name='middle_solid', solids=[inner_solid])
+
+    outer_solid = CompositeSolidDefinition(name='outer_solid', solids=[middle_solid])
+
+    pipeline = PipelineDefinition(name='layered_types', solids=[outer_solid])
+
+    assert pipeline.has_runtime_type('Foo')
