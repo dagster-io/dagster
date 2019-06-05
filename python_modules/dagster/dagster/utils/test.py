@@ -1,6 +1,7 @@
 import itertools
 import logging
 import os
+import shutil
 import tempfile
 import uuid
 
@@ -90,6 +91,17 @@ def get_temp_file_names(number):
     finally:
         for temp_file_name in temp_file_names:
             _unlink_swallow_errors(temp_file_name)
+
+
+@contextmanager
+def get_temp_dir():
+    temp_dir = None
+    try:
+        temp_dir = tempfile.mkdtemp()
+        yield temp_dir
+    finally:
+        if temp_dir:
+            shutil.rmtree(temp_dir)
 
 
 def _dep_key_of(solid):

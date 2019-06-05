@@ -51,11 +51,12 @@ def _yield_transform_results(transform_context, inputs, compute_fn):
 
     for result in gen:
         if isinstance(result, Result):
+            value_repr = repr(result.value)
             transform_context.log.info(
                 'Solid {solid} emitted output "{output}" value {value}'.format(
                     solid=str(step.solid_handle),
                     output=result.output_name,
-                    value=repr(result.value),
+                    value=value_repr[:200] + '...' if len(value_repr) > 200 else value_repr,
                 )
             )
             yield Result(output_name=result.output_name, value=result.value)

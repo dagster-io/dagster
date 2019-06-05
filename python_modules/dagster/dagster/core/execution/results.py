@@ -123,6 +123,22 @@ class SolidExecutionResult(object):
             )
         )
 
+    @property
+    def expectation_events_during_compute(self):
+        return list(
+            filter(
+                lambda se: se.event_type == DagsterEventType.STEP_EXPECTATION_RESULT,
+                self.transforms,
+            )
+        )
+
+    @property
+    def expectation_results_during_compute(self):
+        return [
+            expt_event.event_specific_data.expectation_result
+            for expt_event in self.expectation_events_during_compute
+        ]
+
     def get_step_success_event(self):
         for step_event in self.transforms:
             if step_event.event_type == DagsterEventType.STEP_SUCCESS:
