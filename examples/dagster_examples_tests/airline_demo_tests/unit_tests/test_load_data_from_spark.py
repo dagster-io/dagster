@@ -1,13 +1,8 @@
-from dagster import PipelineDefinition, ModeDefinition, ResourceDefinition, execute_solid
-
 from pyspark.sql import DataFrame
 
+from dagster import PipelineDefinition, ModeDefinition, ResourceDefinition, execute_solid
+from dagster.seven import mock
 from dagster_examples.airline_demo.solids import load_data_to_database_from_spark
-
-try:
-    import unittest.mock as mock
-except ImportError:
-    import mock
 
 
 def test_airline_demo_load_df():

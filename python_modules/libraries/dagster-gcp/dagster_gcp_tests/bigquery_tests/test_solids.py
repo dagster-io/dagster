@@ -5,11 +5,6 @@ import uuid
 import pytest
 import pandas as pd
 
-try:
-    import unittest.mock as mock
-except ImportError:
-    import mock
-
 from dagster_pandas import DataFrame
 
 from dagster import (
@@ -26,6 +21,7 @@ from dagster import (
 )
 from dagster.core.definitions import create_environment_type
 from dagster.core.types.evaluator import evaluate_config_value
+from dagster.seven import mock
 
 from dagster_gcp import (
     bigquery_resource,

@@ -1,11 +1,7 @@
 import pytest
 
-try:
-    import unittest.mock as mock
-except ImportError:
-    import mock
-
 from dagster import ExecutionTargetHandle
+from dagster.seven import mock
 from dagster.utils import script_relative_path
 from dagit.app import create_app, notebook_view
 from dagit.cli import host_dagit_ui
