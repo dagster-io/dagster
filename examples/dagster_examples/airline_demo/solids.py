@@ -291,6 +291,13 @@ s3_to_dw_table = CompositeSolidDefinition(
             'data_frame': DependencyDefinition('canonicalize_column_names')
         },
     },
+    output_mappings=[
+        OutputDefinition(
+            name='table_name',
+            dagster_type=String,
+            description='''The name of table created during loading.''',
+        ).mapping_from(solid_name='load_data_to_database_from_spark', output_name='table_name')
+    ],
 )
 
 

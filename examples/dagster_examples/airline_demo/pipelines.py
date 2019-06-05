@@ -4,9 +4,11 @@ from dagster import (
     CompositeSolidDefinition,
     DependencyDefinition,
     ModeDefinition,
+    OutputDefinition,
     PipelineDefinition,
     PresetDefinition,
     SolidInstance,
+    String,
     file_relative_path,
 )
 
@@ -88,6 +90,15 @@ process_on_time_data = CompositeSolidDefinition(
             'data_frame': DependencyDefinition('join_q2_data')
         },
     },
+    output_mappings=[
+        OutputDefinition(
+            name='table_name',
+            dagster_type=String,
+            description='''
+        The name of table created during loading.
+        ''',
+        ).mapping_from(solid_name='load_q2_on_time_data', output_name='table_name')
+    ],
 )
 
 sfo_weather_data = CompositeSolidDefinition(
@@ -110,6 +121,15 @@ sfo_weather_data = CompositeSolidDefinition(
             'data_frame': DependencyDefinition('process_sfo_weather_data')
         },
     },
+    output_mappings=[
+        OutputDefinition(
+            name='table_name',
+            dagster_type=String,
+            description='''
+        The name of table created during loading.
+        ''',
+        ).mapping_from(solid_name='load_q2_sfo_weather', output_name='table_name')
+    ],
 )
 
 
