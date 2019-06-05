@@ -219,20 +219,18 @@ def process_sfo_weather_data(_context, sfo_weather_data):
             description='The pyspark DataFrame to load into the database.',
         )
     ],
-    outputs=[OutputDefinition(SparkDataFrameType)],
+    outputs=[OutputDefinition(name='table_name', dagster_type=String)],
     config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
 )
 def load_data_to_database_from_spark(context, data_frame):
     context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
+    table_name = context.solid_config['table_name']
+
     # TODO Flow more information down to the client
     # We should be able to flow multiple key value pairs down to dagit
     # See https://github.com/dagster-io/dagster/issues/1408
-    yield Materialization(
-        path='Persisted Db Table: {table_name}'.format(
-            table_name=context.solid_config['table_name']
-        )
-    )
-    yield Result(data_frame)
+    yield Materialization(path='Persisted Db Table: {table_name}'.format(table_name=table_name))
+    yield Result(value=table_name, output_name='table_name')
 
 
 @solid(
