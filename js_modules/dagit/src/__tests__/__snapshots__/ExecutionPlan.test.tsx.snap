@@ -1,0 +1,139 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders given an execution plan 1`] = `
+<div
+  className="sc-jzJRlG iMOFwR"
+>
+  <div
+    className="sc-cSHVUG jeyvwi"
+  >
+    <div
+      className="sc-chPdSV iYKlrL"
+    />
+    <div
+      className="sc-kAzzGY dUpADq"
+    >
+      <div
+        className="sc-kgoBCf AEAZF"
+      />
+       
+    </div>
+    <div
+      className="sc-jTzLTM iGhCxz"
+    >
+      <div
+        className="waiting sc-fjdhpX hvRudt"
+        onClick={[Function]}
+        style={
+          Object {
+            "transitionDelay": "-100ms",
+          }
+        }
+      >
+        <div
+          className="sc-VigVT eXyvQa"
+          style={
+            Object {
+              "transitionDelay": "-100ms",
+            }
+          }
+        />
+        <div
+          style={
+            Object {
+              "alignItems": "center",
+              "display": "inline-flex",
+            }
+          }
+        >
+          <div
+            className="sc-gzVnrw dtdrIX"
+            onClick={[Function]}
+          >
+            <div
+              className="sc-dnqmqq gQkESw"
+              style={
+                Object {
+                  "transitionDelay": "-100ms",
+                }
+              }
+              title="Waiting"
+            />
+            <div
+              style={
+                Object {
+                  "width": 4,
+                }
+              }
+            />
+          </div>
+          <div
+            className="sc-gqjmRU jxxYey"
+            title="raw_file_event_admins.compute"
+          >
+            raw_file_event_admins.compute
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      className="sc-jTzLTM iGhCxz"
+    >
+      <div
+        className="waiting sc-fjdhpX hvRudt"
+        onClick={[Function]}
+        style={
+          Object {
+            "transitionDelay": "-100ms",
+          }
+        }
+      >
+        <div
+          className="sc-VigVT eXyvQa"
+          style={
+            Object {
+              "transitionDelay": "-100ms",
+            }
+          }
+        />
+        <div
+          style={
+            Object {
+              "alignItems": "center",
+              "display": "inline-flex",
+            }
+          }
+        >
+          <div
+            className="sc-gzVnrw dtdrIX"
+            onClick={[Function]}
+          >
+            <div
+              className="sc-dnqmqq gQkESw"
+              style={
+                Object {
+                  "transitionDelay": "-100ms",
+                }
+              }
+              title="Waiting"
+            />
+            <div
+              style={
+                Object {
+                  "width": 4,
+                }
+              }
+            />
+          </div>
+          <div
+            className="sc-gqjmRU jxxYey"
+            title="raw_file_event_admins.output.result.expectation.something"
+          >
+            raw_file_event_admins.output.result.expectation.something
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
