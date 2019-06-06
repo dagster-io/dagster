@@ -22,7 +22,7 @@ def test_diamond_simple_execution():
 
 
 def transform_event(result, solid_name):
-    return result.result_for_solid(solid_name).transforms[0]
+    return result.result_for_solid(solid_name).compute_step_events[0]
 
 
 def test_diamond_multi_execution():

@@ -10,22 +10,22 @@ from dagster import (
 )
 
 
-def expectation_results_for_solid_transform(result, solid_name):
+def expt_results_for_compute_step(result, solid_name):
     solid_result = result.result_for_solid(solid_name)
     return [
-        t_event
-        for t_event in solid_result.transforms
-        if t_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT
+        compute_step_event
+        for compute_step_event in solid_result.compute_step_events
+        if compute_step_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT
     ]
 
 
-def test_successful_expectation_in_transform():
+def test_successful_expectation_in_compute_step():
     @solid(outputs=[])
     def success_expectation_solid(_context):
         yield ExpectationResult(success=True, message='This is always true.')
 
     pipeline_def = PipelineDefinition(
-        name='success_expectation_in_transform_pipeline', solids=[success_expectation_solid]
+        name='success_expectation_in_compute_pipeline', solids=[success_expectation_solid]
     )
 
     result = execute_pipeline(pipeline_def)
@@ -33,7 +33,7 @@ def test_successful_expectation_in_transform():
     assert result
     assert result.success
 
-    expt_results = expectation_results_for_solid_transform(result, 'success_expectation_solid')
+    expt_results = expt_results_for_compute_step(result, 'success_expectation_solid')
 
     assert len(expt_results) == 1
     expt_result = expt_results[0]
@@ -41,20 +41,20 @@ def test_successful_expectation_in_transform():
     assert expt_result.event_specific_data.expectation_result.message == 'This is always true.'
 
 
-def test_failed_expectation_in_transform():
+def test_failed_expectation_in_compute_step():
     @solid(outputs=[])
     def failure_expectation_solid(_context):
         yield ExpectationResult(success=False, message='This is always false.')
 
     pipeline_def = PipelineDefinition(
-        name='failure_expectation_in_transform_pipeline', solids=[failure_expectation_solid]
+        name='failure_expectation_in_compute_pipeline', solids=[failure_expectation_solid]
     )
 
     result = execute_pipeline(pipeline_def)
 
     assert result
     assert result.success
-    expt_results = expectation_results_for_solid_transform(result, 'failure_expectation_solid')
+    expt_results = expt_results_for_compute_step(result, 'failure_expectation_solid')
 
     assert len(expt_results) == 1
     expt_result = expt_results[0]
@@ -68,7 +68,7 @@ def test_return_expectation_failure():
         return ExpectationResult(success=True, message='This is always true.')
 
     pipeline_def = PipelineDefinition(
-        name='success_expectation_in_transform_pipeline', solids=[return_expectation_failure]
+        name='success_expectation_in_compute_pipeline', solids=[return_expectation_failure]
     )
 
     with pytest.raises(DagsterInvariantViolationError) as exc_info:

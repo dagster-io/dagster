@@ -20,6 +20,7 @@ class PipelineExecutionResult(object):
         self.event_list = check.list_param(event_list, 'step_event_list', of_type=DagsterEvent)
         self.reconstruct_context = check.callable_param(reconstruct_context, 'reconstruct_context')
 
+        # Dict[string: solid_name, SolidExecutionResult]
         solid_result_dict = self._context_solid_result_dict(event_list)
 
         self.solid_result_dict = solid_result_dict
@@ -100,12 +101,7 @@ class SolidExecutionResult(object):
         self.reconstruct_context = check.callable_param(reconstruct_context, 'reconstruct_context')
 
     @property
-    def transform(self):
-        check.invariant(len(self.step_events_by_kind[StepKind.COMPUTE]) == 1)
-        return self.step_events_by_kind[StepKind.COMPUTE][0]
-
-    @property
-    def transforms(self):
+    def compute_step_events(self):
         return self.step_events_by_kind.get(StepKind.COMPUTE, [])
 
     @property
@@ -119,7 +115,8 @@ class SolidExecutionResult(object):
     def materialization_events_during_compute(self):
         return list(
             filter(
-                lambda se: se.event_type == DagsterEventType.STEP_MATERIALIZATION, self.transforms
+                lambda se: se.event_type == DagsterEventType.STEP_MATERIALIZATION,
+                self.compute_step_events,
             )
         )
 
@@ -140,7 +137,7 @@ class SolidExecutionResult(object):
         ]
 
     def get_step_success_event(self):
-        for step_event in self.transforms:
+        for step_event in self.compute_step_events:
             if step_event.event_type == DagsterEventType.STEP_SUCCESS:
                 return step_event
 
@@ -159,7 +156,7 @@ class SolidExecutionResult(object):
         '''Whether the solid execution was successful'''
         any_success = False
         for step_event in itertools.chain(
-            self.input_expectations, self.output_expectations, self.transforms
+            self.input_expectations, self.output_expectations, self.compute_step_events
         ):
             if step_event.event_type == DagsterEventType.STEP_FAILURE:
                 return False
@@ -175,7 +172,7 @@ class SolidExecutionResult(object):
             [
                 step_event.event_type == DagsterEventType.STEP_SKIPPED
                 for step_event in itertools.chain(
-                    self.input_expectations, self.output_expectations, self.transforms
+                    self.input_expectations, self.output_expectations, self.compute_step_events
                 )
             ]
         )
@@ -187,14 +184,14 @@ class SolidExecutionResult(object):
 
         Reconstructs the pipeline context to materialize values.
         '''
-        if self.success and self.transforms:
+        if self.success and self.compute_step_events:
             with self.reconstruct_context() as context:
                 values = {
-                    result.step_output_data.output_name: self._get_value(
-                        context, result.step_output_data
+                    compute_step_event.step_output_data.output_name: self._get_value(
+                        context, compute_step_event.step_output_data
                     )
-                    for result in self.transforms
-                    if result.is_successful_output
+                    for compute_step_event in self.compute_step_events
+                    if compute_step_event.is_successful_output
                 }
             return values
         else:
@@ -216,13 +213,13 @@ class SolidExecutionResult(object):
             )
 
         if self.success:
-            for result in self.transforms:
+            for compute_step_event in self.compute_step_events:
                 if (
-                    result.is_successful_output
-                    and result.step_output_data.output_name == output_name
+                    compute_step_event.is_successful_output
+                    and compute_step_event.step_output_data.output_name == output_name
                 ):
                     with self.reconstruct_context() as context:
-                        value = self._get_value(context, result.step_output_data)
+                        value = self._get_value(context, compute_step_event.step_output_data)
                     return value
 
             raise DagsterInvariantViolationError(
@@ -244,8 +241,8 @@ class SolidExecutionResult(object):
     @property
     def failure_data(self):
         '''Returns the failing step's data that happened during this solid's execution, if any'''
-        for result in itertools.chain(
-            self.input_expectations, self.output_expectations, self.transforms
+        for step_event in itertools.chain(
+            self.input_expectations, self.output_expectations, self.compute_step_events
         ):
-            if result.event_type == DagsterEventType.STEP_FAILURE:
-                return result.step_failure_data
+            if step_event.event_type == DagsterEventType.STEP_FAILURE:
+                return step_event.step_failure_data
