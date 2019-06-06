@@ -1,32 +1,29 @@
 Configuration
 -------------
-For maximum flexibility, testability, and reusability, we want to avoid hardcoding solids'
-(or pipelines') dependencies on the external world.
+For maximum flexibility, testability, and reusability, we want to avoid hardcoding the dependencies
+of solids or pipelines on the external world.
 
-We should be able to run the same code in different environments for test, in development, and in
-production, and to parametrize our solids' interactions with the different facilities afforded by
-each of those environments.
-
-Then, we can declaratively specify features of our environment without having to rewrite our code.
+We should be able to run the `same` code in different environments for test, in development, and in
+production. By parameterizing our solids' interactions with the different facilities afforded by each
+of these environments, we can declaratively specify features of our environment without having to
+rewrite our code.
 
 Conceptually, where **inputs** are inputs to the computation done by a single solid, and might be
 linked by a dependency definition to **outputs** of a previous computation in a DAG,
 **configuration** should be used to specify *how* a computation executes.
 
 We'll illustrate this by configuring our hello world example to speak a couple of different
-languages.
-
-This time, we'll use a more fully-featured API to define our solid --
+languages. This time, we'll use a more fully-featured API to define our solid --
 :py:func:`@solid <dagster.solid>` instead of :py:func:`@lambda_solid <dagster.lambda_solid>`.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config.py
-   :linenos:
+   :lines: 4-28
    :caption: config.py
 
 We will be exploring the :py:func:`@solid <dagster.solid>` API in much more detail as this tutorial
 proceeds. For now, the salient differences are:
 
-1. The :py:func:`@solid <dagster.solid>` API takes an additional parameter, `config_field`, which
+1. The :py:func:`@solid <dagster.solid>` API takes a parameter, ``config_field``, which
    defines the structure and type of configuration values that can be set on each execution of the
    solid. This parameter should be a :py:func:`Field <dagster.Field>`, which tells the dagster
    machinery how to translate config values into runtime values available to the solid.
@@ -54,7 +51,6 @@ Let's see how to run this pipeline, with config, from the command line. In order
 must provide config in the form of a yaml file:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config_env.yaml
-   :linenos:
    :caption: config_env.yaml
 
 Now you can run this pipeline with this config file like so:
@@ -62,13 +58,13 @@ Now you can run this pipeline with this config file like so:
 .. code-block:: console
 
    $ dagster pipeline execute -f config.py \
-   -n define_configurable_hello_pipeline -e config_env.yaml
+   -n define_hello_with_config_pipeline -e config_env.yaml
 
 To run this example from dagit, use the following command:
 
 .. code-block:: console
 
-   $ dagit -f config.py -n define_configurable_hello_pipeline
+   $ dagit -f config.py -n define_hello_with_config_pipeline
 
 Just as with configurable inputs, you can edit the configuration on the fly in dagit's built-in
 config editor. Try switching languages and rerunning the pipeline!

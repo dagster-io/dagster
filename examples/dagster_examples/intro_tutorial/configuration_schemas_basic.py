@@ -1,11 +1,10 @@
 import collections
 
 from dagster import (
+    Any,
     DependencyDefinition,
-    Dict,
     Field,
     InputDefinition,
-    Int,
     PipelineDefinition,
     String,
     lambda_solid,
@@ -13,7 +12,7 @@ from dagster import (
 )
 
 
-@solid(inputs=[InputDefinition('word', String)], config_field=Field(Dict({'factor': Field(Int)})))
+@solid(inputs=[InputDefinition('word', String)], config_field=Field(Any))
 def multiply_the_word(context, word):
     return word * context.solid_config['factor']
 

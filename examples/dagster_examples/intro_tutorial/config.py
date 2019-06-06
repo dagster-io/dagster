@@ -1,24 +1,28 @@
 # encoding: utf-8
 # py27 compat
 
-from dagster import Field, PipelineDefinition, execute_pipeline, solid, types
+from dagster import execute_pipeline, solid, Field, PipelineDefinition, String
 
 
-@solid(config_field=Field(types.String, is_optional=True, default_value='en-us'))
-def configurable_hello(context):
-    if len(context.solid_config) >= 3 and context.solid_config[:3] == 'haw':
+@solid(config_field=Field(String, is_optional=True, default_value='en-us'))
+def hello_with_config(context):
+    if context.solid_config == 'haw':
         return 'Aloha honua!'
-    elif len(context.solid_config) >= 2 and context.solid_config[:2] == 'cn':
+    elif context.solid_config == 'cn':
         return '你好, 世界!'
     else:
         return 'Hello, world!'
 
 
-def define_configurable_hello_pipeline():
-    return PipelineDefinition(name='configurable_hello_pipeline', solids=[configurable_hello])
+def define_hello_with_config_pipeline():
+    return PipelineDefinition(name='hello_with_config_pipeline', solids=[hello_with_config])
 
 
-def test_intro_tutorial_part_four():
+def run():
     execute_pipeline(
-        define_configurable_hello_pipeline(), {'solids': {'configurable_hello': {'config': 'cn'}}}
+        define_hello_with_config_pipeline(), {'solids': {'hello_with_config': {'config': 'cn'}}}
     )
+
+
+if __name__ == '__main__':
+    run()

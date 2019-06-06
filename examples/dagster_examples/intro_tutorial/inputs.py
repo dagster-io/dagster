@@ -1,10 +1,10 @@
 from dagster import (
+    execute_pipeline,
+    lambda_solid,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    execute_pipeline,
-    lambda_solid,
-    types,
+    String,
 )
 
 
@@ -32,7 +32,7 @@ def execute_with_another_world():
     )
 
 
-@lambda_solid(inputs=[InputDefinition('word', types.String)], output=OutputDefinition(types.String))
+@lambda_solid(inputs=[InputDefinition('word', String)], output=OutputDefinition(String))
 def add_hello_to_word_typed(word):
     return 'Hello, ' + word + '!'
 

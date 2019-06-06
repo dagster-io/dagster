@@ -1,12 +1,7 @@
-loggers:
-  console:
-    config:
-      log_level: DEBUG
-
 solids:
   multiply_the_word:
     inputs:
       word:
         value: "kj"
     config:
-      factor: "not_a_num"
+      factor: "not_a_number"

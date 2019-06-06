@@ -1,10 +1,5 @@
-loggers:
-  console:
-    config:
-      log_level: DEBUG
-
 solids:
-  typed_multiply_the_word:
+  multiply_the_word:
     config:
       factor: 2
     inputs:

@@ -1,8 +1,3 @@
-loggers:
-  console:
-    config:
-      log_level: DEBUG
-
 solids:
   multiply_the_word_with_typed_config:
     config:
