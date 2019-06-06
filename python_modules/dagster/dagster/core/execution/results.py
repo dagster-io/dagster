@@ -144,11 +144,11 @@ class SolidExecutionResult(object):
         check.failed('Step success not found for solid {}'.format(self.solid.name))
 
     @property
-    def input_expectations(self):
+    def input_expectation_step_events(self):
         return self.step_events_by_kind.get(StepKind.INPUT_EXPECTATION, [])
 
     @property
-    def output_expectations(self):
+    def output_expectation_step_events(self):
         return self.step_events_by_kind.get(StepKind.OUTPUT_EXPECTATION, [])
 
     @property
@@ -156,7 +156,9 @@ class SolidExecutionResult(object):
         '''Whether the solid execution was successful'''
         any_success = False
         for step_event in itertools.chain(
-            self.input_expectations, self.output_expectations, self.compute_step_events
+            self.input_expectation_step_events,
+            self.output_expectation_step_events,
+            self.compute_step_events,
         ):
             if step_event.event_type == DagsterEventType.STEP_FAILURE:
                 return False
@@ -172,7 +174,9 @@ class SolidExecutionResult(object):
             [
                 step_event.event_type == DagsterEventType.STEP_SKIPPED
                 for step_event in itertools.chain(
-                    self.input_expectations, self.output_expectations, self.compute_step_events
+                    self.input_expectation_step_events,
+                    self.output_expectation_step_events,
+                    self.compute_step_events,
                 )
             ]
         )
@@ -242,7 +246,9 @@ class SolidExecutionResult(object):
     def failure_data(self):
         '''Returns the failing step's data that happened during this solid's execution, if any'''
         for step_event in itertools.chain(
-            self.input_expectations, self.output_expectations, self.compute_step_events
+            self.input_expectation_step_events,
+            self.output_expectation_step_events,
+            self.compute_step_events,
         ):
             if step_event.event_type == DagsterEventType.STEP_FAILURE:
                 return step_event.step_failure_data
