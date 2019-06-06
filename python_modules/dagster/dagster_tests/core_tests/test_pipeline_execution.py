@@ -6,6 +6,8 @@ from dagster import (
     InputDefinition,
     Int,
     ModeDefinition,
+    MultiDependencyDefinition,
+    Nothing,
     OutputDefinition,
     PipelineDefinition,
     ResourceDefinition,
@@ -346,6 +348,54 @@ def test_pipeline_subset():
 
     for step_event in step_output_event_filter(events):
         assert step_event.is_step_success
+
+
+def test_pipeline_subset_with_multi_dependency():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid
+    def return_two():
+        return 2
+
+    @lambda_solid(inputs=[InputDefinition('dep', Nothing)])
+    def noop():
+        return 3
+
+    pipeline_def = PipelineDefinition(
+        solids=[return_one, return_two, noop],
+        dependencies={
+            'noop': {
+                'dep': MultiDependencyDefinition(
+                    [DependencyDefinition('return_one'), DependencyDefinition('return_two')]
+                )
+            }
+        },
+    )
+
+    pipeline_result = execute_pipeline(pipeline_def)
+    assert pipeline_result.success
+    assert pipeline_result.result_for_solid('noop').transformed_value() == 3
+
+    subset_result = execute_pipeline(pipeline_def.build_sub_pipeline(['noop']))
+
+    assert subset_result.success
+    assert len(subset_result.solid_result_list) == 1
+    assert pipeline_result.result_for_solid('noop').transformed_value() == 3
+
+    events = execute_pipeline_iterator(pipeline_def.build_sub_pipeline(['noop']))
+
+    for step_event in step_output_event_filter(events):
+        assert step_event.is_step_success
+
+    subset_result = execute_pipeline(
+        pipeline_def.build_sub_pipeline(['return_one', 'return_two', 'noop'])
+    )
+
+    assert subset_result.success
+    assert len(subset_result.solid_result_list) == 3
+    assert pipeline_result.result_for_solid('noop').transformed_value() == 3
 
 
 def define_three_part_pipeline():
