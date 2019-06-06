@@ -205,7 +205,7 @@ def dagster_event_sequence_for_step(step_context, inputs, intermediates_manager)
             raise dagster_error
 
         return
-    except:
+    except Exception:  # pylint: disable=broad-except
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         yield DagsterEvent.step_failure_event(
             step_context=step_context, step_failure_data=StepFailureData(error=error_info)

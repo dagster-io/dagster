@@ -24,7 +24,7 @@ export default class ConfigEditorPresetsPicker extends React.Component<
   ConfigEditorPresetsPickerProps
 > {
   render() {
-    const { pipelineName, solidSubset, onCreateSession } = this.props;
+    const { pipelineName, onCreateSession } = this.props;
 
     return (
       <Query

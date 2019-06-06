@@ -3,7 +3,6 @@ import gql from "graphql-tag";
 import { Query, QueryResult } from "react-apollo";
 import { BrowserRouter, Switch, Route } from "react-router-dom";
 
-import Loading from "./Loading";
 import { TopNav } from "./TopNav";
 import PythonErrorInfo from "./PythonErrorInfo";
 import CustomAlertProvider from "./CustomAlertProvider";

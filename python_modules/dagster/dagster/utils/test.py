@@ -66,7 +66,7 @@ def _unlink_swallow_errors(path):
     check.str_param(path, 'path')
     try:
         os.unlink(path)
-    except:  # pylint: disable=W0702
+    except Exception:  # pylint: disable=broad-except
         pass
 
 

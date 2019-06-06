@@ -24,7 +24,7 @@ def docker_compose_db():
         try:
             subprocess.check_output(['docker-compose', 'stop', 'airline-demo-db'])
             subprocess.check_output(['docker-compose', 'rm', '-f', 'airline-demo-db'])
-        except:  # pylint: disable=bare-except
+        except Exception:  # pylint: disable=broad-except
             pass
         subprocess.check_output(['docker-compose', 'up', '-d', 'airline-demo-db'])
 

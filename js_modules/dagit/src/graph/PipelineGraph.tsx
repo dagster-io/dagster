@@ -88,7 +88,7 @@ class PipelineGraphContents extends React.PureComponent<
             key={`composite-rect-${parentHandleID}`}
             width={layout.width - 1}
             height={layout.height - 1}
-            label={parentSolid ? parentSolid.name : ""}
+            label={parentSolid.name}
             fill={Colors.LIGHT_GRAY5}
             minified={minified}
           />

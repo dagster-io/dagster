@@ -48,7 +48,7 @@ def execute_command_in_child_process(queue, command):
         for step_event in command.execute():
             queue.put(step_event)
         queue.put(ChildProcessDoneEvent(pid=pid))
-    except:  # pylint: disable=bare-except
+    except Exception:  # pylint: disable=broad-except
         queue.put(
             ChildProcessSystemErrorEvent(
                 pid=pid, error_info=serializable_error_info_from_exc_info(sys.exc_info())

@@ -43,13 +43,6 @@ const ErrorHeader = styled.h3`
   margin: 0.5em 0 0.25em;
 `;
 
-const BoldMessage = styled.div`
-  font-weight: 600;
-  font-family: Consolas, Menlo, monospace;
-  font-size: 0.95em;
-  margin-bottom: 0.7em;
-`;
-
 const Trace = styled.div`
   color: rgb(41, 50, 56);
   font-family: Consolas, Menlo, monospace;

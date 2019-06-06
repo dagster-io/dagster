@@ -1,5 +1,4 @@
 import * as React from "react";
-import gql from "graphql-tag";
 import { Query, QueryResult } from "react-apollo";
 import Loading from "./Loading";
 import MOCKS from "./__tests__/mockData";

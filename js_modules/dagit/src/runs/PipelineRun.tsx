@@ -18,7 +18,7 @@ import PythonErrorInfo from "../PythonErrorInfo";
 import { ExecutionPlan } from "../ExecutionPlan";
 import RunMetadataProvider from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
-import { Mutation, MutationFn, ApolloConsumer } from "react-apollo";
+import { Mutation, MutationFn } from "react-apollo";
 import {
   HANDLE_START_EXECUTION_FRAGMENT,
   handleStartExecutionResult
