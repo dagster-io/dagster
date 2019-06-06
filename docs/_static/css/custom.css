@@ -6,11 +6,11 @@
 
 @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600");
 
-html, body {
+html,
+body {
   margin: 0;
-  padding:0;
+  padding: 0;
 }
-
 
 body {
   font-family: "Source Sans Pro", sans-serif;
@@ -54,6 +54,14 @@ div.body h6 {
   font-size: 100%;
 }
 
+div.body img {
+  max-width: 80%;
+  height: auto;
+  margin: 20px auto 20px auto;
+  border: 1px solid #ddd;
+  display: block;
+}
+
 div.sphinxsidebar a {
   border-bottom: none;
 }
@@ -64,6 +72,7 @@ a.reference {
 
 .bodywrapper {
   padding-top: 21px;
+  max-width: 950px;
 }
 
 #documentation {
@@ -108,7 +117,6 @@ div.sphinxsidebar > div > ul > li.toctree-l1.current > ul {
 
 div.sphinxsidebar > div > ul > li > ul {
   margin-left: 0px;
-
 }
 
 div.sphinxsidebar li.toctree-l1 > a.current {
@@ -130,7 +138,6 @@ div.sphinxsidebar li.toctree-l3::before {
   width: 10px;
   margin-left: -15px;
 }
-
 
 @media screen and (max-width: 875px) {
   body {

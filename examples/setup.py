@@ -23,6 +23,7 @@ setup(
         'full': [
             'dagstermill',
             'dagster-aws',
+            'dagster-slack',
             'descartes==1.1.0',
             'geopandas==0.4.0',
             'matplotlib==3.0.2; python_version >= "3.5"',

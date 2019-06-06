@@ -3,7 +3,7 @@ import sys
 import warnings
 
 from dagster import execute_pipeline, RunConfig
-from dagster_examples.intro_tutorial.resources import define_resource_test_pipeline
+from dagster_examples.intro_tutorial.resources_full import define_resources_pipeline
 
 
 def has_message(events, message):
@@ -15,48 +15,16 @@ def has_message(events, message):
 
 
 def test_run_local():
-    events = []
-
-    def _event_callback(ev):
-        events.append(ev)
-
     result = execute_pipeline(
-        define_resource_test_pipeline(),
-        environment_dict={
-            'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 3}}}}
-        },
-        run_config=RunConfig(mode='local', event_callback=_event_callback),
+        define_resources_pipeline(),
+        run_config=RunConfig(mode='local'),
+        environment_dict={'resources': {'say_hi': {'config': {'output': '/tmp/dagster-messages'}}}},
     )
 
     assert result.success
-    assert result.result_for_solid('add_ints').transformed_value() == 5
 
-    assert has_message(events, 'Setting key=add value=5 in memory')
-    assert not has_message(events, 'Setting key=add value=5 in cloud')
-
-
-def test_run_cloud():
-    events = []
-
-    def _event_callback(ev):
-        events.append(ev)
-
-    result = execute_pipeline(
-        define_resource_test_pipeline(),
-        environment_dict={
-            'resources': {
-                'store': {'config': {'username': 'some_user', 'password': 'some_password'}}
-            },
-            'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 6}}}},
-        },
-        run_config=RunConfig(event_callback=_event_callback, mode='cloud'),
-    )
-
-    assert result.success
-    assert result.result_for_solid('add_ints').transformed_value() == 8
-
-    assert not has_message(events, 'Setting key=add value=8 in memory')
-    assert has_message(events, 'Setting key=add value=8 in cloud')
+    with open('/tmp/dagster-messages', 'rb') as f:
+        assert b'#dagster -- Hello from Dagster!' in f.read()
 
 
 def test_resources():
@@ -66,4 +34,4 @@ def test_resources():
     if not sys.warnoptions:  # allow overriding with `-W` option
         warnings.filterwarnings('ignore', category=RuntimeWarning, module='runpy')
 
-    runpy.run_module('dagster_examples.intro_tutorial.resources', run_name='__main__')
+    runpy.run_module('dagster_examples.intro_tutorial.resources_full', run_name='__main__')
