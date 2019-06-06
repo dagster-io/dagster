@@ -1,4 +1,5 @@
 import contextlib
+import os
 import pickle
 import shutil
 import tempfile
@@ -240,3 +241,38 @@ def test_in_notebook_manager_load_parameter_pickleable():
 def test_in_pipeline_manager_resources():
     with in_pipeline_manager() as manager:
         assert manager.context.resources._asdict() == OrderedDict([])
+
+
+def test_in_pipeline_manager_with_resources():
+    with tempfile.NamedTemporaryFile() as fd:
+        path = fd.name
+
+    try:
+        with in_pipeline_manager(
+            solid_def_name='hello_world_resource',
+            pipeline_def_name='resource_pipeline',
+            environment_dict={'resources': {'list': {'config': path}}},
+        ) as manager:
+            assert len(manager.context.resources._asdict()) == 1
+
+            with open(path, 'rb') as fd:
+                messages = pickle.load(fd)
+
+            messages = [message.split(': ') for message in messages]
+
+            assert len(messages) == 1
+            assert messages[0][1] == 'Opened'
+
+            manager.teardown_resources()
+
+            with open(path, 'rb') as fd:
+                messages = pickle.load(fd)
+
+            messages = [message.split(': ') for message in messages]
+
+            assert len(messages) == 2
+            assert messages[1][1] == 'Closed'
+
+    finally:
+        if os.path.exists(path):
+            os.unlink(path)

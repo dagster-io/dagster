@@ -3,11 +3,14 @@ import pickle
 import uuid
 import warnings
 
+from contextlib import contextmanager
+
 import scrapbook
 
 from dagster import check, Materialization, ModeDefinition, PipelineDefinition, RunConfig
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context.logger import InitLoggerContext
+from dagster.core.execution.context_creation_pipeline import ResourcesStack
 from dagster.core.types.marshal import PickleSerializationStrategy
 
 from .context import DagstermillInNotebookExecutionContext
@@ -33,12 +36,29 @@ class Manager:
         self.input_name_type_dict = None
         self.output_name_type_dict = None
         self.solid_def_name = None
+        self.resources_stack = None
 
     def register_repository(self, repository_def):
         self.repository_def = repository_def
 
     def deregister_repository(self):
+        # This function is intended to support test cases, and should not be invoked
+        # from user notebooks.
         self.repository_def = None
+
+    @contextmanager
+    def setup_resources(self, pipeline_def, environment_config, run_config, log_manager):
+        '''This context manager is a drop-in replacement for
+        dagster.core.execution.context_creation_pipeline.create_resources. It uses the Manager's
+        instance of ResourceStack to create resources, but does not tear them down when the
+        context manager returns -- teardown must be managed manually using Manager.teardown().
+        '''
+
+        # pylint: disable=protected-access
+        self.resources_stack = ResourcesStack(
+            pipeline_def, environment_config, run_config, log_manager
+        )
+        yield self.resources_stack.create()
 
     def define_out_of_pipeline_context(self, config=None):
         '''Defines a context to be used in a notebook (i.e., not in pipeline execution).
@@ -46,11 +66,6 @@ class Manager:
         '''
         config = check.opt_dict_param(config, 'config')
         pipeline_def = PipelineDefinition([], name='Ephemeral Notebook Pipeline')
-
-        # BUG: If the context cleans up after itself (e.g. closes a db connection or similar)
-        # This will instigate that process *before* return. We are going to have to
-        # manage this manually (without an if block) in order to make this work.
-        # See https://github.com/dagster-io/dagster/issues/796
 
         if config.keys():
             warnings.warn(
@@ -62,11 +77,18 @@ class Manager:
 
             config = {}
 
+        run_config = RunConfig()
+
         with scoped_pipeline_context(
-            pipeline_def, config, RunConfig(run_id='')
+            pipeline_def, config, run_config, resources_builder_cm=self.setup_resources
         ) as pipeline_context:
             self.context = DagstermillInNotebookExecutionContext(
                 pipeline_context, out_of_pipeline=True
+            )
+
+        if self.context.resources:  # pylint: disable=protected-access
+            warnings.warn(
+                'Call dagstermill.teardown() to finalize resources attached to the context.'
             )
         return self.context
 
@@ -167,12 +189,9 @@ class Manager:
                         'that are not pickling, then you must register a repository within '
                         'notebook by calling dm.register_repository(repository_def).'
                     )
-            with scoped_pipeline_context(
-                self.pipeline_def,
-                {'loggers': {'dagstermill': {}}},
-                RunConfig(run_id=run_id, mode=mode),
-            ) as pipeline_context:
-                self.context = DagstermillInNotebookExecutionContext(pipeline_context)
+            environment_dict = {'loggers': {'dagstermill': {}}}
+            run_config = RunConfig(run_id=run_id, mode=mode)
+
         else:
             self.pipeline_def = self.repository_def.get_pipeline(pipeline_def_name)
             check.invariant(self.pipeline_def.has_solid_def(solid_def_name))
@@ -183,14 +202,20 @@ class Manager:
             )
 
             run_config = RunConfig(run_id, loggers=[logger], mode=mode)
-            # See block comment above referencing this issue
-            # See https://github.com/dagster-io/dagster/issues/796
-            with scoped_pipeline_context(
-                self.pipeline_def, environment_dict, run_config
-            ) as pipeline_context:
-                self.context = DagstermillInNotebookExecutionContext(pipeline_context)
+
+        with scoped_pipeline_context(
+            self.pipeline_def,
+            environment_dict,
+            run_config,
+            resources_builder_cm=self.setup_resources,
+        ) as pipeline_context:
+            self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 
         return self.context
+
+    def teardown_resources(self):
+        if self.resources_stack is not None:
+            self.resources_stack.teardown()
 
 
 MANAGER_FOR_NOTEBOOK_INSTANCE = Manager()

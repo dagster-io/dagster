@@ -1,24 +1,31 @@
 import os
+import pickle
+import uuid
+
 import pandas as pd
 
 import dagstermill as dm
 
 from dagster import (
+    as_dagster_type,
+    check,
     DependencyDefinition,
     Field,
     InputDefinition,
     Int,
+    lambda_solid,
+    ModeDefinition,
     OutputDefinition,
     PipelineDefinition,
     RepositoryDefinition,
+    resource,
+    SerializationStrategy,
+    solid,
     SolidDefinition,
     SolidInstance,
-    check,
-    lambda_solid,
-    solid,
-    as_dagster_type,
-    SerializationStrategy,
+    String,
 )
+
 from dagster_pandas import DataFrame
 
 
@@ -217,6 +224,101 @@ def define_no_repo_registration_error_pipeline():
     return PipelineDefinition(name='repo_registration_error', solids=[no_repo_reg_solid()])
 
 
+@solid('resource_solid', resources={'list'})
+def resource_solid(context):
+    context.resources.list.append('Hello, solid!')
+    return True
+
+
+@solid_definition
+def hello_world_resource_solid():
+    return dm.define_dagstermill_solid(
+        'hello_world_resource',
+        nb_test_path('hello_world_resource'),
+        inputs=[InputDefinition('nonce')],
+        resources={'list'},
+    )
+
+
+@solid_definition
+def hello_world_resource_with_exception_solid():
+    return dm.define_dagstermill_solid(
+        'hello_world_resource_with_exception',
+        nb_test_path('hello_world_resource_with_exception'),
+        inputs=[InputDefinition('nonce')],
+        resources={'list'},
+    )
+
+
+class FilePickleList(object):
+    # This is not thread- or anything else-safe
+    def __init__(self, path):
+        self.closed = False
+        self.id = str(uuid.uuid4())[-6:]
+        self.path = path
+        self.list = []
+        if not os.path.exists(self.path):
+            self.write()
+        self.read()
+        self.open()
+
+    def init(self):
+        self.write()
+
+    def open(self):
+        self.read()
+        self.append('Opened')
+
+    def append(self, obj):
+        if self.closed:
+            raise Exception()
+        self.read()
+        self.list.append(self.id + ': ' + obj)
+        self.write()
+
+    def read(self):
+        with open(self.path, 'rb') as fd:
+            self.list = pickle.load(fd)
+            return self.list
+
+    def write(self):
+        with open(self.path, 'wb') as fd:
+            pickle.dump(self.list, fd)
+
+    def close(self):
+        self.append('Closed')
+        self.closed = True
+
+
+@resource(config_field=Field(String))
+def filepicklelist_resource(init_context):
+    filepicklelist = FilePickleList(init_context.resource_config)
+    try:
+        yield filepicklelist
+    finally:
+        filepicklelist.close()
+
+
+def define_resource_pipeline():
+    return PipelineDefinition(
+        name='resource_pipeline',
+        solids=[resource_solid, hello_world_resource_solid],
+        dependencies={'hello_world_resource': {'nonce': DependencyDefinition('resource_solid')}},
+        mode_definitions=[ModeDefinition(resources={'list': filepicklelist_resource})],
+    )
+
+
+def define_resource_with_exception_pipeline():
+    return PipelineDefinition(
+        name='resource_with_exception_pipeline',
+        solids=[resource_solid, hello_world_resource_with_exception_solid],
+        dependencies={
+            'hello_world_resource_with_exception': {'nonce': DependencyDefinition('resource_solid')}
+        },
+        mode_definitions=[ModeDefinition(resources={'list': filepicklelist_resource})],
+    )
+
+
 def define_example_repository():
     return RepositoryDefinition(
         name='notebook_repo',
@@ -225,6 +327,8 @@ def define_example_repository():
             'hello_world_pipeline': define_hello_world_pipeline,
             'hello_world_with_output_pipeline': define_hello_world_with_output_pipeline,
             'hello_logging_pipeline': define_hello_logging_pipeline,
+            'resource_pipeline': define_resource_pipeline,
+            'resource_with_exception_pipeline': define_resource_with_exception_pipeline,
             'test_add_pipeline': define_add_pipeline,
             'test_notebook_dag': define_test_notebook_dag_pipeline,
             'tutorial_pipeline': define_tutorial_pipeline,

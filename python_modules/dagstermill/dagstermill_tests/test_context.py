@@ -53,8 +53,7 @@ def test_pipeline_def():
 
 
 def test_resources():
-    with pytest.raises(CheckError):
-        _ = OUT_OF_PIPELINE_CONTEXT.resources
+    assert isinstance(OUT_OF_PIPELINE_CONTEXT.resources, tuple)
 
 
 def test_solid_def():
