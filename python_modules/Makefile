@@ -3,9 +3,8 @@ watch:
 	"pytest -vvx --ff "\
 	"dagster/dagster_tests "\
 	"dagster-graphql/dagster_graphql_tests "\
-	"dagit/dagit_tests "\
-	"dagster-pandas/dagster_pandas_tests "\
-	"dagster-ge/dagster_ge_tests "
+	"dagit/dagit_tests "
+
 
 
 black:

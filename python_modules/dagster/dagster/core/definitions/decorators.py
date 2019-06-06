@@ -1,18 +1,25 @@
+import inspect
 from collections import namedtuple
 from functools import wraps
-import inspect
 
 from dagster import check
-
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 from . import (
+    CompositeSolidDefinition,
     ExpectationResult,
     InputDefinition,
     Materialization,
     OutputDefinition,
     Result,
     SolidDefinition,
+)
+from .composition import (
+    EmptySolidContext,
+    InputMappingNode,
+    InvokedSolidOutputHandle,
+    enter_composition,
+    exit_composition,
 )
 
 if hasattr(inspect, 'signature'):
@@ -100,7 +107,7 @@ class _LambdaSolid(object):
         if not self.name:
             self.name = fn.__name__
 
-        _validate_compute_fn(self.name, fn, self.input_defs)
+        _validate_solid_fn(self.name, fn, self.input_defs)
         compute_fn = _create_lambda_solid_transform_wrapper(fn, self.input_defs, self.output_def)
         return SolidDefinition(
             name=self.name,
@@ -139,7 +146,7 @@ class _Solid(object):
         if not self.name:
             self.name = fn.__name__
 
-        _validate_compute_fn(self.name, fn, self.input_defs, [('context',)])
+        _validate_solid_fn(self.name, fn, self.input_defs, [('context',)])
         compute_fn = _create_solid_transform_wrapper(fn, self.input_defs, self.outputs)
         return SolidDefinition(
             name=self.name,
@@ -402,7 +409,7 @@ class FunctionValidationError(Exception):
         self.missing_names = missing_names
 
 
-def _validate_compute_fn(solid_name, compute_fn, inputs, expected_positionals=None):
+def _validate_solid_fn(solid_name, compute_fn, inputs, expected_positionals=None):
     check.str_param(solid_name, 'solid_name')
     check.callable_param(compute_fn, 'compute_fn')
     check.list_param(inputs, 'inputs', of_type=InputDefinition)
@@ -417,24 +424,24 @@ def _validate_compute_fn(solid_name, compute_fn, inputs, expected_positionals=No
     except FunctionValidationError as e:
         if e.error_type == FunctionValidationError.TYPES['vararg']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' compute function has positional vararg parameter "
-                "'{e.param}'. Compute functions should only have keyword arguments that match "
+                "solid '{solid_name}' decorated function has positional vararg parameter "
+                "'{e.param}'. Solid functions should only have keyword arguments that match "
                 "input names and a first positional parameter named 'context'.".format(
                     solid_name=solid_name, e=e
                 )
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_name']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' compute function has parameter '{e.param}' that is not "
-                "one of the solid inputs. Compute functions should only have keyword arguments "
+                "solid '{solid_name}' decorated function has parameter '{e.param}' that is not "
+                "one of the solid inputs. Solid functions should only have keyword arguments "
                 "that match input names and a first positional parameter named 'context'.".format(
                     solid_name=solid_name, e=e
                 )
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' compute function do not have required positional "
-                "parameter '{e.param}'. Compute functions should only have keyword arguments "
+                "solid '{solid_name}' decorated function do not have required positional "
+                "parameter '{e.param}'. Solid functions should only have keyword arguments "
                 "that match input names and a first positional parameter named 'context'.".format(
                     solid_name=solid_name, e=e
                 )
@@ -442,8 +449,8 @@ def _validate_compute_fn(solid_name, compute_fn, inputs, expected_positionals=No
         elif e.error_type == FunctionValidationError.TYPES['extra']:
             undeclared_inputs_printed = ", '".join(e.missing_names)
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' compute function do not have parameter(s) "
-                "'{undeclared_inputs_printed}', which are in solid's inputs. Compute functions "
+                "solid '{solid_name}' decorated function do not have parameter(s) "
+                "'{undeclared_inputs_printed}', which are in solid's inputs. Solid functions "
                 "should only have keyword arguments that match input names and a first positional "
                 "parameter named 'context'.".format(
                     solid_name=solid_name, undeclared_inputs_printed=undeclared_inputs_printed
@@ -501,3 +508,127 @@ def _validate_decorated_fn(fn, names, expected_positionals):
         raise FunctionValidationError(
             FunctionValidationError.TYPES['extra'], missing_names=undeclared_inputs
         )
+
+
+class _CompositeSolid(object):
+    def __init__(self, name=None, inputs=None, outputs=None, description=None):
+        self.name = check.opt_str_param(name, 'name')
+        self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
+        self.output_defs = check.opt_list_param(outputs, 'output', OutputDefinition)
+        self.description = check.opt_str_param(description, 'description')
+
+    def __call__(self, fn):
+        check.callable_param(fn, 'fn')
+
+        if not self.name:
+            self.name = fn.__name__
+
+        _validate_solid_fn(self.name, fn, self.input_defs, [('context',)])
+
+        kwargs = {input_def.name: InputMappingNode(input_def) for input_def in self.input_defs}
+
+        output = None
+        enter_composition(self.name)
+        try:
+            output = fn(EmptySolidContext(), **kwargs)
+        finally:
+            context = exit_composition(self._mapping_from_output(output))
+
+        check.invariant(
+            context.name == self.name,
+            'Composition context stack desync: received context for '
+            '"{context.name}" expected "{self.name}"'.format(context=context, self=self),
+        )
+
+        return CompositeSolidDefinition(
+            name=self.name,
+            input_mappings=context.input_mappings,
+            output_mappings=context.output_mappings,
+            dependencies=context.dependencies,
+            solids=context.solid_defs,
+            description=self.description,
+        )
+
+    def _mapping_from_output(self, output):
+        # single output
+        if isinstance(output, InvokedSolidOutputHandle):
+            if len(self.output_defs) == 1:
+                return [self.output_defs[0].mapping_from(output.solid_name, output.output_name)]
+            else:
+                raise DagsterInvalidDefinitionError(
+                    'Returned a single output ({solid_name}.{output_name}) in '
+                    '@composite_solid {name} but {num} outputs are defined. '
+                    'Return a dict to map defined outputs.'.format(
+                        solid_name=output.solid_name,
+                        output_name=output.output_name,
+                        name=self.name,
+                        num=len(self.output_defs),
+                    )
+                )
+
+        output_mappings = []
+        output_def_dict = {output_def.name: output_def for output_def in self.output_defs}
+
+        # tuple returned directly
+        if isinstance(output, tuple) and all(
+            map(lambda item: isinstance(item, InvokedSolidOutputHandle), output)
+        ):
+            for handle in output:
+                if handle.output_name not in output_def_dict:
+                    raise DagsterInvalidDefinitionError(
+                        'Output name mismatch returning output tuple in @composite_solid {name}. '
+                        'No matching OutputDefinition named {output_name} for {solid_name}.{output_name}.'
+                        'Return a dict to map to the desired OutputDefinition'.format(
+                            name=self.name,
+                            output_name=handle.output_name,
+                            solid_name=handle.solid_name,
+                        )
+                    )
+                output_mappings.append(
+                    output_def_dict[handle.output_name].mapping_from(
+                        handle.solid_name, handle.output_name
+                    )
+                )
+            return output_mappings
+
+        # mapping dict
+        if isinstance(output, dict):
+            for name, handle in output.items():
+                if name in output_def_dict:
+                    raise DagsterInvalidDefinitionError(
+                        '@composite_solid {name} referenced key {key} which does not match any '
+                        'OutputDefinitions. Valid options are: {options}'.format(
+                            name=self.name, key=name, options=list(output_def_dict.keys())
+                        )
+                    )
+                if not isinstance(handle, InvokedSolidOutputHandle):
+                    raise DagsterInvalidDefinitionError(
+                        '@composite_solid {name} returned problematic dict entry under '
+                        'key {key} of type {type}. Dict values must be outputs of '
+                        'invoked solids'.format(name=self.name, key=name, type=type(handle))
+                    )
+
+                output_mappings.append(
+                    output_def_dict[name].mapping_from(handle.solid_name, handle.output_name)
+                )
+            return output_mappings
+
+        # error
+        if output is not None:
+            raise DagsterInvalidDefinitionError(
+                '@composite_solid {name} returned problematic value '
+                'of type {type}. Expected return value from invoked solid or dict mapping '
+                'output name to return values from invoked solids'.format(
+                    name=self.name, type=type(output)
+                )
+            )
+
+
+def composite_solid(name=None, inputs=None, outputs=None, description=None):
+    if callable(name):
+        check.invariant(inputs is None)
+        check.invariant(outputs is None)
+        check.invariant(description is None)
+        return _CompositeSolid()(name)
+
+    return _CompositeSolid(name=name, inputs=inputs, outputs=outputs, description=description)

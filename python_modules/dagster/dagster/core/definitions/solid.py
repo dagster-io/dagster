@@ -5,7 +5,7 @@ import six
 from dagster import check
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.utils import frozendict
+from dagster.utils import frozendict, frozenlist
 
 from .input import InputDefinition, InputMapping
 from .output import OutputDefinition, OutputMapping
@@ -14,12 +14,14 @@ from .container import IContainSolids, create_execution_structure, validate_depe
 
 
 class ISolidDefinition(six.with_metaclass(ABCMeta)):
-    def __init__(self, name, input_dict, output_dict, description=None, metadata=None):
+    def __init__(self, name, input_defs, output_defs, description=None, metadata=None):
         self.name = check_valid_name(name)
         self.description = check.opt_str_param(description, 'description')
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
-        self.input_dict = frozendict(input_dict)
-        self.output_dict = frozendict(output_dict)
+        self.input_defs = frozenlist(input_defs)
+        self.input_dict = frozendict({input_def.name: input_def for input_def in input_defs})
+        self.output_defs = frozenlist(output_defs)
+        self.output_dict = frozendict({output_def.name: output_def for output_def in output_defs})
 
     def has_input(self, name):
         check.str_param(name, 'name')
@@ -39,26 +41,36 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
 
     @property
     def has_configurable_inputs(self):
-        return any([inp.runtime_type.input_schema for inp in self.input_dict.values()])
+        return any([inp.runtime_type.input_schema for inp in self.input_defs])
 
     @property
     def has_configurable_outputs(self):
-        return any([out.runtime_type.output_schema for out in self.output_dict.values()])
+        return any([out.runtime_type.output_schema for out in self.output_defs])
 
     @abstractproperty
     def has_config_entry(self):
         raise NotImplementedError()
 
     def all_input_output_types(self):
-        for input_def in self.input_dict.values():
+        for input_def in self.input_defs:
             yield input_def.runtime_type
             for inner_type in input_def.runtime_type.inner_types:
                 yield inner_type
 
-        for output_def in self.output_dict.values():
+        for output_def in self.output_defs:
             yield output_def.runtime_type
             for inner_type in output_def.runtime_type.inner_types:
                 yield inner_type
+
+    def __call__(self, *args, **kwargs):
+        from .composition import CallableSolidNode
+
+        return CallableSolidNode(self)(*args, **kwargs)
+
+    def alias(self, name):
+        from .composition import CallableSolidNode
+
+        return CallableSolidNode(self, name)
 
 
 class SolidDefinition(ISolidDefinition):
@@ -141,12 +153,13 @@ class SolidDefinition(ISolidDefinition):
         self.resources = check.opt_set_param(resources, 'resources', of_type=str)
         self.step_metadata_fn = step_metadata_fn
 
-        input_dict = {inp.name: inp for inp in check.list_param(inputs, 'inputs', InputDefinition)}
-        output_dict = {
-            output.name: output for output in check.list_param(outputs, 'outputs', OutputDefinition)
-        }
-
-        super(SolidDefinition, self).__init__(name, input_dict, output_dict, description, metadata)
+        super(SolidDefinition, self).__init__(
+            name,
+            check.list_param(inputs, 'inputs', InputDefinition),
+            check.list_param(outputs, 'outputs', OutputDefinition),
+            description,
+            metadata,
+        )
 
     @property
     def has_config_entry(self):
@@ -187,20 +200,14 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         self._solid_dict = pipeline_solid_dict
         self._dependency_structure = dependency_structure
 
-        input_dict = {
-            input_mapping.definition.name: input_mapping.definition
-            for input_mapping in self.input_mappings
-        }
+        input_defs = [input_mapping.definition for input_mapping in self.input_mappings]
 
-        output_dict = {
-            output_mapping.definition.name: output_mapping.definition
-            for output_mapping in self.output_mappings
-        }
+        output_defs = [output_mapping.definition for output_mapping in self.output_mappings]
 
         self._solid_defs = solids
 
         super(CompositeSolidDefinition, self).__init__(
-            name, input_dict, output_dict, description, metadata
+            name, input_defs, output_defs, description, metadata
         )
 
     @property
