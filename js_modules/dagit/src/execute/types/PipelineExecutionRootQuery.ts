@@ -7,15 +7,15 @@
 // GraphQL query operation: PipelineExecutionRootQuery
 // ====================================================
 
-export interface PipelineExecutionRootQuery_pipeline_environmentType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
 export interface PipelineExecutionRootQuery_pipeline_modes {
   __typename: "Mode";
   name: string;
   description: string | null;
+}
+
+export interface PipelineExecutionRootQuery_pipeline_environmentType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
 }
 
 export interface PipelineExecutionRootQuery_pipeline_configTypes_RegularConfigType {
@@ -103,8 +103,8 @@ export type PipelineExecutionRootQuery_pipeline_configTypes = PipelineExecutionR
 export interface PipelineExecutionRootQuery_pipeline {
   __typename: "Pipeline";
   name: string;
-  environmentType: PipelineExecutionRootQuery_pipeline_environmentType;
   modes: PipelineExecutionRootQuery_pipeline_modes[];
+  environmentType: PipelineExecutionRootQuery_pipeline_environmentType;
   configTypes: PipelineExecutionRootQuery_pipeline_configTypes[];
 }
 

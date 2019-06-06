@@ -4,13 +4,8 @@ import uuid
 
 import httplib2
 
-try:
-    import unittest.mock as mock
-except ImportError:
-    import mock
-
-
 from dagster import execute_pipeline, seven, PipelineDefinition, ModeDefinition
+from dagster.seven import mock
 
 from dagster_gcp import dataproc_solid, dataproc_resource
 

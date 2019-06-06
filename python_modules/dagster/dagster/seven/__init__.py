@@ -81,3 +81,17 @@ elif os.name == 'nt':
     time_fn = time.clock
 else:
     time_fn = time.time
+
+try:
+    from unittest import mock
+except ImportError:
+    # Because this dependency is not encoded setup.py deliberately
+    # (we do not want to override or conflict with our users mocks)
+    # we never fail when importing this.
+
+    # This will only be used within *our* test enviroment of which
+    # we have total control
+    try:
+        import mock
+    except ImportError:
+        pass

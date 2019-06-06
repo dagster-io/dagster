@@ -62,9 +62,6 @@ export default class PipelineExecutionContainer extends React.Component<
     PipelineExecutionContainerFragment: gql`
       fragment PipelineExecutionContainerFragment on Pipeline {
         name
-        environmentType(mode: $mode) {
-          key
-        }
         modes {
           name
           description

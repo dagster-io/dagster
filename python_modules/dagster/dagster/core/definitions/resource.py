@@ -29,7 +29,11 @@ class ResourceDefinition(object):
 
     @staticmethod
     def none_resource(description=None):
-        return ResourceDefinition(resource_fn=lambda _init_context: None, description=description)
+        return ResourceDefinition.hardcoded_resource(value=None, description=description)
+
+    @staticmethod
+    def hardcoded_resource(value, description=None):
+        return ResourceDefinition(resource_fn=lambda _init_context: value, description=description)
 
     @staticmethod
     def string_resource(description=None):

@@ -108,6 +108,14 @@ class SolidExecutionResult(object):
     def transforms(self):
         return self.step_events_by_kind.get(StepKind.COMPUTE, [])
 
+    @property
+    def materializations_during_compute(self):
+        return list(
+            filter(
+                lambda se: se.event_type == DagsterEventType.STEP_MATERIALIZATION, self.transforms
+            )
+        )
+
     def get_step_success_event(self):
         for step_event in self.transforms:
             if step_event.event_type == DagsterEventType.STEP_SUCCESS:

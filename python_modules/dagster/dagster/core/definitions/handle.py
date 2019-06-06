@@ -162,6 +162,12 @@ class ExecutionTargetHandle:
         obj = self.entrypoint.perform_load()
 
         if self.mode == _ExecutionTargetMode.REPOSITORY:
+            # User passed in a function that returns a pipeline definition, not a repository. See:
+            # https://github.com/dagster-io/dagster/issues/1439
+            if isinstance(obj, PipelineDefinition):
+                return RepositoryDefinition(
+                    name=EPHEMERAL_NAME, pipeline_dict={obj.name: lambda: obj}
+                )
             return check.inst(obj, RepositoryDefinition)
         elif self.mode == _ExecutionTargetMode.PIPELINE:
             check.inst(obj, PipelineDefinition)

@@ -1,10 +1,6 @@
 from dagster import execute_pipeline, solid, ModeDefinition, PipelineDefinition
+from dagster.seven import mock
 from dagster_datadog import datadog_resource
-
-try:
-    import unittest.mock as mock
-except ImportError:
-    import mock
 
 
 @mock.patch('datadog.statsd.timing')

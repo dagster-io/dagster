@@ -74,6 +74,15 @@ type EnumConfigValue {
 
 scalar EnvironmentConfigData
 
+type EnvironmentSchema {
+  rootEnvironmentType: ConfigType!
+  allConfigTypes: [ConfigType!]!
+  configTypeOrError(configTypeName: String!): ConfigTypeOrError!
+  isEnvironmentConfigValid(environmentConfigData: EnvironmentConfigData): PipelineConfigValidationResult!
+}
+
+union EnvironmentSchemaOrError = EnvironmentSchema | PipelineNotFoundError | SolidNotFoundError | ModeNotFoundError
+
 interface Error {
   message: String!
   stack: [String!]!
@@ -374,6 +383,12 @@ type Mode {
   loggers: [Logger!]!
 }
 
+type ModeNotFoundError implements Error {
+  message: String!
+  stack: [String!]!
+  mode: String!
+}
+
 type Mutation {
   startPipelineExecution(executionParams: ExecutionParams!, reexecutionConfig: ReexecutionConfig): StartPipelineExecutionResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
@@ -601,6 +616,7 @@ type Query {
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
+  environmentSchemaOrError(selector: ExecutionSelector!, mode: String!): EnvironmentSchemaOrError!
 }
 
 input ReexecutionConfig {
