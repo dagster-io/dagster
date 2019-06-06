@@ -125,7 +125,7 @@ class SolidExecutionResult(object):
         return list(
             filter(
                 lambda se: se.event_type == DagsterEventType.STEP_EXPECTATION_RESULT,
-                self.transforms,
+                self.compute_step_events,
             )
         )
 

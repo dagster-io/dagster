@@ -376,13 +376,13 @@ def test_pipeline_subset_with_multi_dependency():
 
     pipeline_result = execute_pipeline(pipeline_def)
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid('noop').transformed_value() == 3
+    assert pipeline_result.result_for_solid('noop').result_value() == 3
 
     subset_result = execute_pipeline(pipeline_def.build_sub_pipeline(['noop']))
 
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 1
-    assert pipeline_result.result_for_solid('noop').transformed_value() == 3
+    assert pipeline_result.result_for_solid('noop').result_value() == 3
 
     events = execute_pipeline_iterator(pipeline_def.build_sub_pipeline(['noop']))
 
@@ -395,7 +395,7 @@ def test_pipeline_subset_with_multi_dependency():
 
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 3
-    assert pipeline_result.result_for_solid('noop').transformed_value() == 3
+    assert pipeline_result.result_for_solid('noop').result_value() == 3
 
 
 def define_three_part_pipeline():

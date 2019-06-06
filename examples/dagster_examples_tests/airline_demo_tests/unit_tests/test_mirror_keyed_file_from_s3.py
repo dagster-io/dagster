@@ -61,8 +61,8 @@ def test_mirror_keyed_file_from_s3_basic():
         assert isinstance(expectation_result.result_metadata['path'], str)
         assert os.path.exists(expectation_result.result_metadata['path'])
 
-        assert isinstance(solid_result.transformed_value(), LocalFileHandle)
-        assert 'some-key' in solid_result.transformed_value().path_desc
+        assert isinstance(solid_result.result_value(), LocalFileHandle)
+        assert 'some-key' in solid_result.result_value().path_desc
 
 
 def test_mirror_keyed_file_from_s3_specify_target_key():
@@ -90,8 +90,8 @@ def test_mirror_keyed_file_from_s3_specify_target_key():
         assert pipeline_result.success
         solid_result = pipeline_result.result_for_solid('mirror_keyed_file_from_s3')
         assert solid_result.success
-        assert isinstance(solid_result.transformed_value(), LocalFileHandle)
-        assert 'specified-file-key' in solid_result.transformed_value().path_desc
+        assert isinstance(solid_result.result_value(), LocalFileHandle)
+        assert 'specified-file-key' in solid_result.result_value().path_desc
 
 
 def test_mirror_keyed_file_from_s3_skip_download():
