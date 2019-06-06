@@ -16,7 +16,7 @@ def test_run_whole_pipeline():
     )
 
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid('a_plus_b').transformed_value() == 8
+    assert pipeline_result.result_for_solid('a_plus_b').result_value() == 8
 
-    assert pipeline_result.result_for_solid('c_plus_d').transformed_value() == 12
-    assert pipeline_result.result_for_solid('final').transformed_value() == 8 * 12
+    assert pipeline_result.result_for_solid('c_plus_d').result_value() == 12
+    assert pipeline_result.result_for_solid('final').result_value() == 8 * 12

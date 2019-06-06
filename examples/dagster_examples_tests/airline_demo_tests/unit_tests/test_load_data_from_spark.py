@@ -32,4 +32,4 @@ def test_airline_demo_load_df():
     # Can improve when https://github.com/dagster-io/dagster/issues/1438 is complete
     assert mat.path == 'Persisted Db Table: foo'
 
-    assert solid_result.transformed_value('table_name') == 'foo'
+    assert solid_result.result_value('table_name') == 'foo'

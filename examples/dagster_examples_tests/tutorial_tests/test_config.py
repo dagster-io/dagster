@@ -15,19 +15,19 @@ def test_tutorial_part_four():
 
     assert result.success
     assert len(result.solid_result_list) == 1
-    assert result.result_for_solid('configurable_hello').transformed_value() == '你好, 世界!'
+    assert result.result_for_solid('configurable_hello').result_value() == '你好, 世界!'
 
     result = execute_pipeline(pipeline, {'solids': {'configurable_hello': {'config': 'haw'}}})
 
     assert result.success
     assert len(result.solid_result_list) == 1
-    assert result.result_for_solid('configurable_hello').transformed_value() == 'Aloha honua!'
+    assert result.result_for_solid('configurable_hello').result_value() == 'Aloha honua!'
 
     result = execute_pipeline(pipeline, {'solids': {'configurable_hello': {'config': 'es'}}})
 
     assert result.success
     assert len(result.solid_result_list) == 1
-    assert result.result_for_solid('configurable_hello').transformed_value() == 'Hello, world!'
+    assert result.result_for_solid('configurable_hello').result_value() == 'Hello, world!'
 
 
 def test_tutorial_script_part_four():

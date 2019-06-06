@@ -943,11 +943,11 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.transformed_value">transformed_value() (dagster.SolidExecutionResult method)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.result_value">result_value() (dagster.SolidExecutionResult method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.transformed_values">transformed_values (dagster.SolidExecutionResult attribute)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.result_values">result_values (dagster.SolidExecutionResult attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -2815,7 +2815,7 @@ single function call.
 
     assert result.success
     assert os.path.exists(
-        result.result_for_solid('unzip_file').transformed_value())
+        result.result_for_solid('unzip_file').result_value())
 ```
 
 **After:**
@@ -2828,7 +2828,7 @@ single function call.
     )
 
     assert solid_result.success
-    assert os.path.exists(solid_result.transformed_value())
+    assert os.path.exists(solid_result.result_value())
 ```
 
 **Before (with stubbed inputs):**
@@ -2849,8 +2849,8 @@ single function call.
 
     assert result.success
     solid_result = result.result_for_solid('split_headers_and_service_lines')
-    assert os.path.exists(solid_result.transformed_value('header_file'))
-    assert os.path.exists(solid_result.transformed_value('service_lines_file'))
+    assert os.path.exists(solid_result.result_value('header_file'))
+    assert os.path.exists(solid_result.result_value('service_lines_file'))
 ```
 
 **After (with stubbed inputs):**
@@ -2865,8 +2865,8 @@ single function call.
         environment=environment,
     )
 
-    assert os.path.exists(solid_result.transformed_value('header_file'))
-    assert os.path.exists(solid_result.transformed_value('service_lines_file'))
+    assert os.path.exists(solid_result.result_value('header_file'))
+    assert os.path.exists(solid_result.result_value('service_lines_file'))
 ```
 
 **Before (subset execution):**
@@ -19575,16 +19575,16 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 </dd></dl>
 
 <dl class="method">
-<dt id="dagster.SolidExecutionResult.transformed_value">
-<code class="descname">transformed_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/results.html#SolidExecutionResult.transformed_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_value" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.SolidExecutionResult.result_value">
+<code class="descname">result_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/results.html#SolidExecutionResult.result_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidExecutionResult.result_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns transformed value either for DEFAULT_OUTPUT or for the output
 given as output_name. Returns None if execution result isn’t a success.</p>
 <p>Reconstructs the pipeline context to materialize value.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="dagster.SolidExecutionResult.transformed_values">
-<code class="descname">transformed_values</code><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_values" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.SolidExecutionResult.result_values">
+<code class="descname">result_values</code><a class="headerlink" href="#dagster.SolidExecutionResult.result_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return dictionary of transformed results, with keys being output names.
 Returns None if execution result isn’t a success.</p>
 <p>Reconstructs the pipeline context to materialize values.</p>
@@ -23462,7 +23462,7 @@ single function call.</p>
 
     <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span>
     <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span>
-        <span class="n">result</span><span class="o">.</span><span class="n">result_for_solid</span><span class="p">(</span><span class="s1">&#39;unzip_file&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">transformed_value</span><span class="p">())</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">result_for_solid</span><span class="p">(</span><span class="s1">&#39;unzip_file&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">result_value</span><span class="p">())</span>
 </pre></div>
 </div>
 <p><strong>After:</strong></p>
@@ -23473,7 +23473,7 @@ single function call.</p>
     <span class="p">)</span>
 
     <span class="k">assert</span> <span class="n">solid_result</span><span class="o">.</span><span class="n">success</span>
-    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">solid_result</span><span class="o">.</span><span class="n">transformed_value</span><span class="p">())</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">solid_result</span><span class="o">.</span><span class="n">result_value</span><span class="p">())</span>
 </pre></div>
 </div>
 <p><strong>Before (with stubbed inputs):</strong></p>
@@ -23492,8 +23492,8 @@ single function call.</p>
 
     <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span>
     <span class="n">solid_result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">result_for_solid</span><span class="p">(</span><span class="s1">&#39;split_headers_and_service_lines&#39;</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">solid_result</span><span class="o">.</span><span class="n">transformed_value</span><span class="p">(</span><span class="s1">&#39;header_file&#39;</span><span class="p">))</span>
-    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">solid_result</span><span class="o">.</span><span class="n">transformed_value</span><span class="p">(</span><span class="s1">&#39;service_lines_file&#39;</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">solid_result</span><span class="o">.</span><span class="n">result_value</span><span class="p">(</span><span class="s1">&#39;header_file&#39;</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">solid_result</span><span class="o">.</span><span class="n">result_value</span><span class="p">(</span><span class="s1">&#39;service_lines_file&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
 <p><strong>After (with stubbed inputs):</strong></p>
@@ -23506,8 +23506,8 @@ single function call.</p>
         <span class="n">environment</span><span class="o">=</span><span class="n">environment</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">solid_result</span><span class="o">.</span><span class="n">transformed_value</span><span class="p">(</span><span class="s1">&#39;header_file&#39;</span><span class="p">))</span>
-    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">solid_result</span><span class="o">.</span><span class="n">transformed_value</span><span class="p">(</span><span class="s1">&#39;service_lines_file&#39;</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">solid_result</span><span class="o">.</span><span class="n">result_value</span><span class="p">(</span><span class="s1">&#39;header_file&#39;</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">solid_result</span><span class="o">.</span><span class="n">result_value</span><span class="p">(</span><span class="s1">&#39;service_lines_file&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
 <p><strong>Before (subset execution):</strong></p>
@@ -28171,7 +28171,7 @@ provide, instead of from solids upstream in the dependency graph.</p>
         <span class="n">define_part_fourteen_step_one_pipeline</span><span class="p">(),</span> <span class="s1">&#39;final&#39;</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;num1&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;num2&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}</span>
     <span class="p">)</span>
     <span class="k">assert</span> <span class="n">solid_result</span><span class="o">.</span><span class="n">success</span>
-    <span class="k">assert</span> <span class="n">solid_result</span><span class="o">.</span><span class="n">transformed_value</span><span class="p">()</span> <span class="o">==</span> <span class="mi">12</span>
+    <span class="k">assert</span> <span class="n">solid_result</span><span class="o">.</span><span class="n">result_value</span><span class="p">()</span> <span class="o">==</span> <span class="mi">12</span>
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -28194,8 +28194,8 @@ the <code class="docutils literal notranslate"><span class="pre">execute_solids<
         <span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;a_plus_b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num1&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;num2&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span> <span class="s1">&#39;final&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num2&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}},</span>
     <span class="p">)</span>
 
-    <span class="k">assert</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;a_plus_b&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">transformed_value</span><span class="p">()</span> <span class="o">==</span> <span class="mi">6</span>
-    <span class="k">assert</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;final&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">transformed_value</span><span class="p">()</span> <span class="o">==</span> <span class="mi">36</span>
+    <span class="k">assert</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;a_plus_b&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">result_value</span><span class="p">()</span> <span class="o">==</span> <span class="mi">6</span>
+    <span class="k">assert</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;final&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">result_value</span><span class="p">()</span> <span class="o">==</span> <span class="mi">36</span>
 </pre></div>
 </td></tr></table></div>
 </div>

@@ -54,7 +54,7 @@ def test_execute_solid_with_input_same_name():
         pipeline, environment_dict={'solids': {'pass_value': {'config': {'value': 'foo'}}}}
     )
 
-    assert result.result_for_solid('a_thing').transformed_value() == 'foofoo'
+    assert result.result_for_solid('a_thing').result_value() == 'foofoo'
 
 
 def test_execute_two_solids_with_same_input_name():
@@ -99,8 +99,8 @@ def test_execute_two_solids_with_same_input_name():
 
     assert result.success
 
-    assert result.result_for_solid('solid_one').transformed_value() == 'foofoo'
-    assert result.result_for_solid('solid_two').transformed_value() == 'barbar'
+    assert result.result_for_solid('solid_one').result_value() == 'foofoo'
+    assert result.result_for_solid('solid_two').result_value() == 'barbar'
 
 
 def test_execute_dep_solid_different_input_name():
@@ -134,6 +134,6 @@ def test_execute_dep_solid_different_input_name():
 
     assert result.success
     assert len(result.solid_result_list) == 3
-    assert result.result_for_solid('pass_to_first').transformed_value() == 'bar'
-    assert result.result_for_solid('first_solid').transformed_value() == 'barbar'
-    assert result.result_for_solid('second_solid').transformed_value() == 'barbarbarbar'
+    assert result.result_for_solid('pass_to_first').result_value() == 'bar'
+    assert result.result_for_solid('first_solid').result_value() == 'barbar'
+    assert result.result_for_solid('second_solid').result_value() == 'barbarbarbar'

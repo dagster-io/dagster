@@ -40,7 +40,7 @@ def test_hello_world_with_output():
         pipeline = define_hello_world_with_output_pipeline()
         result = execute_pipeline(pipeline)
         assert result.success
-        assert result.result_for_solid('hello_world_output').transformed_value() == 'hello, world'
+        assert result.result_for_solid('hello_world_output').result_value() == 'hello, world'
     finally:
         cleanup_result_notebook(result)
 
@@ -67,7 +67,7 @@ def test_add_pipeline():
             pipeline, {'loggers': {'console': {'config': {'log_level': 'ERROR'}}}}
         )
         assert result.success
-        assert result.result_for_solid('add_two_numbers').transformed_value() == 3
+        assert result.result_for_solid('add_two_numbers').result_value() == 3
     finally:
         cleanup_result_notebook(result)
 
@@ -79,8 +79,8 @@ def test_notebook_dag():
             environment_dict={'solids': {'load_a': {'config': 1}, 'load_b': {'config': 2}}},
         )
         assert pipeline_result.success
-        assert pipeline_result.result_for_solid('add_two').transformed_value() == 3
-        assert pipeline_result.result_for_solid('mult_two').transformed_value() == 6
+        assert pipeline_result.result_for_solid('add_two').result_value() == 3
+        assert pipeline_result.result_for_solid('mult_two').result_value() == 6
     finally:
         cleanup_result_notebook(pipeline_result)
 

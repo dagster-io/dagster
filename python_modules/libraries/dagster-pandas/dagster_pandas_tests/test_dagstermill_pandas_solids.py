@@ -21,4 +21,4 @@ def test_papermill_pandas_hello_world_pipeline():
     assert pipeline_result.success
     solid_result = pipeline_result.result_for_solid('papermill_pandas_hello_world')
     expected = pd.read_csv(script_relative_path('num_prod.csv')) + 1
-    assert solid_result.transformed_value().equals(expected)
+    assert solid_result.result_value().equals(expected)

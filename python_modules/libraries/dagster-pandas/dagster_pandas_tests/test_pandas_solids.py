@@ -21,7 +21,7 @@ def _dataframe_solid(name, inputs, compute_fn):
     )
 
 
-def get_solid_transformed_value(solid_inst):
+def get_solid_result_value(solid_inst):
     pipeline = PipelineDefinition(
         solids=[load_num_csv_solid('load_csv'), solid_inst],
         dependencies={
@@ -35,7 +35,7 @@ def get_solid_transformed_value(solid_inst):
 
     execution_result = pipeline_result.result_for_solid(solid_inst.name)
 
-    return execution_result.transformed_value()
+    return execution_result.result_value()
 
 
 def get_num_csv_environment(solids_config):
@@ -76,7 +76,7 @@ def sum_sq_table_renamed_input(sum_table_renamed):
 
 
 def test_pandas_csv_in_memory():
-    df = get_solid_transformed_value(create_sum_table())
+    df = get_solid_result_value(create_sum_table())
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
@@ -113,7 +113,7 @@ def test_two_input_solid():
     pipeline_result = execute_pipeline(pipeline)
     assert pipeline_result.success
 
-    df = pipeline_result.result_for_solid('two_input_solid').transformed_value()
+    df = pipeline_result.result_for_solid('two_input_solid').result_value()
 
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
@@ -125,7 +125,7 @@ def test_no_transform_solid():
         inputs=[InputDefinition('num_csv', DataFrame)],
         compute_fn=lambda _context, inputs: inputs['num_csv'],
     )
-    df = get_solid_transformed_value(num_table)
+    df = get_solid_result_value(num_table)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
 
@@ -177,7 +177,7 @@ def test_pandas_multiple_inputs():
         },
     )
 
-    output_df = execute_pipeline(pipeline).result_for_solid('double_sum').transformed_value()
+    output_df = execute_pipeline(pipeline).result_for_solid('double_sum').result_value()
 
     assert not output_df.empty
 
@@ -201,4 +201,4 @@ def test_rename_input():
 
     expected = {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7], 'sum_squared': [9, 49]}
     solid_result = result.result_for_solid('sum_sq_table_renamed_input')
-    assert solid_result.transformed_value().to_dict('list') == expected
+    assert solid_result.result_value().to_dict('list') == expected

@@ -22,12 +22,12 @@ def test_demo_configuration_schema_pipeline_correct_yaml():
     )
     assert result.success
     assert len(result.solid_result_list) == 2
-    count_letters_result = result.result_for_solid('count_letters').transformed_value()
+    count_letters_result = result.result_for_solid('count_letters').result_value()
     expected_value = {'q': 2, 'u': 4, 'x': 2}
     assert set(count_letters_result.keys()) == set(expected_value.keys())
     for key, value in expected_value.items():
         assert count_letters_result[key] == value
-    assert result.result_for_solid('multiply_the_word').transformed_value() == 'quuxquux'
+    assert result.result_for_solid('multiply_the_word').result_value() == 'quuxquux'
 
 
 def test_demo_configuration_schema_pipeline_runtime_error():
@@ -58,12 +58,12 @@ def test_typed_demo_configuration_schema_pipeline_correct_yaml():
     )
     assert result.success
     assert len(result.solid_result_list) == 2
-    count_letters_result = result.result_for_solid('count_letters').transformed_value()
+    count_letters_result = result.result_for_solid('count_letters').result_value()
     expected_value = {'q': 2, 'u': 4, 'x': 2}
     assert set(count_letters_result.keys()) == set(expected_value.keys())
     for key, value in expected_value.items():
         assert count_letters_result[key] == value
-    assert result.result_for_solid('typed_multiply_the_word').transformed_value() == 'quuxquux'
+    assert result.result_for_solid('typed_multiply_the_word').result_value() == 'quuxquux'
 
 
 def test_typed_demo_configuration_schema_type_mismatch_error():

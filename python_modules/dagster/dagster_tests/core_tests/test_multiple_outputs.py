@@ -33,13 +33,13 @@ def test_multiple_outputs():
     solid_result = result.solid_result_list[0]
 
     assert solid_result.solid.name == 'multiple_outputs'
-    assert solid_result.transformed_value('output_one') == 'foo'
-    assert solid_result.transformed_value('output_two') == 'bar'
+    assert solid_result.result_value('output_one') == 'foo'
+    assert solid_result.result_value('output_two') == 'bar'
 
     with pytest.raises(
         DagsterInvariantViolationError, match='not_defined not defined in solid multiple_outputs'
     ):
-        solid_result.transformed_value('not_defined')
+        solid_result.result_value('not_defined')
 
 
 def test_multiple_outputs_expectations():
@@ -174,15 +174,15 @@ def test_multiple_outputs_only_emit_one():
 
     assert called['one']
     solid_result = result.result_for_solid('multiple_outputs')
-    assert set(solid_result.transformed_values.keys()) == set(['output_one'])
+    assert set(solid_result.result_values.keys()) == set(['output_one'])
 
     with pytest.raises(
         DagsterInvariantViolationError, match='not_defined not defined in solid multiple_outputs'
     ):
-        solid_result.transformed_value('not_defined')
+        solid_result.result_value('not_defined')
 
     with pytest.raises(DagsterInvariantViolationError, match='Did not find result output_two'):
-        solid_result.transformed_value('output_two')
+        solid_result.result_value('output_two')
 
     with pytest.raises(
         DagsterInvariantViolationError,

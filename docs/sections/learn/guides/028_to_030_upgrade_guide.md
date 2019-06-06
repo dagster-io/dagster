@@ -245,7 +245,7 @@ single function call.
 
     assert result.success
     assert os.path.exists(
-        result.result_for_solid('unzip_file').transformed_value())
+        result.result_for_solid('unzip_file').result_value())
 ```
 
 **After:**
@@ -258,7 +258,7 @@ single function call.
     )
 
     assert solid_result.success
-    assert os.path.exists(solid_result.transformed_value())
+    assert os.path.exists(solid_result.result_value())
 ```
 
 **Before (with stubbed inputs):**
@@ -279,8 +279,8 @@ single function call.
 
     assert result.success
     solid_result = result.result_for_solid('split_headers_and_service_lines')
-    assert os.path.exists(solid_result.transformed_value('header_file'))
-    assert os.path.exists(solid_result.transformed_value('service_lines_file'))
+    assert os.path.exists(solid_result.result_value('header_file'))
+    assert os.path.exists(solid_result.result_value('service_lines_file'))
 ```
 
 **After (with stubbed inputs):**
@@ -295,8 +295,8 @@ single function call.
         environment=environment,
     )
 
-    assert os.path.exists(solid_result.transformed_value('header_file'))
-    assert os.path.exists(solid_result.transformed_value('service_lines_file'))
+    assert os.path.exists(solid_result.result_value('header_file'))
+    assert os.path.exists(solid_result.result_value('service_lines_file'))
 ```
 
 **Before (subset execution):**

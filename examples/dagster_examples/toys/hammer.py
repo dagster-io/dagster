@@ -120,4 +120,4 @@ if __name__ == '__main__':
         env_config={'storage': {'filesystem': {}}},
         run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM),
     )
-    print('Total Hammer Time: ', result.result_for_solid('total').transformed_value())
+    print('Total Hammer Time: ', result.result_for_solid('total').result_value())

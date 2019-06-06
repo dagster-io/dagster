@@ -55,7 +55,7 @@ def test_simple_values():
         )
     )
     assert result.success
-    assert result.result_for_solid('sum_num').transformed_value() == 6
+    assert result.result_for_solid('sum_num').result_value() == 6
 
 
 def test_interleaved_values():
