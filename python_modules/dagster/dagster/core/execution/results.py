@@ -110,6 +110,13 @@ class SolidExecutionResult(object):
 
     @property
     def materializations_during_compute(self):
+        return [
+            mat_event.event_specific_data.materialization
+            for mat_event in self.materialization_events_during_compute
+        ]
+
+    @property
+    def materialization_events_during_compute(self):
         return list(
             filter(
                 lambda se: se.event_type == DagsterEventType.STEP_MATERIALIZATION, self.transforms

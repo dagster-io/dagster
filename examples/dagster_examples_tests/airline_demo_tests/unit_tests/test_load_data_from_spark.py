@@ -30,6 +30,6 @@ def test_airline_demo_load_df():
     mat = mats[0]
     # This is obviously a dumb thing to materialize
     # Can improve when https://github.com/dagster-io/dagster/issues/1438 is complete
-    assert mat.event_specific_data.materialization.path == 'Persisted Db Table: foo'
+    assert mat.path == 'Persisted Db Table: foo'
 
     assert solid_result.transformed_value('table_name') == 'foo'
