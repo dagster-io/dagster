@@ -9,8 +9,8 @@ from .solid import ISolidDefinition
 _composition_stack = []
 
 
-def enter_composition(name):
-    _composition_stack.append(InProgressCompositionContext(name))
+def enter_composition(name, source):
+    _composition_stack.append(InProgressCompositionContext(name, source))
 
 
 def exit_composition(output):
@@ -23,11 +23,12 @@ def current_context():
 
 class InProgressCompositionContext:
     '''This context captures invocations of solids within a
-    composition function such as @composite_solid
+    composition function such as @composite_solid or @pipeline
     '''
 
-    def __init__(self, name):
+    def __init__(self, name, source):
         self.name = check.str_param(name, 'name')
+        self.source = check.str_param(source, 'source')
         self._invocations = {}
 
     def has_seen_invocation(self, name):
@@ -101,9 +102,10 @@ class CallableSolidNode:
 
             if def_idx >= len(self.solid_def.input_defs):
                 raise DagsterInvalidDefinitionError(
-                    'In @composite_solid {composite} received too many inputs for solid '
+                    'In {source} {name} received too many inputs for solid '
                     'invocation {solid_name}. Only {def_num} defined, received {arg_num}'.format(
-                        composite=current_context().name,
+                        source=current_context().source,
+                        name=current_context().name,
                         solid_name=self.solid_name,
                         def_num=len(self.solid_def.input_defs),
                         arg_num=len(args),
@@ -121,10 +123,11 @@ class CallableSolidNode:
                 map(lambda item: isinstance(item, InvokedSolidOutputHandle), output_node)
             ):
                 raise DagsterInvalidDefinitionError(
-                    'In @composite_solid {composite} received a tuple of multiple outputs for '
+                    'In {source} {name} received a tuple of multiple outputs for '
                     'input position {idx} in solid invocation {solid_name}. '
                     'Must pass individual output, available from tuple: {options}'.format(
-                        composite=current_context().name,
+                        source=current_context().source,
+                        name=current_context().name,
                         idx=idx,
                         solid_name=self.solid_name,
                         options=output_node._fields,
@@ -132,11 +135,12 @@ class CallableSolidNode:
                 )
             else:
                 raise DagsterInvalidDefinitionError(
-                    'In @composite_solid {composite} received invalid type {type} for input '
+                    'In {source} {name} received invalid type {type} for input '
                     '{input_name} at postition {idx} in solid invocation {solid_name}. '
                     'Must pass the output from previous solid invocations or inputs to the '
                     'composition function as inputs when invoking solids during composition.'.format(
-                        composite=current_context().name,
+                        source=current_context().source,
+                        name=current_context().name,
                         type=type(output_node),
                         idx={idx},
                         input_name=input_name,
@@ -154,10 +158,11 @@ class CallableSolidNode:
                 map(lambda item: isinstance(item, InvokedSolidOutputHandle), output_node)
             ):
                 raise DagsterInvalidDefinitionError(
-                    'In @composite_solid {composite} received a tuple of multiple outputs for '
+                    'In {source} {name} received a tuple of multiple outputs for '
                     'the input {input_name} in solid invocation {solid_name}. '
                     'Must pass individual output, available from tuple: {options}'.format(
-                        composite=current_context().name,
+                        name=current_context().name,
+                        source=current_context().source,
                         input_name=input_name,
                         solid_name=self.solid_name,
                         options=output_node._fields,
@@ -165,11 +170,12 @@ class CallableSolidNode:
                 )
             else:
                 raise DagsterInvalidDefinitionError(
-                    'In @composite_solid {composite} received invalid type {type} for input '
+                    'In {source} {name} received invalid type {type} for input '
                     '{input_name} in solid invocation {solid_name}. '
                     'Must pass the output from previous solid invocations or inputs to the composition function '
                     'as inputs when invoking solids during composition.'.format(
-                        composite=current_context().name,
+                        source=current_context().source,
+                        name=current_context().name,
                         type=type(output_node),
                         input_name=input_name,
                         solid_name=self.solid_name,
@@ -178,8 +184,10 @@ class CallableSolidNode:
 
         if current_context().has_seen_invocation(self.solid_name):
             raise DagsterInvalidDefinitionError(
-                '@composite_solid {composite} invokd the same solid ({solid_name}) twice without aliasing.'.format(
-                    composite=current_context().name, solid_name=self.solid_name
+                '{source} {name} invokd the same solid ({solid_name}) twice without aliasing.'.format(
+                    source=current_context().source,
+                    name=current_context().name,
+                    solid_name=self.solid_name,
                 )
             )
 

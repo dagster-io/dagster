@@ -13,6 +13,9 @@ from . import (
     OutputDefinition,
     Result,
     SolidDefinition,
+    PresetDefinition,
+    ModeDefinition,
+    PipelineDefinition,
 )
 from .composition import (
     EmptySolidContext,
@@ -528,7 +531,7 @@ class _CompositeSolid(object):
         kwargs = {input_def.name: InputMappingNode(input_def) for input_def in self.input_defs}
 
         output = None
-        enter_composition(self.name)
+        enter_composition(self.name, '@composite_solid')
         try:
             output = fn(EmptySolidContext(), **kwargs)
         finally:
@@ -632,3 +635,49 @@ def composite_solid(name=None, inputs=None, outputs=None, description=None):
         return _CompositeSolid()(name)
 
     return _CompositeSolid(name=name, inputs=inputs, outputs=outputs, description=description)
+
+
+class _Pipeline:
+    def __init__(self, name=None, mode_definitions=None, preset_definitions=None, description=None):
+        self.name = check.opt_str_param(name, 'name')
+        self.mode_definitions = check.opt_list_param(
+            mode_definitions, 'mode_definitions', ModeDefinition
+        )
+        self.preset_definitions = check.opt_list_param(
+            preset_definitions, 'preset_definitions', PresetDefinition
+        )
+        self.description = check.opt_str_param(description, 'description')
+
+    def __call__(self, fn):
+        check.callable_param(fn, 'fn')
+
+        if not self.name:
+            self.name = fn.__name__
+
+        enter_composition(self.name, '@pipeline')
+        try:
+            fn(EmptySolidContext())
+        finally:
+            context = exit_composition([])
+
+        return PipelineDefinition(
+            name=self.name,
+            dependencies=context.dependencies,
+            solids=context.solid_defs,
+            mode_definitions=self.mode_definitions,
+            preset_definitions=self.preset_definitions,
+            description=self.description,
+        )
+
+
+def pipeline(name=None, mode_definitions=None, preset_definitions=None, description=None):
+    if callable(name):
+        check.invariant(description is None)
+        return _Pipeline()(name)
+
+    return _Pipeline(
+        name=name,
+        mode_definitions=mode_definitions,
+        preset_definitions=preset_definitions,
+        description=description,
+    )

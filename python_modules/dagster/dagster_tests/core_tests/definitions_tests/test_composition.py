@@ -12,6 +12,7 @@ from dagster import (
     lambda_solid,
     solid,
     composite_solid,
+    pipeline,
 )
 
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -325,16 +326,24 @@ class Garbage(Exception):
 
 
 def test_rescursion_with_exceptions():
-    @composite_solid
-    def outer(context):
-        try:
+    called = {}
 
-            @composite_solid
-            def throws(_context):
-                raise Garbage()
+    @pipeline
+    def recurse(context):
+        @composite_solid
+        def outer(context):
+            try:
 
-            throws(context)
-        except Garbage:
-            add_one(return_one())
+                @composite_solid
+                def throws(_context):
+                    called['throws'] = True
+                    raise Garbage()
 
-    assert execute_pipeline(PipelineDefinition(solids=[outer])).success
+                throws(context)
+            except Garbage:
+                add_one(return_one())
+
+        outer(context)
+
+    assert execute_pipeline(recurse).success
+    assert called['throws'] is True

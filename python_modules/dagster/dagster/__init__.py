@@ -25,6 +25,7 @@ from dagster.core.definitions.decorators import (
     lambda_solid,
     solid,
     composite_solid,
+    pipeline,
 )
 from dagster.core.definitions.logger import logger, LoggerDefinition
 from dagster.core.definitions.resource import resource, ResourceDefinition
@@ -125,6 +126,7 @@ __all__ = [
     'resource',
     'solid',
     'composite_solid',
+    'pipeline',
     'MultipleResults',
     # Execution
     'execute_pipeline_iterator',
