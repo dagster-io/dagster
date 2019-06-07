@@ -9,6 +9,7 @@ from dagster import (
     PresetDefinition,
     SolidInstance,
     String,
+    composite_solid,
     file_relative_path,
 )
 
@@ -72,34 +73,19 @@ prod_mode = ModeDefinition(
     },
 )
 
-process_on_time_data = CompositeSolidDefinition(
-    name='process_on_time_data',
-    solids=[s3_to_df, join_q2_data, load_data_to_database_from_spark],
-    dependencies={
-        SolidInstance('s3_to_df', alias='april_on_time_s3_to_df'): {},
-        SolidInstance('s3_to_df', alias='may_on_time_s3_to_df'): {},
-        SolidInstance('s3_to_df', alias='june_on_time_s3_to_df'): {},
-        SolidInstance('s3_to_df', alias='master_cord_s3_to_df'): {},
-        'join_q2_data': {
-            'april_data': DependencyDefinition('april_on_time_s3_to_df'),
-            'may_data': DependencyDefinition('may_on_time_s3_to_df'),
-            'june_data': DependencyDefinition('june_on_time_s3_to_df'),
-            'master_cord_data': DependencyDefinition('master_cord_s3_to_df'),
-        },
-        SolidInstance('load_data_to_database_from_spark', alias='load_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('join_q2_data')
-        },
-    },
-    output_mappings=[
-        OutputDefinition(
-            name='table_name',
-            dagster_type=String,
-            description='''
-        The name of table created during loading.
-        ''',
-        ).mapping_from(solid_name='load_q2_on_time_data', output_name='table_name')
-    ],
-)
+
+@composite_solid(outputs=[OutputDefinition(name='table_name', dagster_type=String)])
+def process_on_time_data(context):
+    return load_data_to_database_from_spark.alias('load_q2_on_time_data')(
+        data_frame=join_q2_data(
+            context,
+            april_data=s3_to_df.alias('april_on_time_s3_to_df')(),
+            may_data=s3_to_df.alias('may_on_time_s3_to_df')(),
+            june_data=s3_to_df.alias('june_on_time_s3_to_df')(),
+            master_cord_data=s3_to_df.alias('master_cord_s3_to_df')(),
+        )
+    )
+
 
 sfo_weather_data = CompositeSolidDefinition(
     name='sfo_weather_data',
