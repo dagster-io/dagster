@@ -144,8 +144,6 @@ def dagster_event_from_dict(event_dict, pipeline_name):
     check.dict_param(event_dict, 'event_dict', key_type=str)
     check.str_param(pipeline_name, 'pipeline_name')
 
-    materialization = event_dict.get('intermediateMaterialization') or {}
-
     # Get event_type
     event_type = _handled_events().get(event_dict['__typename'])
     if not event_type:
@@ -154,13 +152,15 @@ def dagster_event_from_dict(event_dict, pipeline_name):
     # Get event_specific_data
     event_specific_data = None
     if event_type == DagsterEventType.STEP_OUTPUT:
+        intermediate_materialization = event_dict.get('intermediateMaterialization', {})
         event_specific_data = StepOutputData(
             step_output_handle=StepOutputHandle(
                 event_dict['step']['key'], event_dict['outputName']
             ),
             value_repr=event_dict['valueRepr'],
             intermediate_materialization=Materialization(
-                path=materialization.get('path'), description=materialization.get('description')
+                path=intermediate_materialization.get('path'),
+                description=intermediate_materialization.get('description'),
             ),
         )
 
@@ -168,6 +168,7 @@ def dagster_event_from_dict(event_dict, pipeline_name):
         event_specific_data = StepSuccessData(0.0)
 
     elif event_type == DagsterEventType.STEP_MATERIALIZATION:
+        materialization = event_dict.get('materialization', {})
         event_specific_data = StepMaterializationData(
             materialization=Materialization(
                 path=materialization.get('path'), description=materialization.get('description')
