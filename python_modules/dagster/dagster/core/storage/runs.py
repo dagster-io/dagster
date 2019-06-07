@@ -142,6 +142,7 @@ class InMemoryRunStorage(RunStorage):
         return False
 
 
+# TODO eliminate once type plugin system migrated to system storage
 class RunStorageMode(Enum):
     IN_MEMORY = 'IN_MEMORY'
     FILESYSTEM = 'FILESYSTEM'
@@ -153,35 +154,9 @@ class RunStorageMode(Enum):
 
         if mode == 'filesystem':
             return RunStorageMode.FILESYSTEM
-        elif mode == 'in_memory':
-            return RunStorageMode.IN_MEMORY
         elif mode == 's3':
             return RunStorageMode.S3
-        elif mode is None:
+        elif mode == 'in_memory' or mode is None:
             return RunStorageMode.IN_MEMORY
         else:
             raise DagsterInvariantViolationError('Invalid storage specified {}'.format(mode))
-
-
-def construct_run_storage(run_storage_mode):
-    '''
-    Construct the run storage for this pipeline. Our rules are the following:
-
-    If the RunConfig has a storage_mode provided, we use that.
-
-    Then we fallback to environment config.
-
-    If there is no config, we default to in memory storage. This is mostly so
-    that tests default to in-memory.
-    '''
-    check.inst_param(run_storage_mode, 'run_storage_mode', RunStorageMode)
-
-    if run_storage_mode == RunStorageMode.FILESYSTEM:
-        return FileSystemRunStorage()
-    elif run_storage_mode == RunStorageMode.IN_MEMORY:
-        return InMemoryRunStorage()
-    elif run_storage_mode == RunStorageMode.S3:
-        # TODO: Revisit whether we want to use S3 run storage
-        return FileSystemRunStorage()
-    else:
-        check.failed('Unexpected enum {}'.format(run_storage_mode))

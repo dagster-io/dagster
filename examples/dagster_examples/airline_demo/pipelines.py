@@ -11,6 +11,7 @@ from dagster import (
 )
 
 from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 from dagster_aws.s3.solids import put_object_to_s3_bytes, download_from_s3_to_bytes
 
 from .resources import (
@@ -46,6 +47,7 @@ test_mode = ModeDefinition(
         'tempfile': tempfile_resource,
         's3': s3_resource,
     },
+    system_storage_defs=s3_plus_default_storage_defs(),
 )
 
 
@@ -57,6 +59,7 @@ local_mode = ModeDefinition(
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
     },
+    system_storage_defs=s3_plus_default_storage_defs(),
 )
 
 
@@ -68,6 +71,7 @@ prod_mode = ModeDefinition(
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
     },
+    system_storage_defs=s3_plus_default_storage_defs(),
 )
 
 

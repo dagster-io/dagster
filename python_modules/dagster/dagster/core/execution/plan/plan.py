@@ -6,6 +6,7 @@ from dagster.core.definitions import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
+    ModeDefinition,
     Solid,
     SolidDefinition,
     SolidHandle,
@@ -36,11 +37,12 @@ class _PlanBuilder:
     execution.
     '''
 
-    def __init__(self, pipeline_def, environment_config):
+    def __init__(self, pipeline_def, environment_config, mode_definition):
         self.pipeline_def = check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         self.environment_config = check.inst_param(
             environment_config, 'environment_config', EnvironmentConfig
         )
+        self.mode_definition = check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
         self.steps = []
         self.step_output_map = dict()
         self.seen_keys = set()
@@ -92,12 +94,11 @@ class _PlanBuilder:
 
         step_dict = {step.key: step for step in self.steps}
 
-        return ExecutionPlan(
-            self.pipeline_def,
-            step_dict,
-            deps,
-            self.environment_config.storage.construct_run_storage().is_persistent,
+        system_storage_def = self.mode_definition.get_system_storage_def(
+            self.environment_config.storage.storage_mode
         )
+
+        return ExecutionPlan(self.pipeline_def, step_dict, deps, system_storage_def.is_persistent)
 
     def _build_from_sorted_solids(
         self, solids, dependency_structure, parent_handle=None, parent_step_inputs=None
@@ -334,7 +335,7 @@ class ExecutionPlan(
         ]
 
     @staticmethod
-    def build(pipeline_def, environment_config):
+    def build(pipeline_def, environment_config, mode_definition):
         '''Here we build a new ExecutionPlan from a pipeline definition and the environment config.
 
         To do this, we iterate through the pipeline's solids in topological order, and hand off the
@@ -346,7 +347,7 @@ class ExecutionPlan(
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
 
-        plan_builder = _PlanBuilder(pipeline_def, environment_config)
+        plan_builder = _PlanBuilder(pipeline_def, environment_config, mode_definition)
 
         # Finally, we build and return the execution plan
         return plan_builder.build()

@@ -101,14 +101,13 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
     check.dict_param(inputs, 'inputs', key_type=six.string_types)
 
     run_id = compute_context.run_id
-    mode = compute_context.mode
 
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
     mkdir_p(marshal_dir)
 
     dm_context_dict = {
         'run_id': run_id,
-        'mode': mode,
+        'mode': compute_context.mode_def.name,
         'pipeline_name': compute_context.pipeline_def.name,
         'solid_def_name': compute_context.solid_def.name,
         'marshal_dir': marshal_dir,

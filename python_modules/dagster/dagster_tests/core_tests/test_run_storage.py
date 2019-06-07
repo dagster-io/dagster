@@ -5,12 +5,11 @@ import tempfile
 import time
 import shutil
 
-from dagster import PipelineDefinition, solid, RunConfig, execute_pipeline
+from dagster import PipelineDefinition, solid, execute_pipeline
 from dagster.core.storage.runs import (
     DagsterRunMeta,
     FileSystemRunStorage,
     InMemoryRunStorage,
-    RunStorageMode,
     base_run_directory,
 )
 
@@ -32,9 +31,7 @@ def test_filesystem_run_storage_from_run_config():
 
     pipeline = PipelineDefinition(name='filesystem_run_storage_test', solids=[check_run_storage])
 
-    result = execute_pipeline(
-        pipeline, run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM)
-    )
+    result = execute_pipeline(pipeline, {'storage': {'filesystem': {}}})
 
     assert result.success
 

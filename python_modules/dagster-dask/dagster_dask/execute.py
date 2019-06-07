@@ -3,7 +3,7 @@ import itertools
 import dask
 import dask.distributed
 
-from dagster import check, ExecutionTargetHandle, RunConfig, RunStorageMode
+from dagster import check, ExecutionTargetHandle, RunConfig
 
 from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.results import PipelineExecutionResult
@@ -118,9 +118,7 @@ def execute_on_dask(
 
     env_config = check.opt_dict_param(env_config, 'env_config', key_type=str)
     dask_config = check.opt_inst_param(dask_config, 'dask_config', DaskConfig, DaskConfig())
-    run_config = check.opt_inst_param(
-        run_config, 'run_config', RunConfig, RunConfig(storage_mode=RunStorageMode.FILESYSTEM)
-    )
+    run_config = check.opt_inst_param(run_config, 'run_config', RunConfig, RunConfig())
     pipeline = handle.build_pipeline_definition()
     mode = check.opt_str_param(mode, 'mode', pipeline.get_default_mode_name())
 
@@ -206,5 +204,6 @@ def execute_on_dask(
                     env_config,
                     run_config,
                     intermediates_manager=pipeline_context.intermediates_manager,
+                    run_storage=pipeline_context.run_storage,
                 ),
             )

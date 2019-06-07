@@ -1,22 +1,28 @@
 from dagster.core import types
 
 from dagster.core.definitions import (
-    ExecutionTargetHandle,
+    CompositeSolidDefinition,
     DependencyDefinition,
-    MultiDependencyDefinition,
+    ExecutionTargetHandle,
     ExpectationDefinition,
     ExpectationResult,
     InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    RepositoryDefinition,
-    Result,
+    LoggerDefinition,
     Materialization,
     ModeDefinition,
-    SolidDefinition,
-    CompositeSolidDefinition,
-    SolidInstance,
+    MultiDependencyDefinition,
+    OutputDefinition,
+    PipelineDefinition,
     PresetDefinition,
+    RepositoryDefinition,
+    ResourceDefinition,
+    Result,
+    SolidDefinition,
+    SolidInstance,
+    SystemStorageDefinition,
+    SystemStoragePluginData,
+    logger,
+    resource,
 )
 
 # These specific imports are to avoid circular import issues
@@ -27,8 +33,6 @@ from dagster.core.definitions.decorators import (
     composite_solid,
     pipeline,
 )
-from dagster.core.definitions.logger import logger, LoggerDefinition
-from dagster.core.definitions.resource import resource, ResourceDefinition
 
 from dagster.core.events import DagsterEventType
 
@@ -62,6 +66,7 @@ from dagster.core.errors import (
     DagsterStepOutputNotFoundError,
 )
 
+from dagster.core.storage.init import InitSystemStorageContext
 from dagster.core.storage.runs import RunStorageMode
 
 from dagster.core.types import (
@@ -120,6 +125,7 @@ __all__ = [
     'Result',
     'SolidDefinition',
     'SolidInstance',
+    'SystemStorageDefinition',
     # Decorators
     'lambda_solid',
     'logger',
@@ -134,6 +140,7 @@ __all__ = [
     'DagsterEventType',
     'InitLoggerContext',
     'InitResourceContext',
+    'InitSystemStorageContext',
     'InProcessExecutorConfig',
     'MultiprocessExecutorConfig',
     'PipelineConfigEvaluationError',
@@ -141,6 +148,7 @@ __all__ = [
     'RunConfig',
     'RunStorageMode',
     'SolidExecutionResult',
+    'SystemStoragePluginData',
     # Errors
     'DagsterEvaluateConfigValueError',
     'DagsterExecutionStepExecutionError',

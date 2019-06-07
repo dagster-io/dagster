@@ -1,11 +1,12 @@
+from abc import ABCMeta, abstractproperty
+from collections import namedtuple
+
 import multiprocessing
 
-from collections import namedtuple
+import six
 
 from dagster import check
 from dagster.utils import merge_dicts
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.storage.runs import RunStorageMode
 from dagster.core.utils import make_new_run_id
 
 
@@ -13,7 +14,7 @@ class RunConfig(
     namedtuple(
         '_RunConfig',
         (
-            'run_id tags event_callback loggers executor_config storage_mode reexecution_config '
+            'run_id tags event_callback loggers executor_config reexecution_config '
             'step_keys_to_execute mode'
         ),
     )
@@ -42,20 +43,10 @@ class RunConfig(
         event_callback=None,
         loggers=None,
         executor_config=None,
-        storage_mode=None,
         reexecution_config=None,
         step_keys_to_execute=None,
         mode=None,
     ):
-        if (
-            isinstance(executor_config, MultiprocessExecutorConfig)
-            and storage_mode is RunStorageMode.IN_MEMORY
-        ):
-            raise DagsterInvariantViolationError(
-                'Can not create a RunConfig with executor_config MultiProcessExecutorConfig and '
-                'storage_mode RunStorageMode.IN_MEMORY'
-            )
-
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
         return super(RunConfig, cls).__new__(
@@ -67,7 +58,6 @@ class RunConfig(
             executor_config=check.inst_param(executor_config, 'executor_config', ExecutorConfig)
             if executor_config
             else InProcessExecutorConfig(),
-            storage_mode=check.opt_inst_param(storage_mode, 'storage_mode', RunStorageMode),
             reexecution_config=check.opt_inst_param(
                 reexecution_config, 'reexecution_config', ReexecutionConfig
             ),
@@ -84,13 +74,19 @@ class RunConfig(
         return RunConfig(**merge_dicts(self._asdict(), {'tags': new_tags}))
 
 
-class ExecutorConfig:
-    pass
+class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    @abstractproperty
+    def requires_persistent_storage(self):
+        raise NotImplementedError()
 
 
 class InProcessExecutorConfig(ExecutorConfig):
     def __init__(self, raise_on_error=True):
         self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
+
+    @property
+    def requires_persistent_storage(self):
+        return False
 
 
 class MultiprocessExecutorConfig(ExecutorConfig):
@@ -105,6 +101,10 @@ class MultiprocessExecutorConfig(ExecutorConfig):
         self.max_concurrent = check.int_param(max_concurrent, 'max_concurrent')
         check.invariant(self.max_concurrent > 0, 'max_concurrent processes must be greater than 0')
         self.raise_on_error = False
+
+    @property
+    def requires_persistent_storage(self):
+        return True
 
 
 class ReexecutionConfig:

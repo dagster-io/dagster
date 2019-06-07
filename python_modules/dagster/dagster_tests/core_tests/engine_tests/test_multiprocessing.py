@@ -1,4 +1,7 @@
+import pytest
+
 from dagster import (
+    DagsterInvariantViolationError,
     DependencyDefinition,
     ExecutionTargetHandle,
     InProcessExecutorConfig,
@@ -9,8 +12,6 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
 )
-
-from dagster.core.storage.runs import RunStorageMode
 
 
 def test_diamond_simple_execution():
@@ -29,18 +30,16 @@ def test_diamond_multi_execution():
     pipeline = define_diamond_pipeline()
     result = execute_pipeline(
         pipeline,
+        environment_dict={'storage': {'filesystem': {}}},
         run_config=RunConfig(
             executor_config=MultiprocessExecutorConfig(
                 ExecutionTargetHandle.for_pipeline_fn(define_diamond_pipeline)
-            ),
-            storage_mode=RunStorageMode.FILESYSTEM,
+            )
         ),
     )
     assert result.success
 
-    # FIXME: be able to get this value
-    # https://github.com/dagster-io/dagster/issues/953
-    # assert result.result_for_solid('adder').result_value() == 11
+    assert result.result_for_solid('adder').result_value() == 11
 
     pids_by_solid = {}
     for solid in pipeline.solids:
@@ -105,8 +104,30 @@ def test_error_pipeline_multiprocess():
         run_config=RunConfig(
             executor_config=MultiprocessExecutorConfig(
                 ExecutionTargetHandle.for_pipeline_fn(define_error_pipeline)
-            ),
-            storage_mode=RunStorageMode.FILESYSTEM,
+            )
         ),
+        environment_dict={'storage': {'filesystem': {}}},
     )
     assert not result.success
+
+
+def test_mem_storage_error_pipeline_multiprocess():
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        execute_pipeline(
+            define_diamond_pipeline(),
+            run_config=RunConfig(
+                executor_config=MultiprocessExecutorConfig(
+                    ExecutionTargetHandle.for_pipeline_fn(define_error_pipeline)
+                )
+            ),
+        )
+
+    assert (
+        'While invoking '
+        'pipeline diamond_execution. You have attempted to use the '
+        'multiprocessing executor while using system storage in_memory '
+        'which does not persist intermediates. This means there would '
+        'be no way to move data between different processes. Please '
+        'configure your pipeline in the storage config section to use '
+        'persistent system storage such as the filesystem.'
+    ) in str(exc_info.value)

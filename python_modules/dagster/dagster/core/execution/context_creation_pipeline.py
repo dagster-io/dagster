@@ -9,8 +9,10 @@ from dagster import check
 from dagster.core.definitions import PipelineDefinition, create_environment_type
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import SolidResourcesBuilder
+from dagster.core.definitions.system_storage import SystemStorageDefinition
 from dagster.core.errors import (
     DagsterError,
+    DagsterInvariantViolationError,
     DagsterUserCodeExecutionError,
     DagsterResourceFunctionError,
     user_code_error_boundary,
@@ -18,16 +20,10 @@ from dagster.core.errors import (
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
 from dagster.core.events.log import construct_event_logger
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.intermediates_manager import (
-    construct_intermediates_manager,
-    IntermediatesManager,
-)
-from dagster.core.storage.runs import (
-    construct_run_storage,
-    DagsterRunMeta,
-    RunStorage,
-    RunStorageMode,
-)
+from dagster.core.storage.init import InitSystemStorageContext
+from dagster.core.storage.intermediates_manager import IntermediatesManager
+from dagster.core.storage.runs import DagsterRunMeta, RunStorage, RunStorageMode
+from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import (
     EvaluationError,
@@ -82,27 +78,6 @@ def create_environment_config(pipeline, environment_dict=None, mode=None):
     return EnvironmentConfig.from_dict(result.value)
 
 
-def create_run_storage(pipeline_def, environment_config, run_config):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
-    check.inst_param(run_config, 'run_config', RunConfig)
-
-    # The run storage mode will be provided by RunConfig or from the "storage" field in the user's
-    # environment config, with preference given to the former if provided.
-    storage_mode = run_config.storage_mode or RunStorageMode.from_environment_config(
-        environment_config.storage.storage_mode
-    )
-
-    run_storage = construct_run_storage(storage_mode)
-
-    run_storage.write_dagster_run_meta(
-        DagsterRunMeta(
-            run_id=run_config.run_id, timestamp=time.time(), pipeline_name=pipeline_def.name
-        )
-    )
-    return run_storage
-
-
 @contextmanager
 def create_resource_builder(pipeline_def, environment_config, run_config, log_manager):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
@@ -115,12 +90,46 @@ def create_resource_builder(pipeline_def, environment_config, run_config, log_ma
     resources_stack.teardown()
 
 
+def construct_system_storage_data(storage_init_context):
+    return storage_init_context.system_storage_def.system_storage_creation_fn(storage_init_context)
+
+
+def system_storage_def_from_config(mode_definition, environment_config):
+    for system_storage_def in mode_definition.system_storage_defs:
+        if system_storage_def.name == environment_config.storage.storage_mode:
+            return system_storage_def
+
+    check.failed(
+        'Could not find storage mode {}. Should have be caught by config system'.format(
+            environment_config.storage.storage_mode
+        )
+    )
+
+
+def check_persistent_storage_requirement(pipeline_def, system_storage_def, run_config):
+    if (
+        run_config.executor_config.requires_persistent_storage
+        and not system_storage_def.is_persistent
+    ):
+        raise DagsterInvariantViolationError(
+            (
+                'While invoking pipeline {pipeline_name}. You have attempted '
+                'to use the multiprocessing executor while using system '
+                'storage {storage_name} which does not persist intermediates. '
+                'This means there would be no way to move data between different '
+                'processes. Please configure your pipeline in the storage config '
+                'section to use persistent system storage such as the filesystem.'
+            ).format(pipeline_name=pipeline_def.name, storage_name=system_storage_def.name)
+        )
+
+
 @contextmanager
 def scoped_pipeline_context(
     pipeline_def,
     environment_dict,
     run_config,
     intermediates_manager=None,
+    run_storage=None,
     solid_resources_builder_cm=create_resource_builder,
 ):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
@@ -132,30 +141,59 @@ def scoped_pipeline_context(
         pipeline_def, environment_dict, mode=run_config.mode
     )
 
-    storage_mode = run_config.storage_mode or RunStorageMode.from_environment_config(
-        environment_config.storage.storage_mode
+    check.invariant(
+        (intermediates_manager and run_storage)
+        or (intermediates_manager is None and run_storage is None),
+        'Must override both manager and run storage or not at all',
     )
 
-    run_storage = create_run_storage(pipeline_def, environment_config, run_config)
+    mode_def = pipeline_def.get_mode_definition(run_config.mode)
+    system_storage_def = system_storage_def_from_config(mode_def, environment_config)
 
-    intermediates_manager = intermediates_manager or construct_intermediates_manager(
-        storage_mode, run_config.run_id, environment_config, pipeline_def
-    )
+    check_persistent_storage_requirement(pipeline_def, system_storage_def, run_config)
 
     try:
-        log_manager = create_log_manager(
-            environment_config,
-            run_config,
-            pipeline_def,
-            pipeline_def.get_mode_definition(run_config.mode),
-        )
+        log_manager = create_log_manager(environment_config, run_config, pipeline_def, mode_def)
 
         with solid_resources_builder_cm(
             pipeline_def, environment_config, run_config, log_manager
         ) as solid_resources_builder:
+
+            if not (run_storage and intermediates_manager):
+                system_storage_data = construct_system_storage_data(
+                    InitSystemStorageContext(
+                        pipeline_def=pipeline_def,
+                        mode_def=mode_def,
+                        system_storage_def=system_storage_def,
+                        system_storage_config=environment_config.storage.storage_config,
+                        run_config=run_config,
+                        environment_config=environment_config,
+                        type_storage_plugin_registry=construct_type_storage_plugin_registry(
+                            pipeline_def,
+                            # TODO eliminate once type plugin system migrated to system storage
+                            RunStorageMode.from_environment_config(
+                                environment_config.storage.storage_mode
+                            ),
+                        ),
+                        solid_resources_builder=solid_resources_builder,
+                    )
+                )
+                run_storage, intermediates_manager = (
+                    system_storage_data.run_storage,
+                    system_storage_data.intermediates_manager,
+                )
+
+            run_storage.write_dagster_run_meta(
+                DagsterRunMeta(
+                    run_id=run_config.run_id, timestamp=time.time(), pipeline_name=pipeline_def.name
+                )
+            )
+
             yield construct_pipeline_execution_context(
                 run_config=run_config,
                 pipeline_def=pipeline_def,
+                mode_def=mode_def,
+                system_storage_def=system_storage_def,
                 solid_resources_builder=solid_resources_builder,
                 environment_config=environment_config,
                 run_storage=run_storage,
@@ -186,6 +224,8 @@ def scoped_pipeline_context(
 def construct_pipeline_execution_context(
     run_config,
     pipeline_def,
+    mode_def,
+    system_storage_def,
     solid_resources_builder,
     environment_config,
     run_storage,
@@ -194,6 +234,8 @@ def construct_pipeline_execution_context(
 ):
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(pipeline_def, 'pipeline', PipelineDefinition)
+    check.inst_param(mode_def, 'mode_def', ModeDefinition)
+    check.inst_param(system_storage_def, 'system_storage_def', SystemStorageDefinition)
     solid_resources_builder = check.opt_inst_param(
         solid_resources_builder,
         'solid_resources_builder',
@@ -211,6 +253,8 @@ def construct_pipeline_execution_context(
     return SystemPipelineExecutionContext(
         SystemPipelineExecutionContextData(
             pipeline_def=pipeline_def,
+            mode_def=mode_def,
+            system_storage_def=system_storage_def,
             run_config=run_config,
             solid_resources_builder=solid_resources_builder,
             environment_config=environment_config,

@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.definitions import SolidHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector, String
+from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector
 from dagster.core.types.config import ALL_CONFIG_BUILTINS, ConfigType, ConfigTypeAttributes
 from dagster.core.types.default_applier import apply_default_values
 from dagster.core.types.field_utils import FieldImpl, check_opt_field_param
@@ -172,7 +172,11 @@ def define_environment_cls(creation_data):
                 ),
                 'storage': Field(
                     define_storage_config_cls(
-                        '{pipeline_name}.StorageConfig'.format(pipeline_name=pipeline_name)
+                        '{pipeline_name}.{mode_name}.StorageConfig'.format(
+                            pipeline_name=pipeline_name,
+                            mode_name=camelcase(creation_data.mode_definition.name),
+                        ),
+                        creation_data.mode_definition,
                     ),
                     is_optional=True,
                 ),
@@ -205,31 +209,23 @@ def define_expectations_config_cls(name):
     )
 
 
-def define_storage_config_cls(name):
-    check.str_param(name, 'name')
+def define_storage_config_cls(type_name, mode_definition):
+    check.str_param(type_name, 'type_name')
+    check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
 
-    return SystemNamedSelector(
-        name,
-        {
-            'in_memory': Field(
-                SystemNamedDict('{parent_name}.InMem'.format(parent_name=name), {}),
-                is_optional=True,
-            ),
-            'filesystem': Field(
-                SystemNamedDict(
-                    '{parent_name}.Files'.format(parent_name=name),
-                    {'base_dir': Field(String, is_optional=True)},
+    fields = {}
+
+    for storage_def in mode_definition.system_storage_defs:
+        fields[storage_def.name] = Field(
+            SystemNamedDict(
+                name='{type_name}.{storage_name}'.format(
+                    type_name=type_name, storage_name=camelcase(storage_def.name)
                 ),
-                is_optional=True,
-            ),
-            's3': Field(
-                SystemNamedDict(
-                    '{parent_name}.S3'.format(parent_name=name), {'s3_bucket': Field(String)}
-                ),
-                is_optional=True,
-            ),
-        },
-    )
+                fields={'config': storage_def.config_field} if storage_def.config_field else {},
+            )
+        )
+
+    return SystemNamedSelector(type_name, fields)
 
 
 def get_inputs_field(solid, handle, dependency_structure, pipeline_name):

@@ -11,6 +11,7 @@ from dagster.utils import merge_dicts
 
 from dagster.core.definitions.expectation import ExpectationDefinition
 from dagster.core.definitions.input import InputDefinition
+from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.resource import SolidResourcesBuilder
 from dagster.core.log_manager import DagsterLogManager
@@ -25,7 +26,7 @@ class SystemPipelineExecutionContextData(
         '_SystemPipelineExecutionContextData',
         (
             'run_config solid_resources_builder environment_config pipeline_def '
-            'run_storage intermediates_manager'
+            'mode_def system_storage_def run_storage intermediates_manager'
         ),
     )
 ):
@@ -40,10 +41,13 @@ class SystemPipelineExecutionContextData(
         solid_resources_builder,
         environment_config,
         pipeline_def,
+        mode_def,
+        system_storage_def,
         run_storage,
         intermediates_manager,
     ):
         from dagster.core.definitions import PipelineDefinition
+        from dagster.core.definitions.system_storage import SystemStorageDefinition
         from dagster.core.storage.intermediates_manager import IntermediatesManager
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
@@ -56,6 +60,10 @@ class SystemPipelineExecutionContextData(
                 environment_config, 'environment_config', EnvironmentConfig
             ),
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+            mode_def=check.inst_param(mode_def, 'mode_def', ModeDefinition),
+            system_storage_def=check.inst_param(
+                system_storage_def, 'system_storage_def', SystemStorageDefinition
+            ),
             run_storage=check.inst_param(run_storage, 'run_storage', RunStorage),
             intermediates_manager=check.inst_param(
                 intermediates_manager, 'intermediates_manager', IntermediatesManager
@@ -143,6 +151,14 @@ class SystemPipelineExecutionContext(object):
         return self._pipeline_context_data.pipeline_def
 
     @property
+    def mode_def(self):
+        return self._pipeline_context_data.mode_def
+
+    @property
+    def system_storage_def(self):
+        return self._pipeline_context_data.system_storage_def
+
+    @property
     def event_callback(self):
         return self._pipeline_context_data.event_callback
 
@@ -208,10 +224,6 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
     @property
     def resources(self):
         return self._resources
-
-    @property
-    def mode(self):
-        return self._pipeline_context_data.run_config.mode
 
 
 class SystemComputeExecutionContext(SystemStepExecutionContext):

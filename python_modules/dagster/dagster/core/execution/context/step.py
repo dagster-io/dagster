@@ -30,6 +30,10 @@ class StepExecutionContext(object):
         return self._system_step_execution_context.pipeline_def
 
     @property
+    def mode_def(self):
+        return self._system_step_execution_context.mode_def
+
+    @property
     def log(self):
         return self._system_step_execution_context.log
 

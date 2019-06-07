@@ -1,3 +1,4 @@
 storage:
   filesystem:
-    base_dir: /tmp
+    config:
+      base_dir: /tmp

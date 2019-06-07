@@ -24,17 +24,19 @@ from .events import ExpectationResult, Result, Materialization
 
 from .input import InputDefinition, InputMapping
 
-from .logger import LoggerDefinition
+from .logger import LoggerDefinition, logger
 
 from .output import OutputDefinition, OutputMapping
 
-from .resource import ResourceDefinition
+from .resource import ResourceDefinition, resource
 
 from .mode import ModeDefinition
 
 from .repository import RepositoryDefinition
 
 from .pipeline import PipelineDefinition
+
+from .system_storage import SystemStorageDefinition, SystemStoragePluginData
 
 from .container import solids_in_topological_order, create_execution_structure, IContainSolids
 

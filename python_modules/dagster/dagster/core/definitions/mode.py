@@ -15,11 +15,22 @@ class ModeDefinition:
     Args:
         name (Optional[str]): The name of the mode, defaults to 'default'.
         resources (Optional[List[ResourceDefinition]]): The set of resources for this mode.
-        loggers (Optiona[List[LoggerDefinition]]): The set of loggers to use in this mode.
+        loggers (Optional[List[LoggerDefinition]]): The set of loggers to use in this mode.
+        system_storage_defs (Optional[List[SystemStorageDefinition]]): The set of system storage
+            options available when executing in this mode. Defaults to 'in_memory' and 'filesystem'.
         description (Optional[str])
     '''
 
-    def __init__(self, name=DEFAULT_MODE_NAME, resources=None, loggers=None, description=None):
+    def __init__(
+        self,
+        name=DEFAULT_MODE_NAME,
+        resources=None,
+        loggers=None,
+        system_storage_defs=None,
+        description=None,
+    ):
+        from .system_storage import SystemStorageDefinition, mem_system_storage, fs_system_storage
+
         self.name = check.str_param(name, 'name')
         self.resource_defs = check.opt_dict_param(
             resources, 'resources', key_type=str, value_type=ResourceDefinition
@@ -28,4 +39,19 @@ class ModeDefinition:
             check.opt_dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition)
             or default_loggers()
         )
+        self.system_storage_defs = check.list_param(
+            system_storage_defs
+            if system_storage_defs
+            else [mem_system_storage(), fs_system_storage()],
+            'system_storage_def',
+            of_type=SystemStorageDefinition,
+        )
         self.description = check.opt_str_param(description, 'description')
+
+    def get_system_storage_def(self, name):
+        check.str_param(name, 'name')
+        for system_storage_def in self.system_storage_defs:
+            if system_storage_def.name == name:
+                return system_storage_def
+
+        check.failed('{} storage definition not found'.format(name))

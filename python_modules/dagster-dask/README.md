@@ -19,7 +19,6 @@ For distributed execution on a Dask cluster, you'll just need to provide a `Dask
 execute_on_dask(
     ExecutionTargetHandle.for_pipeline_fn(define_pipeline),
     env_config={'storage': {'s3': {}}},
-    run_config=RunConfig(storage_mode=RunStorageMode.S3),
     dask_config=DaskConfig(address='dask_scheduler.dns-name:8787')
 )
 ```

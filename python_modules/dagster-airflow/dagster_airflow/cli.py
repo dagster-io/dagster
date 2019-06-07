@@ -22,7 +22,7 @@ def _construct_yml(environment_yaml_file, dag_name):
 
     if 'storage' not in environment_dict:
         environment_dict['storage'] = {
-            'filesystem': {'base_dir': '/tmp/dagster-airflow/{}'.format(dag_name)}
+            'filesystem': {'config': {'base_dir': '/tmp/dagster-airflow/{}'.format(dag_name)}}
         }
 
     # See http://bit.ly/309sTOu

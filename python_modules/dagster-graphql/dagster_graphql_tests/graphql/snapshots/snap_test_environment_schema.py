@@ -81,6 +81,9 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': None
             },
             {
+                'name': None
+            },
+            {
                 'name': 'Any'
             },
             {
@@ -117,6 +120,15 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'Int.MaterializationSchema'
             },
             {
+                'name': 'MultiModeWithResources.AddMode.StorageConfig'
+            },
+            {
+                'name': 'MultiModeWithResources.AddMode.StorageConfig.Filesystem'
+            },
+            {
+                'name': 'MultiModeWithResources.AddMode.StorageConfig.InMemory'
+            },
+            {
                 'name': 'MultiModeWithResources.ApplyToThree.Outputs'
             },
             {
@@ -142,18 +154,6 @@ snapshots['test_successful_enviroment_schema 1'] = {
             },
             {
                 'name': 'MultiModeWithResources.SolidsConfigDictionary'
-            },
-            {
-                'name': 'MultiModeWithResources.StorageConfig'
-            },
-            {
-                'name': 'MultiModeWithResources.StorageConfig.Files'
-            },
-            {
-                'name': 'MultiModeWithResources.StorageConfig.InMem'
-            },
-            {
-                'name': 'MultiModeWithResources.StorageConfig.S3'
             },
             {
                 'name': 'Path'
@@ -218,7 +218,7 @@ snapshots['test_basic_invalid_config_on_environment_schema 1'] = {
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Field "nope" is not defined at document config root. Expected: "{ execution?: CsvHelloWorld.ExecutionConfig expectations?: CsvHelloWorld.ExpectationsConfig loggers?: CsvHelloWorld.LoggerConfig resources?: CsvHelloWorld.Mode.Default.Resources solids: CsvHelloWorld.SolidsConfigDictionary storage?: CsvHelloWorld.StorageConfig }"',
+                    'message': 'Field "nope" is not defined at document config root. Expected: "{ execution?: CsvHelloWorld.ExecutionConfig expectations?: CsvHelloWorld.ExpectationsConfig loggers?: CsvHelloWorld.LoggerConfig resources?: CsvHelloWorld.Mode.Default.Resources solids: CsvHelloWorld.SolidsConfigDictionary storage?: CsvHelloWorld.Default.StorageConfig }"',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [

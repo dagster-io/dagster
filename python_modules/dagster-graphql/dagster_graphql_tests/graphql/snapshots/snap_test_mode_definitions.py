@@ -98,6 +98,9 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': None
             },
             {
+                'name': None
+            },
+            {
                 'name': 'Float'
             },
             {
@@ -114,6 +117,15 @@ snapshots['test_query_multi_mode 1'] = {
             },
             {
                 'name': 'Int.MaterializationSchema'
+            },
+            {
+                'name': 'MultiModeWithResources.AddMode.StorageConfig'
+            },
+            {
+                'name': 'MultiModeWithResources.AddMode.StorageConfig.Filesystem'
+            },
+            {
+                'name': 'MultiModeWithResources.AddMode.StorageConfig.InMemory'
             },
             {
                 'name': 'MultiModeWithResources.ApplyToThree.Outputs'
@@ -141,18 +153,6 @@ snapshots['test_query_multi_mode 1'] = {
             },
             {
                 'name': 'MultiModeWithResources.SolidsConfigDictionary'
-            },
-            {
-                'name': 'MultiModeWithResources.StorageConfig'
-            },
-            {
-                'name': 'MultiModeWithResources.StorageConfig.Files'
-            },
-            {
-                'name': 'MultiModeWithResources.StorageConfig.InMem'
-            },
-            {
-                'name': 'MultiModeWithResources.StorageConfig.S3'
             },
             {
                 'name': 'Path'
@@ -202,7 +202,7 @@ snapshots['test_query_multi_mode 1'] = {
                 },
                 {
                     'configType': {
-                        'name': 'MultiModeWithResources.StorageConfig'
+                        'name': 'MultiModeWithResources.AddMode.StorageConfig'
                     }
                 }
             ],

@@ -14,6 +14,8 @@ from dagster import (
     solid,
 )
 
+from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+
 
 @solid(inputs=[InputDefinition('word', String)], config_field=Field(Dict({'factor': Field(Int)})))
 def multiply_the_word(context, word):
@@ -38,7 +40,7 @@ def define_demo_execution_pipeline():
         name='demo_pipeline',
         solids=[multiply_the_word, count_letters],
         dependencies={'count_letters': {'word': DependencyDefinition('multiply_the_word')}},
-        mode_definitions=[ModeDefinition()],
+        mode_definitions=[ModeDefinition(system_storage_defs=s3_plus_default_storage_defs())],
     )
 
 

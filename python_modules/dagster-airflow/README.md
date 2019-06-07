@@ -40,7 +40,7 @@ in the directory in which Airflow looks for DAGs -- this is typically `$AIRFLOW_
 
     dag, steps = make_airflow_dag(
         pipeline,
-        environment_dict={'storage': {'filesystem': {'base_dir': '/tmp'}}},
+        environment_dict={'storage': {'filesystem': {'config': {'base_dir': '/tmp'}}}},
         dag_id=None,
         dag_description=None,
         dag_kwargs=None,
@@ -135,7 +135,7 @@ which Airflow looks for DAGs.
     dag, steps = make_airflow_dag(
         pipeline,
         image,
-        environment_dict={'storage': {'filesystem': {'base_dir': '/tmp'}}},
+        environment_dict={'storage': {'filesystem': {'config': {'base_dir': '/tmp'}}}},
         dag_id=None,
         dag_description=None,
         dag_kwargs=None,
@@ -156,7 +156,7 @@ use this volume for interediate storage, you can run:
     dag, steps = make_airflow_dag(
         pipeline,
         image,
-        environment_dict={'storage': {'filesystem': {'base_dir': '/container_tmp'}}},
+        environment_dict={'storage': {'filesystem': {'config' : {'base_dir': '/container_tmp'}}}},
         dag_id=None,
         dag_description=None,
         dag_kwargs=None,
