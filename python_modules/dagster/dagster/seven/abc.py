@@ -41,3 +41,22 @@ else:
         Sized,
         ValuesView,
     )
+
+__all__ = [
+    'Callable',
+    'Container',
+    'Hashable',
+    'ItemsView',
+    'Iterable',
+    'Iterator',
+    'KeysView',
+    'Mapping',
+    'MappingView',
+    'MutableMapping',
+    'MutableSequence',
+    'MutableSet',
+    'Sequence',
+    'Set',
+    'Sized',
+    'ValuesView',
+]

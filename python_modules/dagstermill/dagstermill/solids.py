@@ -10,6 +10,7 @@ import papermill
 import scrapbook
 import six
 
+from papermill.engines import papermill_engines
 from papermill.parameterize import _find_first_tagged_cell_index
 from papermill.iorw import load_notebook_node, write_ipynb
 
@@ -27,6 +28,7 @@ from dagster.core.execution.context.system import SystemTransformExecutionContex
 from dagster.core.execution.context.transform import TransformExecutionContext
 from dagster.utils import mkdir_p
 
+from .engine import DagstermillNBConvertEngine
 from .errors import DagstermillExecutionError
 from .logger import init_db, JsonSqlite3LogWatcher
 from .serialize import (
@@ -206,7 +208,10 @@ def _dm_solid_transform(name, notebook_path):
                 ),
             ):
                 try:
-                    papermill.execute_notebook(intermediate_path, temp_path, log_output=True)
+                    papermill_engines.register('dagstermill', DagstermillNBConvertEngine)
+                    papermill.execute_notebook(
+                        intermediate_path, temp_path, engine_name='dagstermill', log_output=True
+                    )
                 except Exception as exc:
                     yield Materialization(
                         path=temp_path,
@@ -248,11 +253,14 @@ def _dm_solid_transform(name, notebook_path):
     return _t_fn
 
 
-def define_dagstermill_solid(name, notebook_path, inputs=None, outputs=None, config_field=None):
+def define_dagstermill_solid(
+    name, notebook_path, inputs=None, outputs=None, config_field=None, resources=None
+):
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')
     inputs = check.opt_list_param(inputs, 'input_defs', of_type=InputDefinition)
     outputs = check.opt_list_param(outputs, 'output_defs', of_type=OutputDefinition)
+    resources = check.opt_set_param(resources, 'resources', of_type=str)
 
     return SolidDefinition(
         name=name,
@@ -260,6 +268,7 @@ def define_dagstermill_solid(name, notebook_path, inputs=None, outputs=None, con
         compute_fn=_dm_solid_transform(name, notebook_path),
         outputs=outputs,
         config_field=config_field,
+        resources=resources,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
         metadata={'notebook_path': notebook_path, 'kind': 'ipynb'},
     )

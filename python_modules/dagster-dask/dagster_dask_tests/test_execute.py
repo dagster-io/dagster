@@ -30,4 +30,4 @@ def test_execute_on_dask():
         run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM),
         dask_config=DaskConfig(timeout=30),
     )
-    assert result.result_for_solid('simple').transformed_value() == 1
+    assert result.result_for_solid('simple').result_value() == 1

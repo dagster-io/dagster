@@ -45,7 +45,7 @@ def yield_materialization(path, description=''):
 
 def populate_context(dm_context_data):
     check.dict_param(dm_context_data, 'dm_context_data')
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(
+    context = MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(
         dm_context_data['run_id'],
         dm_context_data['mode'],
         dm_context_data['solid_def_name'],
@@ -56,6 +56,7 @@ def populate_context(dm_context_data):
         dm_context_data['output_name_type_dict'],
         dm_context_data['output_log_path'],
     )
+    return context
 
 
 def load_parameter(input_name, input_value):
@@ -88,3 +89,7 @@ def get_context(config=None):
     if not MANAGER_FOR_NOTEBOOK_INSTANCE.populated_by_papermill:
         MANAGER_FOR_NOTEBOOK_INSTANCE.define_out_of_pipeline_context(config)
     return MANAGER_FOR_NOTEBOOK_INSTANCE.context
+
+
+def teardown():
+    MANAGER_FOR_NOTEBOOK_INSTANCE.teardown_resources()

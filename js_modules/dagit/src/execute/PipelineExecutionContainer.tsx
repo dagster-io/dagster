@@ -93,7 +93,7 @@ export default class PipelineExecutionContainer extends React.Component<
   }
 
   ensureSessionStateValid() {
-    const { currentSession, pipeline } = this.props;
+    const { pipeline } = this.props;
     if (!pipeline) return;
   }
 

@@ -323,7 +323,6 @@ const ExecutionFinishedFlash = styled.div<{ success: boolean }>`
 `;
 
 const ExecutionPlanRowContainer = styled.div`
-  width: 100%;
   display: flex;
   align-items: center;
 

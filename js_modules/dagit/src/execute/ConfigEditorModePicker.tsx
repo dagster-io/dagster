@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Button, Menu, MenuItem } from "@blueprintjs/core";
+import { Button, Menu } from "@blueprintjs/core";
 import { Select } from "@blueprintjs/select";
 import { PipelineExecutionContainerFragment } from "./types/PipelineExecutionContainerFragment";
 

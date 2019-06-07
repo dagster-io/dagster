@@ -11,7 +11,7 @@ import {
 } from "./RunMetadataProvider";
 import { formatElapsedTime } from "./Util";
 
-interface IExecutionPlanProps {
+export interface IExecutionPlanProps {
   executionPlan: ExecutionPlanFragment;
   runMetadata?: IRunMetadataDict;
   onApplyStepFilter?: (step: string) => void;
@@ -32,9 +32,7 @@ const EMPTY_STEP_METADATA: IStepMetadata = {
   materializations: []
 };
 
-export default class ExecutionPlan extends React.PureComponent<
-  IExecutionPlanProps
-> {
+export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
   static fragments = {
     ExecutionPlanFragment: gql`
       fragment ExecutionPlanFragment on ExecutionPlan {

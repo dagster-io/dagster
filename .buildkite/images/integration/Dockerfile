@@ -80,7 +80,9 @@ RUN set -ex; \
     mkdir -p /usr/share/man/man1; \
     fi; \
     apt-get update; \
-    apt-get install -y --no-install-recommends \
+    apt-get install -y \
+    openjdk-8-jre-headless="$JAVA_DEBIAN_VERSION"; \ 
+    apt-get install -y \
     openjdk-8-jdk-headless="$JAVA_DEBIAN_VERSION" \
     ; \
     rm -rf /var/lib/apt/lists/*; \
@@ -102,6 +104,9 @@ RUN curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_V
     apt-get install sbt && \
     sbt sbtVersion
 
+##################################################################################################
+
+
 # pip install all the downstream deps to speed up our CI jobs
 #
 # to update (from root):
@@ -109,7 +114,18 @@ RUN curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_V
 # create a new virtual env
 # make install_dev_python_modules
 # pip freeze --exclude-editable > .buildkite/images/integration/snapshot-reqs.txt
+
 ARG PYTHON_MAJOR_VERSION
 ADD snapshot-reqs-$PYTHON_MAJOR_VERSION.txt /tmp/snapshot-reqs.txt
 RUN pip install --upgrade pip;\
     pip install -r /tmp/snapshot-reqs.txt
+
+
+# This instigates some package downloads required by the airline-demo
+ADD trigger_maven.py .
+RUN python trigger_maven.py
+
+
+# Postgres (libpq) required for the airline demo
+RUN pip install tox
+RUN apt-get update && apt-get -y install libpq-dev

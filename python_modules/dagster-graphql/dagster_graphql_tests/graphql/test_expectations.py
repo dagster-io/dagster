@@ -24,7 +24,7 @@ def get_expectation_result(logs, solid_name):
     return expt_results[0]
 
 
-def test_basic_expectations_within_transforms():
+def test_basic_expectations_within_compute_step_events():
     logs = sync_execute_get_events(
         variables={
             'executionParams': {

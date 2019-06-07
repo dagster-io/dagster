@@ -2,7 +2,7 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { Colors, Icon, H6, Text, Code, UL, Button } from "@blueprintjs/core";
+import { H6, Text, Code, UL, Button } from "@blueprintjs/core";
 
 import { titleOfIO } from "./Util";
 import { pluginForMetadata } from "./plugins";

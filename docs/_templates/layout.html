@@ -139,26 +139,6 @@
 {%- endblock %}
 
 {%- block footer %}
-<div class="footer">
-    {% if show_copyright %}&copy;{{ copyright }}.{% endif %}
-    {% if theme_show_powered_by|lower == 'true' %}
-    {% if show_copyright %}|{% endif %}
-    Powered by <a href="http://sphinx-doc.org/">Sphinx {{ sphinx_version }}</a>
-    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster {{ alabaster_version }}</a>
-    {% endif %}
-    {%- if show_source and has_source and sourcename %}
-    {% if show_copyright or theme_show_powered_by %}|{% endif %}
-    <a href="{{ pathto('_sources/' + sourcename, true)|e }}" rel="nofollow">{{ _('Page source') }}</a>
-    {%- endif %}
-</div>
-
-{% if theme_github_banner|lower != 'false' %}
-<a href="https://github.com/{{ theme_github_user }}/{{ theme_github_repo }}" class="github">
-    <img style="position: absolute; top: 0; right: 0; border: 0;"
-        src="{{ pathto('_static/' ~ theme_github_banner, 1) if theme_github_banner|lower != 'true' else 'https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png' }}"
-        alt="Fork me on GitHub" class="github" />
-</a>
-{% endif %}
 
 {% if theme_analytics_id %}
 <script type="text/javascript">

@@ -62,7 +62,7 @@ webapp, from any directory that contains a repository.yaml file. For example:
 
 .. code-block:: console
 
-    $ cd dagster/python_modules/dagster/dagster/tutorials/intro_tutorial
+    $ cd dagster/examples/dagster_examples/intro_tutorial
     $ dagit -p 3333
 
 Keep this running. Then, in another terminal, run the local development

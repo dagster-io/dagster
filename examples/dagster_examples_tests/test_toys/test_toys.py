@@ -38,14 +38,14 @@ def test_spew_pipeline():
 
 def test_resource_pipeline_no_config():
     result = execute_pipeline(define_resource_pipeline())
-    assert result.result_for_solid('one').transformed_value() == 2
+    assert result.result_for_solid('one').result_value() == 2
 
 
 def test_resource_pipeline_with_config():
     result = execute_pipeline(
         define_resource_pipeline(), environment_dict={'resources': {'R1': {'config': 2}}}
     )
-    assert result.result_for_solid('one').transformed_value() == 3
+    assert result.result_for_solid('one').result_value() == 3
 
 
 def test_error_monster_success():

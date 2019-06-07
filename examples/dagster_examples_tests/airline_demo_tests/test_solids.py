@@ -76,7 +76,7 @@ def test_unzip_file_tempfile():
         run_config=RunConfig(mode='tempfile'),
     )
     assert result.success
-    assert result.transformed_value().read() == b'test\n'
+    assert result.result_value().read() == b'test\n'
 
 
 @pytest.mark.spark
@@ -99,10 +99,10 @@ def test_ingest_csv_to_spark():
         run_config=RunConfig(mode='spark'),
     )
     assert result.success
-    assert isinstance(result.transformed_value(), pyspark.sql.dataframe.DataFrame)
+    assert isinstance(result.result_value(), pyspark.sql.dataframe.DataFrame)
     # We can't make this assertion because the tempfile is cleaned up after the solid executes --
     # a fuller test would have another solid make this assertion
-    # assert result.transformed_value().head()[0] == '1'
+    # assert result.result_value().head()[0] == '1'
 
 
 @pytest.mark.postgres

@@ -8,6 +8,7 @@ class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         self._pipeline_context = pipeline_context
         self.out_of_pipeline = out_of_pipeline
+        self._resource_context_stack = []
 
     def has_tag(self, key):
         return self._pipeline_context.has_tag(key)
@@ -37,9 +38,11 @@ class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
 
     @property
     def resources(self):
-        if self.out_of_pipeline:
-            check.failed('Cannot access resources in dagstermill exploratory context')
-        return self._pipeline_context.resources
+        return self._pipeline_context.resources_builder.build()
+
+    @property
+    def run_config(self):
+        return self._pipeline_context.run_config
 
     @property
     def log(self):

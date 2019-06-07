@@ -106,4 +106,4 @@ if __name__ == '__main__':
         ),
     )
 
-    print('Total Sleep Time: ', result.result_for_solid('total').transformed_value())
+    print('Total Sleep Time: ', result.result_for_solid('total').result_value())

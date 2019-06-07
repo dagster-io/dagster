@@ -269,7 +269,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         if not self.docker_conn_id_set:
             try:
                 from_env().version()
-            except:  # pylint: disable=bare-except
+            except Exception:  # pylint: disable=broad-except
                 pass
             else:
                 kwargs['docker_conn_id'] = True

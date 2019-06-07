@@ -4,12 +4,6 @@ import sys
 
 from setuptools import find_packages, setup
 
-# pylint: disable=E0401, W0611
-if sys.version_info[0] < 3:
-    import __builtin__ as builtins
-else:
-    import builtins
-
 
 def long_description():
     here = os.path.abspath(os.path.dirname(__file__))

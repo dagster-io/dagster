@@ -40,30 +40,6 @@ function getEndTime(run: RunHistoryRunFragment) {
   return 0;
 }
 
-interface ISortableColumnProps {
-  name: string;
-  cellRenderer: ICellRenderer;
-}
-
-const SortableColumn: React.StatelessComponent<ISortableColumnProps> = ({
-  name,
-  cellRenderer,
-  children
-}) => {
-  return (
-    <Column
-      columnHeaderCellRenderer={() => (
-        <ColumnHeaderCell
-          name={name}
-          menuRenderer={() => <Menu>{children}</Menu>}
-        />
-      )}
-      name={name}
-      cellRenderer={cellRenderer}
-    />
-  );
-};
-
 enum RunSort {
   START_TIME_ASC,
   START_TIME_DSC,

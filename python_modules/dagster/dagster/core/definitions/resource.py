@@ -61,7 +61,8 @@ def resource(config_field=None, description=None):
 
 
 class ResourcesBuilder(namedtuple('ResourcesBuilder', 'src')):
-    def __new__(cls, src):
+    def __new__(cls, src=None):
+        src = check.opt_dict_param(src, 'src')
         return super(ResourcesBuilder, cls).__new__(cls, src)
 
     def build(self, mapper_fn=None, resource_deps=None):

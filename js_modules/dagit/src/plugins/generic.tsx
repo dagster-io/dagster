@@ -1,6 +1,6 @@
 import * as React from "react";
 import { startCase } from "lodash";
-import { Button, Classes, Dialog, Colors } from "@blueprintjs/core";
+import { Button, Classes, Dialog } from "@blueprintjs/core";
 import { IPluginSidebarProps } from ".";
 
 export class SidebarComponent extends React.Component<IPluginSidebarProps> {

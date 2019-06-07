@@ -1,28 +1,26 @@
 Execution Context
 =================
+The execution context is threaded throughout the entire execution of a pipeline via a ``context``
+object passed to user code. It wraps the logging system along with access to external resources:
+interactions with logging systems, databases, and other external systems (e.g. a Spark cluster)
+should be managed through these properties of the execution context.
 
-One of the most important objects in the system is the execution context. The execution context,
-the logger, and the resources are threaded throughout the entire computation ( via the ``context``
-object passed to user code) and contains handles to logging facilities and external resources.
-Interactions with logging systems, databases, and external clusters (e.g. a Spark cluster) should
-be managed through these properties of the execution context.
-
-This provides a powerful layer of indirection that allows a solid to abstract away its surrounding
-environment. Using an execution context allows the system and pipeline infrastructure to provide
-different implementations for different environments, giving the engineer the opportunity to design
-pipelines that can be executed on your local machine or your CI/CD pipeline as readily as your
-production cluster environment.
+Execution contexts provide a powerful layer of indirection that allows a solid to abstract away its
+surrounding environment. Using an execution context allows the system and pipeline infrastructure to
+provide different implementations for different environments, giving the engineer the opportunity to
+design pipelines that can be executed on your local machine or your CI/CD pipeline as readily as
+your production cluster environment.
 
 Logging
 ~~~~~~~
 
-One of the most basic pipeline-level facilities is logging:
+One of the most common places you'll interact with the execution context is when logging:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/execution_context.py
-   :lines: 1-16
+   :lines: 1-18
    :caption: execution_context.py
 
-Run this example pipeline in dagit:
+Run this example pipeline on the dagster CLI:
 
 .. code-block:: console
 

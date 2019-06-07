@@ -36,7 +36,7 @@ def test_download_from_s3_to_file():
             },
         )
         assert result.success
-        assert result.transformed_value() == os.path.join(tmp_directory, 'test_file')
+        assert result.result_value() == os.path.join(tmp_directory, 'test_file')
 
 
 @pytest.mark.nettest
@@ -61,4 +61,4 @@ def test_download_from_s3_to_bytes():
         },
     )
     assert result.success
-    assert result.transformed_value().read() == b'test\n'
+    assert result.result_value().read() == b'test\n'

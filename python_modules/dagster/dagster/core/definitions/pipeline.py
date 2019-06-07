@@ -353,8 +353,7 @@ def _build_sub_pipeline(pipeline_def, solid_names):
                     else MultiDependencyDefinition(
                         [
                             DependencyDefinition(
-                                solid=output_handle.solid.name,
-                                output=output_handles.output_def.name,
+                                solid=output_handle.solid.name, output=output_handle.output_def.name
                             )
                             for output_handle in output_handles
                         ]

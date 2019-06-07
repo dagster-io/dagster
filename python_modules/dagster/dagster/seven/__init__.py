@@ -36,9 +36,9 @@ def import_module_from_path(module_name, path_to_file):
         # pylint:disable=deprecated-method, no-value-for-parameter
         module = SourceFileLoader(module_name, path_to_file).load_module()
     else:
-        import imp
+        from imp import load_source
 
-        module = imp.load_source(module_name, path_to_file)
+        module = load_source(module_name, path_to_file)
 
     return module
 

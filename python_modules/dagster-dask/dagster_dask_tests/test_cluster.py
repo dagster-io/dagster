@@ -14,4 +14,4 @@ def test_dask_cluster():
         dask_config=DaskConfig(address='%s:8786' % os.getenv('DASK_ADDRESS')),
     )
     assert result.success
-    assert result.result_for_solid('total').transformed_value() == 4
+    assert result.result_for_solid('total').result_value() == 4

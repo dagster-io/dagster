@@ -10,10 +10,10 @@ def test_intro_tutorial_actual_dag():
 
     assert result.success
     assert len(result.solid_result_list) == 4
-    assert result.result_for_solid('solid_a').transformed_value() == 1
-    assert result.result_for_solid('solid_b').transformed_value() == 2
-    assert result.result_for_solid('solid_c').transformed_value() == 3
-    assert result.result_for_solid('solid_d').transformed_value() == 6
+    assert result.result_for_solid('solid_a').result_value() == 1
+    assert result.result_for_solid('solid_b').result_value() == 2
+    assert result.result_for_solid('solid_c').result_value() == 3
+    assert result.result_for_solid('solid_d').result_value() == 6
     return result
 
 

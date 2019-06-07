@@ -2,7 +2,7 @@
 
 exports[`renders given materializations and passing expectations 1`] = `
 <div
-  className="sc-jTzLTM cVyhBU"
+  className="sc-jTzLTM iGhCxz"
 >
   <div
     className="succeeded sc-fjdhpX cSXITg"
@@ -77,7 +77,7 @@ exports[`renders given materializations and passing expectations 1`] = `
 
 exports[`renders given materializations and passing expectations 2`] = `
 <div
-  className="sc-jTzLTM cVyhBU"
+  className="sc-jTzLTM iGhCxz"
 >
   <div
     className="succeeded sc-fjdhpX cSXITg"

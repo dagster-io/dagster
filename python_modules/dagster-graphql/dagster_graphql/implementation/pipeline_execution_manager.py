@@ -117,7 +117,7 @@ class SynchronousExecutionManager(PipelineExecutionManager):
                     step_keys_to_execute=pipeline_run.step_keys_to_execute,
                 ),
             )
-        except:  # pylint: disable=W0702
+        except Exception:  # pylint: disable=broad-except
             if raise_on_error:
                 six.reraise(*sys.exc_info())
 
@@ -185,7 +185,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                                 run_id=process.pipeline_run.run_id
                             )
                         )
-                    except:  # pylint: disable=W0702
+                    except Exception:  # pylint: disable=broad-except
                         process.pipeline_run.handle_new_event(
                             build_synthetic_pipeline_error_record(
                                 process.pipeline_run.run_id,
@@ -303,7 +303,7 @@ def execute_pipeline_through_queue(
 
     try:
         repository = handle.build_repository_definition()
-    except:  # pylint: disable=W0702
+    except Exception:  # pylint: disable=broad-except
         repo_error = sys.exc_info()
         message_queue.put(MultiprocessingError(serializable_error_info_from_exc_info(repo_error)))
         return
@@ -315,7 +315,7 @@ def execute_pipeline_through_queue(
             run_config=run_config,
         )
         return result
-    except:  # pylint: disable=W0702
+    except Exception:  # pylint: disable=broad-except
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         message_queue.put(MultiprocessingError(error_info))
     finally:
