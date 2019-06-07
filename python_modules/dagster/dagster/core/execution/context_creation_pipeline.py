@@ -8,7 +8,7 @@ from contextlib2 import ExitStack
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, create_environment_type
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.resource import ResourcesBuilder
+from dagster.core.definitions.resource import SolidResourcesBuilder
 from dagster.core.errors import (
     DagsterError,
     DagsterUserCodeExecutionError,
@@ -121,7 +121,7 @@ def scoped_pipeline_context(
     environment_dict,
     run_config,
     intermediates_manager=None,
-    resources_builder_cm=create_resource_builder,
+    solid_resources_builder_cm=create_resource_builder,
 ):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
@@ -150,13 +150,13 @@ def scoped_pipeline_context(
             pipeline_def.get_mode_definition(run_config.mode),
         )
 
-        with resources_builder_cm(
+        with solid_resources_builder_cm(
             pipeline_def, environment_config, run_config, log_manager
-        ) as resources_builder:
+        ) as solid_resources_builder:
             yield construct_pipeline_execution_context(
                 run_config=run_config,
                 pipeline_def=pipeline_def,
-                resources_builder=resources_builder,
+                solid_resources_builder=solid_resources_builder,
                 environment_config=environment_config,
                 run_storage=run_storage,
                 intermediates_manager=intermediates_manager,
@@ -186,7 +186,7 @@ def scoped_pipeline_context(
 def construct_pipeline_execution_context(
     run_config,
     pipeline_def,
-    resources_builder,
+    solid_resources_builder,
     environment_config,
     run_storage,
     intermediates_manager,
@@ -194,8 +194,11 @@ def construct_pipeline_execution_context(
 ):
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(pipeline_def, 'pipeline', PipelineDefinition)
-    resources_builder = check.opt_inst_param(
-        resources_builder, 'resources_builder', ResourcesBuilder, default=ResourcesBuilder()
+    solid_resources_builder = check.opt_inst_param(
+        solid_resources_builder,
+        'solid_resources_builder',
+        SolidResourcesBuilder,
+        default=SolidResourcesBuilder(),
     )
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(run_storage, 'run_storage', RunStorage)
@@ -209,7 +212,7 @@ def construct_pipeline_execution_context(
         SystemPipelineExecutionContextData(
             pipeline_def=pipeline_def,
             run_config=run_config,
-            resources_builder=resources_builder,
+            solid_resources_builder=solid_resources_builder,
             environment_config=environment_config,
             run_storage=run_storage,
             intermediates_manager=intermediates_manager,
@@ -231,7 +234,7 @@ class ResourcesStack(object):
         check.inst_param(run_config, 'run_config', RunConfig)
         check.inst_param(log_manager, 'log_manager', DagsterLogManager)
 
-        self.resources_src = {}
+        self.resource_instances = {}
         self.mode_definition = pipeline_def.get_mode_definition(run_config.mode)
         self.pipeline_def = pipeline_def
         self.environment_config = environment_config
@@ -259,8 +262,8 @@ class ResourcesStack(object):
                 )
             )
 
-            self.resources_src[resource_name] = resource_obj
-        return ResourcesBuilder(self.resources_src)
+            self.resource_instances[resource_name] = resource_obj
+        return SolidResourcesBuilder(self.resource_instances)
 
     def teardown(self):
         self.stack.close()

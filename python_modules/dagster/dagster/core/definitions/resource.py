@@ -60,10 +60,14 @@ def resource(config_field=None, description=None):
     return _wrap
 
 
-class ResourcesBuilder(namedtuple('ResourcesBuilder', 'src')):
-    def __new__(cls, src=None):
-        src = check.opt_dict_param(src, 'src')
-        return super(ResourcesBuilder, cls).__new__(cls, src)
+class SolidResourcesBuilder(namedtuple('SolidResourcesBuilder', 'resource_instance_dict')):
+    def __new__(cls, resource_instance_dict=None):
+        return super(SolidResourcesBuilder, cls).__new__(
+            cls,
+            resource_instance_dict=check.opt_dict_param(
+                resource_instance_dict, 'resource_instance_dict', key_type=str
+            ),
+        )
 
     def build(self, mapper_fn=None, resource_deps=None):
         '''We dynamically create a type that has the resource keys as properties, to enable dotting into
@@ -78,7 +82,11 @@ class ResourcesBuilder(namedtuple('ResourcesBuilder', 'src')):
         and then binds the specified resources into an instance of this object, which can be consumed
         as, e.g., context.resources.foo.
         '''
-        src = mapper_fn(self.src, resource_deps) if (mapper_fn and resource_deps) else self.src
+        resource_instance_dict = (
+            mapper_fn(self.resource_instance_dict, resource_deps)
+            if (mapper_fn and resource_deps)
+            else self.resource_instance_dict
+        )
 
-        resource_type = namedtuple('Resources', list(src.keys()))
-        return resource_type(**src)
+        resource_type = namedtuple('Resources', list(resource_instance_dict.keys()))
+        return resource_type(**resource_instance_dict)

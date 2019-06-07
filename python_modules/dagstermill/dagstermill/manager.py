@@ -80,7 +80,7 @@ class Manager:
         run_config = RunConfig()
 
         with scoped_pipeline_context(
-            pipeline_def, config, run_config, resources_builder_cm=self.setup_resources
+            pipeline_def, config, run_config, solid_resources_builder_cm=self.setup_resources
         ) as pipeline_context:
             self.context = DagstermillInNotebookExecutionContext(
                 pipeline_context, out_of_pipeline=True
@@ -207,7 +207,7 @@ class Manager:
             self.pipeline_def,
             environment_dict,
             run_config,
-            resources_builder_cm=self.setup_resources,
+            solid_resources_builder_cm=self.setup_resources,
         ) as pipeline_context:
             self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 

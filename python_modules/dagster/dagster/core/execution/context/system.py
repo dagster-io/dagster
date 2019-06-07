@@ -12,7 +12,7 @@ from dagster.utils import merge_dicts
 from dagster.core.definitions.expectation import ExpectationDefinition
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.output import OutputDefinition
-from dagster.core.definitions.resource import ResourcesBuilder
+from dagster.core.definitions.resource import SolidResourcesBuilder
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.runs import RunStorage
 from dagster.core.system_config.objects import EnvironmentConfig
@@ -24,7 +24,7 @@ class SystemPipelineExecutionContextData(
     namedtuple(
         '_SystemPipelineExecutionContextData',
         (
-            'run_config resources_builder environment_config pipeline_def '
+            'run_config solid_resources_builder environment_config pipeline_def '
             'run_storage intermediates_manager'
         ),
     )
@@ -37,7 +37,7 @@ class SystemPipelineExecutionContextData(
     def __new__(
         cls,
         run_config,
-        resources_builder,
+        solid_resources_builder,
         environment_config,
         pipeline_def,
         run_storage,
@@ -49,8 +49,8 @@ class SystemPipelineExecutionContextData(
         return super(SystemPipelineExecutionContextData, cls).__new__(
             cls,
             run_config=check.inst_param(run_config, 'run_config', RunConfig),
-            resources_builder=check.inst_param(
-                resources_builder, 'resources_builder', ResourcesBuilder
+            solid_resources_builder=check.inst_param(
+                solid_resources_builder, 'solid_resources_builder', SolidResourcesBuilder
             ),
             environment_config=check.inst_param(
                 environment_config, 'environment_config', EnvironmentConfig
@@ -111,8 +111,8 @@ class SystemPipelineExecutionContext(object):
         return self._pipeline_context_data.run_config
 
     @property
-    def resources_builder(self):
-        return self._pipeline_context_data.resources_builder
+    def solid_resources_builder(self):
+        return self._pipeline_context_data.solid_resources_builder
 
     @property
     def run_id(self):
@@ -163,13 +163,16 @@ class SystemPipelineExecutionContext(object):
 
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):
-    __slots__ = ['_step']
+    __slots__ = ['_step', '_resources']
 
     def __init__(self, pipeline_context_data, tags, log_manager, step):
         from dagster.core.execution.plan.objects import ExecutionStep
 
         self._step = check.inst_param(step, 'step', ExecutionStep)
         super(SystemStepExecutionContext, self).__init__(pipeline_context_data, tags, log_manager)
+        self._resources = self._pipeline_context_data.solid_resources_builder.build(
+            self.solid.resource_mapper_fn, self.solid_def.resources
+        )
 
     def for_transform(self):
         return SystemTransformExecutionContext(
@@ -204,9 +207,7 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
 
     @property
     def resources(self):
-        return self._pipeline_context_data.resources_builder.build(
-            self.solid.resource_mapper_fn, self.solid_def.resources
-        )
+        return self._resources
 
     @property
     def mode(self):
