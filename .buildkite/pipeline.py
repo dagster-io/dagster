@@ -62,31 +62,25 @@ def airline_demo_tests():
     tests = []
     for version in SupportedPythons:
         coverage = ".coverage.airline-demo.{version}.$BUILDKITE_BUILD_ID".format(version=version)
-        tests.append(
-            StepBuilder('airline-demo tests ({version})'.format(version=TOX_MAP[version]))
-            .run(
-                "cd examples",
-                # Build the image we use for airflow in the demo tests
-                "./build_airline_demo_image.sh",
-                "mkdir -p /home/circleci/airflow",
-                # Run the postgres db. We are in docker running docker
-                # so this will be a sibling container.
-                "docker-compose stop",
-                "docker-compose rm -f",
-                "docker-compose up -d",
-                # Can't use host networking on buildkite and communicate via localhost
-                # between these sibling containers, so pass along the ip.
-                "export DAGSTER_AIRLINE_DEMO_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' airline-demo-db`",
-                "pip install tox",
-                "apt-get update",
-                "apt-get -y install libpq-dev",
-                "tox -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-            )
-            .on_integration_image(version)
-            .build()
+        step = StepBuilder('airline-demo tests ({version})'.format(version=TOX_MAP[version]))
+        step.run(
+            "cd examples",
+            # Build the image we use for airflow in the demo tests
+            "./build_airline_demo_image.sh",
+            "mkdir -p /home/circleci/airflow",
+            # Run the postgres db. We are in docker running docker
+            # so this will be a sibling container.
+            "docker-compose stop",
+            "docker-compose rm -f",
+            "docker-compose up -d",
+            # Can't use host networking on buildkite and communicate via localhost
+            # between these sibling containers, so pass along the ip.
+            "export DAGSTER_AIRLINE_DEMO_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' airline-demo-db`",
+            "tox -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
+            "mv .coverage {file}".format(file=coverage),
+            "buildkite-agent artifact upload {file}".format(file=coverage),
         )
+        tests.append(step.on_integration_image(version).build())
     return tests
 
 
