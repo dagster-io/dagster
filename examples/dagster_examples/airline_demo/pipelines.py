@@ -10,6 +10,7 @@ from dagster import (
     SolidInstance,
     String,
     composite_solid,
+    pipeline,
     file_relative_path,
 )
 
@@ -119,38 +120,36 @@ sfo_weather_data = CompositeSolidDefinition(
 )
 
 
-def define_airline_demo_ingest_pipeline():
-    solids = [process_on_time_data, sfo_weather_data, s3_to_dw_table]
-    dependencies = {
-        SolidInstance('s3_to_dw_table', alias='process_q2_coupon_data'): {},
-        SolidInstance('s3_to_dw_table', alias='process_q2_market_data'): {},
-        SolidInstance('s3_to_dw_table', alias='process_q2_ticket_data'): {},
-    }
+@pipeline(
+    mode_definitions=[test_mode, local_mode, prod_mode],
+    preset_definitions=[
+        PresetDefinition(
+            name='local_fast',
+            mode='local',
+            environment_files=[
+                file_relative_path(__file__, 'environments/local_base.yaml'),
+                file_relative_path(__file__, 'environments/local_fast_ingest.yaml'),
+            ],
+        ),
+        PresetDefinition(
+            name='local_full',
+            mode='local',
+            environment_files=[
+                file_relative_path(__file__, 'environments/local_base.yaml'),
+                file_relative_path(__file__, 'environments/local_full_ingest.yaml'),
+            ],
+        ),
+    ],
+)
+def airline_demo_ingest_pipeline(context):
+    process_on_time_data(context)
+    sfo_weather_data(context)
+    for data_type in ['coupon', 'market', 'ticket']:
+        s3_to_dw_table.alias('process_q2_{}_data'.format(data_type))(context)
 
-    return PipelineDefinition(
-        name="airline_demo_ingest_pipeline",
-        solids=solids,
-        dependencies=dependencies,
-        mode_definitions=[test_mode, local_mode, prod_mode],
-        preset_definitions=[
-            PresetDefinition(
-                name='local_fast',
-                mode='local',
-                environment_files=[
-                    file_relative_path(__file__, 'environments/local_base.yaml'),
-                    file_relative_path(__file__, 'environments/local_fast_ingest.yaml'),
-                ],
-            ),
-            PresetDefinition(
-                name='local_full',
-                mode='local',
-                environment_files=[
-                    file_relative_path(__file__, 'environments/local_base.yaml'),
-                    file_relative_path(__file__, 'environments/local_full_ingest.yaml'),
-                ],
-            ),
-        ],
-    )
+
+def define_airline_demo_ingest_pipeline():
+    return airline_demo_ingest_pipeline
 
 
 def define_airline_demo_warehouse_pipeline():
