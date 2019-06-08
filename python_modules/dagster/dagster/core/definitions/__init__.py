@@ -36,7 +36,7 @@ from .repository import RepositoryDefinition
 
 from .pipeline import PipelineDefinition
 
-from .system_storage import SystemStorageDefinition, SystemStoragePluginData
+from .system_storage import SystemStorageDefinition, SystemStoragePluginData, system_storage
 
 from .container import solids_in_topological_order, create_execution_structure, IContainSolids
 

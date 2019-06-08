@@ -40,9 +40,7 @@ class ModeDefinition:
             or default_loggers()
         )
         self.system_storage_defs = check.list_param(
-            system_storage_defs
-            if system_storage_defs
-            else [mem_system_storage(), fs_system_storage()],
+            system_storage_defs if system_storage_defs else [mem_system_storage, fs_system_storage],
             'system_storage_def',
             of_type=SystemStorageDefinition,
         )

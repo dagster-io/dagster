@@ -30,7 +30,7 @@ tempfile_mode = ModeDefinition(name='tempfile', resources={'tempfile': tempfile_
 spark_mode = ModeDefinition(
     name='spark',
     resources={'spark': spark_session_local, 'tempfile': tempfile_resource},
-    system_storage_defs=s3_plus_default_storage_defs(),
+    system_storage_defs=s3_plus_default_storage_defs,
 )
 
 

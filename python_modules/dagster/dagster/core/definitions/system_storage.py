@@ -59,19 +59,51 @@ class SystemStoragePluginData:
         )
 
 
-def mem_system_storage_fn(_init_context):
+def system_storage(name=None, is_persistent=True, config_field=None):
+    if callable(name):
+        check.invariant(name is None)
+        check.invariant(is_persistent is True)
+        check.invariant(config_field is None)
+        return _SystemStorageDecoratorCallable()(name)
+
+    return _SystemStorageDecoratorCallable(
+        name=name, is_persistent=is_persistent, config_field=config_field
+    )
+
+
+class _SystemStorageDecoratorCallable:
+    def __init__(self, name=None, is_persistent=True, config_field=None):
+        self.name = check.opt_str_param(name, 'name')
+        self.is_persistent = check.bool_param(is_persistent, 'is_persistent')
+        self.config_field = config_field  # type check in definition
+
+    def __call__(self, fn):
+        check.callable_param(fn, 'fn')
+
+        if not self.name:
+            self.name = fn.__name__
+
+        return SystemStorageDefinition(
+            name=self.name,
+            is_persistent=self.is_persistent,
+            config_field=self.config_field,
+            system_storage_creation_fn=fn,
+        )
+
+
+@system_storage(name='in_memory', is_persistent=False)
+def mem_system_storage(_init_context):
     return SystemStoragePluginData(
         run_storage=InMemoryRunStorage(), intermediates_manager=InMemoryIntermediatesManager()
     )
 
 
-def mem_system_storage():
-    return SystemStorageDefinition(
-        name='in_memory', is_persistent=False, system_storage_creation_fn=mem_system_storage_fn
-    )
-
-
-def fs_system_storage_fn(init_context):
+@system_storage(
+    name='filesystem',
+    is_persistent=True,
+    config_field=Field(Dict({'base_dir': Field(String, is_optional=True)})),
+)
+def fs_system_storage(init_context):
     base_dir = init_context.system_storage_config.get('base_dir')
     return SystemStoragePluginData(
         run_storage=FileSystemRunStorage(base_dir=base_dir),
@@ -82,13 +114,4 @@ def fs_system_storage_fn(init_context):
                 base_dir=base_dir,
             )
         ),
-    )
-
-
-def fs_system_storage():
-    return SystemStorageDefinition(
-        name='filesystem',
-        is_persistent=True,
-        system_storage_creation_fn=fs_system_storage_fn,
-        config_field=Field(Dict({'base_dir': Field(String, is_optional=True)})),
     )

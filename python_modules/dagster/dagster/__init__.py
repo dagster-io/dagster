@@ -23,6 +23,7 @@ from dagster.core.definitions import (
     SystemStoragePluginData,
     logger,
     resource,
+    system_storage,
 )
 
 # These specific imports are to avoid circular import issues
@@ -127,12 +128,13 @@ __all__ = [
     'SolidInstance',
     'SystemStorageDefinition',
     # Decorators
+    'composite_solid',
     'lambda_solid',
     'logger',
+    'pipeline',
     'resource',
     'solid',
-    'composite_solid',
-    'pipeline',
+    'system_storage',
     'MultipleResults',
     # Execution
     'execute_pipeline_iterator',

@@ -47,7 +47,7 @@ test_mode = ModeDefinition(
         'tempfile': tempfile_resource,
         's3': s3_resource,
     },
-    system_storage_defs=s3_plus_default_storage_defs(),
+    system_storage_defs=s3_plus_default_storage_defs,
 )
 
 
@@ -59,7 +59,7 @@ local_mode = ModeDefinition(
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
     },
-    system_storage_defs=s3_plus_default_storage_defs(),
+    system_storage_defs=s3_plus_default_storage_defs,
 )
 
 
@@ -71,7 +71,7 @@ prod_mode = ModeDefinition(
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
     },
-    system_storage_defs=s3_plus_default_storage_defs(),
+    system_storage_defs=s3_plus_default_storage_defs,
 )
 
 
