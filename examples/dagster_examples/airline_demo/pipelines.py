@@ -151,6 +151,20 @@ def define_airline_demo_ingest_pipeline():
     return airline_demo_ingest_pipeline
 
 
+@composite_solid(
+    outputs=[
+        OutputDefinition(name='bucket', dagster_type=String),
+        OutputDefinition(name='key', dagster_type=String),
+    ]
+)
+def process_delays_by_geo(_context):
+    return put_object_to_s3_bytes.alias('upload_delays_by_geography_pdf_plots')(
+        delays_by_geography(
+            westbound_delays=westbound_delays(), eastbound_delays=eastbound_delays()
+        )
+    )
+
+
 @pipeline(
     mode_definitions=[test_mode, local_mode, prod_mode],
     preset_definitions=[
@@ -164,12 +178,8 @@ def define_airline_demo_ingest_pipeline():
         )
     ],
 )
-def airline_demo_warehouse_pipeline(_):
-    put_object_to_s3_bytes.alias('upload_delays_by_geography_pdf_plots')(
-        delays_by_geography(
-            westbound_delays=westbound_delays(), eastbound_delays=eastbound_delays()
-        )
-    )
+def airline_demo_warehouse_pipeline(context):
+    process_delays_by_geo(context)
 
     outbound_delays = average_sfo_outbound_avg_delays_by_destination(q2_sfo_outbound_flights())
 
