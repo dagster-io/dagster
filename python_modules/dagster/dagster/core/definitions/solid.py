@@ -99,7 +99,7 @@ class SolidDefinition(ISolidDefinition):
         name (str): Name of the solid.
         inputs (List[InputDefinition]): Inputs of the solid.
 
-        compute_fn (Callable[[SystemTransformExecutionContext, ], Iterable[Union[Result,
+        compute_fn (Callable[[SystemComputeExecutionContext, ], Iterable[Union[Result,
             Materialization]]]): The core of the solid, the function that does the actual
             computation. The arguments passed to this function after context are deteremined by
             ``inputs``.

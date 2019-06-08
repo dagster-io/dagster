@@ -5,10 +5,10 @@ import six
 from dagster import check
 
 from .step import StepExecutionContext
-from .system import SystemTransformExecutionContext
+from .system import SystemComputeExecutionContext
 
 
-class AbstractTransformExecutionContext(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+class AbstractComputeExecutionContext(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
     def has_tag(self, key):
         pass
@@ -42,17 +42,17 @@ class AbstractTransformExecutionContext(six.with_metaclass(ABCMeta)):  # pylint:
         pass
 
 
-class TransformExecutionContext(StepExecutionContext, AbstractTransformExecutionContext):
-    __slots__ = ['_system_transform_execution_context']
+class ComputeExecutionContext(StepExecutionContext, AbstractComputeExecutionContext):
+    __slots__ = ['_system_compute_execution_context']
 
-    def __init__(self, system_transform_execution_context):
-        self._system_transform_execution_context = check.inst_param(
-            system_transform_execution_context,
-            'system_transform_execution_context',
-            SystemTransformExecutionContext,
+    def __init__(self, system_compute_execution_context):
+        self._system_compute_execution_context = check.inst_param(
+            system_compute_execution_context,
+            'system_compute_execution_context',
+            SystemComputeExecutionContext,
         )
-        super(TransformExecutionContext, self).__init__(system_transform_execution_context)
+        super(ComputeExecutionContext, self).__init__(system_compute_execution_context)
 
     @property
     def solid_config(self):
-        return self._system_transform_execution_context.solid_config
+        return self._system_compute_execution_context.solid_config

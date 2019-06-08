@@ -175,7 +175,7 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
         )
 
     def for_transform(self):
-        return SystemTransformExecutionContext(
+        return SystemComputeExecutionContext(
             self._pipeline_context_data, self.logging_tags, self.log, self.step
         )
 
@@ -214,7 +214,7 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
         return self._pipeline_context_data.run_config.mode
 
 
-class SystemTransformExecutionContext(SystemStepExecutionContext):
+class SystemComputeExecutionContext(SystemStepExecutionContext):
     @property
     def solid_config(self):
         solid_config = self.environment_config.solids.get(str(self.solid_handle))

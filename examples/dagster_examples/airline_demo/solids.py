@@ -175,7 +175,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         '''Inner function defining the new solid.
 
         Args:
-            context (TransformExecutionContext): Must expose a `db` resource with an `execute` method,
+            context (ComputeExecutionContext): Must expose a `db` resource with an `execute` method,
                 like a SQLAlchemy engine, that can execute raw SQL against a database.
 
         Returns:

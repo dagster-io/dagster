@@ -1,8 +1,8 @@
 from dagster import check
 from dagster.core.definitions import ExpectationResult, Materialization, Result, Solid, SolidHandle
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.execution.context.system import SystemTransformExecutionContext
-from dagster.core.execution.context.transform import TransformExecutionContext
+from dagster.core.execution.context.system import SystemComputeExecutionContext
+from dagster.core.execution.context.transform import ComputeExecutionContext
 
 from .objects import ExecutionStep, StepInput, StepKind, StepOutput
 
@@ -32,10 +32,10 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
     )
 
 
-def _yield_transform_results(transform_context, inputs, compute_fn):
-    check.inst_param(transform_context, 'transform_context', SystemTransformExecutionContext)
-    step = transform_context.step
-    gen = compute_fn(TransformExecutionContext(transform_context), inputs)
+def _yield_transform_results(compute_context, inputs, compute_fn):
+    check.inst_param(compute_context, 'compute_context', SystemComputeExecutionContext)
+    step = compute_context.step
+    gen = compute_fn(ComputeExecutionContext(compute_context), inputs)
 
     if isinstance(gen, Result):
         raise DagsterInvariantViolationError(
@@ -52,7 +52,7 @@ def _yield_transform_results(transform_context, inputs, compute_fn):
     for result in gen:
         if isinstance(result, Result):
             value_repr = repr(result.value)
-            transform_context.log.info(
+            compute_context.log.info(
                 'Solid {solid} emitted output "{output}" value {value}'.format(
                     solid=str(step.solid_handle),
                     output=result.output_name,
@@ -73,22 +73,22 @@ def _yield_transform_results(transform_context, inputs, compute_fn):
             )
 
 
-def _execute_core_transform(transform_context, inputs, compute_fn):
+def _execute_core_transform(compute_context, inputs, compute_fn):
     '''
     Execute the user-specified compute for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     '''
-    check.inst_param(transform_context, 'transform_context', SystemTransformExecutionContext)
+    check.inst_param(compute_context, 'compute_context', SystemComputeExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
 
-    step = transform_context.step
+    step = compute_context.step
 
-    transform_context.log.debug(
+    compute_context.log.debug(
         'Executing core compute for solid {solid}.'.format(solid=str(step.solid_handle))
     )
 
     all_results = []
-    for step_output in _yield_transform_results(transform_context, inputs, compute_fn):
+    for step_output in _yield_transform_results(compute_context, inputs, compute_fn):
         yield step_output
         if isinstance(step_output, Result):
             all_results.append(step_output)
@@ -97,7 +97,7 @@ def _execute_core_transform(transform_context, inputs, compute_fn):
         emitted_result_names = {r.output_name for r in all_results}
         solid_output_names = {output.name for output in step.step_outputs}
         omitted_outputs = solid_output_names.difference(emitted_result_names)
-        transform_context.log.info(
+        compute_context.log.info(
             'Solid {solid} did not fire outputs {outputs}'.format(
                 solid=str(step.solid_handle), outputs=repr(omitted_outputs)
             )

@@ -1,9 +1,9 @@
 from dagster import check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.execution.context.transform import AbstractTransformExecutionContext
+from dagster.core.execution.context.transform import AbstractComputeExecutionContext
 
 
-class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
+class DagstermillInNotebookExecutionContext(AbstractComputeExecutionContext):
     def __init__(self, pipeline_context, out_of_pipeline=False):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         self._pipeline_context = pipeline_context
