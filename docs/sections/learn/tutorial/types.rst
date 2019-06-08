@@ -120,11 +120,11 @@ these inputs via config:
 Output Materialization Config
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We will add output materialization config now. They are similar to input hydration config, except that they are responsible
-for taking the in-memory object flowed through your computation and materializing it to some
-persistent store. Outputs are purely *optional* for any computation, whereas inputs *must* be provided
-for a computation to proceed. You will likely want outputs as for a pipeline to be useful it
-should produce some materialization that outlives the computation.
+We will add output materialization config now. They are similar to input hydration config, except
+that they are responsible for taking the in-memory object flowed through your computation and
+materializing it to some persistent store. Outputs are purely *optional* for any computation,
+whereas inputs *must* be provided for a computation to proceed. You will likely want outputs as for
+a pipeline to be useful it should produce some materialization that outlives the computation.
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
    :lines: 32-57

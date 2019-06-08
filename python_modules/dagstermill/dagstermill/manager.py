@@ -7,20 +7,24 @@ from contextlib import contextmanager
 from dagster import (
     check,
     ExecutionTargetHandle,
+    ExpectationResult,
+    Failure,
+    Materialization,
     ModeDefinition,
     PipelineDefinition,
     RunConfig,
     SolidDefinition,
+    TypeCheck,
 )
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import ResourcesStack
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.loggers import colored_console_logger
 
-from .context import DagstermillInPipelineExecutionContext
+from .context import DagstermillExecutionContext
 from .errors import DagstermillError
 from .logger import construct_sqlite_logger
-from .serialize import PICKLE_PROTOCOL, write_value
+from .serialize import PICKLE_PROTOCOL, read_value, write_value
 
 
 class Manager:
@@ -58,12 +62,14 @@ class Manager:
     ):
         '''Reconstitutes a context for dagstermill-managed execution.
         
-        This function is called to reconstruct a pipeline context within the injected parameters cell
-        of a dagstermill notebook. Users should not call this function interactively except when
-        debugging output notebooks.
+        You'll see this function called to reconstruct a pipeline context within the ``injected
+        parameters`` cell of a dagstermill output notebook. Users should not call this function
+        interactively except when debugging output notebooks.
         
-        Use dagstermill.get_context in the ``parameters`` cell of your notebook when defining a
-        context for interactive exploration and development.
+        Use :func:`dagstermill.get_context` in the ``parameters`` cell of your notebook to define a
+        context for interactive exploration and development. This call will be replaced by one to
+        :func:`dagstermill.reconstitute_pipeline_context` when the notebook is executed by
+        dagstermill.
         '''
         check.opt_str_param(output_log_path, 'output_log_path')
         check.opt_str_param(marshal_dir, 'marshal_dir')
@@ -107,23 +113,36 @@ class Manager:
             run_config,
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
-            self.context = DagstermillInPipelineExecutionContext(pipeline_context)
+            self.context = DagstermillExecutionContext(pipeline_context)
 
         return self.context
 
-    def get_context(self, solid_def=None, mode_def=None, environment_dict=None):
-        check.opt_inst_param(solid_def, 'solid_def', SolidDefinition)
+    def get_context(self, solid_config=None, mode_def=None, environment_dict=None):
+        '''Get a dagstermill execution context for interactive exploration and development.
+
+        Args:
+            solid_config (Optional[Any]): If specified, this value will be made available on the
+                context as its ``solid_config`` property.
+            mode_def (Optional[:class:`dagster.ModeDefinition`]): If specified, defines the mode to
+                use to construct the context. Specify this if you would like a context constructed
+                with specific ``resource_defs`` or ``logger_defs``. By default, an ephemeral mode
+                with a console logger will be constructed.
+            environment_dict(Optional[dict]): The environment config dict with which to construct
+                the context.
+        
+        Returns:
+            :class:`dagstermill.DagstermillExecutionContext`
+        '''
         check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
 
-        if solid_def is None:
-            solid_def = SolidDefinition(
-                name='this_solid',
-                input_defs=[],
-                compute_fn=lambda *args, **kwargs: None,
-                output_defs=[],
-                description='Ephemeral solid constructed by dagstermill.get_context()',
-            )
+        solid_def = SolidDefinition(
+            name='this_solid',
+            input_defs=[],
+            compute_fn=lambda *args, **kwargs: None,
+            output_defs=[],
+            description='Ephemeral solid constructed by dagstermill.get_context()',
+        )
 
         if not mode_def:
             mode_def = ModeDefinition(logger_defs={'dagstermill': colored_console_logger})
@@ -145,11 +164,19 @@ class Manager:
             run_config,
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
-            self.context = DagstermillInPipelineExecutionContext(pipeline_context)
+            self.context = DagstermillExecutionContext(pipeline_context, solid_config)
 
         return self.context
 
     def yield_result(self, value, output_name='result'):
+        '''Yield a result directly from notebook code.
+        
+        When called interactively or in development, returns its input.
+
+        Args:
+            value (Any): The value to yield.
+            output_name (Optional[str]): The name of the result to yield (default: ``'result'``). 
+        '''
         if not self.in_pipeline:
             return value
 
@@ -169,6 +196,18 @@ class Manager:
         scrapbook.glue(output_name, write_value(runtime_type, value, out_file))
 
     def yield_event(self, dagster_event):
+        '''Yield a dagster event directly from notebook code.
+        
+        When called interactively or in development, returns its input.
+
+        Args:
+            dagster_event (Union[:class:`dagster.Materialization`, :class:`dagster.ExpectationResult`, :class:`dagster.TypeCheck`, :class:`dagster.Failure`]):
+                An event to yield back to Dagster.
+        '''
+        check.inst_param(
+            dagster_event, 'dagster_event', (Materialization, ExpectationResult, TypeCheck, Failure)
+        )
+
         if not self.in_pipeline:
             return dagster_event
 
@@ -185,6 +224,10 @@ class Manager:
     def teardown_resources(self):
         if self.resources_stack is not None:
             self.resources_stack.teardown()
+
+    def load_parameter(self, input_name, input_value):
+        input_def = self.solid_def.input_def_named(input_name)
+        return read_value(input_def.runtime_type, input_value)
 
 
 MANAGER_FOR_NOTEBOOK_INSTANCE = Manager()

@@ -13,3 +13,4 @@ API Docs
   apidocs/types
   apidocs/errors
   apidocs/utilities
+  apidocs/dagstermill

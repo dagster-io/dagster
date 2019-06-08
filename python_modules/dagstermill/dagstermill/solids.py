@@ -247,7 +247,6 @@ def _dm_solid_transform(name, notebook_path):
                     yield Output(value, output_name)
 
             for key, value in output_nb.scraps.items():
-                print(output_nb.scraps)
                 if key.startswith('event-'):
                     with open(value.data, 'rb') as fd:
                         yield pickle.loads(fd.read())
@@ -266,16 +265,14 @@ def define_dagstermill_solid(
     '''Wrap a Jupyter notebook in a solid.
 
     Arguments:
-        name (str): The name of the solid (passed to SolidDefinition)
+        name (str): The name of the solid.
         notebook_path (str): Path to the backing notebook.
-        input_defs (Optional[list[InputDefinition]]): The solid's inputs (passed to SolidDefinition).
-        output_defs (Optional[list[OutputDefinition]]): The solid's outputs
-            (passed to SolidDefinition).
-        required_resource_keys (Optional[set[str]]): The string names of any required resources
-            (passed to SolidDefinition).
+        input_defs (Optional[list[:class:`dagster.InputDefinition`]]): The solid's inputs.
+        output_defs (Optional[list[:class:`dagster.OutputDefinition`]]): The solid's outputs.
+        required_resource_keys (Optional[set[str]]): The string names of any required resources.
 
     Returns:
-        SolidDefinition
+        :class:`dagster.SolidDefinition`
     '''
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')

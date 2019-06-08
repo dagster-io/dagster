@@ -1,3 +1,5 @@
+.. _execution_context:
+
 Execution Context
 =================
 The execution context is threaded throughout the entire execution of a pipeline via a ``context``

@@ -8,3 +8,4 @@ Guides
   testing/testing
   testing/expectations
   logging/logging
+  data_science/data_science

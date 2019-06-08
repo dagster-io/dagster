@@ -20,4 +20,3 @@ Tutorial
   reusing_solids 
   composite_solids
   composition_functions
-  dagstermill

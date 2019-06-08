@@ -71,6 +71,8 @@ from dagster.core.errors import (
 from dagster.core.storage.init import InitSystemStorageContext
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
 
+from dagster.core.system_config.objects import EnvironmentConfig
+
 from dagster.core.types import (
     Any,
     Bool,

@@ -2,8 +2,8 @@ from dagster.core.errors import DagsterUserCodeExecutionError
 
 
 class DagstermillError(Exception):
-    pass
+    '''Base class for errors raised by dagstermill.'''
 
 
 class DagstermillExecutionError(DagstermillError, DagsterUserCodeExecutionError):
-    pass
+    '''Errors raised during the execution of dagstermill solids.'''
