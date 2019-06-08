@@ -194,7 +194,10 @@ class Manager:
 
         else:
             self.pipeline_def = self.repository_def.get_pipeline(pipeline_def_name)
-            check.invariant(self.pipeline_def.has_solid_def(solid_def_name))
+            check.invariant(
+                self.pipeline_def.has_solid_def(solid_def_name),
+                'solid {} not found'.format(solid_def_name),
+            )
             self.solid_def = self.pipeline_def.solid_def_named(solid_def_name)
 
             logger = logger_def.logger_fn(

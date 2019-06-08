@@ -1,18 +1,19 @@
 import pytest
 
 from dagster import (
+    DependencyDefinition,
     Field,
     InputDefinition,
     Int,
     OutputDefinition,
     PipelineDefinition,
-    DependencyDefinition,
+    RepositoryDefinition,
     Result,
+    composite_solid,
     execute_pipeline,
     lambda_solid,
-    solid,
-    composite_solid,
     pipeline,
+    solid,
 )
 
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -325,7 +326,7 @@ class Garbage(Exception):
     pass
 
 
-def test_rescursion_with_exceptions():
+def test_recursion_with_exceptions():
     called = {}
 
     @pipeline
@@ -347,3 +348,41 @@ def test_rescursion_with_exceptions():
 
     assert execute_pipeline(recurse).success
     assert called['throws'] is True
+
+
+def test_pipeline_has_solid_def():
+    @composite_solid(outputs=[OutputDefinition()])
+    def inner(_context):
+        return add_one(return_one())
+
+    @composite_solid
+    def outer(context):
+        add_one(inner(context))
+
+    @pipeline
+    def a_pipeline(context):
+        outer(context)
+
+    assert a_pipeline.has_solid_def('add_one')
+    assert a_pipeline.has_solid_def('outer')
+    assert a_pipeline.has_solid_def('inner')
+
+
+def test_repositry_has_solid_def():
+    @composite_solid(outputs=[OutputDefinition()])
+    def inner(_context):
+        return add_one(return_one())
+
+    @composite_solid
+    def outer(context):
+        add_one(inner(context))
+
+    @pipeline
+    def a_pipeline(context):
+        outer(context)
+
+    repo_def = RepositoryDefinition.eager_construction(
+        name='has_solid_def_test', pipelines=[a_pipeline]
+    )
+
+    assert repo_def.solid_def_named('inner')

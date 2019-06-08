@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta, abstractproperty, abstractmethod
 
 import six
 
@@ -49,6 +49,10 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
 
     @abstractproperty
     def has_config_entry(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def iterate_solid_defs(self):
         raise NotImplementedError()
 
     def all_input_output_types(self):
@@ -169,6 +173,9 @@ class SolidDefinition(ISolidDefinition):
         for tt in self.all_input_output_types():
             yield tt
 
+    def iterate_solid_defs(self):
+        yield self
+
 
 class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
     def __init__(
@@ -209,6 +216,12 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         super(CompositeSolidDefinition, self).__init__(
             name, input_defs, output_defs, description, metadata
         )
+
+    def iterate_solid_defs(self):
+        yield self
+        for outer_solid_def in self._solid_defs:
+            for solid_def in outer_solid_def.iterate_solid_defs():
+                yield solid_def
 
     @property
     def solids(self):
