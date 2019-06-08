@@ -5,7 +5,6 @@ from dagster import (
     DependencyDefinition,
     ModeDefinition,
     OutputDefinition,
-    PipelineDefinition,
     PresetDefinition,
     SolidInstance,
     String,
@@ -152,62 +151,41 @@ def define_airline_demo_ingest_pipeline():
     return airline_demo_ingest_pipeline
 
 
-def define_airline_demo_warehouse_pipeline():
-    return PipelineDefinition(
-        name="airline_demo_warehouse_pipeline",
-        solids=[
-            average_sfo_outbound_avg_delays_by_destination,
-            delays_by_geography,
-            delays_vs_fares,
-            delays_vs_fares_nb,
-            eastbound_delays,
-            q2_sfo_outbound_flights,
-            sfo_delays_by_destination,
-            tickets_with_destination,
-            put_object_to_s3_bytes,
-            westbound_delays,
-        ],
-        dependencies={
-            'q2_sfo_outbound_flights': {},
-            'tickets_with_destination': {},
-            'westbound_delays': {},
-            'eastbound_delays': {},
-            'average_sfo_outbound_avg_delays_by_destination': {
-                'q2_sfo_outbound_flights': DependencyDefinition('q2_sfo_outbound_flights')
-            },
-            'delays_vs_fares': {
-                'tickets_with_destination': DependencyDefinition('tickets_with_destination'),
-                'average_sfo_outbound_avg_delays_by_destination': DependencyDefinition(
-                    'average_sfo_outbound_avg_delays_by_destination'
-                ),
-            },
-            'fares_vs_delays': {'table_name': DependencyDefinition('delays_vs_fares')},
-            'sfo_delays_by_destination': {
-                'table_name': DependencyDefinition('average_sfo_outbound_avg_delays_by_destination')
-            },
-            'delays_by_geography': {
-                'eastbound_delays': DependencyDefinition('eastbound_delays'),
-                'westbound_delays': DependencyDefinition('westbound_delays'),
-            },
-            SolidInstance('put_object_to_s3_bytes', alias='upload_outbound_avg_delay_pdf_plots'): {
-                'file_obj': DependencyDefinition('sfo_delays_by_destination')
-            },
-            SolidInstance('put_object_to_s3_bytes', alias='upload_delays_vs_fares_pdf_plots'): {
-                'file_obj': DependencyDefinition('fares_vs_delays')
-            },
-            SolidInstance('put_object_to_s3_bytes', alias='upload_delays_by_geography_pdf_plots'): {
-                'file_obj': DependencyDefinition('delays_by_geography')
-            },
-        },
-        mode_definitions=[test_mode, local_mode, prod_mode],
-        preset_definitions=[
-            PresetDefinition(
-                name='local',
-                mode='local',
-                environment_files=[
-                    file_relative_path(__file__, 'environments/local_base.yaml'),
-                    file_relative_path(__file__, 'environments/local_warehouse.yaml'),
-                ],
-            )
-        ],
+@pipeline(
+    mode_definitions=[test_mode, local_mode, prod_mode],
+    preset_definitions=[
+        PresetDefinition(
+            name='local',
+            mode='local',
+            environment_files=[
+                file_relative_path(__file__, 'environments/local_base.yaml'),
+                file_relative_path(__file__, 'environments/local_warehouse.yaml'),
+            ],
+        )
+    ],
+)
+def airline_demo_warehouse_pipeline(_):
+    put_object_to_s3_bytes.alias('upload_delays_by_geography_pdf_plots')(
+        delays_by_geography(
+            westbound_delays=westbound_delays(), eastbound_delays=eastbound_delays()
+        )
     )
+
+    outbound_delays = average_sfo_outbound_avg_delays_by_destination(q2_sfo_outbound_flights())
+
+    put_object_to_s3_bytes.alias('upload_delays_vs_fares_pdf_plots')(
+        delays_vs_fares_nb.alias('fares_vs_delays')(
+            delays_vs_fares(
+                tickets_with_destination=tickets_with_destination(),
+                average_sfo_outbound_avg_delays_by_destination=outbound_delays,
+            )
+        )
+    )
+
+    put_object_to_s3_bytes.alias('upload_outbound_avg_delay_pdf_plots')(
+        sfo_delays_by_destination(outbound_delays)
+    )
+
+
+def define_airline_demo_warehouse_pipeline():
+    return airline_demo_warehouse_pipeline
