@@ -1,12 +1,9 @@
 """Pipeline definitions for the airline_demo."""
 
 from dagster import (
-    CompositeSolidDefinition,
-    DependencyDefinition,
     ModeDefinition,
     OutputDefinition,
     PresetDefinition,
-    SolidInstance,
     String,
     composite_solid,
     pipeline,
@@ -87,36 +84,16 @@ def process_on_time_data(context):
     )
 
 
-sfo_weather_data = CompositeSolidDefinition(
-    name='sfo_weather_data',
-    solids=[
-        download_from_s3_to_bytes,
-        ingest_csv_to_spark,
-        process_sfo_weather_data,
-        load_data_to_database_from_spark,
-    ],
-    dependencies={
-        SolidInstance('download_from_s3_to_bytes', alias='download_q2_sfo_weather'): {},
-        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_sfo_weather'): {
-            'input_csv_file': DependencyDefinition('download_q2_sfo_weather')
-        },
-        'process_sfo_weather_data': {
-            'sfo_weather_data': DependencyDefinition('ingest_q2_sfo_weather')
-        },
-        SolidInstance('load_data_to_database_from_spark', alias='load_q2_sfo_weather'): {
-            'data_frame': DependencyDefinition('process_sfo_weather_data')
-        },
-    },
-    output_mappings=[
-        OutputDefinition(
-            name='table_name',
-            dagster_type=String,
-            description='''
-        The name of table created during loading.
-        ''',
-        ).mapping_from(solid_name='load_q2_sfo_weather', output_name='table_name')
-    ],
-)
+@composite_solid(outputs=[OutputDefinition(name='table_name', dagster_type=String)])
+def sfo_weather_data(context):
+    return load_data_to_database_from_spark.alias('load_q2_sfo_weather')(
+        process_sfo_weather_data(
+            context,
+            ingest_csv_to_spark.alias('ingest_q2_sfo_weather')(
+                download_from_s3_to_bytes.alias('download_q2_sfo_weather')()
+            ),
+        )
+    )
 
 
 @pipeline(
