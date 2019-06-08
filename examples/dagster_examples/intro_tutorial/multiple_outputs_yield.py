@@ -1,9 +1,9 @@
 from dagster import (
     DependencyDefinition,
     InputDefinition,
-    MultipleResults,
     OutputDefinition,
     PipelineDefinition,
+    Result,
     solid,
     Int,
 )
@@ -15,8 +15,9 @@ from dagster import (
         OutputDefinition(dagster_type=Int, name='out_two'),
     ]
 )
-def return_dict_results(_context):
-    return MultipleResults.from_dict({'out_one': 23, 'out_two': 45})
+def yield_outputs(_context):
+    yield Result(23, 'out_one')
+    yield Result(45, 'out_two')
 
 
 @solid(inputs=[InputDefinition('num', dagster_type=Int)])
@@ -31,14 +32,12 @@ def log_num_squared(context, num):
     return num * num
 
 
-def define_multiple_outputs_pipeline():
+def define_multiple_outputs_yield_pipeline():
     return PipelineDefinition(
-        name='multiple_outputs_pipeline',
-        solids=[return_dict_results, log_num, log_num_squared],
+        name='multiple_outputs_yield_pipeline',
+        solids=[yield_outputs, log_num, log_num_squared],
         dependencies={
-            'log_num': {'num': DependencyDefinition(solid='return_dict_results', output='out_one')},
-            'log_num_squared': {
-                'num': DependencyDefinition(solid='return_dict_results', output='out_two')
-            },
+            'log_num': {'num': DependencyDefinition('yield_outputs', 'out_one')},
+            'log_num_squared': {'num': DependencyDefinition('yield_outputs', 'out_two')},
         },
     )

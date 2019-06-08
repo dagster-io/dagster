@@ -3,15 +3,17 @@ import pytest
 
 
 from dagster import DagsterInvariantViolationError, execute_pipeline
-from dagster_examples.intro_tutorial.multiple_outputs import (
-    define_multiple_outputs_step_one_pipeline,
-    define_multiple_outputs_step_two_pipeline,
-    define_multiple_outputs_step_three_pipeline,
+from dagster_examples.intro_tutorial.multiple_outputs import define_multiple_outputs_pipeline
+from dagster_examples.intro_tutorial.multiple_outputs_yield import (
+    define_multiple_outputs_yield_pipeline,
+)
+from dagster_examples.intro_tutorial.multiple_outputs_conditional import (
+    define_multiple_outputs_conditional_pipeline,
 )
 
 
-def test_intro_tutorial_multiple_outputs_step_one():
-    result = execute_pipeline(define_multiple_outputs_step_one_pipeline())
+def test_intro_tutorial_multiple_outputs():
+    result = execute_pipeline(define_multiple_outputs_pipeline())
 
     assert result.success
     assert result.result_for_solid('return_dict_results').result_value('out_one') == 23
@@ -20,8 +22,8 @@ def test_intro_tutorial_multiple_outputs_step_one():
     assert result.result_for_solid('log_num_squared').result_value() == 45 * 45
 
 
-def test_intro_tutorial_multiple_outputs_step_two():
-    result = execute_pipeline(define_multiple_outputs_step_two_pipeline())
+def test_intro_tutorial_multiple_outputs_yield():
+    result = execute_pipeline(define_multiple_outputs_yield_pipeline())
 
     assert result.success
     assert result.result_for_solid('yield_outputs').result_value('out_one') == 23
@@ -30,9 +32,9 @@ def test_intro_tutorial_multiple_outputs_step_two():
     assert result.result_for_solid('log_num_squared').result_value() == 45 * 45
 
 
-def test_intro_tutorial_multiple_outputs_step_three():
+def test_intro_tutorial_multiple_outputs_conditional():
     result = execute_pipeline(
-        define_multiple_outputs_step_three_pipeline(),
+        define_multiple_outputs_conditional_pipeline(),
         {'solids': {'conditional': {'config': 'out_two'}}},
     )
 
@@ -44,12 +46,3 @@ def test_intro_tutorial_multiple_outputs_step_three():
     # unsuccessful things
     with pytest.raises(DagsterInvariantViolationError):
         assert result.result_for_solid('conditional').result_value('out_one') == 45
-
-
-if __name__ == '__main__':
-    execute_pipeline(
-        define_multiple_outputs_step_three_pipeline(),
-        {'solids': {'conditional': {'config': 'out_two'}}},
-    )
-
-    # execute_pipeline(define_multiple_outputs_step_two())
