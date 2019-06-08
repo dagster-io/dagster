@@ -15,7 +15,7 @@ SystemPipelineExecutionContext                  (contains SystemPipelineExecutio
  |
  |--> SystemStepExecutionContext                (produced by .for_step() on pipeline context)
        |
-       |--> SystemTransformExecutionContext     (produced by .for_transform() on step context)
+       |--> SystemComputeExecutionContext     (produced by .for_transform() on step context)
        |
        |--> SystemExpectationExecutionContext   (produced by .for_expectation() on step context)
 
@@ -27,17 +27,17 @@ The below contexts are provisioned to wrap the corresponding system instance:
 ====================================================================================================
 
 StepExecutionContext
- |                       AbstractTransformExecutionContext
+ |                       AbstractComputeExecutionContext
  |                                     |
  |                -------------------------------------------
  |                |                                         |
  |                V                                         V
- |--> TransformExecutionContext              DagstermillInNotebookExecutionContext
+ |--> ComputeExecutionContext              DagstermillInNotebookExecutionContext
  |                                           (defined in dagstermill)
  |--> ExpectationExecutionContext
 
 ====================================================================================================
 These contexts exist so that we can add system-defined stuff to the System* contexts without
 exposing them to users. System*Context classes are totally internal, whereas
-TransformExecutionContext et all are passed to the user and exported at the global level.
+ComputeExecutionContext et all are passed to the user and exported at the global level.
 '''

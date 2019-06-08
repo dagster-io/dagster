@@ -64,8 +64,8 @@ def test_repo_definition():
 
     assert set(['foo', 'bar']) == {pipeline.name for pipeline in pipelines}
 
-    assert repo.get_solid_def('foo_solid').name == 'foo_solid'
-    assert repo.get_solid_def('bar_solid').name == 'bar_solid'
+    assert repo.solid_def_named('foo_solid').name == 'foo_solid'
+    assert repo.solid_def_named('bar_solid').name == 'bar_solid'
 
 
 def test_dupe_solid_repo_definition():
@@ -89,7 +89,9 @@ def test_dupe_solid_repo_definition():
         repo.get_all_pipelines()
 
     assert str(exc_info.value) == (
-        'You have defined two solids named "same" in repository "error_repo". '
-        'Solid names must be unique within a repository. The solid has been defined '
-        'in pipeline "first" and it has been defined again in pipeline "second."'
+        'You have defined two solid definitions named "same" in repository '
+        '"error_repo". Solid definition names must be unique within a '
+        'repository. The solid definition has been defined '
+        'in pipeline "first" and it has been defined again '
+        'in pipeline "second."'
     )

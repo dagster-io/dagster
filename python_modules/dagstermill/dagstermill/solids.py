@@ -24,8 +24,8 @@ from dagster import (
     SolidDefinition,
 )
 from dagster.core.errors import user_code_error_boundary
-from dagster.core.execution.context.system import SystemTransformExecutionContext
-from dagster.core.execution.context.transform import TransformExecutionContext
+from dagster.core.execution.context.system import SystemComputeExecutionContext
+from dagster.core.execution.context.transform import ComputeExecutionContext
 from dagster.utils import mkdir_p
 
 from .engine import DagstermillNBConvertEngine
@@ -91,17 +91,17 @@ def replace_parameters(context, nb, parameters):
     return nb
 
 
-def get_papermill_parameters(transform_context, inputs, output_log_path):
-    check.inst_param(transform_context, 'transform_context', SystemTransformExecutionContext)
+def get_papermill_parameters(compute_context, inputs, output_log_path):
+    check.inst_param(compute_context, 'compute_context', SystemComputeExecutionContext)
     check.param_invariant(
-        isinstance(transform_context.environment_dict, dict),
-        'transform_context',
-        'SystemTransformExecutionContext must have valid environment_dict',
+        isinstance(compute_context.environment_dict, dict),
+        'compute_context',
+        'SystemComputeExecutionContext must have valid environment_dict',
     )
     check.dict_param(inputs, 'inputs', key_type=six.string_types)
 
-    run_id = transform_context.run_id
-    mode = transform_context.mode
+    run_id = compute_context.run_id
+    mode = compute_context.mode
 
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
     mkdir_p(marshal_dir)
@@ -109,11 +109,11 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
     dm_context_dict = {
         'run_id': run_id,
         'mode': mode,
-        'pipeline_name': transform_context.pipeline_def.name,
-        'solid_def_name': transform_context.solid_def.name,
+        'pipeline_name': compute_context.pipeline_def.name,
+        'solid_def_name': compute_context.solid_def.name,
         'marshal_dir': marshal_dir,
         # TODO rename to environment_dict
-        'environment_config': transform_context.environment_dict,
+        'environment_config': compute_context.environment_dict,
         'output_log_path': output_log_path,
     }
 
@@ -121,7 +121,7 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
 
     input_name_type_dict = {}
 
-    input_def_dict = transform_context.solid_def.input_dict
+    input_def_dict = compute_context.solid_def.input_dict
     for input_name, input_value in inputs.items():
         assert (
             input_name != 'dm_context'
@@ -139,7 +139,7 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
 
     output_name_type_dict = {
         name: output_name_serialization_enum(output_def.runtime_type).value
-        for name, output_def in transform_context.solid_def.output_dict.items()
+        for name, output_def in compute_context.solid_def.output_dict.items()
     }
 
     dm_context_dict['output_name_type_dict'] = output_name_type_dict
@@ -153,17 +153,17 @@ def _dm_solid_transform(name, notebook_path):
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')
 
-    def _t_fn(transform_context, inputs):
-        check.inst_param(transform_context, 'transform_context', TransformExecutionContext)
+    def _t_fn(compute_context, inputs):
+        check.inst_param(compute_context, 'compute_context', ComputeExecutionContext)
         check.param_invariant(
-            isinstance(transform_context.environment_dict, dict),
+            isinstance(compute_context.environment_dict, dict),
             'context',
-            'SystemTransformExecutionContext must have valid environment_dict',
+            'SystemComputeExecutionContext must have valid environment_dict',
         )
 
-        system_transform_context = transform_context.get_system_context()
+        system_compute_context = compute_context.get_system_context()
 
-        base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=transform_context.run_id)
+        base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=compute_context.run_id)
         output_notebook_dir = os.path.join(base_dir, 'output_notebooks/')
         mkdir_p(output_notebook_dir)
 
@@ -177,9 +177,9 @@ def _dm_solid_transform(name, notebook_path):
 
             nb = load_notebook_node(notebook_path)
             nb_no_parameters = replace_parameters(
-                system_transform_context,
+                system_compute_context,
                 nb,
-                get_papermill_parameters(system_transform_context, inputs, output_log_path),
+                get_papermill_parameters(system_compute_context, inputs, output_log_path),
             )
             intermediate_path = os.path.join(
                 output_notebook_dir, '{prefix}-inter.ipynb'.format(prefix=str(uuid.uuid4()))
@@ -192,7 +192,7 @@ def _dm_solid_transform(name, notebook_path):
 
             def log_watcher_thread_target():
                 log_watcher = JsonSqlite3LogWatcher(
-                    output_log_path, system_transform_context.log, is_done
+                    output_log_path, system_compute_context.log, is_done
                 )
                 log_watcher.watch()
 
@@ -216,7 +216,7 @@ def _dm_solid_transform(name, notebook_path):
                     yield Materialization(
                         path=temp_path,
                         description='{name} output notebook'.format(
-                            name=transform_context.solid.name
+                            name=compute_context.solid.name
                         ),
                     )
                     raise exc
@@ -226,7 +226,7 @@ def _dm_solid_transform(name, notebook_path):
 
             output_nb = scrapbook.read_notebook(temp_path)
 
-            system_transform_context.log.debug(
+            system_compute_context.log.debug(
                 'Notebook execution complete for {name}. Data is {data}'.format(
                     name=name, data=output_nb.scraps
                 )
@@ -234,10 +234,10 @@ def _dm_solid_transform(name, notebook_path):
 
             yield Materialization(
                 path=temp_path,
-                description='{name} output notebook'.format(name=transform_context.solid.name),
+                description='{name} output notebook'.format(name=compute_context.solid.name),
             )
 
-            for (output_name, output_def) in system_transform_context.solid_def.output_dict.items():
+            for (output_name, output_def) in system_compute_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
                 if output_name in data_dict:
                     value = read_value(output_def.runtime_type, data_dict[output_name])

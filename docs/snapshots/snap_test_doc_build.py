@@ -3109,7 +3109,7 @@ proceeds. For now, the salient differences are:
    solid. This parameter should be a :py:func:`Field <dagster.Field>`, which tells the dagster
    machinery how to translate config values into runtime values available to the solid.
 2. The function annotated by the :py:func:`@solid <dagster.solid>` API receives an additional first
-   parameter, ``context``, of type :py:class:`TransformExecutionContext <dagster.TransformExecutionContext>`.
+   parameter, ``context``, of type :py:class:`ComputeExecutionContext <dagster.ComputeExecutionContext>`.
    The configuration passed into each solid is available to the annotated function as ``context.solid_config``.
 
 Configuration values are passed in a dict as the second argument to
@@ -3460,7 +3460,7 @@ If the notebook driven solid has outputs (as defined when using ``define_dagster
 .. code-block:: python
     
     context = dm.get_context(config=None)
-    assert (isinstance(context, AbstractTransformExecutionContext))
+    assert (isinstance(context, AbstractComputeExecutionContext))
     context.log.info("This will log some info to the logger")
 
 If you want access to the context object that is available in other solids, then you can call ``get_context()`` with the desired config within the notebook to access the context object and manipulate it as you would in any other solid. When the notebook is run as a solid in a pipeline, the context will be injected at runtime with the configuration provided for the entire pipeline. 
@@ -20381,7 +20381,7 @@ is generally used by framework authors.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Name of the solid.</p></li>
 <li><p><strong>inputs</strong> (<em>List</em><em>[</em><a class="reference internal" href="#dagster.InputDefinition" title="dagster.InputDefinition"><em>InputDefinition</em></a><em>]</em>) – Inputs of the solid.</p></li>
-<li><p><strong>(</strong><strong>Callable</strong><strong>[</strong><strong>[</strong><strong>SystemTransformExecutionContext</strong><strong>, </strong><strong>]</strong><strong>, </strong><strong>Iterable</strong><strong>[</strong><strong>Union</strong><strong>[</strong><strong>Result</strong><strong>,</strong> (<em>compute_fn</em>) – <p>Materialization]]]): The core of the solid, the function that does the actual
+<li><p><strong>(</strong><strong>Callable</strong><strong>[</strong><strong>[</strong><strong>SystemComputeExecutionContext</strong><strong>, </strong><strong>]</strong><strong>, </strong><strong>Iterable</strong><strong>[</strong><strong>Union</strong><strong>[</strong><strong>Result</strong><strong>,</strong> (<em>compute_fn</em>) – <p>Materialization]]]): The core of the solid, the function that does the actual
 computation. The arguments passed to this function after context are deteremined by
 <code class="docutils literal notranslate"><span class="pre">inputs</span></code>.</p>
 <p>This function yields <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> according to <code class="docutils literal notranslate"><span class="pre">outputs</span></code> or
@@ -24063,7 +24063,7 @@ defines the structure and type of configuration values that can be set on each e
 solid. This parameter should be a <a class="reference internal" href="../../api/apidocs/types.html#dagster.Field" title="dagster.Field"><code class="xref py py-func docutils literal notranslate"><span class="pre">Field</span></code></a>, which tells the dagster
 machinery how to translate config values into runtime values available to the solid.</p></li>
 <li><p>The function annotated by the <a class="reference internal" href="../../api/apidocs/solids.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API receives an additional first
-parameter, <code class="docutils literal notranslate"><span class="pre">context</span></code>, of type <code class="xref py py-class docutils literal notranslate"><span class="pre">TransformExecutionContext</span></code>.
+parameter, <code class="docutils literal notranslate"><span class="pre">context</span></code>, of type <code class="xref py py-class docutils literal notranslate"><span class="pre">ComputeExecutionContext</span></code>.
 The configuration passed into each solid is available to the annotated function as <code class="docutils literal notranslate"><span class="pre">context.solid_config</span></code>.</p></li>
 </ol>
 <p>Configuration values are passed in a dict as the second argument to
@@ -24818,7 +24818,7 @@ We can also look at the input that was flowed into the notebook (i.e. the filter
 <li><p>output_name (str) – Defaults to “result”, but must match the name given in the OutputDefinition (which defaults to <code class="docutils literal notranslate"><span class="pre">&quot;result&quot;</span></code> if there is only 1 output)</p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">context</span> <span class="o">=</span> <span class="n">dm</span><span class="o">.</span><span class="n">get_context</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
-<span class="k">assert</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">AbstractTransformExecutionContext</span><span class="p">))</span>
+<span class="k">assert</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">AbstractComputeExecutionContext</span><span class="p">))</span>
 <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;This will log some info to the logger&quot;</span><span class="p">)</span>
 </pre></div>
 </div>

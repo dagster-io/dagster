@@ -1,8 +1,10 @@
 solids:
-  upload_delays_by_geography_pdf_plots:
-    config:
-      Bucket: dagster-airline-demo-sink
-      Key: delays_by_geography.pdf
+  process_delays_by_geo:
+    solids:
+      upload_delays_by_geography_pdf_plots:
+        config:
+          Bucket: dagster-airline-demo-sink
+          Key: delays_by_geography.pdf
   upload_delays_vs_fares_pdf_plots:
     config:
       Bucket: dagster-airline-demo-sink

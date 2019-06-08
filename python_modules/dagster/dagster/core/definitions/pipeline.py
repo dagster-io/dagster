@@ -87,7 +87,7 @@ class PipelineDefinition(IContainSolids, object):
 
         self.mode_definitions = mode_definitions
 
-        solids = check.list_param(
+        current_level_solid_defs = check.list_param(
             _check_solids_arg(self.name, solids), 'solids', of_type=ISolidDefinition
         )
 
@@ -105,13 +105,13 @@ class PipelineDefinition(IContainSolids, object):
         self.dependencies = validate_dependency_dict(dependencies)
 
         dependency_structure, pipeline_solid_dict = create_execution_structure(
-            solids, self.dependencies, parent=None
+            current_level_solid_defs, self.dependencies, parent=None
         )
 
         self._solid_dict = pipeline_solid_dict
         self._dependency_structure = dependency_structure
 
-        self._runtime_type_dict = construct_runtime_type_dictionary(solids)
+        self._runtime_type_dict = construct_runtime_type_dictionary(current_level_solid_defs)
 
         self._preset_dict = {}
         for preset in check.opt_list_param(
@@ -134,7 +134,12 @@ class PipelineDefinition(IContainSolids, object):
             self._preset_dict[preset.name] = preset
 
         # Validate solid resource dependencies
-        _validate_resource_dependencies(self.mode_definitions, solids)
+        _validate_resource_dependencies(self.mode_definitions, current_level_solid_defs)
+
+        self._all_solid_defs = {}
+        for current_level_solid_def in current_level_solid_defs:
+            for solid_def in current_level_solid_def.iterate_solid_defs():
+                self._all_solid_defs[solid_def.name] = solid_def
 
     def _get_mode_definition(self, mode):
         check.str_param(mode, 'mode')
@@ -263,25 +268,17 @@ class PipelineDefinition(IContainSolids, object):
 
     @property
     def solid_defs(self):
-        return list({solid.definition for solid in self.solids})
+        return list(self._all_solid_defs.values())
 
     def solid_def_named(self, name):
         check.str_param(name, 'name')
 
-        for solid in self.solids:
-            if solid.definition.name == name:
-                return solid.definition
-
-        check.failed('{} not found'.format(name))
+        check.invariant(name in self._all_solid_defs, '{} not found'.format(name))
+        return self._all_solid_defs[name]
 
     def has_solid_def(self, name):
         check.str_param(name, 'name')
-
-        for solid in self.solids:
-            if solid.definition.name == name:
-                return True
-
-        return False
+        return name in self._all_solid_defs
 
     def build_sub_pipeline(self, solid_subset):
         return self if solid_subset is None else _build_sub_pipeline(self, solid_subset)

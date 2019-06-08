@@ -35,6 +35,8 @@ class RepositoryDefinition(object):
         self.pipeline_dict = pipeline_dict
 
         self._pipeline_cache = {}
+        self._all_pipelines = None
+        self._solid_defs = None
 
     @property
     def pipeline_names(self):
@@ -114,15 +116,28 @@ class RepositoryDefinition(object):
             List[PipelineDefinition]:
 
         '''
-        pipelines = list(map(self.get_pipeline, self.pipeline_dict.keys()))
-        # This does uniqueness check
-        self._construct_solid_defs(pipelines)
-        return pipelines
+        if self._all_pipelines:
+            return self._all_pipelines
 
-    def _construct_solid_defs(self, pipelines):
+        self._all_pipelines = list(map(self.get_pipeline, self.pipeline_dict.keys()))
+        # This does uniqueness check
+        self.get_all_solid_defs()
+        return self._all_pipelines
+
+    def get_all_solid_defs(self):
+        if self._solid_defs:
+            return self._solid_defs
+
+        self._solid_defs = self._construct_solid_defs()
+        return list(self._solid_defs.values())
+
+    def _construct_solid_defs(self):
         solid_defs = {}
         solid_to_pipeline = {}
-        for pipeline in pipelines:
+        # This looks like it should infinitely loop but the
+        # memoization of all_pipelines and _solids_defs short
+        # circuits that
+        for pipeline in self.get_all_pipelines():
             for solid_def in pipeline.solid_defs:
                 if solid_def.name not in solid_defs:
                     solid_defs[solid_def.name] = solid_def
@@ -134,9 +149,9 @@ class RepositoryDefinition(object):
                     )
                     raise DagsterInvalidDefinitionError(
                         (
-                            'You have defined two solids named "{solid_def_name}" '
-                            'in repository "{repository_name}". Solid names must be '
-                            'unique within a repository. The solid has been defined in '
+                            'You have defined two solid definitions named "{solid_def_name}" '
+                            'in repository "{repository_name}". Solid definition names must be '
+                            'unique within a repository. The solid definition has been defined in '
                             'pipeline "{first_pipeline_name}" and it has been defined '
                             'again in pipeline "{second_pipeline_name}."'
                         ).format(
@@ -149,21 +164,12 @@ class RepositoryDefinition(object):
 
         return solid_defs
 
-    def get_solid_def(self, name):
-        check.str_param(name, 'name')
-
-        solid_defs = self._construct_solid_defs(self.get_all_pipelines())
-
-        if name not in solid_defs:
-            check.failed('could not find solid_def {}'.format(name))
-
-        return solid_defs[name]
-
     def solid_def_named(self, name):
         check.str_param(name, 'name')
-        for pipeline in self.get_all_pipelines():
-            for solid in pipeline.solids:
-                if solid.definition.name == name:
-                    return solid.definition
 
-        check.failed('Did not find ' + name)
+        self.get_all_solid_defs()
+
+        if name not in self._solid_defs:
+            check.failed('could not find solid_def {}'.format(name))
+
+        return self._solid_defs[name]

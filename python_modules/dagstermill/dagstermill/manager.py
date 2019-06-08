@@ -80,7 +80,7 @@ class Manager:
         run_config = RunConfig()
 
         with scoped_pipeline_context(
-            pipeline_def, config, run_config, resources_builder_cm=self.setup_resources
+            pipeline_def, config, run_config, solid_resources_builder_cm=self.setup_resources
         ) as pipeline_context:
             self.context = DagstermillInNotebookExecutionContext(
                 pipeline_context, out_of_pipeline=True
@@ -194,7 +194,10 @@ class Manager:
 
         else:
             self.pipeline_def = self.repository_def.get_pipeline(pipeline_def_name)
-            check.invariant(self.pipeline_def.has_solid_def(solid_def_name))
+            check.invariant(
+                self.pipeline_def.has_solid_def(solid_def_name),
+                'solid {} not found'.format(solid_def_name),
+            )
             self.solid_def = self.pipeline_def.solid_def_named(solid_def_name)
 
             logger = logger_def.logger_fn(
@@ -207,7 +210,7 @@ class Manager:
             self.pipeline_def,
             environment_dict,
             run_config,
-            resources_builder_cm=self.setup_resources,
+            solid_resources_builder_cm=self.setup_resources,
         ) as pipeline_context:
             self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 

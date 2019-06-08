@@ -20,7 +20,13 @@ from dagster.core.definitions import (
 )
 
 # These specific imports are to avoid circular import issues
-from dagster.core.definitions.decorators import MultipleResults, lambda_solid, solid
+from dagster.core.definitions.decorators import (
+    MultipleResults,
+    lambda_solid,
+    solid,
+    composite_solid,
+    pipeline,
+)
 from dagster.core.definitions.logger import logger, LoggerDefinition
 from dagster.core.definitions.resource import resource, ResourceDefinition
 
@@ -119,6 +125,8 @@ __all__ = [
     'logger',
     'resource',
     'solid',
+    'composite_solid',
+    'pipeline',
     'MultipleResults',
     # Execution
     'execute_pipeline_iterator',

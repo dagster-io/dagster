@@ -83,6 +83,23 @@ class PipelineExecutionResult(object):
 
         return top_level_results[name]
 
+    def result_for_handle(self, handle):
+        '''Get a :py:class:`SolidExecutionResult` for a given solid handle string.
+        '''
+        check.str_param(handle, 'handle')
+        results = {
+            solid_id.to_string(): result for solid_id, result in self.solid_result_dict.items()
+        }
+
+        if handle not in results:
+            raise DagsterInvariantViolationError(
+                'Did not find result for solid handle {handle} in pipeline execution result'.format(
+                    handle=handle
+                )
+            )
+
+        return results[handle]
+
 
 class SolidExecutionResult(object):
     '''Execution result for one solid of the pipeline.

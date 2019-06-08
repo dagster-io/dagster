@@ -195,7 +195,7 @@ If the notebook driven solid has outputs (as defined when using ``define_dagster
 .. code-block:: python
     
     context = dm.get_context(config=None)
-    assert (isinstance(context, AbstractTransformExecutionContext))
+    assert (isinstance(context, AbstractComputeExecutionContext))
     context.log.info("This will log some info to the logger")
 
 If you want access to the context object that is available in other solids, then you can call ``get_context()`` with the desired config within the notebook to access the context object and manipulate it as you would in any other solid. When the notebook is run as a solid in a pipeline, the context will be injected at runtime with the configuration provided for the entire pipeline. 
