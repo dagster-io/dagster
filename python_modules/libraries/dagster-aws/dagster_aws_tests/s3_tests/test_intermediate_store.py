@@ -153,6 +153,11 @@ def test_using_s3_for_subplan(s3_bucket):
 
 class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
     @classmethod
+    def applies_to_storage(cls, _):
+        # Not needed for these tests
+        raise NotImplementedError()
+
+    @classmethod
     def set_object(cls, intermediate_store, obj, context, runtime_type, paths):
         check.inst_param(intermediate_store, 'intermediate_store', S3IntermediateStore)
         paths.append(obj)
@@ -177,7 +182,7 @@ def test_s3_intermediate_store_with_type_storage_plugin():
     intermediate_store = S3IntermediateStore(
         run_id=run_id,
         s3_bucket='dagster-airflow-scratch',
-        types_to_register={RuntimeString.inst(): FancyStringS3TypeStoragePlugin},
+        type_storage_plugin_registry={RuntimeString.inst(): FancyStringS3TypeStoragePlugin},
     )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -202,7 +207,7 @@ def test_s3_intermediate_store_with_composite_type_storage_plugin():
     intermediate_store = S3IntermediateStore(
         run_id=run_id,
         s3_bucket='dagster-airflow-scratch',
-        types_to_register={RuntimeString.inst(): FancyStringS3TypeStoragePlugin},
+        type_storage_plugin_registry={RuntimeString.inst(): FancyStringS3TypeStoragePlugin},
     )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:

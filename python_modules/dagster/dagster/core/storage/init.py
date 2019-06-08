@@ -5,7 +5,7 @@ from dagster.core.definitions import PipelineDefinition, ModeDefinition, SystemS
 from dagster.core.definitions.resource import SolidResourcesBuilder
 from dagster.core.execution.config import RunConfig
 from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.core.types.runtime import RuntimeType
+from dagster.core.storage.type_storage import TypeStoragePluginRegistry
 
 
 class InitSystemStorageContext(
@@ -39,11 +39,10 @@ class InitSystemStorageContext(
             environment_config=check.inst_param(
                 environment_config, 'environment_config', EnvironmentConfig
             ),
-            type_storage_plugin_registry=check.dict_param(
+            type_storage_plugin_registry=check.inst_param(
                 type_storage_plugin_registry,
                 'type_storage_plugin_registry',
-                key_type=RuntimeType,
-                value_type=type,  # subclass of TypeStoragePlugin
+                TypeStoragePluginRegistry,
             ),
             solid_resources_builder=check.inst_param(
                 solid_resources_builder, 'solid_resources_builder', SolidResourcesBuilder

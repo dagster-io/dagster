@@ -1,4 +1,6 @@
 from dagster import check
+from dagster.core.storage.type_storage import TypeStoragePlugin
+
 from .config_schema import InputSchema, OutputSchema
 from .marshal import SerializationStrategy, PickleSerializationStrategy
 from .runtime import PythonObjectType, RuntimeType
@@ -20,7 +22,7 @@ def _decorate_as_dagster_type(
     input_schema=None,
     output_schema=None,
     serialization_strategy=None,
-    storage_plugins=None,
+    auto_plugins=None,
 ):
     _ObjectType = _create_object_type_class(
         key=key,
@@ -30,7 +32,7 @@ def _decorate_as_dagster_type(
         input_schema=input_schema,
         output_schema=output_schema,
         serialization_strategy=serialization_strategy,
-        storage_plugins=storage_plugins,
+        auto_plugins=auto_plugins,
     )
 
     type_inst = _ObjectType.inst()
@@ -45,7 +47,7 @@ def dagster_type(
     input_schema=None,
     output_schema=None,
     serialization_strategy=None,
-    storage_plugins=None,
+    auto_plugins=None,
 ):
     '''
     Decorator version of as_dagster_type. See documentation for :py:func:`as_dagster_type` .
@@ -62,7 +64,7 @@ def dagster_type(
             input_schema=input_schema,
             output_schema=output_schema,
             serialization_strategy=serialization_strategy,
-            storage_plugins=storage_plugins,
+            auto_plugins=auto_plugins,
         )
 
     # check for no args, no parens case
@@ -102,7 +104,7 @@ def as_dagster_type(
     input_schema=None,
     output_schema=None,
     serialization_strategy=None,
-    storage_plugins=None,
+    auto_plugins=None,
 ):
     '''
     Takes a python cls and creates a type for it in the Dagster domain.
@@ -124,10 +126,6 @@ def as_dagster_type(
             The default behavior for how to serialize this value for
             persisting between execution steps.
 
-        storage_plugins (Optional[Dict[RunStorageMode, TypeStoragePlugin]]):
-            Storage type specific overrides for the serialization strategy.
-            This allows for storage specific optimzations such as effecient
-            distributed storage on S3.
     '''
     check.type_param(existing_type, 'existing_type')
     check.opt_str_param(name, 'name')
@@ -140,7 +138,12 @@ def as_dagster_type(
         SerializationStrategy,
         default=PickleSerializationStrategy(),
     )
-    storage_plugins = check.opt_dict_param(storage_plugins, 'storage_plugins')
+
+    auto_plugins = check.opt_list_param(auto_plugins, 'auto_plugins', of_type=type)
+    check.param_invariant(
+        all(issubclass(auto_plugin_type, TypeStoragePlugin) for auto_plugin_type in auto_plugins),
+        'auto_plugins',
+    )
 
     name = name or existing_type.__name__
 
@@ -152,5 +155,5 @@ def as_dagster_type(
         input_schema=input_schema,
         output_schema=output_schema,
         serialization_strategy=serialization_strategy,
-        storage_plugins=storage_plugins,
+        auto_plugins=auto_plugins,
     )

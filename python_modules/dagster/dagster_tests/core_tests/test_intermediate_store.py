@@ -7,7 +7,7 @@ import pytest
 
 from dagster import check, String, Nullable, seven, List, Bool
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
-from dagster.core.storage.type_storage import TypeStoragePlugin
+from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.runtime import (
     Bool as RuntimeBool,
@@ -37,6 +37,11 @@ class LowercaseString(RuntimeType):
 
 
 class FancyStringFilesystemTypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
+    @classmethod
+    def applies_to_storage(cls, _):
+        # Not needed for these tests
+        raise NotImplementedError()
+
     @classmethod
     def set_object(cls, intermediate_store, obj, context, runtime_type, paths):
         check.inst_param(intermediate_store, 'intermediate_store', FileSystemIntermediateStore)
@@ -180,7 +185,9 @@ def test_file_system_intermediate_store_with_type_storage_plugin():
     # FIXME need a dedicated test bucket
     intermediate_store = FileSystemIntermediateStore(
         run_id=run_id,
-        types_to_register={RuntimeString.inst(): FancyStringFilesystemTypeStoragePlugin},
+        type_storage_plugin_registry=TypeStoragePluginRegistry(
+            {RuntimeString.inst(): FancyStringFilesystemTypeStoragePlugin}
+        ),
     )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -202,7 +209,9 @@ def test_file_system_intermediate_store_with_composite_type_storage_plugin():
     # FIXME need a dedicated test bucket
     intermediate_store = FileSystemIntermediateStore(
         run_id=run_id,
-        types_to_register={RuntimeString.inst(): FancyStringFilesystemTypeStoragePlugin},
+        type_storage_plugin_registry=TypeStoragePluginRegistry(
+            {RuntimeString.inst(): FancyStringFilesystemTypeStoragePlugin}
+        ),
     )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:

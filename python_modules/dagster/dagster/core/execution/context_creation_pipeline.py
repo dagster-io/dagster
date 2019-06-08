@@ -22,7 +22,7 @@ from dagster.core.events.log import construct_event_logger
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitSystemStorageContext
 from dagster.core.storage.intermediates_manager import IntermediatesManager
-from dagster.core.storage.runs import DagsterRunMeta, RunStorage, RunStorageMode
+from dagster.core.storage.runs import DagsterRunMeta, RunStorage
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import (
@@ -96,12 +96,12 @@ def construct_system_storage_data(storage_init_context):
 
 def system_storage_def_from_config(mode_definition, environment_config):
     for system_storage_def in mode_definition.system_storage_defs:
-        if system_storage_def.name == environment_config.storage.storage_mode:
+        if system_storage_def.name == environment_config.storage.system_storage_name:
             return system_storage_def
 
     check.failed(
         'Could not find storage mode {}. Should have be caught by config system'.format(
-            environment_config.storage.storage_mode
+            environment_config.storage.system_storage_name
         )
     )
 
@@ -165,15 +165,11 @@ def scoped_pipeline_context(
                         pipeline_def=pipeline_def,
                         mode_def=mode_def,
                         system_storage_def=system_storage_def,
-                        system_storage_config=environment_config.storage.storage_config,
+                        system_storage_config=environment_config.storage.system_storage_config,
                         run_config=run_config,
                         environment_config=environment_config,
                         type_storage_plugin_registry=construct_type_storage_plugin_registry(
-                            pipeline_def,
-                            # TODO eliminate once type plugin system migrated to system storage
-                            RunStorageMode.from_environment_config(
-                                environment_config.storage.storage_mode
-                            ),
+                            pipeline_def, system_storage_def
                         ),
                         solid_resources_builder=solid_resources_builder,
                     )

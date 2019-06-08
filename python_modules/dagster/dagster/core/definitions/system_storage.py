@@ -110,7 +110,7 @@ def fs_system_storage(init_context):
         intermediates_manager=IntermediateStoreIntermediatesManager(
             FileSystemIntermediateStore(
                 run_id=init_context.run_config.run_id,
-                types_to_register=init_context.type_storage_plugin_registry,
+                type_storage_plugin_registry=init_context.type_storage_plugin_registry,
                 base_dir=base_dir,
             )
         ),

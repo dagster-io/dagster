@@ -22,6 +22,16 @@ S3ACL = Enum(
 
 class BytesIOS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
+    def applies_to_storage(cls, system_storage_def):
+        try:
+            from dagster_aws.s3.system_storage import s3_system_storage
+
+            return system_storage_def is s3_system_storage
+        except ImportError:
+            return False
+        return True
+
+    @classmethod
     def set_object(cls, intermediate_store, obj, context, runtime_type, paths):
         if isinstance(obj, bytes):
             return super(BytesIOS3StoragePlugin, cls).set_object(

@@ -8,7 +8,6 @@ from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.types.runtime import RuntimeType
 
 from .intermediate_store import IntermediateStore
-from .runs import RunStorageMode
 
 
 class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
@@ -46,7 +45,6 @@ class InMemoryIntermediatesManager(IntermediatesManager):
     def __init__(self):
 
         self.values = {}
-        self.storage_mode = RunStorageMode.IN_MEMORY
 
     # Note:
     # For the in-memory manager context and runtime are currently optional
@@ -81,7 +79,6 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
         self._intermediate_store = check.inst_param(
             intermediate_store, 'intermediate_store', IntermediateStore
         )
-        self.storage_mode = self._intermediate_store.storage_mode
 
     def _get_paths(self, step_output_handle):
         return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]

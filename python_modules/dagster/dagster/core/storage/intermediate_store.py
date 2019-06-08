@@ -9,15 +9,16 @@ from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
 
 from .object_store import ObjectStore, FileSystemObjectStore
-from .runs import RunStorageMode
 from .type_storage import TypeStoragePluginRegistry
 
 
 class IntermediateStore(six.with_metaclass(ABCMeta)):
-    def __init__(self, object_store, root, types_to_register=None):
+    def __init__(self, object_store, root, type_storage_plugin_registry):
         self.root = check.str_param(root, 'root')
         self.object_store = check.inst_param(object_store, 'object_store', ObjectStore)
-        self.registry = TypeStoragePluginRegistry(types_to_register)
+        self.type_storage_plugin_registry = check.inst_param(
+            type_storage_plugin_registry, 'type_storage_plugin_registry', TypeStoragePluginRegistry
+        )
 
     def uri_for_paths(self, paths, protocol=None):
         check.list_param(paths, 'paths', of_type=str)
@@ -67,22 +68,26 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
         pass
 
     def set_value(self, obj, context, runtime_type, paths):
-        if self.registry.is_registered(runtime_type):
-            return self.registry.get(runtime_type.name).set_object(
+        if self.type_storage_plugin_registry.is_registered(runtime_type):
+            return self.type_storage_plugin_registry.get(runtime_type.name).set_object(
                 self, obj, context, runtime_type, paths
             )
         elif runtime_type.name is None:
-            self.registry.check_for_unsupported_composite_overrides(runtime_type)
+            self.type_storage_plugin_registry.check_for_unsupported_composite_overrides(
+                runtime_type
+            )
 
         return self.set_object(obj, context, runtime_type, paths)
 
     def get_value(self, context, runtime_type, paths):
-        if self.registry.is_registered(runtime_type):
-            return self.registry.get(runtime_type.name).get_object(
+        if self.type_storage_plugin_registry.is_registered(runtime_type):
+            return self.type_storage_plugin_registry.get(runtime_type.name).get_object(
                 self, context, runtime_type, paths
             )
         elif runtime_type.name is None:
-            self.registry.check_for_unsupported_composite_overrides(runtime_type)
+            self.type_storage_plugin_registry.check_for_unsupported_composite_overrides(
+                runtime_type
+            )
         return self.get_object(context, runtime_type, paths)
 
     @staticmethod
@@ -108,9 +113,15 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
 
 
 class FileSystemIntermediateStore(IntermediateStore):
-    def __init__(self, run_id, types_to_register=None, base_dir=None):
+    def __init__(self, run_id, type_storage_plugin_registry=None, base_dir=None):
         self.run_id = check.str_param(run_id, 'run_id')
-        self.storage_mode = RunStorageMode.FILESYSTEM
+        type_storage_plugin_registry = check.inst_param(
+            type_storage_plugin_registry
+            if type_storage_plugin_registry
+            else TypeStoragePluginRegistry(types_to_register={}),
+            'type_storage_plugin_registry',
+            TypeStoragePluginRegistry,
+        )
 
         self._base_dir = os.path.abspath(
             os.path.expanduser(
@@ -130,7 +141,7 @@ class FileSystemIntermediateStore(IntermediateStore):
         root = object_store.key_for_paths([self.base_dir, 'dagster', 'runs', run_id, 'files'])
 
         super(FileSystemIntermediateStore, self).__init__(
-            object_store, root=root, types_to_register=types_to_register
+            object_store, root=root, type_storage_plugin_registry=type_storage_plugin_registry
         )
 
     @property

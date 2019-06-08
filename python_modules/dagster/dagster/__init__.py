@@ -68,7 +68,6 @@ from dagster.core.errors import (
 )
 
 from dagster.core.storage.init import InitSystemStorageContext
-from dagster.core.storage.runs import RunStorageMode
 
 from dagster.core.types import (
     Any,
@@ -148,7 +147,6 @@ __all__ = [
     'PipelineConfigEvaluationError',
     'PipelineExecutionResult',
     'RunConfig',
-    'RunStorageMode',
     'SolidExecutionResult',
     'SystemStoragePluginData',
     # Errors

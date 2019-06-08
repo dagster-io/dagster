@@ -95,7 +95,7 @@ class _PlanBuilder:
         step_dict = {step.key: step for step in self.steps}
 
         system_storage_def = self.mode_definition.get_system_storage_def(
-            self.environment_config.storage.storage_mode
+            self.environment_config.storage.system_storage_name
         )
 
         return ExecutionPlan(self.pipeline_def, step_dict, deps, system_storage_def.is_persistent)

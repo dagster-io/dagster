@@ -8,8 +8,13 @@ from dagster import check
 class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     '''Base class for storage plugins.
 
-    Extend this class for (storage_mode, runtime_type) pairs that need special handling.
+    Extend this class for (system_storage_name, runtime_type) pairs that need special handling.
     '''
+
+    @classmethod
+    @abstractmethod
+    def applies_to_storage(self, system_storage_def):
+        raise NotImplementedError()
 
     @classmethod
     @abstractmethod
@@ -99,11 +104,17 @@ class TypeStoragePluginRegistry:
             )
 
 
-def construct_type_storage_plugin_registry(pipeline_def, storage_mode):
+def construct_type_storage_plugin_registry(pipeline_def, system_storage_def):
+    # Needed to avoid circular dep
+    from dagster.core.definitions import PipelineDefinition, SystemStorageDefinition
+
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(system_storage_def, 'system_storage_def', SystemStorageDefinition)
+
     type_plugins = {}
     for type_obj in pipeline_def.all_runtime_types():
-        storage_plugin = type_obj.storage_plugins.get(storage_mode)
-        if storage_plugin:
-            type_plugins[type_obj] = storage_plugin
+        for auto_plugin in type_obj.auto_plugins:
+            if auto_plugin.applies_to_storage(system_storage_def):
+                type_plugins[type_obj] = auto_plugin
 
-    return type_plugins
+    return TypeStoragePluginRegistry(type_plugins)

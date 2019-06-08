@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple, OrderedDict
-from enum import Enum
 import json
 import os
 import shutil
@@ -8,7 +7,6 @@ import shutil
 import six
 
 from dagster import check, seven
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils import mkdir_p, list_pull
 
 
@@ -140,23 +138,3 @@ class InMemoryRunStorage(RunStorage):
     @property
     def is_persistent(self):
         return False
-
-
-# TODO eliminate once type plugin system migrated to system storage
-class RunStorageMode(Enum):
-    IN_MEMORY = 'IN_MEMORY'
-    FILESYSTEM = 'FILESYSTEM'
-    S3 = 'S3'
-
-    @classmethod
-    def from_environment_config(cls, mode):
-        check.opt_str_param(mode, 'mode')
-
-        if mode == 'filesystem':
-            return RunStorageMode.FILESYSTEM
-        elif mode == 's3':
-            return RunStorageMode.S3
-        elif mode == 'in_memory' or mode is None:
-            return RunStorageMode.IN_MEMORY
-        else:
-            raise DagsterInvariantViolationError('Invalid storage specified {}'.format(mode))

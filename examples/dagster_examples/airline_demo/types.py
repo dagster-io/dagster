@@ -19,11 +19,12 @@ from dagster import (
     check,
     output_selector_schema,
 )
-from dagster.core.storage.runs import RunStorageMode
+from dagster.core.definitions.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.runtime import Stringish, RuntimeType
 
 from dagster_aws.s3.types import BytesIOS3StoragePlugin
+from dagster_aws.s3.system_storage import s3_system_storage
 
 AirlineDemoResources = namedtuple(
     'AirlineDemoResources',
@@ -32,6 +33,10 @@ AirlineDemoResources = namedtuple(
 
 
 class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
+    @classmethod
+    def applies_to_storage(cls, system_storage_def):
+        return system_storage_def is s3_system_storage
+
     @classmethod
     def set_object(cls, intermediate_store, obj, _context, _runtime_type, paths):
         target_path = intermediate_store.object_store.key_for_paths(paths)
@@ -46,6 +51,10 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
 
 
 class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
+    @classmethod
+    def applies_to_storage(cls, system_storage_def):
+        return system_storage_def is fs_system_storage
+
     @classmethod
     def set_object(cls, intermediate_store, obj, _context, _runtime_type, paths):
         target_path = os.path.join(intermediate_store.root, *paths)
@@ -86,10 +95,7 @@ SparkDataFrameType = as_dagster_type(
     DataFrame,
     name='SparkDataFrameType',
     description='A Pyspark data frame.',
-    storage_plugins={
-        RunStorageMode.S3: SparkDataFrameS3StoragePlugin,
-        RunStorageMode.FILESYSTEM: SparkDataFrameFilesystemStoragePlugin,
-    },
+    auto_plugins=[SparkDataFrameS3StoragePlugin, SparkDataFrameFilesystemStoragePlugin],
     output_schema=spark_df_output_schema,
 )
 
@@ -108,10 +114,10 @@ class SqlTableName(Stringish):
 
 class FileFromPath(RuntimeType):
     def __init__(self):
-        self.storage_plugins = {RunStorageMode.S3: BytesIOS3StoragePlugin}
         super(FileFromPath, self).__init__(
             'FileFromPath',
             'FileFromPath',
+            auto_plugins=[BytesIOS3StoragePlugin],
             description='Bytes representing the contents of a file at a specific path.',
         )
 

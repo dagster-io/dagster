@@ -30,7 +30,6 @@ class RunConfig(
         produced during execution.
       loggers (list): Additional loggers that log messages will be sent to.
       executor_config (ExecutorConfig): Configuration for where and how computation will occur.
-      storage_mode (RunStorageMode): Where intermediate artifacts will be stored during execution.
       rexecution_config (RexecutionConfig): Information about a previous run to allow
         for subset rexecution.
       step_keys_to_execute (list[str]): They subset of steps from a pipeline to execute this run.
