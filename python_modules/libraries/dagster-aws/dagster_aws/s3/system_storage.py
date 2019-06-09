@@ -3,15 +3,24 @@ from dagster.core.definitions.system_storage import mem_system_storage, fs_syste
 from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
 from dagster.core.storage.runs import FileSystemRunStorage
 from .intermediate_store import S3IntermediateStore
+from .file_manager import S3FileManager
+from .utils import create_s3_session
 
 
 @system_storage(
-    name='s3', is_persistent=True, config_field=Field(Dict({'s3_bucket': Field(String)}))
+    name='s3',
+    is_persistent=True,
+    config_field=Field(
+        Dict({'s3_bucket': Field(String), 's3_key': Field(String, is_optional=True)})
+    ),
 )
 def s3_system_storage(init_context):
     return SystemStorageData(
-        # TODO: implement S3FileManager https://github.com/dagster-io/dagster/issues/1456
-        file_manager=None,
+        file_manager=S3FileManager(
+            s3_session=create_s3_session(),
+            s3_bucket=init_context.system_storage_config['s3_bucket'],
+            s3_base_key=init_context.system_storage_config.get('s3_key', ''),
+        ),
         run_storage=FileSystemRunStorage(),
         intermediates_manager=IntermediateStoreIntermediatesManager(
             S3IntermediateStore(

@@ -34,14 +34,18 @@ class FileHandle(six.with_metaclass(ABCMeta)):
 
 class LocalFileHandle(FileHandle):
     def __init__(self, path):
-        self.path = check.str_param(path, 'path')
+        self._path = check.str_param(path, 'path')
+
+    @property
+    def path(self):
+        return self._path
 
     @property
     def path_desc(self):
-        return self.path
+        return self._path
 
 
-class FileManager(six.with_metaclass(ABCMeta)):
+class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     '''
     The base class for all file managers in dagster. The file manager is a user-facing
     abstraction that allows a dagster user to pass files in between solids, and the file
@@ -55,27 +59,19 @@ class FileManager(six.with_metaclass(ABCMeta)):
     system storage specified by the operator.
     '''
 
-    def __init__(self):
-        self.local_temp_manager = TempfileManager()
-
-    def handle_as_local_temp(self, file_handle):
+    @abstractmethod
+    def copy_handle_to_local_temp(self, file_handle):
         '''
         Take a file handle and make it available as a local temp file. Returns a path.
 
         In an implementation lihe an S3FileManager, this would download the file from s3
         to local filesystem.
         '''
-        check.inst_param(file_handle, 'file_handle', FileHandle)
+        raise NotImplementedError()
 
-        with self.read(file_handle, 'rb') as handle_obj:
-            temp_file_obj = self.local_temp_manager.tempfile()
-            temp_file_obj.write(handle_obj.read())
-            temp_name = temp_file_obj.name
-            temp_file_obj.close()
-            return temp_name
-
+    @abstractmethod
     def cleanup_local_temp(self):
-        self.local_temp_manager.close()
+        raise NotImplementedError()
 
     @abstractmethod
     def read(self, file_handle, mode):
@@ -108,9 +104,9 @@ def check_file_like_obj(obj):
 
 class LocalFileManager(FileManager):
     def __init__(self, base_dir):
-        super(LocalFileManager, self).__init__()
         self.base_dir = check.str_param(base_dir, 'base_dir')
         self._base_dir_ensured = False
+        self._temp_file_manager = TempfileManager()
 
     def ensure_base_dir_exists(self):
         if self._base_dir_ensured:
@@ -119,6 +115,15 @@ class LocalFileManager(FileManager):
         mkdir_p(self.base_dir)
 
         self._base_dir_ensured = True
+
+    def copy_handle_to_local_temp(self, file_handle):
+        check.inst_param(file_handle, 'file_handle', FileHandle)
+        with self.read(file_handle, 'rb') as handle_obj:
+            temp_file_obj = self._temp_file_manager.tempfile()
+            temp_file_obj.write(handle_obj.read())
+            temp_name = temp_file_obj.name
+            temp_file_obj.close()
+            return temp_name
 
     @staticmethod
     def default_base_dir(run_id):
@@ -129,6 +134,7 @@ class LocalFileManager(FileManager):
     def read(self, file_handle, mode='r'):
         check.inst_param(file_handle, 'file_handle', LocalFileHandle)
         check.str_param(mode, 'mode')
+        check.param_invariant(mode in {'r', 'rb'}, 'mode')
 
         with open(file_handle.path, mode) as file_obj:
             yield file_obj
@@ -145,3 +151,6 @@ class LocalFileManager(FileManager):
         with open(dest_file_path, mode) as dest_file_obj:
             shutil.copyfileobj(file_obj, dest_file_obj)
             return LocalFileHandle(dest_file_path)
+
+    def cleanup_local_temp(self):
+        self._temp_file_manager.close()

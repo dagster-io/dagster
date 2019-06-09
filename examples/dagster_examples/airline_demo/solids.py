@@ -158,10 +158,10 @@ def unzip_file_handle(context, archive_file_handle, archive_member):
 def ingest_csv_file_handle_to_spark(context, csv_file_handle):
     # fs case: copies from file manager location into system temp
     #    - This is potentially an unnecessary copy. We could potentially specialize
-    #    the implementation of handle_as_local_temp to not to do this in the
+    #    the implementation of copy_handle_to_local_temp to not to do this in the
     #    local fs case. Somewhat more dangerous though.
     # s3 case: downloads from s3 to local temp directory
-    temp_file_name = context.file_manager.handle_as_local_temp(csv_file_handle)
+    temp_file_name = context.file_manager.copy_handle_to_local_temp(csv_file_handle)
 
     # In fact for a generic component this should really be using
     # the spark APIs to load directly from whatever object store, rather

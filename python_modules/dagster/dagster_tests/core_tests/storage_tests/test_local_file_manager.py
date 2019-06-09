@@ -3,12 +3,12 @@ from dagster.core.storage.file_manager import local_file_manager
 from dagster.utils.test import get_temp_dir, get_temp_file_handle_with_data
 
 
-def test_basic_file_manager_handle_as_local_temp():
+def test_basic_file_manager_copy_handle_to_local_temp():
     foo_data = 'foo'.encode()
     with get_temp_dir() as temp_dir:
         with get_temp_file_handle_with_data(foo_data) as foo_handle:
             with local_file_manager(temp_dir) as manager:
-                local_temp = manager.handle_as_local_temp(foo_handle)
+                local_temp = manager.copy_handle_to_local_temp(foo_handle)
                 assert local_temp != foo_handle.path
                 with open(local_temp, 'rb') as ff:
                     assert ff.read() == foo_data
