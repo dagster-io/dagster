@@ -11,7 +11,7 @@ from dagster import (
 )
 from dagster.seven import mock
 from dagster.utils.test import get_temp_dir
-from dagster_examples.airline_demo.solids import mirror_keyed_file_from_s3
+from dagster_examples.airline_demo.mirror_keyed_file_from_s3 import mirror_keyed_file_from_s3
 from dagster_examples.airline_demo.keyed_file_store import keyed_fs_file_store, LocalFileHandle
 
 
