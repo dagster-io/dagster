@@ -13,10 +13,9 @@ happened during the computation.
 
 Here we present an example of a solid that has multiple outputs within a pipeline:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs_step_one.py
    :linenos:
    :caption: multiple_outputs.py
-   :lines: 26-33, 50-74
 
 This can be visualized in dagit:
 
@@ -42,8 +41,9 @@ With this we can run the pipeline (condensed here for brevity):
 
 .. code-block:: console
 
-    $ dagster pipeline execute -f multiple_outputs.py \
-    -n define_multiple_outputs_step_one_pipeline
+    $ dagster pipeline execute \
+        -f multiple_outputs.py \
+        -n define_multiple_outputs_step_one_pipeline
 
     ... log spew
     2019-04-05 22:23:37 - dagster - INFO -
@@ -66,10 +66,10 @@ multiple instances of the ``Result`` object. (Note: this is actually the core
 specification of the compute function: all other forms are implemented in terms of
 the iterator form.)
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs_yield.py
    :linenos:
    :caption: multiple_outputs.py
-   :lines: 15-24
+   :lines: 12-20
 
 Conditional Outputs
 ^^^^^^^^^^^^^^^^^^^
@@ -78,10 +78,9 @@ Multiple outputs are the mechanism by which we implement branching or conditiona
 modify the first solid above to conditionally emit one output or the other based on config
 and then execute that pipeline.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs_conditional.py
     :linenos:
     :caption: multiple_outputs.py
-    :lines: 36-49,86-96
 
 You must create a config file
 
