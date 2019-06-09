@@ -272,6 +272,7 @@ def construct_pipeline_execution_context(
             environment_config=context_creation_data.environment_config,
             run_storage=system_storage_data.run_storage,
             intermediates_manager=system_storage_data.intermediates_manager,
+            file_manager=system_storage_data.file_manager,
         ),
         log_manager=log_manager,
     )

@@ -10,8 +10,13 @@ from dagster import check, seven
 from dagster.utils import mkdir_p, list_pull
 
 
-def base_run_directory():
+def base_runs_directory():
     return os.path.join(seven.get_system_temp_directory(), 'dagster', 'runs')
+
+
+def base_directory_for_run(run_id):
+    check.str_param(run_id, 'run_id')
+    return os.path.join(base_runs_directory(), run_id)
 
 
 def meta_file(base_dir):
@@ -61,8 +66,8 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 class FileSystemRunStorage(RunStorage):
     def __init__(self, base_dir=None):
-        self._base_dir = check.opt_str_param(base_dir, 'base_dir', base_run_directory())
-        mkdir_p(base_run_directory())
+        self._base_dir = check.opt_str_param(base_dir, 'base_dir', base_runs_directory())
+        mkdir_p(base_runs_directory())
         self._meta_file = meta_file(self._base_dir)
 
     def write_dagster_run_meta(self, dagster_run_meta):

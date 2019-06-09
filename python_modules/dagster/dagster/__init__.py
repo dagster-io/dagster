@@ -68,6 +68,7 @@ from dagster.core.errors import (
 )
 
 from dagster.core.storage.init import InitSystemStorageContext
+from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
 
 from dagster.core.types import (
     Any,
@@ -196,4 +197,7 @@ __all__ = [
     'RuntimeType',
     'ConfigType',
     'ConfigScalar',
+    # file things
+    'FileHandle',
+    'LocalFileHandle',
 ]

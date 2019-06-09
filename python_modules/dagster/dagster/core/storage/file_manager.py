@@ -1,0 +1,147 @@
+from abc import ABCMeta, abstractproperty, abstractmethod
+from contextlib import contextmanager
+import io
+import os
+import shutil
+import uuid
+
+import six
+
+from dagster import check
+from dagster.utils import mkdir_p
+from dagster.core.types.decorator import dagster_type
+
+from .temp_file_manager import TempfileManager
+from .runs import base_directory_for_run
+
+
+@dagster_type(
+    description='''A file handle a reference to a file, which could
+    be resident in the local file system, an object store, or any
+    arbitrary place where file can be stored.
+
+    This exists to handle the very common case where you wish to write
+    a computation reads, transforms, and writes files, but written in a way
+    where the same code could work in local developement as well as in a cluster
+    where the files would be stored in globally available object store such as s3.
+    '''
+)  # pylint: disable=no-init
+class FileHandle(six.with_metaclass(ABCMeta)):
+    @abstractproperty
+    def path_desc(self):
+        pass
+
+
+class LocalFileHandle(FileHandle):
+    def __init__(self, path):
+        self.path = check.str_param(path, 'path')
+
+    @property
+    def path_desc(self):
+        return self.path
+
+
+class FileManager(six.with_metaclass(ABCMeta)):
+    '''
+    The base class for all file managers in dagster. The file manager is a user-facing
+    abstraction that allows a dagster user to pass files in between solids, and the file
+    manager is responsible for marshalling those files to and from the nodes where
+    the actual dagster computation occur. If the user does their file manipulations using
+    this abstraction, it is straightforward to write a pipeline that executes both (a) in
+    a local development environment with no external dependencies where files are availble
+    on the filesystem and (b) in a cluster environment where those files would need to be on
+    a distributed filesystem (e.g. hdfs) or an object store (s3). The business logic
+    remains constant and a new implementation of the FileManager is swapped out based on the
+    system storage specified by the operator.
+    '''
+
+    def __init__(self):
+        self.local_temp_manager = TempfileManager()
+
+    def handle_as_local_temp(self, file_handle):
+        '''
+        Take a file handle and make it available as a local temp file. Returns a path.
+
+        In an implementation lihe an S3FileManager, this would download the file from s3
+        to local filesystem.
+        '''
+        check.inst_param(file_handle, 'file_handle', FileHandle)
+
+        with self.read(file_handle, 'rb') as handle_obj:
+            temp_file_obj = self.local_temp_manager.tempfile()
+            temp_file_obj.write(handle_obj.read())
+            temp_name = temp_file_obj.name
+            temp_file_obj.close()
+            return temp_name
+
+    def cleanup_local_temp(self):
+        self.local_temp_manager.close()
+
+    @abstractmethod
+    def read(self, file_handle, mode):
+        '''Return a file-like stream for the file handle'''
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_data(self, data):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_new_file(self, file_obj, mode='w'):
+        raise NotImplementedError()
+
+
+@contextmanager
+def local_file_manager(base_dir=None):
+    manager = None
+    try:
+        manager = LocalFileManager(base_dir)
+        yield manager
+    finally:
+        if manager:
+            manager.cleanup_local_temp()
+
+
+def check_file_like_obj(obj):
+    check.invariant(obj and hasattr(obj, 'read') and hasattr(obj, 'write'))
+
+
+class LocalFileManager(FileManager):
+    def __init__(self, base_dir):
+        super(LocalFileManager, self).__init__()
+        self.base_dir = check.str_param(base_dir, 'base_dir')
+        self._base_dir_ensured = False
+
+    def ensure_base_dir_exists(self):
+        if self._base_dir_ensured:
+            return
+
+        mkdir_p(self.base_dir)
+
+        self._base_dir_ensured = True
+
+    @staticmethod
+    def default_base_dir(run_id):
+        check.str_param(run_id, 'run_id')
+        return os.path.join(base_directory_for_run(run_id), 'files')
+
+    @contextmanager
+    def read(self, file_handle, mode='r'):
+        check.inst_param(file_handle, 'file_handle', LocalFileHandle)
+        check.str_param(mode, 'mode')
+
+        with open(file_handle.path, mode) as file_obj:
+            yield file_obj
+
+    def write_data(self, data):
+        check.inst_param(data, 'data', bytes)
+        return self.write_new_file(io.BytesIO(data), mode='wb')
+
+    def write_new_file(self, file_obj, mode='w'):
+        check_file_like_obj(file_obj)
+        self.ensure_base_dir_exists()
+
+        dest_file_path = os.path.join(self.base_dir, str(uuid.uuid4()))
+        with open(dest_file_path, mode) as dest_file_obj:
+            shutil.copyfileobj(file_obj, dest_file_obj)
+            return LocalFileHandle(dest_file_path)

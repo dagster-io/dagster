@@ -28,6 +28,7 @@ from dagster.core.execution.context_creation_pipeline import (
 )
 from dagster.core.utility_solids import define_stub_solid
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
+from dagster.core.storage.file_manager import LocalFileHandle
 from dagster.core.storage.runs import InMemoryRunStorage
 
 
@@ -70,6 +71,27 @@ def _unlink_swallow_errors(path):
         os.unlink(path)
     except Exception:  # pylint: disable=broad-except
         pass
+
+
+@contextmanager
+def get_temp_file_handle_with_data(data):
+    with get_temp_file_name_with_data(data) as temp_file:
+        yield LocalFileHandle(temp_file)
+
+
+@contextmanager
+def get_temp_file_name_with_data(data):
+    with get_temp_file_name() as temp_file:
+        with open(temp_file, 'wb') as ff:
+            ff.write(data)
+
+        yield temp_file
+
+
+@contextmanager
+def get_temp_file_handle():
+    with get_temp_file_name() as temp_file:
+        yield LocalFileHandle(temp_file)
 
 
 @contextmanager

@@ -10,7 +10,7 @@ from dagster.core.storage.runs import (
     DagsterRunMeta,
     FileSystemRunStorage,
     InMemoryRunStorage,
-    base_run_directory,
+    base_runs_directory,
 )
 
 
@@ -35,7 +35,7 @@ def test_filesystem_run_storage_from_run_config():
 
     assert result.success
 
-    assert os.path.isdir(os.path.join(base_run_directory(), result.run_id))
+    assert os.path.isdir(os.path.join(base_runs_directory(), result.run_id))
 
 
 def test_default_run_storage():
@@ -49,7 +49,7 @@ def test_default_run_storage():
 
     assert result.success
 
-    assert not os.path.exists(os.path.join(base_run_directory(), result.run_id))
+    assert not os.path.exists(os.path.join(base_runs_directory(), result.run_id))
 
 
 def test_config_specified_filesystem_run_storage():
@@ -63,7 +63,7 @@ def test_config_specified_filesystem_run_storage():
 
     assert result.success
 
-    assert os.path.exists(os.path.join(base_run_directory(), result.run_id))
+    assert os.path.exists(os.path.join(base_runs_directory(), result.run_id))
 
 
 def test_empty_storage():

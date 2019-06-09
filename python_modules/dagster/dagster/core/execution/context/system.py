@@ -15,6 +15,8 @@ from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.resource import SolidResourcesBuilder
 from dagster.core.log_manager import DagsterLogManager
+
+from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.runs import RunStorage
 from dagster.core.system_config.objects import EnvironmentConfig
 
@@ -26,7 +28,7 @@ class SystemPipelineExecutionContextData(
         '_SystemPipelineExecutionContextData',
         (
             'run_config solid_resources_builder environment_config pipeline_def '
-            'mode_def system_storage_def run_storage intermediates_manager'
+            'mode_def system_storage_def run_storage intermediates_manager file_manager'
         ),
     )
 ):
@@ -45,6 +47,7 @@ class SystemPipelineExecutionContextData(
         system_storage_def,
         run_storage,
         intermediates_manager,
+        file_manager,
     ):
         from dagster.core.definitions import PipelineDefinition
         from dagster.core.definitions.system_storage import SystemStorageDefinition
@@ -68,6 +71,9 @@ class SystemPipelineExecutionContextData(
             intermediates_manager=check.inst_param(
                 intermediates_manager, 'intermediates_manager', IntermediatesManager
             ),
+            # TODO: Make required when https://github.com/dagster-io/dagster/issues/1456
+            # is complete
+            file_manager=check.opt_inst_param(file_manager, 'file_manager', FileManager),
         )
 
     @property
@@ -171,6 +177,10 @@ class SystemPipelineExecutionContext(object):
     @property
     def intermediates_manager(self):
         return self._pipeline_context_data.intermediates_manager
+
+    @property
+    def file_manager(self):
+        return self._pipeline_context_data.file_manager
 
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):

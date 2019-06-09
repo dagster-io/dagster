@@ -20,8 +20,10 @@ from dagster import (
     RunConfig,
 )
 
+from dagster.core.storage.temp_file_manager import tempfile_resource
+
 from dagster_examples.airline_demo.solids import sql_solid, ingest_csv_to_spark, unzip_file
-from dagster_examples.airline_demo.resources import spark_session_local, tempfile_resource
+from dagster_examples.airline_demo.resources import spark_session_local
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 

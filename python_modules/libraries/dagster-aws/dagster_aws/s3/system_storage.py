@@ -10,6 +10,8 @@ from .intermediate_store import S3IntermediateStore
 )
 def s3_system_storage(init_context):
     return SystemStorageData(
+        # TODO: implement S3FileManager https://github.com/dagster-io/dagster/issues/1456
+        file_manager=None,
         run_storage=FileSystemRunStorage(),
         intermediates_manager=IntermediateStoreIntermediatesManager(
             S3IntermediateStore(

@@ -16,6 +16,7 @@ from dagster import (
     Dict,
     ExpectationResult,
     Field,
+    FileHandle,
     InputDefinition,
     Int,
     Materialization,
@@ -136,6 +137,51 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
 
 @solid(
+    inputs=[
+        InputDefinition('archive_file_handle', FileHandle),
+        InputDefinition('archive_member', String),
+    ],
+    outputs=[OutputDefinition()],
+)
+def unzip_file_handle(context, archive_file_handle, archive_member):
+    with context.file_manager.read(archive_file_handle, mode='rb') as local_obj:
+        with zipfile.ZipFile(local_obj) as zip_file:
+            with zip_file.open(archive_member) as unzipped_stream:
+                return context.file_manager.write_new_file(unzipped_stream, mode='wb')
+
+
+@solid(
+    inputs=[InputDefinition('csv_file_handle', FileHandle)],
+    outputs=[OutputDefinition(SparkDataFrameType)],
+    resources={'spark'},
+)
+def ingest_csv_file_handle_to_spark(context, csv_file_handle):
+    # fs case: copies from file manager location into system temp
+    #    - This is potentially an unnecessary copy. We could potentially specialize
+    #    the implementation of handle_as_local_temp to not to do this in the
+    #    local fs case. Somewhat more dangerous though.
+    # s3 case: downloads from s3 to local temp directory
+    temp_file_name = context.file_manager.handle_as_local_temp(csv_file_handle)
+
+    # In fact for a generic component this should really be using
+    # the spark APIs to load directly from whatever object store, rather
+    # than using any interleaving temp files.
+    data_frame = (
+        context.resources.spark.read.format('csv')
+        .options(
+            header='true',
+            # inferSchema='true',
+        )
+        .load(temp_file_name)
+    )
+
+    # parquet compat
+    return rename_spark_dataframe_columns(
+        data_frame, lambda x: re.sub(PARQUET_SPECIAL_CHARACTERS, '', x)
+    )
+
+
+@solid(
     name='unzip_file',
     inputs=[
         InputDefinition('archive_file', Bytes, description='The archive to unzip'),
@@ -163,6 +209,7 @@ def ingest_csv_to_spark(context, input_csv_file):
     tf = context.resources.tempfile.tempfile()
     with open(tf.name, 'wb') as fd:
         fd.write(input_csv_file.read())
+
     data_frame = (
         context.resources.spark.read.format('csv')
         .options(
