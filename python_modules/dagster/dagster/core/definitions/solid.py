@@ -201,7 +201,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
 
         self.dependencies = validate_dependency_dict(dependencies)
         dependency_structure, pipeline_solid_dict = create_execution_structure(
-            solids, self.dependencies, self
+            solids, self.dependencies, parent_definition=self
         )
 
         self._solid_dict = pipeline_solid_dict

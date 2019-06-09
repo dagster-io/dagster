@@ -105,7 +105,7 @@ class PipelineDefinition(IContainSolids, object):
         self.dependencies = validate_dependency_dict(dependencies)
 
         dependency_structure, pipeline_solid_dict = create_execution_structure(
-            current_level_solid_defs, self.dependencies, parent=None
+            current_level_solid_defs, self.dependencies, parent_definition=None
         )
 
         self._solid_dict = pipeline_solid_dict

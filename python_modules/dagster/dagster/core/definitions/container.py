@@ -119,7 +119,7 @@ def validate_dependency_dict(dependencies):
     return dependencies
 
 
-def create_execution_structure(solids, dependencies_dict, parent):
+def create_execution_structure(solid_defs, dependencies_dict, parent_definition):
     '''This builder takes the dependencies dictionary specified during creation of the
     PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
     dictionary.
@@ -161,6 +161,18 @@ def create_execution_structure(solids, dependencies_dict, parent):
 
     as well as a dagster.core.definitions.dependency.DependencyStructure object.
     '''
+    from .solid import ISolidDefinition, CompositeSolidDefinition
+
+    check.list_param(solid_defs, 'solid_defs', of_type=ISolidDefinition)
+    check.dict_param(
+        dependencies_dict,
+        'dependencies_dict',
+        key_type=six.string_types + (SolidInstance,),
+        value_type=dict,
+    )
+    # parent_definition is none in the context of a pipeline
+    check.opt_inst_param(parent_definition, 'parent_definition', CompositeSolidDefinition)
+
     # Same as dep_dict but with SolidInstance replaced by alias string
     aliased_dependencies_dict = {}
 
@@ -187,7 +199,7 @@ def create_execution_structure(solids, dependencies_dict, parent):
                 name_to_aliases[dep.solid].add(dep.solid)
 
     pipeline_solid_dict = _build_pipeline_solid_dict(
-        solids, name_to_aliases, alias_to_solid_instance, parent
+        solid_defs, name_to_aliases, alias_to_solid_instance, parent_definition
     )
 
     _validate_dependencies(aliased_dependencies_dict, pipeline_solid_dict, alias_to_name)
@@ -199,9 +211,11 @@ def create_execution_structure(solids, dependencies_dict, parent):
     return dependency_structure, pipeline_solid_dict
 
 
-def _build_pipeline_solid_dict(solids, name_to_aliases, alias_to_solid_instance, parent):
+def _build_pipeline_solid_dict(
+    solid_defs, name_to_aliases, alias_to_solid_instance, parent_definition
+):
     pipeline_solids = []
-    for solid_def in solids:
+    for solid_def in solid_defs:
         uses_of_solid = name_to_aliases.get(solid_def.name, {solid_def.name})
 
         for alias in uses_of_solid:
@@ -216,7 +230,7 @@ def _build_pipeline_solid_dict(solids, name_to_aliases, alias_to_solid_instance,
                     name=alias,
                     definition=solid_def,
                     resource_mapper_fn=resource_mapper_fn,
-                    parent=parent,
+                    parent_definition=parent_definition,
                 )
             )
 
