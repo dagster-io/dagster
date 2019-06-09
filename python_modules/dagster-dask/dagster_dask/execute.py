@@ -3,7 +3,7 @@ import itertools
 import dask
 import dask.distributed
 
-from dagster import check, ExecutionTargetHandle, RunConfig
+from dagster import check, ExecutionTargetHandle, RunConfig, SystemStorageData
 
 from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.results import PipelineExecutionResult
@@ -203,7 +203,9 @@ def execute_on_dask(
                     pipeline,
                     env_config,
                     run_config,
-                    intermediates_manager=pipeline_context.intermediates_manager,
-                    run_storage=pipeline_context.run_storage,
+                    system_storage_data_override=SystemStorageData(
+                        intermediates_manager=pipeline_context.intermediates_manager,
+                        run_storage=pipeline_context.run_storage,
+                    ),
                 ),
             )

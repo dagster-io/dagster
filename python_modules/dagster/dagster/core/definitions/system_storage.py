@@ -33,9 +33,9 @@ class SystemStorageDefinition:
             boundaries. Execution with, for example, the multiprocess executor or within
             the context of dagster-airflow require a persistent storage mode.
         config_field (Field): Configuration field for its section of the storage config.
-        system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStoragePluginData])
+        system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStorageData])
             Called by the system. The author of the StorageSystemDefinition must provide this function,
-            which consumes the init context and then emits the SystemStoragePluginData.
+            which consumes the init context and then emits the SystemStorageData.
     '''
 
     def __init__(self, name, is_persistent, config_field=None, system_storage_creation_fn=None):
@@ -51,7 +51,7 @@ class SystemStorageDefinition:
         )
 
 
-class SystemStoragePluginData:
+class SystemStorageData:
     def __init__(self, run_storage, intermediates_manager):
         self.run_storage = check.inst_param(run_storage, 'run_storage', RunStorage)
         self.intermediates_manager = check.inst_param(
@@ -93,7 +93,7 @@ class _SystemStorageDecoratorCallable:
 
 @system_storage(name='in_memory', is_persistent=False)
 def mem_system_storage(_init_context):
-    return SystemStoragePluginData(
+    return SystemStorageData(
         run_storage=InMemoryRunStorage(), intermediates_manager=InMemoryIntermediatesManager()
     )
 
@@ -105,7 +105,7 @@ def mem_system_storage(_init_context):
 )
 def fs_system_storage(init_context):
     base_dir = init_context.system_storage_config.get('base_dir')
-    return SystemStoragePluginData(
+    return SystemStorageData(
         run_storage=FileSystemRunStorage(base_dir=base_dir),
         intermediates_manager=IntermediateStoreIntermediatesManager(
             FileSystemIntermediateStore(

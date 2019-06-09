@@ -1,3 +1,4 @@
+from collections import namedtuple
 from contextlib import contextmanager
 import inspect
 import sys
@@ -7,9 +8,8 @@ from contextlib2 import ExitStack
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, create_environment_type
-from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import SolidResourcesBuilder
-from dagster.core.definitions.system_storage import SystemStorageDefinition
+from dagster.core.definitions.system_storage import SystemStorageData
 from dagster.core.errors import (
     DagsterError,
     DagsterInvariantViolationError,
@@ -21,8 +21,7 @@ from dagster.core.events import DagsterEvent, PipelineInitFailureData
 from dagster.core.events.log import construct_event_logger
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitSystemStorageContext
-from dagster.core.storage.intermediates_manager import IntermediatesManager
-from dagster.core.storage.runs import DagsterRunMeta, RunStorage
+from dagster.core.storage.runs import DagsterRunMeta
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import (
@@ -123,28 +122,20 @@ def check_persistent_storage_requirement(pipeline_def, system_storage_def, run_c
         )
 
 
-@contextmanager
-def scoped_pipeline_context(
-    pipeline_def,
-    environment_dict,
-    run_config,
-    intermediates_manager=None,
-    run_storage=None,
-    solid_resources_builder_cm=create_resource_builder,
-):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.dict_param(environment_dict, 'environment_dict', key_type=str)
-    check.inst_param(run_config, 'run_config', RunConfig)
-    check.opt_inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
+# This represents all the data that is passed *into* context creation process.
+# The remainder of the objects generated (e.g. loggers, resources) are created
+# using user-defined code that may fail at runtime and result in the emission
+# of a pipeline init failure events. The data in this object are passed all
+# over the place during the context creation process so grouping here for
+# ease of argument passing etc.
+ContextCreationData = namedtuple(
+    'ContextCreationData', 'pipeline_def environment_config run_config mode_def system_storage_def'
+)
 
+
+def create_context_creation_data(pipeline_def, environment_dict, run_config):
     environment_config = create_environment_config(
         pipeline_def, environment_dict, mode=run_config.mode
-    )
-
-    check.invariant(
-        (intermediates_manager and run_storage)
-        or (intermediates_manager is None and run_storage is None),
-        'Must override both manager and run storage or not at all',
     )
 
     mode_def = pipeline_def.get_mode_definition(run_config.mode)
@@ -152,48 +143,51 @@ def scoped_pipeline_context(
 
     check_persistent_storage_requirement(pipeline_def, system_storage_def, run_config)
 
+    return ContextCreationData(
+        pipeline_def=pipeline_def,
+        environment_config=environment_config,
+        run_config=run_config,
+        mode_def=mode_def,
+        system_storage_def=system_storage_def,
+    )
+
+
+@contextmanager
+def scoped_pipeline_context(
+    pipeline_def,
+    environment_dict,
+    run_config,
+    system_storage_data_override=None,
+    solid_resources_builder_cm=create_resource_builder,
+):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.dict_param(environment_dict, 'environment_dict', key_type=str)
+    check.inst_param(run_config, 'run_config', RunConfig)
+    check.opt_inst_param(
+        system_storage_data_override, 'system_storage_data_override', SystemStorageData
+    )
+
+    context_creation_data = create_context_creation_data(pipeline_def, environment_dict, run_config)
+
+    # After this try block, a Dagster exception thrown will result in a pipeline init failure event.
     try:
-        log_manager = create_log_manager(environment_config, run_config, pipeline_def, mode_def)
+        log_manager = create_log_manager(context_creation_data)
 
         with solid_resources_builder_cm(
-            pipeline_def, environment_config, run_config, log_manager
+            context_creation_data.pipeline_def,
+            context_creation_data.environment_config,
+            context_creation_data.run_config,
+            log_manager,
         ) as solid_resources_builder:
 
-            if not (run_storage and intermediates_manager):
-                system_storage_data = construct_system_storage_data(
-                    InitSystemStorageContext(
-                        pipeline_def=pipeline_def,
-                        mode_def=mode_def,
-                        system_storage_def=system_storage_def,
-                        system_storage_config=environment_config.storage.system_storage_config,
-                        run_config=run_config,
-                        environment_config=environment_config,
-                        type_storage_plugin_registry=construct_type_storage_plugin_registry(
-                            pipeline_def, system_storage_def
-                        ),
-                        solid_resources_builder=solid_resources_builder,
-                    )
-                )
-                run_storage, intermediates_manager = (
-                    system_storage_data.run_storage,
-                    system_storage_data.intermediates_manager,
-                )
-
-            run_storage.write_dagster_run_meta(
-                DagsterRunMeta(
-                    run_id=run_config.run_id, timestamp=time.time(), pipeline_name=pipeline_def.name
-                )
+            system_storage_data = create_system_storage_data(
+                context_creation_data, system_storage_data_override, solid_resources_builder
             )
 
             yield construct_pipeline_execution_context(
-                run_config=run_config,
-                pipeline_def=pipeline_def,
-                mode_def=mode_def,
-                system_storage_def=system_storage_def,
+                context_creation_data=context_creation_data,
                 solid_resources_builder=solid_resources_builder,
-                environment_config=environment_config,
-                run_storage=run_storage,
-                intermediates_manager=intermediates_manager,
+                system_storage_data=system_storage_data,
                 log_manager=log_manager,
             )
 
@@ -217,47 +211,68 @@ def scoped_pipeline_context(
         )
 
 
-def construct_pipeline_execution_context(
-    run_config,
-    pipeline_def,
-    mode_def,
-    system_storage_def,
-    solid_resources_builder,
-    environment_config,
-    run_storage,
-    intermediates_manager,
-    log_manager,
+def create_system_storage_data(
+    context_creation_data, system_storage_data_override, solid_resources_builder
 ):
-    check.inst_param(run_config, 'run_config', RunConfig)
-    check.inst_param(pipeline_def, 'pipeline', PipelineDefinition)
-    check.inst_param(mode_def, 'mode_def', ModeDefinition)
-    check.inst_param(system_storage_def, 'system_storage_def', SystemStorageDefinition)
-    solid_resources_builder = check.opt_inst_param(
-        solid_resources_builder,
+    check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
+
+    environment_config, pipeline_def, system_storage_def, run_config = (
+        context_creation_data.environment_config,
+        context_creation_data.pipeline_def,
+        context_creation_data.system_storage_def,
+        context_creation_data.run_config,
+    )
+
+    system_storage_data = (
+        system_storage_data_override
+        if system_storage_data_override
+        else construct_system_storage_data(
+            InitSystemStorageContext(
+                pipeline_def=pipeline_def,
+                mode_def=context_creation_data.mode_def,
+                system_storage_def=system_storage_def,
+                system_storage_config=environment_config.storage.system_storage_config,
+                run_config=run_config,
+                environment_config=environment_config,
+                type_storage_plugin_registry=construct_type_storage_plugin_registry(
+                    pipeline_def, system_storage_def
+                ),
+                solid_resources_builder=solid_resources_builder,
+            )
+        )
+    )
+
+    system_storage_data.run_storage.write_dagster_run_meta(
+        DagsterRunMeta(
+            run_id=run_config.run_id, timestamp=time.time(), pipeline_name=pipeline_def.name
+        )
+    )
+    return system_storage_data
+
+
+def construct_pipeline_execution_context(
+    context_creation_data, solid_resources_builder, system_storage_data, log_manager
+):
+    check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
+    solid_resources_builder = check.inst_param(
+        solid_resources_builder if solid_resources_builder else SolidResourcesBuilder(),
         'solid_resources_builder',
         SolidResourcesBuilder,
-        default=SolidResourcesBuilder(),
     )
-    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
-    check.inst_param(run_storage, 'run_storage', RunStorage)
-    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
+    check.inst_param(system_storage_data, 'system_storage_data', SystemStorageData)
     check.inst_param(log_manager, 'log_manager', DagsterLogManager)
-
-    logging_tags = get_logging_tags(run_config, pipeline_def)
-    log_manager.logging_tags = logging_tags
 
     return SystemPipelineExecutionContext(
         SystemPipelineExecutionContextData(
-            pipeline_def=pipeline_def,
-            mode_def=mode_def,
-            system_storage_def=system_storage_def,
-            run_config=run_config,
+            pipeline_def=context_creation_data.pipeline_def,
+            mode_def=context_creation_data.mode_def,
+            system_storage_def=context_creation_data.system_storage_def,
+            run_config=context_creation_data.run_config,
             solid_resources_builder=solid_resources_builder,
-            environment_config=environment_config,
-            run_storage=run_storage,
-            intermediates_manager=intermediates_manager,
+            environment_config=context_creation_data.environment_config,
+            run_storage=system_storage_data.run_storage,
+            intermediates_manager=system_storage_data.intermediates_manager,
         ),
-        logging_tags=logging_tags,
         log_manager=log_manager,
     )
 
@@ -321,11 +336,15 @@ def create_resource_fn_lambda(pipeline_def, resource_def, resource_config, run_i
     )
 
 
-def create_log_manager(environment_config, run_config, pipeline_def, mode_def):
-    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
-    check.inst_param(run_config, 'run_config', RunConfig)
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.inst_param(mode_def, 'mode_def', ModeDefinition)
+def create_log_manager(context_creation_data):
+    check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
+
+    pipeline_def, mode_def, environment_config, run_config = (
+        context_creation_data.pipeline_def,
+        context_creation_data.mode_def,
+        context_creation_data.environment_config,
+        context_creation_data.run_config,
+    )
 
     loggers = []
     for logger_key, logger_def in mode_def.loggers.items() or default_loggers().items():
@@ -359,7 +378,13 @@ def create_log_manager(environment_config, run_config, pipeline_def, mode_def):
             construct_event_logger(run_config.event_callback).logger_fn(init_logger_context)
         )
 
-    return DagsterLogManager(run_id=run_config.run_id, logging_tags={}, loggers=loggers)
+    return DagsterLogManager(
+        run_id=run_config.run_id,
+        logging_tags=get_logging_tags(
+            context_creation_data.run_config, context_creation_data.pipeline_def
+        ),
+        loggers=loggers,
+    )
 
 
 def _create_context_free_log_manager(run_config, pipeline_def):

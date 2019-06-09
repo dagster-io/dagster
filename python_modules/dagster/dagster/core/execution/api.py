@@ -13,7 +13,7 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 '''
 
 from dagster import check
-from dagster.core.definitions import PipelineDefinition
+from dagster.core.definitions import PipelineDefinition, SystemStorageData
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
@@ -185,8 +185,10 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
                 pipeline,
                 environment_dict,
                 run_config,
-                run_storage=pipeline_context.run_storage,
-                intermediates_manager=pipeline_context.intermediates_manager,
+                system_storage_data_override=SystemStorageData(
+                    run_storage=pipeline_context.run_storage,
+                    intermediates_manager=pipeline_context.intermediates_manager,
+                ),
             ),
         )
 

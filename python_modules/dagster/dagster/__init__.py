@@ -20,7 +20,7 @@ from dagster.core.definitions import (
     SolidDefinition,
     SolidInstance,
     SystemStorageDefinition,
-    SystemStoragePluginData,
+    SystemStorageData,
     logger,
     resource,
     system_storage,
@@ -148,7 +148,7 @@ __all__ = [
     'PipelineExecutionResult',
     'RunConfig',
     'SolidExecutionResult',
-    'SystemStoragePluginData',
+    'SystemStorageData',
     # Errors
     'DagsterEvaluateConfigValueError',
     'DagsterExecutionStepExecutionError',
