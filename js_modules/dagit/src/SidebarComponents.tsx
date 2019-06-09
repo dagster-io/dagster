@@ -49,7 +49,6 @@ export const SidebarTitle = styled.h3`
   margin: 0;
   margin-bottom: 14px;
   overflow: hidden;
-  padding-left: 12px;
   text-overflow: ellipsis;
 `;
 
@@ -59,12 +58,16 @@ export const SectionItemHeader = styled.h4`
   margin: 6px 0;
 `;
 
+export const SidebarDivider = styled.div`
+  height: 2px;
+  background: ${Colors.GRAY4};
+`;
+
 export const SidebarSubhead = styled.div`
   color: ${Colors.GRAY3};
   font-size: 0.7rem;
-  margin-left: 12px;
-  margin-top: 14px;
 `;
+
 export const SectionItemContainer = styled.div`
   border-bottom: 1px solid ${Colors.LIGHT_GRAY2};
   margin-bottom: 20px;
