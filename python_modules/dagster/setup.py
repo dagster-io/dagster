@@ -1,14 +1,18 @@
 import argparse
 import sys
-import os
 
 from setuptools import find_packages, setup
 
 
 def long_description():
-    here = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(here, 'README.rst'), 'r') as fh:
-        return fh.read()
+    return '''
+## Dagster
+Dagster is a system for building modern data applications.
+
+Combining an elegant programming model and beautiful tools, Dagster allows infrastructure engineers,
+data engineers, and data scientists to seamlessly collaborate to process and produce the trusted,
+reliable data needed in today's world.
+'''.strip()
 
 
 def get_version(name):
