@@ -119,7 +119,8 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
             <ExecutionTimelineDot completed={startDone} /> {startText}
           </ExecutionTimelineMessage>
           {executionPlan.steps.map(step => {
-            const isStepPartOfRun = runMetadata.steps[step.key] !== undefined;
+            const isStepPartOfRun =
+              !haveRun || runMetadata.steps[step.key] !== undefined;
             if (!isStepPartOfRun) {
               stepsSkippedCount++;
               return;
