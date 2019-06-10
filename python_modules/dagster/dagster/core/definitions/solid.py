@@ -142,7 +142,7 @@ class SolidDefinition(ISolidDefinition):
         config_field=None,
         description=None,
         metadata=None,
-        resources=None,
+        required_resources=None,
         step_metadata_fn=None,
     ):
         self.name = check_valid_name(name)
@@ -154,7 +154,9 @@ class SolidDefinition(ISolidDefinition):
             'of a SolidDefinition or @solid named "{name}"'.format(name=name),
         )
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
-        self.resources = check.opt_set_param(resources, 'resources', of_type=str)
+        self.required_resources = check.opt_set_param(
+            required_resources, 'required_resources', of_type=str
+        )
         self.step_metadata_fn = step_metadata_fn
 
         super(SolidDefinition, self).__init__(
@@ -235,12 +237,12 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         return self._dependency_structure
 
     @property
-    def resources(self):
-        resources = set()
+    def required_resources(self):
+        required_resources = set()
         for solid in self.solids:
-            resources.update(solid.definition.resources)
+            required_resources.update(solid.definition.required_resources)
 
-        return resources
+        return required_resources
 
     @property
     def has_config_entry(self):

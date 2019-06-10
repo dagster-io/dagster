@@ -253,13 +253,13 @@ def _dm_solid_transform(name, notebook_path):
 
 
 def define_dagstermill_solid(
-    name, notebook_path, inputs=None, outputs=None, config_field=None, resources=None
+    name, notebook_path, inputs=None, outputs=None, config_field=None, required_resources=None
 ):
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')
     inputs = check.opt_list_param(inputs, 'input_defs', of_type=InputDefinition)
     outputs = check.opt_list_param(outputs, 'output_defs', of_type=OutputDefinition)
-    resources = check.opt_set_param(resources, 'resources', of_type=str)
+    required_resources = check.opt_set_param(required_resources, 'required_resources', of_type=str)
 
     return SolidDefinition(
         name=name,
@@ -267,7 +267,7 @@ def define_dagstermill_solid(
         compute_fn=_dm_solid_transform(name, notebook_path),
         outputs=outputs,
         config_field=config_field,
-        resources=resources,
+        required_resources=required_resources,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
         metadata={'notebook_path': notebook_path, 'kind': 'ipynb'},
     )

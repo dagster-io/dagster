@@ -33,7 +33,7 @@ from .keyed_file_store import FileHandle
             }
         )
     ),
-    resources={'keyed_file_store', 's3'},
+    required_resources={'keyed_file_store', 's3'},
     description='''This is a solid which mirrors a file in s3 into a keyed file store.
     The keyed file store is a resource type that allows a solid author to save files
     and assign a key to them. The keyed file store can be backed by local file or any

@@ -69,7 +69,7 @@ class SolidResourcesBuilder(namedtuple('SolidResourcesBuilder', 'resource_instan
             ),
         )
 
-    def build(self, mapper_fn=None, resource_deps=None):
+    def build(self, mapper_fn=None, required_resources=None):
         '''We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.
 
@@ -83,8 +83,8 @@ class SolidResourcesBuilder(namedtuple('SolidResourcesBuilder', 'resource_instan
         as, e.g., context.resources.foo.
         '''
         resource_instance_dict = (
-            mapper_fn(self.resource_instance_dict, resource_deps)
-            if (mapper_fn and resource_deps)
+            mapper_fn(self.resource_instance_dict, required_resources)
+            if (mapper_fn and required_resources)
             else self.resource_instance_dict
         )
 

@@ -128,7 +128,7 @@ class _Solid(object):
         inputs=None,
         outputs=None,
         description=None,
-        resources=None,
+        required_resources=None,
         config_field=None,
     ):
         self.name = check.opt_str_param(name, 'name')
@@ -138,7 +138,7 @@ class _Solid(object):
         self.description = check.opt_str_param(description, 'description')
 
         # resources will be checked within SolidDefinition
-        self.resources = resources
+        self.required_resources = required_resources
 
         # config_field will be checked within SolidDefinition
         self.config_field = config_field
@@ -158,7 +158,7 @@ class _Solid(object):
             compute_fn=compute_fn,
             config_field=self.config_field,
             description=self.description,
-            resources=self.resources,
+            required_resources=self.required_resources,
         )
 
 
@@ -201,7 +201,12 @@ def lambda_solid(name=None, inputs=None, output=None, description=None):
 
 
 def solid(
-    name=None, inputs=None, outputs=None, config_field=None, description=None, resources=None
+    name=None,
+    inputs=None,
+    outputs=None,
+    config_field=None,
+    description=None,
+    required_resources=None,
 ):
     '''(decorator) Create a solid with specified parameters.
 
@@ -293,7 +298,7 @@ def solid(
         check.invariant(outputs is None)
         check.invariant(description is None)
         check.invariant(config_field is None)
-        check.invariant(resources is None)
+        check.invariant(required_resources is None)
         return _Solid()(name)
 
     return _Solid(
@@ -302,7 +307,7 @@ def solid(
         outputs=outputs,
         config_field=config_field,
         description=description,
-        resources=resources,
+        required_resources=required_resources,
     )
 
 

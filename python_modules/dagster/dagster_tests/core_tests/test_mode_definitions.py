@@ -177,7 +177,7 @@ def test_mode_with_resource_deps():
     def resource_a(_init_context):
         return 1
 
-    @solid(resources={'a'})
+    @solid(required_resources={'a'})
     def requires_a(context):
         called['count'] += 1
         assert context.resources.a == 1
@@ -228,7 +228,7 @@ def test_subset_with_mode_definitions():
     def resource_a(_init_context):
         return 1
 
-    @solid(resources={'a'})
+    @solid(required_resources={'a'})
     def requires_a(context):
         called['a'] += 1
         assert context.resources.a == 1
@@ -237,7 +237,7 @@ def test_subset_with_mode_definitions():
     def resource_b(_init_context):
         return 2
 
-    @solid(resources={'b'})
+    @solid(required_resources={'b'})
     def requires_b(context):
         called['b'] += 1
         assert context.resources.b == 2

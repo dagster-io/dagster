@@ -142,7 +142,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 @solid(
     inputs=[InputDefinition('csv_file_handle', FileHandle)],
     outputs=[OutputDefinition(SparkDataFrameType)],
-    resources={'spark'},
+    required_resources={'spark'},
 )
 def ingest_csv_file_handle_to_spark(context, csv_file_handle):
     # fs case: copies from file manager location into system temp

@@ -376,11 +376,15 @@ def _validate_resource_dependencies(mode_definitions, solids):
     for mode_def in mode_definitions:
         mode_resources = set(mode_def.resource_defs.keys())
         for solid in solids:
-            for resource in solid.resources:
-                if resource not in mode_resources:
+            for required_resource in solid.required_resources:
+                if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (
                             'Resource "{resource}" is required by solid {solid_name}, but is not '
                             'provided by mode "{mode_name}"'
-                        ).format(resource=resource, solid_name=solid.name, mode_name=mode_def.name)
+                        ).format(
+                            resource=required_resource,
+                            solid_name=solid.name,
+                            mode_name=mode_def.name,
+                        )
                     )

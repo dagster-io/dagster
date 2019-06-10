@@ -52,7 +52,7 @@ S3BucketData = dict_with_fields(
     description='Downloads an object from S3.',
     inputs=[InputDefinition('bucket_data', S3BucketData)],
     outputs=[OutputDefinition(Bytes, description='The contents of the downloaded object.')],
-    resources={'s3'},
+    required_resources={'s3'},
 )
 def download_from_s3_to_bytes(context, bucket_data):
     '''Download an object from S3 as an in-memory bytes object.
@@ -80,7 +80,7 @@ def download_from_s3_to_bytes(context, bucket_data):
     ),
     description='Downloads an object from S3 to a file.',
     outputs=[OutputDefinition(FileExistsAtPath, description='The path to the downloaded object.')],
-    resources={'s3'},
+    required_resources={'s3'},
 )
 def download_from_s3_to_file(context):
     '''Download an object from S3 to a local file.
@@ -105,7 +105,7 @@ def download_from_s3_to_file(context):
         ),
         OutputDefinition(String, description='The key to which the file was uploaded.', name='key'),
     ],
-    resources={'s3'},
+    required_resources={'s3'},
 )
 def put_object_to_s3_bytes(context, file_obj):
     '''Upload file contents to s3.
