@@ -4,17 +4,6 @@ import { Colors } from "@blueprintjs/core";
 import { IStepState } from "./RunMetadataProvider";
 
 export interface IExecutionPlanHiddenStepsBoxProps {
-  // state: IStepState;
-  // stepKey: string;
-  // start: number | undefined;
-  // elapsed: number | undefined;
-  // delay: number;
-  // materializations: IMaterialization[];
-  // expectationResults: IExpectationResult[];
-  // onShowStateDetails?: (steName: string) => void;
-  // onApplyStepFilter?: (stepName: string) => void;
-  // executionArtifactsPersisted: boolean;
-  // onReexecuteStep?: (stepKey: string) => void;
   numberStepsSkipped: number;
 }
 
