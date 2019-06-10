@@ -4,15 +4,16 @@ from dagster.core.storage.intermediates_manager import IntermediateStoreIntermed
 from dagster.core.storage.runs import FileSystemRunStorage
 from .intermediate_store import S3IntermediateStore
 from .file_manager import S3FileManager
-from .utils import create_s3_session
 
 
 @system_storage(
-    name='s3', is_persistent=True, config_field=Field(Dict({'s3_bucket': Field(String)}))
+    name='s3',
+    is_persistent=True,
+    config_field=Field(Dict({'s3_bucket': Field(String)})),
+    required_resources={'s3'},
 )
 def s3_system_storage(init_context):
-    resources_dict = init_context.resources._asdict()
-    s3_session = resources_dict['s3'].session if 's3' in resources_dict else create_s3_session()
+    s3_session = init_context.resources.s3.session
     s3_key = 'dagster/runs/{run_id}/files/managed'.format(run_id=init_context.run_config.run_id)
     return SystemStorageData(
         file_manager=S3FileManager(

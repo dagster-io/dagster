@@ -24,6 +24,7 @@ from dagster.core.storage.temp_file_manager import tempfile_resource
 
 from dagster_examples.airline_demo.solids import sql_solid, ingest_csv_to_spark, unzip_file
 from dagster_examples.airline_demo.resources import spark_session_local
+from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 
@@ -31,7 +32,7 @@ tempfile_mode = ModeDefinition(name='tempfile', resources={'tempfile': tempfile_
 
 spark_mode = ModeDefinition(
     name='spark',
-    resources={'spark': spark_session_local, 'tempfile': tempfile_resource},
+    resources={'spark': spark_session_local, 'tempfile': tempfile_resource, 's3': s3_resource},
     system_storage_defs=s3_plus_default_storage_defs,
 )
 

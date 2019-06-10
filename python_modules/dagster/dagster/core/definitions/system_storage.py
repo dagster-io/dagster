@@ -39,7 +39,14 @@ class SystemStorageDefinition:
             which consumes the init context and then emits the SystemStorageData.
     '''
 
-    def __init__(self, name, is_persistent, config_field=None, system_storage_creation_fn=None):
+    def __init__(
+        self,
+        name,
+        is_persistent,
+        config_field=None,
+        system_storage_creation_fn=None,
+        required_resources=None,
+    ):
         self.name = check.str_param(name, 'name')
         self.is_persistent = check.bool_param(is_persistent, 'is_persistent')
         self.config_field = check_user_facing_opt_field_param(
@@ -49,6 +56,9 @@ class SystemStorageDefinition:
         )
         self.system_storage_creation_fn = check.opt_callable_param(
             system_storage_creation_fn, 'system_storage_creation_fn'
+        )
+        self.required_resources = check.opt_set_param(
+            required_resources, 'required_resources', of_type=str
         )
 
 
@@ -62,23 +72,28 @@ class SystemStorageData:
         self.file_manager = check.opt_inst_param(file_manager, 'file_manager', FileManager)
 
 
-def system_storage(name=None, is_persistent=True, config_field=None):
+def system_storage(name=None, is_persistent=True, config_field=None, required_resources=None):
     if callable(name):
         check.invariant(name is None)
         check.invariant(is_persistent is True)
         check.invariant(config_field is None)
+        check.invariant(required_resources is None)
         return _SystemStorageDecoratorCallable()(name)
 
     return _SystemStorageDecoratorCallable(
-        name=name, is_persistent=is_persistent, config_field=config_field
+        name=name,
+        is_persistent=is_persistent,
+        config_field=config_field,
+        required_resources=required_resources,
     )
 
 
 class _SystemStorageDecoratorCallable:
-    def __init__(self, name=None, is_persistent=True, config_field=None):
+    def __init__(self, name=None, is_persistent=True, config_field=None, required_resources=None):
         self.name = check.opt_str_param(name, 'name')
         self.is_persistent = check.bool_param(is_persistent, 'is_persistent')
         self.config_field = config_field  # type check in definition
+        self.required_resources = required_resources  # type check in definition
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -91,11 +106,11 @@ class _SystemStorageDecoratorCallable:
             is_persistent=self.is_persistent,
             config_field=self.config_field,
             system_storage_creation_fn=fn,
+            required_resources=self.required_resources,
         )
 
 
-@system_storage(name='in_memory', is_persistent=False)
-def mem_system_storage(init_context):
+def create_mem_system_storage_data(init_context):
     return SystemStorageData(
         run_storage=InMemoryRunStorage(),
         intermediates_manager=InMemoryIntermediatesManager(),
@@ -103,6 +118,11 @@ def mem_system_storage(init_context):
             LocalFileManager.default_base_dir(init_context.run_config.run_id)
         ),
     )
+
+
+@system_storage(name='in_memory', is_persistent=False)
+def mem_system_storage(init_context):
+    return create_mem_system_storage_data(init_context)
 
 
 @system_storage(

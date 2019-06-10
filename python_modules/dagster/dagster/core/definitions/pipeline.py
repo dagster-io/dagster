@@ -381,10 +381,23 @@ def _validate_resource_dependencies(mode_definitions, solids):
                     raise DagsterInvalidDefinitionError(
                         (
                             'Resource "{resource}" is required by solid {solid_name}, but is not '
-                            'provided by mode "{mode_name}"'
+                            'provided by mode "{mode_name}".'
                         ).format(
                             resource=required_resource,
                             solid_name=solid.name,
+                            mode_name=mode_def.name,
+                        )
+                    )
+        for system_storage_def in mode_def.system_storage_defs:
+            for required_resource in system_storage_def.required_resources:
+                if required_resource not in mode_resources:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            'Resource "{resource}" is required by system storage'
+                            '{storage_name}, but is not provided by mode "{mode_name}".'
+                        ).format(
+                            resource=required_resource,
+                            storage_name=system_storage_def.name,
                             mode_name=mode_def.name,
                         )
                     )
