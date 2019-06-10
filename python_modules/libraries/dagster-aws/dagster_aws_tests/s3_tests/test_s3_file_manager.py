@@ -15,7 +15,7 @@ from dagster.seven import mock
 
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 from dagster_aws.s3.file_manager import S3FileManager, S3FileHandle
-from .s3_fake_resource import create_s3_fake_resource
+from dagster_aws.s3.s3_fake_resource import create_s3_fake_resource
 
 # For deps
 # pylint: disable=no-value-for-parameter

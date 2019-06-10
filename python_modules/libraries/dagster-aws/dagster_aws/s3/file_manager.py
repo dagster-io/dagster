@@ -74,6 +74,10 @@ class S3FileManager(FileManager):
     def _get_local_path(self, file_handle):
         return self._local_handle_cache[file_handle.s3_path]
 
+    def read_data(self, file_handle):
+        with self.read(file_handle, mode='rb') as file_obj:
+            return file_obj.read()
+
     def write_data(self, data):
         check.inst_param(data, 'data', bytes)
         return self.write_new_file(io.BytesIO(data), mode='wb')

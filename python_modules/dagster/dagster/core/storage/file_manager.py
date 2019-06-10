@@ -79,6 +79,10 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         raise NotImplementedError()
 
     @abstractmethod
+    def read_data(self, file_handle):
+        raise NotImplementedError()
+
+    @abstractmethod
     def write_data(self, data):
         raise NotImplementedError()
 
@@ -138,6 +142,10 @@ class LocalFileManager(FileManager):
 
         with open(file_handle.path, mode) as file_obj:
             yield file_obj
+
+    def read_data(self, file_handle):
+        with self.read(file_handle, mode='rb') as file_obj:
+            return file_obj.read()
 
     def write_data(self, data):
         check.inst_param(data, 'data', bytes)

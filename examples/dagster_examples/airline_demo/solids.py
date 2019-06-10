@@ -137,20 +137,6 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
 
 @solid(
-    inputs=[
-        InputDefinition('archive_file_handle', FileHandle),
-        InputDefinition('archive_member', String),
-    ],
-    outputs=[OutputDefinition()],
-)
-def unzip_file_handle(context, archive_file_handle, archive_member):
-    with context.file_manager.read(archive_file_handle, mode='rb') as local_obj:
-        with zipfile.ZipFile(local_obj) as zip_file:
-            with zip_file.open(archive_member) as unzipped_stream:
-                return context.file_manager.write_new_file(unzipped_stream, mode='wb')
-
-
-@solid(
     inputs=[InputDefinition('csv_file_handle', FileHandle)],
     outputs=[OutputDefinition(SparkDataFrameType)],
     resources={'spark'},
