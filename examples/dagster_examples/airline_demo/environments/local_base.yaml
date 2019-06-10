@@ -5,3 +5,6 @@ resources:
       postgres_password: test
       postgres_hostname: localhost
       postgres_db_name: test
+  keyed_file_store:
+    config:
+      target_folder: /tmp/dagster/airline_data/keyed_store

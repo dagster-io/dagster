@@ -98,5 +98,5 @@ def test_unzip_file_handle_on_fake_s3():
     zipped_s3_file = result.result_for_solid('write_zipped_file_to_s3_store').result_value()
     unzipped_s3_file = result.result_for_solid('unzip_file_handle').result_value()
 
-    assert zipped_s3_file.s3_key in s3_fake_resource.s3.buckets['some-bucket']
-    assert unzipped_s3_file.s3_key in s3_fake_resource.s3.buckets['some-bucket']
+    assert zipped_s3_file.s3_key in s3_fake_resource.session.buckets['some-bucket']
+    assert unzipped_s3_file.s3_key in s3_fake_resource.session.buckets['some-bucket']

@@ -9,6 +9,7 @@ from dagster import (
     ResourceDefinition,
     DagsterInvalidDefinitionError,
 )
+from dagster_aws.s3.resources import S3Resource
 from dagster.seven import mock
 from dagster.utils.test import get_temp_dir
 from dagster_examples.airline_demo.mirror_keyed_file_from_s3 import mirror_keyed_file_from_s3
@@ -32,7 +33,7 @@ def test_mirror_keyed_file_from_s3_basic():
             mirror_keyed_file_from_s3,
             resources={
                 'keyed_file_store': keyed_fs_file_store,
-                's3': ResourceDefinition.hardcoded_resource(s3_session),
+                's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session)),
             },
             environment_dict={
                 'solids': {
@@ -72,7 +73,7 @@ def test_mirror_keyed_file_from_s3_specify_target_key():
             mirror_keyed_file_from_s3,
             resources={
                 'keyed_file_store': keyed_fs_file_store,
-                's3': ResourceDefinition.hardcoded_resource(s3_session),
+                's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session)),
             },
             environment_dict={
                 'solids': {
@@ -96,12 +97,12 @@ def test_mirror_keyed_file_from_s3_specify_target_key():
 
 def test_mirror_keyed_file_from_s3_skip_download():
     with get_temp_dir() as temp_dir:
-        s3_one = mock.MagicMock()
+        s3_session_one = mock.MagicMock()
         pipeline_result_one = execute_solid_with_resources(
             mirror_keyed_file_from_s3,
             resources={
                 'keyed_file_store': keyed_fs_file_store,
-                's3': ResourceDefinition.hardcoded_resource(s3_one),
+                's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session_one)),
             },
             environment_dict={
                 'solids': {
@@ -115,14 +116,14 @@ def test_mirror_keyed_file_from_s3_skip_download():
 
         assert pipeline_result_one.success
         # assert the download occured
-        assert s3_one.download_file.call_count == 1
+        assert s3_session_one.download_file.call_count == 1
 
-        s3_two = mock.MagicMock()
+        s3_session_two = mock.MagicMock()
         pipeline_result_two = execute_solid_with_resources(
             mirror_keyed_file_from_s3,
             resources={
                 'keyed_file_store': keyed_fs_file_store,
-                's3': ResourceDefinition.hardcoded_resource(s3_two),
+                's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session_two)),
             },
             environment_dict={
                 'solids': {
@@ -136,17 +137,17 @@ def test_mirror_keyed_file_from_s3_skip_download():
 
         assert pipeline_result_two.success
         # assert the download did not occur because file is already there
-        assert s3_two.download_file.call_count == 0
+        assert s3_session_two.download_file.call_count == 0
 
 
 def test_mirror_keyed_file_from_s3_overwrite():
     with get_temp_dir() as temp_dir:
-        s3_one = mock.MagicMock()
+        s3_session_one = mock.MagicMock()
         pipeline_result_one = execute_solid_with_resources(
             mirror_keyed_file_from_s3,
             resources={
                 'keyed_file_store': keyed_fs_file_store,
-                's3': ResourceDefinition.hardcoded_resource(s3_one),
+                's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session_one)),
             },
             environment_dict={
                 'solids': {
@@ -162,14 +163,14 @@ def test_mirror_keyed_file_from_s3_overwrite():
 
         assert pipeline_result_one.success
         # assert the download occured
-        assert s3_one.download_file.call_count == 1
+        assert s3_session_one.download_file.call_count == 1
 
-        s3_two = mock.MagicMock()
+        s3_session_two = mock.MagicMock()
         pipeline_result_two = execute_solid_with_resources(
             mirror_keyed_file_from_s3,
             resources={
                 'keyed_file_store': keyed_fs_file_store,
-                's3': ResourceDefinition.hardcoded_resource(s3_two),
+                's3': ResourceDefinition.hardcoded_resource(s3_session_two),
             },
             environment_dict={
                 'solids': {
@@ -185,7 +186,7 @@ def test_mirror_keyed_file_from_s3_overwrite():
 
         assert pipeline_result_two.success
         # assert the download did not occur because file is already there
-        assert s3_two.download_file.call_count == 0
+        assert s3_session_two.download_file.call_count == 0
 
 
 def test_missing_resources():

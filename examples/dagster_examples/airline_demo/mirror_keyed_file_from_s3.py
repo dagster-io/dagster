@@ -62,7 +62,7 @@ def mirror_keyed_file_from_s3(context, bucket_data):
     if keyed_file_store.overwrite or not keyed_file_store.has_file_object(target_key):
 
         with get_temp_file_name() as tmp_file:
-            context.resources.s3.download_file(
+            context.resources.s3.session.download_file(
                 Bucket=bucket_data['bucket'], Key=bucket_data['key'], Filename=tmp_file
             )
 

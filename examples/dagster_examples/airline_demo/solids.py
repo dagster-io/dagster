@@ -11,6 +11,7 @@ from sqlalchemy import text
 
 from dagster import (
     Bytes,
+    composite_solid,
     CompositeSolidDefinition,
     DependencyDefinition,
     Dict,
@@ -27,10 +28,12 @@ from dagster import (
     check,
     solid,
 )
-from dagster_aws.s3.solids import download_from_s3_to_bytes, S3BucketData
+from dagster_aws.s3.solids import S3BucketData
 from dagstermill import define_dagstermill_solid
 
 from .types import FileFromPath, SparkDataFrameType, SqlTableName
+from .mirror_keyed_file_from_s3 import mirror_keyed_file_from_s3
+from .unzip_file_handle import unzip_file_handle
 
 
 PARQUET_SPECIAL_CHARACTERS = r'[ ,;{}()\n\t=]'
@@ -291,21 +294,19 @@ def subsample_spark_dataset(context, data_frame):
     )
 
 
-s3_to_df = CompositeSolidDefinition(
-    name='s3_to_df',
-    solids=[download_from_s3_to_bytes, unzip_file, ingest_csv_to_spark],
-    dependencies={
-        'unzip_file': {'archive_file': DependencyDefinition('download_from_s3_to_bytes')},
-        'ingest_csv_to_spark': {'input_csv_file': DependencyDefinition('unzip_file')},
-    },
-    input_mappings=[
-        InputDefinition('bucket_data', S3BucketData).mapping_to(
-            'download_from_s3_to_bytes', 'bucket_data'
-        ),
-        InputDefinition('archive_member', String).mapping_to('unzip_file', 'archive_member'),
+@composite_solid(
+    inputs=[
+        InputDefinition('bucket_data', S3BucketData),
+        InputDefinition('archive_member', String),
     ],
-    output_mappings=[OutputDefinition(SparkDataFrameType).mapping_from('ingest_csv_to_spark')],
+    outputs=[OutputDefinition(SparkDataFrameType)],
 )
+def s3_to_df(_, bucket_data, archive_member):
+    # pylint: disable=no-value-for-parameter
+    return ingest_csv_file_handle_to_spark(
+        unzip_file_handle(mirror_keyed_file_from_s3(bucket_data), archive_member)
+    )
+
 
 s3_to_dw_table = CompositeSolidDefinition(
     name='s3_to_dw_table',

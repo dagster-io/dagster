@@ -35,6 +35,7 @@ from .solids import (
     s3_to_df,
 )
 
+from .keyed_file_store import keyed_fs_file_store, keyed_s3_file_store
 
 test_mode = ModeDefinition(
     name='test',
@@ -43,6 +44,7 @@ test_mode = ModeDefinition(
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
         's3': s3_resource,
+        'keyed_file_store': keyed_fs_file_store,
     },
     system_storage_defs=s3_plus_default_storage_defs,
 )
@@ -55,6 +57,7 @@ local_mode = ModeDefinition(
         's3': s3_resource,
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
+        'keyed_file_store': keyed_fs_file_store,
     },
     system_storage_defs=s3_plus_default_storage_defs,
 )
@@ -67,6 +70,7 @@ prod_mode = ModeDefinition(
         's3': s3_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
+        'keyed_file_store': keyed_s3_file_store,
     },
     system_storage_defs=s3_plus_default_storage_defs,
 )
