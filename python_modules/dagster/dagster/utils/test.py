@@ -19,7 +19,7 @@ from dagster import (
     SystemStorageData,
 )
 from dagster.core.definitions.logger import LoggerDefinition
-from dagster.core.definitions.resource import SolidResourcesBuilder
+from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.execution.api import RunConfig, scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import (
     create_log_manager,
@@ -33,7 +33,7 @@ from dagster.core.storage.runs import InMemoryRunStorage
 
 
 def create_test_pipeline_execution_context(
-    loggers=None, solid_resources_builder=None, tags=None, run_config_loggers=None
+    loggers=None, scoped_resources_builder=None, tags=None, run_config_loggers=None
 ):
     run_id = str(uuid.uuid4())
     loggers = check.opt_dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition)
@@ -49,15 +49,15 @@ def create_test_pipeline_execution_context(
     creation_data = create_context_creation_data(pipeline_def, environment_dict, run_config)
     log_manager = create_log_manager(creation_data)
 
-    solid_resources_builder = check.opt_inst_param(
-        solid_resources_builder,
-        'solid_resources_builder',
-        SolidResourcesBuilder,
-        default=SolidResourcesBuilder(),
+    scoped_resources_builder = check.opt_inst_param(
+        scoped_resources_builder,
+        'scoped_resources_builder',
+        ScopedResourcesBuilder,
+        default=ScopedResourcesBuilder(),
     )
     return construct_pipeline_execution_context(
         context_creation_data=creation_data,
-        solid_resources_builder=solid_resources_builder,
+        scoped_resources_builder=scoped_resources_builder,
         system_storage_data=SystemStorageData(
             run_storage=InMemoryRunStorage(), intermediates_manager=InMemoryIntermediatesManager()
         ),

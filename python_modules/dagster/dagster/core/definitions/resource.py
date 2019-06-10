@@ -60,9 +60,14 @@ def resource(config_field=None, description=None):
     return _wrap
 
 
-class SolidResourcesBuilder(namedtuple('SolidResourcesBuilder', 'resource_instance_dict')):
+class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_instance_dict')):
+    '''There are concepts in the codebase (e.g. solids, system storage) that receive
+    only the resources that they have specified in required_resources.
+    ScopedResourcesBuilder is responsible for dynamically building a class with
+    only those required resources and returning an instance of that class.'''
+
     def __new__(cls, resource_instance_dict=None):
-        return super(SolidResourcesBuilder, cls).__new__(
+        return super(ScopedResourcesBuilder, cls).__new__(
             cls,
             resource_instance_dict=check.opt_dict_param(
                 resource_instance_dict, 'resource_instance_dict', key_type=str

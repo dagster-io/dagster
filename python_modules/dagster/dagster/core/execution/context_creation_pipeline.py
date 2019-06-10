@@ -8,7 +8,7 @@ from contextlib2 import ExitStack
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, create_environment_type
-from dagster.core.definitions.resource import SolidResourcesBuilder
+from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.system_storage import SystemStorageData
 from dagster.core.errors import (
     DagsterError,
@@ -158,7 +158,7 @@ def scoped_pipeline_context(
     environment_dict,
     run_config,
     system_storage_data=None,
-    solid_resources_builder_cm=create_resource_builder,
+    scoped_resources_builder_cm=create_resource_builder,
 ):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
@@ -171,20 +171,20 @@ def scoped_pipeline_context(
     try:
         log_manager = create_log_manager(context_creation_data)
 
-        with solid_resources_builder_cm(
+        with scoped_resources_builder_cm(
             context_creation_data.pipeline_def,
             context_creation_data.environment_config,
             context_creation_data.run_config,
             log_manager,
-        ) as solid_resources_builder:
+        ) as scoped_resources_builder:
 
             system_storage_data = create_system_storage_data(
-                context_creation_data, system_storage_data, solid_resources_builder
+                context_creation_data, system_storage_data, scoped_resources_builder
             )
 
             yield construct_pipeline_execution_context(
                 context_creation_data=context_creation_data,
-                solid_resources_builder=solid_resources_builder,
+                scoped_resources_builder=scoped_resources_builder,
                 system_storage_data=system_storage_data,
                 log_manager=log_manager,
             )
@@ -209,7 +209,9 @@ def scoped_pipeline_context(
         )
 
 
-def create_system_storage_data(context_creation_data, system_storage_data, solid_resources_builder):
+def create_system_storage_data(
+    context_creation_data, system_storage_data, scoped_resources_builder
+):
     check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
 
     environment_config, pipeline_def, system_storage_def, run_config = (
@@ -233,7 +235,7 @@ def create_system_storage_data(context_creation_data, system_storage_data, solid
                 type_storage_plugin_registry=construct_type_storage_plugin_registry(
                     pipeline_def, system_storage_def
                 ),
-                resources=solid_resources_builder.build(),
+                resources=scoped_resources_builder.build(),
             )
         )
     )
@@ -247,13 +249,13 @@ def create_system_storage_data(context_creation_data, system_storage_data, solid
 
 
 def construct_pipeline_execution_context(
-    context_creation_data, solid_resources_builder, system_storage_data, log_manager
+    context_creation_data, scoped_resources_builder, system_storage_data, log_manager
 ):
     check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
-    solid_resources_builder = check.inst_param(
-        solid_resources_builder if solid_resources_builder else SolidResourcesBuilder(),
-        'solid_resources_builder',
-        SolidResourcesBuilder,
+    scoped_resources_builder = check.inst_param(
+        scoped_resources_builder if scoped_resources_builder else ScopedResourcesBuilder(),
+        'scoped_resources_builder',
+        ScopedResourcesBuilder,
     )
     check.inst_param(system_storage_data, 'system_storage_data', SystemStorageData)
     check.inst_param(log_manager, 'log_manager', DagsterLogManager)
@@ -264,7 +266,7 @@ def construct_pipeline_execution_context(
             mode_def=context_creation_data.mode_def,
             system_storage_def=context_creation_data.system_storage_def,
             run_config=context_creation_data.run_config,
-            solid_resources_builder=solid_resources_builder,
+            scoped_resources_builder=scoped_resources_builder,
             environment_config=context_creation_data.environment_config,
             run_storage=system_storage_data.run_storage,
             intermediates_manager=system_storage_data.intermediates_manager,
@@ -315,7 +317,7 @@ class ResourcesStack(object):
             )
 
             self.resource_instances[resource_name] = resource_obj
-        return SolidResourcesBuilder(self.resource_instances)
+        return ScopedResourcesBuilder(self.resource_instances)
 
     def teardown(self):
         self.stack.close()
