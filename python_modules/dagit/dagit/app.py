@@ -99,7 +99,7 @@ def notebook_view(request_args):
     if not path.endswith(".ipynb"):
         return "Invalid Path", 400
 
-    with open(os.path.join('/', path)) as f:
+    with open(os.path.abspath(path)) as f:
         read_data = f.read()
         notebook = nbformat.reads(read_data, as_version=4)
         html_exporter = HTMLExporter()
