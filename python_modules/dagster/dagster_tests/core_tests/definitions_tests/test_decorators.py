@@ -294,6 +294,10 @@ def test_solid_definition_errors():
     def valid(context, foo, bar):
         pass
 
+    @solid
+    def valid_because_inference(context, foo, bar):
+        pass
+
 
 def test_wrong_argument_to_pipeline():
     def non_solid_func():
@@ -312,7 +316,7 @@ def test_wrong_argument_to_pipeline():
 
 def test_descriptions():
     @solid(description='foo')
-    def solid_desc():
+    def solid_desc(_context):
         pass
 
     assert solid_desc.description == 'foo'

@@ -319,7 +319,7 @@ def test_pipeline_subset():
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid
     def add_one(num):
         return num + 1
 
@@ -495,7 +495,7 @@ def test_pipeline_streaming_iterator():
         events.append(1)
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid
     def add_one(num):
         events.append(num + 1)
         return num + 1

@@ -24,6 +24,11 @@ from .composition import (
     enter_composition,
     exit_composition,
 )
+from .inference import (
+    infer_input_definitions_for_lambda_solid,
+    infer_input_definitions_for_solid,
+    infer_output_definitions,
+)
 
 if hasattr(inspect, 'signature'):
     funcsigs = inspect
@@ -100,8 +105,8 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
 class _LambdaSolid(object):
     def __init__(self, name=None, inputs=None, output=None, description=None):
         self.name = check.opt_str_param(name, 'name')
-        self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
-        self.output_def = check.inst_param(output, 'output', OutputDefinition)
+        self.input_defs = check.opt_nullable_list_param(inputs, 'inputs', InputDefinition)
+        self.output_def = check.opt_inst_param(output, 'output', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
 
     def __call__(self, fn):
@@ -110,12 +115,24 @@ class _LambdaSolid(object):
         if not self.name:
             self.name = fn.__name__
 
-        _validate_solid_fn(self.name, fn, self.input_defs)
-        compute_fn = _create_lambda_solid_transform_wrapper(fn, self.input_defs, self.output_def)
+        input_defs = (
+            self.input_defs
+            if self.input_defs is not None
+            else infer_input_definitions_for_lambda_solid(self.name, fn)
+        )
+        output_def = (
+            self.output_def
+            if self.output_def is not None
+            else infer_output_definitions('@lambda_solid', self.name, fn)[0]
+        )
+
+        _validate_solid_fn(self.name, fn, input_defs)
+        compute_fn = _create_lambda_solid_transform_wrapper(fn, input_defs, output_def)
+
         return SolidDefinition(
             name=self.name,
-            inputs=self.input_defs,
-            outputs=[self.output_def],
+            inputs=input_defs,
+            outputs=[output_def],
             compute_fn=compute_fn,
             description=self.description,
         )
@@ -132,9 +149,9 @@ class _Solid(object):
         config_field=None,
     ):
         self.name = check.opt_str_param(name, 'name')
-        self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
-        outputs = outputs or ([OutputDefinition()] if outputs is None else [])
-        self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
+        self.input_defs = check.opt_nullable_list_param(inputs, 'inputs', InputDefinition)
+        self.output_defs = check.opt_nullable_list_param(outputs, 'outputs', OutputDefinition)
+
         self.description = check.opt_str_param(description, 'description')
 
         # resources will be checked within SolidDefinition
@@ -149,12 +166,24 @@ class _Solid(object):
         if not self.name:
             self.name = fn.__name__
 
-        _validate_solid_fn(self.name, fn, self.input_defs, [('context',)])
-        compute_fn = _create_solid_transform_wrapper(fn, self.input_defs, self.outputs)
+        input_defs = (
+            self.input_defs
+            if self.input_defs is not None
+            else infer_input_definitions_for_solid('@solid', self.name, fn)
+        )
+        output_defs = (
+            self.output_defs
+            if self.output_defs is not None
+            else infer_output_definitions('@solid', self.name, fn)
+        )
+
+        _validate_solid_fn(self.name, fn, input_defs, [('context',)])
+        compute_fn = _create_solid_transform_wrapper(fn, input_defs, output_defs)
+
         return SolidDefinition(
             name=self.name,
-            inputs=self.input_defs,
-            outputs=self.outputs,
+            inputs=input_defs,
+            outputs=output_defs,
             compute_fn=compute_fn,
             config_field=self.config_field,
             description=self.description,
@@ -190,8 +219,6 @@ def lambda_solid(name=None, inputs=None, output=None, description=None):
                 return foo
 
     '''
-    output = output or OutputDefinition()
-
     if callable(name):
         check.invariant(inputs is None)
         check.invariant(description is None)
@@ -521,8 +548,8 @@ def _validate_decorated_fn(fn, names, expected_positionals):
 class _CompositeSolid(object):
     def __init__(self, name=None, inputs=None, outputs=None, description=None):
         self.name = check.opt_str_param(name, 'name')
-        self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
-        self.output_defs = check.opt_list_param(outputs, 'output', OutputDefinition)
+        self.input_defs = check.opt_nullable_list_param(inputs, 'inputs', InputDefinition)
+        self.output_defs = check.opt_nullable_list_param(outputs, 'output', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
 
     def __call__(self, fn):
@@ -531,9 +558,20 @@ class _CompositeSolid(object):
         if not self.name:
             self.name = fn.__name__
 
-        _validate_solid_fn(self.name, fn, self.input_defs, [('context',)])
+        input_defs = (
+            self.input_defs
+            if self.input_defs is not None
+            else infer_input_definitions_for_solid('@composite_solid', self.name, fn)
+        )
+        output_defs = (
+            self.output_defs
+            if self.output_defs is not None
+            else infer_output_definitions('@composite_solid', self.name, fn)
+        )
 
-        kwargs = {input_def.name: InputMappingNode(input_def) for input_def in self.input_defs}
+        _validate_solid_fn(self.name, fn, input_defs, [('context',)])
+
+        kwargs = {input_def.name: InputMappingNode(input_def) for input_def in input_defs}
 
         output = None
         enter_composition(self.name, '@composite_solid')
@@ -541,7 +579,7 @@ class _CompositeSolid(object):
             output = fn(EmptySolidContext(), **kwargs)
         finally:
             context = exit_composition(
-                composite_mapping_from_output(output, self.output_defs, self.name)
+                composite_mapping_from_output(output, output_defs, self.name)
             )
 
         check.invariant(
