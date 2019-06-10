@@ -141,6 +141,9 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'MultiModeWithResources.LoggerConfig'
             },
             {
+                'name': 'MultiModeWithResources.LoggerConfig.Console'
+            },
+            {
                 'name': 'MultiModeWithResources.Mode.AddMode.Environment'
             },
             {
@@ -169,9 +172,6 @@ snapshots['test_successful_enviroment_schema 1'] = {
             },
             {
                 'name': 'String.MaterializationSchema'
-            },
-            {
-                'name': 'multi_mode_with_resources.LoggerConfig.console'
             }
         ],
         'rootEnvironmentType': {

@@ -133,7 +133,8 @@ def define_logger_dictionary_cls(name, creation_data):
         fields[logger_name] = Field(
             SystemNamedDict(
                 '{pipeline_name}.LoggerConfig.{logger_name}'.format(
-                    pipeline_name=creation_data.pipeline_name, logger_name=logger_name
+                    pipeline_name=camelcase(creation_data.pipeline_name),
+                    logger_name=camelcase(logger_name),
                 ),
                 remove_none_entries({'config': logger_definition.config_field}),
             ),

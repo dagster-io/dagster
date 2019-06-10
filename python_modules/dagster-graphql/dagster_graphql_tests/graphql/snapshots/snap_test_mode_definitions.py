@@ -140,6 +140,9 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': 'MultiModeWithResources.LoggerConfig'
             },
             {
+                'name': 'MultiModeWithResources.LoggerConfig.Console'
+            },
+            {
                 'name': 'MultiModeWithResources.Mode.AddMode.Environment'
             },
             {
@@ -168,9 +171,6 @@ snapshots['test_query_multi_mode 1'] = {
             },
             {
                 'name': 'String.MaterializationSchema'
-            },
-            {
-                'name': 'multi_mode_with_resources.LoggerConfig.console'
             }
         ],
         'environmentType': {
