@@ -12,8 +12,6 @@ from sqlalchemy import text
 from dagster import (
     Bytes,
     composite_solid,
-    CompositeSolidDefinition,
-    DependencyDefinition,
     Dict,
     ExpectationResult,
     Field,
@@ -308,31 +306,12 @@ def s3_to_df(_, bucket_data, archive_member):
     )
 
 
-s3_to_dw_table = CompositeSolidDefinition(
-    name='s3_to_dw_table',
-    solids=[
-        s3_to_df,
-        subsample_spark_dataset,
-        canonicalize_column_names,
-        load_data_to_database_from_spark,
-    ],
-    dependencies={
-        'subsample_spark_dataset': {'data_frame': DependencyDefinition('s3_to_df')},
-        'canonicalize_column_names': {
-            'data_frame': DependencyDefinition('subsample_spark_dataset')
-        },
-        'load_data_to_database_from_spark': {
-            'data_frame': DependencyDefinition('canonicalize_column_names')
-        },
-    },
-    output_mappings=[
-        OutputDefinition(
-            name='table_name',
-            dagster_type=String,
-            description='''The name of table created during loading.''',
-        ).mapping_from(solid_name='load_data_to_database_from_spark', output_name='table_name')
-    ],
-)
+@composite_solid(outputs=[OutputDefinition(name='table_name', dagster_type=String)])
+def s3_to_dw_table(_):
+    # pylint: disable=no-value-for-parameter
+    return load_data_to_database_from_spark(
+        canonicalize_column_names(subsample_spark_dataset(s3_to_df()))
+    )
 
 
 q2_sfo_outbound_flights = sql_solid(
