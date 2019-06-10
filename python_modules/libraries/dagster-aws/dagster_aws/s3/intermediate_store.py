@@ -5,11 +5,11 @@ from .object_store import S3ObjectStore
 
 
 class S3IntermediateStore(IntermediateStore):
-    def __init__(self, s3_bucket, run_id, type_storage_plugin_registry=None):
+    def __init__(self, s3_bucket, run_id, s3_session=None, type_storage_plugin_registry=None):
         check.str_param(s3_bucket, 's3_bucket')
         check.str_param(run_id, 'run_id')
 
-        object_store = S3ObjectStore(s3_bucket)
+        object_store = S3ObjectStore(s3_bucket, s3_session=s3_session)
         root = object_store.key_for_paths(['dagster', 'runs', run_id, 'files'])
 
         super(S3IntermediateStore, self).__init__(

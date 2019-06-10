@@ -2,7 +2,6 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, ModeDefinition, SystemStorageDefinition
-from dagster.core.definitions.resource import SolidResourcesBuilder
 from dagster.core.execution.config import RunConfig
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.storage.type_storage import TypeStoragePluginRegistry
@@ -13,7 +12,7 @@ class InitSystemStorageContext(
         'InitSystemStorageContext',
         (
             'pipeline_def mode_def system_storage_def run_config environment_config '
-            'type_storage_plugin_registry solid_resources_builder system_storage_config'
+            'type_storage_plugin_registry resources system_storage_config'
         ),
     )
 ):
@@ -25,7 +24,7 @@ class InitSystemStorageContext(
         run_config,
         environment_config,
         type_storage_plugin_registry,
-        solid_resources_builder,
+        resources,
         system_storage_config,
     ):
         return super(InitSystemStorageContext, cls).__new__(
@@ -44,9 +43,7 @@ class InitSystemStorageContext(
                 'type_storage_plugin_registry',
                 TypeStoragePluginRegistry,
             ),
-            solid_resources_builder=check.inst_param(
-                solid_resources_builder, 'solid_resources_builder', SolidResourcesBuilder
-            ),
+            resources=check.not_none_param(resources, 'resources'),
             system_storage_config=check.dict_param(
                 system_storage_config, system_storage_config, key_type=str
             ),

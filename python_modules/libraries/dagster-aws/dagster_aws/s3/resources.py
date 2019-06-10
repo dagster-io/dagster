@@ -7,8 +7,8 @@ from .utils import create_s3_session, S3Logger
 
 
 class S3Resource:
-    def __init__(self, use_unsigned_session=True):
-        self.s3 = create_s3_session(signed=(not use_unsigned_session))
+    def __init__(self, s3_session):
+        self.s3 = s3_session
 
     def download_from_s3_to_bytes(self, bucket, key):
         return self.s3.get_object(Bucket=bucket, Key=key)['Body'].read()
@@ -67,4 +67,5 @@ class S3Resource:
     )
 )
 def s3_resource(context):
-    return S3Resource(use_unsigned_session=context.resource_config['use_unsigned_session'])
+    use_unsigned_session = context.resource_config['use_unsigned_session']
+    return S3Resource(create_s3_session(signed=not use_unsigned_session))

@@ -237,7 +237,7 @@ def create_system_storage_data(
                 type_storage_plugin_registry=construct_type_storage_plugin_registry(
                     pipeline_def, system_storage_def
                 ),
-                solid_resources_builder=solid_resources_builder,
+                resources=solid_resources_builder.build(),
             )
         )
     )

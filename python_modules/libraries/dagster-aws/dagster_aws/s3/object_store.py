@@ -10,9 +10,9 @@ from dagster.core.types.marshal import SerializationStrategy
 
 
 class S3ObjectStore(ObjectStore):
-    def __init__(self, bucket):
+    def __init__(self, bucket, s3_session=None):
         self.bucket = check.str_param(bucket, 'bucket')
-        self.s3 = boto3.client('s3')
+        self.s3 = s3_session or boto3.client('s3')
         self.s3.head_bucket(Bucket=bucket)
         super(S3ObjectStore, self).__init__(sep='/')
 
