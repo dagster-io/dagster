@@ -38,7 +38,7 @@ class LowercaseString(RuntimeType):
 
 class FancyStringFilesystemTypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
     @classmethod
-    def applies_to_storage(cls, _):
+    def compatible_with_storage_def(cls, _):
         # Not needed for these tests
         raise NotImplementedError()
 

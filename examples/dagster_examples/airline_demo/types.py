@@ -34,7 +34,7 @@ AirlineDemoResources = namedtuple(
 
 class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
-    def applies_to_storage(cls, system_storage_def):
+    def compatible_with_storage_def(cls, system_storage_def):
         return system_storage_def is s3_system_storage
 
     @classmethod
@@ -52,7 +52,7 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
 
 class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
-    def applies_to_storage(cls, system_storage_def):
+    def compatible_with_storage_def(cls, system_storage_def):
         return system_storage_def is fs_system_storage
 
     @classmethod

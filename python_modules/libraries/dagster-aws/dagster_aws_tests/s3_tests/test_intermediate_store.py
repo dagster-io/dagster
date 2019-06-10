@@ -153,7 +153,7 @@ def test_using_s3_for_subplan(s3_bucket):
 
 class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
     @classmethod
-    def applies_to_storage(cls, _):
+    def compatible_with_storage_def(cls, _):
         # Not needed for these tests
         raise NotImplementedError()
 

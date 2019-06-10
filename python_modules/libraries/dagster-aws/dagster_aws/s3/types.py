@@ -22,7 +22,7 @@ S3ACL = Enum(
 
 class BytesIOS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
-    def applies_to_storage(cls, system_storage_def):
+    def compatible_with_storage_def(cls, system_storage_def):
         try:
             from dagster_aws.s3.system_storage import s3_system_storage
 

@@ -29,7 +29,10 @@ from .runs import base_directory_for_run
 class FileHandle(six.with_metaclass(ABCMeta)):
     @abstractproperty
     def path_desc(self):
-        pass
+        ''' This is a properly to return a *representation* of the path for
+        diplay purposes. Should not be used in a programatically meaningful
+        way beyond display'''
+        raise NotImplementedError()
 
 
 class LocalFileHandle(FileHandle):
@@ -64,7 +67,7 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''
         Take a file handle and make it available as a local temp file. Returns a path.
 
-        In an implementation lihe an S3FileManager, this would download the file from s3
+        In an implementation like an S3FileManager, this would download the file from s3
         to local filesystem.
         '''
         raise NotImplementedError()

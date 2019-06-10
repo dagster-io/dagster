@@ -185,7 +185,7 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
                 pipeline,
                 environment_dict,
                 run_config,
-                system_storage_data_override=SystemStorageData(
+                system_storage_data=SystemStorageData(
                     run_storage=pipeline_context.run_storage,
                     intermediates_manager=pipeline_context.intermediates_manager,
                 ),

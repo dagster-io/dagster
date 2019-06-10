@@ -13,7 +13,7 @@ class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
     @classmethod
     @abstractmethod
-    def applies_to_storage(self, system_storage_def):
+    def compatible_with_storage_def(self, system_storage_def):
         raise NotImplementedError()
 
     @classmethod
@@ -114,7 +114,7 @@ def construct_type_storage_plugin_registry(pipeline_def, system_storage_def):
     type_plugins = {}
     for type_obj in pipeline_def.all_runtime_types():
         for auto_plugin in type_obj.auto_plugins:
-            if auto_plugin.applies_to_storage(system_storage_def):
+            if auto_plugin.compatible_with_storage_def(system_storage_def):
                 type_plugins[type_obj] = auto_plugin
 
     return TypeStoragePluginRegistry(type_plugins)

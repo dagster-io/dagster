@@ -203,7 +203,7 @@ def execute_on_dask(
                     pipeline,
                     env_config,
                     run_config,
-                    system_storage_data_override=SystemStorageData(
+                    system_storage_data=SystemStorageData(
                         intermediates_manager=pipeline_context.intermediates_manager,
                         run_storage=pipeline_context.run_storage,
                     ),

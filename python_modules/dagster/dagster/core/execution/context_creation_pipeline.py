@@ -157,15 +157,13 @@ def scoped_pipeline_context(
     pipeline_def,
     environment_dict,
     run_config,
-    system_storage_data_override=None,
+    system_storage_data=None,
     solid_resources_builder_cm=create_resource_builder,
 ):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
     check.inst_param(run_config, 'run_config', RunConfig)
-    check.opt_inst_param(
-        system_storage_data_override, 'system_storage_data_override', SystemStorageData
-    )
+    check.opt_inst_param(system_storage_data, 'system_storage_data', SystemStorageData)
 
     context_creation_data = create_context_creation_data(pipeline_def, environment_dict, run_config)
 
@@ -181,7 +179,7 @@ def scoped_pipeline_context(
         ) as solid_resources_builder:
 
             system_storage_data = create_system_storage_data(
-                context_creation_data, system_storage_data_override, solid_resources_builder
+                context_creation_data, system_storage_data, solid_resources_builder
             )
 
             yield construct_pipeline_execution_context(
@@ -211,9 +209,7 @@ def scoped_pipeline_context(
         )
 
 
-def create_system_storage_data(
-    context_creation_data, system_storage_data_override, solid_resources_builder
-):
+def create_system_storage_data(context_creation_data, system_storage_data, solid_resources_builder):
     check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
 
     environment_config, pipeline_def, system_storage_def, run_config = (
@@ -224,8 +220,8 @@ def create_system_storage_data(
     )
 
     system_storage_data = (
-        system_storage_data_override
-        if system_storage_data_override
+        system_storage_data
+        if system_storage_data
         else construct_system_storage_data(
             InitSystemStorageContext(
                 pipeline_def=pipeline_def,
