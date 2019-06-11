@@ -141,6 +141,17 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
     inputs=[InputDefinition('csv_file_handle', FileHandle)],
     outputs=[OutputDefinition(SparkDataFrameType)],
     required_resources={'spark'},
+    description='''Take a file handle that contains a csv with headers and load it
+into a Spark DataFrame. It infers header names but does *not* infer schema.
+
+It also ensures that the column names are valid parquet column names by
+filtering out any of the following characters from column names:
+
+Characters (within quotations): "`{chars}`"
+
+'''.format(
+        chars=PARQUET_SPECIAL_CHARACTERS
+    ),
 )
 def ingest_csv_file_handle_to_spark(context, csv_file_handle):
     # fs case: copies from file manager location into system temp
@@ -269,10 +280,16 @@ def load_data_to_database_from_spark(context, data_frame):
 
 @solid(
     name='subsample_spark_dataset',
-    description='Subsample a spark dataset.',
+    description='Subsample a spark dataset via the configuration option.',
     config_field=Field(
-        Dict(fields={'subsample_pct': Field(Int, description='')})
-        # description='The integer percentage of rows to sample from the input dataset.'
+        Dict(
+            fields={
+                'subsample_pct': Field(
+                    Int,
+                    description='The integer percentage of rows to sample from the input dataset.',
+                )
+            }
+        )
     ),
     inputs=[
         InputDefinition(
@@ -298,6 +315,11 @@ def subsample_spark_dataset(context, data_frame):
         InputDefinition('archive_member', String),
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
+    description='''Ingest a zipped csv file from s3,
+stash in a keyed file store (does not download if already
+present by default), unzip that file, and load it into a
+Spark Dataframe. See documentation in constituent solids for
+more detail.''',
 )
 def s3_to_df(_, bucket_data, archive_member):
     # pylint: disable=no-value-for-parameter
@@ -306,7 +328,14 @@ def s3_to_df(_, bucket_data, archive_member):
     )
 
 
-@composite_solid(outputs=[OutputDefinition(name='table_name', dagster_type=String)])
+@composite_solid(
+    outputs=[OutputDefinition(name='table_name', dagster_type=String)],
+    description='''Ingest zipped csv file from s3, load into a Spark
+DataFrame, optionally subsample it (via configuring the
+subsample_spark_dataset, solid), canonicalize the column names, and then
+load it into a data warehouse.
+''',
+)
 def s3_to_dw_table(_):
     # pylint: disable=no-value-for-parameter
     return load_data_to_database_from_spark(
