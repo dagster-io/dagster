@@ -1,4 +1,5 @@
 from dagster import (
+    FileHandle,
     Bool,
     Bytes,
     Dict,
@@ -6,6 +7,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     Path,
+    Materialization,
     Result,
     String,
     check,
@@ -14,6 +16,7 @@ from dagster import (
 )
 
 from .configs import put_object_configs
+from .file_manager import S3FileHandle
 from .types import FileExistsAtPath
 
 from dagster.core.types.runtime import PythonObjectType
@@ -76,6 +79,31 @@ def download_from_s3_to_file(context):
     return context.resources.s3.download_from_s3_to_file(
         context, bucket, key, target_folder, skip_if_present
     )
+
+
+@solid(
+    config_field=put_object_configs(),
+    inputs=[InputDefinition('file_handle', FileHandle, description='The file to upload.')],
+    outputs=[OutputDefinition(name='s3_file_handle', dagster_type=S3FileHandle)],
+    description='''Take a file handle and upload it to s3. See configuration for all
+    arguments you can pass to put_object. Returns an S3FileHandle.''',
+)
+def file_handle_to_s3(context, file_handle):
+    bucket = context.solid_config['Bucket']
+    key = context.solid_config['Key']
+
+    # the s3 put_object API expects the actual bytes to be on the 'Body' key in kwargs; since we
+    # get all other fields from config, we copy the config object and add 'Body' here.
+    cfg = context.solid_config.copy()
+    with context.file_manager.read(file_handle, 'rb') as file_obj:
+        cfg['Body'] = file_obj
+
+        context.resources.s3.put_object(**cfg)
+        s3_file_handle = S3FileHandle(bucket, key)
+
+        yield Materialization(path=s3_file_handle.s3_path)
+
+        yield Result(value=s3_file_handle, output_name='s3_file_handle')
 
 
 @solid(
