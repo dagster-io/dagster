@@ -80,9 +80,9 @@ class S3FileManager(FileManager):
 
     def write_data(self, data):
         check.inst_param(data, 'data', bytes)
-        return self.write_new_file(io.BytesIO(data), mode='wb')
+        return self.write(io.BytesIO(data), mode='wb')
 
-    def write_new_file(self, file_obj, mode='w'):
+    def write(self, file_obj, mode='w'):
         check_file_like_obj(file_obj)
         s3_key = self.get_full_key(str(uuid.uuid4()))
         self._s3_session.put_object(Body=file_obj, Bucket=self._s3_bucket, Key=s3_key)

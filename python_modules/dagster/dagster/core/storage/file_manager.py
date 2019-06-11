@@ -86,11 +86,11 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         raise NotImplementedError()
 
     @abstractmethod
-    def write_data(self, data):
+    def write(self, file_obj, mode):
         raise NotImplementedError()
 
     @abstractmethod
-    def write_new_file(self, file_obj, mode='w'):
+    def write_data(self, data):
         raise NotImplementedError()
 
 
@@ -152,9 +152,9 @@ class LocalFileManager(FileManager):
 
     def write_data(self, data):
         check.inst_param(data, 'data', bytes)
-        return self.write_new_file(io.BytesIO(data), mode='wb')
+        return self.write(io.BytesIO(data), mode='wb')
 
-    def write_new_file(self, file_obj, mode='w'):
+    def write(self, file_obj, mode='w'):
         check_file_like_obj(file_obj)
         self.ensure_base_dir_exists()
 
