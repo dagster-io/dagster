@@ -14,8 +14,10 @@ from dagster.core.storage.temp_file_manager import tempfile_resource
 
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
-from dagster_aws.s3.solids import put_object_to_s3_bytes, download_from_s3_to_bytes
+from dagster_aws.s3.solids import put_object_to_s3_bytes
 
+
+from .mirror_keyed_file_from_s3 import mirror_keyed_file_from_s3
 from .resources import postgres_db_info_resource, redshift_db_info_resource, spark_session_local
 from .solids import (
     average_sfo_outbound_avg_delays_by_destination,
@@ -23,7 +25,7 @@ from .solids import (
     delays_vs_fares,
     delays_vs_fares_nb,
     eastbound_delays,
-    ingest_csv_to_spark,
+    ingest_csv_file_handle_to_spark,
     load_data_to_database_from_spark,
     join_q2_data,
     process_sfo_weather_data,
@@ -90,12 +92,12 @@ def process_on_time_data(context):
 
 
 @composite_solid(outputs=[OutputDefinition(name='table_name', dagster_type=String)])
-def sfo_weather_data(context):
+def sfo_weather_data(_):
     return load_data_to_database_from_spark.alias('load_q2_sfo_weather')(
         process_sfo_weather_data(
-            context,
-            ingest_csv_to_spark.alias('ingest_q2_sfo_weather')(
-                download_from_s3_to_bytes.alias('download_q2_sfo_weather')()
+            _,
+            ingest_csv_file_handle_to_spark.alias('ingest_q2_sfo_weather')(
+                mirror_keyed_file_from_s3.alias('download_q2_sfo_weather')()
             ),
         )
     )
