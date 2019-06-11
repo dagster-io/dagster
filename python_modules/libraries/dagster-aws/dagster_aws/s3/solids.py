@@ -1,6 +1,4 @@
 from dagster import (
-    check,
-    solid,
     Bool,
     Bytes,
     Dict,
@@ -10,7 +8,9 @@ from dagster import (
     Path,
     Result,
     String,
+    check,
     input_schema,
+    solid,
 )
 
 from .configs import put_object_configs
@@ -46,22 +46,6 @@ S3BucketData = dict_with_fields(
         'key': Field(String, description='S3 key name'),
     },
 )
-
-
-@solid(
-    description='Downloads an object from S3.',
-    inputs=[InputDefinition('bucket_data', S3BucketData)],
-    outputs=[OutputDefinition(Bytes, description='The contents of the downloaded object.')],
-    required_resources={'s3'},
-)
-def download_from_s3_to_bytes(context, bucket_data):
-    '''Download an object from S3 as an in-memory bytes object.
-
-    Returns:
-        str:
-            The path to the downloaded object.
-    '''
-    return context.resources.s3.download_from_s3_to_bytes(bucket_data['bucket'], bucket_data['key'])
 
 
 @solid(

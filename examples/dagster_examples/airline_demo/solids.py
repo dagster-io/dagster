@@ -2,15 +2,11 @@
 
 import os
 import re
-import zipfile
-
-from io import BytesIO
 
 from pyspark.sql import DataFrame
 from sqlalchemy import text
 
 from dagster import (
-    Bytes,
     composite_solid,
     Dict,
     ExpectationResult,
@@ -179,48 +175,8 @@ def ingest_csv_file_handle_to_spark(context, csv_file_handle):
     )
 
 
-@solid(
-    name='unzip_file',
-    inputs=[
-        InputDefinition('archive_file', Bytes, description='The archive to unzip'),
-        InputDefinition('archive_member', String, description='The archive member to extract.'),
-    ],
-    description='Extracts an archive member from a zip archive.',
-    outputs=[OutputDefinition(Bytes, description='The unzipped archive member.')],
-)
-def unzip_file(_context, archive_file, archive_member):
-
-    with zipfile.ZipFile(archive_file) as zip_ref:
-        return BytesIO(zip_ref.open(archive_member).read())
-
-
 def rename_spark_dataframe_columns(data_frame, fn):
     return data_frame.toDF(*[fn(c) for c in data_frame.columns])
-
-
-@solid(
-    name='ingest_csv_to_spark',
-    inputs=[InputDefinition('input_csv_file', Bytes)],
-    outputs=[OutputDefinition(SparkDataFrameType)],
-)
-def ingest_csv_to_spark(context, input_csv_file):
-    tf = context.resources.tempfile.tempfile()
-    with open(tf.name, 'wb') as fd:
-        fd.write(input_csv_file.read())
-
-    data_frame = (
-        context.resources.spark.read.format('csv')
-        .options(
-            header='true',
-            # inferSchema='true',
-        )
-        .load(tf.name)
-    )
-
-    # parquet compat
-    return rename_spark_dataframe_columns(
-        data_frame, lambda x: re.sub(PARQUET_SPECIAL_CHARACTERS, '', x)
-    )
 
 
 def do_prefix_column_names(df, prefix):

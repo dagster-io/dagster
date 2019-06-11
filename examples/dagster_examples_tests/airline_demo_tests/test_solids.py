@@ -6,23 +6,14 @@ requiring, e.g., a connection to S3, Spark, and a database.
 We lever pytest marks to isolate subsets of tests with different requirements. E.g., to run only
 those tests that don't require Spark, `pytest -m "not spark"`.
 """
-import os
 
-import pyspark
 import pytest
 
-from dagster import (
-    DependencyDefinition,
-    execute_solid,
-    lambda_solid,
-    ModeDefinition,
-    PipelineDefinition,
-    RunConfig,
-)
+from dagster import ModeDefinition
 
 from dagster.core.storage.temp_file_manager import tempfile_resource
 
-from dagster_examples.airline_demo.solids import sql_solid, ingest_csv_to_spark, unzip_file
+from dagster_examples.airline_demo.solids import sql_solid
 from dagster_examples.airline_demo.resources import spark_session_local
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
@@ -55,60 +46,6 @@ def test_sql_solid():
     result = sql_solid('foo', 'select * from bar', 'table', 'quux')
     assert result
     # TODO: test execution?
-
-
-def test_unzip_file_tempfile():
-    @lambda_solid
-    def nonce():
-        return None
-
-    with open(os.path.join(os.path.dirname(__file__), 'data/test.zip'), 'rb') as fd:
-        archive_file = fd.read()
-
-    result = execute_solid(
-        PipelineDefinition(
-            solids=[nonce, unzip_file],
-            dependencies={
-                'unzip_file': {
-                    'archive_file': DependencyDefinition('nonce'),
-                    'archive_member': DependencyDefinition('nonce'),
-                }
-            },
-            mode_definitions=[tempfile_mode],
-        ),
-        'unzip_file',
-        inputs={'archive_file': archive_file, 'archive_member': 'test/test_file'},
-        environment_dict={},
-        run_config=RunConfig(mode='tempfile'),
-    )
-    assert result.success
-    assert result.result_value().read() == b'test\n'
-
-
-@pytest.mark.spark
-def test_ingest_csv_to_spark():
-    @lambda_solid
-    def nonce():
-        return None
-
-    with open(os.path.join(os.path.dirname(__file__), 'data/test.csv'), 'rb') as fd:
-        input_csv_file = fd.read()
-    result = execute_solid(
-        PipelineDefinition(
-            [nonce, ingest_csv_to_spark],
-            dependencies={'ingest_csv_to_spark': {'input_csv_file': DependencyDefinition('nonce')}},
-            mode_definitions=[spark_mode],
-        ),
-        'ingest_csv_to_spark',
-        inputs={'input_csv_file': input_csv_file},
-        environment_dict={},
-        run_config=RunConfig(mode='spark'),
-    )
-    assert result.success
-    assert isinstance(result.result_value(), pyspark.sql.dataframe.DataFrame)
-    # We can't make this assertion because the tempfile is cleaned up after the solid executes --
-    # a fuller test would have another solid make this assertion
-    # assert result.result_value().head()[0] == '1'
 
 
 @pytest.mark.postgres
