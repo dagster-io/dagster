@@ -1,7 +1,6 @@
 from dagster import (
     FileHandle,
     Bool,
-    Bytes,
     Dict,
     Field,
     InputDefinition,
@@ -104,40 +103,3 @@ def file_handle_to_s3(context, file_handle):
         yield Materialization(path=s3_file_handle.s3_path)
 
         yield Result(value=s3_file_handle, output_name='s3_file_handle')
-
-
-@solid(
-    name='put_object_to_s3_bytes',
-    config_field=put_object_configs(),
-    inputs=[InputDefinition('file_obj', Bytes, description='The file to upload.')],
-    description='Uploads a file to S3.',
-    outputs=[
-        OutputDefinition(
-            String, description='The bucket to which the file was uploaded.', name='bucket'
-        ),
-        OutputDefinition(String, description='The key to which the file was uploaded.', name='key'),
-    ],
-    required_resources={'s3'},
-)
-def put_object_to_s3_bytes(context, file_obj):
-    '''Upload file contents to s3.
-
-    Args:
-        file_obj (Bytes): The bytes of a file object.
-
-    Returns:
-        (str, str):
-            The bucket and key to which the file was uploaded.
-    '''
-    bucket = context.solid_config['Bucket']
-    key = context.solid_config['Key']
-
-    # the s3 put_object API expects the actual bytes to be on the 'Body' key in kwargs; since we
-    # get all other fields from config, we copy the config object and add 'Body' here.
-    cfg = context.solid_config.copy()
-    cfg['Body'] = file_obj.read()
-
-    context.resources.s3.put_object(**cfg)
-
-    yield Result(bucket, 'bucket')
-    yield Result(key, 'key')
