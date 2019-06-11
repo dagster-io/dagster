@@ -3,8 +3,6 @@ from collections import namedtuple
 from dagster import check
 
 from dagster.core.definitions.dependency import SolidHandle
-from dagster.core.storage.runs import InMemoryRunStorage, FileSystemRunStorage
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils import single_item
 
 
@@ -107,33 +105,22 @@ class ExecutionConfig(namedtuple('_ExecutionConfig', '')):
         return super(ExecutionConfig, cls).__new__(cls)
 
 
-class StorageConfig(namedtuple('_FilesConfig', 'storage_mode storage_config')):
-    def __new__(cls, storage_mode, storage_config):
+class StorageConfig(namedtuple('_FilesConfig', 'system_storage_name system_storage_config')):
+    def __new__(cls, system_storage_name, system_storage_config):
         return super(StorageConfig, cls).__new__(
             cls,
-            storage_mode=check.opt_str_param(storage_mode, 'storage_mode'),
-            storage_config=check.opt_dict_param(storage_config, 'storage_config', key_type=str),
+            system_storage_name=check.opt_str_param(
+                system_storage_name, 'system_storage_name', 'in_memory'
+            ),
+            system_storage_config=check.opt_dict_param(
+                system_storage_config, 'system_storage_config', key_type=str
+            ),
         )
-
-    def construct_run_storage(self):
-        if self.storage_mode == 'filesystem':
-            return FileSystemRunStorage()
-        elif self.storage_mode == 'in_memory':
-            return InMemoryRunStorage()
-        elif self.storage_mode == 's3':
-            # TODO: Revisit whether we want to use S3 run storage
-            return FileSystemRunStorage()
-        elif self.storage_mode is None:
-            return InMemoryRunStorage()
-        else:
-            raise DagsterInvariantViolationError(
-                'Invalid storage specified {}'.format(self.storage_mode)
-            )
 
     @staticmethod
     def from_dict(config=None):
         check.opt_dict_param(config, 'config', key_type=str)
         if config:
-            storage_mode, storage_config = single_item(config)
-            return StorageConfig(storage_mode, storage_config)
+            system_storage_name, system_storage_config = single_item(config)
+            return StorageConfig(system_storage_name, system_storage_config.get('config'))
         return StorageConfig(None, None)

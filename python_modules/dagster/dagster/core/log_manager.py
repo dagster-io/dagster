@@ -3,7 +3,7 @@ import itertools
 import logging
 import uuid
 
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 from dagster import check, seven
 from dagster.utils import frozendict
@@ -59,7 +59,7 @@ def coerce_valid_log_level(log_level):
     return PYTHON_LOGGING_LEVELS_MAPPING[log_level]
 
 
-class DagsterLogManager:
+class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags loggers')):
     '''Centralized dispatch for logging through the execution context.
 
     Handles the construction of uniform structured log messages and passes through to the underlying
@@ -86,10 +86,13 @@ class DagsterLogManager:
         loggers (List[logging.Logger]): Loggers to invoke.
     '''
 
-    def __init__(self, run_id, logging_tags, loggers):
-        self.run_id = check.str_param(run_id, 'run_id')
-        self.logging_tags = check.dict_param(logging_tags, 'logging_tags')
-        self.loggers = check.list_param(loggers, 'loggers', of_type=logging.Logger)
+    def __new__(cls, run_id, logging_tags, loggers):
+        return super(DagsterLogManager, cls).__new__(
+            cls,
+            run_id=check.str_param(run_id, 'run_id'),
+            logging_tags=check.dict_param(logging_tags, 'logging_tags'),
+            loggers=check.list_param(loggers, 'loggers', of_type=logging.Logger),
+        )
 
     def _prepare_message(self, orig_message, message_props):
         check.str_param(orig_message, 'orig_message')

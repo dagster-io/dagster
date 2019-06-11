@@ -101,14 +101,13 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
     check.dict_param(inputs, 'inputs', key_type=six.string_types)
 
     run_id = compute_context.run_id
-    mode = compute_context.mode
 
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
     mkdir_p(marshal_dir)
 
     dm_context_dict = {
         'run_id': run_id,
-        'mode': mode,
+        'mode': compute_context.mode_def.name,
         'pipeline_name': compute_context.pipeline_def.name,
         'solid_def_name': compute_context.solid_def.name,
         'marshal_dir': marshal_dir,
@@ -254,13 +253,13 @@ def _dm_solid_transform(name, notebook_path):
 
 
 def define_dagstermill_solid(
-    name, notebook_path, inputs=None, outputs=None, config_field=None, resources=None
+    name, notebook_path, inputs=None, outputs=None, config_field=None, required_resources=None
 ):
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')
     inputs = check.opt_list_param(inputs, 'input_defs', of_type=InputDefinition)
     outputs = check.opt_list_param(outputs, 'output_defs', of_type=OutputDefinition)
-    resources = check.opt_set_param(resources, 'resources', of_type=str)
+    required_resources = check.opt_set_param(required_resources, 'required_resources', of_type=str)
 
     return SolidDefinition(
         name=name,
@@ -268,7 +267,7 @@ def define_dagstermill_solid(
         compute_fn=_dm_solid_transform(name, notebook_path),
         outputs=outputs,
         config_field=config_field,
-        resources=resources,
+        required_resources=required_resources,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
         metadata={'notebook_path': notebook_path, 'kind': 'ipynb'},
     )

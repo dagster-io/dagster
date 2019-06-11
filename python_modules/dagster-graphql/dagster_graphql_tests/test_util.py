@@ -13,7 +13,6 @@ from dagster import (
     PipelineDefinition,
     Result,
     RunConfig,
-    RunStorageMode,
 )
 from dagster.core.events import STEP_EVENTS, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
@@ -149,10 +148,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
     mode = pipeline.get_default_mode_name()
     execution_plan = create_execution_plan(pipeline, {}, mode=mode)
     step_levels = execution_plan.topological_step_levels()
-    run_config = RunConfig(
-        executor_config=InProcessExecutorConfig(raise_on_error=False),
-        storage_mode=RunStorageMode.FILESYSTEM,
-    )
+    run_config = RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False))
 
     unhandled_events = STEP_EVENTS.copy()
 

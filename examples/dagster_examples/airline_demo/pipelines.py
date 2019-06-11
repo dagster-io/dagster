@@ -10,15 +10,13 @@ from dagster import (
     file_relative_path,
 )
 
+from dagster.core.storage.temp_file_manager import tempfile_resource
+
 from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 from dagster_aws.s3.solids import put_object_to_s3_bytes, download_from_s3_to_bytes
 
-from .resources import (
-    postgres_db_info_resource,
-    redshift_db_info_resource,
-    spark_session_local,
-    tempfile_resource,
-)
+from .resources import postgres_db_info_resource, redshift_db_info_resource, spark_session_local
 from .solids import (
     average_sfo_outbound_avg_delays_by_destination,
     delays_by_geography,
@@ -37,6 +35,7 @@ from .solids import (
     s3_to_df,
 )
 
+from .keyed_file_store import keyed_fs_file_store, keyed_s3_file_store
 
 test_mode = ModeDefinition(
     name='test',
@@ -45,7 +44,9 @@ test_mode = ModeDefinition(
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
         's3': s3_resource,
+        'keyed_file_store': keyed_fs_file_store,
     },
+    system_storage_defs=s3_plus_default_storage_defs,
 )
 
 
@@ -56,7 +57,9 @@ local_mode = ModeDefinition(
         's3': s3_resource,
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
+        'keyed_file_store': keyed_fs_file_store,
     },
+    system_storage_defs=s3_plus_default_storage_defs,
 )
 
 
@@ -67,7 +70,9 @@ prod_mode = ModeDefinition(
         's3': s3_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
+        'keyed_file_store': keyed_s3_file_store,
     },
+    system_storage_defs=s3_plus_default_storage_defs,
 )
 
 

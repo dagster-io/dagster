@@ -5,13 +5,12 @@ import tempfile
 import time
 import shutil
 
-from dagster import PipelineDefinition, solid, RunConfig, execute_pipeline
+from dagster import PipelineDefinition, solid, execute_pipeline
 from dagster.core.storage.runs import (
     DagsterRunMeta,
     FileSystemRunStorage,
     InMemoryRunStorage,
-    RunStorageMode,
-    base_run_directory,
+    base_runs_directory,
 )
 
 
@@ -32,13 +31,11 @@ def test_filesystem_run_storage_from_run_config():
 
     pipeline = PipelineDefinition(name='filesystem_run_storage_test', solids=[check_run_storage])
 
-    result = execute_pipeline(
-        pipeline, run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM)
-    )
+    result = execute_pipeline(pipeline, {'storage': {'filesystem': {}}})
 
     assert result.success
 
-    assert os.path.isdir(os.path.join(base_run_directory(), result.run_id))
+    assert os.path.isdir(os.path.join(base_runs_directory(), result.run_id))
 
 
 def test_default_run_storage():
@@ -52,7 +49,7 @@ def test_default_run_storage():
 
     assert result.success
 
-    assert not os.path.exists(os.path.join(base_run_directory(), result.run_id))
+    assert not os.path.exists(os.path.join(base_runs_directory(), result.run_id))
 
 
 def test_config_specified_filesystem_run_storage():
@@ -66,7 +63,7 @@ def test_config_specified_filesystem_run_storage():
 
     assert result.success
 
-    assert os.path.exists(os.path.join(base_run_directory(), result.run_id))
+    assert os.path.exists(os.path.join(base_runs_directory(), result.run_id))
 
 
 def test_empty_storage():

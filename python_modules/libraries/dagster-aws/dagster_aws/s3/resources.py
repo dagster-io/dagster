@@ -7,11 +7,11 @@ from .utils import create_s3_session, S3Logger
 
 
 class S3Resource:
-    def __init__(self, use_unsigned_session=True):
-        self.s3 = create_s3_session(signed=(not use_unsigned_session))
+    def __init__(self, s3_session):
+        self.session = s3_session
 
     def download_from_s3_to_bytes(self, bucket, key):
-        return self.s3.get_object(Bucket=bucket, Key=key)['Body'].read()
+        return self.session.get_object(Bucket=bucket, Key=key)['Body'].read()
 
     def download_from_s3_to_file(self, context, bucket, key, target_folder, skip_if_present):
         # TODO: remove context argument once we support resource logging
@@ -35,11 +35,13 @@ class S3Resource:
                 )
             )
 
-            headers = self.s3.head_object(Bucket=bucket, Key=key)
+            headers = self.session.head_object(Bucket=bucket, Key=key)
             logger = S3Logger(
                 context.log.debug, bucket, key, target_file, int(headers['ContentLength'])
             )
-            self.s3.download_file(Bucket=bucket, Key=key, Filename=target_file, Callback=logger)
+            self.session.download_file(
+                Bucket=bucket, Key=key, Filename=target_file, Callback=logger
+            )
         return target_file
 
     def put_object(self, **kwargs):
@@ -49,7 +51,7 @@ class S3Resource:
         The config schema for this API is applied to the put_object_to_s3_bytes solid vs. at the
         resource level here.
         '''
-        return self.s3.put_object(**kwargs)
+        return self.session.put_object(**kwargs)
 
 
 @resource(
@@ -67,4 +69,5 @@ class S3Resource:
     )
 )
 def s3_resource(context):
-    return S3Resource(use_unsigned_session=context.resource_config['use_unsigned_session'])
+    use_unsigned_session = context.resource_config['use_unsigned_session']
+    return S3Resource(create_s3_session(signed=not use_unsigned_session))

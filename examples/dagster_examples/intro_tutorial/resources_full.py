@@ -13,7 +13,7 @@ from dagster import (
 from dagster_slack import slack_resource
 
 
-@solid(resources={'say_hi'})
+@solid(required_resources={'say_hi'})
 def a_solid(context):
     context.resources.say_hi.chat.post_message(channel='#dagster', text='Hello from Dagster!')
 

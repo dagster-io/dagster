@@ -5,6 +5,7 @@ import six
 from dagster import check
 
 from dagster.core.errors import DagsterRuntimeCoercionError
+from dagster.core.storage.type_storage import TypeStoragePlugin
 
 from .builtin_enum import BuiltinEnum
 from .builtin_config_schemas import BuiltinSchemas
@@ -42,7 +43,7 @@ class RuntimeType(object):
         input_schema=None,
         output_schema=None,
         serialization_strategy=None,
-        storage_plugins=None,
+        auto_plugins=None,
     ):
 
         type_obj = type(self)
@@ -65,7 +66,17 @@ class RuntimeType(object):
             SerializationStrategy,
             PickleSerializationStrategy(),
         )
-        self.storage_plugins = check.opt_dict_param(storage_plugins, 'storage_plugins')
+
+        auto_plugins = check.opt_list_param(auto_plugins, 'auto_plugins', of_type=type)
+
+        check.param_invariant(
+            all(
+                issubclass(auto_plugin_type, TypeStoragePlugin) for auto_plugin_type in auto_plugins
+            ),
+            'auto_plugins',
+        )
+
+        self.auto_plugins = auto_plugins
 
         self.is_builtin = check.bool_param(is_builtin, 'is_builtin')
 
@@ -193,17 +204,16 @@ class Bool(BuiltinScalarRuntimeType):
 
 class Bytes(RuntimeType, BytesIO):
     def __init__(self):
-        from dagster import RunStorageMode
-
-        storage_plugins = {}
+        auto_plugins = []
         try:
             from dagster_aws.s3 import BytesIOS3StoragePlugin
 
-            storage_plugins[RunStorageMode.S3] = BytesIOS3StoragePlugin
+            auto_plugins.append(BytesIOS3StoragePlugin)
+
         except ImportError:
             pass
 
-        super(Bytes, self).__init__('Bytes', 'Bytes')
+        super(Bytes, self).__init__('Bytes', 'Bytes', auto_plugins=auto_plugins)
 
     def coerce_runtime_value(self, value):
         if isinstance(value, BytesIO):

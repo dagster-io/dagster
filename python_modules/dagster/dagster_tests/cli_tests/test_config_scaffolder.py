@@ -27,7 +27,7 @@ def test_scalars():
     assert scaffold_type(config.Any.inst()) == 'AnyType'
 
 
-def test_basic_solids_config():
+def test_basic_solids_config(snapshot):
     pipeline_def = PipelineDefinition(
         name='BasicSolidsConfigPipeline',
         solids=[
@@ -63,21 +63,14 @@ def test_basic_solids_config():
 
     assert set(console_logger_config_config_type.fields.keys()) == set(['log_level', 'name'])
 
-    assert scaffold_pipeline_config(pipeline_def, skip_optional=False) == {
-        'loggers': {'console': {'config': {'log_level': '', 'name': ''}}},
-        'solids': {'required_field_solid': {'config': {'required_int': 0}}},
-        'expectations': {'evaluate': True},
-        'execution': {},
-        'resources': {},
-        'storage': {'filesystem': {'base_dir': ''}, 'in_memory': {}, 's3': {'s3_bucket': ''}},
-    }
+    snapshot.assert_match(scaffold_pipeline_config(pipeline_def, skip_optional=False))
 
 
 def dummy_resource(config_field):
     return ResourceDefinition(lambda: None, config_field)
 
 
-def test_two_modes():
+def test_two_modes(snapshot):
     pipeline_def = PipelineDefinition(
         name='TwoModePipelines',
         solids=[],
@@ -93,28 +86,14 @@ def test_two_modes():
         ],
     )
 
-    assert scaffold_pipeline_config(pipeline_def, mode='mode_one') == {
-        'resources': {'value': {'config': {'mode_one_field': ''}}}
-    }
+    snapshot.assert_match(scaffold_pipeline_config(pipeline_def, mode='mode_one'))
 
-    assert scaffold_pipeline_config(pipeline_def, mode='mode_one', skip_optional=False) == {
-        'loggers': {'console': {'config': {'log_level': '', 'name': ''}}},
-        'solids': {},
-        'expectations': {'evaluate': True},
-        'storage': {'in_memory': {}, 'filesystem': {'base_dir': ''}, 's3': {'s3_bucket': ''}},
-        'execution': {},
-        'resources': {'value': {'config': {'mode_one_field': ''}}},
-    }
+    snapshot.assert_match(
+        scaffold_pipeline_config(pipeline_def, mode='mode_one', skip_optional=False)
+    )
 
-    assert scaffold_pipeline_config(pipeline_def, mode='mode_two') == {
-        'resources': {'value': {'config': {'mode_two_field': 0}}}
-    }
+    snapshot.assert_match(scaffold_pipeline_config(pipeline_def, mode='mode_two'))
 
-    assert scaffold_pipeline_config(pipeline_def, mode='mode_two', skip_optional=False) == {
-        'solids': {},
-        'expectations': {'evaluate': True},
-        'storage': {'in_memory': {}, 'filesystem': {'base_dir': ''}, 's3': {'s3_bucket': ''}},
-        'execution': {},
-        'resources': {'value': {'config': {'mode_two_field': 0}}},
-        'loggers': {'console': {'config': {'log_level': '', 'name': ''}}},
-    }
+    snapshot.assert_match(
+        scaffold_pipeline_config(pipeline_def, mode='mode_two', skip_optional=False)
+    )

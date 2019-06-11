@@ -11,7 +11,6 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     RunConfig,
-    RunStorageMode,
 )
 
 from dagster.core.errors import (
@@ -25,6 +24,11 @@ from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.storage.intermediates_manager import StepOutputHandle
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.core.events import get_step_output_event
+from dagster.utils import merge_dicts
+
+
+def env_with_fs(environment_dict):
+    return merge_dicts(environment_dict, {'storage': {'filesystem': {}}})
 
 
 def define_addy_pipeline():
@@ -55,11 +59,9 @@ def test_execution_plan_reexecution():
     pipeline_def = define_addy_pipeline()
 
     old_run_id = str(uuid.uuid4())
-    environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
-        pipeline_def,
-        environment_dict=environment_dict,
-        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM, run_id=old_run_id),
+        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
     )
 
     assert result.success
@@ -77,7 +79,6 @@ def test_execution_plan_reexecution():
         reexecution_config=ReexecutionConfig(
             previous_run_id=result.run_id, step_output_handles=[StepOutputHandle('add_one.compute')]
         ),
-        storage_mode=RunStorageMode.FILESYSTEM,
     )
 
     execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
@@ -101,7 +102,7 @@ def test_execution_plan_wrong_run_id():
     pipeline_def = define_addy_pipeline()
 
     unrun_id = str(uuid.uuid4())
-    environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
 
     execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
 
@@ -110,11 +111,10 @@ def test_execution_plan_wrong_run_id():
             execution_plan,
             environment_dict=environment_dict,
             run_config=RunConfig(
-                storage_mode=RunStorageMode.FILESYSTEM,
                 reexecution_config=ReexecutionConfig(
                     previous_run_id=unrun_id,
                     step_output_handles=[StepOutputHandle('add_one.compute')],
-                ),
+                )
             ),
         )
 
@@ -129,11 +129,9 @@ def test_execution_plan_wrong_invalid_step_key():
     pipeline_def = define_addy_pipeline()
 
     old_run_id = str(uuid.uuid4())
-    environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
-        pipeline_def,
-        environment_dict=environment_dict,
-        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM, run_id=old_run_id),
+        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
     )
 
     new_run_id = str(uuid.uuid4())
@@ -144,7 +142,6 @@ def test_execution_plan_wrong_invalid_step_key():
             previous_run_id=result.run_id,
             step_output_handles=[StepOutputHandle('not_valid.compute')],
         ),
-        storage_mode=RunStorageMode.FILESYSTEM,
     )
 
     execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
@@ -166,11 +163,9 @@ def test_execution_plan_wrong_invalid_output_name():
     pipeline_def = define_addy_pipeline()
 
     old_run_id = str(uuid.uuid4())
-    environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
-        pipeline_def,
-        environment_dict=environment_dict,
-        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM, run_id=old_run_id),
+        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
     )
 
     new_run_id = str(uuid.uuid4())
@@ -181,7 +176,6 @@ def test_execution_plan_wrong_invalid_output_name():
             previous_run_id=result.run_id,
             step_output_handles=[StepOutputHandle('add_one.compute', 'not_an_output')],
         ),
-        storage_mode=RunStorageMode.FILESYSTEM,
     )
 
     execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
@@ -209,9 +203,7 @@ def test_execution_plan_reexecution_with_in_memory():
     old_run_id = str(uuid.uuid4())
     environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
     result = execute_pipeline(
-        pipeline_def,
-        environment_dict=environment_dict,
-        run_config=RunConfig(storage_mode=RunStorageMode.IN_MEMORY, run_id=old_run_id),
+        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
     )
 
     assert result.success
@@ -225,7 +217,6 @@ def test_execution_plan_reexecution_with_in_memory():
         reexecution_config=ReexecutionConfig(
             previous_run_id=result.run_id, step_output_handles=[StepOutputHandle('add_one.compute')]
         ),
-        storage_mode=RunStorageMode.IN_MEMORY,
     )
 
     execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
@@ -243,11 +234,9 @@ def test_pipeline_step_key_subset_execution():
     pipeline_def = define_addy_pipeline()
 
     old_run_id = str(uuid.uuid4())
-    environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
-        pipeline_def,
-        environment_dict=environment_dict,
-        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM, run_id=old_run_id),
+        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
     )
 
     assert result.success
@@ -269,7 +258,6 @@ def test_pipeline_step_key_subset_execution():
                 previous_run_id=result.run_id,
                 step_output_handles=[StepOutputHandle('add_one.compute')],
             ),
-            storage_mode=RunStorageMode.FILESYSTEM,
             step_keys_to_execute=['add_two.compute'],
         ),
     )
@@ -290,11 +278,9 @@ def test_pipeline_step_key_subset_execution():
 def test_pipeline_step_key_subset_execution_wrong_step_key_in_subset():
     pipeline_def = define_addy_pipeline()
     old_run_id = str(uuid.uuid4())
-    environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
-        pipeline_def,
-        environment_dict=environment_dict,
-        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM, run_id=old_run_id),
+        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
     )
     assert result.success
 
@@ -310,7 +296,6 @@ def test_pipeline_step_key_subset_execution_wrong_step_key_in_subset():
                     previous_run_id=result.run_id,
                     step_output_handles=[StepOutputHandle('add_one.compute')],
                 ),
-                storage_mode=RunStorageMode.FILESYSTEM,
                 step_keys_to_execute=['nope'],
             ),
         )
@@ -319,11 +304,9 @@ def test_pipeline_step_key_subset_execution_wrong_step_key_in_subset():
 def test_pipeline_step_key_subset_execution_wrong_step_key_in_step_output_handles():
     pipeline_def = define_addy_pipeline()
     old_run_id = str(uuid.uuid4())
-    environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
-        pipeline_def,
-        environment_dict=environment_dict,
-        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM, run_id=old_run_id),
+        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
     )
     assert result.success
 
@@ -339,7 +322,6 @@ def test_pipeline_step_key_subset_execution_wrong_step_key_in_step_output_handle
                     previous_run_id=result.run_id,
                     step_output_handles=[StepOutputHandle('invalid_in_step_output_handles')],
                 ),
-                storage_mode=RunStorageMode.FILESYSTEM,
                 step_keys_to_execute=['add_two.compute'],
             ),
         )
@@ -351,8 +333,8 @@ def test_pipeline_step_key_subset_execution_wrong_output_name_in_step_output_han
     environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
     result = execute_pipeline(
         pipeline_def,
-        environment_dict=environment_dict,
-        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM, run_id=old_run_id),
+        environment_dict=env_with_fs(environment_dict),
+        run_config=RunConfig(run_id=old_run_id),
     )
     assert result.success
 
@@ -361,14 +343,13 @@ def test_pipeline_step_key_subset_execution_wrong_output_name_in_step_output_han
     with pytest.raises(DagsterStepOutputNotFoundError):
         execute_pipeline(
             pipeline_def,
-            environment_dict=environment_dict,
+            environment_dict=env_with_fs(environment_dict),
             run_config=RunConfig(
                 run_id=new_run_id,
                 reexecution_config=ReexecutionConfig(
                     previous_run_id=result.run_id,
                     step_output_handles=[StepOutputHandle('add_one.compute', 'invalid_output')],
                 ),
-                storage_mode=RunStorageMode.FILESYSTEM,
                 step_keys_to_execute=['add_two.compute'],
             ),
         )

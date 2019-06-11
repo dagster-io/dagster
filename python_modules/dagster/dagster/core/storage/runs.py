@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple, OrderedDict
-from enum import Enum
 import json
 import os
 import shutil
@@ -8,12 +7,16 @@ import shutil
 import six
 
 from dagster import check, seven
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils import mkdir_p, list_pull
 
 
-def base_run_directory():
+def base_runs_directory():
     return os.path.join(seven.get_system_temp_directory(), 'dagster', 'runs')
+
+
+def base_directory_for_run(run_id):
+    check.str_param(run_id, 'run_id')
+    return os.path.join(base_runs_directory(), run_id)
 
 
 def meta_file(base_dir):
@@ -63,8 +66,8 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 class FileSystemRunStorage(RunStorage):
     def __init__(self, base_dir=None):
-        self._base_dir = check.opt_str_param(base_dir, 'base_dir', base_run_directory())
-        mkdir_p(base_run_directory())
+        self._base_dir = check.opt_str_param(base_dir, 'base_dir', base_runs_directory())
+        mkdir_p(base_runs_directory())
         self._meta_file = meta_file(self._base_dir)
 
     def write_dagster_run_meta(self, dagster_run_meta):
@@ -140,48 +143,3 @@ class InMemoryRunStorage(RunStorage):
     @property
     def is_persistent(self):
         return False
-
-
-class RunStorageMode(Enum):
-    IN_MEMORY = 'IN_MEMORY'
-    FILESYSTEM = 'FILESYSTEM'
-    S3 = 'S3'
-
-    @classmethod
-    def from_environment_config(cls, mode):
-        check.opt_str_param(mode, 'mode')
-
-        if mode == 'filesystem':
-            return RunStorageMode.FILESYSTEM
-        elif mode == 'in_memory':
-            return RunStorageMode.IN_MEMORY
-        elif mode == 's3':
-            return RunStorageMode.S3
-        elif mode is None:
-            return RunStorageMode.IN_MEMORY
-        else:
-            raise DagsterInvariantViolationError('Invalid storage specified {}'.format(mode))
-
-
-def construct_run_storage(run_storage_mode):
-    '''
-    Construct the run storage for this pipeline. Our rules are the following:
-
-    If the RunConfig has a storage_mode provided, we use that.
-
-    Then we fallback to environment config.
-
-    If there is no config, we default to in memory storage. This is mostly so
-    that tests default to in-memory.
-    '''
-    check.inst_param(run_storage_mode, 'run_storage_mode', RunStorageMode)
-
-    if run_storage_mode == RunStorageMode.FILESYSTEM:
-        return FileSystemRunStorage()
-    elif run_storage_mode == RunStorageMode.IN_MEMORY:
-        return InMemoryRunStorage()
-    elif run_storage_mode == RunStorageMode.S3:
-        # TODO: Revisit whether we want to use S3 run storage
-        return FileSystemRunStorage()
-    else:
-        check.failed('Unexpected enum {}'.format(run_storage_mode))

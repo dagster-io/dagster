@@ -1,6 +1,4 @@
 import logging
-import os
-import shutil
 
 from io import BytesIO
 
@@ -9,13 +7,12 @@ import boto3
 from dagster import check
 from dagster.core.storage.object_store import ObjectStore
 from dagster.core.types.marshal import SerializationStrategy
-from dagster.utils import mkdir_p
 
 
 class S3ObjectStore(ObjectStore):
-    def __init__(self, bucket):
+    def __init__(self, bucket, s3_session=None):
         self.bucket = check.str_param(bucket, 'bucket')
-        self.s3 = boto3.client('s3')
+        self.s3 = s3_session or boto3.client('s3')
         self.s3.head_bucket(Bucket=bucket)
         super(S3ObjectStore, self).__init__(sep='/')
 
@@ -81,17 +78,8 @@ class S3ObjectStore(ObjectStore):
         return
 
     def cp_object(self, src, dst):
-        check.invariant(not os.path.exists(dst), 'Path already exists {}'.format(dst))
-
-        # Ensure output path exists
-        mkdir_p(os.path.dirname(dst))
-
-        if os.path.isfile(src):
-            shutil.copy(src, dst)
-        elif os.path.isdir(src):
-            shutil.copytree(src, dst)
-        else:
-            check.failed('should not get here')
+        # https://github.com/dagster-io/dagster/issues/1455
+        raise NotImplementedError()
 
     def uri_for_key(self, key, protocol=None):
         check.str_param(key, 'key')

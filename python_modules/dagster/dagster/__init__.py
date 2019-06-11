@@ -1,22 +1,29 @@
 from dagster.core import types
 
 from dagster.core.definitions import (
-    ExecutionTargetHandle,
+    CompositeSolidDefinition,
     DependencyDefinition,
-    MultiDependencyDefinition,
+    ExecutionTargetHandle,
     ExpectationDefinition,
     ExpectationResult,
     InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    RepositoryDefinition,
-    Result,
+    LoggerDefinition,
     Materialization,
     ModeDefinition,
-    SolidDefinition,
-    CompositeSolidDefinition,
-    SolidInstance,
+    MultiDependencyDefinition,
+    OutputDefinition,
+    PipelineDefinition,
     PresetDefinition,
+    RepositoryDefinition,
+    ResourceDefinition,
+    Result,
+    SolidDefinition,
+    SolidInstance,
+    SystemStorageDefinition,
+    SystemStorageData,
+    logger,
+    resource,
+    system_storage,
 )
 
 # These specific imports are to avoid circular import issues
@@ -27,8 +34,6 @@ from dagster.core.definitions.decorators import (
     composite_solid,
     pipeline,
 )
-from dagster.core.definitions.logger import logger, LoggerDefinition
-from dagster.core.definitions.resource import resource, ResourceDefinition
 
 from dagster.core.events import DagsterEventType
 
@@ -62,7 +67,8 @@ from dagster.core.errors import (
     DagsterStepOutputNotFoundError,
 )
 
-from dagster.core.storage.runs import RunStorageMode
+from dagster.core.storage.init import InitSystemStorageContext
+from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
 
 from dagster.core.types import (
     Any,
@@ -120,13 +126,15 @@ __all__ = [
     'Result',
     'SolidDefinition',
     'SolidInstance',
+    'SystemStorageDefinition',
     # Decorators
+    'composite_solid',
     'lambda_solid',
     'logger',
+    'pipeline',
     'resource',
     'solid',
-    'composite_solid',
-    'pipeline',
+    'system_storage',
     'MultipleResults',
     # Execution
     'execute_pipeline_iterator',
@@ -134,13 +142,14 @@ __all__ = [
     'DagsterEventType',
     'InitLoggerContext',
     'InitResourceContext',
+    'InitSystemStorageContext',
     'InProcessExecutorConfig',
     'MultiprocessExecutorConfig',
     'PipelineConfigEvaluationError',
     'PipelineExecutionResult',
     'RunConfig',
-    'RunStorageMode',
     'SolidExecutionResult',
+    'SystemStorageData',
     # Errors
     'DagsterEvaluateConfigValueError',
     'DagsterExecutionStepExecutionError',
@@ -188,4 +197,7 @@ __all__ = [
     'RuntimeType',
     'ConfigType',
     'ConfigScalar',
+    # file things
+    'FileHandle',
+    'LocalFileHandle',
 ]

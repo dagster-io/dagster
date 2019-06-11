@@ -1,30 +1,15 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 import io
 import os
 import shutil
 
 import six
 
-from dagster import check, resource, Bool, Field, String, Dict, dagster_type
+from dagster import check, resource, Bool, Field, String, Dict
+from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
 from dagster.utils import mkdir_p
 from dagster_aws.s3.utils import create_s3_session
 from botocore.exceptions import ClientError
-
-
-@dagster_type  # pylint: disable=no-init
-class FileHandle(six.with_metaclass(ABCMeta)):
-    @abstractproperty
-    def path_desc(self):
-        pass
-
-
-class LocalFileHandle(FileHandle):
-    def __init__(self, path):
-        self._path = check.str_param(path, 'path')
-
-    @property
-    def path_desc(self):
-        return self._path
 
 
 class S3FileHandle(FileHandle):

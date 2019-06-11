@@ -13,7 +13,7 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 '''
 
 from dagster import check
-from dagster.core.definitions import PipelineDefinition
+from dagster.core.definitions import PipelineDefinition, SystemStorageData
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
@@ -68,7 +68,7 @@ def create_execution_plan(pipeline, environment_dict=None, mode=None):
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     check.opt_str_param(mode, 'mode')
     environment_config = create_environment_config(pipeline, environment_dict, mode)
-    return ExecutionPlan.build(pipeline, environment_config)
+    return ExecutionPlan.build(pipeline, environment_config, pipeline.get_mode_definition(mode))
 
 
 def _execute_pipeline_iterator(context_or_failure_event):
@@ -86,7 +86,9 @@ def _execute_pipeline_iterator(context_or_failure_event):
     yield DagsterEvent.pipeline_start(pipeline_context)
 
     execution_plan = ExecutionPlan.build(
-        pipeline_context.pipeline_def, pipeline_context.environment_config
+        pipeline_context.pipeline_def,
+        pipeline_context.environment_config,
+        pipeline_context.mode_def,
     )
 
     steps = execution_plan.topological_steps()
@@ -183,7 +185,10 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
                 pipeline,
                 environment_dict,
                 run_config,
-                intermediates_manager=pipeline_context.intermediates_manager,
+                system_storage_data=SystemStorageData(
+                    run_storage=pipeline_context.run_storage,
+                    intermediates_manager=pipeline_context.intermediates_manager,
+                ),
             ),
         )
 

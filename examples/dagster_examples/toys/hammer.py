@@ -13,12 +13,12 @@ from dagster import (
     PipelineDefinition,
     Result,
     SolidInstance,
-    RunConfig,
     lambda_solid,
     solid,
-    RunStorageMode,
 )
 from dagster_dask import execute_on_dask
+from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 
 @solid(
@@ -110,7 +110,11 @@ def define_hammer_pipeline():
                 'in_4': DependencyDefinition('hammer_4', 'total'),
             },
         },
-        mode_definitions=[ModeDefinition()],
+        mode_definitions=[
+            ModeDefinition(
+                resources={'s3': s3_resource}, system_storage_defs=s3_plus_default_storage_defs
+            )
+        ],
     )
 
 
@@ -118,6 +122,5 @@ if __name__ == '__main__':
     result = execute_on_dask(
         ExecutionTargetHandle.for_pipeline_fn(define_hammer_pipeline),
         env_config={'storage': {'filesystem': {}}},
-        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM),
     )
     print('Total Hammer Time: ', result.result_for_solid('total').result_value())

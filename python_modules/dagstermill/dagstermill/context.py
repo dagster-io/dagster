@@ -38,7 +38,7 @@ class DagstermillInNotebookExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def resources(self):
-        return self._pipeline_context.solid_resources_builder.build()
+        return self._pipeline_context.scoped_resources_builder.build()
 
     @property
     def run_config(self):

@@ -27,7 +27,9 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         ) as pipeline_context:
 
             execution_plan = ExecutionPlan.build(
-                pipeline_context.pipeline_def, pipeline_context.environment_config
+                pipeline_context.pipeline_def,
+                pipeline_context.environment_config,
+                pipeline_context.mode_def,
             )
 
             for step_event in InProcessEngine.execute(

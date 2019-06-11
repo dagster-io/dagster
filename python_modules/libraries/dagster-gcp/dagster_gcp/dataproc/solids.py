@@ -3,7 +3,7 @@ from dagster import solid
 from .configs import define_dataproc_submit_job_config
 
 
-@solid(resources={'dataproc'}, config_field=define_dataproc_submit_job_config())
+@solid(required_resources={'dataproc'}, config_field=define_dataproc_submit_job_config())
 def dataproc_solid(context):
     # Cluster context manager, creates and then deletes cluster
     with context.resources.dataproc.cluster_context_manager() as cluster:

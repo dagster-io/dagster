@@ -14,6 +14,10 @@ class StepExecutionContext(object):
         )
 
     @property
+    def file_manager(self):
+        return self._system_step_execution_context.file_manager
+
+    @property
     def resources(self):
         return self._system_step_execution_context.resources
 
@@ -28,6 +32,10 @@ class StepExecutionContext(object):
     @property
     def pipeline_def(self):
         return self._system_step_execution_context.pipeline_def
+
+    @property
+    def mode_def(self):
+        return self._system_step_execution_context.mode_def
 
     @property
     def log(self):

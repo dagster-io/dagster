@@ -7,7 +7,7 @@ sys.path.append(SCRIPT_PATH)
 
 from defines import IMAGE_VERSION_MAP, SupportedPython
 
-TIMEOUT_IN_MIN = 15
+TIMEOUT_IN_MIN = 20
 
 DOCKER_PLUGIN = "docker#v3.2.0"
 

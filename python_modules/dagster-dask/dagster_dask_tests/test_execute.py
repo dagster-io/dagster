@@ -1,8 +1,6 @@
 from tornado import gen
 
 from dagster import solid, ExecutionTargetHandle, ModeDefinition, PipelineDefinition
-from dagster.core.execution.config import RunConfig
-from dagster.core.storage.runs import RunStorageMode
 from dagster.core.test_utils import retry
 
 from dagster_dask import execute_on_dask, DaskConfig
@@ -27,7 +25,6 @@ def test_execute_on_dask():
     result = execute_on_dask(
         ExecutionTargetHandle.for_pipeline_fn(define_dask_test_pipeline),
         env_config={'storage': {'filesystem': {}}},
-        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM),
         dask_config=DaskConfig(timeout=30),
     )
     assert result.result_for_solid('simple').result_value() == 1

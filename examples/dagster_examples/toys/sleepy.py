@@ -2,22 +2,17 @@ from time import sleep
 
 from dagster import (
     DependencyDefinition,
-    ExecutionTargetHandle,
     Field,
     InputDefinition,
     Int,
     List,
     ModeDefinition,
-    MultiprocessExecutorConfig,
     OutputDefinition,
     PipelineDefinition,
     Result,
     SolidInstance,
-    RunConfig,
-    execute_pipeline,
     lambda_solid,
     solid,
-    RunStorageMode,
 )
 
 
@@ -92,18 +87,3 @@ def define_sleepy_pipeline():
         },
         mode_definitions=[ModeDefinition()],
     )
-
-
-if __name__ == '__main__':
-    pipeline = define_sleepy_pipeline()
-    result = execute_pipeline(
-        pipeline,
-        run_config=RunConfig(
-            executor_config=MultiprocessExecutorConfig(
-                ExecutionTargetHandle.for_pipeline_fn(define_sleepy_pipeline)
-            ),
-            storage_mode=RunStorageMode.FILESYSTEM,
-        ),
-    )
-
-    print('Total Sleep Time: ', result.result_for_solid('total').result_value())

@@ -11,11 +11,11 @@ from sqlalchemy import text
 
 from dagster import (
     Bytes,
-    CompositeSolidDefinition,
-    DependencyDefinition,
+    composite_solid,
     Dict,
     ExpectationResult,
     Field,
+    FileHandle,
     InputDefinition,
     Int,
     Materialization,
@@ -26,82 +26,15 @@ from dagster import (
     check,
     solid,
 )
-from dagster_aws.s3.solids import download_from_s3_to_bytes, S3BucketData
+from dagster_aws.s3.solids import S3BucketData
 from dagstermill import define_dagstermill_solid
-from dagster.utils.test import get_temp_file_name
 
-from .keyed_file_store import FileHandle
 from .types import FileFromPath, SparkDataFrameType, SqlTableName
+from .mirror_keyed_file_from_s3 import mirror_keyed_file_from_s3
+from .unzip_file_handle import unzip_file_handle
 
 
 PARQUET_SPECIAL_CHARACTERS = r'[ ,;{}()\n\t=]'
-
-
-@solid(
-    inputs=[InputDefinition('bucket_data', S3BucketData)],
-    outputs=[OutputDefinition(FileHandle)],
-    config_field=Field(
-        Dict(
-            {
-                'file_key': Field(
-                    String,
-                    is_optional=True,
-                    description=(
-                        'Optionally specify the key for the file to be ingested '
-                        'into the keyed store. Defaults to the last path component '
-                        'of the downloaded s3 key.'
-                    ),
-                )
-            }
-        )
-    ),
-    resources={'keyed_file_store', 's3'},
-    description='''This is a solid which mirrors a file in s3 into a keyed file store.
-    The keyed file store is a resource type that allows a solid author to save files
-    and assign a key to them. The keyed file store can be backed by local file or any
-    object store (currently we support s3). This keyed file store can be configured
-    to be at an external location so that is persists in a well known spot between runs.
-    It is designed for the case where there is an expensive download step that should not
-    occur unless the downloaded file does not exist. Redownload can be instigated either
-    by configuring the source to overwrite files or to just delete the file in the underlying
-    storage manually.
-
-    This works by downloading the file to a temporary file, and then ingesting it into
-    the keyed file store. In the case of a filesystem-backed key store, this is a file
-    copy. In the case of a object-store-backed key store, this is an upload.
-
-    In order to work this must be executed within a mode that provides an s3
-    and keyed_file_store resource.
-    ''',
-)
-def mirror_keyed_file_from_s3(context, bucket_data):
-    target_key = context.solid_config.get('file_key', bucket_data['key'].split('/')[-1])
-
-    keyed_file_store = context.resources.keyed_file_store
-
-    file_handle = keyed_file_store.get_file_handle(target_key)
-
-    if keyed_file_store.overwrite or not keyed_file_store.has_file_object(target_key):
-
-        with get_temp_file_name() as tmp_file:
-            context.resources.s3.download_file(
-                Bucket=bucket_data['bucket'], Key=bucket_data['key'], Filename=tmp_file
-            )
-
-            context.log.info('File downloaded to {}'.format(tmp_file))
-
-            with open(tmp_file, 'rb') as tmp_file_object:
-                keyed_file_store.write_file_object(target_key, tmp_file_object)
-                context.log.info('File handle written at : {}'.format(file_handle.path_desc))
-    else:
-        context.log.info('File {} already present in keyed store'.format(file_handle.path_desc))
-
-    yield ExpectationResult(
-        success=keyed_file_store.has_file_object(target_key),
-        name='file_handle_exists',
-        result_metadata={'path': file_handle.path_desc},
-    )
-    yield Result(file_handle)
 
 
 def _notebook_path(name):
@@ -205,6 +138,37 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
 
 @solid(
+    inputs=[InputDefinition('csv_file_handle', FileHandle)],
+    outputs=[OutputDefinition(SparkDataFrameType)],
+    required_resources={'spark'},
+)
+def ingest_csv_file_handle_to_spark(context, csv_file_handle):
+    # fs case: copies from file manager location into system temp
+    #    - This is potentially an unnecessary copy. We could potentially specialize
+    #    the implementation of copy_handle_to_local_temp to not to do this in the
+    #    local fs case. Somewhat more dangerous though.
+    # s3 case: downloads from s3 to local temp directory
+    temp_file_name = context.file_manager.copy_handle_to_local_temp(csv_file_handle)
+
+    # In fact for a generic component this should really be using
+    # the spark APIs to load directly from whatever object store, rather
+    # than using any interleaving temp files.
+    data_frame = (
+        context.resources.spark.read.format('csv')
+        .options(
+            header='true',
+            # inferSchema='true',
+        )
+        .load(temp_file_name)
+    )
+
+    # parquet compat
+    return rename_spark_dataframe_columns(
+        data_frame, lambda x: re.sub(PARQUET_SPECIAL_CHARACTERS, '', x)
+    )
+
+
+@solid(
     name='unzip_file',
     inputs=[
         InputDefinition('archive_file', Bytes, description='The archive to unzip'),
@@ -232,6 +196,7 @@ def ingest_csv_to_spark(context, input_csv_file):
     tf = context.resources.tempfile.tempfile()
     with open(tf.name, 'wb') as fd:
         fd.write(input_csv_file.read())
+
     data_frame = (
         context.resources.spark.read.format('csv')
         .options(
@@ -327,47 +292,26 @@ def subsample_spark_dataset(context, data_frame):
     )
 
 
-s3_to_df = CompositeSolidDefinition(
-    name='s3_to_df',
-    solids=[download_from_s3_to_bytes, unzip_file, ingest_csv_to_spark],
-    dependencies={
-        'unzip_file': {'archive_file': DependencyDefinition('download_from_s3_to_bytes')},
-        'ingest_csv_to_spark': {'input_csv_file': DependencyDefinition('unzip_file')},
-    },
-    input_mappings=[
-        InputDefinition('bucket_data', S3BucketData).mapping_to(
-            'download_from_s3_to_bytes', 'bucket_data'
-        ),
-        InputDefinition('archive_member', String).mapping_to('unzip_file', 'archive_member'),
+@composite_solid(
+    inputs=[
+        InputDefinition('bucket_data', S3BucketData),
+        InputDefinition('archive_member', String),
     ],
-    output_mappings=[OutputDefinition(SparkDataFrameType).mapping_from('ingest_csv_to_spark')],
+    outputs=[OutputDefinition(SparkDataFrameType)],
 )
+def s3_to_df(_, bucket_data, archive_member):
+    # pylint: disable=no-value-for-parameter
+    return ingest_csv_file_handle_to_spark(
+        unzip_file_handle(mirror_keyed_file_from_s3(bucket_data), archive_member)
+    )
 
-s3_to_dw_table = CompositeSolidDefinition(
-    name='s3_to_dw_table',
-    solids=[
-        s3_to_df,
-        subsample_spark_dataset,
-        canonicalize_column_names,
-        load_data_to_database_from_spark,
-    ],
-    dependencies={
-        'subsample_spark_dataset': {'data_frame': DependencyDefinition('s3_to_df')},
-        'canonicalize_column_names': {
-            'data_frame': DependencyDefinition('subsample_spark_dataset')
-        },
-        'load_data_to_database_from_spark': {
-            'data_frame': DependencyDefinition('canonicalize_column_names')
-        },
-    },
-    output_mappings=[
-        OutputDefinition(
-            name='table_name',
-            dagster_type=String,
-            description='''The name of table created during loading.''',
-        ).mapping_from(solid_name='load_data_to_database_from_spark', output_name='table_name')
-    ],
-)
+
+@composite_solid(outputs=[OutputDefinition(name='table_name', dagster_type=String)])
+def s3_to_dw_table(_):
+    # pylint: disable=no-value-for-parameter
+    return load_data_to_database_from_spark(
+        canonicalize_column_names(subsample_spark_dataset(s3_to_df()))
+    )
 
 
 q2_sfo_outbound_flights = sql_solid(

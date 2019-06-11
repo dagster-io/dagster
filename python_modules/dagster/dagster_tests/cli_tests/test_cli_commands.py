@@ -7,7 +7,7 @@ import pytest
 from click.testing import CliRunner
 
 from dagster import lambda_solid, PipelineDefinition, RepositoryDefinition
-from dagster.core.storage.runs import base_run_directory
+from dagster.core.storage.runs import base_runs_directory
 from dagster.cli.load_handle import CliUsageError
 from dagster.cli.pipeline import (
     execute_print_command,
@@ -351,7 +351,7 @@ def test_default_memory_run_storage():
     result = execute_execute_command(env=None, raise_on_error=True, cli_args=cli_args)
     assert result.success
 
-    run_dir = os.path.join(base_run_directory(), result.run_id)
+    run_dir = os.path.join(base_runs_directory(), result.run_id)
 
     assert not os.path.isdir(run_dir)
 
@@ -369,7 +369,7 @@ def test_override_with_in_memory_storage():
     )
     assert result.success
 
-    run_dir = os.path.join(base_run_directory(), result.run_id)
+    run_dir = os.path.join(base_runs_directory(), result.run_id)
 
     assert not os.path.exists(run_dir)
 
@@ -387,6 +387,6 @@ def test_override_with_filesystem_storage():
     )
     assert result.success
 
-    run_dir = os.path.join(base_run_directory(), result.run_id)
+    run_dir = os.path.join(base_runs_directory(), result.run_id)
 
     assert os.path.exists(run_dir)

@@ -16,7 +16,6 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     RunConfig,
-    RunStorageMode,
     execute_pipeline,
     execute_solid,
     lambda_solid,
@@ -51,11 +50,12 @@ def test_spark_data_frame_serialization_file_system():
 
     run_id = str(uuid.uuid4())
 
-    storage_mode = RunStorageMode.FILESYSTEM
     intermediate_store = FileSystemIntermediateStore(run_id=run_id)
 
     result = execute_pipeline(
-        pipeline_def, run_config=RunConfig(run_id=run_id, storage_mode=storage_mode, mode='spark')
+        pipeline_def,
+        run_config=RunConfig(run_id=run_id, mode='spark'),
+        environment_dict={'storage': {'filesystem': {}}},
     )
 
     assert result.success
@@ -88,13 +88,12 @@ def test_spark_data_frame_serialization_s3():
 
     run_id = str(uuid.uuid4())
 
-    storage_mode = RunStorageMode.S3
     intermediate_store = S3IntermediateStore(s3_bucket='dagster-airflow-scratch', run_id=run_id)
 
     result = execute_pipeline(
         pipeline_def,
-        environment_dict={'storage': {'s3': {'s3_bucket': 'dagster-airflow-scratch'}}},
-        run_config=RunConfig(run_id=run_id, storage_mode=storage_mode, mode='spark'),
+        environment_dict={'storage': {'s3': {'config': {'s3_bucket': 'dagster-airflow-scratch'}}}},
+        run_config=RunConfig(run_id=run_id, mode='spark'),
     )
 
     assert result.success

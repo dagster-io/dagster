@@ -11,9 +11,12 @@ from dagster.utils import merge_dicts
 
 from dagster.core.definitions.expectation import ExpectationDefinition
 from dagster.core.definitions.input import InputDefinition
+from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.output import OutputDefinition
-from dagster.core.definitions.resource import SolidResourcesBuilder
+from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.log_manager import DagsterLogManager
+
+from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.runs import RunStorage
 from dagster.core.system_config.objects import EnvironmentConfig
 
@@ -24,8 +27,8 @@ class SystemPipelineExecutionContextData(
     namedtuple(
         '_SystemPipelineExecutionContextData',
         (
-            'run_config solid_resources_builder environment_config pipeline_def '
-            'run_storage intermediates_manager'
+            'run_config scoped_resources_builder environment_config pipeline_def '
+            'mode_def system_storage_def run_storage intermediates_manager file_manager'
         ),
     )
 ):
@@ -37,29 +40,40 @@ class SystemPipelineExecutionContextData(
     def __new__(
         cls,
         run_config,
-        solid_resources_builder,
+        scoped_resources_builder,
         environment_config,
         pipeline_def,
+        mode_def,
+        system_storage_def,
         run_storage,
         intermediates_manager,
+        file_manager,
     ):
         from dagster.core.definitions import PipelineDefinition
+        from dagster.core.definitions.system_storage import SystemStorageDefinition
         from dagster.core.storage.intermediates_manager import IntermediatesManager
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
             cls,
             run_config=check.inst_param(run_config, 'run_config', RunConfig),
-            solid_resources_builder=check.inst_param(
-                solid_resources_builder, 'solid_resources_builder', SolidResourcesBuilder
+            scoped_resources_builder=check.inst_param(
+                scoped_resources_builder, 'scoped_resources_builder', ScopedResourcesBuilder
             ),
             environment_config=check.inst_param(
                 environment_config, 'environment_config', EnvironmentConfig
             ),
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+            mode_def=check.inst_param(mode_def, 'mode_def', ModeDefinition),
+            system_storage_def=check.inst_param(
+                system_storage_def, 'system_storage_def', SystemStorageDefinition
+            ),
             run_storage=check.inst_param(run_storage, 'run_storage', RunStorage),
             intermediates_manager=check.inst_param(
                 intermediates_manager, 'intermediates_manager', IntermediatesManager
             ),
+            # TODO: Make required when https://github.com/dagster-io/dagster/issues/1456
+            # is complete
+            file_manager=check.opt_inst_param(file_manager, 'file_manager', FileManager),
         )
 
     @property
@@ -76,19 +90,12 @@ class SystemPipelineExecutionContextData(
 
 
 class SystemPipelineExecutionContext(object):
-    __slots__ = [
-        '_pipeline_context_data',
-        '_logging_tags',
-        '_log_manager',
-        '_legacy_context',
-        '_events',
-    ]
+    __slots__ = ['_pipeline_context_data', '_log_manager', '_legacy_context', '_events']
 
-    def __init__(self, pipeline_context_data, logging_tags, log_manager):
+    def __init__(self, pipeline_context_data, log_manager):
         self._pipeline_context_data = check.inst_param(
             pipeline_context_data, 'pipeline_context_data', SystemPipelineExecutionContextData
         )
-        self._logging_tags = check.dict_param(logging_tags, 'logging_tags')
         self._log_manager = check.inst_param(log_manager, 'log_manager', DagsterLogManager)
 
     def for_step(self, step):
@@ -96,10 +103,12 @@ class SystemPipelineExecutionContext(object):
 
         check.inst_param(step, 'step', ExecutionStep)
 
-        logging_tags = merge_dicts(self.logging_tags, step.logging_tags)
-        log_manager = DagsterLogManager(self.run_id, logging_tags, self.log.loggers)
         return SystemStepExecutionContext(
-            self._pipeline_context_data, logging_tags, log_manager, step
+            self._pipeline_context_data,
+            DagsterLogManager(
+                self.run_id, merge_dicts(self.logging_tags, step.logging_tags), self.log.loggers
+            ),
+            step,
         )
 
     @property
@@ -111,8 +120,8 @@ class SystemPipelineExecutionContext(object):
         return self._pipeline_context_data.run_config
 
     @property
-    def solid_resources_builder(self):
-        return self._pipeline_context_data.solid_resources_builder
+    def scoped_resources_builder(self):
+        return self._pipeline_context_data.scoped_resources_builder
 
     @property
     def run_id(self):
@@ -128,19 +137,27 @@ class SystemPipelineExecutionContext(object):
 
     @property
     def logging_tags(self):
-        return self._logging_tags
+        return self._log_manager.logging_tags
 
     def has_tag(self, key):
         check.str_param(key, 'key')
-        return key in self._logging_tags
+        return key in self.logging_tags
 
     def get_tag(self, key):
         check.str_param(key, 'key')
-        return self._logging_tags[key]
+        return self.logging_tags[key]
 
     @property
     def pipeline_def(self):
         return self._pipeline_context_data.pipeline_def
+
+    @property
+    def mode_def(self):
+        return self._pipeline_context_data.mode_def
+
+    @property
+    def system_storage_def(self):
+        return self._pipeline_context_data.system_storage_def
 
     @property
     def event_callback(self):
@@ -161,32 +178,29 @@ class SystemPipelineExecutionContext(object):
     def intermediates_manager(self):
         return self._pipeline_context_data.intermediates_manager
 
+    @property
+    def file_manager(self):
+        return self._pipeline_context_data.file_manager
+
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):
     __slots__ = ['_step', '_resources']
 
-    def __init__(self, pipeline_context_data, tags, log_manager, step):
+    def __init__(self, pipeline_context_data, log_manager, step):
         from dagster.core.execution.plan.objects import ExecutionStep
 
         self._step = check.inst_param(step, 'step', ExecutionStep)
-        super(SystemStepExecutionContext, self).__init__(pipeline_context_data, tags, log_manager)
-        self._resources = self._pipeline_context_data.solid_resources_builder.build(
-            self.solid.resource_mapper_fn, self.solid_def.resources
+        super(SystemStepExecutionContext, self).__init__(pipeline_context_data, log_manager)
+        self._resources = self._pipeline_context_data.scoped_resources_builder.build(
+            self.solid.resource_mapper_fn, self.solid_def.required_resources
         )
 
     def for_transform(self):
-        return SystemComputeExecutionContext(
-            self._pipeline_context_data, self.logging_tags, self.log, self.step
-        )
+        return SystemComputeExecutionContext(self._pipeline_context_data, self.log, self.step)
 
     def for_expectation(self, inout_def, expectation_def):
         return SystemExpectationExecutionContext(
-            self._pipeline_context_data,
-            self.logging_tags,
-            self.log,
-            self.step,
-            inout_def,
-            expectation_def,
+            self._pipeline_context_data, self.log, self.step, inout_def, expectation_def
         )
 
     @property
@@ -209,10 +223,6 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
     def resources(self):
         return self._resources
 
-    @property
-    def mode(self):
-        return self._pipeline_context_data.run_config.mode
-
 
 class SystemComputeExecutionContext(SystemStepExecutionContext):
     @property
@@ -224,7 +234,7 @@ class SystemComputeExecutionContext(SystemStepExecutionContext):
 class SystemExpectationExecutionContext(SystemStepExecutionContext):
     __slots__ = ['_inout_def', '_expectation_def']
 
-    def __init__(self, pipeline_context_data, tags, log_manager, step, inout_def, expectation_def):
+    def __init__(self, pipeline_context_data, log_manager, step, inout_def, expectation_def):
         self._expectation_def = check.inst_param(
             expectation_def, 'expectation_def', ExpectationDefinition
         )
@@ -232,7 +242,7 @@ class SystemExpectationExecutionContext(SystemStepExecutionContext):
             inout_def, 'inout_def', (InputDefinition, OutputDefinition)
         )
         super(SystemExpectationExecutionContext, self).__init__(
-            pipeline_context_data, tags, log_manager, step
+            pipeline_context_data, log_manager, step
         )
 
     @property

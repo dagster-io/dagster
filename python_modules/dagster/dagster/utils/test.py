@@ -16,22 +16,24 @@ from dagster import (
     SolidInstance,
     check,
     execute_pipeline,
+    SystemStorageData,
 )
 from dagster.core.definitions.logger import LoggerDefinition
-from dagster.core.definitions.resource import SolidResourcesBuilder
+from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.execution.api import RunConfig, scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import (
     create_log_manager,
-    create_environment_config,
     construct_pipeline_execution_context,
+    create_context_creation_data,
 )
-from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
-from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.utility_solids import define_stub_solid
+from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
+from dagster.core.storage.file_manager import LocalFileHandle
+from dagster.core.storage.runs import InMemoryRunStorage
 
 
 def create_test_pipeline_execution_context(
-    loggers=None, solid_resources_builder=None, tags=None, run_config_loggers=None
+    loggers=None, scoped_resources_builder=None, tags=None, run_config_loggers=None
 ):
     run_id = str(uuid.uuid4())
     loggers = check.opt_dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition)
@@ -43,24 +45,22 @@ def create_test_pipeline_execution_context(
         run_config_loggers, 'run_config_loggers', of_type=logging.Logger
     )
     run_config = RunConfig(run_id, tags=tags, loggers=run_config_loggers)
-    environment_config = create_environment_config(
-        pipeline_def, {'loggers': {key: {} for key in loggers}}
-    )
-    log_manager = create_log_manager(environment_config, run_config, pipeline_def, mode_def)
+    environment_dict = {'loggers': {key: {} for key in loggers}}
+    creation_data = create_context_creation_data(pipeline_def, environment_dict, run_config)
+    log_manager = create_log_manager(creation_data)
 
-    solid_resources_builder = check.opt_inst_param(
-        solid_resources_builder,
-        'solid_resources_builder',
-        SolidResourcesBuilder,
-        default=SolidResourcesBuilder(),
+    scoped_resources_builder = check.opt_inst_param(
+        scoped_resources_builder,
+        'scoped_resources_builder',
+        ScopedResourcesBuilder,
+        default=ScopedResourcesBuilder(),
     )
     return construct_pipeline_execution_context(
-        run_config=run_config,
-        pipeline_def=pipeline_def,
-        solid_resources_builder=solid_resources_builder,
-        environment_config=environment_config,
-        run_storage=InMemoryRunStorage(),
-        intermediates_manager=InMemoryIntermediatesManager(),
+        context_creation_data=creation_data,
+        scoped_resources_builder=scoped_resources_builder,
+        system_storage_data=SystemStorageData(
+            run_storage=InMemoryRunStorage(), intermediates_manager=InMemoryIntermediatesManager()
+        ),
         log_manager=log_manager,
     )
 
@@ -71,6 +71,27 @@ def _unlink_swallow_errors(path):
         os.unlink(path)
     except Exception:  # pylint: disable=broad-except
         pass
+
+
+@contextmanager
+def get_temp_file_handle_with_data(data):
+    with get_temp_file_name_with_data(data) as temp_file:
+        yield LocalFileHandle(temp_file)
+
+
+@contextmanager
+def get_temp_file_name_with_data(data):
+    with get_temp_file_name() as temp_file:
+        with open(temp_file, 'wb') as ff:
+            ff.write(data)
+
+        yield temp_file
+
+
+@contextmanager
+def get_temp_file_handle():
+    with get_temp_file_name() as temp_file:
+        yield LocalFileHandle(temp_file)
 
 
 @contextmanager
