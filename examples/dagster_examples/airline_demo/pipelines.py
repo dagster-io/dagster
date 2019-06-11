@@ -1,9 +1,6 @@
 """Pipeline definitions for the airline_demo."""
 
 from dagster import (
-    Bytes,
-    FileHandle,
-    InputDefinition,
     ModeDefinition,
     OutputDefinition,
     PresetDefinition,
@@ -11,7 +8,6 @@ from dagster import (
     composite_solid,
     file_relative_path,
     pipeline,
-    solid,
 )
 
 from dagster.core.storage.temp_file_manager import tempfile_resource
@@ -140,19 +136,11 @@ def define_airline_demo_ingest_pipeline():
     return airline_demo_ingest_pipeline
 
 
-@solid(inputs=[InputDefinition('data', Bytes)], outputs=[OutputDefinition(FileHandle)])
-def bytes_to_file_handle(context, data):
-    return context.file_manager.write(data, 'wb')
-
-
 @composite_solid(outputs=[OutputDefinition(S3FileHandle)])
 def process_delays_by_geo(_context):
     return file_handle_to_s3.alias('upload_delays_by_geography_pdf_plots')(
-        bytes_to_file_handle(
-            _context,
-            delays_by_geography(
-                westbound_delays=westbound_delays(), eastbound_delays=eastbound_delays()
-            ),
+        delays_by_geography(
+            westbound_delays=westbound_delays(), eastbound_delays=eastbound_delays()
         )
     )
 
@@ -176,21 +164,16 @@ def airline_demo_warehouse_pipeline(context):
     outbound_delays = average_sfo_outbound_avg_delays_by_destination(q2_sfo_outbound_flights())
 
     file_handle_to_s3.alias('upload_delays_vs_fares_pdf_plots')(
-        bytes_to_file_handle.alias('fares_vs_delays_coercion')(
-            context,
-            delays_vs_fares_nb.alias('fares_vs_delays')(
-                delays_vs_fares(
-                    tickets_with_destination=tickets_with_destination(),
-                    average_sfo_outbound_avg_delays_by_destination=outbound_delays,
-                )
-            ),
+        delays_vs_fares_nb.alias('fares_vs_delays')(
+            delays_vs_fares(
+                tickets_with_destination=tickets_with_destination(),
+                average_sfo_outbound_avg_delays_by_destination=outbound_delays,
+            )
         )
     )
 
     file_handle_to_s3.alias('upload_outbound_avg_delay_pdf_plots')(
-        bytes_to_file_handle.alias('delays_by_destination_coercion')(
-            context, sfo_delays_by_destination(outbound_delays)
-        )
+        sfo_delays_by_destination(outbound_delays)
     )
 
 

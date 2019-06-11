@@ -25,7 +25,7 @@ from dagster import (
 from dagster_aws.s3.solids import S3BucketData
 from dagstermill import define_dagstermill_solid
 
-from .types import FileFromPath, SparkDataFrameType, SqlTableName
+from .types import SparkDataFrameType, SqlTableName
 from .mirror_keyed_file_from_s3 import mirror_keyed_file_from_s3
 from .unzip_file_handle import unzip_file_handle
 
@@ -483,7 +483,7 @@ delays_by_geography = notebook_solid(
     ],
     outputs=[
         OutputDefinition(
-            dagster_type=FileFromPath,
+            dagster_type=FileHandle,
             # name='plots_pdf_path',
             description='The saved PDF plots.',
         )
@@ -500,7 +500,7 @@ delays_vs_fares_nb = notebook_solid(
     ],
     outputs=[
         OutputDefinition(
-            dagster_type=FileFromPath,
+            dagster_type=FileHandle,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
         )
@@ -517,7 +517,7 @@ sfo_delays_by_destination = notebook_solid(
     ],
     outputs=[
         OutputDefinition(
-            dagster_type=FileFromPath,
+            dagster_type=FileHandle,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
         )
