@@ -2,6 +2,7 @@ from dagster import (
     Dict,
     ExpectationResult,
     Field,
+    FileHandle,
     InputDefinition,
     OutputDefinition,
     Result,
@@ -11,8 +12,6 @@ from dagster import (
 from dagster.utils.test import get_temp_file_name
 
 from dagster_aws.s3.solids import S3BucketData
-
-from .keyed_file_store import FileHandle
 
 
 @solid(
@@ -33,10 +32,10 @@ from .keyed_file_store import FileHandle
             }
         )
     ),
-    required_resources={'keyed_file_store', 's3'},
-    description='''This is a solid which mirrors a file in s3 into a keyed file store.
+    required_resources={'file_cache', 's3'},
+    description='''This is a solid which caches a file in s3 into file cache.
 
-The keyed file store is a resource type that allows a solid author to save files
+The `file_cache` is a resource type that allows a solid author to save files
 and assign a key to them. The keyed file store can be backed by local file or any
 object store (currently we support s3). This keyed file store can be configured
 to be at an external location so that is persists in a well known spot between runs.
@@ -46,21 +45,21 @@ by configuring the source to overwrite files or to just delete the file in the u
 storage manually.
 
 This works by downloading the file to a temporary file, and then ingesting it into
-the keyed file store. In the case of a filesystem-backed key store, this is a file
-copy. In the case of a object-store-backed key store, this is an upload.
+the file cache. In the case of a filesystem-backed file cache, this is a file
+copy. In the case of a object-store-backed file cache, this is an upload.
 
-In order to work this must be executed within a mode that provides an s3
-and keyed_file_store resource.
+In order to work this must be executed within a mode that provides an `s3`
+and `file_cache` resource.
     ''',
 )
-def mirror_keyed_file_from_s3(context, bucket_data):
+def cache_file_from_s3(context, bucket_data):
     target_key = context.solid_config.get('file_key', bucket_data['key'].split('/')[-1])
 
-    keyed_file_store = context.resources.keyed_file_store
+    file_cache = context.resources.file_cache
 
-    file_handle = keyed_file_store.get_file_handle(target_key)
+    file_handle = file_cache.get_file_handle(target_key)
 
-    if keyed_file_store.overwrite or not keyed_file_store.has_file_object(target_key):
+    if file_cache.overwrite or not file_cache.has_file_object(target_key):
 
         with get_temp_file_name() as tmp_file:
             context.resources.s3.session.download_file(
@@ -70,13 +69,13 @@ def mirror_keyed_file_from_s3(context, bucket_data):
             context.log.info('File downloaded to {}'.format(tmp_file))
 
             with open(tmp_file, 'rb') as tmp_file_object:
-                keyed_file_store.write_file_object(target_key, tmp_file_object)
+                file_cache.write_file_object(target_key, tmp_file_object)
                 context.log.info('File handle written at : {}'.format(file_handle.path_desc))
     else:
-        context.log.info('File {} already present in keyed store'.format(file_handle.path_desc))
+        context.log.info('File {} already present in cache'.format(file_handle.path_desc))
 
     yield ExpectationResult(
-        success=keyed_file_store.has_file_object(target_key),
+        success=file_cache.has_file_object(target_key),
         name='file_handle_exists',
         result_metadata={'path': file_handle.path_desc},
     )

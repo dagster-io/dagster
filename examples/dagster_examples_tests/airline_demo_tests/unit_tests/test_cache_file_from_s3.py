@@ -12,8 +12,8 @@ from dagster import (
 from dagster_aws.s3.resources import S3Resource
 from dagster.seven import mock
 from dagster.utils.test import get_temp_dir
-from dagster_examples.airline_demo.mirror_keyed_file_from_s3 import mirror_keyed_file_from_s3
-from dagster_examples.airline_demo.keyed_file_store import keyed_fs_file_store, LocalFileHandle
+from dagster_examples.airline_demo.cache_file_from_s3 import cache_file_from_s3
+from dagster_examples.airline_demo.file_cache import fs_file_cache, LocalFileHandle
 
 
 def execute_solid_with_resources(solid_def, resources, environment_dict):
@@ -26,22 +26,22 @@ def execute_solid_with_resources(solid_def, resources, environment_dict):
     return execute_pipeline(pipeline_def, environment_dict)
 
 
-def test_mirror_keyed_file_from_s3_basic():
+def test_cache_file_from_s3_basic():
     s3_session = mock.MagicMock()
     with get_temp_dir() as temp_dir:
         pipeline_result = execute_solid_with_resources(
-            mirror_keyed_file_from_s3,
+            cache_file_from_s3,
             resources={
-                'keyed_file_store': keyed_fs_file_store,
+                'file_cache': fs_file_cache,
                 's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session)),
             },
             environment_dict={
                 'solids': {
-                    'mirror_keyed_file_from_s3': {
+                    'cache_file_from_s3': {
                         'inputs': {'bucket_data': {'bucket': 'some-bucket', 'key': 'some-key'}}
                     }
                 },
-                'resources': {'keyed_file_store': {'config': {'target_folder': temp_dir}}},
+                'resources': {'file_cache': {'config': {'target_folder': temp_dir}}},
             },
         )
 
@@ -50,7 +50,7 @@ def test_mirror_keyed_file_from_s3_basic():
 
         assert pipeline_result.success
 
-        solid_result = pipeline_result.result_for_solid('mirror_keyed_file_from_s3')
+        solid_result = pipeline_result.result_for_solid('cache_file_from_s3')
 
         assert solid_result.success
 
@@ -66,51 +66,51 @@ def test_mirror_keyed_file_from_s3_basic():
         assert 'some-key' in solid_result.result_value().path_desc
 
 
-def test_mirror_keyed_file_from_s3_specify_target_key():
+def test_cache_file_from_s3_specify_target_key():
     s3_session = mock.MagicMock()
     with get_temp_dir() as temp_dir:
         pipeline_result = execute_solid_with_resources(
-            mirror_keyed_file_from_s3,
+            cache_file_from_s3,
             resources={
-                'keyed_file_store': keyed_fs_file_store,
+                'file_cache': fs_file_cache,
                 's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session)),
             },
             environment_dict={
                 'solids': {
-                    'mirror_keyed_file_from_s3': {
+                    'cache_file_from_s3': {
                         'inputs': {'bucket_data': {'bucket': 'some-bucket', 'key': 'some-key'}},
                         'config': {'file_key': 'specified-file-key'},
                     }
                 },
-                'resources': {'keyed_file_store': {'config': {'target_folder': temp_dir}}},
+                'resources': {'file_cache': {'config': {'target_folder': temp_dir}}},
             },
         )
 
         # assert the download occured
         assert s3_session.download_file.call_count == 1
         assert pipeline_result.success
-        solid_result = pipeline_result.result_for_solid('mirror_keyed_file_from_s3')
+        solid_result = pipeline_result.result_for_solid('cache_file_from_s3')
         assert solid_result.success
         assert isinstance(solid_result.result_value(), LocalFileHandle)
         assert 'specified-file-key' in solid_result.result_value().path_desc
 
 
-def test_mirror_keyed_file_from_s3_skip_download():
+def test_cache_file_from_s3_skip_download():
     with get_temp_dir() as temp_dir:
         s3_session_one = mock.MagicMock()
         pipeline_result_one = execute_solid_with_resources(
-            mirror_keyed_file_from_s3,
+            cache_file_from_s3,
             resources={
-                'keyed_file_store': keyed_fs_file_store,
+                'file_cache': fs_file_cache,
                 's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session_one)),
             },
             environment_dict={
                 'solids': {
-                    'mirror_keyed_file_from_s3': {
+                    'cache_file_from_s3': {
                         'inputs': {'bucket_data': {'bucket': 'some-bucket', 'key': 'some-key'}}
                     }
                 },
-                'resources': {'keyed_file_store': {'config': {'target_folder': temp_dir}}},
+                'resources': {'file_cache': {'config': {'target_folder': temp_dir}}},
             },
         )
 
@@ -120,18 +120,18 @@ def test_mirror_keyed_file_from_s3_skip_download():
 
         s3_session_two = mock.MagicMock()
         pipeline_result_two = execute_solid_with_resources(
-            mirror_keyed_file_from_s3,
+            cache_file_from_s3,
             resources={
-                'keyed_file_store': keyed_fs_file_store,
+                'file_cache': fs_file_cache,
                 's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session_two)),
             },
             environment_dict={
                 'solids': {
-                    'mirror_keyed_file_from_s3': {
+                    'cache_file_from_s3': {
                         'inputs': {'bucket_data': {'bucket': 'some-bucket', 'key': 'some-key'}}
                     }
                 },
-                'resources': {'keyed_file_store': {'config': {'target_folder': temp_dir}}},
+                'resources': {'file_cache': {'config': {'target_folder': temp_dir}}},
             },
         )
 
@@ -140,23 +140,23 @@ def test_mirror_keyed_file_from_s3_skip_download():
         assert s3_session_two.download_file.call_count == 0
 
 
-def test_mirror_keyed_file_from_s3_overwrite():
+def test_cache_file_from_s3_overwrite():
     with get_temp_dir() as temp_dir:
         s3_session_one = mock.MagicMock()
         pipeline_result_one = execute_solid_with_resources(
-            mirror_keyed_file_from_s3,
+            cache_file_from_s3,
             resources={
-                'keyed_file_store': keyed_fs_file_store,
+                'file_cache': fs_file_cache,
                 's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session_one)),
             },
             environment_dict={
                 'solids': {
-                    'mirror_keyed_file_from_s3': {
+                    'cache_file_from_s3': {
                         'inputs': {'bucket_data': {'bucket': 'some-bucket', 'key': 'some-key'}}
                     }
                 },
                 'resources': {
-                    'keyed_file_store': {'config': {'target_folder': temp_dir, 'overwrite': True}}
+                    'file_cache': {'config': {'target_folder': temp_dir, 'overwrite': True}}
                 },
             },
         )
@@ -167,19 +167,19 @@ def test_mirror_keyed_file_from_s3_overwrite():
 
         s3_session_two = mock.MagicMock()
         pipeline_result_two = execute_solid_with_resources(
-            mirror_keyed_file_from_s3,
+            cache_file_from_s3,
             resources={
-                'keyed_file_store': keyed_fs_file_store,
+                'file_cache': fs_file_cache,
                 's3': ResourceDefinition.hardcoded_resource(s3_session_two),
             },
             environment_dict={
                 'solids': {
-                    'mirror_keyed_file_from_s3': {
+                    'cache_file_from_s3': {
                         'inputs': {'bucket_data': {'bucket': 'some-bucket', 'key': 'some-key'}}
                     }
                 },
                 'resources': {
-                    'keyed_file_store': {'config': {'target_folder': temp_dir, 'overwrite': True}}
+                    'file_cache': {'config': {'target_folder': temp_dir, 'overwrite': True}}
                 },
             },
         )
@@ -193,14 +193,14 @@ def test_missing_resources():
     with pytest.raises(DagsterInvalidDefinitionError):
         with get_temp_dir() as temp_dir:
             execute_solid_with_resources(
-                mirror_keyed_file_from_s3,
-                resources={'keyed_file_store': keyed_fs_file_store},
+                cache_file_from_s3,
+                resources={'file_cache': fs_file_cache},
                 environment_dict={
                     'solids': {
-                        'mirror_keyed_file_from_s3': {
+                        'cache_file_from_s3': {
                             'inputs': {'bucket_data': {'bucket': 'some-bucket', 'key': 'some-key'}}
                         }
                     },
-                    'resources': {'keyed_file_store': {'config': {'target_folder': temp_dir}}},
+                    'resources': {'file_cache': {'config': {'target_folder': temp_dir}}},
                 },
             )

@@ -5,17 +5,17 @@ from botocore.exceptions import ClientError
 
 from dagster.utils.test import get_temp_dir
 from dagster.seven import mock
-from dagster_examples.airline_demo.keyed_file_store import (
-    KeyedFilesystemFileStore,
-    KeyedS3FileStore,
+from dagster_examples.airline_demo.file_cache import (
+    FSFileCache,
+    S3FileCache,
     S3FileHandle,
     LocalFileHandle,
 )
 
 
-def test_keyed_filesystem_store():
+def test_fs_file_cache():
     with get_temp_dir() as temp_dir:
-        file_store = KeyedFilesystemFileStore(temp_dir, overwrite=False)
+        file_store = FSFileCache(temp_dir, overwrite=False)
         assert not file_store.has_file_object('foo')
         assert file_store.write_binary_data('foo', 'bar'.encode())
         file_handle = file_store.get_file_handle('foo')
@@ -23,10 +23,10 @@ def test_keyed_filesystem_store():
         assert file_handle.path_desc == os.path.join(temp_dir, 'foo')
 
 
-def test_keyed_s3_store_file_not_present():
+def test_s3_file_cache_file_not_present():
     session_mock = mock.MagicMock()
     session_mock.get_object.side_effect = ClientError({}, None)
-    file_store = KeyedS3FileStore(
+    file_store = S3FileCache(
         s3_bucket='some-bucket', s3_key='some-key', s3_session=session_mock, overwrite=False
     )
 
@@ -37,9 +37,9 @@ def test_keyed_s3_store_file_not_present():
     )
 
 
-def test_keyed_s3_store_file_present():
+def test_s3_file_cache__file_present():
     session_mock = mock.MagicMock()
-    file_store = KeyedS3FileStore(
+    file_store = S3FileCache(
         s3_bucket='some-bucket', s3_key='some-key', s3_session=session_mock, overwrite=False
     )
 
@@ -50,17 +50,17 @@ def test_keyed_s3_store_file_present():
     )
 
 
-def test_keyed_s3_store_file_handle():
-    file_store = KeyedS3FileStore(
+def test_s3_file_cache_correct_handle():
+    file_store = S3FileCache(
         s3_bucket='some-bucket', s3_key='some-key', s3_session=mock.MagicMock(), overwrite=False
     )
 
     assert isinstance(file_store.get_file_handle('foo'), S3FileHandle)
 
 
-def test_keyed_s3_store_write_file_object():
+def test_s3_file_cache_write_file_object():
     session_mock = mock.MagicMock()
-    file_store = KeyedS3FileStore(
+    file_store = S3FileCache(
         s3_bucket='some-bucket', s3_key='some-key', s3_session=session_mock, overwrite=False
     )
 

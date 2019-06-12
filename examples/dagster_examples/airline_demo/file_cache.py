@@ -6,24 +6,17 @@ import shutil
 import six
 
 from dagster import check, resource, Bool, Field, String, Dict
-from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
+from dagster.core.storage.file_manager import LocalFileHandle
 from dagster.utils import mkdir_p
+from dagster_aws.s3.file_manager import S3FileHandle
 from dagster_aws.s3.utils import create_s3_session
 from botocore.exceptions import ClientError
 
 
-class S3FileHandle(FileHandle):
-    def __init__(self, s3_bucket, s3_key):
-        self.s3_bucket = check.str_param(s3_bucket, 's3_bucket')
-        self.s3_key = check.str_param(s3_key, 's3_key')
-
-    @property
-    def path_desc(self):
-        return 's3://{bucket}/{key}'.format(bucket=self.s3_bucket, key=self.s3_key)
-
-
-class KeyedFileStore(six.with_metaclass(ABCMeta)):
+class FileCache(six.with_metaclass(ABCMeta)):
     def __init__(self, overwrite):
+        # Overwrite is currently only a signal to callers to not overwrite.
+        # These classes currently do not enforce any semantics around that
         self.overwrite = check.bool_param(overwrite, 'overwrite')
 
     @abstractmethod
@@ -42,9 +35,9 @@ class KeyedFileStore(six.with_metaclass(ABCMeta)):
         return self.write_file_object(file_key, io.BytesIO(binary_data))
 
 
-class KeyedFilesystemFileStore(KeyedFileStore):
+class FSFileCache(FileCache):
     def __init__(self, target_folder, overwrite=False):
-        super(KeyedFilesystemFileStore, self).__init__(overwrite=overwrite)
+        super(FSFileCache, self).__init__(overwrite=overwrite)
         check.str_param(target_folder, 'target_folder')
         check.param_invariant(os.path.isdir(target_folder), 'target_folder')
 
@@ -78,18 +71,18 @@ class KeyedFilesystemFileStore(KeyedFileStore):
         )
     )
 )
-def keyed_fs_file_store(init_context):
+def fs_file_cache(init_context):
     target_folder = init_context.resource_config['target_folder']
 
     if not os.path.exists(target_folder):
         mkdir_p(target_folder)
 
-    return KeyedFilesystemFileStore(target_folder=target_folder, overwrite=False)
+    return FSFileCache(target_folder=target_folder, overwrite=False)
 
 
-class KeyedS3FileStore(KeyedFileStore):
+class S3FileCache(FileCache):
     def __init__(self, s3_bucket, s3_key, s3_session, overwrite=False):
-        super(KeyedS3FileStore, self).__init__(overwrite=overwrite)
+        super(S3FileCache, self).__init__(overwrite=overwrite)
 
         self.s3_bucket = s3_bucket
         self.s3_key = s3_key
@@ -108,6 +101,7 @@ class KeyedS3FileStore(KeyedFileStore):
 
     def write_file_object(self, file_key, source_file_object):
         check.str_param(file_key, 'file_key')
+
         self.s3.put_object(
             Body=source_file_object, Bucket=self.s3_bucket, Key=self.get_full_key(file_key)
         )
@@ -128,10 +122,11 @@ class KeyedS3FileStore(KeyedFileStore):
         )
     )
 )
-def keyed_s3_file_store(init_context):
-    return KeyedS3FileStore(
+def s3_file_cache(init_context):
+    return S3FileCache(
         s3_bucket=init_context.resource_config['bucket'],
         s3_key=init_context.resource_config['key'],
         overwrite=init_context.resource_config['overwrite'],
+        # TODO: resource dependencies
         s3_session=create_s3_session(),
     )

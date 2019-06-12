@@ -18,7 +18,7 @@ from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 from dagster_aws.s3.solids import file_handle_to_s3
 
 
-from .mirror_keyed_file_from_s3 import mirror_keyed_file_from_s3
+from .cache_file_from_s3 import cache_file_from_s3
 from .resources import postgres_db_info_resource, redshift_db_info_resource, spark_session_local
 from .solids import (
     average_sfo_outbound_avg_delays_by_destination,
@@ -38,7 +38,7 @@ from .solids import (
     s3_to_df,
 )
 
-from .keyed_file_store import keyed_fs_file_store, keyed_s3_file_store
+from .file_cache import fs_file_cache, s3_file_cache
 
 test_mode = ModeDefinition(
     name='test',
@@ -47,7 +47,7 @@ test_mode = ModeDefinition(
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
         's3': s3_resource,
-        'keyed_file_store': keyed_fs_file_store,
+        'file_cache': fs_file_cache,
     },
     system_storage_defs=s3_plus_default_storage_defs,
 )
@@ -60,7 +60,7 @@ local_mode = ModeDefinition(
         's3': s3_resource,
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
-        'keyed_file_store': keyed_fs_file_store,
+        'file_cache': fs_file_cache,
     },
     system_storage_defs=s3_plus_default_storage_defs,
 )
@@ -73,7 +73,7 @@ prod_mode = ModeDefinition(
         's3': s3_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
-        'keyed_file_store': keyed_s3_file_store,
+        'file_cache': s3_file_cache,
     },
     system_storage_defs=s3_plus_default_storage_defs,
 )
@@ -98,7 +98,7 @@ def sfo_weather_data(_):
         process_sfo_weather_data(
             _,
             ingest_csv_file_handle_to_spark.alias('ingest_q2_sfo_weather')(
-                mirror_keyed_file_from_s3.alias('download_q2_sfo_weather')()
+                cache_file_from_s3.alias('download_q2_sfo_weather')()
             ),
         )
     )

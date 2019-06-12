@@ -26,7 +26,7 @@ from dagster_aws.s3.solids import S3BucketData
 from dagstermill import define_dagstermill_solid
 
 from .types import SparkDataFrameType, SqlTableName
-from .mirror_keyed_file_from_s3 import mirror_keyed_file_from_s3
+from .cache_file_from_s3 import cache_file_from_s3
 from .unzip_file_handle import unzip_file_handle
 
 
@@ -280,7 +280,7 @@ more detail.''',
 def s3_to_df(_, bucket_data, archive_member):
     # pylint: disable=no-value-for-parameter
     return ingest_csv_file_handle_to_spark(
-        unzip_file_handle(mirror_keyed_file_from_s3(bucket_data), archive_member)
+        unzip_file_handle(cache_file_from_s3(bucket_data), archive_member)
     )
 
 
