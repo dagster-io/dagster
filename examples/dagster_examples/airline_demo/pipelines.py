@@ -10,6 +10,7 @@ from dagster import (
     pipeline,
 )
 
+from dagster.core.storage.file_cache import fs_file_cache
 from dagster.core.storage.temp_file_manager import tempfile_resource
 
 from dagster_aws.s3.resources import s3_resource
@@ -38,7 +39,7 @@ from .solids import (
     s3_to_df,
 )
 
-from .file_cache import fs_file_cache, s3_file_cache
+from .file_cache import s3_file_cache
 
 test_mode = ModeDefinition(
     name='test',
