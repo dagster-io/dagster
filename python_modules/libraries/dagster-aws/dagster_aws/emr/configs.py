@@ -18,7 +18,7 @@ from .types import (
 
 def _define_configurations():
     return Field(
-        List(
+        List[
             Dict(
                 fields={
                     'Classification': Field(
@@ -27,7 +27,7 @@ def _define_configurations():
                         is_optional=True,
                     ),
                     'Configurations': Field(
-                        List(PermissiveDict()),
+                        List[PermissiveDict()],
                         description='''A list of additional configurations to apply within a
                                 configuration object.''',
                         is_optional=True,
@@ -40,7 +40,7 @@ def _define_configurations():
                     ),
                 }
             )
-        ),
+        ],
         description='''For Amazon EMR releases 4.0 and later. The list of configurations supplied
         for the EMR cluster you are creating.
 
@@ -69,7 +69,7 @@ def _define_steps():
         Dict(
             fields={
                 'Properties': Field(
-                    List(Dict(fields={'Key': Field(String), 'Value': Field(String)})),
+                    List[Dict(fields={'Key': Field(String), 'Value': Field(String)})],
                     description='''A list of Java properties that are set when the step runs. You
                     can use these properties to pass key value pairs to your main function.''',
                     is_optional=True,
@@ -86,7 +86,7 @@ def _define_steps():
                     is_optional=True,
                 ),
                 'Args': Field(
-                    List(String),
+                    List[String],
                     description='''A list of command line arguments passed to the JAR file's main
                     function when executed.''',
                     is_optional=True,
@@ -97,7 +97,7 @@ def _define_steps():
     )
 
     return Field(
-        List(
+        List[
             Dict(
                 fields={
                     'Name': name,
@@ -105,7 +105,7 @@ def _define_steps():
                     'HadoopJarStep': hadoopJarStep,
                 }
             )
-        ),
+        ],
         description='A list of steps to run.',
     )
 
@@ -121,7 +121,7 @@ def _define_bootstrap_actions():
     )
 
     args = Field(
-        List(String),
+        List[String],
         description='A list of command line arguments to pass to the bootstrap action script.',
         is_optional=True,
     )
@@ -138,7 +138,7 @@ def _define_bootstrap_actions():
     )
 
     return Field(
-        List(bootstrap_action),
+        List[bootstrap_action],
         description='''A list of bootstrap actions to run before Hadoop starts on the cluster
         nodes.''',
         is_optional=True,
@@ -185,14 +185,14 @@ def _define_ebs_configuration():
         Dict(
             fields={
                 'EbsBlockDeviceConfigs': Field(
-                    List(
+                    List[
                         Dict(
                             fields={
                                 'VolumeSpecification': volume_specification,
                                 'VolumesPerInstance': volumes_per_instance,
                             }
                         )
-                    ),
+                    ],
                     description='''An array of Amazon EBS volume specifications attached to a
                     cluster instance.''',
                     is_optional=True,
@@ -271,14 +271,14 @@ def _define_auto_scaling_policy():
     )
 
     dimensions = Field(
-        List(
+        List[
             Dict(
                 fields={
                     'Key': Field(String, description='The dimension name.', is_optional=False),
                     'Value': Field(String, description='The dimension value.', is_optional=True),
                 }
             )
-        ),
+        ],
         description='''A CloudWatch metric dimension.''',
         is_optional=True,
     )
@@ -386,7 +386,7 @@ def _define_auto_scaling_policy():
                     is_optional=False,
                 ),
                 'Rules': Field(
-                    List(
+                    List[
                         Dict(
                             fields={
                                 'Name': Field(
@@ -404,7 +404,7 @@ def _define_auto_scaling_policy():
                                 'Trigger': trigger,
                             }
                         )
-                    ),
+                    ],
                     description='''A scale-in or scale-out rule that defines scaling activity,
                     including the CloudWatch metric alarm that triggers activity, how EC2 instances
                     are added or removed, and the periodicity of adjustments. The automatic scaling
@@ -425,7 +425,7 @@ def _define_auto_scaling_policy():
 
 def _define_instance_groups():
     return Field(
-        List(
+        List[
             Dict(
                 fields={
                     'Name': Field(
@@ -471,7 +471,7 @@ def _define_instance_groups():
                     'AutoScalingPolicy': _define_auto_scaling_policy(),
                 }
             )
-        ),
+        ],
         description='Configuration for the instance groups in a cluster.',
         is_optional=True,
     )
@@ -519,7 +519,7 @@ def _define_instance_fleets():
     )
 
     instance_type_configs = Field(
-        List(
+        List[
             Dict(
                 fields={
                     'InstanceType': Field(
@@ -556,7 +556,7 @@ def _define_instance_fleets():
                     'Configurations': _define_configurations(),
                 }
             )
-        ),
+        ],
         description='''An instance type configuration for each instance type in an instance fleet,
         which determines the EC2 instances Amazon EMR attempts to provision to fulfill On-Demand and
         Spot target capacities. There can be a maximum of 5 instance type configurations in a
@@ -616,7 +616,7 @@ def _define_instance_fleets():
     )
 
     return Field(
-        List(
+        List[
             Dict(
                 fields={
                     'Name': Field(
@@ -635,7 +635,7 @@ def _define_instance_fleets():
                     'LaunchSpecifications': launch_specifications,
                 }
             )
-        ),
+        ],
         description='''Describes the EC2 instances and instance configurations for clusters that use
         the instance fleet configuration.''',
         is_optional=True,
@@ -709,7 +709,7 @@ def define_emr_run_job_flow_config():
                                 is_optional=True,
                             ),
                             'AvailabilityZones': Field(
-                                List(String),
+                                List[String],
                                 description='''When multiple Availability Zones are specified,
                                 Amazon EMR evaluates them and launches instances in the optimal
                                 Availability Zone. AvailabilityZones is used for instance fleets,
@@ -760,7 +760,7 @@ def define_emr_run_job_flow_config():
                     is_optional=True,
                 ),
                 'Ec2SubnetIds': Field(
-                    List(String),
+                    List[String],
                     description='''Applies to clusters that use the instance fleet configuration.
                     When multiple EC2 subnet IDs are specified, Amazon EMR evaluates them and
                     launches instances in the optimal subnet.''',
@@ -785,13 +785,13 @@ def define_emr_run_job_flow_config():
                     is_optional=True,
                 ),
                 'AdditionalMasterSecurityGroups': Field(
-                    List(String),
+                    List[String],
                     description='''A list of additional Amazon EC2 security group IDs for the master
                     node.''',
                     is_optional=True,
                 ),
                 'AdditionalSlaveSecurityGroups': Field(
-                    List(String),
+                    List[String],
                     description='''A list of additional Amazon EC2 security group IDs for the core
                     and task nodes.''',
                     is_optional=True,
@@ -803,7 +803,7 @@ def define_emr_run_job_flow_config():
     )
 
     supported_products = Field(
-        List(EmrSupportedProducts),
+        List[EmrSupportedProducts],
         description='''A list of strings that indicates third-party software to use. For
                     more information, see the Amazon EMR Developer Guide. Currently supported
                     values are:
@@ -814,14 +814,14 @@ def define_emr_run_job_flow_config():
     )
 
     new_supported_products = Field(
-        List(
+        List[
             Dict(
                 fields={
                     'Name': Field(String, is_optional=False),
-                    'Args': Field(List(String), description='The list of user-supplied arguments.'),
+                    'Args': Field(List[String], description='The list of user-supplied arguments.'),
                 }
             )
-        ),
+        ],
         description='''
         The list of supported product configurations which allow user-supplied arguments. EMR
         accepts these arguments and forwards them to the corresponding installation script as
@@ -846,7 +846,7 @@ def define_emr_run_job_flow_config():
     )
 
     applications = Field(
-        List(
+        List[
             Dict(
                 fields={
                     'Name': Field(
@@ -856,7 +856,7 @@ def define_emr_run_job_flow_config():
                         String, description='The version of the application.', is_optional=True
                     ),
                     'Args': Field(
-                        List(String),
+                        List[String],
                         description='Arguments for Amazon EMR to pass to the application.',
                         is_optional=True,
                     ),
@@ -869,7 +869,7 @@ def define_emr_run_job_flow_config():
                     ),
                 }
             )
-        ),
+        ],
         description='''Applies to Amazon EMR releases 4.0 and later. A case-insensitive list of
         applications for Amazon EMR to install and configure when launching the cluster. For a list
         of applications available for each Amazon EMR release version, see the Amazon EMR Release
@@ -915,7 +915,7 @@ def define_emr_run_job_flow_config():
     )
 
     tags = Field(
-        List(
+        List[
             Dict(
                 fields={
                     'Key': Field(
@@ -932,7 +932,7 @@ def define_emr_run_job_flow_config():
                     ),
                 }
             )
-        ),
+        ],
         description='''A list of tags to associate with a cluster and propagate to Amazon EC2
         instances.
 

@@ -74,7 +74,7 @@ class BigQuerySolidDefinition(SolidDefinition):
             name=name,
             description=description,
             inputs=[InputDefinition(_START, Nothing)],
-            outputs=[OutputDefinition(List(DataFrame))],
+            outputs=[OutputDefinition(List[DataFrame])],
             compute_fn=_compute_fn,
             config_field=define_bigquery_query_config(),
             metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
@@ -95,7 +95,7 @@ class BigQueryLoadSolidDefinition(SolidDefinition):
         elif source == BigQueryLoadSource.File:
             return [InputDefinition('file_path', Path)]
         elif source == BigQueryLoadSource.Gcs:
-            return [InputDefinition('source_uris', List(Path))]
+            return [InputDefinition('source_uris', List[Path])]
         else:
             raise BigQueryError(
                 'invalid source specification -- must be one of [%s]'

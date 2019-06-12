@@ -19,7 +19,7 @@ from dagster import (
 
 
 def test_simple_values():
-    @solid(inputs=[InputDefinition('numbers', List(Int))])
+    @solid(inputs=[InputDefinition('numbers', List[Int])])
     def sum_num(_context, numbers):
         # cant guarantee order
         assert set(numbers) == set([1, 2, 3])
@@ -59,7 +59,7 @@ def test_simple_values():
 
 
 def test_interleaved_values():
-    @solid(inputs=[InputDefinition('stuff', List(Any))])
+    @solid(inputs=[InputDefinition('stuff', List[Any])])
     def collect(_context, stuff):
         assert set(stuff) == set([1, None, 'one'])
         return stuff
@@ -97,7 +97,7 @@ def test_interleaved_values():
 
 
 def test_nothing_deps():
-    @solid(inputs=[InputDefinition('stuff', List(Any))])
+    @solid(inputs=[InputDefinition('stuff', List[Any])])
     def collect(_context, stuff):
         return stuff
 

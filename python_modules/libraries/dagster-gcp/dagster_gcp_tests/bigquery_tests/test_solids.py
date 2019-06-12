@@ -260,7 +260,7 @@ def test_gcs_load():
     )
     delete_solid = BigQueryDeleteDatasetSolidDefinition('delete_solid')
 
-    @solid(inputs=[InputDefinition('success', Nothing)], outputs=[OutputDefinition(List(Path))])
+    @solid(inputs=[InputDefinition('success', Nothing)], outputs=[OutputDefinition(List[Path])])
     def return_gcs_uri(_context):  # pylint: disable=unused-argument
         return ["gs://cloud-samples-data/bigquery/us-states/us-states.csv"]
 

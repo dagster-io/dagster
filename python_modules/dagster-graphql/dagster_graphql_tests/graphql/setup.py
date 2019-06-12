@@ -21,7 +21,7 @@ from dagster import (
     Int,
     List,
     ModeDefinition,
-    Nullable,
+    Optional,
     OutputDefinition,
     Path,
     PipelineDefinition,
@@ -258,7 +258,7 @@ def define_more_complicated_nested_config():
                                         'field_four_str': Field(String),
                                         'field_five_int': Field(Int),
                                         'field_six_nullable_int_list': Field(
-                                            List(Nullable(Int)), is_optional=True
+                                            List[Optional[Int]], is_optional=True
                                         ),
                                     }
                                 )
@@ -323,7 +323,7 @@ def define_pipeline_with_list():
                 inputs=[],
                 outputs=[],
                 compute_fn=lambda *_args: None,
-                config_field=Field(List(Int)),
+                config_field=Field(List[Int]),
             )
         ],
     )

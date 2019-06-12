@@ -51,7 +51,7 @@ class ConfigType(object):
 
     @staticmethod
     def from_builtin_enum(builtin_enum):
-        check.inst_param(builtin_enum, 'builtin_enum', BuiltinEnum)
+        check.invariant(BuiltinEnum.contains(builtin_enum), 'param must be member of BuiltinEnum')
         return _CONFIG_MAP[builtin_enum]
 
     @property
@@ -99,7 +99,7 @@ class ConfigType(object):
         return False
 
 
-# Scalars, Composites, Selectors, Lists, Nullable, Any
+# Scalars, Composites, Selectors, Lists, Optional, Any
 
 
 class ConfigScalar(ConfigType):
@@ -206,7 +206,7 @@ def Nullable(inner_type):
     class _Nullable(ConfigNullable):
         def __init__(self):
             super(_Nullable, self).__init__(
-                key='Nullable.{inner_type}'.format(inner_type=inner_type.key),
+                key='Optional.{inner_type}'.format(inner_type=inner_type.key),
                 name=None,
                 type_attributes=ConfigTypeAttributes(is_builtin=True),
                 inner_type=inner_type,

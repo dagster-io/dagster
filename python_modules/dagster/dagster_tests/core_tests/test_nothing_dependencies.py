@@ -10,7 +10,7 @@ from dagster import (
     Int,
     Materialization,
     List,
-    Nullable,
+    Optional,
     MultiDependencyDefinition,
     Nothing,
     OutputDefinition,
@@ -266,26 +266,26 @@ def test_invalid_nothing_fns():
 def test_wrapping_nothing():
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(output=OutputDefinition(List(Nothing)))
+        @lambda_solid(output=OutputDefinition(List[Nothing]))
         def _():
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(inputs=[InputDefinition(List(Nothing))])
+        @lambda_solid(inputs=[InputDefinition('in', List[Nothing])])
+        def _(_in):
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @lambda_solid(output=OutputDefinition(Optional[Nothing]))
         def _():
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(output=OutputDefinition(Nullable(Nothing)))
-        def _():
-            pass
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @lambda_solid(inputs=[InputDefinition(Nullable(Nothing))])
-        def _():
+        @lambda_solid(inputs=[InputDefinition('in', Optional[Nothing])])
+        def _(_in):
             pass
 
 

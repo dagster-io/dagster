@@ -1,4 +1,4 @@
-from dagster import PipelineDefinition, SolidDefinition, Int, Field, String, List, Nullable, Dict
+from dagster import PipelineDefinition, SolidDefinition, Int, Field, String, List, Optional, Dict
 
 from dagster.core.types.field import resolve_to_config_type
 from dagster.core.types.type_printer import print_type_to_string
@@ -16,28 +16,28 @@ def test_basic_type_print():
 
 
 def test_basic_list_type_print():
-    assert print_type_to_string(List(Int)) == '[Int]'
-    assert_inner_types(List(Int), Int)
+    assert print_type_to_string(List[Int]) == '[Int]'
+    assert_inner_types(List[Int], Int)
 
 
 def test_double_list_type_print():
-    assert print_type_to_string(List(List(Int))) == '[[Int]]'
-    int_list = List(Int)
-    list_int_list = List(int_list)
+    assert print_type_to_string(List[List[Int]]) == '[[Int]]'
+    int_list = List[Int]
+    list_int_list = List[int_list]
     assert_inner_types(list_int_list, Int, int_list)
 
 
 def test_basic_nullable_type_print():
-    assert print_type_to_string(Nullable(Int)) == 'Int?'
-    nullable_int = Nullable(Int)
+    assert print_type_to_string(Optional[Int]) == 'Int?'
+    nullable_int = Optional[Int]
     assert_inner_types(nullable_int, Int)
 
 
 def test_nullable_list_combos():
-    assert print_type_to_string(List(Int)) == '[Int]'
-    assert print_type_to_string(Nullable(List(Int))) == '[Int]?'
-    assert print_type_to_string(List(Nullable(Int))) == '[Int?]'
-    assert print_type_to_string(Nullable(List(Nullable(Int)))) == '[Int?]?'
+    assert print_type_to_string(List[Int]) == '[Int]'
+    assert print_type_to_string(Optional[List[Int]]) == '[Int]?'
+    assert print_type_to_string(List[Optional[Int]]) == '[Int?]'
+    assert print_type_to_string(Optional[List[Optional[Int]]]) == '[Int?]?'
 
 
 def test_basic_dict():
@@ -92,9 +92,9 @@ def test_single_level_dict_lists_and_nullable():
     output = print_type_to_string(
         Dict(
             {
-                'nullable_int_field': Field(Nullable(Int)),
+                'nullable_int_field': Field(Optional[Int]),
                 'optional_int_field': Field(Int, is_optional=True),
-                'string_list_field': Field(List(String)),
+                'string_list_field': Field(List[String]),
             }
         )
     )
@@ -145,11 +145,11 @@ def define_test_type_pipeline():
         name='test_type_pipeline',
         solids=[
             define_solid_for_test_type('int_config', Int),
-            define_solid_for_test_type('list_of_int_config', List(Int)),
-            define_solid_for_test_type('nullable_list_of_int_config', Nullable(List(Int))),
-            define_solid_for_test_type('list_of_nullable_int_config', List(Nullable(Int))),
+            define_solid_for_test_type('list_of_int_config', List[Int]),
+            define_solid_for_test_type('nullable_list_of_int_config', Optional[List[Int]]),
+            define_solid_for_test_type('list_of_nullable_int_config', List[Optional[Int]]),
             define_solid_for_test_type(
-                'nullable_list_of_nullable_int_config', Nullable(List(Nullable(Int)))
+                'nullable_list_of_nullable_int_config', Optional[List[Optional[Int]]]
             ),
             define_solid_for_test_type(
                 'simple_dict', Dict({'int_field': Field(Int), 'string_field': Field(String)})
@@ -158,9 +158,9 @@ def define_test_type_pipeline():
                 'dict_with_optional_field',
                 Dict(
                     {
-                        'nullable_int_field': Field(Nullable(Int)),
+                        'nullable_int_field': Field(Optional[Int]),
                         'optional_int_field': Field(Int, is_optional=True),
-                        'string_list_field': Field(List(String)),
+                        'string_list_field': Field(List[String]),
                     }
                 ),
             ),

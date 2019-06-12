@@ -17,9 +17,13 @@ def resolve_to_config_nullable(nullable_type):
 
 
 def resolve_to_config_type(dagster_type):
+    from .mapping import remap_python_type
+
+    dagster_type = remap_python_type(dagster_type)
+
     if dagster_type is None:
         return Any.inst()
-    if isinstance(dagster_type, BuiltinEnum):
+    if BuiltinEnum.contains(dagster_type):
         return ConfigType.from_builtin_enum(dagster_type)
     if isinstance(dagster_type, WrappingListType):
         return resolve_to_config_list(dagster_type).inst()

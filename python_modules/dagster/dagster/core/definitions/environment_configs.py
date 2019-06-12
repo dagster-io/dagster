@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from dagster import check
+from dagster.utils import check
 from dagster.core.definitions import SolidHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector
@@ -284,7 +284,7 @@ def get_outputs_field(solid, handle, pipeline_name):
         output_dict_fields,
     )
 
-    return Field(List(output_entry_dict), is_optional=True)
+    return Field(List[output_entry_dict], is_optional=True)
 
 
 def define_isolid_field(solid, handle, dependency_structure, pipeline_name):

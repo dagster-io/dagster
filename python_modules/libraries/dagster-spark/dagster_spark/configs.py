@@ -29,9 +29,9 @@ def define_spark_config():
         description='''Whether to deploy your driver on the worker nodes (cluster) or locally as an
         external client (client) (default: client). A common deployment strategy is to submit your
         application from a gateway machine that is physically co-located with your worker machines
-        (e.g. Master node in a standalone EC2 cluster). In this setup, client mode is appropriate. 
-        In client mode, the driver is launched directly within the spark-submit process which acts 
-        as a client to the cluster. The input and output of the application is attached to the 
+        (e.g. Master node in a standalone EC2 cluster). In this setup, client mode is appropriate.
+        In client mode, the driver is launched directly within the spark-submit process which acts
+        as a client to the cluster. The input and output of the application is attached to the
         console. Thus, this mode is especially suitable for applications that involve the REPL (e.g.
         Spark shell).''',
         is_optional=True,
@@ -58,7 +58,7 @@ def define_spark_config():
         is_optional=True,
     )
 
-    spark_outputs = Field(List(String), description='The outputs that this Spark job will produce')
+    spark_outputs = Field(List[String], description='The outputs that this Spark job will produce')
 
     return Field(
         Dict(

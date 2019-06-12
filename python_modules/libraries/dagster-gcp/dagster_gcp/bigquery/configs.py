@@ -42,7 +42,7 @@ def _define_shared_fields():
     '''
 
     clustering_fields = Field(
-        List(String),
+        List[String],
         description='''Fields defining clustering for the table
 
         (Defaults to None).
@@ -70,7 +70,7 @@ def _define_shared_fields():
     )
 
     schema_update_options = Field(
-        List(BQSchemaUpdateOption),
+        List[BQSchemaUpdateOption],
         description='''Specifies updates to the destination table schema to allow as a side effect
         of the query job.''',
         is_optional=True,
@@ -200,7 +200,7 @@ def define_bigquery_query_config():
     )
 
     query_parameters = Field(
-        List(String),
+        List[String],
         description='''list of parameters for parameterized query (empty by default)
         See: https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.queryParameters
         ''',

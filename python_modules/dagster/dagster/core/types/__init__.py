@@ -8,7 +8,7 @@ from .config_schema import (
 from .field import Field
 from .field_utils import Dict, NamedDict, Selector, NamedSelector, PermissiveDict
 from .runtime import PythonObjectType
-from .wrapping import Nullable, List
+from .wrapping import Optional, List
 
 Any = BuiltinEnum.ANY
 String = BuiltinEnum.STRING

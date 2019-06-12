@@ -7,7 +7,7 @@ from dagster import (
     InputDefinition,
     Int,
     List,
-    Nullable,
+    Optional,
     OutputDefinition,
     Path,
     PipelineConfigEvaluationError,
@@ -75,11 +75,11 @@ def define_test_all_scalars_pipeline():
     def produce_any():
         return True
 
-    @lambda_solid(inputs=[InputDefinition('string_list', List(String))])
+    @lambda_solid(inputs=[InputDefinition('string_list', List[String])])
     def take_string_list(string_list):
         return string_list
 
-    @lambda_solid(inputs=[InputDefinition('nullable_string', Nullable(String))])
+    @lambda_solid(inputs=[InputDefinition('nullable_string', Optional[String])])
     def take_nullable_string(nullable_string):
         return nullable_string
 
@@ -396,7 +396,7 @@ def test_nullable_string_input_with_value():
 
 
 def test_nullable_string_input_with_none_value():
-    # Perhaps a confusing test case. Nullable makes the entire enclosing structure nullable,
+    # Perhaps a confusing test case. Optional makes the entire enclosing structure nullable,
     # rather than the "value" value embedded within it
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         _execute_pipeline_with_subset(
