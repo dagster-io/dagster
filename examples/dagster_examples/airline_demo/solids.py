@@ -2,15 +2,11 @@
 
 import os
 import re
-import zipfile
-
-from io import BytesIO
 
 from pyspark.sql import DataFrame
 from sqlalchemy import text
 
 from dagster import (
-    Bytes,
     composite_solid,
     Dict,
     ExpectationResult,
@@ -141,6 +137,17 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
     inputs=[InputDefinition('csv_file_handle', FileHandle)],
     outputs=[OutputDefinition(SparkDataFrameType)],
     required_resources={'spark'},
+    description='''Take a file handle that contains a csv with headers and load it
+into a Spark DataFrame. It infers header names but does *not* infer schema.
+
+It also ensures that the column names are valid parquet column names by
+filtering out any of the following characters from column names:
+
+Characters (within quotations): "`{chars}`"
+
+'''.format(
+        chars=PARQUET_SPECIAL_CHARACTERS
+    ),
 )
 def ingest_csv_file_handle_to_spark(context, csv_file_handle):
     # fs case: copies from file manager location into system temp
@@ -168,48 +175,8 @@ def ingest_csv_file_handle_to_spark(context, csv_file_handle):
     )
 
 
-@solid(
-    name='unzip_file',
-    inputs=[
-        InputDefinition('archive_file', Bytes, description='The archive to unzip'),
-        InputDefinition('archive_member', String, description='The archive member to extract.'),
-    ],
-    description='Extracts an archive member from a zip archive.',
-    outputs=[OutputDefinition(Bytes, description='The unzipped archive member.')],
-)
-def unzip_file(_context, archive_file, archive_member):
-
-    with zipfile.ZipFile(archive_file) as zip_ref:
-        return BytesIO(zip_ref.open(archive_member).read())
-
-
 def rename_spark_dataframe_columns(data_frame, fn):
     return data_frame.toDF(*[fn(c) for c in data_frame.columns])
-
-
-@solid(
-    name='ingest_csv_to_spark',
-    inputs=[InputDefinition('input_csv_file', Bytes)],
-    outputs=[OutputDefinition(SparkDataFrameType)],
-)
-def ingest_csv_to_spark(context, input_csv_file):
-    tf = context.resources.tempfile.tempfile()
-    with open(tf.name, 'wb') as fd:
-        fd.write(input_csv_file.read())
-
-    data_frame = (
-        context.resources.spark.read.format('csv')
-        .options(
-            header='true',
-            # inferSchema='true',
-        )
-        .load(tf.name)
-    )
-
-    # parquet compat
-    return rename_spark_dataframe_columns(
-        data_frame, lambda x: re.sub(PARQUET_SPECIAL_CHARACTERS, '', x)
-    )
 
 
 def do_prefix_column_names(df, prefix):
@@ -269,10 +236,16 @@ def load_data_to_database_from_spark(context, data_frame):
 
 @solid(
     name='subsample_spark_dataset',
-    description='Subsample a spark dataset.',
+    description='Subsample a spark dataset via the configuration option.',
     config_field=Field(
-        Dict(fields={'subsample_pct': Field(Int, description='')})
-        # description='The integer percentage of rows to sample from the input dataset.'
+        Dict(
+            fields={
+                'subsample_pct': Field(
+                    Int,
+                    description='The integer percentage of rows to sample from the input dataset.',
+                )
+            }
+        )
     ),
     inputs=[
         InputDefinition(
@@ -298,6 +271,11 @@ def subsample_spark_dataset(context, data_frame):
         InputDefinition('archive_member', String),
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
+    description='''Ingest a zipped csv file from s3,
+stash in a keyed file store (does not download if already
+present by default), unzip that file, and load it into a
+Spark Dataframe. See documentation in constituent solids for
+more detail.''',
 )
 def s3_to_df(_, bucket_data, archive_member):
     # pylint: disable=no-value-for-parameter
@@ -306,7 +284,14 @@ def s3_to_df(_, bucket_data, archive_member):
     )
 
 
-@composite_solid(outputs=[OutputDefinition(name='table_name', dagster_type=String)])
+@composite_solid(
+    outputs=[OutputDefinition(name='table_name', dagster_type=String)],
+    description='''Ingest zipped csv file from s3, load into a Spark
+DataFrame, optionally subsample it (via configuring the
+subsample_spark_dataset, solid), canonicalize the column names, and then
+load it into a data warehouse.
+''',
+)
 def s3_to_dw_table(_):
     # pylint: disable=no-value-for-parameter
     return load_data_to_database_from_spark(

@@ -35,21 +35,22 @@ from .keyed_file_store import FileHandle
     ),
     required_resources={'keyed_file_store', 's3'},
     description='''This is a solid which mirrors a file in s3 into a keyed file store.
-    The keyed file store is a resource type that allows a solid author to save files
-    and assign a key to them. The keyed file store can be backed by local file or any
-    object store (currently we support s3). This keyed file store can be configured
-    to be at an external location so that is persists in a well known spot between runs.
-    It is designed for the case where there is an expensive download step that should not
-    occur unless the downloaded file does not exist. Redownload can be instigated either
-    by configuring the source to overwrite files or to just delete the file in the underlying
-    storage manually.
 
-    This works by downloading the file to a temporary file, and then ingesting it into
-    the keyed file store. In the case of a filesystem-backed key store, this is a file
-    copy. In the case of a object-store-backed key store, this is an upload.
+The keyed file store is a resource type that allows a solid author to save files
+and assign a key to them. The keyed file store can be backed by local file or any
+object store (currently we support s3). This keyed file store can be configured
+to be at an external location so that is persists in a well known spot between runs.
+It is designed for the case where there is an expensive download step that should not
+occur unless the downloaded file does not exist. Redownload can be instigated either
+by configuring the source to overwrite files or to just delete the file in the underlying
+storage manually.
 
-    In order to work this must be executed within a mode that provides an s3
-    and keyed_file_store resource.
+This works by downloading the file to a temporary file, and then ingesting it into
+the keyed file store. In the case of a filesystem-backed key store, this is a file
+copy. In the case of a object-store-backed key store, this is an upload.
+
+In order to work this must be executed within a mode that provides an s3
+and keyed_file_store resource.
     ''',
 )
 def mirror_keyed_file_from_s3(context, bucket_data):
