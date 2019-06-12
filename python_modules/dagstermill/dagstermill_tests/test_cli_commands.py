@@ -21,7 +21,7 @@ EXPECTED_OUTPUT_SHELL = '''
     "metadata": {{}},
     "outputs": [],
     "source": [
-        "import dagstermill as dm\\n",
+        "import dagstermill\\n",
         "{import_statement}\\n",
         "{declaration_statement}"
     ]
@@ -36,7 +36,7 @@ EXPECTED_OUTPUT_SHELL = '''
     }},
     "outputs": [],
     "source": [
-        "context = dm.get_context()"
+        "context = dagstermill.get_context()"
     ]
     }}
     ],
@@ -91,7 +91,7 @@ def test_module_example():
         ) as notebook_path:
             EXPECTED_OUTPUT = EXPECTED_OUTPUT_SHELL.format(
                 import_statement='from dagster import function_name',
-                declaration_statement='dm.register_repository(function_name())',
+                declaration_statement='dagstermill.register_repository(function_name())',
             )
             check_notebook_expected_output(
                 notebook_path + '.ipynb', expected_output=EXPECTED_OUTPUT
@@ -103,7 +103,7 @@ def test_yaml_example():
         with scaffold(notebook_name='notebooks/CLI_test_YAML') as notebook_path:
             EXPECTED_OUTPUT = EXPECTED_OUTPUT_SHELL.format(
                 import_statement=EXPECTED_IMPORT_STATEMENT,
-                declaration_statement='dm.register_repository(define_example_repository())',
+                declaration_statement='dagstermill.register_repository(define_example_repository())',
             )
             check_notebook_expected_output(
                 notebook_path + '.ipynb', expected_output=EXPECTED_OUTPUT

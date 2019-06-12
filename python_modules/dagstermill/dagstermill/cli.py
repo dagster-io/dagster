@@ -14,13 +14,13 @@ from dagster.utils import all_none, DEFAULT_REPOSITORY_YAML_FILENAME, safe_isfil
 
 def get_notebook_scaffolding(register_repo_info):
     if register_repo_info is None:  # do not register repo
-        first_cell_source = '"import dagstermill as dm"'
+        first_cell_source = '"import dagstermill"'
     else:
         check.str_param(register_repo_info.import_statement, 'register_repo_info.import_statement')
         check.str_param(
             register_repo_info.declaration_statement, 'register_repo_info.declaration_statement'
         )
-        first_cell_source = '''"import dagstermill as dm\\n",
+        first_cell_source = '''"import dagstermill\\n",
         "{import_statement}\\n",
         "{declaration_statement}"'''.format(
             import_statement=register_repo_info.import_statement,
@@ -49,7 +49,7 @@ def get_notebook_scaffolding(register_repo_info):
     }},
     "outputs": [],
     "source": [
-        "context = dm.get_context()"
+        "context = dagstermill.get_context()"
     ]
     }}
     ],
@@ -74,7 +74,7 @@ def execute_retroactive_scaffold(notebook_path, **kwargs):
     new_nb = copy.deepcopy(nb)
     register_repo_info = get_register_repo_info(kwargs, allow_none=False)
 
-    cell_source = 'import dagstermill as dm\n{import_statement}\n{declaration_statement}'.format(
+    cell_source = 'import dagstermill\n{import_statement}\n{declaration_statement}'.format(
         import_statement=register_repo_info.import_statement,
         declaration_statement=register_repo_info.declaration_statement,
     )
@@ -124,7 +124,7 @@ def get_register_repo_info(cli_args, allow_none=True):
         RegisterRepoInfo = namedtuple('RegisterRepoInfo', 'import_statement declaration_statement')
         register_repo_info = RegisterRepoInfo(
             "from {module} import {fn_name}".format(module=module, fn_name=fn_name),
-            "dm.register_repository({fn_name}())".format(fn_name=fn_name),
+            "dagstermill.register_repository({fn_name}())".format(fn_name=fn_name),
         )
     return register_repo_info
 

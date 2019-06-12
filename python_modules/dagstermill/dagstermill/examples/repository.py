@@ -4,7 +4,7 @@ import uuid
 
 import pandas as pd
 
-import dagstermill as dm
+import dagstermill
 
 from dagster import (
     as_dagster_type,
@@ -40,11 +40,11 @@ def define_hello_world_pipeline():
 
 
 def define_hello_world_solid():
-    return dm.define_dagstermill_solid('hello_world', nb_test_path('hello_world'))
+    return dagstermill.define_dagstermill_solid('hello_world', nb_test_path('hello_world'))
 
 
 def define_hello_world_with_output():
-    return dm.define_dagstermill_solid(
+    return dagstermill.define_dagstermill_solid(
         'hello_world_output', nb_test_path('hello_world_output'), [], [OutputDefinition()]
     )
 
@@ -56,7 +56,7 @@ def define_hello_world_with_output_pipeline():
 
 
 def define_hello_world_explicit_yield():
-    return dm.define_dagstermill_solid(
+    return dagstermill.define_dagstermill_solid(
         'hello_world_explicit_yield_pipeline',
         nb_test_path('hello_world_explicit_yield'),
         [],
@@ -71,7 +71,7 @@ def define_hello_world_explicit_yield_pipeline():
 
 
 def define_hello_logging_solid():
-    return dm.define_dagstermill_solid('hello_logging', nb_test_path('hello_logging'))
+    return dagstermill.define_dagstermill_solid('hello_logging', nb_test_path('hello_logging'))
 
 
 def define_hello_logging_pipeline():
@@ -85,7 +85,7 @@ def solid_definition(fn):
 
 @solid_definition
 def add_two_numbers_pm_solid():
-    return dm.define_dagstermill_solid(
+    return dagstermill.define_dagstermill_solid(
         'add_two_numbers',
         nb_test_path('add_two_numbers'),
         [InputDefinition(name='a', dagster_type=Int), InputDefinition(name='b', dagster_type=Int)],
@@ -95,7 +95,7 @@ def add_two_numbers_pm_solid():
 
 @solid_definition
 def mult_two_numbers_pm_solid():
-    return dm.define_dagstermill_solid(
+    return dagstermill.define_dagstermill_solid(
         'mult_two_numbers',
         nb_test_path('mult_two_numbers'),
         [InputDefinition(name='a', dagster_type=Int), InputDefinition(name='b', dagster_type=Int)],
@@ -154,20 +154,22 @@ def define_test_notebook_dag_pipeline():
 def define_error_pipeline():
     return PipelineDefinition(
         name='error_pipeline',
-        solids=[dm.define_dagstermill_solid('error_solid', nb_test_path('error_notebook'))],
+        solids=[
+            dagstermill.define_dagstermill_solid('error_solid', nb_test_path('error_notebook'))
+        ],
     )
 
 
 @solid_definition
 def clean_data_solid():
-    return dm.define_dagstermill_solid(
+    return dagstermill.define_dagstermill_solid(
         'clean_data', nb_test_path('clean_data'), outputs=[OutputDefinition(DataFrame)]
     )
 
 
 @solid_definition
 def LR_solid():
-    return dm.define_dagstermill_solid(
+    return dagstermill.define_dagstermill_solid(
         'linear_regression',
         nb_test_path('tutorial_LR'),
         inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
@@ -176,7 +178,7 @@ def LR_solid():
 
 @solid_definition
 def RF_solid():
-    return dm.define_dagstermill_solid(
+    return dagstermill.define_dagstermill_solid(
         'random_forest_regression',
         nb_test_path('tutorial_RF'),
         inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
@@ -213,7 +215,7 @@ ComplexDagsterType = as_dagster_type(
 
 
 def no_repo_reg_solid():
-    return dm.define_dagstermill_solid(
+    return dagstermill.define_dagstermill_solid(
         'no_repo_reg',
         nb_test_path('no_repo_reg_error'),
         outputs=[OutputDefinition(name='df', dagster_type=ComplexDagsterType)],
@@ -232,7 +234,7 @@ def resource_solid(context):
 
 @solid_definition
 def hello_world_resource_solid():
-    return dm.define_dagstermill_solid(
+    return dagstermill.define_dagstermill_solid(
         'hello_world_resource',
         nb_test_path('hello_world_resource'),
         inputs=[InputDefinition('nonce')],
@@ -242,7 +244,7 @@ def hello_world_resource_solid():
 
 @solid_definition
 def hello_world_resource_with_exception_solid():
-    return dm.define_dagstermill_solid(
+    return dagstermill.define_dagstermill_solid(
         'hello_world_resource_with_exception',
         nb_test_path('hello_world_resource_with_exception'),
         inputs=[InputDefinition('nonce')],

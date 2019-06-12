@@ -672,9 +672,9 @@ solid will belong to, and the argument to `-note` tells dagstermill what to call
 You can also manually insert the boilerplate. In either case, at the top of the notebook, we
 declare the notebook to be a solid and register it to our repository with the following code:
 
-    import dagstermill as dm
+    import dagstermill
     from dagster_examples.airline_demo.repository import define_repo
-    dm.register_repository(define_repo())
+    dagstermill.register_repository(define_repo())
 
 In your own pipelines, you'll register your solid to your own repositories.
 
@@ -683,7 +683,7 @@ solid we defined in our pipeline.
 
 Then, in a cell with the `parameters` tag, we write:
 
-    context = dm.get_context()
+    context = dagstermill.get_context()
     db_url = 'postgresql://test:test@127.0.0.1:5432/test'
     eastbound_delays = 'eastbound_delays'
     westbound_delays = 'westbound_delays'
@@ -693,7 +693,7 @@ injected from the output of upstream solids.
 
 Finally, at the very end of the notebook, we yield the result back to the pipeline:
 
-    dm.yield_result(pdf_path, 'result')
+    dagstermill.yield_result(pdf_path, 'result')
 
 <!-- TODOs (with db resource)
     - Discuss output notebooks

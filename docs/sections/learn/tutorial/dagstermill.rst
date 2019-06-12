@@ -37,17 +37,17 @@ To register this notebook as a dagster solid, we use the following lines of code
 .. code-block:: python
 
     from dagster import InputDefinition, OutputDefinition, Int
-    import dagstermill as dm
+    from dagstermill import define_dagstermill_solid
 
-    my_notebook_solid = dm.define_dagstermill_solid(
-                                name='add_two_numbers',
-                                notebook_path='/notebook/path/add_two_numbers.ipynb',
-                                inputs = [
-                                    InputDefinition(name='a', dagster_type=Int),
-                                    InputDefinition(name='b', dagster_type=Int)
-                                ],
-                                ouputs = [OutputDefinition(Int)]
-                            )
+    my_notebook_solid = define_dagstermill_solid(
+        name='add_two_numbers',
+        notebook_path='/notebook/path/add_two_numbers.ipynb',
+        inputs = [
+            InputDefinition(name='a', dagster_type=Int),
+            InputDefinition(name='b', dagster_type=Int)
+        ],
+        ouputs = [OutputDefinition(Int)]
+    )
 
 The function ``dm.define_dagstermill_solid()`` returns an object of type ``SolidDefinition`` that can be passed into ``PipelineDefinition`` objects. We see that its arguments are rather self-explanatory: 
 
@@ -59,10 +59,10 @@ However, we also have to add some boilerplate to the notebook itself to make sur
 
 .. image:: add_two_numbers.png
 
-1. ``import dagstermill as dm`` imports the dagstermill library, which is necesary for the rest of the boilerplate
-2. ``dm.register_repository()`` takes a repository definition (``define_example_repository()`` in this case) and lets the notebook know how to find the repository that contains the corresponding notebook-driven solid.
+1. ``import dagstermill`` imports the dagstermill library, which is necesary for the rest of the boilerplate
+2. ``dagstermill.register_repository()`` takes a repository definition (``define_example_repository()`` in this case) and lets the notebook know how to find the repository that contains the corresponding notebook-driven solid.
 3. There is a tagged cell with the tag ``parameters`` that should contain **only** the inputs of the notebook-driven solid.
-4.  If the notebook-driven solid has an output, then call ``dm.yield_result()`` with the result.
+4.  If the notebook-driven solid has an output, then call ``dagstermill.yield_result()`` with the result.
 
 There is a helpful `Dagstermill CLI`_ that you can use to generate notebooks that will automatically contain the requisite boilerplate.
 
@@ -86,9 +86,9 @@ Summary of Using Dagstermill
 Initially, you might want to prototype with a notebook without worrying about incorporating it into a dagster pipeline. When you want to incorporate it into a pipeline, do the following steps:
 
 1. Use ``dm.define_dagstermill_solid()`` to define the notebook-driven solid to include within a pipeline
-2. Within the notebook, call ``import dagstermill as dm`` and make sure that you register the containing repository with ``dm.register_repository()``
+2. Within the notebook, call ``import dagstermill`` and make sure that you register the containing repository with ``dagstermill.register_repository()``
 3. Make sure all inputs to the notebook-driven solid are contained in a tagged-cell with the ``parameters`` tag
-4. For all outputs, call ``dm.yield_result()`` with the result and output name
+4. For all outputs, call ``dagstermill.yield_result()`` with the result and output name
 
 The `Dagstermill CLI`_ should help you with stage 2.
 

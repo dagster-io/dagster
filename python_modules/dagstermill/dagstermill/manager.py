@@ -180,14 +180,14 @@ class Manager:
                     raise DagstermillError(
                         'If Dagstermill solids have inputs that require serialization strategies '
                         'that are not pickling, then you must register a repository within '
-                        'notebook by calling dm.register_repository(repository_def)'
+                        'notebook by calling dagstermill.register_repository(repository_def)'
                     )
             for _, runtime_type_enum in self.output_name_type_dict.items():
                 if runtime_type_enum == SerializableRuntimeType.NONE:
                     raise DagstermillError(
                         'If Dagstermill solids have outputs that require serialization strategies '
                         'that are not pickling, then you must register a repository within '
-                        'notebook by calling dm.register_repository(repository_def).'
+                        'notebook by calling dagstermill.register_repository(repository_def).'
                     )
             environment_dict = {'loggers': {'dagstermill': {}}}
             run_config = RunConfig(run_id=run_id, mode=mode)
