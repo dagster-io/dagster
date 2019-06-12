@@ -10,17 +10,17 @@ from . import (
     ExpectationResult,
     InputDefinition,
     Materialization,
+    ModeDefinition,
     OutputDefinition,
+    PipelineDefinition,
+    PresetDefinition,
     Result,
     SolidDefinition,
-    PresetDefinition,
-    ModeDefinition,
-    PipelineDefinition,
 )
 from .composition import (
     EmptySolidContext,
     InputMappingNode,
-    InvokedSolidOutputHandle,
+    composite_mapping_from_output,
     enter_composition,
     exit_composition,
 )
@@ -540,7 +540,9 @@ class _CompositeSolid(object):
         try:
             output = fn(EmptySolidContext(), **kwargs)
         finally:
-            context = exit_composition(self._mapping_from_output(output))
+            context = exit_composition(
+                composite_mapping_from_output(output, self.output_defs, self.name)
+            )
 
         check.invariant(
             context.name == self.name,
@@ -556,80 +558,6 @@ class _CompositeSolid(object):
             solids=context.solid_defs,
             description=self.description,
         )
-
-    def _mapping_from_output(self, output):
-        # single output
-        if isinstance(output, InvokedSolidOutputHandle):
-            if len(self.output_defs) == 1:
-                return [self.output_defs[0].mapping_from(output.solid_name, output.output_name)]
-            else:
-                raise DagsterInvalidDefinitionError(
-                    'Returned a single output ({solid_name}.{output_name}) in '
-                    '@composite_solid {name} but {num} outputs are defined. '
-                    'Return a dict to map defined outputs.'.format(
-                        solid_name=output.solid_name,
-                        output_name=output.output_name,
-                        name=self.name,
-                        num=len(self.output_defs),
-                    )
-                )
-
-        output_mappings = []
-        output_def_dict = {output_def.name: output_def for output_def in self.output_defs}
-
-        # tuple returned directly
-        if isinstance(output, tuple) and all(
-            map(lambda item: isinstance(item, InvokedSolidOutputHandle), output)
-        ):
-            for handle in output:
-                if handle.output_name not in output_def_dict:
-                    raise DagsterInvalidDefinitionError(
-                        'Output name mismatch returning output tuple in @composite_solid {name}. '
-                        'No matching OutputDefinition named {output_name} for {solid_name}.{output_name}.'
-                        'Return a dict to map to the desired OutputDefinition'.format(
-                            name=self.name,
-                            output_name=handle.output_name,
-                            solid_name=handle.solid_name,
-                        )
-                    )
-                output_mappings.append(
-                    output_def_dict[handle.output_name].mapping_from(
-                        handle.solid_name, handle.output_name
-                    )
-                )
-            return output_mappings
-
-        # mapping dict
-        if isinstance(output, dict):
-            for name, handle in output.items():
-                if name in output_def_dict:
-                    raise DagsterInvalidDefinitionError(
-                        '@composite_solid {name} referenced key {key} which does not match any '
-                        'OutputDefinitions. Valid options are: {options}'.format(
-                            name=self.name, key=name, options=list(output_def_dict.keys())
-                        )
-                    )
-                if not isinstance(handle, InvokedSolidOutputHandle):
-                    raise DagsterInvalidDefinitionError(
-                        '@composite_solid {name} returned problematic dict entry under '
-                        'key {key} of type {type}. Dict values must be outputs of '
-                        'invoked solids'.format(name=self.name, key=name, type=type(handle))
-                    )
-
-                output_mappings.append(
-                    output_def_dict[name].mapping_from(handle.solid_name, handle.output_name)
-                )
-            return output_mappings
-
-        # error
-        if output is not None:
-            raise DagsterInvalidDefinitionError(
-                '@composite_solid {name} returned problematic value '
-                'of type {type}. Expected return value from invoked solid or dict mapping '
-                'output name to return values from invoked solids'.format(
-                    name=self.name, type=type(output)
-                )
-            )
 
 
 def composite_solid(name=None, inputs=None, outputs=None, description=None):
