@@ -157,6 +157,34 @@ class SolidHandle(namedtuple('_SolidHandle', 'name definition_name parent')):
             else camelcase(self.name)
         )
 
+    @classmethod
+    def from_dict(cls, dict_repr):
+        '''This method makes it possible to rehydrate a potentially nested SolidHandle after a
+        roundtrip through json.loads(json.dumps(SolidHandle._asdict()))'''
+
+        check.dict_param(dict_repr, 'dict_repr', key_type=str)
+        check.invariant(
+            'name' in dict_repr, 'Dict representation of SolidHandle must have a \'name\' key'
+        )
+        check.invariant(
+            'definition_name' in dict_repr,
+            'Dict representation of SolidHandle must have a \'definition_name\' key',
+        )
+        check.invariant(
+            'parent' in dict_repr, 'Dict representation of SolidHandle must have a \'parent\' key'
+        )
+
+        if isinstance(dict_repr['parent'], (list, tuple)):
+            dict_repr['parent'] = SolidHandle.from_dict(
+                {
+                    'name': dict_repr['parent'][0],
+                    'definition_name': dict_repr['parent'][1],
+                    'parent': dict_repr['parent'][2],
+                }
+            )
+
+        return SolidHandle(**dict_repr)
+
 
 class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
     def __new__(cls, solid, input_def):

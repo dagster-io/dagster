@@ -6,21 +6,10 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import execute_pipeline, PipelineDefinition, RunConfig
+from dagster import execute_pipeline, RunConfig
+from dagster.cli.load_handle import handle_for_pipeline_cli_args
 
-from dagstermill import DagstermillError, define_dagstermill_solid
-from dagstermill.examples.repository import (
-    define_add_pipeline,
-    define_error_pipeline,
-    define_hello_world_explicit_yield_pipeline,
-    define_hello_world_pipeline,
-    define_hello_world_with_output_pipeline,
-    define_no_repo_registration_error_pipeline,
-    define_resource_pipeline,
-    define_resource_with_exception_pipeline,
-    define_test_notebook_dag_pipeline,
-    define_tutorial_pipeline,
-)
+from dagstermill import DagstermillError  # , define_dagstermill_solid
 
 from dagster.core.definitions.events import PathMetadataEntryData
 
@@ -46,8 +35,15 @@ def cleanup_result_notebook(result):
 
 
 @contextmanager
-def exec_for_test(pipeline, env=None, **kwargs):
+def exec_for_test(fn_name, env=None, **kwargs):
     result = None
+
+    handle = handle_for_pipeline_cli_args(
+        {'module_name': 'dagstermill.examples.repository', 'fn_name': fn_name}
+    )
+
+    pipeline = handle.build_pipeline_definition()
+
     try:
         result = execute_pipeline(pipeline, env, **kwargs)
         yield result
@@ -56,19 +52,22 @@ def exec_for_test(pipeline, env=None, **kwargs):
             cleanup_result_notebook(result)
 
 
+@pytest.mark.notebook_test
 def test_hello_world():
-    with exec_for_test(define_hello_world_pipeline()) as result:
+    with exec_for_test('define_hello_world_pipeline') as result:
         assert result.success
 
 
+@pytest.mark.notebook_test
 def test_hello_world_with_output():
-    with exec_for_test(define_hello_world_with_output_pipeline()) as result:
+    with exec_for_test('define_hello_world_with_output_pipeline') as result:
         assert result.success
         assert result.result_for_solid('hello_world_output').result_value() == 'hello, world'
 
 
+@pytest.mark.notebook_test
 def test_hello_world_explicit_yield():
-    with exec_for_test(define_hello_world_explicit_yield_pipeline()) as result:
+    with exec_for_test('define_hello_world_explicit_yield_pipeline') as result:
         materializations = [
             x for x in result.event_list if x.event_type_value == 'STEP_MATERIALIZATION'
         ]
@@ -77,17 +76,19 @@ def test_hello_world_explicit_yield():
         assert get_path(materializations[1]) == '/path/to/file'
 
 
+@pytest.mark.notebook_test
 def test_add_pipeline():
     with exec_for_test(
-        define_add_pipeline(), {'loggers': {'console': {'config': {'log_level': 'ERROR'}}}}
+        'define_add_pipeline', {'loggers': {'console': {'config': {'log_level': 'ERROR'}}}}
     ) as result:
         assert result.success
         assert result.result_for_solid('add_two_numbers').result_value() == 3
 
 
+@pytest.mark.notebook_test
 def test_notebook_dag():
     with exec_for_test(
-        define_test_notebook_dag_pipeline(),
+        'define_test_notebook_dag_pipeline',
         {'solids': {'load_a': {'config': 1}, 'load_b': {'config': 2}}},
     ) as result:
         assert result.success
@@ -95,71 +96,85 @@ def test_notebook_dag():
         assert result.result_for_solid('mult_two').result_value() == 6
 
 
+@pytest.mark.notebook_test
 def test_error_notebook():
     with pytest.raises(
         DagstermillError, match='Error occurred during the execution of Dagstermill solid'
     ) as exc:
-        execute_pipeline(define_error_pipeline())
+        with exec_for_test('define_error_pipeline') as result:
+            pass
+
     assert 'Someone set up us the bomb' in exc.value.original_exc_info[1].args[0]
 
     with exec_for_test(
-        define_error_pipeline(), run_config=RunConfig.nonthrowing_in_process()
+        'define_error_pipeline', run_config=RunConfig.nonthrowing_in_process()
     ) as result:
         assert not result.success
         assert result.step_event_list[1].event_type.value == 'STEP_MATERIALIZATION'
         assert result.step_event_list[2].event_type.value == 'STEP_FAILURE'
 
 
+@pytest.mark.nettest
+@pytest.mark.notebook_test
 def test_tutorial_pipeline():
     with exec_for_test(
-        define_tutorial_pipeline(), {'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}}
+        'define_tutorial_pipeline', {'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}}
     ) as result:
         assert result.success
 
 
-def test_no_repo_registration_error():
-    with pytest.raises(
-        DagstermillError,
-        match='Error occurred during the execution of Dagstermill solid no_repo_reg',
-    ) as exc:
-        execute_pipeline(define_no_repo_registration_error_pipeline())
-    assert (
-        'If Dagstermill solids have outputs that require serialization strategies'
-        in exc.value.original_exc_info[1].args[0]
-    )
-
-    with exec_for_test(
-        define_no_repo_registration_error_pipeline(), run_config=RunConfig.nonthrowing_in_process()
-    ) as result:
-        assert not result.success
-
-
+@pytest.mark.notebook_test
 def test_hello_world_reexecution():
-    with exec_for_test(define_hello_world_pipeline()) as result:
+    with exec_for_test('define_hello_world_pipeline') as result:
         assert result.success
 
         output_notebook_path = get_path(
             [x for x in result.step_event_list if x.event_type_value == 'STEP_MATERIALIZATION'][0]
         )
-        # .event_specific_data.materialization.path
 
-        reexecution_solid = define_dagstermill_solid(
-            'hello_world_reexecution', output_notebook_path
-        )
+        with tempfile.NamedTemporaryFile('w+', suffix='.py') as reexecution_notebook_file:
+            reexecution_notebook_file.write(
+                (
+                    'from dagster import PipelineDefinition\n'
+                    'from dagstermill import define_dagstermill_solid\n\n\n'
+                    'reexecution_solid = define_dagstermill_solid(\n'
+                    '    \'hello_world_reexecution\', \'{output_notebook_path}\'\n'
+                    ')\n\n'
+                    'def define_reexecution_pipeline():\n'
+                    '    return PipelineDefinition([reexecution_solid])\n'
+                ).format(output_notebook_path=output_notebook_path)
+            )
+            reexecution_notebook_file.flush()
 
-        reexecution_pipeline = PipelineDefinition([reexecution_solid])
+            result = None
 
-        with exec_for_test(reexecution_pipeline) as reexecution_result:
-            assert reexecution_result.success
+            handle = handle_for_pipeline_cli_args(
+                {
+                    'python_file': reexecution_notebook_file.name,
+                    'fn_name': 'define_reexecution_pipeline',
+                }
+            )
+
+            pipeline = handle.build_pipeline_definition()
+
+            try:
+                reexecution_result = execute_pipeline(pipeline)
+                assert reexecution_result.success
+            finally:
+                if reexecution_result:
+                    cleanup_result_notebook(reexecution_result)
 
 
+@pytest.mark.notebook_test
 def test_resources_notebook():
     with tempfile.NamedTemporaryFile() as fd:
         path = fd.name
 
     try:
         with exec_for_test(
-            define_resource_pipeline(), {'resources': {'list': {'config': path}}}
+            'define_resource_pipeline',
+            {'resources': {'list': {'config': path}}},
+            run_config=RunConfig(mode='prod'),
         ) as result:
             assert result.success
 
@@ -186,6 +201,7 @@ def test_resources_notebook():
             os.unlink(path)
 
 
+@pytest.mark.notebook_test
 def test_resources_notebook_with_exception():
     result = None
     with tempfile.NamedTemporaryFile() as fd:
@@ -193,7 +209,7 @@ def test_resources_notebook_with_exception():
 
     try:
         with exec_for_test(
-            define_resource_with_exception_pipeline(),
+            'define_resource_with_exception_pipeline',
             {'resources': {'list': {'config': path}}},
             run_config=RunConfig.nonthrowing_in_process(),
         ) as result:

@@ -14,7 +14,7 @@ def _cli_load_invariant(condition):
         raise CliUsageError()
 
 
-def handle_for_pipeline_cli_args(kwargs):
+def handle_for_pipeline_cli_args(kwargs, use_default_repository_yaml=True):
     '''Builds an ExecutionTargetHandle for CLI arguments, which can be any of the combinations
     for repo/pipeline loading above.
     '''
@@ -33,7 +33,12 @@ def handle_for_pipeline_cli_args(kwargs):
             )
 
     # Pipeline from repository YAML and pipeline_name
-    if pipeline_name and kwargs.get('module_name') is None and kwargs.get('python_file') is None:
+    if (
+        pipeline_name
+        and kwargs.get('module_name') is None
+        and kwargs.get('python_file') is None
+        and (kwargs.get('repository_yaml') is not None or use_default_repository_yaml)
+    ):
         _cli_load_invariant(kwargs.get('fn_name') is None)
         return ExecutionTargetHandle.for_repo_yaml(
             repository_yaml=kwargs.get('repository_yaml') or DEFAULT_REPOSITORY_YAML_FILENAME

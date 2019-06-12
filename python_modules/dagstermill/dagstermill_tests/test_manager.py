@@ -3,57 +3,83 @@ import os
 import pickle
 import shutil
 import tempfile
+import threading
 import uuid
 
 from collections import OrderedDict
 
 import pytest
 
-from dagster import Materialization
-
 import dagstermill
+
+from dagster import (
+    DagsterInvariantViolationError,
+    Field,
+    ModeDefinition,
+    ResourceDefinition,
+    RunConfig,
+    SolidDefinition,
+    String,
+)
+from dagster.cli.load_handle import handle_for_pipeline_cli_args
+from dagster.core.definitions.dependency import SolidHandle
 from dagstermill import DagstermillError, Manager
-from dagstermill.examples import define_example_repository
-from dagstermill.serialize import SerializableRuntimeType
 
 
 @contextlib.contextmanager
-def in_pipeline_manager(register=True, **kwargs):
-    repository_def = define_example_repository()
-
+def in_pipeline_manager(
+    pipeline_name='hello_world_pipeline',
+    solid_handle=SolidHandle('hello_world', 'hello_world', None),
+    **kwargs
+):
     manager = Manager()
-
-    if register:
-        manager.register_repository(repository_def)
 
     run_id = str(uuid.uuid4())
 
     marshal_dir = tempfile.mkdtemp()
 
+    handle = handle_for_pipeline_cli_args(
+        {
+            'pipeline_name': pipeline_name,
+            'module_name': 'dagstermill.examples.repository',
+            'fn_name': 'define_hello_world_pipeline',
+        }
+    )
+
     try:
         with tempfile.NamedTemporaryFile() as output_log_file:
-            context_dict = dict(
-                {
-                    'run_id': run_id,
-                    'mode': 'default',
-                    'solid_def_name': 'hello_world',
-                    'pipeline_name': 'hello_world_pipeline',
-                    'marshal_dir': marshal_dir,
-                    'environment_config': {},
-                    'output_log_path': output_log_file.name,
-                    'input_name_type_dict': {},
-                    'output_name_type_dict': {},
-                },
-                **kwargs
-            )
-            manager.populate_context(**context_dict)
+            context_dict = {
+                'run_config': RunConfig(run_id=run_id, mode='default'),
+                'solid_handle': solid_handle,
+                'handle': handle,
+                'marshal_dir': marshal_dir,
+                'environment_dict': {},
+                'output_log_path': output_log_file.name,
+            }
+
+            manager.reconstitute_pipeline_context(**dict(context_dict, **kwargs))
             yield manager
     finally:
         shutil.rmtree(marshal_dir)
 
 
 def test_get_out_of_pipeline_context():
-    assert dagstermill.get_context().pipeline_def.name == 'Ephemeral Notebook Pipeline'
+    context = dagstermill.get_context(
+        mode_def=ModeDefinition(resource_defs={'list': ResourceDefinition(lambda _: [])})
+    )
+
+    assert context.pipeline_def.name == 'ephemeral_dagstermill_pipeline'
+    assert context.resources.list == []
+
+
+def test_get_out_of_pipeline_solid_config():
+    assert (
+        dagstermill.get_context(
+            solid_def=SolidDefinition('foo', [], lambda _: None, [], config_field=Field(String)),
+            environment_dict={'solids': {'foo': {'config': 'bar'}}},
+        ).solid_config
+        == 'bar'
+    )
 
 
 def test_out_of_pipeline_manager_yield_result():
@@ -69,31 +95,38 @@ def test_out_of_pipeline_manager_yield_complex_result():
     assert isinstance(manager.yield_result(Foo()), Foo)
 
 
-def test_dummy_pipeline_manager_yield_bad_result():
-    with in_pipeline_manager(register=False) as manager:
+def test_in_pipeline_manager_yield_bad_result():
+    with in_pipeline_manager() as manager:
         with pytest.raises(
             DagstermillError, match='Solid hello_world does not have output named result'
         ):
             assert manager.yield_result('foo') == 'foo'
 
 
-def test_dummy_manager_yield_complex_result():
-    with in_pipeline_manager(
-        register=False, output_name_type_dict={'result': SerializableRuntimeType.ANY}
-    ) as manager:
-
-        class Foo:
-            pass
-
-        with pytest.raises(DagstermillError, match='since it has a complex serialization format'):
-            manager.yield_result(Foo())
-
-
-def test_out_of_pipeline_manager_yield_materialization():
+def test_yield_unserializable_result():
     manager = Manager()
-    assert manager.yield_event(
-        Materialization.file('/path/to/artifact', 'artifact')
-    ) == Materialization.file('/path/to/artifact', 'artifact')
+    assert manager.yield_result(threading.Lock())
+
+    with in_pipeline_manager(
+        solid_handle=SolidHandle('hello_world_output', 'hello_world_output', None),
+        handle=handle_for_pipeline_cli_args(
+            {
+                'module_name': 'dagstermill.examples.repository',
+                'fn_name': 'define_hello_world_with_output_pipeline',
+            }
+        ),
+    ) as manager:
+        with pytest.raises(TypeError):
+            manager.yield_result(threading.Lock())
+
+
+def test_in_pipeline_manager_bad_solid():
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=('Pipeline hello_world_pipeline has no solid named foobar'),
+    ):
+        with in_pipeline_manager(solid_handle=SolidHandle('foobar', 'foobar', None)) as _manager:
+            pass
 
 
 def test_in_pipeline_manager_bad_yield_result():
@@ -104,143 +137,42 @@ def test_in_pipeline_manager_bad_yield_result():
             manager.yield_result('foo')
 
 
-def test_in_notebook_manager_bad_load_parameter():
-    class Foo:
-        pass
-
-    run_id = str(uuid.uuid4())
-
-    marshal_dir = tempfile.mkdtemp()
-
-    try:
-        with tempfile.NamedTemporaryFile() as output_log_file:
-            repository_def = define_example_repository()
-            dagstermill.register_repository(repository_def)
-
-            context_dict = {
-                'run_id': run_id,
-                'mode': 'default',
-                'solid_def_name': 'hello_world',
-                'pipeline_name': 'hello_world_pipeline',
-                'marshal_dir': marshal_dir,
-                'environment_config': {},
-                'output_log_path': output_log_file.name,
-                'input_name_type_dict': {},
-                'output_name_type_dict': {},
-            }
-            dagstermill.populate_context(context_dict)
-
-            with pytest.raises(KeyError):
-                dagstermill.load_parameter('garble', Foo())
-    finally:
-        shutil.rmtree(marshal_dir)
-
-
-def test_in_notebook_manager_bad_complex_load_parameter():
-
-    run_id = str(uuid.uuid4())
-
-    marshal_dir = tempfile.mkdtemp()
-
-    try:
-        with tempfile.NamedTemporaryFile() as output_log_file:
-            dagstermill.deregister_repository()
-
-            context_dict = {
-                'run_id': run_id,
-                'mode': 'default',
-                'solid_def_name': 'hello_world',
-                'pipeline_name': 'hello_world_pipeline',
-                'marshal_dir': marshal_dir,
-                'environment_config': {},
-                'output_log_path': output_log_file.name,
-                'input_name_type_dict': {'a': SerializableRuntimeType.NONE},
-                'output_name_type_dict': {},
-            }
-            with pytest.raises(
-                DagstermillError,
-                match=(
-                    'If Dagstermill solids have inputs that require serialization strategies that '
-                ),
-            ):
-                dagstermill.populate_context(context_dict)
-
-    finally:
-        shutil.rmtree(marshal_dir)
-
-
-def test_in_notebook_manager_load_parameter():
-    run_id = str(uuid.uuid4())
-
-    marshal_dir = tempfile.mkdtemp()
-
-    try:
-        with tempfile.NamedTemporaryFile() as output_log_file:
-            repository_def = define_example_repository()
-            dagstermill.register_repository(repository_def)
-
-            context_dict = {
-                'run_id': run_id,
-                'mode': 'default',
-                'solid_def_name': 'add_two_numbers',
-                'pipeline_name': 'test_add_pipeline',
-                'marshal_dir': marshal_dir,
-                'environment_config': {},
-                'output_log_path': output_log_file.name,
-                'input_name_type_dict': {},
-                'output_name_type_dict': {},
-            }
-            dagstermill.populate_context(context_dict)
-
-            dagstermill.load_parameter('a', 7)
-
-    finally:
-        shutil.rmtree(marshal_dir)
-
-
-def test_in_notebook_manager_load_parameter_pickleable():
-    run_id = str(uuid.uuid4())
-
-    marshal_dir = tempfile.mkdtemp()
-
-    dagstermill.deregister_repository()
-
-    try:
-        with tempfile.NamedTemporaryFile() as output_log_file:
-            with tempfile.NamedTemporaryFile() as pickle_file:
-                pickle.dump(7, pickle_file)
-                pickle_file.seek(0)
-
-                context_dict = {
-                    'run_id': run_id,
-                    'mode': 'default',
-                    'solid_def_name': 'add_two_numbers',
-                    'pipeline_name': 'test_add_pipeline',
-                    'marshal_dir': marshal_dir,
-                    'environment_config': {},
-                    'output_log_path': output_log_file.name,
-                    'input_name_type_dict': {
-                        'a': SerializableRuntimeType.PICKLE_SERIALIZABLE,
-                        'b': SerializableRuntimeType.ANY,
-                    },
-                    'output_name_type_dict': {},
-                }
-                dagstermill.populate_context(context_dict)
-
-                dagstermill.load_parameter('a', pickle_file.name)
-
-                with pytest.raises(
-                    DagstermillError, match='loading parameter b resulted in an error'
-                ):
-                    dagstermill.load_parameter('b', 9)
-
-    finally:
-        shutil.rmtree(marshal_dir)
+def test_out_of_pipeline_yield_event():
+    manager = Manager()
+    assert manager.yield_event('foo') == 'foo'
 
 
 def test_in_pipeline_manager_resources():
     with in_pipeline_manager() as manager:
         assert manager.context.resources._asdict() == OrderedDict([])
+
+
+def test_in_pipeline_manager_solid_config():
+    with in_pipeline_manager() as manager:
+        assert manager.context.solid_config is None
+
+    with in_pipeline_manager(
+        solid_handle=SolidHandle('hello_world_config', 'hello_world_config', None),
+        handle=handle_for_pipeline_cli_args(
+            {
+                'module_name': 'dagstermill.examples.repository',
+                'fn_name': 'define_hello_world_config_pipeline',
+            }
+        ),
+    ) as manager:
+        assert manager.context.solid_config == {'greeting': 'hello'}
+
+    with in_pipeline_manager(
+        solid_handle=SolidHandle('hello_world_config', 'hello_world_config', None),
+        environment_dict={'solids': {'hello_world_config': {'config': {'greeting': 'bonjour'}}}},
+        handle=handle_for_pipeline_cli_args(
+            {
+                'module_name': 'dagstermill.examples.repository',
+                'fn_name': 'define_hello_world_config_pipeline',
+            }
+        ),
+    ) as manager:
+        assert manager.context.solid_config == {'greeting': 'bonjour'}
 
 
 def test_in_pipeline_manager_with_resources():
@@ -249,9 +181,16 @@ def test_in_pipeline_manager_with_resources():
 
     try:
         with in_pipeline_manager(
-            solid_def_name='hello_world_resource',
-            pipeline_name='resource_pipeline',
-            environment_config={'resources': {'list': {'config': path}}},
+            handle=handle_for_pipeline_cli_args(
+                {
+                    'pipeline_name': 'resource_pipeline',
+                    'fn_name': 'define_resource_pipeline',
+                    'module_name': 'dagstermill.examples.repository',
+                }
+            ),
+            solid_handle=SolidHandle('hello_world_resource', 'hello_world_resource', None),
+            environment_dict={'resources': {'list': {'config': path}}},
+            run_config=RunConfig(mode='prod'),
         ) as manager:
             assert len(manager.context.resources._asdict()) == 1
 

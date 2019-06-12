@@ -1,4 +1,3 @@
-from collections import namedtuple
 import copy
 import os
 
@@ -6,26 +5,11 @@ import click
 from papermill.iorw import load_notebook_node, write_ipynb
 import nbformat
 
-from dagster import check
-from dagster.cli.pipeline import repository_target_argument
-from dagster.cli.load_handle import handle_for_repo_cli_args
-from dagster.utils import all_none, DEFAULT_REPOSITORY_YAML_FILENAME, safe_isfile, mkdir_p
+from dagster.utils import safe_isfile, mkdir_p
 
 
-def get_notebook_scaffolding(register_repo_info):
-    if register_repo_info is None:  # do not register repo
-        first_cell_source = '"import dagstermill"'
-    else:
-        check.str_param(register_repo_info.import_statement, 'register_repo_info.import_statement')
-        check.str_param(
-            register_repo_info.declaration_statement, 'register_repo_info.declaration_statement'
-        )
-        first_cell_source = '''"import dagstermill\\n",
-        "{import_statement}\\n",
-        "{declaration_statement}"'''.format(
-            import_statement=register_repo_info.import_statement,
-            declaration_statement=register_repo_info.declaration_statement,
-        )
+def get_notebook_scaffolding():
+    first_cell_source = '"import dagstermill"'
 
     starting_notebook_init = '''
     {{
@@ -63,73 +47,38 @@ def get_notebook_scaffolding(register_repo_info):
 
 
 @click.command(name='register-notebook', help=('Registers repository in existing notebook'))
-@repository_target_argument
 @click.option('--notebook', '-note', type=click.STRING, help='Path to notebook')
-def retroactively_scaffold_notebook(notebook, **kwargs):
-    execute_retroactive_scaffold(notebook, **kwargs)
+def retroactively_scaffold_notebook(notebook):
+    execute_retroactive_scaffold(notebook)
 
 
-def execute_retroactive_scaffold(notebook_path, **kwargs):
+def execute_retroactive_scaffold(notebook_path):
     nb = load_notebook_node(notebook_path)
     new_nb = copy.deepcopy(nb)
-    register_repo_info = get_register_repo_info(kwargs, allow_none=False)
 
-    cell_source = 'import dagstermill\n{import_statement}\n{declaration_statement}'.format(
-        import_statement=register_repo_info.import_statement,
-        declaration_statement=register_repo_info.declaration_statement,
-    )
+    import_cell_source = 'import dagstermill'
+    import_cell = nbformat.v4.new_code_cell(source=import_cell_source)
 
-    newcell = nbformat.v4.new_code_cell(source=cell_source)
-    newcell.metadata['tags'] = ['injected-repo-registration']
-    new_nb.cells = [newcell] + nb.cells
+    parameters_cell_source = 'context = dagstermill.get_context()'
+    parameters_cell = nbformat.v4.new_code_cell(source=parameters_cell_source)
+    parameters_cell.metadata['tags'] = ['parameters']
+
+    new_nb.cells = [import_cell, parameters_cell] + nb.cells
     write_ipynb(new_nb, notebook_path)
 
 
 @click.command(name='create-notebook', help=('Creates new dagstermill notebook.'))
-@repository_target_argument
 @click.option('--notebook', '-note', type=click.STRING, help="Name of notebook")
 @click.option(
     '--force-overwrite',
     is_flag=True,
     help="Will force overwrite any existing notebook or file with the same name.",
 )
-def create_notebook(notebook, force_overwrite, **kwargs):
-    execute_create_notebook(notebook, force_overwrite, **kwargs)
+def create_notebook(notebook, force_overwrite):
+    execute_create_notebook(notebook, force_overwrite)
 
 
-def get_register_repo_info(cli_args, allow_none=True):
-    scaffolding_with_repo = True
-    if all_none(cli_args):
-        if os.path.exists(os.path.join(os.getcwd(), DEFAULT_REPOSITORY_YAML_FILENAME)):
-            cli_args['repository_yaml'] = DEFAULT_REPOSITORY_YAML_FILENAME
-        elif allow_none:  # register_repo_info can remain None
-            scaffolding_with_repo = False
-
-    if (
-        cli_args['python_file']
-        and cli_args['fn_name']
-        and not cli_args['module_name']
-        and not cli_args['repository_yaml']
-    ):
-        raise click.UsageError(
-            "Cannot instantiate notebook with repository definition given by a "
-            "function from a file"
-        )
-
-    register_repo_info = None
-    if scaffolding_with_repo:
-        handle = handle_for_repo_cli_args(cli_args)
-        module = handle.entrypoint.module_name
-        fn_name = handle.entrypoint.fn_name
-        RegisterRepoInfo = namedtuple('RegisterRepoInfo', 'import_statement declaration_statement')
-        register_repo_info = RegisterRepoInfo(
-            "from {module} import {fn_name}".format(module=module, fn_name=fn_name),
-            "dagstermill.register_repository({fn_name}())".format(fn_name=fn_name),
-        )
-    return register_repo_info
-
-
-def execute_create_notebook(notebook, force_overwrite, **kwargs):
+def execute_create_notebook(notebook, force_overwrite):
     notebook_path = os.path.join(
         os.getcwd(), notebook if notebook.endswith('.ipynb') else notebook + ".ipynb"
     )
@@ -146,10 +95,9 @@ def execute_create_notebook(notebook, force_overwrite, **kwargs):
             ).format(notebook_path=notebook_path),
             abort=True,
         )
-    register_repo_info = get_register_repo_info(kwargs)
 
     with open(notebook_path, 'w') as f:
-        f.write(get_notebook_scaffolding(register_repo_info))
+        f.write(get_notebook_scaffolding())
         click.echo("Created new dagstermill notebook at {path}".format(path=notebook_path))
 
 

@@ -60,7 +60,7 @@ RETRIEVE_LOG_RECORDS_STATEMENT = '''select * from logs
     order by timestamp asc
 '''
 
-if sys.version_info < (3,):
+if sys.version_info < (3,):  # pragma: nocover
     EVENT_TYPE = threading._Event  # pylint: disable=no-member, protected-access
 else:
     EVENT_TYPE = threading.Event
@@ -138,7 +138,7 @@ class JsonSqlite3LogWatcher(object):
                 last_pass = True
 
 
-def construct_logger(sqlite_db_path):
+def construct_sqlite_logger(sqlite_db_path):
     return construct_single_handler_logger(
         'dagstermill', 'debug', JsonSqlite3Handler(sqlite_db_path)
     )

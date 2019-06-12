@@ -10,6 +10,7 @@ from dagster import check
 from dagster.utils import merge_dicts
 
 from dagster.core.definitions.expectation import IOExpectationDefinition
+from dagster.core.definitions.handle import ExecutionTargetHandle
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.output import OutputDefinition
@@ -28,7 +29,8 @@ class SystemPipelineExecutionContextData(
         '_SystemPipelineExecutionContextData',
         (
             'run_config scoped_resources_builder environment_config pipeline_def '
-            'mode_def system_storage_def run_storage intermediates_manager file_manager'
+            'mode_def system_storage_def run_storage intermediates_manager file_manager '
+            'execution_target_handle'
         ),
     )
 ):
@@ -48,6 +50,7 @@ class SystemPipelineExecutionContextData(
         run_storage,
         intermediates_manager,
         file_manager,
+        execution_target_handle,
     ):
         from dagster.core.definitions import PipelineDefinition
         from dagster.core.definitions.system_storage import SystemStorageDefinition
@@ -74,6 +77,9 @@ class SystemPipelineExecutionContextData(
             # TODO: Make required when https://github.com/dagster-io/dagster/issues/1456
             # is complete
             file_manager=check.opt_inst_param(file_manager, 'file_manager', FileManager),
+            execution_target_handle=check.opt_inst_param(
+                execution_target_handle, 'execution_target_handle', ExecutionTargetHandle
+            ),
         )
 
     @property

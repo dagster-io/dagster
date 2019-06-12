@@ -8,6 +8,7 @@ from contextlib2 import ExitStack
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, create_environment_type
+from dagster.core.definitions.handle import ExecutionTargetHandle
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.system_storage import SystemStorageData
 from dagster.core.errors import (
@@ -104,7 +105,8 @@ def check_persistent_storage_requirement(pipeline_def, system_storage_def, run_c
 # over the place during the context creation process so grouping here for
 # ease of argument passing etc.
 ContextCreationData = namedtuple(
-    'ContextCreationData', 'pipeline_def environment_config run_config mode_def system_storage_def'
+    'ContextCreationData',
+    'pipeline_def environment_config run_config mode_def system_storage_def execution_target_handle',
 )
 
 
@@ -122,6 +124,7 @@ def create_context_creation_data(pipeline_def, environment_dict, run_config):
         run_config=run_config,
         mode_def=mode_def,
         system_storage_def=system_storage_def,
+        execution_target_handle=ExecutionTargetHandle.get_handle(pipeline_def),
     )
 
 
@@ -248,6 +251,7 @@ def construct_pipeline_execution_context(
             run_storage=system_storage_data.run_storage,
             intermediates_manager=system_storage_data.intermediates_manager,
             file_manager=system_storage_data.file_manager,
+            execution_target_handle=context_creation_data.execution_target_handle,
         ),
         log_manager=log_manager,
     )

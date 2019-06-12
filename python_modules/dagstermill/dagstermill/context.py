@@ -3,12 +3,10 @@ from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.context.transform import AbstractComputeExecutionContext
 
 
-class DagstermillInNotebookExecutionContext(AbstractComputeExecutionContext):
-    def __init__(self, pipeline_context, out_of_pipeline=False):
+class DagstermillInPipelineExecutionContext(AbstractComputeExecutionContext):
+    def __init__(self, pipeline_context):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         self._pipeline_context = pipeline_context
-        self.out_of_pipeline = out_of_pipeline
-        self._resource_context_stack = []
 
     def has_tag(self, key):
         return self._pipeline_context.has_tag(key)
@@ -50,10 +48,13 @@ class DagstermillInNotebookExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def solid_def(self):
-        if self.out_of_pipeline:
-            check.failed('Cannot access solid_def in dagstermill exploratory context')
+        return self.pipeline_def.solid_defs[0]
 
     @property
     def solid(self):
-        if self.out_of_pipeline:
-            check.failed('Cannot access solid in dagstermill exploratory context')
+        return self.pipeline_def.solids[0]
+
+    @property
+    def solid_config(self):
+        solid_config = self.environment_config.solids.get(self.solid.name)
+        return solid_config.config if solid_config else None
