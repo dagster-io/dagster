@@ -68,29 +68,51 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         Take a file handle and make it available as a local temp file. Returns a path.
 
         In an implementation like an S3FileManager, this would download the file from s3
-        to local filesystem.
+        to local filesystem, to files created (typically) by the python tempfile module.
+
+        These temp files are *not* guaranteed to be able across solid boundaries. For
+        files that must work across solid boundaries, use the read, read_data, write, and
+        write_data methods on this class.
         '''
         raise NotImplementedError()
 
     @abstractmethod
-    def cleanup_local_temp(self):
+    def delete_local_temp(self):
+        '''
+        Delete all the local temporary files created by copy_handle_to_local_temp. This should
+        typically only be called by framework implementors.
+        '''
         raise NotImplementedError()
 
     @abstractmethod
-    def read(self, file_handle, mode):
-        '''Return a file-like stream for the file handle'''
+    def read(self, file_handle, mode='rb'):
+        '''Return a file-like stream for the file handle. Defaults to binary mode read.
+        This may incur an expensive network call for file managers backed by object stores
+        such as s3.
+        '''
         raise NotImplementedError()
 
     @abstractmethod
     def read_data(self, file_handle):
+        '''Return the bytes for a given file handle. This may incur an expensive network
+        call for file managers backed by object stores such as s3.
+        '''
         raise NotImplementedError()
 
     @abstractmethod
-    def write(self, file_obj, mode):
+    def write(self, file_obj, mode='wb'):
+        '''Write the bytes contained within the given file_obj into the file manager.
+        This returns a FileHandle corressponding to the newly created file. FileManagers
+        typically return a subclass of FileHandle approprirate for their implementation. E.g.
+        a LocalFileManager returns a LocalFileHandle, an S3FileManager returns an S3FileHandle,
+        and so forth.
+        '''
         raise NotImplementedError()
 
     @abstractmethod
     def write_data(self, data):
+        '''Similar to FileManager.write, but instead of a file-like-object, this
+        just takes a raw bytes objects. Returns a FileHandle subclass.'''
         raise NotImplementedError()
 
 
@@ -102,7 +124,7 @@ def local_file_manager(base_dir=None):
         yield manager
     finally:
         if manager:
-            manager.cleanup_local_temp()
+            manager.delete_local_temp()
 
 
 def check_file_like_obj(obj):
@@ -138,7 +160,7 @@ class LocalFileManager(FileManager):
         return os.path.join(base_directory_for_run(run_id), 'files')
 
     @contextmanager
-    def read(self, file_handle, mode='r'):
+    def read(self, file_handle, mode='rb'):
         check.inst_param(file_handle, 'file_handle', LocalFileHandle)
         check.str_param(mode, 'mode')
         check.param_invariant(mode in {'r', 'rb'}, 'mode')
@@ -154,7 +176,7 @@ class LocalFileManager(FileManager):
         check.inst_param(data, 'data', bytes)
         return self.write(io.BytesIO(data), mode='wb')
 
-    def write(self, file_obj, mode='w'):
+    def write(self, file_obj, mode='wb'):
         check_file_like_obj(file_obj)
         self.ensure_base_dir_exists()
 
@@ -163,5 +185,5 @@ class LocalFileManager(FileManager):
             shutil.copyfileobj(file_obj, dest_file_obj)
             return LocalFileHandle(dest_file_path)
 
-    def cleanup_local_temp(self):
+    def delete_local_temp(self):
         self._temp_file_manager.close()

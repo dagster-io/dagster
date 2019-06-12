@@ -58,7 +58,7 @@ class S3FileManager(FileManager):
         return file_handle
 
     @contextmanager
-    def read(self, file_handle, mode):
+    def read(self, file_handle, mode='rb'):
         check.inst_param(file_handle, 'file_handle', S3FileHandle)
         check.str_param(mode, 'mode')
         check.param_invariant(mode in {'r', 'rb'}, 'mode')
@@ -82,7 +82,7 @@ class S3FileManager(FileManager):
         check.inst_param(data, 'data', bytes)
         return self.write(io.BytesIO(data), mode='wb')
 
-    def write(self, file_obj, mode='w'):
+    def write(self, file_obj, mode='wb'):
         check_file_like_obj(file_obj)
         s3_key = self.get_full_key(str(uuid.uuid4()))
         self._s3_session.put_object(Body=file_obj, Bucket=self._s3_bucket, Key=s3_key)
@@ -91,5 +91,5 @@ class S3FileManager(FileManager):
     def get_full_key(self, file_key):
         return '{base_key}/{file_key}'.format(base_key=self._s3_base_key, file_key=file_key)
 
-    def cleanup_local_temp(self):
+    def delete_local_temp(self):
         self._temp_file_manager.close()

@@ -18,7 +18,7 @@ from dagster import solid, InputDefinition, FileHandle, String, OutputDefinition
     ''',
 )
 def unzip_file_handle(context, archive_file_handle, archive_member):
-    with context.file_manager.read(archive_file_handle, mode='rb') as local_obj:
+    with context.file_manager.read(archive_file_handle) as local_obj:
         with zipfile.ZipFile(local_obj) as zip_file:
             with zip_file.open(archive_member) as unzipped_stream:
-                return context.file_manager.write(unzipped_stream, mode='wb')
+                return context.file_manager.write(unzipped_stream)
