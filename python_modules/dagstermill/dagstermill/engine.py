@@ -48,19 +48,13 @@ class DagstermillNBConvertEngine(NBConvertEngine):
         execution_timeout=None,
         **kwargs
     ):
-        # Exclude parameters that named differently downstream
-        safe_kwargs = {k: v for k, v in kwargs.items() if k not in ['timeout', 'startup_timeout']}
-
         # Nicely handle preprocessor arguments prioritizing values set by engine
         preprocessor = DagstermillExecutePreprocessor(
-            **dict(
-                safe_kwargs,
-                timeout=execution_timeout if execution_timeout else kwargs.get('timeout'),
-                startup_timeout=start_timeout,
-                kernel_name=kernel_name,
-                log=logger,
-            )
+            timeout=execution_timeout if execution_timeout else kwargs.get('timeout'),
+            startup_timeout=start_timeout,
+            kernel_name=kernel_name,
+            log=logger,
         )
 
         preprocessor.log_output = log_output  # pylint:disable = attribute-defined-outside-init
-        preprocessor.preprocess(nb_man, safe_kwargs)
+        preprocessor.preprocess(nb_man, kwargs)
