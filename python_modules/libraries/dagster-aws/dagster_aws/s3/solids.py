@@ -1,11 +1,9 @@
 from dagster import (
     FileHandle,
-    Bool,
     Dict,
     Field,
     InputDefinition,
     OutputDefinition,
-    Path,
     Materialization,
     Result,
     String,
@@ -16,7 +14,6 @@ from dagster import (
 
 from .configs import put_object_configs
 from .file_manager import S3FileHandle
-from .types import FileExistsAtPath
 
 from dagster.core.types.runtime import PythonObjectType
 
@@ -48,36 +45,6 @@ S3BucketData = dict_with_fields(
         'key': Field(String, description='S3 key name'),
     },
 )
-
-
-@solid(
-    name='download_from_s3_to_file',
-    config_field=Field(
-        Dict(
-            fields={
-                'bucket': Field(String, description='S3 bucket name'),
-                'key': Field(String, description='S3 key name'),
-                'target_folder': Field(
-                    Path, description=('Specifies the path at which to download the object.')
-                ),
-                'skip_if_present': Field(Bool, is_optional=True, default_value=False),
-            }
-        )
-    ),
-    description='Downloads an object from S3 to a file.',
-    outputs=[OutputDefinition(FileExistsAtPath, description='The path to the downloaded object.')],
-    required_resources={'s3'},
-)
-def download_from_s3_to_file(context):
-    '''Download an object from S3 to a local file.
-    '''
-    (bucket, key, target_folder, skip_if_present) = (
-        context.solid_config.get(k) for k in ('bucket', 'key', 'target_folder', 'skip_if_present')
-    )
-
-    return context.resources.s3.download_from_s3_to_file(
-        context, bucket, key, target_folder, skip_if_present
-    )
 
 
 @solid(

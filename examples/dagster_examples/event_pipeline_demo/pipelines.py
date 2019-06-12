@@ -5,22 +5,99 @@ import os
 import shutil
 
 from dagster import (
-    lambda_solid,
+    Bool,
     DependencyDefinition,
+    Dict,
+    Field,
     InputDefinition,
-    OutputDefinition,
     List,
     ModeDefinition,
+    OutputDefinition,
+    Path,
     PipelineDefinition,
     SolidInstance,
     String,
+    lambda_solid,
+    solid,
 )
+from dagster.core.types.runtime import Stringish
 from dagster.utils import safe_isfile, mkdir_p
 
 from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.solids import download_from_s3_to_file
+from dagster_aws.s3.utils import S3Logger
 from dagster_snowflake import snowflake_resource, SnowflakeLoadSolidDefinition
 from dagster_spark import SparkSolidDefinition
+
+
+class FileExistsAtPath(Stringish):
+    def __init__(self):
+        super(FileExistsAtPath, self).__init__(description='A path at which a file actually exists')
+
+    def coerce_runtime_value(self, value):
+        value = super(FileExistsAtPath, self).coerce_runtime_value(value)
+        return self.throw_if_false(safe_isfile, value)
+
+
+def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip_if_present):
+    # TODO: remove context argument once we support resource logging
+
+    # file name is S3 key path suffix after last /
+    target_file = os.path.join(target_folder, key.split('/')[-1])
+
+    if skip_if_present and safe_isfile(target_file):
+        context.log.info(
+            'Skipping download, file already present at {target_file}'.format(
+                target_file=target_file
+            )
+        )
+    else:
+        if not os.path.exists(target_folder):
+            mkdir_p(target_folder)
+
+        context.log.info(
+            'Starting download of {bucket}/{key} to {target_file}'.format(
+                bucket=bucket, key=key, target_file=target_file
+            )
+        )
+
+        headers = session.head_object(Bucket=bucket, Key=key)
+        logger = S3Logger(
+            context.log.debug, bucket, key, target_file, int(headers['ContentLength'])
+        )
+        session.download_file(Bucket=bucket, Key=key, Filename=target_file, Callback=logger)
+    return target_file
+
+
+# This should be ported to use FileHandle-based solids.
+# See https://github.com/dagster-io/dagster/issues/1476
+@solid(
+    name='download_from_s3_to_file',
+    config_field=Field(
+        Dict(
+            fields={
+                'bucket': Field(String, description='S3 bucket name'),
+                'key': Field(String, description='S3 key name'),
+                'target_folder': Field(
+                    Path, description=('Specifies the path at which to download the object.')
+                ),
+                'skip_if_present': Field(Bool, is_optional=True, default_value=False),
+            }
+        )
+    ),
+    description='Downloads an object from S3 to a file.',
+    outputs=[OutputDefinition(FileExistsAtPath, description='The path to the downloaded object.')],
+    required_resources={'s3'},
+)
+def download_from_s3_to_file(context):
+    '''Download an object from S3 to a local file.
+    '''
+    (bucket, key, target_folder, skip_if_present) = (
+        context.solid_config.get(k) for k in ('bucket', 'key', 'target_folder', 'skip_if_present')
+    )
+
+    return _download_from_s3_to_file(
+        context.resources.s3.session, context, bucket, key, target_folder, skip_if_present
+    )
 
 
 @lambda_solid(inputs=[InputDefinition('gzip_file', String)], output=OutputDefinition(List(String)))
