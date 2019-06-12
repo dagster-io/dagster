@@ -78,8 +78,8 @@ def replace_parameters(context, nb, parameters):
         # Inject to the top of the notebook, presumably first cell includes dagstermill import
         context.log.debug(
             (
-                'Warning notebook has no parameters cell, '
-                'so first cell must import dagstermill and call dm.register_repository()'
+                'Executing notebook with no tagged parameters cell: injecting boilerplate in first '
+                'cell.'
             )
         )
         before = nb.cells[:1]
