@@ -16,7 +16,7 @@ def kernel():
             re.sub('  +', ' ', x.strip(' '))
             for x in filter(
                 lambda x: x.startswith('  '),
-                subprocess.check_output(['ipython', 'kernelspec', 'list'])
+                subprocess.check_output(['jupyter', 'kernelspec', 'list'])
                 .decode('utf-8')
                 .split('\n'),
             )
