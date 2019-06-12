@@ -148,17 +148,27 @@ class Manager:
 
     def populate_context(
         self,
-        run_id,
-        mode,
-        solid_def_name,
-        pipeline_def_name,
-        marshal_dir,
-        environment_dict,
-        input_name_type_dict,
-        output_name_type_dict,
-        output_log_path,
+        run_id=None,
+        mode=None,
+        solid_def_name=None,
+        pipeline_name=None,
+        marshal_dir=None,
+        environment_config=None,
+        input_name_type_dict=None,
+        output_name_type_dict=None,
+        output_log_path=None,
+        **_kwargs
     ):
-        check.dict_param(environment_dict, 'environment_dict')
+        check.str_param(run_id, 'run_id')
+        check.str_param(mode, 'mode')
+        check.str_param(solid_def_name, 'solid_def_name')
+        check.str_param(pipeline_name, 'pipeline_name')
+        check.str_param(marshal_dir, 'marshal_dir')
+        check.dict_param(environment_config, 'environment_config')
+        check.dict_param(input_name_type_dict, 'input_name_type_dict')
+        check.dict_param(output_name_type_dict, 'output_name_type_dict')
+        check.str_param(output_log_path, 'output_log_path')
+
         self.populated_by_papermill = True
         self.solid_def_name = solid_def_name
         self.marshal_dir = marshal_dir
@@ -189,11 +199,11 @@ class Manager:
                         'that are not pickling, then you must register a repository within '
                         'notebook by calling dagstermill.register_repository(repository_def).'
                     )
-            environment_dict = {'loggers': {'dagstermill': {}}}
+            environment_config = {'loggers': {'dagstermill': {}}}
             run_config = RunConfig(run_id=run_id, mode=mode)
 
         else:
-            self.pipeline_def = self.repository_def.get_pipeline(pipeline_def_name)
+            self.pipeline_def = self.repository_def.get_pipeline(pipeline_name)
             check.invariant(
                 self.pipeline_def.has_solid_def(solid_def_name),
                 'solid {} not found'.format(solid_def_name),
@@ -208,7 +218,7 @@ class Manager:
 
         with scoped_pipeline_context(
             self.pipeline_def,
-            environment_dict,
+            environment_config,
             run_config,
             scoped_resources_builder_cm=self.setup_resources,
         ) as pipeline_context:

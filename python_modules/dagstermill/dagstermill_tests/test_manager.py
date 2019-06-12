@@ -37,9 +37,9 @@ def in_pipeline_manager(register=True, **kwargs):
                     'run_id': run_id,
                     'mode': 'default',
                     'solid_def_name': 'hello_world',
-                    'pipeline_def_name': 'hello_world_pipeline',
+                    'pipeline_name': 'hello_world_pipeline',
                     'marshal_dir': marshal_dir,
-                    'environment_dict': {},
+                    'environment_config': {},
                     'output_log_path': output_log_file.name,
                     'input_name_type_dict': {},
                     'output_name_type_dict': {},
@@ -250,8 +250,8 @@ def test_in_pipeline_manager_with_resources():
     try:
         with in_pipeline_manager(
             solid_def_name='hello_world_resource',
-            pipeline_def_name='resource_pipeline',
-            environment_dict={'resources': {'list': {'config': path}}},
+            pipeline_name='resource_pipeline',
+            environment_config={'resources': {'list': {'config': path}}},
         ) as manager:
             assert len(manager.context.resources._asdict()) == 1
 

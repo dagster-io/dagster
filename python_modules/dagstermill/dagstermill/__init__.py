@@ -45,17 +45,7 @@ def yield_materialization(path, description=''):
 
 def populate_context(dm_context_data):
     check.dict_param(dm_context_data, 'dm_context_data')
-    context = MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(
-        dm_context_data['run_id'],
-        dm_context_data['mode'],
-        dm_context_data['solid_def_name'],
-        dm_context_data['pipeline_name'],
-        dm_context_data['marshal_dir'],
-        dm_context_data['environment_config'],
-        dm_context_data['input_name_type_dict'],
-        dm_context_data['output_name_type_dict'],
-        dm_context_data['output_log_path'],
-    )
+    context = MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(**dm_context_data)
     return context
 
 
