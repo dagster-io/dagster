@@ -22,11 +22,11 @@ class StepBuilder:
         self._step["commands"] = map(lambda cmd: "time " + cmd, argc)
         return self
 
-    def base_docker_settings(self):
+    def _base_docker_settings(self):
         return {"shell": ["/bin/bash", "-xeuc"], "always-pull": True}
 
     def on_python_image(self, ver, env=None):
-        settings = self.base_docker_settings()
+        settings = self._base_docker_settings()
         settings["image"] = PY_IMAGE_MAP[ver]
         if env:
             settings['environment'] = env
@@ -36,7 +36,7 @@ class StepBuilder:
         return self
 
     def on_integration_image(self, ver, env=None):
-        settings = self.base_docker_settings()
+        settings = self._base_docker_settings()
 
         # version like dagster/buildkite-integration:py3.7.3-v2
         settings["image"] = "dagster/buildkite-integration:py" + ver + '-v2'
@@ -56,6 +56,10 @@ class StepBuilder:
 
     def with_retry(self, num_retries):
         self._step["retry"] = {'automatic': {'limit': num_retries}}
+        return self
+
+    def on_medium_instance(self):
+        self._step["agents"] = {'queue': 'medium'}
         return self
 
     def build(self):

@@ -16,13 +16,6 @@ TOX_MAP = {
     SupportedPython.V2_7: "py27",
 }
 
-LIBRARY_PATH = os.path.join(SCRIPT_PATH, '..', 'python_modules/libraries/')
-LIBRARY_MODULES = set(os.listdir(LIBRARY_PATH))
-
-# Skip these two. dagster-gcp is handled separately by gcp_tests() below, dagster-pyspark does not
-# have tests
-LIBRARY_MODULES -= {'dagster-gcp', 'dagster-pyspark'}
-
 
 def wait_step():
     return "wait"
@@ -53,6 +46,7 @@ def python_modules_tox_tests(directory, prereqs=None, env=None):
             .run(*tox_command)
             .on_python_image(version, env_vars)
         )
+
         tests.append(builder.build())
 
     return tests
@@ -62,25 +56,30 @@ def airline_demo_tests():
     tests = []
     for version in SupportedPython3s:
         coverage = ".coverage.airline-demo.{version}.$BUILDKITE_BUILD_ID".format(version=version)
-        step = StepBuilder('airline-demo tests ({version})'.format(version=TOX_MAP[version]))
-        step.run(
-            "cd examples",
-            # Build the image we use for airflow in the demo tests
-            "./build_airline_demo_image.sh",
-            "mkdir -p /home/circleci/airflow",
-            # Run the postgres db. We are in docker running docker
-            # so this will be a sibling container.
-            "docker-compose stop",
-            "docker-compose rm -f",
-            "docker-compose up -d",
-            # Can't use host networking on buildkite and communicate via localhost
-            # between these sibling containers, so pass along the ip.
-            "export DAGSTER_AIRLINE_DEMO_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' airline-demo-db`",
-            "tox -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
-            "mv .coverage {file}".format(file=coverage),
-            "buildkite-agent artifact upload {file}".format(file=coverage),
+        tests.append(
+            StepBuilder('airline-demo tests ({version})'.format(version=TOX_MAP[version]))
+            .on_integration_image(version)
+            .on_medium_instance()
+            .run(
+                "cd examples",
+                # Build the image we use for airflow in the demo tests
+                "./build_airline_demo_image.sh",
+                "mkdir -p /home/circleci/airflow",
+                # Run the postgres db. We are in docker running docker
+                # so this will be a sibling container.
+                "docker-compose stop",
+                "docker-compose rm -f",
+                "docker-compose up -d",
+                # Can't use host networking on buildkite and communicate via localhost
+                # between these sibling containers, so pass along the ip.
+                "export DAGSTER_AIRLINE_DEMO_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' airline-demo-db`",
+                "tox -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+            )
+            .build()
         )
-        tests.append(step.on_integration_image(version).build())
+
     return tests
 
 
@@ -90,6 +89,10 @@ def events_demo_tests():
         coverage = ".coverage.events-demo.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder('events-demo tests ({version})'.format(version=TOX_MAP[version]))
+            .on_integration_image(
+                version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
+            )
+            .on_medium_instance()
             .run(
                 "mkdir -p /tmp/dagster/events",
                 "pushd scala_modules",
@@ -101,9 +104,6 @@ def events_demo_tests():
                 "tox -c event.tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
-            )
-            .on_integration_image(
-                version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
             )
             .build()
         )
@@ -147,6 +147,7 @@ def examples_tests():
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(version)
+            .on_medium_instance()
             .build()
         )
     return tests
@@ -202,8 +203,25 @@ def dask_tests():
             )
             .with_timeout(5)
             .with_retry(3)
+            .on_medium_instance()
             .build()
         )
+    return tests
+
+
+def library_tests():
+    library_path = os.path.join(SCRIPT_PATH, '..', 'python_modules/libraries/')
+    library_modules = set(os.listdir(library_path))
+
+    tests = []
+    for library in library_modules:
+        if library == 'dagster-pyspark':
+            continue  # no tests :'(
+        elif library == 'dagster-gcp':
+            tests += gcp_tests()
+        else:
+            tests += python_modules_tox_tests("libraries/{library}".format(library=library))
+
     return tests
 
 
@@ -247,6 +265,7 @@ if __name__ == "__main__":
         StepBuilder("pylint")
         .run("make install_dev_python_modules", "make pylint")
         .on_integration_image(SupportedPython.V3_7)
+        .on_medium_instance()
         .build(),
         StepBuilder("black")
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
@@ -285,6 +304,7 @@ if __name__ == "__main__":
             "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
         )
         .on_integration_image(SupportedPython.V3_7)
+        .on_medium_instance()
         .build(),
     ]
     steps += airline_demo_tests()
@@ -293,12 +313,13 @@ if __name__ == "__main__":
     steps += dask_tests()
 
     steps += python_modules_tox_tests("dagster")
-    steps += python_modules_tox_tests("dagit", ["apt-get update", "apt-get install -y xdg-utils"])
+    steps += python_modules_tox_tests(
+        "dagit", prereqs=["apt-get update", "apt-get install -y xdg-utils"]
+    )
     steps += python_modules_tox_tests("dagster-graphql")
     steps += python_modules_tox_tests("dagstermill")
 
-    for library in LIBRARY_MODULES:
-        steps += python_modules_tox_tests("libraries/{library}".format(library=library))
+    steps += library_tests()
 
     steps += gcp_tests()
     steps += examples_tests()
