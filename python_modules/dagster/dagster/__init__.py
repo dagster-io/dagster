@@ -97,7 +97,7 @@ from dagster.core.types.config import ConfigType, ConfigScalar, Enum, EnumValue
 
 from dagster.core.types.decorator import dagster_type, as_dagster_type
 
-from dagster.core.types.evaluator import DagsterEvaluateConfigValueError
+from dagster.core.types.evaluator.errors import DagsterEvaluateConfigValueError
 
 from dagster.core.types.marshal import SerializationStrategy
 

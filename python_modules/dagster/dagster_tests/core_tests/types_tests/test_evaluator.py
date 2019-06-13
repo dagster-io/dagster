@@ -1,12 +1,11 @@
 from dagster import Field, Dict, String, Int, Bool, Optional, List, Selector, Any
 
-from dagster.core.types.evaluator import (
-    DagsterEvaluationErrorReason,
+from dagster.core.types.evaluator.errors import DagsterEvaluationErrorReason
+from dagster.core.types.evaluator.stack import (
     EvaluationStackListItemEntry,
     EvaluationStackPathEntry,
-    EvaluateValueResult,
-    evaluate_config_value,
 )
+from dagster.core.types.evaluator import EvaluateValueResult, evaluate_config_value
 from dagster.core.types.field import resolve_to_config_type
 
 

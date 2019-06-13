@@ -2,16 +2,18 @@ from __future__ import absolute_import
 
 from dagster import check
 
-from dagster.core.types.evaluator import (
+from dagster.core.types.evaluator.errors import (
     EvaluationError,
-    EvaluationStackPathEntry,
-    EvaluationStackListItemEntry,
-    RuntimeMismatchErrorData,
     MissingFieldErrorData,
     MissingFieldsErrorData,
     FieldNotDefinedErrorData,
     FieldsNotDefinedErrorData,
+    RuntimeMismatchErrorData,
     SelectorTypeErrorData,
+)
+from dagster.core.types.evaluator.stack import (
+    EvaluationStackPathEntry,
+    EvaluationStackListItemEntry,
 )
 
 from dagster.utils.error import SerializableErrorInfo
