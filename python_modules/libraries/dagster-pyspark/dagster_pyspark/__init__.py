@@ -78,7 +78,7 @@ def write_rdd(context, file_type, file_options, spark_rdd):
 SparkRDD = as_dagster_type(RDD, 'SparkRDD', input_schema=load_rdd, output_schema=write_rdd)
 
 
-@resource(config_field=Field(Dict({'spark_conf': spark_config()})))
+@resource(config={'spark_conf': spark_config()})
 def spark_session_resource(init_context):
     builder = SparkSession.builder
     flat = flatten_dict(init_context.resource_config['spark_conf'])

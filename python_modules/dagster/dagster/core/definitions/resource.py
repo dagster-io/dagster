@@ -4,6 +4,7 @@ from dagster import check
 
 from dagster.core.types import Field, String
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
+from .config import resolve_config_field
 
 
 class ResourceDefinition(object):
@@ -44,9 +45,18 @@ class ResourceDefinition(object):
         )
 
 
-def resource(config_field=None, description=None):
+def resource(config_field=None, config=None, description=None):
     '''A decorator for creating a resource. The decorated function will be used as the
     resource_fn in a ResourceDefinition.
+
+    Args:
+        config (Dict[str, Field]):
+            The schema for the configuration data to be made available to the resource_fn
+        config_field (Field):
+            Used in the rare case of a top level config type other than a dictionary.
+
+            Only one of config or config_field can be provided.
+        description(str)
     '''
 
     # This case is for when decorator is used bare, without arguments.
@@ -55,7 +65,9 @@ def resource(config_field=None, description=None):
         return ResourceDefinition(resource_fn=config_field)
 
     def _wrap(resource_fn):
-        return ResourceDefinition(resource_fn, config_field, description)
+        return ResourceDefinition(
+            resource_fn, resolve_config_field(config_field, config, '@resource'), description
+        )
 
     return _wrap
 

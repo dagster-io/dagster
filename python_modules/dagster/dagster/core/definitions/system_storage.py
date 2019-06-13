@@ -8,7 +8,8 @@ from dagster.core.storage.intermediates_manager import (
 )
 from dagster.core.storage.runs import RunStorage, InMemoryRunStorage, FileSystemRunStorage
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
-from dagster.core.types import Field, Dict, String
+from dagster.core.types import Field, String
+from .config import resolve_config_field
 
 
 class SystemStorageDefinition:
@@ -37,6 +38,8 @@ class SystemStorageDefinition:
         system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStorageData])
             Called by the system. The author of the StorageSystemDefinition must provide this function,
             which consumes the init context and then emits the SystemStorageData.
+        required_resources(Set[str]):
+            The resources that this storage needs at runtime to function.
     '''
 
     def __init__(
@@ -72,7 +75,28 @@ class SystemStorageData:
         self.file_manager = check.opt_inst_param(file_manager, 'file_manager', FileManager)
 
 
-def system_storage(name=None, is_persistent=True, config_field=None, required_resources=None):
+def system_storage(
+    name=None, is_persistent=True, config_field=None, config=None, required_resources=None
+):
+    '''A decorator for creating a SystemStorageDefinition. The decorated function will be used as the
+    system_storage_creation_fn in a SystemStorageDefinition.
+
+    Args:
+        name (str)
+        is_persistent (bool): Does storage def persist in way that can cross process/node
+            boundaries. Execution with, for example, the multiprocess executor or within
+            the context of dagster-airflow require a persistent storage mode.
+        required_resources (Set[str]):
+            The resources that this storage needs at runtime to function.
+        config (Dict[str, Field]):
+            The schema for the configuration data made available to the system_storage_creation_fn.
+        config_field (Field):
+            Used in the rare case of a top level config type other than a dictionary.
+
+            Only one of config or config_field can be provided.
+
+    '''
+
     if callable(name):
         check.invariant(name is None)
         check.invariant(is_persistent is True)
@@ -83,7 +107,7 @@ def system_storage(name=None, is_persistent=True, config_field=None, required_re
     return _SystemStorageDecoratorCallable(
         name=name,
         is_persistent=is_persistent,
-        config_field=config_field,
+        config_field=resolve_config_field(config_field, config, '@system_storage'),
         required_resources=required_resources,
     )
 
@@ -126,9 +150,7 @@ def mem_system_storage(init_context):
 
 
 @system_storage(
-    name='filesystem',
-    is_persistent=True,
-    config_field=Field(Dict({'base_dir': Field(String, is_optional=True)})),
+    name='filesystem', is_persistent=True, config={'base_dir': Field(String, is_optional=True)}
 )
 def fs_system_storage(init_context):
     base_dir = init_context.system_storage_config.get('base_dir')
