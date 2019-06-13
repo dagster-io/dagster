@@ -24,7 +24,6 @@ from dagster import (
 from dagster.core.definitions import create_environment_schema
 from dagster.core.types.evaluator import evaluate_config_value
 from dagster.core.types.evaluator.errors import DagsterEvaluationErrorReason
-
 from dagster.core.test_utils import throwing_evaluate_config_value
 
 

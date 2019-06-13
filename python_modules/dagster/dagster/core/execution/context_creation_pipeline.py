@@ -66,7 +66,7 @@ def create_environment_config(pipeline, environment_dict=None, mode=None):
 
     environment_type = create_environment_type(pipeline, mode)
 
-    result = evaluate_config_value(environment_type, environment_dict)
+    result = evaluate_config_value(environment_type, environment_dict, pipeline)
 
     if not result.success:
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment_dict)

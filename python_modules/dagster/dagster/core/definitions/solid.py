@@ -186,6 +186,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         solid_defs,
         input_mappings=None,
         output_mappings=None,
+        config_mapping_fn=None,
         dependencies=None,
         description=None,
         metadata=None,
@@ -200,6 +201,8 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         self.output_mappings = _validate_out_mappings(
             check.opt_list_param(output_mappings, 'output_mappings')
         )
+
+        self.config_mapping_fn = check.opt_callable_param(config_mapping_fn, 'config_mapping_fn')
 
         self.dependencies = validate_dependency_dict(dependencies)
         dependency_structure, pipeline_solid_dict = create_execution_structure(

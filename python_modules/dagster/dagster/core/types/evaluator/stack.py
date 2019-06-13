@@ -32,13 +32,13 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
         else:
             return ttype
 
-    def with_field(self, field_name, field_def):
+    def for_field(self, field_name, field_def):
         return EvaluationStack(
             config_type=self.config_type,
             entries=self.entries + [EvaluationStackPathEntry(field_name, field_def)],
         )
 
-    def with_list_index(self, list_index):
+    def for_list_index(self, list_index):
         list_type = self.type_in_context
         check.invariant(list_type.is_list)
         return EvaluationStack(

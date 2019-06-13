@@ -57,7 +57,9 @@ def resolve_is_environment_config_valid(
     check.inst_param(dagster_pipeline, 'dagster_pipeline', PipelineDefinition)
     check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
 
-    validated_config = evaluate_config_value(environment_schema.environment_type, environment_dict)
+    validated_config = evaluate_config_value(
+        environment_schema.environment_type, environment_dict, dagster_pipeline
+    )
 
     dauphin_pipeline = graphene_info.schema.type_named('Pipeline')(dagster_pipeline)
 

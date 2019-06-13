@@ -555,11 +555,14 @@ def _validate_decorated_fn(fn, names, expected_positionals):
 
 
 class _CompositeSolid(object):
-    def __init__(self, name=None, inputs=None, outputs=None, description=None):
+    def __init__(
+        self, name=None, inputs=None, outputs=None, description=None, config_mapping_fn=None
+    ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_nullable_list_param(inputs, 'inputs', InputDefinition)
         self.output_defs = check.opt_nullable_list_param(outputs, 'output', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
+        self.config_mapping_fn = check.opt_callable_param(config_mapping_fn, 'config_mapping_fn')
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -604,17 +607,25 @@ class _CompositeSolid(object):
             dependencies=context.dependencies,
             solid_defs=context.solid_defs,
             description=self.description,
+            config_mapping_fn=self.config_mapping_fn,
         )
 
 
-def composite_solid(name=None, inputs=None, outputs=None, description=None):
+def composite_solid(name=None, inputs=None, outputs=None, description=None, config_mapping_fn=None):
     if callable(name):
         check.invariant(inputs is None)
         check.invariant(outputs is None)
         check.invariant(description is None)
+        check.invariant(config_mapping_fn is None)
         return _CompositeSolid()(name)
 
-    return _CompositeSolid(name=name, inputs=inputs, outputs=outputs, description=description)
+    return _CompositeSolid(
+        name=name,
+        inputs=inputs,
+        outputs=outputs,
+        description=description,
+        config_mapping_fn=config_mapping_fn,
+    )
 
 
 class _Pipeline:
