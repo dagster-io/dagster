@@ -6,7 +6,7 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(SCRIPT_PATH)
 
-from defines import IMAGE_VERSION_MAP, SupportedPython, SupportedPythons, SupportedPython3s
+from defines import SupportedPython, SupportedPythons, SupportedPython3s
 from step_builder import StepBuilder
 
 TOX_MAP = {
@@ -176,9 +176,9 @@ def dask_tests():
             StepBuilder("dagster-dask tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
                 "pushd python_modules/dagster-dask/dagster_dask_tests/dask-docker",
-                "./build.sh " + IMAGE_VERSION_MAP[version],
+                "./build.sh " + version,
                 # Run the docker-compose dask cluster
-                "export PYTHON_VERSION=\"{ver}\"".format(ver=IMAGE_VERSION_MAP[version]),
+                "export PYTHON_VERSION=\"{ver}\"".format(ver=version),
                 "docker-compose up -d --remove-orphans",
                 # hold onto your hats, this is docker networking at its best. First, we figure out
                 # the name of the currently running container...
