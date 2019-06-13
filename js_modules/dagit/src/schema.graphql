@@ -340,7 +340,9 @@ type LogMessageEvent implements MessageEvent {
 
 type Materialization {
   description: String
+  name: String
   path: String
+  resultMetadataJsonString: String
 }
 
 interface MessageEvent {

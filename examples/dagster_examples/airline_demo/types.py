@@ -2,7 +2,6 @@
 import os
 
 from collections import namedtuple
-from io import BytesIO
 
 import sqlalchemy
 
@@ -21,9 +20,8 @@ from dagster import (
 )
 from dagster.core.definitions.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
-from dagster.core.types.runtime import Stringish, RuntimeType
+from dagster.core.types.runtime import Stringish
 
-from dagster_aws.s3.types import BytesIOS3StoragePlugin
 from dagster_aws.s3.system_storage import s3_system_storage
 
 AirlineDemoResources = namedtuple(
@@ -110,20 +108,6 @@ SqlAlchemyEngineType = as_dagster_type(
 class SqlTableName(Stringish):
     def __init__(self):
         super(SqlTableName, self).__init__(description='The name of a database table')
-
-
-class FileFromPath(RuntimeType):
-    def __init__(self):
-        super(FileFromPath, self).__init__(
-            'FileFromPath',
-            'FileFromPath',
-            auto_plugins=[BytesIOS3StoragePlugin],
-            description='Bytes representing the contents of a file at a specific path.',
-        )
-
-    def coerce_runtime_value(self, value):
-        with open(value, 'rb') as fd:
-            return BytesIO(fd.read())
 
 
 RedshiftConfigData = Dict(

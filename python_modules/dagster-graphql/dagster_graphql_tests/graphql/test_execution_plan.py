@@ -78,8 +78,10 @@ mutation ($executionParams: ExecutionParams!) {
                 }
                 ... on StepMaterializationEvent {
                     materialization {
+                        name
                         path
                         description
+                        resultMetadataJsonString
                     }
                 }
                 ... on ExecutionStepFailureEvent {
@@ -491,3 +493,9 @@ def test_basic_execute_plan_with_materialization():
         # ensure only one event
         assert step_mat_event
         assert step_mat_event['materialization']['path'] == out_csv_path
+        assert step_mat_event['materialization']['name'] == None
+        assert (
+            step_mat_event['materialization']['description']
+            == 'Materialization of sum_solid.result'
+        )
+        assert step_mat_event['materialization']['resultMetadataJsonString'] == '{}'

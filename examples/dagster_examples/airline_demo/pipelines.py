@@ -6,18 +6,19 @@ from dagster import (
     PresetDefinition,
     String,
     composite_solid,
-    pipeline,
     file_relative_path,
+    pipeline,
 )
 
 from dagster.core.storage.temp_file_manager import tempfile_resource
 
 from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3.file_manager import S3FileHandle
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
-from dagster_aws.s3.solids import put_object_to_s3_bytes
+from dagster_aws.s3.solids import file_handle_to_s3
 
 
-from .mirror_keyed_file_from_s3 import mirror_keyed_file_from_s3
+from .cache_file_from_s3 import cache_file_from_s3
 from .resources import postgres_db_info_resource, redshift_db_info_resource, spark_session_local
 from .solids import (
     average_sfo_outbound_avg_delays_by_destination,
@@ -37,7 +38,7 @@ from .solids import (
     s3_to_df,
 )
 
-from .keyed_file_store import keyed_fs_file_store, keyed_s3_file_store
+from .file_cache import fs_file_cache, s3_file_cache
 
 test_mode = ModeDefinition(
     name='test',
@@ -46,7 +47,7 @@ test_mode = ModeDefinition(
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
         's3': s3_resource,
-        'keyed_file_store': keyed_fs_file_store,
+        'file_cache': fs_file_cache,
     },
     system_storage_defs=s3_plus_default_storage_defs,
 )
@@ -59,7 +60,7 @@ local_mode = ModeDefinition(
         's3': s3_resource,
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
-        'keyed_file_store': keyed_fs_file_store,
+        'file_cache': fs_file_cache,
     },
     system_storage_defs=s3_plus_default_storage_defs,
 )
@@ -72,7 +73,7 @@ prod_mode = ModeDefinition(
         's3': s3_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
-        'keyed_file_store': keyed_s3_file_store,
+        'file_cache': s3_file_cache,
     },
     system_storage_defs=s3_plus_default_storage_defs,
 )
@@ -97,7 +98,7 @@ def sfo_weather_data(_):
         process_sfo_weather_data(
             _,
             ingest_csv_file_handle_to_spark.alias('ingest_q2_sfo_weather')(
-                mirror_keyed_file_from_s3.alias('download_q2_sfo_weather')()
+                cache_file_from_s3.alias('download_q2_sfo_weather')()
             ),
         )
     )
@@ -135,14 +136,9 @@ def define_airline_demo_ingest_pipeline():
     return airline_demo_ingest_pipeline
 
 
-@composite_solid(
-    outputs=[
-        OutputDefinition(name='bucket', dagster_type=String),
-        OutputDefinition(name='key', dagster_type=String),
-    ]
-)
+@composite_solid(outputs=[OutputDefinition(S3FileHandle)])
 def process_delays_by_geo(_context):
-    return put_object_to_s3_bytes.alias('upload_delays_by_geography_pdf_plots')(
+    return file_handle_to_s3.alias('upload_delays_by_geography_pdf_plots')(
         delays_by_geography(
             westbound_delays=westbound_delays(), eastbound_delays=eastbound_delays()
         )
@@ -167,7 +163,7 @@ def airline_demo_warehouse_pipeline(context):
 
     outbound_delays = average_sfo_outbound_avg_delays_by_destination(q2_sfo_outbound_flights())
 
-    put_object_to_s3_bytes.alias('upload_delays_vs_fares_pdf_plots')(
+    file_handle_to_s3.alias('upload_delays_vs_fares_pdf_plots')(
         delays_vs_fares_nb.alias('fares_vs_delays')(
             delays_vs_fares(
                 tickets_with_destination=tickets_with_destination(),
@@ -176,7 +172,7 @@ def airline_demo_warehouse_pipeline(context):
         )
     )
 
-    put_object_to_s3_bytes.alias('upload_outbound_avg_delay_pdf_plots')(
+    file_handle_to_s3.alias('upload_outbound_avg_delay_pdf_plots')(
         sfo_delays_by_destination(outbound_delays)
     )
 

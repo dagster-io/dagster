@@ -101,7 +101,7 @@ from dagster.core.types.evaluator import DagsterEvaluateConfigValueError
 
 from dagster.core.types.marshal import SerializationStrategy
 
-from dagster.core.types.runtime import Bytes, RuntimeType
+from dagster.core.types.runtime import RuntimeType
 
 from dagster.utils import file_relative_path
 from dagster.utils.test import execute_solid, execute_solids
@@ -170,7 +170,6 @@ __all__ = [
     # types
     'Any',
     'Bool',
-    'Bytes',
     'input_schema',
     'input_selector_schema',
     'Dict',

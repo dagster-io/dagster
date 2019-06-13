@@ -234,7 +234,12 @@ class DauphinMaterialization(dauphin.ObjectType):
         name = 'Materialization'
 
     description = dauphin.String()
+    name = dauphin.String()
     path = dauphin.String()
+    resultMetadataJsonString = dauphin.String()
+
+    def resolve_resultMetadataJsonString(self, _graphene_info):
+        return json.dumps(self.result_metadata or {})
 
 
 class DauphinExpectationResult(dauphin.ObjectType):
@@ -337,9 +342,9 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
             **(basic_params)
         )
     elif dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
-        materialization_data = dagster_event.step_materialization_data
+        materialization = dagster_event.step_materialization_data.materialization
         return graphene_info.schema.type_named('StepMaterializationEvent')(
-            materialization=materialization_data.materialization, **basic_params
+            materialization=materialization, **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         expectation_result = dagster_event.event_specific_data.expectation_result

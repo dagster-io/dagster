@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 import pytest
 
-import dagstermill as dm
+import dagstermill
 
 from dagster import (
     DependencyDefinition,
@@ -31,7 +31,7 @@ def nb_test_path(name):
 
 
 def define_papermill_pandas_hello_world_solid():
-    return dm.define_dagstermill_solid(
+    return dagstermill.define_dagstermill_solid(
         name='papermill_pandas_hello_world',
         notebook_path=nb_test_path('papermill_pandas_hello_world'),
         inputs=[InputDefinition(name='df', dagster_type=DataFrame)],

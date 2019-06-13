@@ -32,7 +32,8 @@ class RunConfig(
       executor_config (ExecutorConfig): Configuration for where and how computation will occur.
       rexecution_config (RexecutionConfig): Information about a previous run to allow
         for subset rexecution.
-      step_keys_to_execute (list[str]): They subset of steps from a pipeline to execute this run.
+      step_keys_to_execute (list[str]): The subset of steps from a pipeline to execute this run.
+      mode (Optional[str]): The name of the mode in which to execute the pipeline.
     '''
 
     def __new__(

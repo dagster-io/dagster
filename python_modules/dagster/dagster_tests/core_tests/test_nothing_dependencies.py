@@ -238,7 +238,7 @@ def test_valid_nothing_fns():
 
     @solid(outputs=[OutputDefinition(Nothing)])
     def yield_stuff(_context):
-        yield Materialization(None)
+        yield Materialization('/path/to/nowhere')
 
     pipeline = PipelineDefinition(
         name='fn_test', solids=[just_pass, just_pass2, ret_none, yield_none, yield_stuff]

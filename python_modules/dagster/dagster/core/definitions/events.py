@@ -19,12 +19,23 @@ class Result(namedtuple('_Result', 'value output_name')):
         return super(Result, cls).__new__(cls, value, check.str_param(output_name, 'output_name'))
 
 
-class Materialization(namedtuple('_Materialization', 'path description')):
-    def __new__(cls, path, description=None):
+class Materialization(namedtuple('_Materialization', 'path name description result_metadata')):
+    '''A value materialized by an execution step.
+
+    Attributes:
+        path (str): The path to the materialized value.
+        name (str): A short display name for the materialized value.
+        description (str): A longer description of the materialized value.
+        result_metadata (dict): Arbitrary metadata about the materialized value.
+    '''
+
+    def __new__(cls, path, name=None, description=None, result_metadata=None):
         return super(Materialization, cls).__new__(
             cls,
-            path=check.opt_str_param(path, 'path'),
+            path=check.str_param(path, 'path'),
+            name=check.opt_str_param(name, 'name'),
             description=check.opt_str_param(description, 'description'),
+            result_metadata=check.opt_dict_param(result_metadata, 'result_metadata'),
         )
 
 

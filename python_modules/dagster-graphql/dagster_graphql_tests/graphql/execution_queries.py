@@ -26,8 +26,10 @@ mutation (
                             step { key kind }
                             outputName
                             intermediateMaterialization {
+                                name
                                 path
                                 description
+                                resultMetadataJsonString
                             }
                         }
                         ... on StepExpectationResultEvent {
@@ -129,8 +131,11 @@ subscription subscribeTest($runId: ID!) {
                 }
                 ... on StepMaterializationEvent {
                     materialization {
+                        name
                         path
                         description
+                        resultMetadataJsonString
+
                     }
                 }
                 ... on StepExpectationResultEvent {

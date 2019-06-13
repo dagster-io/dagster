@@ -55,19 +55,19 @@ def test_s3_file_manager_read():
     s3_mock = S3Mock()
     file_manager = S3FileManager(s3_mock, 'some-bucket', 'some-key')
     file_handle = S3FileHandle('some-bucket', 'some-key/kdjfkjdkfjkd')
-    with file_manager.read(file_handle, 'rb') as file_obj:
+    with file_manager.read(file_handle) as file_obj:
         assert file_obj.read() == bar_bytes
 
     assert state['bucket'] == file_handle.s3_bucket
     assert state['key'] == file_handle.s3_key
 
     # read again. cached
-    with file_manager.read(file_handle, 'rb') as file_obj:
+    with file_manager.read(file_handle) as file_obj:
         assert file_obj.read() == bar_bytes
 
     assert os.path.exists(state['file_name'])
 
-    file_manager.cleanup_local_temp()
+    file_manager.delete_local_temp()
 
     assert not os.path.exists(state['file_name'])
 

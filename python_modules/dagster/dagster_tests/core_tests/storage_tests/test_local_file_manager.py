@@ -25,7 +25,7 @@ def test_basic_file_manager_execute_in_pipeline():
         with open(file_handle.path, 'rb') as handle_obj:
             assert foo_bytes == handle_obj.read()
 
-        with context.file_manager.read(file_handle, mode='rb') as handle_obj:
+        with context.file_manager.read(file_handle) as handle_obj:
             assert foo_bytes == handle_obj.read()
 
         called['yup'] = True

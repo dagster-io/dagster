@@ -1,48 +1,11 @@
-import os
-
 from dagster import Field, resource, Dict, Bool
-from dagster.utils import safe_isfile, mkdir_p
 
-from .utils import create_s3_session, S3Logger
+from .utils import create_s3_session
 
 
 class S3Resource:
     def __init__(self, s3_session):
         self.session = s3_session
-
-    def download_from_s3_to_bytes(self, bucket, key):
-        return self.session.get_object(Bucket=bucket, Key=key)['Body'].read()
-
-    def download_from_s3_to_file(self, context, bucket, key, target_folder, skip_if_present):
-        # TODO: remove context argument once we support resource logging
-
-        # file name is S3 key path suffix after last /
-        target_file = os.path.join(target_folder, key.split('/')[-1])
-
-        if skip_if_present and safe_isfile(target_file):
-            context.log.info(
-                'Skipping download, file already present at {target_file}'.format(
-                    target_file=target_file
-                )
-            )
-        else:
-            if not os.path.exists(target_folder):
-                mkdir_p(target_folder)
-
-            context.log.info(
-                'Starting download of {bucket}/{key} to {target_file}'.format(
-                    bucket=bucket, key=key, target_file=target_file
-                )
-            )
-
-            headers = self.session.head_object(Bucket=bucket, Key=key)
-            logger = S3Logger(
-                context.log.debug, bucket, key, target_file, int(headers['ContentLength'])
-            )
-            self.session.download_file(
-                Bucket=bucket, Key=key, Filename=target_file, Callback=logger
-            )
-        return target_file
 
     def put_object(self, **kwargs):
         '''This mirrors the put_object boto3 API:
