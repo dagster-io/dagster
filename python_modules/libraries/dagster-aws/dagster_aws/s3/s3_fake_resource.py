@@ -4,6 +4,8 @@ import io
 from dagster_aws.s3.resources import S3Resource
 from dagster.seven import mock
 
+from botocore.exceptions import ClientError
+
 
 def create_s3_fake_resource():
     return S3Resource(S3FakeSession())
@@ -34,8 +36,14 @@ class S3FakeSession:
         self.buckets[Bucket][Key] = Body.read()
 
     def get_object(self, Bucket, Key, *args, **kwargs):
+        if not self._has_object(Bucket, Key):
+            raise ClientError({}, None)
+
         self.mock_extras.get_object(*args, **kwargs)
         return {'Body': self._get_byte_stream(Bucket, Key)}
+
+    def _has_object(self, bucket, key):
+        return bucket in self.buckets and key in self.buckets[bucket]
 
     def _get_byte_stream(self, bucket, key):
         return io.BytesIO(self.buckets[bucket][key])

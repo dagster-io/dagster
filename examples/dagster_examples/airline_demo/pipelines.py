@@ -14,6 +14,7 @@ from dagster.core.storage.file_cache import fs_file_cache
 from dagster.core.storage.temp_file_manager import tempfile_resource
 
 from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3.file_cache import s3_file_cache
 from dagster_aws.s3.file_manager import S3FileHandle
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 from dagster_aws.s3.solids import file_handle_to_s3
@@ -39,7 +40,6 @@ from .solids import (
     s3_to_df,
 )
 
-from .file_cache import s3_file_cache
 
 test_mode = ModeDefinition(
     name='test',
