@@ -15,6 +15,8 @@ solid. Put the following into a file ``resources.py``:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_one.py
     :caption: resources.py
+    :linenos:
+    :lines: 3-17,22-31
 
 Provide your Slack token, and choose a channel and message. Then running this with ``python
 resources.py``, you should see a message from ``dagsterbot`` appear in your Slack channel.
@@ -37,30 +39,33 @@ a simple resource that provides the same ``.chat.post_message()`` API, using the
 decorator:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_full.py
-   :lines: 21-36
-   :emphasize-lines: 14
+   :lines: 25-41
+   :linenos:
+   :emphasize-lines: 3,10
 
 As you can see, this resource has a different configuration. As highlighted above, instead of
-requiring a Slack token, we've specified an "output" string configuration for the name of the file
+requiring a Slack token, we've specified an "output_path" string configuration for the name of the file
 it'll write to.
 
 In order to run this pipeline, we invoke it in this way:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_full.py
-   :lines: 59-63
+   :lines: 67-73
+   :linenos:
    :dedent: 4
-   :emphasize-lines: 3-4
+   :emphasize-lines: 4-6
 
 Now we can simply change the mode via :py:class:`RunConfig <dagster.RunConfig>` to toggle which
-implementation of ``say_hi`` is used. The complete example including both "local" and "production"
+implementation of ``slack`` is used. The complete example including both "local" and "production"
 modes is shown below:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_full.py
-    :emphasize-lines: 44-45, 53, 61
+    :emphasize-lines: 61-64, 69-72 
+    :linenos:
     :caption: resources_full.py
 
 Note for each of the ``execute_pipeline`` invocations we are selecting a mode via the
-:py:class:`RunConfig <dagster.RunConfig>` and then parameterizing the ``say_hi`` resource with the
+:py:class:`RunConfig <dagster.RunConfig>` and then parameterizing the ``slack`` resource with the
 appropriate config for that mode.
 
 In the next section, we'll see how to declaratively specify :doc:`Repositories <repos>` to

@@ -1,30 +1,26 @@
+# pylint: disable=no-value-for-parameter
+
 import collections
 
-from dagster import (
-    Any,
-    DependencyDefinition,
-    Field,
-    InputDefinition,
-    PipelineDefinition,
-    String,
-    lambda_solid,
-    solid,
-)
+from dagster import Any, Field, lambda_solid, solid, pipeline, as_dagster_type
+
+Counter = as_dagster_type(collections.Counter)
 
 
-@solid(inputs=[InputDefinition('word', String)], config_field=Field(Any))
-def multiply_the_word(context, word):
+@solid(config_field=Field(Any))
+def multiply_the_word(context, word: str) -> str:
     return word * context.solid_config['factor']
 
 
-@lambda_solid(inputs=[InputDefinition('word')])
-def count_letters(word):
+@lambda_solid
+def count_letters(word: str) -> Counter:
     return collections.Counter(word)
 
 
+@pipeline
+def configuration_schema_pipeline(_):
+    return count_letters(multiply_the_word())
+
+
 def define_configuration_schema_pipeline():
-    return PipelineDefinition(
-        name='configuration_schema_pipeline',
-        solids=[multiply_the_word, count_letters],
-        dependencies={'count_letters': {'word': DependencyDefinition('multiply_the_word')}},
-    )
+    return configuration_schema_pipeline

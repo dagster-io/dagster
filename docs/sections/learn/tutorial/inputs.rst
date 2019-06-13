@@ -8,7 +8,7 @@ Let's return to our hello world example. But this time, we'll make the string
 the solid returns be parameterized based on inputs.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
-   :lines: 1-17
+   :lines: 1-12
    :linenos:
    :caption: inputs.py
 
@@ -24,12 +24,12 @@ Python API
 ~~~~~~~~~~
 In the Python API, pipeline configuration is specified in the second argument to
 :py:func:`execute_pipeline <dagster.execute_pipeline>`, which must be a dict. This dict contains
-*all* of the configuration to execute an entire pipeline. It may have many sections, but we'll only
+*all* of the configuration to execute an entire pipeline. It is divided into sections, but we'll only
 use one of them here: per-solid configuration specified under the key ``solids``:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
     :linenos:
-    :lines: 25,27,29-31
+    :lines: 22-30
     :dedent: 8
 
 The ``solids`` dict is keyed by solid name, and each solid is configured by a dict that may have
@@ -41,7 +41,7 @@ using the python API:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
     :linenos:
-    :lines: 20-22,25,27,29-32
+    :lines: 19-21,24-31
 
 CLI
 ~~~
@@ -107,12 +107,12 @@ Click on the red dot on the execution step that failed and a detailed stacktrace
 It would be better if we could catch this error earlier, when we specify the config. So let's
 make the inputs typed.
 
-A user can apply types to inputs and outputs. In this case we just want to type them as the
+A user can apply types to inputs and outputs using python type annotation syntax. In this case we just want to type them as the
 built-in ``String``.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
-   :lines: 35-40
-   :emphasize-lines: 1
+   :lines: 34-36
+   :emphasize-lines: 2
    :caption: inputs.py
 
 By using typed input instead we can catch this error prior to execution.

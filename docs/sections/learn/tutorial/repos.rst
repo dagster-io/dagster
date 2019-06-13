@@ -22,10 +22,11 @@ Repositories are declared using a new API,
 :py:func:`RepositoryDefinition <dagster.RepositoryDefinition>`:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/repos.py
+   :linenos:
    :caption: repos.py
 
 Note that the name of the pipeline in the ``RepositoryDefinition`` must match the name we declared
-for it in its ``PipelineDefinition``. Don't worry, if these names don't match, you'll see a helpful
+for it in its ``pipeline`` (the default is the function name). Don't worry, if these names don't match, you'll see a helpful
 error message.
 
 If you save this file as ``repos.py``, you can then run the command line tools on it. Try running:

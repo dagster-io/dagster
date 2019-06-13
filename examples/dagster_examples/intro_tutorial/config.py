@@ -1,10 +1,10 @@
+# pylint: disable=no-value-for-parameter
 # encoding: utf-8
-# py27 compat
 
-from dagster import execute_pipeline, solid, Field, PipelineDefinition, String
+from dagster import execute_pipeline, solid, Field, pipeline
 
 
-@solid(config_field=Field(String, is_optional=True, default_value='en-us'))
+@solid(config_field=Field(str, is_optional=True, default_value='en-us'))
 def hello_with_config(context):
     if context.solid_config == 'haw':
         return 'Aloha honua!'
@@ -14,15 +14,20 @@ def hello_with_config(context):
         return 'Hello, world!'
 
 
-def define_hello_with_config_pipeline():
-    return PipelineDefinition(name='hello_with_config_pipeline', solids=[hello_with_config])
+@pipeline
+def hello_with_config_pipeline(_):
+    hello_with_config()
 
 
 def run():
     execute_pipeline(
-        define_hello_with_config_pipeline(), {'solids': {'hello_with_config': {'config': 'cn'}}}
+        hello_with_config_pipeline, {'solids': {'hello_with_config': {'config': 'cn'}}}
     )
 
 
 if __name__ == '__main__':
     run()
+
+
+def define_hello_with_config_pipeline():
+    return hello_with_config_pipeline
