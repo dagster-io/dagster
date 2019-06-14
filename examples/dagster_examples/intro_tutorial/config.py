@@ -27,7 +27,3 @@ def run():
 
 if __name__ == '__main__':
     run()
-
-
-def define_hello_with_config_pipeline():
-    return hello_with_config_pipeline

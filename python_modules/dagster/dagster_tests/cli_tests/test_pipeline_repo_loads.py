@@ -154,10 +154,7 @@ def test_load_from_pipeline_file():
 
 def test_load_from_pipeline_module():
     pipeline = handle_for_pipeline_cli_args(
-        {
-            'module_name': 'dagster_examples.intro_tutorial.repos',
-            'fn_name': 'define_repo_demo_pipeline',
-        }
+        {'module_name': 'dagster_examples.intro_tutorial.repos', 'fn_name': 'repo_demo_pipeline'}
     ).build_pipeline_definition()
 
     assert isinstance(pipeline, PipelineDefinition)

@@ -99,7 +99,7 @@ def create_airflow_dags(clean_airflow_home):
             '--module-name',
             'dagster_examples.toys.resources',
             '--fn-name',
-            'define_resources_pipeline',
+            'define_resource_pipeline',
         ],
     )
     runner.invoke(

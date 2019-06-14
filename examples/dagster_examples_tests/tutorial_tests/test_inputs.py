@@ -3,7 +3,7 @@ import pytest
 from dagster import PipelineConfigEvaluationError, execute_pipeline
 from dagster.utils import check_cli_execute_file_pipeline, script_relative_path
 from dagster_examples.intro_tutorial.inputs import (
-    define_hello_typed_inputs_pipeline,
+    hello_typed_inputs_pipeline,
     execute_with_another_world,
 )
 
@@ -18,7 +18,7 @@ def test_hello_inputs_parameterized_pipeline():
 def test_hello_inputs_parameterized_cli_pipeline():
     check_cli_execute_file_pipeline(
         script_relative_path('../../dagster_examples/intro_tutorial/inputs.py'),
-        'define_hello_inputs_pipeline',
+        'hello_inputs_pipeline',
         script_relative_path('../../dagster_examples/intro_tutorial/inputs_env.yaml'),
     )
 
@@ -32,7 +32,7 @@ def test_hello_typed_inputs():
         ),
     ):
         execute_pipeline(
-            define_hello_typed_inputs_pipeline(),
+            hello_typed_inputs_pipeline,
             {'solids': {'add_hello_to_word_typed': {'inputs': {'word': {'value': 343}}}}},
         )
 
@@ -43,14 +43,14 @@ def test_hello_typed_bad_structure():
         match='Value for selector type String.InputSchema must be a dict',
     ):
         execute_pipeline(
-            define_hello_typed_inputs_pipeline(),
+            hello_typed_inputs_pipeline,
             {'solids': {'add_hello_to_word_typed': {'inputs': {'word': {'Foobar Baz'}}}}},
         )
 
 
 def test_hello_typed():
     result = execute_pipeline(
-        define_hello_typed_inputs_pipeline(),
+        hello_typed_inputs_pipeline,
         {'solids': {'add_hello_to_word_typed': {'inputs': {'word': {'value': 'Foobar Baz'}}}}},
     )
     assert result.success

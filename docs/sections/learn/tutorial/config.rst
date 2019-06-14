@@ -58,13 +58,13 @@ Now you can run this pipeline with this config file like so:
 .. code-block:: console
 
    $ dagster pipeline execute -f config.py \
-   -n define_hello_with_config_pipeline -e config_env.yaml
+   -n hello_with_config_pipeline -e config_env.yaml
 
 To run this example from dagit, use the following command:
 
 .. code-block:: console
 
-   $ dagit -f config.py -n define_hello_with_config_pipeline
+   $ dagit -f config.py -n hello_with_config_pipeline
 
 Just as with configurable inputs, you can edit the configuration on the fly in dagit's built-in
 config editor. Try switching languages and rerunning the pipeline!

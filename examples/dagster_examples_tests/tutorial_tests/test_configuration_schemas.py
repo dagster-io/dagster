@@ -2,10 +2,10 @@ import pytest
 
 from dagster import execute_pipeline, PipelineConfigEvaluationError
 from dagster_examples.intro_tutorial.configuration_schemas_basic import (
-    define_configuration_schema_pipeline,
+    configuration_schema_pipeline,
 )
 from dagster_examples.intro_tutorial.configuration_schemas import (
-    define_configuration_schema_pipeline as define_typed_configuration_schema_pipeline,
+    configuration_schema_pipeline as typed_configuration_schema_pipeline,
 )
 from dagster.utils import script_relative_path
 from dagster.utils.yaml_utils import load_yaml_from_path
@@ -18,7 +18,7 @@ def intro_tutorial_path(path):
 
 def test_demo_configuration_schema_pipeline_correct_yaml():
     result = execute_pipeline(
-        define_configuration_schema_pipeline(),
+        configuration_schema_pipeline,
         load_yaml_from_path(intro_tutorial_path('configuration_schemas.yaml')),
     )
     assert result.success
@@ -34,7 +34,7 @@ def test_demo_configuration_schema_pipeline_correct_yaml():
 def test_demo_configuration_schema_pipeline_runtime_error():
     with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
         execute_pipeline(
-            define_configuration_schema_pipeline(),
+            configuration_schema_pipeline,
             load_yaml_from_path(intro_tutorial_path('configuration_schemas_bad_config.yaml')),
         )
 
@@ -47,14 +47,14 @@ def test_demo_configuration_schema_pipeline_wrong_field():
         match=('Undefined field "multiply_the_word_with_typed_config" at path ' 'root:solids'),
     ):
         execute_pipeline(
-            define_configuration_schema_pipeline(),
+            configuration_schema_pipeline,
             load_yaml_from_path(intro_tutorial_path('configuration_schemas_wrong_field.yaml')),
         )
 
 
 def test_typed_demo_configuration_schema_pipeline_correct_yaml():
     result = execute_pipeline(
-        define_typed_configuration_schema_pipeline(),
+        typed_configuration_schema_pipeline,
         load_yaml_from_path(intro_tutorial_path('configuration_schemas_typed.yaml')),
     )
     assert result.success
@@ -75,7 +75,7 @@ def test_typed_demo_configuration_schema_type_mismatch_error():
         ),
     ):
         execute_pipeline(
-            define_typed_configuration_schema_pipeline(),
+            typed_configuration_schema_pipeline,
             load_yaml_from_path(
                 script_relative_path(
                     (

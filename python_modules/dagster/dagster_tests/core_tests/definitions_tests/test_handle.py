@@ -62,7 +62,7 @@ def test_repo_yaml_file_dynamic_load():
 
 def test_repo_module_dynamic_load():
     repository = ExecutionTargetHandle.for_pipeline_module(
-        module_name='dagster_examples.intro_tutorial.repos', fn_name='define_repo_demo_pipeline'
+        module_name='dagster_examples.intro_tutorial.repos', fn_name='repo_demo_pipeline'
     ).build_repository_definition()
 
     assert isinstance(repository, RepositoryDefinition)
@@ -80,7 +80,7 @@ def test_repo_file_dynamic_load():
 
 def test_repo_module_dynamic_load_from_pipeline():
     repository = ExecutionTargetHandle.for_pipeline_module(
-        module_name='dagster_examples.intro_tutorial.repos', fn_name='define_repo_demo_pipeline'
+        module_name='dagster_examples.intro_tutorial.repos', fn_name='repo_demo_pipeline'
     ).build_repository_definition()
 
     assert isinstance(repository, RepositoryDefinition)

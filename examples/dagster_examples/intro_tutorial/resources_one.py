@@ -17,10 +17,6 @@ def resources_pipeline(_):
     post_hello_message()
 
 
-def define_resources_pipeline():
-    return resources_pipeline
-
-
 if __name__ == '__main__':
     execute_pipeline(
         resources_pipeline,
