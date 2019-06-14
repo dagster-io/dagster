@@ -9,7 +9,6 @@
 
 export interface SidebarTabbedContainerSolidFragment_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  isNothing: boolean;
   name: string | null;
   displayName: string;
   description: string | null;
@@ -53,7 +52,6 @@ export interface SidebarTabbedContainerSolidFragment_outputs {
 
 export interface SidebarTabbedContainerSolidFragment_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  isNothing: boolean;
   name: string | null;
   displayName: string;
   description: string | null;
