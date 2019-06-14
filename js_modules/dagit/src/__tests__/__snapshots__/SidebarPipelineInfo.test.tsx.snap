@@ -3,18 +3,22 @@
 exports[`renders given a pipeline with resources and loggers 1`] = `
 <div>
   <div
-    className="sc-bxivhb dXxkna"
+    className="sc-htoDjs icLeVm"
   >
-    Pipeline
+    <div
+      className="sc-EHOje dltgwV"
+    >
+      Pipeline
+    </div>
+    <h3
+      className="sc-bwzfXH kAXACy"
+    >
+      A good test pipeline
+    </h3>
   </div>
-  <h3
-    className="sc-bwzfXH kdXhPV"
-  >
-    A good test pipeline
-  </h3>
   <div>
     <div
-      className="sc-EHOje eUtHcH"
+      className="sc-gzVnrw kmnULz"
       onClick={[Function]}
     >
       Description
@@ -59,10 +63,10 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
         }
       >
         <div
-          className="sc-bZQynM fywpQW"
+          className="sc-htoDjs icLeVm"
         >
           <div
-            className="sc-gzVnrw ejdkFD"
+            className="sc-dnqmqq jAGQAf"
             onDoubleClick={[Function]}
             style={
               Object {
@@ -84,7 +88,7 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
   </div>
   <div>
     <div
-      className="sc-EHOje eUtHcH"
+      className="sc-gzVnrw kmnULz"
       onClick={[Function]}
     >
       Modes
@@ -129,10 +133,10 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
         }
       >
         <div
-          className="sc-bZQynM fywpQW"
+          className="sc-htoDjs icLeVm"
         >
           <div
-            className="sc-ifAKCX eQlIwf"
+            className="sc-bZQynM dPnpZk"
           >
             <h4
               className="sc-htpNat gNWcHK"
@@ -140,7 +144,7 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
               one_good_mode
             </h4>
             <div
-              className="sc-gzVnrw ejdkFD"
+              className="sc-dnqmqq jAGQAf"
               onDoubleClick={[Function]}
               style={
                 Object {
@@ -157,7 +161,7 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
               </div>
             </div>
             <div
-              className="sc-fjdhpX hkRxps"
+              className="sc-cSHVUG lgPeWV"
             >
               <span
                 className="bp3-icon bp3-icon-layers"
@@ -181,12 +185,12 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
               </span>
               <div>
                 <h4
-                  className="sc-jTzLTM cOeylB sc-htpNat gNWcHK"
+                  className="sc-jzJRlG hdUmqf sc-htpNat gNWcHK"
                 >
                   a_resource
                 </h4>
                 <div
-                  className="sc-gzVnrw ejdkFD"
+                  className="sc-dnqmqq jAGQAf"
                   onDoubleClick={[Function]}
                   style={
                     Object {
@@ -203,10 +207,10 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                   </div>
                 </div>
                 <code
-                  className="sc-iwsKbI dTZquL"
+                  className="sc-gqjmRU bRLIya"
                 >
                   <div
-                    className="sc-VigVT bJGoMT"
+                    className="sc-fjdhpX edikPP"
                   >
                     /* A configuration dictionary with typed fields */
                   </div>
@@ -228,7 +232,7 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
             </div>
           </div>
           <div
-            className="sc-ifAKCX eQlIwf"
+            className="sc-bZQynM dPnpZk"
           >
             <h4
               className="sc-htpNat gNWcHK"
@@ -236,7 +240,7 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
               another_mode
             </h4>
             <div
-              className="sc-gzVnrw ejdkFD"
+              className="sc-dnqmqq jAGQAf"
               onDoubleClick={[Function]}
               style={
                 Object {
@@ -253,7 +257,7 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
               </div>
             </div>
             <div
-              className="sc-fjdhpX hkRxps"
+              className="sc-cSHVUG lgPeWV"
             >
               <span
                 className="bp3-icon bp3-icon-layers"
@@ -277,12 +281,12 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
               </span>
               <div>
                 <h4
-                  className="sc-jTzLTM cOeylB sc-htpNat gNWcHK"
+                  className="sc-jzJRlG hdUmqf sc-htpNat gNWcHK"
                 >
                   a_resource
                 </h4>
                 <div
-                  className="sc-gzVnrw ejdkFD"
+                  className="sc-dnqmqq jAGQAf"
                   onDoubleClick={[Function]}
                   style={
                     Object {
@@ -299,80 +303,10 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                   </div>
                 </div>
                 <code
-                  className="sc-iwsKbI dTZquL"
+                  className="sc-gqjmRU bRLIya"
                 >
                   <div
-                    className="sc-VigVT bJGoMT"
-                  >
-                    /* A configuration dictionary with typed fields */
-                  </div>
-                  <span>
-                    foo
-                  </span>
-                  <span
-                    style={
-                      Object {
-                        "color": "#BF7326",
-                        "fontWeight": 500,
-                      }
-                    }
-                  >
-                    ?
-                  </span>
-                </code>
-              </div>
-            </div>
-            <div
-              className="sc-fjdhpX hkRxps"
-            >
-              <span
-                className="bp3-icon bp3-icon-layers"
-                icon="layers"
-              >
-                <svg
-                  data-icon="layers"
-                  fill="#202B33"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    layers
-                  </desc>
-                  <path
-                    d="M.55 4.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5a.998.998 0 0 0-.06-1.81L8.4.08a1.006 1.006 0 0 0-.79 0l-6.99 3a.992.992 0 0 0-.07 1.81zM15 10c-.16 0-.31.04-.45.11L8 13.38 1.45 10.1c-.14-.06-.29-.1-.45-.1-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1zm0-3.5c-.16 0-.31.04-.45.11L8 9.88 1.45 6.61A.997.997 0 0 0 1 6.5c-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              <div>
-                <h4
-                  className="sc-jTzLTM cOeylB sc-htpNat gNWcHK"
-                >
-                  b_resource
-                </h4>
-                <div
-                  className="sc-gzVnrw ejdkFD"
-                  onDoubleClick={[Function]}
-                  style={
-                    Object {
-                      "maxHeight": 320,
-                    }
-                  }
-                >
-                  <div>
-                    <div>
-                      <p>
-                        Very useful
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <code
-                  className="sc-iwsKbI dTZquL"
-                >
-                  <div
-                    className="sc-VigVT bJGoMT"
+                    className="sc-fjdhpX edikPP"
                   >
                     /* A configuration dictionary with typed fields */
                   </div>
@@ -419,10 +353,80 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                 <h4
                   className="sc-jzJRlG hdUmqf sc-htpNat gNWcHK"
                 >
+                  b_resource
+                </h4>
+                <div
+                  className="sc-dnqmqq jAGQAf"
+                  onDoubleClick={[Function]}
+                  style={
+                    Object {
+                      "maxHeight": 320,
+                    }
+                  }
+                >
+                  <div>
+                    <div>
+                      <p>
+                        Very useful
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <code
+                  className="sc-gqjmRU bRLIya"
+                >
+                  <div
+                    className="sc-fjdhpX edikPP"
+                  >
+                    /* A configuration dictionary with typed fields */
+                  </div>
+                  <span>
+                    foo
+                  </span>
+                  <span
+                    style={
+                      Object {
+                        "color": "#BF7326",
+                        "fontWeight": 500,
+                      }
+                    }
+                  >
+                    ?
+                  </span>
+                </code>
+              </div>
+            </div>
+            <div
+              className="sc-chPdSV kBkKzM"
+            >
+              <span
+                className="bp3-icon bp3-icon-layers"
+                icon="layers"
+              >
+                <svg
+                  data-icon="layers"
+                  fill="#202B33"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    layers
+                  </desc>
+                  <path
+                    d="M.55 4.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5a.998.998 0 0 0-.06-1.81L8.4.08a1.006 1.006 0 0 0-.79 0l-6.99 3a.992.992 0 0 0-.07 1.81zM15 10c-.16 0-.31.04-.45.11L8 13.38 1.45 10.1c-.14-.06-.29-.1-.45-.1-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1zm0-3.5c-.16 0-.31.04-.45.11L8 9.88 1.45 6.61A.997.997 0 0 0 1 6.5c-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <div>
+                <h4
+                  className="sc-kAzzGY gNiSmw sc-htpNat gNWcHK"
+                >
                   console
                 </h4>
                 <div
-                  className="sc-gzVnrw ejdkFD"
+                  className="sc-dnqmqq jAGQAf"
                   onDoubleClick={[Function]}
                   style={
                     Object {
@@ -439,20 +443,20 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                   </div>
                 </div>
                 <code
-                  className="sc-iwsKbI dTZquL"
+                  className="sc-gqjmRU bRLIya"
                 >
                   <div
-                    className="sc-VigVT bJGoMT"
+                    className="sc-fjdhpX edikPP"
                   >
                     /* A configuration dictionary with typed fields */
                   </div>
                   {
                   <div
-                    className="sc-gZMcBi giNnHm"
+                    className="sc-VigVT fIhGog"
                   >
                       
                     <span
-                      className="sc-gqjmRU cjhCQz"
+                      className="sc-jTzLTM eSIHQs"
                     >
                       log_level
                     </span>
@@ -472,11 +476,11 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                     </span>
                   </div>
                   <div
-                    className="sc-gZMcBi giNnHm"
+                    className="sc-VigVT fIhGog"
                   >
                       
                     <span
-                      className="sc-gqjmRU cjhCQz"
+                      className="sc-jTzLTM eSIHQs"
                     >
                       name
                     </span>
