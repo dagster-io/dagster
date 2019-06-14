@@ -34,7 +34,7 @@ def python_modules_tox_tests(directory, prereqs=None, env=None):
         tox_command += [
             "pip install tox;",
             "cd python_modules/{directory}".format(directory=directory),
-            "tox -e {ver}".format(ver=TOX_MAP[version]),
+            "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
             "mv .coverage {file}".format(file=coverage),
             "buildkite-agent artifact upload {file}".format(file=coverage),
         ]
@@ -73,7 +73,7 @@ def airline_demo_tests():
                 # Can't use host networking on buildkite and communicate via localhost
                 # between these sibling containers, so pass along the ip.
                 "export DAGSTER_AIRLINE_DEMO_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' airline-demo-db`",
-                "tox -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
+                "tox -vv -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
@@ -101,7 +101,7 @@ def events_demo_tests():
                 "popd",
                 "pushd examples",
                 "pip install tox",
-                "tox -c event.tox -e {ver}".format(ver=TOX_MAP[version]),
+                "tox -vv -c event.tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )

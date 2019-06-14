@@ -74,7 +74,6 @@ def _do_setup(name='dagster'):
             # 'snapshottest==0.5.0',
             # 'Sphinx>=2.0.1',
             # 'sphinx-autobuild>=0.7.1',
-            # 'yapf>=0.22.0',
             # 'twine>=1.11.0',
             # 'pre-commit'>=1.10.1',
         ],

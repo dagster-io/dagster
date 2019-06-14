@@ -4,10 +4,12 @@ envlist = py36,py35
 [testenv]
 passenv = CI_* COVERALLS_REPO_TOKEN TOXENV SLUGIFY_USES_TEXT_UNIDECODE AWS_SECRET_ACCESS_KEY AWS_ACCESS_KEY_ID AIRFLOW_HOME JAVA_HOME DAGSTER_AIRLINE_DEMO_DB_HOST
 deps =
-  -e ../python_modules/dagster
+  -r ./dev-requirements.txt
   -r ../python_modules/dagster/dev-requirements.txt
+  -e ../python_modules/dagster
   -e ../python_modules/dagstermill
   -e ../python_modules/libraries/dagster-aws
+  -e ../python_modules/libraries/dagster-spark
   -e ../python_modules/libraries/dagster-pyspark
   -e ../python_modules/dagster-airflow
 commands =
@@ -21,10 +23,12 @@ commands =
 
 [testenv:py37]
 deps =
-  -e ../python_modules/dagster
+  -r ./dev-requirements.txt
   -r ../python_modules/dagster/dev-requirements.txt
+  -e ../python_modules/dagster
   -e ../python_modules/dagstermill
   -e ../python_modules/libraries/dagster-aws
+  -e ../python_modules/libraries/dagster-spark
   -e ../python_modules/libraries/dagster-pyspark
 commands =
   coverage erase

@@ -19,22 +19,26 @@ install_dev_python_modules:
 	# On machines with less memory, pyspark install will fail... see:
 	# https://stackoverflow.com/a/31526029/11295366
 	pip --no-cache-dir install pyspark==2.4.0
+	
+	#
+	# Dask installation will fail for Python 2.7 (Dask doesn't work w/ py27 on macOS)
+	# See https://github.com/dagster-io/dagster/issues/1486
 
-	pip install -r python_modules/dagster/dev-requirements.txt
+	# dagster-pandas must come before dasgtermill because of dependency
+	# See https://github.com/dagster-io/dagster/issues/1485
+
 	pip install -e python_modules/dagster
 	pip install -e python_modules/dagster-graphql
 	pip install -e python_modules/dagit
-	pip install -r python_modules/dagit/dev-requirements.txt
+	pip install -e python_modules/libraries/dagster-pandas
 	pip install -e python_modules/dagstermill
 	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow
 	# This installation will fail for Python 2.7 (Dask doesn't work w/ py27 on macOS)
 	-pip install -e python_modules/dagster-dask
 	pip install -e python_modules/libraries/dagster-aws
-	pip install -r python_modules/libraries/dagster-aws/dev-requirements.txt
 	pip install -e python_modules/libraries/dagster-datadog
 	pip install -e python_modules/libraries/dagster-gcp
 	pip install -e python_modules/libraries/dagster-ge
-	pip install -e python_modules/libraries/dagster-pandas
 	pip install -e python_modules/libraries/dagster-slack
 	pip install -e python_modules/libraries/dagster-snowflake
 	pip install -e python_modules/libraries/dagster-spark
@@ -44,6 +48,9 @@ install_dev_python_modules:
 	pip install -e python_modules/libraries/dagster-datadog
 	pip install -e python_modules/automation
 	pip install -e examples[full]
+	pip install -r python_modules/dagster/dev-requirements.txt
+	pip install -r python_modules/dagit/dev-requirements.txt
+	pip install -r python_modules/libraries/dagster-aws/dev-requirements.txt
 	pip install -r bin/requirements.txt
 
 graphql:
