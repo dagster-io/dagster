@@ -22,27 +22,27 @@ from .stack import get_friendly_path_info
 from .traversal_context import TraversalContext
 
 
-def _validate_config(context):
+def _evaluate_config(context):
     check.inst_param(context, 'context', TraversalContext)
 
     if context.config_type.is_scalar:
         if not context.config_type.is_config_scalar_valid(context.config_value):
             context.add_error(create_scalar_error(context))
-        return None
-
-    elif context.config_type.is_any:
-        # no-op: we're safe
+            return None
         return context.config_value
 
+    elif context.config_type.is_any:
+        return context.config_value  # yolo
+
     elif context.config_type.is_selector:
-        return validate_selector_config_value(context)
+        return evaluate_selector_config(context)
     elif context.config_type.is_composite:
-        return validate_composite_config_value(context)
+        return evaluate_composite_config(context)
     elif context.config_type.is_list:
-        return validate_list_value(context)
+        return evaluate_list_config(context)
     elif context.config_type.is_nullable:
         if context.config_value is not None:
-            return _validate_config(
+            return _evaluate_config(
                 TraversalContext(
                     context.config_type.inner_type,
                     context.config_value,
@@ -52,12 +52,12 @@ def _validate_config(context):
             )
         return None
     elif context.config_type.is_enum:
-        return validate_enum_value(context)
+        return evaluate_enum_config(context)
     else:
         check.failed('Unsupported type {name}'.format(name=context.config_type.name))
 
 
-def validate_enum_value(context):
+def evaluate_enum_config(context):
     check.inst_param(context, 'context', TraversalContext)
     check.param_invariant(context.config_type.is_enum, 'enum_type')
 
@@ -69,11 +69,13 @@ def validate_enum_value(context):
         context.add_error(create_enum_value_missing_error(context))
         return None
 
+    return context.config_type.to_python_value(context.config_value)
+
 
 ## Selectors
 
 
-def validate_selector_config_value(context):
+def evaluate_selector_config(context):
     check.inst_param(context, 'context', TraversalContext)
     check.param_invariant(context.config_type.is_selector, 'selector_type')
 
@@ -107,7 +109,7 @@ def validate_selector_config_value(context):
             return None
 
     parent_field = context.config_type.fields[field_name]
-    _validate_config(
+    child_value = _evaluate_config(
         TraversalContext(
             parent_field.config_type,
             incoming_field_value,
@@ -116,11 +118,13 @@ def validate_selector_config_value(context):
         )
     )
 
+    return {field_name: child_value}
+
 
 ## Composites
 
 
-def validate_composite_config_value(context):
+def evaluate_composite_config(context):
     check.inst_param(context, 'context', TraversalContext)
     check.param_invariant(context.config_type.is_composite, 'composite_type')
 
@@ -139,9 +143,11 @@ def validate_composite_config_value(context):
     incoming_fields = set(config_value.keys())
     extra_fields = list(incoming_fields - defined_fields)
 
+    # We'll build up a dict of processed config values below
+    output_config_value = {}
+
     # Here, we support permissive composites. In cases where we know the set of permissible keys a
-    # priori, we validate against the config. For permissive composites, we give the user an escape
-    # hatch where they can specify arbitrary fields...
+    # priori, we validate against the config:
     if not context.config_type.is_permissive_composite:
         if extra_fields:
             if len(extra_fields) == 1:
@@ -149,12 +155,17 @@ def validate_composite_config_value(context):
             else:
                 context.add_error(create_fields_not_defined_error(context, extra_fields))
 
+    # And for permissive fields, we just pass along to the output without further validation
+    else:
+        for field_name in extra_fields:
+            output_config_value[field_name] = config_value[field_name]
+
     # ...However, for any fields the user *has* told us about, we validate against their config
     # specifications
     missing_fields = []
     for expected_field, field_def in fields.items():
         if expected_field in incoming_fields:
-            _validate_config(
+            result = _evaluate_config(
                 TraversalContext(
                     field_def.config_type,
                     context.config_value[expected_field],
@@ -162,8 +173,11 @@ def validate_composite_config_value(context):
                     context.errors,
                 )
             )
+            output_config_value[expected_field] = result
+
         elif field_def.is_optional:
-            pass
+            if field_def.default_provided:
+                output_config_value[expected_field] = field_def.default_value
 
         else:
             check.invariant(not field_def.default_provided)
@@ -176,11 +190,13 @@ def validate_composite_config_value(context):
             err = create_missing_required_fields_error(context, missing_fields)
         context.add_error(err)
 
+    return output_config_value
+
 
 ## Lists
 
 
-def validate_list_value(context):
+def evaluate_list_config(context):
     check.inst_param(context, 'context', TraversalContext)
     check.param_invariant(context.config_type.is_list, 'list_type')
 
@@ -192,7 +208,7 @@ def validate_list_value(context):
         return None
 
     return [
-        _validate_config(
+        _evaluate_config(
             TraversalContext(
                 config_type.inner_type, item, context.stack.with_list_index(index), context.errors
             )

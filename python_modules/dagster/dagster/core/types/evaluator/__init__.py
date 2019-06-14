@@ -7,7 +7,6 @@ from dagster import check
 from dagster.utils import single_item, make_readonly_value
 
 from ..config import ConfigType
-from ..default_applier import apply_default_values
 from ..type_printer import print_config_type_to_string
 
 from .errors import (
@@ -22,7 +21,7 @@ from .errors import (
 )
 from .stack import get_friendly_path_msg, get_friendly_path_info, EvaluationStack
 from .traversal_context import TraversalContext
-from .validators import _validate_config
+from .evaluation import _evaluate_config
 
 
 class EvaluateValueResult(namedtuple('_EvaluateValueResult', 'success value errors')):
@@ -47,20 +46,20 @@ class EvaluateValueResult(namedtuple('_EvaluateValueResult', 'success value erro
 def evaluate_config_value(config_type, config_value):
     check.inst_param(config_type, 'config_type', ConfigType)
 
-    errors = validate_config(config_type, config_value)
+    errors, value = evaluate_config(config_type, config_value)
+
     if errors:
         return EvaluateValueResult(success=False, value=None, errors=errors)
-
-    value = apply_default_values(config_type, config_value)
 
     return EvaluateValueResult(success=True, value=make_readonly_value(value), errors=[])
 
 
-def validate_config(config_type, config_value):
+def evaluate_config(config_type, config_value):
     check.inst_param(config_type, 'config_type', ConfigType)
 
     errors = []
     stack = EvaluationStack(config_type=config_type, entries=[])
 
-    _validate_config(TraversalContext(config_type, config_value, stack, errors))
-    return errors
+    value = _evaluate_config(TraversalContext(config_type, config_value, stack, errors))
+
+    return (errors, value)

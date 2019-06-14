@@ -5,7 +5,6 @@ from dagster.core.definitions import SolidHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector
 from dagster.core.types.config import ALL_CONFIG_BUILTINS, ConfigType, ConfigTypeAttributes
-from dagster.core.types.default_applier import apply_default_values
 from dagster.core.types.field_utils import FieldImpl, check_opt_field_param
 from dagster.core.types.iterate_types import iterate_config_types
 from dagster.core.types.runtime import construct_runtime_type_dictionary
@@ -35,20 +34,6 @@ def _is_selector_field_optional(config_type):
     else:
         _name, field = single_item(config_type.fields)
         return field.is_optional
-
-
-def define_maybe_optional_selector_field(config_cls):
-    is_optional = _is_selector_field_optional(config_cls.inst())
-
-    return (
-        Field(
-            config_cls,
-            is_optional=is_optional,
-            default_value=apply_default_values(config_cls.inst(), None),
-        )
-        if is_optional
-        else Field(config_cls, is_optional=False)
-    )
 
 
 def define_resource_cls(parent_name, resource_name, resource_def):
