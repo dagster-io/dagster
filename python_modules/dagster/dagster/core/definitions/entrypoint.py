@@ -5,6 +5,9 @@ import os
 from collections import namedtuple
 
 from dagster import check
+from .pipeline import PipelineDefinition
+from .repository import RepositoryDefinition
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils import load_yaml_from_path
 
 
@@ -13,9 +16,36 @@ class LoaderEntrypoint(namedtuple('_LoaderEntrypoint', 'module module_name fn_na
         return super(LoaderEntrypoint, cls).__new__(cls, module, module_name, fn_name)
 
     def perform_load(self):
-        fn = getattr(self.module, self.fn_name)
-        check.is_callable(fn)
-        return fn()
+        # in the decorator case the attribute will be the actual definition
+        if not hasattr(self.module, self.fn_name):
+            raise DagsterInvariantViolationError(
+                '{name} not found in module {module}.'.format(name=self.fn_name, module=self.module)
+            )
+
+        fn_repo_or_pipeline = getattr(self.module, self.fn_name)
+        if isinstance(fn_repo_or_pipeline, RepositoryDefinition) or isinstance(
+            fn_repo_or_pipeline, PipelineDefinition
+        ):
+            return fn_repo_or_pipeline
+        elif callable(fn_repo_or_pipeline):
+            repo_or_pipeline = fn_repo_or_pipeline()
+
+            if isinstance(repo_or_pipeline, (RepositoryDefinition, PipelineDefinition)):
+                return repo_or_pipeline
+
+            raise DagsterInvariantViolationError(
+                '{fn_name} is a function but must return a PipelineDefinition '
+                'or a RepositoryDefinition, or be decorated with @pipeline.'.format(
+                    fn_name=self.fn_name
+                )
+            )
+        else:
+            raise DagsterInvariantViolationError(
+                '{fn_name} must be a function that returns a PipelineDefinition '
+                'or a RepositoryDefinition, or a function decorated with @pipeline.'.format(
+                    fn_name=self.fn_name
+                )
+            )
 
     @staticmethod
     def from_file_target(python_file, fn_name):
