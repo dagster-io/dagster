@@ -27,14 +27,17 @@ interface IPipelineExplorerProps {
   path: string[];
   pipeline: PipelineExplorerFragment;
   handles: PipelineExplorerSolidHandleFragment[];
-  selectedHandle: PipelineExplorerSolidHandleFragment | undefined;
-  parentHandle: PipelineExplorerSolidHandleFragment | undefined;
+  selectedHandle?: PipelineExplorerSolidHandleFragment;
+  selectedDefinitionInvocations?: PipelineExplorerSolidHandleFragment[];
+  parentHandle?: PipelineExplorerSolidHandleFragment;
 }
 
 interface IPipelineExplorerState {
   filter: string;
   graphVW: number;
 }
+
+export type SolidNameOrPath = { name: string } | { path: string[] };
 
 export default class PipelineExplorer extends React.Component<
   IPipelineExplorerProps,
@@ -70,44 +73,52 @@ export default class PipelineExplorer extends React.Component<
     graphVW: 70
   };
 
-  nameToHandleID = (solidName: string) => {
-    if (solidName === "") return "";
-    return this.props.handles.find(h => h.solid.name === solidName)!.handleID;
-  };
-
-  handleAdjustPath = (fn: (handleIDs: string[]) => void) => {
+  handleAdjustPath = (fn: (solidNames: string[]) => void) => {
     const { history, pipeline, path } = this.props;
     let next = [...path];
-    fn(next);
+    const retValue = fn(next);
+    if (retValue !== undefined) {
+      throw new Error(
+        "handleAdjustPath function is expected to mutate the array"
+      );
+    }
     history.push(`/${pipeline.name}/explore/${next.join("/")}`);
   };
 
-  handleClickSolid = (solidName: string) => {
-    this.handleAdjustPath(handleIds => {
-      handleIds[handleIds.length - 1] = this.nameToHandleID(solidName);
+  handleClickSolid = (arg: SolidNameOrPath) => {
+    this.handleAdjustPath(solidNames => {
+      if ("name" in arg) {
+        solidNames[solidNames.length - 1] = arg.name;
+      } else {
+        solidNames.length = 0;
+        solidNames.push(...arg.path);
+      }
     });
   };
 
-  handleEnterCompositeSolid = (solidName: string) => {
+  handleEnterCompositeSolid = (arg: SolidNameOrPath) => {
     // To animate the rect of the composite solid expanding correctly, we need
     // to select it before entering it so we can draw the "initial state" of the
     // labeled rectangle.
-    this.handleClickSolid(solidName);
+    this.handleClickSolid(arg);
 
     window.requestAnimationFrame(() => {
-      this.handleAdjustPath(handleIds => {
-        handleIds[handleIds.length - 1] = this.nameToHandleID(solidName);
-        handleIds.push("");
+      this.handleAdjustPath(solidNames => {
+        const last = "name" in arg ? arg.name : arg.path[arg.path.length - 1];
+        solidNames[solidNames.length - 1] = last;
+        solidNames.push("");
       });
     });
   };
 
   handleLeaveCompositeSolid = () => {
-    this.handleAdjustPath(handleIds => handleIds.pop());
+    this.handleAdjustPath(solidNames => {
+      solidNames.pop();
+    });
   };
 
   handleClickBackground = () => {
-    this.handleClickSolid("");
+    this.handleClickSolid({ name: "" });
   };
 
   _layoutCacheKey: string | undefined;
@@ -124,7 +135,13 @@ export default class PipelineExplorer extends React.Component<
   };
 
   public render() {
-    const { pipeline, parentHandle, selectedHandle, path } = this.props;
+    const {
+      pipeline,
+      parentHandle,
+      selectedHandle,
+      selectedDefinitionInvocations,
+      path
+    } = this.props;
     const { filter, graphVW } = this.state;
 
     const solids = this.props.handles.map(h => h.solid);
@@ -161,7 +178,9 @@ export default class PipelineExplorer extends React.Component<
             <SolidJumpBar
               solids={solids}
               selectedSolid={selectedHandle && selectedHandle.solid}
-              onItemSelect={solid => this.handleClickSolid(solid.name)}
+              onItemSelect={solid =>
+                this.handleClickSolid({ name: solid.name })
+              }
             />
           </PathOverlay>
           <SearchOverlay style={{ background: backgroundTranslucent }}>
@@ -200,8 +219,10 @@ export default class PipelineExplorer extends React.Component<
               <SidebarTabbedContainer
                 pipeline={pipeline}
                 solid={selectedHandle && selectedHandle.solid}
+                solidDefinitionInvocations={selectedDefinitionInvocations}
                 parentSolid={parentHandle && parentHandle.solid}
                 onEnterCompositeSolid={this.handleEnterCompositeSolid}
+                onClickSolid={this.handleClickSolid}
                 {...parseQueryString(location.search || "")}
               />
             )}

@@ -13,12 +13,13 @@ import {
   SidebarDivider,
   SidebarTitle,
   SidebarSubhead,
-  SectionItemHeader,
+  SectionSmallHeader,
   SectionItemContainer
 } from "./SidebarComponents";
 import Description from "./Description";
 import ConfigTypeSchema from "./ConfigTypeSchema";
 import { SidebarSolidInfoFragment } from "./types/SidebarSolidInfoFragment";
+import { SolidNameOrPath } from "./PipelineExplorer";
 
 type SolidLinkInfo = {
   solid: { name: string };
@@ -31,8 +32,13 @@ type SolidMappingTable = {
 
 interface ISidebarSolidInfoProps {
   solid: SidebarSolidInfoFragment;
+  solidDefinitionInvocations?: {
+    handleID: string;
+    solid: SidebarSolidInfoFragment;
+  }[];
   showingSubsolids: boolean;
-  onEnterCompositeSolid: (solidName: string) => void;
+  onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
+  onClickSolid: (arg: SolidNameOrPath) => void;
 }
 
 export default class SidebarSolidInfo extends React.Component<
@@ -137,7 +143,13 @@ export default class SidebarSolidInfo extends React.Component<
   };
 
   public render() {
-    const { solid, showingSubsolids, onEnterCompositeSolid } = this.props;
+    const {
+      solid,
+      solidDefinitionInvocations,
+      showingSubsolids,
+      onClickSolid,
+      onEnterCompositeSolid
+    } = this.props;
     const { name, definition, inputs, outputs } = solid;
 
     const Plugin = pluginForMetadata(definition.metadata);
@@ -197,7 +209,7 @@ export default class SidebarSolidInfo extends React.Component<
               icon="zoom-in"
               text="Expand"
               style={{ float: "right", margin: "0 15px" }}
-              onClick={() => onEnterCompositeSolid(name)}
+              onClick={() => onEnterCompositeSolid({ name })}
             />
           )}
           <SidebarSubhead>
@@ -223,7 +235,7 @@ export default class SidebarSolidInfo extends React.Component<
         <SidebarSection title={"Inputs"}>
           {inputs.map((input, idx) => (
             <SectionItemContainer key={idx}>
-              <SectionItemHeader>{input.definition.name}</SectionItemHeader>
+              <SectionSmallHeader>{input.definition.name}</SectionSmallHeader>
               <TypeWrapper>
                 <TypeWithTooltip type={input.definition.type} />
               </TypeWrapper>
@@ -240,7 +252,7 @@ export default class SidebarSolidInfo extends React.Component<
         <SidebarSection title={"Outputs"}>
           {outputs.map((output, idx) => (
             <SectionItemContainer key={idx}>
-              <SectionItemHeader>{output.definition.name}</SectionItemHeader>
+              <SectionSmallHeader>{output.definition.name}</SectionSmallHeader>
               <TypeWrapper>
                 <TypeWithTooltip type={output.definition.type} />
               </TypeWrapper>
@@ -253,6 +265,18 @@ export default class SidebarSolidInfo extends React.Component<
             </SectionItemContainer>
           ))}
         </SidebarSection>
+        {solidDefinitionInvocations && (
+          <SidebarSection title={"All Invocations"}>
+            {solidDefinitionInvocations.map(({ solid, handleID }, idx) => (
+              <Invocation
+                key={idx}
+                solid={solid}
+                handleID={handleID}
+                onClick={() => onClickSolid({ path: handleID.split(".") })}
+              />
+            ))}
+          </SidebarSection>
+        )}
       </div>
     );
   }
@@ -287,6 +311,26 @@ const SolidLinks = (props: { title: string; items: SolidLinkInfo[] }) =>
       ))}
     </Text>
   ) : null;
+
+const Invocation = (props: {
+  onClick: () => void;
+  solid: SidebarSolidInfoFragment;
+  handleID: string;
+}) => {
+  const handlePath = props.handleID.split(".");
+  return (
+    <InvocationContainer onClick={props.onClick}>
+      {handlePath.length > 1 && (
+        <SidebarSubhead>
+          {`In ${handlePath[handlePath.length - 2]}:`}
+        </SidebarSubhead>
+      )}
+      <SectionSmallHeader style={{ marginBottom: 0 }}>
+        {props.solid.name}
+      </SectionSmallHeader>
+    </InvocationContainer>
+  );
+};
 
 const Expectations = (props: {
   items: { name: string; description: string | null }[];
@@ -355,6 +399,19 @@ const DependencyLocalIOName = styled.div`
 
 const DependencyTable = styled.table`
   width: 100%;
+`;
+
+const InvocationContainer = styled.div`
+  margin: 0 -10px;
+  padding: 10px;
+  pointer: default;
+  border-bottom: 1px solid ${Colors.LIGHT_GRAY2};
+  &:last-child {
+    border-bottom: none;
+  }
+  &:hover {
+    background: ${Colors.LIGHT_GRAY5};
+  }
 `;
 
 const DependencyArrow = (
