@@ -16,8 +16,25 @@ export class SidebarSection extends React.Component<
   ISidebarSectionProps,
   ISidebarSectionState
 > {
-  state = {
-    isOpen: this.props.collapsedByDefault === true ? false : true
+  storageKey: string;
+
+  constructor(props: ISidebarSectionProps) {
+    super(props);
+
+    this.storageKey = `sidebar-${props.title}`;
+    this.state = {
+      isOpen: {
+        true: true,
+        false: false,
+        null: this.props.collapsedByDefault === true ? false : true
+      }[`${window.localStorage.getItem(this.storageKey)}`]
+    };
+  }
+
+  onToggle = () => {
+    const isOpen = !this.state.isOpen;
+    this.setState({ isOpen });
+    window.localStorage.setItem(this.storageKey, `${isOpen}`);
   };
 
   render() {
@@ -25,12 +42,12 @@ export class SidebarSection extends React.Component<
 
     return (
       <div>
-        <SectionHeader onClick={() => this.setState({ isOpen: !isOpen })}>
+        <CollapsingHeaderBar onClick={this.onToggle}>
           {this.props.title}
           <DisclosureIcon
             icon={isOpen ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_UP}
           />
-        </SectionHeader>
+        </CollapsingHeaderBar>
         <Collapse isOpen={isOpen}>
           <SectionInner>{this.props.children}</SectionInner>
         </Collapse>
@@ -52,9 +69,16 @@ export const SidebarTitle = styled.h3`
   text-overflow: ellipsis;
 `;
 
-export const SectionItemHeader = styled.h4`
+export const SectionHeader = styled.h4`
   font-family: "Source Code Pro", monospace;
   font-size: 15px;
+  margin: 6px 0;
+`;
+
+export const SectionSmallHeader = styled.h4`
+  font-family: "Source Code Pro", monospace;
+  font-size: 14px;
+  font-weight: 500;
   margin: 6px 0;
 `;
 
@@ -72,6 +96,7 @@ export const SectionItemContainer = styled.div`
   border-bottom: 1px solid ${Colors.LIGHT_GRAY2};
   margin-bottom: 20px;
   padding-bottom: 20px;
+  font-size: 0.8rem;
   &:last-child {
     border-bottom: none;
     margin-bottom: 0;
@@ -81,7 +106,7 @@ export const SectionItemContainer = styled.div`
 
 // Internal
 
-const SectionHeader = styled.div`
+const CollapsingHeaderBar = styled.div`
   padding: 6px;
   padding-left: 12px;
   background: linear-gradient(

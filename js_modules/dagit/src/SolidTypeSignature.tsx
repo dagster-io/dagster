@@ -69,6 +69,7 @@ export default class SolidTypeSignature extends React.Component<
 const TypeSignature = styled(Code)`
   && {
     background: ${Colors.LIGHT_GRAY5};
+    font-size: 12px;
     padding: 5px 10px;
     box-shadow: none;
     color: black;

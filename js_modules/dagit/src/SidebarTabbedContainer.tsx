@@ -9,14 +9,20 @@ import SidebarPipelineInfo from "./SidebarPipelineInfo";
 import SidebarSolidInfo from "./SidebarSolidInfo";
 import { SidebarTabbedContainerPipelineFragment } from "./types/SidebarTabbedContainerPipelineFragment";
 import { SidebarTabbedContainerSolidFragment } from "./types/SidebarTabbedContainerSolidFragment";
+import { SolidNameOrPath } from "./PipelineExplorer";
 
 interface ISidebarTabbedContainerProps {
   types?: string;
   typeExplorer?: string;
   pipeline: SidebarTabbedContainerPipelineFragment;
   solid?: SidebarTabbedContainerSolidFragment;
+  solidDefinitionInvocations?: {
+    handleID: string;
+    solid: SidebarTabbedContainerSolidFragment;
+  }[];
   parentSolid?: SidebarTabbedContainerSolidFragment;
-  onEnterCompositeSolid: (solidName: string) => void;
+  onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
+  onClickSolid: (arg: SolidNameOrPath) => void;
 }
 
 interface ITabInfo {
@@ -62,7 +68,14 @@ export default class SidebarTabbedContainer extends React.Component<
   };
 
   render() {
-    const { typeExplorer, types, solid, parentSolid, pipeline } = this.props;
+    const {
+      typeExplorer,
+      types,
+      solid,
+      solidDefinitionInvocations,
+      parentSolid,
+      pipeline
+    } = this.props;
 
     let content = <div />;
     let activeTab = "info";
@@ -82,8 +95,10 @@ export default class SidebarTabbedContainer extends React.Component<
       content = (
         <SidebarSolidInfo
           solid={solid}
+          solidDefinitionInvocations={solidDefinitionInvocations}
           key={solid.name}
           showingSubsolids={false}
+          onClickSolid={this.props.onClickSolid}
           onEnterCompositeSolid={this.props.onEnterCompositeSolid}
         />
       );
@@ -91,8 +106,10 @@ export default class SidebarTabbedContainer extends React.Component<
       content = (
         <SidebarSolidInfo
           solid={parentSolid}
+          solidDefinitionInvocations={solidDefinitionInvocations}
           key={parentSolid.name}
           showingSubsolids={true}
+          onClickSolid={this.props.onClickSolid}
           onEnterCompositeSolid={this.props.onEnterCompositeSolid}
         />
       );
