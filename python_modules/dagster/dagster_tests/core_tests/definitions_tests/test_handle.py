@@ -26,76 +26,101 @@ def test_exc_target_handle():
 
 def test_repo_entrypoints():
     module = importlib.import_module('dagster_examples.intro_tutorial.repos')
-    assert ExecutionTargetHandle.for_repo_yaml(
-        script_relative_path('repository.yaml')
-    ).entrypoint == LoaderEntrypoint(module, 'dagster_examples.intro_tutorial.repos', 'define_repo')
+
+    expected = LoaderEntrypoint(module, 'dagster_examples.intro_tutorial.repos', 'define_repo')
+    handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('repository.yaml'))
+    assert handle.entrypoint.module == expected.module
+    assert handle.entrypoint.module_name == expected.module_name
+    assert handle.entrypoint.fn_name == expected.fn_name
+    assert handle.entrypoint.from_handle == handle
 
     module = importlib.import_module('dagster')
-    assert ExecutionTargetHandle.for_repo_module(
-        module_name='dagster', fn_name='define_bar_repo'
-    ).entrypoint == LoaderEntrypoint(module, 'dagster', 'define_bar_repo')
+    expected = LoaderEntrypoint(module, 'dagster', 'define_bar_repo')
+    handle = ExecutionTargetHandle.for_repo_module(module_name='dagster', fn_name='define_bar_repo')
+    assert handle.entrypoint.module == expected.module
+    assert handle.entrypoint.module_name == expected.module_name
+    assert handle.entrypoint.fn_name == expected.fn_name
+    assert handle.entrypoint.from_handle == handle
 
     python_file = script_relative_path('bar_repo.py')
     module = imp.load_source('bar_repo', python_file)
-    assert ExecutionTargetHandle.for_repo_python_file(
+
+    expected = LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo')
+    handle = ExecutionTargetHandle.for_repo_python_file(
         python_file=python_file, fn_name='define_bar_repo'
-    ).entrypoint == LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo')
+    )
+    assert handle.entrypoint.module == expected.module
+    assert handle.entrypoint.module_name == expected.module_name
+    assert handle.entrypoint.fn_name == expected.fn_name
+    assert handle.entrypoint.from_handle == handle
 
 
 def test_repo_yaml_module_dynamic_load():
-    repository = ExecutionTargetHandle.for_repo_yaml(
+    handle = ExecutionTargetHandle.for_repo_yaml(
         repository_yaml=script_relative_path('repository_module.yaml')
-    ).build_repository_definition()
+    )
+    repository = handle.build_repository_definition()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'demo_repository'
+    assert ExecutionTargetHandle.get_handle(repository) == handle
 
 
 def test_repo_yaml_file_dynamic_load():
-    repository = ExecutionTargetHandle.for_repo_yaml(
+    handle = ExecutionTargetHandle.for_repo_yaml(
         repository_yaml=script_relative_path('repository_file.yaml')
-    ).build_repository_definition()
+    )
+    repository = handle.build_repository_definition()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'bar'
+    assert ExecutionTargetHandle.get_handle(repository) == handle
 
 
 def test_repo_module_dynamic_load():
-    repository = ExecutionTargetHandle.for_pipeline_module(
+    handle = ExecutionTargetHandle.for_pipeline_module(
         module_name='dagster_examples.intro_tutorial.repos', fn_name='repo_demo_pipeline'
-    ).build_repository_definition()
+    )
+    repository = handle.build_repository_definition()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == EPHEMERAL_NAME
+    assert ExecutionTargetHandle.get_handle(repository) == handle
 
 
 def test_repo_file_dynamic_load():
-    repository = ExecutionTargetHandle.for_repo_python_file(
+    handle = ExecutionTargetHandle.for_repo_python_file(
         python_file=script_relative_path('test_handle.py'), fn_name='define_bar_repo'
-    ).build_repository_definition()
+    )
+    repository = handle.build_repository_definition()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'bar'
+    assert ExecutionTargetHandle.get_handle(repository) == handle
 
 
 def test_repo_module_dynamic_load_from_pipeline():
-    repository = ExecutionTargetHandle.for_pipeline_module(
+    handle = ExecutionTargetHandle.for_pipeline_module(
         module_name='dagster_examples.intro_tutorial.repos', fn_name='repo_demo_pipeline'
-    ).build_repository_definition()
+    )
+    repository = handle.build_repository_definition()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == '<<unnamed>>'
     assert repository.get_pipeline('repo_demo_pipeline').name == 'repo_demo_pipeline'
+    assert ExecutionTargetHandle.get_handle(repository) == handle
 
 
 def test_repo_file_dynamic_load_from_pipeline():
-    repository = ExecutionTargetHandle.for_pipeline_python_file(
+    handle = ExecutionTargetHandle.for_pipeline_python_file(
         python_file=script_relative_path('test_handle.py'), fn_name='define_foo_pipeline'
-    ).build_repository_definition()
+    )
+    repository = handle.build_repository_definition()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == EPHEMERAL_NAME
     assert repository.get_pipeline('foo').name == 'foo'
+    assert ExecutionTargetHandle.get_handle(repository) == handle
 
 
 @lambda_solid

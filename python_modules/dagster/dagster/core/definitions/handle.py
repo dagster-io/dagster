@@ -1,17 +1,98 @@
-from collections import namedtuple
-
+import imp
+import importlib
 import inspect
 import os
 import sys
+import weakref
 
+from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.errors import InvalidPipelineLoadingComboError, InvalidRepositoryLoadingComboError
+from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.definitions.repository import RepositoryDefinition
+from dagster.core.errors import (
+    DagsterInvariantViolationError,
+    InvalidPipelineLoadingComboError,
+    InvalidRepositoryLoadingComboError,
+)
+from dagster.utils import load_yaml_from_path
 
-from .entrypoint import LoaderEntrypoint
 
 EPHEMERAL_NAME = '<<unnamed>>'
+
+
+class LoaderEntrypoint(namedtuple('_LoaderEntrypoint', 'module module_name fn_name from_handle')):
+    def __new__(cls, module, module_name, fn_name, from_handle=None):
+        return super(LoaderEntrypoint, cls).__new__(cls, module, module_name, fn_name, from_handle)
+
+    def perform_load(self):
+        # in the decorator case the attribute will be the actual definition
+        if not hasattr(self.module, self.fn_name):
+            raise DagsterInvariantViolationError(
+                '{name} not found in module {module}.'.format(name=self.fn_name, module=self.module)
+            )
+
+        fn_repo_or_pipeline = getattr(self.module, self.fn_name)
+
+        if isinstance(fn_repo_or_pipeline, RepositoryDefinition) or isinstance(
+            fn_repo_or_pipeline, PipelineDefinition
+        ):
+            inst = fn_repo_or_pipeline
+
+        elif callable(fn_repo_or_pipeline):
+            repo_or_pipeline = fn_repo_or_pipeline()
+
+            if not isinstance(repo_or_pipeline, (RepositoryDefinition, PipelineDefinition)):
+                raise DagsterInvariantViolationError(
+                    '{fn_name} is a function but must return a PipelineDefinition '
+                    'or a RepositoryDefinition, or be decorated with @pipeline.'.format(
+                        fn_name=self.fn_name
+                    )
+                )
+
+            inst = repo_or_pipeline
+
+        else:
+            raise DagsterInvariantViolationError(
+                '{fn_name} must be a function that returns a PipelineDefinition '
+                'or a RepositoryDefinition, or a function decorated with @pipeline.'.format(
+                    fn_name=self.fn_name
+                )
+            )
+
+        if self.from_handle:
+            return ExecutionTargetHandle.cache_handle(inst, self.from_handle)
+
+        return inst
+
+    @staticmethod
+    def from_file_target(python_file, fn_name, from_handle=None):
+        module_name = os.path.splitext(os.path.basename(python_file))[0]
+        module = imp.load_source(module_name, python_file)
+        return LoaderEntrypoint(module, module_name, fn_name, from_handle)
+
+    @staticmethod
+    def from_module_target(module_name, fn_name, from_handle=None):
+        module = importlib.import_module(module_name)
+        return LoaderEntrypoint(module, module_name, fn_name, from_handle)
+
+    @staticmethod
+    def from_yaml(file_path, from_handle=None):
+        check.str_param(file_path, 'file_path')
+
+        config = load_yaml_from_path(file_path)
+        repository_config = check.dict_elem(config, 'repository')
+        module_name = check.opt_str_elem(repository_config, 'module')
+        file_name = check.opt_str_elem(repository_config, 'file')
+        fn_name = check.str_elem(repository_config, 'fn')
+
+        if module_name:
+            return LoaderEntrypoint.from_module_target(module_name, fn_name, from_handle)
+        else:
+            # rebase file in config off of the path in the config file
+            file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
+            return LoaderEntrypoint.from_file_target(file_name, fn_name, from_handle)
 
 
 class ExecutionTargetHandle:
@@ -63,6 +144,28 @@ class ExecutionTargetHandle:
 
     This should not be necessary in common usage.
     '''
+
+    __cache__ = weakref.WeakKeyDictionary()
+    '''The cache is used to cache handles used to create PipelineDefinition and
+    RepositoryDefinition objects, so the handles can be passed across serialization boundaries (as
+    for dagstermill) by solid compute logic.'''
+
+    @classmethod
+    def get_handle(cls, repo_or_pipeline):
+        check.inst_param(
+            repo_or_pipeline, 'repo_or_pipeline', (RepositoryDefinition, PipelineDefinition)
+        )
+        return cls.__cache__.get(repo_or_pipeline)
+
+    @classmethod
+    def cache_handle(cls, repo_or_pipeline, handle):
+        check.inst_param(
+            repo_or_pipeline, 'repo_or_pipeline', (RepositoryDefinition, PipelineDefinition)
+        )
+        check.inst_param(handle, 'handle', ExecutionTargetHandle)
+        cls.__cache__[repo_or_pipeline] = handle
+
+        return repo_or_pipeline
 
     @staticmethod
     def for_pipeline_fn(fn):
@@ -159,29 +262,29 @@ class ExecutionTargetHandle:
         If this ExecutionTargetHandle points to a pipeline, we create an ephemeral repository to
         wrap the pipeline and return it.
         '''
-        from dagster import PipelineDefinition, RepositoryDefinition
-
         obj = self.entrypoint.perform_load()
 
         if self.mode == _ExecutionTargetMode.REPOSITORY:
             # User passed in a function that returns a pipeline definition, not a repository. See:
             # https://github.com/dagster-io/dagster/issues/1439
             if isinstance(obj, PipelineDefinition):
-                return RepositoryDefinition(
-                    name=EPHEMERAL_NAME, pipeline_dict={obj.name: lambda: obj}
+                return ExecutionTargetHandle.cache_handle(
+                    RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_dict={obj.name: obj}),
+                    ExecutionTargetHandle.get_handle(obj),
                 )
-            return check.inst(obj, RepositoryDefinition)
+            return ExecutionTargetHandle.cache_handle(check.inst(obj, RepositoryDefinition), self)
         elif self.mode == _ExecutionTargetMode.PIPELINE:
             check.inst(obj, PipelineDefinition)
-            return RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_dict={obj.name: lambda: obj})
+            return ExecutionTargetHandle.cache_handle(
+                RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_dict={obj.name: obj}),
+                ExecutionTargetHandle.get_handle(obj),
+            )
         else:
             check.failed('Unhandled mode {mode}'.format(mode=self.mode))
 
     def build_pipeline_definition(self):
         '''Rehydrates a PipelineDefinition from an ExecutionTargetHandle object.
         '''
-        from dagster import PipelineDefinition, RepositoryDefinition
-
         if self.mode == _ExecutionTargetMode.REPOSITORY:
             check.invariant(
                 self.data.pipeline_name is not None,
@@ -191,7 +294,9 @@ class ExecutionTargetHandle:
             )
             obj = self.entrypoint.perform_load()
             repository = check.inst(obj, RepositoryDefinition)
-            return repository.get_pipeline(self.data.pipeline_name)
+            return ExecutionTargetHandle.cache_handle(
+                repository.get_pipeline(self.data.pipeline_name), self
+            )
         elif self.mode == _ExecutionTargetMode.PIPELINE:
             obj = self.entrypoint.perform_load()
             return check.inst(obj, PipelineDefinition)
@@ -201,9 +306,9 @@ class ExecutionTargetHandle:
     @property
     def entrypoint(self):
         if self.mode == _ExecutionTargetMode.REPOSITORY:
-            return self.data.get_repository_entrypoint()
+            return self.data.get_repository_entrypoint(from_handle=self)
         elif self.mode == _ExecutionTargetMode.PIPELINE:
-            return self.data.get_pipeline_entrypoint()
+            return self.data.get_pipeline_entrypoint(from_handle=self)
         else:
             check.failed('Unhandled mode {mode}'.format(mode=self.mode))
 
@@ -270,27 +375,27 @@ class _ExecutionTargetHandleData(
             pipeline_name=check.opt_str_param(pipeline_name, 'pipeline_name'),
         )
 
-    def get_repository_entrypoint(self):
+    def get_repository_entrypoint(self, from_handle=None):
         if self.repository_yaml:
-            return LoaderEntrypoint.from_yaml(self.repository_yaml)
+            return LoaderEntrypoint.from_yaml(self.repository_yaml, from_handle=from_handle)
         elif self.module_name and self.fn_name:
             return LoaderEntrypoint.from_module_target(
-                module_name=self.module_name, fn_name=self.fn_name
+                module_name=self.module_name, fn_name=self.fn_name, from_handle=from_handle
             )
         elif self.python_file and self.fn_name:
             return LoaderEntrypoint.from_file_target(
-                python_file=self.python_file, fn_name=self.fn_name
+                python_file=self.python_file, fn_name=self.fn_name, from_handle=from_handle
             )
         else:
             raise InvalidRepositoryLoadingComboError()
 
-    def get_pipeline_entrypoint(self):
+    def get_pipeline_entrypoint(self, from_handle=None):
         if self.python_file and self.fn_name:
             return LoaderEntrypoint.from_file_target(
-                python_file=self.python_file, fn_name=self.fn_name
+                python_file=self.python_file, fn_name=self.fn_name, from_handle=from_handle
             )
         elif self.module_name and self.fn_name:
             return LoaderEntrypoint.from_module_target(
-                module_name=self.module_name, fn_name=self.fn_name
+                module_name=self.module_name, fn_name=self.fn_name, from_handle=from_handle
             )
         raise InvalidPipelineLoadingComboError()

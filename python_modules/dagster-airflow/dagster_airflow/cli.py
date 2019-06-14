@@ -5,7 +5,7 @@ import sys
 import click
 import yaml
 
-from dagster.core.definitions.entrypoint import LoaderEntrypoint
+from dagster.core.definitions.handle import LoaderEntrypoint
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
 if sys.version_info.major >= 3:
