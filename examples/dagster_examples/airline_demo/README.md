@@ -138,7 +138,7 @@ order to understand what values are required, or what they do -- enabling more c
 <!-- FIXME -->
 <!-- ### Custom types
 
-Note that the output of this solid is also a List -- in this case, a `List(FileExistsAtPath)`. We've
+Note that the output of this solid is also a List -- in this case, a `List[FileExistsAtPath]`. We've
 defined a custom output type to illustrate the richness of the Dagster type system:
 
     from dagster.core.types.runtime import Stringish

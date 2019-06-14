@@ -89,7 +89,7 @@ class RuntimeType(object):
 
     @staticmethod
     def from_builtin_enum(builtin_enum):
-        check.inst_param(builtin_enum, 'builtin_enum', BuiltinEnum)
+        check.invariant(BuiltinEnum.contains(builtin_enum), 'must be member of BuiltinEnum')
         return _RUNTIME_MAP[builtin_enum]
 
     @property
@@ -284,7 +284,7 @@ def _create_nullable_input_schema(inner_type):
 
 class NullableType(RuntimeType):
     def __init__(self, inner_type):
-        key = 'Nullable.' + inner_type.key
+        key = 'Optional.' + inner_type.key
         super(NullableType, self).__init__(
             key=key, name=None, input_schema=_create_nullable_input_schema(inner_type)
         )
@@ -349,7 +349,7 @@ class ListType(RuntimeType):
         return [self.inner_type] + self.inner_type.inner_types
 
 
-def Nullable(inner_type):
+def Optional(inner_type):
     check.inst_param(inner_type, 'inner_type', RuntimeType)
 
     class _Nullable(NullableType):
@@ -396,12 +396,15 @@ _RUNTIME_MAP = {
 def resolve_to_runtime_type(dagster_type):
     # circular dep
     from .decorator import is_runtime_type_decorated_klass, get_runtime_type_on_decorated_klass
+    from .mapping import remap_python_type
+
+    dagster_type = remap_python_type(dagster_type)
 
     check_dagster_type_param(dagster_type, 'dagster_type', RuntimeType)
 
     if dagster_type is None:
         return Any.inst()
-    if isinstance(dagster_type, BuiltinEnum):
+    if BuiltinEnum.contains(dagster_type):
         return RuntimeType.from_builtin_enum(dagster_type)
     if isinstance(dagster_type, WrappingListType):
         return resolve_to_runtime_list(dagster_type)
@@ -422,7 +425,7 @@ def resolve_to_runtime_list(list_type):
 
 def resolve_to_runtime_nullable(nullable_type):
     check.inst_param(nullable_type, 'nullable_type', WrappingNullableType)
-    return Nullable(resolve_to_runtime_type(nullable_type.inner_type))
+    return Optional(resolve_to_runtime_type(nullable_type.inner_type))
 
 
 ALL_RUNTIME_BUILTINS = set(_RUNTIME_MAP.values())

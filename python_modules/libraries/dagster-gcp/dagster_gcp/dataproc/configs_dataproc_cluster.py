@@ -86,7 +86,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'accelerators': Field(
-                                List(
+                                List[
                                     Dict(
                                         fields={
                                             'acceleratorTypeUri': Field(
@@ -110,7 +110,7 @@ def define_dataproc_cluster_config():
                                             ),
                                         }
                                     )
-                                ),
+                                ],
                                 description='''Optional. The Compute Engine accelerator
                                 configuration for these instances.Beta Feature: This feature is
                                 still under development. It may be changed before final release.''',
@@ -197,7 +197,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'accelerators': Field(
-                                List(
+                                List[
                                     Dict(
                                         fields={
                                             'acceleratorTypeUri': Field(
@@ -221,7 +221,7 @@ def define_dataproc_cluster_config():
                                             ),
                                         }
                                     )
-                                ),
+                                ],
                                 description='''Optional. The Compute Engine accelerator
                                 configuration for these instances.Beta Feature: This feature is
                                 still under development. It may be changed before final release.''',
@@ -254,7 +254,7 @@ def define_dataproc_cluster_config():
                     is_optional=True,
                 ),
                 'initializationActions': Field(
-                    List(
+                    List[
                         Dict(
                             fields={
                                 'executionTimeout': Field(
@@ -273,7 +273,7 @@ def define_dataproc_cluster_config():
                                 ),
                             }
                         )
-                    ),
+                    ],
                     description='''Optional. Commands to execute on each node after config is
                     completed. By default, executables are run on master and all worker nodes. You
                     can test a node\'s role metadata to run an executable on a master or worker
@@ -363,7 +363,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'accelerators': Field(
-                                List(
+                                List[
                                     Dict(
                                         fields={
                                             'acceleratorTypeUri': Field(
@@ -387,7 +387,7 @@ def define_dataproc_cluster_config():
                                             ),
                                         }
                                     )
-                                ),
+                                ],
                                 description='''Optional. The Compute Engine accelerator
                                 configuration for these instances.Beta Feature: This feature is
                                 still under development. It may be changed before final release.''',
@@ -439,7 +439,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'serviceAccountScopes': Field(
-                                List(String),
+                                List[String],
                                 description='''Optional. The URIs of service account scopes to be
                                 included in Compute Engine instances. The following base set of
                                 scopes is always included:
@@ -454,7 +454,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'tags': Field(
-                                List(String),
+                                List[String],
                                 description='''The Compute Engine tags to add to all instances (see
                                 Tagging instances).''',
                                 is_optional=True,
@@ -522,7 +522,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'optionalComponents': Field(
-                                List(Component),
+                                List[Component],
                                 description='''The set of optional components to activate on the
                                 cluster.''',
                                 is_optional=True,

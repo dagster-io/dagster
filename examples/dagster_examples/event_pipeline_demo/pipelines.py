@@ -100,7 +100,7 @@ def download_from_s3_to_file(context):
     )
 
 
-@lambda_solid(inputs=[InputDefinition('gzip_file', String)], output=OutputDefinition(List(String)))
+@lambda_solid(inputs=[InputDefinition('gzip_file', String)], output=OutputDefinition(List[String]))
 def gunzipper(gzip_file):
     '''gunzips /path/to/foo.gz to /path/to/raw/2019/01/01/data.json
     '''

@@ -8,7 +8,7 @@ from dagster import (
     Int,
     List,
     ModeDefinition,
-    Nullable,
+    Optional,
     PermissiveDict,
     PipelineConfigEvaluationError,
     PipelineDefinition,
@@ -22,7 +22,8 @@ from dagster import (
 
 
 from dagster.core.definitions import create_environment_schema
-from dagster.core.types.evaluator import evaluate_config_value, DagsterEvaluationErrorReason
+from dagster.core.types.evaluator import evaluate_config_value
+from dagster.core.types.evaluator.errors import DagsterEvaluationErrorReason
 
 from dagster.core.test_utils import throwing_evaluate_config_value
 
@@ -328,7 +329,7 @@ def test_nested_optional_with_no_default():
 
 
 def single_elem(ddict):
-    return list(ddict.items())[0]
+    return List[ddict.items()[0]]
 
 
 def test_build_optionality():
@@ -409,7 +410,7 @@ def test_solid_list_config():
                 name='solid_list_config',
                 inputs=[],
                 outputs=[],
-                config_field=Field(List(Int)),
+                config_field=Field(List[Int]),
                 compute_fn=_test_config,
             )
         ],
@@ -432,7 +433,7 @@ def test_two_list_types():
                 inputs=[],
                 outputs=[],
                 config_field=Field(
-                    Dict({'list_one': Field(List(Int)), 'list_two': Field(List(Int))})
+                    Dict({'list_one': Field(List[Int]), 'list_two': Field(List[Int])})
                 ),
                 compute_fn=lambda *_args: None,
             )
@@ -534,7 +535,7 @@ def test_deeper_path():
 def test_working_list_path():
     called = {}
 
-    @solid(config_field=Field(List(Int)))
+    @solid(config_field=Field(List[Int]))
     def required_list_int_solid(context):
         assert context.solid_config == [1, 2]
         called['yup'] = True
@@ -552,7 +553,7 @@ def test_working_list_path():
 def test_item_error_list_path():
     called = {}
 
-    @solid(config_field=Field(List(Int)))
+    @solid(config_field=Field(List[Int]))
     def required_list_int_solid(context):
         assert context.solid_config == [1, 2]
         called['yup'] = True
@@ -631,7 +632,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
 
 
 def test_multilevel_good_error_handling_config_solids_name_solids():
-    @solid(config_field=Field(Nullable(Int)))
+    @solid(config_field=Field(Optional[Int]))
     def good_error_handling(_context):
         pass
 

@@ -5,12 +5,11 @@ import shutil
 
 import six
 
-from dagster import check, resource, Bool, Field, String, Dict
-from dagster.core.storage.file_manager import LocalFileHandle
+from dagster import check
 from dagster.utils import mkdir_p
-from dagster_aws.s3.file_manager import S3FileHandle
-from dagster_aws.s3.utils import create_s3_session
-from botocore.exceptions import ClientError
+from dagster.core.definitions import resource
+from dagster.core.types import Dict, Field, Bool, String
+from .file_manager import LocalFileHandle
 
 
 class FileCache(six.with_metaclass(ABCMeta)):
@@ -78,55 +77,3 @@ def fs_file_cache(init_context):
         mkdir_p(target_folder)
 
     return FSFileCache(target_folder=target_folder, overwrite=False)
-
-
-class S3FileCache(FileCache):
-    def __init__(self, s3_bucket, s3_key, s3_session, overwrite=False):
-        super(S3FileCache, self).__init__(overwrite=overwrite)
-
-        self.s3_bucket = s3_bucket
-        self.s3_key = s3_key
-        self.s3 = s3_session
-
-    def has_file_object(self, file_key):
-        check.str_param(file_key, 'file_key')
-        try:
-            self.s3.get_object(Bucket=self.s3_bucket, Key=self.get_full_key(file_key))
-        except ClientError:
-            return False
-        return True
-
-    def get_full_key(self, file_key):
-        return '{base_key}/{file_key}'.format(base_key=self.s3_key, file_key=file_key)
-
-    def write_file_object(self, file_key, source_file_object):
-        check.str_param(file_key, 'file_key')
-
-        self.s3.put_object(
-            Body=source_file_object, Bucket=self.s3_bucket, Key=self.get_full_key(file_key)
-        )
-
-    def get_file_handle(self, file_key):
-        check.str_param(file_key, 'file_key')
-        return S3FileHandle(self.s3_bucket, self.get_full_key(file_key))
-
-
-@resource(
-    config_field=Field(
-        Dict(
-            {
-                'bucket': Field(String),
-                'key': Field(String),
-                'overwrite': Field(Bool, is_optional=True, default_value=False),
-            }
-        )
-    )
-)
-def s3_file_cache(init_context):
-    return S3FileCache(
-        s3_bucket=init_context.resource_config['bucket'],
-        s3_key=init_context.resource_config['key'],
-        overwrite=init_context.resource_config['overwrite'],
-        # TODO: resource dependencies
-        s3_session=create_s3_session(),
-    )

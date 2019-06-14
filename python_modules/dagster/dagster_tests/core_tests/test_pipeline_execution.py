@@ -20,7 +20,7 @@ from dagster import (
     solid,
 )
 
-from dagster.core.types import Nullable, List, String
+from dagster.core.types import Optional, List, String
 
 from dagster.core.definitions import Solid, solids_in_topological_order
 from dagster.core.definitions.dependency import DependencyStructure
@@ -319,7 +319,7 @@ def test_pipeline_subset():
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid
     def add_one(num):
         return num + 1
 
@@ -448,8 +448,8 @@ def test_pipeline_execution_disjoint_subset():
 
 def test_pipeline_wrapping_types():
     @lambda_solid(
-        inputs=[InputDefinition('value', Nullable(List(Nullable(String))))],
-        output=OutputDefinition(Nullable(List(Nullable(String)))),
+        inputs=[InputDefinition('value', Optional[List[Optional[String]]])],
+        output=OutputDefinition(Optional[List[Optional[String]]]),
     )
     def double_string_for_all(value):
         if not value:
@@ -495,7 +495,7 @@ def test_pipeline_streaming_iterator():
         events.append(1)
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid
     def add_one(num):
         events.append(num + 1)
         return num + 1

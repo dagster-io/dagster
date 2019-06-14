@@ -73,11 +73,11 @@ class TypeStoragePluginRegistry:
             outer_type = 'composite type'
             if runtime_type.is_list:
                 if runtime_type.is_nullable:
-                    outer_type = 'Nullable List'
+                    outer_type = 'Optional List'
                 else:
                     outer_type = 'List'
             elif runtime_type.is_nullable:
-                outer_type = 'Nullable'
+                outer_type = 'Optional'
 
             if len(composite_overrides) > 1:
                 plural = 's'

@@ -213,7 +213,7 @@ def test_s3_intermediate_store_with_composite_type_storage_plugin():
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             intermediate_store.set_value(
-                ['hello'], context, resolve_to_runtime_type(List(String)), ['obj_name']
+                ['hello'], context, resolve_to_runtime_type(List[String]), ['obj_name']
             )
 
 
@@ -228,12 +228,12 @@ def test_s3_intermediate_store_composite_types_with_custom_serializer_for_inner_
             intermediate_store.set_object(
                 ['foo', 'bar'],
                 context,
-                resolve_to_runtime_type(List(LowercaseString)).inst(),
+                resolve_to_runtime_type(List[LowercaseString]).inst(),
                 ['list'],
             )
             assert intermediate_store.has_object(context, ['list'])
             assert intermediate_store.get_object(
-                context, resolve_to_runtime_type(List(Bool)).inst(), ['list']
+                context, resolve_to_runtime_type(List[Bool]).inst(), ['list']
             ) == ['foo', 'bar']
 
         finally:
