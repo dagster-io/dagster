@@ -5,6 +5,7 @@ import { Colors, Icon } from "@blueprintjs/core";
 import {
   SidebarTitle,
   SidebarSubhead,
+  SectionInner,
   SidebarSection,
   SectionItemContainer,
   SectionHeader
@@ -61,8 +62,10 @@ export default class SidebarPipelineInfo extends React.Component<
 
     return (
       <div>
-        <SidebarSubhead>Pipeline</SidebarSubhead>
-        <SidebarTitle>{pipeline.name}</SidebarTitle>
+        <SectionInner>
+          <SidebarSubhead>Pipeline</SidebarSubhead>
+          <SidebarTitle>{pipeline.name}</SidebarTitle>
+        </SectionInner>
         <SidebarSection title={"Description"}>
           <Description
             description={pipeline ? pipeline.description : NO_DESCRIPTION}

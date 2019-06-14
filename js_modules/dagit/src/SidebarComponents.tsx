@@ -121,6 +121,6 @@ const CollapsingHeaderBar = styled.div`
   font-size: 0.75rem;
 `;
 
-const SectionInner = styled.div`
+export const SectionInner = styled.div`
   padding: 12px;
 `;
