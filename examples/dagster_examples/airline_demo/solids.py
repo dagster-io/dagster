@@ -3,7 +3,6 @@
 import os
 import re
 
-from pyspark.sql import DataFrame
 from sqlalchemy import text
 
 from dagster import (
@@ -23,9 +22,10 @@ from dagster import (
     solid,
 )
 from dagster_aws.s3.solids import S3BucketData
+from dagster_pyspark import DataFrame
 from dagstermill import define_dagstermill_solid
 
-from .types import SparkDataFrameType, SqlTableName
+from .types import SqlTableName
 from .cache_file_from_s3 import cache_file_from_s3
 from .unzip_file_handle import unzip_file_handle
 
@@ -147,7 +147,7 @@ Characters (within quotations): "`{chars}`"
         chars=PARQUET_SPECIAL_CHARACTERS
     ),
 )
-def ingest_csv_file_handle_to_spark(context, csv_file_handle: FileHandle) -> SparkDataFrameType:
+def ingest_csv_file_handle_to_spark(context, csv_file_handle: FileHandle) -> DataFrame:
     # fs case: copies from file manager location into system temp
     #    - This is potentially an unnecessary copy. We could potentially specialize
     #    the implementation of copy_handle_to_local_temp to not to do this in the
@@ -184,7 +184,7 @@ def do_prefix_column_names(df, prefix):
 
 
 @solid
-def canonicalize_column_names(_context, data_frame: SparkDataFrameType) -> SparkDataFrameType:
+def canonicalize_column_names(_context, data_frame: DataFrame) -> DataFrame:
     return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
 
 
@@ -193,7 +193,7 @@ def replace_values_spark(data_frame, old, new):
 
 
 @solid
-def process_sfo_weather_data(_context, sfo_weather_data: SparkDataFrameType) -> SparkDataFrameType:
+def process_sfo_weather_data(_context, sfo_weather_data: DataFrame) -> DataFrame:
     normalized_sfo_weather_data = replace_values_spark(sfo_weather_data, 'M', None)
     return rename_spark_dataframe_columns(normalized_sfo_weather_data, lambda c: c.lower())
 
@@ -202,7 +202,7 @@ def process_sfo_weather_data(_context, sfo_weather_data: SparkDataFrameType) -> 
     outputs=[OutputDefinition(name='table_name', dagster_type=String)],
     config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
 )
-def load_data_to_database_from_spark(context, data_frame: SparkDataFrameType):
+def load_data_to_database_from_spark(context, data_frame: DataFrame):
     context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
     table_name = context.solid_config['table_name']
 
@@ -226,7 +226,7 @@ def load_data_to_database_from_spark(context, data_frame: SparkDataFrameType):
         )
     ),
 )
-def subsample_spark_dataset(context, data_frame: SparkDataFrameType) -> SparkDataFrameType:
+def subsample_spark_dataset(context, data_frame: DataFrame) -> DataFrame:
     return data_frame.sample(
         withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
     )
@@ -239,7 +239,7 @@ present by default), unzip that file, and load it into a
 Spark Dataframe. See documentation in constituent solids for
 more detail.'''
 )
-def s3_to_df(_, bucket_data: S3BucketData, archive_member: String) -> SparkDataFrameType:
+def s3_to_df(_, bucket_data: S3BucketData, archive_member: String) -> DataFrame:
     # pylint: disable=no-value-for-parameter
     return ingest_csv_file_handle_to_spark(
         unzip_file_handle(cache_file_from_s3(bucket_data), archive_member)
@@ -499,11 +499,11 @@ sfo_delays_by_destination = notebook_solid(
 )
 def join_q2_data(
     context,
-    april_data: SparkDataFrameType,
-    may_data: SparkDataFrameType,
-    june_data: SparkDataFrameType,
-    master_cord_data: SparkDataFrameType,
-) -> SparkDataFrameType:
+    april_data: DataFrame,
+    may_data: DataFrame,
+    june_data: DataFrame,
+    master_cord_data: DataFrame,
+) -> DataFrame:
 
     dfs = {'april': april_data, 'may': may_data, 'june': june_data}
 

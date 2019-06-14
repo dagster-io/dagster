@@ -18,6 +18,7 @@ RUN pip install \
 	-e dagster-graphql/ \
 	-e dagstermill/ \
 	-e dagster-aws/ \
+	-e dagster-pyspark/ \
 	-e .
 
 ENTRYPOINT [ "dagster-graphql" ]

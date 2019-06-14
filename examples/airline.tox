@@ -8,6 +8,7 @@ deps =
   -r ../python_modules/dagster/dev-requirements.txt
   -e ../python_modules/dagstermill
   -e ../python_modules/libraries/dagster-aws
+  -e ../python_modules/libraries/dagster-pyspark
   -e ../python_modules/dagster-airflow
 commands =
   coverage erase
@@ -24,6 +25,7 @@ deps =
   -r ../python_modules/dagster/dev-requirements.txt
   -e ../python_modules/dagstermill
   -e ../python_modules/libraries/dagster-aws
+  -e ../python_modules/libraries/dagster-pyspark
 commands =
   coverage erase
   pip install -e .[full]
