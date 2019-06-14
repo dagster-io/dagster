@@ -33,7 +33,7 @@ DISALLOWED_NAMES = set(
 def check_valid_name(name):
     check.str_param(name, 'name')
     if name in DISALLOWED_NAMES:
-        raise DagsterInvalidDefinitionError('{name} is not allowed'.format(name=name))
+        raise DagsterInvalidDefinitionError('{name} is not allowed.'.format(name=name))
 
     regex = r'^[A-Za-z0-9_]+$'
     if not re.match(regex, name):
