@@ -1,5 +1,5 @@
 [tox]
-envlist = py36,py35,py27
+envlist = py36,py35
 
 [testenv]
 passenv = CI_* COVERALLS_REPO_TOKEN TOXENV SLUGIFY_USES_TEXT_UNIDECODE AWS_SECRET_ACCESS_KEY AWS_ACCESS_KEY_ID AIRFLOW_HOME JAVA_HOME DAGSTER_AIRLINE_DEMO_DB_HOST
@@ -14,16 +14,6 @@ commands =
   pip install -e .[full,airflow]
   ipython kernel install --name "dagster" --user
   pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov=../python_modules --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow"
-  coverage report --omit='.tox/*,**/test_*.py' --skip-covered
-  coverage html --omit='.tox/*,**/test_*.py'
-  coverage xml --omit='.tox/*,**/test_*.py'
-
-[testenv:py27]
-commands =
-  coverage erase
-  pip install -e .[full,airflow]
-  ipython kernel install --name "python3" --user
-  pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov=../python_modules --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow and not py3"
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered
   coverage html --omit='.tox/*,**/test_*.py'
   coverage xml --omit='.tox/*,**/test_*.py'

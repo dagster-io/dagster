@@ -6,7 +6,7 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(SCRIPT_PATH)
 
-from defines import IMAGE_VERSION_MAP, SupportedPython, SupportedPythons
+from defines import IMAGE_VERSION_MAP, SupportedPython, SupportedPythons, SupportedPython3s
 from step_builder import StepBuilder
 
 TOX_MAP = {
@@ -60,7 +60,7 @@ def python_modules_tox_tests(directory, prereqs=None, env=None):
 
 def airline_demo_tests():
     tests = []
-    for version in SupportedPythons:
+    for version in SupportedPython3s:
         coverage = ".coverage.airline-demo.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         step = StepBuilder('airline-demo tests ({version})'.format(version=TOX_MAP[version]))
         step.run(
@@ -86,7 +86,7 @@ def airline_demo_tests():
 
 def events_demo_tests():
     tests = []
-    for version in SupportedPythons:
+    for version in SupportedPython3s:
         coverage = ".coverage.events-demo.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder('events-demo tests ({version})'.format(version=TOX_MAP[version]))
@@ -135,7 +135,7 @@ def airflow_tests():
 
 def examples_tests():
     tests = []
-    for version in SupportedPythons:
+    for version in SupportedPython3s:
         coverage = ".coverage.examples.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder("examples tests ({ver})".format(ver=TOX_MAP[version]))

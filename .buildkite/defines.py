@@ -13,6 +13,8 @@ SupportedPythons = [
     SupportedPython.V2_7,
 ]
 
+SupportedPython3s = [SupportedPython.V3_7, SupportedPython.V3_6, SupportedPython.V3_5]
+
 IMAGE_VERSION_MAP = {
     SupportedPython.V3_7: "3.7.3",
     SupportedPython.V3_6: "3.6.8",

@@ -383,18 +383,9 @@ which abstracts the operation of loading a Spark data frame to a database -- eit
 Redshift cluster or our local Postgres in test:
 
     @solid(
-        name='load_data_to_database_from_spark',
-        inputs=[
-            InputDefinition(
-                'data_frame',
-                SparkDataFrameType,
-                description='The pyspark DataFrame to load into the database.',
-            )
-        ],
-        outputs=[OutputDefinition(SparkDataFrameType)],
         config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
     )
-    def load_data_to_database_from_spark(context, data_frame):
+    def load_data_to_database_from_spark(context, data_frame: SparkDataFrameType) -> SparkDataFrameType:
         context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
         return data_frame
 

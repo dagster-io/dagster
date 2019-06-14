@@ -134,8 +134,6 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
 
 @solid(
-    inputs=[InputDefinition('csv_file_handle', FileHandle)],
-    outputs=[OutputDefinition(SparkDataFrameType)],
     required_resources={'spark'},
     description='''Take a file handle that contains a csv with headers and load it
 into a Spark DataFrame. It infers header names but does *not* infer schema.
@@ -149,7 +147,7 @@ Characters (within quotations): "`{chars}`"
         chars=PARQUET_SPECIAL_CHARACTERS
     ),
 )
-def ingest_csv_file_handle_to_spark(context, csv_file_handle):
+def ingest_csv_file_handle_to_spark(context, csv_file_handle: FileHandle) -> SparkDataFrameType:
     # fs case: copies from file manager location into system temp
     #    - This is potentially an unnecessary copy. We could potentially specialize
     #    the implementation of copy_handle_to_local_temp to not to do this in the
@@ -185,16 +183,8 @@ def do_prefix_column_names(df, prefix):
     return rename_spark_dataframe_columns(df, lambda c: '{prefix}{c}'.format(prefix=prefix, c=c))
 
 
-@solid(
-    name='canonicalize_column_names',
-    inputs=[
-        InputDefinition(
-            'data_frame', SparkDataFrameType, description='The data frame to canonicalize'
-        )
-    ],
-    outputs=[OutputDefinition(SparkDataFrameType)],
-)
-def canonicalize_column_names(_context, data_frame):
+@solid
+def canonicalize_column_names(_context, data_frame: SparkDataFrameType) -> SparkDataFrameType:
     return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
 
 
@@ -202,28 +192,17 @@ def replace_values_spark(data_frame, old, new):
     return data_frame.na.replace(old, new)
 
 
-@solid(
-    inputs=[InputDefinition('sfo_weather_data', SparkDataFrameType)],
-    outputs=[OutputDefinition(SparkDataFrameType)],
-)
-def process_sfo_weather_data(_context, sfo_weather_data):
+@solid
+def process_sfo_weather_data(_context, sfo_weather_data: SparkDataFrameType) -> SparkDataFrameType:
     normalized_sfo_weather_data = replace_values_spark(sfo_weather_data, 'M', None)
     return rename_spark_dataframe_columns(normalized_sfo_weather_data, lambda c: c.lower())
 
 
 @solid(
-    name='load_data_to_database_from_spark',
-    inputs=[
-        InputDefinition(
-            'data_frame',
-            SparkDataFrameType,
-            description='The pyspark DataFrame to load into the database.',
-        )
-    ],
     outputs=[OutputDefinition(name='table_name', dagster_type=String)],
     config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
 )
-def load_data_to_database_from_spark(context, data_frame):
+def load_data_to_database_from_spark(context, data_frame: SparkDataFrameType):
     context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
     table_name = context.solid_config['table_name']
 
@@ -235,7 +214,6 @@ def load_data_to_database_from_spark(context, data_frame):
 
 
 @solid(
-    name='subsample_spark_dataset',
     description='Subsample a spark dataset via the configuration option.',
     config_field=Field(
         Dict(
@@ -247,37 +225,21 @@ def load_data_to_database_from_spark(context, data_frame):
             }
         )
     ),
-    inputs=[
-        InputDefinition(
-            'data_frame', SparkDataFrameType, description='The pyspark DataFrame to subsample.'
-        )
-    ],
-    outputs=[
-        OutputDefinition(
-            SparkDataFrameType,
-            # description='A pyspark DataFrame containing a subsample of the input rows.',
-        )
-    ],
 )
-def subsample_spark_dataset(context, data_frame):
+def subsample_spark_dataset(context, data_frame: SparkDataFrameType) -> SparkDataFrameType:
     return data_frame.sample(
         withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
     )
 
 
 @composite_solid(
-    inputs=[
-        InputDefinition('bucket_data', S3BucketData),
-        InputDefinition('archive_member', String),
-    ],
-    outputs=[OutputDefinition(SparkDataFrameType)],
     description='''Ingest a zipped csv file from s3,
 stash in a keyed file store (does not download if already
 present by default), unzip that file, and load it into a
 Spark Dataframe. See documentation in constituent solids for
-more detail.''',
+more detail.'''
 )
-def s3_to_df(_, bucket_data, archive_member):
+def s3_to_df(_, bucket_data: S3BucketData, archive_member: String) -> SparkDataFrameType:
     # pylint: disable=no-value-for-parameter
     return ingest_csv_file_handle_to_spark(
         unzip_file_handle(cache_file_from_s3(bucket_data), archive_member)
@@ -285,14 +247,13 @@ def s3_to_df(_, bucket_data, archive_member):
 
 
 @composite_solid(
-    outputs=[OutputDefinition(name='table_name', dagster_type=String)],
     description='''Ingest zipped csv file from s3, load into a Spark
 DataFrame, optionally subsample it (via configuring the
 subsample_spark_dataset, solid), canonicalize the column names, and then
 load it into a data warehouse.
-''',
+'''
 )
-def s3_to_dw_table(_):
+def s3_to_dw_table(_) -> String:
     # pylint: disable=no-value-for-parameter
     return load_data_to_database_from_spark(
         canonicalize_column_names(subsample_spark_dataset(s3_to_df()))
@@ -526,13 +487,6 @@ sfo_delays_by_destination = notebook_solid(
 
 
 @solid(
-    inputs=[
-        InputDefinition('april_data', SparkDataFrameType),
-        InputDefinition('may_data', SparkDataFrameType),
-        InputDefinition('june_data', SparkDataFrameType),
-        InputDefinition('master_cord_data', SparkDataFrameType),
-    ],
-    outputs=[OutputDefinition(SparkDataFrameType)],
     config_field=Field(
         Dict(fields={'subsample_pct': Field(Int, description='')})
         # description='The integer percentage of rows to sample from the input dataset.'
@@ -543,7 +497,13 @@ sfo_delays_by_destination = notebook_solid(
     master_cord_data.
     ''',
 )
-def join_q2_data(context, april_data, may_data, june_data, master_cord_data):
+def join_q2_data(
+    context,
+    april_data: SparkDataFrameType,
+    may_data: SparkDataFrameType,
+    june_data: SparkDataFrameType,
+    master_cord_data: SparkDataFrameType,
+) -> SparkDataFrameType:
 
     dfs = {'april': april_data, 'may': may_data, 'june': june_data}
 
@@ -586,7 +546,7 @@ def join_q2_data(context, april_data, may_data, june_data, master_cord_data):
             SELECT * FROM q2_data
             LEFT JOIN dest_cord_data ON
             q2_data.DestAirportSeqID = dest_cord_data.DEST_AIRPORT_SEQ_ID
-        ) q2_dest_data 
+        ) q2_dest_data
         ON origin_cord_data.ORIGIN_AIRPORT_SEQ_ID = q2_dest_data.OriginAirportSeqID
         '''
     )
