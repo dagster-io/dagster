@@ -29,9 +29,26 @@ export interface SidebarSolidInfoFragment_outputs_definition {
   expectations: SidebarSolidInfoFragment_outputs_definition_expectations[];
 }
 
+export interface SidebarSolidInfoFragment_outputs_dependedBy_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface SidebarSolidInfoFragment_outputs_dependedBy_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface SidebarSolidInfoFragment_outputs_dependedBy {
+  __typename: "Input";
+  definition: SidebarSolidInfoFragment_outputs_dependedBy_definition;
+  solid: SidebarSolidInfoFragment_outputs_dependedBy_solid;
+}
+
 export interface SidebarSolidInfoFragment_outputs {
   __typename: "Output";
   definition: SidebarSolidInfoFragment_outputs_definition;
+  dependedBy: SidebarSolidInfoFragment_outputs_dependedBy[];
 }
 
 export interface SidebarSolidInfoFragment_inputs_definition_type {
@@ -225,6 +242,7 @@ export interface SidebarSolidInfoFragment_definition_SolidDefinition_configDefin
 
 export interface SidebarSolidInfoFragment_definition_SolidDefinition {
   __typename: "SolidDefinition";
+  name: string;
   description: string | null;
   metadata: SidebarSolidInfoFragment_definition_SolidDefinition_metadata[];
   configDefinition: SidebarSolidInfoFragment_definition_SolidDefinition_configDefinition | null;
@@ -292,6 +310,7 @@ export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_ou
 
 export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
+  name: string;
   description: string | null;
   metadata: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_metadata[];
   inputMappings: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings[];

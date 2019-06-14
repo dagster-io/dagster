@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import SVGViewport, { SVGViewportInteractor } from "./SVGViewport";
 import { SVGLabeledRect } from "./SVGComponents";
+import { SolidNameOrPath } from "../PipelineExplorer";
 import SolidNode from "./SolidNode";
 import {
   ILayoutConnection,
@@ -26,9 +27,9 @@ interface IPipelineGraphProps {
   selectedSolid?: PipelineGraphSolidFragment;
   highlightedSolids: Array<PipelineGraphSolidFragment>;
   interactor?: SVGViewportInteractor;
-  onClickSolid?: (solidName: string) => void;
-  onDoubleClickSolid?: (solidName: string) => void;
-  onEnterCompositeSolid?: (solidName: string) => void;
+  onClickSolid?: (arg: SolidNameOrPath) => void;
+  onDoubleClickSolid?: (arg: SolidNameOrPath) => void;
+  onEnterCompositeSolid?: (arg: SolidNameOrPath) => void;
   onLeaveCompositeSolid?: () => void;
   onClickBackground?: () => void;
 }
@@ -124,9 +125,9 @@ class PipelineGraphContents extends React.PureComponent<
             solid={solid}
             parentSolid={parentSolid}
             minified={minified}
-            onClick={onClickSolid}
-            onDoubleClick={onDoubleClickSolid}
-            onEnterComposite={onEnterCompositeSolid}
+            onClick={name => onClickSolid({ name })}
+            onDoubleClick={name => onDoubleClickSolid({ name })}
+            onEnterComposite={name => onEnterCompositeSolid({ name })}
             onHighlightConnections={this.onHighlightConnections}
             layout={layout.solids[solid.name]}
             selected={selectedSolid === solid}
@@ -164,8 +165,9 @@ export default class PipelineGraph extends React.Component<
 
   viewportEl: React.RefObject<SVGViewport> = React.createRef();
 
-  focusOnSolid = (solidName: string) => {
-    const solidLayout = this.props.layout.solids[solidName];
+  focusOnSolid = (arg: SolidNameOrPath) => {
+    const lastName = "name" in arg ? arg.name : arg.path[arg.path.length - 1];
+    const solidLayout = this.props.layout.solids[lastName];
     if (!solidLayout) {
       return;
     }
@@ -226,7 +228,7 @@ export default class PipelineGraph extends React.Component<
     if (nextSolid && this.props.onClickSolid) {
       e.preventDefault();
       e.stopPropagation();
-      this.props.onClickSolid(nextSolid);
+      this.props.onClickSolid({ name: nextSolid });
     }
   };
 

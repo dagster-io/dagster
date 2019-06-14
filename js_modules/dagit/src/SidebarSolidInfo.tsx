@@ -2,7 +2,7 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { H6, Text, Code, UL, Button } from "@blueprintjs/core";
+import { H6, Text, Code, UL, Button, Colors } from "@blueprintjs/core";
 
 import { titleOfIO } from "./Util";
 import { pluginForMetadata } from "./plugins";
@@ -10,14 +10,16 @@ import SolidTypeSignature from "./SolidTypeSignature";
 import TypeWithTooltip from "./TypeWithTooltip";
 import {
   SidebarSection,
+  SidebarDivider,
   SidebarTitle,
   SidebarSubhead,
-  SectionItemHeader,
+  SectionSmallHeader,
   SectionItemContainer
 } from "./SidebarComponents";
 import Description from "./Description";
 import ConfigTypeSchema from "./ConfigTypeSchema";
 import { SidebarSolidInfoFragment } from "./types/SidebarSolidInfoFragment";
+import { SolidNameOrPath } from "./PipelineExplorer";
 
 type SolidLinkInfo = {
   solid: { name: string };
@@ -30,8 +32,13 @@ type SolidMappingTable = {
 
 interface ISidebarSolidInfoProps {
   solid: SidebarSolidInfoFragment;
+  solidDefinitionInvocations?: {
+    handleID: string;
+    solid: SidebarSolidInfoFragment;
+  }[];
   showingSubsolids: boolean;
-  onEnterCompositeSolid: (solidName: string) => void;
+  onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
+  onClickSolid: (arg: SolidNameOrPath) => void;
 }
 
 export default class SidebarSolidInfo extends React.Component<
@@ -43,6 +50,7 @@ export default class SidebarSolidInfo extends React.Component<
         ...SolidTypeSignatureFragment
         name
         definition {
+          name
           description
           metadata {
             key
@@ -117,6 +125,14 @@ export default class SidebarSolidInfo extends React.Component<
               description
             }
           }
+          dependedBy {
+            definition {
+              name
+            }
+            solid {
+              name
+            }
+          }
         }
       }
 
@@ -127,7 +143,13 @@ export default class SidebarSolidInfo extends React.Component<
   };
 
   public render() {
-    const { solid, showingSubsolids, onEnterCompositeSolid } = this.props;
+    const {
+      solid,
+      solidDefinitionInvocations,
+      showingSubsolids,
+      onClickSolid,
+      onEnterCompositeSolid
+    } = this.props;
     const { name, definition, inputs, outputs } = solid;
 
     const Plugin = pluginForMetadata(definition.metadata);
@@ -163,27 +185,48 @@ export default class SidebarSolidInfo extends React.Component<
 
     return (
       <div>
-        {isComposite && !showingSubsolids && (
-          <Button
-            icon="zoom-in"
-            text="Expand"
-            style={{ float: "right", margin: "0 15px" }}
-            onClick={() => onEnterCompositeSolid(name)}
-          />
-        )}
-        <SidebarSubhead>
-          {isComposite ? "Composite Solid" : "Solid"}
-        </SidebarSubhead>
-        <SidebarTitle>{name}</SidebarTitle>
-        <SidebarSection title={"Type Signature"}>
+        <SidebarSection title={"Invocation"}>
+          <SidebarTitle>{name}</SidebarTitle>
+          <DependencyTable>
+            <tbody>
+              {solid.inputs.map(({ definition, dependsOn }) =>
+                dependsOn.map((source, idx) => (
+                  <DependencyRow key={idx} from={source} to={definition.name} />
+                ))
+              )}
+              {solid.outputs.map(({ definition, dependedBy }) =>
+                dependedBy.map((target, idx) => (
+                  <DependencyRow key={idx} from={definition.name} to={target} />
+                ))
+              )}
+            </tbody>
+          </DependencyTable>
+        </SidebarSection>
+        <SidebarDivider />
+        <SidebarSection title={"Definition"}>
+          {isComposite && !showingSubsolids && (
+            <Button
+              icon="zoom-in"
+              text="Expand"
+              style={{ float: "right", margin: "0 15px" }}
+              onClick={() => onEnterCompositeSolid({ name })}
+            />
+          )}
+          <SidebarSubhead>
+            {isComposite ? "Composite Solid" : "Solid"}
+          </SidebarSubhead>
+          <SidebarTitle>{definition.name}</SidebarTitle>
           <SolidTypeSignature solid={solid} />
         </SidebarSection>
-        <SidebarSection title={"Description"}>
-          <Description description={definition.description} />
-          {Plugin && Plugin.SidebarComponent && (
-            <Plugin.SidebarComponent solid={solid} />
-          )}
-        </SidebarSection>
+
+        {definition.description && (
+          <SidebarSection title={"Description"}>
+            <Description description={definition.description} />
+            {Plugin && Plugin.SidebarComponent && (
+              <Plugin.SidebarComponent solid={solid} />
+            )}
+          </SidebarSection>
+        )}
         {configDefinition && (
           <SidebarSection title={"Config"}>
             <ConfigTypeSchema type={configDefinition.configType} />
@@ -192,7 +235,7 @@ export default class SidebarSolidInfo extends React.Component<
         <SidebarSection title={"Inputs"}>
           {inputs.map((input, idx) => (
             <SectionItemContainer key={idx}>
-              <SectionItemHeader>{input.definition.name}</SectionItemHeader>
+              <SectionSmallHeader>{input.definition.name}</SectionSmallHeader>
               <TypeWrapper>
                 <TypeWithTooltip type={input.definition.type} />
               </TypeWrapper>
@@ -209,7 +252,7 @@ export default class SidebarSolidInfo extends React.Component<
         <SidebarSection title={"Outputs"}>
           {outputs.map((output, idx) => (
             <SectionItemContainer key={idx}>
-              <SectionItemHeader>{output.definition.name}</SectionItemHeader>
+              <SectionSmallHeader>{output.definition.name}</SectionSmallHeader>
               <TypeWrapper>
                 <TypeWithTooltip type={output.definition.type} />
               </TypeWrapper>
@@ -222,6 +265,18 @@ export default class SidebarSolidInfo extends React.Component<
             </SectionItemContainer>
           ))}
         </SidebarSection>
+        {solidDefinitionInvocations && (
+          <SidebarSection title={"All Invocations"}>
+            {solidDefinitionInvocations.map(({ solid, handleID }, idx) => (
+              <Invocation
+                key={idx}
+                solid={solid}
+                handleID={handleID}
+                onClick={() => onClickSolid({ path: handleID.split(".") })}
+              />
+            ))}
+          </SidebarSection>
+        )}
       </div>
     );
   }
@@ -232,8 +287,18 @@ const TypeWrapper = styled.div`
 `;
 
 const SolidLink = (props: SolidLinkInfo) => (
-  <Link to={`./${props.solid.name}`} style={{ display: "block" }}>
-    <Code>{titleOfIO(props)}</Code>
+  <Link to={`./${props.solid.name}`}>
+    <Code
+      style={{
+        display: "inline-block",
+        verticalAlign: "middle",
+        textOverflow: "ellipsis",
+        overflow: "hidden",
+        maxWidth: "100%"
+      }}
+    >
+      {titleOfIO(props)}
+    </Code>
   </Link>
 );
 
@@ -246,6 +311,26 @@ const SolidLinks = (props: { title: string; items: SolidLinkInfo[] }) =>
       ))}
     </Text>
   ) : null;
+
+const Invocation = (props: {
+  onClick: () => void;
+  solid: SidebarSolidInfoFragment;
+  handleID: string;
+}) => {
+  const handlePath = props.handleID.split(".");
+  return (
+    <InvocationContainer onClick={props.onClick}>
+      {handlePath.length > 1 && (
+        <SidebarSubhead>
+          {`In ${handlePath[handlePath.length - 2]}:`}
+        </SidebarSubhead>
+      )}
+      <SectionSmallHeader style={{ marginBottom: 0 }}>
+        {props.solid.name}
+      </SectionSmallHeader>
+    </InvocationContainer>
+  );
+};
 
 const Expectations = (props: {
   items: { name: string; description: string | null }[];
@@ -261,4 +346,86 @@ const Expectations = (props: {
       ))}
     </UL>
   </>
+);
+
+const DependencyRow = ({
+  from,
+  to
+}: {
+  from: SolidLinkInfo | string;
+  to: SolidLinkInfo | string;
+}) => {
+  return (
+    <tr>
+      <td
+        style={{
+          whiteSpace: "nowrap",
+          maxWidth: 0,
+          width: "45%"
+        }}
+      >
+        {typeof from === "string" ? (
+          <DependencyLocalIOName>{from}</DependencyLocalIOName>
+        ) : (
+          <SolidLink {...from} />
+        )}
+      </td>
+      <td>{DependencyArrow}</td>
+      <td
+        style={{
+          textOverflow: "ellipsis",
+          overflow: "hidden",
+          whiteSpace: "nowrap",
+          maxWidth: 0,
+          width: "60%"
+        }}
+      >
+        {typeof to === "string" ? (
+          <DependencyLocalIOName>{to}</DependencyLocalIOName>
+        ) : (
+          <SolidLink {...to} />
+        )}
+      </td>
+    </tr>
+  );
+};
+
+const DependencyLocalIOName = styled.div`
+  font-family: monospace;
+  font-size: smaller;
+  font-weight: 500;
+  color: ${Colors.BLACK};
+`;
+
+const DependencyTable = styled.table`
+  width: 100%;
+`;
+
+const InvocationContainer = styled.div`
+  margin: 0 -10px;
+  padding: 10px;
+  pointer: default;
+  border-bottom: 1px solid ${Colors.LIGHT_GRAY2};
+  &:last-child {
+    border-bottom: none;
+  }
+  &:hover {
+    background: ${Colors.LIGHT_GRAY5};
+  }
+`;
+
+const DependencyArrow = (
+  <svg width="36px" height="9px" viewBox="0 0 36 9" version="1.1">
+    <g opacity="0.682756696">
+      <g
+        transform="translate(-1127.000000, -300.000000)"
+        fill="#979797"
+        fillRule="nonzero"
+      >
+        <g transform="translate(120.000000, 200.000000)">
+          <path d="M1033.16987,105 L1007.67526,105 L1007.67526,104 L1033.16987,104 L1033.16987,100 L1042.16987,104.5 L1033.16987,109 L1033.16987,105 Z" />
+        </g>
+      </g>
+    </g>
+  </svg>
 );
