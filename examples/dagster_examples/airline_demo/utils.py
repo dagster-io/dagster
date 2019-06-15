@@ -1,17 +1,4 @@
-import errno
-import os
-
 import sqlalchemy
-
-
-def mkdir_p(newdir, mode=0o777):
-    """The missing mkdir -p functionality in os."""
-    try:
-        os.makedirs(newdir, mode)
-    except OSError as err:
-        # Reraise the error unless it's about an already existing directory
-        if err.errno != errno.EEXIST or not os.path.isdir(newdir):
-            raise
 
 
 def create_redshift_db_url(username, password, hostname, db_name, jdbc=True):
