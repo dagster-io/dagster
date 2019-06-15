@@ -189,11 +189,13 @@ export default class SidebarSolidInfo extends React.Component<
           <SidebarTitle>{name}</SidebarTitle>
           <DependencyTable>
             <tbody>
+              <DependencyInOutLabel>Inputs:</DependencyInOutLabel>
               {solid.inputs.map(({ definition, dependsOn }) =>
                 dependsOn.map((source, idx) => (
                   <DependencyRow key={idx} from={source} to={definition.name} />
                 ))
               )}
+              <DependencyInOutLabel>Outputs:</DependencyInOutLabel>
               {solid.outputs.map(({ definition, dependedBy }) =>
                 dependedBy.map((target, idx) => (
                   <DependencyRow key={idx} from={definition.name} to={target} />
@@ -394,6 +396,13 @@ const DependencyLocalIOName = styled.div`
   font-family: monospace;
   font-size: smaller;
   font-weight: 500;
+  color: ${Colors.BLACK};
+`;
+
+const DependencyInOutLabel = styled.div`
+  font-family: monospace;
+  font-size: small;
+  font-weight: 700;
   color: ${Colors.BLACK};
 `;
 
