@@ -5,18 +5,13 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(SCRIPT_PATH)
 
-from defines import IMAGE_VERSION_MAP, SupportedPython
+from defines import SupportedPythons
 
 TIMEOUT_IN_MIN = 20
 
 DOCKER_PLUGIN = "docker#v3.2.0"
 
-PY_IMAGE_MAP = {
-    SupportedPython.V3_7: "python:3.7.3-stretch",
-    SupportedPython.V3_6: "python:3.6.8-stretch",
-    SupportedPython.V3_5: "python:3.5.7-stretch",
-    SupportedPython.V2_7: "python:2.7.16-stretch",
-}
+PY_IMAGE_MAP = {ver: "python:{}-stretch".format(ver) for ver in SupportedPythons}
 
 
 class StepBuilder:
@@ -27,11 +22,11 @@ class StepBuilder:
         self._step["commands"] = map(lambda cmd: "time " + cmd, argc)
         return self
 
-    def base_docker_settings(self):
+    def _base_docker_settings(self):
         return {"shell": ["/bin/bash", "-xeuc"], "always-pull": True}
 
     def on_python_image(self, ver, env=None):
-        settings = self.base_docker_settings()
+        settings = self._base_docker_settings()
         settings["image"] = PY_IMAGE_MAP[ver]
         if env:
             settings['environment'] = env
@@ -41,10 +36,10 @@ class StepBuilder:
         return self
 
     def on_integration_image(self, ver, env=None):
-        settings = self.base_docker_settings()
+        settings = self._base_docker_settings()
 
         # version like dagster/buildkite-integration:py3.7.3-v2
-        settings["image"] = "dagster/buildkite-integration:py" + IMAGE_VERSION_MAP[ver] + '-v2'
+        settings["image"] = "dagster/buildkite-integration:py" + ver + '-v2'
 
         # map the docker socket to enable docker to be run from inside docker
         settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock"]
@@ -61,6 +56,10 @@ class StepBuilder:
 
     def with_retry(self, num_retries):
         self._step["retry"] = {'automatic': {'limit': num_retries}}
+        return self
+
+    def on_medium_instance(self):
+        self._step["agents"] = {'queue': 'medium'}
         return self
 
     def build(self):

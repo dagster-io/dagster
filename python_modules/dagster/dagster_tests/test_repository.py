@@ -3,7 +3,6 @@ Repository of test pipelines
 '''
 
 from dagster import (
-    Dict,
     Field,
     Int,
     ModeDefinition,
@@ -49,7 +48,7 @@ def define_multi_mode_with_resources_pipeline():
     def multer_resource(init_context):
         return lambda x: x * init_context.resource_config
 
-    @resource(config_field=Field(Dict({'num_one': Field(Int), 'num_two': Field(Int)})))
+    @resource(config={'num_one': Field(Int), 'num_two': Field(Int)})
     def double_adder_resource(init_context):
         return (
             lambda x: x

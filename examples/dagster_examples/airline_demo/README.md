@@ -307,18 +307,18 @@ Note the type signature of these solids.
 
 ![Ingest pipeline type signature](img/ingest_pipeline_type_signature.png)
 
-The output has type `SparkDataFrameType`, a custom Dagster type that wraps a pyspark.sql.DataFrame.
+The output has type `DataFrame`, a custom Dagster type that wraps a pyspark.sql.DataFrame.
 Defining types of this kind is straightforward and provides additional safety when your solids pass
 Python objects to each other:
 
     from dagster import as_dagster_type
     from pyspark.sql import DataFrame
 
-    SparkDataFrameType = as_dagster_type(
-        DataFrame, name='SparkDataFrameType', description='A Pyspark data frame.'
+    DataFrame = as_dagster_type(
+        DataFrame, name='DataFrame', description='A Pyspark data frame.'
     )
 
-The transformation solids that follow all use the SparkDataFrameType for their intermediate results.
+The transformation solids that follow all use the DataFrame for their intermediate results.
 You might also build DAGs where Pandas data frames, or some other in-memory Python object, are the
 common intermediate representation.
 
@@ -383,18 +383,9 @@ which abstracts the operation of loading a Spark data frame to a database -- eit
 Redshift cluster or our local Postgres in test:
 
     @solid(
-        name='load_data_to_database_from_spark',
-        inputs=[
-            InputDefinition(
-                'data_frame',
-                SparkDataFrameType,
-                description='The pyspark DataFrame to load into the database.',
-            )
-        ],
-        outputs=[OutputDefinition(SparkDataFrameType)],
         config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
     )
-    def load_data_to_database_from_spark(context, data_frame):
+    def load_data_to_database_from_spark(context, data_frame: DataFrame) -> DataFrame:
         context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
         return data_frame
 

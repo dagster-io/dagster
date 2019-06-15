@@ -2,6 +2,7 @@ from dagster import check
 
 from dagster.core.types import Field, Dict
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
+from .config import resolve_config_field
 
 
 class LoggerDefinition(object):
@@ -27,15 +28,25 @@ class LoggerDefinition(object):
         self.description = check.opt_str_param(description, 'description')
 
 
-def logger(config_field=None, description=None):
+def logger(config_field=None, config=None, description=None):
     '''A decorator for creating a logger. The decorated function will be used as the
     logger_fn in a LoggerDefinition.
-    '''
 
+    Args:
+        config (Dict[str, Field]):
+                The schema for the configuration data made available to the logger_fn
+        config_field (Field):
+            Used in the rare case of a top level config type other than a dictionary.
+
+            Only one of config or config_field can be provided.
+        description (str)
+    '''
     # This case is for when decorator is used bare, without arguments.
     # E.g. @logger versus @logger()
     if callable(config_field):
         return LoggerDefinition(logger_fn=config_field, config_field=Field(Dict({})))
+
+    config_field = resolve_config_field(config_field, config, '@logger')
 
     def _wrap(logger_fn):
         return LoggerDefinition(logger_fn, config_field, description)

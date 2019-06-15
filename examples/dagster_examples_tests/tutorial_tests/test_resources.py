@@ -1,9 +1,10 @@
+import os
 import runpy
 import sys
 import warnings
 
 from dagster import execute_pipeline, RunConfig
-from dagster_examples.intro_tutorial.resources_full import define_resources_pipeline
+from dagster_examples.intro_tutorial.resources_full import resources_pipeline, HELLO_MESSAGE
 
 
 def has_message(events, message):
@@ -14,17 +15,26 @@ def has_message(events, message):
     return False
 
 
+TEMP_DAGSTER_MESSAGE_DIR = '/tmp/dagster-messages'
+
+
 def test_run_local():
+
+    if os.path.exists(TEMP_DAGSTER_MESSAGE_DIR):
+        os.unlink(TEMP_DAGSTER_MESSAGE_DIR)
+
     result = execute_pipeline(
-        define_resources_pipeline(),
+        resources_pipeline,
         run_config=RunConfig(mode='local'),
-        environment_dict={'resources': {'say_hi': {'config': {'output': '/tmp/dagster-messages'}}}},
+        environment_dict={
+            'resources': {'slack': {'config': {'output_path': TEMP_DAGSTER_MESSAGE_DIR}}}
+        },
     )
 
     assert result.success
 
     with open('/tmp/dagster-messages', 'rb') as f:
-        assert b'#dagster -- Hello from Dagster!' in f.read()
+        assert HELLO_MESSAGE.encode() in f.read()
 
 
 def test_resources():

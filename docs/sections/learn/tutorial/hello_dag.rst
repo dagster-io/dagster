@@ -8,33 +8,26 @@ and whose second solid concatenates two copies of its input. The output of the p
 two concatenated copies of the hardcoded string.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_dag.py
-   :linenos:
+   :lines: 1-16
    :caption: hello_dag.py
 
 This pipeline introduces a few new concepts.
 
-1.  Solids can have **inputs** defined by instances of
-    :py:class:`InputDefinition <dagster.InputDefinition>`. Inputs allow us to connect solids to
-    each other, and give dagster information about solids' dependencies on each other (and, as
-    we'll see later, optionally let dagster check the types of the inputs at runtime).
+1.  Solids can have **inputs**. Inputs allow us to connect solids to each other, and 
+    give dagster information about solids' dependencies on each other and, as we'll
+    see later, optionally let dagster check the types of the inputs at runtime.
+    (Note: The system introspects on the function signature to create instances
+    of instances of :py:class:`InputDefinition <dagster.InputDefinition>`. You are
+    free to construct these explicitly.) 
 
-2.  Solids' **dependencies** on each other are expressed by instances of
-    :py:class:`DependencyDefinition <dagster.DependencyDefinition>`.
-    You'll notice the new argument to :py:class:`PipelineDefinition <dagster.PipelineDefinition>`
-    called ``dependencies``, which is a dict that defines the connections between solids in a
-    pipeline's DAG.
+2.  Solids' **dependencies** are expressed in the body of the pipeline function. You use traditional
+    function calls to construct a representation of the dependency graph. These functions are
+    invoked at pipeline construction time and do *not* actually execute the body of the solid.
 
     .. literalinclude::  ../../../../examples/dagster_examples/intro_tutorial/hello_dag.py
-       :lines: 18
-       :dedent: 8
+       :lines: 14-16
 
-    The first layer of keys in this dict are the *names* of solids in the pipeline. The second layer
-    of keys are the *names* of the inputs to each solid. Each input in the DAG must be provided a
-    :py:class:`DependencyDefinition <dagster.DependencyDefinition>`. (Don't worry -- if you forget
-    to specify an input, a helpful error message will tell you what you missed.)
-
-    In this case the dictionary encodes the fact that the input ``arg_one`` of solid ``solid_two``
-    should flow from the output of ``solid_one``.
+    The above pipeline constructs a two solid pipeline with solid_two depending on solid_one.
 
 Let's visualize the DAG we've just defined in dagit.
 

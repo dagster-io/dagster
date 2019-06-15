@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from dagster import (
     DependencyDefinition,
-    Dict,
     Field,
     InputDefinition,
     Int,
@@ -14,7 +13,7 @@ from dagster import (
 )
 
 
-@solid(inputs=[InputDefinition('word', String)], config_field=Field(Dict({'factor': Field(Int)})))
+@solid(inputs=[InputDefinition('word', String)], config={'factor': Field(Int)})
 def multiply_the_word(context, word):
     return word * context.solid_config['factor']
 

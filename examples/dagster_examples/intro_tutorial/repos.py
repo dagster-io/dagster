@@ -1,4 +1,4 @@
-from dagster import lambda_solid, PipelineDefinition, RepositoryDefinition
+from dagster import lambda_solid, pipeline, RepositoryDefinition
 
 
 @lambda_solid
@@ -6,8 +6,13 @@ def hello_world():
     pass
 
 
+@pipeline
+def repo_demo_pipeline(_):
+    hello_world()
+
+
 def define_repo_demo_pipeline():
-    return PipelineDefinition(name='repo_demo_pipeline', solids=[hello_world])
+    return repo_demo_pipeline
 
 
 def define_repo():

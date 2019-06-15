@@ -29,6 +29,7 @@ from .inference import (
     infer_input_definitions_for_solid,
     infer_output_definitions,
 )
+from .config import resolve_config_field
 
 if hasattr(inspect, 'signature'):
     funcsigs = inspect
@@ -232,6 +233,7 @@ def solid(
     inputs=None,
     outputs=None,
     config_field=None,
+    config=None,
     description=None,
     required_resources=None,
 ):
@@ -253,10 +255,16 @@ def solid(
 
     Args:
         name (str): Name of solid.
-        inputs (list[InputDefinition]): List of inputs.
-        outputs (list[OutputDefinition]): List of outputs.
+        inputs (list[InputDefinition]):
+            List of inputs. Inferred from typehints if not provided.
+        outputs (list[OutputDefinition]):
+            List of outputs. Inferred from typehints if not provided.
+        config (Dict[str, Field]):
+            Defines the schema of configuration data provided to the solid via context.
         config_field (Field):
-            The configuration for this solid.
+            Used in the rare case of a top level config type other than a dictionary.
+
+            Only one of config or config_field can be provided.
         description (str): Description of this solid.
         resources (set[str]): Set of resource instances required by this solid.
 
@@ -325,6 +333,7 @@ def solid(
         check.invariant(outputs is None)
         check.invariant(description is None)
         check.invariant(config_field is None)
+        check.invariant(config is None)
         check.invariant(required_resources is None)
         return _Solid()(name)
 
@@ -332,7 +341,7 @@ def solid(
         name=name,
         inputs=inputs,
         outputs=outputs,
-        config_field=config_field,
+        config_field=resolve_config_field(config_field, config, '@solid'),
         description=description,
         required_resources=required_resources,
     )

@@ -1,4 +1,4 @@
-from dagster import system_storage, SystemStorageData, Dict, Field, String
+from dagster import system_storage, SystemStorageData, Field, String
 from dagster.core.definitions.system_storage import mem_system_storage, fs_system_storage
 from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
 from dagster.core.storage.runs import FileSystemRunStorage
@@ -7,10 +7,7 @@ from .file_manager import S3FileManager
 
 
 @system_storage(
-    name='s3',
-    is_persistent=True,
-    config_field=Field(Dict({'s3_bucket': Field(String)})),
-    required_resources={'s3'},
+    name='s3', is_persistent=True, config={'s3_bucket': Field(String)}, required_resources={'s3'}
 )
 def s3_system_storage(init_context):
     s3_session = init_context.resources.s3.session

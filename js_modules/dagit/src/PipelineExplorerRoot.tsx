@@ -6,13 +6,17 @@ import { QueryResult, Query } from "react-apollo";
 
 import Loading from "./Loading";
 import PipelineExplorer from "./PipelineExplorer";
-import { PipelineExplorerRootQuery } from "./types/PipelineExplorerRootQuery";
+import {
+  PipelineExplorerRootQuery,
+  PipelineExplorerRootQuery_pipeline_solidHandles
+} from "./types/PipelineExplorerRootQuery";
 
 interface IPipelineExplorerRootProps {
   location: { pathname: string };
   match: match<{ pipelineName: string; solidName: string }>;
   history: History<any>;
 }
+
 const PipelineExplorerRoot: React.FunctionComponent<
   IPipelineExplorerRootProps
 > = props => {
@@ -20,8 +24,8 @@ const PipelineExplorerRoot: React.FunctionComponent<
     .split(/\/explore\/?/)
     .pop()!
     .split("/");
-  const parentHandleID = pathSolids[pathSolids.length - 2];
-  const selectedHandleID = pathSolids[pathSolids.length - 1];
+  const parentNames = pathSolids.slice(0, pathSolids.length - 1);
+  const selectedName = pathSolids[pathSolids.length - 1];
 
   return (
     <Query
@@ -34,16 +38,26 @@ const PipelineExplorerRoot: React.FunctionComponent<
         <Loading queryResult={queryResult}>
           {({ pipeline }) => {
             let displayedHandles = pipeline.solidHandles.filter(h => !h.parent);
-            let parent = undefined;
+            let parent:
+              | PipelineExplorerRootQuery_pipeline_solidHandles
+              | undefined;
 
-            if (parentHandleID) {
-              parent = pipeline.solidHandles.find(
-                h => h.handleID === parentHandleID
-              );
+            for (const parentName of parentNames) {
+              parent = displayedHandles.find(h => h.solid.name === parentName);
               displayedHandles = pipeline.solidHandles.filter(
-                h => h.parent && h.parent.handleID === parentHandleID
+                h => h.parent && parent && h.parent.handleID === parent.handleID
               );
             }
+            const selectedHandle = displayedHandles.find(
+              h => h.solid.name === selectedName
+            );
+            const selectedDefinitionInvocations =
+              selectedHandle &&
+              pipeline.solidHandles.filter(
+                s =>
+                  s.solid.definition.name ===
+                  selectedHandle.solid.definition.name
+              );
 
             return (
               <PipelineExplorer
@@ -52,9 +66,8 @@ const PipelineExplorerRoot: React.FunctionComponent<
                 pipeline={pipeline}
                 handles={displayedHandles}
                 parentHandle={parent}
-                selectedHandle={displayedHandles.find(
-                  h => h.handleID === selectedHandleID
-                )}
+                selectedDefinitionInvocations={selectedDefinitionInvocations}
+                selectedHandle={selectedHandle}
               />
             );
           }}

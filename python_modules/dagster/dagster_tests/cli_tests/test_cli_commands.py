@@ -6,7 +6,7 @@ import pytest
 
 from click.testing import CliRunner
 
-from dagster import lambda_solid, PipelineDefinition, RepositoryDefinition
+from dagster import lambda_solid, RepositoryDefinition, pipeline, DagsterInvariantViolationError
 from dagster.core.storage.runs import base_runs_directory
 from dagster.cli.load_handle import CliUsageError
 from dagster.cli.pipeline import (
@@ -31,8 +31,13 @@ def do_something():
     return 1
 
 
+@pipeline(name='foo')
+def foo_pipeline(_):
+    do_something()
+
+
 def define_foo_pipeline():
-    return PipelineDefinition(name='foo', solids=[do_something])
+    return foo_pipeline
 
 
 def define_bar_repo():
@@ -202,6 +207,13 @@ def valid_execute_args():
             'module_name': None,
             'fn_name': 'define_foo_pipeline',
         },
+        {
+            'repository_yaml': None,
+            'pipeline_name': (),
+            'python_file': script_relative_path('test_cli_commands.py'),
+            'module_name': None,
+            'fn_name': 'foo_pipeline',
+        },
     ]
 
 
@@ -304,6 +316,72 @@ def test_execute_command():
         runner_pipeline_execute(
             runner, ['--env', script_relative_path('default_log_error_env.yaml')] + cli_args
         )
+
+
+def test_fn_not_found_execute():
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        execute_execute_command(
+            env=None,
+            raise_on_error=True,
+            cli_args={
+                'repository_yaml': None,
+                'pipeline_name': (),
+                'python_file': script_relative_path('test_cli_commands.py'),
+                'module_name': None,
+                'fn_name': 'nope',
+            },
+        )
+
+    assert 'nope not found in module' in str(exc_info.value)
+
+
+def not_a_repo_or_pipeline_fn():
+    return 'kdjfkjdf'
+
+
+not_a_repo_or_pipeline = 123
+
+
+def test_fn_is_wrong_thing():
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        execute_execute_command(
+            env=None,
+            raise_on_error=True,
+            cli_args={
+                'repository_yaml': None,
+                'pipeline_name': (),
+                'python_file': script_relative_path('test_cli_commands.py'),
+                'module_name': None,
+                'fn_name': 'not_a_repo_or_pipeline',
+            },
+        )
+
+    assert str(exc_info.value) == (
+        'not_a_repo_or_pipeline must be a function that returns a '
+        'PipelineDefinition or a RepositoryDefinition, or a function '
+        'decorated with @pipeline.'
+    )
+
+
+def test_fn_returns_wrong_thing():
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        execute_execute_command(
+            env=None,
+            raise_on_error=True,
+            cli_args={
+                'repository_yaml': None,
+                'pipeline_name': (),
+                'python_file': script_relative_path('test_cli_commands.py'),
+                'module_name': None,
+                'fn_name': 'not_a_repo_or_pipeline_fn',
+            },
+        )
+
+    assert str(exc_info.value) == (
+        'not_a_repo_or_pipeline_fn is a function but must return a '
+        'PipelineDefinition or a RepositoryDefinition, or be decorated '
+        'with @pipeline.'
+    )
 
 
 def runner_pipeline_execute(runner, cli_args):

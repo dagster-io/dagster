@@ -2,7 +2,6 @@ import re
 from operator import add
 
 from dagster import (
-    Dict,
     DependencyDefinition,
     Field,
     Int,
@@ -44,7 +43,7 @@ def computeContribs(urls, rank):
 @solid(
     inputs=[InputDefinition(name='links', dagster_type=SparkRDD)],
     outputs=[OutputDefinition(name='ranks', dagster_type=SparkRDD)],
-    config_field=Field(Dict({'iterations': Field(Int, is_optional=True, default_value=1)})),
+    config={'iterations': Field(Int, is_optional=True, default_value=1)},
 )
 def calculate_ranks(context, links):
     ranks = links.map(lambda url_neighbors: (url_neighbors[0], 1.0))

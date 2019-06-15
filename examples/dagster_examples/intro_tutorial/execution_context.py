@@ -1,4 +1,6 @@
-from dagster import PipelineDefinition, execute_pipeline, solid
+# pylint: disable=no-value-for-parameter
+
+from dagster import pipeline, solid
 
 
 @solid
@@ -12,14 +14,11 @@ def error_message(context):
     context.log.error('An error occurred.')
 
 
+@pipeline
+def execution_context_pipeline(_):
+    debug_message()
+    error_message()
+
+
 def define_execution_context_pipeline():
-    return PipelineDefinition(
-        name='execution_context_pipeline', solids=[debug_message, error_message]
-    )
-
-
-if __name__ == '__main__':
-    execute_pipeline(
-        define_execution_context_pipeline(),
-        {'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}},
-    )
+    return execution_context_pipeline

@@ -5,9 +5,10 @@ import { Colors, Icon } from "@blueprintjs/core";
 import {
   SidebarTitle,
   SidebarSubhead,
+  SectionInner,
   SidebarSection,
   SectionItemContainer,
-  SectionItemHeader
+  SectionHeader
 } from "./SidebarComponents";
 import Description from "./Description";
 import ConfigTypeSchema from "./ConfigTypeSchema";
@@ -61,8 +62,10 @@ export default class SidebarPipelineInfo extends React.Component<
 
     return (
       <div>
-        <SidebarSubhead>Pipeline</SidebarSubhead>
-        <SidebarTitle>{pipeline.name}</SidebarTitle>
+        <SectionInner>
+          <SidebarSubhead>Pipeline</SidebarSubhead>
+          <SidebarTitle>{pipeline.name}</SidebarTitle>
+        </SectionInner>
         <SidebarSection title={"Description"}>
           <Description
             description={pipeline ? pipeline.description : NO_DESCRIPTION}
@@ -71,7 +74,7 @@ export default class SidebarPipelineInfo extends React.Component<
         <SidebarSection title={"Modes"}>
           {pipeline.modes.map(mode => (
             <SectionItemContainer key={mode.name}>
-              <SectionItemHeader>{mode.name}</SectionItemHeader>
+              <SectionHeader>{mode.name}</SectionHeader>
               <Description description={mode.description || NO_DESCRIPTION} />
               {mode.resources.map(resource => (
                 <ContextResourceContainer key={resource.name}>
@@ -121,7 +124,7 @@ export default class SidebarPipelineInfo extends React.Component<
   }
 }
 
-const ContextResourceHeader = styled(SectionItemHeader)`
+const ContextResourceHeader = styled(SectionHeader)`
   font-size: 13px;
 `;
 
@@ -135,7 +138,7 @@ const ContextResourceContainer = styled.div`
   }
 `;
 
-const ContextLoggerHeader = styled(SectionItemHeader)`
+const ContextLoggerHeader = styled(SectionHeader)`
   font-size: 13px;
 `;
 

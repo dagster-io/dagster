@@ -1,20 +1,19 @@
-from dagster import (
-    execute_pipeline,
-    lambda_solid,
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    String,
-)
+# pylint: disable=no-value-for-parameter
+from dagster import execute_pipeline, lambda_solid, pipeline, String
 
 
-@lambda_solid(inputs=[InputDefinition('word')])
+@lambda_solid
 def add_hello_to_word(word):
     return 'Hello, ' + word + '!'
 
 
+@pipeline
+def hello_inputs_pipeline(_):
+    add_hello_to_word()
+
+
 def define_hello_inputs_pipeline():
-    return PipelineDefinition(name='hello_inputs', solids=[add_hello_to_word])
+    return hello_inputs_pipeline
 
 
 def execute_with_another_world():
@@ -32,10 +31,15 @@ def execute_with_another_world():
     )
 
 
-@lambda_solid(inputs=[InputDefinition('word', String)], output=OutputDefinition(String))
-def add_hello_to_word_typed(word):
+@lambda_solid
+def add_hello_to_word_typed(word: String) -> String:
     return 'Hello, ' + word + '!'
 
 
+@pipeline
+def hello_typed_inputs_pipeline(_):
+    add_hello_to_word_typed()
+
+
 def define_hello_typed_inputs_pipeline():
-    return PipelineDefinition(name='hello_typed_inputs', solids=[add_hello_to_word_typed])
+    return hello_typed_inputs_pipeline

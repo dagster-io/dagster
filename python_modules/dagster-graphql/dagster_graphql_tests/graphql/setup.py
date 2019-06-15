@@ -417,7 +417,7 @@ def define_multi_mode_with_resources_pipeline():
     def multer_resource(init_context):
         return lambda x: x * init_context.resource_config
 
-    @resource(config_field=Field(Dict({'num_one': Field(Int), 'num_two': Field(Int)})))
+    @resource(config={'num_one': Field(Int), 'num_two': Field(Int)})
     def double_adder_resource(init_context):
         return (
             lambda x: x
@@ -460,7 +460,7 @@ def define_multi_mode_with_loggers_pipeline():
         logger_.setLevel(coerce_valid_log_level(init_context.logger_config))
         return logger_
 
-    @logger(config_field=Field(Dict({'log_level': Field(String), 'prefix': Field(String)})))
+    @logger(config={'log_level': Field(String), 'prefix': Field(String)})
     def bar_logger(init_context):
         class BarLogger(logging.Logger):
             def __init__(self, name, prefix, *args, **kwargs):

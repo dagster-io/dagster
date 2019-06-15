@@ -14,7 +14,7 @@ from dagster import (
     solid,
 )
 from dagster.core.types.config import ConfigEnum
-from dagster.core.types.evaluator import validate_config
+from dagster.core.types.evaluator import evaluate_config
 
 
 def define_test_enum_type():
@@ -22,21 +22,22 @@ def define_test_enum_type():
 
 
 def test_config_enums():
-    assert not list(validate_config(define_test_enum_type(), 'VALUE_ONE'))
+    errors, _ = evaluate_config(define_test_enum_type(), 'VALUE_ONE')
+    assert not errors
 
 
 def test_config_enum_error_none():
-    errors = list(validate_config(define_test_enum_type(), None))
+    errors, _ = evaluate_config(define_test_enum_type(), None)
     assert len(errors) == 1
 
 
 def test_config_enum_error_wrong_type():
-    errors = list(validate_config(define_test_enum_type(), 384934))
+    errors, _ = evaluate_config(define_test_enum_type(), 384934)
     assert len(errors) == 1
 
 
 def test_config_enum_error():
-    errors = list(validate_config(define_test_enum_type(), 'NOT_PRESENT'))
+    errors, _ = evaluate_config(define_test_enum_type(), 'NOT_PRESENT')
     assert len(errors) == 1
 
 

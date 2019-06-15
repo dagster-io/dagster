@@ -7,7 +7,7 @@ Let's write our first pipeline and save it as ``hello_world.py``.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_world.py
    :linenos:
-   :lines: 1-10
+   :lines: 1-11
    :caption: hello_world.py
 
 This example introduces three concepts:
@@ -18,7 +18,7 @@ This example introduces three concepts:
     time it's run.
 
 2.  A **pipeline** is a set of solids arranged into a DAG of computation that produces data assets.
-    In this example, the call to :py:class:`PipelineDefinition <dagster.PipelineDefinition>` defines
+    In this example, the function decorated call to :py:func:`@pipeline <dagster.pipeline>` defines
     a pipeline with a single solid.
 
 3.  We **execute** the pipeline by running :py:func:`execute_pipeline <dagster.execute_pipeline>`.

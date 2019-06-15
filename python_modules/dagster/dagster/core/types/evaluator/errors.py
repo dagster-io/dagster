@@ -9,6 +9,7 @@ from ..field_utils import check_field_param
 from ..type_printer import print_config_type_to_string
 
 from .stack import get_friendly_path_info, get_friendly_path_msg, EvaluationStack
+from .traversal_context import TraversalContext
 
 
 class DagsterEvaluationErrorReason(Enum):
@@ -132,85 +133,220 @@ def _get_type_msg(error, type_in_context):
         return ' on type "{type_name}"'.format(type_name=type_in_context.name)
 
 
-def create_fields_not_defined_error(composite_type, stack, undefined_fields):
-    check.inst_param(composite_type, 'composite_type', ConfigType)
-    check.param_invariant(composite_type.has_fields, 'composite_type')
-    check.inst_param(stack, 'stack', EvaluationStack)
+def create_composite_type_mismatch_error(context):
+    check.inst_param(context, 'context', TraversalContext)
+
+    path_msg, _path = get_friendly_path_info(context.stack)
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message='Value {path_msg} must be dict. Expected: "{type_name}".'.format(
+            path_msg=path_msg,
+            type_name=print_config_type_to_string(context.config_type, with_lines=False),
+        ),
+        error_data=RuntimeMismatchErrorData(
+            config_type=context.config_type, value_rep=repr(context.config_value)
+        ),
+    )
+
+
+def create_fields_not_defined_error(context, undefined_fields):
+    check.inst_param(context, 'context', TraversalContext)
+    check.param_invariant(context.config_type.has_fields, 'config_type')
     check.list_param(undefined_fields, 'undefined_fields', of_type=str)
 
-    available_fields = sorted(list(composite_type.fields.keys()))
+    available_fields = sorted(list(context.config_type.fields.keys()))
     undefined_fields = sorted(undefined_fields)
 
     return EvaluationError(
-        stack=stack,
+        stack=context.stack,
         reason=DagsterEvaluationErrorReason.FIELDS_NOT_DEFINED,
         message=(
             'Fields "{undefined_fields}" are not defined {path_msg} Available '
             'fields: "{available_fields}"'
         ).format(
             undefined_fields=undefined_fields,
-            path_msg=get_friendly_path_msg(stack),
+            path_msg=get_friendly_path_msg(context.stack),
             available_fields=available_fields,
         ),
         error_data=FieldsNotDefinedErrorData(field_names=undefined_fields),
     )
 
 
-def create_field_not_defined_error(config_type, stack, received_field):
-    check.param_invariant(config_type.has_fields, 'config_type')
-    check.inst_param(stack, 'stack', EvaluationStack)
+def create_enum_type_mismatch_error(context):
+    check.inst_param(context, 'context', TraversalContext)
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message='Value for enum type {type_name} must be a string'.format(
+            type_name=context.config_type.name
+        ),
+        error_data=RuntimeMismatchErrorData(context.config_type, repr(context.config_value)),
+    )
+
+
+def create_enum_value_missing_error(context):
+    check.inst_param(context, 'context', TraversalContext)
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message='Value not in enum type {type_name}'.format(type_name=context.config_type.name),
+        error_data=RuntimeMismatchErrorData(context.config_type, repr(context.config_value)),
+    )
+
+
+def create_field_not_defined_error(context, received_field):
+    check.inst_param(context, 'context', TraversalContext)
+    check.param_invariant(context.config_type.has_fields, 'config_type')
     check.str_param(received_field, 'received_field')
 
     return EvaluationError(
-        stack=stack,
+        stack=context.stack,
         reason=DagsterEvaluationErrorReason.FIELD_NOT_DEFINED,
         message='Field "{received}" is not defined {path_msg} Expected: "{type_name}"'.format(
-            path_msg=get_friendly_path_msg(stack),
-            type_name=print_config_type_to_string(config_type, with_lines=False),
+            path_msg=get_friendly_path_msg(context.stack),
+            type_name=print_config_type_to_string(context.config_type, with_lines=False),
             received=received_field,
         ),
         error_data=FieldNotDefinedErrorData(field_name=received_field),
     )
 
 
-def create_missing_required_field_error(config_type, stack, expected_field):
-    check.param_invariant(config_type.has_fields, 'config_type')
-    check.inst_param(stack, 'stack', EvaluationStack)
-    check.str_param(expected_field, 'expected_field')
+def create_list_error(context):
+    check.inst_param(context, 'context', TraversalContext)
+    check.param_invariant(context.config_type.is_list, 'config_type')
 
     return EvaluationError(
-        stack=stack,
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message='Value {path_msg} must be list. Expected: {type_name}'.format(
+            path_msg=get_friendly_path_msg(context.stack),
+            type_name=print_config_type_to_string(context.config_type, with_lines=False),
+        ),
+        error_data=RuntimeMismatchErrorData(context.config_type, repr(context.config_value)),
+    )
+
+
+def create_missing_required_field_error(context, expected_field):
+    check.inst_param(context, 'context', TraversalContext)
+    check.param_invariant(context.config_type.has_fields, 'config_type')
+
+    return EvaluationError(
+        stack=context.stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD,
         message=(
             'Missing required field "{expected}" {path_msg} Available Fields: '
             '"{available_fields}".'
         ).format(
             expected=expected_field,
-            path_msg=get_friendly_path_msg(stack),
-            available_fields=sorted(list(config_type.fields.keys())),
+            path_msg=get_friendly_path_msg(context.stack),
+            available_fields=sorted(list(context.config_type.fields.keys())),
         ),
         error_data=MissingFieldErrorData(
-            field_name=expected_field, field_def=config_type.fields[expected_field]
+            field_name=expected_field, field_def=context.config_type.fields[expected_field]
         ),
     )
 
 
-def create_missing_required_fields_error(composite_type, stack, missing_fields):
-    check.inst_param(composite_type, 'composite_type', ConfigType)
-    check.param_invariant(composite_type.has_fields, 'compositve_type')
-    check.inst_param(stack, 'stack', EvaluationStack)
-    check.list_param(missing_fields, 'missing_fields', of_type=str)
+def create_missing_required_fields_error(context, missing_fields):
+    check.inst_param(context, 'context', TraversalContext)
+    check.param_invariant(context.config_type.has_fields, 'compositve_type')
 
     missing_fields = sorted(missing_fields)
-    missing_field_defs = list(map(lambda mf: composite_type.fields[mf], missing_fields))
+    missing_field_defs = list(map(lambda mf: context.config_type.fields[mf], missing_fields))
 
     return EvaluationError(
-        stack=stack,
+        stack=context.stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS,
         message='Missing required fields "{missing_fields}" {path_msg}".'.format(
-            missing_fields=missing_fields, path_msg=get_friendly_path_msg(stack)
+            missing_fields=missing_fields, path_msg=get_friendly_path_msg(context.stack)
         ),
         error_data=MissingFieldsErrorData(
             field_names=missing_fields, field_defs=missing_field_defs
         ),
+    )
+
+
+def create_scalar_error(context):
+    check.inst_param(context, 'context', TraversalContext)
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message='Value {path_msg} is not valid. Expected "{type_name}"'.format(
+            path_msg=get_friendly_path_msg(context.stack), type_name=context.config_type.name
+        ),
+        error_data=RuntimeMismatchErrorData(context.config_type, repr(context.config_value)),
+    )
+
+
+def create_selector_multiple_fields_error(context):
+    check.inst_param(context, 'context', TraversalContext)
+
+    defined_fields = sorted(list(context.config_type.fields.keys()))
+    incoming_fields = sorted(list(context.config_value.keys()))
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
+        message=(
+            'You can only specify a single field {path_msg}. You specified {incoming_fields}. '
+            'The available fields are {defined_fields}'
+        ).format(
+            incoming_fields=incoming_fields,
+            defined_fields=defined_fields,
+            path_msg=get_friendly_path_msg(context.stack),
+        ),
+        error_data=SelectorTypeErrorData(
+            dagster_type=context.config_type, incoming_fields=incoming_fields
+        ),
+    )
+
+
+def create_selector_multiple_fields_no_field_selected_error(context):
+    check.inst_param(context, 'context', TraversalContext)
+
+    defined_fields = sorted(list(context.config_type.fields.keys()))
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
+        message=(
+            'Must specify a field {path_msg} if more than one field is defined. '
+            'Defined fields: {defined_fields}'
+        ).format(defined_fields=defined_fields, path_msg=get_friendly_path_msg(context.stack)),
+        error_data=SelectorTypeErrorData(dagster_type=context.config_type, incoming_fields=[]),
+    )
+
+
+def create_selector_type_error(context):
+    check.inst_param(context, 'context', TraversalContext)
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message='Value for selector type {type_name} must be a dict'.format(
+            type_name=context.config_type.name
+        ),
+        error_data=RuntimeMismatchErrorData(
+            config_type=context.config_type, value_rep=repr(context.config_value)
+        ),
+    )
+
+
+def create_selector_unspecified_value_error(context):
+    check.inst_param(context, 'context', TraversalContext)
+
+    defined_fields = sorted(list(context.config_type.fields.keys()))
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
+        message=(
+            'Must specify the required field {path_msg}. Defined fields: {defined_fields}'
+        ).format(defined_fields=defined_fields, path_msg=get_friendly_path_msg(context.stack)),
+        error_data=SelectorTypeErrorData(dagster_type=context.config_type, incoming_fields=[]),
     )

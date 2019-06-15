@@ -30,7 +30,7 @@ from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster_aws.s3.intermediate_store import S3IntermediateStore
 
 from dagster_examples.airline_demo.solids import ingest_csv_file_handle_to_spark
-from dagster_examples.airline_demo.types import SparkDataFrameType
+from dagster_pyspark import DataFrame
 
 from .test_solids import spark_mode
 
@@ -122,10 +122,7 @@ def test_spark_dataframe_output_csv():
 
     assert num_df.collect() == [Row(num1=1, num2=2)]
 
-    @solid(
-        inputs=[InputDefinition('df', SparkDataFrameType)],
-        outputs=[OutputDefinition(SparkDataFrameType)],
-    )
+    @solid(inputs=[InputDefinition('df', DataFrame)], outputs=[OutputDefinition(DataFrame)])
     def passthrough_df(_context, df):
         return df
 

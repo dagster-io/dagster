@@ -17,7 +17,7 @@ languages. This time, we'll use a more fully-featured API to define our solid --
 :py:func:`@solid <dagster.solid>` instead of :py:func:`@lambda_solid <dagster.lambda_solid>`.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config.py
-   :lines: 4-28
+   :lines: 4-19
    :caption: config.py
 
 We will be exploring the :py:func:`@solid <dagster.solid>` API in much more detail as this tutorial
@@ -37,7 +37,7 @@ configuration to execute an entire pipeline. It may have many sections, but we'r
 using one of them here: per-solid configuration specified under the key ``solids``.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config.py
-   :lines: 22-24
+   :lines: 23-25
    :dedent: 4
 
 The ``solids`` dict is keyed by solid name, and each of its values in turn defines a ``config``

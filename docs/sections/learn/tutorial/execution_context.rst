@@ -1,9 +1,8 @@
 Execution Context
 =================
 The execution context is threaded throughout the entire execution of a pipeline via a ``context``
-object passed to user code. It wraps the logging system along with access to external resources:
-interactions with logging systems, databases, and other external systems (e.g. a Spark cluster)
-should be managed through these properties of the execution context.
+object passed to user code. It wraps the logging system along with external resources, such as object store sessions;
+database and data warehouse connections; and access points for computational runtimes (e.g. a Spark context).
 
 Execution contexts provide a powerful layer of indirection that allows a solid to abstract away its
 surrounding environment. Using an execution context allows the system and pipeline infrastructure to
@@ -17,7 +16,7 @@ Logging
 One of the most common places you'll interact with the execution context is when logging:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/execution_context.py
-   :lines: 1-18
+   :lines: 3-20
    :caption: execution_context.py
 
 Run this example pipeline on the dagster CLI:

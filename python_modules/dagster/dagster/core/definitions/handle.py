@@ -65,25 +65,27 @@ class ExecutionTargetHandle:
     '''
 
     @staticmethod
-    def for_pipeline_fn(fn_name):  # pylint: disable=unused-argument
+    def for_pipeline_fn(fn):
         '''This builder is a bit magical, but it inspects its caller to determine how to build a
         ExecutionTargetHandle object via python_file and fn_name.
 
         This will work since fn_name is ensured to be in scope in the python_file caller's scope.
         '''
+        check.callable_param(fn, 'fn')
         return ExecutionTargetHandle.for_pipeline_python_file(
-            python_file=_get_python_file_from_previous_stack_frame(), fn_name=fn_name.__name__
+            python_file=_get_python_file_from_previous_stack_frame(), fn_name=fn.__name__
         )
 
     @staticmethod
-    def for_repo_fn(fn_name):  # pylint: disable=unused-argument
+    def for_repo_fn(fn):
         '''This builder is a bit magical, but it inspects its caller to determine how to build a
         ExecutionTargetHandle object via python_file and fn_name.
 
         This will work since fn_name is ensured to be in scope in the python_file caller's scope.
         '''
+        check.callable_param(fn, 'fn')
         return ExecutionTargetHandle.for_repo_python_file(
-            python_file=_get_python_file_from_previous_stack_frame(), fn_name=fn_name.__name__
+            python_file=_get_python_file_from_previous_stack_frame(), fn_name=fn.__name__
         )
 
     @staticmethod

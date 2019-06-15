@@ -10,6 +10,7 @@ consider a simple pipeline that replicates a word several times, then counts the
 characters:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_basic.py
+   :lines: 3-20
    :linenos:
    :caption: configuration_schemas.py
 
@@ -68,7 +69,8 @@ require an integer field ``factor`` in its configuration:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas.py
    :linenos:
-   :emphasize-lines: 18
+   :emphasize-lines: 7 
+   :lines: 3-20
    :caption: configuration_schemas.py
 
 Now, if we run the pipeline with the same incorrect configuration:
