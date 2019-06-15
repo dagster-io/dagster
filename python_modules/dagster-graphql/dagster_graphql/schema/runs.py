@@ -6,6 +6,13 @@ import logging
 import yaml
 
 from dagster import check
+
+from dagster.core.definitions.events import (
+    PathMetadataEntryData,
+    EventMetadataEntry,
+    JsonMetadataEntryData,
+)
+
 from dagster.core.events.log import EventRecord
 from dagster.core.events import DagsterEventType
 
@@ -229,27 +236,79 @@ class DauphinExecutionStepSkippedEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
 
+class DauphinEventMetadataEntry(dauphin.Interface):
+    class Meta:
+        name = 'EventMetadataEntry'
+
+    label = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+
+
+class DauphinEventPathMetadataEntry(dauphin.ObjectType):
+    class Meta:
+        name = 'EventPathMetadataEntry'
+        interfaces = (DauphinEventMetadataEntry,)
+
+    path = dauphin.NonNull(dauphin.String)
+
+
+class DauphinEventJsonMetadataEntry(dauphin.ObjectType):
+    class Meta:
+        name = 'EventJsonMetadataEntry'
+        interfaces = (DauphinEventMetadataEntry,)
+
+    jsonString = dauphin.NonNull(dauphin.String)
+
+
+class DauphinDisplayableEvent(dauphin.Interface):
+    class Meta:
+        name = 'DisplayableEvent'
+
+    label = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    metadataEntries = dauphin.non_null_list(DauphinEventMetadataEntry)
+
+
 class DauphinMaterialization(dauphin.ObjectType):
     class Meta:
         name = 'Materialization'
+        interfaces = (DauphinDisplayableEvent,)
 
-    description = dauphin.String()
-    name = dauphin.String()
-    path = dauphin.String()
-    resultMetadataJsonString = dauphin.String()
+    def resolve_metadataEntries(self, _graphene_info):
+        return list(iterate_metadata_entries(self.metadata_entries) or [])
 
-    def resolve_resultMetadataJsonString(self, _graphene_info):
-        return json.dumps(self.result_metadata or {})
+
+def iterate_metadata_entries(metadata_entries):
+    check.list_param(metadata_entries, 'metadata_entries', of_type=EventMetadataEntry)
+    for metadata_entry in metadata_entries:
+        if isinstance(metadata_entry.entry_data, PathMetadataEntryData):
+            yield DauphinEventPathMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                path=metadata_entry.entry_data.path,
+            )
+        elif isinstance(metadata_entry.entry_data, JsonMetadataEntryData):
+            yield DauphinEventJsonMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                jsonString=json.dumps(metadata_entry.entry_data.data),
+            )
+        else:
+            # skip rest for now
+            check.not_implemented(
+                '{} unsupported metadata entry for now'.format(type(metadata_entry.entry_data))
+            )
 
 
 class DauphinExpectationResult(dauphin.ObjectType):
     class Meta:
         name = 'ExpectationResult'
+        interfaces = (DauphinDisplayableEvent,)
 
     success = dauphin.NonNull(dauphin.Boolean)
-    name = dauphin.String()
-    message = dauphin.String()
-    resultMetadataJsonString = dauphin.String()
+
+    def resolve_metadataEntries(self, _graphene_info):
+        return list(iterate_metadata_entries(self.metadata_entries) or [])
 
 
 class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
@@ -339,7 +398,9 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
             intermediate_materialization=output_data.intermediate_materialization,
             value_repr=dagster_event.step_output_data.value_repr,
             # parens make black not put trailing commas, which in turn break py27
+            # fmt: off
             **(basic_params)
+            # fmt: on
         )
     elif dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
         materialization = dagster_event.step_materialization_data.materialization
@@ -349,16 +410,7 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         expectation_result = dagster_event.event_specific_data.expectation_result
         return graphene_info.schema.type_named('StepExpectationResultEvent')(
-            expectation_result=DauphinExpectationResult(
-                success=expectation_result.success,
-                name=expectation_result.name,
-                message=expectation_result.message,
-                resultMetadataJsonString=json.dumps(expectation_result.result_metadata)
-                if expectation_result.result_metadata
-                else None,
-            ),
-            # parens make black not put trailing commas, which in turn break py27
-            **(basic_params)
+            expectation_result=expectation_result, **(basic_params)
         )
     elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
         check.inst(dagster_event.step_failure_data, StepFailureData)
@@ -367,7 +419,9 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
                 dagster_event.step_failure_data.error
             ),
             # parens make black not put trailing commas, which in turn break py27
+            # fmt: off
             **(basic_params)
+            # fmt: on
         )
     elif dagster_event.event_type == DagsterEventType.PIPELINE_START:
         return graphene_info.schema.type_named('PipelineStartEvent')(
@@ -397,7 +451,9 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
                 dagster_event.pipeline_init_failure_data.error
             ),
             # parens make black not put trailing commas, which in turn break py27
+            # fmt: off
             **(basic_params)
+            # fmt: on
         )
     else:
         raise Exception(

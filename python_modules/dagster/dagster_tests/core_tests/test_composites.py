@@ -143,7 +143,7 @@ def test_mapped_composite_input_expectations():
 
     def exp_a(_c, _v):
         called['exp_a'] = True
-        return ExpectationResult(True)
+        return ExpectationResult.legacy_ctor(True)
 
     @solid(inputs=[InputDefinition('one', expectations=[ExpectationDefinition('exp_a', exp_a)])])
     def node_a(_context, one):
@@ -152,11 +152,11 @@ def test_mapped_composite_input_expectations():
 
     def inner_exp(_c, _v):
         called['inner_exp'] = True
-        return ExpectationResult(True)
+        return ExpectationResult.legacy_ctor(True)
 
     def outer_exp(_c, _v):
         called['outer_exp'] = True
-        return ExpectationResult(True)
+        return ExpectationResult.legacy_ctor(True)
 
     inner = CompositeSolidDefinition(
         name='inner',

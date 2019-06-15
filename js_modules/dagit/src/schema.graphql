@@ -54,6 +54,12 @@ union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigTy
 
 scalar Cursor
 
+interface DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+}
+
 type EnumConfigType implements ConfigType {
   key: String!
   name: String
@@ -109,6 +115,23 @@ type EvaluationStackListItemEntry {
 
 type EvaluationStackPathEntry {
   field: ConfigTypeField!
+}
+
+type EventJsonMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  jsonString: String!
+}
+
+interface EventMetadataEntry {
+  label: String!
+  description: String
+}
+
+type EventPathMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  path: String!
 }
 
 union ExecutePlanResult = ExecutePlanSuccess | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidStepError | PythonError
@@ -219,11 +242,11 @@ type Expectation {
   description: String
 }
 
-type ExpectationResult {
+type ExpectationResult implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
   success: Boolean!
-  name: String
-  message: String
-  resultMetadataJsonString: String
 }
 
 type FieldNotDefinedConfigError implements PipelineConfigValidationError {
@@ -338,11 +361,10 @@ type LogMessageEvent implements MessageEvent {
   step: ExecutionStep
 }
 
-type Materialization {
+type Materialization implements DisplayableEvent {
+  label: String!
   description: String
-  name: String
-  path: String
-  resultMetadataJsonString: String
+  metadataEntries: [EventMetadataEntry!]!
 }
 
 interface MessageEvent {

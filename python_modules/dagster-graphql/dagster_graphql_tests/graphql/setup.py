@@ -110,7 +110,7 @@ def sum_sq_solid(sum_df):
             expectations=[
                 ExpectationDefinition(
                     name='some_expectation',
-                    expectation_fn=lambda _i, _v: ExpectationResult(success=True),
+                    expectation_fn=lambda _i, _v: ExpectationResult.legacy_ctor(success=True),
                 )
             ],
         )
@@ -120,7 +120,7 @@ def sum_sq_solid(sum_df):
         expectations=[
             ExpectationDefinition(
                 name='other_expectation',
-                expectation_fn=lambda _i, _v: ExpectationResult(success=True),
+                expectation_fn=lambda _i, _v: ExpectationResult.legacy_ctor(success=True),
             )
         ],
     ),
@@ -168,7 +168,7 @@ def define_repository():
 def define_pipeline_with_expectation():
     @solid(outputs=[])
     def emit_successful_expectation(_context):
-        yield ExpectationResult(
+        yield ExpectationResult.legacy_ctor(
             success=True,
             name='always_true',
             message='Successful',
@@ -177,7 +177,7 @@ def define_pipeline_with_expectation():
 
     @solid(outputs=[])
     def emit_failed_expectation(_context):
-        yield ExpectationResult(
+        yield ExpectationResult.legacy_ctor(
             success=False,
             name='always_false',
             message='Failure',
@@ -186,7 +186,7 @@ def define_pipeline_with_expectation():
 
     @solid(outputs=[])
     def emit_successful_expectation_no_metadata(_context):
-        yield ExpectationResult(success=True, name='no_metadata', message='Successful')
+        yield ExpectationResult.legacy_ctor(success=True, name='no_metadata', message='Successful')
 
     return PipelineDefinition(
         name='pipeline_with_expectations',

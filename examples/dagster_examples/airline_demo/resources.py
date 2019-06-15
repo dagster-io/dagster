@@ -65,18 +65,20 @@ def redshift_db_info_resource(init_context):
 
 @resource(config_field=Field(PostgresConfigData))
 def postgres_db_info_resource(init_context):
+    host = init_context.resource_config['postgres_hostname']
+    db_name = init_context.resource_config['postgres_db_name']
     db_url_jdbc = create_postgres_db_url(
         init_context.resource_config['postgres_username'],
         init_context.resource_config['postgres_password'],
-        init_context.resource_config['postgres_hostname'],
-        init_context.resource_config['postgres_db_name'],
+        host,
+        db_name,
     )
 
     db_url = create_postgres_db_url(
         init_context.resource_config['postgres_username'],
         init_context.resource_config['postgres_password'],
-        init_context.resource_config['postgres_hostname'],
-        init_context.resource_config['postgres_db_name'],
+        host,
+        db_name,
         jdbc=False,
     )
 
@@ -91,4 +93,6 @@ def postgres_db_info_resource(init_context):
         engine=create_postgres_engine(db_url),
         dialect='postgres',
         load_table=_do_load,
+        host=host,
+        db_name=db_name,
     )

@@ -238,7 +238,7 @@ def test_valid_nothing_fns():
 
     @solid(outputs=[OutputDefinition(Nothing)])
     def yield_stuff(_context):
-        yield Materialization('/path/to/nowhere')
+        yield Materialization.legacy_ctor('/path/to/nowhere')
 
     pipeline = PipelineDefinition(
         name='fn_test', solids=[just_pass, just_pass2, ret_none, yield_none, yield_stuff]
@@ -292,7 +292,7 @@ def test_wrapping_nothing():
 def test_execution_plan():
     @solid(outputs=[OutputDefinition(Nothing)])
     def emit_nothing(_context):
-        yield Materialization(path='/path/')
+        yield Materialization.legacy_ctor(path='/path/')
 
     @lambda_solid(inputs=[InputDefinition('ready', Nothing)])
     def consume_nothing():

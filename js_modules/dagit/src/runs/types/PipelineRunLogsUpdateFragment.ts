@@ -97,10 +97,27 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEve
   key: string;
 }
 
+export interface PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_materialization_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export type PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_materialization_metadataEntries = PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry | PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_materialization_metadataEntries_EventJsonMetadataEntry;
+
 export interface PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_materialization {
   __typename: "Materialization";
-  path: string | null;
+  label: string;
   description: string | null;
+  metadataEntries: PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_materialization_metadataEntries[];
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent {
@@ -117,11 +134,28 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultE
   key: string;
 }
 
+export interface PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent_expectationResult_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export type PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent_expectationResult_metadataEntries = PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry | PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent_expectationResult_metadataEntries_EventJsonMetadataEntry;
+
 export interface PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent_expectationResult {
   __typename: "ExpectationResult";
   success: boolean;
-  name: string | null;
-  resultMetadataJsonString: string | null;
+  label: string;
+  description: string | null;
+  metadataEntries: PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent_expectationResult_metadataEntries[];
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent {

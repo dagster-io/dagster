@@ -17,7 +17,9 @@ from dagster import (
             expectations=[
                 ExpectationDefinition(
                     name='check_positive',
-                    expectation_fn=lambda _info, value: ExpectationResult(success=value > 0),
+                    expectation_fn=lambda _info, value: ExpectationResult.legacy_ctor(
+                        success=value > 0
+                    ),
                 )
             ],
         ),

@@ -30,7 +30,7 @@ raw_files = [
 
 def create_raw_file_solid(name):
     def do_expectation(_context, _value):
-        return ExpectationResult(
+        return ExpectationResult.legacy_ctor(
             success=True, name='output_table_exists', message='Checked {name} exists'
         )
 
@@ -49,7 +49,7 @@ def create_raw_file_solid(name):
         ),
     )
     def _f(_context):
-        yield Materialization(path='/path/to/{}.raw'.format(name))
+        yield Materialization.legacy_ctor(path='/path/to/{}.raw'.format(name))
         yield Result(name)
 
     return _f
@@ -82,7 +82,9 @@ def input_name_for_raw_file(raw_file):
 )
 def many_table_materializations(_context):
     for table in raw_tables:
-        yield Materialization(path='/path/to/{}'.format(table), description='This is a table.')
+        yield Materialization.legacy_ctor(
+            path='/path/to/{}'.format(table), description='This is a table.'
+        )
 
 
 @solid(
@@ -105,8 +107,10 @@ def many_materializations_and_passing_expectations(_context):
     ]
 
     for table in tables:
-        yield Materialization(path='/path/to/{}'.format(table), description='This is a table.')
-        yield ExpectationResult(
+        yield Materialization.legacy_ctor(
+            path='/path/to/{}'.format(table), description='This is a table.'
+        )
+        yield ExpectationResult.legacy_ctor(
             success=True,
             name='{table}.row_count'.format(table=table),
             message='Row count passed for {table}'.format(table=table),
@@ -119,7 +123,7 @@ def many_materializations_and_passing_expectations(_context):
     description='A solid that just does a couple inline expectations, one of which fails',
 )
 def check_users_and_groups_one_fails_one_succeeds(_context):
-    yield ExpectationResult(
+    yield ExpectationResult.legacy_ctor(
         success=True,
         name='user_expectations',
         message='Battery of expectations for user',
@@ -131,7 +135,7 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
         },
     )
 
-    yield ExpectationResult(
+    yield ExpectationResult.legacy_ctor(
         success=False,
         name='groups_expectations',
         message='Battery of expectations for groups',
@@ -150,8 +154,8 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
     description='A solid that just does a couple inline expectations',
 )
 def check_admins_both_succeed(_context):
-    yield ExpectationResult(success=True, message='Group admins check out')
-    yield ExpectationResult(success=True, message='Event admins check out')
+    yield ExpectationResult.legacy_ctor(success=True, message='Group admins check out')
+    yield ExpectationResult.legacy_ctor(success=True, message='Event admins check out')
 
 
 def define_many_events_pipeline():

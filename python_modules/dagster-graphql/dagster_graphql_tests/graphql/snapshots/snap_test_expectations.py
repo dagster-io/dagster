@@ -7,13 +7,81 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
+snapshots['test_basic_expectations_within_compute_step_events 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Failure',
+            'label': 'always_false',
+            'metadataEntries': [
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Relentless pessimism."}',
+                    'label': 'json'
+                }
+            ],
+            'success': False
+        },
+        'level': 'INFO',
+        'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step emit_failed_expectation.compute',
+        'step': {
+            'key': 'emit_failed_expectation.compute',
+            'solidHandleID': 'emit_failed_expectation'
+        }
+    }
+]
+
+snapshots['test_basic_expectations_within_compute_step_events 2'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Successful',
+            'label': 'always_true',
+            'metadataEntries': [
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Just because."}',
+                    'label': 'json'
+                }
+            ],
+            'success': True
+        },
+        'level': 'INFO',
+        'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step emit_successful_expectation.compute',
+        'step': {
+            'key': 'emit_successful_expectation.compute',
+            'solidHandleID': 'emit_successful_expectation'
+        }
+    }
+]
+
+snapshots['test_basic_expectations_within_compute_step_events 3'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Successful',
+            'label': 'no_metadata',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'INFO',
+        'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step emit_successful_expectation_no_metadata.compute',
+        'step': {
+            'key': 'emit_successful_expectation_no_metadata.compute',
+            'solidHandleID': 'emit_successful_expectation_no_metadata'
+        }
+    }
+]
+
 snapshots['test_basic_input_output_expectations 1'] = [
     {
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
-            'message': None,
-            'name': None,
-            'resultMetadataJsonString': None,
+            'description': None,
+            'label': 'unlabeled',
+            'metadataEntries': [
+            ],
             'success': True
         },
         'level': 'INFO',
@@ -26,9 +94,10 @@ snapshots['test_basic_input_output_expectations 1'] = [
     {
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
-            'message': None,
-            'name': None,
-            'resultMetadataJsonString': None,
+            'description': None,
+            'label': 'unlabeled',
+            'metadataEntries': [
+            ],
             'success': True
         },
         'level': 'INFO',

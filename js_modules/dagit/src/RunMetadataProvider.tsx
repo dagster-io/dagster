@@ -133,25 +133,51 @@ function extractMetadataFromLogs(
         metadata.steps[stepKey] = produce(
           metadata.steps[stepKey] || {},
           step => {
-            let text = (log.materialization.path || "").split("/").pop()!;
-            step.materializations.push({
-              icon: IStepDisplayIconType.LINK,
-              text: text || "Materialization",
-              items: [
-                {
-                  text: text,
-                  actionText: "[Copy Path]",
-                  action: IStepDisplayActionType.COPY,
-                  actionValue: log.materialization.path || ""
-                }
-              ]
-            });
+            for (const metadataEntry of log.materialization.metadataEntries) {
+              // place holder until we have two layers of hierarchy
+              // this preserves existing behavior now. other metadata types
+              // on a materialization will be ignored
+              if (metadataEntry.__typename == "EventPathMetadataEntry") {
+                let text =
+                  log.materialization.label + "." + metadataEntry.label;
+
+                step.materializations.push({
+                  icon: IStepDisplayIconType.LINK,
+                  text: text || "Materialization",
+                  items: [
+                    {
+                      text: text,
+                      actionText: "[Copy Path]",
+                      action: IStepDisplayActionType.COPY,
+                      actionValue: metadataEntry.path || ""
+                    }
+                  ]
+                });
+              }
+            }
           }
         );
       } else if (log.__typename == "StepExpectationResultEvent") {
         metadata.steps[stepKey] = produce(
           metadata.steps[stepKey] || {},
           step => {
+            const items = [];
+            for (const metadataEntry of log.expectationResult.metadataEntries) {
+              // ignore other entry types for now
+              if (metadataEntry.__typename == "EventJsonMetadataEntry") {
+                items.push({
+                  text: "",
+                  actionText: "[Show Metadata]",
+                  action: IStepDisplayActionType.SHOW_IN_MODAL,
+                  // take JSON string, parse, and then pretty print
+                  actionValue: JSON.stringify(
+                    JSON.parse(metadataEntry.jsonString),
+                    null,
+                    2
+                  )
+                });
+              }
+            }
             step.expectationResults.push({
               status: log.expectationResult.success
                 ? IExpectationResultStatus.PASSED
@@ -159,26 +185,8 @@ function extractMetadataFromLogs(
               icon: log.expectationResult.success
                 ? IStepDisplayIconType.SUCCESS
                 : IStepDisplayIconType.FAILURE,
-              text: log.expectationResult.name
-                ? log.expectationResult.name
-                : "Expectation",
-              items: log.expectationResult.resultMetadataJsonString
-                ? [
-                    {
-                      text: "",
-                      actionText: "[Show Metadata]",
-                      action: IStepDisplayActionType.SHOW_IN_MODAL,
-                      // take JSON string, parse, and then pretty print
-                      actionValue: JSON.stringify(
-                        JSON.parse(
-                          log.expectationResult.resultMetadataJsonString
-                        ),
-                        null,
-                        2
-                      )
-                    }
-                  ]
-                : []
+              text: log.expectationResult.label,
+              items: items
             });
           }
         );
@@ -209,6 +217,17 @@ export default class RunMetadataProvider extends React.Component<
 > {
   static fragments = {
     RunMetadataProviderMessageFragment: gql`
+      fragment MetadataEntryFragment on EventMetadataEntry {
+        label
+        description
+        ... on EventPathMetadataEntry {
+          path
+        }
+        ... on EventJsonMetadataEntry {
+          jsonString
+        }
+      }
+
       fragment RunMetadataProviderMessageFragment on PipelineRunEvent {
         __typename
         ... on MessageEvent {
@@ -226,15 +245,21 @@ export default class RunMetadataProvider extends React.Component<
             key
           }
           materialization {
-            path
+            label
             description
+            metadataEntries {
+              ...MetadataEntryFragment
+            }
           }
         }
         ... on StepExpectationResultEvent {
           expectationResult {
             success
-            name
-            resultMetadataJsonString
+            label
+            description
+            metadataEntries {
+              ...MetadataEntryFragment
+            }
           }
         }
       }

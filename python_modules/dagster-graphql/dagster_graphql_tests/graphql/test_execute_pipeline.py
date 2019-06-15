@@ -256,7 +256,8 @@ def test_basic_filesystem_sync_execution():
     sum_solid_output = get_step_output_event(logs, 'sum_solid.compute')
     assert sum_solid_output['step']['key'] == 'sum_solid.compute'
     assert sum_solid_output['outputName'] == 'result'
-    output_path = sum_solid_output['intermediateMaterialization']['path']
+    assert len(sum_solid_output['intermediateMaterialization']['metadataEntries']) == 1
+    output_path = sum_solid_output['intermediateMaterialization']['metadataEntries'][0]['path']
 
     assert os.path.exists(output_path)
 
@@ -530,4 +531,5 @@ def test_basic_start_pipeline_execution_with_materialization():
 
         # ensure only one event
         assert step_mat_event
-        assert step_mat_event['materialization']['path'] == out_csv_path
+        assert len(step_mat_event['materialization']['metadataEntries']) == 1
+        assert step_mat_event['materialization']['metadataEntries'][0]['path'] == out_csv_path

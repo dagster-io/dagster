@@ -74,7 +74,7 @@ def cache_file_from_s3(context, bucket_data):
     else:
         context.log.info('File {} already present in cache'.format(file_handle.path_desc))
 
-    yield ExpectationResult(
+    yield ExpectationResult.legacy_ctor(
         success=file_cache.has_file_object(target_key),
         name='file_handle_exists',
         result_metadata={'path': file_handle.path_desc},

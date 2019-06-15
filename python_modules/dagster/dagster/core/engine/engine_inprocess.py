@@ -344,7 +344,7 @@ def _create_step_output_event(step_context, result, intermediates_manager):
             step_output_data=StepOutputData(
                 step_output_handle=step_output_handle,
                 value_repr=repr(value),
-                intermediate_materialization=Materialization(path=object_key)
+                intermediate_materialization=Materialization.legacy_ctor(path=object_key)
                 if object_key
                 else None,
             ),
