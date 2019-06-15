@@ -1,40 +1,30 @@
+# pylint: disable=no-value-for-parameter
+
 from collections import defaultdict
 
-from dagster import (
-    DependencyDefinition,
-    Field,
-    InputDefinition,
-    Int,
-    PipelineDefinition,
-    RepositoryDefinition,
-    String,
-    lambda_solid,
-    solid,
-)
+from dagster import pipeline, Field, Int, RepositoryDefinition, lambda_solid, solid
 
 
-@solid(inputs=[InputDefinition('word', String)], config={'factor': Field(Int)})
-def multiply_the_word(context, word):
+@solid(config={'factor': Field(Int)})
+def multiply_the_word(context, word: str) -> str:
     return word * context.solid_config['factor']
 
 
-@lambda_solid(inputs=[InputDefinition('word')])
-def count_letters(word):
+@lambda_solid
+def count_letters(word: str):  # TODO type return as dict?
     counts = defaultdict(int)
     for letter in word:
         counts[letter] += 1
     return dict(counts)
 
 
-def define_demo_execution_pipeline():
-    return PipelineDefinition(
-        name='demo_pipeline',
-        solids=[multiply_the_word, count_letters],
-        dependencies={'count_letters': {'word': DependencyDefinition('multiply_the_word')}},
-    )
+@pipeline
+def demo_execution_pipeline(_):
+    return count_letters(multiply_the_word())
 
 
 def define_demo_execution_repo():
     return RepositoryDefinition(
-        name='demo_execution_repo', pipeline_dict={'demo_pipeline': define_demo_execution_pipeline}
+        name='demo_execution_repo',
+        pipeline_dict={'demo_execution_pipeline': demo_execution_pipeline},
     )
