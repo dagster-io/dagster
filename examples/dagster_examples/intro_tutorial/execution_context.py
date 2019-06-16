@@ -18,7 +18,3 @@ def error_message(context):
 def execution_context_pipeline(_):
     debug_message()
     error_message()
-
-
-def define_execution_context_pipeline():
-    return execution_context_pipeline

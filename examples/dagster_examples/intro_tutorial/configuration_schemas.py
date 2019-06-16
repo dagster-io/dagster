@@ -20,7 +20,3 @@ def count_letters(word: str) -> Counter:
 @pipeline
 def configuration_schema_pipeline(_):
     return count_letters(multiply_the_word())
-
-
-def define_configuration_schema_pipeline():
-    return configuration_schema_pipeline

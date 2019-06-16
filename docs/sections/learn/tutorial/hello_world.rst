@@ -40,7 +40,7 @@ CLI
 
 .. code-block:: console
 
-    $ dagster pipeline execute -f hello_world.py -n define_hello_world_pipeline
+    $ dagster pipeline execute -f hello_world.py -n hello_world_pipeline
     2019-01-08 11:23:57 - dagster - INFO - orig_message="Beginning execution of pipeline hello_world_pipeline" log_message_id="5c829421-06c7-49eb-9195-7e828e37eab8" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" event_type="PIPELINE_START"
     2019-01-08 11:23:57 - dagster - INFO - orig_message="Beginning execution of hello_world.transform" log_message_id="5878513a-b510-4837-88cb-f77205931abb" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" solid="hello_world" solid_definition="hello_world" event_type="EXECUTION_PLAN_STEP_START" step_key="hello_world.transform"
     2019-01-08 11:23:57 - dagster - INFO - orig_message="Solid hello_world emitted output \"result\" value 'hello'" log_message_id="b27fb70a-744a-46cc-81ba-677247b1b07b" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" solid="hello_world" solid_definition="hello_world"
@@ -59,7 +59,7 @@ To visualize your pipeline (which only has one node) in dagit, you can run:
 
 .. code-block:: console
 
-   $ dagit -f hello_world.py -n define_hello_world_pipeline
+   $ dagit -f hello_world.py -n hello_world_pipeline
    Serving on http://127.0.0.1:3000
 
 You should be able to navigate to http://127.0.0.1:3000/hello_world_pipeline/explore in your web

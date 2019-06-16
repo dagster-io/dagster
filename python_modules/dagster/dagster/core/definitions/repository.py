@@ -10,7 +10,7 @@ class RepositoryDefinition(object):
 
     Args:
         name (str): The name of the pipeline.
-        pipeline_dict (Dict[str, callable]):
+        pipeline_dict (Dict[str, Union[callable, PipelineDefinition]):
             An dictionary of pipelines. The value of the dictionary is a function that takes
             no parameters and returns a PipelineDefiniton.
 
@@ -30,7 +30,13 @@ class RepositoryDefinition(object):
         check.dict_param(pipeline_dict, 'pipeline_dict', key_type=str)
 
         for val in pipeline_dict.values():
-            check.is_callable(val, 'Value in pipeline_dict must be function')
+            check.invariant(
+                callable(val) or isinstance(val, PipelineDefinition),
+                (
+                    'Value in pipeline_dict must be function, an @pipeline function, '
+                    'or a PipelineDefinition instance '
+                ),
+            )
 
         self.pipeline_dict = pipeline_dict
 
@@ -63,6 +69,29 @@ class RepositoryDefinition(object):
         check.str_param(name, 'name')
         return name in self.pipeline_dict
 
+    def _resolve_pipeline(self, name):
+        check.str_param(name, 'name')
+        if name not in self.pipeline_dict:
+            raise DagsterInvariantViolationError(
+                'Could not find pipeline "{name}". Found: {pipeline_names}.'.format(
+                    name=name,
+                    pipeline_names=', '.join(
+                        [
+                            '"{pipeline_name}"'.format(pipeline_name=name)
+                            for pipeline_name in self.pipeline_dict.keys()
+                        ]
+                    ),
+                )
+            )
+
+        entry = self.pipeline_dict[name]
+        if isinstance(entry, PipelineDefinition):
+            return entry
+        elif callable(entry):
+            return entry()
+        else:
+            check.failed('Should be pipeline or callable')
+
     def get_pipeline(self, name):
         '''Get a pipeline by name. Only constructs that pipeline and caches it.
 
@@ -77,26 +106,7 @@ class RepositoryDefinition(object):
         if name in self._pipeline_cache:
             return self._pipeline_cache[name]
 
-        try:
-            pipeline = self.pipeline_dict[name]()
-        except KeyError:
-            raise DagsterInvariantViolationError(
-                'Could not find pipeline "{name}". Found: {pipeline_names}.'.format(
-                    name=name,
-                    pipeline_names=', '.join(
-                        [
-                            '"{pipeline_name}"'.format(pipeline_name=pipeline_name)
-                            for pipeline_name in self.pipeline_dict.keys()
-                        ]
-                    ),
-                )
-            )
-        check.invariant(
-            pipeline.name == name,
-            'Name does not match. Name in dict {name}. Name in pipeline {pipeline.name}'.format(
-                name=name, pipeline=pipeline
-            ),
-        )
+        pipeline = self._resolve_pipeline(name)
 
         self._pipeline_cache[name] = check.inst(
             pipeline,

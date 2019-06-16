@@ -198,7 +198,7 @@ def valid_execute_args():
             'pipeline_name': (),
             'python_file': None,
             'module_name': 'dagster_examples.intro_tutorial.repos',
-            'fn_name': 'define_repo_demo_pipeline',
+            'fn_name': 'repo_demo_pipeline',
         },
         {
             'repository_yaml': None,
@@ -223,7 +223,7 @@ def valid_cli_args():
         ['-y', script_relative_path('repository_module.yaml'), 'repo_demo_pipeline'],
         ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_bar_repo', 'foo'],
         ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo', 'repo_demo_pipeline'],
-        ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo_demo_pipeline'],
+        ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'repo_demo_pipeline'],
         ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_foo_pipeline'],
     ]
 

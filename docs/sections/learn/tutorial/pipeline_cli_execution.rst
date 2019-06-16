@@ -33,7 +33,7 @@ name.
 
 .. code-block:: console
 
-    $ dagster pipeline execute demo_pipeline -e env.yaml
+    $ dagster pipeline execute demo_execution_pipeline -e env.yaml
 
 Config Splitting
 ^^^^^^^^^^^^^^^^
@@ -60,7 +60,7 @@ Now we can run our pipeline as follows:
 
 .. code-block:: console
 
-    $ dagster pipeline execute part_seven -e constant_env.yaml -e specific_env.yaml
+    $ dagster pipeline execute demo_execution_pipeline -e constant_env.yaml -e specific_env.yaml
 
 Order matters when specifying yaml files to use -- values specified in later files will override
 values in earlier files, which can be useful. You can also use globs in the CLI arguments to consume

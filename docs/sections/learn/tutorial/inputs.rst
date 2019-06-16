@@ -60,7 +60,7 @@ And now specify that config file via the ``-e`` flag.
 .. code-block:: console
 
     $ dagster pipeline execute -f inputs.py \
-    -n define_hello_inputs_pipeline -e inputs_env.yaml
+    -n hello_inputs_pipeline -e inputs_env.yaml
 
 Dagit
 ~~~~~
@@ -69,7 +69,7 @@ As always, you can load the pipeline and execute it within dagit.
 
 .. code-block:: console
 
-   $ dagit -f inputs.py -n define_hello_inputs_pipeline
+   $ dagit -f inputs.py -n hello_inputs_pipeline
    Serving on http://127.0.0.1:3000
 
 From the execute console, you can enter your config directly like so:

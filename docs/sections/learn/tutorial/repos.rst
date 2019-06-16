@@ -9,9 +9,9 @@ definition function (``-n``) in order to tell the CLI tools how to load a pipeli
 
 .. code-block:: console
 
-    $ dagit -f hello_world.py -n define_hello_world_pipeline
+    $ dagit -f hello_world.py -n hello_world_pipeline
     $ dagster pipeline execute -f hello_world.py \
-        -n define_hello_world_pipeline
+        -n hello_world_pipeline
 
 But most of the time, especially when working on long-running projects with other people, we will
 want to be able to target many pipelines at once with our tools.

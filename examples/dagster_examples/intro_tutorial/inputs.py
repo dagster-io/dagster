@@ -12,13 +12,9 @@ def hello_inputs_pipeline(_):
     add_hello_to_word()
 
 
-def define_hello_inputs_pipeline():
-    return hello_inputs_pipeline
-
-
 def execute_with_another_world():
     return execute_pipeline(
-        define_hello_inputs_pipeline(),
+        hello_inputs_pipeline,
         # This entire dictionary is known as the 'environment'.
         # It has many sections.
         {
@@ -39,7 +35,3 @@ def add_hello_to_word_typed(word: String) -> String:
 @pipeline
 def hello_typed_inputs_pipeline(_):
     add_hello_to_word_typed()
-
-
-def define_hello_typed_inputs_pipeline():
-    return hello_typed_inputs_pipeline

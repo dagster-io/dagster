@@ -6,7 +6,7 @@ from dagster.utils import pushd, script_relative_path
 
 def test_execute_pipeline():
     execute_kwargs = {
-        'pipeline_name': ['demo_pipeline'],
+        'pipeline_name': ['demo_execution_pipeline'],
         'repository_yaml': 'pipeline_execution_repository.yaml',
         'module_name': None,
         'python_file': None,

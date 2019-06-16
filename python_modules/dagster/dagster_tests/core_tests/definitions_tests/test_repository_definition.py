@@ -26,7 +26,7 @@ def create_single_node_pipeline(name, called):
     )
 
 
-def test_repo_definition():
+def test_repo_lazy_definition():
     called = defaultdict(int)
     repo = RepositoryDefinition(
         name='some_repo',
@@ -95,3 +95,31 @@ def test_dupe_solid_repo_definition():
         'in pipeline "first" and it has been defined again '
         'in pipeline "second."'
     )
+
+
+def test_non_lazy_pipeline_dict():
+    called = defaultdict(int)
+    repo = RepositoryDefinition(
+        name='some_repo',
+        pipeline_dict={
+            'foo': create_single_node_pipeline('foo', called),
+            'bar': create_single_node_pipeline('bar', called),
+        },
+    )
+
+    assert repo.get_pipeline('foo').name == 'foo'
+    assert repo.get_pipeline('bar').name == 'bar'
+
+
+def test_eager():
+    called = defaultdict(int)
+    repo = RepositoryDefinition.eager_construction(
+        name='some_repo',
+        pipelines=[
+            create_single_node_pipeline('foo', called),
+            create_single_node_pipeline('bar', called),
+        ],
+    )
+
+    assert repo.get_pipeline('foo').name == 'foo'
+    assert repo.get_pipeline('bar').name == 'bar'

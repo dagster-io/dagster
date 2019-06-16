@@ -2,11 +2,11 @@
 
 from dagster import execute_pipeline
 from dagster.utils import check_cli_execute_file_pipeline, check_script, script_relative_path
-from dagster_examples.intro_tutorial.config import define_hello_with_config_pipeline, run
+from dagster_examples.intro_tutorial.config import hello_with_config_pipeline, run
 
 
 def test_tutorial_part_four():
-    pipeline = define_hello_with_config_pipeline()
+    pipeline = hello_with_config_pipeline
 
     result = execute_pipeline(pipeline, {'solids': {'hello_with_config': {'config': 'cn'}}})
 
@@ -34,7 +34,7 @@ def test_tutorial_script_part_four():
 def test_tutorial_cli_part_four():
     check_cli_execute_file_pipeline(
         script_relative_path('../../dagster_examples/intro_tutorial/config.py'),
-        'define_hello_with_config_pipeline',
+        'hello_with_config_pipeline',
         script_relative_path('../../dagster_examples/intro_tutorial/config_env.yaml'),
     )
 

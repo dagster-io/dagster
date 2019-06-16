@@ -27,7 +27,7 @@ You should be able to run this with the usual CLI invocation:
 
     $ dagster pipeline execute \
         -f configuration_schemas.py \
-        -n define_configuration_schema_pipeline \
+        -n configuration_schema_pipeline \
         -e configuration_schemas.yaml
 
 Now let's imagine we made a mistake and passed a ``string`` in our configuration:
@@ -42,7 +42,7 @@ And then ran it:
 
     $ dagster pipeline execute \
         -f configuration_schemas.py \
-        -n define_configuration_schema_pipeline \
+        -n configuration_schema_pipeline \
         -e configuration_schemas_bad_config.yaml
 
     ...
@@ -79,7 +79,7 @@ Now, if we run the pipeline with the same incorrect configuration:
 
     $ dagster pipeline execute \
         -f configuration_schemas.py \
-        -n define_configuration_schema_pipeline \
+        -n configuration_schema_pipeline \
         -e configuration_schemas_bad_config.yaml
 
 We'll get a nice error *prior* to execution:
@@ -109,7 +109,7 @@ And then run the pipeline:
 
     $ dagster pipeline execute \
         -f configuration_schemas.py \
-        -n define_configuration_schema_pipeline \
+        -n configuration_schema_pipeline \
         -e configuration_schemas_wrong_field.yaml
 
     ...

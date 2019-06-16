@@ -33,7 +33,7 @@ Let's visualize the DAG we've just defined in dagit.
 
 .. code-block:: console
 
-   $ dagit -f hello_dag.py -n define_hello_dag_pipeline
+   $ dagit -f hello_dag.py -n hello_dag_pipeline
 
 Navigate to http://127.0.0.1:3000/hello_dag_pipeline/explore or choose the hello_dag_pipeline
 from the dropdown:
@@ -50,7 +50,7 @@ Now run the pipeline we've just defined, either from dagit or from the command l
 
 .. code-block:: console
 
-	$ dagster pipeline execute -f hello_dag.py -n define_hello_dag_pipeline
+	$ dagster pipeline execute -f hello_dag.py -n hello_dag_pipeline
 
 In the next section, :doc:`An actual DAG <actual_dag>`, we'll build our first DAG with interesting
 topology and see how dagster determines the execution order of a pipeline.
