@@ -105,7 +105,7 @@ RUN curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_V
     sbt sbtVersion
 
 ##################################################################################################
-
+#
 
 # pip install all the downstream deps to speed up our CI jobs
 #
@@ -115,17 +115,22 @@ RUN curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_V
 # make install_dev_python_modules
 # pip freeze --exclude-editable > .buildkite/images/integration/snapshot-reqs.txt
 
-ARG PYTHON_MAJOR_VERSION
-ADD snapshot-reqs-$PYTHON_MAJOR_VERSION.txt /tmp/snapshot-reqs.txt
-RUN pip install --upgrade pip;\
-    pip install -r /tmp/snapshot-reqs.txt
-
+RUN pip --no-cache-dir install pyspark==2.4.0
 
 # This instigates some package downloads required by the airline-demo
 ADD trigger_maven.py .
 RUN python trigger_maven.py
 
-
 # Postgres (libpq) required for the airline demo
 RUN pip install tox
 RUN apt-get update && apt-get -y install libpq-dev
+
+ARG PYTHON_MAJOR_VERSION
+# These are at the bottom and because they are the most likely
+# to change frequently
+
+ADD snapshot-reqs-$PYTHON_MAJOR_VERSION.txt /tmp/snapshot-reqs.txt
+RUN pip install --upgrade pip;\
+    pip install -r /tmp/snapshot-reqs.txt
+
+

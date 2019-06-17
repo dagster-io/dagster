@@ -36,10 +36,13 @@ def _evaluate_config(context):
 
     elif context.config_type.is_selector:
         return evaluate_selector_config(context)
+
     elif context.config_type.is_composite:
         return evaluate_composite_config(context)
+
     elif context.config_type.is_list:
         return evaluate_list_config(context)
+
     elif context.config_type.is_nullable:
         if context.config_value is not None:
             return _evaluate_config(
@@ -79,15 +82,21 @@ def evaluate_selector_config(context):
     check.inst_param(context, 'context', TraversalContext)
     check.param_invariant(context.config_type.is_selector, 'selector_type')
 
-    if context.config_value and not isinstance(context.config_value, dict):
-        context.add_error(create_selector_type_error(context))
-        return None
+    if context.config_value:
+        if not isinstance(context.config_value, dict):
+            context.add_error(create_selector_type_error(context))
+            return None
 
-    if context.config_value and len(context.config_value) > 1:
-        context.add_error(create_selector_multiple_fields_error(context))
-        return None
+        if len(context.config_value) > 1:
+            context.add_error(create_selector_multiple_fields_error(context))
+            return None
 
-    elif not context.config_value:
+        field_name, incoming_field_value = single_item(context.config_value)
+        if field_name not in context.config_type.fields:
+            context.add_error(create_field_not_defined_error(context, field_name))
+            return None
+
+    else:
         if len(context.config_type.fields) > 1:
             context.add_error(create_selector_multiple_fields_no_field_selected_error(context))
             return None
@@ -100,20 +109,13 @@ def evaluate_selector_config(context):
 
         incoming_field_value = field_def.default_value if field_def.default_provided else None
 
-    else:
-        check.invariant(context.config_value and len(context.config_value) == 1)
+    field_def = context.config_type.fields[field_name]
 
-        field_name, incoming_field_value = single_item(context.config_value)
-        if field_name not in context.config_type.fields:
-            context.add_error(create_field_not_defined_error(context, field_name))
-            return None
-
-    parent_field = context.config_type.fields[field_name]
     child_value = _evaluate_config(
         TraversalContext(
-            parent_field.config_type,
+            field_def.config_type,
             incoming_field_value,
-            context.stack.with_field(field_name, parent_field),
+            context.stack.with_field(field_name, field_def),
             context.errors,
         )
     )
