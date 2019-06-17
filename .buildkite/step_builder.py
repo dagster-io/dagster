@@ -39,7 +39,7 @@ class StepBuilder:
         settings = self._base_docker_settings()
 
         # version like dagster/buildkite-integration:py3.7.3-v3
-        settings["image"] = "dagster/buildkite-integration:py" + ver + '-v3'
+        settings["image"] = "dagster/buildkite-integration:py" + ver + '-v4'
 
         # map the docker socket to enable docker to be run from inside docker
         settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock"]

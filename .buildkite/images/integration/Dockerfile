@@ -81,7 +81,7 @@ RUN set -ex; \
     fi; \
     apt-get update; \
     apt-get install -y \
-    openjdk-8-jre-headless="$JAVA_DEBIAN_VERSION"; \ 
+    openjdk-8-jre-headless="$JAVA_DEBIAN_VERSION"; \
     apt-get install -y \
     openjdk-8-jdk-headless="$JAVA_DEBIAN_VERSION" \
     ; \
@@ -121,6 +121,10 @@ RUN pip --no-cache-dir install pyspark==2.4.0
 ADD trigger_maven.py .
 RUN python trigger_maven.py
 
+# Pre-load jars for scala_modules by running a compile
+ADD scala_modules scala_modules
+RUN cd scala_modules && make compile
+
 # Postgres (libpq) required for the airline demo
 RUN pip install tox
 RUN apt-get update && apt-get -y install libpq-dev
@@ -132,5 +136,3 @@ ARG PYTHON_MAJOR_VERSION
 ADD snapshot-reqs-$PYTHON_MAJOR_VERSION.txt /tmp/snapshot-reqs.txt
 RUN pip install --upgrade pip;\
     pip install -r /tmp/snapshot-reqs.txt
-
-

@@ -1,4 +1,4 @@
-FROM dagster/buildkite-integration:py3.7.3-v3
+FROM dagster/buildkite-integration:py3.7.3-v4
 
 ADD dagster dagster
 ADD dagster-graphql dagster-graphql
