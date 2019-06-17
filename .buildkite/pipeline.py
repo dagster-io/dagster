@@ -171,7 +171,7 @@ def gcp_tests():
 
 def dask_tests():
     tests = []
-    for version in SupportedPythons:
+    for version in SupportedPython3s:
         coverage = ".coverage.dagster-dask.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder("dagster-dask tests ({ver})".format(ver=TOX_MAP[version]))

@@ -3,7 +3,8 @@ import json
 import click
 
 from graphql import graphql
-from graphql.execution.executors.gevent import GeventExecutor as Executor
+from graphql.execution.executors.gevent import GeventExecutor
+from graphql.execution.executors.sync import SyncExecutor
 
 from dagster import check, seven, ExecutionTargetHandle
 from dagster.cli.pipeline import repository_target_argument
@@ -29,10 +30,20 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query(handle, query, variables=None, pipeline_run_storage=None, raise_on_error=False):
+def execute_query(
+    handle,
+    query,
+    variables=None,
+    pipeline_run_storage=None,
+    raise_on_error=False,
+    use_sync_executor=False,
+):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.str_param(query, 'query')
     check.opt_dict_param(variables, 'variables')
+    check.opt_inst_param(pipeline_run_storage, 'pipeline_run_storage', PipelineRunStorage)
+    check.bool_param(raise_on_error, 'raise_on_error')
+    check.bool_param(use_sync_executor, 'use_sync_executor')
 
     query = query.strip('\'" \n\t')
 
@@ -50,12 +61,14 @@ def execute_query(handle, query, variables=None, pipeline_run_storage=None, rais
         version=__version__,
     )
 
+    executor = SyncExecutor() if use_sync_executor else GeventExecutor()
+
     result = graphql(
         request_string=query,
         schema=create_schema(),
         context=context,
         variables=variables,
-        executor=Executor(),
+        executor=executor,
     )
 
     result_dict = result.to_dict()

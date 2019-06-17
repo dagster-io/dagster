@@ -27,7 +27,7 @@ def query_on_dask_worker(handle, query, variables, dependencies):  # pylint: dis
     is propagated to the dask master from the workers about the state of execution; we should at
     least inform the user of exceptions.
     '''
-    res = execute_query(handle, query, variables, raise_on_error=True)
+    res = execute_query(handle, query, variables, raise_on_error=True, use_sync_executor=True)
     handle_errors(res)
     return handle_result(res)
 

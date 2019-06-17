@@ -1,7 +1,4 @@
-from tornado import gen
-
 from dagster import solid, ExecutionTargetHandle, ModeDefinition, PipelineDefinition
-from dagster.core.test_utils import retry
 
 from dagster_dask import execute_on_dask, DaskConfig
 
@@ -17,11 +14,7 @@ def define_dask_test_pipeline():
     )
 
 
-@retry(gen.TimeoutError, tries=3)
 def test_execute_on_dask():
-    '''This test is flaky on py27, I believe because of
-    https://github.com/dask/distributed/issues/2446. For now, we just retry a couple times...
-    '''
     result = execute_on_dask(
         ExecutionTargetHandle.for_pipeline_fn(define_dask_test_pipeline),
         env_config={'storage': {'filesystem': {}}},
