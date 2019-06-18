@@ -24,7 +24,7 @@ def get_expectation_result(logs, solid_name):
     return expt_results[0]
 
 
-def test_basic_expectations_within_compute_step_events():
+def test_basic_expectations_within_compute_step_events(snapshot):
     logs = sync_execute_get_events(
         variables={
             'executionParams': {
@@ -36,28 +36,31 @@ def test_basic_expectations_within_compute_step_events():
 
     emit_failed_expectation_event = get_expectation_result(logs, 'emit_failed_expectation')
     assert emit_failed_expectation_event['expectationResult']['success'] is False
-    assert emit_failed_expectation_event['expectationResult']['message'] == 'Failure'
+    assert emit_failed_expectation_event['expectationResult']['description'] == 'Failure'
     failed_result_metadata = json.loads(
-        emit_failed_expectation_event['expectationResult']['resultMetadataJsonString']
+        emit_failed_expectation_event['expectationResult']['metadataEntries'][0]['jsonString']
     )
-    assert emit_failed_expectation_event['expectationResult']['name'] == 'always_false'
+    assert emit_failed_expectation_event['expectationResult']['label'] == 'always_false'
 
     assert failed_result_metadata == {'reason': 'Relentless pessimism.'}
 
     emit_successful_expectation_event = get_expectation_result(logs, 'emit_successful_expectation')
 
     assert emit_successful_expectation_event['expectationResult']['success'] is True
-    assert emit_successful_expectation_event['expectationResult']['message'] == 'Successful'
-    assert emit_successful_expectation_event['expectationResult']['name'] == 'always_true'
+    assert emit_successful_expectation_event['expectationResult']['description'] == 'Successful'
+    assert emit_successful_expectation_event['expectationResult']['label'] == 'always_true'
     successful_result_metadata = json.loads(
-        emit_successful_expectation_event['expectationResult']['resultMetadataJsonString']
+        emit_successful_expectation_event['expectationResult']['metadataEntries'][0]['jsonString']
     )
 
     assert successful_result_metadata == {'reason': 'Just because.'}
 
     emit_no_metadata = get_expectation_result(logs, 'emit_successful_expectation_no_metadata')
+    assert not emit_no_metadata['expectationResult']['metadataEntries']
 
-    assert emit_no_metadata['expectationResult']['resultMetadataJsonString'] is None
+    snapshot.assert_match(get_expectation_results(logs, 'emit_failed_expectation'))
+    snapshot.assert_match(get_expectation_results(logs, 'emit_successful_expectation'))
+    snapshot.assert_match(get_expectation_results(logs, 'emit_successful_expectation_no_metadata'))
 
 
 def test_basic_input_output_expectations(snapshot):

@@ -36,7 +36,7 @@ def _create_materialization_lambda(output_def, config_spec):
             )
 
         yield Result(output_name=MATERIALIZATION_THUNK_OUTPUT, value=runtime_value)
-        yield Materialization(
+        yield Materialization.legacy_ctor(
             path=path,
             description=('Materialization of {solid_name}.{output_name}').format(
                 output_name=output_def.name, solid_name=str(step_context.solid_handle)

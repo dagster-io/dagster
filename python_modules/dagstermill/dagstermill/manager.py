@@ -135,14 +135,14 @@ class Manager:
 
     def yield_materialization(self, path, description):
         if not self.populated_by_papermill:
-            return Materialization(path, description)
+            return Materialization.legacy_ctor(path, description=description)
 
         materialization_id = 'materialization-{materialization_uuid}'.format(
             materialization_uuid=str(uuid.uuid4())
         )
         out_file_path = os.path.join(self.marshal_dir, materialization_id)
         with open(out_file_path, 'wb') as fd:
-            fd.write(pickle.dumps(Materialization(path, description), PICKLE_PROTOCOL))
+            fd.write(pickle.dumps(Materialization.legacy_ctor(path, description), PICKLE_PROTOCOL))
 
         scrapbook.glue(materialization_id, out_file_path)
 

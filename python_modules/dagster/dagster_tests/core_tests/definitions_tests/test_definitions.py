@@ -90,6 +90,14 @@ def test_solid_def():
     assert len(pipeline_def.dependency_structure.items()) == 1
 
 
+def test_solid_def_bad_input_name():
+    with pytest.raises(DagsterInvalidDefinitionError, match='context is not allowed'):
+        # pylint: disable=unused-variable
+        @solid(inputs=[InputDefinition('context', String)])
+        def solid_one(_, _context):
+            pass
+
+
 def test_pipeline_types():
     @lambda_solid
     def produce_string():

@@ -3,6 +3,7 @@ from dagster.core import types
 from dagster.core.definitions import (
     CompositeSolidDefinition,
     DependencyDefinition,
+    EventMetadataEntry,
     ExecutionTargetHandle,
     ExpectationDefinition,
     ExpectationResult,
@@ -112,6 +113,7 @@ from .version import __version__
 __all__ = [
     # Definition
     'DependencyDefinition',
+    'EventMetadataEntry',
     'ExpectationDefinition',
     'ExpectationResult',
     'Field',

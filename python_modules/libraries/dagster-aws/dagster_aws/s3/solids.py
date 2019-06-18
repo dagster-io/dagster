@@ -1,4 +1,5 @@
 from dagster import (
+    EventMetadataEntry,
     FileHandle,
     Dict,
     Field,
@@ -47,6 +48,13 @@ S3BucketData = dict_with_fields(
 )
 
 
+def last_key(key):
+    if '/' not in key:
+        return key
+    comps = key.split('/')
+    return comps[-1]
+
+
 @solid(
     config_field=put_object_configs(),
     inputs=[InputDefinition('file_handle', FileHandle, description='The file to upload.')],
@@ -67,6 +75,9 @@ def file_handle_to_s3(context, file_handle):
         context.resources.s3.put_object(**cfg)
         s3_file_handle = S3FileHandle(bucket, key)
 
-        yield Materialization(path=s3_file_handle.s3_path)
+        yield Materialization(
+            label='file_to_s3',
+            metadata_entries=[EventMetadataEntry.path(s3_file_handle.s3_path, label=last_key(key))],
+        )
 
         yield Result(value=s3_file_handle, output_name='s3_file_handle')

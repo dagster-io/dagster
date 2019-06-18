@@ -20,7 +20,7 @@ from .entrypoint import LoaderEntrypoint
 
 from .expectation import ExpectationDefinition
 
-from .events import ExpectationResult, Result, Materialization
+from .events import ExpectationResult, Result, Materialization, EventMetadataEntry
 
 from .input import InputDefinition, InputMapping
 

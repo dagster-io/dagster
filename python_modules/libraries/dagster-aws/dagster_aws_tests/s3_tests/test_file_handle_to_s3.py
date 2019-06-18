@@ -48,7 +48,11 @@ def test_successful_file_handle_to_s3():
             'file_handle_to_s3'
         ).materializations_during_compute
         assert len(materializations) == 1
-        assert materializations[0].path == 's3://some-bucket/some-key'
+        assert len(materializations[0].metadata_entries) == 1
+        assert (
+            materializations[0].metadata_entries[0].entry_data.path == 's3://some-bucket/some-key'
+        )
+        assert materializations[0].metadata_entries[0].label == 'some-key'
 
 
 def test_successful_file_handle_to_s3_with_configs():

@@ -26,17 +26,35 @@ mutation (
                             step { key kind }
                             outputName
                             intermediateMaterialization {
-                                name
-                                path
+                                label
                                 description
-                                resultMetadataJsonString
+                                metadataEntries {
+                                    label
+                                    description
+                                    ... on EventPathMetadataEntry {
+                                        path
+                                    }
+                                    ... on EventJsonMetadataEntry {
+                                        jsonString
+                                    }
+                                }
                             }
                         }
                         ... on StepExpectationResultEvent {
                             expectationResult {
                                 success
-                                name
-                                resultMetadataJsonString
+                                label
+                                description
+                                metadataEntries {
+                                    label
+                                    description
+                                    ... on EventPathMetadataEntry {
+                                        path
+                                    }
+                                    ... on EventJsonMetadataEntry {
+                                        jsonString
+                                    }
+                                }
                             }
                         }
                     }
@@ -131,19 +149,36 @@ subscription subscribeTest($runId: ID!) {
                 }
                 ... on StepMaterializationEvent {
                     materialization {
-                        name
-                        path
+                        label
                         description
-                        resultMetadataJsonString
+                        metadataEntries {
+                            label
+                            description
+                            ... on EventPathMetadataEntry {
+                                path
+                            }
+                            ... on EventJsonMetadataEntry {
+                                jsonString
+                            }
+                        }
 
                     }
                 }
                 ... on StepExpectationResultEvent {
                     expectationResult {
                         success
-                        name
-                        message
-                        resultMetadataJsonString
+                        label
+                        description
+                        metadataEntries {
+                            label
+                            description
+                            ... on EventPathMetadataEntry {
+                                path
+                            }
+                            ... on EventJsonMetadataEntry {
+                                jsonString
+                            }
+                        }
                     }
                 }
             }

@@ -61,23 +61,55 @@ fragment stepEventFragment on StepEvent {
   ... on StepExpectationResultEvent {
     expectationResult {
       success
-      name
-      message
-      resultMetadataJsonString
+      label
+      description
+      metadataEntries {
+        __typename
+        label
+        description
+        ... on EventPathMetadataEntry {
+            path
+        }
+        ... on EventJsonMetadataEntry {
+            jsonString
+        }
+      }
     }
   }
   ... on StepMaterializationEvent {
     materialization {
+      label
       description
-      path
+      metadataEntries {
+        __typename
+        label
+        description
+        ... on EventPathMetadataEntry {
+          path
+        }
+        ... on EventJsonMetadataEntry {
+          jsonString
+        }
+      }
     }
   }
   ... on ExecutionStepOutputEvent {
     outputName
     valueRepr
     intermediateMaterialization {
+      label
       description
-      path
+      metadataEntries {
+        __typename
+        label
+        description
+        ... on EventPathMetadataEntry {
+          path
+        }
+        ... on EventJsonMetadataEntry {
+          jsonString
+        }
+      }
     }
   }
   ... on ExecutionStepFailureEvent {
@@ -140,6 +172,48 @@ def _handled_events():
     }
 
 
+from dagster import EventMetadataEntry
+
+
+def expectation_result_from_data(data):
+    return ExpectationResult(
+        success=data['success'],
+        label=data['label'],
+        description=data.get('description'),  # enforce?
+        metadata_entries=list(event_metadata_entries(data.get('metadataEntries')) or []),
+    )
+
+
+def materialization_from_data(data):
+    return Materialization(
+        label=data['label'],
+        description=data.get('description'),  # enforce?
+        metadata_entries=list(event_metadata_entries(data.get('metadataEntries')) or []),
+    )
+
+
+def event_metadata_entries(metadata_entry_datas):
+    if not metadata_entry_datas:
+        return
+
+    for metadata_entry_data in metadata_entry_datas:
+        typename = metadata_entry_data['__typename']
+        label = metadata_entry_data['label']
+        description = metadata_entry_data.get('description')
+        if typename == 'EventPathMetadataEntry':
+            yield EventMetadataEntry.path(
+                label=label, description=description, path=metadata_entry_data['path']
+            )
+        elif typename == 'EventJsonMetadataEntry':
+            yield EventMetadataEntry.json(
+                label=label,
+                description=description,
+                data=json.loads(metadata_entry_data.get('jsonString', '')),
+            )
+        else:
+            check.not_implemented('TODO for type {}'.format(typename))
+
+
 def dagster_event_from_dict(event_dict, pipeline_name):
     check.dict_param(event_dict, 'event_dict', key_type=str)
     check.str_param(pipeline_name, 'pipeline_name')
@@ -152,15 +226,13 @@ def dagster_event_from_dict(event_dict, pipeline_name):
     # Get event_specific_data
     event_specific_data = None
     if event_type == DagsterEventType.STEP_OUTPUT:
-        intermediate_materialization = event_dict.get('intermediateMaterialization', {})
         event_specific_data = StepOutputData(
             step_output_handle=StepOutputHandle(
                 event_dict['step']['key'], event_dict['outputName']
             ),
             value_repr=event_dict['valueRepr'],
-            intermediate_materialization=Materialization(
-                path=intermediate_materialization.get('path'),
-                description=intermediate_materialization.get('description'),
+            intermediate_materialization=materialization_from_data(
+                event_dict['intermediateMaterialization']
             ),
         )
 
@@ -168,20 +240,12 @@ def dagster_event_from_dict(event_dict, pipeline_name):
         event_specific_data = StepSuccessData(0.0)
 
     elif event_type == DagsterEventType.STEP_MATERIALIZATION:
-        materialization = event_dict.get('materialization', {})
+        materialization = event_dict['materialization']
         event_specific_data = StepMaterializationData(
-            materialization=Materialization(
-                path=materialization.get('path'), description=materialization.get('description')
-            )
+            materialization=materialization_from_data(materialization)
         )
     elif event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
-        result_metadata = event_dict['expectationResult']['resultMetadataJsonString']
-        expectation_result = ExpectationResult(
-            event_dict['expectationResult']['success'],
-            event_dict['expectationResult']['name'],
-            event_dict['expectationResult']['message'],
-            json.loads(result_metadata) if result_metadata else None,
-        )
+        expectation_result = expectation_result_from_data(event_dict['expectationResult'])
         event_specific_data = StepExpectationResultData(expectation_result)
 
     elif event_type == DagsterEventType.STEP_FAILURE:

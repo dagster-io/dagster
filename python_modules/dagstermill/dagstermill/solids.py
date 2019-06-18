@@ -212,7 +212,7 @@ def _dm_solid_transform(name, notebook_path):
                         intermediate_path, temp_path, engine_name='dagstermill', log_output=True
                     )
                 except Exception as exc:
-                    yield Materialization(
+                    yield Materialization.legacy_ctor(
                         path=temp_path,
                         description='{name} output notebook'.format(
                             name=compute_context.solid.name
@@ -231,7 +231,7 @@ def _dm_solid_transform(name, notebook_path):
                 )
             )
 
-            yield Materialization(
+            yield Materialization.legacy_ctor(
                 path=temp_path,
                 description='{name} output notebook'.format(name=compute_context.solid.name),
             )

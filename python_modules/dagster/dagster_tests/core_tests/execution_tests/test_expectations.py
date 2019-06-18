@@ -22,7 +22,7 @@ def expt_results_for_compute_step(result, solid_name):
 def test_successful_expectation_in_compute_step():
     @solid(outputs=[])
     def success_expectation_solid(_context):
-        yield ExpectationResult(success=True, message='This is always true.')
+        yield ExpectationResult.legacy_ctor(success=True, message='This is always true.')
 
     pipeline_def = PipelineDefinition(
         name='success_expectation_in_compute_pipeline', solids=[success_expectation_solid]
@@ -38,13 +38,13 @@ def test_successful_expectation_in_compute_step():
     assert len(expt_results) == 1
     expt_result = expt_results[0]
     assert expt_result.event_specific_data.expectation_result.success
-    assert expt_result.event_specific_data.expectation_result.message == 'This is always true.'
+    assert expt_result.event_specific_data.expectation_result.description == 'This is always true.'
 
 
 def test_failed_expectation_in_compute_step():
     @solid(outputs=[])
     def failure_expectation_solid(_context):
-        yield ExpectationResult(success=False, message='This is always false.')
+        yield ExpectationResult.legacy_ctor(success=False, message='This is always false.')
 
     pipeline_def = PipelineDefinition(
         name='failure_expectation_in_compute_pipeline', solids=[failure_expectation_solid]
@@ -59,13 +59,13 @@ def test_failed_expectation_in_compute_step():
     assert len(expt_results) == 1
     expt_result = expt_results[0]
     assert not expt_result.event_specific_data.expectation_result.success
-    assert expt_result.event_specific_data.expectation_result.message == 'This is always false.'
+    assert expt_result.event_specific_data.expectation_result.description == 'This is always false.'
 
 
 def test_return_expectation_failure():
     @solid(outputs=[])
     def return_expectation_failure(_context):
-        return ExpectationResult(success=True, message='This is always true.')
+        return ExpectationResult.legacy_ctor(success=True, message='This is always true.')
 
     pipeline_def = PipelineDefinition(
         name='success_expectation_in_compute_pipeline', solids=[return_expectation_failure]

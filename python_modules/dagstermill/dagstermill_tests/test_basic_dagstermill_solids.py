@@ -22,15 +22,25 @@ from dagstermill.examples.repository import (
     define_tutorial_pipeline,
 )
 
+from dagster.core.definitions.events import PathMetadataEntryData
+
+
+def get_path(materialization_event):
+    for (
+        metadata_entry
+    ) in materialization_event.event_specific_data.materialization.metadata_entries:
+        if isinstance(metadata_entry.entry_data, PathMetadataEntryData):
+            return metadata_entry.entry_data.path
+
 
 def cleanup_result_notebook(result):
     if not result:
         return
-    materializations = [
+    materialization_events = [
         x for x in result.step_event_list if x.event_type_value == 'STEP_MATERIALIZATION'
     ]
-    for materialization in materializations:
-        result_path = materialization.event_specific_data.materialization.path
+    for materialization_event in materialization_events:
+        result_path = get_path(materialization_event)
         if os.path.exists(result_path):
             os.unlink(result_path)
 
@@ -63,10 +73,8 @@ def test_hello_world_explicit_yield():
             x for x in result.event_list if x.event_type_value == 'STEP_MATERIALIZATION'
         ]
         assert len(materializations) == 2
-        assert materializations[0].event_specific_data.materialization.path.startswith(
-            '/tmp/dagstermill/'
-        )
-        assert materializations[1].event_specific_data.materialization.path == '/path/to/file'
+        assert get_path(materializations[0]).startswith('/tmp/dagstermill/')
+        assert get_path(materializations[1]) == '/path/to/file'
 
 
 def test_add_pipeline():
@@ -130,9 +138,10 @@ def test_hello_world_reexecution():
     with exec_for_test(define_hello_world_pipeline()) as result:
         assert result.success
 
-        output_notebook_path = [
-            x for x in result.step_event_list if x.event_type_value == 'STEP_MATERIALIZATION'
-        ][0].event_specific_data.materialization.path
+        output_notebook_path = get_path(
+            [x for x in result.step_event_list if x.event_type_value == 'STEP_MATERIALIZATION'][0]
+        )
+        # .event_specific_data.materialization.path
 
         reexecution_solid = define_dagstermill_solid(
             'hello_world_reexecution', output_notebook_path

@@ -1,12 +1,12 @@
 # Dockerfile for Airflow
 
-FROM dagster/buildkite-integration:py3.7.3-v3
+FROM dagster/buildkite-integration:py3.7.3-v4
 
 RUN mkdir -p /tmp/results
 
 WORKDIR /tmp/
 
-ADD . . 
+ADD . .
 
 
 # Install all local modules at once with no deps to

@@ -81,10 +81,27 @@ export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent_st
   key: string;
 }
 
+export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export type PipelineRunPipelineRunEventFragment_StepMaterializationEvent_materialization_metadataEntries = PipelineRunPipelineRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry | PipelineRunPipelineRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventJsonMetadataEntry;
+
 export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent_materialization {
   __typename: "Materialization";
-  path: string | null;
+  label: string;
   description: string | null;
+  metadataEntries: PipelineRunPipelineRunEventFragment_StepMaterializationEvent_materialization_metadataEntries[];
 }
 
 export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent {
@@ -101,11 +118,28 @@ export interface PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_
   key: string;
 }
 
+export interface PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export type PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries = PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry | PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventJsonMetadataEntry;
+
 export interface PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult {
   __typename: "ExpectationResult";
   success: boolean;
-  name: string | null;
-  resultMetadataJsonString: string | null;
+  label: string;
+  description: string | null;
+  metadataEntries: PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries[];
 }
 
 export interface PipelineRunPipelineRunEventFragment_StepExpectationResultEvent {

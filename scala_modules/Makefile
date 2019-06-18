@@ -6,6 +6,9 @@ style:
 	sbt scalafmtCheck
 
 
+compile:
+	sbt events/compile
+
 all:
 	sbt events/assembly
 

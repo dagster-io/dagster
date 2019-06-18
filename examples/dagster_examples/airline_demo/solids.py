@@ -8,6 +8,7 @@ from sqlalchemy import text
 from dagster import (
     composite_solid,
     Dict,
+    EventMetadataEntry,
     ExpectationResult,
     Field,
     FileHandle,
@@ -204,12 +205,18 @@ def process_sfo_weather_data(_context, sfo_weather_data: DataFrame) -> DataFrame
 )
 def load_data_to_database_from_spark(context, data_frame: DataFrame):
     context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
-    table_name = context.solid_config['table_name']
 
-    # TODO Flow more information down to the client
-    # We should be able to flow multiple key value pairs down to dagit
-    # See https://github.com/dagster-io/dagster/issues/1408
-    yield Materialization(path='Persisted Db Table: {table_name}'.format(table_name=table_name))
+    table_name = context.solid_config['table_name']
+    yield Materialization(
+        label='Table: {table_name}'.format(table_name=table_name),
+        description=(
+            'Persisted table {table_name} in database configured in the db_info resource.'
+        ).format(table_name=table_name),
+        metadata_entries=[
+            EventMetadataEntry.text(label='Host', text=context.resources.db_info.host),
+            EventMetadataEntry.text(label='Db', text=context.resources.db_info.db_name),
+        ],
+    )
     yield Result(value=table_name, output_name='table_name')
 
 
@@ -514,14 +521,14 @@ def join_q2_data(
             if required_column not in df.columns:
                 missing_things.append({'month': month, 'missing_column': required_column})
 
-    yield ExpectationResult(
+    yield ExpectationResult.legacy_ctor(
         success=not bool(missing_things),
         name='airport_ids_present',
         message='Sequence IDs present in incoming monthly flight data.',
         result_metadata={'missing_columns': missing_things},
     )
 
-    yield ExpectationResult(
+    yield ExpectationResult.legacy_ctor(
         success=set(april_data.columns) == set(may_data.columns) == set(june_data.columns),
         name='flight_data_same_shape',
         result_metadata={'columns': april_data.columns},

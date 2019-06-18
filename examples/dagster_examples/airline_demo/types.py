@@ -36,7 +36,7 @@ RedshiftConfigData = Dict(
 )
 
 
-DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table')
+DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table host db_name')
 
 
 PostgresConfigData = Dict(
