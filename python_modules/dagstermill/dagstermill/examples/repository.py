@@ -22,7 +22,7 @@ from dagster import (
     SerializationStrategy,
     solid,
     SolidDefinition,
-    SolidInstance,
+    SolidInvocation,
     String,
 )
 
@@ -139,13 +139,13 @@ def define_test_notebook_dag_pipeline():
         name='test_notebook_dag',
         solid_defs=[load_constant, add_two_numbers_pm_solid, mult_two_numbers_pm_solid],
         dependencies={
-            SolidInstance('load_constant', alias='load_a'): {},
-            SolidInstance('load_constant', alias='load_b'): {},
-            SolidInstance(name='add_two_numbers', alias='add_two'): {
+            SolidInvocation('load_constant', alias='load_a'): {},
+            SolidInvocation('load_constant', alias='load_b'): {},
+            SolidInvocation(name='add_two_numbers', alias='add_two'): {
                 'a': DependencyDefinition('load_a'),
                 'b': DependencyDefinition('load_b'),
             },
-            SolidInstance(name='mult_two_numbers', alias='mult_two'): {
+            SolidInvocation(name='mult_two_numbers', alias='mult_two'): {
                 'a': DependencyDefinition('add_two'),
                 'b': DependencyDefinition('load_b'),
             },
@@ -192,9 +192,9 @@ def define_tutorial_pipeline():
         name='tutorial_pipeline',
         solid_defs=[clean_data_solid, LR_solid, RF_solid],
         dependencies={
-            SolidInstance('clean_data'): {},
-            SolidInstance('linear_regression'): {'df': DependencyDefinition('clean_data')},
-            SolidInstance('random_forest_regression'): {'df': DependencyDefinition('clean_data')},
+            SolidInvocation('clean_data'): {},
+            SolidInvocation('linear_regression'): {'df': DependencyDefinition('clean_data')},
+            SolidInvocation('random_forest_regression'): {'df': DependencyDefinition('clean_data')},
         },
     )
 

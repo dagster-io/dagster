@@ -88,9 +88,9 @@ and to catch at least some semantic issues.
 ### Defining a pipeline with reusable solids
 
 Let's start by looking at the pipeline definition (in `airline_demo/pipelines.py`). where you'll see
-that we rely heavily on `SolidInstance` to build our pipeline, for example:
+that we rely heavily on `SolidInvocation` to build our pipeline, for example:
 
-    SolidInstance('unzip_file', alias='unzip_may_on_time_data'): {
+    SolidInvocation('unzip_file', alias='unzip_may_on_time_data'): {
         'archive_path': DependencyDefinition('download_may_on_time_data')
     }
 

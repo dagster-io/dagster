@@ -16,7 +16,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     Result,
-    SolidInstance,
+    SolidInvocation,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -151,9 +151,9 @@ def test_nothing_inputs():
         name='input_test',
         solid_defs=[emit_one, emit_two, emit_three, emit_nothing, adder],
         dependencies={
-            SolidInstance('emit_nothing', '_one'): {},
-            SolidInstance('emit_nothing', '_two'): {},
-            SolidInstance('emit_nothing', '_three'): {},
+            SolidInvocation('emit_nothing', '_one'): {},
+            SolidInvocation('emit_nothing', '_two'): {},
+            SolidInvocation('emit_nothing', '_three'): {},
             'adder': {
                 '_one': DependencyDefinition('_one'),
                 '_two': DependencyDefinition('_two'),
@@ -195,11 +195,11 @@ def test_fanin_deps():
         name='input_test',
         solid_defs=[emit_two, emit_nothing, adder],
         dependencies={
-            SolidInstance('emit_two', 'emit_1'): {},
-            SolidInstance('emit_two', 'emit_2'): {},
-            SolidInstance('emit_nothing', '_one'): {},
-            SolidInstance('emit_nothing', '_two'): {},
-            SolidInstance('emit_nothing', '_three'): {},
+            SolidInvocation('emit_two', 'emit_1'): {},
+            SolidInvocation('emit_two', 'emit_2'): {},
+            SolidInvocation('emit_nothing', '_one'): {},
+            SolidInvocation('emit_nothing', '_two'): {},
+            SolidInvocation('emit_nothing', '_three'): {},
             'adder': {
                 'ready': MultiDependencyDefinition(
                     [

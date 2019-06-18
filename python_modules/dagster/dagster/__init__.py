@@ -19,7 +19,7 @@ from dagster.core.definitions import (
     ResourceDefinition,
     Result,
     SolidDefinition,
-    SolidInstance,
+    SolidInvocation,
     SystemStorageDefinition,
     SystemStorageData,
     logger,
@@ -127,7 +127,7 @@ __all__ = [
     'ResourceDefinition',
     'Result',
     'SolidDefinition',
-    'SolidInstance',
+    'SolidInvocation',
     'SystemStorageDefinition',
     # Decorators
     'composite_solid',

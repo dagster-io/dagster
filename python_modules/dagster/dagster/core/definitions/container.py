@@ -7,7 +7,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.utils import toposort_flatten
 
-from .dependency import DependencyStructure, IDependencyDefinition, Solid, SolidInstance
+from .dependency import DependencyStructure, IDependencyDefinition, Solid, SolidInvocation
 
 
 class IContainSolids(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
@@ -64,7 +64,7 @@ def _create_adjacency_lists(solids, dep_structure):
 
 def validate_dependency_dict(dependencies):
     prelude = (
-        'The expected type for "dependencies" is dict[Union[str, SolidInstance], dict[str, '
+        'The expected type for "dependencies" is dict[Union[str, SolidInvocation], dict[str, '
         'DependencyDefinition]]. '
     )
 
@@ -80,9 +80,9 @@ def validate_dependency_dict(dependencies):
         )
 
     for key, dep_dict in dependencies.items():
-        if not (isinstance(key, six.string_types) or isinstance(key, SolidInstance)):
+        if not (isinstance(key, six.string_types) or isinstance(key, SolidInvocation)):
             raise DagsterInvalidDefinitionError(
-                prelude + 'Expected str or SolidInstance key in the top level dict. '
+                prelude + 'Expected str or SolidInvocation key in the top level dict. '
                 'Received value {val} of type {type}'.format(val=key, type=type(key))
             )
         if not isinstance(dep_dict, dict):
@@ -127,20 +127,20 @@ def create_execution_structure(solid_defs, dependencies_dict, parent_definition)
     For example, for the following dependencies:
 
     dep_dict = {
-            SolidInstance('giver'): {},
-            SolidInstance('sleeper', alias='sleeper_1'): {
+            SolidInvocation('giver'): {},
+            SolidInvocation('sleeper', alias='sleeper_1'): {
                 'units': DependencyDefinition('giver', 'out_1')
             },
-            SolidInstance('sleeper', alias='sleeper_2'): {
+            SolidInvocation('sleeper', alias='sleeper_2'): {
                 'units': DependencyDefinition('giver', 'out_2')
             },
-            SolidInstance('sleeper', alias='sleeper_3'): {
+            SolidInvocation('sleeper', alias='sleeper_3'): {
                 'units': DependencyDefinition('giver', 'out_3')
             },
-            SolidInstance('sleeper', alias='sleeper_4'): {
+            SolidInvocation('sleeper', alias='sleeper_4'): {
                 'units': DependencyDefinition('giver', 'out_4')
             },
-            SolidInstance('total'): {
+            SolidInvocation('total'): {
                 'in_1': DependencyDefinition('sleeper_1', 'total'),
                 'in_2': DependencyDefinition('sleeper_2', 'total'),
                 'in_3': DependencyDefinition('sleeper_3', 'total'),
@@ -167,13 +167,13 @@ def create_execution_structure(solid_defs, dependencies_dict, parent_definition)
     check.dict_param(
         dependencies_dict,
         'dependencies_dict',
-        key_type=six.string_types + (SolidInstance,),
+        key_type=six.string_types + (SolidInvocation,),
         value_type=dict,
     )
     # parent_definition is none in the context of a pipeline
     check.opt_inst_param(parent_definition, 'parent_definition', CompositeSolidDefinition)
 
-    # Same as dep_dict but with SolidInstance replaced by alias string
+    # Same as dep_dict but with SolidInvocation replaced by alias string
     aliased_dependencies_dict = {}
 
     # Keep track of solid name -> all aliases used and alias -> name
@@ -183,9 +183,9 @@ def create_execution_structure(solid_defs, dependencies_dict, parent_definition)
 
     for solid_key, input_dep_dict in dependencies_dict.items():
         # We allow deps of the form dependencies={'foo': DependencyDefition('bar')}
-        # Here, we replace 'foo' with SolidInstance('foo')
-        if not isinstance(solid_key, SolidInstance):
-            solid_key = SolidInstance(solid_key)
+        # Here, we replace 'foo' with SolidInvocation('foo')
+        if not isinstance(solid_key, SolidInvocation):
+            solid_key = SolidInvocation(solid_key)
 
         alias = solid_key.alias or solid_key.name
 
@@ -223,7 +223,7 @@ def _build_pipeline_solid_dict(
             resource_mapper_fn = (
                 solid_instance.resource_mapper_fn
                 if solid_instance
-                else SolidInstance.default_resource_mapper_fn
+                else SolidInvocation.default_resource_mapper_fn
             )
             pipeline_solids.append(
                 Solid(

@@ -6,7 +6,7 @@ from dagster import (
     OutputDefinition,
     PipelineConfigEvaluationError,
     PipelineDefinition,
-    SolidInstance,
+    SolidInvocation,
     execute_pipeline,
     solid,
     types,
@@ -42,7 +42,8 @@ def test_string_from_aliased_inputs():
         called['yup'] = True
 
     pipeline = PipelineDefinition(
-        solid_defs=[str_as_input], dependencies={SolidInstance('str_as_input', alias='aliased'): {}}
+        solid_defs=[str_as_input],
+        dependencies={SolidInvocation('str_as_input', alias='aliased'): {}},
     )
 
     result = execute_pipeline(

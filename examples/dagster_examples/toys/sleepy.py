@@ -10,7 +10,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     Result,
-    SolidInstance,
+    SolidInvocation,
     lambda_solid,
     solid,
 )
@@ -65,20 +65,20 @@ def define_sleepy_pipeline():
         name="sleepy",
         solid_defs=[giver, sleeper, total],
         dependencies={
-            SolidInstance('giver'): {},
-            SolidInstance('sleeper', alias='sleeper_1'): {
+            SolidInvocation('giver'): {},
+            SolidInvocation('sleeper', alias='sleeper_1'): {
                 'units': DependencyDefinition('giver', 'out_1')
             },
-            SolidInstance('sleeper', alias='sleeper_2'): {
+            SolidInvocation('sleeper', alias='sleeper_2'): {
                 'units': DependencyDefinition('giver', 'out_2')
             },
-            SolidInstance('sleeper', alias='sleeper_3'): {
+            SolidInvocation('sleeper', alias='sleeper_3'): {
                 'units': DependencyDefinition('giver', 'out_3')
             },
-            SolidInstance('sleeper', alias='sleeper_4'): {
+            SolidInvocation('sleeper', alias='sleeper_4'): {
                 'units': DependencyDefinition('giver', 'out_4')
             },
-            SolidInstance('total'): {
+            SolidInvocation('total'): {
                 'in_1': DependencyDefinition('sleeper_1', 'total'),
                 'in_2': DependencyDefinition('sleeper_2', 'total'),
                 'in_3': DependencyDefinition('sleeper_3', 'total'),

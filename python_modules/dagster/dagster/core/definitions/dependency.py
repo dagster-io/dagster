@@ -12,7 +12,7 @@ from .output import OutputDefinition
 from .utils import DEFAULT_OUTPUT, struct_to_string
 
 
-class SolidInstance(namedtuple('Solid', 'name alias resource_mapper_fn')):
+class SolidInvocation(namedtuple('Solid', 'name alias resource_mapper_fn')):
     '''
     A solid identifier in a dependency structure. Allows supplying parameters to the solid,
     like the alias.
@@ -30,7 +30,7 @@ class SolidInstance(namedtuple('Solid', 'name alias resource_mapper_fn')):
             pipeline = Pipeline(
                 solid_defs=[solid_1, solid_2]
                 dependencies={
-                    SolidInstance('solid_2', alias='other_name') : {
+                    SolidInvocation('solid_2', alias='other_name') : {
                         'input_name' : DependencyDefinition('solid_2'),
                     },
                     'solid_1' : {
@@ -44,9 +44,9 @@ class SolidInstance(namedtuple('Solid', 'name alias resource_mapper_fn')):
         name = check.str_param(name, 'name')
         alias = check.opt_str_param(alias, 'alias')
         resource_mapper_fn = check.opt_callable_param(
-            resource_mapper_fn, 'resource_mapper_fn', SolidInstance.default_resource_mapper_fn
+            resource_mapper_fn, 'resource_mapper_fn', SolidInvocation.default_resource_mapper_fn
         )
-        return super(cls, SolidInstance).__new__(cls, name, alias, resource_mapper_fn)
+        return super(cls, SolidInvocation).__new__(cls, name, alias, resource_mapper_fn)
 
     @staticmethod
     def default_resource_mapper_fn(resources, resource_deps):

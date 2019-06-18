@@ -112,9 +112,9 @@ The corresponding dagster code for defining the pipeline is as follows:
             name='ML_pipeline',
             solid_defs=[clean_data_solid, LR_solid, RF_solid],
             dependencies={
-                SolidInstance('clean_data'): {},
-                SolidInstance('linear_regression'): {'df': DependencyDefinition('clean_data')},
-                SolidInstance('random_forest_regression'): {'df': DependencyDefinition('clean_data')},
+                SolidInvocation('clean_data'): {},
+                SolidInvocation('linear_regression'): {'df': DependencyDefinition('clean_data')},
+                SolidInvocation('random_forest_regression'): {'df': DependencyDefinition('clean_data')},
             },
         )
 

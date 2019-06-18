@@ -6,7 +6,7 @@ from dagster import (
     InputDefinition,
     Int,
     PipelineDefinition,
-    SolidInstance,
+    SolidInvocation,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -26,8 +26,10 @@ def test_aliased_solids():
         solid_defs=[first, not_first],
         dependencies={
             'not_first': {'prev': DependencyDefinition('first')},
-            SolidInstance('not_first', alias='second'): {'prev': DependencyDefinition('not_first')},
-            SolidInstance('not_first', alias='third'): {'prev': DependencyDefinition('second')},
+            SolidInvocation('not_first', alias='second'): {
+                'prev': DependencyDefinition('not_first')
+            },
+            SolidInvocation('not_first', alias='third'): {'prev': DependencyDefinition('second')},
         },
     )
 
@@ -49,8 +51,8 @@ def test_only_aliased_solids():
     pipeline = PipelineDefinition(
         solid_defs=[first, not_first],
         dependencies={
-            SolidInstance('first', alias='the_root'): {},
-            SolidInstance('not_first', alias='the_consequence'): {
+            SolidInvocation('first', alias='the_root'): {},
+            SolidInvocation('not_first', alias='the_consequence'): {
                 'prev': DependencyDefinition('the_root')
             },
         },
@@ -70,8 +72,8 @@ def test_aliased_configs():
     pipeline = PipelineDefinition(
         solid_defs=[load_constant],
         dependencies={
-            SolidInstance(load_constant.name, 'load_a'): {},
-            SolidInstance(load_constant.name, 'load_b'): {},
+            SolidInvocation(load_constant.name, 'load_a'): {},
+            SolidInvocation(load_constant.name, 'load_b'): {},
         },
     )
 
@@ -96,8 +98,8 @@ def test_aliased_solids_context():
     pipeline = PipelineDefinition(
         solid_defs=[log_things],
         dependencies={
-            SolidInstance('log_things', 'log_a'): {},
-            SolidInstance('log_things', 'log_b'): {},
+            SolidInvocation('log_things', 'log_a'): {},
+            SolidInvocation('log_things', 'log_b'): {},
         },
     )
 

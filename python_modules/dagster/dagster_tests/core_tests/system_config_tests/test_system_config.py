@@ -14,7 +14,7 @@ from dagster import (
     ResourceDefinition,
     PipelineDefinition,
     SolidDefinition,
-    SolidInstance,
+    SolidInvocation,
     String,
     execute_pipeline,
     lambda_solid,
@@ -667,8 +667,8 @@ def test_required_inputs():
         name='required_int_input',
         solid_defs=[add_one],
         dependencies={
-            SolidInstance('add_one', 'first_add'): {},
-            SolidInstance('add_one', 'second_add'): {'num': DependencyDefinition('first_add')},
+            SolidInvocation('add_one', 'first_add'): {},
+            SolidInvocation('add_one', 'second_add'): {'num': DependencyDefinition('first_add')},
         },
     )
 

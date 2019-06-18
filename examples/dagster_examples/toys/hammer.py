@@ -12,7 +12,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     Result,
-    SolidInstance,
+    SolidInvocation,
     lambda_solid,
     solid,
 )
@@ -90,20 +90,20 @@ def define_hammer_pipeline():
         name="thors_hammer",
         solid_defs=[giver, hammer, total],
         dependencies={
-            SolidInstance('giver'): {},
-            SolidInstance('hammer', alias='hammer_1'): {
+            SolidInvocation('giver'): {},
+            SolidInvocation('hammer', alias='hammer_1'): {
                 'chase_duration': DependencyDefinition('giver', 'out_1')
             },
-            SolidInstance('hammer', alias='hammer_2'): {
+            SolidInvocation('hammer', alias='hammer_2'): {
                 'chase_duration': DependencyDefinition('giver', 'out_2')
             },
-            SolidInstance('hammer', alias='hammer_3'): {
+            SolidInvocation('hammer', alias='hammer_3'): {
                 'chase_duration': DependencyDefinition('giver', 'out_3')
             },
-            SolidInstance('hammer', alias='hammer_4'): {
+            SolidInvocation('hammer', alias='hammer_4'): {
                 'chase_duration': DependencyDefinition('giver', 'out_4')
             },
-            SolidInstance('total'): {
+            SolidInvocation('total'): {
                 'in_1': DependencyDefinition('hammer_1', 'total'),
                 'in_2': DependencyDefinition('hammer_2', 'total'),
                 'in_3': DependencyDefinition('hammer_3', 'total'),

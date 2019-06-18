@@ -10,7 +10,7 @@ be reusable. E.g. we want to have a generic ``adder`` solid and use it a couple 
 a pipeline. Using APIs presented so far, that would be impossible: there would be a name collision
 if one included two copies of the solid.
 
-Instead we introduce a new class ``SolidInstance`` that allows the user to create multiple, named instances
+Instead we introduce a new class ``SolidInvocation`` that allows the user to create multiple, named instances
 of a single solid:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusable_solids.py

@@ -3,7 +3,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    SolidInstance,
+    SolidInvocation,
     execute_solid,
     execute_solids,
     lambda_solid,
@@ -34,9 +34,9 @@ def define_part_fourteen_step_one_pipeline():
         name='part_fourteen_step_one_pipeline',
         solid_defs=[adder, multer],
         dependencies={
-            SolidInstance(adder.name, 'a_plus_b'): {},
-            SolidInstance(adder.name, 'c_plus_d'): {},
-            SolidInstance(multer.name, 'final'): {
+            SolidInvocation(adder.name, 'a_plus_b'): {},
+            SolidInvocation(adder.name, 'c_plus_d'): {},
+            SolidInvocation(multer.name, 'final'): {
                 'num1': DependencyDefinition('a_plus_b'),
                 'num2': DependencyDefinition('c_plus_d'),
             },

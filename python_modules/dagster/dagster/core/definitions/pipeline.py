@@ -4,7 +4,12 @@ from dagster.core.execution.config import RunConfig
 from dagster.core.types.runtime import construct_runtime_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
-from .dependency import DependencyDefinition, MultiDependencyDefinition, SolidHandle, SolidInstance
+from .dependency import (
+    DependencyDefinition,
+    MultiDependencyDefinition,
+    SolidHandle,
+    SolidInvocation,
+)
 from .mode import ModeDefinition
 from .preset import PresetDefinition
 from .solid import ISolidDefinition
@@ -54,9 +59,9 @@ class PipelineDefinition(IContainSolids, object):
             The set of solid definitions used in this pipeline.
         name (Optional[str])
         description (Optional[str])
-        dependencies (Optional[Dict[Union[str, SolidInstance], Dict[str, DependencyDefinition]]]):
+        dependencies (Optional[Dict[Union[str, SolidInvocation], Dict[str, DependencyDefinition]]]):
             A structure that declares where each solid gets its inputs. The keys at the top
-            level dict are either string names of solids or SolidInstances. The values
+            level dict are either string names of solids or SolidInvocations. The values
             are dicts that map input names to DependencyDefinitions.
         mode_definitions (Optional[List[ModeDefinition]]):
             The set of modes this pipeline can operate in. Modes can be used for example to vary
@@ -312,7 +317,7 @@ class PipelineDefinition(IContainSolids, object):
 
 
 def _dep_key_of(solid):
-    return SolidInstance(solid.definition.name, solid.name)
+    return SolidInvocation(solid.definition.name, solid.name)
 
 
 def _build_sub_pipeline(pipeline_def, solid_names):

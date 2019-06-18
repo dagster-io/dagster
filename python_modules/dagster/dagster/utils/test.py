@@ -13,7 +13,7 @@ from dagster import (
     DependencyDefinition,
     ModeDefinition,
     PipelineDefinition,
-    SolidInstance,
+    SolidInvocation,
     check,
     execute_pipeline,
     SystemStorageData,
@@ -131,7 +131,7 @@ def get_temp_dir():
 
 
 def _dep_key_of(solid):
-    return SolidInstance(solid.definition.name, solid.name)
+    return SolidInvocation(solid.definition.name, solid.name)
 
 
 def build_pipeline_with_input_stubs(pipeline_def, inputs):

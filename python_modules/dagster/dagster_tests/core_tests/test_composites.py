@@ -10,7 +10,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    SolidInstance,
+    SolidInvocation,
     String,
     dagster_type,
     execute_pipeline,
@@ -49,8 +49,8 @@ def test_composite_basic_execution():
         PipelineDefinition(
             solid_defs=[diamond_composite],
             dependencies={
-                SolidInstance('diamond_composite', alias='D1'): {},
-                SolidInstance('diamond_composite', alias='D2'): {},
+                SolidInvocation('diamond_composite', alias='D1'): {},
+                SolidInvocation('diamond_composite', alias='D2'): {},
             },
         )
     )

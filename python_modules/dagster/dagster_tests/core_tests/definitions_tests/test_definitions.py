@@ -8,7 +8,7 @@ from dagster import (
     Int,
     OutputDefinition,
     PipelineDefinition,
-    SolidInstance,
+    SolidInvocation,
     String,
     lambda_solid,
     solid,
@@ -140,7 +140,7 @@ def test_mapper_errors():
         PipelineDefinition(
             solid_defs=[solid_a],
             dependencies={
-                SolidInstance('solid_b', alias='solid_c'): {
+                SolidInvocation('solid_b', alias='solid_c'): {
                     'arg_a': DependencyDefinition('solid_a')
                 }
             },

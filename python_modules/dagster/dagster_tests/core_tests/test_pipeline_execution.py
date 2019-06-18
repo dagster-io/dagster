@@ -13,7 +13,7 @@ from dagster import (
     ResourceDefinition,
     Result,
     RunConfig,
-    SolidInstance,
+    SolidInvocation,
     execute_pipeline,
     execute_pipeline_iterator,
     lambda_solid,
@@ -73,7 +73,7 @@ def make_transform():
 def _do_construct(solids, dependencies):
     solids = {
         s.name: Solid(
-            name=s.name, definition=s, resource_mapper_fn=SolidInstance.default_resource_mapper_fn
+            name=s.name, definition=s, resource_mapper_fn=SolidInvocation.default_resource_mapper_fn
         )
         for s in solids
     }
@@ -207,7 +207,7 @@ def test_execute_aliased_solid_in_diamond():
         name='aliased_pipeline',
         solid_defs=[a_source, create_root_solid('A')],
         dependencies={
-            SolidInstance('A', alias='aliased'): {'A_input': DependencyDefinition(a_source.name)}
+            SolidInvocation('A', alias='aliased'): {'A_input': DependencyDefinition(a_source.name)}
         },
     )
 

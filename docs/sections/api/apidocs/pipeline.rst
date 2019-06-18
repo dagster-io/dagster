@@ -8,7 +8,7 @@ Pipelines
 .. autoclass:: DependencyDefinition
     :members:
 
-.. autoclass:: SolidInstance
+.. autoclass:: SolidInvocation
     :members:
 
 ----

@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
-from .dependency import DependencyDefinition, SolidInstance
+from .dependency import DependencyDefinition, SolidInvocation
 from .solid import ISolidDefinition
 from .output import OutputDefinition
 
@@ -60,7 +60,7 @@ class CompleteCompositionContext(
                 check.failed('Detected conflicting solid definitions with the same name')
             solid_def_dict[def_name] = invocation.solid_def
 
-            dep_dict[SolidInstance(invocation.solid_def.name, invocation.solid_name)] = {
+            dep_dict[SolidInvocation(invocation.solid_def.name, invocation.solid_name)] = {
                 input_name: DependencyDefinition(solid_name, output_name)
                 for input_name, (solid_name, output_name) in invocation.input_bindings.items()
             }
