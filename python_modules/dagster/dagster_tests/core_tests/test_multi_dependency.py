@@ -40,7 +40,7 @@ def test_simple_values():
     result = execute_pipeline(
         PipelineDefinition(
             name='input_test',
-            solids=[emit_1, emit_2, emit_3, sum_num],
+            solid_defs=[emit_1, emit_2, emit_3, sum_num],
             dependencies={
                 'sum_num': {
                     'numbers': MultiDependencyDefinition(
@@ -79,7 +79,7 @@ def test_interleaved_values():
     result = execute_pipeline(
         PipelineDefinition(
             name='input_test',
-            solids=[emit_num, emit_none, emit_str, collect],
+            solid_defs=[emit_num, emit_none, emit_str, collect],
             dependencies={
                 'collect': {
                     'stuff': MultiDependencyDefinition(
@@ -120,7 +120,7 @@ def test_nothing_deps():
     ):
         PipelineDefinition(
             name='input_test',
-            solids=[emit_num, emit_nothing, emit_str, collect],
+            solid_defs=[emit_num, emit_nothing, emit_str, collect],
             dependencies={
                 'collect': {
                     'stuff': MultiDependencyDefinition(

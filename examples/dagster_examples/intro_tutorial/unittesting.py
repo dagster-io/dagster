@@ -32,7 +32,7 @@ def define_part_fourteen_step_one_pipeline():
 
     return PipelineDefinition(
         name='part_fourteen_step_one_pipeline',
-        solids=[adder, multer],
+        solid_defs=[adder, multer],
         dependencies={
             SolidInstance(adder.name, 'a_plus_b'): {},
             SolidInstance(adder.name, 'c_plus_d'): {},

@@ -183,14 +183,14 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
     def __init__(
         self,
         name,
-        solids,
+        solid_defs,
         input_mappings=None,
         output_mappings=None,
         dependencies=None,
         description=None,
         metadata=None,
     ):
-        check.list_param(solids, 'solids', of_type=ISolidDefinition)
+        check.list_param(solid_defs, 'solid_defs', of_type=ISolidDefinition)
 
         # List[InputMapping]
         self.input_mappings = _validate_in_mappings(
@@ -203,7 +203,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
 
         self.dependencies = validate_dependency_dict(dependencies)
         dependency_structure, pipeline_solid_dict = create_execution_structure(
-            solids, self.dependencies, parent_definition=self
+            solid_defs, self.dependencies, parent_definition=self
         )
 
         self._solid_dict = pipeline_solid_dict
@@ -213,7 +213,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
 
         output_defs = [output_mapping.definition for output_mapping in self.output_mappings]
 
-        self._solid_defs = solids
+        self._solid_defs = solid_defs
 
         super(CompositeSolidDefinition, self).__init__(
             name, input_defs, output_defs, description, metadata

@@ -41,7 +41,7 @@ def create_root_transform_failure_solid(name):
 
 
 def test_transform_failure_pipeline():
-    pipeline = PipelineDefinition(solids=[create_root_transform_failure_solid('failing')])
+    pipeline = PipelineDefinition(solid_defs=[create_root_transform_failure_solid('failing')])
     pipeline_result = execute_pipeline(pipeline, run_config=RunConfig.nonthrowing_in_process())
 
     assert not pipeline_result.success
@@ -87,7 +87,7 @@ def test_failure_midstream():
     )
 
     pipeline = PipelineDefinition(
-        solids=[solid_a, solid_b, solid_c, solid_d],
+        solid_defs=[solid_a, solid_b, solid_c, solid_d],
         dependencies={
             'C': {'A': DependencyDefinition(solid_a.name), 'B': DependencyDefinition(solid_b.name)},
             'D': {'C': DependencyDefinition(solid_c.name)},
@@ -154,7 +154,7 @@ def test_failure_propagation():
     )
 
     pipeline = PipelineDefinition(
-        solids=[solid_a, solid_b, solid_c, solid_d, solid_e, solid_f],
+        solid_defs=[solid_a, solid_b, solid_c, solid_d, solid_e, solid_f],
         dependencies={
             'B': {'A': DependencyDefinition(solid_a.name)},
             'D': {'A': DependencyDefinition(solid_a.name)},
@@ -179,7 +179,7 @@ def test_failure_propagation():
 
 def execute_isolated_solid(solid_def, environment_dict=None):
     return execute_pipeline(
-        PipelineDefinition(name='test', solids=[solid_def]), environment_dict=environment_dict
+        PipelineDefinition(name='test', solid_defs=[solid_def]), environment_dict=environment_dict
     )
 
 
@@ -244,7 +244,7 @@ def test_user_error_propogation():
 
     pipeline_def = PipelineDefinition(
         name='test_user_error_propogation',
-        solids=[throws_user_error, return_one, add_one],
+        solid_defs=[throws_user_error, return_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
 

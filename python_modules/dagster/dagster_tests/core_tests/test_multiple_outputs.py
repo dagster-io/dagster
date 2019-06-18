@@ -27,7 +27,7 @@ def test_multiple_outputs():
         compute_fn=_t_fn,
     )
 
-    pipeline = PipelineDefinition(solids=[solid])
+    pipeline = PipelineDefinition(solid_defs=[solid])
 
     result = execute_pipeline(pipeline)
     solid_result = result.solid_result_list[0]
@@ -79,7 +79,7 @@ def test_multiple_outputs_expectations():
         compute_fn=_compute_fn,
     )
 
-    pipeline = PipelineDefinition(solids=[solid])
+    pipeline = PipelineDefinition(solid_defs=[solid])
 
     result = execute_pipeline(pipeline)
 
@@ -99,7 +99,7 @@ def test_wrong_multiple_output():
         compute_fn=_t_fn,
     )
 
-    pipeline = PipelineDefinition(solids=[solid])
+    pipeline = PipelineDefinition(solid_defs=[solid])
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_pipeline(pipeline)
@@ -119,7 +119,7 @@ def test_multiple_outputs_of_same_name_disallowed():
         compute_fn=_t_fn,
     )
 
-    pipeline = PipelineDefinition(solids=[solid])
+    pipeline = PipelineDefinition(solid_defs=[solid])
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_pipeline(pipeline)
@@ -162,7 +162,7 @@ def test_multiple_outputs_only_emit_one():
     )
 
     pipeline = PipelineDefinition(
-        solids=[solid, downstream_one, downstream_two],
+        solid_defs=[solid, downstream_one, downstream_two],
         dependencies={
             'downstream_one': {'some_input': DependencyDefinition(solid.name, output='output_one')},
             'downstream_two': {'some_input': DependencyDefinition(solid.name, output='output_two')},
@@ -204,7 +204,7 @@ def test_missing_non_optional_output_fails():
         compute_fn=_t_fn,
     )
 
-    pipeline = PipelineDefinition(solids=[solid])
+    pipeline = PipelineDefinition(solid_defs=[solid])
 
     with pytest.raises(DagsterStepOutputNotFoundError):
         execute_pipeline(pipeline)

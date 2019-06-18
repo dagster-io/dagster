@@ -24,7 +24,7 @@ def define_two_int_pipeline():
 
     return PipelineDefinition(
         name='pipeline_ints',
-        solids=[return_one, add_one],
+        solid_defs=[return_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
 
@@ -58,7 +58,7 @@ def test_execution_plan_two_outputs():
         yield Result(1, 'num_one')
         yield Result(2, 'num_two')
 
-    pipeline_def = PipelineDefinition(name='return_one_two_pipeline', solids=[return_one_two])
+    pipeline_def = PipelineDefinition(name='return_one_two_pipeline', solid_defs=[return_one_two])
 
     execution_plan = create_execution_plan(pipeline_def)
 
@@ -81,7 +81,7 @@ def test_reentrant_execute_plan():
         assert context.get_tag('foo') == 'bar'
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(name='has_tag_pipeline', solids=[has_tag])
+    pipeline_def = PipelineDefinition(name='has_tag_pipeline', solid_defs=[has_tag])
     execution_plan = create_execution_plan(pipeline_def)
 
     step_events = execute_plan(execution_plan, run_config=RunConfig(tags={'foo': 'bar'}))

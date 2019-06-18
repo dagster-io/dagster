@@ -63,7 +63,7 @@ def total(in_1, in_2, in_3, in_4):
 def define_sleepy_pipeline():
     return PipelineDefinition(
         name="sleepy",
-        solids=[giver, sleeper, total],
+        solid_defs=[giver, sleeper, total],
         dependencies={
             SolidInstance('giver'): {},
             SolidInstance('sleeper', alias='sleeper_1'): {

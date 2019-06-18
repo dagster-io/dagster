@@ -36,7 +36,7 @@ def test_snowflake_resource(snowflake_connect):
 
     pipeline = PipelineDefinition(
         name='test_snowflake_resource',
-        solids=[snowflake_solid],
+        solid_defs=[snowflake_solid],
         mode_definitions=[ModeDefinition(resources={'snowflake': snowflake_resource})],
     )
 

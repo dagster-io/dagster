@@ -136,7 +136,7 @@ def define_event_ingest_pipeline():
 
     return PipelineDefinition(
         name='event_ingest_pipeline',
-        solids=[download_from_s3_to_file, gunzipper, event_ingest, snowflake_load],
+        solid_defs=[download_from_s3_to_file, gunzipper, event_ingest, snowflake_load],
         dependencies={
             SolidInstance('gunzipper'): {
                 'gzip_file': DependencyDefinition('download_from_s3_to_file')

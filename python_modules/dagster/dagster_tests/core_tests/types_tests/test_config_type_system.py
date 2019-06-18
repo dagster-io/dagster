@@ -349,7 +349,7 @@ def test_build_optionality():
 def test_wrong_solid_name():
     pipeline_def = PipelineDefinition(
         name='pipeline_wrong_solid_name',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='some_solid',
                 inputs=[],
@@ -386,7 +386,7 @@ def test_wrong_resources():
                 resources={'resource_one': dummy_resource(), 'resource_two': dummy_resource()}
             )
         ],
-        solids=[],
+        solid_defs=[],
     )
 
     with pytest.raises(
@@ -405,7 +405,7 @@ def test_solid_list_config():
 
     pipeline_def = PipelineDefinition(
         name='solid_list_config_pipeline',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='solid_list_config',
                 inputs=[],
@@ -427,7 +427,7 @@ def test_solid_list_config():
 def test_two_list_types():
     assert PipelineDefinition(
         name='two_types',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='two_list_type',
                 inputs=[],
@@ -447,7 +447,7 @@ def test_multilevel_default_handling():
         assert context.solid_config == 234
 
     pipeline_def = PipelineDefinition(
-        name='multilevel_default_handling', solids=[has_default_value]
+        name='multilevel_default_handling', solid_defs=[has_default_value]
     )
 
     assert execute_pipeline(pipeline_def).success
@@ -474,7 +474,7 @@ def test_no_env_missing_required_error_handling():
         pass
 
     pipeline_def = PipelineDefinition(
-        name='no_env_missing_required_error', solids=[required_int_solid]
+        name='no_env_missing_required_error', solid_defs=[required_int_solid]
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
@@ -499,7 +499,7 @@ def test_root_extra_field():
     def required_int_solid(_context):
         pass
 
-    pipeline_def = PipelineDefinition(name='root_extra_field', solids=[required_int_solid])
+    pipeline_def = PipelineDefinition(name='root_extra_field', solid_defs=[required_int_solid])
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(
@@ -519,7 +519,7 @@ def test_deeper_path():
     def required_int_solid(_context):
         pass
 
-    pipeline_def = PipelineDefinition(name='deeper_path', solids=[required_int_solid])
+    pipeline_def = PipelineDefinition(name='deeper_path', solid_defs=[required_int_solid])
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(
@@ -540,7 +540,7 @@ def test_working_list_path():
         assert context.solid_config == [1, 2]
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(name='list_path', solids=[required_list_int_solid])
+    pipeline_def = PipelineDefinition(name='list_path', solid_defs=[required_list_int_solid])
 
     result = execute_pipeline(
         pipeline_def, environment_dict={'solids': {'required_list_int_solid': {'config': [1, 2]}}}
@@ -558,7 +558,7 @@ def test_item_error_list_path():
         assert context.solid_config == [1, 2]
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(name='list_path', solids=[required_list_int_solid])
+    pipeline_def = PipelineDefinition(name='list_path', solid_defs=[required_list_int_solid])
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(
@@ -577,7 +577,7 @@ def test_item_error_list_path():
 def test_required_resource_not_given():
     pipeline_def = PipelineDefinition(
         name='required_resource_not_given',
-        solids=[],
+        solid_defs=[],
         mode_definitions=[ModeDefinition(resources={'required': dummy_resource(Field(Int))})],
     )
 
@@ -599,7 +599,7 @@ def test_multilevel_good_error_handling_solids():
         pass
 
     pipeline_def = PipelineDefinition(
-        name='multilevel_good_error_handling', solids=[good_error_handling]
+        name='multilevel_good_error_handling', solid_defs=[good_error_handling]
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
@@ -618,7 +618,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
         pass
 
     pipeline_def = PipelineDefinition(
-        name='multilevel_good_error_handling', solids=[good_error_handling]
+        name='multilevel_good_error_handling', solid_defs=[good_error_handling]
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
@@ -637,7 +637,7 @@ def test_multilevel_good_error_handling_config_solids_name_solids():
         pass
 
     pipeline_def = PipelineDefinition(
-        name='multilevel_good_error_handling', solids=[good_error_handling]
+        name='multilevel_good_error_handling', solid_defs=[good_error_handling]
     )
 
     execute_pipeline(
@@ -662,7 +662,7 @@ def test_secret_field():
     def solid_with_secret(_context):
         pass
 
-    pipeline_def = PipelineDefinition(name='secret_pipeline', solids=[solid_with_secret])
+    pipeline_def = PipelineDefinition(name='secret_pipeline', solid_defs=[solid_with_secret])
 
     environment_schema = create_environment_schema(pipeline_def)
     config_type = environment_schema.config_type_named('SecretPipeline.SolidConfig.SolidWithSecret')

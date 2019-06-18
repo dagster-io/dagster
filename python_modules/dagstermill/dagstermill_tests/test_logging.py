@@ -12,7 +12,7 @@ def test_logging():
 
     pipeline_def = PipelineDefinition(
         name='hello_logging_pipeline',
-        solids=[define_hello_logging_solid()],
+        solid_defs=[define_hello_logging_solid()],
         mode_definitions=[
             ModeDefinition(
                 loggers={

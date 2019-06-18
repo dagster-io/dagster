@@ -32,7 +32,7 @@ def single_dagster_event(events, event_type):
 
 def define_event_logging_pipeline(name, solids, event_callback, deps=None):
     return PipelineDefinition(
-        name=name, solids=solids, description=deps, mode_definitions=[mode_def(event_callback)]
+        name=name, solid_defs=solids, description=deps, mode_definitions=[mode_def(event_callback)]
     )
 
 
@@ -45,7 +45,7 @@ def test_empty_pipeline():
             events[record.dagster_event.event_type].append(record)
 
     pipeline_def = PipelineDefinition(
-        name='empty_pipeline', solids=[], mode_definitions=[mode_def(_event_callback)]
+        name='empty_pipeline', solid_defs=[], mode_definitions=[mode_def(_event_callback)]
     )
 
     result = execute_pipeline(pipeline_def, {'loggers': {'callback': {}, 'console': {}}})
@@ -75,7 +75,7 @@ def test_single_solid_pipeline_success():
 
     pipeline_def = PipelineDefinition(
         name='single_solid_pipeline',
-        solids=[solid_one],
+        solid_defs=[solid_one],
         mode_definitions=[mode_def(_event_callback)],
     )
 
@@ -115,7 +115,7 @@ def test_single_solid_pipeline_failure():
 
     pipeline_def = PipelineDefinition(
         name='single_solid_pipeline',
-        solids=[solid_one],
+        solid_defs=[solid_one],
         mode_definitions=[mode_def(_event_callback)],
     )
 

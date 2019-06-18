@@ -29,7 +29,7 @@ def single_int_output_pipeline():
     def return_one():
         return 1
 
-    return PipelineDefinition(name='single_int_output_pipeline', solids=[return_one])
+    return PipelineDefinition(name='single_int_output_pipeline', solid_defs=[return_one])
 
 
 def single_string_output_pipeline():
@@ -37,7 +37,7 @@ def single_string_output_pipeline():
     def return_foo():
         return 'foo'
 
-    return PipelineDefinition(name='single_string_output_pipeline', solids=[return_foo])
+    return PipelineDefinition(name='single_string_output_pipeline', solid_defs=[return_foo])
 
 
 def multiple_output_pipeline():
@@ -48,7 +48,7 @@ def multiple_output_pipeline():
         yield Result(1, 'number')
         yield Result('foo', 'string')
 
-    return PipelineDefinition(name='multiple_output_pipeline', solids=[return_one_and_foo])
+    return PipelineDefinition(name='multiple_output_pipeline', solid_defs=[return_one_and_foo])
 
 
 def single_int_named_output_pipeline():
@@ -56,7 +56,9 @@ def single_int_named_output_pipeline():
     def return_named_one():
         return Result(1, 'named')
 
-    return PipelineDefinition(name='single_int_named_output_pipeline', solids=[return_named_one])
+    return PipelineDefinition(
+        name='single_int_named_output_pipeline', solid_defs=[return_named_one]
+    )
 
 
 def no_input_no_output_pipeline():
@@ -65,7 +67,7 @@ def no_input_no_output_pipeline():
         pass
 
     return PipelineDefinition(
-        name='no_input_no_output_pipeline', solids=[take_nothing_return_nothing]
+        name='no_input_no_output_pipeline', solid_defs=[take_nothing_return_nothing]
     )
 
 
@@ -75,7 +77,7 @@ def one_input_no_output_pipeline():
         pass
 
     return PipelineDefinition(
-        name='one_input_no_output_pipeline', solids=[take_input_return_nothing]
+        name='one_input_no_output_pipeline', solid_defs=[take_input_return_nothing]
     )
 
 
@@ -466,7 +468,7 @@ def test_basic_bad_output_materialization():
     def return_one():
         return 1
 
-    pipeline_def = PipelineDefinition(name='single_int_output_pipeline', solids=[return_one])
+    pipeline_def = PipelineDefinition(name='single_int_output_pipeline', solid_defs=[return_one])
 
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         execute_pipeline(

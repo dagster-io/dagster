@@ -13,7 +13,7 @@ def test_execution_plan_create_metadata():
             'computed': env_config.solids['solid_metadata_creation'].config['str_value'] + '1'
         },
     )
-    p_def = PipelineDefinition(name='test_metadata', solids=[solid_def])
+    p_def = PipelineDefinition(name='test_metadata', solid_defs=[solid_def])
 
     execution_plan = create_execution_plan(
         p_def,

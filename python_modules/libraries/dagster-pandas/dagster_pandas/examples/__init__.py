@@ -52,7 +52,7 @@ def define_pandas_repository():
 def define_papermill_pandas_hello_world_pipeline():
     return PipelineDefinition(
         name='papermill_pandas_hello_world_pipeline',
-        solids=[define_papermill_pandas_hello_world_solid()],
+        solid_defs=[define_papermill_pandas_hello_world_solid()],
         preset_definitions=[
             PresetDefinition(
                 'test',

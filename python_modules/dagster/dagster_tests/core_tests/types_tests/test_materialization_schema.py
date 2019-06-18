@@ -7,7 +7,9 @@ def test_materialization_schema_types():
     def return_one():
         return 1
 
-    pipeline_def = PipelineDefinition(name='test_materialization_schema_types', solids=[return_one])
+    pipeline_def = PipelineDefinition(
+        name='test_materialization_schema_types', solid_defs=[return_one]
+    )
 
     environment_schema = create_environment_schema(pipeline_def)
 

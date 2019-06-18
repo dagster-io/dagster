@@ -30,7 +30,7 @@ def test_scalars():
 def test_basic_solids_config(snapshot):
     pipeline_def = PipelineDefinition(
         name='BasicSolidsConfigPipeline',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='required_field_solid',
                 inputs=[],
@@ -73,7 +73,7 @@ def dummy_resource(config_field):
 def test_two_modes(snapshot):
     pipeline_def = PipelineDefinition(
         name='TwoModePipelines',
-        solids=[],
+        solid_defs=[],
         mode_definitions=[
             ModeDefinition(
                 'mode_one',

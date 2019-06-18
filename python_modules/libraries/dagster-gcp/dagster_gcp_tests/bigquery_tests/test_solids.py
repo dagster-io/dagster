@@ -80,7 +80,7 @@ def test_simple_queries():
         ],
     )
 
-    pipeline = PipelineDefinition(solids=[solid_inst], mode_definitions=bq_modes())
+    pipeline = PipelineDefinition(solid_defs=[solid_inst], mode_definitions=bq_modes())
     pipeline_result = execute_pipeline(pipeline)
     res = pipeline_result.result_for_solid(solid_inst.name)
     assert res.success
@@ -145,7 +145,7 @@ def test_bad_config():
 
     pipeline_def = PipelineDefinition(
         name='test_config_pipeline',
-        solids=[BigQuerySolidDefinition('test', ['SELECT 1'])],
+        solid_defs=[BigQuerySolidDefinition('test', ['SELECT 1'])],
         mode_definitions=bq_modes(),
     )
 
@@ -160,7 +160,7 @@ def test_create_delete_dataset():
     dataset = get_dataset()
 
     create_solid = BigQueryCreateDatasetSolidDefinition('test')
-    create_pipeline = PipelineDefinition(solids=[create_solid], mode_definitions=bq_modes())
+    create_pipeline = PipelineDefinition(solid_defs=[create_solid], mode_definitions=bq_modes())
     config = {'solids': {'test': {'config': {'dataset': dataset, 'exists_ok': True}}}}
 
     assert execute_pipeline(create_pipeline, config).result_for_solid(create_solid.name).success
@@ -171,7 +171,7 @@ def test_create_delete_dataset():
     assert 'Dataset "%s" already exists and exists_ok is false' % dataset in str(exc_info.value)
 
     delete_solid = BigQueryDeleteDatasetSolidDefinition('test')
-    delete_pipeline = PipelineDefinition(solids=[delete_solid], mode_definitions=bq_modes())
+    delete_pipeline = PipelineDefinition(solid_defs=[delete_solid], mode_definitions=bq_modes())
     config = {'solids': {'test': {'config': {'dataset': dataset}}}}
 
     # Delete should succeed
@@ -213,7 +213,7 @@ def test_pd_df_load():
         }
     }
     pipeline = PipelineDefinition(
-        solids=[return_df, create_solid, load_solid, query_solid, delete_solid],
+        solid_defs=[return_df, create_solid, load_solid, query_solid, delete_solid],
         dependencies={
             'return_df': {'success': DependencyDefinition('create_solid')},
             'load_solid': {'df': DependencyDefinition('return_df')},
@@ -239,7 +239,7 @@ def test_pd_df_load():
         cleanup_config = {
             'solids': {'delete_solid': {'config': {'dataset': dataset, 'delete_contents': True}}}
         }
-        cleanup = PipelineDefinition(solids=[delete_solid], mode_definitions=bq_modes())
+        cleanup = PipelineDefinition(solid_defs=[delete_solid], mode_definitions=bq_modes())
         assert execute_pipeline(cleanup, cleanup_config).success
 
     assert not dataset_exists(dataset)
@@ -282,7 +282,7 @@ def test_gcs_load():
         }
     }
     pipeline = PipelineDefinition(
-        solids=[create_solid, return_gcs_uri, load_solid, query_solid, delete_solid],
+        solid_defs=[create_solid, return_gcs_uri, load_solid, query_solid, delete_solid],
         dependencies={
             'return_gcs_uri': {'success': DependencyDefinition('create_solid')},
             'load_solid': {'source_uris': DependencyDefinition('return_gcs_uri')},

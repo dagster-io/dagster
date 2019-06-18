@@ -34,7 +34,7 @@ def log_num_squared(context, num):
 def define_multiple_outputs_pipeline():
     return PipelineDefinition(
         name='multiple_outputs_pipeline',
-        solids=[return_dict_results, log_num, log_num_squared],
+        solid_defs=[return_dict_results, log_num, log_num_squared],
         dependencies={
             'log_num': {'num': DependencyDefinition(solid='return_dict_results', output='out_one')},
             'log_num_squared': {

@@ -88,7 +88,7 @@ def total(in_1, in_2, in_3, in_4):
 def define_hammer_pipeline():
     return PipelineDefinition(
         name="thors_hammer",
-        solids=[giver, hammer, total],
+        solid_defs=[giver, hammer, total],
         dependencies={
             SolidInstance('giver'): {},
             SolidInstance('hammer', alias='hammer_1'): {

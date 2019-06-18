@@ -30,7 +30,7 @@ def mult_two(num):
 def define_csv_hello_world():
     return PipelineDefinition(
         name='math',
-        solids=[add_one, mult_two],
+        solid_defs=[add_one, mult_two],
         dependencies={'add_one': {}, 'mult_two': {'num': DependencyDefinition(add_one.name)}},
     )
 

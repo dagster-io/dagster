@@ -36,7 +36,7 @@ def nb_test_path(name):
 
 
 def define_hello_world_pipeline():
-    return PipelineDefinition(name='hello_world_pipeline', solids=[define_hello_world_solid()])
+    return PipelineDefinition(name='hello_world_pipeline', solid_defs=[define_hello_world_solid()])
 
 
 def define_hello_world_solid():
@@ -51,7 +51,7 @@ def define_hello_world_with_output():
 
 def define_hello_world_with_output_pipeline():
     return PipelineDefinition(
-        name='hello_world_with_output_pipeline', solids=[define_hello_world_with_output()]
+        name='hello_world_with_output_pipeline', solid_defs=[define_hello_world_with_output()]
     )
 
 
@@ -66,7 +66,7 @@ def define_hello_world_explicit_yield():
 
 def define_hello_world_explicit_yield_pipeline():
     return PipelineDefinition(
-        name='hello_world_explicit_yield_pipeline', solids=[define_hello_world_explicit_yield()]
+        name='hello_world_explicit_yield_pipeline', solid_defs=[define_hello_world_explicit_yield()]
     )
 
 
@@ -75,7 +75,9 @@ def define_hello_logging_solid():
 
 
 def define_hello_logging_pipeline():
-    return PipelineDefinition(name='hello_logging_pipeline', solids=[define_hello_logging_solid()])
+    return PipelineDefinition(
+        name='hello_logging_pipeline', solid_defs=[define_hello_logging_solid()]
+    )
 
 
 # This probably should be moved to a library because it is immensely useful for testing
@@ -117,7 +119,7 @@ def define_add_pipeline():
     add_two_numbers = add_two_numbers_pm_solid
     return PipelineDefinition(
         name='test_add_pipeline',
-        solids=[return_one, return_two, add_two_numbers],
+        solid_defs=[return_one, return_two, add_two_numbers],
         dependencies={
             add_two_numbers.name: {
                 'a': DependencyDefinition('return_one'),
@@ -135,7 +137,7 @@ def load_constant(context):
 def define_test_notebook_dag_pipeline():
     return PipelineDefinition(
         name='test_notebook_dag',
-        solids=[load_constant, add_two_numbers_pm_solid, mult_two_numbers_pm_solid],
+        solid_defs=[load_constant, add_two_numbers_pm_solid, mult_two_numbers_pm_solid],
         dependencies={
             SolidInstance('load_constant', alias='load_a'): {},
             SolidInstance('load_constant', alias='load_b'): {},
@@ -154,7 +156,7 @@ def define_test_notebook_dag_pipeline():
 def define_error_pipeline():
     return PipelineDefinition(
         name='error_pipeline',
-        solids=[
+        solid_defs=[
             dagstermill.define_dagstermill_solid('error_solid', nb_test_path('error_notebook'))
         ],
     )
@@ -188,7 +190,7 @@ def RF_solid():
 def define_tutorial_pipeline():
     return PipelineDefinition(
         name='tutorial_pipeline',
-        solids=[clean_data_solid, LR_solid, RF_solid],
+        solid_defs=[clean_data_solid, LR_solid, RF_solid],
         dependencies={
             SolidInstance('clean_data'): {},
             SolidInstance('linear_regression'): {'df': DependencyDefinition('clean_data')},
@@ -223,7 +225,7 @@ def no_repo_reg_solid():
 
 
 def define_no_repo_registration_error_pipeline():
-    return PipelineDefinition(name='repo_registration_error', solids=[no_repo_reg_solid()])
+    return PipelineDefinition(name='repo_registration_error', solid_defs=[no_repo_reg_solid()])
 
 
 @solid('resource_solid', required_resources={'list'})
@@ -304,7 +306,7 @@ def filepicklelist_resource(init_context):
 def define_resource_pipeline():
     return PipelineDefinition(
         name='resource_pipeline',
-        solids=[resource_solid, hello_world_resource_solid],
+        solid_defs=[resource_solid, hello_world_resource_solid],
         dependencies={'hello_world_resource': {'nonce': DependencyDefinition('resource_solid')}},
         mode_definitions=[ModeDefinition(resources={'list': filepicklelist_resource})],
     )
@@ -313,7 +315,7 @@ def define_resource_pipeline():
 def define_resource_with_exception_pipeline():
     return PipelineDefinition(
         name='resource_with_exception_pipeline',
-        solids=[resource_solid, hello_world_resource_with_exception_solid],
+        solid_defs=[resource_solid, hello_world_resource_with_exception_solid],
         dependencies={
             'hello_world_resource_with_exception': {'nonce': DependencyDefinition('resource_solid')}
         },

@@ -74,7 +74,7 @@ def test_default_expectations():
 def test_all_types_provided():
     pipeline_def = PipelineDefinition(
         name='pipeline',
-        solids=[],
+        solid_defs=[],
         mode_definitions=[
             ModeDefinition(
                 name='SomeMode',
@@ -127,7 +127,7 @@ def test_provided_default_on_resources_config():
                 },
             )
         ],
-        solids=[
+        solid_defs=[
             SolidDefinition(name='some_solid', inputs=[], outputs=[], compute_fn=lambda *args: None)
         ],
     )
@@ -149,7 +149,7 @@ def test_provided_default_on_resources_config():
 
 def test_default_environment():
     pipeline_def = PipelineDefinition(
-        solids=[
+        solid_defs=[
             SolidDefinition(name='some_solid', inputs=[], outputs=[], compute_fn=lambda *args: None)
         ]
     )
@@ -224,7 +224,7 @@ def test_solid_dictionary_type():
 
 def define_test_solids_config_pipeline():
     return PipelineDefinition(
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Int, is_optional=True),
@@ -270,7 +270,7 @@ def test_solid_configs_defaults():
 
 def test_solid_dictionary_some_no_config():
     pipeline_def = PipelineDefinition(
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Int),
@@ -309,7 +309,7 @@ def test_whole_environment():
                 },
             )
         ],
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Int),
@@ -377,7 +377,7 @@ def test_optional_solid_with_no_config():
 
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Int),
@@ -403,7 +403,7 @@ def test_optional_solid_with_optional_scalar_config():
 
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Int, is_optional=True),
@@ -437,7 +437,7 @@ def test_optional_solid_with_required_scalar_config():
 
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Int),
@@ -470,7 +470,7 @@ def test_optional_solid_with_required_scalar_config():
 def test_required_solid_with_required_subfield():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Dict({'required_field': Field(String)})),
@@ -512,7 +512,7 @@ def test_required_solid_with_required_subfield():
 def test_optional_solid_with_optional_subfield():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(
@@ -545,7 +545,7 @@ def nested_field(config_type, *field_names):
 def test_required_resource_with_required_subfield():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
-        solids=[],
+        solid_defs=[],
         mode_definitions=[
             ModeDefinition(
                 resources={
@@ -573,7 +573,7 @@ def test_required_resource_with_required_subfield():
 def test_all_optional_field_on_single_resource():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
-        solids=[],
+        solid_defs=[],
         mode_definitions=[
             ModeDefinition(
                 resources={
@@ -603,7 +603,7 @@ def test_all_optional_field_on_single_resource():
 def test_optional_and_required_context():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
-        solids=[],
+        solid_defs=[],
         mode_definitions=[
             ModeDefinition(
                 name='mixed',
@@ -665,7 +665,7 @@ def test_required_inputs():
 
     pipeline_def = PipelineDefinition(
         name='required_int_input',
-        solids=[add_one],
+        solid_defs=[add_one],
         dependencies={
             SolidInstance('add_one', 'first_add'): {},
             SolidInstance('add_one', 'second_add'): {'num': DependencyDefinition('first_add')},
@@ -704,7 +704,7 @@ def test_mix_required_inputs():
 
     pipeline_def = PipelineDefinition(
         name='mixed_required_inputs',
-        solids=[add_numbers, return_three],
+        solid_defs=[add_numbers, return_three],
         dependencies={'add_numbers': {'right': DependencyDefinition('return_three')}},
     )
 
@@ -718,7 +718,7 @@ def test_mix_required_inputs():
 
 
 def test_files_default_config():
-    pipeline_def = PipelineDefinition(name='pipeline', solids=[])
+    pipeline_def = PipelineDefinition(name='pipeline', solid_defs=[])
 
     env_type = create_environment_type(pipeline_def)
     assert 'storage' in env_type.fields
@@ -729,7 +729,7 @@ def test_files_default_config():
 
 
 def test_storage_in_memory_config():
-    pipeline_def = PipelineDefinition(name='pipeline', solids=[])
+    pipeline_def = PipelineDefinition(name='pipeline', solid_defs=[])
 
     env_type = create_environment_type(pipeline_def)
     assert 'storage' in env_type.fields

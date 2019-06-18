@@ -129,7 +129,7 @@ def test_spark_dataframe_output_csv():
     with tempfile.TemporaryDirectory() as tempdir:
         file_name = os.path.join(tempdir, 'output.csv')
         result = execute_solid(
-            PipelineDefinition(name='passthrough', solids=[passthrough_df]),
+            PipelineDefinition(name='passthrough', solid_defs=[passthrough_df]),
             'passthrough_df',
             inputs={'df': num_df},
             environment_dict={

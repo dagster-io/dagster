@@ -77,7 +77,7 @@ def define_inty_pipeline():
 
     pipeline = PipelineDefinition(
         name='basic_external_plan_execution',
-        solids=[return_one, add_one, user_throw_exception],
+        solid_defs=[return_one, add_one, user_throw_exception],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
     return pipeline

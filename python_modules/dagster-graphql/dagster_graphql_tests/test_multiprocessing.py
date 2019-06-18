@@ -178,14 +178,14 @@ def crashy_solid(sum_df):  # pylint: disable=W0613
 
 def define_passing_pipeline():
     return PipelineDefinition(
-        name='csv_hello_world', solids=[sum_solid], dependencies={'sum_solid': {}}
+        name='csv_hello_world', solid_defs=[sum_solid], dependencies={'sum_solid': {}}
     )
 
 
 def define_failing_pipeline():
     return PipelineDefinition(
         name='csv_hello_world',
-        solids=[sum_solid, error_solid],
+        solid_defs=[sum_solid, error_solid],
         dependencies={
             'sum_solid': {},
             'error_solid': {'sum_df': DependencyDefinition('sum_solid')},
@@ -196,7 +196,7 @@ def define_failing_pipeline():
 def define_crashy_pipeline():
     return PipelineDefinition(
         name='csv_hello_world',
-        solids=[sum_solid, crashy_solid],
+        solid_defs=[sum_solid, crashy_solid],
         dependencies={
             'sum_solid': {},
             'crashy_solid': {'sum_df': DependencyDefinition('sum_solid')},

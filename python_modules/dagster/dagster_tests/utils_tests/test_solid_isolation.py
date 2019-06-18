@@ -24,7 +24,7 @@ def test_single_solid_in_isolation():
     def solid_one():
         return 1
 
-    pipeline_def = PipelineDefinition(solids=[solid_one])
+    pipeline_def = PipelineDefinition(solid_defs=[solid_one])
 
     result = execute_solid(pipeline_def, 'solid_one')
     assert result.success
@@ -41,7 +41,7 @@ def test_single_solid_with_single():
         return num + 1
 
     pipeline_def = PipelineDefinition(
-        solids=[solid_one, add_one_solid],
+        solid_defs=[solid_one, add_one_solid],
         dependencies={'add_one_solid': {'num': DependencyDefinition('solid_one')}},
     )
 
@@ -60,7 +60,7 @@ def test_single_solid_with_multiple_inputs():
         return num_one + num_two
 
     pipeline_def = PipelineDefinition(
-        solids=[solid_one, add_solid],
+        solid_defs=[solid_one, add_solid],
         dependencies={
             'add_solid': {
                 'num_one': DependencyDefinition('solid_one'),
@@ -88,7 +88,7 @@ def test_single_solid_with_config():
         assert context.solid_config == 2
         ran['check_config_for_two'] = True
 
-    pipeline_def = PipelineDefinition(solids=[check_config_for_two])
+    pipeline_def = PipelineDefinition(solid_defs=[check_config_for_two])
     result = execute_solid(
         pipeline_def,
         'check_config_for_two',
@@ -112,7 +112,7 @@ def test_single_solid_with_context_config():
         ran['count'] += 1
 
     pipeline_def = PipelineDefinition(
-        solids=[check_context_config_for_two],
+        solid_defs=[check_context_config_for_two],
         mode_definitions=[ModeDefinition(resources={'num': num_resource})],
     )
 
@@ -139,7 +139,7 @@ def test_single_solid_error():
     def throw_error():
         raise SomeError()
 
-    pipeline_def = PipelineDefinition(solids=[throw_error])
+    pipeline_def = PipelineDefinition(solid_defs=[throw_error])
 
     with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
         execute_solid(pipeline_def, 'throw_error')
@@ -152,7 +152,7 @@ def test_single_solid_type_checking_output_error():
     def return_string():
         return 'ksjdfkjd'
 
-    pipeline_def = PipelineDefinition(solids=[return_string])
+    pipeline_def = PipelineDefinition(solid_defs=[return_string])
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_solid(pipeline_def, 'return_string')
@@ -166,7 +166,7 @@ def test_failing_solid_execute_solid():
     def throw_an_error():
         raise ThisException('nope')
 
-    pipeline_def = PipelineDefinition(solids=[throw_an_error])
+    pipeline_def = PipelineDefinition(solid_defs=[throw_an_error])
 
     with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
         execute_solid(pipeline_def, 'throw_an_error')

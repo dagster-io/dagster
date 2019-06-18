@@ -24,7 +24,7 @@ def div_two(num):
 
 add_two = CompositeSolidDefinition(
     'add_two',
-    solids=[add_one],
+    solid_defs=[add_one],
     dependencies={
         SolidInstance('add_one', 'adder_1'): {},
         SolidInstance('add_one', 'adder_2'): {'num': DependencyDefinition('adder_1')},
@@ -35,7 +35,7 @@ add_two = CompositeSolidDefinition(
 
 add_four = CompositeSolidDefinition(
     'add_four',
-    solids=[add_two],
+    solid_defs=[add_two],
     dependencies={
         SolidInstance('add_two', 'adder_1'): {},
         SolidInstance('add_two', 'adder_2'): {'num': DependencyDefinition('adder_1')},
@@ -46,7 +46,7 @@ add_four = CompositeSolidDefinition(
 
 div_four = CompositeSolidDefinition(
     'div_four',
-    solids=[div_two],
+    solid_defs=[div_two],
     dependencies={
         SolidInstance('div_two', 'div_1'): {},
         SolidInstance('div_two', 'div_2'): {'num': DependencyDefinition('div_1')},
@@ -59,7 +59,7 @@ div_four = CompositeSolidDefinition(
 def define_composition_pipeline():
     return PipelineDefinition(
         name='composition',
-        solids=[add_four, div_four],
+        solid_defs=[add_four, div_four],
         dependencies={'div_four': {'num': DependencyDefinition('add_four')}},
         mode_definitions=[ModeDefinition()],
     )

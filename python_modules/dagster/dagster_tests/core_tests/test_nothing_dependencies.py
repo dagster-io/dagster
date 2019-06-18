@@ -65,7 +65,7 @@ def _define_nothing_dep_pipeline():
 
     return PipelineDefinition(
         name='simple_exc',
-        solids=[emit_value, add_value, start_nothing, end_nothing, yield_values],
+        solid_defs=[emit_value, add_value, start_nothing, end_nothing, yield_values],
         dependencies={
             'add_value': {
                 'on_complete': DependencyDefinition('start_nothing', 'complete'),
@@ -99,7 +99,7 @@ def test_invalid_input_dependency():
     with pytest.raises(DagsterInvalidDefinitionError):
         PipelineDefinition(
             name='bad_dep',
-            solids=[do_nothing, add_one],
+            solid_defs=[do_nothing, add_one],
             dependencies={'add_one': {'num': DependencyDefinition('do_nothing')}},
         )
 
@@ -109,7 +109,7 @@ def test_result_type_check():
     def bad(_context):
         yield Result('oops')
 
-    pipeline = PipelineDefinition(name='fail', solids=[bad])
+    pipeline = PipelineDefinition(name='fail', solid_defs=[bad])
     with pytest.raises(DagsterInvariantViolationError):
         execute_pipeline(pipeline)
 
@@ -149,7 +149,7 @@ def test_nothing_inputs():
 
     pipeline = PipelineDefinition(
         name='input_test',
-        solids=[emit_one, emit_two, emit_three, emit_nothing, adder],
+        solid_defs=[emit_one, emit_two, emit_three, emit_nothing, adder],
         dependencies={
             SolidInstance('emit_nothing', '_one'): {},
             SolidInstance('emit_nothing', '_two'): {},
@@ -193,7 +193,7 @@ def test_fanin_deps():
 
     pipeline = PipelineDefinition(
         name='input_test',
-        solids=[emit_two, emit_nothing, adder],
+        solid_defs=[emit_two, emit_nothing, adder],
         dependencies={
             SolidInstance('emit_two', 'emit_1'): {},
             SolidInstance('emit_two', 'emit_2'): {},
@@ -241,7 +241,7 @@ def test_valid_nothing_fns():
         yield Materialization.legacy_ctor('/path/to/nowhere')
 
     pipeline = PipelineDefinition(
-        name='fn_test', solids=[just_pass, just_pass2, ret_none, yield_none, yield_stuff]
+        name='fn_test', solid_defs=[just_pass, just_pass2, ret_none, yield_none, yield_stuff]
     )
     result = execute_pipeline(pipeline)
     assert result.success
@@ -257,10 +257,10 @@ def test_invalid_nothing_fns():
         yield Result('val')
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline(PipelineDefinition(name='fn_test', solids=[ret_val]))
+        execute_pipeline(PipelineDefinition(name='fn_test', solid_defs=[ret_val]))
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline(PipelineDefinition(name='fn_test', solids=[yield_val]))
+        execute_pipeline(PipelineDefinition(name='fn_test', solid_defs=[yield_val]))
 
 
 def test_wrapping_nothing():
@@ -300,7 +300,7 @@ def test_execution_plan():
 
     pipe = PipelineDefinition(
         name='execution_plan_test',
-        solids=[emit_nothing, consume_nothing],
+        solid_defs=[emit_nothing, consume_nothing],
         dependencies={'consume_nothing': {'ready': DependencyDefinition('emit_nothing')}},
     )
     plan = create_execution_plan(pipe)

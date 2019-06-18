@@ -212,7 +212,7 @@ def test_default_context_logging():
         for logger in context.log.loggers:
             assert logger.level == logging.INFO
 
-    pipeline = PipelineDefinition(solids=[default_context_transform])
+    pipeline = PipelineDefinition(solid_defs=[default_context_transform])
     execute_pipeline(pipeline)
 
     assert called['yes']

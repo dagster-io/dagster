@@ -50,7 +50,7 @@ class PipelineDefinition(IContainSolids, object):
         determine how the values produced by solids flow through the DAG.
 
     Args:
-        solids (List[SolidDefinition]):
+        solid_defs (List[SolidDefinition]):
             The set of solid definitions used in this pipeline.
         name (Optional[str])
         description (Optional[str])
@@ -68,7 +68,7 @@ class PipelineDefinition(IContainSolids, object):
 
     def __init__(
         self,
-        solids,
+        solid_defs,
         name=None,
         description=None,
         dependencies=None,
@@ -88,7 +88,7 @@ class PipelineDefinition(IContainSolids, object):
         self.mode_definitions = mode_definitions
 
         current_level_solid_defs = check.list_param(
-            _check_solids_arg(self.name, solids), 'solids', of_type=ISolidDefinition
+            _check_solids_arg(self.name, solid_defs), 'solid_defs', of_type=ISolidDefinition
         )
 
         seen_modes = set()
@@ -360,22 +360,22 @@ def _build_sub_pipeline(pipeline_def, solid_names):
 
     return PipelineDefinition(
         name=pipeline_def.name,
-        solids=list({solid.definition for solid in solids}),
+        solid_defs=list({solid.definition for solid in solids}),
         mode_definitions=pipeline_def.mode_definitions,
         dependencies=deps,
     )
 
 
-def _validate_resource_dependencies(mode_definitions, solids):
+def _validate_resource_dependencies(mode_definitions, solid_defs):
     '''This validation ensures that each pipeline context provides the resources that are required
     by each solid.
     '''
     check.list_param(mode_definitions, 'mode_definintions', of_type=ModeDefinition)
-    check.list_param(solids, 'solids', of_type=ISolidDefinition)
+    check.list_param(solid_defs, 'solid_defs', of_type=ISolidDefinition)
 
     for mode_def in mode_definitions:
         mode_resources = set(mode_def.resource_defs.keys())
-        for solid in solids:
+        for solid in solid_defs:
             for required_resource in solid.required_resources:
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(

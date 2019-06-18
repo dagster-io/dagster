@@ -28,7 +28,7 @@ class SolidInstance(namedtuple('Solid', 'name alias resource_mapper_fn')):
         .. code-block:: python
 
             pipeline = Pipeline(
-                solids=[solid_1, solid_2]
+                solid_defs=[solid_1, solid_2]
                 dependencies={
                     SolidInstance('solid_2', alias='other_name') : {
                         'input_name' : DependencyDefinition('solid_2'),

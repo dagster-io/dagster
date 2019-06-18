@@ -23,7 +23,7 @@ def _dataframe_solid(name, inputs, compute_fn):
 
 def get_solid_result_value(solid_inst):
     pipeline = PipelineDefinition(
-        solids=[load_num_csv_solid('load_csv'), solid_inst],
+        solid_defs=[load_num_csv_solid('load_csv'), solid_inst],
         dependencies={
             solid_inst.name: {
                 list(solid_inst.input_dict.values())[0].name: DependencyDefinition('load_csv')
@@ -82,7 +82,7 @@ def test_pandas_csv_in_memory():
 
 
 def _sum_only_pipeline():
-    return PipelineDefinition(solids=[sum_table, sum_sq_table], dependencies={})
+    return PipelineDefinition(solid_defs=[sum_table, sum_sq_table], dependencies={})
 
 
 def test_two_input_solid():
@@ -101,7 +101,11 @@ def test_two_input_solid():
     )
 
     pipeline = PipelineDefinition(
-        solids=[load_num_csv_solid('load_csv1'), load_num_csv_solid('load_csv2'), two_input_solid],
+        solid_defs=[
+            load_num_csv_solid('load_csv1'),
+            load_num_csv_solid('load_csv2'),
+            two_input_solid,
+        ],
         dependencies={
             'two_input_solid': {
                 'num_csv1': DependencyDefinition('load_csv1'),
@@ -168,7 +172,7 @@ def test_pandas_multiple_inputs():
     )
 
     pipeline = PipelineDefinition(
-        solids=[load_num_csv_solid('load_one'), load_num_csv_solid('load_two'), double_sum],
+        solid_defs=[load_num_csv_solid('load_one'), load_num_csv_solid('load_two'), double_sum],
         dependencies={
             'double_sum': {
                 'num_csv1': DependencyDefinition('load_one'),
@@ -187,7 +191,7 @@ def test_pandas_multiple_inputs():
 def test_rename_input():
     result = execute_pipeline(
         PipelineDefinition(
-            solids=[load_num_csv_solid('load_csv'), sum_table, sum_sq_table_renamed_input],
+            solid_defs=[load_num_csv_solid('load_csv'), sum_table, sum_sq_table_renamed_input],
             dependencies={
                 'sum_table': {'num_csv': DependencyDefinition('load_csv')},
                 sum_sq_table_renamed_input.name: {

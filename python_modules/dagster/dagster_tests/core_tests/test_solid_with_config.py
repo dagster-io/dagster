@@ -25,7 +25,7 @@ def test_basic_solid_with_config():
         compute_fn=_t_fn,
     )
 
-    pipeline = PipelineDefinition(solids=[solid])
+    pipeline = PipelineDefinition(solid_defs=[solid])
 
     execute_pipeline(
         pipeline, {'solids': {'solid_with_context': {'config': {'some_config': 'foo'}}}}
@@ -47,7 +47,7 @@ def test_config_arg_mismatch():
         compute_fn=_t_fn,
     )
 
-    pipeline = PipelineDefinition(solids=[solid])
+    pipeline = PipelineDefinition(solid_defs=[solid])
 
     with pytest.raises(PipelineConfigEvaluationError):
         execute_pipeline(
@@ -61,7 +61,7 @@ def test_solid_not_found():
 
     solid = SolidDefinition(name='find_me_solid', inputs=[], outputs=[], compute_fn=_t_fn)
 
-    pipeline = PipelineDefinition(solids=[solid])
+    pipeline = PipelineDefinition(solid_defs=[solid])
 
     with pytest.raises(PipelineConfigEvaluationError):
         execute_pipeline(pipeline, {'solids': {'not_found': {'config': {'some_config': 1}}}})
@@ -73,7 +73,7 @@ def test_config_for_no_config():
 
     solid_def = SolidDefinition(name='no_config_solid', inputs=[], outputs=[], compute_fn=_t_fn)
 
-    pipeline = PipelineDefinition(solids=[solid_def])
+    pipeline = PipelineDefinition(solid_defs=[solid_def])
 
     with pytest.raises(PipelineConfigEvaluationError):
         execute_pipeline(pipeline, {'solids': {'no_config_solid': {'config': {'some_config': 1}}}})

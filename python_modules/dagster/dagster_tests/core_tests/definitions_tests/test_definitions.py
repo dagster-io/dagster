@@ -40,7 +40,7 @@ def test_solid_def():
         raise Exception('should not execute')
 
     pipeline_def = PipelineDefinition(
-        solids=[produce_string, solid_one],
+        solid_defs=[produce_string, solid_one],
         dependencies={'solid_one': {'input_one': DependencyDefinition('produce_string')}},
     )
 
@@ -112,7 +112,7 @@ def test_pipeline_types():
         raise Exception('should not execute')
 
     pipeline_def = PipelineDefinition(
-        solids=[produce_string, solid_one],
+        solid_defs=[produce_string, solid_one],
         dependencies={'solid_one': {'input_one': DependencyDefinition('produce_string')}},
     )
 
@@ -131,13 +131,14 @@ def test_mapper_errors():
 
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_1:
         PipelineDefinition(
-            solids=[solid_a], dependencies={'solid_b': {'arg_a': DependencyDefinition('solid_a')}}
+            solid_defs=[solid_a],
+            dependencies={'solid_b': {'arg_a': DependencyDefinition('solid_a')}},
         )
     assert str(excinfo_1.value) == 'Solid solid_b in dependency dictionary not found in solid list'
 
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_2:
         PipelineDefinition(
-            solids=[solid_a],
+            solid_defs=[solid_a],
             dependencies={
                 SolidInstance('solid_b', alias='solid_c'): {
                     'arg_a': DependencyDefinition('solid_a')

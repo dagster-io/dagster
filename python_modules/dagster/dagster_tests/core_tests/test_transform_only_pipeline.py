@@ -32,7 +32,7 @@ def test_execute_solid_with_dep_only_inputs_no_api():
     )
 
     pipeline = PipelineDefinition(
-        solids=[step_one_solid, step_two_solid],
+        solid_defs=[step_one_solid, step_two_solid],
         dependencies={'step_two_solid': {'step_one_solid': DependencyDefinition('step_one_solid')}},
     )
 
@@ -67,7 +67,7 @@ def test_execute_solid_with_dep_only_inputs_with_api():
     )
 
     pipeline = PipelineDefinition(
-        solids=[step_one_solid, step_two_solid],
+        solid_defs=[step_one_solid, step_two_solid],
         dependencies={
             'step_two_solid': {step_one_solid.name: DependencyDefinition(step_one_solid.name)}
         },

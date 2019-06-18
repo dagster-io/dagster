@@ -14,7 +14,7 @@ from dagster import (
 
 
 def define_empty_pipeline():
-    return PipelineDefinition(name='empty_pipeline', solids=[])
+    return PipelineDefinition(name='empty_pipeline', solid_defs=[])
 
 
 def define_single_mode_pipeline():
@@ -23,7 +23,9 @@ def define_single_mode_pipeline():
         return 2
 
     return PipelineDefinition(
-        name='single_mode', solids=[return_two], mode_definitions=[ModeDefinition(name='the_mode')]
+        name='single_mode',
+        solid_defs=[return_two],
+        mode_definitions=[ModeDefinition(name='the_mode')],
     )
 
 
@@ -34,7 +36,7 @@ def define_multi_mode_pipeline():
 
     return PipelineDefinition(
         name='multi_mode',
-        solids=[return_three],
+        solid_defs=[return_three],
         mode_definitions=[ModeDefinition(name='mode_one'), ModeDefinition('mode_two')],
     )
 
@@ -62,7 +64,7 @@ def define_multi_mode_with_resources_pipeline():
 
     return PipelineDefinition(
         name='multi_mode_with_resources',
-        solids=[apply_to_three],
+        solid_defs=[apply_to_three],
         mode_definitions=[
             ModeDefinition(name='add_mode', resources={'op': adder_resource}),
             ModeDefinition(name='mult_mode', resources={'op': multer_resource}),

@@ -32,7 +32,7 @@ def test_wrong_output_value():
     pass_solid = define_stub_solid('pass_solid', pd.DataFrame())
 
     pipeline = PipelineDefinition(
-        solids=[pass_solid, df_solid],
+        solid_defs=[pass_solid, df_solid],
         dependencies={'test_wrong_output': {'num_csv': DependencyDefinition('pass_solid')}},
     )
 
@@ -48,7 +48,7 @@ def test_wrong_input_value():
     pass_solid = define_stub_solid('pass_solid', 'not a dataframe')
 
     pipeline = PipelineDefinition(
-        solids=[pass_solid, df_solid],
+        solid_defs=[pass_solid, df_solid],
         dependencies={'test_wrong_input': {'foo': DependencyDefinition('pass_solid')}},
     )
 

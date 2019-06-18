@@ -19,7 +19,7 @@ from dagster_examples.airline_demo.cache_file_from_s3 import cache_file_from_s3
 def execute_solid_with_resources(solid_def, resources, environment_dict):
     pipeline_def = PipelineDefinition(
         name='{}_solid_test'.format(solid_def.name),
-        solids=[solid_def],
+        solid_defs=[solid_def],
         mode_definitions=[ModeDefinition(resources=resources)],
     )
 

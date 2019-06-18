@@ -74,7 +74,7 @@ def define_pipeline():
     return PipelineDefinition(
         name='pyspark_pagerank',
         mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})],
-        solids=[parse_pagerank_data, compute_links, calculate_ranks, log_ranks],
+        solid_defs=[parse_pagerank_data, compute_links, calculate_ranks, log_ranks],
         dependencies={
             'compute_links': {'urls': DependencyDefinition('parse_pagerank_data')},
             'calculate_ranks': {'links': DependencyDefinition('compute_links')},

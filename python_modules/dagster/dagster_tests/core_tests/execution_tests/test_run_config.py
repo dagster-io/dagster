@@ -12,7 +12,7 @@ def test_default_run_id():
         assert uuid.UUID(context.run_id)
         called['run_id'] = context.run_id
 
-    pipeline = PipelineDefinition(solids=[check_run_id])
+    pipeline = PipelineDefinition(solid_defs=[check_run_id])
 
     result = execute_pipeline(pipeline)
     assert result.run_id == called['run_id']
@@ -27,7 +27,7 @@ def test_provided_run_id():
         called['yes'] = True
         assert context.run_id == 'given'
 
-    pipeline = PipelineDefinition(solids=[check_run_id])
+    pipeline = PipelineDefinition(solid_defs=[check_run_id])
 
     result = execute_pipeline(pipeline, run_config=RunConfig(run_id='given'))
     assert result.run_id == 'given'
@@ -43,7 +43,7 @@ def test_injected_tags():
         assert context.get_tag('foo') == 'bar'
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(name='injected_run_id', solids=[check_tags])
+    pipeline_def = PipelineDefinition(name='injected_run_id', solid_defs=[check_tags])
     result = execute_pipeline(pipeline_def, run_config=RunConfig(tags={'foo': 'bar'}))
 
     assert result.success

@@ -190,7 +190,7 @@ def define_pipeline_with_expectation():
 
     return PipelineDefinition(
         name='pipeline_with_expectations',
-        solids=[
+        solid_defs=[
             emit_successful_expectation,
             emit_failed_expectation,
             emit_successful_expectation_no_metadata,
@@ -207,13 +207,13 @@ def define_pipeline_with_secret():
     def solid_with_secret(_context):
         pass
 
-    return PipelineDefinition(name='secret_pipeline', solids=[solid_with_secret])
+    return PipelineDefinition(name='secret_pipeline', solid_defs=[solid_with_secret])
 
 
 def define_more_complicated_config():
     return PipelineDefinition(
         name='more_complicated_config',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='a_solid_with_three_field_config',
                 inputs=[],
@@ -238,7 +238,7 @@ def define_more_complicated_config():
 def define_more_complicated_nested_config():
     return PipelineDefinition(
         name='more_complicated_nested_config',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='a_solid_with_multilayered_config',
                 inputs=[],
@@ -274,7 +274,7 @@ def define_more_complicated_nested_config():
 def define_csv_hello_world():
     return PipelineDefinition(
         name='csv_hello_world',
-        solids=[sum_solid, sum_sq_solid],
+        solid_defs=[sum_solid, sum_sq_solid],
         dependencies={
             'sum_solid': {},
             'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
@@ -299,7 +299,7 @@ def define_csv_hello_world():
 def define_csv_hello_world_with_expectations():
     return PipelineDefinition(
         name='csv_hello_world_with_expectations',
-        solids=[sum_solid, sum_sq_solid, df_expectations_solid],
+        solid_defs=[sum_solid, sum_sq_solid, df_expectations_solid],
         dependencies={
             'sum_solid': {},
             'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
@@ -310,14 +310,14 @@ def define_csv_hello_world_with_expectations():
 
 def define_pipeline_two():
     return PipelineDefinition(
-        name='csv_hello_world_two', solids=[sum_solid], dependencies={'sum_solid': {}}
+        name='csv_hello_world_two', solid_defs=[sum_solid], dependencies={'sum_solid': {}}
     )
 
 
 def define_pipeline_with_list():
     return PipelineDefinition(
         name='pipeline_with_list',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='solid_with_list',
                 inputs=[],
@@ -332,7 +332,7 @@ def define_pipeline_with_list():
 def define_pipeline_with_csv_df_input():
     return PipelineDefinition(
         name='csv_hello_world_df_input',
-        solids=[sum_solid, sum_sq_solid],
+        solid_defs=[sum_solid, sum_sq_solid],
         dependencies={'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)}},
     )
 
@@ -342,7 +342,7 @@ def define_no_config_pipeline():
     def return_hello():
         return 'Hello'
 
-    return PipelineDefinition(name='no_config_pipeline', solids=[return_hello])
+    return PipelineDefinition(name='no_config_pipeline', solid_defs=[return_hello])
 
 
 def define_scalar_output_pipeline():
@@ -363,7 +363,7 @@ def define_scalar_output_pipeline():
         return 'dkjfkdjfe'
 
     return PipelineDefinition(
-        name='scalar_output_pipeline', solids=[return_str, return_int, return_bool, return_any]
+        name='scalar_output_pipeline', solid_defs=[return_str, return_int, return_bool, return_any]
     )
 
 
@@ -383,7 +383,7 @@ def define_pipeline_with_enum_config():
     def takes_an_enum(_context):
         pass
 
-    return PipelineDefinition(name='pipeline_with_enum_config', solids=[takes_an_enum])
+    return PipelineDefinition(name='pipeline_with_enum_config', solid_defs=[takes_an_enum])
 
 
 def define_naughty_programmer_pipeline():
@@ -391,7 +391,7 @@ def define_naughty_programmer_pipeline():
     def throw_a_thing():
         raise Exception('bad programmer, bad')
 
-    return PipelineDefinition(name='naughty_programmer_pipeline', solids=[throw_a_thing])
+    return PipelineDefinition(name='naughty_programmer_pipeline', solid_defs=[throw_a_thing])
 
 
 def define_pipeline_with_step_metadata():
@@ -405,7 +405,7 @@ def define_pipeline_with_step_metadata():
             'computed': env_config.solids['solid_metadata_creation'].config['str_value'] + '1'
         },
     )
-    return PipelineDefinition(name='pipeline_with_step_metadata', solids=[solid_def])
+    return PipelineDefinition(name='pipeline_with_step_metadata', solid_defs=[solid_def])
 
 
 def define_multi_mode_with_resources_pipeline():
@@ -431,7 +431,7 @@ def define_multi_mode_with_resources_pipeline():
 
     return PipelineDefinition(
         name='multi_mode_with_resources',
-        solids=[apply_to_three],
+        solid_defs=[apply_to_three],
         preset_definitions=[PresetDefinition("add", mode="add_mode")],
         mode_definitions=[
             ModeDefinition(
@@ -481,7 +481,7 @@ def define_multi_mode_with_loggers_pipeline():
 
     return PipelineDefinition(
         name='multi_mode_with_loggers',
-        solids=[return_six],
+        solid_defs=[return_six],
         mode_definitions=[
             ModeDefinition(
                 name='foo_mode', loggers={'foo': foo_logger}, description='Mode with foo logger'
@@ -509,7 +509,7 @@ def define_composites_pipeline():
 
     add_two = CompositeSolidDefinition(
         'add_two',
-        solids=[add_one],
+        solid_defs=[add_one],
         dependencies={
             SolidInstance('add_one', 'adder_1'): {},
             SolidInstance('add_one', 'adder_2'): {'num': DependencyDefinition('adder_1')},
@@ -520,7 +520,7 @@ def define_composites_pipeline():
 
     add_four = CompositeSolidDefinition(
         'add_four',
-        solids=[add_two],
+        solid_defs=[add_two],
         dependencies={
             SolidInstance('add_two', 'adder_1'): {},
             SolidInstance('add_two', 'adder_2'): {'num': DependencyDefinition('adder_1')},
@@ -531,7 +531,7 @@ def define_composites_pipeline():
 
     div_four = CompositeSolidDefinition(
         'div_four',
-        solids=[div_two],
+        solid_defs=[div_two],
         dependencies={
             SolidInstance('div_two', 'div_1'): {},
             SolidInstance('div_two', 'div_2'): {'num': DependencyDefinition('div_1')},
@@ -542,6 +542,6 @@ def define_composites_pipeline():
 
     return PipelineDefinition(
         name='composites_pipeline',
-        solids=[add_four, div_four],
+        solid_defs=[add_four, div_four],
         dependencies={'div_four': {'num': DependencyDefinition('add_four')}},
     )

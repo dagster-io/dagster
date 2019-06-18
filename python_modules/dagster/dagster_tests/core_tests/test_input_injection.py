@@ -21,7 +21,9 @@ def test_string_from_inputs():
         assert string_input == 'foo'
         called['yup'] = True
 
-    pipeline = PipelineDefinition(name='test_string_from_inputs_pipeline', solids=[str_as_input])
+    pipeline = PipelineDefinition(
+        name='test_string_from_inputs_pipeline', solid_defs=[str_as_input]
+    )
 
     result = execute_pipeline(
         pipeline, {'solids': {'str_as_input': {'inputs': {'string_input': {'value': 'foo'}}}}}
@@ -40,7 +42,7 @@ def test_string_from_aliased_inputs():
         called['yup'] = True
 
     pipeline = PipelineDefinition(
-        solids=[str_as_input], dependencies={SolidInstance('str_as_input', alias='aliased'): {}}
+        solid_defs=[str_as_input], dependencies={SolidInstance('str_as_input', alias='aliased'): {}}
     )
 
     result = execute_pipeline(
@@ -58,7 +60,7 @@ def test_string_missing_inputs():
     def str_as_input(_context, string_input):  # pylint: disable=W0613
         called['yup'] = True
 
-    pipeline = PipelineDefinition(name='missing_inputs', solids=[str_as_input])
+    pipeline = PipelineDefinition(name='missing_inputs', solid_defs=[str_as_input])
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(pipeline)
 
@@ -86,7 +88,7 @@ def test_string_missing_input_collision():
 
     pipeline = PipelineDefinition(
         name='overlapping',
-        solids=[str_as_input, str_as_output],
+        solid_defs=[str_as_input, str_as_output],
         dependencies={'str_as_input': {'string_input': DependencyDefinition('str_as_output')}},
     )
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:

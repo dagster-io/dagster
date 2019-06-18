@@ -59,7 +59,7 @@ def test_enum_in_pipeline_execution():
         assert context.solid_config['enum_field'] == 'ENUM_VALUE'
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(name='enum_in_pipeline', solids=[config_me])
+    pipeline_def = PipelineDefinition(name='enum_in_pipeline', solid_defs=[config_me])
 
     result = execute_pipeline(
         pipeline_def,
@@ -101,7 +101,9 @@ def test_native_enum_dagster_enum():
         assert context.solid_config == NativeEnum.BAR
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(name='native_enum_dagster_pipeline', solids=[dagster_enum_me])
+    pipeline_def = PipelineDefinition(
+        name='native_enum_dagster_pipeline', solid_defs=[dagster_enum_me]
+    )
 
     result = execute_pipeline(pipeline_def, {'solids': {'dagster_enum_me': {'config': 'BAR'}}})
     assert result.success

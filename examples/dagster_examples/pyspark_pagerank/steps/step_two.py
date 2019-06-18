@@ -61,4 +61,4 @@ def whole_pipeline_solid(context, pagerank_data):
 
 
 def define_pyspark_pagerank_step_two():
-    return PipelineDefinition(name='pyspark_pagerank_step_two', solids=[whole_pipeline_solid])
+    return PipelineDefinition(name='pyspark_pagerank_step_two', solid_defs=[whole_pipeline_solid])

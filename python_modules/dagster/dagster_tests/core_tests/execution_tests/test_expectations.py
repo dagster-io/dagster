@@ -25,7 +25,7 @@ def test_successful_expectation_in_compute_step():
         yield ExpectationResult.legacy_ctor(success=True, message='This is always true.')
 
     pipeline_def = PipelineDefinition(
-        name='success_expectation_in_compute_pipeline', solids=[success_expectation_solid]
+        name='success_expectation_in_compute_pipeline', solid_defs=[success_expectation_solid]
     )
 
     result = execute_pipeline(pipeline_def)
@@ -47,7 +47,7 @@ def test_failed_expectation_in_compute_step():
         yield ExpectationResult.legacy_ctor(success=False, message='This is always false.')
 
     pipeline_def = PipelineDefinition(
-        name='failure_expectation_in_compute_pipeline', solids=[failure_expectation_solid]
+        name='failure_expectation_in_compute_pipeline', solid_defs=[failure_expectation_solid]
     )
 
     result = execute_pipeline(pipeline_def)
@@ -68,7 +68,7 @@ def test_return_expectation_failure():
         return ExpectationResult.legacy_ctor(success=True, message='This is always true.')
 
     pipeline_def = PipelineDefinition(
-        name='success_expectation_in_compute_pipeline', solids=[return_expectation_failure]
+        name='success_expectation_in_compute_pipeline', solid_defs=[return_expectation_failure]
     )
 
     with pytest.raises(DagsterInvariantViolationError) as exc_info:

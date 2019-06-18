@@ -29,7 +29,9 @@ def test_filesystem_run_storage_from_run_config():
     def check_run_storage(context):
         assert isinstance(context.get_system_context().run_storage, FileSystemRunStorage)
 
-    pipeline = PipelineDefinition(name='filesystem_run_storage_test', solids=[check_run_storage])
+    pipeline = PipelineDefinition(
+        name='filesystem_run_storage_test', solid_defs=[check_run_storage]
+    )
 
     result = execute_pipeline(pipeline, {'storage': {'filesystem': {}}})
 
@@ -43,7 +45,7 @@ def test_default_run_storage():
     def check_run_storage(context):
         assert isinstance(context.get_system_context().run_storage, InMemoryRunStorage)
 
-    pipeline = PipelineDefinition(name='default_run_storage_test', solids=[check_run_storage])
+    pipeline = PipelineDefinition(name='default_run_storage_test', solid_defs=[check_run_storage])
 
     result = execute_pipeline(pipeline)
 
@@ -57,7 +59,7 @@ def test_config_specified_filesystem_run_storage():
     def check_run_storage(context):
         assert isinstance(context.get_system_context().run_storage, FileSystemRunStorage)
 
-    pipeline = PipelineDefinition(name='default_run_storage_test', solids=[check_run_storage])
+    pipeline = PipelineDefinition(name='default_run_storage_test', solid_defs=[check_run_storage])
 
     result = execute_pipeline(pipeline, environment_dict={'storage': {'filesystem': {}}})
 

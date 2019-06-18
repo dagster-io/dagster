@@ -23,7 +23,7 @@ def test_aliased_solids():
         return prev + ['not_first']
 
     pipeline = PipelineDefinition(
-        solids=[first, not_first],
+        solid_defs=[first, not_first],
         dependencies={
             'not_first': {'prev': DependencyDefinition('first')},
             SolidInstance('not_first', alias='second'): {'prev': DependencyDefinition('not_first')},
@@ -47,7 +47,7 @@ def test_only_aliased_solids():
         return prev + ['not_first']
 
     pipeline = PipelineDefinition(
-        solids=[first, not_first],
+        solid_defs=[first, not_first],
         dependencies={
             SolidInstance('first', alias='the_root'): {},
             SolidInstance('not_first', alias='the_consequence'): {
@@ -68,7 +68,7 @@ def test_aliased_configs():
         return context.solid_config
 
     pipeline = PipelineDefinition(
-        solids=[load_constant],
+        solid_defs=[load_constant],
         dependencies={
             SolidInstance(load_constant.name, 'load_a'): {},
             SolidInstance(load_constant.name, 'load_b'): {},
@@ -94,7 +94,7 @@ def test_aliased_solids_context():
         record[solid_def_value].add(solid_value)
 
     pipeline = PipelineDefinition(
-        solids=[log_things],
+        solid_defs=[log_things],
         dependencies={
             SolidInstance('log_things', 'log_a'): {},
             SolidInstance('log_things', 'log_b'): {},

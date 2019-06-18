@@ -32,4 +32,4 @@ def add_ints(num_one, num_two):
 
 
 def define_expectations_tutorial_pipeline():
-    return PipelineDefinition(name='expectations_tutorial_pipeline', solids=[add_ints])
+    return PipelineDefinition(name='expectations_tutorial_pipeline', solid_defs=[add_ints])

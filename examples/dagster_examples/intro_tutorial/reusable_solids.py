@@ -30,7 +30,7 @@ def define_reusable_solids_pipeline():
 
     return PipelineDefinition(
         name='reusable_solids_pipeline',
-        solids=[adder, multer],
+        solid_defs=[adder, multer],
         dependencies={
             SolidInstance('adder', 'a_plus_b'): {},
             SolidInstance('adder', 'c_plus_d'): {},

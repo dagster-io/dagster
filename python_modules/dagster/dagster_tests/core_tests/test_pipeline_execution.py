@@ -151,7 +151,7 @@ def create_diamond_solids():
 
 def create_diamond_pipeline():
     return PipelineDefinition(
-        name='diamond_pipeline', solids=create_diamond_solids(), dependencies=diamond_deps()
+        name='diamond_pipeline', solid_defs=create_diamond_solids(), dependencies=diamond_deps()
     )
 
 
@@ -188,7 +188,7 @@ def assert_all_results_equivalent(expected_results, result_results):
 
 
 def test_pipeline_execution_graph_diamond():
-    pipeline = PipelineDefinition(solids=create_diamond_solids(), dependencies=diamond_deps())
+    pipeline = PipelineDefinition(solid_defs=create_diamond_solids(), dependencies=diamond_deps())
     return _do_test(pipeline)
 
 
@@ -205,7 +205,7 @@ def test_execute_aliased_solid_in_diamond():
     a_source = define_stub_solid('A_source', [input_set('A_input')])
     pipeline_def = PipelineDefinition(
         name='aliased_pipeline',
-        solids=[a_source, create_root_solid('A')],
+        solid_defs=[a_source, create_root_solid('A')],
         dependencies={
             SolidInstance('A', alias='aliased'): {'A_input': DependencyDefinition(a_source.name)}
         },
@@ -220,7 +220,7 @@ def test_execute_aliased_solid_in_diamond():
 
 
 def test_create_pipeline_with_empty_solids_list():
-    single_solid_pipeline = PipelineDefinition(solids=[], dependencies={})
+    single_solid_pipeline = PipelineDefinition(solid_defs=[], dependencies={})
 
     result = execute_pipeline(single_solid_pipeline)
     assert result.success
@@ -228,7 +228,7 @@ def test_create_pipeline_with_empty_solids_list():
 
 def test_singleton_pipeline():
     stub_solid = define_stub_solid('stub', [{'a key': 'a value'}])
-    single_solid_pipeline = PipelineDefinition(solids=[stub_solid], dependencies={})
+    single_solid_pipeline = PipelineDefinition(solid_defs=[stub_solid], dependencies={})
 
     result = execute_pipeline(single_solid_pipeline)
     assert result.success
@@ -237,7 +237,9 @@ def test_singleton_pipeline():
 def test_two_root_solid_pipeline_with_empty_dependency_definition():
     stub_solid_a = define_stub_solid('stub_a', [{'a key': 'a value'}])
     stub_solid_b = define_stub_solid('stub_b', [{'a key': 'a value'}])
-    single_solid_pipeline = PipelineDefinition(solids=[stub_solid_a, stub_solid_b], dependencies={})
+    single_solid_pipeline = PipelineDefinition(
+        solid_defs=[stub_solid_a, stub_solid_b], dependencies={}
+    )
 
     result = execute_pipeline(single_solid_pipeline)
     assert result.success
@@ -247,7 +249,7 @@ def test_two_root_solid_pipeline_with_partial_dependency_definition():
     stub_solid_a = define_stub_solid('stub_a', [{'a key': 'a value'}])
     stub_solid_b = define_stub_solid('stub_b', [{'a key': 'a value'}])
     single_solid_pipeline = PipelineDefinition(
-        solids=[stub_solid_a, stub_solid_b], dependencies={'stub_a': {}}
+        solid_defs=[stub_solid_a, stub_solid_b], dependencies={'stub_a': {}}
     )
 
     result = execute_pipeline(single_solid_pipeline)
@@ -290,7 +292,7 @@ def _do_test(pipeline):
 
 
 def test_empty_pipeline_execution():
-    result = execute_pipeline(PipelineDefinition(solids=[]))
+    result = execute_pipeline(PipelineDefinition(solid_defs=[]))
 
     assert result.success
 
@@ -302,13 +304,13 @@ def test_pipeline_name_threaded_through_context():
     def assert_name_transform(context):
         assert context.pipeline_def.name == name
 
-    result = execute_pipeline(PipelineDefinition(name="foobar", solids=[assert_name_transform]))
+    result = execute_pipeline(PipelineDefinition(name="foobar", solid_defs=[assert_name_transform]))
 
     assert result.success
 
     for step_event in step_output_event_filter(
         execute_pipeline_iterator(
-            PipelineDefinition(name="foobar", solids=[assert_name_transform]), {}
+            PipelineDefinition(name="foobar", solid_defs=[assert_name_transform]), {}
         )
     ):
         assert step_event.is_step_success
@@ -324,7 +326,7 @@ def test_pipeline_subset():
         return num + 1
 
     pipeline_def = PipelineDefinition(
-        solids=[return_one, add_one],
+        solid_defs=[return_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
 
@@ -364,7 +366,7 @@ def test_pipeline_subset_with_multi_dependency():
         return 3
 
     pipeline_def = PipelineDefinition(
-        solids=[return_one, return_two, noop],
+        solid_defs=[return_one, return_two, noop],
         dependencies={
             'noop': {
                 'dep': MultiDependencyDefinition(
@@ -411,7 +413,7 @@ def define_three_part_pipeline():
     def add_three(num):
         return num + 3
 
-    return PipelineDefinition(name='three_part_pipeline', solids=[add_one, add_two, add_three])
+    return PipelineDefinition(name='three_part_pipeline', solid_defs=[add_one, add_two, add_three])
 
 
 def define_created_disjoint_three_part_pipeline():
@@ -460,7 +462,7 @@ def test_pipeline_wrapping_types():
             output.append(None if item is None else item + item)
         return output
 
-    pipeline_def = PipelineDefinition(name='wrapping_test', solids=[double_string_for_all])
+    pipeline_def = PipelineDefinition(name='wrapping_test', solid_defs=[double_string_for_all])
 
     assert execute_pipeline(
         pipeline_def,
@@ -502,7 +504,7 @@ def test_pipeline_streaming_iterator():
 
     pipeline_def = PipelineDefinition(
         name='test_streaming_iterator',
-        solids=[push_one, add_one],
+        solid_defs=[push_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('push_one')}},
     )
 
@@ -530,7 +532,7 @@ def test_pipeline_streaming_multiple_outputs():
         yield Result(2, 'two')
 
     pipeline_def = PipelineDefinition(
-        name='test_streaming_iterator_multiple_outputs', solids=[push_one_two]
+        name='test_streaming_iterator_multiple_outputs', solid_defs=[push_one_two]
     )
 
     step_event_iterator = step_output_event_filter(execute_pipeline_iterator(pipeline_def))

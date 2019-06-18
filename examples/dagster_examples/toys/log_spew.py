@@ -43,7 +43,7 @@ def nonce_solid(name, n_inputs, n_outputs):
 def define_spew_pipeline():
     return PipelineDefinition(
         name='log_spew',
-        solids=[
+        solid_defs=[
             nonce_solid('no_in_two_out', 0, 2),
             nonce_solid('one_in_one_out', 1, 1),
             nonce_solid('one_in_two_out', 1, 2),

@@ -73,7 +73,7 @@ def sum_solid_expectations_config(num_df):
 def test_single_node_passing_expectation():
     in_df = pd.DataFrame.from_dict({'num1': [1, 3], 'num2': [2, 4]})
     pipeline = PipelineDefinition(
-        solids=[define_stub_solid('value', in_df), sum_solid],
+        solid_defs=[define_stub_solid('value', in_df), sum_solid],
         dependencies={'sum_solid': {'num_df': DependencyDefinition('value')}},
     )
 
@@ -91,7 +91,7 @@ def test_single_node_passing_expectation():
 def test_single_node_passing_json_config_expectations():
     in_df = pd.DataFrame.from_dict({'num1': [1, 3], 'num2': [2, 4]})
     pipeline = PipelineDefinition(
-        solids=[define_stub_solid('value', in_df), sum_solid_expectations_config],
+        solid_defs=[define_stub_solid('value', in_df), sum_solid_expectations_config],
         dependencies={
             sum_solid_expectations_config.name: {'num_df': DependencyDefinition('value')}
         },
@@ -111,7 +111,7 @@ def test_single_node_passing_json_config_expectations():
 def test_single_node_failing_expectation():
     in_df = pd.DataFrame.from_dict({'num1': [1, 3], 'num2': [2, 4]})
     pipeline = PipelineDefinition(
-        solids=[define_stub_solid('value', in_df), sum_solid_fails_input_expectation],
+        solid_defs=[define_stub_solid('value', in_df), sum_solid_fails_input_expectation],
         dependencies={
             sum_solid_fails_input_expectation.name: {'num_df': DependencyDefinition('value')}
         },

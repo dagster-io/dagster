@@ -42,7 +42,7 @@ def log_num_squared(context, num):
 def define_multiple_outputs_conditional_pipeline():
     return PipelineDefinition(
         name='multiple_outputs_conditional_pipeline',
-        solids=[conditional, log_num, log_num_squared],
+        solid_defs=[conditional, log_num, log_num_squared],
         dependencies={
             'log_num': {'num': DependencyDefinition('conditional', 'out_one')},
             'log_num_squared': {'num': DependencyDefinition('conditional', 'out_two')},

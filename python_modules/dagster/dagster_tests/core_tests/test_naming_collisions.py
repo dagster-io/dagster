@@ -46,7 +46,7 @@ def test_execute_solid_with_input_same_name():
     )
 
     pipeline = PipelineDefinition(
-        solids=[define_pass_value_solid('pass_value'), a_thing_solid],
+        solid_defs=[define_pass_value_solid('pass_value'), a_thing_solid],
         dependencies={'a_thing': {'a_thing': DependencyDefinition('pass_value')}},
     )
 
@@ -75,7 +75,7 @@ def test_execute_two_solids_with_same_input_name():
     )
 
     pipeline = dagster.PipelineDefinition(
-        solids=[
+        solid_defs=[
             define_pass_value_solid('pass_to_one'),
             define_pass_value_solid('pass_to_two'),
             solid_one,
@@ -121,7 +121,7 @@ def test_execute_dep_solid_different_input_name():
     )
 
     pipeline = dagster.PipelineDefinition(
-        solids=[pass_to_first, first_solid, second_solid],
+        solid_defs=[pass_to_first, first_solid, second_solid],
         dependencies={
             'first_solid': {'a_thing': DependencyDefinition('pass_to_first')},
             'second_solid': {'an_input': DependencyDefinition('first_solid')},

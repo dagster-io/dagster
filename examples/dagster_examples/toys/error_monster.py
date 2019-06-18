@@ -85,7 +85,7 @@ def str_to_num(context, string):
 def define_error_monster_pipeline():
     return PipelineDefinition(
         name='error_monster',
-        solids=[emit_num, num_to_str, str_to_num],
+        solid_defs=[emit_num, num_to_str, str_to_num],
         dependencies={
             SolidInstance('emit_num', 'start'): {},
             SolidInstance('num_to_str', 'middle'): {'num': DependencyDefinition('start')},

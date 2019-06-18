@@ -30,7 +30,7 @@ def test_presets():
 
     pipeline = PipelineDefinition(
         name='simple',
-        solids=[can_fail, always_fail],
+        solid_defs=[can_fail, always_fail],
         preset_definitions=[
             PresetDefinition(
                 'passing',
@@ -81,7 +81,7 @@ def test_invalid_preset():
     with pytest.raises(DagsterInvalidDefinitionError, match='mode "mode_b" which is not defined'):
         PipelineDefinition(
             name="preset_modes",
-            solids=[lil_solid],
+            solid_defs=[lil_solid],
             mode_definitions=[ModeDefinition(name="mode_a")],
             preset_definitions=[PresetDefinition(name="preset_b", mode="mode_b")],
         )

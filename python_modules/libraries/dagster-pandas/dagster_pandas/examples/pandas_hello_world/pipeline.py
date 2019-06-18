@@ -41,7 +41,7 @@ def always_fails_solid(**_kwargs):
 def define_failure_pipeline():
     return PipelineDefinition(
         name='pandas_hello_world_fails',
-        solids=[sum_solid, sum_sq_solid, always_fails_solid],
+        solid_defs=[sum_solid, sum_sq_solid, always_fails_solid],
         dependencies={
             'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
             'always_fails_solid': {'sum_sq_solid': DependencyDefinition(sum_sq_solid.name)},
@@ -52,7 +52,7 @@ def define_failure_pipeline():
 def define_pandas_hello_world_pipeline():
     return PipelineDefinition(
         name='pandas_hello_world',
-        solids=[sum_solid, sum_sq_solid],
+        solid_defs=[sum_solid, sum_sq_solid],
         dependencies={
             'sum_solid': {},
             'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},

@@ -64,7 +64,12 @@ def define_test_events_pipeline():
 
     return PipelineDefinition(
         name='test_events',
-        solids=[materialization_and_expectation, optional_only_one, should_fail, should_be_skipped],
+        solid_defs=[
+            materialization_and_expectation,
+            optional_only_one,
+            should_fail,
+            should_be_skipped,
+        ],
         dependencies={
             'optional_only_one': {},
             'should_fail': {
