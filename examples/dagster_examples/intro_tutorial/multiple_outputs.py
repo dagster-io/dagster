@@ -25,7 +25,7 @@ def log_num_squared(context, num: int):
 
 
 @pipeline
-def multiple_outputs_pipeline(_):
+def multiple_outputs_pipeline():
     out_one, out_two = return_dict_results()
     log_num(out_one)
     log_num_squared(out_two)

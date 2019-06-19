@@ -1,3 +1,5 @@
+# pylint: disable=no-value-for-parameter
+
 import pytest
 
 from dagster import (
@@ -41,13 +43,13 @@ def scalar_config_solid(context):
 
 
 @composite_solid(config_mapping_fn=wrap_config_mapping_fn)
-def wrap(context):
-    return scalar_config_solid(context)
+def wrap():
+    return scalar_config_solid()
 
 
 @composite_solid(config_mapping_fn=nesting_config_mapping_fn)
-def nesting_wrap(context):
-    return wrap(context)
+def nesting_wrap():
+    return wrap()
 
 
 def ensure_keypath_exists(dst_dict, keys):
@@ -59,8 +61,8 @@ def ensure_keypath_exists(dst_dict, keys):
 
 def test_multiple_overrides_pipeline():
     @pipeline
-    def wrap_pipeline(context):
-        return nesting_wrap.alias('outer_wrap')(context)
+    def wrap_pipeline():
+        return nesting_wrap.alias('outer_wrap')()
 
     result = execute_pipeline(
         wrap_pipeline,
@@ -80,8 +82,8 @@ def test_multiple_overrides_pipeline():
 
 def test_good_override():
     @pipeline
-    def wrap_pipeline(context):
-        return wrap.alias('do_stuff')(context)
+    def wrap_pipeline():
+        return wrap.alias('do_stuff')()
 
     result = execute_pipeline(
         wrap_pipeline,
@@ -96,12 +98,12 @@ def test_good_override():
 
 def test_bad_override():
     @composite_solid(config_mapping_fn=bad_wrap_config_mapping_fn)
-    def bad_wrap(context):
-        return scalar_config_solid(context)
+    def bad_wrap():
+        return scalar_config_solid()
 
     @pipeline
-    def wrap_pipeline(context):
-        return bad_wrap.alias('do_stuff')(context)
+    def wrap_pipeline():
+        return bad_wrap.alias('do_stuff')()
 
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(
@@ -123,12 +125,12 @@ def test_bad_override():
 
 def test_raises_fn_override():
     @composite_solid(config_mapping_fn=raises_config_mapping_fn)
-    def bad_wrap(context):
-        return scalar_config_solid(context)
+    def bad_wrap():
+        return scalar_config_solid()
 
     @pipeline
-    def wrap_pipeline(context):
-        return bad_wrap.alias('do_stuff')(context)
+    def wrap_pipeline():
+        return bad_wrap.alias('do_stuff')()
 
     with pytest.raises(DagsterUserCodeExecutionError) as exc_info:
         execute_pipeline(

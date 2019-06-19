@@ -19,7 +19,7 @@ def count_letters(word: str):  # TODO type return as dict?
 
 
 @pipeline
-def demo_execution_pipeline(_):
+def demo_execution_pipeline():
     return count_letters(multiply_the_word())
 
 

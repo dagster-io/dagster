@@ -18,7 +18,6 @@ from . import (
     SolidDefinition,
 )
 from .composition import (
-    EmptySolidContext,
     InputMappingNode,
     composite_mapping_from_output,
     enter_composition,
@@ -27,6 +26,7 @@ from .composition import (
 from .inference import (
     infer_input_definitions_for_lambda_solid,
     infer_input_definitions_for_solid,
+    infer_input_definitions_for_composite_solid,
     infer_output_definitions,
 )
 from .config import resolve_config_field
@@ -170,7 +170,7 @@ class _Solid(object):
         input_defs = (
             self.input_defs
             if self.input_defs is not None
-            else infer_input_definitions_for_solid('@solid', self.name, fn)
+            else infer_input_definitions_for_solid(self.name, fn)
         )
         output_defs = (
             self.output_defs
@@ -484,7 +484,7 @@ def _validate_solid_fn(solid_name, compute_fn, inputs, expected_positionals=None
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' decorated function do not have required positional "
+                "solid '{solid_name}' decorated function does not have required positional "
                 "parameter '{e.param}'. Solid functions should only have keyword arguments "
                 "that match input names and a first positional parameter named 'context'.".format(
                     solid_name=solid_name, e=e
@@ -493,7 +493,7 @@ def _validate_solid_fn(solid_name, compute_fn, inputs, expected_positionals=None
         elif e.error_type == FunctionValidationError.TYPES['extra']:
             undeclared_inputs_printed = ", '".join(e.missing_names)
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' decorated function do not have parameter(s) "
+                "solid '{solid_name}' decorated function does not have parameter(s) "
                 "'{undeclared_inputs_printed}', which are in solid's inputs. Solid functions "
                 "should only have keyword arguments that match input names and a first positional "
                 "parameter named 'context'.".format(
@@ -573,7 +573,7 @@ class _CompositeSolid(object):
         input_defs = (
             self.input_defs
             if self.input_defs is not None
-            else infer_input_definitions_for_solid('@composite_solid', self.name, fn)
+            else infer_input_definitions_for_composite_solid(self.name, fn)
         )
         output_defs = (
             self.output_defs
@@ -581,14 +581,14 @@ class _CompositeSolid(object):
             else infer_output_definitions('@composite_solid', self.name, fn)
         )
 
-        _validate_solid_fn(self.name, fn, input_defs, [('context',)])
+        _validate_solid_fn(self.name, fn, input_defs)
 
         kwargs = {input_def.name: InputMappingNode(input_def) for input_def in input_defs}
 
         output = None
         enter_composition(self.name, '@composite_solid')
         try:
-            output = fn(EmptySolidContext(), **kwargs)
+            output = fn(**kwargs)
         finally:
             context = exit_composition(
                 composite_mapping_from_output(output, output_defs, self.name)
@@ -686,7 +686,7 @@ class _Pipeline:
 
         enter_composition(self.name, '@pipeline')
         try:
-            fn(EmptySolidContext())
+            fn()
         finally:
             context = exit_composition([])
 
@@ -733,7 +733,7 @@ def pipeline(name=None, description=None, mode_definitions=None, preset_definiti
             return num * 2
 
         @pipeline
-        def add_pipeline(_):
+        def add_pipeline():
             add_one(mult_two(emit_one()))
 
     '''

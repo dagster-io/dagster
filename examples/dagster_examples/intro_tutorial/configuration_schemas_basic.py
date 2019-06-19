@@ -18,5 +18,5 @@ def count_letters(word: str) -> Counter:
 
 
 @pipeline
-def configuration_schema_pipeline(_):
+def configuration_schema_pipeline():
     return count_letters(multiply_the_word())

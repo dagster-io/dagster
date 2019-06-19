@@ -15,7 +15,7 @@ def hello_with_config(context):
 
 
 @pipeline
-def hello_with_config_pipeline(_):
+def hello_with_config_pipeline():
     hello_with_config()
 
 

@@ -246,7 +246,7 @@ present by default), unzip that file, and load it into a
 Spark Dataframe. See documentation in constituent solids for
 more detail.'''
 )
-def s3_to_df(_, bucket_data: S3BucketData, archive_member: String) -> DataFrame:
+def s3_to_df(bucket_data: S3BucketData, archive_member: String) -> DataFrame:
     # pylint: disable=no-value-for-parameter
     return ingest_csv_file_handle_to_spark(
         unzip_file_handle(cache_file_from_s3(bucket_data), archive_member)

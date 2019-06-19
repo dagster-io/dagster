@@ -22,7 +22,7 @@ def multiply(arg_b, arg_c):
 
 
 @pipeline
-def actual_dag_pipeline(_):
+def actual_dag_pipeline():
     one = return_one()
     multiply(multiply_by_two(one), multiply_by_three(one))
 

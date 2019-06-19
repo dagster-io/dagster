@@ -12,7 +12,7 @@ def multer(num1: int, num2: int) -> int:
 
 
 @pipeline
-def reusable_solids_pipeline(_):
+def reusable_solids_pipeline():
     # (a + b) * (c + d)
 
     a_plus_b = adder.alias('a_plus_b')

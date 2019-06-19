@@ -33,5 +33,5 @@ def sum_sq_solid(sum_df: DataFrame) -> DataFrame:
         ),
     ]
 )
-def pandas_hello_world_pipeline(_):
+def pandas_hello_world_pipeline():
     return sum_sq_solid(sum_solid())

@@ -15,6 +15,6 @@ def error_message(context):
 
 
 @pipeline
-def execution_context_pipeline(_):
+def execution_context_pipeline():
     debug_message()
     error_message()

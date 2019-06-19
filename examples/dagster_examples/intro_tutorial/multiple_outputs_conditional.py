@@ -31,7 +31,7 @@ def log_num_squared(context, num: int):
 
 
 @pipeline
-def multiple_outputs_conditional_pipeline(_):
+def multiple_outputs_conditional_pipeline():
     out_one, out_two = conditional()
     log_num(out_one)
     log_num_squared(out_two)

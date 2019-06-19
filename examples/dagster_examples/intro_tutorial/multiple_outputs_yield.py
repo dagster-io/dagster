@@ -26,7 +26,7 @@ def log_num_squared(context, num: int):
 
 
 @pipeline
-def multiple_outputs_yield_pipeline(_):
+def multiple_outputs_yield_pipeline():
     out_one, out_two = yield_outputs()
     log_num(out_one)
     log_num_squared(out_two)

@@ -8,7 +8,7 @@ def add_hello_to_word(word):
 
 
 @pipeline
-def hello_inputs_pipeline(_):
+def hello_inputs_pipeline():
     add_hello_to_word()
 
 
@@ -33,5 +33,5 @@ def add_hello_to_word_typed(word: String) -> String:
 
 
 @pipeline
-def hello_typed_inputs_pipeline(_):
+def hello_typed_inputs_pipeline():
     add_hello_to_word_typed()

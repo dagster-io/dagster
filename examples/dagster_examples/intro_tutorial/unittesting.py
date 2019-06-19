@@ -12,7 +12,7 @@ def multer(num1: int, num2: int) -> int:
 
 
 @pipeline
-def part_fourteen_step_one_pipeline(_):
+def part_fourteen_step_one_pipeline():
     # (a + b) * (c + d)
 
     a_plus_b = adder.alias('a_plus_b')

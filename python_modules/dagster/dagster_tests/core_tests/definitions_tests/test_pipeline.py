@@ -1,3 +1,5 @@
+# pylint: disable=no-value-for-parameter
+
 from dagster import (
     DependencyDefinition,
     Field,
@@ -39,7 +41,7 @@ def test_basic_use_case():
 
 def test_basic_use_case_with_dsl():
     @pipeline
-    def test(_context):
+    def test():
         return add_one(num=return_one())
 
     assert execute_pipeline(test).result_for_solid('add_one').result_value() == 2
@@ -85,7 +87,7 @@ def test_two_inputs_with_dsl():
         return 3
 
     @pipeline
-    def test(_context):
+    def test():
         return add(num_one=return_two(), num_two=return_three())
 
     assert execute_pipeline(test).result_for_solid('add').result_value() == 5
@@ -93,7 +95,7 @@ def test_two_inputs_with_dsl():
 
 def test_basic_aliasing_with_dsl():
     @pipeline
-    def test(_context):
+    def test():
         return add_one.alias('renamed')(num=return_one())
 
     assert execute_pipeline(test).result_for_solid('renamed').result_value() == 2
@@ -110,8 +112,8 @@ def test_diamond_graph():
         return num_one + num_two
 
     @pipeline
-    def diamond_pipeline(context):
-        value_one, value_two = emit_values(context)
+    def diamond_pipeline():
+        value_one, value_two = emit_values()
         return add(num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two))
 
     result = execute_pipeline(diamond_pipeline)
@@ -125,7 +127,7 @@ def test_two_cliques():
         return 2
 
     @pipeline
-    def diamond_pipeline(_context):
+    def diamond_pipeline():
         return (return_one(), return_two())
 
     result = execute_pipeline(diamond_pipeline)
@@ -160,10 +162,10 @@ def test_deep_graph():
         return num + 3
 
     @pipeline
-    def test(context):
+    def test():
         return load_num(
             num=canonicalize_num(
-                num=subsample_num(num=ingest_num(num=unzip_num(num=download_num(context))))
+                num=subsample_num(num=ingest_num(num=unzip_num(num=download_num())))
             )
         )
 
