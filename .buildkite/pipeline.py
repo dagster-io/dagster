@@ -321,7 +321,6 @@ if __name__ == "__main__":
 
     steps += library_tests()
 
-    steps += gcp_tests()
     steps += examples_tests()
     steps += [wait_step(), coverage_step(), wait_step(), deploy_trigger_step()]
 
