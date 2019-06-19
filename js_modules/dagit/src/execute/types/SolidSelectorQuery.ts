@@ -102,7 +102,6 @@ export type SolidSelectorQuery_pipeline_solids_definition = SolidSelectorQuery_p
 export interface SolidSelectorQuery_pipeline_solids_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   displayName: string;
-  isNothing: boolean;
 }
 
 export interface SolidSelectorQuery_pipeline_solids_inputs_definition {
@@ -142,7 +141,6 @@ export interface SolidSelectorQuery_pipeline_solids_inputs {
 export interface SolidSelectorQuery_pipeline_solids_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   displayName: string;
-  isNothing: boolean;
 }
 
 export interface SolidSelectorQuery_pipeline_solids_outputs_definition_expectations {

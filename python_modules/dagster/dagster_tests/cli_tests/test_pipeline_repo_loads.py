@@ -187,7 +187,7 @@ def define_foo_pipeline():
     def do_something():
         return 1
 
-    return PipelineDefinition(name='foo', solids=[do_something])
+    return PipelineDefinition(name='foo', solid_defs=[do_something])
 
 
 def define_bar_repo():

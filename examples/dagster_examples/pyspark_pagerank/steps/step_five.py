@@ -74,7 +74,7 @@ def define_pyspark_pagerank_step_five():
     return PipelineDefinition(
         name='pyspark_pagerank_step_five',
         mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})],
-        solids=[
+        solid_defs=[
             parse_pagerank_data_step_five,
             compute_links_step_five,
             calculate_ranks_step_five,

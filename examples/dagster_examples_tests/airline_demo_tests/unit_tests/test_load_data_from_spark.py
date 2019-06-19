@@ -18,7 +18,7 @@ def test_airline_demo_load_df():
     )
     pipeline_def = PipelineDefinition(
         name='load_df_test',
-        solids=[load_data_to_database_from_spark],
+        solid_defs=[load_data_to_database_from_spark],
         mode_definitions=[
             ModeDefinition(
                 resources={'db_info': ResourceDefinition.hardcoded_resource(db_info_mock)}

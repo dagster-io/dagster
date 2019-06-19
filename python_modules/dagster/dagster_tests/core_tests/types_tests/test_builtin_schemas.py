@@ -85,7 +85,7 @@ def define_test_all_scalars_pipeline():
 
     return PipelineDefinition(
         name='test_all_scalars_pipeline',
-        solids=[
+        solid_defs=[
             produce_any,
             produce_bool,
             produce_float,

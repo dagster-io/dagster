@@ -102,7 +102,6 @@ export type PipelineGraphSolidFragment_definition = PipelineGraphSolidFragment_d
 export interface PipelineGraphSolidFragment_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   displayName: string;
-  isNothing: boolean;
 }
 
 export interface PipelineGraphSolidFragment_inputs_definition {
@@ -142,7 +141,6 @@ export interface PipelineGraphSolidFragment_inputs {
 export interface PipelineGraphSolidFragment_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   displayName: string;
-  isNothing: boolean;
 }
 
 export interface PipelineGraphSolidFragment_outputs_definition_expectations {

@@ -15,7 +15,7 @@ def create_single_node_pipeline(name, called):
     called[name] = called[name] + 1
     return PipelineDefinition(
         name=name,
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name=name + '_solid',
                 inputs=[],
@@ -80,8 +80,8 @@ def test_dupe_solid_repo_definition():
     repo = RepositoryDefinition(
         'error_repo',
         pipeline_dict={
-            'first': lambda: PipelineDefinition(name='first', solids=[noop]),
-            'second': lambda: PipelineDefinition(name='second', solids=[noop2]),
+            'first': lambda: PipelineDefinition(name='first', solid_defs=[noop]),
+            'second': lambda: PipelineDefinition(name='second', solid_defs=[noop2]),
         },
     )
 

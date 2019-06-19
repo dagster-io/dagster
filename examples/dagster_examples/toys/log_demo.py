@@ -12,8 +12,8 @@ def hello_error(context):
 
 
 def define_hello_logs_pipeline():
-    return PipelineDefinition(name='hello_logs', solids=[hello_logs])
+    return PipelineDefinition(name='hello_logs', solid_defs=[hello_logs])
 
 
 def define_hello_error_pipeline():
-    return PipelineDefinition(name='hello_error', solids=[hello_error])
+    return PipelineDefinition(name='hello_error', solid_defs=[hello_error])

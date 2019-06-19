@@ -13,7 +13,7 @@ from dagster import (
     DependencyDefinition,
     ModeDefinition,
     PipelineDefinition,
-    SolidInstance,
+    SolidInvocation,
     check,
     execute_pipeline,
     SystemStorageData,
@@ -39,7 +39,7 @@ def create_test_pipeline_execution_context(
     loggers = check.opt_dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition)
     mode_def = ModeDefinition(loggers=loggers)
     pipeline_def = PipelineDefinition(
-        name='test_legacy_context', solids=[], mode_definitions=[mode_def]
+        name='test_legacy_context', solid_defs=[], mode_definitions=[mode_def]
     )
     run_config_loggers = check.opt_list_param(
         run_config_loggers, 'run_config_loggers', of_type=logging.Logger
@@ -131,7 +131,7 @@ def get_temp_dir():
 
 
 def _dep_key_of(solid):
-    return SolidInstance(solid.definition.name, solid.name)
+    return SolidInvocation(solid.definition.name, solid.name)
 
 
 def build_pipeline_with_input_stubs(pipeline_def, inputs):
@@ -167,7 +167,7 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
 
     return PipelineDefinition(
         name=pipeline_def.name + '_stubbed',
-        solids=pipeline_def.solid_defs + stub_solid_defs,
+        solid_defs=pipeline_def.solid_defs + stub_solid_defs,
         mode_definitions=pipeline_def.mode_definitions,
         dependencies=deps,
     )

@@ -1,0 +1,33 @@
+{
+    "variables": {
+        "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+        "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
+        "region": "us-west-1"
+    },
+    "builders": [
+        {
+            "ami_name": "buildkite-integration-image {{timestamp}}",
+            "access_key": "{{user `aws_access_key`}}",
+            "instance_type": "t2.micro",
+            "launch_block_device_mappings": [
+                {
+                    "device_name": "/dev/xvda",
+                    "volume_size": 40,
+                    "volume_type": "gp2",
+                    "delete_on_termination": true
+                }
+            ],
+            "region": "{{user `region`}}",
+            "secret_key": "{{user `aws_secret_key`}}",
+            "source_ami": "ami-0e0d441be8682ae93",
+            "ssh_username": "ec2-user",
+            "type": "amazon-ebs"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "script": "./init.sh"
+        }
+    ]
+}

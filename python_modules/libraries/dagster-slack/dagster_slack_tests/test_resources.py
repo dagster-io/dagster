@@ -26,7 +26,7 @@ def test_slack_resource():
 
     pipeline = PipelineDefinition(
         name='test_slack_resource',
-        solids=[slack_solid],
+        solid_defs=[slack_solid],
         mode_definitions=[ModeDefinition(resources={'slack': slack_resource})],
     )
 

@@ -46,7 +46,7 @@ def one_and_two_and_three(_):
 def define_resource_pipeline():
     return PipelineDefinition(
         name='resources for days',
-        solids=[all_resources, one, two, one_and_two_and_three],
+        solid_defs=[all_resources, one, two, one_and_two_and_three],
         mode_definitions=[ModeDefinition(resources=lots_of_resources)],
     )
 

@@ -3,7 +3,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    SolidInstance,
+    SolidInvocation,
     lambda_solid,
     Int,
 )
@@ -30,11 +30,11 @@ def define_reusable_solids_pipeline():
 
     return PipelineDefinition(
         name='reusable_solids_pipeline',
-        solids=[adder, multer],
+        solid_defs=[adder, multer],
         dependencies={
-            SolidInstance('adder', 'a_plus_b'): {},
-            SolidInstance('adder', 'c_plus_d'): {},
-            SolidInstance('multer', 'final'): {
+            SolidInvocation('adder', 'a_plus_b'): {},
+            SolidInvocation('adder', 'c_plus_d'): {},
+            SolidInvocation('multer', 'final'): {
                 'num1': DependencyDefinition('a_plus_b'),
                 'num2': DependencyDefinition('c_plus_d'),
             },

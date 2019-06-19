@@ -143,7 +143,7 @@ def define_solid_for_test_type(name, runtime_type):
 def define_test_type_pipeline():
     return PipelineDefinition(
         name='test_type_pipeline',
-        solids=[
+        solid_defs=[
             define_solid_for_test_type('int_config', Int),
             define_solid_for_test_type('list_of_int_config', List[Int]),
             define_solid_for_test_type('nullable_list_of_int_config', Optional[List[Int]]),

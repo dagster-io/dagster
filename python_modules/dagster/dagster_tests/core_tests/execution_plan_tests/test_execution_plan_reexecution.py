@@ -46,7 +46,7 @@ def define_addy_pipeline():
 
     pipeline_def = PipelineDefinition(
         name='execution_plan_reexecution',
-        solids=[add_one, add_two, add_three],
+        solid_defs=[add_one, add_two, add_three],
         dependencies={
             'add_two': {'num': DependencyDefinition('add_one')},
             'add_three': {'num': DependencyDefinition('add_two')},

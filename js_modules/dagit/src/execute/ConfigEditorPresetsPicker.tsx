@@ -1,13 +1,14 @@
 import * as React from "react";
 import { Button, Menu } from "@blueprintjs/core";
 import { Select } from "@blueprintjs/select";
-import { Query, QueryResult } from "react-apollo";
+import { Query, QueryResult, ApolloConsumer } from "react-apollo";
 import {
   ConfigPresetsQuery,
   ConfigPresetsQuery_pipeline_presets
 } from "./types/ConfigPresetsQuery";
 import gql from "graphql-tag";
 import { IExecutionSession } from "../LocalStorage";
+import ApolloClient from "apollo-client";
 
 type Preset = ConfigPresetsQuery_pipeline_presets;
 
@@ -19,20 +20,44 @@ interface ConfigEditorPresetsPickerProps {
   onCreateSession: (initial: Partial<IExecutionSession>) => void;
 }
 
-// TODO: How to handle mode in the presets picker?
 export default class ConfigEditorPresetsPicker extends React.Component<
   ConfigEditorPresetsPickerProps
 > {
+  onPresetSelect = async (
+    preset: ConfigPresetsQuery_pipeline_presets,
+    pipelineName: string,
+    client: ApolloClient<any>
+  ) => {
+    const { data } = await client.query({
+      query: CONFIG_PRESETS_QUERY,
+      variables: { pipelineName },
+      fetchPolicy: "network-only"
+    });
+    let updatedPreset = preset;
+    for (const p of data.pipeline.presets) {
+      if (p.name === preset.name) {
+        updatedPreset = p;
+        break;
+      }
+    }
+    this.props.onCreateSession({
+      name: updatedPreset.name,
+      environmentConfigYaml: updatedPreset.environmentConfigYaml || "",
+      solidSubset: updatedPreset.solidSubset,
+      mode: updatedPreset.mode
+    });
+  };
+
   render() {
     const { pipelineName, onCreateSession } = this.props;
 
     return (
       <Query
         query={CONFIG_PRESETS_QUERY}
-        fetchPolicy="cache-and-network"
+        fetchPolicy="network-only"
         variables={{ pipelineName }}
       >
-        {({ data }: QueryResult<ConfigPresetsQuery, any>) => {
+        {({ data, client }: QueryResult<ConfigPresetsQuery, any>) => {
           const presets = (
             (data && data.pipeline && data.pipeline.presets) ||
             []
@@ -54,13 +79,8 @@ export default class ConfigEditorPresetsPicker extends React.Component<
                   />
                 )}
                 noResults={<Menu.Item disabled={true} text="No presets." />}
-                onItemSelect={p =>
-                  onCreateSession({
-                    name: p.name,
-                    environmentConfigYaml: p.environmentConfigYaml || "",
-                    solidSubset: p.solidSubset,
-                    mode: p.mode
-                  })
+                onItemSelect={preset =>
+                  this.onPresetSelect(preset, pipelineName, client)
                 }
               >
                 <Button text={""} icon="insert" rightIcon="caret-down" />

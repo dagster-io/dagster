@@ -31,7 +31,7 @@ def test_hello_world_with_dataframe_fns():
 def run_hello_world(hello_world):
     assert len(hello_world.input_dict) == 1
 
-    pipeline = PipelineDefinition(solids=[hello_world], dependencies={'hello_world': {}})
+    pipeline = PipelineDefinition(solid_defs=[hello_world], dependencies={'hello_world': {}})
 
     pipeline_result = execute_pipeline(pipeline, environment_dict=create_num_csv_environment())
 

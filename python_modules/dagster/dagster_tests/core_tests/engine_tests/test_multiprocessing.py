@@ -68,7 +68,7 @@ def define_diamond_pipeline():
 
     return PipelineDefinition(
         name='diamond_execution',
-        solids=[return_two, add_three, mult_three, adder],
+        solid_defs=[return_two, add_three, mult_three, adder],
         dependencies={
             'add_three': {'num': DependencyDefinition('return_two')},
             'mult_three': {'num': DependencyDefinition('return_two')},
@@ -85,7 +85,7 @@ def define_error_pipeline():
     def throw_error():
         raise Exception('bad programmer')
 
-    return PipelineDefinition(name='error_pipeline', solids=[throw_error])
+    return PipelineDefinition(name='error_pipeline', solid_defs=[throw_error])
 
 
 def test_error_pipeline():

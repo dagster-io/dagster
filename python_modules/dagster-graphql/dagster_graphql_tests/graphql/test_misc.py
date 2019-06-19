@@ -121,7 +121,7 @@ def test_type_rendering():
 def define_circular_dependency_pipeline():
     return PipelineDefinition(
         name='circular_dependency_pipeline',
-        solids=[
+        solid_defs=[
             SolidDefinition(
                 name='csolid',
                 inputs=[InputDefinition('num', PoorMansDataFrame)],

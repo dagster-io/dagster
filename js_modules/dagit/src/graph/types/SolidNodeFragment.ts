@@ -102,7 +102,6 @@ export type SolidNodeFragment_definition = SolidNodeFragment_definition_SolidDef
 export interface SolidNodeFragment_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   displayName: string;
-  isNothing: boolean;
 }
 
 export interface SolidNodeFragment_inputs_definition {
@@ -142,7 +141,6 @@ export interface SolidNodeFragment_inputs {
 export interface SolidNodeFragment_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   displayName: string;
-  isNothing: boolean;
 }
 
 export interface SolidNodeFragment_outputs_definition_expectations {

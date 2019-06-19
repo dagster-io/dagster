@@ -61,7 +61,7 @@ def rest_of_pipeline(context, urls):
 def define_pyspark_pagerank_step_four():
     return PipelineDefinition(
         name='pyspark_pagerank_step_four',
-        solids=[parse_pagerank_data_step_four, rest_of_pipeline],
+        solid_defs=[parse_pagerank_data_step_four, rest_of_pipeline],
         dependencies={
             'rest_of_pipeline': {'urls': DependencyDefinition('parse_pagerank_data_step_four')}
         },

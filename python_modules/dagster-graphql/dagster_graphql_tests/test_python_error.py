@@ -40,7 +40,7 @@ def define_bad_pipeline():
     def bad_context():
         pass
 
-    return PipelineDefinition(name='bad', solids=[bad_context])
+    return PipelineDefinition(name='bad', solid_defs=[bad_context])
 
 
 def define_error_pipeline_repo():

@@ -602,7 +602,7 @@ class _CompositeSolid(object):
             input_mappings=context.input_mappings,
             output_mappings=context.output_mappings,
             dependencies=context.dependencies,
-            solids=context.solid_defs,
+            solid_defs=context.solid_defs,
             description=self.description,
         )
 
@@ -643,7 +643,7 @@ class _Pipeline:
         return PipelineDefinition(
             name=self.name,
             dependencies=context.dependencies,
-            solids=context.solid_defs,
+            solid_defs=context.solid_defs,
             mode_definitions=self.mode_definitions,
             preset_definitions=self.preset_definitions,
             description=self.description,

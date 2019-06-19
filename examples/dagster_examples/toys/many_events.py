@@ -161,7 +161,7 @@ def check_admins_both_succeed(_context):
 def define_many_events_pipeline():
     return PipelineDefinition(
         name='many_events',
-        solids=[
+        solid_defs=[
             many_table_materializations,
             many_materializations_and_passing_expectations,
             check_users_and_groups_one_fails_one_succeeds,

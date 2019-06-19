@@ -234,7 +234,6 @@ export type PipelineExplorerSolidHandleFragment_solid_definition = PipelineExplo
 export interface PipelineExplorerSolidHandleFragment_solid_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   displayName: string;
-  isNothing: boolean;
   name: string | null;
   description: string | null;
 }
@@ -284,7 +283,6 @@ export interface PipelineExplorerSolidHandleFragment_solid_inputs {
 export interface PipelineExplorerSolidHandleFragment_solid_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   displayName: string;
-  isNothing: boolean;
   name: string | null;
   description: string | null;
 }

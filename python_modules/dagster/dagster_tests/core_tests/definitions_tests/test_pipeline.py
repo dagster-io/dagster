@@ -30,7 +30,7 @@ def add_one(num):
 def test_basic_use_case():
     pipeline_def = PipelineDefinition(
         name='basic',
-        solids=[return_one, add_one],
+        solid_defs=[return_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
 
@@ -59,7 +59,7 @@ def test_two_inputs_without_dsl():
         return 3
 
     pipeline_def = PipelineDefinition(
-        solids=[add, return_two, return_three],
+        solid_defs=[add, return_two, return_three],
         dependencies={
             'add': {
                 'num_one': DependencyDefinition('return_two'),

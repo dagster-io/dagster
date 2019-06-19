@@ -15,7 +15,7 @@ from dagster import (
     OutputDefinition,
     Path,
     PipelineDefinition,
-    SolidInstance,
+    SolidInvocation,
     String,
     lambda_solid,
     solid,
@@ -136,13 +136,13 @@ def define_event_ingest_pipeline():
 
     return PipelineDefinition(
         name='event_ingest_pipeline',
-        solids=[download_from_s3_to_file, gunzipper, event_ingest, snowflake_load],
+        solid_defs=[download_from_s3_to_file, gunzipper, event_ingest, snowflake_load],
         dependencies={
-            SolidInstance('gunzipper'): {
+            SolidInvocation('gunzipper'): {
                 'gzip_file': DependencyDefinition('download_from_s3_to_file')
             },
-            SolidInstance('event_ingest'): {'spark_inputs': DependencyDefinition('gunzipper')},
-            SolidInstance('snowflake_load'): {
+            SolidInvocation('event_ingest'): {'spark_inputs': DependencyDefinition('gunzipper')},
+            SolidInvocation('snowflake_load'): {
                 'start': DependencyDefinition('event_ingest', 'paths')
             },
         },

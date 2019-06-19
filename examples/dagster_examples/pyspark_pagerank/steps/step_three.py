@@ -51,6 +51,6 @@ def whole_pipeline_solid_using_context(context, pagerank_data):
 def define_pyspark_pagerank_step_three():
     return PipelineDefinition(
         name='pyspark_pagerank_step_three',
-        solids=[whole_pipeline_solid_using_context],
+        solid_defs=[whole_pipeline_solid_using_context],
         mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})],
     )

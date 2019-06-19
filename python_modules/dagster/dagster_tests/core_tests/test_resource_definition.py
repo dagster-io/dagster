@@ -26,7 +26,7 @@ def test_basic_resource():
 
     pipeline_def = PipelineDefinition(
         name='with_a_resource',
-        solids=[a_solid],
+        solid_defs=[a_solid],
         mode_definitions=[ModeDefinition(resources={'a_string': define_string_resource()})],
     )
 
@@ -51,7 +51,7 @@ def test_yield_resource():
 
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
-        solids=[a_solid],
+        solid_defs=[a_solid],
         mode_definitions=[ModeDefinition(resources={'a_string': yield_string_resource})],
     )
 
@@ -81,7 +81,7 @@ def test_yield_multiple_resources():
 
     pipeline_def = PipelineDefinition(
         name='with_yield_resources',
-        solids=[a_solid],
+        solid_defs=[a_solid],
         mode_definitions=[
             ModeDefinition(
                 resources={'string_one': yield_string_resource, 'string_two': yield_string_resource}
@@ -123,7 +123,7 @@ def test_resource_decorator():
 
     pipeline_def = PipelineDefinition(
         name='with_yield_resources',
-        solids=[a_solid],
+        solid_defs=[a_solid],
         mode_definitions=[
             ModeDefinition(
                 resources={
@@ -179,7 +179,7 @@ def test_mixed_multiple_resources():
 
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
-        solids=[a_solid],
+        solid_defs=[a_solid],
         mode_definitions=[
             ModeDefinition(
                 resources={
@@ -213,7 +213,7 @@ def test_none_resource():
 
     pipeline = PipelineDefinition(
         name='test_none_resource',
-        solids=[solid_test_null],
+        solid_defs=[solid_test_null],
         mode_definitions=[
             ModeDefinition(resources={'test_null': ResourceDefinition.none_resource()})
         ],
@@ -235,7 +235,7 @@ def test_string_resource():
 
     pipeline = PipelineDefinition(
         name='test_string_resource',
-        solids=[solid_test_string],
+        solid_defs=[solid_test_string],
         mode_definitions=[
             ModeDefinition(resources={'test_string': ResourceDefinition.string_resource()})
         ],
@@ -262,7 +262,7 @@ def test_no_config_resource_pass_none():
 
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
-        solids=[check_thing],
+        solid_defs=[check_thing],
         mode_definitions=[ModeDefinition(resources={'return_thing': return_thing})],
     )
 
@@ -287,7 +287,7 @@ def test_no_config_resource_no_arg():
 
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
-        solids=[check_thing],
+        solid_defs=[check_thing],
         mode_definitions=[ModeDefinition(resources={'return_thing': return_thing})],
     )
 
@@ -312,7 +312,7 @@ def test_no_config_resource_bare_no_arg():
 
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
-        solids=[check_thing],
+        solid_defs=[check_thing],
         mode_definitions=[ModeDefinition(resources={'return_thing': return_thing})],
     )
 
@@ -336,7 +336,7 @@ def test_no_config_resource_definition():
 
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
-        solids=[check_thing],
+        solid_defs=[check_thing],
         mode_definitions=[
             ModeDefinition(
                 resources={'return_thing': ResourceDefinition(_return_thing_resource_fn)}
@@ -365,7 +365,7 @@ def test_resource_cleanup():
 
     pipeline = PipelineDefinition(
         name='test_resource_cleanup',
-        solids=[check_resource_created],
+        solid_defs=[check_resource_created],
         mode_definitions=[
             ModeDefinition(
                 resources={'resource_with_cleanup': ResourceDefinition(_cleanup_resource_fn)}
@@ -401,7 +401,7 @@ def test_stacked_resource_cleanup():
 
     pipeline = PipelineDefinition(
         name='test_resource_cleanup',
-        solids=[check_resource_created],
+        solid_defs=[check_resource_created],
         mode_definitions=[
             ModeDefinition(
                 resources={

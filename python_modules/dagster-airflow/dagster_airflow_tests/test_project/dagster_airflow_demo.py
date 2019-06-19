@@ -38,7 +38,7 @@ def error_solid():
 def define_demo_execution_pipeline():
     return PipelineDefinition(
         name='demo_pipeline',
-        solids=[multiply_the_word, count_letters],
+        solid_defs=[multiply_the_word, count_letters],
         dependencies={'count_letters': {'word': DependencyDefinition('multiply_the_word')}},
         mode_definitions=[
             ModeDefinition(
@@ -49,7 +49,7 @@ def define_demo_execution_pipeline():
 
 
 def define_demo_error_pipeline():
-    return PipelineDefinition(name='demo_error_pipeline', solids=[error_solid])
+    return PipelineDefinition(name='demo_error_pipeline', solid_defs=[error_solid])
 
 
 def define_demo_execution_repo():

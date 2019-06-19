@@ -10,7 +10,7 @@ from dagster import (
     PipelineDefinition,
     PresetDefinition,
     ResourceDefinition,
-    SolidInstance,
+    SolidInvocation,
     String,
     execute_pipeline,
     file_relative_path,
@@ -85,11 +85,11 @@ def str_to_num(context, string):
 def define_error_monster_pipeline():
     return PipelineDefinition(
         name='error_monster',
-        solids=[emit_num, num_to_str, str_to_num],
+        solid_defs=[emit_num, num_to_str, str_to_num],
         dependencies={
-            SolidInstance('emit_num', 'start'): {},
-            SolidInstance('num_to_str', 'middle'): {'num': DependencyDefinition('start')},
-            SolidInstance('str_to_num', 'end'): {'string': DependencyDefinition('middle')},
+            SolidInvocation('emit_num', 'start'): {},
+            SolidInvocation('num_to_str', 'middle'): {'num': DependencyDefinition('start')},
+            SolidInvocation('str_to_num', 'end'): {'string': DependencyDefinition('middle')},
         },
         mode_definitions=[
             ModeDefinition(

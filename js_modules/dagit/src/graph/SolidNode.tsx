@@ -85,7 +85,6 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             name
             type {
               displayName
-              isNothing
             }
           }
           dependsOn {
@@ -105,7 +104,6 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             name
             type {
               displayName
-              isNothing
             }
             expectations {
               name

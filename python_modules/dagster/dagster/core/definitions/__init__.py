@@ -6,7 +6,7 @@ from .dependency import (
     Solid,
     SolidHandle,
     SolidInputHandle,
-    SolidInstance,
+    SolidInvocation,
     SolidOutputHandle,
 )
 

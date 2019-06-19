@@ -10,7 +10,7 @@ from dagster_aws.emr.solids import EmrRunJobFlowSolidDefinition
 @mock_emr
 def test_run_emr_job():
     e = EmrRunJobFlowSolidDefinition('test')
-    pipeline = PipelineDefinition(name='test', solids=[e])
+    pipeline = PipelineDefinition(name='test', solid_defs=[e])
     emr_config = {
         'Name': 'test-pyspark',
         'ReleaseLabel': 'emr-5.23.0',

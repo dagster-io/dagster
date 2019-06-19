@@ -544,7 +544,6 @@ export type PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition = P
 export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   displayName: string;
-  isNothing: boolean;
   name: string | null;
   description: string | null;
 }
@@ -594,7 +593,6 @@ export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_inputs {
 export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   displayName: string;
-  isNothing: boolean;
   name: string | null;
   description: string | null;
 }

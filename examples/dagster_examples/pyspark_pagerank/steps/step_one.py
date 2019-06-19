@@ -7,4 +7,4 @@ def hello_world(context):
 
 
 def define_pyspark_pagerank_step_one():
-    return PipelineDefinition(name='pyspark_pagerank_step_one', solids=[hello_world])
+    return PipelineDefinition(name='pyspark_pagerank_step_one', solid_defs=[hello_world])

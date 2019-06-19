@@ -29,7 +29,7 @@ from dagster.core.utility_solids import define_stub_solid
 
 def execute_isolated_solid(solid_def, environment_dict=None):
     return execute_pipeline(
-        PipelineDefinition(name='test', solids=[solid_def]), environment_dict=environment_dict
+        PipelineDefinition(name='test', solid_defs=[solid_def]), environment_dict=environment_dict
     )
 
 
@@ -226,7 +226,7 @@ def test_solid_with_input():
         return foo_to_foo
 
     pipeline = PipelineDefinition(
-        solids=[define_stub_solid('test_value', {'foo': 'bar'}), hello_world],
+        solid_defs=[define_stub_solid('test_value', {'foo': 'bar'}), hello_world],
         dependencies={'hello_world': {'foo_to_foo': DependencyDefinition('test_value')}},
     )
 
@@ -306,12 +306,12 @@ def test_wrong_argument_to_pipeline():
     with pytest.raises(
         DagsterInvalidDefinitionError, match='You have passed a lambda or function non_solid_func'
     ):
-        PipelineDefinition(solids=[non_solid_func])
+        PipelineDefinition(solid_defs=[non_solid_func])
 
     with pytest.raises(
         DagsterInvalidDefinitionError, match='You have passed a lambda or function <lambda>'
     ):
-        PipelineDefinition(solids=[lambda x: x])
+        PipelineDefinition(solid_defs=[lambda x: x])
 
 
 def test_descriptions():

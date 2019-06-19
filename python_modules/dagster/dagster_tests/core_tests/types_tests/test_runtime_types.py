@@ -33,7 +33,7 @@ def test_display_name():
 
 
 def test_builtins_available():
-    pipeline = PipelineDefinition(name='test_builting_available', solids=[])
+    pipeline = PipelineDefinition(name='test_builting_available', solid_defs=[])
     for builtin_type in ALL_RUNTIME_BUILTINS:
         assert pipeline.has_runtime_type(builtin_type.name)
         assert pipeline.runtime_type_named(builtin_type.name).is_builtin

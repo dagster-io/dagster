@@ -48,14 +48,14 @@ def test_create_pipeline_with_bad_solids_list():
         match='"solids" arg to pipeline "a_pipeline" is not a list. Got',
     ):
         PipelineDefinition(
-            name='a_pipeline', solids=define_stub_solid('stub', [{'a key': 'a value'}])
+            name='a_pipeline', solid_defs=define_stub_solid('stub', [{'a key': 'a value'}])
         )
 
 
 def test_circular_dep():
     with pytest.raises(DagsterInvalidDefinitionError, match='Circular reference'):
         PipelineDefinition(
-            solids=solid_a_b_list(),
+            solid_defs=solid_a_b_list(),
             dependencies={'A': {}, 'B': {'b_input': DependencyDefinition('B')}},
         )
 
@@ -65,7 +65,7 @@ def test_from_solid_not_there():
         DagsterInvalidDefinitionError, match='Solid NOTTHERE in dependency dictionary not found'
     ):
         PipelineDefinition(
-            solids=solid_a_b_list(),
+            solid_defs=solid_a_b_list(),
             dependencies={
                 'A': {},
                 'B': {'b_input': DependencyDefinition('A')},
@@ -79,7 +79,8 @@ def test_from_non_existant_input():
         DagsterInvalidDefinitionError, match='Solid "B" does not have input "not_an_input"'
     ):
         PipelineDefinition(
-            solids=solid_a_b_list(), dependencies={'B': {'not_an_input': DependencyDefinition('A')}}
+            solid_defs=solid_a_b_list(),
+            dependencies={'B': {'not_an_input': DependencyDefinition('A')}},
         )
 
 
@@ -89,7 +90,7 @@ def test_to_solid_not_there():
         match='Solid NOTTHERE in DependencyDefinition not found in solid list',
     ):
         PipelineDefinition(
-            solids=solid_a_b_list(),
+            solid_defs=solid_a_b_list(),
             dependencies={'A': {}, 'B': {'b_input': DependencyDefinition('NOTTHERE')}},
         )
 
@@ -99,7 +100,7 @@ def test_to_solid_output_not_there():
         DagsterInvalidDefinitionError, match='Solid A does not have output NOTTHERE'
     ):
         PipelineDefinition(
-            solids=solid_a_b_list(),
+            solid_defs=solid_a_b_list(),
             dependencies={'B': {'b_input': DependencyDefinition('A', output='NOTTHERE')}},
         )
 
@@ -108,7 +109,7 @@ def test_invalid_item_in_solid_list():
     with pytest.raises(
         DagsterInvalidDefinitionError, match="Invalid item in solid list: 'not_a_solid'"
     ):
-        PipelineDefinition(solids=['not_a_solid'])
+        PipelineDefinition(solid_defs=['not_a_solid'])
 
 
 def test_one_layer_off_dependencies():
@@ -116,7 +117,9 @@ def test_one_layer_off_dependencies():
         DagsterInvalidDefinitionError,
         match="Received a IDependencyDefinition one layer too high under key B",
     ):
-        PipelineDefinition(solids=solid_a_b_list(), dependencies={'B': DependencyDefinition('A')})
+        PipelineDefinition(
+            solid_defs=solid_a_b_list(), dependencies={'B': DependencyDefinition('A')}
+        )
 
 
 def test_malformed_dependencies():
@@ -125,7 +128,7 @@ def test_malformed_dependencies():
         match='Expected IDependencyDefinition for solid "B" input "b_input"',
     ):
         PipelineDefinition(
-            solids=solid_a_b_list(),
+            solid_defs=solid_a_b_list(),
             dependencies={'B': {'b_input': {'b_input': DependencyDefinition('A')}}},
         )
 
@@ -134,7 +137,7 @@ def test_list_dependencies():
     with pytest.raises(
         DagsterInvalidDefinitionError, match='The expected type for "dependencies" is dict'
     ):
-        PipelineDefinition(solids=solid_a_b_list(), dependencies=[])
+        PipelineDefinition(solid_defs=solid_a_b_list(), dependencies=[])
 
 
 def test_double_type_name():
@@ -147,7 +150,7 @@ def test_double_type_name():
         raise Exception('should not execute')
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        create_environment_schema(PipelineDefinition(solids=[solid_one, solid_two]))
+        create_environment_schema(PipelineDefinition(solid_defs=[solid_one, solid_two]))
 
     assert str(exc_info.value) == (
         'Type names must be unique. You have constructed two different instances of '
@@ -173,7 +176,7 @@ def test_double_type_key():
         raise Exception('should not execute')
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        create_environment_schema(PipelineDefinition(solids=[solid_one, solid_two]))
+        create_environment_schema(PipelineDefinition(solid_defs=[solid_one, solid_two]))
 
     assert str(exc_info.value) == (
         'Type keys must be unique. You have constructed two different instances of types '

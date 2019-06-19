@@ -44,7 +44,7 @@ def test_dataframe_csv_from_inputs():
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
 
-    pipeline = PipelineDefinition(solids=[df_as_config])
+    pipeline = PipelineDefinition(solid_defs=[df_as_config])
 
     result = execute_pipeline(
         pipeline,
@@ -70,7 +70,7 @@ def test_dataframe_wrong_sep_from_inputs():
         assert df.to_dict('list') == {'num1,num2': ['1,2', '3,4']}
         called['yup'] = True
 
-    pipeline = PipelineDefinition(solids=[df_as_config])
+    pipeline = PipelineDefinition(solid_defs=[df_as_config])
 
     result = execute_pipeline(
         pipeline,
@@ -95,7 +95,7 @@ def test_dataframe_pipe_sep_csv_from_inputs():
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
 
-    pipeline = PipelineDefinition(solids=[df_as_config])
+    pipeline = PipelineDefinition(solid_defs=[df_as_config])
 
     result = execute_pipeline(
         pipeline,
@@ -121,7 +121,7 @@ def test_dataframe_csv_missing_inputs():
     def df_as_input(_context, df):  # pylint: disable=W0613
         called['yup'] = True
 
-    pipeline = PipelineDefinition(name='missing_inputs', solids=[df_as_input])
+    pipeline = PipelineDefinition(name='missing_inputs', solid_defs=[df_as_input])
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(pipeline)
 
@@ -150,7 +150,7 @@ def test_dataframe_csv_missing_input_collision():
 
     pipeline = PipelineDefinition(
         name='overlapping',
-        solids=[df_as_input, df_as_output],
+        solid_defs=[df_as_input, df_as_output],
         dependencies={'df_as_input': {'df': DependencyDefinition('df_as_output')}},
     )
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
@@ -182,7 +182,7 @@ def test_dataframe_parquet_from_inputs():
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
 
-    pipeline = PipelineDefinition(solids=[df_as_config])
+    pipeline = PipelineDefinition(solid_defs=[df_as_config])
 
     result = execute_pipeline(
         pipeline,
@@ -207,7 +207,7 @@ def test_dataframe_table_from_inputs():
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
 
-    pipeline = PipelineDefinition(solids=[df_as_config])
+    pipeline = PipelineDefinition(solid_defs=[df_as_config])
 
     result = execute_pipeline(
         pipeline,
@@ -229,7 +229,7 @@ def test_dataframe_csv_materialization():
     def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
-    pipeline_def = PipelineDefinition(name='return_df_pipeline', solids=[return_df])
+    pipeline_def = PipelineDefinition(name='return_df_pipeline', solid_defs=[return_df])
 
     with get_temp_file_name() as filename:
         result = execute_pipeline(
@@ -250,7 +250,7 @@ def test_dataframe_parquet_materialization():
     def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
-    pipeline_def = PipelineDefinition(name='return_df_pipeline', solids=[return_df])
+    pipeline_def = PipelineDefinition(name='return_df_pipeline', solid_defs=[return_df])
 
     with get_temp_file_name() as filename:
         result = execute_pipeline(
@@ -269,7 +269,7 @@ def test_dataframe_table_materialization():
     def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
-    pipeline_def = PipelineDefinition(name='return_df_pipeline', solids=[return_df])
+    pipeline_def = PipelineDefinition(name='return_df_pipeline', solid_defs=[return_df])
 
     with get_temp_file_name() as filename:
         filename = '/tmp/table_test.txt'
