@@ -114,7 +114,7 @@ export class PipelineRun extends React.Component<
     `
   };
 
-  state = {
+  state: IPipelineRunState = {
     logsVW: 75,
     logsFilter: DefaultLogFilter,
     highlightedError: undefined

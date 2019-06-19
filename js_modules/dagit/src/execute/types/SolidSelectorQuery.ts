@@ -26,6 +26,7 @@ export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_c
 
 export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition {
   __typename: "SolidDefinition";
+  name: string;
   metadata: SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_metadata[];
   configDefinition: SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_configDefinition | null;
 }
@@ -92,6 +93,7 @@ export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDef
 
 export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
+  name: string;
   metadata: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_metadata[];
   inputMappings: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputMappings[];

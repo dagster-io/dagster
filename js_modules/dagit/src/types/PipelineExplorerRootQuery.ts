@@ -464,9 +464,9 @@ export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_definitio
 
 export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_SolidDefinition {
   __typename: "SolidDefinition";
+  name: string;
   metadata: PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_SolidDefinition_metadata[];
   configDefinition: PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_SolidDefinition_configDefinition | null;
-  name: string;
   description: string | null;
 }
 
@@ -532,10 +532,10 @@ export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_definitio
 
 export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
+  name: string;
   metadata: PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_CompositeSolidDefinition_metadata[];
   inputMappings: PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: PipelineExplorerRootQuery_pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings[];
-  name: string;
   description: string | null;
 }
 

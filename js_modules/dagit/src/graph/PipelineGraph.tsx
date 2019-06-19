@@ -3,16 +3,13 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import SVGViewport, { SVGViewportInteractor } from "./SVGViewport";
-import { SVGLabeledRect } from "./SVGComponents";
 import { SolidNameOrPath } from "../PipelineExplorer";
 import SolidNode from "./SolidNode";
-import {
-  ILayoutConnection,
-  IFullPipelineLayout,
-  IFullSolidLayout
-} from "./getFullSolidLayout";
+import { IFullPipelineLayout, IFullSolidLayout } from "./getFullSolidLayout";
 import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
-import { SolidLinks, IConnHighlight } from "./SolidLinks";
+import { SolidLinks } from "./SolidLinks";
+import { Edge, isHighlighted, isSolidHighlighted } from "./highlighting";
+import { ParentSolidNode, SVGLabeledParentRect } from "./ParentSolidNode";
 
 const NoOp = () => {};
 
@@ -40,7 +37,7 @@ interface IPipelineContentsProps extends IPipelineGraphProps {
 }
 
 interface IPipelineContentsState {
-  highlightedConnections: IConnHighlight[];
+  highlighted: Edge[];
 }
 
 class PipelineGraphContents extends React.PureComponent<
@@ -48,11 +45,11 @@ class PipelineGraphContents extends React.PureComponent<
   IPipelineContentsState
 > {
   state: IPipelineContentsState = {
-    highlightedConnections: []
+    highlighted: []
   };
 
-  onHighlightConnections = (connections: IConnHighlight[]) => {
-    this.setState({ highlightedConnections: connections });
+  onHighlightEdges = (highlighted: Edge[]) => {
+    this.setState({ highlighted });
   };
 
   render() {
@@ -70,25 +67,12 @@ class PipelineGraphContents extends React.PureComponent<
       selectedHandleID
     } = this.props;
 
-    const { highlightedConnections } = this.state;
-
-    const isHighlighted = (c: ILayoutConnection) => {
-      const from = c.from.solidName;
-      const to = c.to.solidName;
-      return highlightedConnections.find(
-        h => (h.a === from && h.b === to) || (h.b === from && h.a === to)
-      );
-    };
-
     return (
       <g>
-        {parentSolid && (
-          <SVGLabeledCompositeRect
-            x={1}
-            y={1}
+        {parentSolid && layout.parent && (
+          <SVGLabeledParentRect
+            {...layout.parent.invocationBoundingBox}
             key={`composite-rect-${parentHandleID}`}
-            width={layout.width - 1}
-            height={layout.height - 1}
             label={parentSolid.name}
             fill={Colors.LIGHT_GRAY5}
             minified={minified}
@@ -99,7 +83,7 @@ class PipelineGraphContents extends React.PureComponent<
           // when they expand the composite solid React sees this component becoming
           // the one above and re-uses the DOM node. This allows us to animate the rect's
           // bounds from the parent layout to the inner layout with no React state.
-          <SVGLabeledCompositeRect
+          <SVGLabeledParentRect
             {...layout.solids[selectedSolid.name].solid}
             key={`composite-rect-${selectedHandleID}`}
             label={""}
@@ -107,17 +91,35 @@ class PipelineGraphContents extends React.PureComponent<
             minified={true}
           />
         )}
+
+        {parentSolid && (
+          <ParentSolidNode
+            onClickSolid={onClickSolid}
+            onDoubleClick={name => onDoubleClickSolid({ name })}
+            onHighlightEdges={this.onHighlightEdges}
+            highlightedEdges={this.state.highlighted}
+            key={`composite-rect-${parentHandleID}-definition`}
+            minified={minified}
+            solid={parentSolid}
+            layout={layout}
+          />
+        )}
         <SolidLinks
           layout={layout}
           opacity={0.2}
           connections={layout.connections}
-          onHighlight={this.onHighlightConnections}
+          onHighlight={this.onHighlightEdges}
         />
         <SolidLinks
           layout={layout}
           opacity={0.55}
-          connections={layout.connections.filter(c => isHighlighted(c))}
-          onHighlight={this.onHighlightConnections}
+          onHighlight={this.onHighlightEdges}
+          connections={layout.connections.filter(({ from, to }) =>
+            isHighlighted(this.state.highlighted, {
+              a: from.solidName,
+              b: to.solidName
+            })
+          )}
         />
         {solids.map(solid => (
           <SolidNode
@@ -128,14 +130,12 @@ class PipelineGraphContents extends React.PureComponent<
             onClick={name => onClickSolid({ name })}
             onDoubleClick={name => onDoubleClickSolid({ name })}
             onEnterComposite={name => onEnterCompositeSolid({ name })}
-            onHighlightConnections={this.onHighlightConnections}
+            onHighlightEdges={this.onHighlightEdges}
             layout={layout.solids[solid.name]}
             selected={selectedSolid === solid}
-            highlightedConnections={
-              highlightedConnections.some(
-                c => c.a === solid.name || c.b === solid.name
-              )
-                ? highlightedConnections
+            highlightedEdges={
+              isSolidHighlighted(this.state.highlighted, solid.name)
+                ? this.state.highlighted
                 : []
             }
             dim={
@@ -156,6 +156,9 @@ export default class PipelineGraph extends React.Component<
     PipelineGraphSolidFragment: gql`
       fragment PipelineGraphSolidFragment on Solid {
         name
+        definition {
+          name
+        }
         ...SolidNodeFragment
       }
 
@@ -275,7 +278,7 @@ export default class PipelineGraph extends React.Component<
         {({ scale }: any) => (
           <SVGContainer
             width={layout.width}
-            height={layout.height}
+            height={layout.height + 200}
             onClick={onClickBackground}
             onDoubleClick={this.unfocus}
           >
@@ -293,10 +296,6 @@ export default class PipelineGraph extends React.Component<
 }
 
 const SVGContainer = styled.svg`
+  overflow: visible;
   border-radius: 0;
-`;
-
-const SVGLabeledCompositeRect = styled(SVGLabeledRect)`
-  transition: x 250ms ease-out, y 250ms ease-out, width 250ms ease-out,
-    height 250ms ease-out;
 `;

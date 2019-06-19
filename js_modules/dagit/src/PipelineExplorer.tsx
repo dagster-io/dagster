@@ -85,12 +85,25 @@ export default class PipelineExplorer extends React.Component<
     history.push(`/${pipeline.name}/explore/${next.join("/")}`);
   };
 
+  // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
+  // This is important because the DAG component tree doesn't always have access to a handleID,
+  // and we sometimes want to be able to jump to a solid in the parent layer.
+  //
   handleClickSolid = (arg: SolidNameOrPath) => {
     this.handleAdjustPath(solidNames => {
       if ("name" in arg) {
         solidNames[solidNames.length - 1] = arg.name;
       } else {
-        solidNames.length = 0;
+        if (arg.path[0] != "..") {
+          solidNames.length = 0;
+        }
+        if (arg.path[0] == ".." && solidNames[solidNames.length - 1] !== "") {
+          solidNames.pop(); // remove the last path component indicating selection
+        }
+        while (arg.path[0] == "..") {
+          arg.path.shift();
+          solidNames.pop();
+        }
         solidNames.push(...arg.path);
       }
     });
@@ -124,12 +137,15 @@ export default class PipelineExplorer extends React.Component<
   _layoutCacheKey: string | undefined;
   _layoutCache: IFullPipelineLayout | undefined;
 
-  getLayout = (solids: PipelineExplorerSolidHandleFragment_solid[]) => {
+  getLayout = (
+    solids: PipelineExplorerSolidHandleFragment_solid[],
+    parent: PipelineExplorerSolidHandleFragment_solid | undefined
+  ) => {
     const key = solids.map(s => s.name).join("|");
     if (this._layoutCacheKey === key && this._layoutCache) {
       return this._layoutCache;
     }
-    this._layoutCache = getDagrePipelineLayout(solids);
+    this._layoutCache = getDagrePipelineLayout(solids, parent);
     this._layoutCacheKey = key;
     return this._layoutCache;
   };
@@ -203,7 +219,7 @@ export default class PipelineExplorer extends React.Component<
             onClickBackground={this.handleClickBackground}
             onEnterCompositeSolid={this.handleEnterCompositeSolid}
             onLeaveCompositeSolid={this.handleLeaveCompositeSolid}
-            layout={this.getLayout(solids)}
+            layout={this.getLayout(solids, parentHandle && parentHandle.solid)}
             highlightedSolids={solids.filter(
               s => filter && s.name.includes(filter)
             )}
