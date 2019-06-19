@@ -119,7 +119,7 @@ div.sphinxsidebar > div > ul > li > ul {
   margin-left: 0px;
 }
 
-div.sphinxsidebar li.toctree-l1 > a.current {
+div.sphinxsidebar li.toctree-l1 a.current {
   color: #2391eb;
 }
 

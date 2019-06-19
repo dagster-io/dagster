@@ -16,7 +16,7 @@ solid. Put the following into a file ``resources.py``:
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_one.py
     :caption: resources.py
     :linenos:
-    :lines: 3-17,22-31
+    :lines: 3-26
 
 Provide your Slack token, and choose a channel and message. Then running this with ``python
 resources.py``, you should see a message from ``dagsterbot`` appear in your Slack channel.
@@ -39,9 +39,9 @@ a simple resource that provides the same ``.chat.post_message()`` API, using the
 decorator:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_full.py
-   :lines: 25-41
+   :lines: 25-42
    :linenos:
-   :emphasize-lines: 3,10
+   :emphasize-lines: 15
 
 As you can see, this resource has a different configuration. As highlighted above, instead of
 requiring a Slack token, we've specified an "output_path" string configuration for the name of the file
@@ -50,17 +50,17 @@ it'll write to.
 In order to run this pipeline, we invoke it in this way:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_full.py
-   :lines: 67-73
+   :lines: 63-69
    :linenos:
    :dedent: 4
-   :emphasize-lines: 4-6
+   :emphasize-lines: 3,5
 
 Now we can simply change the mode via :py:class:`RunConfig <dagster.RunConfig>` to toggle which
 implementation of ``slack`` is used. The complete example including both "local" and "production"
 modes is shown below:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_full.py
-    :emphasize-lines: 61-64, 69-72 
+    :emphasize-lines: 57, 59, 65, 67
     :linenos:
     :caption: resources_full.py
 

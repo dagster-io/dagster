@@ -192,7 +192,7 @@ class _Solid(object):
         )
 
 
-def lambda_solid(name=None, inputs=None, output=None, description=None):
+def lambda_solid(name=None, description=None, inputs=None, output=None):
     '''(decorator) Create a simple solid.
 
     This shortcut allows the creation of simple solids that do not require
@@ -203,9 +203,9 @@ def lambda_solid(name=None, inputs=None, output=None, description=None):
 
     Args:
         name (str): Name of solid.
+        description (str): Solid description.
         inputs (list[InputDefinition]): List of inputs.
         output (OutputDefinition): The output of the solid. Defaults to ``OutputDefinition()``.
-        description (str): Solid description.
 
     Examples:
 
@@ -230,11 +230,11 @@ def lambda_solid(name=None, inputs=None, output=None, description=None):
 
 def solid(
     name=None,
+    description=None,
     inputs=None,
     outputs=None,
     config_field=None,
     config=None,
-    description=None,
     required_resources=None,
 ):
     '''(decorator) Create a solid with specified parameters.
@@ -255,6 +255,7 @@ def solid(
 
     Args:
         name (str): Name of solid.
+        description (str): Description of this solid.
         inputs (list[InputDefinition]):
             List of inputs. Inferred from typehints if not provided.
         outputs (list[OutputDefinition]):
@@ -265,7 +266,6 @@ def solid(
             Used in the rare case of a top level config type other than a dictionary.
 
             Only one of config or config_field can be provided.
-        description (str): Description of this solid.
         resources (set[str]): Set of resource instances required by this solid.
 
     Examples:
@@ -612,6 +612,45 @@ class _CompositeSolid(object):
 
 
 def composite_solid(name=None, inputs=None, outputs=None, description=None, config_mapping_fn=None):
+    ''' (decorator) Create a CompositeSolidDefinition with specified parameters.
+
+    Using this decorator allows you to build up the dependency graph of the composite by writing a
+    function that invokes solids and passes the output to other solids.
+
+    Args:
+        name (Optional[str])
+        description (Optional[str])
+        inputs (Optional[List[InputDefinition]]):
+            The set of inputs, inferred from typehints if not provided.
+
+            Where these inputs get used in the body of the decorated function create the
+            InputMappings for the CompositeSolidDefinition
+        outputs (Optional[List[OutputDefinition]]):
+            The set of outputs, inferred from typehints if not provided.
+
+            These outputs are combined with the return value of the decorated function to
+            create the OutputMappings for the CompositeSolidDefinition.
+
+            A dictionary is returned from the function to map multiple outputs.
+        config_mapping_fn (Callable):
+            A function to remap configuration for the constituent solids.
+
+    Examples:
+
+        .. code-block:: python
+
+        @lambda_solid
+        def add_one(num: int) -> int:
+            return num + 1
+
+        @composite_solid
+        def add_two(num: int) -> int:
+            add_one_1 = add_one.alias('add_one_1')
+            add_one_2 = add_one.alias('add_one_2')
+
+            return add_one_2(add_one_1(num))
+
+    '''
     if callable(name):
         check.invariant(inputs is None)
         check.invariant(outputs is None)
@@ -661,7 +700,43 @@ class _Pipeline:
         )
 
 
-def pipeline(name=None, mode_definitions=None, preset_definitions=None, description=None):
+def pipeline(name=None, description=None, mode_definitions=None, preset_definitions=None):
+    ''' (decorator) Create a pipeline with specified parameters.
+
+    Using this decorator allows you to build up the dependency graph of the pipeline by writing a
+    function that invokes solids and passes the output to other solids.
+
+    Args:
+        name (Optional[str])
+        description (Optional[str])
+        mode_definitions (Optional[List[ModeDefinition]]):
+            The set of modes this pipeline can operate in. Modes can be used for example to vary
+            resources and logging implementations for local testing and running in production.
+        preset_definitions (Optional[List[PresetDefinition]]):
+            Given the different ways a pipeline may execute, presets give you a way to provide
+            specific valid collections of configuration.
+
+    Examples:
+
+        .. code-block:: python
+
+        @lambda_solid
+        def emit_one() -> int:
+            return 1
+
+        @lambda_solid
+        def add_one(num: int) -> int:
+            return num + 1
+
+        @lambda_solid
+        def mult_two(num: int) -> int:
+            return num * 2
+
+        @pipeline
+        def add_pipeline(_):
+            add_one(mult_two(emit_one()))
+
+    '''
     if callable(name):
         check.invariant(description is None)
         return _Pipeline()(name)

@@ -8,7 +8,7 @@ Let's return to our hello world example. But this time, we'll make the string
 the solid returns be parameterized based on inputs.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
-   :lines: 1-12
+   :lines: 2-12
    :linenos:
    :caption: inputs.py
 
@@ -29,7 +29,7 @@ use one of them here: per-solid configuration specified under the key ``solids``
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
     :linenos:
-    :lines: 22-30
+    :lines: 20,22,24-26
     :dedent: 8
 
 The ``solids`` dict is keyed by solid name, and each solid is configured by a dict that may have
@@ -41,7 +41,7 @@ using the python API:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
     :linenos:
-    :lines: 19-21,24-31
+    :lines: 15-27
 
 CLI
 ~~~
@@ -111,7 +111,7 @@ A user can apply types to inputs and outputs using python type annotation syntax
 built-in ``String``.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
-   :lines: 34-36
+   :lines: 30-32
    :emphasize-lines: 2
    :caption: inputs.py
 

@@ -3,17 +3,15 @@ import pytest
 
 
 from dagster import DagsterInvariantViolationError, execute_pipeline
-from dagster_examples.intro_tutorial.multiple_outputs import define_multiple_outputs_pipeline
-from dagster_examples.intro_tutorial.multiple_outputs_yield import (
-    define_multiple_outputs_yield_pipeline,
-)
+from dagster_examples.intro_tutorial.multiple_outputs import multiple_outputs_pipeline
+from dagster_examples.intro_tutorial.multiple_outputs_yield import multiple_outputs_yield_pipeline
 from dagster_examples.intro_tutorial.multiple_outputs_conditional import (
-    define_multiple_outputs_conditional_pipeline,
+    multiple_outputs_conditional_pipeline,
 )
 
 
 def test_intro_tutorial_multiple_outputs():
-    result = execute_pipeline(define_multiple_outputs_pipeline())
+    result = execute_pipeline(multiple_outputs_pipeline)
 
     assert result.success
     assert result.result_for_solid('return_dict_results').result_value('out_one') == 23
@@ -23,7 +21,7 @@ def test_intro_tutorial_multiple_outputs():
 
 
 def test_intro_tutorial_multiple_outputs_yield():
-    result = execute_pipeline(define_multiple_outputs_yield_pipeline())
+    result = execute_pipeline(multiple_outputs_yield_pipeline)
 
     assert result.success
     assert result.result_for_solid('yield_outputs').result_value('out_one') == 23
@@ -34,8 +32,7 @@ def test_intro_tutorial_multiple_outputs_yield():
 
 def test_intro_tutorial_multiple_outputs_conditional():
     result = execute_pipeline(
-        define_multiple_outputs_conditional_pipeline(),
-        {'solids': {'conditional': {'config': 'out_two'}}},
+        multiple_outputs_conditional_pipeline, {'solids': {'conditional': {'config': 'out_two'}}}
     )
 
     # successful things

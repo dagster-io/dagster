@@ -8,19 +8,25 @@ from dagster_examples.intro_tutorial.config import hello_with_config_pipeline, r
 def test_tutorial_part_four():
     pipeline = hello_with_config_pipeline
 
-    result = execute_pipeline(pipeline, {'solids': {'hello_with_config': {'config': 'cn'}}})
+    result = execute_pipeline(
+        pipeline, {'solids': {'hello_with_config': {'config': {'language': 'cn'}}}}
+    )
 
     assert result.success
     assert len(result.solid_result_list) == 1
     assert result.result_for_solid('hello_with_config').result_value() == '你好, 世界!'
 
-    result = execute_pipeline(pipeline, {'solids': {'hello_with_config': {'config': 'haw'}}})
+    result = execute_pipeline(
+        pipeline, {'solids': {'hello_with_config': {'config': {'language': 'haw'}}}}
+    )
 
     assert result.success
     assert len(result.solid_result_list) == 1
     assert result.result_for_solid('hello_with_config').result_value() == 'Aloha honua!'
 
-    result = execute_pipeline(pipeline, {'solids': {'hello_with_config': {'config': 'es'}}})
+    result = execute_pipeline(
+        pipeline, {'solids': {'hello_with_config': {'config': {'language': 'es'}}}}
+    )
 
     assert result.success
     assert len(result.solid_result_list) == 1

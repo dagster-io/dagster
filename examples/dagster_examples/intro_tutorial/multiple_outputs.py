@@ -1,12 +1,5 @@
-from dagster import (
-    DependencyDefinition,
-    InputDefinition,
-    MultipleResults,
-    OutputDefinition,
-    PipelineDefinition,
-    solid,
-    Int,
-)
+# pylint: disable=no-value-for-parameter
+from dagster import Int, MultipleResults, OutputDefinition, pipeline, solid
 
 
 @solid(
@@ -19,26 +12,20 @@ def return_dict_results(_context):
     return MultipleResults.from_dict({'out_one': 23, 'out_two': 45})
 
 
-@solid(inputs=[InputDefinition('num', dagster_type=Int)])
-def log_num(context, num):
+@solid
+def log_num(context, num: int):
     context.log.info('num {num}'.format(num=num))
     return num
 
 
-@solid(inputs=[InputDefinition('num', dagster_type=Int)])
-def log_num_squared(context, num):
+@solid
+def log_num_squared(context, num: int):
     context.log.info('num_squared {num_squared}'.format(num_squared=num * num))
     return num * num
 
 
-def define_multiple_outputs_pipeline():
-    return PipelineDefinition(
-        name='multiple_outputs_pipeline',
-        solid_defs=[return_dict_results, log_num, log_num_squared],
-        dependencies={
-            'log_num': {'num': DependencyDefinition(solid='return_dict_results', output='out_one')},
-            'log_num_squared': {
-                'num': DependencyDefinition(solid='return_dict_results', output='out_two')
-            },
-        },
-    )
+@pipeline
+def multiple_outputs_pipeline(_):
+    out_one, out_two = return_dict_results()
+    log_num(out_one)
+    log_num_squared(out_two)

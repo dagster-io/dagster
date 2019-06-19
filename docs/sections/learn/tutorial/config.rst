@@ -23,9 +23,9 @@ languages. This time, we'll use a more fully-featured API to define our solid --
 We will be exploring the :py:func:`@solid <dagster.solid>` API in much more detail as this tutorial
 proceeds. For now, the salient differences are:
 
-1. The :py:func:`@solid <dagster.solid>` API takes a parameter, ``config_field``, which
+1. The :py:func:`@solid <dagster.solid>` API takes a parameter, ``config``, which
    defines the structure and type of configuration values that can be set on each execution of the
-   solid. This parameter should be a :py:func:`Field <dagster.Field>`, which tells the dagster
+   solid. This parameter should be a Dict of string names to :py:func:`Field <dagster.Field>`, which tells the dagster
    machinery how to translate config values into runtime values available to the solid.
 2. The function annotated by the :py:func:`@solid <dagster.solid>` API receives an additional first
    parameter, ``context``, of type :py:class:`ComputeExecutionContext <dagster.ComputeExecutionContext>`.

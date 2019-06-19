@@ -17,17 +17,14 @@ Basic Typing
 What this code doing is annotating/registering an existing type as a dagster type. Now one can
 include this type and use it as an input or output of a solid. The system will do a typecheck
 to ensure that the object is of type ``pd.DataFrame``.
-`
+
 Now one can use it to define a solid:
 
 .. code-block:: py
-   :emphasize-lines: 2-3
+   :emphasize-lines: 2
 
-    @lambda_solid(
-        inputs=[InputDefinition('num', DataFrame)],
-        output=OutputDefinition(DataFrame),
-    )
-    def sum_solid(num):
+    @lambda_solid
+    def sum_solid(num: DataFrame) -> DataFrame:
         sum_df = num.copy()
         sum_df['sum'] = sum_df['num1'] + sum_df['num2']
         return sum_df

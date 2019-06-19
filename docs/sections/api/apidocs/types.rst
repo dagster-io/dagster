@@ -40,7 +40,7 @@ Builtin Types
     ``Nothing``, no parameters are passed to to the ``transform_fn``
     for that input.
 
-.. autofunction:: Nullable
+.. autofunction:: Optional
 
 .. autofunction:: List
 

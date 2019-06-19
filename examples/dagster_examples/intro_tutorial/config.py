@@ -4,11 +4,11 @@
 from dagster import execute_pipeline, solid, Field, pipeline
 
 
-@solid(config_field=Field(str, is_optional=True, default_value='en-us'))
+@solid(config={'language': Field(str, is_optional=True, default_value='en-us')})
 def hello_with_config(context):
-    if context.solid_config == 'haw':
+    if context.solid_config['language'] == 'haw':
         return 'Aloha honua!'
-    elif context.solid_config == 'cn':
+    elif context.solid_config['language'] == 'cn':
         return '你好, 世界!'
     else:
         return 'Hello, world!'
@@ -21,7 +21,8 @@ def hello_with_config_pipeline(_):
 
 def run():
     execute_pipeline(
-        hello_with_config_pipeline, {'solids': {'hello_with_config': {'config': 'cn'}}}
+        hello_with_config_pipeline,
+        {'solids': {'hello_with_config': {'config': {'language': 'cn'}}}},
     )
 
 

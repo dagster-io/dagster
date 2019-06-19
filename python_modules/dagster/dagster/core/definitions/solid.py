@@ -180,6 +180,48 @@ class SolidDefinition(ISolidDefinition):
 
 
 class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
+    '''
+    The core unit of composition and abstraction, composite solids allow you to manage
+    the complexity of your pipelines.
+
+    In the same way you would refactor a block of code in to a function to deduplicate, organize,
+    or manage complexity you can refactor solids in a pipeline in to a composite solid.
+
+    Args:
+        name (str)
+        solid_defs (List[ISolidDefinition]):
+            The set of solid definitions used in this composite
+        input_mappings (List[InputMapping]):
+            Define inputs and how they map to the constituent solids within.
+        output_mappings (List[OutputMapping]):
+            Define outputs and how they map from the constituent solids within.
+        dependencies (Optional[Dict[Union[str, SolidInvocation], Dict[str, DependencyDefinition]]]):
+            A structure that declares where each solid gets its inputs. The keys at the top
+            level dict are either string names of solids or SolidInvocations. The values
+            are dicts that map input names to DependencyDefinitions.
+        description (Optional[str])
+        metadata (Optional[Dict[Any, Any]]):
+            Arbitrary metadata for the solid. Some frameworks expect and require
+            certain metadata to be attached to a solid.
+
+    Examples:
+        .. code-block:: python
+            @lambda_solid
+            def add_one(num: int) -> int:
+                return num + 1
+
+            add_two = CompositeSolidDefinition(
+                'add_two',
+                solid_defs=[add_one],
+                dependencies={
+                    SolidInvocation('add_one', 'adder_1'): {},
+                    SolidInvocation('add_one', 'adder_2'): {'num': DependencyDefinition('adder_1')},
+                },
+                input_mappings=[InputDefinition('num', Int).mapping_to('adder_1', 'num')],
+                output_mappings=[OutputDefinition(Int).mapping_from('adder_2')],
+            )
+    '''
+
     def __init__(
         self,
         name,

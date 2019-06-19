@@ -55,7 +55,7 @@ class SolidInvocation(namedtuple('Solid', 'name alias resource_mapper_fn')):
 
 class Solid(object):
     '''
-    Solid instance within a pipeline. Defined by its name inside the pipeline.
+    Solid invocation within a pipeline. Defined by its name inside the pipeline.
 
     Attributes:
         name (str):

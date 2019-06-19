@@ -13,12 +13,13 @@ two concatenated copies of the hardcoded string.
 
 This pipeline introduces a few new concepts.
 
-1.  Solids can have **inputs**. Inputs allow us to connect solids to each other, and 
+1.  Solids can have **inputs**. Inputs allow us to connect solids to each other, and
     give dagster information about solids' dependencies on each other and, as we'll
     see later, optionally let dagster check the types of the inputs at runtime.
-    (Note: The system introspects on the function signature to create instances
-    of instances of :py:class:`InputDefinition <dagster.InputDefinition>`. You are
-    free to construct these explicitly.) 
+
+    Note: The system introspects on the function signature to create instances of
+    :py:class:`InputDefinition <dagster.InputDefinition>`. You are free to construct these explicitly.
+
 
 2.  Solids' **dependencies** are expressed in the body of the pipeline function. You use traditional
     function calls to construct a representation of the dependency graph. These functions are

@@ -88,6 +88,10 @@ class Result(namedtuple('_Result', 'value output_name')):
 class Materialization(namedtuple('_Materialization', 'label description metadata_entries')):
     '''A value materialized by an execution step.
 
+    As opposed to Results, Materializations can not be passed to other solids and persistence
+    is not controlled by dagster. They are a useful way to communicate side effects to the system
+    and display them to the end user.
+
     Attributes:
         path (str): The path to the materialized value.
         name (str): A short display name for the materialized value.

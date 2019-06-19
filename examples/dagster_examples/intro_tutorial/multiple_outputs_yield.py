@@ -1,12 +1,5 @@
-from dagster import (
-    DependencyDefinition,
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    Result,
-    solid,
-    Int,
-)
+# pylint: disable=no-value-for-parameter
+from dagster import Int, OutputDefinition, Result, pipeline, solid
 
 
 @solid(
@@ -20,24 +13,20 @@ def yield_outputs(_context):
     yield Result(45, 'out_two')
 
 
-@solid(inputs=[InputDefinition('num', dagster_type=Int)])
-def log_num(context, num):
+@solid
+def log_num(context, num: int):
     context.log.info('num {num}'.format(num=num))
     return num
 
 
-@solid(inputs=[InputDefinition('num', dagster_type=Int)])
-def log_num_squared(context, num):
+@solid
+def log_num_squared(context, num: int):
     context.log.info('num_squared {num_squared}'.format(num_squared=num * num))
     return num * num
 
 
-def define_multiple_outputs_yield_pipeline():
-    return PipelineDefinition(
-        name='multiple_outputs_yield_pipeline',
-        solid_defs=[yield_outputs, log_num, log_num_squared],
-        dependencies={
-            'log_num': {'num': DependencyDefinition('yield_outputs', 'out_one')},
-            'log_num_squared': {'num': DependencyDefinition('yield_outputs', 'out_two')},
-        },
-    )
+@pipeline
+def multiple_outputs_yield_pipeline(_):
+    out_one, out_two = yield_outputs()
+    log_num(out_one)
+    log_num_squared(out_two)

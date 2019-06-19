@@ -46,9 +46,6 @@ Configuration
 .. autoclass:: RunConfig
    :members:
 
-.. autoclass:: RunStorageMode
-   :members:
-
 .. autoclass:: InProcessExecutorConfig
    :members:
 

@@ -26,7 +26,7 @@ class PresetDefinition:
             List of paths or glob patterns for yaml files to load and parse as the enivornment
             config for this preset.
         solid_subset (Optional[List[str]]):
-            The list of names of solid instances to execute for this preset.
+            The list of names of solid invocations to execute for this preset.
         mode (Optional[str]):
             The mode to apply when executing this preset. Defaults to 'default'.
     '''

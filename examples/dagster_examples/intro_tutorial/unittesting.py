@@ -1,52 +1,30 @@
-from dagster import (
-    DependencyDefinition,
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    SolidInvocation,
-    execute_solid,
-    execute_solids,
-    lambda_solid,
-    Int,
-)
+from dagster import execute_solid, execute_solids, lambda_solid, pipeline
 
 
-@lambda_solid(
-    inputs=[InputDefinition('num1', Int), InputDefinition('num2', Int)],
-    output=OutputDefinition(Int),
-)
-def adder(num1, num2):
+@lambda_solid
+def adder(num1: int, num2: int) -> int:
     return num1 + num2
 
 
-@lambda_solid(
-    inputs=[InputDefinition('num1', Int), InputDefinition('num2', Int)],
-    output=OutputDefinition(Int),
-)
-def multer(num1, num2):
+@lambda_solid
+def multer(num1: int, num2: int) -> int:
     return num1 * num2
 
 
-def define_part_fourteen_step_one_pipeline():
+@pipeline
+def part_fourteen_step_one_pipeline(_):
     # (a + b) * (c + d)
 
-    return PipelineDefinition(
-        name='part_fourteen_step_one_pipeline',
-        solid_defs=[adder, multer],
-        dependencies={
-            SolidInvocation(adder.name, 'a_plus_b'): {},
-            SolidInvocation(adder.name, 'c_plus_d'): {},
-            SolidInvocation(multer.name, 'final'): {
-                'num1': DependencyDefinition('a_plus_b'),
-                'num2': DependencyDefinition('c_plus_d'),
-            },
-        },
-    )
+    a_plus_b = adder.alias('a_plus_b')
+    c_plus_d = adder.alias('c_plus_d')
+    final = multer.alias('final')
+
+    final(a_plus_b(), c_plus_d())
 
 
 def execute_test_only_final():
     solid_result = execute_solid(
-        define_part_fourteen_step_one_pipeline(), 'final', inputs={'num1': 3, 'num2': 4}
+        part_fourteen_step_one_pipeline, 'final', inputs={'num1': 3, 'num2': 4}
     )
     assert solid_result.success
     assert solid_result.result_value() == 12
@@ -54,7 +32,7 @@ def execute_test_only_final():
 
 def execute_test_a_plus_b_final_subdag():
     results = execute_solids(
-        define_part_fourteen_step_one_pipeline(),
+        part_fourteen_step_one_pipeline,
         ['a_plus_b', 'final'],
         inputs={'a_plus_b': {'num1': 2, 'num2': 4}, 'final': {'num2': 6}},
     )

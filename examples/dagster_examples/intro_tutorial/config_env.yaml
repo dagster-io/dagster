@@ -1,3 +1,4 @@
 solids:
   hello_with_config:
-    config: "haw"
+    config:
+      language: "haw"
