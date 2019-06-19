@@ -226,6 +226,12 @@ export default class RunMetadataProvider extends React.Component<
         ... on EventJsonMetadataEntry {
           jsonString
         }
+        ... on EventUrlMetadataEntry {
+          url
+        }
+        ... on EventTextMetadataEntry {
+          text
+        }
       }
 
       fragment RunMetadataProviderMessageFragment on PipelineRunEvent {
