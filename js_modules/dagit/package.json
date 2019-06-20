@@ -43,8 +43,8 @@
   },
   "devDependencies": {
     "@types/ajv": "^1.0.0",
-    "@types/color": "^3.0.0",
     "@types/codemirror": "^0.0.60",
+    "@types/color": "^3.0.0",
     "@types/dagre": "^0.7.40",
     "@types/graphql": "^14.0.5",
     "@types/highlight.js": "^9.12.3",
@@ -66,7 +66,6 @@
     "babel-jest": "^24.8.0",
     "babel-plugin-graphql-tag": "^1.6.0",
     "child-process": "^1.0.2",
-    "fs": "0.0.1-security",
     "jest": "^23.6.0",
     "prettier": "^1.14.0",
     "react-scripts-ts": "^4.0.8",
