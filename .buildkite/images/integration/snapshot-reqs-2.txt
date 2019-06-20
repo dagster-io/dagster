@@ -183,10 +183,10 @@ pyproj==2.0.1
 pyrsistent==0.15.2
 pyspark==2.4.0
 pytablereader==0.26.1
-pytest==4.0.2
-pytest-cov==2.6.0
+pytest==4.6.3
+pytest-cov==2.7.1
 pytest-dependency==0.4.0
-pytest-runner==4.2
+pytest-runner==5.1
 python-daemon==2.1.2
 python-dateutil==2.8.0
 python-editor==1.0.4
