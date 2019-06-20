@@ -39,8 +39,7 @@ class PresetDefinition:
         self.solid_subset = check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
         self.mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
 
-    @property
-    def environment_dict(self):
+    def get_environment_dict(self, pipeline_name):
         if self.environment_files is None:
             return None
 
@@ -50,7 +49,9 @@ class PresetDefinition:
             if not files:
                 raise DagsterInvalidDefinitionError(
                     'File or glob pattern "{file_glob}" for "environment_files" in preset '
-                    '"{name}" produced no results.'.format(name=self.name, file_glob=file_glob)
+                    '"{name}" for pipline "{pipeline}" produced no results.'.format(
+                        name=self.name, file_glob=file_glob, pipeline=pipeline_name
+                    )
                 )
 
             file_set.update(map(os.path.realpath, files))
@@ -61,8 +62,11 @@ class PresetDefinition:
             six.raise_from(
                 DagsterInvariantViolationError(
                     'Encountered error attempting to parse yaml. Parsing files {file_set} '
-                    'loaded by file/patterns {files} on preset "{name}".'.format(
-                        file_set=file_set, files=self.environment_files, name=self.name
+                    'loaded by file/patterns {files} on preset "{name}" for pipeline "{pipeline}".'.format(
+                        file_set=file_set,
+                        files=self.environment_files,
+                        name=self.name,
+                        pipeline=pipeline_name,
                     )
                 ),
                 err,
@@ -70,9 +74,8 @@ class PresetDefinition:
 
         return merged
 
-    @property
-    def environment_yaml(self):
-        merged = self.environment_dict
+    def get_environment_yaml(self, pipeline_name):
+        merged = self.get_environment_dict(pipeline_name)
         if merged is None:
             return None
 
