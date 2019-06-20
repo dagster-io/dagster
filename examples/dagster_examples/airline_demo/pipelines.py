@@ -1,14 +1,6 @@
 # pylint: disable=no-value-for-parameter
 """Pipeline definitions for the airline_demo."""
-from dagster import (
-    ModeDefinition,
-    OutputDefinition,
-    PresetDefinition,
-    String,
-    composite_solid,
-    file_relative_path,
-    pipeline,
-)
+from dagster import ModeDefinition, PresetDefinition, composite_solid, file_relative_path, pipeline
 
 from dagster.core.storage.file_cache import fs_file_cache
 from dagster.core.storage.temp_file_manager import tempfile_resource
@@ -80,29 +72,6 @@ prod_mode = ModeDefinition(
 )
 
 
-@composite_solid(outputs=[OutputDefinition(name='table_name', dagster_type=String)])
-def process_on_time_data():
-    return load_data_to_database_from_spark.alias('load_q2_on_time_data')(
-        data_frame=join_q2_data(
-            april_data=s3_to_df.alias('april_on_time_s3_to_df')(),
-            may_data=s3_to_df.alias('may_on_time_s3_to_df')(),
-            june_data=s3_to_df.alias('june_on_time_s3_to_df')(),
-            master_cord_data=s3_to_df.alias('master_cord_s3_to_df')(),
-        )
-    )
-
-
-@composite_solid(outputs=[OutputDefinition(name='table_name', dagster_type=String)])
-def sfo_weather_data():
-    return load_data_to_database_from_spark.alias('load_q2_sfo_weather')(
-        process_sfo_weather_data(
-            ingest_csv_file_handle_to_spark.alias('ingest_q2_sfo_weather')(
-                cache_file_from_s3.alias('download_q2_sfo_weather')()
-            )
-        )
-    )
-
-
 @pipeline(
     mode_definitions=[test_mode, local_mode, prod_mode],
     preset_definitions=[
@@ -125,8 +94,25 @@ def sfo_weather_data():
     ],
 )
 def airline_demo_ingest_pipeline():
-    process_on_time_data()
-    sfo_weather_data()
+    # on time data
+    load_data_to_database_from_spark.alias('load_q2_on_time_data')(
+        data_frame=join_q2_data(
+            april_data=s3_to_df.alias('april_on_time_s3_to_df')(),
+            may_data=s3_to_df.alias('may_on_time_s3_to_df')(),
+            june_data=s3_to_df.alias('june_on_time_s3_to_df')(),
+            master_cord_data=s3_to_df.alias('master_cord_s3_to_df')(),
+        )
+    )
+
+    # load weather data
+    load_data_to_database_from_spark.alias('load_q2_sfo_weather')(
+        process_sfo_weather_data(
+            ingest_csv_file_handle_to_spark.alias('ingest_q2_sfo_weather')(
+                cache_file_from_s3.alias('download_q2_sfo_weather')()
+            )
+        )
+    )
+
     for data_type in ['coupon', 'market', 'ticket']:
         s3_to_dw_table.alias('process_q2_{}_data'.format(data_type))()
 
@@ -135,8 +121,8 @@ def define_airline_demo_ingest_pipeline():
     return airline_demo_ingest_pipeline
 
 
-@composite_solid(outputs=[OutputDefinition(S3FileHandle)])
-def process_delays_by_geo():
+@composite_solid
+def process_delays_by_geo() -> S3FileHandle:
     return file_handle_to_s3.alias('upload_delays_by_geography_pdf_plots')(
         delays_by_geography(
             westbound_delays=westbound_delays(), eastbound_delays=eastbound_delays()
