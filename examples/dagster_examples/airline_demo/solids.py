@@ -521,17 +521,21 @@ def join_q2_data(
             if required_column not in df.columns:
                 missing_things.append({'month': month, 'missing_column': required_column})
 
-    yield ExpectationResult.legacy_ctor(
+    yield ExpectationResult(
         success=not bool(missing_things),
-        name='airport_ids_present',
-        message='Sequence IDs present in incoming monthly flight data.',
-        result_metadata={'missing_columns': missing_things},
+        label='airport_ids_present',
+        description='Sequence IDs present in incoming monthly flight data.',
+        metadata_entries=[
+            EventMetadataEntry.json(label='metadata', data={'missing_columns': missing_things})
+        ],
     )
 
-    yield ExpectationResult.legacy_ctor(
+    yield ExpectationResult(
         success=set(april_data.columns) == set(may_data.columns) == set(june_data.columns),
-        name='flight_data_same_shape',
-        result_metadata={'columns': april_data.columns},
+        label='flight_data_same_shape',
+        metadata_entries=[
+            EventMetadataEntry.json(label='metadata', data={'columns': april_data.columns})
+        ],
     )
 
     q2_data = april_data.union(may_data).union(june_data)
