@@ -395,7 +395,7 @@ def _event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
 
     error_str = '''Error occured during the execution of step:
     step key: "{key}"
-    solid instance: "{solid}"
+    solid invocation: "{solid}"
     solid definition: "{solid_def}"
     '''.format(
         key=step_context.step.key,

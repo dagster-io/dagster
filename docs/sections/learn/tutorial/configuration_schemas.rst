@@ -10,7 +10,7 @@ consider a simple pipeline that replicates a word several times, then counts the
 characters:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_basic.py
-   :lines: 3-20
+   :lines: 3-22
    :linenos:
    :caption: configuration_schemas.py
 
@@ -58,7 +58,7 @@ And then ran it:
     ...
     dagster.core.errors.DagsterExecutionStepExecutionError: Error occured during the execution of step:
         step key: "multiply_the_word.transform"
-        solid instance: "multiply_the_word"
+        solid invocation: "multiply_the_word"
         solid definition: "multiply_the_word"
 
 
@@ -69,8 +69,8 @@ require an integer field ``factor`` in its configuration:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas.py
    :linenos:
-   :emphasize-lines: 7 
-   :lines: 3-20
+   :emphasize-lines:
+   :lines: 3-22
    :caption: configuration_schemas.py
 
 Now, if we run the pipeline with the same incorrect configuration:
@@ -100,7 +100,7 @@ Let's see what happens if we pass config with the wrong structure:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_wrong_field.yaml
    :linenos:
-   :emphasize-lines: 9
+   :emphasize-lines: 7
    :caption: configuration_schemas_wrong_field.yaml
 
 And then run the pipeline:
@@ -113,12 +113,13 @@ And then run the pipeline:
         -e configuration_schemas_wrong_field.yaml
 
     ...
-    dagster.core.execution.PipelineConfigEvaluationError: Pipeline "configuration_schema_pipeline"
-      config errors:
+    dagster.core.execution.context_creation_pipeline.PipelineConfigEvaluationError:
+    Pipeline "configuration_schema_pipeline" config errors:
+
     Error 1: Undefined field "multiply_the_word_with_typed_config" at path root:solids
-    Error 2: Missing required field "multiply_the_word" at path root:solids Expected: "{
-      count_letters?: DemoConfigurationSchema.SolidConfig.CountLetters multiply_the_word:
-      DemoConfigurationSchema.SolidConfig.MultiplyTheWord }"
+
+    Error 2: Missing required field "multiply_the_word" at path root:solids
+        Available Fields: "['count_letters', 'multiply_the_word']".
 
 Next, we’ll see how to use the :doc:`Execution Context <execution_context>` to further configure
 how pipeline execution interacts with its environment.

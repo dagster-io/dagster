@@ -31,16 +31,11 @@ def yield_result(value, output_name='result'):
     return MANAGER_FOR_NOTEBOOK_INSTANCE.yield_result(value, output_name)
 
 
-def yield_materialization(path, description=''):
-    '''Explicitly yield an additional Materialization.
-
-    Args:
-        path (str): The path to the materialized artifact.
-        description (Optional[str]): A description of the materialized artifact.
-
+def yield_event(dagster_event):
+    '''Explicitly yield a dagster event such as a Materialization or ExpectationResult
     '''
 
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.yield_materialization(path, description)
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.yield_event(dagster_event)
 
 
 def populate_context(dm_context_data):

@@ -31,8 +31,8 @@ def test_basic_file_manager_execute_in_pipeline():
         called['yup'] = True
 
     @pipeline
-    def basic_file_manager_test(_):
-        file_handle(_)
+    def basic_file_manager_test():
+        file_handle()  # pylint: disable=no-value-for-parameter
 
     result = execute_pipeline(basic_file_manager_test)
     assert result.success

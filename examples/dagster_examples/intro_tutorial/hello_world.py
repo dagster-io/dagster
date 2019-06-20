@@ -7,7 +7,7 @@ def hello_world():
 
 
 @pipeline
-def hello_world_pipeline(_):
+def hello_world_pipeline():
     hello_world()
 
 

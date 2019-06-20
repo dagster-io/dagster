@@ -33,7 +33,7 @@ def test_resource_requirements_pass():
             )
         ]
     )
-    def resource_req_pass_pipeline(_):
+    def resource_req_pass_pipeline():
         pass
 
     assert execute_pipeline(
@@ -58,7 +58,7 @@ def test_resource_requirements_fail():
                 )
             ]
         )
-        def _resource_req_pass_pipeline(_):
+        def _resource_req_pass_pipeline():
             pass
 
     assert str(exc_info.value) == (

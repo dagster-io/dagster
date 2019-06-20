@@ -6,6 +6,10 @@ from dagster import check
 from .utils import DEFAULT_OUTPUT
 
 
+def last_file_comp(path):
+    return os.path.basename(os.path.normpath(path))
+
+
 class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description entry_data')):
     def __new__(cls, label, description, entry_data):
         return super(EventMetadataEntry, cls).__new__(
@@ -31,9 +35,7 @@ class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description en
     def fspath(path, label=None, description=None):
         'Just like path, but makes label last path component if None'
         return EventMetadataEntry.path(
-            path,
-            label if label is not None else os.path.basename(os.path.normpath(path)),
-            description,
+            path, label if label is not None else last_file_comp(path), description
         )
 
     @staticmethod
@@ -88,6 +90,10 @@ class Result(namedtuple('_Result', 'value output_name')):
 class Materialization(namedtuple('_Materialization', 'label description metadata_entries')):
     '''A value materialized by an execution step.
 
+    As opposed to Results, Materializations can not be passed to other solids and persistence
+    is not controlled by dagster. They are a useful way to communicate side effects to the system
+    and display them to the end user.
+
     Attributes:
         path (str): The path to the materialized value.
         name (str): A short display name for the materialized value.
@@ -111,6 +117,14 @@ class Materialization(namedtuple('_Materialization', 'label description metadata
             ]
             if result_metadata
             else [path_entry],
+        )
+
+    @staticmethod
+    def file(path, description=None):
+        return Materialization(
+            label=last_file_comp(path),
+            description=description,
+            metadata_entries=[EventMetadataEntry.fspath(path)],
         )
 
     def __new__(cls, label, description=None, metadata_entries=None):

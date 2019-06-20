@@ -59,7 +59,7 @@ def test_cache_file_from_s3_basic():
         expectation_result = expectation_results[0]
         assert expectation_result.success
         assert expectation_result.label == 'file_handle_exists'
-        path_in_metadata = expectation_result.metadata_entries[0].entry_data.data['path']
+        path_in_metadata = expectation_result.metadata_entries[0].entry_data.path
         assert isinstance(path_in_metadata, str)
         assert os.path.exists(path_in_metadata)
 

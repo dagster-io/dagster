@@ -75,13 +75,6 @@ class CompleteCompositionContext(
         )
 
 
-class EmptySolidContext:
-    '''An empty context object to thread through during solid composition.
-    This keeps allows matching the function signature of the solid function
-    when invoking it during composition.
-    '''
-
-
 class CallableSolidNode:
     '''An intermediate object in solid composition to allow for binding information such as
     an alias before invoking.
@@ -94,14 +87,10 @@ class CallableSolidNode:
     def __call__(self, *args, **kwargs):
         input_bindings = {}
         input_mappings = {}
-        def_idx = 0
 
         # handle *args
         for idx, output_node in enumerate(args):
-            if idx == 0 and isinstance(output_node, EmptySolidContext):
-                continue
-
-            if def_idx >= len(self.solid_def.input_defs):
+            if idx >= len(self.solid_def.input_defs):
                 raise DagsterInvalidDefinitionError(
                     'In {source} {name} received too many inputs for solid '
                     'invocation {solid_name}. Only {def_num} defined, received {arg_num}'.format(
@@ -113,8 +102,7 @@ class CallableSolidNode:
                     )
                 )
 
-            input_name = self.solid_def.input_defs[def_idx].name
-            def_idx += 1
+            input_name = self.solid_def.input_defs[idx].name
 
             if isinstance(output_node, InvokedSolidOutputHandle):
                 input_bindings[input_name] = output_node

@@ -13,7 +13,7 @@ def post_hello_message(context):
 
 
 @pipeline(mode_definitions=[ModeDefinition(resources={'slack': slack_resource})])
-def resources_pipeline(_):
+def resources_pipeline():
     post_hello_message()
 
 

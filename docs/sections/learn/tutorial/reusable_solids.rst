@@ -10,7 +10,7 @@ be reusable. E.g. we want to have a generic ``adder`` solid and use it a couple 
 a pipeline. Using APIs presented so far, that would be impossible: there would be a name collision
 if one included two copies of the solid.
 
-Instead we introduce a new class ``SolidInvocation`` that allows the user to create multiple, named instances
+Instead we introduce the ``alias`` call that allows the user to create multiple, named instances
 of a single solid:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusable_solids.py
@@ -19,10 +19,9 @@ of a single solid:
 
 You'll notice that now have two copies of the adder solid.
 
-You can think of the solids parameter as declaring what solids are "in-scope" for the
-purposes of this pipeline, and the dependencies parameter is how they instantiated
-and connected together. Within the dependency graph and in config, the alias of the
-particular instance is used, rather than the name of the definition.
+We only add solids to the pipeline when they are invoked. Here we invoke them only after we have
+given them aliases allowing us to have two invocations of the same underlying solid definition with
+unique names.
 
 If you inspect this in dagit, you'll see those two instances:
 

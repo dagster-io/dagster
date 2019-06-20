@@ -5,7 +5,7 @@ from dagster.core.definitions import SolidHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector
 from dagster.core.types.config import ALL_CONFIG_BUILTINS, ConfigType, ConfigTypeAttributes
-from dagster.core.types.field_utils import FieldImpl, check_opt_field_param
+from dagster.core.types.field_utils import FieldImpl, check_opt_field_param, _ConfigComposite
 from dagster.core.types.iterate_types import iterate_config_types
 from dagster.core.types.runtime import construct_runtime_type_dictionary
 from dagster.utils import camelcase, single_item
@@ -23,8 +23,44 @@ def SystemNamedDict(name, fields, description=None):
     return NamedDict(name, fields, description, ConfigTypeAttributes(is_system_config=True))
 
 
+class _SolidContainerConfigDict(_ConfigComposite):
+    def __init__(self, name, fields, description=None, handle=None):
+        self._handle = check.opt_inst_param(handle, 'handle', SolidHandle)
+        super(_SolidContainerConfigDict, self).__init__(
+            key=name,
+            name=name,
+            fields=fields,
+            description=description,
+            type_attributes=ConfigTypeAttributes(is_system_config=True),
+        )
+
+    @property
+    def handle(self):
+        '''A solid handle ref to the composite solid that is associated with this config schema
+        (e.g., this is the top-level config object for a composite solid or pipeline)
+        '''
+        return self._handle
+
+
+def SolidContainerConfigDict(name, fields, description=None, handle=None):
+    class _SolidContainerConfigDictInternal(_SolidContainerConfigDict):
+        def __init__(self):
+            super(_SolidContainerConfigDictInternal, self).__init__(
+                name=name,
+                fields=fields,
+                description=description,
+                handle=check.opt_inst_param(handle, 'handle', SolidHandle),
+            )
+
+    return _SolidContainerConfigDictInternal
+
+
 def SystemNamedSelector(name, fields, description=None):
     return NamedSelector(name, fields, description, ConfigTypeAttributes(is_system_config=True))
+
+
+def is_solid_container_config(obj):
+    return isinstance(obj, _SolidContainerConfigDict)
 
 
 def _is_selector_field_optional(config_type):
@@ -133,7 +169,7 @@ def define_environment_cls(creation_data):
     check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
     pipeline_name = camelcase(creation_data.pipeline_name)
 
-    return SystemNamedDict(
+    return SolidContainerConfigDict(
         name='{pipeline_name}.Mode.{mode_name}.Environment'.format(
             pipeline_name=pipeline_name, mode_name=camelcase(creation_data.mode_definition.name)
         )
@@ -292,7 +328,7 @@ def define_isolid_field(solid, handle, dependency_structure, pipeline_name):
             )
         )
         return Field(
-            SystemNamedDict(
+            SolidContainerConfigDict(
                 '{name}CompositeSolidConfig'.format(name=str(handle)),
                 remove_none_entries(
                     {
@@ -303,6 +339,7 @@ def define_isolid_field(solid, handle, dependency_structure, pipeline_name):
                         'outputs': get_outputs_field(solid, handle, pipeline_name),
                     }
                 ),
+                handle=handle,
             )
         )
 

@@ -11,6 +11,8 @@ from dagster.core.definitions.events import (
     PathMetadataEntryData,
     EventMetadataEntry,
     JsonMetadataEntryData,
+    TextMetadataEntryData,
+    UrlMetadataEntryData,
 )
 
 from dagster.core.events.log import EventRecord
@@ -260,6 +262,22 @@ class DauphinEventJsonMetadataEntry(dauphin.ObjectType):
     jsonString = dauphin.NonNull(dauphin.String)
 
 
+class DauphinEventTextMetadataEntry(dauphin.ObjectType):
+    class Meta:
+        name = 'EventTextMetadataEntry'
+        interfaces = (DauphinEventMetadataEntry,)
+
+    text = dauphin.NonNull(dauphin.String)
+
+
+class DauphinEventUrlMetadataEntry(dauphin.ObjectType):
+    class Meta:
+        name = 'EventUrlMetadataEntry'
+        interfaces = (DauphinEventMetadataEntry,)
+
+    url = dauphin.NonNull(dauphin.String)
+
+
 class DauphinDisplayableEvent(dauphin.Interface):
     class Meta:
         name = 'DisplayableEvent'
@@ -292,6 +310,18 @@ def iterate_metadata_entries(metadata_entries):
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 jsonString=json.dumps(metadata_entry.entry_data.data),
+            )
+        elif isinstance(metadata_entry.entry_data, TextMetadataEntryData):
+            yield DauphinEventTextMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                text=metadata_entry.entry_data.text,
+            )
+        elif isinstance(metadata_entry.entry_data, UrlMetadataEntryData):
+            yield DauphinEventUrlMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                url=metadata_entry.entry_data.url,
             )
         else:
             # skip rest for now

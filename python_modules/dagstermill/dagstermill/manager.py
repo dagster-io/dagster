@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 import scrapbook
 
-from dagster import check, Materialization, ModeDefinition, PipelineDefinition, RunConfig
+from dagster import check, ModeDefinition, PipelineDefinition, RunConfig
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context_creation_pipeline import ResourcesStack
@@ -133,18 +133,16 @@ class Manager:
             out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
             scrapbook.glue(output_name, write_value(runtime_type, value, out_file))
 
-    def yield_materialization(self, path, description):
+    def yield_event(self, dagster_event):
         if not self.populated_by_papermill:
-            return Materialization.legacy_ctor(path, description=description)
+            return dagster_event
 
-        materialization_id = 'materialization-{materialization_uuid}'.format(
-            materialization_uuid=str(uuid.uuid4())
-        )
-        out_file_path = os.path.join(self.marshal_dir, materialization_id)
+        event_id = 'event-{event_uuid}'.format(event_uuid=str(uuid.uuid4()))
+        out_file_path = os.path.join(self.marshal_dir, event_id)
         with open(out_file_path, 'wb') as fd:
-            fd.write(pickle.dumps(Materialization.legacy_ctor(path, description), PICKLE_PROTOCOL))
+            fd.write(pickle.dumps(dagster_event, PICKLE_PROTOCOL))
 
-        scrapbook.glue(materialization_id, out_file_path)
+        scrapbook.glue(event_id, out_file_path)
 
     def populate_context(
         self,

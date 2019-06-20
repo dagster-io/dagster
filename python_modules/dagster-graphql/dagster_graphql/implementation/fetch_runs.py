@@ -17,9 +17,13 @@ def get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode
     check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     check.str_param(mode, 'mode')
 
-    environment_schema = create_environment_schema(dauphin_pipeline.get_dagster_pipeline(), mode)
+    pipeline = dauphin_pipeline.get_dagster_pipeline()
 
-    validated_config = evaluate_config_value(environment_schema.environment_type, environment_dict)
+    environment_schema = create_environment_schema(pipeline, mode)
+
+    validated_config = evaluate_config_value(
+        environment_schema.environment_type, environment_dict, pipeline
+    )
 
     if not validated_config.success:
         raise UserFacingGraphQLError(

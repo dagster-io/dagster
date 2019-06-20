@@ -13,7 +13,7 @@ happened during the computation.
 
 Here we present an example of a solid that has multiple outputs within a pipeline:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs_step_one.py
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
    :linenos:
    :caption: multiple_outputs.py
 

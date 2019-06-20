@@ -1,3 +1,5 @@
+# pylint: disable=no-value-for-parameter
+
 import pytest
 
 from dagster import (
@@ -56,7 +58,7 @@ def return_mult(_context):
 
 def test_basic():
     @composite_solid
-    def test(_context):
+    def test():
         one = return_one()
         add_one(num=one)
 
@@ -70,37 +72,33 @@ def test_basic():
 
 def test_args():
     @composite_solid
-    def _test_1(_context):
+    def _test_1():
         one = return_one()
         add_one(one)
 
     @composite_solid
-    def _test_2(_context):
-        # pylint: disable=no-value-for-parameter
+    def _test_2():
         adder(return_one(), return_two())
 
     @composite_solid
-    def _test_3(_context):
-        # pylint: disable=no-value-for-parameter
+    def _test_3():
         adder(int_1=return_one(), int_2=return_two())
 
     @composite_solid
-    def _test_4(context):
-        adder(context, return_one(), return_two())
+    def _test_4():
+        adder(return_one(), return_two())
 
     @composite_solid
-    def _test_5(context):
-        adder(context, return_one(), int_2=return_two())
+    def _test_5():
+        adder(return_one(), int_2=return_two())
 
     @composite_solid
-    def _test_6(context):
-        # pylint: disable=no-value-for-parameter
-        adder(context, return_one())
+    def _test_6():
+        adder(return_one())
 
     @composite_solid
-    def _test_7(context):
-        # pylint: disable=no-value-for-parameter
-        adder(context, int_2=return_two())
+    def _test_7():
+        adder(int_2=return_two())
 
 
 def test_arg_fails():
@@ -108,21 +106,15 @@ def test_arg_fails():
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @composite_solid
-        def _fail_1(context):
-            adder(context, context, return_one())
+        def _fail_2():
+            adder(return_one(), 1)
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @composite_solid
-        def _fail_2(context):
-            adder(context, return_one(), 1)
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @composite_solid
-        def _fail_3(context):
+        def _fail_3():
             # pylint: disable=too-many-function-args
-            adder(context, return_one(), return_two(), return_one.alias('three')())
+            adder(return_one(), return_two(), return_one.alias('three')())
 
 
 def test_mult_out_fail():
@@ -130,8 +122,8 @@ def test_mult_out_fail():
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @composite_solid
-        def _test(context):
-            ret = return_mult(context)
+        def _test():
+            ret = return_mult()
             add_one(ret)
 
 
@@ -139,16 +131,16 @@ def test_dupes_fail():
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @composite_solid
-        def _test(context):
-            one, two = return_mult(context)
+        def _test():
+            one, two = return_mult()
             add_one(num=one)
             add_one(num=two)
 
 
 def test_multiple():
     @composite_solid
-    def test(context):
-        one, two = return_mult(context)
+    def test():
+        one, two = return_mult()
         add_one(num=one)
         add_one.alias('add_one_2')(num=two)
 
@@ -167,7 +159,7 @@ def test_two_inputs_with_dsl():
         return 3
 
     @composite_solid
-    def test(_context):
+    def test():
         add(num_one=return_two(), num_two=return_three())
 
     assert (
@@ -180,7 +172,7 @@ def test_two_inputs_with_dsl():
 
 def test_basic_aliasing_with_dsl():
     @composite_solid
-    def test(_context):
+    def test():
         add_one.alias('renamed')(num=return_one())
 
     assert (
@@ -202,8 +194,8 @@ def test_diamond_graph():
         return num_one + num_two
 
     @composite_solid
-    def diamond(context):
-        value_one, value_two = emit_values(context)
+    def diamond():
+        value_one, value_two = emit_values()
         add(num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two))
 
     result = execute_pipeline(PipelineDefinition(solid_defs=[diamond]))
@@ -219,7 +211,7 @@ def test_mapping():
     @composite_solid(
         inputs=[InputDefinition('num_in', Int)], outputs=[OutputDefinition(Int, 'num_out')]
     )
-    def composed_inout(_context, num_in):
+    def composed_inout(num_in):
         return double(num_in=num_in)
 
     # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
@@ -241,8 +233,8 @@ def test_mapping():
 
 def output_map_mult():
     @composite_solid(outputs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
-    def wrap_mult(context):
-        return return_mult(context)
+    def wrap_mult():
+        return return_mult()
 
     result = execute_pipeline(PipelineDefinition(solid_defs=[wrap_mult])).result_for_solid(
         'wrap_mult'
@@ -267,8 +259,8 @@ def test_output_map_fail():
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @composite_solid(outputs=[OutputDefinition(Int, 'three'), OutputDefinition(Int, 'four')])
-        def _bad(context):
-            return return_mult(context)
+        def _bad():
+            return return_mult()
 
 
 def test_deep_graph():
@@ -297,10 +289,10 @@ def test_deep_graph():
         return num + 3
 
     @composite_solid(outputs=[OutputDefinition(Int)])
-    def test(context):
+    def test():
         return load_num(
             num=canonicalize_num(
-                num=subsample_num(num=ingest_num(num=unzip_num(num=download_num(context))))
+                num=subsample_num(num=ingest_num(num=unzip_num(num=download_num())))
             )
         )
 
@@ -314,12 +306,12 @@ def test_deep_graph():
 
 def test_recursion():
     @composite_solid
-    def outer(context):
+    def outer():
         @composite_solid(outputs=[OutputDefinition()])
-        def inner(_context):
+        def inner():
             return add_one(return_one())
 
-        add_one(inner(context))
+        add_one(inner())
 
     assert execute_pipeline(PipelineDefinition(solid_defs=[outer])).success
 
@@ -332,21 +324,21 @@ def test_recursion_with_exceptions():
     called = {}
 
     @pipeline
-    def recurse(context):
+    def recurse():
         @composite_solid
-        def outer(context):
+        def outer():
             try:
 
                 @composite_solid
-                def throws(_context):
+                def throws():
                     called['throws'] = True
                     raise Garbage()
 
-                throws(context)
+                throws()
             except Garbage:
                 add_one(return_one())
 
-        outer(context)
+        outer()
 
     assert execute_pipeline(recurse).success
     assert called['throws'] is True
@@ -354,16 +346,16 @@ def test_recursion_with_exceptions():
 
 def test_pipeline_has_solid_def():
     @composite_solid(outputs=[OutputDefinition()])
-    def inner(_context):
+    def inner():
         return add_one(return_one())
 
     @composite_solid
-    def outer(context):
-        add_one(inner(context))
+    def outer():
+        add_one(inner())
 
     @pipeline
-    def a_pipeline(context):
-        outer(context)
+    def a_pipeline():
+        outer()
 
     assert a_pipeline.has_solid_def('add_one')
     assert a_pipeline.has_solid_def('outer')
@@ -372,16 +364,16 @@ def test_pipeline_has_solid_def():
 
 def test_repositry_has_solid_def():
     @composite_solid(outputs=[OutputDefinition()])
-    def inner(_context):
+    def inner():
         return add_one(return_one())
 
     @composite_solid
-    def outer(context):
-        add_one(inner(context))
+    def outer():
+        add_one(inner())
 
     @pipeline
-    def a_pipeline(context):
-        outer(context)
+    def a_pipeline():
+        outer()
 
     repo_def = RepositoryDefinition.eager_construction(
         name='has_solid_def_test', pipelines=[a_pipeline]

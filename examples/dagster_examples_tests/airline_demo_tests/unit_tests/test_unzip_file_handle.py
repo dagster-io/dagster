@@ -43,7 +43,7 @@ def test_unzip_file_handle():
             return LocalFileHandle(zip_file_name)
 
         @pipeline
-        def do_test_unzip_file_handle(_):
+        def do_test_unzip_file_handle():
             return unzip_file_handle(to_zip_file_handle())
 
         result = execute_pipeline(
@@ -80,7 +80,7 @@ def test_unzip_file_handle_on_fake_s3():
             )
         ]
     )
-    def do_test_unzip_file_handle_s3(_):
+    def do_test_unzip_file_handle_s3():
         return unzip_file_handle(write_zipped_file_to_s3_store())
 
     result = execute_pipeline(

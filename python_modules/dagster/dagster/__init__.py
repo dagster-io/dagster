@@ -52,6 +52,8 @@ from dagster.core.execution.context.init import InitResourceContext
 
 from dagster.core.execution.context.logger import InitLoggerContext
 
+from dagster.core.execution.plan.objects import StepKind
+
 from dagster.core.execution.results import PipelineExecutionResult, SolidExecutionResult
 
 from dagster.core.errors import (

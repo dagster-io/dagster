@@ -1,7 +1,14 @@
 import six
 
 from dagster import check
-from dagster.core.definitions import Materialization, OutputDefinition, Solid, SolidHandle, Result
+from dagster.core.definitions import (
+    EventMetadataEntry,
+    Materialization,
+    OutputDefinition,
+    Result,
+    Solid,
+    SolidHandle,
+)
 
 from dagster.core.errors import DagsterInvariantViolationError
 from .objects import ExecutionStep, ExecutionValueSubplan, StepInput, StepKind, StepOutput
@@ -12,7 +19,8 @@ MATERIALIZATION_THUNK_INPUT = 'materialization_thunk_input'
 MATERIALIZATION_THUNK_OUTPUT = 'materialization_thunk_output'
 
 
-def _create_materialization_lambda(output_def, config_spec):
+def _create_materialization_lambda(solid, output_def, config_spec):
+    check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.invariant(output_def.runtime_type.output_schema, 'Must have output schema')
 
@@ -36,9 +44,12 @@ def _create_materialization_lambda(output_def, config_spec):
             )
 
         yield Result(output_name=MATERIALIZATION_THUNK_OUTPUT, value=runtime_value)
-        yield Materialization.legacy_ctor(
-            path=path,
-            description=('Materialization of {solid_name}.{output_name}').format(
+        yield Materialization(
+            label='{solid_name}.{output_name}.materialization'.format(
+                solid_name=solid.name, output_name=output_def.name
+            ),
+            metadata_entries=[EventMetadataEntry.path(path=path, label='intermediate_file')],
+            description='Materialization of {solid_name}.{output_name}'.format(
                 output_name=output_def.name, solid_name=str(step_context.solid_handle)
             ),
         )
@@ -94,7 +105,7 @@ def decorate_with_output_materializations(
                 ],
                 kind=StepKind.MATERIALIZATION_THUNK,
                 solid_handle=handle,
-                compute_fn=_create_materialization_lambda(output_def, output_spec),
+                compute_fn=_create_materialization_lambda(solid, output_def, output_spec),
             )
         )
 

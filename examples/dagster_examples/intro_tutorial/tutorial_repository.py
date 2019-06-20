@@ -6,8 +6,8 @@ from .actual_dag import define_actual_dag_pipeline
 from .config import hello_with_config_pipeline
 from .execution_context import execution_context_pipeline
 from .resources_full import resources_pipeline
-from .reusable_solids import define_reusable_solids_pipeline
-from .multiple_outputs import define_multiple_outputs_pipeline
+from .reusable_solids import reusable_solids_pipeline
+from .multiple_outputs import multiple_outputs_pipeline
 from .configuration_schemas import configuration_schema_pipeline
 
 
@@ -22,7 +22,7 @@ def define_repository():
             'hello_with_config_pipeline': hello_with_config_pipeline,
             'execution_context_pipeline': execution_context_pipeline,
             'resources_pipeline': resources_pipeline,
-            'multiple_outputs_pipeline': define_multiple_outputs_pipeline,
-            'reusable_solids_pipeline': define_reusable_solids_pipeline,
+            'multiple_outputs_pipeline': multiple_outputs_pipeline,
+            'reusable_solids_pipeline': reusable_solids_pipeline,
         },
     )

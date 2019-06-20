@@ -195,6 +195,12 @@ class _ConfigComposite(_ConfigHasFields):
         return False
 
 
+class _CompositeSolidConfigComposite(_ConfigComposite):
+    @property
+    def handle(self):
+        return self.type_attributes.handle
+
+
 class _ConfigSelector(_ConfigHasFields):
     @property
     def is_selector(self):

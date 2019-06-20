@@ -10,6 +10,27 @@ The foundational unit of composition in Dagster.
 .. autoclass:: SolidDefinition
     :members:
 
+.. autodecorator:: lambda_solid
+
+.. autodecorator:: solid
+
+
+-------
+
+Composites
+----------
+
+.. autoclass:: CompositeSolidDefinition
+    :members:
+
+.. autodecorator:: composite_solid
+
+
+-------
+
+I/O
+---
+
 .. autoclass:: InputDefinition
     :members:
 
@@ -19,31 +40,8 @@ The foundational unit of composition in Dagster.
 .. autoclass:: Result
     :members:
 
-.. autoclass:: Materialization
-    :members:
-
-
------
-
-Decorators
-----------
-
-The concise way to define solids.
-
-.. autodecorator:: lambda_solid
-
-.. autodecorator:: solid
-
 .. autoclass:: MultipleResults
     :members:
 
------
-
-Expectations
-------------
-
-.. autoclass:: ExpectationDefinition
-
-
-
-
+.. autoclass:: Materialization
+    :members:

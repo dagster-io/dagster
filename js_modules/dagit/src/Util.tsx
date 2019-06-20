@@ -76,14 +76,14 @@ export function formatElapsedTime(elapsed: number) {
 // object argument.
 //
 export function weakmapMemoize<T extends object, R>(
-  fn: (arg: T) => R
-): (arg: T) => R {
+  fn: (arg: T, ...rest: any[]) => R
+): (arg: T, ...rest: any[]) => R {
   let cache = new WeakMap();
-  return (arg: T) => {
+  return (arg: T, ...rest: any[]) => {
     if (cache.has(arg)) {
       return cache.get(arg);
     }
-    const r = fn(arg);
+    const r = fn(arg, ...rest);
     cache.set(arg, r);
     return r;
   };

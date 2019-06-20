@@ -3,7 +3,7 @@ from collections import namedtuple
 import six
 
 from dagster import check
-
+from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.utils import single_item, make_readonly_value
 
 from ..config import ConfigType
@@ -21,7 +21,7 @@ from .errors import (
 )
 from .stack import get_friendly_path_msg, get_friendly_path_info, EvaluationStack
 from .traversal_context import TraversalContext
-from .evaluation import _evaluate_config
+from .evaluation import evaluate_config
 
 
 class EvaluateValueResult(namedtuple('_EvaluateValueResult', 'success value errors')):
@@ -43,23 +43,13 @@ class EvaluateValueResult(namedtuple('_EvaluateValueResult', 'success value erro
                 yield error
 
 
-def evaluate_config_value(config_type, config_value):
+def evaluate_config_value(config_type, config_value, pipeline=None):
     check.inst_param(config_type, 'config_type', ConfigType)
+    check.opt_inst_param(pipeline, 'pipeline', PipelineDefinition)
 
-    errors, value = evaluate_config(config_type, config_value)
+    errors, value = evaluate_config(config_type, config_value, pipeline)
 
     if errors:
         return EvaluateValueResult(success=False, value=None, errors=errors)
 
     return EvaluateValueResult(success=True, value=make_readonly_value(value), errors=[])
-
-
-def evaluate_config(config_type, config_value):
-    check.inst_param(config_type, 'config_type', ConfigType)
-
-    errors = []
-    stack = EvaluationStack(config_type=config_type, entries=[])
-
-    value = _evaluate_config(TraversalContext(config_type, config_value, stack, errors))
-
-    return (errors, value)

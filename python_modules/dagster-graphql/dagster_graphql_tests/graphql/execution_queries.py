@@ -54,6 +54,12 @@ mutation (
                                     ... on EventJsonMetadataEntry {
                                         jsonString
                                     }
+                                    ... on EventTextMetadataEntry {
+                                        text
+                                    }
+                                    ... on EventUrlMetadataEntry {
+                                        url
+                                    }
                                 }
                             }
                         }
@@ -152,6 +158,7 @@ subscription subscribeTest($runId: ID!) {
                         label
                         description
                         metadataEntries {
+                            __typename
                             label
                             description
                             ... on EventPathMetadataEntry {
@@ -159,6 +166,12 @@ subscription subscribeTest($runId: ID!) {
                             }
                             ... on EventJsonMetadataEntry {
                                 jsonString
+                            }
+                            ... on EventUrlMetadataEntry {
+                                url
+                            }
+                            ... on EventTextMetadataEntry {
+                                text
                             }
                         }
 

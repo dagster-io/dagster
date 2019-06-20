@@ -134,6 +134,18 @@ type EventPathMetadataEntry implements EventMetadataEntry {
   path: String!
 }
 
+type EventTextMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  text: String!
+}
+
+type EventUrlMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  url: String!
+}
+
 union ExecutePlanResult = ExecutePlanSuccess | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidStepError | PythonError
 
 type ExecutePlanSuccess {

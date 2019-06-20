@@ -7,7 +7,7 @@ def hello_world():
 
 
 @pipeline
-def repo_demo_pipeline(_):
+def repo_demo_pipeline():
     hello_world()
 
 

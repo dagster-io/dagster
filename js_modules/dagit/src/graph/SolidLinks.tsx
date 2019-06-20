@@ -4,14 +4,14 @@ import { LinkVertical as Link } from "@vx/shape";
 import { ILayoutConnection, IFullPipelineLayout } from "./getFullSolidLayout";
 import styled from "styled-components";
 
-export type IConnHighlight = { a: string; b: string };
+export type Edge = { a: string; b: string };
 
 export const SolidLinks = React.memo(
   (props: {
     opacity: number;
     layout: IFullPipelineLayout;
     connections: ILayoutConnection[];
-    onHighlight: (arr: IConnHighlight[]) => void;
+    onHighlight: (arr: Edge[]) => void;
   }) => {
     const solids = props.layout.solids;
 

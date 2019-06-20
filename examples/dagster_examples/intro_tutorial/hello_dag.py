@@ -12,5 +12,5 @@ def solid_two(arg_one):
 
 
 @pipeline
-def hello_dag_pipeline(_):
+def hello_dag_pipeline():
     return solid_two(solid_one())

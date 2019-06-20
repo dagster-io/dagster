@@ -3,18 +3,20 @@ import json
 import pytest
 
 from dagster import (
-    Int,
+    DagsterEventType,
     InputDefinition,
+    Int,
     OutputDefinition,
     PipelineConfigEvaluationError,
     PipelineDefinition,
     Result,
+    RuntimeType,
+    StepKind,
     execute_pipeline,
     lambda_solid,
+    output_schema,
     solid,
     types,
-    RuntimeType,
-    output_schema,
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
@@ -173,17 +175,45 @@ def test_basic_int_execution_plan():
 
 
 def test_basic_int_json_materialization():
-    pipeline = single_int_output_pipeline()
-
     with get_temp_file_name() as filename:
         result = execute_pipeline(
-            pipeline,
+            single_int_output_pipeline(),
             {'solids': {'return_one': {'outputs': [{'result': {'json': {'path': filename}}}]}}},
         )
 
         assert result.success
 
         with open(filename, 'r') as ff:
+            value = json.loads(ff.read())
+            assert value == {'value': 1}
+
+
+def test_basic_materialization_event():
+    with get_temp_file_name() as filename:
+        result = execute_pipeline(
+            single_int_output_pipeline(),
+            {'solids': {'return_one': {'outputs': [{'result': {'json': {'path': filename}}}]}}},
+        )
+
+        assert result.success
+        solid_result = result.result_for_solid('return_one')
+        mat_thunk_step_events = solid_result.step_events_by_kind[StepKind.MATERIALIZATION_THUNK]
+        mat_event = list(
+            filter(
+                lambda de: de.event_type == DagsterEventType.STEP_MATERIALIZATION,
+                mat_thunk_step_events,
+            )
+        )[0]
+
+        mat = mat_event.event_specific_data.materialization
+
+        assert mat.label == 'return_one.result.materialization'
+        assert len(mat.metadata_entries) == 1
+        assert mat.metadata_entries[0].path
+        assert mat.metadata_entries[0].label == 'intermediate_file'
+        path = mat.metadata_entries[0].entry_data.path
+
+        with open(path, 'r') as ff:
             value = json.loads(ff.read())
             assert value == {'value': 1}
 

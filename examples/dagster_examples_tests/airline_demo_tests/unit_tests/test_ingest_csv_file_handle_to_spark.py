@@ -15,7 +15,7 @@ def test_ingest_csv_file_handle_to_spark():
         return LocalFileHandle(file_relative_path(__file__, '../num.csv'))
 
     @pipeline(mode_definitions=[ModeDefinition(resources={'spark': spark_session_local})])
-    def ingest_csv_file_test(_):
+    def ingest_csv_file_test():
         return ingest_csv_file_handle_to_spark(emit_num_csv_local_file())
 
     result = execute_pipeline(ingest_csv_file_test)
@@ -32,7 +32,7 @@ def test_ingest_csv_file_with_special_handle_to_spark():
         return LocalFileHandle(file_relative_path(__file__, '../num_with_special_chars.csv'))
 
     @pipeline(mode_definitions=[ModeDefinition(resources={'spark': spark_session_local})])
-    def ingest_csv_file_test(_):
+    def ingest_csv_file_test():
         return ingest_csv_file_handle_to_spark(emit_num_special_csv_local_file())
 
     result = execute_pipeline(ingest_csv_file_test)

@@ -90,7 +90,7 @@ def test_depends_on_s3_resource_intermediates():
             )
         ]
     )
-    def s3_internal_pipeline(_):
+    def s3_internal_pipeline():
         return add_numbers()
 
     result = execute_pipeline(
@@ -148,7 +148,7 @@ def test_depends_on_s3_resource_file_manager():
             )
         ]
     )
-    def s3_file_manager_test(_):
+    def s3_file_manager_test():
         accept_file(emit_file())
 
     result = execute_pipeline(

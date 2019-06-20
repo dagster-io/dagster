@@ -9,7 +9,7 @@ interface ISolidConfigPortProps {
   minified: boolean;
 }
 
-const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({
+export const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({
   x,
   y,
   minified
@@ -51,5 +51,3 @@ const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({
     </>
   );
 };
-
-export default SolidConfigPort;

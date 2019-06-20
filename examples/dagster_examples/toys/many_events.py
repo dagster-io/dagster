@@ -12,6 +12,7 @@ from dagster import (
     ExpectationDefinition,
     String,
     MultiDependencyDefinition,
+    EventMetadataEntry,
 )
 
 from dagster.utils import merge_dicts
@@ -82,8 +83,16 @@ def input_name_for_raw_file(raw_file):
 )
 def many_table_materializations(_context):
     for table in raw_tables:
-        yield Materialization.legacy_ctor(
-            path='/path/to/{}'.format(table), description='This is a table.'
+        yield Materialization(
+            label='table_info',
+            metadata_entries=[
+                EventMetadataEntry.fspath(path='/path/to/{}'.format(table), label='table_path'),
+                EventMetadataEntry.text(text=table, label='table_name'),
+                EventMetadataEntry.json(data={'name': table}, label='table_data'),
+                EventMetadataEntry.url(
+                    url='https://bigty.pe/{}'.format(table), label='table_name_big'
+                ),
+            ],
         )
 
 

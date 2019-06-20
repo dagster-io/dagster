@@ -1,5 +1,5 @@
 import * as dagre from "dagre";
-import { weakmapMemoize } from "../Util";
+import { weakmapMemoize, titleOfIO } from "../Util";
 
 export type ILayoutConnectionMember = {
   point: IPoint;
@@ -13,12 +13,13 @@ export type ILayoutConnection = {
 };
 
 export type IFullPipelineLayout = {
+  width: number;
+  height: number;
+  parent: IParentSolidLayout | null;
+  connections: Array<ILayoutConnection>;
   solids: {
     [solidName: string]: IFullSolidLayout;
   };
-  connections: Array<ILayoutConnection>;
-  width: number;
-  height: number;
 };
 
 export interface IFullSolidLayout {
@@ -36,6 +37,14 @@ export interface IFullSolidLayout {
       port: IPoint;
     };
   };
+}
+
+interface IParentSolidLayout extends Omit<IFullSolidLayout, "solid"> {
+  mappingLeftEdge: number;
+  mappingLeftSpacing: number;
+  dependsOn: { [solidName: string]: IPoint };
+  dependedBy: { [solidName: string]: IPoint };
+  invocationBoundingBox: ILayout;
 }
 
 interface ILayoutSolid {
@@ -57,6 +66,14 @@ interface ILayoutSolid {
     definition: {
       name: string;
     };
+    dependedBy: Array<{
+      definition: {
+        name: string;
+      };
+      solid: {
+        name: string;
+      };
+    }>;
   }>;
 }
 
@@ -80,21 +97,44 @@ const IO_MINI_WIDTH = 35;
 const IO_THRESHOLD_FOR_MINI = 4;
 const PORT_INSET_X = 15;
 const PORT_INSET_Y = IO_HEIGHT / 2;
+const PARENT_DEFINITION_PADDING = 70;
+const PARENT_INVOCATION_PADDING = 70;
+const EXTERNAL_DEPENDENCY_PADDING = 50;
+
+type SolidLinkInfo = {
+  solid: { name: string };
+  definition: { name: string };
+};
+
+function flattenIO(arrays: SolidLinkInfo[][]) {
+  const map: { [key: string]: SolidLinkInfo } = {};
+  arrays.forEach(array => array.forEach(item => (map[titleOfIO(item)] = item)));
+  return Object.values(map);
+}
 
 function getDagrePipelineLayoutHeavy(
-  pipelineSolids: ILayoutSolid[]
+  pipelineSolids: ILayoutSolid[],
+  parentSolid: ILayoutSolid | undefined
 ): IFullPipelineLayout {
   const g = new dagre.graphlib.Graph();
 
+  // First, identify how much space we need to pad the DAG by in order to show the
+  // parent solid AROUND it. We pass this padding in to dagre, and then we have enough
+  // room to add our parent layout around the result.
+  let parentIOPadding = 0;
+  let marginy = 100;
+  let marginx = 100;
+  if (parentSolid) {
+    parentIOPadding =
+      Math.max(parentSolid.inputs.length, parentSolid.outputs.length) *
+      IO_HEIGHT;
+    marginx = PARENT_DEFINITION_PADDING + PARENT_INVOCATION_PADDING;
+    marginy = marginx + parentIOPadding;
+  }
+
   // Define a new top-down, left to right graph layout
-  g.setGraph({
-    rankdir: "TB",
-    marginx: 120,
-    marginy: 120
-  });
-  g.setDefaultEdgeLabel(function() {
-    return {};
-  });
+  g.setGraph({ rankdir: "TB", marginx, marginy });
+  g.setDefaultEdgeLabel(() => ({}));
 
   const connections: Array<ILayoutConnection> = [];
 
@@ -167,12 +207,117 @@ function getDagrePipelineLayoutHeavy(
     }
   });
 
-  return {
+  const result: IFullPipelineLayout = {
     solids,
     connections,
     width: maxWidth,
-    height: g.graph().height as number
+    height: g.graph().height as number,
+    parent: null
   };
+
+  if (parentSolid) {
+    // Now that we've computed the pipeline layout fully, lay out the
+    // composite solid around the completed DAG.
+    result.parent = layoutParentCompositeSolid(
+      result,
+      parentSolid,
+      parentIOPadding
+    );
+  }
+
+  return result;
+}
+
+function layoutParentCompositeSolid(
+  layout: IFullPipelineLayout,
+  solid: ILayoutSolid,
+  parentIOPadding: number
+) {
+  const result: IParentSolidLayout = {
+    invocationBoundingBox: {
+      x: 1,
+      y: 1,
+      width: layout.width - 1,
+      height: layout.height - 1
+    },
+    boundingBox: {
+      x: PARENT_INVOCATION_PADDING,
+      y: PARENT_INVOCATION_PADDING + parentIOPadding,
+      width: layout.width - PARENT_INVOCATION_PADDING * 2,
+      height: layout.height - (PARENT_INVOCATION_PADDING + parentIOPadding) * 2
+    },
+    mappingLeftEdge: PARENT_INVOCATION_PADDING - 20,
+    mappingLeftSpacing: 10,
+    inputs: {},
+    outputs: {},
+    dependsOn: layoutExternalConnections(
+      flattenIO(solid.inputs.map(d => d.dependsOn)),
+      -EXTERNAL_DEPENDENCY_PADDING,
+      layout.width
+    ),
+    dependedBy: layoutExternalConnections(
+      flattenIO(solid.outputs.map(d => d.dependedBy)),
+      layout.height + EXTERNAL_DEPENDENCY_PADDING,
+      layout.width
+    )
+  };
+
+  const boundingBottom = result.boundingBox.y + result.boundingBox.height;
+
+  solid.inputs.forEach((input, idx) => {
+    result.inputs[input.definition.name] = {
+      layout: {
+        x: result.boundingBox.x,
+        y: result.boundingBox.y - idx * IO_HEIGHT - IO_HEIGHT,
+        width: 0,
+        height: IO_HEIGHT
+      },
+      port: {
+        x: result.boundingBox.x + PORT_INSET_X,
+        y: result.boundingBox.y - idx * IO_HEIGHT - IO_HEIGHT / 2
+      }
+    };
+  });
+
+  solid.outputs.forEach((output, idx) => {
+    result.outputs[output.definition.name] = {
+      layout: {
+        x: result.boundingBox.x,
+        y: boundingBottom + idx * IO_HEIGHT,
+        width: 0,
+        height: IO_HEIGHT
+      },
+      port: {
+        x: result.boundingBox.x + PORT_INSET_X,
+        y: boundingBottom + idx * IO_HEIGHT + IO_HEIGHT / 2
+      }
+    };
+  });
+
+  return result;
+}
+
+function layoutExternalConnections(
+  links: SolidLinkInfo[],
+  y: number,
+  layoutWidth: number
+) {
+  // fill evenly from 0 to layoutWidth from left to right, then center them if there's overflow.
+  const inset = PARENT_INVOCATION_PADDING + PORT_INSET_X;
+  const insetWidth = layoutWidth - inset * 2;
+  const spacing = Math.max(200, insetWidth / links.length);
+  const baseX = inset + Math.min(0, (insetWidth - links.length * spacing) / 2);
+  const yShift = spacing < 300 ? 20 : 0;
+
+  const result: { [solidName: string]: IPoint } = {};
+  links.forEach((link, idx) => {
+    const shiftDirection = 1 - (idx % 2) * 2; // 1 or -1, alternating
+    result[titleOfIO(link)] = {
+      x: baseX + idx * spacing,
+      y: y + yShift * shiftDirection
+    };
+  });
+  return result;
 }
 
 function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {

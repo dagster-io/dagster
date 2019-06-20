@@ -47,7 +47,7 @@ def slack_to_file_resource(context):
         ModeDefinition(name='local', resources={'slack': slack_to_file_resource}),
     ]
 )
-def resources_pipeline(_):
+def resources_pipeline():
     post_hello_message()
 
 

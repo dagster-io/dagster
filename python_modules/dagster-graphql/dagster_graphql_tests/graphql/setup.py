@@ -3,7 +3,6 @@ import logging
 from collections import OrderedDict
 from copy import deepcopy
 
-
 from dagster import (
     Any,
     Bool,
@@ -12,6 +11,7 @@ from dagster import (
     Dict,
     Enum,
     EnumValue,
+    EventMetadataEntry,
     ExecutionTargetHandle,
     ExpectationDefinition,
     ExpectationResult,
@@ -19,7 +19,9 @@ from dagster import (
     Float,
     InputDefinition,
     Int,
+    Result,
     List,
+    Materialization,
     ModeDefinition,
     Optional,
     OutputDefinition,
@@ -37,6 +39,7 @@ from dagster import (
     output_schema,
     resource,
     solid,
+    pipeline,
 )
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import script_relative_path
@@ -161,6 +164,7 @@ def define_repository():
             'multi_mode_with_resources': define_multi_mode_with_resources_pipeline,
             'multi_mode_with_loggers': define_multi_mode_with_loggers_pipeline,
             'composites_pipeline': define_composites_pipeline,
+            'materialization_pipeline': materialization_pipeline,
         },
     )
 
@@ -545,3 +549,23 @@ def define_composites_pipeline():
         solid_defs=[add_four, div_four],
         dependencies={'div_four': {'num': DependencyDefinition('add_four')}},
     )
+
+
+@solid
+def materialize(_):
+    yield Materialization(
+        label='all_types',
+        description='a materialization with all metadata types',
+        metadata_entries=[
+            EventMetadataEntry.text('text is cool', 'text'),
+            EventMetadataEntry.url('https://bigty.pe/neato', 'url'),
+            EventMetadataEntry.fspath('/tmp/awesome', 'path'),
+            EventMetadataEntry.json({'is_dope': True}, 'json'),
+        ],
+    )
+    yield Result(None)
+
+
+@pipeline
+def materialization_pipeline():
+    materialize()  # pylint: disable=no-value-for-parameter

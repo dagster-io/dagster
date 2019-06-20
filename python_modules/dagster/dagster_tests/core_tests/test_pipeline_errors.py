@@ -259,7 +259,7 @@ def test_user_error_propogation():
 
     # and in the message
     assert 'step key: "throws_user_error.compute"' in str(e_info.value)
-    assert 'solid instance: "throws_user_error"' in str(e_info.value)
+    assert 'solid invocation: "throws_user_error"' in str(e_info.value)
     assert 'solid definition: "throws_user_error"' in str(e_info.value)
 
     # ensure that the inner exception shows up in the error message on python 2

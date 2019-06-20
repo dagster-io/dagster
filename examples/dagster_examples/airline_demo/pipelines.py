@@ -1,5 +1,5 @@
+# pylint: disable=no-value-for-parameter
 """Pipeline definitions for the airline_demo."""
-
 from dagster import (
     ModeDefinition,
     OutputDefinition,
@@ -81,10 +81,9 @@ prod_mode = ModeDefinition(
 
 
 @composite_solid(outputs=[OutputDefinition(name='table_name', dagster_type=String)])
-def process_on_time_data(context):
+def process_on_time_data():
     return load_data_to_database_from_spark.alias('load_q2_on_time_data')(
         data_frame=join_q2_data(
-            context,
             april_data=s3_to_df.alias('april_on_time_s3_to_df')(),
             may_data=s3_to_df.alias('may_on_time_s3_to_df')(),
             june_data=s3_to_df.alias('june_on_time_s3_to_df')(),
@@ -94,13 +93,12 @@ def process_on_time_data(context):
 
 
 @composite_solid(outputs=[OutputDefinition(name='table_name', dagster_type=String)])
-def sfo_weather_data(_):
+def sfo_weather_data():
     return load_data_to_database_from_spark.alias('load_q2_sfo_weather')(
         process_sfo_weather_data(
-            _,
             ingest_csv_file_handle_to_spark.alias('ingest_q2_sfo_weather')(
                 cache_file_from_s3.alias('download_q2_sfo_weather')()
-            ),
+            )
         )
     )
 
@@ -126,11 +124,11 @@ def sfo_weather_data(_):
         ),
     ],
 )
-def airline_demo_ingest_pipeline(context):
-    process_on_time_data(context)
-    sfo_weather_data(context)
+def airline_demo_ingest_pipeline():
+    process_on_time_data()
+    sfo_weather_data()
     for data_type in ['coupon', 'market', 'ticket']:
-        s3_to_dw_table.alias('process_q2_{}_data'.format(data_type))(context)
+        s3_to_dw_table.alias('process_q2_{}_data'.format(data_type))()
 
 
 def define_airline_demo_ingest_pipeline():
@@ -138,7 +136,7 @@ def define_airline_demo_ingest_pipeline():
 
 
 @composite_solid(outputs=[OutputDefinition(S3FileHandle)])
-def process_delays_by_geo(_context):
+def process_delays_by_geo():
     return file_handle_to_s3.alias('upload_delays_by_geography_pdf_plots')(
         delays_by_geography(
             westbound_delays=westbound_delays(), eastbound_delays=eastbound_delays()
@@ -159,8 +157,8 @@ def process_delays_by_geo(_context):
         )
     ],
 )
-def airline_demo_warehouse_pipeline(context):
-    process_delays_by_geo(context)
+def airline_demo_warehouse_pipeline():
+    process_delays_by_geo()
 
     outbound_delays = average_sfo_outbound_avg_delays_by_destination(q2_sfo_outbound_flights())
 

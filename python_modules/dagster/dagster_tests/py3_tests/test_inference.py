@@ -177,7 +177,7 @@ def test_composites():
         return n1 + n2
 
     @composite_solid
-    def add_one(_, a: int) -> int:
+    def add_one(a: int) -> int:
         return add(a, emit_one())
 
     assert add_one.input_mappings

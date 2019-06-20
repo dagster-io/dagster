@@ -18,7 +18,6 @@ from . import (
     SolidDefinition,
 )
 from .composition import (
-    EmptySolidContext,
     InputMappingNode,
     composite_mapping_from_output,
     enter_composition,
@@ -27,6 +26,7 @@ from .composition import (
 from .inference import (
     infer_input_definitions_for_lambda_solid,
     infer_input_definitions_for_solid,
+    infer_input_definitions_for_composite_solid,
     infer_output_definitions,
 )
 from .config import resolve_config_field
@@ -170,7 +170,7 @@ class _Solid(object):
         input_defs = (
             self.input_defs
             if self.input_defs is not None
-            else infer_input_definitions_for_solid('@solid', self.name, fn)
+            else infer_input_definitions_for_solid(self.name, fn)
         )
         output_defs = (
             self.output_defs
@@ -192,7 +192,7 @@ class _Solid(object):
         )
 
 
-def lambda_solid(name=None, inputs=None, output=None, description=None):
+def lambda_solid(name=None, description=None, inputs=None, output=None):
     '''(decorator) Create a simple solid.
 
     This shortcut allows the creation of simple solids that do not require
@@ -203,9 +203,9 @@ def lambda_solid(name=None, inputs=None, output=None, description=None):
 
     Args:
         name (str): Name of solid.
+        description (str): Solid description.
         inputs (list[InputDefinition]): List of inputs.
         output (OutputDefinition): The output of the solid. Defaults to ``OutputDefinition()``.
-        description (str): Solid description.
 
     Examples:
 
@@ -230,11 +230,11 @@ def lambda_solid(name=None, inputs=None, output=None, description=None):
 
 def solid(
     name=None,
+    description=None,
     inputs=None,
     outputs=None,
     config_field=None,
     config=None,
-    description=None,
     required_resources=None,
 ):
     '''(decorator) Create a solid with specified parameters.
@@ -255,6 +255,7 @@ def solid(
 
     Args:
         name (str): Name of solid.
+        description (str): Description of this solid.
         inputs (list[InputDefinition]):
             List of inputs. Inferred from typehints if not provided.
         outputs (list[OutputDefinition]):
@@ -265,7 +266,6 @@ def solid(
             Used in the rare case of a top level config type other than a dictionary.
 
             Only one of config or config_field can be provided.
-        description (str): Description of this solid.
         resources (set[str]): Set of resource instances required by this solid.
 
     Examples:
@@ -484,7 +484,7 @@ def _validate_solid_fn(solid_name, compute_fn, inputs, expected_positionals=None
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' decorated function do not have required positional "
+                "solid '{solid_name}' decorated function does not have required positional "
                 "parameter '{e.param}'. Solid functions should only have keyword arguments "
                 "that match input names and a first positional parameter named 'context'.".format(
                     solid_name=solid_name, e=e
@@ -493,7 +493,7 @@ def _validate_solid_fn(solid_name, compute_fn, inputs, expected_positionals=None
         elif e.error_type == FunctionValidationError.TYPES['extra']:
             undeclared_inputs_printed = ", '".join(e.missing_names)
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' decorated function do not have parameter(s) "
+                "solid '{solid_name}' decorated function does not have parameter(s) "
                 "'{undeclared_inputs_printed}', which are in solid's inputs. Solid functions "
                 "should only have keyword arguments that match input names and a first positional "
                 "parameter named 'context'.".format(
@@ -555,11 +555,14 @@ def _validate_decorated_fn(fn, names, expected_positionals):
 
 
 class _CompositeSolid(object):
-    def __init__(self, name=None, inputs=None, outputs=None, description=None):
+    def __init__(
+        self, name=None, inputs=None, outputs=None, description=None, config_mapping_fn=None
+    ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_nullable_list_param(inputs, 'inputs', InputDefinition)
         self.output_defs = check.opt_nullable_list_param(outputs, 'output', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
+        self.config_mapping_fn = check.opt_callable_param(config_mapping_fn, 'config_mapping_fn')
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -570,7 +573,7 @@ class _CompositeSolid(object):
         input_defs = (
             self.input_defs
             if self.input_defs is not None
-            else infer_input_definitions_for_solid('@composite_solid', self.name, fn)
+            else infer_input_definitions_for_composite_solid(self.name, fn)
         )
         output_defs = (
             self.output_defs
@@ -578,14 +581,14 @@ class _CompositeSolid(object):
             else infer_output_definitions('@composite_solid', self.name, fn)
         )
 
-        _validate_solid_fn(self.name, fn, input_defs, [('context',)])
+        _validate_solid_fn(self.name, fn, input_defs)
 
         kwargs = {input_def.name: InputMappingNode(input_def) for input_def in input_defs}
 
         output = None
         enter_composition(self.name, '@composite_solid')
         try:
-            output = fn(EmptySolidContext(), **kwargs)
+            output = fn(**kwargs)
         finally:
             context = exit_composition(
                 composite_mapping_from_output(output, output_defs, self.name)
@@ -604,17 +607,64 @@ class _CompositeSolid(object):
             dependencies=context.dependencies,
             solid_defs=context.solid_defs,
             description=self.description,
+            config_mapping_fn=self.config_mapping_fn,
         )
 
 
-def composite_solid(name=None, inputs=None, outputs=None, description=None):
+def composite_solid(name=None, inputs=None, outputs=None, description=None, config_mapping_fn=None):
+    ''' (decorator) Create a CompositeSolidDefinition with specified parameters.
+
+    Using this decorator allows you to build up the dependency graph of the composite by writing a
+    function that invokes solids and passes the output to other solids.
+
+    Args:
+        name (Optional[str])
+        description (Optional[str])
+        inputs (Optional[List[InputDefinition]]):
+            The set of inputs, inferred from typehints if not provided.
+
+            Where these inputs get used in the body of the decorated function create the
+            InputMappings for the CompositeSolidDefinition
+        outputs (Optional[List[OutputDefinition]]):
+            The set of outputs, inferred from typehints if not provided.
+
+            These outputs are combined with the return value of the decorated function to
+            create the OutputMappings for the CompositeSolidDefinition.
+
+            A dictionary is returned from the function to map multiple outputs.
+        config_mapping_fn (Callable):
+            A function to remap configuration for the constituent solids.
+
+    Examples:
+
+        .. code-block:: python
+
+        @lambda_solid
+        def add_one(num: int) -> int:
+            return num + 1
+
+        @composite_solid
+        def add_two(num: int) -> int:
+            add_one_1 = add_one.alias('add_one_1')
+            add_one_2 = add_one.alias('add_one_2')
+
+            return add_one_2(add_one_1(num))
+
+    '''
     if callable(name):
         check.invariant(inputs is None)
         check.invariant(outputs is None)
         check.invariant(description is None)
+        check.invariant(config_mapping_fn is None)
         return _CompositeSolid()(name)
 
-    return _CompositeSolid(name=name, inputs=inputs, outputs=outputs, description=description)
+    return _CompositeSolid(
+        name=name,
+        inputs=inputs,
+        outputs=outputs,
+        description=description,
+        config_mapping_fn=config_mapping_fn,
+    )
 
 
 class _Pipeline:
@@ -636,7 +686,7 @@ class _Pipeline:
 
         enter_composition(self.name, '@pipeline')
         try:
-            fn(EmptySolidContext())
+            fn()
         finally:
             context = exit_composition([])
 
@@ -650,7 +700,43 @@ class _Pipeline:
         )
 
 
-def pipeline(name=None, mode_definitions=None, preset_definitions=None, description=None):
+def pipeline(name=None, description=None, mode_definitions=None, preset_definitions=None):
+    ''' (decorator) Create a pipeline with specified parameters.
+
+    Using this decorator allows you to build up the dependency graph of the pipeline by writing a
+    function that invokes solids and passes the output to other solids.
+
+    Args:
+        name (Optional[str])
+        description (Optional[str])
+        mode_definitions (Optional[List[ModeDefinition]]):
+            The set of modes this pipeline can operate in. Modes can be used for example to vary
+            resources and logging implementations for local testing and running in production.
+        preset_definitions (Optional[List[PresetDefinition]]):
+            Given the different ways a pipeline may execute, presets give you a way to provide
+            specific valid collections of configuration.
+
+    Examples:
+
+        .. code-block:: python
+
+        @lambda_solid
+        def emit_one() -> int:
+            return 1
+
+        @lambda_solid
+        def add_one(num: int) -> int:
+            return num + 1
+
+        @lambda_solid
+        def mult_two(num: int) -> int:
+            return num * 2
+
+        @pipeline
+        def add_pipeline():
+            add_one(mult_two(emit_one()))
+
+    '''
     if callable(name):
         check.invariant(description is None)
         return _Pipeline()(name)

@@ -350,3 +350,22 @@ def create_selector_unspecified_value_error(context):
         ).format(defined_fields=defined_fields, path_msg=get_friendly_path_msg(context.stack)),
         error_data=SelectorTypeErrorData(dagster_type=context.config_type, incoming_fields=[]),
     )
+
+
+def create_bad_mapping_error(context, solid_def_name, handle_name, mapping):
+    check.inst_param(context, 'context', TraversalContext)
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message=(
+            'Config override mapping function defined by solid {handle_name} from definition '
+            '{solid_def_name} {path_msg} is not a dict. Got: {mapping}'.format(
+                handle_name=handle_name,
+                solid_def_name=solid_def_name,
+                path_msg=get_friendly_path_msg(context.stack),
+                mapping=mapping.friendly_repr_for_error(),
+            )
+        ),
+        error_data=RuntimeMismatchErrorData(context.config_type, repr(context.config_value)),
+    )

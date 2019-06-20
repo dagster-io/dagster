@@ -32,7 +32,7 @@ def do_something():
 
 
 @pipeline(name='foo')
-def foo_pipeline(_):
+def foo_pipeline():
     do_something()
 
 

@@ -5,6 +5,8 @@ Pipelines
 
 .. autoclass:: PipelineDefinition
 
+.. autodecorator:: pipeline
+
 .. autoclass:: DependencyDefinition
     :members:
 
