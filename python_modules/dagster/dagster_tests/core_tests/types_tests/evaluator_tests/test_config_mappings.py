@@ -8,33 +8,13 @@ from dagster import (
     pipeline,
     solid,
     Field,
+    Int,
     PipelineConfigEvaluationError,
     Result,
     String,
 )
+from dagster.core.definitions import ConfigMapping
 from dagster.core.errors import DagsterUserCodeExecutionError
-
-
-def wrap_config_mapping_fn(cfg):
-    ensure_keypath_exists(cfg, ['solids'])
-    cfg['solids']['scalar_config_solid'] = {'config': 'override'}
-    return cfg
-
-
-def bad_wrap_config_mapping_fn(cfg):
-    ensure_keypath_exists(cfg, ['solids'])
-    cfg['solids']['scalar_config_solid'] = {'config': 1234}
-    return cfg
-
-
-def raises_config_mapping_fn(_):
-    assert 0
-
-
-def nesting_config_mapping_fn(cfg):
-    ensure_keypath_exists(cfg, ['solids', 'wrap', 'solids', 'scalar_config_solid'])
-    cfg['solids']['wrap']['solids']['scalar_config_solid'] = {'config': 'nesting_override'}
-    return cfg
 
 
 @solid(config_field=Field(String, is_optional=True))
@@ -42,24 +22,28 @@ def scalar_config_solid(context):
     yield Result(context.solid_config)
 
 
-@composite_solid(config_mapping_fn=wrap_config_mapping_fn)
+@composite_solid(
+    config_mapping=ConfigMapping(
+        config={'override_str': Field(String)},
+        config_mapping_fn=lambda cfg: {'scalar_config_solid': {'config': cfg['override_str']}},
+    )
+)
 def wrap():
     return scalar_config_solid()
 
 
-@composite_solid(config_mapping_fn=nesting_config_mapping_fn)
-def nesting_wrap():
-    return wrap()
-
-
-def ensure_keypath_exists(dst_dict, keys):
-    if keys:
-        key, rest = keys[0], keys[1:]
-        dst_dict[key] = dst_dict.get(key, {})
-        ensure_keypath_exists(dst_dict[key], rest)
-
-
 def test_multiple_overrides_pipeline():
+    def nesting_config_mapping_fn(cfg):
+        return {'wrap': {'config': {'override_str': cfg['nesting_override']}}}
+
+    @composite_solid(
+        config_mapping=ConfigMapping(
+            config={'nesting_override': Field(String)}, config_mapping_fn=nesting_config_mapping_fn
+        )
+    )
+    def nesting_wrap():
+        return wrap()
+
     @pipeline
     def wrap_pipeline():
         return nesting_wrap.alias('outer_wrap')()
@@ -67,17 +51,13 @@ def test_multiple_overrides_pipeline():
     result = execute_pipeline(
         wrap_pipeline,
         {
-            'solids': {
-                'outer_wrap': {
-                    'solids': {'wrap': {'solids': {'scalar_config_solid': {'config': 'test'}}}}
-                }
-            },
+            'solids': {'outer_wrap': {'config': {'nesting_override': 'blah'}}},
             'loggers': {'console': {'config': {'log_level': 'ERROR'}}},
         },
     )
 
     output_event = [e for e in result.step_event_list if e.event_type_value == 'STEP_OUTPUT'][0]
-    assert output_event.event_specific_data.value_repr == "'nesting_override'"
+    assert output_event.event_specific_data.value_repr == "'blah'"
 
 
 def test_good_override():
@@ -88,7 +68,7 @@ def test_good_override():
     result = execute_pipeline(
         wrap_pipeline,
         {
-            'solids': {'do_stuff': {'solids': {'scalar_config_solid': {'config': 'test'}}}},
+            'solids': {'do_stuff': {'config': {'override_str': 'override'}}},
             'loggers': {'console': {'config': {'log_level': 'ERROR'}}},
         },
     )
@@ -97,7 +77,12 @@ def test_good_override():
 
 
 def test_bad_override():
-    @composite_solid(config_mapping_fn=bad_wrap_config_mapping_fn)
+    @composite_solid(
+        config_mapping=ConfigMapping(
+            config={'does_not_matter': Field(String)},
+            config_mapping_fn=lambda _: {'scalar_config_solid': {'config': 1234}},
+        )
+    )
     def bad_wrap():
         return scalar_config_solid()
 
@@ -109,7 +94,7 @@ def test_bad_override():
         execute_pipeline(
             wrap_pipeline,
             {
-                'solids': {'do_stuff': {'solids': {'scalar_config_solid': {'config': 'test'}}}},
+                'solids': {'do_stuff': {'config': {'does_not_matter': 'blah'}}},
                 'loggers': {'console': {'config': {'log_level': 'ERROR'}}},
             },
         )
@@ -119,12 +104,19 @@ def test_bad_override():
     assert exc_info.value.errors[0].message == (
         '''Config override mapping function defined by solid do_stuff from definition bad_wrap at'''
         ''' path root:solids:do_stuff caused error: Value at path '''
-        '''root:solids:scalar_config_solid:config is not valid. Expected "String"'''
+        '''root:scalar_config_solid:config is not valid. Expected "String"'''
     )
 
 
 def test_raises_fn_override():
-    @composite_solid(config_mapping_fn=raises_config_mapping_fn)
+    def raises_config_mapping_fn(_):
+        assert 0
+
+    @composite_solid(
+        config_mapping=ConfigMapping(
+            config={'does_not_matter': Field(String)}, config_mapping_fn=raises_config_mapping_fn
+        )
+    )
     def bad_wrap():
         return scalar_config_solid()
 
@@ -142,6 +134,31 @@ def test_raises_fn_override():
         )
 
     assert exc_info.match(
-        'error occurred during execution of user config mapping function defined at path '
-        'root:solids:do_stuff'
+        'error occurred during execution of user config mapping function raises_config_mapping_fn '
+        'defined at path root:solids:do_stuff'
     )
+
+
+def test_composite_config_field():
+    @solid(config={'inner': Field(String)})
+    def inner_solid(context):
+        return context.solid_config['inner']
+
+    @composite_solid(
+        config_mapping=ConfigMapping(
+            config={'override': Field(Int)},
+            config_mapping_fn=lambda cfg: {
+                'inner_solid': {'config': {'inner': str(cfg['override'])}}
+            },
+        )
+    )
+    def test():
+        return inner_solid()
+
+    @pipeline
+    def test_pipeline():
+        return test()
+
+    assert execute_pipeline(
+        test_pipeline, {'solids': {'test': {'config': {'override': 5}}}}
+    ).success

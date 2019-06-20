@@ -76,10 +76,8 @@ def get_execution_plan(graphene_info, selector, environment_dict, mode):
     check.opt_str_param(mode, 'mode')
 
     dauphin_pipeline = get_dauphin_pipeline_from_selector(graphene_info, selector)
-    validated_config = get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode)
+    get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode)
     return graphene_info.schema.type_named('ExecutionPlan')(
         dauphin_pipeline,
-        create_execution_plan(
-            dauphin_pipeline.get_dagster_pipeline(), validated_config.value, mode
-        ),
+        create_execution_plan(dauphin_pipeline.get_dagster_pipeline(), environment_dict, mode),
     )

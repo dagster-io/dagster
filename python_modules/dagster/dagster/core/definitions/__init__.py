@@ -1,5 +1,7 @@
 from .handle import ExecutionTargetHandle
 
+from .config import ConfigMapping
+
 from .dependency import (
     DependencyDefinition,
     MultiDependencyDefinition,

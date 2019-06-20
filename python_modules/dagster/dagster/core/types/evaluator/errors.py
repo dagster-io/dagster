@@ -369,3 +369,23 @@ def create_bad_mapping_error(context, solid_def_name, handle_name, mapping):
         ),
         error_data=RuntimeMismatchErrorData(context.config_type, repr(context.config_value)),
     )
+
+
+def create_bad_mapping_solids_key_error(context, solid_def_name, handle_name):
+    check.inst_param(context, 'context', TraversalContext)
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message=(
+            'Environment contains "solids" key but config mapping defined by solid {handle_name} '
+            'from definition {solid_def_name} {path_msg} is provided; "solids" should not be '
+            'provided when a config mapping override is used {config_value}'.format(
+                handle_name=handle_name,
+                solid_def_name=solid_def_name,
+                path_msg=get_friendly_path_msg(context.stack),
+                config_value=context.config_value,
+            )
+        ),
+        error_data=RuntimeMismatchErrorData(context.config_type, repr(context.config_value)),
+    )

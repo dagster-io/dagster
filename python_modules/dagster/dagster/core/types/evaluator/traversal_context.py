@@ -21,7 +21,7 @@ class TraversalContext(
             check.inst_param(stack, 'stack', EvaluationStack),
             check.list_param(errors, 'errors', of_type=EvaluationError),
             check.opt_inst_param(pipeline, 'pipeline', PipelineDefinition),
-            check.opt_set_param(seen_handles, 'seen_handles'),
+            check.opt_list_param(seen_handles, 'seen_handles'),
         )
 
     def add_error(self, error):
