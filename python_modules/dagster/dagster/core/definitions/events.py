@@ -6,6 +6,10 @@ from dagster import check
 from .utils import DEFAULT_OUTPUT
 
 
+def last_file_comp(path):
+    return os.path.basename(os.path.normpath(path))
+
+
 class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description entry_data')):
     def __new__(cls, label, description, entry_data):
         return super(EventMetadataEntry, cls).__new__(
@@ -31,9 +35,7 @@ class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description en
     def fspath(path, label=None, description=None):
         'Just like path, but makes label last path component if None'
         return EventMetadataEntry.path(
-            path,
-            label if label is not None else os.path.basename(os.path.normpath(path)),
-            description,
+            path, label if label is not None else last_file_comp(path), description
         )
 
     @staticmethod
@@ -115,6 +117,14 @@ class Materialization(namedtuple('_Materialization', 'label description metadata
             ]
             if result_metadata
             else [path_entry],
+        )
+
+    @staticmethod
+    def file(path, description=None):
+        return Materialization(
+            label=last_file_comp(path),
+            description=description,
+            metadata_entries=[EventMetadataEntry.fspath(path)],
         )
 
     def __new__(cls, label, description=None, metadata_entries=None):

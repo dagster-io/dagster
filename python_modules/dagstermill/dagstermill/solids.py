@@ -15,13 +15,14 @@ from papermill.parameterize import _find_first_tagged_cell_index
 from papermill.iorw import load_notebook_node, write_ipynb
 
 from dagster import (
-    check,
+    EventMetadataEntry,
     InputDefinition,
     Materialization,
     OutputDefinition,
     Result,
-    seven,
     SolidDefinition,
+    check,
+    seven,
 )
 from dagster.core.errors import user_code_error_boundary
 from dagster.core.execution.context.system import SystemComputeExecutionContext
@@ -212,11 +213,10 @@ def _dm_solid_transform(name, notebook_path):
                         intermediate_path, temp_path, engine_name='dagstermill', log_output=True
                     )
                 except Exception as exc:
-                    yield Materialization.legacy_ctor(
-                        path=temp_path,
-                        description='{name} output notebook'.format(
-                            name=compute_context.solid.name
-                        ),
+                    yield Materialization(
+                        label='output_notebook',
+                        description='Location of output notebook on the filesystem',
+                        metadata_entries=[EventMetadataEntry.fspath(temp_path)],
                     )
                     raise exc
                 finally:
@@ -231,9 +231,10 @@ def _dm_solid_transform(name, notebook_path):
                 )
             )
 
-            yield Materialization.legacy_ctor(
-                path=temp_path,
-                description='{name} output notebook'.format(name=compute_context.solid.name),
+            yield Materialization(
+                label='output_notebook',
+                description='Location of output notebook on the filesystem',
+                metadata_entries=[EventMetadataEntry.fspath(temp_path)],
             )
 
             for (output_name, output_def) in system_compute_context.solid_def.output_dict.items():
@@ -245,7 +246,7 @@ def _dm_solid_transform(name, notebook_path):
 
             for key, value in output_nb.scraps.items():
                 print(output_nb.scraps)
-                if key.startswith('materialization-'):
+                if key.startswith('event-'):
                     with open(value.data, 'rb') as fd:
                         yield pickle.loads(fd.read())
 

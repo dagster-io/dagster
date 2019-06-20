@@ -91,9 +91,9 @@ def test_dummy_manager_yield_complex_result():
 
 def test_out_of_pipeline_manager_yield_materialization():
     manager = Manager()
-    assert manager.yield_materialization(
-        '/path/to/artifact', 'artifact'
-    ) == Materialization.legacy_ctor('/path/to/artifact', description='artifact')
+    assert manager.yield_event(
+        Materialization.file('/path/to/artifact', 'artifact')
+    ) == Materialization.file('/path/to/artifact', 'artifact')
 
 
 def test_in_pipeline_manager_bad_yield_result():
