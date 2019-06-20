@@ -1,1 +1,1 @@
-from .pipelines import define_event_ingest_pipeline
+from .pipelines import event_ingest_pipeline
