@@ -24,8 +24,12 @@ def SystemNamedDict(name, fields, description=None):
 
 
 class _SolidContainerConfigDict(_ConfigComposite):
-    def __init__(self, name, fields, description=None, handle=None):
+    def __init__(self, name, fields, description=None, handle=None, child_solids_config_field=None):
         self._handle = check.opt_inst_param(handle, 'handle', SolidHandle)
+        self._child_solids_config_field = check.opt_inst_param(
+            child_solids_config_field, 'child_solids_config_field', FieldImpl
+        )
+
         super(_SolidContainerConfigDict, self).__init__(
             key=name,
             name=name,
@@ -41,15 +45,25 @@ class _SolidContainerConfigDict(_ConfigComposite):
         '''
         return self._handle
 
+    @property
+    def child_solids_config_field(self):
+        '''We stash the config schema for the children of composite solids here so that we can
+        continue schema traversal even when masked at the top level of config
+        '''
+        return self._child_solids_config_field
 
-def SolidContainerConfigDict(name, fields, description=None, handle=None):
+
+def SolidContainerConfigDict(
+    name, fields, description=None, handle=None, child_solids_config_field=None
+):
     class _SolidContainerConfigDictInternal(_SolidContainerConfigDict):
         def __init__(self):
             super(_SolidContainerConfigDictInternal, self).__init__(
                 name=name,
                 fields=fields,
                 description=description,
-                handle=check.opt_inst_param(handle, 'handle', SolidHandle),
+                handle=handle,
+                child_solids_config_field=child_solids_config_field,
             )
 
     return _SolidContainerConfigDictInternal
@@ -316,7 +330,7 @@ def define_isolid_field(solid, handle, dependency_structure, pipeline_name):
 
     if isinstance(solid.definition, CompositeSolidDefinition):
         composite_def = solid.definition
-        solid_cfg = Field(
+        child_solids_config_field = Field(
             define_solid_dictionary_cls(
                 '{pipeline_name}.CompositeSolidsDict.{solid_handle}'.format(
                     pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
@@ -327,19 +341,24 @@ def define_isolid_field(solid, handle, dependency_structure, pipeline_name):
                 handle,
             )
         )
+
+        composite_config_dict = {
+            'inputs': get_inputs_field(solid, handle, dependency_structure, pipeline_name),
+            'outputs': get_outputs_field(solid, handle, pipeline_name),
+        }
+
+        # Mask solid config for solids beneath this level if config mapping is provided
+        if composite_def.has_config_mapping:
+            composite_config_dict['config'] = composite_def.config_mapping.config_field
+        else:
+            composite_config_dict['solids'] = child_solids_config_field
+
         return Field(
             SolidContainerConfigDict(
                 '{name}CompositeSolidConfig'.format(name=str(handle)),
-                remove_none_entries(
-                    {
-                        'solids': solid_cfg,
-                        'inputs': get_inputs_field(
-                            solid, handle, dependency_structure, pipeline_name
-                        ),
-                        'outputs': get_outputs_field(solid, handle, pipeline_name),
-                    }
-                ),
+                remove_none_entries(composite_config_dict),
                 handle=handle,
+                child_solids_config_field=child_solids_config_field,
             )
         )
 

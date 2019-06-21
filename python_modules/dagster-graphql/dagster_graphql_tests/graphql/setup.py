@@ -113,7 +113,7 @@ def sum_sq_solid(sum_df):
             expectations=[
                 ExpectationDefinition(
                     name='some_expectation',
-                    expectation_fn=lambda _i, _v: ExpectationResult.legacy_ctor(success=True),
+                    expectation_fn=lambda _i, _v: ExpectationResult(success=True),
                 )
             ],
         )
@@ -123,7 +123,7 @@ def sum_sq_solid(sum_df):
         expectations=[
             ExpectationDefinition(
                 name='other_expectation',
-                expectation_fn=lambda _i, _v: ExpectationResult.legacy_ctor(success=True),
+                expectation_fn=lambda _i, _v: ExpectationResult(success=True),
             )
         ],
     ),
@@ -172,25 +172,29 @@ def define_repository():
 def define_pipeline_with_expectation():
     @solid(outputs=[])
     def emit_successful_expectation(_context):
-        yield ExpectationResult.legacy_ctor(
+        yield ExpectationResult(
             success=True,
-            name='always_true',
-            message='Successful',
-            result_metadata={'reason': 'Just because.'},
+            label='always_true',
+            description='Successful',
+            metadata_entries=[
+                EventMetadataEntry.json(label='data', data={'reason': 'Just because.'})
+            ],
         )
 
     @solid(outputs=[])
     def emit_failed_expectation(_context):
-        yield ExpectationResult.legacy_ctor(
+        yield ExpectationResult(
             success=False,
-            name='always_false',
-            message='Failure',
-            result_metadata={'reason': 'Relentless pessimism.'},
+            label='always_false',
+            description='Failure',
+            metadata_entries=[
+                EventMetadataEntry.json(label='data', data={'reason': 'Relentless pessimism.'})
+            ],
         )
 
     @solid(outputs=[])
     def emit_successful_expectation_no_metadata(_context):
-        yield ExpectationResult.legacy_ctor(success=True, name='no_metadata', message='Successful')
+        yield ExpectationResult(success=True, label='no_metadata', description='Successful')
 
     return PipelineDefinition(
         name='pipeline_with_expectations',

@@ -12,7 +12,7 @@ def define_demo_repo():
         define_airline_demo_ingest_pipeline,
         define_airline_demo_warehouse_pipeline,
     )
-    from dagster_examples.event_pipeline_demo.pipelines import define_event_ingest_pipeline
+    from dagster_examples.event_pipeline_demo.pipelines import event_ingest_pipeline
     from dagster_examples.pyspark_pagerank.pyspark_pagerank_pipeline import define_pipeline
     from dagster_pandas.examples import define_papermill_pandas_hello_world_pipeline
 
@@ -27,7 +27,7 @@ def define_demo_repo():
             'composition': define_composition_pipeline,
             'airline_demo_ingest_pipeline': define_airline_demo_ingest_pipeline,
             'airline_demo_warehouse_pipeline': define_airline_demo_warehouse_pipeline,
-            'event_ingest_pipeline': define_event_ingest_pipeline,
+            'event_ingest_pipeline': event_ingest_pipeline,
             'pyspark_pagerank': define_pipeline,
             'papermill_pandas_hello_world_pipeline': define_papermill_pandas_hello_world_pipeline,
         },

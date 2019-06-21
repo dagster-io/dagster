@@ -5,20 +5,20 @@ import os
 import shutil
 
 from dagster import (
+    file_relative_path,
+    lambda_solid,
+    pipeline,
+    solid,
     Bool,
-    DependencyDefinition,
     Dict,
     Field,
     InputDefinition,
     List,
     ModeDefinition,
     OutputDefinition,
+    PresetDefinition,
     Path,
-    PipelineDefinition,
-    SolidInvocation,
     String,
-    lambda_solid,
-    solid,
 )
 from dagster.core.types.runtime import Stringish
 from dagster.utils import safe_isfile, mkdir_p
@@ -119,7 +119,19 @@ def gunzipper(gzip_file):
     return [path_prefix]
 
 
-def define_event_ingest_pipeline():
+@pipeline(
+    mode_definitions=[
+        ModeDefinition(name='local', resources={'s3': s3_resource, 'snowflake': snowflake_resource})
+    ],
+    preset_definitions=[
+        PresetDefinition(
+            name='local',
+            mode='local',
+            environment_files=[file_relative_path(__file__, 'environments/default.yaml')],
+        )
+    ],
+)
+def event_ingest_pipeline():
     event_ingest = SparkSolidDefinition(
         name='event_ingest',
         main_class='io.dagster.events.EventPipeline',
@@ -133,20 +145,5 @@ def define_event_ingest_pipeline():
         src='file:///tmp/dagster/events/data/output/2019/01/01/*.parquet',
         table='events',
     )
-
-    return PipelineDefinition(
-        name='event_ingest_pipeline',
-        solid_defs=[download_from_s3_to_file, gunzipper, event_ingest, snowflake_load],
-        dependencies={
-            SolidInvocation('gunzipper'): {
-                'gzip_file': DependencyDefinition('download_from_s3_to_file')
-            },
-            SolidInvocation('event_ingest'): {'spark_inputs': DependencyDefinition('gunzipper')},
-            SolidInvocation('snowflake_load'): {
-                'start': DependencyDefinition('event_ingest', 'paths')
-            },
-        },
-        mode_definitions=[
-            ModeDefinition(resources={'s3': s3_resource, 'snowflake': snowflake_resource})
-        ],
-    )
+    # pylint: disable=no-value-for-parameter
+    snowflake_load(start=event_ingest(spark_inputs=gunzipper(gzip_file=download_from_s3_to_file())))

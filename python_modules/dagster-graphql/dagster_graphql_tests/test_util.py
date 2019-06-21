@@ -39,10 +39,10 @@ def test_can_handle_all_step_events():
 def define_test_events_pipeline():
     @solid(outputs=[OutputDefinition(Bool)])
     def materialization_and_expectation(_context):
-        yield Materialization.legacy_ctor(path='/path/to/foo', description='This is a table.')
-        yield Materialization.legacy_ctor(path='/path/to/bar')
-        yield ExpectationResult.legacy_ctor(success=True, name='row_count', message='passed')
-        yield ExpectationResult.legacy_ctor(True)
+        yield Materialization.file(path='/path/to/foo', description='This is a table.')
+        yield Materialization.file(path='/path/to/bar')
+        yield ExpectationResult(success=True, label='row_count', description='passed')
+        yield ExpectationResult(True)
         yield Result(True)
 
     @solid(

@@ -7,7 +7,7 @@ import pytest
 from dagster import execute_pipeline
 from dagster.seven import mock
 from dagster.utils import load_yaml_from_globs, script_relative_path
-from dagster_examples.event_pipeline_demo.pipelines import define_event_ingest_pipeline
+from dagster_examples.event_pipeline_demo.pipelines import event_ingest_pipeline
 
 
 def create_mock_connector(*_args, **_kwargs):
@@ -56,7 +56,7 @@ def test_event_pipeline(snowflake_connect):
                 '../../dagster_examples/event_pipeline_demo/environments/default.yaml'
             )
         )
-        result_pipeline = execute_pipeline(define_event_ingest_pipeline(), config)
+        result_pipeline = execute_pipeline(event_ingest_pipeline, config)
         assert result_pipeline.success
 
         # We're not testing Snowflake loads here, so at least test that we called the connect

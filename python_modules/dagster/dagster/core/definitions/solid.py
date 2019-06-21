@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractproperty, abstractmethod
 import six
 
 from dagster import check
+from dagster.core.definitions.config import ConfigMapping
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import frozendict, frozenlist
@@ -145,26 +146,23 @@ class SolidDefinition(ISolidDefinition):
         required_resources=None,
         step_metadata_fn=None,
     ):
-        self.name = check_valid_name(name)
         self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
-        self.description = check.opt_str_param(description, 'description')
         self.config_field = check_user_facing_opt_field_param(
             config_field,
             'config_field',
             'of a SolidDefinition or @solid named "{name}"'.format(name=name),
         )
-        self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self.required_resources = check.opt_set_param(
             required_resources, 'required_resources', of_type=str
         )
         self.step_metadata_fn = step_metadata_fn
 
         super(SolidDefinition, self).__init__(
-            name,
-            check.list_param(inputs, 'inputs', InputDefinition),
-            check.list_param(outputs, 'outputs', OutputDefinition),
-            description,
-            metadata,
+            name=name,
+            input_defs=check.list_param(inputs, 'inputs', InputDefinition),
+            output_defs=check.list_param(outputs, 'outputs', OutputDefinition),
+            description=description,
+            metadata=metadata,
         )
 
     @property
@@ -228,7 +226,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         solid_defs,
         input_mappings=None,
         output_mappings=None,
-        config_mapping_fn=None,
+        config_mapping=None,
         dependencies=None,
         description=None,
         metadata=None,
@@ -244,7 +242,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
             check.opt_list_param(output_mappings, 'output_mappings')
         )
 
-        self.config_mapping_fn = check.opt_callable_param(config_mapping_fn, 'config_mapping_fn')
+        self.config_mapping = check.opt_inst_param(config_mapping, 'config_mapping', ConfigMapping)
 
         self.dependencies = validate_dependency_dict(dependencies)
         dependency_structure, pipeline_solid_dict = create_execution_structure(
@@ -261,7 +259,11 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         self._solid_defs = solid_defs
 
         super(CompositeSolidDefinition, self).__init__(
-            name, input_defs, output_defs, description, metadata
+            name=name,
+            input_defs=input_defs,
+            output_defs=output_defs,
+            description=description,
+            metadata=metadata,
         )
 
     def iterate_solid_defs(self):
@@ -290,9 +292,18 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         return required_resources
 
     @property
+    def has_config_mapping(self):
+        return self.config_mapping is not None
+
+    @property
     def has_config_entry(self):
         has_solid_config = any([solid.definition.has_config_entry for solid in self.solids])
-        return has_solid_config or self.has_configurable_inputs or self.has_configurable_outputs
+        return (
+            self.has_config_mapping
+            or has_solid_config
+            or self.has_configurable_inputs
+            or self.has_configurable_outputs
+        )
 
     def mapped_input(self, solid_name, input_name):
         for mapping in self.input_mappings:

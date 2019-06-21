@@ -1,5 +1,7 @@
 import copy
 
+from collections import namedtuple
+
 import six
 
 from dagster import check
@@ -11,6 +13,7 @@ from dagster.utils import single_item
 
 from .errors import (
     create_bad_mapping_error,
+    create_bad_mapping_solids_key_error,
     create_composite_type_mismatch_error,
     create_enum_type_mismatch_error,
     create_enum_value_missing_error,
@@ -138,45 +141,23 @@ def evaluate_composite_config(context):
     check.inst_param(context, 'context', TraversalContext)
     check.param_invariant(context.config_type.is_composite, 'composite_type')
 
-    # Support config mapping override functions
-    mapped_config_value = get_config_mapping_value(context)
-    if mapped_config_value:
-        solid_def_name = context.pipeline.get_solid(context.config_type.handle).definition.name
-        handle_name = str(context.config_type.handle)
-
-        if not isinstance(mapped_config_value, dict):
-            context.add_error(
-                create_bad_mapping_error(context, solid_def_name, handle_name, mapped_config_value)
-            )
-            return None
-
-        errors, _ = evaluate_config(
-            context.config_type, mapped_config_value, context.pipeline, context.seen_handles
-        )
-
-        if errors:
-            prefix = (
-                'Config override mapping function defined by solid {handle_name} from definition '
-                '{solid_def_name} {path_msg} caused error: '.format(
-                    path_msg=get_friendly_path_msg(context.stack),
-                    handle_name=handle_name,
-                    solid_def_name=solid_def_name,
-                )
-            )
-            for error in errors:
-                context.add_error(error._replace(message=prefix + error.message))
-            return None
-
-        return mapped_config_value
+    fields = context.config_type.fields
 
     if context.config_value and not isinstance(context.config_value, dict):
         context.add_error(create_composite_type_mismatch_error(context))
         return None
 
+    result = _evaluate_composite_solid_config(context)
+    if result.errors:
+        for error in result.errors:
+            context.add_error(error)
+        return None
+
+    if result.value:
+        return result.value
+
     # ASK: this can crash on user error
     config_value = check.opt_dict_param(context.config_value, 'incoming_value', key_type=str)
-
-    fields = context.config_type.fields
 
     defined_fields = set(fields.keys())
     incoming_fields = set(config_value.keys())
@@ -227,6 +208,99 @@ def evaluate_composite_config(context):
     return output_config_value
 
 
+class CompositeSolidEvaluationResult(namedtuple('_CompositeSolidEvaluationResult', 'errors value')):
+    def __new__(cls, errors, value):
+        return super(CompositeSolidEvaluationResult, cls).__new__(
+            cls, check.opt_list_param(errors, 'errors'), value
+        )
+
+
+def _evaluate_composite_solid_config(context):
+    '''Evaluates config for a composite solid and returns CompositeSolidEvaluationResult
+    '''
+    # Support config mapping override functions
+    if not is_solid_container_config(context.config_type):
+        return CompositeSolidEvaluationResult(None, None)
+
+    handle = context.config_type.handle
+
+    # If we've already seen this handle, skip -- we've already run the block of code below
+    if not handle or handle in context.seen_handles:
+        return CompositeSolidEvaluationResult(None, None)
+
+    solid_def = context.pipeline.get_solid(context.config_type.handle).definition
+
+    has_mapping = isinstance(solid_def, CompositeSolidDefinition) and solid_def.has_config_mapping
+
+    # If there's no config mapping function provided for this composite solid, bail
+    if not has_mapping:
+        return CompositeSolidEvaluationResult(None, None)
+
+    # ensure we don't mutate the source environment dict
+    copy_config_value = copy.deepcopy(context.config_value.get('config'))
+
+    with user_code_error_boundary(
+        DagsterUserCodeExecutionError,
+        'error occurred during execution of user config mapping function {fn} defined'
+        ' {path_msg}'.format(
+            fn=solid_def.config_mapping.config_mapping_fn.__name__,
+            path_msg=get_friendly_path_msg(context.stack),
+        ),
+    ):
+        mapped_config_value = solid_def.config_mapping.config_mapping_fn(copy_config_value)
+
+    if not mapped_config_value:
+        return CompositeSolidEvaluationResult(None, None)
+
+    solid_def_name = context.pipeline.get_solid(handle).definition.name
+
+    # Perform basic validation on the mapped config value; remaining validation will happen via the
+    # evaluate_config call below
+    if not isinstance(mapped_config_value, dict):
+        errors = [
+            create_bad_mapping_error(context, solid_def_name, str(handle), mapped_config_value)
+        ]
+        return CompositeSolidEvaluationResult(errors, None)
+
+    if 'solids' in context.config_value:
+        errors = [create_bad_mapping_solids_key_error(context, solid_def_name, str(handle))]
+        return CompositeSolidEvaluationResult(errors, None)
+
+    # We first validate the provided environment config as normal against the composite solid config
+    # schema. This will perform a full traversal rooted at the SolidContainerConfigDict and thread
+    # errors up to the root
+    errors, _ = evaluate_config(
+        context.config_type,
+        context.config_value,
+        pipeline=context.pipeline,
+        seen_handles=context.seen_handles + [handle],
+    )
+    if errors:
+        return CompositeSolidEvaluationResult(errors, None)
+
+    # We've validated the composite solid config; now validate the mapping fn overrides
+    # against the config schema subtree for child solids
+    errors, config_value = evaluate_config(
+        context.config_type.child_solids_config_field.config_type,
+        mapped_config_value,
+        pipeline=context.pipeline,
+        seen_handles=context.seen_handles + [handle],
+    )
+    if errors:
+        prefix = (
+            'Config override mapping function defined by solid {handle_name} from '
+            'definition {solid_def_name} {path_msg} caused error: '.format(
+                path_msg=get_friendly_path_msg(context.stack),
+                handle_name=str(handle),
+                solid_def_name=solid_def_name,
+            )
+        )
+        errors = [e._replace(message=prefix + e.message) for e in errors]
+        return CompositeSolidEvaluationResult(errors, None)
+
+    return CompositeSolidEvaluationResult(None, {'solids': config_value})
+
+
 ## Lists
 
 
@@ -243,35 +317,3 @@ def evaluate_list_config(context):
     return [
         _evaluate_config(context.for_list(index, item)) for index, item in enumerate(config_value)
     ]
-
-
-def get_config_mapping_value(context):
-    check.inst_param(context, 'context', TraversalContext)
-
-    if not is_solid_container_config(context.config_type):
-        return None
-
-    handle = context.config_type.handle
-
-    if not handle or handle in context.seen_handles:
-        return None
-
-    # Ensure we don't re-process configs from the same handle twice
-    context.seen_handles.add(handle)
-
-    solid_def = context.pipeline.get_solid(context.config_type.handle).definition
-
-    has_mapping = isinstance(solid_def, CompositeSolidDefinition) and solid_def.config_mapping_fn
-
-    if not has_mapping:
-        return None
-
-    # ensure we don't mutate the source environment dict
-    copy_config_value = copy.deepcopy(context.config_value)
-
-    with user_code_error_boundary(
-        DagsterUserCodeExecutionError,
-        'error occurred during execution of user config mapping function defined'
-        ' {path_msg}'.format(path_msg=get_friendly_path_msg(context.stack)),
-    ):
-        return solid_def.config_mapping_fn(copy_config_value)

@@ -98,7 +98,7 @@ class DauphinPipeline(dauphin.ObjectType):
 
     def resolve_presets(self, _graphene_info):
         return [
-            DauphinPipelinePreset(preset)
+            DauphinPipelinePreset(preset, self._pipeline.name)
             for preset in sorted(self._pipeline.get_presets(), key=lambda item: item.name)
         ]
 
@@ -214,8 +214,9 @@ class DauphinPipelinePreset(dauphin.ObjectType):
     environmentConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
 
-    def __init__(self, preset):
+    def __init__(self, preset, pipeline_name):
         self._preset = check.inst_param(preset, 'preset', PresetDefinition)
+        self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
 
     def resolve_name(self, _graphene_info):
         return self._preset.name
@@ -224,7 +225,8 @@ class DauphinPipelinePreset(dauphin.ObjectType):
         return self._preset.solid_subset
 
     def resolve_environmentConfigYaml(self, _graphene_info):
-        return self._preset.environment_yaml if self._preset.environment_yaml else ''
+        yaml = self._preset.get_environment_yaml(self._pipeline_name)
+        return yaml if yaml else ''
 
     def resolve_mode(self, _graphene_info):
         return self._preset.mode

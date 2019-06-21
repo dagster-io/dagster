@@ -6,6 +6,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 from . import (
+    ConfigMapping,
     CompositeSolidDefinition,
     ExpectationResult,
     InputDefinition,
@@ -555,14 +556,13 @@ def _validate_decorated_fn(fn, names, expected_positionals):
 
 
 class _CompositeSolid(object):
-    def __init__(
-        self, name=None, inputs=None, outputs=None, description=None, config_mapping_fn=None
-    ):
+    def __init__(self, name=None, inputs=None, outputs=None, description=None, config_mapping=None):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_nullable_list_param(inputs, 'inputs', InputDefinition)
         self.output_defs = check.opt_nullable_list_param(outputs, 'output', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
-        self.config_mapping_fn = check.opt_callable_param(config_mapping_fn, 'config_mapping_fn')
+
+        self.config_mapping = check.opt_inst_param(config_mapping, 'config_mapping', ConfigMapping)
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -607,11 +607,11 @@ class _CompositeSolid(object):
             dependencies=context.dependencies,
             solid_defs=context.solid_defs,
             description=self.description,
-            config_mapping_fn=self.config_mapping_fn,
+            config_mapping=self.config_mapping,
         )
 
 
-def composite_solid(name=None, inputs=None, outputs=None, description=None, config_mapping_fn=None):
+def composite_solid(name=None, inputs=None, outputs=None, description=None, config_mapping=None):
     ''' (decorator) Create a CompositeSolidDefinition with specified parameters.
 
     Using this decorator allows you to build up the dependency graph of the composite by writing a
@@ -632,8 +632,12 @@ def composite_solid(name=None, inputs=None, outputs=None, description=None, conf
             create the OutputMappings for the CompositeSolidDefinition.
 
             A dictionary is returned from the function to map multiple outputs.
-        config_mapping_fn (Callable):
-            A function to remap configuration for the constituent solids.
+        config_mapping (ConfigMapping):
+            By specifying a config mapping, you can override the configuration for child solids
+            contained within this composite solid. Config mappings require both a configuration
+            field to be specified, which is exposed as the configuration for this composite solid,
+            and a configuration mapping function, which maps the parent configuration of this solid
+            into a configuration that is applied to any child solids.
 
     Examples:
 
@@ -655,7 +659,7 @@ def composite_solid(name=None, inputs=None, outputs=None, description=None, conf
         check.invariant(inputs is None)
         check.invariant(outputs is None)
         check.invariant(description is None)
-        check.invariant(config_mapping_fn is None)
+        check.invariant(config_mapping is None)
         return _CompositeSolid()(name)
 
     return _CompositeSolid(
@@ -663,7 +667,7 @@ def composite_solid(name=None, inputs=None, outputs=None, description=None, conf
         inputs=inputs,
         outputs=outputs,
         description=description,
-        config_mapping_fn=config_mapping_fn,
+        config_mapping=config_mapping,
     )
 
 
