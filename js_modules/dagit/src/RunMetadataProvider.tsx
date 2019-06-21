@@ -3,6 +3,7 @@ import produce from "immer";
 import gql from "graphql-tag";
 
 import { RunMetadataProviderMessageFragment } from "./types/RunMetadataProviderMessageFragment";
+import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
 
 export enum IStepState {
   WAITING = "waiting",
@@ -32,15 +33,18 @@ export enum IStepDisplayActionType {
   SHOW_IN_MODAL = "show-in-modal",
   NONE = "none"
 }
+
+interface IDisplayEventItem {
+  text: string; // shown in gray on the left
+  action: IStepDisplayActionType;
+  actionText: string; // shown after `text`, optionally with a click action
+  actionValue: string; // value passed to the click action
+}
+
 export interface IStepDisplayEvent {
   icon: IStepDisplayIconType;
   text: string;
-  items: {
-    text: string; // shown in gray on the left
-    action: IStepDisplayActionType;
-    actionText: string; // shown after `text`, optionally with a click action
-    actionValue: string; // value passed to the click action
-  }[];
+  items: IDisplayEventItem[];
 }
 
 export interface IExpectationResult extends IStepDisplayEvent {
@@ -68,6 +72,58 @@ export interface IRunMetadataDict {
   steps: {
     [stepKey: string]: IStepMetadata;
   };
+}
+
+function itemsForMetadataEntries(
+  metadataEntries: MetadataEntryFragment[]
+): IDisplayEventItem[] {
+  const items = [];
+  for (const metadataEntry of metadataEntries) {
+    switch (metadataEntry.__typename) {
+      case "EventPathMetadataEntry":
+        items.push({
+          text: metadataEntry.label,
+          actionText: "[Copy Path]",
+          action: IStepDisplayActionType.COPY,
+          actionValue: metadataEntry.path
+        });
+        break;
+      case "EventJsonMetadataEntry":
+        items.push({
+          text: metadataEntry.label,
+          actionText: "[Show Metadata]",
+          action: IStepDisplayActionType.SHOW_IN_MODAL,
+          // take JSON string, parse, and then pretty print
+          actionValue: JSON.stringify(
+            JSON.parse(metadataEntry.jsonString),
+            null,
+            2
+          )
+        });
+
+        break;
+      case "EventUrlMetadataEntry":
+        items.push({
+          text: metadataEntry.label,
+          actionText: "[Open URL]",
+          action: IStepDisplayActionType.OPEN_IN_TAB,
+          actionValue: metadataEntry.url
+        });
+
+        break;
+      case "EventTextMetadataEntry":
+        items.push({
+          text: metadataEntry.label,
+          actionText: metadataEntry.text,
+          action: IStepDisplayActionType.NONE,
+          actionValue: ""
+        });
+
+        break;
+    }
+  }
+
+  return items;
 }
 
 function extractMetadataFromLogs(
@@ -133,51 +189,20 @@ function extractMetadataFromLogs(
         metadata.steps[stepKey] = produce(
           metadata.steps[stepKey] || {},
           step => {
-            for (const metadataEntry of log.materialization.metadataEntries) {
-              // place holder until we have two layers of hierarchy
-              // this preserves existing behavior now. other metadata types
-              // on a materialization will be ignored
-              if (metadataEntry.__typename == "EventPathMetadataEntry") {
-                let text =
-                  log.materialization.label + "." + metadataEntry.label;
-
-                step.materializations.push({
-                  icon: IStepDisplayIconType.LINK,
-                  text: text || "Materialization",
-                  items: [
-                    {
-                      text: text,
-                      actionText: "[Copy Path]",
-                      action: IStepDisplayActionType.COPY,
-                      actionValue: metadataEntry.path || ""
-                    }
-                  ]
-                });
-              }
-            }
+            console.log(log.materialization);
+            step.materializations.push({
+              icon: IStepDisplayIconType.LINK,
+              text: log.materialization.label || "Materialization",
+              items: itemsForMetadataEntries(
+                log.materialization.metadataEntries
+              )
+            });
           }
         );
       } else if (log.__typename == "StepExpectationResultEvent") {
         metadata.steps[stepKey] = produce(
           metadata.steps[stepKey] || {},
           step => {
-            const items = [];
-            for (const metadataEntry of log.expectationResult.metadataEntries) {
-              // ignore other entry types for now
-              if (metadataEntry.__typename == "EventJsonMetadataEntry") {
-                items.push({
-                  text: "",
-                  actionText: "[Show Metadata]",
-                  action: IStepDisplayActionType.SHOW_IN_MODAL,
-                  // take JSON string, parse, and then pretty print
-                  actionValue: JSON.stringify(
-                    JSON.parse(metadataEntry.jsonString),
-                    null,
-                    2
-                  )
-                });
-              }
-            }
             step.expectationResults.push({
               status: log.expectationResult.success
                 ? IExpectationResultStatus.PASSED
@@ -186,7 +211,9 @@ function extractMetadataFromLogs(
                 ? IStepDisplayIconType.SUCCESS
                 : IStepDisplayIconType.FAILURE,
               text: log.expectationResult.label,
-              items: items
+              items: itemsForMetadataEntries(
+                log.expectationResult.metadataEntries
+              )
             });
           }
         );

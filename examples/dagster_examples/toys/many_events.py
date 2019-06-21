@@ -86,8 +86,8 @@ def many_table_materializations(_context):
         yield Materialization(
             label='table_info',
             metadata_entries=[
-                EventMetadataEntry.fspath(path='/path/to/{}'.format(table), label='table_path'),
                 EventMetadataEntry.text(text=table, label='table_name'),
+                EventMetadataEntry.fspath(path='/path/to/{}'.format(table), label='table_path'),
                 EventMetadataEntry.json(data={'name': table}, label='table_data'),
                 EventMetadataEntry.url(
                     url='https://bigty.pe/{}'.format(table), label='table_name_big'

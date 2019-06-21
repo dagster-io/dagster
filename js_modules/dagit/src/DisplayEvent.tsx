@@ -65,7 +65,11 @@ const DisplayEventItem: React.FunctionComponent<
       </DisplayEventLink>
     );
   }
-  return <DisplayEventItemContainer>{actionEl}</DisplayEventItemContainer>;
+  return (
+    <DisplayEventItemContainer>
+      {text}: {actionEl}
+    </DisplayEventItemContainer>
+  );
 };
 
 export const DisplayEvent: React.FunctionComponent<DisplayEventProps> = ({
