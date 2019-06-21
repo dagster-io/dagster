@@ -76,6 +76,30 @@ def test_good_override():
     assert result.success
 
 
+@pytest.mark.skip('https://github.com/dagster-io/dagster/issues/1510')
+def test_missing_config():
+    @pipeline
+    def wrap_pipeline():
+        return wrap.alias('do_stuff')()
+
+    with pytest.raises(PipelineConfigEvaluationError):
+        execute_pipeline(wrap_pipeline)
+
+    with pytest.raises(PipelineConfigEvaluationError):
+        execute_pipeline(wrap_pipeline, {})
+
+    with pytest.raises(PipelineConfigEvaluationError):
+        execute_pipeline(wrap_pipeline, {'solids': {}})
+
+    # fails
+    with pytest.raises(PipelineConfigEvaluationError):
+        execute_pipeline(wrap_pipeline, {'solids': {'do_stuff': {}}})
+
+    # fails
+    with pytest.raises(PipelineConfigEvaluationError):
+        execute_pipeline(wrap_pipeline, {'solids': {'do_stuff': {'config': {}}}})
+
+
 def test_bad_override():
     @composite_solid(
         config_mapping=ConfigMapping(
