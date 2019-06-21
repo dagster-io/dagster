@@ -14,7 +14,6 @@ from dagster import (
     String,
 )
 from dagster.core.definitions import ConfigMapping
-from dagster.core.errors import DagsterUserCodeExecutionError
 
 
 @solid(config_field=Field(String, is_optional=True))
@@ -76,28 +75,57 @@ def test_good_override():
     assert result.success
 
 
-@pytest.mark.skip('https://github.com/dagster-io/dagster/issues/1510')
 def test_missing_config():
     @pipeline
     def wrap_pipeline():
         return wrap.alias('do_stuff')()
 
-    with pytest.raises(PipelineConfigEvaluationError):
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(wrap_pipeline)
 
-    with pytest.raises(PipelineConfigEvaluationError):
+    assert len(exc_info.value.errors) == 1
+    assert exc_info.value.errors[0].message == (
+        'Missing required field "solids" at document config root. Available Fields: '
+        '''"['execution', 'expectations', 'loggers', 'resources', 'solids', 'storage']".'''
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(wrap_pipeline, {})
 
-    with pytest.raises(PipelineConfigEvaluationError):
+    assert len(exc_info.value.errors) == 1
+    assert exc_info.value.errors[0].message == (
+        'Missing required field "solids" at document config root. Available Fields: '
+        '''"['execution', 'expectations', 'loggers', 'resources', 'solids', 'storage']".'''
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(wrap_pipeline, {'solids': {}})
 
-    # fails
-    with pytest.raises(PipelineConfigEvaluationError):
+    assert len(exc_info.value.errors) == 1
+    assert exc_info.value.errors[0].message == (
+        'Missing required field "do_stuff" at path root:solids Available Fields: '
+        '''"['do_stuff']".'''
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(wrap_pipeline, {'solids': {'do_stuff': {}}})
 
-    # fails
-    with pytest.raises(PipelineConfigEvaluationError):
+    assert len(exc_info.value.errors) == 1
+    assert (
+        'Exception occurred during execution of user config mapping function <lambda> defined by '
+        'solid do_stuff from definition wrap at path root:solids:do_stuff:'
+    ) in exc_info.value.errors[0].message
+    assert 'TypeError: \'NoneType\' object' in exc_info.value.errors[0].message
+
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(wrap_pipeline, {'solids': {'do_stuff': {'config': {}}}})
+
+    assert len(exc_info.value.errors) == 1
+    assert (
+        'Exception occurred during execution of user config mapping function <lambda> defined by '
+        'solid do_stuff from definition wrap at path root:solids:do_stuff:'
+    ) in exc_info.value.errors[0].message
+    assert 'KeyError: \'override_str\'' in exc_info.value.errors[0].message
 
 
 def test_bad_override():
@@ -148,7 +176,7 @@ def test_raises_fn_override():
     def wrap_pipeline():
         return bad_wrap.alias('do_stuff')()
 
-    with pytest.raises(DagsterUserCodeExecutionError) as exc_info:
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(
             wrap_pipeline,
             {
@@ -157,10 +185,13 @@ def test_raises_fn_override():
             },
         )
 
-    assert exc_info.match(
-        'error occurred during execution of user config mapping function raises_config_mapping_fn '
-        'defined at path root:solids:do_stuff'
-    )
+    assert len(exc_info.value.errors) == 1
+    assert (
+        'Exception occurred during execution of user config mapping function '
+        'raises_config_mapping_fn defined by solid do_stuff from definition bad_wrap at path '
+        'root:solids:do_stuff'
+    ) in exc_info.value.errors[0].message
+    assert 'AssertionError: assert 0' in exc_info.value.errors[0].message
 
 
 def test_composite_config_field():
