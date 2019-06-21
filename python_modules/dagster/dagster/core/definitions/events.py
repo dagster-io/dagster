@@ -102,24 +102,6 @@ class Materialization(namedtuple('_Materialization', 'label description metadata
     '''
 
     @staticmethod
-    def legacy_ctor(path, name=None, description=None, result_metadata=None):
-        '''The constructor for this object used to have this signature. Introduced
-        this temporary static method that matched that signature to make migration
-        easier and the initial diff less thrashy -- schrockn (06/17/19)'''
-        check.str_param(path, 'path')
-        path_entry = EventMetadataEntry.path(label='a_path', path=path)
-        return Materialization(
-            label=name if name else 'unlabeled',
-            description=description,
-            metadata_entries=[
-                path_entry,
-                EventMetadataEntry.json(label='json', data=result_metadata),
-            ]
-            if result_metadata
-            else [path_entry],
-        )
-
-    @staticmethod
     def file(path, description=None):
         return Materialization(
             label=last_file_comp(path),
@@ -149,30 +131,16 @@ class ExpectationResult(
     Attributes:
 
         success (bool): Whether the expectation passed or not.
-        name (str): Short display name for expectation
+        name (Optional[str]): Short display name for expectation. Defaults to "result".
         message (str): Information about the computation. Typically only used in the failure case.
         result_metadata (dict): Arbitrary information about the expectation result.
     '''
 
-    @staticmethod
-    def legacy_ctor(success, name=None, message=None, result_metadata=None):
-        '''The constructor for this object used to have this signature. Introduced
-        this temporary static method that matched that signature to make migration
-        easier and the initial diff less thrashy -- schrockn (06/17/19)'''
-        return ExpectationResult(
-            success=success,
-            label=name if name is not None else 'unlabeled',
-            description=message,
-            metadata_entries=[]
-            if result_metadata is None
-            else [EventMetadataEntry.json(label='json', data=result_metadata)],
-        )
-
-    def __new__(cls, success, label, description=None, metadata_entries=None):
+    def __new__(cls, success, label=None, description=None, metadata_entries=None):
         return super(ExpectationResult, cls).__new__(
             cls,
             success=check.bool_param(success, 'success'),
-            label=check.str_param(label, 'label'),
+            label=check.opt_str_param(label, 'label', 'result'),
             description=check.opt_str_param(description, 'description'),
             metadata_entries=check.opt_list_param(
                 metadata_entries, metadata_entries, of_type=EventMetadataEntry

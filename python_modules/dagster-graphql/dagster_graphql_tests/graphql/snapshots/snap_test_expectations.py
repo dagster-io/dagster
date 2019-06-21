@@ -17,7 +17,7 @@ snapshots['test_basic_expectations_within_compute_step_events 1'] = [
                 {
                     'description': None,
                     'jsonString': '{"reason": "Relentless pessimism."}',
-                    'label': 'json'
+                    'label': 'data'
                 }
             ],
             'success': False
@@ -41,7 +41,7 @@ snapshots['test_basic_expectations_within_compute_step_events 2'] = [
                 {
                     'description': None,
                     'jsonString': '{"reason": "Just because."}',
-                    'label': 'json'
+                    'label': 'data'
                 }
             ],
             'success': True
@@ -79,7 +79,7 @@ snapshots['test_basic_input_output_expectations 1'] = [
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
             'description': None,
-            'label': 'unlabeled',
+            'label': 'result',
             'metadataEntries': [
             ],
             'success': True
@@ -95,7 +95,7 @@ snapshots['test_basic_input_output_expectations 1'] = [
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
             'description': None,
-            'label': 'unlabeled',
+            'label': 'result',
             'metadataEntries': [
             ],
             'success': True

@@ -31,8 +31,8 @@ raw_files = [
 
 def create_raw_file_solid(name):
     def do_expectation(_context, _value):
-        return ExpectationResult.legacy_ctor(
-            success=True, name='output_table_exists', message='Checked {name} exists'
+        return ExpectationResult(
+            success=True, label='output_table_exists', description='Checked {name} exists'
         )
 
     @solid(
@@ -50,7 +50,12 @@ def create_raw_file_solid(name):
         ),
     )
     def _f(_context):
-        yield Materialization.legacy_ctor(path='/path/to/{}.raw'.format(name))
+        yield Materialization(
+            label='table_info',
+            metadata_entries=[
+                EventMetadataEntry.path(label='table_path', path='/path/to/{}.raw'.format(name))
+            ],
+        )
         yield Result(name)
 
     return _f
@@ -116,13 +121,16 @@ def many_materializations_and_passing_expectations(_context):
     ]
 
     for table in tables:
-        yield Materialization.legacy_ctor(
-            path='/path/to/{}'.format(table), description='This is a table.'
+        yield Materialization(
+            label='table_info',
+            metadata_entries=[
+                EventMetadataEntry.path(label='table_path', path='/path/to/{}.raw'.format(table))
+            ],
         )
-        yield ExpectationResult.legacy_ctor(
+        yield ExpectationResult(
             success=True,
-            name='{table}.row_count'.format(table=table),
-            message='Row count passed for {table}'.format(table=table),
+            label='{table}.row_count'.format(table=table),
+            description='Row count passed for {table}'.format(table=table),
         )
 
 
@@ -132,28 +140,38 @@ def many_materializations_and_passing_expectations(_context):
     description='A solid that just does a couple inline expectations, one of which fails',
 )
 def check_users_and_groups_one_fails_one_succeeds(_context):
-    yield ExpectationResult.legacy_ctor(
+    yield ExpectationResult(
         success=True,
-        name='user_expectations',
-        message='Battery of expectations for user',
-        result_metadata={
-            'columns': {
-                'name': {'nulls': 0, 'empty': 0, 'values': 123, 'average_length': 3.394893},
-                'time_created': {'nulls': 1, 'empty': 2, 'values': 120, 'average': 1231283},
-            }
-        },
+        label='user_expectations',
+        description='Battery of expectations for user',
+        metadata_entries=[
+            EventMetadataEntry.json(
+                label='table_summary',
+                data={
+                    'columns': {
+                        'name': {'nulls': 0, 'empty': 0, 'values': 123, 'average_length': 3.394893},
+                        'time_created': {'nulls': 1, 'empty': 2, 'values': 120, 'average': 1231283},
+                    }
+                },
+            )
+        ],
     )
 
-    yield ExpectationResult.legacy_ctor(
+    yield ExpectationResult(
         success=False,
-        name='groups_expectations',
-        message='Battery of expectations for groups',
-        result_metadata={
-            'columns': {
-                'name': {'nulls': 1, 'empty': 0, 'values': 122, 'average_length': 3.394893},
-                'time_created': {'nulls': 1, 'empty': 2, 'values': 120, 'average': 1231283},
-            }
-        },
+        label='groups_expectations',
+        description='Battery of expectations for groups',
+        metadata_entries=[
+            EventMetadataEntry.json(
+                label='table_summary',
+                data={
+                    'columns': {
+                        'name': {'nulls': 1, 'empty': 0, 'values': 122, 'average_length': 3.394893},
+                        'time_created': {'nulls': 1, 'empty': 2, 'values': 120, 'average': 1231283},
+                    }
+                },
+            )
+        ],
     )
 
 
@@ -163,8 +181,8 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
     description='A solid that just does a couple inline expectations',
 )
 def check_admins_both_succeed(_context):
-    yield ExpectationResult.legacy_ctor(success=True, message='Group admins check out')
-    yield ExpectationResult.legacy_ctor(success=True, message='Event admins check out')
+    yield ExpectationResult(success=True, label='Group admins check out')
+    yield ExpectationResult(success=True, label='Event admins check out')
 
 
 def define_many_events_pipeline():

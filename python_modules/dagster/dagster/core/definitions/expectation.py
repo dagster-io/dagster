@@ -33,7 +33,7 @@ class ExpectationDefinition(object):
                     expectation_fn=lambda(
                         _info,
                         value,
-                    ): ExpectationResult.legacy_ctor(success=value > 0),
+                    ): ExpectationResult(success=value > 0),
                 )
             ])
     '''

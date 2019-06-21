@@ -22,7 +22,7 @@ def expt_results_for_compute_step(result, solid_name):
 def test_successful_expectation_in_compute_step():
     @solid(outputs=[])
     def success_expectation_solid(_context):
-        yield ExpectationResult.legacy_ctor(success=True, message='This is always true.')
+        yield ExpectationResult(success=True, description='This is always true.')
 
     pipeline_def = PipelineDefinition(
         name='success_expectation_in_compute_pipeline', solid_defs=[success_expectation_solid]
@@ -44,7 +44,7 @@ def test_successful_expectation_in_compute_step():
 def test_failed_expectation_in_compute_step():
     @solid(outputs=[])
     def failure_expectation_solid(_context):
-        yield ExpectationResult.legacy_ctor(success=False, message='This is always false.')
+        yield ExpectationResult(success=False, description='This is always false.')
 
     pipeline_def = PipelineDefinition(
         name='failure_expectation_in_compute_pipeline', solid_defs=[failure_expectation_solid]
@@ -65,7 +65,7 @@ def test_failed_expectation_in_compute_step():
 def test_return_expectation_failure():
     @solid(outputs=[])
     def return_expectation_failure(_context):
-        return ExpectationResult.legacy_ctor(success=True, message='This is always true.')
+        return ExpectationResult(success=True, description='This is always true.')
 
     pipeline_def = PipelineDefinition(
         name='success_expectation_in_compute_pipeline', solid_defs=[return_expectation_failure]

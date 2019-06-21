@@ -47,11 +47,11 @@ def test_multiple_outputs_expectations():
 
     def _expect_fn_one(*_args, **_kwargs):
         called['expectation_one'] = True
-        return ExpectationResult.legacy_ctor(success=True)
+        return ExpectationResult(success=True)
 
     def _expect_fn_two(*_args, **_kwargs):
         called['expectation_two'] = True
-        return ExpectationResult.legacy_ctor(success=True)
+        return ExpectationResult(success=True)
 
     def _compute_fn(*_args, **_kwargs):
         yield Result('foo', 'output_one')

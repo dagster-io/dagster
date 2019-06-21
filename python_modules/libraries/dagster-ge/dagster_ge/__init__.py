@@ -4,7 +4,7 @@ import json
 import great_expectations as ge
 
 from dagster import check
-from dagster.core.definitions import ExpectationDefinition, ExpectationResult
+from dagster.core.definitions import ExpectationDefinition, ExpectationResult, EventMetadataEntry
 
 
 # e.g.
@@ -27,8 +27,9 @@ def json_config_expectation(name, file_path):
             validate_result = ge_df.validate()
             check.invariant('success' in validate_result)
             check.invariant('results' in validate_result)
-            return ExpectationResult.legacy_ctor(
-                success=validate_result['success'], result_metadata=validate_result
+            return ExpectationResult(
+                success=validate_result['success'],
+                metadata_entries=[EventMetadataEntry.json(label='result', data=validate_result)],
             )
 
     return ExpectationDefinition(name, expectation_fn=_file_passes)
@@ -43,8 +44,9 @@ def ge_expectation(name, ge_callback):
         ge_df = ge.from_pandas(df)
         ge_result = ge_callback(ge_df)
         check.invariant('success' in ge_result)
-        return ExpectationResult.legacy_ctor(
-            success=ge_result['success'], result_metadata=ge_result
+        return ExpectationResult(
+            success=ge_result['success'],
+            metadata_entries=[EventMetadataEntry.json(label='result', data=ge_result)],
         )
 
     return ExpectationDefinition(name, expectation_fn=_do_expectation)
