@@ -279,14 +279,10 @@ def _evaluate_composite_solid_config(context):
     # We first validate the provided environment config as normal against the composite solid config
     # schema. This will perform a full traversal rooted at the SolidContainerConfigDict and thread
     # errors up to the root
-    errors, _ = evaluate_config(
-        context.config_type,
-        context.config_value,
-        pipeline=context.pipeline,
-        seen_handles=context.seen_handles + [handle],
-    )
-    if errors:
-        return CompositeSolidEvaluationResult(errors, None)
+    config_context = context.new_context_with_handle(handle)
+    _evaluate_config(config_context)
+    if config_context.errors:
+        return CompositeSolidEvaluationResult(config_context.errors, None)
 
     # We've validated the composite solid config; now validate the mapping fn overrides
     # against the config schema subtree for child solids
