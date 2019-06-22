@@ -7,13 +7,13 @@ from dagster import (
     execute_pipeline,
     pipeline,
     solid,
+    ConfigMapping,
     Field,
     Int,
     PipelineConfigEvaluationError,
     Result,
     String,
 )
-from dagster.core.definitions import ConfigMapping
 
 
 @solid(config_field=Field(String, is_optional=True))
