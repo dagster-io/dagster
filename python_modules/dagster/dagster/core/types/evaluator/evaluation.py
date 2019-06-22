@@ -10,6 +10,7 @@ from dagster.core.definitions.environment_configs import is_solid_container_conf
 from dagster.core.definitions.solid import CompositeSolidDefinition
 from dagster.core.types.config import ConfigType
 from dagster.utils import single_item
+from dagster.utils.merger import dict_merge
 
 from .errors import (
     create_bad_mapping_error,
@@ -304,7 +305,9 @@ def _evaluate_composite_solid_config(context):
         errors = [e._replace(message=prefix + e.message) for e in errors]
         return CompositeSolidEvaluationResult(errors, None)
 
-    return CompositeSolidEvaluationResult(None, {'solids': config_value})
+    return CompositeSolidEvaluationResult(
+        None, {'solids': dict_merge(config_value, mapped_config_value)}
+    )
 
 
 ## Lists

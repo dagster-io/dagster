@@ -5,10 +5,12 @@ import pytest
 from dagster import (
     composite_solid,
     execute_pipeline,
+    lambda_solid,
     pipeline,
     solid,
     ConfigMapping,
     Field,
+    InputDefinition,
     Int,
     PipelineConfigEvaluationError,
     Result,
@@ -217,3 +219,54 @@ def test_composite_config_field():
     assert execute_pipeline(
         test_pipeline, {'solids': {'test': {'config': {'override': 5}}}}
     ).success
+
+
+def test_nested_with_inputs():
+    @solid(inputs=[InputDefinition('some_input', String)], config={'basic_key': Field(String)})
+    def basic(context, some_input):
+        yield Result(context.solid_config['basic_key'] + ' - ' + some_input)
+
+    @composite_solid(
+        inputs=[InputDefinition('some_input', String)],
+        config_mapping=ConfigMapping(
+            config_mapping_fn=lambda cfg: {
+                'basic': {'config': {'basic_key': 'override.' + cfg['inner_first']}}
+            },
+            config={'inner_first': Field(String)},
+        ),
+    )
+    def inner_wrap(some_input):
+        return basic(some_input)
+
+    def outer_wrap_fn(cfg):
+        return {
+            'inner_wrap': {
+                'inputs': {'some_input': {'value': 'foobar'}},
+                'config': {'inner_first': cfg['outer_first']},
+            }
+        }
+
+    @composite_solid(
+        config_mapping=ConfigMapping(
+            config_mapping_fn=outer_wrap_fn, config={'outer_first': Field(String)}
+        )
+    )
+    def outer_wrap():
+        return inner_wrap()
+
+    @lambda_solid(inputs=[InputDefinition('input_str')])
+    def pipe(input_str):
+        return input_str
+
+    @pipeline(name='config_mapping')
+    def config_mapping_pipeline():
+        return pipe(outer_wrap())
+
+    result = execute_pipeline(
+        config_mapping_pipeline, {'solids': {'outer_wrap': {'config': {'outer_first': 'foo'}}}}
+    )
+
+    assert result.success
+
+    # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
+    assert result.result_for_solid('pipe').result_value() == 'override.foo - foobar'
