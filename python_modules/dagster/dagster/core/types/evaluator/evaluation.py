@@ -1,4 +1,5 @@
 import copy
+import traceback
 
 from collections import namedtuple
 
@@ -7,13 +8,13 @@ import six
 from dagster import check
 from dagster.core.definitions.environment_configs import is_solid_container_config
 from dagster.core.definitions.solid import CompositeSolidDefinition
-from dagster.core.errors import user_code_error_boundary, DagsterUserCodeExecutionError
 from dagster.core.types.config import ConfigType
 from dagster.utils import single_item
 
 from .errors import (
     create_bad_mapping_error,
     create_bad_mapping_solids_key_error,
+    create_bad_user_config_mapping_fn_error,
     create_composite_type_mismatch_error,
     create_enum_type_mismatch_error,
     create_enum_value_missing_error,
@@ -229,6 +230,7 @@ def _evaluate_composite_solid_config(context):
         return CompositeSolidEvaluationResult(None, None)
 
     solid_def = context.pipeline.get_solid(context.config_type.handle).definition
+    solid_def_name = context.pipeline.get_solid(handle).definition.name
 
     has_mapping = isinstance(solid_def, CompositeSolidDefinition) and solid_def.has_config_mapping
 
@@ -239,26 +241,34 @@ def _evaluate_composite_solid_config(context):
     # ensure we don't mutate the source environment dict
     copy_config_value = copy.deepcopy(context.config_value.get('config'))
 
-    with user_code_error_boundary(
-        DagsterUserCodeExecutionError,
-        'error occurred during execution of user config mapping function {fn} defined'
-        ' {path_msg}'.format(
-            fn=solid_def.config_mapping.config_mapping_fn.__name__,
-            path_msg=get_friendly_path_msg(context.stack),
-        ),
-    ):
+    try:
         mapped_config_value = solid_def.config_mapping.config_mapping_fn(copy_config_value)
+    except Exception:  # pylint: disable=W0703
+        errors = [
+            create_bad_user_config_mapping_fn_error(
+                context,
+                solid_def.config_mapping.config_mapping_fn.__name__,
+                str(handle),
+                solid_def_name,
+                traceback.format_exc(),
+            )
+        ]
+        return CompositeSolidEvaluationResult(errors, None)
 
     if not mapped_config_value:
         return CompositeSolidEvaluationResult(None, None)
-
-    solid_def_name = context.pipeline.get_solid(handle).definition.name
 
     # Perform basic validation on the mapped config value; remaining validation will happen via the
     # evaluate_config call below
     if not isinstance(mapped_config_value, dict):
         errors = [
-            create_bad_mapping_error(context, solid_def_name, str(handle), mapped_config_value)
+            create_bad_mapping_error(
+                context,
+                solid_def.config_mapping.config_mapping_fn.__name__,
+                solid_def_name,
+                str(handle),
+                mapped_config_value,
+            )
         ]
         return CompositeSolidEvaluationResult(errors, None)
 

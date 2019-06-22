@@ -1,7 +1,6 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-
 from .pipeline import PipelineDefinition
 
 

@@ -1,5 +1,3 @@
-from .handle import ExecutionTargetHandle
-
 from .config import ConfigMapping
 
 from .dependency import (
@@ -18,11 +16,11 @@ from .environment_schema import (
     create_environment_type,
 )
 
-from .entrypoint import LoaderEntrypoint
-
 from .expectation import ExpectationDefinition
 
 from .events import ExpectationResult, Result, Materialization, EventMetadataEntry
+
+from .handle import ExecutionTargetHandle, LoaderEntrypoint
 
 from .input import InputDefinition, InputMapping
 

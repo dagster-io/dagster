@@ -352,15 +352,16 @@ def create_selector_unspecified_value_error(context):
     )
 
 
-def create_bad_mapping_error(context, solid_def_name, handle_name, mapping):
+def create_bad_mapping_error(context, fn_name, solid_def_name, handle_name, mapping):
     check.inst_param(context, 'context', TraversalContext)
 
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message=(
-            'Config override mapping function defined by solid {handle_name} from definition '
-            '{solid_def_name} {path_msg} is not a dict. Got: {mapping}'.format(
+            'Config override mapping function {fn_name} defined by solid {handle_name} from '
+            'definition {solid_def_name} {path_msg} is not a dict. Got: {mapping}'.format(
+                fn_name=fn_name,
                 handle_name=handle_name,
                 solid_def_name=solid_def_name,
                 path_msg=get_friendly_path_msg(context.stack),
@@ -385,6 +386,27 @@ def create_bad_mapping_solids_key_error(context, solid_def_name, handle_name):
                 solid_def_name=solid_def_name,
                 path_msg=get_friendly_path_msg(context.stack),
                 config_value=context.config_value,
+            )
+        ),
+        error_data=RuntimeMismatchErrorData(context.config_type, repr(context.config_value)),
+    )
+
+
+def create_bad_user_config_mapping_fn_error(
+    context, fn_name, handle_name, solid_def_name, exc_info
+):
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message=(
+            'Exception occurred during execution of user config mapping function {fn_name} defined '
+            'by solid {handle_name} from definition {solid_def_name} {path_msg}:\n'
+            '{exc_info}'.format(
+                fn_name=fn_name,
+                handle_name=handle_name,
+                solid_def_name=solid_def_name,
+                path_msg=get_friendly_path_msg(context.stack),
+                exc_info=exc_info,
             )
         ),
         error_data=RuntimeMismatchErrorData(context.config_type, repr(context.config_value)),
