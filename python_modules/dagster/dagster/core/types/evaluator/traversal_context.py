@@ -64,3 +64,14 @@ class TraversalContext(
             self.pipeline,
             self.seen_handles,
         )
+
+    def new_context_with_handle(self, handle):
+        errors = []
+        return TraversalContext(
+            self.config_type,
+            self.config_value,
+            self.stack,
+            errors,
+            self.pipeline,
+            self.seen_handles + [handle],
+        )

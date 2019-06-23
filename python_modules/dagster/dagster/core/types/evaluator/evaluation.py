@@ -10,6 +10,7 @@ from dagster.core.definitions.environment_configs import is_solid_container_conf
 from dagster.core.definitions.solid import CompositeSolidDefinition
 from dagster.core.types.config import ConfigType
 from dagster.utils import single_item
+from dagster.utils.merger import dict_merge
 
 from .errors import (
     create_bad_mapping_error,
@@ -279,14 +280,10 @@ def _evaluate_composite_solid_config(context):
     # We first validate the provided environment config as normal against the composite solid config
     # schema. This will perform a full traversal rooted at the SolidContainerConfigDict and thread
     # errors up to the root
-    errors, _ = evaluate_config(
-        context.config_type,
-        context.config_value,
-        pipeline=context.pipeline,
-        seen_handles=context.seen_handles + [handle],
-    )
-    if errors:
-        return CompositeSolidEvaluationResult(errors, None)
+    config_context = context.new_context_with_handle(handle)
+    _evaluate_config(config_context)
+    if config_context.errors:
+        return CompositeSolidEvaluationResult(config_context.errors, None)
 
     # We've validated the composite solid config; now validate the mapping fn overrides
     # against the config schema subtree for child solids
@@ -308,7 +305,9 @@ def _evaluate_composite_solid_config(context):
         errors = [e._replace(message=prefix + e.message) for e in errors]
         return CompositeSolidEvaluationResult(errors, None)
 
-    return CompositeSolidEvaluationResult(None, {'solids': config_value})
+    return CompositeSolidEvaluationResult(
+        None, {'solids': dict_merge(config_value, mapped_config_value)}
+    )
 
 
 ## Lists
