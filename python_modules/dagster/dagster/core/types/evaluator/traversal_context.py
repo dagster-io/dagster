@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.definitions.environment_configs import is_solid_container_config
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.types.field_utils import FieldImpl
 
@@ -66,7 +67,13 @@ class TraversalContext(
         )
 
     def new_context_with_handle(self, handle):
+        check.invariant(
+            is_solid_container_config(self.config_type),
+            'Not a solid container config schema; this is intended to create a new context for a '
+            'solid container',
+        )
         errors = []
+
         return TraversalContext(
             self.config_type,
             self.config_value,
