@@ -92,13 +92,16 @@ def test_dataproc_resource():
                 'solids': {
                     'dataproc_solid': {
                         'config': {
-                            'projectId': PROJECT_ID,
-                            'region': REGION,
-                            'job': {
-                                'reference': {'projectId': PROJECT_ID},
-                                'placement': {'clusterName': CLUSTER_NAME},
-                                'hiveJob': {'queryList': {'queries': ['SHOW DATABASES']}},
+                            'job_config': {
+                                'projectId': PROJECT_ID,
+                                'region': REGION,
+                                'job': {
+                                    'reference': {'projectId': PROJECT_ID},
+                                    'placement': {'clusterName': CLUSTER_NAME},
+                                    'hiveJob': {'queryList': {'queries': ['SHOW DATABASES']}},
+                                },
                             },
+                            'job_scoped_cluster': True,
                         }
                     }
                 },

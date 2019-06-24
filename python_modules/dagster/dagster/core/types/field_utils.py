@@ -168,6 +168,19 @@ class FieldImpl:
 
         return str(self._default_value)
 
+    def __repr__(self):
+        return (
+            'Field({config_type}, default={default}, is_optional={is_optional}, '
+            'is_secret={is_secret})'
+        ).format(
+            config_type=self.config_type,
+            default='@'
+            if self._default_value == FIELD_NO_DEFAULT_PROVIDED
+            else self._default_value,
+            is_optional=self.is_optional,
+            is_secret=self.is_secret,
+        )
+
 
 class _ConfigHasFields(ConfigType):
     def __init__(self, fields, *args, **kwargs):

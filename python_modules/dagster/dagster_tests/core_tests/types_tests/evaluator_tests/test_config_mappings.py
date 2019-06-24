@@ -17,6 +17,11 @@ from dagster import (
     String,
 )
 
+# have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
+@lambda_solid(inputs=[InputDefinition('input_str')])
+def pipe(input_str):
+    return input_str
+
 
 @solid(config_field=Field(String, is_optional=True))
 def scalar_config_solid(context):
@@ -254,10 +259,6 @@ def test_nested_with_inputs():
     def outer_wrap():
         return inner_wrap()
 
-    @lambda_solid(inputs=[InputDefinition('input_str')])
-    def pipe(input_str):
-        return input_str
-
     @pipeline(name='config_mapping')
     def config_mapping_pipeline():
         return pipe(outer_wrap())
@@ -267,6 +268,362 @@ def test_nested_with_inputs():
     )
 
     assert result.success
-
-    # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
     assert result.result_for_solid('pipe').result_value() == 'override.foo - foobar'
+
+
+def test_wrap_none_config_and_inputs():
+    @solid(
+        config={'config_field_a': Field(String), 'config_field_b': Field(String)},
+        inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
+    )
+    def basic(context, input_a, input_b):
+        res = '.'.join(
+            [
+                context.solid_config['config_field_a'],
+                context.solid_config['config_field_b'],
+                input_a,
+                input_b,
+            ]
+        )
+        yield Result(res)
+
+    @composite_solid
+    def wrap_none():
+        return basic()
+
+    @pipeline(name='config_mapping')
+    def config_mapping_pipeline():
+        return pipe(wrap_none())
+
+    # Check all good
+    result = execute_pipeline(
+        config_mapping_pipeline,
+        {
+            'solids': {
+                'wrap_none': {
+                    'solids': {
+                        'basic': {
+                            'inputs': {
+                                'input_a': {'value': 'set_input_a'},
+                                'input_b': {'value': 'set_input_b'},
+                            },
+                            'config': {
+                                'config_field_a': 'set_config_a',
+                                'config_field_b': 'set_config_b',
+                            },
+                        }
+                    }
+                }
+            }
+        },
+    )
+    assert result.success
+    assert (
+        result.result_for_solid('pipe').result_value()
+        == 'set_config_a.set_config_b.set_input_a.set_input_b'
+    )
+
+    # Check bad input override
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+        result = execute_pipeline(
+            config_mapping_pipeline,
+            {
+                'solids': {
+                    'wrap_none': {
+                        'solids': {
+                            'basic': {
+                                'inputs': {
+                                    'input_a': {'value': 1234},
+                                    'input_b': {'value': 'set_input_b'},
+                                },
+                                'config': {
+                                    'config_field_a': 'set_config_a',
+                                    'config_field_b': 'set_config_b',
+                                },
+                            }
+                        }
+                    }
+                }
+            },
+        )
+    assert len(exc_info.value.errors) == 1
+    assert exc_info.value.errors[0].message == (
+        'Value at path root:solids:wrap_none:solids:basic:inputs:input_a:value is not '
+        'valid. Expected "String"'
+    )
+
+    # Check bad config override
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+        result = execute_pipeline(
+            config_mapping_pipeline,
+            {
+                'solids': {
+                    'wrap_none': {
+                        'solids': {
+                            'basic': {
+                                'inputs': {
+                                    'input_a': {'value': 'set_input_a'},
+                                    'input_b': {'value': 'set_input_b'},
+                                },
+                                'config': {
+                                    'config_field_a': 1234,
+                                    'config_field_b': 'set_config_b',
+                                },
+                            }
+                        }
+                    }
+                }
+            },
+        )
+    assert len(exc_info.value.errors) == 1
+    assert exc_info.value.errors[0].message == (
+        'Value at path root:solids:wrap_none:solids:basic:config:config_field_a is not valid. '
+        'Expected "String"'
+    )
+
+
+def test_wrap_all_config_no_inputs():
+    @solid(
+        config={'config_field_a': Field(String), 'config_field_b': Field(String)},
+        inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
+    )
+    def basic(context, input_a, input_b):
+        res = '.'.join(
+            [
+                context.solid_config['config_field_a'],
+                context.solid_config['config_field_b'],
+                input_a,
+                input_b,
+            ]
+        )
+        yield Result(res)
+
+    @composite_solid(
+        inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
+        config_mapping=ConfigMapping(
+            config_mapping_fn=lambda cfg: {
+                'basic': {
+                    'config': {
+                        'config_field_a': cfg['config_field_a'],
+                        'config_field_b': cfg['config_field_b'],
+                    }
+                }
+            },
+            config={'config_field_a': Field(String), 'config_field_b': Field(String)},
+        ),
+    )
+    def wrap_all_config_no_inputs(input_a, input_b):
+        return basic(input_a, input_b)
+
+    @pipeline(name='config_mapping')
+    def config_mapping_pipeline():
+        return pipe(wrap_all_config_no_inputs())
+
+    result = execute_pipeline(
+        config_mapping_pipeline,
+        {
+            'solids': {
+                'wrap_all_config_no_inputs': {
+                    'config': {'config_field_a': 'override_a', 'config_field_b': 'override_b'},
+                    'inputs': {
+                        'input_a': {'value': 'set_input_a'},
+                        'input_b': {'value': 'set_input_b'},
+                    },
+                }
+            }
+        },
+    )
+    assert result.success
+    assert (
+        result.result_for_solid('pipe').result_value()
+        == 'override_a.override_b.set_input_a.set_input_b'
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+        result = execute_pipeline(
+            config_mapping_pipeline,
+            {
+                'solids': {
+                    'wrap_all_config_no_inputs': {
+                        'config': {'config_field_a': 1234, 'config_field_b': 'override_b'},
+                        'inputs': {
+                            'input_a': {'value': 'set_input_a'},
+                            'input_b': {'value': 'set_input_b'},
+                        },
+                    }
+                }
+            },
+        )
+    assert len(exc_info.value.errors) == 1
+    assert exc_info.value.errors[0].message == (
+        'Value at path root:solids:wrap_all_config_no_inputs:config:config_field_a is not valid. '
+        'Expected "String"'
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+        result = execute_pipeline(
+            config_mapping_pipeline,
+            {
+                'solids': {
+                    'wrap_all_config_no_inputs': {
+                        'config': {'config_field_a': 'override_a', 'config_field_b': 'override_b'},
+                        'inputs': {'input_a': {'value': 1234}, 'input_b': {'value': 'set_input_b'}},
+                    }
+                }
+            },
+        )
+    assert len(exc_info.value.errors) == 1
+    assert exc_info.value.errors[0].message == (
+        'Value at path root:solids:wrap_all_config_no_inputs:inputs:input_a:value is not valid.'
+        ' Expected "String"'
+    )
+
+
+def test_wrap_all_config_one_input():
+    @solid(
+        config={'config_field_a': Field(String), 'config_field_b': Field(String)},
+        inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
+    )
+    def basic(context, input_a, input_b):
+        res = '.'.join(
+            [
+                context.solid_config['config_field_a'],
+                context.solid_config['config_field_b'],
+                input_a,
+                input_b,
+            ]
+        )
+        yield Result(res)
+
+    @composite_solid(
+        inputs=[InputDefinition('input_a', String)],
+        config_mapping=ConfigMapping(
+            config_mapping_fn=lambda cfg: {
+                'basic': {
+                    'config': {
+                        'config_field_a': cfg['config_field_a'],
+                        'config_field_b': cfg['config_field_b'],
+                    },
+                    'inputs': {'input_b': {'value': 'set_input_b'}},
+                }
+            },
+            config={'config_field_a': Field(String), 'config_field_b': Field(String)},
+        ),
+    )
+    def wrap_all_config_one_input(input_a):
+        return basic(input_a)
+
+    @pipeline(name='config_mapping')
+    def config_mapping_pipeline():
+        return pipe(wrap_all_config_one_input())
+
+    result = execute_pipeline(
+        config_mapping_pipeline,
+        {
+            'solids': {
+                'wrap_all_config_one_input': {
+                    'config': {'config_field_a': 'override_a', 'config_field_b': 'override_b'},
+                    'inputs': {'input_a': {'value': 'set_input_a'}},
+                }
+            }
+        },
+    )
+    assert result.success
+    assert (
+        result.result_for_solid('pipe').result_value()
+        == 'override_a.override_b.set_input_a.set_input_b'
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+        result = execute_pipeline(
+            config_mapping_pipeline,
+            {
+                'solids': {
+                    'wrap_all_config_one_input': {
+                        'config': {'config_field_a': 1234, 'config_field_b': 'override_b'},
+                        'inputs': {'input_a': {'value': 'set_input_a'}},
+                    }
+                }
+            },
+        )
+    assert len(exc_info.value.errors) == 1
+    assert exc_info.value.errors[0].message == (
+        'Value at path root:solids:wrap_all_config_one_input:config:config_field_a is not valid. '
+        'Expected "String"'
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+        result = execute_pipeline(
+            config_mapping_pipeline,
+            {
+                'solids': {
+                    'wrap_all_config_one_input': {
+                        'config': {'config_field_a': 'override_a', 'config_field_b': 'override_b'},
+                        'inputs': {'input_a': {'value': 1234}},
+                    }
+                }
+            },
+        )
+    assert len(exc_info.value.errors) == 1
+    assert exc_info.value.errors[0].message == (
+        'Value at path root:solids:wrap_all_config_one_input:inputs:input_a:value is not valid. '
+        'Expected "String"'
+    )
+
+
+def test_wrap_all_config_and_inputs():
+    @solid(
+        config={'config_field_a': Field(String), 'config_field_b': Field(String)},
+        inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
+    )
+    def basic(context, input_a, input_b):
+        res = '.'.join(
+            [
+                context.solid_config['config_field_a'],
+                context.solid_config['config_field_b'],
+                input_a,
+                input_b,
+            ]
+        )
+        yield Result(res)
+
+    @composite_solid(
+        config_mapping=ConfigMapping(
+            config_mapping_fn=lambda cfg: {
+                'basic': {
+                    'config': {
+                        'config_field_a': cfg['config_field_a'],
+                        'config_field_b': cfg['config_field_b'],
+                    },
+                    'inputs': {
+                        'input_a': {'value': 'override_input_a'},
+                        'input_b': {'value': 'override_input_b'},
+                    },
+                }
+            },
+            config={'config_field_a': Field(String), 'config_field_b': Field(String)},
+        )
+    )
+    def wrap_all():
+        return basic()
+
+    @pipeline(name='config_mapping')
+    def config_mapping_pipeline():
+        return pipe(wrap_all())
+
+    result = execute_pipeline(
+        config_mapping_pipeline,
+        {
+            'solids': {
+                'wrap_all': {
+                    'config': {'config_field_a': 'override_a', 'config_field_b': 'override_b'}
+                }
+            }
+        },
+    )
+
+    assert result.success
+    assert (
+        result.result_for_solid('pipe').result_value()
+        == 'override_a.override_b.override_input_a.override_input_b'
+    )

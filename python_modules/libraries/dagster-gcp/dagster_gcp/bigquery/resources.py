@@ -74,24 +74,18 @@ class BigQueryClient(bigquery.Client):
                 file_obj, destination, job_config=job_config
             )
 
-    def load_table_from_source(self, source, inputs, destination, job_config):
+    def load_table_from_source(self, source, load_input, destination, job_config):
         # Load from DataFrame. See: https://bit.ly/2GDhVt1
         if source == BigQueryLoadSource.DataFrame:
-            return self.load_table_from_dataframe(
-                inputs.get('df'), destination, job_config=job_config
-            )
+            return self.load_table_from_dataframe(load_input, destination, job_config=job_config)
 
         # Load from file. See: https://cloud.google.com/bigquery/docs/loading-data-local
         elif source == BigQueryLoadSource.File:
-            return self.load_table_from_filepath(
-                inputs.get('file_path'), destination, job_config=job_config
-            )
+            return self.load_table_from_filepath(load_input, destination, job_config=job_config)
 
         # Load from GCS. See: https://cloud.google.com/bigquery/docs/loading-data-cloud-storage
-        elif source == BigQueryLoadSource.Gcs:
-            return self.load_table_from_uri(
-                inputs.get('source_uris'), destination, job_config=job_config
-            )
+        elif source == BigQueryLoadSource.GCS:
+            return self.load_table_from_uri(load_input, destination, job_config=job_config)
 
 
 @resource(

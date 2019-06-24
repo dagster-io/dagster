@@ -287,12 +287,13 @@ def _evaluate_composite_solid_config(context):
 
     # We've validated the composite solid config; now validate the mapping fn overrides
     # against the config schema subtree for child solids
-    errors, config_value = evaluate_config(
+    errors, validated_mapped_config_value = evaluate_config(
         context.config_type.child_solids_config_field.config_type,
         mapped_config_value,
         pipeline=context.pipeline,
         seen_handles=context.seen_handles + [handle],
     )
+
     if errors:
         prefix = (
             'Config override mapping function defined by solid {handle_name} from '
@@ -306,7 +307,7 @@ def _evaluate_composite_solid_config(context):
         return CompositeSolidEvaluationResult(errors, None)
 
     return CompositeSolidEvaluationResult(
-        None, {'solids': dict_merge(config_value, mapped_config_value)}
+        None, dict_merge(context.config_value, {'solids': validated_mapped_config_value})
     )
 
 

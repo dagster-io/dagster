@@ -1,0 +1,3 @@
+repository:
+  module: dagster_examples.gcp_data_platform.main
+  fn: define_repo

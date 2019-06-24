@@ -6,7 +6,7 @@ Produced via:
 python automation/parse_dataproc_configs.py \
 
 '''
-
+import uuid
 
 from dagster import Bool, Dict, Field, Int, List, PermissiveDict, String
 
@@ -107,6 +107,7 @@ def define_dataproc_job_config():
                                 characters.If not specified by the caller, the job ID will be
                                 provided by the server.''',
                                 is_optional=True,
+                                default_value='dagster-job-' + str(uuid.uuid4()),
                             ),
                         }
                     ),

@@ -89,18 +89,18 @@ class BigQueryLoadSolidDefinition(SolidDefinition):
     Expects a BQ client to be provisioned in resources as context.resources.bq.
     '''
 
-    def _inputs_for_source(self, source):
+    def _input_type_for_source(self, source):
         if source == BigQueryLoadSource.DataFrame:
-            return [InputDefinition('df', DataFrame)]
+            return DataFrame
         elif source == BigQueryLoadSource.File:
-            return [InputDefinition('file_path', Path)]
-        elif source == BigQueryLoadSource.Gcs:
-            return [InputDefinition('source_uris', List[Path])]
+            return Path
+        elif source == BigQueryLoadSource.GCS:
+            return List[Path]
         else:
             raise BigQueryError(
                 'invalid source specification -- must be one of [%s]'
                 % ','.join(
-                    [BigQueryLoadSource.DataFrame, BigQueryLoadSource.File, BigQueryLoadSource.Gcs]
+                    [BigQueryLoadSource.DataFrame, BigQueryLoadSource.File, BigQueryLoadSource.GCS]
                 )
             )
 
@@ -116,12 +116,12 @@ class BigQueryLoadSolidDefinition(SolidDefinition):
             cfg = LoadJobConfig(**load_job_config) if load_job_config else None
 
             context.log.info(
-                'executing BQ load with config: %s'
-                % (cfg.to_api_repr() if cfg else '(no config provided)')
+                'executing BQ load with config: %s for source %s'
+                % (cfg.to_api_repr() if cfg else '(no config provided)', source)
             )
 
             context.resources.bq.load_table_from_source(
-                source, inputs, destination, job_config=cfg
+                source, inputs.get('source'), destination, job_config=cfg
             ).result()
 
             yield Result(None)
@@ -129,7 +129,7 @@ class BigQueryLoadSolidDefinition(SolidDefinition):
         super(BigQueryLoadSolidDefinition, self).__init__(
             name=name,
             description=description,
-            inputs=self._inputs_for_source(source),
+            inputs=[InputDefinition('source', self._input_type_for_source(source))],
             outputs=[OutputDefinition(Nothing)],
             compute_fn=_compute_fn,
             config_field=define_bigquery_load_config(),
