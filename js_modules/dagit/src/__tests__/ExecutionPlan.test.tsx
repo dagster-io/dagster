@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as TestRenderer from "react-test-renderer";
 import { BrowserRouter } from "react-router-dom";
-import { ExecutionPlan, IExecutionPlanProps } from "../ExecutionPlan";
+import { ExecutionPlan, IExecutionPlanProps } from "../plan/ExecutionPlan";
 import { StepKind } from "../types/globalTypes";
 
 it("renders given an execution plan", () => {

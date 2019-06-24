@@ -7,7 +7,7 @@ import {
   IExpectationResult,
   IExpectationResultStatus,
   IMaterialization
-} from "./RunMetadataProvider";
+} from "../RunMetadataProvider";
 
 interface IDisplayEventsContainerProps {
   expectationResults: IExpectationResult[];

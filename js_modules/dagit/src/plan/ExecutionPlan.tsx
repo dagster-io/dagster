@@ -8,8 +8,8 @@ import {
   IRunMetadataDict,
   IStepState,
   IStepMetadata
-} from "./RunMetadataProvider";
-import { formatElapsedTime } from "./Util";
+} from "../RunMetadataProvider";
+import { formatElapsedTime } from "../Util";
 
 export interface IExecutionPlanProps {
   executionPlan: ExecutionPlanFragment;

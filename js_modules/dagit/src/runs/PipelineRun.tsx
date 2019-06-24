@@ -15,7 +15,7 @@ import {
 } from "./types/PipelineRunFragment";
 import { PanelDivider } from "../PanelDivider";
 import PythonErrorInfo from "../PythonErrorInfo";
-import { ExecutionPlan } from "../ExecutionPlan";
+import { ExecutionPlan } from "../plan/ExecutionPlan";
 import RunMetadataProvider from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
 import { Mutation, MutationFn } from "react-apollo";

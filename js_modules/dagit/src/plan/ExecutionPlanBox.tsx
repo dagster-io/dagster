@@ -5,9 +5,9 @@ import {
   IExpectationResult,
   IMaterialization,
   IStepState
-} from "./RunMetadataProvider";
+} from "../RunMetadataProvider";
 import { DisplayEventsContainer } from "./DisplayEventsContainer";
-import { formatElapsedTime } from "./Util";
+import { formatElapsedTime } from "../Util";
 import { IconNames } from "@blueprintjs/icons";
 
 export interface IExecutionPlanBoxProps {
