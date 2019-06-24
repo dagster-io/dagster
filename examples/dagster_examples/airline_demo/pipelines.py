@@ -113,8 +113,9 @@ def airline_demo_ingest_pipeline():
         )
     )
 
-    for data_type in ['coupon', 'market', 'ticket']:
-        s3_to_dw_table.alias('process_q2_{}_data'.format(data_type))()
+    s3_to_dw_table.alias('process_q2_coupon_data')()
+    s3_to_dw_table.alias('process_q2_market_data')()
+    s3_to_dw_table.alias('process_q2_ticket_data')()
 
 
 def define_airline_demo_ingest_pipeline():
