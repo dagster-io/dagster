@@ -239,6 +239,14 @@ def _evaluate_composite_solid_config(context):
     if not has_mapping:
         return CompositeSolidEvaluationResult(None, None)
 
+    # We first validate the provided environment config as normal against the composite solid config
+    # schema. This will perform a full traversal rooted at the SolidContainerConfigDict and thread
+    # errors up to the root
+    config_context = context.new_context_with_handle(handle)
+    _evaluate_config(config_context)
+    if config_context.errors:
+        return CompositeSolidEvaluationResult(config_context.errors, None)
+
     # ensure we don't mutate the source environment dict
     copy_config_value = copy.deepcopy(context.config_value.get('config'))
 
@@ -276,14 +284,6 @@ def _evaluate_composite_solid_config(context):
     if 'solids' in context.config_value:
         errors = [create_bad_mapping_solids_key_error(context, solid_def_name, str(handle))]
         return CompositeSolidEvaluationResult(errors, None)
-
-    # We first validate the provided environment config as normal against the composite solid config
-    # schema. This will perform a full traversal rooted at the SolidContainerConfigDict and thread
-    # errors up to the root
-    config_context = context.new_context_with_handle(handle)
-    _evaluate_config(config_context)
-    if config_context.errors:
-        return CompositeSolidEvaluationResult(config_context.errors, None)
 
     # We've validated the composite solid config; now validate the mapping fn overrides
     # against the config schema subtree for child solids

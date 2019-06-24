@@ -119,20 +119,20 @@ def test_missing_config():
 
     assert len(exc_info.value.errors) == 1
     assert (
-        'Exception occurred during execution of user config mapping function <lambda> defined by '
-        'solid do_stuff from definition wrap at path root:solids:do_stuff:'
-    ) in exc_info.value.errors[0].message
-    assert 'TypeError: \'NoneType\' object' in exc_info.value.errors[0].message
+        exc_info.value.errors[0].message
+        == 'Missing required field "config" at path root:solids:do_stuff Available Fields: '
+        '"[\'config\', \'outputs\']".'
+    )
 
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(wrap_pipeline, {'solids': {'do_stuff': {'config': {}}}})
 
     assert len(exc_info.value.errors) == 1
     assert (
-        'Exception occurred during execution of user config mapping function <lambda> defined by '
-        'solid do_stuff from definition wrap at path root:solids:do_stuff:'
-    ) in exc_info.value.errors[0].message
-    assert 'KeyError: \'override_str\'' in exc_info.value.errors[0].message
+        exc_info.value.errors[0].message
+        == 'Missing required field "override_str" at path root:solids:do_stuff:config Available '
+        'Fields: "[\'override_str\']".'
+    )
 
 
 def test_bad_override():
@@ -187,7 +187,7 @@ def test_raises_fn_override():
         execute_pipeline(
             wrap_pipeline,
             {
-                'solids': {'do_stuff': {'solids': {'scalar_config_solid': {'config': 'test'}}}},
+                'solids': {'do_stuff': {'config': {'does_not_matter': 'foo'}}},
                 'loggers': {'console': {'config': {'log_level': 'ERROR'}}},
             },
         )
@@ -626,4 +626,31 @@ def test_wrap_all_config_and_inputs():
     assert (
         result.result_for_solid('pipe').result_value()
         == 'override_a.override_b.override_input_a.override_input_b'
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+        result = execute_pipeline(
+            config_mapping_pipeline,
+            {
+                'solids': {
+                    'wrap_all': {
+                        'config': {
+                            'config_field_a': 'override_a',
+                            'this_key_doesnt_exist': 'override_b',
+                        }
+                    }
+                }
+            },
+        )
+
+    assert len(exc_info.value.errors) == 2
+    assert exc_info.value.errors[0].message == (
+        'Field "this_key_doesnt_exist" is not defined at path root:solids:wrap_all:config '
+        'Expected: "{ config_field_a: String config_field_b: String }"'
+    )
+
+    assert (
+        exc_info.value.errors[1].message
+        == 'Missing required field "config_field_b" at path root:solids:wrap_all:config '
+        'Available Fields: "[\'config_field_a\', \'config_field_b\']".'
     )
