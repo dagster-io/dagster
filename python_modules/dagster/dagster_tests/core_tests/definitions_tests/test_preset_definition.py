@@ -9,7 +9,7 @@ from dagster import (
     Field,
     Bool,
     Dict,
-    execute_pipeline,
+    execute_pipeline_with_preset,
     DagsterExecutionStepExecutionError,
     PresetDefinition,
     ModeDefinition,
@@ -55,22 +55,22 @@ def test_presets():
         ],
     )
 
-    execute_pipeline(**(pipeline.get_preset('passing')))
+    execute_pipeline_with_preset(pipeline, 'passing')
 
     with pytest.raises(DagsterExecutionStepExecutionError):
-        execute_pipeline(**(pipeline.get_preset('failing_1')))
+        execute_pipeline_with_preset(pipeline, 'failing_1')
 
     with pytest.raises(DagsterExecutionStepExecutionError):
-        execute_pipeline(**(pipeline.get_preset('failing_2')))
+        execute_pipeline_with_preset(pipeline, 'failing_2')
 
     with pytest.raises(DagsterInvalidDefinitionError, match="not_a_file.yaml"):
-        execute_pipeline(**(pipeline.get_preset('invalid_1')))
+        execute_pipeline_with_preset(pipeline, 'invalid_1')
 
     with pytest.raises(DagsterInvariantViolationError, match="error attempting to parse yaml"):
-        execute_pipeline(**(pipeline.get_preset('invalid_2')))
+        execute_pipeline_with_preset(pipeline, 'invalid_2')
 
     with pytest.raises(DagsterInvariantViolationError, match="Could not find preset"):
-        execute_pipeline(**(pipeline.get_preset('not_failing')))
+        execute_pipeline_with_preset(pipeline, 'not_failing')
 
 
 def test_invalid_preset():

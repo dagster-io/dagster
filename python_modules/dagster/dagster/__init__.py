@@ -39,7 +39,11 @@ from dagster.core.definitions.decorators import (
 
 from dagster.core.events import DagsterEventType
 
-from dagster.core.execution.api import execute_pipeline, execute_pipeline_iterator
+from dagster.core.execution.api import (
+    execute_pipeline,
+    execute_pipeline_iterator,
+    execute_pipeline_with_preset,
+)
 
 from dagster.core.execution.config import (
     InProcessExecutorConfig,

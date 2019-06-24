@@ -193,6 +193,26 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
         )
 
 
+def execute_pipeline_with_preset(pipeline, preset_name, run_config=None):
+    '''Runs :py:func:`execute_pipeline` with the given preset for the pipeline.
+
+    The preset will optionally provide environment_dict and/or build a pipeline from
+    a solid subset. If a run_config is not provied, one which only sets the
+    mode as defined by the preset will be used.
+    '''
+
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.str_param(preset_name, 'preset_name')
+    check.opt_inst_param(run_config, 'run_config', RunConfig)
+    preset = pipeline.get_preset(preset_name)
+
+    return execute_pipeline(
+        pipeline=preset['pipeline'],
+        environment_dict=preset['environment_dict'],
+        run_config=run_config if run_config is not None else preset['run_config'],
+    )
+
+
 def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute=None):
     if step_keys_to_execute:
         for step_key in step_keys_to_execute:
