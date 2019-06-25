@@ -436,3 +436,11 @@ def test_mapping_args_ordering():
             }
         },
     )
+
+
+def test_unused_mapping():
+    with pytest.raises(DagsterInvalidDefinitionError, match='unused input mapping'):
+
+        @composite_solid
+        def unused_mapping(_):
+            return_one()
