@@ -20,9 +20,8 @@ from dagster.core.utils import toposort
 
 from .compute import create_compute_step
 from .expectations import create_expectations_subplan, decorate_with_expectations
-from .input_thunk import create_input_thunk_execution_step
 from .materialization_thunk import decorate_with_output_materializations
-from .objects import ExecutionStep, ExecutionValueSubplan, StepInput, StepKind, StepOutputHandle
+from .objects import ExecutionStep, StepInput, StepKind, StepOutputHandle
 from .utility import create_join_outputs_step
 
 
@@ -90,7 +89,8 @@ class _PlanBuilder:
 
         for step in self.steps:
             for step_input in step.step_inputs:
-                deps[step.key].add(step_input.prev_output_handle.step_key)
+                if step_input.is_from_output:
+                    deps[step.key].add(step_input.prev_output_handle.step_key)
 
         step_dict = {step.key: step for step in self.steps}
 
@@ -111,7 +111,7 @@ class _PlanBuilder:
             # Create and add execution plan steps for solid inputs
             step_inputs = []
             for input_name, input_def in solid.definition.input_dict.items():
-                prev_step_output_handle = get_input_source_step_handles(
+                step_input = get_step_input(
                     self,
                     solid,
                     input_name,
@@ -121,27 +121,14 @@ class _PlanBuilder:
                     parent_step_inputs,
                 )
 
-                # We return None for the handle (see above in get_input_source_step_handle) when the
-                # input def runtime type is "Nothing"
-                if not prev_step_output_handle:
+                # If an input with runtime_type "Nothing" doesnt have a value
+                # we don't create a StepInput
+                if step_input is None:
                     continue
 
-                subplan = create_subplan_for_input(
-                    self.pipeline_name,
-                    self.environment_config,
-                    solid,
-                    prev_step_output_handle,
-                    input_def,
-                    handle,
-                )
+                step_input = create_subplan_for_input(self, solid, step_input, input_def, handle)
 
-                self.add_steps(subplan.steps)
-
-                step_inputs.append(
-                    StepInput(
-                        input_name, input_def.runtime_type, subplan.terminal_step_output_handle
-                    )
-                )
+                step_inputs.append(step_input)
 
             ### 2. COMPUTE FUNCTION OR RECURSE
             # Create and add execution plan step for the solid compute function or
@@ -186,27 +173,28 @@ class _PlanBuilder:
         return terminal_transform_step
 
 
-def create_subplan_for_input(
-    pipeline_name, environment_config, solid, prev_step_output_handle, input_def, handle
-):
-    check.str_param(pipeline_name, 'pipeline_name')
-    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
+def create_subplan_for_input(plan_builder, solid, step_input, input_def, handle):
+    check.inst_param(plan_builder, 'plan_builder', _PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
-    check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
+    check.inst_param(step_input, 'step_input', StepInput)
     check.inst_param(input_def, 'input_def', InputDefinition)
     check.inst_param(handle, 'handle', SolidHandle)
 
-    if environment_config.expectations.evaluate and input_def.expectations:
-        return create_expectations_subplan(
-            pipeline_name,
+    if plan_builder.environment_config.expectations.evaluate and input_def.expectations:
+        subplan = create_expectations_subplan(
+            plan_builder.pipeline_name,
             solid,
             input_def,
-            prev_step_output_handle,
+            step_input,
             kind=StepKind.INPUT_EXPECTATION,
             handle=handle,
         )
+        plan_builder.add_steps(subplan.steps)
+        return StepInput(
+            input_def.name, input_def.runtime_type, subplan.terminal_step_output_handle
+        )
     else:
-        return ExecutionValueSubplan.empty(prev_step_output_handle)
+        return step_input
 
 
 def create_subplan_for_output(
@@ -226,7 +214,7 @@ def create_subplan_for_output(
     )
 
 
-def get_input_source_step_handles(
+def get_step_input(
     plan_builder, solid, input_name, input_def, dependency_structure, handle, parent_step_inputs
 ):
     check.inst_param(plan_builder, 'plan_builder', _PlanBuilder)
@@ -238,24 +226,17 @@ def get_input_source_step_handles(
     check.opt_list_param(parent_step_inputs, 'parent_step_inputs', of_type=StepInput)
 
     solid_config = plan_builder.environment_config.solids.get(str(handle))
-
     if solid_config and input_name in solid_config.inputs:
-        step_creation_data = create_input_thunk_execution_step(
-            plan_builder.pipeline_name,
-            dependency_structure,
-            solid,
-            input_name,
-            input_def,
-            solid_config.inputs[input_name],
-            handle,
+        return StepInput(
+            input_name, input_def.runtime_type, config_data=solid_config.inputs[input_name]
         )
-        plan_builder.add_step(step_creation_data.step)
-        return step_creation_data.step_output_handle
 
     input_handle = solid.input_handle(input_name)
     if dependency_structure.has_singular_dep(input_handle):
         solid_output_handle = dependency_structure.get_singular_dep(input_handle)
-        return plan_builder.get_output_handle(solid_output_handle)
+        return StepInput(
+            input_name, input_def.runtime_type, plan_builder.get_output_handle(solid_output_handle)
+        )
 
     if dependency_structure.has_deps(input_handle):
         solid_output_handles = dependency_structure.get_deps(input_handle)
@@ -270,13 +251,19 @@ def get_input_source_step_handles(
             handle,
         )
         plan_builder.add_step(join_data.step)
-        return join_data.step_output_handle
+        return StepInput(input_name, input_def.runtime_type, join_data.step_output_handle)
 
     if solid.parent_maps_input(input_name):
         parent_name = solid.parent_mapped_input(input_name).definition.name
         parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
         if parent_name in parent_inputs:
-            return parent_inputs[parent_name].prev_output_handle
+            parent_input = parent_inputs[parent_name]
+            return StepInput(
+                input_name,
+                input_def.runtime_type,
+                parent_input.prev_output_handle,
+                parent_input.config_data,
+            )
 
     # At this point we have an input that is not hooked up to
     # the output of another solid or provided via environment config.

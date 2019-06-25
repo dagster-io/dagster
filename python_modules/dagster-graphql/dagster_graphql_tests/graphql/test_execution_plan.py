@@ -232,7 +232,7 @@ def test_successful_one_part_execute_plan(snapshot):
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
                 'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
-                'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.compute'],
+                'stepKeys': ['sum_solid.compute'],
                 'executionMetadata': {'runId': run_id},
                 'mode': 'default',
             }
@@ -247,15 +247,15 @@ def test_successful_one_part_execute_plan(snapshot):
 
     step_events = query_result['stepEvents']
     # 0-2 are sum_solid.num.input_thunk
-    assert step_events[3]['step']['key'] == 'sum_solid.compute'
-    assert step_events[4]['__typename'] == 'ExecutionStepOutputEvent'
-    assert step_events[4]['outputName'] == 'result'
+    assert step_events[0]['step']['key'] == 'sum_solid.compute'
+    assert step_events[1]['__typename'] == 'ExecutionStepOutputEvent'
+    assert step_events[1]['outputName'] == 'result'
     expected_value_repr = (
         '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), '''
         '''OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]'''
     )
-    assert step_events[4]['valueRepr'] == expected_value_repr
-    assert step_events[5]['__typename'] == 'ExecutionStepSuccessEvent'
+    assert step_events[1]['valueRepr'] == expected_value_repr
+    assert step_events[2]['__typename'] == 'ExecutionStepSuccessEvent'
 
     snapshot.assert_match(result.data)
 
@@ -276,7 +276,7 @@ def test_successful_two_part_execute_plan(snapshot):
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
                 'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
-                'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.compute'],
+                'stepKeys': ['sum_solid.compute'],
                 'executionMetadata': {'runId': run_id},
                 'mode': 'default',
             }
@@ -458,7 +458,6 @@ def test_basic_execute_plan_with_materialization():
         steps_data = result.data['executionPlan']['steps']
 
         assert [step_data['key'] for step_data in steps_data] == [
-            'sum_solid.inputs.num.read',
             'sum_solid.compute',
             'sum_solid.outputs.result.materialize.0',
             'sum_solid.outputs.result.materialize.join',
@@ -473,7 +472,6 @@ def test_basic_execute_plan_with_materialization():
                     'selector': {'name': 'csv_hello_world'},
                     'environmentConfigData': environment_dict,
                     'stepKeys': [
-                        'sum_solid.inputs.num.read',
                         'sum_solid.compute',
                         'sum_solid.outputs.result.materialize.0',
                         'sum_solid.outputs.result.materialize.join',

@@ -321,7 +321,6 @@ def test_successful_pipeline_reexecution(snapshot):
     )
 
     store = FileSystemIntermediateStore(run_id)
-    assert store.has_intermediate(None, 'sum_solid.inputs.num.read', 'input_thunk_output')
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
     assert (

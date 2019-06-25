@@ -78,13 +78,11 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     return _do_expectation
 
 
-def create_expectations_subplan(
-    pipeline_name, solid, inout_def, prev_step_output_handle, kind, handle
-):
+def create_expectations_subplan(pipeline_name, solid, inout_def, step_input, kind, handle):
     check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
-    check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
+    check.inst_param(step_input, 'step_input', StepInput)
     check.inst_param(kind, 'kind', StepKind)
 
     input_expect_steps = []
@@ -99,7 +97,7 @@ def create_expectations_subplan(
                 expectation_name=expectation_def.name,
             ),
             kind=kind,
-            prev_step_output_handle=prev_step_output_handle,
+            step_input=step_input,
             inout_def=inout_def,
             handle=handle,
         )
@@ -118,21 +116,14 @@ def create_expectations_subplan(
 
 
 def create_expectation_step(
-    pipeline_name,
-    solid,
-    expectation_def,
-    key_suffix,
-    kind,
-    prev_step_output_handle,
-    inout_def,
-    handle,
+    pipeline_name, solid, expectation_def, key_suffix, kind, step_input, inout_def, handle
 ):
     check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition)
     check.str_param(key_suffix, 'key_suffix')
     check.inst_param(kind, 'kind', StepKind)
-    check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
+    check.inst_param(step_input, 'step_input', StepInput)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
     check.opt_inst_param(handle, 'handle', SolidHandle)
 
@@ -145,7 +136,8 @@ def create_expectation_step(
             StepInput(
                 name=EXPECTATION_INPUT,
                 runtime_type=value_type,
-                prev_output_handle=prev_step_output_handle,
+                prev_output_handle=step_input.prev_output_handle,
+                config_data=step_input.config_data,
             )
         ],
         step_outputs=[
@@ -173,7 +165,6 @@ def decorate_with_expectations(
     check.inst_param(transform_step, 'transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.opt_inst_param(handle, 'handle', SolidHandle)
-
     terminal_step_output_handle = StepOutputHandle.from_step(transform_step, output_def.name)
 
     if environment_config.expectations.evaluate and output_def.expectations:
@@ -181,7 +172,7 @@ def decorate_with_expectations(
             pipeline_name,
             solid,
             output_def,
-            terminal_step_output_handle,
+            StepInput(output_def.name, output_def.runtime_type, terminal_step_output_handle),
             kind=StepKind.OUTPUT_EXPECTATION,
             handle=handle,
         )

@@ -76,7 +76,8 @@ class InProcessEngine(IEngine):  # pylint: disable=no-init
                 failed_inputs = [
                     step_input.prev_output_handle.step_key
                     for step_input in step.step_inputs
-                    if step_input.prev_output_handle.step_key in failed_or_skipped_steps
+                    if step_input.is_from_output
+                    and step_input.prev_output_handle.step_key in failed_or_skipped_steps
                 ]
                 if failed_inputs:
                     step_context.log.info(
@@ -137,11 +138,16 @@ def _create_input_values(step_context):
         if step_input.runtime_type.is_nothing:
             continue
 
-        prev_output_handle = step_input.prev_output_handle
-        input_value = step_context.intermediates_manager.get_intermediate(
-            step_context, step_input.runtime_type, prev_output_handle
-        )
+        if step_input.is_from_output:
+            input_value = step_context.intermediates_manager.get_intermediate(
+                step_context, step_input.runtime_type, step_input.prev_output_handle
+            )
+        else:  # is from config
+            input_value = step_input.runtime_type.input_schema.construct_from_config_value(
+                step_context, step_input.config_data
+            )
         input_values[step_input.name] = input_value
+
     return input_values
 
 

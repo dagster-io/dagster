@@ -109,11 +109,7 @@ def test_depends_on_s3_resource_intermediates():
     assert 'some-bucket' in s3_fake_resource.session.buckets
 
     keys = set()
-    for step_key, output_name in [
-        ('add_numbers.inputs.num_one.read', 'input_thunk_output'),
-        ('add_numbers.inputs.num_two.read', 'input_thunk_output'),
-        ('add_numbers.compute', 'result'),
-    ]:
+    for step_key, output_name in [('add_numbers.compute', 'result')]:
         keys.add(create_s3_key(result.run_id, step_key, output_name))
 
     assert set(s3_fake_resource.session.buckets['some-bucket'].keys()) == keys

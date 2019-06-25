@@ -76,23 +76,27 @@ class StepKind(Enum):
     OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
     JOIN = 'JOIN'
     SERIALIZE = 'SERIALIZE'
-    INPUT_THUNK = 'INPUT_THUNK'
     MATERIALIZATION_THUNK = 'MATERIALIZATION_THUNK'
     VALUE_THUNK = 'VALUE_THUNK'
     UNMARSHAL_INPUT = 'UNMARSHAL_INPUT'
     MARSHAL_OUTPUT = 'MARSHAL_OUTPUT'
 
 
-class StepInput(namedtuple('_StepInput', 'name runtime_type prev_output_handle')):
-    def __new__(cls, name, runtime_type, prev_output_handle):
+class StepInput(namedtuple('_StepInput', 'name runtime_type prev_output_handle config_data')):
+    def __new__(cls, name, runtime_type, prev_output_handle=None, config_data=None):
         return super(StepInput, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             runtime_type=check.inst_param(runtime_type, 'runtime_type', RuntimeType),
-            prev_output_handle=check.inst_param(
+            prev_output_handle=check.opt_inst_param(
                 prev_output_handle, 'prev_output_handle', StepOutputHandle
             ),
+            config_data=config_data,  # can be any type
         )
+
+    @property
+    def is_from_output(self):
+        return bool(self.prev_output_handle)
 
 
 class StepOutput(namedtuple('_StepOutput', 'name runtime_type optional')):
