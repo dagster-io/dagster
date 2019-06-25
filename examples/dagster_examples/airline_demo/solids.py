@@ -256,7 +256,7 @@ def s3_to_df(bucket_data: S3BucketData, archive_member: String) -> DataFrame:
 
 @composite_solid(
     config_mapping=ConfigMapping(
-        config_mapping_fn=lambda cfg: {
+        config_mapping_fn=lambda _, cfg: {
             'subsample_spark_dataset': {'config': {'subsample_pct': cfg['subsample_pct']}},
             'load_data_to_database_from_spark': {'config': {'table_name': cfg['table_name']}},
         },

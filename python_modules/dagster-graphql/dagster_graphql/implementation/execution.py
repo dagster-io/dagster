@@ -39,7 +39,7 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
     execution_plan = create_execution_plan(
         dauphin_pipeline.get_dagster_pipeline(),
         execution_params.environment_dict,
-        mode=execution_params.mode,
+        run_config=RunConfig(mode=execution_params.mode),
     )
 
     _check_start_pipeline_execution_errors(
@@ -186,10 +186,19 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
+    event_records = []
+
+    run_config = RunConfig(
+        run_id=execution_params.execution_metadata.run_id,
+        mode=execution_params.mode,
+        tags=execution_params.execution_metadata.tags,
+        event_callback=event_records.append,
+    )
+
     execution_plan = create_execution_plan(
         pipeline=dauphin_pipeline.get_dagster_pipeline(),
         environment_dict=execution_params.environment_dict,
-        mode=execution_params.mode,
+        run_config=run_config,
     )
 
     if execution_params.step_keys:
@@ -199,17 +208,10 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
                     graphene_info.schema.type_named('InvalidStepError')(invalid_step_key=step_key)
                 )
 
-    event_records = []
-
     execute_plan(
         execution_plan=execution_plan,
         environment_dict=execution_params.environment_dict,
-        run_config=RunConfig(
-            run_id=execution_params.execution_metadata.run_id,
-            mode=execution_params.mode,
-            tags=execution_params.execution_metadata.tags,
-            event_callback=event_records.append,
-        ),
+        run_config=run_config,
         step_keys_to_execute=execution_params.step_keys,
     )
 

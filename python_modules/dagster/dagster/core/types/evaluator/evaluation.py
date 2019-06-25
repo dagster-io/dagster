@@ -1,15 +1,15 @@
-import copy
 import traceback
 
 import six
 
 from dagster import check
+from dagster.core.definitions.config import ConfigMappingContext
 from dagster.core.definitions.environment_configs import is_solid_container_config
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.solid import CompositeSolidDefinition
 from dagster.core.execution.config import RunConfig
 from dagster.core.types.config import ConfigType
-from dagster.utils import single_item
+from dagster.utils import frozendict, single_item
 from dagster.utils.merger import dict_merge
 
 from .evaluate_value_result import EvaluateValueResult
@@ -42,7 +42,9 @@ def evaluate_config(config_type, config_value, pipeline=None, run_config=None, s
             config_value=config_value,
             stack=EvaluationStack(config_type=config_type, entries=[]),
             pipeline=check.opt_inst_param(pipeline, 'pipeline', PipelineDefinition),
-            run_config=check.opt_inst_param(run_config, 'run_config', RunConfig),
+            run_config=check.opt_inst_param(
+                run_config, 'run_config', RunConfig, default=RunConfig()
+            ),
             seen_handles=check.opt_list_param(seen_handles, 'seen_handles'),
         )
     )
@@ -243,11 +245,12 @@ def _evaluate_composite_solid_config(context):
     if not evaluate_value_result.success:
         return evaluate_value_result
 
-    # ensure we don't mutate the source environment dict
-    copy_config_value = copy.deepcopy(context.config_value.get('config'))
-
     try:
-        mapped_config_value = solid_def.config_mapping.config_mapping_fn(copy_config_value)
+        mapped_config_value = solid_def.config_mapping.config_mapping_fn(
+            ConfigMappingContext(run_config=context.run_config),
+            # ensure we don't mutate the source environment dict
+            frozendict(context.config_value.get('config')),
+        )
     except Exception:  # pylint: disable=W0703
         return EvaluateValueResult.for_error(
             create_bad_user_config_mapping_fn_error(

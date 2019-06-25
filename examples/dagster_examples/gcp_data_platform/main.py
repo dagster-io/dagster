@@ -30,8 +30,6 @@ DEPLOY_BUCKET_PREFIX = os.getenv('GCP_DEPLOY_BUCKET_PREFIX')
 REGION = 'us-west1'
 LATEST_JAR_HASH = '214f4bff2eccb4e9c08578d96bd329409b7111c8'
 
-RUN_DATE = '2019-05-28'
-
 
 @solid(
     config={'paths': Field(List[String])},
@@ -41,8 +39,8 @@ def output_paths(context, start) -> List[String]:  # pylint: disable=unused-argu
     yield Result(context.solid_config['paths'])
 
 
-def events_dataproc_fn(cfg):
-    dt = datetime.datetime.strptime(RUN_DATE, '%Y-%m-%d')
+def events_dataproc_fn(context, cfg):
+    dt = datetime.datetime.fromtimestamp(context.run_config.tags['execution_epoch_time'])
 
     return {
         'dataproc_solid': {
@@ -59,7 +57,7 @@ def events_dataproc_fn(cfg):
                                 '--gcs-output-bucket',
                                 cfg.get('output_bucket'),
                                 '--date',
-                                RUN_DATE,
+                                dt.strftime('%Y-%m-%d'),
                             ],
                             'mainClass': 'io.dagster.events.EventPipeline',
                             'jarFileUris': [
@@ -99,9 +97,10 @@ def events_dataproc() -> List[String]:
     return output_paths(dataproc_solid())  # pylint: disable=no-value-for-parameter
 
 
-def bq_load_events_fn(cfg):
+def bq_load_events_fn(context, cfg):
+    dt = datetime.datetime.fromtimestamp(context.run_config.tags['execution_epoch_time'])
+
     table = cfg.get('table')
-    dt = datetime.datetime.strptime(RUN_DATE, '%Y-%m-%d')
 
     return {
         'bq_load_events_internal': {
@@ -130,7 +129,7 @@ def bq_load_events(source_uris: List[String]):
     )
 
 
-def explore_visits_by_hour_fn(cfg):
+def explore_visits_by_hour_fn(_, cfg):
     return {
         'explore_visits_by_hour_internal': {
             'config': {

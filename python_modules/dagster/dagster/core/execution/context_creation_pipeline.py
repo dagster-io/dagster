@@ -59,14 +59,15 @@ class PipelineConfigEvaluationError(Exception):
         super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
-def create_environment_config(pipeline, environment_dict=None, mode=None):
+def create_environment_config(pipeline, environment_dict=None, run_config=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment_dict, 'environment')
-    mode = check.opt_str_param(mode, 'mode', default=pipeline.get_default_mode_name())
+    run_config = check.opt_inst_param(run_config, 'run_config', RunConfig, default=RunConfig())
 
+    mode = run_config.mode or pipeline.get_default_mode_name()
     environment_type = create_environment_type(pipeline, mode)
 
-    result = evaluate_config(environment_type, environment_dict, pipeline)
+    result = evaluate_config(environment_type, environment_dict, pipeline, run_config)
 
     if not result.success:
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment_dict)
@@ -131,9 +132,7 @@ ContextCreationData = namedtuple(
 
 
 def create_context_creation_data(pipeline_def, environment_dict, run_config):
-    environment_config = create_environment_config(
-        pipeline_def, environment_dict, mode=run_config.mode
-    )
+    environment_config = create_environment_config(pipeline_def, environment_dict, run_config)
 
     mode_def = pipeline_def.get_mode_definition(run_config.mode)
     system_storage_def = system_storage_def_from_config(mode_def, environment_config)

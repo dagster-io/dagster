@@ -1,3 +1,5 @@
+import time
+
 from abc import ABCMeta, abstractproperty
 from collections import namedtuple
 
@@ -49,10 +51,14 @@ class RunConfig(
     ):
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
+        tags = check.opt_dict_param(tags, 'tags', key_type=str)
+        if 'execution_epoch_time' not in tags:
+            tags['execution_epoch_time'] = time.time()
+
         return super(RunConfig, cls).__new__(
             cls,
             run_id=check.str_param(run_id, 'run_id') if run_id else make_new_run_id(),
-            tags=check.opt_dict_param(tags, 'tags', key_type=str, value_type=str),
+            tags=tags,
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
             loggers=check.opt_list_param(loggers, 'loggers'),
             executor_config=check.inst_param(executor_config, 'executor_config', ExecutorConfig)

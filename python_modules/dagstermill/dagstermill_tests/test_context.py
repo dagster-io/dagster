@@ -40,7 +40,7 @@ def test_environment_dict():
 
 
 def test_logging_tags():
-    assert OUT_OF_PIPELINE_CONTEXT.logging_tags == {'pipeline': 'Ephemeral Notebook Pipeline'}
+    assert OUT_OF_PIPELINE_CONTEXT.logging_tags.get('pipeline') == 'Ephemeral Notebook Pipeline'
 
 
 def test_environment_config():

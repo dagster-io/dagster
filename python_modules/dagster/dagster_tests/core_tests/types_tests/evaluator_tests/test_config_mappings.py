@@ -1,4 +1,5 @@
 # pylint: disable=no-value-for-parameter
+import time
 
 import pytest
 
@@ -10,10 +11,12 @@ from dagster import (
     solid,
     ConfigMapping,
     Field,
+    Float,
     InputDefinition,
     Int,
     PipelineConfigEvaluationError,
     Result,
+    RunConfig,
     String,
 )
 
@@ -31,7 +34,7 @@ def scalar_config_solid(context):
 @composite_solid(
     config_mapping=ConfigMapping(
         config={'override_str': Field(String)},
-        config_mapping_fn=lambda cfg: {'scalar_config_solid': {'config': cfg['override_str']}},
+        config_mapping_fn=lambda _, cfg: {'scalar_config_solid': {'config': cfg['override_str']}},
     )
 )
 def wrap():
@@ -39,7 +42,7 @@ def wrap():
 
 
 def test_multiple_overrides_pipeline():
-    def nesting_config_mapping_fn(cfg):
+    def nesting_config_mapping_fn(_, cfg):
         return {'wrap': {'config': {'override_str': cfg['nesting_override']}}}
 
     @composite_solid(
@@ -139,7 +142,7 @@ def test_bad_override():
     @composite_solid(
         config_mapping=ConfigMapping(
             config={'does_not_matter': Field(String)},
-            config_mapping_fn=lambda _: {'scalar_config_solid': {'config': 1234}},
+            config_mapping_fn=lambda _context, _cfg: {'scalar_config_solid': {'config': 1234}},
         )
     )
     def bad_wrap():
@@ -168,7 +171,7 @@ def test_bad_override():
 
 
 def test_raises_fn_override():
-    def raises_config_mapping_fn(_):
+    def raises_config_mapping_fn(_context, _cfg):
         assert 0
 
     @composite_solid(
@@ -209,7 +212,7 @@ def test_composite_config_field():
     @composite_solid(
         config_mapping=ConfigMapping(
             config={'override': Field(Int)},
-            config_mapping_fn=lambda cfg: {
+            config_mapping_fn=lambda _, cfg: {
                 'inner_solid': {'config': {'inner': str(cfg['override'])}}
             },
         )
@@ -234,7 +237,7 @@ def test_nested_with_inputs():
     @composite_solid(
         inputs=[InputDefinition('some_input', String)],
         config_mapping=ConfigMapping(
-            config_mapping_fn=lambda cfg: {
+            config_mapping_fn=lambda _, cfg: {
                 'basic': {'config': {'basic_key': 'override.' + cfg['inner_first']}}
             },
             config={'inner_first': Field(String)},
@@ -243,7 +246,7 @@ def test_nested_with_inputs():
     def inner_wrap(some_input):
         return basic(some_input)
 
-    def outer_wrap_fn(cfg):
+    def outer_wrap_fn(_, cfg):
         return {
             'inner_wrap': {
                 'inputs': {'some_input': {'value': 'foobar'}},
@@ -401,7 +404,7 @@ def test_wrap_all_config_no_inputs():
     @composite_solid(
         inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
         config_mapping=ConfigMapping(
-            config_mapping_fn=lambda cfg: {
+            config_mapping_fn=lambda _, cfg: {
                 'basic': {
                     'config': {
                         'config_field_a': cfg['config_field_a'],
@@ -498,7 +501,7 @@ def test_wrap_all_config_one_input():
     @composite_solid(
         inputs=[InputDefinition('input_a', String)],
         config_mapping=ConfigMapping(
-            config_mapping_fn=lambda cfg: {
+            config_mapping_fn=lambda _, cfg: {
                 'basic': {
                     'config': {
                         'config_field_a': cfg['config_field_a'],
@@ -589,7 +592,7 @@ def test_wrap_all_config_and_inputs():
 
     @composite_solid(
         config_mapping=ConfigMapping(
-            config_mapping_fn=lambda cfg: {
+            config_mapping_fn=lambda _, cfg: {
                 'basic': {
                     'config': {
                         'config_field_a': cfg['config_field_a'],
@@ -654,3 +657,36 @@ def test_wrap_all_config_and_inputs():
         == 'Missing required field "config_field_b" at path root:solids:wrap_all:config '
         'Available Fields: "[\'config_field_a\', \'config_field_b\']".'
     )
+
+
+def test_timestamp_in_run_config():
+    now = time.time()
+    run_config = RunConfig(tags={'execution_epoch_time': now})
+    seen = {}
+
+    @solid(config={'ts': Field(Float)})
+    def basic(context):
+        seen['ts'] = context.solid_config['ts']
+
+    @composite_solid(
+        config_mapping=ConfigMapping(
+            config_mapping_fn=lambda context, _: {
+                'basic': {'config': {'ts': context.run_config.tags['execution_epoch_time']}}
+            },
+            config={'config_field_a': Field(String)},
+        )
+    )
+    def wrap_with_context():
+        return basic()
+
+    @pipeline(name='config_mapping')
+    def config_mapping_pipeline():
+        return wrap_with_context()
+
+    result = execute_pipeline(
+        config_mapping_pipeline,
+        {'solids': {'wrap_with_context': {'config': {'config_field_a': 'foobar'}}}},
+        run_config=run_config,
+    )
+    assert result.success
+    assert seen['ts'] == now
