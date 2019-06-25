@@ -1,34 +1,49 @@
 solids:
   process_q2_coupon_data:
-    inputs:
-      bucket_data:
-        bucket: dagster-airline-demo-source-data
-        key: test/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip
-      archive_member:
-        value: Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv
-    config:
-      subsample_pct: 100
-      table_name: q2_coupon_data
+    solids:
+      s3_to_df:
+        inputs:
+          bucket_data:
+            bucket: dagster-airline-demo-source-data
+            key: test/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip
+          archive_member:
+            value: Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv
+      subsample_spark_dataset:
+        config:
+          subsample_pct: 100
+      load_data_to_database_from_spark:
+        config:
+          table_name: q2_coupon_data
   process_q2_market_data:
-    inputs:
-      bucket_data:
-        bucket: dagster-airline-demo-source-data
-        key: test/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip
-      archive_member:
-        value: Origin_and_Destination_Survey_DB1BMarket_2018_2.csv
-    config:
-      subsample_pct: 100
-      table_name: q2_market_data
+    solids:
+      s3_to_df:
+        inputs:
+          bucket_data:
+            bucket: dagster-airline-demo-source-data
+            key: test/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip
+          archive_member:
+            value: Origin_and_Destination_Survey_DB1BMarket_2018_2.csv
+      subsample_spark_dataset:
+        config:
+          subsample_pct: 100
+      load_data_to_database_from_spark:
+        config:
+          table_name: q2_market_data
   process_q2_ticket_data:
-    inputs:
-      bucket_data:
-        bucket: dagster-airline-demo-source-data
-        key: test/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip
-      archive_member:
-        value: Origin_and_Destination_Survey_DB1BTicket_2018_2.csv
-    config:
-      subsample_pct: 100
-      table_name: q2_ticket_data
+    solids:
+      s3_to_df:
+        inputs:
+          bucket_data:
+            bucket: dagster-airline-demo-source-data
+            key: test/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip
+          archive_member:
+            value: Origin_and_Destination_Survey_DB1BTicket_2018_2.csv
+      subsample_spark_dataset:
+        config:
+          subsample_pct: 100
+      load_data_to_database_from_spark:
+        config:
+          table_name: q2_ticket_data
   april_on_time_s3_to_df:
     inputs:
       bucket_data:
