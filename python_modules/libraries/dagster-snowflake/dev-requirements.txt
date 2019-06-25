@@ -1,2 +1,2 @@
 mock==2.0.0
-pytest==4.0.2
+pytest==4.6.3
