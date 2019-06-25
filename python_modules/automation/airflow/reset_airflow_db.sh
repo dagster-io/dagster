@@ -1,5 +1,12 @@
 #!/bin/bash
 
+set -eux
+
+ROOT=$(git rev-parse --show-toplevel)
+pushd $ROOT/python_modules/automation/airflow/
+
+brew services start mysql
+
 # airflow initdb will go create a random sqlite DB if this isn't set and it doesn't find the
 # airflow.cfg file
 [ -z "$AIRFLOW_HOME" ] && { echo "AIRFLOW_HOME must be set to use this script"; exit 1; }
