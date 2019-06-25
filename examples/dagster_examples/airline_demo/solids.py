@@ -260,7 +260,7 @@ subsample_spark_dataset, solid), canonicalize the column names, and then
 load it into a data warehouse.
 '''
 )
-def s3_to_dw_table(_) -> String:
+def s3_to_dw_table() -> String:
     # pylint: disable=no-value-for-parameter
     return load_data_to_database_from_spark(
         canonicalize_column_names(subsample_spark_dataset(s3_to_df()))

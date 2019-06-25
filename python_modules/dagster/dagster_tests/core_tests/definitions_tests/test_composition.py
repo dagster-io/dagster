@@ -231,6 +231,25 @@ def test_mapping():
     )
 
 
+def test_mapping_args_kwargs():
+    @lambda_solid
+    def take(a, b, c):
+        return (a, b, c)
+
+    @composite_solid
+    def maps(m_c, m_b, m_a):
+        take(m_a, b=m_b, c=m_c)
+
+    assert maps.input_mappings[2].definition.name == 'm_a'
+    assert maps.input_mappings[2].input_name == 'a'
+
+    assert maps.input_mappings[1].definition.name == 'm_b'
+    assert maps.input_mappings[1].input_name == 'b'
+
+    assert maps.input_mappings[0].definition.name == 'm_c'
+    assert maps.input_mappings[0].input_name == 'c'
+
+
 def output_map_mult():
     @composite_solid(outputs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
     def wrap_mult():
@@ -380,3 +399,40 @@ def test_repositry_has_solid_def():
     )
 
     assert repo_def.solid_def_named('inner')
+
+
+def test_mapping_args_ordering():
+    @lambda_solid
+    def take(a, b, c):
+        assert a == 'a'
+        assert b == 'b'
+        assert c == 'c'
+
+    @composite_solid
+    def swizzle(b, a, c):
+        take(a, b, c)
+
+    @composite_solid
+    def swizzle_2(c, b, a):
+        swizzle(b, a=a, c=c)
+
+    @pipeline
+    def ordered():
+        swizzle_2()
+
+    for mapping in swizzle.input_mappings:
+        assert mapping.definition.name == mapping.input_name
+
+    for mapping in swizzle_2.input_mappings:
+        assert mapping.definition.name == mapping.input_name
+
+    execute_pipeline(
+        ordered,
+        {
+            'solids': {
+                'swizzle_2': {
+                    'inputs': {'a': {'value': 'a'}, 'b': {'value': 'b'}, 'c': {'value': 'c'}}
+                }
+            }
+        },
+    )

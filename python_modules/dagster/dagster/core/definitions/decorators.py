@@ -600,9 +600,14 @@ class _CompositeSolid(object):
             '"{context.name}" expected "{self.name}"'.format(context=context, self=self),
         )
 
+        # line up input mappings in input definition order
+        input_mappings = []
+        for defn in input_defs:
+            input_mappings.append(context.input_mapping_dict[defn.name])
+
         return CompositeSolidDefinition(
             name=self.name,
-            input_mappings=context.input_mappings,
+            input_mappings=input_mappings,
             output_mappings=context.output_mappings,
             dependencies=context.dependencies,
             solid_defs=context.solid_defs,
