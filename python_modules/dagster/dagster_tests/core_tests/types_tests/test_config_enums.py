@@ -22,23 +22,19 @@ def define_test_enum_type():
 
 
 def test_config_enums():
-    errors, _ = evaluate_config(define_test_enum_type(), 'VALUE_ONE')
-    assert not errors
+    assert evaluate_config(define_test_enum_type(), 'VALUE_ONE').success
 
 
 def test_config_enum_error_none():
-    errors, _ = evaluate_config(define_test_enum_type(), None)
-    assert len(errors) == 1
+    assert not evaluate_config(define_test_enum_type(), None).success
 
 
 def test_config_enum_error_wrong_type():
-    errors, _ = evaluate_config(define_test_enum_type(), 384934)
-    assert len(errors) == 1
+    assert not evaluate_config(define_test_enum_type(), 384934).success
 
 
 def test_config_enum_error():
-    errors, _ = evaluate_config(define_test_enum_type(), 'NOT_PRESENT')
-    assert len(errors) == 1
+    assert not evaluate_config(define_test_enum_type(), 'NOT_PRESENT').success
 
 
 def test_enum_in_pipeline_execution():

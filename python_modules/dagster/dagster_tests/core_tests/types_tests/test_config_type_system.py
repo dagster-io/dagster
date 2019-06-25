@@ -22,7 +22,7 @@ from dagster import (
 
 
 from dagster.core.definitions import create_environment_schema
-from dagster.core.types.evaluator import evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config
 from dagster.core.types.evaluator.errors import DagsterEvaluationErrorReason
 from dagster.core.test_utils import throwing_evaluate_config_value
 
@@ -34,19 +34,17 @@ def test_noop_config():
 def test_int_field():
     config_field = Field(Dict({'int_field': Field(Int)}))
 
-    assert evaluate_config_value(config_field.config_type, {'int_field': 1}).value == {
-        'int_field': 1
-    }
+    assert evaluate_config(config_field.config_type, {'int_field': 1}).value == {'int_field': 1}
 
 
 def assert_config_value_success(config_type, config_value, expected):
-    result = evaluate_config_value(config_type, config_value)
+    result = evaluate_config(config_type, config_value)
     assert result.success
     assert result.value == expected
 
 
 def assert_eval_failure(config_type, value):
-    assert not evaluate_config_value(config_type, value).success
+    assert not evaluate_config(config_type, value).success
 
 
 def test_int_fails():

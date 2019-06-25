@@ -163,7 +163,7 @@ def test_bad_override():
     assert exc_info.value.errors[0].message == (
         '''Config override mapping function defined by solid do_stuff from definition bad_wrap at'''
         ''' path root:solids:do_stuff caused error: Value at path '''
-        '''root:scalar_config_solid:config is not valid. Expected "String"'''
+        '''root:solids:do_stuff:scalar_config_solid:config is not valid. Expected "String"'''
     )
 
 

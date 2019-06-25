@@ -24,7 +24,7 @@ from dagster.core.storage.init import InitSystemStorageContext
 from dagster.core.storage.runs import DagsterRunMeta
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.core.types.evaluator import evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config
 from dagster.core.types.evaluator.errors import friendly_string_for_error, EvaluationError
 from dagster.loggers import default_loggers, default_system_loggers
 from dagster.utils import merge_dicts
@@ -66,7 +66,7 @@ def create_environment_config(pipeline, environment_dict=None, mode=None):
 
     environment_type = create_environment_type(pipeline, mode)
 
-    result = evaluate_config_value(environment_type, environment_dict, pipeline)
+    result = evaluate_config(environment_type, environment_dict, pipeline)
 
     if not result.success:
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment_dict)

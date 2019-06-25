@@ -3,7 +3,7 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.core.definitions import create_environment_schema
 from dagster.core.execution.api import ExecutionSelector, create_execution_plan
-from dagster.core.types.evaluator import evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config
 
 from .fetch_pipelines import get_dauphin_pipeline_from_selector
 from .utils import capture_dauphin_error, UserFacingGraphQLError
@@ -21,7 +21,7 @@ def get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode
 
     environment_schema = create_environment_schema(pipeline, mode)
 
-    validated_config = evaluate_config_value(
+    validated_config = evaluate_config(
         environment_schema.environment_type, environment_dict, pipeline
     )
 
