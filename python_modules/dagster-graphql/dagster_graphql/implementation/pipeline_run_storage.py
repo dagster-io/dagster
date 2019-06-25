@@ -1,22 +1,23 @@
 import atexit
+import io
+import json
 import os
+import pickle
 import time
-
 from collections import OrderedDict
 from enum import Enum
 
 import gevent
 import gevent.lock
 import pyrsistent
-
+import six
 from rx import Observable
 
 from dagster import check, seven
-from dagster.core.events.log import EventRecord
 from dagster.core.events import DagsterEventType
+from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import ExecutionSelector
 from dagster.core.execution.config import ReexecutionConfig
-from dagster.core.execution.plan.plan import ExecutionPlan
 
 
 class PipelineRunStatus(Enum):
@@ -27,11 +28,26 @@ class PipelineRunStatus(Enum):
 
 
 class PipelineRunStorage(object):
-    def __init__(self, create_pipeline_run=None):
+    def __init__(self, log_dir=None):
         self._runs = OrderedDict()
-        if not create_pipeline_run:
-            create_pipeline_run = InMemoryPipelineRun
-        self._create_pipeline_run = create_pipeline_run
+        self._log_dir = log_dir
+        if self._log_dir:
+            self._load_runs()
+
+    def _load_runs(self):
+        for file in os.listdir(self._log_dir):
+            if not file.endswith('.json'):
+                continue
+            with open(os.path.join(self._log_dir, file)) as data:
+                try:
+                    self.add_run(InMemoryPipelineRun.from_json(json.load(data)))
+                except Exception as ex:  # pylint: disable=broad-except
+                    print(
+                        'Could not parse dagit run from {file_name} in {dir_name}. {ex}: {msg}'.format(
+                            file_name=file, dir_name=self._log_dir, ex=type(ex).__name__, msg=ex
+                        )
+                    )
+                    continue
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
@@ -50,19 +66,15 @@ class PipelineRunStorage(object):
         return self.get_run_by_id(id_)
 
     def create_run(self, *args, **kwargs):
-        return self._create_pipeline_run(*args, **kwargs)
+        if self._log_dir:
+            return LogFilePipelineRun(self._log_dir, *args, **kwargs)
+        else:
+            return InMemoryPipelineRun(*args, **kwargs)
 
 
 class PipelineRun(object):
     def __init__(
-        self,
-        run_id,
-        selector,
-        env_config,
-        mode,
-        execution_plan,
-        reexecution_config,
-        step_keys_to_execute,
+        self, run_id, selector, env_config, mode, reexecution_config=None, step_keys_to_execute=None
     ):
         self.__subscribers = []
 
@@ -71,7 +83,6 @@ class PipelineRun(object):
         self._selector = check.inst_param(selector, 'selector', ExecutionSelector)
         self._env_config = check.opt_dict_param(env_config, 'environment_config', key_type=str)
         self._mode = check.str_param(mode, 'mode')
-        self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
         self._reexecution_config = check.opt_inst_param(
             reexecution_config, 'reexecution_config', ReexecutionConfig
         )
@@ -101,10 +112,6 @@ class PipelineRun(object):
     @property
     def config(self):
         return self._env_config
-
-    @property
-    def execution_plan(self):
-        return self._execution_plan
 
     @property
     def reexecution_config(self):
@@ -169,6 +176,35 @@ class InMemoryPipelineRun(PipelineRun):
         with self._log_storage_lock:
             self._log_sequence = self._log_sequence.append(new_event)
 
+    def store_events(self, new_events):
+        check.list_param(new_events, 'new_events', of_type=EventRecord)
+
+        with self._log_storage_lock:
+            self._log_sequence = self._log_sequence.extend(new_events)
+
+    @staticmethod
+    def from_json(data):
+        selector = ExecutionSelector(
+            name=data['pipeline_name'], solid_subset=data.get('pipeline_solid_subset')
+        )
+        run = InMemoryPipelineRun(
+            run_id=data['run_id'], selector=selector, env_config=data['config'], mode=data['mode']
+        )
+        events = []
+        with open(data['log_file'], 'rb') as logs:
+            while True:
+                try:
+                    event_record = pickle.load(logs)
+                    check.invariant(
+                        isinstance(event_record, EventRecord), 'log file entry not EventRecord'
+                    )
+                    events.append(event_record)
+                except EOFError:
+                    break
+
+        run.store_events(events)
+        return run
+
 
 class LogFilePipelineRun(InMemoryPipelineRun):
     def __init__(self, log_dir, *args, **kwargs):
@@ -178,36 +214,37 @@ class LogFilePipelineRun(InMemoryPipelineRun):
             self._log_dir, '{}_{}'.format(int(time.time()), self.run_id)
         )
         ensure_dir(log_dir)
-        self._write_metadata_to_file()
         self._log_file = '{}.log'.format(self._file_prefix)
         self._log_file_lock = gevent.lock.Semaphore()
+        self._write_metadata_to_file()
 
     def _write_metadata_to_file(self):
         metadata_file = '{}.json'.format(self._file_prefix)
-        with open(metadata_file, 'w', encoding="utf-8") as f:
-            f.write(
-                seven.json.dumps(
-                    {
-                        'run_id': self.run_id,
-                        'pipeline_name': self.selector.name,
-                        'pipeline_solid_subset': self.selector.solid_subset,
-                        'config': self.config,
-                        'execution_plan': 'TODO',
-                    }
-                )
+        with io.open(metadata_file, 'w', encoding='utf-8') as f:
+            json_str = seven.json.dumps(
+                {
+                    'run_id': self.run_id,
+                    'pipeline_name': self.selector.name,
+                    'pipeline_solid_subset': self.selector.solid_subset,
+                    'config': self.config,
+                    'mode': self.mode,
+                    'log_file': self._log_file,
+                }
             )
+            f.write(six.text_type(json_str))
 
     def store_event(self, new_event):
         check.inst_param(new_event, 'new_event', EventRecord)
 
-        super().store_event(new_event)
+        super(LogFilePipelineRun, self).store_event(new_event)
 
         with self._log_file_lock:
             # Going to do the less error-prone, simpler, but slower strategy:
-            # open, append, close for every log message for now
-            with open(self._log_file, 'a', encoding='utf-8') as log_file_handle:
-                log_file_handle.write(seven.json.dumps(new_event.to_dict()))
-                log_file_handle.write('\n')
+            # open, append, close for every log message for now.
+            # Open the file for binary content and create if it doesn't exist.
+            with open(self._log_file, 'ab') as log_file_handle:
+                log_file_handle.seek(0, os.SEEK_END)
+                pickle.dump(new_event, log_file_handle)
 
 
 def ensure_dir(file_path):

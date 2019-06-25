@@ -12,11 +12,7 @@ from dagster.cli.pipeline import repository_target_argument
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 
-from dagster_graphql.implementation.pipeline_run_storage import (
-    PipelineRunStorage,
-    LogFilePipelineRun,
-    InMemoryPipelineRun,
-)
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 
 from .app import create_app
 from .version import __version__
@@ -52,7 +48,7 @@ REPO_TARGET_WARNING = (
 @click.option('--host', '-h', type=click.STRING, default='127.0.0.1', help="Host to run server on")
 @click.option('--port', '-p', type=click.INT, default=3000, help="Port to run server on")
 @click.option('--sync', is_flag=True, help='Use the synchronous execution manager')
-@click.option('--log', is_flag=False, help='Record logs of pipeline runs')
+@click.option('--log', is_flag=True, help='Record logs of pipeline runs')
 @click.option('--log-dir', help="Directory to record logs to", default='dagit_run_logs/')
 @click.option(
     '--no-watch',
@@ -76,15 +72,8 @@ def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
 
 def host_dagit_ui(log, log_dir, handle, use_sync, host, port):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
-    if log:
 
-        def create_pipeline_run(*args, **kwargs):
-            return LogFilePipelineRun(log_dir, *args, **kwargs)
-
-    else:
-        create_pipeline_run = InMemoryPipelineRun
-
-    pipeline_run_storage = PipelineRunStorage(create_pipeline_run=create_pipeline_run)
+    pipeline_run_storage = PipelineRunStorage(log_dir if log else None)
 
     app = create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=use_sync)
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)

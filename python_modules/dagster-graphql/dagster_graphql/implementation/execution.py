@@ -53,7 +53,6 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
         selector=execution_params.selector,
         env_config=execution_params.environment_dict,
         mode=execution_params.mode,
-        execution_plan=execution_plan,
         reexecution_config=reexecution_config,
         step_keys_to_execute=execution_params.step_keys,
     )
@@ -120,11 +119,14 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
     def get_observable(pipeline):
+        execution_plan = create_execution_plan(
+            pipeline.get_dagster_pipeline(), run.config, RunConfig(mode=run.mode)
+        )
         return run.observable_after_cursor(after).map(
             lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
                 runId=run_id,
                 messages=[
-                    from_event_record(graphene_info, event, pipeline, run.execution_plan)
+                    from_event_record(graphene_info, event, pipeline, execution_plan)
                     for event in events
                 ],
             )

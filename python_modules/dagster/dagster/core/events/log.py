@@ -1,6 +1,8 @@
+from collections import namedtuple
 import json
 
 from dagster import check
+from dagster.core.events import DagsterEvent
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils.error import SerializableErrorInfo
 from dagster.utils.log import (
@@ -11,9 +13,14 @@ from dagster.utils.log import (
 )
 
 
-class EventRecord(object):
-    def __init__(
-        self,
+class EventRecord(
+    namedtuple(
+        '_EventRecord',
+        'error_info message level user_message run_id timestamp step_key pipeline_name dagster_event',
+    )
+):
+    def __new__(
+        cls,
         error_info,
         message,
         level,
@@ -24,70 +31,22 @@ class EventRecord(object):
         pipeline_name=None,
         dagster_event=None,
     ):
-        from dagster.core.events import DagsterEvent
-
-        self._error_info = check.opt_inst_param(error_info, 'error_info', SerializableErrorInfo)
-        self._message = check.str_param(message, 'message')
-        self._level = coerce_valid_log_level(level)
-        self._user_message = check.str_param(user_message, 'user_message')
-        self._run_id = check.str_param(run_id, 'run_id')
-        self._timestamp = check.float_param(timestamp, 'timestamp')
-        self._step_key = check.opt_str_param(step_key, 'step_key')
-        self._pipeline_name = check.opt_str_param(pipeline_name, 'pipeline_name')
-        self._dagster_event = check.opt_inst_param(dagster_event, 'dagster_event', DagsterEvent)
-
-    @property
-    def message(self):
-        return self._message
-
-    @property
-    def level(self):
-        return self._level
-
-    @property
-    def user_message(self):
-        return self._user_message
+        return super(EventRecord, cls).__new__(
+            cls,
+            check.opt_inst_param(error_info, 'error_info', SerializableErrorInfo),
+            check.str_param(message, 'message'),
+            coerce_valid_log_level(level),
+            check.str_param(user_message, 'user_message'),
+            check.str_param(run_id, 'run_id'),
+            check.float_param(timestamp, 'timestamp'),
+            check.opt_str_param(step_key, 'step_key'),
+            check.opt_str_param(pipeline_name, 'pipeline_name'),
+            check.opt_inst_param(dagster_event, 'dagster_event', DagsterEvent),
+        )
 
     @property
     def is_dagster_event(self):
-        return bool(self._dagster_event)
-
-    @property
-    def run_id(self):
-        return self._run_id
-
-    @property
-    def timestamp(self):
-        return self._timestamp
-
-    @property
-    def error_info(self):
-        return self._error_info
-
-    @property
-    def step_key(self):
-        return self._step_key
-
-    @property
-    def pipeline_name(self):
-        return self._pipeline_name
-
-    @property
-    def dagster_event(self):
-        return self._dagster_event
-
-    def to_dict(self):
-        return {
-            'run_id': self.run_id,
-            'message': self.message,
-            'level': self.level,
-            'user_message': self.user_message,
-            'timestamp': self.timestamp,
-            'error_info': self.error_info,
-            'step_key': self.step_key,
-            'dagster_event': self.dagster_event,
-            'pipeline_name': self.pipeline_name,
-        }
+        return bool(self.dagster_event)
 
 
 class DagsterEventRecord(EventRecord):
