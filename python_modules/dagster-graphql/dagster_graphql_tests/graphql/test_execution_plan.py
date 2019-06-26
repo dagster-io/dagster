@@ -459,8 +459,6 @@ def test_basic_execute_plan_with_materialization():
 
         assert [step_data['key'] for step_data in steps_data] == [
             'sum_solid.compute',
-            'sum_solid.outputs.result.materialize.0',
-            'sum_solid.outputs.result.materialize.join',
             'sum_sq_solid.compute',
         ]
 
@@ -471,12 +469,7 @@ def test_basic_execute_plan_with_materialization():
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
                     'environmentConfigData': environment_dict,
-                    'stepKeys': [
-                        'sum_solid.compute',
-                        'sum_solid.outputs.result.materialize.0',
-                        'sum_solid.outputs.result.materialize.join',
-                        'sum_sq_solid.compute',
-                    ],
+                    'stepKeys': ['sum_solid.compute', 'sum_sq_solid.compute'],
                     'executionMetadata': {'runId': 'kdjkfjdfd'},
                     'mode': 'default',
                 }

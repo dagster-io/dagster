@@ -1,43 +1,35 @@
 import sys
 
+import six
 from future.utils import raise_from
 
 from dagster import check
-
-from dagster.utils.timing import time_execution_scope
-
+from dagster.core.definitions import EventMetadataEntry, ExpectationResult, Materialization, Output
 from dagster.core.errors import (
     DagsterError,
+    DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
     DagsterRuntimeCoercionError,
-    DagsterExecutionStepExecutionError,
-    DagsterTypeError,
     DagsterStepOutputNotFoundError,
+    DagsterTypeError,
     user_code_error_boundary,
 )
-
+from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.config import ExecutorConfig
-
 from dagster.core.execution.context.system import (
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
-
-from dagster.core.definitions import Materialization, ExpectationResult, Output
-
-from dagster.core.events import DagsterEvent, DagsterEventType
-
-from dagster.utils.error import serializable_error_info_from_exc_info
-
 from dagster.core.execution.plan.objects import (
     ExecutionStep,
-    StepOutputHandle,
-    StepOutputData,
     StepFailureData,
+    StepOutputData,
+    StepOutputHandle,
     StepSuccessData,
 )
-
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.timing import time_execution_scope
 
 from .engine_base import IEngine
 
@@ -297,7 +289,8 @@ def _core_dagster_event_sequence_for_step(step_context):
         ):
 
             if isinstance(event, Output):
-                yield _create_step_output_event(step_context, event)
+                for evt in _create_step_output_events(step_context, event):
+                    yield evt
             elif isinstance(event, Materialization):
                 yield DagsterEvent.step_materialization(step_context, event)
             elif isinstance(event, ExpectationResult):
@@ -312,7 +305,7 @@ def _core_dagster_event_sequence_for_step(step_context):
     )
 
 
-def _create_step_output_event(step_context, result):
+def _create_step_output_events(step_context, result):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.inst_param(result, 'result', Output)
 
@@ -330,7 +323,7 @@ def _create_step_output_event(step_context, result):
             value=value,
         )
 
-        return DagsterEvent.step_output_event(
+        yield DagsterEvent.step_output_event(
             step_context=step_context,
             step_output_data=StepOutputData(
                 step_output_handle=step_output_handle,
@@ -340,6 +333,10 @@ def _create_step_output_event(step_context, result):
                 else None,
             ),
         )
+
+        for evt in _create_output_materializations(step_context, result.output_name, value):
+            yield evt
+
     except DagsterRuntimeCoercionError as e:
         raise DagsterInvariantViolationError(
             (
@@ -351,6 +348,50 @@ def _create_step_output_event(step_context, result):
                 output_name=result.output_name,
             )
         )
+
+
+def _create_output_materializations(step_context, output_name, value):
+    step = step_context.step
+    solid_config = step_context.environment_config.solids.get(str(step.solid_handle))
+    if solid_config is None:
+        return
+
+    for output_spec in solid_config.outputs:
+        check.invariant(len(output_spec) == 1)
+        config_output_name, output_spec = list(output_spec.items())[0]
+        if config_output_name == output_name:
+            step_output = step.step_output_named(output_name)
+            path = step_output.runtime_type.output_schema.materialize_runtime_value(
+                step_context, output_spec, value
+            )
+
+            if not isinstance(path, six.string_types):
+                raise DagsterInvariantViolationError(
+                    (
+                        'materialize_runtime_value on type {type_name} has returned '
+                        'value {value} of type {python_type}. You must return a '
+                        'string (and ideally a valid file path).'
+                    ).format(
+                        type_name=step_output.runtime_type.name,
+                        value=repr(path),
+                        python_type=type(path).__name__,
+                    )
+                )
+
+            yield DagsterEvent.step_materialization(
+                step_context,
+                Materialization(
+                    label='{solid_name}.{output_name}.materialization'.format(
+                        solid_name=str(step.solid_handle), output_name=output_name
+                    ),
+                    metadata_entries=[
+                        EventMetadataEntry.path(path=path, label='intermediate_file')
+                    ],
+                    description='Materialization of {solid_name}.{output_name}'.format(
+                        output_name=output_name, solid_name=str(step.solid_handle)
+                    ),
+                ),
+            )
 
 
 def _get_evaluated_input(step, input_name, input_value):

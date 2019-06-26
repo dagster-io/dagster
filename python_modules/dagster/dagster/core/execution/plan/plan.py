@@ -20,7 +20,6 @@ from dagster.core.utils import toposort
 
 from .compute import create_compute_step
 from .expectations import create_expectations_subplan, decorate_with_expectations
-from .materialization_thunk import decorate_with_output_materializations
 from .objects import ExecutionStep, StepInput, StepKind, StepOutputHandle
 from .utility import create_join_outputs_step
 
@@ -205,12 +204,8 @@ def create_subplan_for_output(
     check.inst_param(solid_transform_step, 'solid_transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
-    subplan = decorate_with_expectations(
+    return decorate_with_expectations(
         pipeline_name, environment_config, solid, solid_transform_step, output_def, handle
-    )
-
-    return decorate_with_output_materializations(
-        pipeline_name, environment_config, solid, output_def, subplan, handle
     )
 
 
