@@ -213,6 +213,8 @@ def test_all_step_events():  # pylint: disable=too-many-locals
                     key = event.step_key + '.' + event.event_type_value
                     event_counts[key] -= 1
                 unhandled_events -= {DagsterEventType(e.event_type_value) for e in events}
+            else:
+                raise Exception(res['errors'])
 
             # build up a dict, incrementing all the event records we've produced in the run storage
             logs = pipeline_run_storage.get_run_by_id(run_config.run_id).all_logs()

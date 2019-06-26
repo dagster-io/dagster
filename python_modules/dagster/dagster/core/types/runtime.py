@@ -3,7 +3,6 @@ import six
 
 from dagster import check
 
-from dagster.core.errors import DagsterRuntimeCoercionError
 from dagster.core.storage.type_storage import TypeStoragePlugin
 
 from .builtin_enum import BuiltinEnum
@@ -96,21 +95,8 @@ class RuntimeType(object):
     def display_name(self):
         return self.name
 
-    def coerce_runtime_value(self, value):
-        return value
-
-    def throw_if_false(self, fn, value):
-        if not fn(value):
-            raise DagsterRuntimeCoercionError(
-                (
-                    'Invalid value for Dagster type {type_name}, got value '
-                    '{value} of Python type {type}'
-                ).format(type_name=self.name, value=repr(value), type=type(value))
-            )
-        return value
-
-    def throw_if_not_string(self, value):
-        return self.throw_if_false(lambda v: isinstance(v, six.string_types), value)
+    def type_check(self, value):
+        pass
 
     @property
     def is_any(self):
@@ -155,10 +141,18 @@ class Int(BuiltinScalarRuntimeType):
             input_schema=BuiltinSchemas.INT_INPUT, output_schema=BuiltinSchemas.INT_OUTPUT
         )
 
-    def coerce_runtime_value(self, value):
-        return self.throw_if_false(
-            lambda v: not isinstance(v, bool) and isinstance(v, six.integer_types), value
-        )
+    def type_check(self, value):
+        from dagster.core.definitions.events import Failure
+
+        if not isinstance(value, six.integer_types):
+            raise Failure('Must be a python int. Got {value}'.format(value=value))
+
+
+def _throw_if_not_string(value):
+    from dagster.core.definitions.events import Failure
+
+    if not isinstance(value, six.string_types):
+        raise Failure('Value {value} must be a string.'.format(value=value))
 
 
 class String(BuiltinScalarRuntimeType):
@@ -167,8 +161,8 @@ class String(BuiltinScalarRuntimeType):
             input_schema=BuiltinSchemas.STRING_INPUT, output_schema=BuiltinSchemas.STRING_OUTPUT
         )
 
-    def coerce_runtime_value(self, value):
-        return self.throw_if_not_string(value)
+    def type_check(self, value):
+        _throw_if_not_string(value)
 
 
 class Path(BuiltinScalarRuntimeType):
@@ -177,8 +171,8 @@ class Path(BuiltinScalarRuntimeType):
             input_schema=BuiltinSchemas.PATH_INPUT, output_schema=BuiltinSchemas.PATH_OUTPUT
         )
 
-    def coerce_runtime_value(self, value):
-        return self.throw_if_not_string(value)
+    def type_check(self, value):
+        _throw_if_not_string(value)
 
 
 class Float(BuiltinScalarRuntimeType):
@@ -187,8 +181,11 @@ class Float(BuiltinScalarRuntimeType):
             input_schema=BuiltinSchemas.FLOAT_INPUT, output_schema=BuiltinSchemas.FLOAT_OUTPUT
         )
 
-    def coerce_runtime_value(self, value):
-        return self.throw_if_false(lambda v: isinstance(v, float), value)
+    def type_check(self, value):
+        from dagster.core.definitions.events import Failure
+
+        if not isinstance(value, float):
+            raise Failure('Value {value} must be a float.'.format(value=value))
 
 
 class Bool(BuiltinScalarRuntimeType):
@@ -197,8 +194,11 @@ class Bool(BuiltinScalarRuntimeType):
             input_schema=BuiltinSchemas.BOOL_INPUT, output_schema=BuiltinSchemas.BOOL_OUTPUT
         )
 
-    def coerce_runtime_value(self, value):
-        return self.throw_if_false(lambda v: isinstance(v, bool), value)
+    def type_check(self, value):
+        from dagster.core.definitions.events import Failure
+
+        if not isinstance(value, bool):
+            raise Failure('Value {value} must be a bool.'.format(value=value))
 
 
 class Anyish(RuntimeType):
@@ -248,8 +248,11 @@ class Nothing(RuntimeType):
     def is_nothing(self):
         return True
 
-    def coerce_runtime_value(self, value):
-        return self.throw_if_false(lambda v: v is None, value)
+    def type_check(self, value):
+        from dagster.core.definitions.events import Failure
+
+        if value is not None:
+            raise Failure('Value {value} must be None.')
 
 
 class PythonObjectType(RuntimeType):
@@ -259,8 +262,15 @@ class PythonObjectType(RuntimeType):
         super(PythonObjectType, self).__init__(key=key, name=name, **kwargs)
         self.python_type = check.type_param(python_type, 'python_type')
 
-    def coerce_runtime_value(self, value):
-        return self.throw_if_false(lambda v: isinstance(v, self.python_type), value)
+    def type_check(self, value):
+        from dagster.core.definitions.events import Failure
+
+        if not isinstance(value, self.python_type):
+            raise Failure(
+                'Value {value} should be of type {type_name}.'.format(
+                    value=value, type_name=self.python_type.__name__
+                )
+            )
 
 
 def _create_nullable_input_schema(inner_type):
@@ -294,8 +304,8 @@ class NullableType(RuntimeType):
     def display_name(self):
         return self.inner_type.display_name + '?'
 
-    def coerce_runtime_value(self, value):
-        return None if value is None else self.inner_type.coerce_runtime_value(value)
+    def type_check(self, value):
+        return None if value is None else self.inner_type.type_check(value)
 
     @property
     def is_nullable(self):
@@ -336,9 +346,14 @@ class ListType(RuntimeType):
     def display_name(self):
         return '[' + self.inner_type.display_name + ']'
 
-    def coerce_runtime_value(self, value):
-        value = self.throw_if_false(lambda v: isinstance(value, list), value)
-        return [self.inner_type.coerce_runtime_value(item) for item in value]
+    def type_check(self, value):
+        from dagster.core.definitions.events import Failure
+
+        if not isinstance(value, list):
+            raise Failure('Value must be a list, got {value}'.format(value=value))
+
+        for item in value:
+            self.inner_type.type_check(item)
 
     @property
     def is_list(self):
@@ -378,8 +393,8 @@ class Stringish(RuntimeType):
     def is_scalar(self):
         return True
 
-    def coerce_runtime_value(self, value):
-        return self.throw_if_not_string(value)
+    def type_check(self, value):
+        return _throw_if_not_string(value)
 
 
 _RUNTIME_MAP = {

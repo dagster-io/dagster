@@ -4,23 +4,26 @@ import gzip
 import os
 import shutil
 
+import six
+
 from dagster import (
-    file_relative_path,
-    lambda_solid,
-    pipeline,
-    solid,
     Bool,
     Dict,
+    Failure,
     Field,
     InputDefinition,
     List,
     ModeDefinition,
     OutputDefinition,
-    PresetDefinition,
     Path,
+    PresetDefinition,
+    RuntimeType,
     String,
+    file_relative_path,
+    lambda_solid,
+    pipeline,
+    solid,
 )
-from dagster.core.types.runtime import Stringish
 from dagster.utils import safe_isfile, mkdir_p
 
 from dagster_aws.s3.resources import s3_resource
@@ -29,13 +32,26 @@ from dagster_snowflake import snowflake_resource, SnowflakeLoadSolidDefinition
 from dagster_spark import SparkSolidDefinition
 
 
-class FileExistsAtPath(Stringish):
+class FileExistsAtPath(RuntimeType):
     def __init__(self):
-        super(FileExistsAtPath, self).__init__(description='A path at which a file actually exists')
+        super(FileExistsAtPath, self).__init__(
+            name='FileExistsAtPath',
+            key='FileExistsAtPath',
+            description='A path at which a file actually exists',
+        )
 
-    def coerce_runtime_value(self, value):
-        value = super(FileExistsAtPath, self).coerce_runtime_value(value)
-        return self.throw_if_false(safe_isfile, value)
+    def type_check(self, value):
+        if not isinstance(value, six.string_types):
+            raise Failure(
+                'FileExistsAtPath must be a string in memory. Got {value}'.format(value=repr(value))
+            )
+        if not safe_isfile(value):
+            raise Failure(
+                (
+                    'FileExistsAtPath must be a path that points to a file that '
+                    'exists. "{value}" does not exist on disk'
+                ).format(value=value)
+            )
 
 
 def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip_if_present):

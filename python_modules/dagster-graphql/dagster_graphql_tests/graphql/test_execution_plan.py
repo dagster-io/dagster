@@ -246,16 +246,23 @@ def test_successful_one_part_execute_plan(snapshot):
     assert query_result['hasFailures'] is False
 
     step_events = query_result['stepEvents']
-    # 0-2 are sum_solid.num.input_thunk
+
     assert step_events[0]['step']['key'] == 'sum_solid.compute'
-    assert step_events[1]['__typename'] == 'ExecutionStepOutputEvent'
-    assert step_events[1]['outputName'] == 'result'
+    assert step_events[0]['__typename'] == 'ExecutionStepStartEvent'
+
+    assert step_events[1]['__typename'] == 'ExecutionStepInputEvent'
+
+    assert step_events[2]['__typename'] == 'ExecutionStepOutputEvent'
+    assert step_events[2]['outputName'] == 'result'
+
     expected_value_repr = (
         '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), '''
         '''OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]'''
     )
-    assert step_events[1]['valueRepr'] == expected_value_repr
-    assert step_events[2]['__typename'] == 'ExecutionStepSuccessEvent'
+    assert step_events[2]['valueRepr'] == expected_value_repr
+
+    assert step_events[3]['step']['key'] == 'sum_solid.compute'
+    assert step_events[3]['__typename'] == 'ExecutionStepSuccessEvent'
 
     snapshot.assert_match(result.data)
 
@@ -308,9 +315,11 @@ def test_successful_two_part_execute_plan(snapshot):
     step_events = query_result['stepEvents']
     assert step_events[0]['__typename'] == 'ExecutionStepStartEvent'
     assert step_events[0]['step']['key'] == 'sum_sq_solid.compute'
-    assert step_events[1]['__typename'] == 'ExecutionStepOutputEvent'
-    assert step_events[1]['outputName'] == 'result'
-    assert step_events[2]['__typename'] == 'ExecutionStepSuccessEvent'
+    assert step_events[1]['__typename'] == 'ExecutionStepInputEvent'
+    assert step_events[1]['step']['key'] == 'sum_sq_solid.compute'
+    assert step_events[2]['__typename'] == 'ExecutionStepOutputEvent'
+    assert step_events[2]['outputName'] == 'result'
+    assert step_events[3]['__typename'] == 'ExecutionStepSuccessEvent'
 
     snapshot.assert_match(result_two.data)
 

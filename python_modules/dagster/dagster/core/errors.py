@@ -24,10 +24,6 @@ class DagsterUserError(DagsterError):
     pass
 
 
-class DagsterRuntimeCoercionError(DagsterError):
-    '''Runtime checked faild'''
-
-
 class DagsterInvalidDefinitionError(DagsterUserError):
     '''Indicates that some violation of the definition rules has been violated by the user'''
 
@@ -36,10 +32,6 @@ class DagsterInvariantViolationError(DagsterUserError):
     '''Indicates the user has violated a well-defined invariant that can only be deteremined
     at runtime.
     '''
-
-
-class DagsterTypeError(DagsterUserError):
-    '''Indicates an error in the solid type system (e.g. mismatched arguments)'''
 
 
 class DagsterUserCodeExecutionError(DagsterUserError):
@@ -55,9 +47,10 @@ class DagsterUserCodeExecutionError(DagsterUserError):
         # code to *re-raise* the user error in it's original format
         # for cleaner error reporting that does not have framework code in it
         user_exception = check.inst_param(kwargs.pop('user_exception'), 'user_exception', Exception)
-        original_exc_info = check.opt_tuple_param(
-            kwargs.pop('original_exc_info', None), 'original_exc_info'
-        )
+        original_exc_info = check.tuple_param(kwargs.pop('original_exc_info'), 'original_exc_info')
+
+        if original_exc_info[0] is None:
+            raise Exception('bad dude {}'.format(type(self)))
 
         msg = _add_inner_exception_for_py2(args[0], original_exc_info)
 
@@ -69,6 +62,12 @@ class DagsterUserCodeExecutionError(DagsterUserError):
     @property
     def is_user_code_error(self):
         return True
+
+
+class DagsterTypeCheckError(DagsterUserCodeExecutionError):
+    '''Indicates an error in the solid type system at runtime. E.g. a solid receives an
+    unexpeccted input, or produces an output that does not match the type of the output
+    definition. '''
 
 
 class DagsterExecutionStepNotFoundError(DagsterUserError):

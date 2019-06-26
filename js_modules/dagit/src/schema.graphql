@@ -204,6 +204,17 @@ type ExecutionStepInput {
   dependsOn: ExecutionStep
 }
 
+type ExecutionStepInputEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  inputName: String!
+  typeCheck: TypeCheck!
+  valueRepr: String!
+}
+
 type ExecutionStepOutput {
   name: String!
   type: RuntimeType!
@@ -587,7 +598,7 @@ type PipelineRun {
   mode: String!
 }
 
-union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | PipelineInitFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepOutputEvent | ExecutionStepFailureEvent | ExecutionStepSkippedEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent | StepExpectationResultEvent
+union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | PipelineStartEvent | PipelineSuccessEvent | StepExpectationResultEvent | StepMaterializationEvent
 
 type PipelineRunLogsSubscriptionMissingRunIdFailure {
   missingRunId: String!
@@ -811,6 +822,13 @@ input StepOutputHandle {
 
 type Subscription {
   pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
+}
+
+type TypeCheck implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  success: Boolean!
 }
 
 interface WrappingConfigType {

@@ -25,17 +25,17 @@ export interface PipelineRunLogsUpdateFragment_logs_pageInfo {
   lastCursor: any | null;
 }
 
-export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent_step {
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_step {
   __typename: "ExecutionStep";
   key: string;
 }
 
-export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent";
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent {
+  __typename: "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent_step | null;
+  step: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_step | null;
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_step {
@@ -195,7 +195,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultE
   expectationResult: PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent_expectationResult;
 }
 
-export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent;
+export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent;
 
 export interface PipelineRunLogsUpdateFragment_logs {
   __typename: "LogMessageConnection";

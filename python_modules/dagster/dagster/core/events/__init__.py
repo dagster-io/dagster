@@ -2,13 +2,14 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
+from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle, TypeCheck
 from dagster.core.log_manager import DagsterLogManager
 from dagster.utils.error import SerializableErrorInfo
 
 
 class DagsterEventType(Enum):
     STEP_OUTPUT = 'STEP_OUTPUT'
+    STEP_INPUT = 'STEP_INPUT'
     STEP_FAILURE = 'STEP_FAILURE'
     STEP_START = 'STEP_START'
     STEP_SUCCESS = 'STEP_SUCCESS'
@@ -27,6 +28,7 @@ class DagsterEventType(Enum):
 
 
 STEP_EVENTS = {
+    DagsterEventType.STEP_INPUT,
     DagsterEventType.STEP_START,
     DagsterEventType.STEP_OUTPUT,
     DagsterEventType.STEP_FAILURE,
@@ -53,7 +55,12 @@ def _assert_type(method, expected_type, actual_type):
 
 
 def _validate_event_specific_data(event_type, event_specific_data):
-    from dagster.core.execution.plan.objects import StepOutputData, StepFailureData, StepSuccessData
+    from dagster.core.execution.plan.objects import (
+        StepOutputData,
+        StepFailureData,
+        StepSuccessData,
+        StepInputData,
+    )
 
     if event_type == DagsterEventType.STEP_OUTPUT:
         check.inst_param(event_specific_data, 'event_specific_data', StepOutputData)
@@ -65,6 +72,8 @@ def _validate_event_specific_data(event_type, event_specific_data):
         check.inst_param(event_specific_data, 'event_specific_data', StepMaterializationData)
     elif event_type == DagsterEventType.PIPELINE_PROCESS_STARTED:
         check.inst_param(event_specific_data, 'event_specific_data', PipelineProcessStartedData)
+    elif event_type == DagsterEventType.STEP_INPUT:
+        check.inst_param(event_specific_data, 'event_specific_data', StepInputData)
 
     return event_specific_data
 
@@ -239,6 +248,14 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_FAILURE,
             step_context=step_context,
             event_specific_data=step_failure_data,
+        )
+
+    @staticmethod
+    def step_input_event(step_context, step_input_data):
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.STEP_INPUT,
+            step_context=step_context,
+            event_specific_data=step_input_data,
         )
 
     @staticmethod

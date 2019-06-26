@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import (
-    DagsterInvariantViolationError,
+    DagsterTypeCheckError,
     DependencyDefinition,
     Field,
     InputDefinition,
@@ -154,7 +154,7 @@ def test_single_solid_type_checking_output_error():
 
     pipeline_def = PipelineDefinition(solid_defs=[return_string])
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(DagsterTypeCheckError):
         execute_solid(pipeline_def, 'return_string')
 
 

@@ -7,16 +7,16 @@
 // GraphQL fragment: RunMetadataProviderMessageFragment
 // ====================================================
 
-export interface RunMetadataProviderMessageFragment_LogMessageEvent_step {
+export interface RunMetadataProviderMessageFragment_ExecutionStepFailureEvent_step {
   __typename: "ExecutionStep";
   key: string;
 }
 
-export interface RunMetadataProviderMessageFragment_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepFailureEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent";
+export interface RunMetadataProviderMessageFragment_ExecutionStepFailureEvent {
+  __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineProcessStartEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
   message: string;
   timestamp: string;
-  step: RunMetadataProviderMessageFragment_LogMessageEvent_step | null;
+  step: RunMetadataProviderMessageFragment_ExecutionStepFailureEvent_step | null;
 }
 
 export interface RunMetadataProviderMessageFragment_PipelineProcessStartedEvent_step {
@@ -133,4 +133,4 @@ export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent {
   expectationResult: RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult;
 }
 
-export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_LogMessageEvent | RunMetadataProviderMessageFragment_PipelineProcessStartedEvent | RunMetadataProviderMessageFragment_StepMaterializationEvent | RunMetadataProviderMessageFragment_StepExpectationResultEvent;
+export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_ExecutionStepFailureEvent | RunMetadataProviderMessageFragment_PipelineProcessStartedEvent | RunMetadataProviderMessageFragment_StepMaterializationEvent | RunMetadataProviderMessageFragment_StepExpectationResultEvent;

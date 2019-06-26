@@ -1,4 +1,5 @@
 from dagster import (
+    DagsterEventType,
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
@@ -40,16 +41,20 @@ def test_execution_plan_simple_two_steps():
     assert execution_plan.get_step_by_key('add_one.compute')
 
     step_events = execute_plan(execution_plan)
-    # start, out, success, start, out, success
-    assert len(step_events) == 6
+    # start, out, success, start, input, out, success
+    assert len(step_events) == 7
 
     assert step_events[1].step_key == 'return_one.compute'
     assert step_events[1].is_successful_output
     assert step_events[1].step_output_data.value_repr == '1'
 
-    assert step_events[4].step_key == 'add_one.compute'
-    assert step_events[4].is_successful_output
-    assert step_events[4].step_output_data.value_repr == '2'
+    assert step_events[2].event_type == DagsterEventType.STEP_SUCCESS
+    assert step_events[3].event_type == DagsterEventType.STEP_START
+    assert step_events[4].event_type == DagsterEventType.STEP_INPUT
+
+    assert step_events[5].step_key == 'add_one.compute'
+    assert step_events[5].is_successful_output
+    assert step_events[5].step_output_data.value_repr == '2'
 
 
 def test_execution_plan_two_outputs():

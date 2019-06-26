@@ -3,7 +3,7 @@ import sys
 
 import six
 
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterTypeError
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 from . import InputDefinition, OutputDefinition
 
@@ -21,7 +21,7 @@ def infer_output_definitions(decorator_name, solid_name, fn):
             if signature.return_annotation is funcsigs.Signature.empty
             else OutputDefinition(signature.return_annotation)
         ]
-    except DagsterTypeError as type_error:
+    except DagsterInvalidDefinitionError as type_error:
         six.raise_from(
             DagsterInvalidDefinitionError(
                 'Error inferring Dagster type for return type '
@@ -59,7 +59,7 @@ def _infer_inputs_from_params(params, decorator_name, solid_name):
     for param in params:
         try:
             input_defs.append(InputDefinition(param.name, _input_param_type(param.annotation)))
-        except DagsterTypeError as type_error:
+        except DagsterInvalidDefinitionError as type_error:
             six.raise_from(
                 DagsterInvalidDefinitionError(
                     'Error inferring Dagster type for input name {param} typed as '

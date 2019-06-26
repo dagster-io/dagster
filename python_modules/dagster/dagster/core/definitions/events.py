@@ -146,3 +146,23 @@ class ExpectationResult(
                 metadata_entries, metadata_entries, of_type=EventMetadataEntry
             ),
         )
+
+
+class TypeCheck(namedtuple('_TypeCheck', 'description metadata_entries')):
+    def __new__(cls, description=None, metadata_entries=None):
+        return super(TypeCheck, cls).__new__(
+            cls,
+            description=check.opt_str_param(description, 'description'),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, metadata_entries, of_type=EventMetadataEntry
+            ),
+        )
+
+
+class Failure(Exception):
+    def __init__(self, description=None, metadata_entries=None):
+        super(Failure, self).__init__(description)
+        self.description = check.opt_str_param(description, 'description')
+        self.metadata_entries = check.opt_list_param(
+            metadata_entries, 'metadata_entries', of_type=EventMetadataEntry
+        )

@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.errors import DagsterTypeError
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .builtin_enum import BuiltinEnum
 from .wrapping import WrappingType
@@ -24,7 +24,7 @@ def check_dagster_type_param(dagster_type, param_name, base_type):
         return dagster_type
 
     if not isinstance(dagster_type, type):
-        raise DagsterTypeError(
+        raise DagsterInvalidDefinitionError(
             'Invalid type for "{param_name}": dagster_type is not an instance of "type", got {dagster_type}'.format(
                 param_name=param_name, dagster_type=dagster_type
             )
@@ -34,7 +34,7 @@ def check_dagster_type_param(dagster_type, param_name, base_type):
         return dagster_type
 
     if not issubclass(dagster_type, base_type):
-        raise DagsterTypeError(
+        raise DagsterInvalidDefinitionError(
             (
                 'Parameter {param_name} must be a valid dagster type: A builtin (e.g. String, Int, '
                 'etc), a wrapping type (List or Optional), or a type class. Got {dagster_type}'
