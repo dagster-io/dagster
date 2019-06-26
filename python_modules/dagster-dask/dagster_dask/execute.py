@@ -139,7 +139,7 @@ def execute_on_dask(
             'Cannot use in-memory storage with Dask, use filesystem or S3',
         )
 
-    execution_plan = create_execution_plan(pipeline, env_config, mode=mode)
+    execution_plan = create_execution_plan(pipeline, env_config, run_config=run_config)
 
     step_levels = execution_plan.topological_step_levels()
 

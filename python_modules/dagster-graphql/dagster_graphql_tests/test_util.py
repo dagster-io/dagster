@@ -151,9 +151,9 @@ def test_all_step_events():  # pylint: disable=too-many-locals
     handle = ExecutionTargetHandle.for_pipeline_fn(define_test_events_pipeline)
     pipeline = handle.build_pipeline_definition()
     mode = pipeline.get_default_mode_name()
-    execution_plan = create_execution_plan(pipeline, {}, mode=mode)
+    run_config = RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False), mode=mode)
+    execution_plan = create_execution_plan(pipeline, {}, run_config=run_config)
     step_levels = execution_plan.topological_step_levels()
-    run_config = RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False))
 
     unhandled_events = STEP_EVENTS.copy()
 

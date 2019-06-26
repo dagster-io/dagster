@@ -3,7 +3,7 @@ import re
 
 from airflow import DAG
 
-from dagster import check, ExecutionTargetHandle
+from dagster import check, ExecutionTargetHandle, RunConfig
 from dagster.core.execution.api import create_execution_plan
 
 from .operators import DagsterDockerOperator, DagsterOperator, DagsterPythonOperator
@@ -81,9 +81,13 @@ def _make_airflow_dag(
     dag = DAG(dag_id=dag_id, description=dag_description, **dag_kwargs)
 
     pipeline = handle.build_pipeline_definition()
+
     if mode is None:
         mode = pipeline.get_default_mode_name()
-    execution_plan = create_execution_plan(pipeline, environment_dict, mode=mode)
+
+    execution_plan = create_execution_plan(
+        pipeline, environment_dict, run_config=RunConfig(mode=mode)
+    )
 
     tasks = {}
 

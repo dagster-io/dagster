@@ -63,12 +63,16 @@ def check_run_config_param(run_config, pipeline_def):
     )
 
 
-def create_execution_plan(pipeline, environment_dict=None, mode=None):
+def create_execution_plan(pipeline, environment_dict=None, run_config=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
-    check.opt_str_param(mode, 'mode')
-    environment_config = create_environment_config(pipeline, environment_dict, mode)
-    return ExecutionPlan.build(pipeline, environment_config, pipeline.get_mode_definition(mode))
+    run_config = check.opt_inst_param(run_config, 'run_config', RunConfig, RunConfig())
+
+    environment_config = create_environment_config(pipeline, environment_dict, run_config)
+
+    return ExecutionPlan.build(
+        pipeline, environment_config, pipeline.get_mode_definition(run_config.mode)
+    )
 
 
 def _execute_pipeline_iterator(context_or_failure_event):
@@ -191,6 +195,26 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
                 ),
             ),
         )
+
+
+def execute_pipeline_with_preset(pipeline, preset_name, run_config=None):
+    '''Runs :py:func:`execute_pipeline` with the given preset for the pipeline.
+
+    The preset will optionally provide environment_dict and/or build a pipeline from
+    a solid subset. If a run_config is not provied, one which only sets the
+    mode as defined by the preset will be used.
+    '''
+
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.str_param(preset_name, 'preset_name')
+    check.opt_inst_param(run_config, 'run_config', RunConfig)
+    preset = pipeline.get_preset(preset_name)
+
+    return execute_pipeline(
+        pipeline=preset['pipeline'],
+        environment_dict=preset['environment_dict'],
+        run_config=run_config if run_config is not None else preset['run_config'],
+    )
 
 
 def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute=None):

@@ -8,7 +8,7 @@ from dagster import (
     SolidDefinition,
 )
 
-from dagster.core.types.evaluator import evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config
 
 
 def single_output_transform(name, inputs, compute_fn, output, description=None):
@@ -63,7 +63,7 @@ def single_output_transform(name, inputs, compute_fn, output, description=None):
 # error. Existing test logic was written assuming structure to this is still
 # around to avoid having to port all the unit tests.
 def throwing_evaluate_config_value(config_type, config_value):
-    result = evaluate_config_value(config_type, config_value)
+    result = evaluate_config(config_type, config_value)
     if not result.success:
         raise DagsterEvaluateConfigValueError(result.errors[0].stack, result.errors[0].message)
     return result.value

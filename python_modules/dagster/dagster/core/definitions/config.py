@@ -2,6 +2,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.execution.config import RunConfig
 from dagster.core.types import Dict, Field
 
 
@@ -34,4 +35,15 @@ class ConfigMapping(namedtuple('_ConfigMapping', 'config_mapping_fn config_field
             cls,
             config_mapping_fn=check.callable_param(config_mapping_fn, 'config_mapping_fn'),
             config_field=resolve_config_field(config_field, config, 'ConfigMapping'),
+        )
+
+
+class ConfigMappingContext(namedtuple('ConfigMappingContext', 'run_config')):
+    '''
+    Config mapping context provided as input to config mapping functions.
+    '''
+
+    def __new__(cls, run_config=None):
+        return super(ConfigMappingContext, cls).__new__(
+            cls, check.inst_param(run_config, 'run_config', RunConfig)
         )

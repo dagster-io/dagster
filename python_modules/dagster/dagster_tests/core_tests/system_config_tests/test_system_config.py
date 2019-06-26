@@ -35,7 +35,7 @@ from dagster.core.system_config.objects import (
     SolidConfig,
 )
 from dagster.core.test_utils import throwing_evaluate_config_value
-from dagster.core.types.evaluator import evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config
 from dagster.loggers import default_loggers
 
 
@@ -168,11 +168,11 @@ def test_resource_def_config_errors():
 
     resource_type = define_resource_cls('Parent', 'takes_int', takes_int_resource_def).inst()
 
-    assert not evaluate_config_value(resource_type, 1).success
-    assert not evaluate_config_value(resource_type, {}).success
-    assert not evaluate_config_value(resource_type, {'config': {}}).success
-    assert evaluate_config_value(resource_type, {'config': {'required_int': 2}}).success
-    assert not evaluate_config_value(resource_type, {'config': {'required_int': 'kdjfkd'}}).success
+    assert not evaluate_config(resource_type, 1).success
+    assert not evaluate_config(resource_type, {}).success
+    assert not evaluate_config(resource_type, {'config': {}}).success
+    assert evaluate_config(resource_type, {'config': {'required_int': 2}}).success
+    assert not evaluate_config(resource_type, {'config': {'required_int': 'kdjfkd'}}).success
 
 
 def test_solid_config():

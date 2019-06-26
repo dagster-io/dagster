@@ -5,12 +5,13 @@ from dagster.core.types.evaluator.stack import (
     EvaluationStackListItemEntry,
     EvaluationStackPathEntry,
 )
-from dagster.core.types.evaluator import EvaluateValueResult, evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config
+from dagster.core.types.evaluator.evaluate_value_result import EvaluateValueResult
 from dagster.core.types.field import resolve_to_config_type
 
 
 def eval_config_value_from_dagster_type(dagster_type, value):
-    return evaluate_config_value(resolve_to_config_type(dagster_type), value)
+    return evaluate_config(resolve_to_config_type(dagster_type), value)
 
 
 def assert_success(result, expected_value):

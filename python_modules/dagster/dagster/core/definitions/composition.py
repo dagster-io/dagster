@@ -43,7 +43,9 @@ class InProgressCompositionContext:
 
 
 class CompleteCompositionContext(
-    namedtuple('_CompositionContext', 'name solid_defs dependencies input_mappings output_mappings')
+    namedtuple(
+        '_CompositionContext', 'name solid_defs dependencies input_mapping_dict output_mappings'
+    )
 ):
     '''The processed information from capturing solid invocations during a composition function.
     '''
@@ -52,7 +54,7 @@ class CompleteCompositionContext(
 
         dep_dict = {}
         solid_def_dict = {}
-        input_mappings = []
+        input_mapping_dict = {}
 
         for invocation in invocations.values():
             def_name = invocation.solid_def.name
@@ -65,13 +67,13 @@ class CompleteCompositionContext(
                 for input_name, (solid_name, output_name) in invocation.input_bindings.items()
             }
 
-            input_mappings += [
-                node.input_def.mapping_to(invocation.solid_name, input_name)
-                for input_name, node in invocation.input_mappings.items()
-            ]
+            for input_name, node in invocation.input_mappings.items():
+                input_mapping_dict[node.input_def.name] = node.input_def.mapping_to(
+                    invocation.solid_name, input_name
+                )
 
         return super(cls, CompleteCompositionContext).__new__(
-            cls, name, list(solid_def_dict.values()), dep_dict, input_mappings, output_mappings
+            cls, name, list(solid_def_dict.values()), dep_dict, input_mapping_dict, output_mappings
         )
 
 

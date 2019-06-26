@@ -81,7 +81,9 @@ def test_execution_plan_reexecution():
         ),
     )
 
-    execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(
+        pipeline_def, environment_dict=environment_dict, run_config=run_config
+    )
 
     step_events = execute_plan(
         execution_plan,
@@ -104,19 +106,18 @@ def test_execution_plan_wrong_run_id():
     unrun_id = str(uuid.uuid4())
     environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
 
-    execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
+    run_config = RunConfig(
+        reexecution_config=ReexecutionConfig(
+            previous_run_id=unrun_id, step_output_handles=[StepOutputHandle('add_one.compute')]
+        )
+    )
+
+    execution_plan = create_execution_plan(
+        pipeline_def, environment_dict=environment_dict, run_config=run_config
+    )
 
     with pytest.raises(DagsterRunNotFoundError) as exc_info:
-        execute_plan(
-            execution_plan,
-            environment_dict=environment_dict,
-            run_config=RunConfig(
-                reexecution_config=ReexecutionConfig(
-                    previous_run_id=unrun_id,
-                    step_output_handles=[StepOutputHandle('add_one.compute')],
-                )
-            ),
-        )
+        execute_plan(execution_plan, environment_dict=environment_dict, run_config=run_config)
 
     assert str(
         exc_info.value
@@ -144,7 +145,9 @@ def test_execution_plan_wrong_invalid_step_key():
         ),
     )
 
-    execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(
+        pipeline_def, environment_dict=environment_dict, run_config=run_config
+    )
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
@@ -178,7 +181,9 @@ def test_execution_plan_wrong_invalid_output_name():
         ),
     )
 
-    execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(
+        pipeline_def, environment_dict=environment_dict, run_config=run_config
+    )
 
     with pytest.raises(DagsterStepOutputNotFoundError) as exc_info:
         execute_plan(
@@ -219,7 +224,9 @@ def test_execution_plan_reexecution_with_in_memory():
         ),
     )
 
-    execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(
+        pipeline_def, environment_dict=environment_dict, run_config=in_memory_run_config
+    )
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_plan(

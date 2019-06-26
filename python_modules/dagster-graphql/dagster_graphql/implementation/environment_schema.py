@@ -4,7 +4,7 @@ from dagster import check
 from dagster.core.execution.api import ExecutionSelector
 from dagster.core.definitions.environment_schema import create_environment_schema, EnvironmentSchema
 from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.types.evaluator import evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config
 from .fetch_pipelines import get_dagster_pipeline_from_selector
 from .utils import capture_dauphin_error, UserFacingGraphQLError
 
@@ -57,7 +57,7 @@ def resolve_is_environment_config_valid(
     check.inst_param(dagster_pipeline, 'dagster_pipeline', PipelineDefinition)
     check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
 
-    validated_config = evaluate_config_value(
+    validated_config = evaluate_config(
         environment_schema.environment_type, environment_dict, dagster_pipeline
     )
 
