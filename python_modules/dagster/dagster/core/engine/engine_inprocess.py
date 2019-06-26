@@ -27,8 +27,6 @@ from dagster.core.definitions import Materialization, ExpectationResult, Result
 
 from dagster.core.events import DagsterEvent, DagsterEventType
 
-from dagster.core.storage.intermediates_manager import IntermediatesManager
-
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from dagster.core.execution.plan.objects import (
@@ -65,8 +63,6 @@ class InProcessEngine(IEngine):  # pylint: disable=no-init
 
         step_levels = execution_plan.topological_step_levels()
 
-        intermediates_manager = pipeline_context.intermediates_manager
-
         # It would be good to implement a reference tracking algorithm here so we could
         # garbage collection results that are no longer needed by any steps
         # https://github.com/dagster-io/dagster/issues/811
@@ -92,7 +88,9 @@ class InProcessEngine(IEngine):  # pylint: disable=no-init
                     yield DagsterEvent.step_skipped_event(step_context)
                     continue
 
-                uncovered_inputs = intermediates_manager.uncovered_inputs(step_context, step)
+                uncovered_inputs = pipeline_context.intermediates_manager.uncovered_inputs(
+                    step_context, step
+                )
                 if uncovered_inputs:
                     # In partial pipeline execution, we may end up here without having validated the
                     # missing dependent outputs were optional
@@ -108,13 +106,7 @@ class InProcessEngine(IEngine):  # pylint: disable=no-init
                     yield DagsterEvent.step_skipped_event(step_context)
                     continue
 
-                input_values = _create_input_values(step_context, intermediates_manager)
-
-                for step_event in check.generator(
-                    dagster_event_sequence_for_step(
-                        step_context, input_values, intermediates_manager
-                    )
-                ):
+                for step_event in check.generator(dagster_event_sequence_for_step(step_context)):
                     check.inst(step_event, DagsterEvent)
                     if step_event.is_step_failure:
                         failed_or_skipped_steps.add(step.key)
@@ -137,9 +129,7 @@ def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):
         )
 
 
-def _create_input_values(step_context, intermediates_manager):
-    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
-
+def _create_input_values(step_context):
     step = step_context.step
 
     input_values = {}
@@ -148,14 +138,14 @@ def _create_input_values(step_context, intermediates_manager):
             continue
 
         prev_output_handle = step_input.prev_output_handle
-        input_value = intermediates_manager.get_intermediate(
+        input_value = step_context.intermediates_manager.get_intermediate(
             step_context, step_input.runtime_type, prev_output_handle
         )
         input_values[step_input.name] = input_value
     return input_values
 
 
-def dagster_event_sequence_for_step(step_context, inputs, intermediates_manager):
+def dagster_event_sequence_for_step(step_context):
     '''
     Yield a sequence of dagster events for the given step with the step context.
 
@@ -170,13 +160,9 @@ def dagster_event_sequence_for_step(step_context, inputs, intermediates_manager)
     '''
 
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.dict_param(inputs, 'inputs', key_type=str)
-    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
     try:
-        for step_event in check.generator(
-            _core_dagster_event_sequence_for_step(step_context, inputs, intermediates_manager)
-        ):
+        for step_event in check.generator(_core_dagster_event_sequence_for_step(step_context)):
             if step_event.event_type is DagsterEventType.STEP_OUTPUT:
                 step_context.log.info(
                     'Step {step} emitted {value} for output {output}'.format(
@@ -274,7 +260,7 @@ def _step_output_error_checked_event_sequence(step_context, event_sequence):
                 )
 
 
-def _core_dagster_event_sequence_for_step(step_context, inputs, intermediates_manager):
+def _core_dagster_event_sequence_for_step(step_context):
     '''
     Execute the step within the step_context argument given the in-memory
     events. This function yields a sequence of DagsterEvents, but without
@@ -282,8 +268,8 @@ def _core_dagster_event_sequence_for_step(step_context, inputs, intermediates_ma
     of the step.
     '''
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.dict_param(inputs, 'inputs', key_type=str)
-    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
+
+    inputs = _create_input_values(step_context)
 
     evaluated_inputs = {}
     # do runtime type checks of inputs versus step inputs
@@ -305,7 +291,7 @@ def _core_dagster_event_sequence_for_step(step_context, inputs, intermediates_ma
         ):
 
             if isinstance(event, Result):
-                yield _create_step_output_event(step_context, event, intermediates_manager)
+                yield _create_step_output_event(step_context, event)
             elif isinstance(event, Materialization):
                 yield DagsterEvent.step_materialization(step_context, event)
             elif isinstance(event, ExpectationResult):
@@ -320,10 +306,9 @@ def _core_dagster_event_sequence_for_step(step_context, inputs, intermediates_ma
     )
 
 
-def _create_step_output_event(step_context, result, intermediates_manager):
+def _create_step_output_event(step_context, result):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.inst_param(result, 'result', Result)
-    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
     step = step_context.step
     step_output = step.step_output_named(result.output_name)
@@ -332,7 +317,7 @@ def _create_step_output_event(step_context, result, intermediates_manager):
         value = step_output.runtime_type.coerce_runtime_value(result.value)
         step_output_handle = StepOutputHandle.from_step(step=step, output_name=result.output_name)
 
-        object_key = intermediates_manager.set_intermediate(
+        object_key = step_context.intermediates_manager.set_intermediate(
             context=step_context,
             runtime_type=step_output.runtime_type,
             step_output_handle=step_output_handle,
