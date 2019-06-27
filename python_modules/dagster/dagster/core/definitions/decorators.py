@@ -586,13 +586,13 @@ class _CompositeSolid(object):
         kwargs = {input_def.name: InputMappingNode(input_def) for input_def in input_defs}
 
         output = None
+        mapping = None
         enter_composition(self.name, '@composite_solid')
         try:
             output = fn(**kwargs)
+            mapping = composite_mapping_from_output(output, output_defs, self.name)
         finally:
-            context = exit_composition(
-                composite_mapping_from_output(output, output_defs, self.name)
-            )
+            context = exit_composition(mapping)
 
         check.invariant(
             context.name == self.name,

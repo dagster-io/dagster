@@ -18,7 +18,7 @@ from dagster import (
     solid,
 )
 
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 
 def builder(graph):
@@ -444,3 +444,9 @@ def test_unused_mapping():
         @composite_solid
         def unused_mapping(_):
             return_one()
+
+
+def test_calling_soild_outside_fn():
+    with pytest.raises(DagsterInvariantViolationError, match='outside of a composition function'):
+
+        return_one()

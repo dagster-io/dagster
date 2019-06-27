@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 from .dependency import DependencyDefinition, SolidInvocation, MultiDependencyDefinition
 from .solid import ISolidDefinition
@@ -20,6 +20,15 @@ def exit_composition(output):
 
 def current_context():
     return _composition_stack[-1]
+
+
+def assert_in_composition(solid_name):
+    if len(_composition_stack) < 1:
+        raise DagsterInvariantViolationError(
+            'Attempted to call solid "{solid_name}" outside of a composition function. '
+            'Calling solids is only valid in a function decorated with '
+            '@pipeline or @composite_solid.'.format(solid_name=solid_name)
+        )
 
 
 class InProgressCompositionContext:
@@ -98,6 +107,8 @@ class CallableSolidNode:
         self.solid_name = check.opt_str_param(solid_name, 'solid_name', solid_def.name)
 
     def __call__(self, *args, **kwargs):
+        assert_in_composition(self.solid_name)
+
         input_bindings = {}
         input_mappings = {}
 
