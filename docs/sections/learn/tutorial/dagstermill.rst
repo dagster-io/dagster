@@ -30,7 +30,7 @@ The notebook might have a cell that looks like the following:
     b = 5
     result = 3 + 5
 
-Currently your notebook simply adds together the numbers ``3`` and ``5``, but in a more generic sense, your notebook is effectively a function that takes in inputs ``a`` and ``b`` and products output ``result``. To use the language of the dagster abstraction, it is a solid with inputs ``a``, ``b`` of dagster-type ``Int`` and with an ouput ``result`` of type ``Int``.
+Currently your notebook simply adds together the numbers ``3`` and ``5``, but in a more generic sense, your notebook is effectively a function that takes in inputs ``a`` and ``b`` and products output ``result``. To use the language of the dagster abstraction, it is a solid with inputs ``a``, ``b`` of dagster-type ``Int`` and with an output ``result`` of type ``Int``.
 
 To register this notebook as a dagster solid, we use the following lines of code.
 
@@ -46,7 +46,7 @@ To register this notebook as a dagster solid, we use the following lines of code
             InputDefinition(name='a', dagster_type=Int),
             InputDefinition(name='b', dagster_type=Int)
         ],
-        ouputs = [OutputDefinition(Int)]
+        outputs = [OutputDefinition(Int)]
     )
 
 The function ``dm.define_dagstermill_solid()`` returns an object of type ``SolidDefinition`` that can be passed into ``PipelineDefinition`` objects. We see that its arguments are rather self-explanatory:
