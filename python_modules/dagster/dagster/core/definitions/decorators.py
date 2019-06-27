@@ -149,6 +149,7 @@ class _Solid(object):
         description=None,
         required_resources=None,
         config_field=None,
+        metadata=None,
     ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_nullable_list_param(inputs, 'inputs', InputDefinition)
@@ -161,6 +162,9 @@ class _Solid(object):
 
         # config_field will be checked within SolidDefinition
         self.config_field = config_field
+
+        # metadata will be checked within ISolidDefinition
+        self.metadata = metadata
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -190,6 +194,7 @@ class _Solid(object):
             config_field=self.config_field,
             description=self.description,
             required_resources=self.required_resources,
+            metadata=self.metadata,
         )
 
 
@@ -237,6 +242,7 @@ def solid(
     config_field=None,
     config=None,
     required_resources=None,
+    metadata=None,
 ):
     '''(decorator) Create a solid with specified parameters.
 
@@ -336,6 +342,7 @@ def solid(
         check.invariant(config_field is None)
         check.invariant(config is None)
         check.invariant(required_resources is None)
+        check.invariant(metadata is None)
         return _Solid()(name)
 
     return _Solid(
@@ -345,6 +352,7 @@ def solid(
         config_field=resolve_config_field(config_field, config, '@solid'),
         description=description,
         required_resources=required_resources,
+        metadata=metadata,
     )
 
 

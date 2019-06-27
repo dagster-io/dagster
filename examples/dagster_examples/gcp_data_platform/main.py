@@ -1,3 +1,5 @@
+# pylint: disable=too-many-function-args
+
 import datetime
 import os
 
@@ -11,18 +13,17 @@ from dagster import (
     ModeDefinition,
     PresetDefinition,
     RepositoryDefinition,
-    Output,
     String,
 )
 from dagster.core.definitions.config import ConfigMapping
 
 from dagster_gcp import (
     bigquery_resource,
+    bq_load_solid_for_source,
+    bq_solid_for_queries,
     dataproc_resource,
     dataproc_solid,
-    BigQueryLoadSolidDefinition,
     BigQueryLoadSource,
-    BigQuerySolidDefinition,
 )
 
 PROJECT_ID = os.getenv('GCP_PROJECT_ID')
@@ -36,7 +37,7 @@ LATEST_JAR_HASH = '214f4bff2eccb4e9c08578d96bd329409b7111c8'
     description='pass configured output paths to BigQuery load command inputs',
 )
 def output_paths(context, start) -> List[String]:  # pylint: disable=unused-argument
-    yield Output(context.solid_config['paths'])
+    return context.solid_config['paths']
 
 
 def events_dataproc_fn(context, cfg):
@@ -124,7 +125,7 @@ def bq_load_events_fn(context, cfg):
     )
 )
 def bq_load_events(source_uris: List[String]):
-    return BigQueryLoadSolidDefinition('bq_load_events_internal', BigQueryLoadSource.GCS)(
+    return bq_load_solid_for_source(BigQueryLoadSource.GCS).alias('bq_load_events_internal')(
         source_uris
     )
 
@@ -154,9 +155,7 @@ def explore_visits_by_hour(start):
     with open(file_relative_path(__file__, 'sql/explore_visits_by_hour.sql'), 'r') as f:
         query = f.read()
 
-    return BigQuerySolidDefinition('explore_visits_by_hour_internal', sql_queries=[query])(
-        start=start
-    )
+    return bq_solid_for_queries([query]).alias('explore_visits_by_hour_internal')(start=start)
 
 
 @pipeline(
