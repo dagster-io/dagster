@@ -23,6 +23,7 @@ def _decorate_as_dagster_type(
     output_schema=None,
     serialization_strategy=None,
     auto_plugins=None,
+    metadata_fn=None,
 ):
     _ObjectType = _create_object_type_class(
         key=key,
@@ -33,6 +34,7 @@ def _decorate_as_dagster_type(
         output_schema=output_schema,
         serialization_strategy=serialization_strategy,
         auto_plugins=auto_plugins,
+        metadata_fn=metadata_fn,
     )
 
     type_inst = _ObjectType.inst()
@@ -105,6 +107,7 @@ def as_dagster_type(
     output_schema=None,
     serialization_strategy=None,
     auto_plugins=None,
+    metadata_fn=None,
 ):
     '''
     Takes a python cls and creates a type for it in the Dagster domain.
@@ -145,6 +148,8 @@ def as_dagster_type(
         'auto_plugins',
     )
 
+    check.opt_callable_param(metadata_fn, 'metadata_fn')
+
     name = name or existing_type.__name__
 
     return _decorate_as_dagster_type(
@@ -156,4 +161,5 @@ def as_dagster_type(
         output_schema=output_schema,
         serialization_strategy=serialization_strategy,
         auto_plugins=auto_plugins,
+        metadata_fn=metadata_fn,
     )

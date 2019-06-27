@@ -118,6 +118,18 @@ class SolidExecutionResult(object):
         self.reconstruct_context = check.callable_param(reconstruct_context, 'reconstruct_context')
 
     @property
+    def compute_input_event_dict(self):
+        return {se.event_specific_data.input_name: se for se in self.input_events_during_compute}
+
+    @property
+    def input_events_during_compute(self):
+        return list(
+            filter(
+                lambda se: se.event_type == DagsterEventType.STEP_INPUT, self.compute_step_events
+            )
+        )
+
+    @property
     def compute_step_events(self):
         return self.step_events_by_kind.get(StepKind.COMPUTE, [])
 

@@ -256,11 +256,12 @@ class Nothing(RuntimeType):
 
 
 class PythonObjectType(RuntimeType):
-    def __init__(self, python_type, key=None, name=None, **kwargs):
+    def __init__(self, python_type, key=None, name=None, metadata_fn=None, **kwargs):
         name = check.opt_str_param(name, 'name', type(self).__name__)
         key = check.opt_str_param(key, 'key', name)
         super(PythonObjectType, self).__init__(key=key, name=name, **kwargs)
         self.python_type = check.type_param(python_type, 'python_type')
+        self.metadata_fn = check.opt_callable_param(metadata_fn, 'metadata_fn')
 
     def type_check(self, value):
         from dagster.core.definitions.events import Failure
@@ -271,6 +272,9 @@ class PythonObjectType(RuntimeType):
                     value=value, type_name=self.python_type.__name__
                 )
             )
+
+        if self.metadata_fn:
+            return self.metadata_fn(value)
 
 
 def _create_nullable_input_schema(inner_type):
