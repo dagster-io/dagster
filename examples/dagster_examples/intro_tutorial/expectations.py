@@ -1,11 +1,11 @@
 from dagster import (
+    lambda_solid,
+    pipeline,
     ExpectationDefinition,
     ExpectationResult,
     InputDefinition,
     Int,
     OutputDefinition,
-    PipelineDefinition,
-    lambda_solid,
 )
 
 
@@ -29,5 +29,6 @@ def add_ints(num_one, num_two):
     return num_one + num_two
 
 
-def define_expectations_tutorial_pipeline():
-    return PipelineDefinition(name='expectations_tutorial_pipeline', solid_defs=[add_ints])
+@pipeline
+def expectations_tutorial_pipeline():
+    add_ints()  # pylint: disable=no-value-for-parameter

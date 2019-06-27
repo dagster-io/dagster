@@ -1,18 +1,17 @@
+# pylint: disable=no-value-for-parameter, no-member
+
 from time import sleep
 
 from dagster import (
-    DependencyDefinition,
+    lambda_solid,
+    pipeline,
+    solid,
     Field,
     InputDefinition,
     Int,
     List,
-    ModeDefinition,
     OutputDefinition,
-    PipelineDefinition,
     Output,
-    SolidInvocation,
-    lambda_solid,
-    solid,
 )
 
 
@@ -60,30 +59,13 @@ def total(in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4
 
 
-def define_sleepy_pipeline():
-    return PipelineDefinition(
-        name="sleepy",
-        solid_defs=[giver, sleeper, total],
-        dependencies={
-            SolidInvocation('giver'): {},
-            SolidInvocation('sleeper', alias='sleeper_1'): {
-                'units': DependencyDefinition('giver', 'out_1')
-            },
-            SolidInvocation('sleeper', alias='sleeper_2'): {
-                'units': DependencyDefinition('giver', 'out_2')
-            },
-            SolidInvocation('sleeper', alias='sleeper_3'): {
-                'units': DependencyDefinition('giver', 'out_3')
-            },
-            SolidInvocation('sleeper', alias='sleeper_4'): {
-                'units': DependencyDefinition('giver', 'out_4')
-            },
-            SolidInvocation('total'): {
-                'in_1': DependencyDefinition('sleeper_1', 'total'),
-                'in_2': DependencyDefinition('sleeper_2', 'total'),
-                'in_3': DependencyDefinition('sleeper_3', 'total'),
-                'in_4': DependencyDefinition('sleeper_4', 'total'),
-            },
-        },
-        mode_definitions=[ModeDefinition()],
+@pipeline
+def sleepy_pipeline():
+    giver_res = giver()
+
+    total(
+        in_1=sleeper.alias('sleeper_1')(units=giver_res.out_1),
+        in_2=sleeper.alias('sleeper_2')(units=giver_res.out_2),
+        in_3=sleeper.alias('sleeper_3')(units=giver_res.out_3),
+        in_4=sleeper.alias('sleeper_4')(units=giver_res.out_4),
     )

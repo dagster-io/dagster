@@ -1,14 +1,16 @@
+# pylint: disable=no-value-for-parameter
+
 from dagster import (
+    execute_pipeline,
+    pipeline,
+    resource,
+    solid,
     ExecutionTargetHandle,
     Field,
     Int,
     ModeDefinition,
     MultiprocessExecutorConfig,
-    PipelineDefinition,
     RunConfig,
-    execute_pipeline,
-    resource,
-    solid,
 )
 
 
@@ -43,22 +45,21 @@ def one_and_two_and_three(_):
     return 1
 
 
-def define_resource_pipeline():
-    return PipelineDefinition(
-        name='resources for days',
-        solid_defs=[all_resources, one, two, one_and_two_and_three],
-        mode_definitions=[ModeDefinition(resources=lots_of_resources)],
-    )
+@pipeline(mode_definitions=[ModeDefinition(resources=lots_of_resources)])
+def resource_pipeline():
+    all_resources()
+    one()
+    two()
+    one_and_two_and_three()
 
 
 if __name__ == '__main__':
-    pipeline = define_resource_pipeline()
     result = execute_pipeline(
-        pipeline,
+        resource_pipeline,
         environment_dict={'storage': {'filesystem': {}}},
         run_config=RunConfig(
             executor_config=MultiprocessExecutorConfig(
-                ExecutionTargetHandle.for_pipeline_fn(define_resource_pipeline)
+                ExecutionTargetHandle.for_pipeline_fn(resource_pipeline)
             )
         ),
     )

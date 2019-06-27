@@ -1,16 +1,17 @@
+# pylint: disable=no-value-for-parameter
+
 import re
 from operator import add
 
 from dagster import (
-    DependencyDefinition,
+    pipeline,
+    solid,
     Field,
     InputDefinition,
     Int,
     ModeDefinition,
     OutputDefinition,
     Path,
-    PipelineDefinition,
-    solid,
 )
 
 from dagster_pyspark import spark_session_resource, SparkRDD
@@ -70,23 +71,8 @@ def log_ranks_step_five(context, ranks):
     return ranks.collect()
 
 
-def define_pyspark_pagerank_step_five():
-    return PipelineDefinition(
-        name='pyspark_pagerank_step_five',
-        mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})],
-        solid_defs=[
-            parse_pagerank_data_step_five,
-            compute_links_step_five,
-            calculate_ranks_step_five,
-            log_ranks_step_five,
-        ],
-        dependencies={
-            'compute_links_step_five': {
-                'urls': DependencyDefinition('parse_pagerank_data_step_five')
-            },
-            'calculate_ranks_step_five': {'links': DependencyDefinition('compute_links_step_five')},
-            'log_ranks_step_five': {
-                'ranks': DependencyDefinition('calculate_ranks_step_five', 'ranks')
-            },
-        },
+@pipeline(mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})])
+def pyspark_pagerank_step_five():
+    log_ranks_step_five(
+        calculate_ranks_step_five(compute_links_step_five(parse_pagerank_data_step_five()))
     )

@@ -1,16 +1,16 @@
+# pylint: disable=no-value-for-parameter
+
 from dagster import (
+    pipeline,
     Bool,
-    DependencyDefinition,
     Dict,
     Field,
     InputDefinition,
     Int,
     ModeDefinition,
     OutputDefinition,
-    PipelineDefinition,
     PresetDefinition,
     ResourceDefinition,
-    SolidInvocation,
     String,
     execute_pipeline,
     file_relative_path,
@@ -82,33 +82,29 @@ def str_to_num(context, string):
     return int(string)
 
 
-def define_error_monster_pipeline():
-    return PipelineDefinition(
-        name='error_monster',
-        solid_defs=[emit_num, num_to_str, str_to_num],
-        dependencies={
-            SolidInvocation('emit_num', 'start'): {},
-            SolidInvocation('num_to_str', 'middle'): {'num': DependencyDefinition('start')},
-            SolidInvocation('str_to_num', 'end'): {'string': DependencyDefinition('middle')},
-        },
-        mode_definitions=[
-            ModeDefinition(
-                name='errorable_mode', resources={'errorable_resource': define_errorable_resource()}
-            )
-        ],
-        preset_definitions=[
-            PresetDefinition(
-                'passing',
-                environment_files=[file_relative_path(__file__, 'environments/error.yaml')],
-                mode='errorable_mode',
-            )
-        ],
-    )
+@pipeline(
+    mode_definitions=[
+        ModeDefinition(
+            name='errorable_mode', resources={'errorable_resource': define_errorable_resource()}
+        )
+    ],
+    preset_definitions=[
+        PresetDefinition(
+            'passing',
+            environment_files=[file_relative_path(__file__, 'environments/error.yaml')],
+            mode='errorable_mode',
+        )
+    ],
+)
+def error_monster():
+    start = emit_num.alias('start')()
+    middle = num_to_str.alias('middle')(num=start)
+    str_to_num.alias('end')(string=middle)
 
 
 if __name__ == '__main__':
     result = execute_pipeline(
-        define_error_monster_pipeline(),
+        error_monster,
         {
             'solids': {
                 'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},

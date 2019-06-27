@@ -1,21 +1,18 @@
+# pylint: disable=no-value-for-parameter
+
 from dagster import (
-    DependencyDefinition,
-    ExpectationResult,
-    PipelineDefinition,
+    pipeline,
     solid,
+    ExpectationResult,
     Materialization,
     Output,
-    ModeDefinition,
     Nothing,
     OutputDefinition,
     InputDefinition,
     ExpectationDefinition,
     String,
-    MultiDependencyDefinition,
     EventMetadataEntry,
 )
-
-from dagster.utils import merge_dicts
 
 raw_files = [
     'raw_file_users',
@@ -49,7 +46,7 @@ def create_raw_file_solid(name):
             name
         ),
     )
-    def _f(_context):
+    def raw_file_solid(_context):
         yield Materialization(
             label='table_info',
             metadata_entries=[
@@ -58,7 +55,7 @@ def create_raw_file_solid(name):
         )
         yield Output(name)
 
-    return _f
+    return raw_file_solid
 
 
 raw_tables = [
@@ -185,34 +182,11 @@ def check_admins_both_succeed(_context):
     yield ExpectationResult(success=True, label='Event admins check out')
 
 
-def define_many_events_pipeline():
-    return PipelineDefinition(
-        name='many_events',
-        solid_defs=[
-            many_table_materializations,
-            many_materializations_and_passing_expectations,
-            check_users_and_groups_one_fails_one_succeeds,
-            check_admins_both_succeed,
-        ]
-        + create_raw_file_solids(),
-        dependencies=merge_dicts(
-            {'many_table_materializations': {}},
-            {
-                'many_table_materializations': {
-                    'start': MultiDependencyDefinition(
-                        [DependencyDefinition(raw_file) for raw_file in raw_files]
-                    )
-                },
-                'many_materializations_and_passing_expectations': {
-                    'start': DependencyDefinition('many_table_materializations')
-                },
-                'check_users_and_groups_one_fails_one_succeeds': {
-                    'start': DependencyDefinition('many_materializations_and_passing_expectations')
-                },
-                'check_admins_both_succeed': {
-                    'start': DependencyDefinition('many_materializations_and_passing_expectations')
-                },
-            },
-        ),
-        mode_definitions=[ModeDefinition()],
-    )
+@pipeline
+def many_events():
+    raw_files_solids = [raw_file_solid() for raw_file_solid in create_raw_file_solids()]
+
+    mtm = many_table_materializations(raw_files_solids)
+    mmape = many_materializations_and_passing_expectations(mtm)
+    check_users_and_groups_one_fails_one_succeeds(mmape)
+    check_admins_both_succeed(mmape)

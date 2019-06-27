@@ -1,15 +1,9 @@
+# pylint: disable=no-value-for-parameter
+
 import re
 from operator import add
 
-from dagster import (
-    DependencyDefinition,
-    InputDefinition,
-    OutputDefinition,
-    Path,
-    ModeDefinition,
-    PipelineDefinition,
-    solid,
-)
+from dagster import pipeline, solid, InputDefinition, OutputDefinition, Path, ModeDefinition
 from dagster_pyspark import spark_session_resource, SparkRDD
 
 
@@ -58,12 +52,6 @@ def rest_of_pipeline(context, urls):
     return ranks.collect()
 
 
-def define_pyspark_pagerank_step_four():
-    return PipelineDefinition(
-        name='pyspark_pagerank_step_four',
-        solid_defs=[parse_pagerank_data_step_four, rest_of_pipeline],
-        dependencies={
-            'rest_of_pipeline': {'urls': DependencyDefinition('parse_pagerank_data_step_four')}
-        },
-        mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})],
-    )
+@pipeline(mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})])
+def pyspark_pagerank_step_four():
+    rest_of_pipeline(parse_pagerank_data_step_four())

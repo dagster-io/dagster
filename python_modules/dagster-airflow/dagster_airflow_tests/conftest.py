@@ -88,7 +88,7 @@ def create_airflow_dags(clean_airflow_home):
             '--module-name',
             'dagster_examples.toys.many_events',
             '--fn-name',
-            'define_many_events_pipeline',
+            'many_events',
         ],
     )
     runner.invoke(
@@ -99,7 +99,7 @@ def create_airflow_dags(clean_airflow_home):
             '--module-name',
             'dagster_examples.toys.resources',
             '--fn-name',
-            'define_resource_pipeline',
+            'resource_pipeline',
         ],
     )
     runner.invoke(
@@ -110,7 +110,7 @@ def create_airflow_dags(clean_airflow_home):
             '--module-name',
             'dagster_examples.toys.sleepy',
             '--fn-name',
-            'define_sleepy_pipeline',
+            'sleepy_pipeline',
         ],
     )
 

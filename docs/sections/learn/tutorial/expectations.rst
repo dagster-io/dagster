@@ -43,7 +43,7 @@ And then run:
 .. code-block:: console
 
     $ dagster pipeline execute -f expectations.py \
-    -n define_expectations_tutorial_pipeline -e \
+    -n expectations_tutorial_pipeline -e \
     expectations_pass.yaml
 
 In that execution you'll notice a passing expectation:
@@ -64,7 +64,7 @@ And then:
 .. code-block:: sh
 
     $ dagster pipeline execute -f expectations.py \
-    -n define_expectations_tutorial_pipeline \
+    -n expectations_tutorial_pipeline \
     -e expectations_fail.yaml
 
     dagster.core.errors.DagsterExpectationFailedError:

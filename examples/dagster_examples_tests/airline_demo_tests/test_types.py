@@ -15,7 +15,6 @@ from dagster import (
     InputDefinition,
     LocalFileHandle,
     OutputDefinition,
-    PipelineDefinition,
     RunConfig,
     execute_pipeline,
     execute_solid,
@@ -126,10 +125,14 @@ def test_spark_dataframe_output_csv():
     def passthrough_df(_context, df):
         return df
 
+    @pipeline
+    def passthrough():
+        passthrough_df()  # pylint: disable=no-value-for-parameter
+
     with tempfile.TemporaryDirectory() as tempdir:
         file_name = os.path.join(tempdir, 'output.csv')
         result = execute_solid(
-            PipelineDefinition(name='passthrough', solid_defs=[passthrough_df]),
+            passthrough,
             'passthrough_df',
             inputs={'df': num_df},
             environment_dict={

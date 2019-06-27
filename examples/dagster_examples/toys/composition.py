@@ -1,10 +1,11 @@
+# pylint: disable=no-value-for-parameter
+
 from dagster import (
-    PipelineDefinition,
+    pipeline,
     CompositeSolidDefinition,
     lambda_solid,
     Int,
     InputDefinition,
-    ModeDefinition,
     SolidInvocation,
     DependencyDefinition,
     OutputDefinition,
@@ -56,10 +57,6 @@ div_four = CompositeSolidDefinition(
 )
 
 
-def define_composition_pipeline():
-    return PipelineDefinition(
-        name='composition',
-        solid_defs=[add_four, div_four],
-        dependencies={'div_four': {'num': DependencyDefinition('add_four')}},
-        mode_definitions=[ModeDefinition()],
-    )
+@pipeline
+def composition():
+    div_four(add_four())

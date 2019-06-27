@@ -1,9 +1,11 @@
+# pylint: disable=no-value-for-parameter
+
 import re
 from operator import add
 
 from pyspark.sql import SparkSession
 
-from dagster import PipelineDefinition, solid, InputDefinition, Path
+from dagster import solid, pipeline, InputDefinition, Path
 
 
 def computeContribs(urls, rank):
@@ -60,5 +62,6 @@ def whole_pipeline_solid(context, pagerank_data):
     return collected_ranks
 
 
-def define_pyspark_pagerank_step_two():
-    return PipelineDefinition(name='pyspark_pagerank_step_two', solid_defs=[whole_pipeline_solid])
+@pipeline
+def pyspark_pagerank_step_two():
+    whole_pipeline_solid()
