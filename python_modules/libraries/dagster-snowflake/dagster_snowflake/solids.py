@@ -4,7 +4,7 @@ from contextlib import closing
 
 import pandas as pd
 
-from dagster import check, InputDefinition, List, OutputDefinition, Result, SolidDefinition, Nothing
+from dagster import check, InputDefinition, List, OutputDefinition, Output, SolidDefinition, Nothing
 
 import dagster_pandas as dagster_pd
 
@@ -67,7 +67,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
                         fetchall_results = cursor.fetchall()  # pylint: disable=E1101
                         results.append(pd.DataFrame(fetchall_results))
 
-                    yield Result(results)
+                    yield Output(results)
 
         super(SnowflakeSolidDefinition, self).__init__(
             name=name,

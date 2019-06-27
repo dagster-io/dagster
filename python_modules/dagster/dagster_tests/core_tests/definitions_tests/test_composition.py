@@ -10,7 +10,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     RepositoryDefinition,
-    Result,
+    Output,
     composite_solid,
     execute_pipeline,
     lambda_solid,
@@ -52,8 +52,8 @@ def adder(_context, int_1, int_2):
 
 @solid(outputs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
 def return_mult(_context):
-    yield Result(1, 'one')
-    yield Result(2, 'two')
+    yield Output(1, 'one')
+    yield Output(2, 'two')
 
 
 def test_basic():
@@ -186,8 +186,8 @@ def test_basic_aliasing_with_dsl():
 def test_diamond_graph():
     @solid(outputs=[OutputDefinition(name='value_one'), OutputDefinition(name='value_two')])
     def emit_values(_context):
-        yield Result(1, 'value_one')
-        yield Result(2, 'value_two')
+        yield Output(1, 'value_one')
+        yield Output(2, 'value_two')
 
     @lambda_solid(inputs=[InputDefinition('num_one'), InputDefinition('num_two')])
     def add(num_one, num_two):

@@ -19,7 +19,7 @@ from dagster import (
     Float,
     InputDefinition,
     Int,
-    Result,
+    Output,
     List,
     Materialization,
     ModeDefinition,
@@ -567,7 +567,7 @@ def materialize(_):
             EventMetadataEntry.json({'is_dope': True}, 'json'),
         ],
     )
-    yield Result(None)
+    yield Output(None)
 
 
 @pipeline

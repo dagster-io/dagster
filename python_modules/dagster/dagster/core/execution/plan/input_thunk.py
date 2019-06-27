@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.definitions import InputDefinition, Solid, SolidHandle, Result
+from dagster.core.definitions import InputDefinition, Solid, SolidHandle, Output
 from dagster.core.errors import DagsterInvariantViolationError
 
 from .objects import ExecutionStep, SingleOutputStepCreationData, StepKind, StepOutput
@@ -19,7 +19,7 @@ def _create_input_thunk_execution_step(pipeline_name, solid, input_def, input_sp
         value = input_def.runtime_type.input_schema.construct_from_config_value(
             step_context, input_spec
         )
-        yield Result(output_name=INPUT_THUNK_OUTPUT, value=value)
+        yield Output(output_name=INPUT_THUNK_OUTPUT, value=value)
 
     return ExecutionStep(
         pipeline_name=pipeline_name,

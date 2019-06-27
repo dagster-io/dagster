@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.definitions import ExpectationResult, Materialization, Result, Solid, SolidHandle
+from dagster.core.definitions import ExpectationResult, Materialization, Output, Solid, SolidHandle
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.execution.context.transform import ComputeExecutionContext
@@ -37,10 +37,10 @@ def _yield_transform_results(compute_context, inputs, compute_fn):
     step = compute_context.step
     gen = compute_fn(ComputeExecutionContext(compute_context), inputs)
 
-    if isinstance(gen, Result):
+    if isinstance(gen, Output):
         raise DagsterInvariantViolationError(
             (
-                'Transform for solid {solid_name} returned a Result rather than '
+                'Transform for solid {solid_name} returned a Output rather than '
                 'yielding it. The compute_fn of the core SolidDefinition must yield '
                 'its results'
             ).format(solid_name=str(step.solid_handle))
@@ -50,7 +50,7 @@ def _yield_transform_results(compute_context, inputs, compute_fn):
         return
 
     for result in gen:
-        if isinstance(result, Result):
+        if isinstance(result, Output):
             value_repr = repr(result.value)
             compute_context.log.info(
                 'Solid {solid} emitted output "{output}" value {value}'.format(
@@ -59,7 +59,7 @@ def _yield_transform_results(compute_context, inputs, compute_fn):
                     value=value_repr[:200] + '...' if len(value_repr) > 200 else value_repr,
                 )
             )
-            yield Result(output_name=result.output_name, value=result.value)
+            yield Output(output_name=result.output_name, value=result.value)
 
         elif isinstance(result, (Materialization, ExpectationResult)):
             yield result
@@ -68,7 +68,7 @@ def _yield_transform_results(compute_context, inputs, compute_fn):
             raise DagsterInvariantViolationError(
                 (
                     'Transform for solid {solid_name} yielded {result} rather an '
-                    'an instance of the Result or Materialization class.'
+                    'an instance of the Output or Materialization class.'
                 ).format(result=repr(result), solid_name=str(step.solid_handle))
             )
 
@@ -90,7 +90,7 @@ def _execute_core_transform(compute_context, inputs, compute_fn):
     all_results = []
     for step_output in _yield_transform_results(compute_context, inputs, compute_fn):
         yield step_output
-        if isinstance(step_output, Result):
+        if isinstance(step_output, Output):
             all_results.append(step_output)
 
     if len(all_results) != len(step.step_outputs):

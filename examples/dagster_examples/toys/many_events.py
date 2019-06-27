@@ -4,7 +4,7 @@ from dagster import (
     PipelineDefinition,
     solid,
     Materialization,
-    Result,
+    Output,
     ModeDefinition,
     Nothing,
     OutputDefinition,
@@ -56,7 +56,7 @@ def create_raw_file_solid(name):
                 EventMetadataEntry.path(label='table_path', path='/path/to/{}.raw'.format(name))
             ],
         )
-        yield Result(name)
+        yield Output(name)
 
     return _f
 

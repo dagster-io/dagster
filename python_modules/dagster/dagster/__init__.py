@@ -18,7 +18,7 @@ from dagster.core.definitions import (
     PresetDefinition,
     RepositoryDefinition,
     ResourceDefinition,
-    Result,
+    Output,
     SolidDefinition,
     SolidInvocation,
     SystemStorageDefinition,
@@ -30,7 +30,7 @@ from dagster.core.definitions import (
 
 # These specific imports are to avoid circular import issues
 from dagster.core.definitions.decorators import (
-    MultipleResults,
+    MultipleOutputs,
     lambda_solid,
     solid,
     composite_solid,
@@ -134,7 +134,7 @@ __all__ = [
     'PipelineDefinition',
     'RepositoryDefinition',
     'ResourceDefinition',
-    'Result',
+    'Output',
     'SolidDefinition',
     'SolidInvocation',
     'SystemStorageDefinition',
@@ -146,7 +146,7 @@ __all__ = [
     'resource',
     'solid',
     'system_storage',
-    'MultipleResults',
+    'MultipleOutputs',
     # Execution
     'execute_pipeline_iterator',
     'execute_pipeline',

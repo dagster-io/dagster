@@ -15,7 +15,7 @@ from dagster import (
     InputDefinition,
     Int,
     PipelineConfigEvaluationError,
-    Result,
+    Output,
     RunConfig,
     String,
 )
@@ -28,7 +28,7 @@ def pipe(input_str):
 
 @solid(config_field=Field(String, is_optional=True))
 def scalar_config_solid(context):
-    yield Result(context.solid_config)
+    yield Output(context.solid_config)
 
 
 @composite_solid(
@@ -232,7 +232,7 @@ def test_composite_config_field():
 def test_nested_with_inputs():
     @solid(inputs=[InputDefinition('some_input', String)], config={'basic_key': Field(String)})
     def basic(context, some_input):
-        yield Result(context.solid_config['basic_key'] + ' - ' + some_input)
+        yield Output(context.solid_config['basic_key'] + ' - ' + some_input)
 
     @composite_solid(
         inputs=[InputDefinition('some_input', String)],
@@ -288,7 +288,7 @@ def test_wrap_none_config_and_inputs():
                 input_b,
             ]
         )
-        yield Result(res)
+        yield Output(res)
 
     @composite_solid
     def wrap_none():
@@ -399,7 +399,7 @@ def test_wrap_all_config_no_inputs():
                 input_b,
             ]
         )
-        yield Result(res)
+        yield Output(res)
 
     @composite_solid(
         inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
@@ -496,7 +496,7 @@ def test_wrap_all_config_one_input():
                 input_b,
             ]
         )
-        yield Result(res)
+        yield Output(res)
 
     @composite_solid(
         inputs=[InputDefinition('input_a', String)],
@@ -588,7 +588,7 @@ def test_wrap_all_config_and_inputs():
                 input_b,
             ]
         )
-        yield Result(res)
+        yield Output(res)
 
     @composite_solid(
         config_mapping=ConfigMapping(

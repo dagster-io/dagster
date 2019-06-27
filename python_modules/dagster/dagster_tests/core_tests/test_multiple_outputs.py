@@ -9,7 +9,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    Result,
+    Output,
     SolidDefinition,
     execute_pipeline,
 )
@@ -17,8 +17,8 @@ from dagster import (
 
 def test_multiple_outputs():
     def _t_fn(*_args):
-        yield Result(output_name='output_one', value='foo')
-        yield Result(output_name='output_two', value='bar')
+        yield Output(output_name='output_one', value='foo')
+        yield Output(output_name='output_two', value='bar')
 
     solid = SolidDefinition(
         name='multiple_outputs',
@@ -54,8 +54,8 @@ def test_multiple_outputs_expectations():
         return ExpectationResult(success=True)
 
     def _compute_fn(*_args, **_kwargs):
-        yield Result('foo', 'output_one')
-        yield Result('bar', 'output_two')
+        yield Output('foo', 'output_one')
+        yield Output('bar', 'output_two')
 
     solid = SolidDefinition(
         name='multiple_outputs',
@@ -90,7 +90,7 @@ def test_multiple_outputs_expectations():
 
 def test_wrong_multiple_output():
     def _t_fn(*_args):
-        yield Result(output_name='mismatch', value='foo')
+        yield Output(output_name='mismatch', value='foo')
 
     solid = SolidDefinition(
         name='multiple_outputs',
@@ -109,8 +109,8 @@ def test_multiple_outputs_of_same_name_disallowed():
     # make this illegal until it is supported
 
     def _t_fn(*_args):
-        yield Result(output_name='output_one', value='foo')
-        yield Result(output_name='output_one', value='foo')
+        yield Output(output_name='output_one', value='foo')
+        yield Output(output_name='output_one', value='foo')
 
     solid = SolidDefinition(
         name='multiple_outputs',
@@ -127,7 +127,7 @@ def test_multiple_outputs_of_same_name_disallowed():
 
 def test_multiple_outputs_only_emit_one():
     def _t_fn(*_args):
-        yield Result(output_name='output_one', value='foo')
+        yield Output(output_name='output_one', value='foo')
 
     solid = SolidDefinition(
         name='multiple_outputs',
@@ -195,7 +195,7 @@ def test_multiple_outputs_only_emit_one():
 
 def test_missing_non_optional_output_fails():
     def _t_fn(*_args):
-        yield Result(output_name='output_one', value='foo')
+        yield Output(output_name='output_one', value='foo')
 
     solid = SolidDefinition(
         name='multiple_outputs',

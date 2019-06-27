@@ -1,5 +1,5 @@
 # pylint: disable=no-value-for-parameter
-from dagster import Int, OutputDefinition, Result, pipeline, solid
+from dagster import Int, OutputDefinition, Output, pipeline, solid
 
 
 @solid(
@@ -9,8 +9,8 @@ from dagster import Int, OutputDefinition, Result, pipeline, solid
     ]
 )
 def yield_outputs(_context):
-    yield Result(23, 'out_one')
-    yield Result(45, 'out_two')
+    yield Output(23, 'out_one')
+    yield Output(45, 'out_two')
 
 
 @solid

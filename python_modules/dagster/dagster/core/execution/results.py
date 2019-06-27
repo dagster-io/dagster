@@ -11,7 +11,7 @@ from dagster.core.execution.plan.objects import StepKind
 
 
 class PipelineExecutionResult(object):
-    '''Result of execution of the whole pipeline. Returned eg by :py:func:`execute_pipeline`.
+    '''Output of execution of the whole pipeline. Returned eg by :py:func:`execute_pipeline`.
     '''
 
     def __init__(self, pipeline, run_id, event_list, reconstruct_context):

@@ -15,7 +15,7 @@ from dagster import (
     Nothing,
     OutputDefinition,
     PipelineDefinition,
-    Result,
+    Output,
     SolidInvocation,
     execute_pipeline,
     lambda_solid,
@@ -59,9 +59,9 @@ def _define_nothing_dep_pipeline():
         ],
     )
     def yield_values(_context):
-        yield Result(1, 'num_1')
-        yield Result(2, 'num_2')
-        yield Result(None, 'complete')
+        yield Output(1, 'num_1')
+        yield Output(2, 'num_2')
+        yield Output(None, 'complete')
 
     return PipelineDefinition(
         name='simple_exc',
@@ -107,7 +107,7 @@ def test_invalid_input_dependency():
 def test_result_type_check():
     @solid(outputs=[OutputDefinition(Nothing)])
     def bad(_context):
-        yield Result('oops')
+        yield Output('oops')
 
     pipeline = PipelineDefinition(name='fail', solid_defs=[bad])
     with pytest.raises(DagsterInvariantViolationError):
@@ -234,7 +234,7 @@ def test_valid_nothing_fns():
 
     @solid(outputs=[OutputDefinition(Nothing)])
     def yield_none(_context):
-        yield Result(None)
+        yield Output(None)
 
     @solid(outputs=[OutputDefinition(Nothing)])
     def yield_stuff(_context):
@@ -254,7 +254,7 @@ def test_invalid_nothing_fns():
 
     @solid(outputs=[OutputDefinition(Nothing)])
     def yield_val(_context):
-        yield Result('val')
+        yield Output('val')
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_pipeline(PipelineDefinition(name='fn_test', solid_defs=[ret_val]))

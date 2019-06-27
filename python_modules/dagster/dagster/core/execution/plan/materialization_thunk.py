@@ -5,7 +5,7 @@ from dagster.core.definitions import (
     EventMetadataEntry,
     Materialization,
     OutputDefinition,
-    Result,
+    Output,
     Solid,
     SolidHandle,
 )
@@ -43,7 +43,7 @@ def _create_materialization_lambda(solid, output_def, config_spec):
                 )
             )
 
-        yield Result(output_name=MATERIALIZATION_THUNK_OUTPUT, value=runtime_value)
+        yield Output(output_name=MATERIALIZATION_THUNK_OUTPUT, value=runtime_value)
         yield Materialization(
             label='{solid_name}.{output_name}.materialization'.format(
                 solid_name=solid.name, output_name=output_def.name

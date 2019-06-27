@@ -9,7 +9,7 @@ from dagster import (
     InputDefinition,
     Nothing,
     OutputDefinition,
-    Result,
+    Output,
     SolidDefinition,
     String,
 )
@@ -80,7 +80,7 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
 
                 curr_iter += 1
 
-            yield Result(job_flow_id)
+            yield Output(job_flow_id)
 
         super(EmrRunJobFlowSolidDefinition, self).__init__(
             name=name,

@@ -7,7 +7,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    Result,
+    Output,
     SolidDefinition,
     String,
     check,
@@ -25,7 +25,7 @@ def define_pass_value_solid(name, description=None):
     check.opt_str_param(description, 'description')
 
     def _value_t_fn(context, _inputs):
-        yield Result(context.solid_config['value'])
+        yield Output(context.solid_config['value'])
 
     return SolidDefinition(
         name=name,

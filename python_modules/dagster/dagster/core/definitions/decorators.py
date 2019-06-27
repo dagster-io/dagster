@@ -15,7 +15,7 @@ from . import (
     OutputDefinition,
     PipelineDefinition,
     PresetDefinition,
-    Result,
+    Output,
     SolidDefinition,
 )
 from .composition import (
@@ -41,14 +41,14 @@ else:
 # pylint: disable=C0301
 
 
-class MultipleResults(namedtuple('_MultipleResults', 'results')):
+class MultipleOutputs(namedtuple('_MultipleResults', 'results')):
     '''A shortcut to output multiple results.
 
     When using the :py:func:`@solid <dagster.solid>` API, you may return an instance of
-    ``MultipleResults`` from a decorated compute function instead of yielding multiple results.
+    ``MultipleOutputs`` from a decorated compute function instead of yielding multiple results.
 
     Attributes:
-      results (list[Result]): list of :py:class:`Result`
+      results (list[Output]): list of :py:class:`Output`
 
     Examples:
 
@@ -59,9 +59,9 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
                 OutputDefinition(name='bar'),
             ])
             def my_solid():
-                return MultipleResults(
-                    Result('Barb', 'foo'),
-                    Result('Glarb', 'bar'),
+                return MultipleOutputs(
+                    Output('Barb', 'foo'),
+                    Output('Glarb', 'bar'),
                 )
 
 
@@ -70,7 +70,7 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
                 OutputDefinition(name='bar'),
             ])
             def my_solid_from_dict():
-                return MultipleResults.from_dict({
+                return MultipleOutputs.from_dict({
                     'foo': 'Barb',
                     'bar': 'Glarb',
                 })
@@ -78,15 +78,15 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
     '''
 
     def __new__(cls, *results):
-        return super(MultipleResults, cls).__new__(
+        return super(MultipleOutputs, cls).__new__(
             cls,
             # XXX(freiksenet): should check.list_param accept tuples from rest?
-            check.opt_list_param(list(results), 'results', Result),
+            check.opt_list_param(list(results), 'results', Output),
         )
 
     @staticmethod
     def from_dict(result_dict):
-        '''Create a new ``MultipleResults`` object from a dictionary.
+        '''Create a new ``MultipleOutputs`` object from a dictionary.
 
         Keys of the dictionary are unpacked into result names.
 
@@ -94,14 +94,14 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
             result_dict (dict) - The dictionary to unpack.
 
         Returns:
-            (:py:class:`MultipleResults <dagster.MultipleResults>`) A new ``MultipleResults`` object
+            (:py:class:`MultipleOutputs <dagster.MultipleOutputs>`) A new ``MultipleOutputs`` object
 
         '''
         check.dict_param(result_dict, 'result_dict', key_type=str)
         results = []
         for name, value in result_dict.items():
-            results.append(Result(value, name))
-        return MultipleResults(*results)
+            results.append(Output(value, name))
+        return MultipleOutputs(*results)
 
 
 class _LambdaSolid(object):
@@ -245,14 +245,14 @@ def solid(
     Parameters are otherwise as in the core API, :py:class:`SolidDefinition`.
 
     The decorated function will be used as the solid's compute function. Unlike in the core API,
-    the compute function does not have to yield :py:class:`Result` object directly. Several
+    the compute function does not have to yield :py:class:`Output` object directly. Several
     simpler alternatives are available:
 
-    1. Return a value. This is returned as a :py:class:`Result` for a single output solid.
-    2. Return a :py:class:`Result`. Works like yielding result.
-    3. Return an instance of :py:class:`MultipleResults`. Works like yielding several results for
+    1. Return a value. This is returned as a :py:class:`Output` for a single output solid.
+    2. Return a :py:class:`Output`. Works like yielding result.
+    3. Return an instance of :py:class:`MultipleOutputs`. Works like yielding several results for
        multiple outputs. Useful for solids that have multiple outputs.
-    4. Yield :py:class:`Result`. Same as default compute behaviour.
+    4. Yield :py:class:`Output`. Same as default compute behaviour.
 
     Args:
         name (str): Name of solid.
@@ -287,18 +287,18 @@ def solid(
 
             @solid(outputs=[OutputDefinition()])
             def hello_world(_context):
-                return Result(value={'foo': 'bar'})
+                return Output(value={'foo': 'bar'})
 
             @solid(outputs=[OutputDefinition()])
             def hello_world(_context):
-                yield Result(value={'foo': 'bar'})
+                yield Output(value={'foo': 'bar'})
 
             @solid(outputs=[
                 OutputDefinition(name="left"),
                 OutputDefinition(name="right"),
             ])
             def hello_world(_context):
-                return MultipleResults.from_dict({
+                return MultipleOutputs.from_dict({
                     'left': {'foo': 'left'},
                     'right': {'foo': 'right'},
                 })
@@ -364,7 +364,7 @@ def _create_lambda_solid_transform_wrapper(fn, input_defs, output_def):
             kwargs[input_name] = inputs[input_name]
 
         result = fn(**kwargs)
-        yield Result(value=result, output_name=output_def.name)
+        yield Output(value=result, output_name=output_def.name)
 
     return transform
 
@@ -401,13 +401,13 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
                     )
                 )
 
-            if isinstance(result, Result):
+            if isinstance(result, Output):
                 yield result
-            elif isinstance(result, MultipleResults):
+            elif isinstance(result, MultipleOutputs):
                 for item in result.results:
                     yield item
             elif len(output_defs) == 1:
-                yield Result(value=result, output_name=output_defs[0].name)
+                yield Output(value=result, output_name=output_defs[0].name)
             elif result is not None:
                 if not output_defs:
                     raise DagsterInvariantViolationError(
@@ -422,7 +422,7 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
                     (
                         'Error in solid {solid_name}: Solid unexpectedly returned '
                         'output {result} of type {type_}. Should '
-                        'be a MultipleResults object, or a generator, containing or yielding '
+                        'be a MultipleOutputs object, or a generator, containing or yielding '
                         '{n_results} results: {{{expected_results}}}.'
                     ).format(
                         solid_name=context.solid.name,

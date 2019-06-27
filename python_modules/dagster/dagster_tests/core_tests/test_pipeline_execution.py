@@ -11,7 +11,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     ResourceDefinition,
-    Result,
+    Output,
     RunConfig,
     SolidInvocation,
     execute_pipeline,
@@ -527,9 +527,9 @@ def test_pipeline_streaming_multiple_outputs():
     @solid(outputs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
     def push_one_two(_context):
         events.append(1)
-        yield Result(1, 'one')
+        yield Output(1, 'one')
         events.append(2)
-        yield Result(2, 'two')
+        yield Output(2, 'two')
 
     pipeline_def = PipelineDefinition(
         name='test_streaming_iterator_multiple_outputs', solid_defs=[push_one_two]

@@ -3,7 +3,7 @@ import time
 
 import pytest
 
-from dagster import solid, Result, PipelineDefinition, execute_pipeline
+from dagster import solid, Output, PipelineDefinition, execute_pipeline
 
 
 @pytest.mark.skipif(
@@ -13,7 +13,7 @@ def test_event_timing_before_yield():
     @solid
     def before_yield_solid(_context):
         time.sleep(0.01)
-        yield Result(None)
+        yield Output(None)
 
     pipeline_def = PipelineDefinition(solid_defs=[before_yield_solid])
     pipeline_result = execute_pipeline(pipeline_def)
@@ -27,7 +27,7 @@ def test_event_timing_before_yield():
 def test_event_timing_after_yield():
     @solid
     def after_yield_solid(_context):
-        yield Result(None)
+        yield Output(None)
         time.sleep(0.01)
 
     pipeline_def = PipelineDefinition(solid_defs=[after_yield_solid])

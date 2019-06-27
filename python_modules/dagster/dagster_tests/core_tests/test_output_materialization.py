@@ -9,7 +9,7 @@ from dagster import (
     OutputDefinition,
     PipelineConfigEvaluationError,
     PipelineDefinition,
-    Result,
+    Output,
     RuntimeType,
     StepKind,
     execute_pipeline,
@@ -47,8 +47,8 @@ def multiple_output_pipeline():
         outputs=[OutputDefinition(types.Int, 'number'), OutputDefinition(types.String, 'string')]
     )
     def return_one_and_foo(_context):
-        yield Result(1, 'number')
-        yield Result('foo', 'string')
+        yield Output(1, 'number')
+        yield Output('foo', 'string')
 
     return PipelineDefinition(name='multiple_output_pipeline', solid_defs=[return_one_and_foo])
 
@@ -56,7 +56,7 @@ def multiple_output_pipeline():
 def single_int_named_output_pipeline():
     @lambda_solid(output=OutputDefinition(types.Int, name='named'))
     def return_named_one():
-        return Result(1, 'named')
+        return Output(1, 'named')
 
     return PipelineDefinition(
         name='single_int_named_output_pipeline', solid_defs=[return_named_one]

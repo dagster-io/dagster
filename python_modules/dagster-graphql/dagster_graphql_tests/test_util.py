@@ -11,7 +11,7 @@ from dagster import (
     Materialization,
     OutputDefinition,
     PipelineDefinition,
-    Result,
+    Output,
     RunConfig,
 )
 from dagster.core.events import STEP_EVENTS, DagsterEventType
@@ -43,7 +43,7 @@ def define_test_events_pipeline():
         yield Materialization.file(path='/path/to/bar')
         yield ExpectationResult(success=True, label='row_count', description='passed')
         yield ExpectationResult(True)
-        yield Result(True)
+        yield Output(True)
 
     @solid(
         outputs=[
@@ -52,7 +52,7 @@ def define_test_events_pipeline():
         ]
     )
     def optional_only_one(_context):  # pylint: disable=unused-argument
-        yield Result(output_name='output_one', value=1)
+        yield Output(output_name='output_one', value=1)
 
     @solid(inputs=[InputDefinition('some_input')])
     def should_fail(_context, some_input):  # pylint: disable=unused-argument

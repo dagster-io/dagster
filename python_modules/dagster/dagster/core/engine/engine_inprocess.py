@@ -23,7 +23,7 @@ from dagster.core.execution.context.system import (
     SystemStepExecutionContext,
 )
 
-from dagster.core.definitions import Materialization, ExpectationResult, Result
+from dagster.core.definitions import Materialization, ExpectationResult, Output
 
 from dagster.core.events import DagsterEvent, DagsterEventType
 
@@ -202,7 +202,7 @@ def dagster_event_sequence_for_step(step_context):
 def _step_output_error_checked_event_sequence(step_context, event_sequence):
     '''
     Process the event sequence to check for invariant violations in the event
-    sequence related to Result events emitted from the compute_fn.
+    sequence related to Output events emitted from the compute_fn.
 
     This consumes and emits an event sequence.
     '''
@@ -214,11 +214,11 @@ def _step_output_error_checked_event_sequence(step_context, event_sequence):
     seen_outputs = set()
 
     for event in event_sequence:
-        if not isinstance(event, Result):
+        if not isinstance(event, Output):
             yield event
             continue
 
-        # do additional processing on Results
+        # do additional processing on Outputs
         result = event
         if not step.has_step_output(result.output_name):
             raise DagsterInvariantViolationError(
@@ -248,7 +248,7 @@ def _step_output_error_checked_event_sequence(step_context, event_sequence):
                         output=step_output_def.name, solid={str(step.solid_handle)}
                     )
                 )
-                yield Result(output_name=step_output_def.name, value=None)
+                yield Output(output_name=step_output_def.name, value=None)
             else:
                 raise DagsterStepOutputNotFoundError(
                     'Core compute for solid "{handle}" did not return an output '
@@ -290,7 +290,7 @@ def _core_dagster_event_sequence_for_step(step_context):
             _step_output_error_checked_event_sequence(step_context, event_sequence)
         ):
 
-            if isinstance(event, Result):
+            if isinstance(event, Output):
                 yield _create_step_output_event(step_context, event)
             elif isinstance(event, Materialization):
                 yield DagsterEvent.step_materialization(step_context, event)
@@ -308,7 +308,7 @@ def _core_dagster_event_sequence_for_step(step_context):
 
 def _create_step_output_event(step_context, result):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.inst_param(result, 'result', Result)
+    check.inst_param(result, 'result', Output)
 
     step = step_context.step
     step_output = step.step_output_named(result.output_name)

@@ -6,7 +6,7 @@ from dagster import (
     FileHandle,
     InputDefinition,
     OutputDefinition,
-    Result,
+    Output,
     String,
     solid,
 )
@@ -80,4 +80,4 @@ def cache_file_from_s3(context, bucket_data):
         label='file_handle_exists',
         metadata_entries=[EventMetadataEntry.path(path=file_handle.path_desc, label=target_key)],
     )
-    yield Result(file_handle)
+    yield Output(file_handle)

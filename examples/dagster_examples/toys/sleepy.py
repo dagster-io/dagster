@@ -9,7 +9,7 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     PipelineDefinition,
-    Result,
+    Output,
     SolidInvocation,
     lambda_solid,
     solid,
@@ -41,10 +41,10 @@ def giver(context):
     for i, sec in enumerate(units):
         queues[i % 4].append(sec)
 
-    yield Result(queues[0], 'out_1')
-    yield Result(queues[1], 'out_2')
-    yield Result(queues[2], 'out_3')
-    yield Result(queues[3], 'out_4')
+    yield Output(queues[0], 'out_1')
+    yield Output(queues[1], 'out_2')
+    yield Output(queues[2], 'out_3')
+    yield Output(queues[3], 'out_4')
 
 
 @lambda_solid(

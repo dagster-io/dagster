@@ -11,7 +11,7 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     PipelineDefinition,
-    Result,
+    Output,
     SolidInvocation,
     lambda_solid,
     solid,
@@ -66,10 +66,10 @@ def hammer(context, chase_duration):
 def giver(context):
     chase_duration = context.solid_config
 
-    yield Result(chase_duration, 'out_1')
-    yield Result(chase_duration, 'out_2')
-    yield Result(chase_duration, 'out_3')
-    yield Result(chase_duration, 'out_4')
+    yield Output(chase_duration, 'out_1')
+    yield Output(chase_duration, 'out_2')
+    yield Output(chase_duration, 'out_3')
+    yield Output(chase_duration, 'out_4')
 
 
 @lambda_solid(

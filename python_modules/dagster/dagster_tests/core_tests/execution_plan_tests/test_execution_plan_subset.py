@@ -3,7 +3,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    Result,
+    Output,
     RunConfig,
     lambda_solid,
     solid,
@@ -55,8 +55,8 @@ def test_execution_plan_simple_two_steps():
 def test_execution_plan_two_outputs():
     @solid(outputs=[OutputDefinition(types.Int, 'num_one'), OutputDefinition(types.Int, 'num_two')])
     def return_one_two(_context):
-        yield Result(1, 'num_one')
-        yield Result(2, 'num_two')
+        yield Output(1, 'num_one')
+        yield Output(2, 'num_two')
 
     pipeline_def = PipelineDefinition(name='return_one_two_pipeline', solid_defs=[return_one_two])
 

@@ -7,7 +7,7 @@ from dagster import (
     Int,
     OutputDefinition,
     PipelineDefinition,
-    Result,
+    Output,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -104,8 +104,8 @@ def test_basic_aliasing_with_dsl():
 def test_diamond_graph():
     @solid(outputs=[OutputDefinition(name='value_one'), OutputDefinition(name='value_two')])
     def emit_values(_context):
-        yield Result(1, 'value_one')
-        yield Result(2, 'value_two')
+        yield Output(1, 'value_one')
+        yield Output(2, 'value_two')
 
     @lambda_solid(inputs=[InputDefinition('num_one'), InputDefinition('num_two')])
     def add(num_one, num_two):

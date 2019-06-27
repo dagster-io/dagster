@@ -11,7 +11,7 @@ from dagster import (
     ModeDefinition,
     PresetDefinition,
     RepositoryDefinition,
-    Result,
+    Output,
     String,
 )
 from dagster.core.definitions.config import ConfigMapping
@@ -36,7 +36,7 @@ LATEST_JAR_HASH = '214f4bff2eccb4e9c08578d96bd329409b7111c8'
     description='pass configured output paths to BigQuery load command inputs',
 )
 def output_paths(context, start) -> List[String]:  # pylint: disable=unused-argument
-    yield Result(context.solid_config['paths'])
+    yield Output(context.solid_config['paths'])
 
 
 def events_dataproc_fn(context, cfg):

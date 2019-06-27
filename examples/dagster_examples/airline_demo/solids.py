@@ -16,7 +16,7 @@ from dagster import (
     Int,
     Materialization,
     OutputDefinition,
-    Result,
+    Output,
     SolidDefinition,
     String,
     check,
@@ -118,7 +118,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
             'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
         )
         context.resources.db_info.engine.execute(text(sql_statement))
-        yield Result(value=table_name, output_name='result')
+        yield Output(value=table_name, output_name='result')
 
     return SolidDefinition(
         name=name,
@@ -218,7 +218,7 @@ def load_data_to_database_from_spark(context, data_frame: DataFrame):
             EventMetadataEntry.text(label='Db', text=context.resources.db_info.db_name),
         ],
     )
-    yield Result(value=table_name, output_name='table_name')
+    yield Output(value=table_name, output_name='table_name')
 
 
 @solid(
@@ -570,4 +570,4 @@ def join_q2_data(
         '''
     )
 
-    yield Result(rename_spark_dataframe_columns(full_data, lambda c: c.lower()))
+    yield Output(rename_spark_dataframe_columns(full_data, lambda c: c.lower()))
