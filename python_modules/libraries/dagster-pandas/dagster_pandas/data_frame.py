@@ -1,16 +1,17 @@
 import pandas as pd
 
 from dagster import (
-    as_dagster_type,
-    check,
     DagsterInvariantViolationError,
     Dict,
     Field,
+    Materialization,
+    NamedSelector,
+    Path,
+    String,
+    as_dagster_type,
+    check,
     input_selector_schema,
     output_selector_schema,
-    Path,
-    NamedSelector,
-    String,
 )
 
 
@@ -53,7 +54,7 @@ def dataframe_output_schema(_context, file_type, file_options, pandas_df):
     else:
         check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
 
-    return file_options['path']
+    return Materialization.file(file_options['path'])
 
 
 @input_selector_schema(

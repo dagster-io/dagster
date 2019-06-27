@@ -1,10 +1,9 @@
 import sys
 
-import six
 from future.utils import raise_from
 
 from dagster import check
-from dagster.core.definitions import EventMetadataEntry, ExpectationResult, Materialization, Output
+from dagster.core.definitions import ExpectationResult, Materialization, Output
 from dagster.core.errors import (
     DagsterError,
     DagsterExecutionStepExecutionError,
@@ -361,37 +360,24 @@ def _create_output_materializations(step_context, output_name, value):
         config_output_name, output_spec = list(output_spec.items())[0]
         if config_output_name == output_name:
             step_output = step.step_output_named(output_name)
-            path = step_output.runtime_type.output_schema.materialize_runtime_value(
+            materialization = step_output.runtime_type.output_schema.materialize_runtime_value(
                 step_context, output_spec, value
             )
 
-            if not isinstance(path, six.string_types):
+            if not isinstance(materialization, Materialization):
                 raise DagsterInvariantViolationError(
                     (
                         'materialize_runtime_value on type {type_name} has returned '
                         'value {value} of type {python_type}. You must return a '
-                        'string (and ideally a valid file path).'
+                        'Materialization.'
                     ).format(
                         type_name=step_output.runtime_type.name,
-                        value=repr(path),
-                        python_type=type(path).__name__,
+                        value=repr(materialization),
+                        python_type=type(materialization).__name__,
                     )
                 )
 
-            yield DagsterEvent.step_materialization(
-                step_context,
-                Materialization(
-                    label='{solid_name}.{output_name}.materialization'.format(
-                        solid_name=str(step.solid_handle), output_name=output_name
-                    ),
-                    metadata_entries=[
-                        EventMetadataEntry.path(path=path, label='intermediate_file')
-                    ],
-                    description='Materialization of {solid_name}.{output_name}'.format(
-                        output_name=output_name, solid_name=str(step.solid_handle)
-                    ),
-                ),
-            )
+            yield DagsterEvent.step_materialization(step_context, materialization)
 
 
 def _get_evaluated_input(step, input_name, input_value):

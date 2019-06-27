@@ -53,17 +53,19 @@ def define_builtin_scalar_output_schema(scalar_name):
 
     @output_selector_schema(schema_cls)
     def _builtin_output_schema(_context, file_type, file_options, runtime_value):
+        from dagster.core.events import Materialization
+
         if file_type == 'json':
             json_file_path = file_options['path']
             json_value = seven.json.dumps({'value': runtime_value})
             with open(json_file_path, 'w') as ff:
                 ff.write(json_value)
-            return json_file_path
+            return Materialization.file(json_file_path)
         elif file_type == 'pickle':
             pickle_file_path = file_options['path']
             with open(pickle_file_path, 'wb') as ff:
                 pickle.dump(runtime_value, ff)
-            return pickle_file_path
+            return Materialization.file(pickle_file_path)
         else:
             check.failed('Unsupported file type: {file_type}'.format(file_type=file_type))
 

@@ -186,10 +186,8 @@ def test_basic_materialization_event():
 
         mat = mat_event.event_specific_data.materialization
 
-        assert mat.label == 'return_one.result.materialization'
         assert len(mat.metadata_entries) == 1
         assert mat.metadata_entries[0].path
-        assert mat.metadata_entries[0].label == 'intermediate_file'
         path = mat.metadata_entries[0].entry_data.path
 
         with open(path, 'r') as ff:
@@ -350,12 +348,7 @@ def test_basic_bad_output_materialization():
 
     pipeline_def = PipelineDefinition(name='single_int_output_pipeline', solid_defs=[return_one])
 
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+    with pytest.raises(DagsterInvariantViolationError, match='You must return a Materialization'):
         execute_pipeline(
             pipeline_def, environment_dict={'solids': {'return_one': {'outputs': [{'result': 2}]}}}
         )
-
-    assert str(exc_info.value) == (
-        'materialize_runtime_value on type SomeType has returned value '
-        '1 of type int. You must return a string (and ideally a valid file path).'
-    )

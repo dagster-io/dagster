@@ -19,11 +19,11 @@ from dagster import (
     Float,
     InputDefinition,
     Int,
-    Output,
     List,
     Materialization,
     ModeDefinition,
     Optional,
+    Output,
     OutputDefinition,
     Path,
     PipelineDefinition,
@@ -37,9 +37,9 @@ from dagster import (
     lambda_solid,
     logger,
     output_schema,
+    pipeline,
     resource,
     solid,
-    pipeline,
 )
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import script_relative_path
@@ -67,7 +67,7 @@ def df_output_schema(_context, path, value):
         writer.writeheader()
         writer.writerows(rowdicts=value)
 
-    return path
+    return Materialization.file(path)
 
 
 PoorMansDataFrame = as_dagster_type(
