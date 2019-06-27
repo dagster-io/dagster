@@ -12,7 +12,7 @@ from airflow.operators.python_operator import PythonOperator
 from dagster.utils import load_yaml_from_glob_list
 
 from .operators import DagsterDockerOperator
-from .factory import make_airflow_dag, make_airflow_dag_containerized
+from .factory import make_airflow_dag_for_handle, make_airflow_dag_containerized_for_handle
 
 
 @pytest.fixture(scope='class')
@@ -49,7 +49,7 @@ def dagster_airflow_python_operator_pipeline(request):
     run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
     execution_date = getattr(request.cls, 'execution_date', datetime.datetime.utcnow())
 
-    dag, tasks = make_airflow_dag(
+    dag, tasks = make_airflow_dag_for_handle(
         handle, pipeline_name, environment_dict, mode=mode, op_kwargs=op_kwargs
     )
 
@@ -106,7 +106,7 @@ def dagster_airflow_docker_operator_pipeline(request):
     run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
     execution_date = getattr(request.cls, 'execution_date', datetime.datetime.utcnow())
 
-    dag, tasks = make_airflow_dag_containerized(
+    dag, tasks = make_airflow_dag_containerized_for_handle(
         handle, pipeline_name, image, environment_dict, op_kwargs=op_kwargs
     )
 

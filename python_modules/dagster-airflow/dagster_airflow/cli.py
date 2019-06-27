@@ -5,7 +5,6 @@ import sys
 import click
 import yaml
 
-from dagster.core.definitions.handle import LoaderEntrypoint
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
 if sys.version_info.major >= 3:
@@ -39,7 +38,7 @@ def main():
 @main.command()
 @click.option('--dag-name', help='The name of the output Airflow DAG', required=True)
 @click.option('--module-name', '-m', help='The name of the source module', required=True)
-@click.option('--fn-name', '-n', help='The name of the pipeline definition function', required=True)
+@click.option('--pipeline-name', '-n', help='The name of the pipeline', required=True)
 @click.option(
     '--output-path',
     '-o',
@@ -51,16 +50,12 @@ def main():
     '-c',
     help='''Optional. Path to a YAML file to install into the Dagster environment.''',
 )
-def scaffold(dag_name, module_name, fn_name, output_path, environment_file):
+def scaffold(dag_name, module_name, pipeline_name, output_path, environment_file):
     '''Creates a DAG file for a specified dagster pipeline'''
 
     # Validate output path
     if not output_path:
         raise Exception('You must specify --output-path or set AIRFLOW_HOME to use this script.')
-
-    # Load the pipeline to determine the pipeline name
-    pipeline = LoaderEntrypoint.from_module_target(module_name, fn_name).perform_load()
-    pipeline_name = pipeline.name
 
     # We construct the YAML environment and then put it directly in the DAG file
     environment_yaml = _construct_yml(environment_file, dag_name)
@@ -68,8 +63,8 @@ def scaffold(dag_name, module_name, fn_name, output_path, environment_file):
     printer = IndentingStringIoPrinter(indent_level=4)
     printer.line('\'\'\'')
     printer.line(
-        'The airflow DAG scaffold for {module_name}.{fn_name}'.format(
-            module_name=module_name, fn_name=fn_name
+        'The airflow DAG scaffold for {module_name}.{pipeline_name}'.format(
+            module_name=module_name, pipeline_name=pipeline_name
         )
     )
     printer.blank_line()
@@ -80,7 +75,6 @@ def scaffold(dag_name, module_name, fn_name, output_path, environment_file):
     printer.line('import datetime')
     printer.line('import yaml')
     printer.blank_line()
-    printer.line('from dagster import ExecutionTargetHandle')
     printer.line('from dagster_airflow.factory import make_airflow_dag')
     printer.blank_line()
     printer.blank_line()
@@ -103,19 +97,10 @@ def scaffold(dag_name, module_name, fn_name, output_path, environment_file):
     printer.line('dag, tasks = make_airflow_dag(')
     with printer.with_indent():
         printer.comment(
-            'NOTE: you must ensure that {module_name} is installed or available on sys.path'.format(
-                module_name=module_name
-            )
+            'NOTE: you must ensure that {module_name} is installed or available on sys.path, '
+            'otherwise, this import will fail.'.format(module_name=module_name)
         )
-        printer.comment('otherwise, this import will fail.')
-        printer.line('handle=ExecutionTargetHandle.for_pipeline_module(')
-        with printer.with_indent():
-            printer.line(
-                'module_name=\'{module_name}\', fn_name=\'{fn_name}\''.format(
-                    module_name=module_name, fn_name=fn_name
-                )
-            )
-        printer.line('),')
+        printer.line('module_name=\'{module_name}\','.format(module_name=module_name))
         printer.line('pipeline_name=\'{pipeline_name}\','.format(pipeline_name=pipeline_name))
         printer.line("environment_dict=yaml.load(ENVIRONMENT),")
         printer.line("dag_kwargs={'default_args': DEFAULT_ARGS, 'max_active_runs': 1}")

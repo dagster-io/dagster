@@ -76,7 +76,7 @@ def create_airflow_dags(clean_airflow_home):
             'toys_log_spew',
             '--module-name',
             'dagster_examples.toys.log_spew',
-            '--fn-name',
+            '--pipeline-name',
             'define_spew_pipeline',
         ],
     )
@@ -87,7 +87,7 @@ def create_airflow_dags(clean_airflow_home):
             'toys_many_events',
             '--module-name',
             'dagster_examples.toys.many_events',
-            '--fn-name',
+            '--pipeline-name',
             'many_events',
         ],
     )
