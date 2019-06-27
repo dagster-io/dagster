@@ -12,7 +12,6 @@ from dagster import (
     List,
     ModeDefinition,
     PresetDefinition,
-    RepositoryDefinition,
     String,
 )
 
@@ -161,9 +160,3 @@ def explore_visits_by_hour(start):
 )
 def gcp_pipeline():
     return explore_visits_by_hour(bq_load_events(events_dataproc()))
-
-
-def define_repo():
-    return RepositoryDefinition(
-        name='gcp_data_platform', pipeline_dict={'gcp_pipeline': gcp_pipeline}
-    )

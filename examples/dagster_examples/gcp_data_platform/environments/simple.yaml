@@ -1,0 +1,20 @@
+solids:
+  events_dataproc:
+    config:
+      cluster_name: gcp-data-platform
+  gcs_to_bigquery:
+    config:
+      project_id: elementl-dev
+resources:
+  dataproc:
+    config:
+      projectId: elementl-dev,
+      clusterName: gcp-data-platform,
+      region: us-west-1,
+      cluster_config:
+        softwareConfig:
+          properties:
+            # Create a single-node cluster
+            # This needs to be the string "true" when
+            # serialized, not a boolean true
+            'dataproc:dataproc.allow.zero.workers': 'true'
