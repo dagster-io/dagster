@@ -278,6 +278,9 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         # just check the last log line to see if it's JSON.
         kwargs['xcom_all'] = True
 
+        # Store Airflow DAG run timestamp so that we can pass along via execution metadata
+        self.airflow_ts = kwargs.get('ts')
+
         if 'environment' not in kwargs:
             kwargs['environment'] = DEFAULT_ENVIRONMENT
 
@@ -339,6 +342,12 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
                 'stepKeys': self.step_keys,
             }
         }
+
+        if self.airflow_ts:
+            variables['executionParams']['executionMetadata']['tags'] = [
+                {'key': 'airflow_ts', 'value': self.airflow_ts}
+            ]
+
         return '-v \'{variables}\' {query}'.format(
             variables=seven.json.dumps(variables), query=QUERY
         )
@@ -406,14 +415,18 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 'in your Airflow environment.'
             )
 
-        def python_callable(**kwargs):
-            run_id = kwargs.get('dag_run').run_id
+        def python_callable(ts, dag_run, **kwargs):  # pylint: disable=unused-argument
+            run_id = dag_run.run_id
+
             variables = {
                 'executionParams': {
                     'environmentConfigData': environment_dict,
                     'mode': mode,
                     'selector': {'name': pipeline_name},
-                    'executionMetadata': {'runId': run_id},
+                    'executionMetadata': {
+                        'runId': run_id,
+                        'tags': [{'key': 'airflow_ts', 'value': ts}],
+                    },
                     'stepKeys': step_keys,
                 }
             }

@@ -5,7 +5,7 @@ import logging
 
 import yaml
 
-from dagster import check
+from dagster import check, RunConfig
 
 from dagster.core.definitions.events import (
     PathMetadataEntryData,
@@ -18,6 +18,7 @@ from dagster.core.definitions.events import (
 from dagster.core.events.log import EventRecord
 from dagster.core.events import DagsterEventType
 
+from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster_graphql import dauphin
@@ -53,9 +54,12 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_executionPlan(self, graphene_info):
         pipeline = self.resolve_pipeline(graphene_info)
-        return graphene_info.schema.type_named('ExecutionPlan')(
-            pipeline, self._pipeline_run.execution_plan
+        execution_plan = create_execution_plan(
+            pipeline.get_dagster_pipeline(),
+            self._pipeline_run.config,
+            RunConfig(mode=self._pipeline_run.mode),
         )
+        return graphene_info.schema.type_named('ExecutionPlan')(pipeline, execution_plan)
 
     def resolve_environmentConfigYaml(self, _graphene_info):
         return yaml.dump(self._pipeline_run.config, default_flow_style=False)
@@ -116,9 +120,14 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
 
     def resolve_nodes(self, graphene_info):
         pipeline = get_pipeline_or_raise(graphene_info, self._pipeline_run.selector)
+
+        execution_plan = create_execution_plan(
+            pipeline.get_dagster_pipeline(),
+            self._pipeline_run.config,
+            RunConfig(mode=self._pipeline_run.mode),
+        )
         return [
-            from_event_record(graphene_info, log, pipeline, self._pipeline_run.execution_plan)
-            for log in self._logs
+            from_event_record(graphene_info, log, pipeline, execution_plan) for log in self._logs
         ]
 
     def resolve_pageInfo(self, graphene_info):

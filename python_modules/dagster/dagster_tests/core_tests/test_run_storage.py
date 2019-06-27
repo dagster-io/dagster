@@ -24,22 +24,6 @@ def temp_run_storage():
             shutil.rmtree(base_dir)
 
 
-def test_filesystem_run_storage_from_run_config():
-    @solid
-    def check_run_storage(context):
-        assert isinstance(context.get_system_context().run_storage, FileSystemRunStorage)
-
-    pipeline = PipelineDefinition(
-        name='filesystem_run_storage_test', solid_defs=[check_run_storage]
-    )
-
-    result = execute_pipeline(pipeline, {'storage': {'filesystem': {}}})
-
-    assert result.success
-
-    assert os.path.isdir(os.path.join(base_runs_directory(), result.run_id))
-
-
 def test_default_run_storage():
     @solid
     def check_run_storage(context):

@@ -9,7 +9,7 @@ import six
 
 from dagster import check
 from dagster.utils import merge_dicts
-from dagster.core.utils import make_new_run_id
+from dagster.core.utils import make_new_run_id, convert_airflow_datestr_to_epoch_ts
 
 
 class RunConfig(
@@ -52,7 +52,10 @@ class RunConfig(
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
         tags = check.opt_dict_param(tags, 'tags', key_type=str)
-        if 'execution_epoch_time' not in tags:
+
+        if 'airflow_ts' in tags:
+            tags['execution_epoch_time'] = convert_airflow_datestr_to_epoch_ts(tags['airflow_ts'])
+        elif 'execution_epoch_time' not in tags:
             tags['execution_epoch_time'] = time.time()
 
         return super(RunConfig, cls).__new__(

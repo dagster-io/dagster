@@ -75,10 +75,10 @@ PoorMansDataFrame = as_dagster_type(
 )
 
 
-def define_context(raise_on_error=True):
+def define_context(raise_on_error=True, log_dir=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
-        pipeline_runs=PipelineRunStorage(),
+        pipeline_runs=PipelineRunStorage(log_dir),
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,
     )

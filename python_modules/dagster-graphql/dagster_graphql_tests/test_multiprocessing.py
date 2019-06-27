@@ -17,7 +17,7 @@ from dagster import (
     PipelineDefinition,
 )
 from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import create_execution_plan, ExecutionSelector
+from dagster.core.execution.api import ExecutionSelector
 from dagster.core.utils import make_new_run_id
 from dagster.utils import script_relative_path
 
@@ -78,7 +78,6 @@ def test_running():
         selector,
         env_config,
         mode='default',
-        execution_plan=create_execution_plan(pipeline, env_config),
         reexecution_config=None,
         step_keys_to_execute=None,
     )
@@ -109,7 +108,6 @@ def test_failing():
         selector,
         env_config,
         mode='default',
-        execution_plan=create_execution_plan(pipeline, env_config),
         reexecution_config=None,
         step_keys_to_execute=None,
     )
@@ -133,7 +131,6 @@ def test_execution_crash():
         selector,
         env_config,
         mode='default',
-        execution_plan=create_execution_plan(pipeline, env_config),
         reexecution_config=None,
         step_keys_to_execute=None,
     )

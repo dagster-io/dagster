@@ -45,6 +45,7 @@ def _do_setup(name='dagster-graphql'):
             'rx>=1.6.1',
         ],
         entry_points={"console_scripts": ['dagster-graphql = dagster_graphql.cli:main']},
+        extras_require={":python_version<'3'": ["backports.tempfile"]},
     )
 
 
