@@ -11,9 +11,10 @@ from dagster import (
     Nothing,
     OutputDefinition,
     PipelineDefinition,
-    String,
+    composite_solid,
     execute_pipeline,
     lambda_solid,
+    pipeline,
     solid,
 )
 
@@ -58,24 +59,33 @@ def test_simple_values():
     assert result.result_for_solid('sum_num').result_value() == 6
 
 
+@solid(inputs=[InputDefinition('stuff', List[Any])])
+def collect(_context, stuff):
+    assert set(stuff) == set([1, None, 'one'])
+    return stuff
+
+
+@lambda_solid
+def emit_num():
+    return 1
+
+
+@lambda_solid
+def emit_none():
+    pass
+
+
+@lambda_solid
+def emit_str():
+    return 'one'
+
+
+@lambda_solid(output=OutputDefinition(Nothing))
+def emit_nothing():
+    pass
+
+
 def test_interleaved_values():
-    @solid(inputs=[InputDefinition('stuff', List[Any])])
-    def collect(_context, stuff):
-        assert set(stuff) == set([1, None, 'one'])
-        return stuff
-
-    @lambda_solid
-    def emit_num():
-        return 1
-
-    @lambda_solid
-    def emit_none():
-        pass
-
-    @lambda_solid
-    def emit_str():
-        return 'one'
-
     result = execute_pipeline(
         PipelineDefinition(
             name='input_test',
@@ -96,22 +106,27 @@ def test_interleaved_values():
     assert result.success
 
 
+def test_dsl():
+    @pipeline
+    def input_test():
+        collect([emit_num(), emit_none(), emit_str()])  # pylint: disable=no-value-for-parameter
+
+    result = execute_pipeline(input_test)
+
+    assert result.success
+
+
+def test_bad_dsl():
+
+    with pytest.raises(DagsterInvalidDefinitionError, match='list containing invalid types'):
+
+        @composite_solid
+        def _composed_collect(str_in, none_in):
+            num = emit_num()
+            collect([num, str_in, none_in])  # pylint: disable=no-value-for-parameter
+
+
 def test_nothing_deps():
-    @solid(inputs=[InputDefinition('stuff', List[Any])])
-    def collect(_context, stuff):
-        return stuff
-
-    @lambda_solid(output=OutputDefinition(Int))
-    def emit_num():
-        return 1
-
-    @lambda_solid(output=OutputDefinition(Nothing))
-    def emit_nothing():
-        pass
-
-    @lambda_solid(output=OutputDefinition(String))
-    def emit_str():
-        return 'one'
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
