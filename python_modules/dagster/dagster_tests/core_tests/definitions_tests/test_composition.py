@@ -7,6 +7,7 @@ from dagster import (
     Field,
     InputDefinition,
     Int,
+    Nothing,
     OutputDefinition,
     PipelineDefinition,
     RepositoryDefinition,
@@ -450,3 +451,13 @@ def test_calling_soild_outside_fn():
     with pytest.raises(DagsterInvariantViolationError, match='outside of a composition function'):
 
         return_one()
+
+
+def test_compose_nothing():
+    @lambda_solid(inputs=[InputDefinition('start', Nothing)])
+    def go():
+        pass
+
+    @composite_solid(inputs=[InputDefinition('start', Nothing)])
+    def _compose(start):
+        go(start)  # pylint: disable=too-many-function-args
