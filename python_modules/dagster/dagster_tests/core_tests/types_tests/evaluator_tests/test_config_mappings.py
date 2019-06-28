@@ -19,6 +19,8 @@ from dagster import (
     RunConfig,
     String,
 )
+from dagster.check import CheckError
+
 
 # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
 @lambda_solid(inputs=[InputDefinition('input_str')])
@@ -690,3 +692,23 @@ def test_timestamp_in_run_config():
     )
     assert result.success
     assert seen['ts'] == now
+
+
+def test_empty_config():
+    with pytest.raises(CheckError) as exc_info:
+
+        @composite_solid(
+            config_mapping=ConfigMapping(
+                config_mapping_fn=lambda context, _: {
+                    'scalar_config_solid': {'config': 'an input'}
+                },
+                # This is not permitted:
+                config={},
+            )
+        )
+        def wrap_solid():  # pylint: disable=unused-variable
+            scalar_config_solid()
+
+    assert 'Invariant failed. Description: Cannot specify empty config for ConfigMapping' in str(
+        exc_info
+    )
