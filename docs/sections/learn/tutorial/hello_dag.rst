@@ -24,6 +24,7 @@ This pipeline introduces a few new concepts.
 2.  Solids' **dependencies** are expressed in the body of the pipeline function. You use traditional
     function calls to construct a representation of the dependency graph. These functions are
     invoked at pipeline construction time and do *not* actually execute the body of the solid.
+    You can learn more about these in the composition functions section.
 
     .. literalinclude::  ../../../../examples/dagster_examples/intro_tutorial/hello_dag.py
        :lines: 14-16
