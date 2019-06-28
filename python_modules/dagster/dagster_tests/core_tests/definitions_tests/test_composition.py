@@ -27,6 +27,11 @@ def builder(graph):
 
 
 @lambda_solid
+def echo(blah):
+    return blah
+
+
+@lambda_solid
 def return_one():
     return 1
 
@@ -251,16 +256,37 @@ def test_mapping_args_kwargs():
     assert maps.input_mappings[0].input_name == 'c'
 
 
-def output_map_mult():
+def test_output_map_mult():
     @composite_solid(outputs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
     def wrap_mult():
         return return_mult()
 
-    result = execute_pipeline(PipelineDefinition(solid_defs=[wrap_mult])).result_for_solid(
-        'wrap_mult'
-    )
-    assert result.result_value('one') == 1
-    assert result.result_value('two') == 2
+    @pipeline
+    def mult_pipe():
+        one, two = wrap_mult()
+        echo.alias('echo_one')(one)
+        echo.alias('echo_two')(two)
+
+    result = execute_pipeline(mult_pipe)
+    assert result.result_for_solid('echo_one').result_value() == 1
+    assert result.result_for_solid('echo_two').result_value() == 2
+
+
+def test_output_map_mult_swizzle():
+    @composite_solid(outputs=[OutputDefinition(Int, 'x'), OutputDefinition(Int, 'y')])
+    def wrap_mult():
+        one, two = return_mult()
+        return {'x': one, 'y': two}
+
+    @pipeline
+    def mult_pipe():
+        x, y = wrap_mult()
+        echo.alias('echo_x')(x)
+        echo.alias('echo_y')(y)
+
+    result = execute_pipeline(mult_pipe)
+    assert result.result_for_solid('echo_x').result_value() == 1
+    assert result.result_for_solid('echo_y').result_value() == 2
 
 
 def test_output_map_fail():
@@ -440,7 +466,7 @@ def test_mapping_args_ordering():
 
 
 def test_unused_mapping():
-    with pytest.raises(DagsterInvalidDefinitionError, match='unused input mapping'):
+    with pytest.raises(DagsterInvalidDefinitionError, match='unmapped input'):
 
         @composite_solid
         def unused_mapping(_):

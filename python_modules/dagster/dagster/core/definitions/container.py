@@ -119,7 +119,7 @@ def validate_dependency_dict(dependencies):
     return dependencies
 
 
-def create_execution_structure(solid_defs, dependencies_dict, parent_definition):
+def create_execution_structure(solid_defs, dependencies_dict, container_definition):
     '''This builder takes the dependencies dictionary specified during creation of the
     PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
     dictionary.
@@ -170,8 +170,8 @@ def create_execution_structure(solid_defs, dependencies_dict, parent_definition)
         key_type=six.string_types + (SolidInvocation,),
         value_type=dict,
     )
-    # parent_definition is none in the context of a pipeline
-    check.opt_inst_param(parent_definition, 'parent_definition', CompositeSolidDefinition)
+    # container_definition is none in the context of a pipeline
+    check.opt_inst_param(container_definition, 'container_definition', CompositeSolidDefinition)
 
     # Same as dep_dict but with SolidInvocation replaced by alias string
     aliased_dependencies_dict = {}
@@ -199,7 +199,7 @@ def create_execution_structure(solid_defs, dependencies_dict, parent_definition)
                 name_to_aliases[dep.solid].add(dep.solid)
 
     pipeline_solid_dict = _build_pipeline_solid_dict(
-        solid_defs, name_to_aliases, alias_to_solid_instance, parent_definition
+        solid_defs, name_to_aliases, alias_to_solid_instance, container_definition
     )
 
     _validate_dependencies(aliased_dependencies_dict, pipeline_solid_dict, alias_to_name)
@@ -212,7 +212,7 @@ def create_execution_structure(solid_defs, dependencies_dict, parent_definition)
 
 
 def _build_pipeline_solid_dict(
-    solid_defs, name_to_aliases, alias_to_solid_instance, parent_definition
+    solid_defs, name_to_aliases, alias_to_solid_instance, container_definition
 ):
     pipeline_solids = []
     for solid_def in solid_defs:
@@ -230,7 +230,7 @@ def _build_pipeline_solid_dict(
                     name=alias,
                     definition=solid_def,
                     resource_mapper_fn=resource_mapper_fn,
-                    parent_definition=parent_definition,
+                    container_definition=container_definition,
                 )
             )
 

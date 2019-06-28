@@ -56,6 +56,10 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
     def iterate_solid_defs(self):
         raise NotImplementedError()
 
+    @abstractmethod
+    def resolve_output_to_origin(self, output_name):
+        raise NotImplementedError()
+
     def all_input_output_types(self):
         for input_def in self.input_defs:
             yield input_def.runtime_type
@@ -176,6 +180,9 @@ class SolidDefinition(ISolidDefinition):
     def iterate_solid_defs(self):
         yield self
 
+    def resolve_output_to_origin(self, output_name):
+        return self.output_def_named(output_name)
+
 
 class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
     '''
@@ -246,7 +253,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
 
         self.dependencies = validate_dependency_dict(dependencies)
         dependency_structure, pipeline_solid_dict = create_execution_structure(
-            solid_defs, self.dependencies, parent_definition=self
+            solid_defs, self.dependencies, container_definition=self
         )
 
         self._solid_dict = pipeline_solid_dict
@@ -310,6 +317,19 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
             if mapping.solid_name == solid_name and mapping.input_name == input_name:
                 return mapping
         return None
+
+    def get_output_mapping(self, output_name):
+        for mapping in self.output_mappings:
+            if mapping.definition.name == output_name:
+                return mapping
+        return None
+
+    def resolve_output_to_origin(self, output_name):
+        mapping = self.get_output_mapping(output_name)
+        check.invariant(mapping, 'Can only resolve outputs for valid output names')
+        return self.solid_named(mapping.solid_name).definition.resolve_output_to_origin(
+            mapping.output_name
+        )
 
     def all_runtime_types(self):
         for tt in self.all_input_output_types():

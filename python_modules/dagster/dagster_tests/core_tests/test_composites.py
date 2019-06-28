@@ -14,7 +14,10 @@ from dagster import (
     String,
     dagster_type,
     execute_pipeline,
+    lambda_solid,
     solid,
+    composite_solid,
+    pipeline,
 )
 from dagster.core.utility_solids import (
     create_root_solid,
@@ -77,9 +80,9 @@ def test_composite_config():
 
     inner = CompositeSolidDefinition(name='inner', solid_defs=[configured])
     outer = CompositeSolidDefinition(name='outer', solid_defs=[inner])
-    pipeline = PipelineDefinition(name='composites_pipeline', solid_defs=[outer])
+    pipe = PipelineDefinition(name='composites_pipeline', solid_defs=[outer])
     result = execute_pipeline(
-        pipeline,
+        pipe,
         {'solids': {'outer': {'solids': {'inner': {'solids': {'configured': {'config': 'yes'}}}}}}},
     )
     assert result.success
@@ -96,9 +99,9 @@ def test_composite_config_input():
 
     inner = CompositeSolidDefinition(name='inner', solid_defs=[node_a])
     outer = CompositeSolidDefinition(name='outer', solid_defs=[inner])
-    pipeline = PipelineDefinition(name='composites_pipeline', solid_defs=[outer])
+    pipe = PipelineDefinition(name='composites_pipeline', solid_defs=[outer])
     result = execute_pipeline(
-        pipeline,
+        pipe,
         {
             'solids': {
                 'outer': {
@@ -129,11 +132,9 @@ def test_mapped_composite_config_input():
         solid_defs=[inner],
         input_mappings=[InputDefinition('outer_one').mapping_to('inner', 'inner_one')],
     )
-    pipeline = PipelineDefinition(name='composites_pipeline', solid_defs=[outer])
+    pipe = PipelineDefinition(name='composites_pipeline', solid_defs=[outer])
 
-    result = execute_pipeline(
-        pipeline, {'solids': {'outer': {'inputs': {'outer_one': {'value': 1}}}}}
-    )
+    result = execute_pipeline(pipe, {'solids': {'outer': {'inputs': {'outer_one': {'value': 1}}}}})
     assert result.success
     assert called['node_a']
 
@@ -176,11 +177,9 @@ def test_mapped_composite_input_expectations():
             ).mapping_to('inner', 'inner_one')
         ],
     )
-    pipeline = PipelineDefinition(name='composites_pipeline', solid_defs=[outer])
+    pipe = PipelineDefinition(name='composites_pipeline', solid_defs=[outer])
 
-    result = execute_pipeline(
-        pipeline, {'solids': {'outer': {'inputs': {'outer_one': {'value': 1}}}}}
-    )
+    result = execute_pipeline(pipe, {'solids': {'outer': {'inputs': {'outer_one': {'value': 1}}}}})
     assert result.success
     assert called['node_a']
     assert called['exp_a']
@@ -262,6 +261,35 @@ def test_types_descent():
 
     outer_solid = CompositeSolidDefinition(name='outer_solid', solid_defs=[middle_solid])
 
-    pipeline = PipelineDefinition(name='layered_types', solid_defs=[outer_solid])
+    pipe = PipelineDefinition(name='layered_types', solid_defs=[outer_solid])
 
-    assert pipeline.has_runtime_type('Foo')
+    assert pipe.has_runtime_type('Foo')
+
+
+def test_deep_mapping():
+    @lambda_solid
+    def echo(blah):
+        return blah
+
+    @lambda_solid
+    def emit_foo():
+        return 'foo'
+
+    @composite_solid(outputs=[OutputDefinition(String, 'z')])
+    def az(a):
+        return echo(a)
+
+    @composite_solid(outputs=[OutputDefinition(String, 'y')])
+    def by(b):
+        return az(b)
+
+    @composite_solid(outputs=[OutputDefinition(String, 'x')])
+    def cx(c):
+        return by(c)
+
+    @pipeline
+    def nested():
+        echo(cx(emit_foo()))
+
+    result = execute_pipeline(nested)
+    assert result.result_for_solid('echo').result_value() == 'foo'

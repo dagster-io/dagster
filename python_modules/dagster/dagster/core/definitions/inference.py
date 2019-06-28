@@ -36,6 +36,11 @@ def infer_output_definitions(decorator_name, solid_name, fn):
         )
 
 
+def has_explicit_return_type(fn):
+    signature = funcsigs.signature(fn)
+    return not signature.return_annotation is funcsigs.Signature.empty
+
+
 def _input_param_type(type_annotation):
     if sys.version_info.major >= 3 and type_annotation is not inspect.Parameter.empty:
         return type_annotation

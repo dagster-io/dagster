@@ -29,6 +29,7 @@ from .inference import (
     infer_input_definitions_for_solid,
     infer_input_definitions_for_composite_solid,
     infer_output_definitions,
+    has_explicit_return_type,
 )
 from .config import resolve_config_field
 
@@ -597,11 +598,14 @@ class _CompositeSolid(object):
             if self.input_defs is not None
             else infer_input_definitions_for_composite_solid(self.name, fn)
         )
-        output_defs = (
-            self.output_defs
-            if self.output_defs is not None
-            else infer_output_definitions('@composite_solid', self.name, fn)
-        )
+
+        explicit_outputs = False
+        if self.output_defs is not None:
+            explicit_outputs = True
+            output_defs = self.output_defs
+        else:
+            explicit_outputs = has_explicit_return_type(fn)
+            output_defs = infer_output_definitions('@composite_solid', self.name, fn)
 
         _validate_solid_fn(self.name, fn, input_defs, exclude_nothing=False)
 
@@ -622,23 +626,39 @@ class _CompositeSolid(object):
             '"{context.name}" expected "{self.name}"'.format(context=context, self=self),
         )
 
-        # line up input mappings in input definition order
+        # line up mappings in definition order
         input_mappings = []
         for defn in input_defs:
             mapping = context.input_mapping_dict.get(defn.name)
             if mapping is None:
                 raise DagsterInvalidDefinitionError(
-                    "@composite_solid '{solid_name}' has unused input mapping '{input_name}'."
+                    "@composite_solid '{solid_name}' has unmapped input '{input_name}'. "
                     "Remove it or pass it to the appropriate solid invocation.".format(
                         solid_name=self.name, input_name=defn.name
                     )
                 )
             input_mappings.append(mapping)
 
+        output_mappings = []
+        for defn in output_defs:
+            mapping = context.output_mapping_dict.get(defn.name)
+            if mapping is None:
+                # if we inferred outputs we will be flexible and either take a mapping or not
+                if not explicit_outputs:
+                    continue
+
+                raise DagsterInvalidDefinitionError(
+                    "@composite_solid '{solid_name}' has unmapped output '{output_name}'. "
+                    "Remove it or return a value from the appropriate solid invocation.".format(
+                        solid_name=self.name, output_name=defn.name
+                    )
+                )
+            output_mappings.append(mapping)
+
         return CompositeSolidDefinition(
             name=self.name,
             input_mappings=input_mappings,
-            output_mappings=context.output_mappings,
+            output_mappings=output_mappings,
             dependencies=context.dependencies,
             solid_defs=context.solid_defs,
             description=self.description,
@@ -727,7 +747,7 @@ class _Pipeline:
         try:
             fn()
         finally:
-            context = exit_composition([])
+            context = exit_composition()
 
         return PipelineDefinition(
             name=self.name,

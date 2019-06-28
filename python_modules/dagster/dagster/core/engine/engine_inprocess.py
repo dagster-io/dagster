@@ -313,6 +313,7 @@ def _create_step_output_events(step_context, result):
 
     try:
         value = step_output.runtime_type.coerce_runtime_value(result.value)
+
         step_output_handle = StepOutputHandle.from_step(step=step, output_name=result.output_name)
 
         object_key = step_context.intermediates_manager.set_intermediate(
