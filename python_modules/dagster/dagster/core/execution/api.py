@@ -114,7 +114,9 @@ def _execute_pipeline_iterator(context_or_failure_event):
         )
     )
 
-    check.invariant(len(steps[0].step_inputs) == 0)
+    check.invariant(
+        len([step_input for step_input in steps[0].step_inputs if step_input.is_from_output]) == 0
+    )
 
     pipeline_success = True
 

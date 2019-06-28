@@ -222,7 +222,7 @@ export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_depend
 
 export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs {
   __typename: "ExecutionStepInput";
-  dependsOn: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn;
+  dependsOn: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn | null;
 }
 
 export interface PipelineRunLogsUpdateFragment_executionPlan_steps {

@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.definitions import Solid, SolidHandle, SolidInputHandle, SolidOutputHandle, Result
+from dagster.core.definitions import Solid, SolidHandle, SolidInputHandle, SolidOutputHandle, Output
 
 from .objects import (
     ExecutionStep,
@@ -15,15 +15,15 @@ JOIN_OUTPUT = 'join_output'
 
 
 def __select_first_join(_context, inputs):
-    yield Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
+    yield Output(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
 
 
 def __merge_join(_context, inputs):
-    yield Result(output_name=JOIN_OUTPUT, value=list(inputs.values()))
+    yield Output(output_name=JOIN_OUTPUT, value=list(inputs.values()))
 
 
 def __empty_join(_context, _inputs):
-    yield Result(output_name=JOIN_OUTPUT, value=None)
+    yield Output(output_name=JOIN_OUTPUT, value=None)
 
 
 def create_join_step(pipeline_name, solid, key_suffix, prev_steps, prev_output_name, handle):

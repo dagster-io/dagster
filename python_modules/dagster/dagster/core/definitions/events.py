@@ -73,8 +73,8 @@ EntryDataUnion = (
 )
 
 
-class Result(namedtuple('_Result', 'value output_name')):
-    '''A solid compute function return a stream of Result objects.
+class Output(namedtuple('_Result', 'value output_name')):
+    '''A solid compute function return a stream of Output objects.
     An implementator of a SolidDefinition must provide a compute that
     yields objects of this type.
 
@@ -84,13 +84,13 @@ class Result(namedtuple('_Result', 'value output_name')):
 '''
 
     def __new__(cls, value, output_name=DEFAULT_OUTPUT):
-        return super(Result, cls).__new__(cls, value, check.str_param(output_name, 'output_name'))
+        return super(Output, cls).__new__(cls, value, check.str_param(output_name, 'output_name'))
 
 
 class Materialization(namedtuple('_Materialization', 'label description metadata_entries')):
     '''A value materialized by an execution step.
 
-    As opposed to Results, Materializations can not be passed to other solids and persistence
+    As opposed to Outputs, Materializations can not be passed to other solids and persistence
     is not controlled by dagster. They are a useful way to communicate side effects to the system
     and display them to the end user.
 
@@ -123,7 +123,7 @@ class Materialization(namedtuple('_Materialization', 'label description metadata
 class ExpectationResult(
     namedtuple('_ExpectationResult', 'success label description metadata_entries')
 ):
-    ''' Result of an expectation callback.
+    ''' Output of an expectation callback.
 
     When Expectations are evaluated in the callback passed to ExpectationDefinitions,
     the user must return an ExpectationResult object from the callback.

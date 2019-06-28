@@ -18,7 +18,7 @@ from .environment_schema import (
 
 from .expectation import ExpectationDefinition
 
-from .events import ExpectationResult, Result, Materialization, EventMetadataEntry
+from .events import ExpectationResult, Output, Materialization, EventMetadataEntry
 
 from .handle import ExecutionTargetHandle, LoaderEntrypoint
 

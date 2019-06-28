@@ -1,26 +1,25 @@
 import csv
 import os
-
 from collections import OrderedDict
 from copy import deepcopy
 
 from dagster import (
-    ExecutionTargetHandle,
-    as_dagster_type,
     DependencyDefinition,
-    input_schema,
+    ExecutionTargetHandle,
     InputDefinition,
-    lambda_solid,
-    output_schema,
+    Materialization,
     OutputDefinition,
     Path,
     PipelineDefinition,
+    as_dagster_type,
+    input_schema,
+    lambda_solid,
+    output_schema,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import ExecutionSelector
 from dagster.core.utils import make_new_run_id
 from dagster.utils import script_relative_path
-
 from dagster_graphql.implementation.pipeline_execution_manager import (
     MultiprocessingExecutionManager,
 )
@@ -49,7 +48,7 @@ def df_output_schema(_context, path, value):
         writer.writeheader()
         writer.writerows(rowdicts=value)
 
-    return path
+    return Materialization.file(path)
 
 
 PoorMansDataFrame = as_dagster_type(

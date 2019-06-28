@@ -21,11 +21,11 @@ def deregister_repository():
 
 
 def yield_result(value, output_name='result'):
-    '''Explicitly yield a Result.
+    '''Explicitly yield a Output.
 
     Args:
-        value (Any): The value of the Result to yield.
-        output_name (Optional[str]): The name of the Result to yield. Default: 'result'.
+        value (Any): The value of the Output to yield.
+        output_name (Optional[str]): The name of the Output to yield. Default: 'result'.
 
     '''
     return MANAGER_FOR_NOTEBOOK_INSTANCE.yield_result(value, output_name)

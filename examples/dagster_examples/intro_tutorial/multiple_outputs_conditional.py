@@ -1,5 +1,5 @@
 # pylint: disable=no-value-for-parameter
-from dagster import Field, Int, OutputDefinition, Result, String, pipeline, solid
+from dagster import Field, Int, OutputDefinition, Output, String, pipeline, solid
 
 
 @solid(
@@ -11,9 +11,9 @@ from dagster import Field, Int, OutputDefinition, Result, String, pipeline, soli
 )
 def conditional(context):
     if context.solid_config == 'out_one':
-        yield Result(23, 'out_one')
+        yield Output(23, 'out_one')
     elif context.solid_config == 'out_two':
-        yield Result(45, 'out_two')
+        yield Output(45, 'out_two')
     else:
         raise Exception('invalid config')
 

@@ -53,8 +53,8 @@ def _make_airflow_dag(
     op_kwargs=None,
     operator=DagsterPythonOperator,
 ):
-
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
+    check.str_param(pipeline_name, 'pipeline_name')
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     mode = check.opt_str_param(mode, 'mode')
 
@@ -113,16 +113,43 @@ def _make_airflow_dag(
 
         for solid_step in solid_steps:
             for step_input in solid_step.step_inputs:
-                prev_solid_name = execution_plan.get_step_by_key(
-                    step_input.prev_output_handle.step_key
-                ).solid_name
-                if solid_name != prev_solid_name:
-                    tasks[prev_solid_name].set_downstream(task)
+                if step_input.is_from_output:
+                    prev_solid_name = execution_plan.get_step_by_key(
+                        step_input.prev_output_handle.step_key
+                    ).solid_name
+                    if solid_name != prev_solid_name:
+                        tasks[prev_solid_name].set_downstream(task)
 
     return (dag, [tasks[solid_name] for solid_name in coalesced_plan.keys()])
 
 
 def make_airflow_dag(
+    module_name,
+    pipeline_name,
+    environment_dict=None,
+    mode=None,
+    dag_id=None,
+    dag_description=None,
+    dag_kwargs=None,
+    op_kwargs=None,
+):
+    check.str_param(module_name, 'module_name')
+
+    handle = ExecutionTargetHandle.for_pipeline_module(module_name, pipeline_name)
+
+    return _make_airflow_dag(
+        handle=handle,
+        pipeline_name=pipeline_name,
+        environment_dict=environment_dict,
+        mode=mode,
+        dag_id=dag_id,
+        dag_description=dag_description,
+        dag_kwargs=dag_kwargs,
+        op_kwargs=op_kwargs,
+    )
+
+
+def make_airflow_dag_for_handle(
     handle,
     pipeline_name,
     environment_dict=None,
@@ -145,6 +172,36 @@ def make_airflow_dag(
 
 
 def make_airflow_dag_containerized(
+    module_name,
+    pipeline_name,
+    image,
+    environment_dict=None,
+    mode=None,
+    dag_id=None,
+    dag_description=None,
+    dag_kwargs=None,
+    op_kwargs=None,
+):
+    check.str_param(module_name, 'module_name')
+
+    handle = ExecutionTargetHandle.for_pipeline_module(module_name, pipeline_name)
+
+    op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
+    op_kwargs['image'] = image
+    return _make_airflow_dag(
+        handle=handle,
+        pipeline_name=pipeline_name,
+        environment_dict=environment_dict,
+        mode=mode,
+        dag_id=dag_id,
+        dag_description=dag_description,
+        dag_kwargs=dag_kwargs,
+        op_kwargs=op_kwargs,
+        operator=DagsterDockerOperator,
+    )
+
+
+def make_airflow_dag_containerized_for_handle(
     handle,
     pipeline_name,
     image,

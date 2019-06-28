@@ -1,9 +1,9 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from .dependency import DependencyDefinition, SolidInvocation
+from .dependency import DependencyDefinition, SolidInvocation, MultiDependencyDefinition
 from .solid import ISolidDefinition
 from .output import OutputDefinition
 
@@ -20,6 +20,15 @@ def exit_composition(output):
 
 def current_context():
     return _composition_stack[-1]
+
+
+def assert_in_composition(solid_name):
+    if len(_composition_stack) < 1:
+        raise DagsterInvariantViolationError(
+            'Attempted to call solid "{solid_name}" outside of a composition function. '
+            'Calling solids is only valid in a function decorated with '
+            '@pipeline or @composite_solid.'.format(solid_name=solid_name)
+        )
 
 
 class InProgressCompositionContext:
@@ -62,10 +71,21 @@ class CompleteCompositionContext(
                 check.failed('Detected conflicting solid definitions with the same name')
             solid_def_dict[def_name] = invocation.solid_def
 
-            dep_dict[SolidInvocation(invocation.solid_def.name, invocation.solid_name)] = {
-                input_name: DependencyDefinition(solid_name, output_name)
-                for input_name, (solid_name, output_name) in invocation.input_bindings.items()
-            }
+            deps = {}
+            for input_name, node in invocation.input_bindings.items():
+                if isinstance(node, InvokedSolidOutputHandle):
+                    solid_name, output_name = node
+                    deps[input_name] = DependencyDefinition(solid_name, output_name)
+                elif isinstance(node, list) and all(
+                    map(lambda item: isinstance(item, InvokedSolidOutputHandle), node)
+                ):
+                    deps[input_name] = MultiDependencyDefinition(
+                        [DependencyDefinition(call.solid_name, call.output_name) for call in node]
+                    )
+                else:
+                    check.failed('Unexpected input binding - got {node}'.format(node=node))
+
+            dep_dict[SolidInvocation(invocation.solid_def.name, invocation.solid_name)] = deps
 
             for input_name, node in invocation.input_mappings.items():
                 input_mapping_dict[node.input_def.name] = node.input_def.mapping_to(
@@ -87,6 +107,8 @@ class CallableSolidNode:
         self.solid_name = check.opt_str_param(solid_name, 'solid_name', solid_def.name)
 
     def __call__(self, *args, **kwargs):
+        assert_in_composition(self.solid_name)
+
         input_bindings = {}
         input_mappings = {}
 
@@ -106,76 +128,23 @@ class CallableSolidNode:
 
             input_name = self.solid_def.input_defs[idx].name
 
-            if isinstance(output_node, InvokedSolidOutputHandle):
-                input_bindings[input_name] = output_node
-            elif isinstance(output_node, InputMappingNode):
-                input_mappings[input_name] = output_node
-            elif isinstance(output_node, tuple) and all(
-                map(lambda item: isinstance(item, InvokedSolidOutputHandle), output_node)
-            ):
-                raise DagsterInvalidDefinitionError(
-                    'In {source} {name} received a tuple of multiple outputs for '
-                    'input position {idx} in solid invocation {solid_name}. '
-                    'Must pass individual output, available from tuple: {options}'.format(
-                        source=current_context().source,
-                        name=current_context().name,
-                        idx=idx,
-                        solid_name=self.solid_name,
-                        options=output_node._fields,
-                    )
-                )
-            else:
-                raise DagsterInvalidDefinitionError(
-                    'In {source} {name} received invalid type {type} for input '
-                    '{input_name} at postition {idx} in solid invocation {solid_name}. '
-                    'Must pass the output from previous solid invocations or inputs to the '
-                    'composition function as inputs when invoking solids during composition.'.format(
-                        source=current_context().source,
-                        name=current_context().name,
-                        type=type(output_node),
-                        idx={idx},
-                        input_name=input_name,
-                        solid_name=self.solid_name,
-                    )
-                )
+            self._process_argument_node(
+                output_node,
+                input_name,
+                input_mappings,
+                input_bindings,
+                '(at position {idx})'.format(idx=idx),
+            )
 
         # then **kwargs
         for input_name, output_node in kwargs.items():
-            if isinstance(output_node, InvokedSolidOutputHandle):
-                input_bindings[input_name] = output_node
-            elif isinstance(output_node, InputMappingNode):
-                input_mappings[input_name] = output_node
-            elif isinstance(output_node, tuple) and all(
-                map(lambda item: isinstance(item, InvokedSolidOutputHandle), output_node)
-            ):
-                raise DagsterInvalidDefinitionError(
-                    'In {source} {name} received a tuple of multiple outputs for '
-                    'the input {input_name} in solid invocation {solid_name}. '
-                    'Must pass individual output, available from tuple: {options}'.format(
-                        name=current_context().name,
-                        source=current_context().source,
-                        input_name=input_name,
-                        solid_name=self.solid_name,
-                        options=output_node._fields,
-                    )
-                )
-            else:
-                raise DagsterInvalidDefinitionError(
-                    'In {source} {name} received invalid type {type} for input '
-                    '{input_name} in solid invocation {solid_name}. '
-                    'Must pass the output from previous solid invocations or inputs to the composition function '
-                    'as inputs when invoking solids during composition.'.format(
-                        source=current_context().source,
-                        name=current_context().name,
-                        type=type(output_node),
-                        input_name=input_name,
-                        solid_name=self.solid_name,
-                    )
-                )
+            self._process_argument_node(
+                output_node, input_name, input_mappings, input_bindings, '(passed by keyword)'
+            )
 
         if current_context().has_seen_invocation(self.solid_name):
             raise DagsterInvalidDefinitionError(
-                '{source} {name} invokd the same solid ({solid_name}) twice without aliasing.'.format(
+                '{source} {name} invoked the same solid ({solid_name}) twice without aliasing.'.format(
                     source=current_context().source,
                     name=current_context().name,
                     solid_name=self.solid_name,
@@ -198,6 +167,62 @@ class CallableSolidNode:
             **{output: InvokedSolidOutputHandle(self.solid_name, output) for output in outputs}
         )
 
+    def _process_argument_node(
+        self, output_node, input_name, input_mappings, input_bindings, arg_desc
+    ):
+
+        if isinstance(output_node, InvokedSolidOutputHandle):
+            input_bindings[input_name] = output_node
+        elif isinstance(output_node, InputMappingNode):
+            input_mappings[input_name] = output_node
+        elif isinstance(output_node, list):
+            if all(map(lambda item: isinstance(item, InvokedSolidOutputHandle), output_node)):
+                input_bindings[input_name] = output_node
+
+            else:
+                raise DagsterInvalidDefinitionError(
+                    'In {source} {name} received a list containing invalid types for input '
+                    '"{input_name}" {arg_desc} in solid invocation {solid_name}. '
+                    'Lists can only contain the output from previous solid invocations.'.format(
+                        source=current_context().source,
+                        name=current_context().name,
+                        arg_desc=arg_desc,
+                        input_name=input_name,
+                        solid_name=self.solid_name,
+                    )
+                )
+
+        elif isinstance(output_node, tuple) and all(
+            map(lambda item: isinstance(item, InvokedSolidOutputHandle), output_node)
+        ):
+            raise DagsterInvalidDefinitionError(
+                'In {source} {name} received a tuple of multiple outputs for '
+                'input "{input_name}" {arg_desc} in solid invocation {solid_name}. '
+                'Must pass individual output, available from tuple: {options}'.format(
+                    source=current_context().source,
+                    name=current_context().name,
+                    arg_desc=arg_desc,
+                    input_name=input_name,
+                    solid_name=self.solid_name,
+                    options=output_node._fields,
+                )
+            )
+
+        else:
+            raise DagsterInvalidDefinitionError(
+                'In {source} {name} received invalid type {type} for input '
+                '"{input_name}" {arg_desc} in solid invocation "{solid_name}". '
+                'Must pass the output from previous solid invocations or inputs to the '
+                'composition function as inputs when invoking solids during composition.'.format(
+                    source=current_context().source,
+                    name=current_context().name,
+                    type=type(output_node),
+                    arg_desc=arg_desc,
+                    input_name=input_name,
+                    solid_name=self.solid_name,
+                )
+            )
+
 
 class InvokedSolidNode(
     namedtuple('_InvokedSolidNode', 'solid_name solid_def input_bindings input_mappings')
@@ -210,9 +235,7 @@ class InvokedSolidNode(
             cls,
             check.str_param(solid_name, 'solid_name'),
             check.inst_param(solid_def, 'solid_def', ISolidDefinition),
-            check.dict_param(
-                input_bindings, 'input_bindings', key_type=str, value_type=InvokedSolidOutputHandle
-            ),
+            check.dict_param(input_bindings, 'input_bindings', key_type=str),
             check.dict_param(
                 input_mappings, 'input_mappings', key_type=str, value_type=InputMappingNode
             ),

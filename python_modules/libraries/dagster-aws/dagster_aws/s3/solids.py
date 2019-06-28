@@ -6,7 +6,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     Materialization,
-    Result,
+    Output,
     String,
     check,
     input_schema,
@@ -80,4 +80,4 @@ def file_handle_to_s3(context, file_handle):
             metadata_entries=[EventMetadataEntry.path(s3_file_handle.s3_path, label=last_key(key))],
         )
 
-        yield Result(value=s3_file_handle, output_name='s3_file_handle')
+        yield Output(value=s3_file_handle, output_name='s3_file_handle')

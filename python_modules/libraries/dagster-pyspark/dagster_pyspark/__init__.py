@@ -1,14 +1,16 @@
 import os
 
-from pyspark.sql import SparkSession, DataFrame as NativeSparkDataFrame
 from pyspark.rdd import RDD
+from pyspark.sql import DataFrame as NativeSparkDataFrame
+from pyspark.sql import SparkSession
 
 from dagster import (
     Bool,
     Dict,
     Field,
-    Selector,
+    Materialization,
     Path,
+    Selector,
     String,
     as_dagster_type,
     check,
@@ -19,9 +21,7 @@ from dagster import (
 from dagster.core.definitions.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.runtime import define_any_type
-
 from dagster_spark.configs_spark import spark_config
-
 from dagster_spark.utils import flatten_dict
 
 
@@ -112,7 +112,7 @@ def spark_df_output_schema(_context, file_type, file_options, spark_df):
         spark_df.write.csv(
             file_options['path'], header=file_options.get('header'), sep=file_options.get('sep')
         )
-        return file_options['path']
+        return Materialization.file(file_options['path'])
     else:
         check.failed('Unsupported file type: {}'.format(file_type))
 

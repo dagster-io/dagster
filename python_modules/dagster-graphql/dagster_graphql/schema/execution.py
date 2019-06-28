@@ -53,7 +53,7 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     type = dauphin.Field(dauphin.NonNull('RuntimeType'))
-    dependsOn = dauphin.Field(dauphin.NonNull('ExecutionStep'))
+    dependsOn = dauphin.Field('ExecutionStep')
 
     def __init__(self, execution_plan, step_input):
         super(DauphinExecutionStepInput, self).__init__()
@@ -67,10 +67,11 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
         return to_dauphin_runtime_type(self._step_input.runtime_type)
 
     def resolve_dependsOn(self, graphene_info):
-        return graphene_info.schema.type_named('ExecutionStep')(
-            self._execution_plan,
-            self._execution_plan.get_step_by_key(self._step_input.prev_output_handle.step_key),
-        )
+        if self._step_input.is_from_output:
+            return graphene_info.schema.type_named('ExecutionStep')(
+                self._execution_plan,
+                self._execution_plan.get_step_by_key(self._step_input.prev_output_handle.step_key),
+            )
 
 
 class DauphinStepKind(dauphin.Enum):

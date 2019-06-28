@@ -8,7 +8,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    Result,
+    Output,
     RunConfig,
     SolidDefinition,
     check,
@@ -188,12 +188,12 @@ def test_do_not_yield_result():
         name='do_not_yield_result',
         inputs=[],
         outputs=[OutputDefinition()],
-        compute_fn=lambda *_args, **_kwargs: Result('foo'),
+        compute_fn=lambda *_args, **_kwargs: Output('foo'),
     )
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match='Transform for solid do_not_yield_result returned a Result',
+        match='Transform for solid do_not_yield_result returned a Output',
     ):
         execute_isolated_solid(solid_inst)
 
@@ -216,7 +216,7 @@ def test_single_transform_returning_result():
     solid_inst = single_output_transform(
         'test_return_result',
         inputs=[],
-        compute_fn=lambda *_args, **_kwargs: Result(None),
+        compute_fn=lambda *_args, **_kwargs: Output(None),
         output=OutputDefinition(),
     )
 

@@ -1,4 +1,6 @@
-from dagster import PipelineDefinition, solid
+# pylint: disable=no-value-for-parameter
+
+from dagster import pipeline, solid
 
 
 @solid
@@ -11,9 +13,11 @@ def hello_error(context):
     raise Exception('Somebody set up us the bomb')
 
 
-def define_hello_logs_pipeline():
-    return PipelineDefinition(name='hello_logs', solid_defs=[hello_logs])
+@pipeline
+def hello_logs_pipeline():
+    hello_logs()
 
 
-def define_hello_error_pipeline():
-    return PipelineDefinition(name='hello_error', solid_defs=[hello_error])
+@pipeline
+def hello_error_pipeline():
+    hello_error()

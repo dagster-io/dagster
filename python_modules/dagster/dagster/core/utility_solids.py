@@ -1,4 +1,4 @@
-from dagster import InputDefinition, OutputDefinition, Result, SolidDefinition, check, lambda_solid
+from dagster import InputDefinition, OutputDefinition, Output, SolidDefinition, check, lambda_solid
 
 
 def _compute_fn(context, inputs):
@@ -14,7 +14,7 @@ def _compute_fn(context, inputs):
     result = []
     result.extend(passed_rows)
     result.append({context.solid.name: 'transform_called'})
-    yield Result(result)
+    yield Output(result)
 
 
 def define_stub_solid(name, value):

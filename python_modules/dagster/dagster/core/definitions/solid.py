@@ -104,12 +104,12 @@ class SolidDefinition(ISolidDefinition):
         name (str): Name of the solid.
         inputs (List[InputDefinition]): Inputs of the solid.
 
-        compute_fn (Callable[[SystemComputeExecutionContext, ], Iterable[Union[Result,
+        compute_fn (Callable[[SystemComputeExecutionContext, ], Iterable[Union[Output,
             Materialization]]]): The core of the solid, the function that does the actual
             computation. The arguments passed to this function after context are deteremined by
             ``inputs``.
 
-            This function yields :py:class:`Result` according to ``outputs`` or
+            This function yields :py:class:`Output` according to ``outputs`` or
             :py:class:`Materialization`.
 
         outputs (List[OutputDefinition]): Outputs of the solid.
@@ -124,7 +124,7 @@ class SolidDefinition(ISolidDefinition):
         .. code-block:: python
 
             def _add_one(_context, inputs):
-                yield Result(inputs["num"] + 1)
+                yield Output(inputs["num"] + 1)
 
             SolidDefinition(
                 name="add_one",

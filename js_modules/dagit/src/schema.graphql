@@ -201,7 +201,7 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
 type ExecutionStepInput {
   name: String!
   type: RuntimeType!
-  dependsOn: ExecutionStep!
+  dependsOn: ExecutionStep
 }
 
 type ExecutionStepOutput {

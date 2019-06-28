@@ -25,33 +25,6 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         '__typename': 'ExecutionStepStartEvent',
                         'level': 'INFO',
                         'step': {
-                            'kind': 'INPUT_THUNK'
-                        }
-                    },
-                    {
-                        '__typename': 'ExecutionStepOutputEvent',
-                        'intermediateMaterialization': {
-                            'description': None
-                        },
-                        'level': 'INFO',
-                        'outputName': 'input_thunk_output',
-                        'step': {
-                            'key': 'sum_solid.inputs.num.read',
-                            'kind': 'INPUT_THUNK'
-                        }
-                    },
-                    {
-                        '__typename': 'LogMessageEvent',
-                        'level': 'INFO'
-                    },
-                    {
-                        '__typename': 'ExecutionStepSuccessEvent',
-                        'level': 'INFO'
-                    },
-                    {
-                        '__typename': 'ExecutionStepStartEvent',
-                        'level': 'INFO',
-                        'step': {
                             'kind': 'COMPUTE'
                         }
                     },

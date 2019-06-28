@@ -9,7 +9,7 @@ from dagster import (
     List,
     OutputDefinition,
     Path,
-    Result,
+    Output,
     SolidDefinition,
     Nothing,
 )
@@ -68,7 +68,7 @@ class BigQuerySolidDefinition(SolidDefinition):
                 )
                 results.append(context.resources.bq.query(sql_query, job_config=cfg).to_dataframe())
 
-            yield Result(results)
+            yield Output(results)
 
         super(BigQuerySolidDefinition, self).__init__(
             name=name,
@@ -124,7 +124,7 @@ class BigQueryLoadSolidDefinition(SolidDefinition):
                 source, inputs.get('source'), destination, job_config=cfg
             ).result()
 
-            yield Result(None)
+            yield Output(None)
 
         super(BigQueryLoadSolidDefinition, self).__init__(
             name=name,
@@ -152,7 +152,7 @@ class BigQueryCreateDatasetSolidDefinition(SolidDefinition):
             (dataset, exists_ok) = [context.solid_config.get(k) for k in ('dataset', 'exists_ok')]
             context.log.info('executing BQ create_dataset for dataset %s' % (dataset))
             context.resources.bq.create_dataset(dataset, exists_ok)
-            yield Result(None)
+            yield Output(None)
 
         super(BigQueryCreateDatasetSolidDefinition, self).__init__(
             name=name,
@@ -186,7 +186,7 @@ class BigQueryDeleteDatasetSolidDefinition(SolidDefinition):
             context.resources.bq.delete_dataset(
                 dataset, delete_contents=delete_contents, not_found_ok=not_found_ok
             )
-            yield Result(None)
+            yield Output(None)
 
         super(BigQueryDeleteDatasetSolidDefinition, self).__init__(
             name=name,

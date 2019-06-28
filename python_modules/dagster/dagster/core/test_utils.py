@@ -4,7 +4,7 @@ from functools import wraps
 from dagster import (
     DagsterEvaluateConfigValueError,
     DagsterInvariantViolationError,
-    Result,
+    Output,
     SolidDefinition,
 )
 
@@ -14,7 +14,7 @@ from dagster.core.types.evaluator import evaluate_config
 def single_output_transform(name, inputs, compute_fn, output, description=None):
     '''It is commmon to want a Solid that has only inputs, a single output (with the default
     name), and no config. So this is a helper function to do that. This compute function
-    must return the naked return value (as opposed to a Result object).
+    must return the naked return value (as opposed to a Output object).
 
     Args:
         name (str): Name of the solid.
@@ -43,12 +43,12 @@ def single_output_transform(name, inputs, compute_fn, output, description=None):
 
     def _new_compute_fn(context, inputs):
         value = compute_fn(context, inputs)
-        if isinstance(value, Result):
+        if isinstance(value, Output):
             raise DagsterInvariantViolationError(
-                '''Single output compute Solid {name} returned a Result. Just return
-                value directly without wrapping it in Result'''
+                '''Single output compute Solid {name} returned a Output. Just return
+                value directly without wrapping it in Output'''
             )
-        yield Result(value=value)
+        yield Output(value=value)
 
     return SolidDefinition(
         name=name,

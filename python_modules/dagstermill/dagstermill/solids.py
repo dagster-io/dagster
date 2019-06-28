@@ -19,7 +19,7 @@ from dagster import (
     InputDefinition,
     Materialization,
     OutputDefinition,
-    Result,
+    Output,
     SolidDefinition,
     check,
     seven,
@@ -242,7 +242,7 @@ def _dm_solid_transform(name, notebook_path):
                 if output_name in data_dict:
                     value = read_value(output_def.runtime_type, data_dict[output_name])
 
-                    yield Result(value, output_name)
+                    yield Output(value, output_name)
 
             for key, value in output_nb.scraps.items():
                 print(output_nb.scraps)

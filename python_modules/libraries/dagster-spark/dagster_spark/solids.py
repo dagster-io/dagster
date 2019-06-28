@@ -1,7 +1,7 @@
 import functools
 import os
 
-from dagster import check, InputDefinition, List, OutputDefinition, Path, Result, SolidDefinition
+from dagster import check, InputDefinition, List, OutputDefinition, Path, Output, SolidDefinition
 
 
 from .configs import define_spark_config
@@ -96,7 +96,7 @@ class SparkSolidDefinition(SolidDefinition):
             if retcode != 0:
                 raise SparkSolidError('Spark job failed. Please consult your logs.')
 
-            yield Result(context.solid_config.get('spark_outputs'), 'paths')
+            yield Output(context.solid_config.get('spark_outputs'), 'paths')
 
         super(SparkSolidDefinition, self).__init__(
             name=name,

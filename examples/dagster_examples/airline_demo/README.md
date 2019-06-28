@@ -491,7 +491,7 @@ newly created table.
                 'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
             )
             context.resources.db_info.engine.execute(text(sql_statement))
-            yield Result(value=table_name, output_name='result')
+            yield Output(value=table_name, output_name='result')
 
         return SolidDefinition(
             name=name,

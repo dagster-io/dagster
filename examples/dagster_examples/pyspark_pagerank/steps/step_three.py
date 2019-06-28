@@ -1,7 +1,9 @@
+# pylint: disable=no-value-for-parameter
+
 import re
 from operator import add
 
-from dagster import PipelineDefinition, solid, InputDefinition, Path, ModeDefinition
+from dagster import pipeline, solid, InputDefinition, Path, ModeDefinition
 from dagster_pyspark import spark_session_resource
 
 
@@ -48,9 +50,6 @@ def whole_pipeline_solid_using_context(context, pagerank_data):
     return ranks.collect()
 
 
-def define_pyspark_pagerank_step_three():
-    return PipelineDefinition(
-        name='pyspark_pagerank_step_three',
-        solid_defs=[whole_pipeline_solid_using_context],
-        mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})],
-    )
+@pipeline(mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})])
+def pyspark_pagerank_step_three():
+    whole_pipeline_solid_using_context()

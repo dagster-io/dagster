@@ -1,5 +1,5 @@
 # pylint: disable=no-value-for-parameter
-from dagster import Int, MultipleResults, OutputDefinition, pipeline, solid
+from dagster import Int, MultipleOutputs, OutputDefinition, pipeline, solid
 
 
 @solid(
@@ -9,7 +9,7 @@ from dagster import Int, MultipleResults, OutputDefinition, pipeline, solid
     ]
 )
 def return_dict_results(_context):
-    return MultipleResults.from_dict({'out_one': 23, 'out_two': 45})
+    return MultipleOutputs.from_dict({'out_one': 23, 'out_two': 45})
 
 
 @solid

@@ -9,10 +9,10 @@ from dagster import (
     DependencyDefinition,
     Field,
     InputDefinition,
-    MultipleResults,
+    MultipleOutputs,
     OutputDefinition,
     PipelineDefinition,
-    Result,
+    Output,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -34,19 +34,19 @@ def execute_isolated_solid(solid_def, environment_dict=None):
 
 
 def test_multiple_single_result():
-    mr = MultipleResults(Result('value', 'output_one'))
-    assert mr.results == [Result('value', 'output_one')]
+    mr = MultipleOutputs(Output('value', 'output_one'))
+    assert mr.results == [Output('value', 'output_one')]
 
 
 def test_multiple_double_result():
-    mr = MultipleResults(Result('value_one', 'output_one'), Result('value_two', 'output_two'))
-    assert mr.results == [Result('value_one', 'output_one'), Result('value_two', 'output_two')]
+    mr = MultipleOutputs(Output('value_one', 'output_one'), Output('value_two', 'output_two'))
+    assert mr.results == [Output('value_one', 'output_one'), Output('value_two', 'output_two')]
 
 
 def test_multiple_dict():
-    mr = MultipleResults.from_dict({'output_one': 'value_one', 'output_two': 'value_two'})
+    mr = MultipleOutputs.from_dict({'output_one': 'value_one', 'output_two': 'value_two'})
     assert set(mr.results) == set(
-        [Result('value_one', 'output_one'), Result('value_two', 'output_two')]
+        [Output('value_one', 'output_one'), Output('value_two', 'output_two')]
     )
 
 
@@ -101,7 +101,7 @@ def test_solid_one_output():
 def test_solid_yield():
     @solid(outputs=[OutputDefinition()])
     def hello_world(_context):
-        yield Result(value={'foo': 'bar'})
+        yield Output(value={'foo': 'bar'})
 
     result = execute_isolated_solid(hello_world)
 
@@ -113,7 +113,7 @@ def test_solid_yield():
 def test_solid_result_return():
     @solid(outputs=[OutputDefinition()])
     def hello_world(_context):
-        return Result(value={'foo': 'bar'})
+        return Output(value={'foo': 'bar'})
 
     result = execute_isolated_solid(hello_world)
 
@@ -125,9 +125,9 @@ def test_solid_result_return():
 def test_solid_multiple_outputs():
     @solid(outputs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
     def hello_world(_context):
-        return MultipleResults(
-            Result(value={'foo': 'left'}, output_name='left'),
-            Result(value={'foo': 'right'}, output_name='right'),
+        return MultipleOutputs(
+            Output(value={'foo': 'left'}, output_name='left'),
+            Output(value={'foo': 'right'}, output_name='right'),
         )
 
     result = execute_isolated_solid(hello_world)
@@ -142,7 +142,7 @@ def test_solid_multiple_outputs():
 def test_dict_multiple_outputs():
     @solid(outputs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
     def hello_world(_context):
-        return MultipleResults.from_dict({'left': {'foo': 'left'}, 'right': {'foo': 'right'}})
+        return MultipleOutputs.from_dict({'left': {'foo': 'left'}, 'right': {'foo': 'right'}})
 
     result = execute_isolated_solid(hello_world)
 

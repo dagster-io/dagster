@@ -3,41 +3,32 @@ import sys
 from future.utils import raise_from
 
 from dagster import check
-
-from dagster.utils.timing import time_execution_scope
-
+from dagster.core.definitions import ExpectationResult, Materialization, Output
 from dagster.core.errors import (
     DagsterError,
+    DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
     DagsterRuntimeCoercionError,
-    DagsterExecutionStepExecutionError,
-    DagsterTypeError,
     DagsterStepOutputNotFoundError,
+    DagsterTypeError,
     user_code_error_boundary,
 )
-
+from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.config import ExecutorConfig
-
 from dagster.core.execution.context.system import (
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
-
-from dagster.core.definitions import Materialization, ExpectationResult, Result
-
-from dagster.core.events import DagsterEvent, DagsterEventType
-
-from dagster.utils.error import serializable_error_info_from_exc_info
-
 from dagster.core.execution.plan.objects import (
     ExecutionStep,
-    StepOutputHandle,
-    StepOutputData,
     StepFailureData,
+    StepOutputData,
+    StepOutputHandle,
     StepSuccessData,
 )
-
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.timing import time_execution_scope
 
 from .engine_base import IEngine
 
@@ -76,7 +67,8 @@ class InProcessEngine(IEngine):  # pylint: disable=no-init
                 failed_inputs = [
                     step_input.prev_output_handle.step_key
                     for step_input in step.step_inputs
-                    if step_input.prev_output_handle.step_key in failed_or_skipped_steps
+                    if step_input.is_from_output
+                    and step_input.prev_output_handle.step_key in failed_or_skipped_steps
                 ]
                 if failed_inputs:
                     step_context.log.info(
@@ -137,11 +129,16 @@ def _create_input_values(step_context):
         if step_input.runtime_type.is_nothing:
             continue
 
-        prev_output_handle = step_input.prev_output_handle
-        input_value = step_context.intermediates_manager.get_intermediate(
-            step_context, step_input.runtime_type, prev_output_handle
-        )
+        if step_input.is_from_output:
+            input_value = step_context.intermediates_manager.get_intermediate(
+                step_context, step_input.runtime_type, step_input.prev_output_handle
+            )
+        else:  # is from config
+            input_value = step_input.runtime_type.input_schema.construct_from_config_value(
+                step_context, step_input.config_data
+            )
         input_values[step_input.name] = input_value
+
     return input_values
 
 
@@ -202,7 +199,7 @@ def dagster_event_sequence_for_step(step_context):
 def _step_output_error_checked_event_sequence(step_context, event_sequence):
     '''
     Process the event sequence to check for invariant violations in the event
-    sequence related to Result events emitted from the compute_fn.
+    sequence related to Output events emitted from the compute_fn.
 
     This consumes and emits an event sequence.
     '''
@@ -214,11 +211,11 @@ def _step_output_error_checked_event_sequence(step_context, event_sequence):
     seen_outputs = set()
 
     for event in event_sequence:
-        if not isinstance(event, Result):
+        if not isinstance(event, Output):
             yield event
             continue
 
-        # do additional processing on Results
+        # do additional processing on Outputs
         result = event
         if not step.has_step_output(result.output_name):
             raise DagsterInvariantViolationError(
@@ -248,7 +245,7 @@ def _step_output_error_checked_event_sequence(step_context, event_sequence):
                         output=step_output_def.name, solid={str(step.solid_handle)}
                     )
                 )
-                yield Result(output_name=step_output_def.name, value=None)
+                yield Output(output_name=step_output_def.name, value=None)
             else:
                 raise DagsterStepOutputNotFoundError(
                     'Core compute for solid "{handle}" did not return an output '
@@ -290,8 +287,9 @@ def _core_dagster_event_sequence_for_step(step_context):
             _step_output_error_checked_event_sequence(step_context, event_sequence)
         ):
 
-            if isinstance(event, Result):
-                yield _create_step_output_event(step_context, event)
+            if isinstance(event, Output):
+                for evt in _create_step_output_events(step_context, event):
+                    yield evt
             elif isinstance(event, Materialization):
                 yield DagsterEvent.step_materialization(step_context, event)
             elif isinstance(event, ExpectationResult):
@@ -306,9 +304,9 @@ def _core_dagster_event_sequence_for_step(step_context):
     )
 
 
-def _create_step_output_event(step_context, result):
+def _create_step_output_events(step_context, result):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.inst_param(result, 'result', Result)
+    check.inst_param(result, 'result', Output)
 
     step = step_context.step
     step_output = step.step_output_named(result.output_name)
@@ -324,7 +322,7 @@ def _create_step_output_event(step_context, result):
             value=value,
         )
 
-        return DagsterEvent.step_output_event(
+        yield DagsterEvent.step_output_event(
             step_context=step_context,
             step_output_data=StepOutputData(
                 step_output_handle=step_output_handle,
@@ -334,6 +332,10 @@ def _create_step_output_event(step_context, result):
                 else None,
             ),
         )
+
+        for evt in _create_output_materializations(step_context, result.output_name, value):
+            yield evt
+
     except DagsterRuntimeCoercionError as e:
         raise DagsterInvariantViolationError(
             (
@@ -345,6 +347,37 @@ def _create_step_output_event(step_context, result):
                 output_name=result.output_name,
             )
         )
+
+
+def _create_output_materializations(step_context, output_name, value):
+    step = step_context.step
+    solid_config = step_context.environment_config.solids.get(str(step.solid_handle))
+    if solid_config is None:
+        return
+
+    for output_spec in solid_config.outputs:
+        check.invariant(len(output_spec) == 1)
+        config_output_name, output_spec = list(output_spec.items())[0]
+        if config_output_name == output_name:
+            step_output = step.step_output_named(output_name)
+            materialization = step_output.runtime_type.output_schema.materialize_runtime_value(
+                step_context, output_spec, value
+            )
+
+            if not isinstance(materialization, Materialization):
+                raise DagsterInvariantViolationError(
+                    (
+                        'materialize_runtime_value on type {type_name} has returned '
+                        'value {value} of type {python_type}. You must return a '
+                        'Materialization.'
+                    ).format(
+                        type_name=step_output.runtime_type.name,
+                        value=repr(materialization),
+                        python_type=type(materialization).__name__,
+                    )
+                )
+
+            yield DagsterEvent.step_materialization(step_context, materialization)
 
 
 def _get_evaluated_input(step, input_name, input_value):

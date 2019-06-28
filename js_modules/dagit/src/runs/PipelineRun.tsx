@@ -151,12 +151,15 @@ export class PipelineRun extends React.Component<
     };
 
     step.inputs.forEach(input => {
-      input.dependsOn.outputs.forEach(outputOfDependentStep => {
-        reexecutionConfig.stepOutputHandles.push({
-          stepKey: input.dependsOn.key,
-          outputName: outputOfDependentStep.name
+      const dep = input.dependsOn;
+      if (dep) {
+        dep.outputs.forEach(outputOfDependentStep => {
+          reexecutionConfig.stepOutputHandles.push({
+            stepKey: dep.key,
+            outputName: outputOfDependentStep.name
+          });
         });
-      });
+      }
     });
 
     const result = await mutation({

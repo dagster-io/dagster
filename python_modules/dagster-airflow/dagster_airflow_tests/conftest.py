@@ -76,7 +76,7 @@ def create_airflow_dags(clean_airflow_home):
             'toys_log_spew',
             '--module-name',
             'dagster_examples.toys.log_spew',
-            '--fn-name',
+            '--pipeline-name',
             'define_spew_pipeline',
         ],
     )
@@ -87,8 +87,8 @@ def create_airflow_dags(clean_airflow_home):
             'toys_many_events',
             '--module-name',
             'dagster_examples.toys.many_events',
-            '--fn-name',
-            'define_many_events_pipeline',
+            '--pipeline-name',
+            'many_events',
         ],
     )
     runner.invoke(
@@ -99,7 +99,7 @@ def create_airflow_dags(clean_airflow_home):
             '--module-name',
             'dagster_examples.toys.resources',
             '--fn-name',
-            'define_resource_pipeline',
+            'resource_pipeline',
         ],
     )
     runner.invoke(
@@ -110,7 +110,7 @@ def create_airflow_dags(clean_airflow_home):
             '--module-name',
             'dagster_examples.toys.sleepy',
             '--fn-name',
-            'define_sleepy_pipeline',
+            'sleepy_pipeline',
         ],
     )
 
