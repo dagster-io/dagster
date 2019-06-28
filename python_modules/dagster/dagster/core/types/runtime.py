@@ -145,14 +145,20 @@ class Int(BuiltinScalarRuntimeType):
         from dagster.core.definitions.events import Failure
 
         if not isinstance(value, six.integer_types):
-            raise Failure('Must be a python int. Got {value}'.format(value=value))
+            raise Failure(_typemismatch_error_str(value, 'int'))
+
+
+def _typemismatch_error_str(value, expected_type_desc):
+    return 'Value "{value}" of python type "{python_type}" must be a {type_desc}.'.format(
+        value=value, python_type=type(value).__name__, type_desc=expected_type_desc
+    )
 
 
 def _throw_if_not_string(value):
     from dagster.core.definitions.events import Failure
 
     if not isinstance(value, six.string_types):
-        raise Failure('Value {value} must be a string.'.format(value=value))
+        raise Failure(_typemismatch_error_str(value, 'string'))
 
 
 class String(BuiltinScalarRuntimeType):
@@ -185,7 +191,7 @@ class Float(BuiltinScalarRuntimeType):
         from dagster.core.definitions.events import Failure
 
         if not isinstance(value, float):
-            raise Failure('Value {value} must be a float.'.format(value=value))
+            raise Failure(_typemismatch_error_str(value, 'float'))
 
 
 class Bool(BuiltinScalarRuntimeType):
@@ -198,7 +204,7 @@ class Bool(BuiltinScalarRuntimeType):
         from dagster.core.definitions.events import Failure
 
         if not isinstance(value, bool):
-            raise Failure('Value {value} must be a bool.'.format(value=value))
+            raise Failure(_typemismatch_error_str(value, 'bool'))
 
 
 class Anyish(RuntimeType):

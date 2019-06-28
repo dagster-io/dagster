@@ -7,6 +7,7 @@ from dagster.core.definitions import SolidHandle, Materialization
 from dagster.core.types.runtime import RuntimeType
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
+from dagster.core.definitions.events import EventMetadataEntry
 
 
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
@@ -37,17 +38,36 @@ class SingleOutputStepCreationData(namedtuple('SingleOutputStepCreationData', 's
 
 
 class StepInputData(namedtuple('_StepInputData', 'input_name value_repr type_check_data')):
-    pass
+    def __new__(cls, input_name, value_repr, type_check_data):
+        return super(StepInputData, cls).__new__(
+            cls,
+            input_name=check.str_param(input_name, 'input_name'),
+            value_repr=check.str_param(value_repr, 'value_repr'),
+            type_check_data=check.opt_inst_param(type_check_data, 'type_check_data', TypeCheckData),
+        )
 
 
 class TypeCheckData(namedtuple('_TypeCheckData', 'success description metadata_entries')):
-    pass
+    def __new__(cls, success, description=None, metadata_entries=None):
+        return super(TypeCheckData, cls).__new__(
+            cls,
+            success=check.bool_param(success, 'success'),
+            description=check.opt_str_param(description, 'description'),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, metadata_entries, of_type=EventMetadataEntry
+            ),
+        )
 
 
 class StepOutputData(
-    namedtuple('_StepOutputData', 'step_output_handle value_repr intermediate_materialization')
+    namedtuple(
+        '_StepOutputData',
+        'step_output_handle value_repr intermediate_materialization type_check_data',
+    )
 ):
-    def __new__(cls, step_output_handle, value_repr, intermediate_materialization):
+    def __new__(
+        cls, step_output_handle, value_repr, intermediate_materialization, type_check_data=None
+    ):
         return super(StepOutputData, cls).__new__(
             cls,
             step_output_handle=check.inst_param(
@@ -57,6 +77,7 @@ class StepOutputData(
             intermediate_materialization=check.opt_inst_param(
                 intermediate_materialization, 'intermediate_materialization', Materialization
             ),
+            type_check_data=check.opt_inst_param(type_check_data, 'type_check_data', TypeCheckData),
         )
 
     @property

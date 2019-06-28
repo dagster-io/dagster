@@ -310,28 +310,29 @@ def _type_checked_input_event_sequence(step_context, inputs):
             # However the yield plus the python2 behavior probably warrant a
             # restructuring of the error boundary to be more flexible.
 
-            if isinstance(failure, DagsterError):
-                raise failure
-
             # This *must* be captured before the yield. Otherwise it returns
             # a tuple with three None elements, but only in python2
             exc_info = sys.exc_info()
 
-            if isinstance(failure, Failure):
-                # TypeScript this ain't. pylint not aware of type discrimination
-                # pylint: disable=no-member
-                yield DagsterEvent.step_input_event(
-                    step_context,
-                    StepInputData(
-                        input_name=input_name,
-                        value_repr=repr(input_value),
-                        type_check_data=TypeCheckData(
-                            success=False,
-                            description=failure.description,
-                            metadata_entries=failure.metadata_entries,
-                        ),
-                    ),
-                )
+            yield DagsterEvent.step_input_event(
+                step_context,
+                StepInputData(
+                    input_name=input_name,
+                    value_repr=repr(input_value),
+                    type_check_data=TypeCheckData(
+                        success=False,
+                        # TypeScript this ain't. pylint not aware of type discrimination
+                        # pylint: disable=no-member
+                        description=failure.description,
+                        metadata_entries=failure.metadata_entries,
+                    )
+                    if isinstance(failure, Failure)
+                    else TypeCheckData(success=False, description=str(failure)),
+                ),
+            )
+
+            if isinstance(failure, DagsterError):
+                raise failure
 
             six.raise_from(
                 DagsterTypeCheckError(
