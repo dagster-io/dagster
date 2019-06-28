@@ -37,10 +37,10 @@ I/O
 .. autoclass:: OutputDefinition
     :members:
 
-.. autoclass:: Result
+.. autoclass:: Output
     :members:
 
-.. autoclass:: MultipleResults
+.. autoclass:: MultipleOutputs
     :members:
 
 .. autoclass:: Materialization

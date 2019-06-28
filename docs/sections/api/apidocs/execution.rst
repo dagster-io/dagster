@@ -25,6 +25,7 @@ Configuration
   The ``environment_dict`` used by ``execute_pipeline`` and
   ``execute_pipeline_iterator`` has the following schema:
   ::
+
     {
       # configuration for Solids
       'solids': {

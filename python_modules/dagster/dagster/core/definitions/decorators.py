@@ -698,16 +698,16 @@ def composite_solid(name=None, inputs=None, outputs=None, description=None, conf
 
         .. code-block:: python
 
-        @lambda_solid
-        def add_one(num: int) -> int:
-            return num + 1
+            @lambda_solid
+            def add_one(num: int) -> int:
+                return num + 1
 
-        @composite_solid
-        def add_two(num: int) -> int:
-            add_one_1 = add_one.alias('add_one_1')
-            add_one_2 = add_one.alias('add_one_2')
+            @composite_solid
+            def add_two(num: int) -> int:
+                add_one_1 = add_one.alias('add_one_1')
+                add_one_2 = add_one.alias('add_one_2')
 
-            return add_one_2(add_one_1(num))
+                return add_one_2(add_one_1(num))
 
     '''
     if callable(name):
@@ -779,21 +779,21 @@ def pipeline(name=None, description=None, mode_definitions=None, preset_definiti
 
         .. code-block:: python
 
-        @lambda_solid
-        def emit_one() -> int:
-            return 1
+            @lambda_solid
+            def emit_one() -> int:
+                return 1
 
-        @lambda_solid
-        def add_one(num: int) -> int:
-            return num + 1
+            @lambda_solid
+            def add_one(num: int) -> int:
+                return num + 1
 
-        @lambda_solid
-        def mult_two(num: int) -> int:
-            return num * 2
+            @lambda_solid
+            def mult_two(num: int) -> int:
+                return num * 2
 
-        @pipeline
-        def add_pipeline():
-            add_one(mult_two(emit_one()))
+            @pipeline
+            def add_pipeline():
+                add_one(mult_two(emit_one()))
 
     '''
     if callable(name):

@@ -210,7 +210,9 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
             certain metadata to be attached to a solid.
 
     Examples:
+
         .. code-block:: python
+
             @lambda_solid
             def add_one(num: int) -> int:
                 return num + 1
