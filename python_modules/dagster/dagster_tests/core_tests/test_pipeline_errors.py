@@ -3,21 +3,24 @@ import sys
 import pytest
 
 from dagster import (
+    DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
     DependencyDefinition,
+    EventMetadataEntry,
+    Failure,
     InputDefinition,
+    Output,
     OutputDefinition,
     PipelineDefinition,
-    Output,
     RunConfig,
     SolidDefinition,
     check,
     execute_pipeline,
     lambda_solid,
+    pipeline,
 )
 
 from dagster.core.test_utils import single_output_transform
-from dagster.core.errors import DagsterExecutionStepExecutionError
 
 
 def create_root_success_solid(name):
@@ -41,8 +44,8 @@ def create_root_transform_failure_solid(name):
 
 
 def test_transform_failure_pipeline():
-    pipeline = PipelineDefinition(solid_defs=[create_root_transform_failure_solid('failing')])
-    pipeline_result = execute_pipeline(pipeline, run_config=RunConfig.nonthrowing_in_process())
+    pipeline_def = PipelineDefinition(solid_defs=[create_root_transform_failure_solid('failing')])
+    pipeline_result = execute_pipeline(pipeline_def, run_config=RunConfig.nonthrowing_in_process())
 
     assert not pipeline_result.success
 
@@ -86,14 +89,14 @@ def test_failure_midstream():
         output=OutputDefinition(),
     )
 
-    pipeline = PipelineDefinition(
+    pipeline_def = PipelineDefinition(
         solid_defs=[solid_a, solid_b, solid_c, solid_d],
         dependencies={
             'C': {'A': DependencyDefinition(solid_a.name), 'B': DependencyDefinition(solid_b.name)},
             'D': {'C': DependencyDefinition(solid_c.name)},
         },
     )
-    pipeline_result = execute_pipeline(pipeline, run_config=RunConfig.nonthrowing_in_process())
+    pipeline_result = execute_pipeline(pipeline_def, run_config=RunConfig.nonthrowing_in_process())
 
     assert pipeline_result.result_for_solid('A').success
     assert pipeline_result.result_for_solid('B').success
@@ -153,7 +156,7 @@ def test_failure_propagation():
         output=OutputDefinition(),
     )
 
-    pipeline = PipelineDefinition(
+    pipeline_def = PipelineDefinition(
         solid_defs=[solid_a, solid_b, solid_c, solid_d, solid_e, solid_f],
         dependencies={
             'B': {'A': DependencyDefinition(solid_a.name)},
@@ -164,7 +167,7 @@ def test_failure_propagation():
         },
     )
 
-    pipeline_result = execute_pipeline(pipeline, run_config=RunConfig.nonthrowing_in_process())
+    pipeline_result = execute_pipeline(pipeline_def, run_config=RunConfig.nonthrowing_in_process())
 
     assert pipeline_result.result_for_solid('A').success
     assert pipeline_result.result_for_solid('B').success
@@ -265,3 +268,24 @@ def test_user_error_propogation():
     # ensure that the inner exception shows up in the error message on python 2
     if sys.version_info[0] == 2:
         assert err_msg in str(e_info.value)
+
+
+def test_explicit_failure():
+    @lambda_solid
+    def throws_failure():
+        raise Failure(
+            description='Always fails.',
+            metadata_entries=[EventMetadataEntry.text('why', label='always_fails')],
+        )
+
+    @pipeline
+    def pipe():
+        throws_failure()
+
+    with pytest.raises(DagsterExecutionStepExecutionError) as exc_info:
+        execute_pipeline(pipe)
+
+    assert exc_info.value.user_specified_failure.description == 'Always fails.'
+    assert exc_info.value.user_specified_failure.metadata_entries == [
+        EventMetadataEntry.text('why', label='always_fails')
+    ]

@@ -196,6 +196,7 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   step: ExecutionStep
   error: PythonError!
+  failureMetadata: FailureMetadata
 }
 
 type ExecutionStepInput {
@@ -270,6 +271,12 @@ type ExpectationResult implements DisplayableEvent {
   description: String
   metadataEntries: [EventMetadataEntry!]!
   success: Boolean!
+}
+
+type FailureMetadata implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
 }
 
 type FieldNotDefinedConfigError implements PipelineConfigValidationError {

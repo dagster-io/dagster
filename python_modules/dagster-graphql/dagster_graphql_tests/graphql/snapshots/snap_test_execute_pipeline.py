@@ -30,7 +30,18 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepInputEvent',
-                        'level': 'INFO'
+                        'inputName': 'num',
+                        'level': 'INFO',
+                        'step': {
+                            'key': 'sum_solid.compute',
+                            'kind': 'COMPUTE'
+                        },
+                        'typeCheck': {
+                            'description': None,
+                            'label': 'num',
+                            'metadataEntries': [
+                            ]
+                        }
                     },
                     {
                         '__typename': 'LogMessageEvent',
@@ -50,7 +61,9 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         },
                         'typeCheck': {
                             'description': None,
-                            'label': 'result'
+                            'label': 'result',
+                            'metadataEntries': [
+                            ]
                         }
                     },
                     {
@@ -70,7 +83,18 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepInputEvent',
-                        'level': 'INFO'
+                        'inputName': 'sum_df',
+                        'level': 'INFO',
+                        'step': {
+                            'key': 'sum_sq_solid.compute',
+                            'kind': 'COMPUTE'
+                        },
+                        'typeCheck': {
+                            'description': None,
+                            'label': 'sum_df',
+                            'metadataEntries': [
+                            ]
+                        }
                     },
                     {
                         '__typename': 'LogMessageEvent',
@@ -90,7 +114,9 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         },
                         'typeCheck': {
                             'description': None,
-                            'label': 'result'
+                            'label': 'result',
+                            'metadataEntries': [
+                            ]
                         }
                     },
                     {
@@ -137,7 +163,18 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                     },
                     {
                         '__typename': 'ExecutionStepInputEvent',
-                        'level': 'INFO'
+                        'inputName': 'sum_df',
+                        'level': 'INFO',
+                        'step': {
+                            'key': 'sum_sq_solid.compute',
+                            'kind': 'COMPUTE'
+                        },
+                        'typeCheck': {
+                            'description': None,
+                            'label': 'sum_df',
+                            'metadataEntries': [
+                            ]
+                        }
                     },
                     {
                         '__typename': 'LogMessageEvent',
@@ -157,7 +194,9 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                         },
                         'typeCheck': {
                             'description': None,
-                            'label': 'result'
+                            'label': 'result',
+                            'metadataEntries': [
+                            ]
                         }
                     },
                     {

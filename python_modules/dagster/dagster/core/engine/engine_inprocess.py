@@ -24,6 +24,7 @@ from dagster.core.execution.plan.objects import (
     StepOutputHandle,
     StepSuccessData,
     TypeCheckData,
+    UserFailureData,
 )
 from dagster.core.execution.plan.plan import ExecutionPlan
 
@@ -143,10 +144,13 @@ def _input_values_from_intermediates_manager(step_context):
     return input_values
 
 
-def _step_failure_event_from_exc_info(step_context, exc_info):
+def _step_failure_event_from_exc_info(step_context, exc_info, user_failure_data=None):
     return DagsterEvent.step_failure_event(
         step_context=step_context,
-        step_failure_data=StepFailureData(error=serializable_error_info_from_exc_info(exc_info)),
+        step_failure_data=StepFailureData(
+            error=serializable_error_info_from_exc_info(exc_info),
+            user_failure_data=user_failure_data,
+        ),
     )
 
 
@@ -159,7 +163,9 @@ def dagster_event_sequence_for_step(step_context):
         wrapped in an exception derived from DagsterUserCodeException. In that
         case the original user exc_info is stashed on the exception
         as the original_exc_info property. Examples of this are computations
-        with the compute_fn, and type checks.
+        with the compute_fn, and type checks. If the user has raised an
+        intentional error via throwing Failure, they can also optionally
+        pass along explicit metadata attached to that Failure.
         (2) The framework raised a DagsterError that indicates a usage error
         or some other error not communicated by a user-thrown exception. For example,
         if the user yields an object out of a compute function that is not a
@@ -194,7 +200,17 @@ def dagster_event_sequence_for_step(step_context):
 
     # case (1) in top comment
     except DagsterUserCodeExecutionError as dagster_user_error:  # case (1) above
-        yield _step_failure_event_from_exc_info(step_context, dagster_user_error.original_exc_info)
+        yield _step_failure_event_from_exc_info(
+            step_context,
+            dagster_user_error.original_exc_info,
+            UserFailureData(
+                label='intentional-failure',
+                description=dagster_user_error.user_specified_failure.description,
+                metadata_entries=dagster_user_error.user_specified_failure.metadata_entries,
+            )
+            if dagster_user_error.is_user_specified_failure
+            else None,
+        )
 
         if step_context.executor_config.raise_on_error:
             raise dagster_user_error

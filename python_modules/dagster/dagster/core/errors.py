@@ -60,6 +60,23 @@ class DagsterUserCodeExecutionError(DagsterUserError):
         self.original_exc_info = original_exc_info
 
     @property
+    def is_user_specified_failure(self):
+        from dagster.core.definitions.events import Failure
+
+        return isinstance(self.user_exception, Failure)
+
+    @property
+    def user_specified_failure(self):
+        check.invariant(
+            self.is_user_specified_failure,
+            (
+                'Can only call if user-specified failure (i.e. the user threw '
+                'an explicit Failure event in user-code'
+            ),
+        )
+        return self.user_exception
+
+    @property
     def is_user_code_error(self):
         return True
 

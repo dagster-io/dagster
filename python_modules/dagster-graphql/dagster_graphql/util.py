@@ -19,6 +19,7 @@ from dagster.core.execution.plan.objects import (
     StepOutputHandle,
     StepSuccessData,
     TypeCheckData,
+    UserFailureData,
 )
 from dagster.utils.error import SerializableErrorInfo
 
@@ -121,6 +122,13 @@ fragment stepEventFragment on StepEvent {
   ... on ExecutionStepFailureEvent {
     error {
       message
+    }
+    failureMetadata {
+      label
+      description
+      metadataEntries {
+        ...eventMetadataEntryFragment
+      }
     }
   }
 }
@@ -277,7 +285,18 @@ def dagster_event_from_dict(event_dict, pipeline_name):
         error_info = SerializableErrorInfo(
             event_dict['error']['message'], stack=None, cls_name=None
         )
-        event_specific_data = StepFailureData(error_info)
+        event_specific_data = StepFailureData(
+            error_info,
+            UserFailureData(
+                label=event_dict['failureMetadata']['label'],
+                description=event_dict['failureMetadata']['description'],
+                metadata_entries=list(
+                    event_metadata_entries(event_dict.get('metadataEntries')) or []
+                ),
+            )
+            if event_dict.get('failureMetadata')
+            else None,
+        )
 
     return DagsterEvent(
         event_type_value=event_type.value,

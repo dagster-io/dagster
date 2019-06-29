@@ -287,24 +287,6 @@ class DauphinEventUrlMetadataEntry(dauphin.ObjectType):
     url = dauphin.NonNull(dauphin.String)
 
 
-class DauphinDisplayableEvent(dauphin.Interface):
-    class Meta:
-        name = 'DisplayableEvent'
-
-    label = dauphin.NonNull(dauphin.String)
-    description = dauphin.String()
-    metadataEntries = dauphin.non_null_list(DauphinEventMetadataEntry)
-
-
-class DauphinMaterialization(dauphin.ObjectType):
-    class Meta:
-        name = 'Materialization'
-        interfaces = (DauphinDisplayableEvent,)
-
-    def resolve_metadataEntries(self, _graphene_info):
-        return list(iterate_metadata_entries(self.metadata_entries) or [])
-
-
 def iterate_metadata_entries(metadata_entries):
     check.list_param(metadata_entries, 'metadata_entries', of_type=EventMetadataEntry)
     for metadata_entry in metadata_entries:
@@ -339,6 +321,28 @@ def iterate_metadata_entries(metadata_entries):
             )
 
 
+def _to_dauphin_metadata_entries(metadata_entries):
+    return list(iterate_metadata_entries(metadata_entries) or [])
+
+
+class DauphinDisplayableEvent(dauphin.Interface):
+    class Meta:
+        name = 'DisplayableEvent'
+
+    label = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    metadataEntries = dauphin.non_null_list(DauphinEventMetadataEntry)
+
+
+class DauphinMaterialization(dauphin.ObjectType):
+    class Meta:
+        name = 'Materialization'
+        interfaces = (DauphinDisplayableEvent,)
+
+    def resolve_metadataEntries(self, _graphene_info):
+        return _to_dauphin_metadata_entries(self.metadata_entries)
+
+
 class DauphinExpectationResult(dauphin.ObjectType):
     class Meta:
         name = 'ExpectationResult'
@@ -347,7 +351,7 @@ class DauphinExpectationResult(dauphin.ObjectType):
     success = dauphin.NonNull(dauphin.Boolean)
 
     def resolve_metadataEntries(self, _graphene_info):
-        return list(iterate_metadata_entries(self.metadata_entries) or [])
+        return _to_dauphin_metadata_entries(self.metadata_entries)
 
 
 class DauphinTypeCheck(dauphin.ObjectType):
@@ -358,7 +362,16 @@ class DauphinTypeCheck(dauphin.ObjectType):
     success = dauphin.NonNull(dauphin.Boolean)
 
     def resolve_metadataEntries(self, _graphene_info):
-        return list(iterate_metadata_entries(self.metadata_entries) or [])
+        return _to_dauphin_metadata_entries(self.metadata_entries)
+
+
+class DauphinFailureMetadata(dauphin.ObjectType):
+    class Meta:
+        name = 'FailureMetadata'
+        interfaces = (DauphinDisplayableEvent,)
+
+    def resolve_metadataEntries(self, _graphene_info):
+        return _to_dauphin_metadata_entries(self.metadata_entries)
 
 
 class DauphinExecutionStepInputEvent(dauphin.ObjectType):
@@ -393,6 +406,7 @@ class DauphinExecutionStepFailureEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
     error = dauphin.NonNull('PythonError')
+    failureMetadata = dauphin.Field('FailureMetadata')
 
 
 class DauphinStepMaterializationEvent(dauphin.ObjectType):
