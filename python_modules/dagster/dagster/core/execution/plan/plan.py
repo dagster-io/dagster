@@ -248,8 +248,8 @@ def get_step_input(
         plan_builder.add_step(join_data.step)
         return StepInput(input_name, input_def.runtime_type, join_data.step_output_handle)
 
-    if solid.parent_maps_input(input_name):
-        parent_name = solid.parent_mapped_input(input_name).definition.name
+    if solid.container_maps_input(input_name):
+        parent_name = solid.container_mapped_input(input_name).definition.name
         parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
         if parent_name in parent_inputs:
             parent_input = parent_inputs[parent_name]

@@ -29,6 +29,10 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         }
                     },
                     {
+                        '__typename': 'ExecutionStepInputEvent',
+                        'level': 'INFO'
+                    },
+                    {
                         '__typename': 'LogMessageEvent',
                         'level': 'DEBUG'
                     },
@@ -62,6 +66,10 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         'step': {
                             'kind': 'COMPUTE'
                         }
+                    },
+                    {
+                        '__typename': 'ExecutionStepInputEvent',
+                        'level': 'INFO'
                     },
                     {
                         '__typename': 'LogMessageEvent',
@@ -124,6 +132,10 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                         'step': {
                             'kind': 'COMPUTE'
                         }
+                    },
+                    {
+                        '__typename': 'ExecutionStepInputEvent',
+                        'level': 'INFO'
                     },
                     {
                         '__typename': 'LogMessageEvent',

@@ -11,9 +11,7 @@ Core dagster error classes.
 
 .. autoexception:: DagsterInvariantViolationError
 
-.. autoexception:: DagsterRuntimeCoercionError
-
-.. autoexception:: DagsterTypeError
+.. autoexception:: DagsterTypeCheckError
 
 .. autoexception:: DagsterUserCodeExecutionError
 

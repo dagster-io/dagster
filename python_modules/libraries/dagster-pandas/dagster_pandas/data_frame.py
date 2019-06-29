@@ -3,11 +3,13 @@ import pandas as pd
 from dagster import (
     DagsterInvariantViolationError,
     Dict,
+    EventMetadataEntry,
     Field,
     Materialization,
     NamedSelector,
     Path,
     String,
+    TypeCheck,
     as_dagster_type,
     check,
     input_selector_schema,
@@ -92,4 +94,10 @@ DataFrame = as_dagster_type(
     See http://pandas.pydata.org/''',
     input_schema=dataframe_input_schema,
     output_schema=dataframe_output_schema,
+    metadata_fn=lambda value: TypeCheck(
+        metadata_entries=[
+            EventMetadataEntry.text(str(len(value)), 'row_count', 'Number of rows in DataFrame'),
+            EventMetadataEntry.json({'columns': list(value.columns)}, 'metadata'),
+        ]
+    ),
 )

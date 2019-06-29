@@ -198,9 +198,9 @@ def test_resources_notebook_with_exception():
             run_config=RunConfig.nonthrowing_in_process(),
         ) as result:
             assert not result.success
-            assert result.step_event_list[5].event_type.value == 'STEP_FAILURE'
+            assert result.step_event_list[6].event_type.value == 'STEP_FAILURE'
             assert (
-                'raise Exception()' in result.step_event_list[5].event_specific_data.error.message
+                'raise Exception()' in result.step_event_list[6].event_specific_data.error.message
             )
 
             # Expect something like:

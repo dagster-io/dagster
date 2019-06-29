@@ -36,6 +36,14 @@ class SingleOutputStepCreationData(namedtuple('SingleOutputStepCreationData', 's
         return StepOutputHandle.from_step(self.step, self.output_name)
 
 
+class StepInputData(namedtuple('_StepInputData', 'input_name value_repr type_check_data')):
+    pass
+
+
+class TypeCheckData(namedtuple('_TypeCheckData', 'success description metadata_entries')):
+    pass
+
+
 class StepOutputData(
     namedtuple('_StepOutputData', 'step_output_handle value_repr intermediate_materialization')
 ):
@@ -59,7 +67,7 @@ class StepOutputData(
 class StepFailureData(namedtuple('_StepFailureData', 'error')):
     def __new__(cls, error):
         return super(StepFailureData, cls).__new__(
-            cls, error=check.inst_param(error, 'error', SerializableErrorInfo)
+            cls, error=check.opt_inst_param(error, 'error', SerializableErrorInfo)
         )
 
 

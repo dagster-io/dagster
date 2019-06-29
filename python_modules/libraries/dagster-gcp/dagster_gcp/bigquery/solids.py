@@ -3,16 +3,7 @@ from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitionin
 
 from dagster_pandas import DataFrame
 
-from dagster import (
-    check,
-    InputDefinition,
-    List,
-    OutputDefinition,
-    Path,
-    Output,
-    SolidDefinition,
-    Nothing,
-)
+from dagster import check, solid, InputDefinition, List, OutputDefinition, Path, Nothing
 
 from .configs import (
     define_bigquery_query_config,
@@ -41,47 +32,43 @@ def _preprocess_config(cfg):
     return cfg
 
 
-class BigQuerySolidDefinition(SolidDefinition):
+def bq_solid_for_queries(sql_queries):
     """
     Executes BigQuery SQL queries.
 
     Expects a BQ client to be provisioned in resources as context.resources.bq.
     """
 
-    def __init__(self, name, sql_queries, description=None):
-        name = check.str_param(name, 'name')
-        sql_queries = check.list_param(sql_queries, 'sql queries', of_type=str)
-        description = check.opt_str_param(description, 'description', 'BigQuery query')
+    sql_queries = check.list_param(sql_queries, 'sql queries', of_type=str)
 
-        def _compute_fn(context, _):
-            query_job_config = _preprocess_config(context.solid_config.get('query_job_config', {}))
+    @solid(
+        inputs=[InputDefinition(_START, Nothing)],
+        outputs=[OutputDefinition(List[DataFrame])],
+        config_field=define_bigquery_query_config(),
+        required_resources={'bq'},
+        metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
+    )
+    def bq_solid(context):  # pylint: disable=unused-argument
+        query_job_config = _preprocess_config(context.solid_config.get('query_job_config', {}))
 
-            # Retrieve results as pandas DataFrames
-            results = []
-            for sql_query in sql_queries:
-                # We need to construct a new QueryJobConfig for each query.
-                # See: https://bit.ly/2VjD6sl
-                cfg = QueryJobConfig(**query_job_config) if query_job_config else None
-                context.log.info(
-                    'executing query %s with config: %s'
-                    % (sql_query, cfg.to_api_repr() if cfg else '(no config provided)')
-                )
-                results.append(context.resources.bq.query(sql_query, job_config=cfg).to_dataframe())
+        # Retrieve results as pandas DataFrames
+        results = []
+        for sql_query in sql_queries:
+            # We need to construct a new QueryJobConfig for each query.
+            # See: https://bit.ly/2VjD6sl
+            cfg = QueryJobConfig(**query_job_config) if query_job_config else None
+            context.log.info(
+                'executing query %s with config: %s'
+                % (sql_query, cfg.to_api_repr() if cfg else '(no config provided)')
+            )
+            results.append(context.resources.bq.query(sql_query, job_config=cfg).to_dataframe())
 
-            yield Output(results)
+        return results
 
-        super(BigQuerySolidDefinition, self).__init__(
-            name=name,
-            description=description,
-            inputs=[InputDefinition(_START, Nothing)],
-            outputs=[OutputDefinition(List[DataFrame])],
-            compute_fn=_compute_fn,
-            config_field=define_bigquery_query_config(),
-            metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
-        )
+    return bq_solid
 
 
-class BigQueryLoadSolidDefinition(SolidDefinition):
+def bq_load_solid_for_source(source_name):
     '''BigQuery Load.
 
     This solid encapsulates loading data into BigQuery from a pandas DataFrame, local file, or GCS.
@@ -89,12 +76,12 @@ class BigQueryLoadSolidDefinition(SolidDefinition):
     Expects a BQ client to be provisioned in resources as context.resources.bq.
     '''
 
-    def _input_type_for_source(self, source):
-        if source == BigQueryLoadSource.DataFrame:
+    def _input_type_for_source(source_name):
+        if source_name == BigQueryLoadSource.DataFrame:
             return DataFrame
-        elif source == BigQueryLoadSource.File:
+        elif source_name == BigQueryLoadSource.File:
             return Path
-        elif source == BigQueryLoadSource.GCS:
+        elif source_name == BigQueryLoadSource.GCS:
             return List[Path]
         else:
             raise BigQueryError(
@@ -104,67 +91,52 @@ class BigQueryLoadSolidDefinition(SolidDefinition):
                 )
             )
 
-    def __init__(self, name, source, description=None):
-        name = check.str_param(name, 'name')
-        description = check.opt_str_param(
-            description, 'description', 'BigQuery load_table_from_dataframe'
+    @solid(
+        inputs=[InputDefinition('source', _input_type_for_source(source_name))],
+        outputs=[OutputDefinition(Nothing)],
+        config_field=define_bigquery_load_config(),
+        required_resources={'bq'},
+    )
+    def bq_load_solid(context, source):
+        destination = context.solid_config.get('destination')
+        load_job_config = _preprocess_config(context.solid_config.get('load_job_config', {}))
+        cfg = LoadJobConfig(**load_job_config) if load_job_config else None
+
+        context.log.info(
+            'executing BQ load with config: %s for source %s'
+            % (cfg.to_api_repr() if cfg else '(no config provided)', source)
         )
 
-        def _compute_fn(context, inputs):
-            destination = context.solid_config.get('destination')
-            load_job_config = _preprocess_config(context.solid_config.get('load_job_config', {}))
-            cfg = LoadJobConfig(**load_job_config) if load_job_config else None
+        context.resources.bq.load_table_from_source(
+            source_name, source, destination, job_config=cfg
+        ).result()
 
-            context.log.info(
-                'executing BQ load with config: %s for source %s'
-                % (cfg.to_api_repr() if cfg else '(no config provided)', source)
-            )
-
-            context.resources.bq.load_table_from_source(
-                source, inputs.get('source'), destination, job_config=cfg
-            ).result()
-
-            yield Output(None)
-
-        super(BigQueryLoadSolidDefinition, self).__init__(
-            name=name,
-            description=description,
-            inputs=[InputDefinition('source', self._input_type_for_source(source))],
-            outputs=[OutputDefinition(Nothing)],
-            compute_fn=_compute_fn,
-            config_field=define_bigquery_load_config(),
-        )
+    return bq_load_solid
 
 
-class BigQueryCreateDatasetSolidDefinition(SolidDefinition):
+@solid(
+    inputs=[InputDefinition(_START, Nothing)],
+    config_field=define_bigquery_create_dataset_config(),
+    required_resources={'bq'},
+)
+def bq_create_dataset(context):
     '''BigQuery Create Dataset.
 
     This solid encapsulates creating a BigQuery dataset.
 
     Expects a BQ client to be provisioned in resources as context.resources.bq.
     '''
-
-    def __init__(self, name, description=None):
-        name = check.str_param(name, 'name')
-        description = check.opt_str_param(description, 'description', 'BigQuery create_dataset')
-
-        def _compute_fn(context, _):
-            (dataset, exists_ok) = [context.solid_config.get(k) for k in ('dataset', 'exists_ok')]
-            context.log.info('executing BQ create_dataset for dataset %s' % (dataset))
-            context.resources.bq.create_dataset(dataset, exists_ok)
-            yield Output(None)
-
-        super(BigQueryCreateDatasetSolidDefinition, self).__init__(
-            name=name,
-            description=description,
-            inputs=[InputDefinition(_START, Nothing)],
-            outputs=[OutputDefinition(Nothing)],
-            compute_fn=_compute_fn,
-            config_field=define_bigquery_create_dataset_config(),
-        )
+    (dataset, exists_ok) = [context.solid_config.get(k) for k in ('dataset', 'exists_ok')]
+    context.log.info('executing BQ create_dataset for dataset %s' % (dataset))
+    context.resources.bq.create_dataset(dataset, exists_ok)
 
 
-class BigQueryDeleteDatasetSolidDefinition(SolidDefinition):
+@solid(
+    inputs=[InputDefinition(_START, Nothing)],
+    config_field=define_bigquery_delete_dataset_config(),
+    required_resources={'bq'},
+)
+def bq_delete_dataset(context):
     '''BigQuery Delete Dataset.
 
     This solid encapsulates deleting a BigQuery dataset.
@@ -172,27 +144,12 @@ class BigQueryDeleteDatasetSolidDefinition(SolidDefinition):
     Expects a BQ client to be provisioned in resources as context.resources.bq.
     '''
 
-    def __init__(self, name, description=None):
-        name = check.str_param(name, 'name')
-        description = check.opt_str_param(description, 'description', 'BigQuery delete_dataset')
+    (dataset, delete_contents, not_found_ok) = [
+        context.solid_config.get(k) for k in ('dataset', 'delete_contents', 'not_found_ok')
+    ]
 
-        def _compute_fn(context, _):
-            (dataset, delete_contents, not_found_ok) = [
-                context.solid_config.get(k) for k in ('dataset', 'delete_contents', 'not_found_ok')
-            ]
+    context.log.info('executing BQ delete_dataset for dataset %s' % dataset)
 
-            context.log.info('executing BQ delete_dataset for dataset %s' % dataset)
-
-            context.resources.bq.delete_dataset(
-                dataset, delete_contents=delete_contents, not_found_ok=not_found_ok
-            )
-            yield Output(None)
-
-        super(BigQueryDeleteDatasetSolidDefinition, self).__init__(
-            name=name,
-            description=description,
-            inputs=[InputDefinition(_START, Nothing)],
-            outputs=[OutputDefinition(Nothing)],
-            compute_fn=_compute_fn,
-            config_field=define_bigquery_delete_dataset_config(),
-        )
+    context.resources.bq.delete_dataset(
+        dataset, delete_contents=delete_contents, not_found_ok=not_found_ok
+    )

@@ -69,7 +69,7 @@ require an integer field ``factor`` in its configuration:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas.py
    :linenos:
-   :emphasize-lines:
+   :emphasize-lines: 8
    :lines: 3-22
    :caption: configuration_schemas.py
 

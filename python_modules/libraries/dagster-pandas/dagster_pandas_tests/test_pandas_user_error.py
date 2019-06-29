@@ -5,8 +5,7 @@ import pytest
 import pandas as pd
 
 from dagster import (
-    DagsterInvariantViolationError,
-    DagsterTypeError,
+    DagsterTypeCheckError,
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
@@ -36,7 +35,7 @@ def test_wrong_output_value():
         dependencies={'test_wrong_output': {'num_csv': DependencyDefinition('pass_solid')}},
     )
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(DagsterTypeCheckError):
         execute_pipeline(pipeline)
 
 
@@ -52,5 +51,5 @@ def test_wrong_input_value():
         dependencies={'test_wrong_input': {'foo': DependencyDefinition('pass_solid')}},
     )
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterTypeCheckError):
         execute_pipeline(pipeline)

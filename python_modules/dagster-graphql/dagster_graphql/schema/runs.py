@@ -350,6 +350,27 @@ class DauphinExpectationResult(dauphin.ObjectType):
         return list(iterate_metadata_entries(self.metadata_entries) or [])
 
 
+class DauphinTypeCheck(dauphin.ObjectType):
+    class Meta:
+        name = 'TypeCheck'
+        interfaces = (DauphinDisplayableEvent,)
+
+    success = dauphin.NonNull(dauphin.Boolean)
+
+    def resolve_metadataEntries(self, _graphene_info):
+        return list(iterate_metadata_entries(self.metadata_entries) or [])
+
+
+class DauphinExecutionStepInputEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionStepInputEvent'
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
+
+    input_name = dauphin.NonNull(dauphin.String)
+    type_check = dauphin.NonNull(DauphinTypeCheck)
+    value_repr = dauphin.NonNull(dauphin.String)
+
+
 class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepOutputEvent'
@@ -395,20 +416,21 @@ class DauphinPipelineRunEvent(dauphin.Union):
     class Meta:
         name = 'PipelineRunEvent'
         types = (
-            DauphinLogMessageEvent,
-            DauphinPipelineStartEvent,
-            DauphinPipelineSuccessEvent,
-            DauphinPipelineFailureEvent,
-            DauphinPipelineInitFailureEvent,
+            DauphinExecutionStepFailureEvent,
+            DauphinExecutionStepInputEvent,
+            DauphinExecutionStepOutputEvent,
+            DauphinExecutionStepSkippedEvent,
             DauphinExecutionStepStartEvent,
             DauphinExecutionStepSuccessEvent,
-            DauphinExecutionStepOutputEvent,
-            DauphinExecutionStepFailureEvent,
-            DauphinExecutionStepSkippedEvent,
+            DauphinLogMessageEvent,
+            DauphinPipelineFailureEvent,
+            DauphinPipelineInitFailureEvent,
             DauphinPipelineProcessStartEvent,
             DauphinPipelineProcessStartedEvent,
-            DauphinStepMaterializationEvent,
+            DauphinPipelineStartEvent,
+            DauphinPipelineSuccessEvent,
             DauphinStepExpectationResultEvent,
+            DauphinStepMaterializationEvent,
         )
 
 
@@ -430,8 +452,16 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
         return graphene_info.schema.type_named('ExecutionStepSkippedEvent')(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
         return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(**basic_params)
+    elif dagster_event.event_type == DagsterEventType.STEP_INPUT:
+        input_data = dagster_event.event_specific_data
+        return graphene_info.schema.type_named('ExecutionStepInputEvent')(
+            input_name=input_data.input_name,
+            value_repr=input_data.value_repr,
+            type_check=input_data.type_check_data,
+            **basic_params
+        )
     elif dagster_event.event_type == DagsterEventType.STEP_OUTPUT:
-        output_data = event_record.dagster_event.step_output_data
+        output_data = dagster_event.step_output_data
         return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
             output_name=output_data.output_name,
             intermediate_materialization=output_data.intermediate_materialization,

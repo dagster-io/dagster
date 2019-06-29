@@ -279,7 +279,9 @@ def get_inputs_field(solid, handle, dependency_structure, pipeline_name):
             inp_handle = SolidInputHandle(solid, inp)
             # If this input is not satisfied by a dependency you must
             # provide it via config
-            if not dependency_structure.has_deps(inp_handle) and not solid.parent_maps_input(name):
+            if not dependency_structure.has_deps(inp_handle) and not solid.container_maps_input(
+                name
+            ):
                 inputs_field_fields[name] = FieldImpl(inp.runtime_type.input_schema.schema_type)
 
     if not inputs_field_fields:

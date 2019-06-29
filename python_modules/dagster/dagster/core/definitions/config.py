@@ -30,11 +30,14 @@ class ConfigMapping(namedtuple('_ConfigMapping', 'config_mapping_fn config_field
     applied to any child solids.
     '''
 
-    def __new__(cls, config_mapping_fn, config=None, config_field=None):
+    def __new__(cls, config_mapping_fn, config):
+        check.dict_param(config, 'config')
+        check.invariant(config, 'Cannot specify empty config for ConfigMapping')
+
         return super(ConfigMapping, cls).__new__(
             cls,
             config_mapping_fn=check.callable_param(config_mapping_fn, 'config_mapping_fn'),
-            config_field=resolve_config_field(config_field, config, 'ConfigMapping'),
+            config_field=resolve_config_field(None, config, 'ConfigMapping'),
         )
 
 

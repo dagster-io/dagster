@@ -3,6 +3,7 @@ import pytest
 from dagster import (
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
+    DagsterTypeCheckError,
     RunConfig,
     execute_pipeline,
 )
@@ -107,7 +108,7 @@ def test_error_monster_success_error_on_resource():
 
 
 def test_error_monster_type_error():
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(DagsterTypeCheckError):
         execute_pipeline(
             error_monster,
             environment_dict={

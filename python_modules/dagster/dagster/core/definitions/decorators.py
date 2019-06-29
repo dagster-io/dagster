@@ -29,6 +29,7 @@ from .inference import (
     infer_input_definitions_for_solid,
     infer_input_definitions_for_composite_solid,
     infer_output_definitions,
+    has_explicit_return_type,
 )
 from .config import resolve_config_field
 
@@ -149,6 +150,7 @@ class _Solid(object):
         description=None,
         required_resources=None,
         config_field=None,
+        metadata=None,
     ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_nullable_list_param(inputs, 'inputs', InputDefinition)
@@ -161,6 +163,9 @@ class _Solid(object):
 
         # config_field will be checked within SolidDefinition
         self.config_field = config_field
+
+        # metadata will be checked within ISolidDefinition
+        self.metadata = metadata
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -190,6 +195,7 @@ class _Solid(object):
             config_field=self.config_field,
             description=self.description,
             required_resources=self.required_resources,
+            metadata=self.metadata,
         )
 
 
@@ -237,6 +243,7 @@ def solid(
     config_field=None,
     config=None,
     required_resources=None,
+    metadata=None,
 ):
     '''(decorator) Create a solid with specified parameters.
 
@@ -336,6 +343,7 @@ def solid(
         check.invariant(config_field is None)
         check.invariant(config is None)
         check.invariant(required_resources is None)
+        check.invariant(metadata is None)
         return _Solid()(name)
 
     return _Solid(
@@ -345,6 +353,7 @@ def solid(
         config_field=resolve_config_field(config_field, config, '@solid'),
         description=description,
         required_resources=required_resources,
+        metadata=metadata,
     )
 
 
@@ -454,15 +463,22 @@ class FunctionValidationError(Exception):
         self.missing_names = missing_names
 
 
-def _validate_solid_fn(solid_name, compute_fn, inputs, expected_positionals=None):
+def _validate_solid_fn(
+    solid_name, compute_fn, inputs, expected_positionals=None, exclude_nothing=True
+):
     check.str_param(solid_name, 'solid_name')
     check.callable_param(compute_fn, 'compute_fn')
     check.list_param(inputs, 'inputs', of_type=InputDefinition)
     expected_positionals = check.opt_list_param(
         expected_positionals, 'expected_positionals', of_type=(str, tuple)
     )
+    if exclude_nothing:
+        names = set(inp.name for inp in inputs if not inp.runtime_type.is_nothing)
+        nothing_names = set(inp.name for inp in inputs if inp.runtime_type.is_nothing)
+    else:
+        names = set(inp.name for inp in inputs)
+        nothing_names = set()
 
-    names = set(inp.name for inp in inputs if not inp.runtime_type.is_nothing)
     # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
     try:
         _validate_decorated_fn(compute_fn, names, expected_positionals)
@@ -476,13 +492,20 @@ def _validate_solid_fn(solid_name, compute_fn, inputs, expected_positionals=None
                 )
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_name']:
-            raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' decorated function has parameter '{e.param}' that is not "
-                "one of the solid inputs. Solid functions should only have keyword arguments "
-                "that match input names and a first positional parameter named 'context'.".format(
-                    solid_name=solid_name, e=e
+            if e.param in nothing_names:
+                raise DagsterInvalidDefinitionError(
+                    "solid '{solid_name}' decorated function has parameter '{e.param}' that is "
+                    "one of the solid inputs of type 'Nothing' which should not be included since "
+                    "no data will be passed for it. ".format(solid_name=solid_name, e=e)
                 )
-            )
+            else:
+                raise DagsterInvalidDefinitionError(
+                    "solid '{solid_name}' decorated function has parameter '{e.param}' that is not "
+                    "one of the solid inputs. Solid functions should only have keyword arguments "
+                    "that match input names and a first positional parameter named 'context'.".format(
+                        solid_name=solid_name, e=e
+                    )
+                )
         elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
             raise DagsterInvalidDefinitionError(
                 "solid '{solid_name}' decorated function does not have required positional "
@@ -575,13 +598,16 @@ class _CompositeSolid(object):
             if self.input_defs is not None
             else infer_input_definitions_for_composite_solid(self.name, fn)
         )
-        output_defs = (
-            self.output_defs
-            if self.output_defs is not None
-            else infer_output_definitions('@composite_solid', self.name, fn)
-        )
 
-        _validate_solid_fn(self.name, fn, input_defs)
+        explicit_outputs = False
+        if self.output_defs is not None:
+            explicit_outputs = True
+            output_defs = self.output_defs
+        else:
+            explicit_outputs = has_explicit_return_type(fn)
+            output_defs = infer_output_definitions('@composite_solid', self.name, fn)
+
+        _validate_solid_fn(self.name, fn, input_defs, exclude_nothing=False)
 
         kwargs = {input_def.name: InputMappingNode(input_def) for input_def in input_defs}
 
@@ -600,23 +626,39 @@ class _CompositeSolid(object):
             '"{context.name}" expected "{self.name}"'.format(context=context, self=self),
         )
 
-        # line up input mappings in input definition order
+        # line up mappings in definition order
         input_mappings = []
         for defn in input_defs:
             mapping = context.input_mapping_dict.get(defn.name)
             if mapping is None:
                 raise DagsterInvalidDefinitionError(
-                    "@composite_solid '{solid_name}' has unused input mapping '{input_name}'."
+                    "@composite_solid '{solid_name}' has unmapped input '{input_name}'. "
                     "Remove it or pass it to the appropriate solid invocation.".format(
                         solid_name=self.name, input_name=defn.name
                     )
                 )
             input_mappings.append(mapping)
 
+        output_mappings = []
+        for defn in output_defs:
+            mapping = context.output_mapping_dict.get(defn.name)
+            if mapping is None:
+                # if we inferred outputs we will be flexible and either take a mapping or not
+                if not explicit_outputs:
+                    continue
+
+                raise DagsterInvalidDefinitionError(
+                    "@composite_solid '{solid_name}' has unmapped output '{output_name}'. "
+                    "Remove it or return a value from the appropriate solid invocation.".format(
+                        solid_name=self.name, output_name=defn.name
+                    )
+                )
+            output_mappings.append(mapping)
+
         return CompositeSolidDefinition(
             name=self.name,
             input_mappings=input_mappings,
-            output_mappings=context.output_mappings,
+            output_mappings=output_mappings,
             dependencies=context.dependencies,
             solid_defs=context.solid_defs,
             description=self.description,
@@ -656,16 +698,16 @@ def composite_solid(name=None, inputs=None, outputs=None, description=None, conf
 
         .. code-block:: python
 
-        @lambda_solid
-        def add_one(num: int) -> int:
-            return num + 1
+            @lambda_solid
+            def add_one(num: int) -> int:
+                return num + 1
 
-        @composite_solid
-        def add_two(num: int) -> int:
-            add_one_1 = add_one.alias('add_one_1')
-            add_one_2 = add_one.alias('add_one_2')
+            @composite_solid
+            def add_two(num: int) -> int:
+                add_one_1 = add_one.alias('add_one_1')
+                add_one_2 = add_one.alias('add_one_2')
 
-            return add_one_2(add_one_1(num))
+                return add_one_2(add_one_1(num))
 
     '''
     if callable(name):
@@ -705,7 +747,7 @@ class _Pipeline:
         try:
             fn()
         finally:
-            context = exit_composition([])
+            context = exit_composition()
 
         return PipelineDefinition(
             name=self.name,
@@ -737,21 +779,21 @@ def pipeline(name=None, description=None, mode_definitions=None, preset_definiti
 
         .. code-block:: python
 
-        @lambda_solid
-        def emit_one() -> int:
-            return 1
+            @lambda_solid
+            def emit_one() -> int:
+                return 1
 
-        @lambda_solid
-        def add_one(num: int) -> int:
-            return num + 1
+            @lambda_solid
+            def add_one(num: int) -> int:
+                return num + 1
 
-        @lambda_solid
-        def mult_two(num: int) -> int:
-            return num * 2
+            @lambda_solid
+            def mult_two(num: int) -> int:
+                return num * 2
 
-        @pipeline
-        def add_pipeline():
-            add_one(mult_two(emit_one()))
+            @pipeline
+            def add_pipeline():
+                add_one(mult_two(emit_one()))
 
     '''
     if callable(name):

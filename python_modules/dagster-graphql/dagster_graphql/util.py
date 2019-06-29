@@ -5,6 +5,7 @@ from collections import namedtuple
 from dagster import check
 
 from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
+
 from dagster.core.events import (
     DagsterEvent,
     DagsterEventType,
@@ -13,9 +14,11 @@ from dagster.core.events import (
 )
 from dagster.core.execution.plan.objects import (
     StepFailureData,
+    StepInputData,
     StepOutputData,
     StepOutputHandle,
     StepSuccessData,
+    TypeCheckData,
 )
 from dagster.utils.error import SerializableErrorInfo
 
@@ -27,6 +30,18 @@ def get_step_event_fragment():
     return GraphQLFragment(
         include_key='...stepEventFragment',
         fragment='''
+fragment eventMetadataEntryFragment on EventMetadataEntry {
+  __typename
+  label
+  description
+  ... on EventPathMetadataEntry {
+      path
+  }
+  ... on EventJsonMetadataEntry {
+      jsonString
+  }
+}
+
 fragment stepEventFragment on StepEvent {
   step {
     key
@@ -64,15 +79,7 @@ fragment stepEventFragment on StepEvent {
       label
       description
       metadataEntries {
-        __typename
-        label
-        description
-        ... on EventPathMetadataEntry {
-            path
-        }
-        ... on EventJsonMetadataEntry {
-            jsonString
-        }
+        ...eventMetadataEntryFragment
       }
     }
   }
@@ -81,15 +88,19 @@ fragment stepEventFragment on StepEvent {
       label
       description
       metadataEntries {
-        __typename
-        label
-        description
-        ... on EventPathMetadataEntry {
-          path
-        }
-        ... on EventJsonMetadataEntry {
-          jsonString
-        }
+        ...eventMetadataEntryFragment
+      }
+    }
+  }
+  ... on ExecutionStepInputEvent {
+    inputName
+    valueRepr
+    typeCheck {
+      __typename
+      success
+      description
+      metadataEntries {
+        ...eventMetadataEntryFragment
       }
     }
   }
@@ -100,15 +111,7 @@ fragment stepEventFragment on StepEvent {
       label
       description
       metadataEntries {
-        __typename
-        label
-        description
-        ... on EventPathMetadataEntry {
-          path
-        }
-        ... on EventJsonMetadataEntry {
-          jsonString
-        }
+        ...eventMetadataEntryFragment
       }
     }
   }
@@ -163,6 +166,7 @@ fragment logMessageEventFragment on LogMessageEvent {
 def _handled_events():
     return {
         'ExecutionStepStartEvent': DagsterEventType.STEP_START,
+        'ExecutionStepInputEvent': DagsterEventType.STEP_INPUT,
         'ExecutionStepOutputEvent': DagsterEventType.STEP_OUTPUT,
         'ExecutionStepFailureEvent': DagsterEventType.STEP_FAILURE,
         'ExecutionStepSkippedEvent': DagsterEventType.STEP_SKIPPED,
@@ -236,6 +240,18 @@ def dagster_event_from_dict(event_dict, pipeline_name):
             ),
         )
 
+    elif event_type == DagsterEventType.STEP_INPUT:
+        event_specific_data = StepInputData(
+            input_name=event_dict['inputName'],
+            value_repr=event_dict['valueRepr'],
+            type_check_data=TypeCheckData(
+                success=event_dict['typeCheck']['success'],
+                description=event_dict.get('description'),
+                metadata_entries=list(
+                    event_metadata_entries(event_dict.get('metadataEntries')) or []
+                ),
+            ),
+        )
     elif event_type == DagsterEventType.STEP_SUCCESS:
         event_specific_data = StepSuccessData(0.0)
 

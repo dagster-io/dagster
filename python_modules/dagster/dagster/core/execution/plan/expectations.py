@@ -165,6 +165,9 @@ def decorate_with_expectations(
     check.inst_param(transform_step, 'transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.opt_inst_param(handle, 'handle', SolidHandle)
+
+    # resolve to the output def from the transform_step's solid
+    output_def = solid.definition.resolve_output_to_origin(output_def.name)
     terminal_step_output_handle = StepOutputHandle.from_step(transform_step, output_def.name)
 
     if environment_config.expectations.evaluate and output_def.expectations:
