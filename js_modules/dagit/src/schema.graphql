@@ -228,7 +228,7 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
   step: ExecutionStep
   outputName: String!
   valueRepr: String!
-  intermediateMaterialization: Materialization
+  typeCheck: TypeCheck!
 }
 
 type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {

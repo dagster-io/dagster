@@ -25,7 +25,7 @@ mutation (
                         ... on ExecutionStepOutputEvent {
                             step { key kind }
                             outputName
-                            intermediateMaterialization {
+                            typeCheck {
                                 label
                                 description
                                 metadataEntries {
@@ -104,7 +104,8 @@ mutation (
                         ... on ExecutionStepOutputEvent {
                             step { key kind }
                             outputName
-                            intermediateMaterialization {
+                            typeCheck {
+                                label
                                 description
                             }
                         }

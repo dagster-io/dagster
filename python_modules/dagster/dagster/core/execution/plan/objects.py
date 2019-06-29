@@ -47,11 +47,12 @@ class StepInputData(namedtuple('_StepInputData', 'input_name value_repr type_che
         )
 
 
-class TypeCheckData(namedtuple('_TypeCheckData', 'success description metadata_entries')):
-    def __new__(cls, success, description=None, metadata_entries=None):
+class TypeCheckData(namedtuple('_TypeCheckData', 'success label description metadata_entries')):
+    def __new__(cls, success, label, description=None, metadata_entries=None):
         return super(TypeCheckData, cls).__new__(
             cls,
             success=check.bool_param(success, 'success'),
+            label=check.str_param(label, 'label'),
             description=check.opt_str_param(description, 'description'),
             metadata_entries=check.opt_list_param(
                 metadata_entries, metadata_entries, of_type=EventMetadataEntry
@@ -66,7 +67,7 @@ class StepOutputData(
     )
 ):
     def __new__(
-        cls, step_output_handle, value_repr, intermediate_materialization, type_check_data=None
+        cls, step_output_handle, value_repr, intermediate_materialization=None, type_check_data=None
     ):
         return super(StepOutputData, cls).__new__(
             cls,

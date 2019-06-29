@@ -378,7 +378,7 @@ class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
 
     output_name = dauphin.NonNull(dauphin.String)
     value_repr = dauphin.NonNull(dauphin.String)
-    intermediate_materialization = dauphin.Field(DauphinMaterialization)
+    type_check = dauphin.NonNull(DauphinTypeCheck)
 
 
 class DauphinExecutionStepSuccessEvent(dauphin.ObjectType):
@@ -464,8 +464,8 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
         output_data = dagster_event.step_output_data
         return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
             output_name=output_data.output_name,
-            intermediate_materialization=output_data.intermediate_materialization,
-            value_repr=dagster_event.step_output_data.value_repr,
+            type_check=output_data.type_check_data,
+            value_repr=output_data.value_repr,
             # parens make black not put trailing commas, which in turn break py27
             # fmt: off
             **(basic_params)

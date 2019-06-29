@@ -42,14 +42,15 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
-                        'intermediateMaterialization': {
-                            'description': None
-                        },
                         'level': 'INFO',
                         'outputName': 'result',
                         'step': {
                             'key': 'sum_solid.compute',
                             'kind': 'COMPUTE'
+                        },
+                        'typeCheck': {
+                            'description': None,
+                            'label': 'result'
                         }
                     },
                     {
@@ -81,14 +82,15 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
-                        'intermediateMaterialization': {
-                            'description': None
-                        },
                         'level': 'INFO',
                         'outputName': 'result',
                         'step': {
                             'key': 'sum_sq_solid.compute',
                             'kind': 'COMPUTE'
+                        },
+                        'typeCheck': {
+                            'description': None,
+                            'label': 'result'
                         }
                     },
                     {
@@ -147,14 +149,15 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
-                        'intermediateMaterialization': {
-                            'description': None
-                        },
                         'level': 'INFO',
                         'outputName': 'result',
                         'step': {
                             'key': 'sum_sq_solid.compute',
                             'kind': 'COMPUTE'
+                        },
+                        'typeCheck': {
+                            'description': None,
+                            'label': 'result'
                         }
                     },
                     {
