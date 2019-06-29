@@ -324,7 +324,7 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
     try:
         with user_code_error_boundary(
             DagsterTypeCheckError,
-            (
+            lambda: (
                 'In solid "{handle}" the input "{input_name}" received '
                 'value {input_value} of Python type {input_type} which '
                 'does not pass the typecheck for Dagster type '
@@ -383,7 +383,7 @@ def _type_checked_step_output_event_sequence(step_context, output):
     try:
         with user_code_error_boundary(
             DagsterTypeCheckError,
-            (
+            lambda: (
                 'In solid "{handle}" the output "{output_name}" received '
                 'value {output_value} of Python type {output_type} which '
                 'does not pass the typecheck for Dagster type '
@@ -518,19 +518,17 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(evaluated_inputs, 'evaluated_inputs', key_type=str)
 
-    error_str = '''Error occured during the execution of step:
-    step key: "{key}"
-    solid invocation: "{solid}"
-    solid definition: "{solid_def}"
-    '''.format(
-        key=step_context.step.key,
-        solid_def=step_context.solid_def.name,
-        solid=step_context.solid.name,
-    )
-
     with user_code_error_boundary(
         DagsterExecutionStepExecutionError,
-        error_str,
+        msg_fn=lambda: '''Error occured during the execution of step:
+        step key: "{key}"
+        solid invocation: "{solid}"
+        solid definition: "{solid_def}"
+        '''.format(
+            key=step_context.step.key,
+            solid_def=step_context.solid_def.name,
+            solid=step_context.solid.name,
+        ),
         step_key=step_context.step.key,
         solid_def_name=step_context.solid_def.name,
         solid_name=step_context.solid.name,
