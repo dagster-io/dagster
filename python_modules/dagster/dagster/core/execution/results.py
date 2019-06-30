@@ -123,11 +123,7 @@ class SolidExecutionResult(object):
 
     @property
     def input_events_during_compute(self):
-        return list(
-            filter(
-                lambda se: se.event_type == DagsterEventType.STEP_INPUT, self.compute_step_events
-            )
-        )
+        return self._compute_steps_of_type(DagsterEventType.STEP_INPUT)
 
     @property
     def compute_step_events(self):
@@ -142,20 +138,15 @@ class SolidExecutionResult(object):
 
     @property
     def materialization_events_during_compute(self):
-        return list(
-            filter(
-                lambda se: se.event_type == DagsterEventType.STEP_MATERIALIZATION,
-                self.compute_step_events,
-            )
-        )
+        return self._compute_steps_of_type(DagsterEventType.STEP_MATERIALIZATION)
 
     @property
     def expectation_events_during_compute(self):
+        return self._compute_steps_of_type(DagsterEventType.STEP_EXPECTATION_RESULT)
+
+    def _compute_steps_of_type(self, dagster_event_type):
         return list(
-            filter(
-                lambda se: se.event_type == DagsterEventType.STEP_EXPECTATION_RESULT,
-                self.compute_step_events,
-            )
+            filter(lambda se: se.event_type == dagster_event_type, self.compute_step_events)
         )
 
     @property
@@ -179,6 +170,17 @@ class SolidExecutionResult(object):
     @property
     def output_expectation_step_events(self):
         return self.step_events_by_kind.get(StepKind.OUTPUT_EXPECTATION, [])
+
+    @property
+    def compute_step_failure_event(self):
+        if self.success:
+            raise DagsterInvariantViolationError(
+                'Cannot call compute_step_failure_event if successful'
+            )
+
+        step_failure_events = self._compute_steps_of_type(DagsterEventType.STEP_FAILURE)
+        check.invariant(len(step_failure_events) == 1)
+        return step_failure_events[0]
 
     @property
     def success(self):
