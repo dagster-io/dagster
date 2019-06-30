@@ -418,18 +418,19 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
         def python_callable(ts, dag_run, **kwargs):  # pylint: disable=unused-argument
             run_id = dag_run.run_id
 
-            variables = {
-                'executionParams': {
-                    'environmentConfigData': environment_dict,
-                    'mode': mode,
-                    'selector': {'name': pipeline_name},
-                    'executionMetadata': {
-                        'runId': run_id,
-                        'tags': [{'key': 'airflow_ts', 'value': ts}],
-                    },
-                    'stepKeys': step_keys,
+            def _construct_variables(redact=False):
+                return {
+                    'executionParams': {
+                        'environmentConfigData': 'REDACTED' if redact else environment_dict,
+                        'mode': mode,
+                        'selector': {'name': pipeline_name},
+                        'executionMetadata': {
+                            'runId': run_id,
+                            'tags': [{'key': 'airflow_ts', 'value': ts}],
+                        },
+                        'stepKeys': step_keys,
+                    }
                 }
-            }
 
             # TODO: This removes the environment, pending an effective way to scrub it for secrets:
             # it's very useful for debugging to understand the GraphQL query that's being executed.
@@ -439,11 +440,13 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 + QUERY
                 + '\n'
                 + 'with variables:\n'
-                + seven.json.dumps(dict(variables, environmentConfigData='REDACTED'))
+                + seven.json.dumps(_construct_variables(redact=True), indent=2)
             )
 
             res = json.loads(
-                execute_query_from_cli(handle, QUERY, variables=seven.json.dumps(variables))
+                execute_query_from_cli(
+                    handle, QUERY, variables=seven.json.dumps(_construct_variables())
+                )
             )
             cls.handle_errors(res, None)
             return cls.handle_result(res)
