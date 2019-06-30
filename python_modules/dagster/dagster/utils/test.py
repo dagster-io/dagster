@@ -28,7 +28,7 @@ from dagster.core.execution.context_creation_pipeline import (
 )
 from dagster.core.utility_solids import define_stub_solid
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
-from dagster.core.storage.file_manager import LocalFileHandle
+from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
 from dagster.core.storage.runs import InMemoryRunStorage
 
 
@@ -59,7 +59,9 @@ def create_test_pipeline_execution_context(
         context_creation_data=creation_data,
         scoped_resources_builder=scoped_resources_builder,
         system_storage_data=SystemStorageData(
-            run_storage=InMemoryRunStorage(), intermediates_manager=InMemoryIntermediatesManager()
+            run_storage=InMemoryRunStorage(),
+            intermediates_manager=InMemoryIntermediatesManager(),
+            file_manager=LocalFileManager.for_run_id(run_id),
         ),
         log_manager=log_manager,
     )

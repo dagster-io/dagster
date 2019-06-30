@@ -66,13 +66,12 @@ class SystemStorageDefinition:
 
 
 class SystemStorageData:
-    def __init__(self, run_storage, intermediates_manager, file_manager=None):
+    def __init__(self, run_storage, intermediates_manager, file_manager):
         self.run_storage = check.inst_param(run_storage, 'run_storage', RunStorage)
         self.intermediates_manager = check.inst_param(
             intermediates_manager, 'intermediates_manager', IntermediatesManager
         )
-        # TODO: Make required when https://github.com/dagster-io/dagster/issues/1456 is complete
-        self.file_manager = check.opt_inst_param(file_manager, 'file_manager', FileManager)
+        self.file_manager = check.inst_param(file_manager, 'file_manager', FileManager)
 
 
 def system_storage(
@@ -138,9 +137,7 @@ def create_mem_system_storage_data(init_context):
     return SystemStorageData(
         run_storage=InMemoryRunStorage(),
         intermediates_manager=InMemoryIntermediatesManager(),
-        file_manager=LocalFileManager(
-            LocalFileManager.default_base_dir(init_context.run_config.run_id)
-        ),
+        file_manager=LocalFileManager.for_run_id(init_context.run_config.run_id),
     )
 
 
@@ -155,9 +152,7 @@ def mem_system_storage(init_context):
 def fs_system_storage(init_context):
     base_dir = init_context.system_storage_config.get('base_dir')
     return SystemStorageData(
-        file_manager=LocalFileManager(
-            LocalFileManager.default_base_dir(init_context.run_config.run_id)
-        ),
+        file_manager=LocalFileManager.for_run_id(init_context.run_config.run_id),
         run_storage=FileSystemRunStorage(base_dir=base_dir),
         intermediates_manager=IntermediateStoreIntermediatesManager(
             FileSystemIntermediateStore(
