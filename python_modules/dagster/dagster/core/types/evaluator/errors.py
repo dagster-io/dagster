@@ -392,9 +392,7 @@ def create_bad_mapping_solids_key_error(context, solid_def_name, handle_name):
     )
 
 
-def create_bad_user_config_mapping_fn_error(
-    context, fn_name, handle_name, solid_def_name, exc_info
-):
+def create_bad_user_config_fn_error(context, fn_name, handle_name, solid_def_name, exc_info):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,

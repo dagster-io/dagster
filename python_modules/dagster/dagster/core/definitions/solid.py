@@ -200,6 +200,12 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
             Define inputs and how they map to the constituent solids within.
         output_mappings (List[OutputMapping]):
             Define outputs and how they map from the constituent solids within.
+        config_mapping (ConfigMapping):
+            By specifying a config mapping, you can override the configuration for child solids
+            contained within this composite solid. Config mappings require both a configuration
+            field to be specified, which is exposed as the configuration for this composite solid,
+            and a configuration mapping function, which maps the parent configuration of this solid
+            into a configuration that is applied to any child solids.
         dependencies (Optional[Dict[Union[str, SolidInvocation], Dict[str, DependencyDefinition]]]):
             A structure that declares where each solid gets its inputs. The keys at the top
             level dict are either string names of solids or SolidInvocations. The values

@@ -16,7 +16,7 @@ from .evaluate_value_result import EvaluateValueResult
 from .errors import (
     create_bad_mapping_error,
     create_bad_mapping_solids_key_error,
-    create_bad_user_config_mapping_fn_error,
+    create_bad_user_config_fn_error,
     create_composite_type_mismatch_error,
     create_enum_type_mismatch_error,
     create_enum_value_missing_error,
@@ -246,16 +246,16 @@ def _evaluate_composite_solid_config(context):
         return evaluate_value_result
 
     try:
-        mapped_config_value = solid_def.config_mapping.config_mapping_fn(
+        mapped_config_value = solid_def.config_mapping.config_fn(
             ConfigMappingContext(run_config=context.run_config),
             # ensure we don't mutate the source environment dict
             frozendict(context.config_value.get('config')),
         )
     except Exception:  # pylint: disable=W0703
         return EvaluateValueResult.for_error(
-            create_bad_user_config_mapping_fn_error(
+            create_bad_user_config_fn_error(
                 context,
-                solid_def.config_mapping.config_mapping_fn.__name__,
+                solid_def.config_mapping.config_fn.__name__,
                 str(handle),
                 solid_def_name,
                 traceback.format_exc(),
@@ -271,7 +271,7 @@ def _evaluate_composite_solid_config(context):
         return EvaluateValueResult.for_error(
             create_bad_mapping_error(
                 context,
-                solid_def.config_mapping.config_mapping_fn.__name__,
+                solid_def.config_mapping.config_fn.__name__,
                 solid_def_name,
                 str(handle),
                 mapped_config_value,

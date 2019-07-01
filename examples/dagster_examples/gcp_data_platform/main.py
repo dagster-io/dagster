@@ -15,7 +15,6 @@ from dagster import (
     RepositoryDefinition,
     String,
 )
-from dagster.core.definitions.config import ConfigMapping
 
 from dagster_gcp import (
     bigquery_resource,
@@ -85,14 +84,12 @@ def events_dataproc_fn(context, cfg):
 
 
 @composite_solid(
-    config_mapping=ConfigMapping(
-        config_mapping_fn=events_dataproc_fn,
-        config={
-            'cluster_name': Field(String),
-            'input_bucket': Field(String),
-            'output_bucket': Field(String),
-        },
-    )
+    config_fn=events_dataproc_fn,
+    config={
+        'cluster_name': Field(String),
+        'input_bucket': Field(String),
+        'output_bucket': Field(String),
+    },
 )
 def events_dataproc() -> List[String]:
     return output_paths(dataproc_solid())  # pylint: disable=no-value-for-parameter
@@ -119,11 +116,7 @@ def bq_load_events_fn(context, cfg):
     }
 
 
-@composite_solid(
-    config_mapping=ConfigMapping(
-        config_mapping_fn=bq_load_events_fn, config={'table': Field(String)}
-    )
-)
+@composite_solid(config_fn=bq_load_events_fn, config={'table': Field(String)})
 def bq_load_events(source_uris: List[String]):
     return bq_load_solid_for_source(BigQueryLoadSource.GCS).alias('bq_load_events_internal')(
         source_uris
@@ -146,11 +139,7 @@ def explore_visits_by_hour_fn(_, cfg):
     }
 
 
-@composite_solid(
-    config_mapping=ConfigMapping(
-        config_mapping_fn=explore_visits_by_hour_fn, config={'table': Field(String)}
-    )
-)
+@composite_solid(config_fn=explore_visits_by_hour_fn, config={'table': Field(String)})
 def explore_visits_by_hour(start):
     with open(file_relative_path(__file__, 'sql/explore_visits_by_hour.sql'), 'r') as f:
         query = f.read()

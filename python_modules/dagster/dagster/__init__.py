@@ -2,7 +2,6 @@ from dagster.core import types
 
 from dagster.core.definitions import (
     CompositeSolidDefinition,
-    ConfigMapping,
     DependencyDefinition,
     EventMetadataEntry,
     ExecutionTargetHandle,
@@ -121,7 +120,6 @@ from .version import __version__
 __all__ = [
     # Definition
     'CompositeSolidDefinition',
-    'ConfigMapping',
     'DependencyDefinition',
     'EventMetadataEntry',
     'ExpectationDefinition',
