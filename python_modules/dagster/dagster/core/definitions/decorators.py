@@ -542,6 +542,9 @@ def _validate_decorated_fn(fn, names, expected_positionals):
     expected_positional_params = params[0 : len(expected_positionals)]
     other_params = params[len(expected_positionals) :]
 
+    if len(expected_positional_params) < len(expected_positionals):
+        raise FunctionValidationError(FunctionValidationError.TYPES['missing_positional'])
+
     for expected_names, actual in zip(expected_positionals, expected_positional_params):
         possible_names = []
         for expected in expected_names:
@@ -553,6 +556,7 @@ def _validate_decorated_fn(fn, names, expected_positionals):
                     '{expected}_'.format(expected=expected),
                 ]
             )
+
         if (
             actual.kind
             not in [funcsigs.Parameter.POSITIONAL_OR_KEYWORD, funcsigs.Parameter.POSITIONAL_ONLY]
