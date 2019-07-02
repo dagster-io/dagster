@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.storage.type_storage import TypeStoragePlugin
 
-from .config_schema import InputSchema, OutputSchema
+from .config_schema import InputHydrationConfig, OutputSchema
 from .marshal import SerializationStrategy, PickleSerializationStrategy
 from .runtime import PythonObjectType, RuntimeType
 
@@ -19,7 +19,7 @@ def _decorate_as_dagster_type(
     key,
     name,
     description,
-    input_schema=None,
+    input_hydration_config=None,
     output_schema=None,
     serialization_strategy=None,
     auto_plugins=None,
@@ -30,7 +30,7 @@ def _decorate_as_dagster_type(
         name=name,
         description=description,
         python_type=bare_cls,
-        input_schema=input_schema,
+        input_hydration_config=input_hydration_config,
         output_schema=output_schema,
         serialization_strategy=serialization_strategy,
         auto_plugins=auto_plugins,
@@ -46,7 +46,7 @@ def _decorate_as_dagster_type(
 def dagster_type(
     name=None,
     description=None,
-    input_schema=None,
+    input_hydration_config=None,
     output_schema=None,
     serialization_strategy=None,
     auto_plugins=None,
@@ -63,7 +63,7 @@ def dagster_type(
             key=new_name,
             name=new_name,
             description=description,
-            input_schema=input_schema,
+            input_hydration_config=input_hydration_config,
             output_schema=output_schema,
             serialization_strategy=serialization_strategy,
             auto_plugins=auto_plugins,
@@ -103,7 +103,7 @@ def as_dagster_type(
     existing_type,
     name=None,
     description=None,
-    input_schema=None,
+    input_hydration_config=None,
     output_schema=None,
     serialization_strategy=None,
     auto_plugins=None,
@@ -117,8 +117,8 @@ def as_dagster_type(
             The python type you want to project in to the Dagster type system.
         name (Optional[str]):
         description (Optiona[str]):
-        input_schema (Optional[InputSchema]):
-            An instance of a class that inherits from :py:class:`InputSchema` that
+        input_hydration_config (Optional[InputHydrationConfig]):
+            An instance of a class that inherits from :py:class:`InputHydrationConfig` that
             can map config data to a value of this type.
 
         output_schema (Optiona[OutputSchema]):
@@ -133,7 +133,7 @@ def as_dagster_type(
     check.type_param(existing_type, 'existing_type')
     check.opt_str_param(name, 'name')
     check.opt_str_param(description, 'description')
-    check.opt_inst_param(input_schema, 'input_schema', InputSchema)
+    check.opt_inst_param(input_hydration_config, 'input_hydration_config', InputHydrationConfig)
     check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
     check.opt_inst_param(
         serialization_strategy,
@@ -157,7 +157,7 @@ def as_dagster_type(
         key=name,
         name=name,
         description=description,
-        input_schema=input_schema,
+        input_hydration_config=input_hydration_config,
         output_schema=output_schema,
         serialization_strategy=serialization_strategy,
         auto_plugins=auto_plugins,

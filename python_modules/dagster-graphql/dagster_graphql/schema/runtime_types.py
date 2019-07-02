@@ -21,7 +21,7 @@ def to_dauphin_runtime_type(runtime_type):
         is_nullable=runtime_type.is_nullable,
         is_list=runtime_type.is_list,
         is_nothing=runtime_type.is_nothing,
-        input_schema_type=config_type_for_schema(runtime_type.input_schema),
+        input_schema_type=config_type_for_schema(runtime_type.input_hydration_config),
         output_schema_type=config_type_for_schema(runtime_type.output_schema),
         inner_types=_resolve_inner_types(runtime_type),
     )

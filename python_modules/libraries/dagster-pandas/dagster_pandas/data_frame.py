@@ -92,7 +92,7 @@ DataFrame = as_dagster_type(
     description='''Two-dimensional size-mutable, potentially heterogeneous
     tabular data structure with labeled axes (rows and columns).
     See http://pandas.pydata.org/''',
-    input_schema=dataframe_input_schema,
+    input_hydration_config=dataframe_input_schema,
     output_schema=dataframe_output_schema,
     metadata_fn=lambda value: TypeCheck(
         metadata_entries=[

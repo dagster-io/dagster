@@ -75,7 +75,9 @@ def write_rdd(context, file_type, file_options, spark_rdd):
         check.failed('Unsupported file type: {}'.format(file_type))
 
 
-SparkRDD = as_dagster_type(RDD, 'SparkRDD', input_schema=load_rdd, output_schema=write_rdd)
+SparkRDD = as_dagster_type(
+    RDD, 'SparkRDD', input_hydration_config=load_rdd, output_schema=write_rdd
+)
 
 
 @resource(config={'spark_conf': spark_config()})

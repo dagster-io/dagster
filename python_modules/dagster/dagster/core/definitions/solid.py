@@ -42,7 +42,7 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
 
     @property
     def has_configurable_inputs(self):
-        return any([inp.runtime_type.input_schema for inp in self.input_defs])
+        return any([inp.runtime_type.input_hydration_config for inp in self.input_defs])
 
     @property
     def has_configurable_outputs(self):

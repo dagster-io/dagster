@@ -87,7 +87,7 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'Any'
             },
             {
-                'name': 'Any.InputSchema'
+                'name': 'Any.InputHydrationConfig'
             },
             {
                 'name': 'Any.MaterializationSchema'
@@ -96,7 +96,7 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'Bool'
             },
             {
-                'name': 'Bool.InputSchema'
+                'name': 'Bool.InputHydrationConfig'
             },
             {
                 'name': 'Bool.MaterializationSchema'
@@ -105,7 +105,7 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'Float'
             },
             {
-                'name': 'Float.InputSchema'
+                'name': 'Float.InputHydrationConfig'
             },
             {
                 'name': 'Float.MaterializationSchema'
@@ -114,7 +114,7 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'Int'
             },
             {
-                'name': 'Int.InputSchema'
+                'name': 'Int.InputHydrationConfig'
             },
             {
                 'name': 'Int.MaterializationSchema'
@@ -168,7 +168,7 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'String'
             },
             {
-                'name': 'String.InputSchema'
+                'name': 'String.InputHydrationConfig'
             },
             {
                 'name': 'String.MaterializationSchema'

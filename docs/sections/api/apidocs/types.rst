@@ -84,7 +84,7 @@ Schema
 
 .. autofunction:: NamedSelector
 
-.. autofunction:: input_schema
+.. autofunction:: input_hydration_config
 
 .. autofunction:: input_selector_schema
 

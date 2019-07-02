@@ -13,7 +13,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
 
     @input_selector_schema(
         NamedSelector(
-            scalar_name + '.InputSchema',
+            scalar_name + '.InputHydrationConfig',
             {
                 'value': FieldImpl(config_scalar_type),
                 'json': define_path_dict_field(),

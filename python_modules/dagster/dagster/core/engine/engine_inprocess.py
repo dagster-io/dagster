@@ -136,7 +136,7 @@ def _input_values_from_intermediates_manager(step_context):
                 step_context, step_input.runtime_type, step_input.prev_output_handle
             )
         else:  # is from config
-            input_value = step_input.runtime_type.input_schema.construct_from_config_value(
+            input_value = step_input.runtime_type.input_hydration_config.construct_from_config_value(
                 step_context, step_input.config_data
             )
         input_values[step_input.name] = input_value

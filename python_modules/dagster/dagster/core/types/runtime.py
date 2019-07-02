@@ -12,7 +12,7 @@ from .config import ConfigType
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
 
-from .config_schema import InputSchema, OutputSchema
+from .config_schema import InputHydrationConfig, OutputSchema
 
 from .marshal import SerializationStrategy, PickleSerializationStrategy
 from .dagster_type import check_dagster_type_param
@@ -38,7 +38,7 @@ class RuntimeType(object):
         name,
         is_builtin=False,
         description=None,
-        input_schema=None,
+        input_hydration_config=None,
         output_schema=None,
         serialization_strategy=None,
         auto_plugins=None,
@@ -56,7 +56,9 @@ class RuntimeType(object):
         self.key = check.str_param(key, 'key')
         self.name = check.opt_str_param(name, 'name')
         self.description = check.opt_str_param(description, 'description')
-        self.input_schema = check.opt_inst_param(input_schema, 'input_schema', InputSchema)
+        self.input_hydration_config = check.opt_inst_param(
+            input_hydration_config, 'input_hydration_config', InputHydrationConfig
+        )
         self.output_schema = check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
         self.serialization_strategy = check.opt_inst_param(
             serialization_strategy,
@@ -138,7 +140,7 @@ class BuiltinScalarRuntimeType(RuntimeType):
 class Int(BuiltinScalarRuntimeType):
     def __init__(self):
         super(Int, self).__init__(
-            input_schema=BuiltinSchemas.INT_INPUT, output_schema=BuiltinSchemas.INT_OUTPUT
+            input_hydration_config=BuiltinSchemas.INT_INPUT, output_schema=BuiltinSchemas.INT_OUTPUT
         )
 
     def type_check(self, value):
@@ -164,7 +166,8 @@ def _throw_if_not_string(value):
 class String(BuiltinScalarRuntimeType):
     def __init__(self):
         super(String, self).__init__(
-            input_schema=BuiltinSchemas.STRING_INPUT, output_schema=BuiltinSchemas.STRING_OUTPUT
+            input_hydration_config=BuiltinSchemas.STRING_INPUT,
+            output_schema=BuiltinSchemas.STRING_OUTPUT,
         )
 
     def type_check(self, value):
@@ -174,7 +177,8 @@ class String(BuiltinScalarRuntimeType):
 class Path(BuiltinScalarRuntimeType):
     def __init__(self):
         super(Path, self).__init__(
-            input_schema=BuiltinSchemas.PATH_INPUT, output_schema=BuiltinSchemas.PATH_OUTPUT
+            input_hydration_config=BuiltinSchemas.PATH_INPUT,
+            output_schema=BuiltinSchemas.PATH_OUTPUT,
         )
 
     def type_check(self, value):
@@ -184,7 +188,8 @@ class Path(BuiltinScalarRuntimeType):
 class Float(BuiltinScalarRuntimeType):
     def __init__(self):
         super(Float, self).__init__(
-            input_schema=BuiltinSchemas.FLOAT_INPUT, output_schema=BuiltinSchemas.FLOAT_OUTPUT
+            input_hydration_config=BuiltinSchemas.FLOAT_INPUT,
+            output_schema=BuiltinSchemas.FLOAT_OUTPUT,
         )
 
     def type_check(self, value):
@@ -197,7 +202,8 @@ class Float(BuiltinScalarRuntimeType):
 class Bool(BuiltinScalarRuntimeType):
     def __init__(self):
         super(Bool, self).__init__(
-            input_schema=BuiltinSchemas.BOOL_INPUT, output_schema=BuiltinSchemas.BOOL_OUTPUT
+            input_hydration_config=BuiltinSchemas.BOOL_INPUT,
+            output_schema=BuiltinSchemas.BOOL_OUTPUT,
         )
 
     def type_check(self, value):
@@ -209,12 +215,18 @@ class Bool(BuiltinScalarRuntimeType):
 
 class Anyish(RuntimeType):
     def __init__(
-        self, key, name, input_schema=None, output_schema=None, is_builtin=False, description=None
+        self,
+        key,
+        name,
+        input_hydration_config=None,
+        output_schema=None,
+        is_builtin=False,
+        description=None,
     ):
         super(Anyish, self).__init__(
             key=key,
             name=name,
-            input_schema=input_schema,
+            input_hydration_config=input_hydration_config,
             output_schema=output_schema,
             is_builtin=is_builtin,
             description=description,
@@ -230,7 +242,7 @@ class Any(Anyish):
         super(Any, self).__init__(
             key='Any',
             name='Any',
-            input_schema=BuiltinSchemas.ANY_INPUT,
+            input_hydration_config=BuiltinSchemas.ANY_INPUT,
             output_schema=BuiltinSchemas.ANY_OUTPUT,
             is_builtin=True,
         )
@@ -247,7 +259,11 @@ def define_any_type(name, description=None):
 class Nothing(RuntimeType):
     def __init__(self):
         super(Nothing, self).__init__(
-            key='Nothing', name='Nothing', input_schema=None, output_schema=None, is_builtin=True
+            key='Nothing',
+            name='Nothing',
+            input_hydration_config=None,
+            output_schema=None,
+            is_builtin=True,
         )
 
     @property
@@ -284,12 +300,12 @@ class PythonObjectType(RuntimeType):
 
 
 def _create_nullable_input_schema(inner_type):
-    if not inner_type.input_schema:
+    if not inner_type.input_hydration_config:
         return None
 
-    nullable_type = ConfigNullable(inner_type.input_schema.schema_type).inst()
+    nullable_type = ConfigNullable(inner_type.input_hydration_config.schema_type).inst()
 
-    class _NullableSchema(InputSchema):
+    class _NullableSchema(InputHydrationConfig):
         @property
         def schema_type(self):
             return nullable_type
@@ -297,7 +313,9 @@ def _create_nullable_input_schema(inner_type):
         def construct_from_config_value(self, context, config_value):
             if config_value is None:
                 return None
-            return inner_type.input_schema.construct_from_config_value(context, config_value)
+            return inner_type.input_hydration_config.construct_from_config_value(
+                context, config_value
+            )
 
     return _NullableSchema()
 
@@ -306,7 +324,7 @@ class NullableType(RuntimeType):
     def __init__(self, inner_type):
         key = 'Optional.' + inner_type.key
         super(NullableType, self).__init__(
-            key=key, name=None, input_schema=_create_nullable_input_schema(inner_type)
+            key=key, name=None, input_hydration_config=_create_nullable_input_schema(inner_type)
         )
         self.inner_type = inner_type
 
@@ -327,18 +345,20 @@ class NullableType(RuntimeType):
 
 
 def _create_list_input_schema(inner_type):
-    if not inner_type.input_schema:
+    if not inner_type.input_hydration_config:
         return None
 
-    list_type = ConfigList(inner_type.input_schema.schema_type).inst()
+    list_type = ConfigList(inner_type.input_hydration_config.schema_type).inst()
 
-    class _ListSchema(InputSchema):
+    class _ListSchema(InputHydrationConfig):
         @property
         def schema_type(self):
             return list_type
 
         def construct_from_config_value(self, context, config_value):
-            convert_item = partial(inner_type.input_schema.construct_from_config_value, context)
+            convert_item = partial(
+                inner_type.input_hydration_config.construct_from_config_value, context
+            )
             return list(map(convert_item, config_value))
 
     return _ListSchema()
@@ -348,7 +368,7 @@ class ListType(RuntimeType):
     def __init__(self, inner_type):
         key = 'List.' + inner_type.key
         super(ListType, self).__init__(
-            key=key, name=None, input_schema=_create_list_input_schema(inner_type)
+            key=key, name=None, input_hydration_config=_create_list_input_schema(inner_type)
         )
         self.inner_type = inner_type
 

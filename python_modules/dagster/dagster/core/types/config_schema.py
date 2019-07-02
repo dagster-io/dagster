@@ -6,7 +6,7 @@ from .config import ConfigType, List, Nullable
 from .wrapping import WrappingListType, WrappingNullableType
 
 
-class InputSchema:
+class InputHydrationConfig:
     @property
     def schema_type(self):
         check.not_implemented(
@@ -36,7 +36,7 @@ def resolve_config_cls_arg(config_cls):
 def make_bare_input_schema(config_cls):
     config_type = resolve_config_cls_arg(config_cls)
 
-    class _InputSchema(InputSchema):
+    class _InputSchema(InputHydrationConfig):
         @property
         def schema_type(self):
             return config_type
@@ -59,7 +59,7 @@ class OutputSchema:
 
 
 def _create_input_schema(config_type, func):
-    class _InputSchema(InputSchema):
+    class _InputSchema(InputHydrationConfig):
         @property
         def schema_type(self):
             return config_type
@@ -70,7 +70,7 @@ def _create_input_schema(config_type, func):
     return _InputSchema()
 
 
-def input_schema(config_cls):
+def input_hydration_config(config_cls):
     '''
     A decorator for annotating a function that can turn a ``config_value`` in to
     an instance of a custom type.

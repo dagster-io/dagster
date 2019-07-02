@@ -275,14 +275,16 @@ def get_inputs_field(solid, handle, dependency_structure, pipeline_name):
 
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
-        if inp.runtime_type.input_schema:
+        if inp.runtime_type.input_hydration_config:
             inp_handle = SolidInputHandle(solid, inp)
             # If this input is not satisfied by a dependency you must
             # provide it via config
             if not dependency_structure.has_deps(inp_handle) and not solid.container_maps_input(
                 name
             ):
-                inputs_field_fields[name] = FieldImpl(inp.runtime_type.input_schema.schema_type)
+                inputs_field_fields[name] = FieldImpl(
+                    inp.runtime_type.input_hydration_config.schema_type
+                )
 
     if not inputs_field_fields:
         return None
@@ -425,8 +427,8 @@ def iterate_solid_def_types(solid_def):
 def _gather_all_schemas(solid_defs):
     runtime_types = construct_runtime_type_dictionary(solid_defs)
     for rtt in runtime_types.values():
-        if rtt.input_schema:
-            for ct in iterate_config_types(rtt.input_schema.schema_type):
+        if rtt.input_hydration_config:
+            for ct in iterate_config_types(rtt.input_hydration_config.schema_type):
                 yield ct
         if rtt.output_schema:
             for ct in iterate_config_types(rtt.output_schema.schema_type):

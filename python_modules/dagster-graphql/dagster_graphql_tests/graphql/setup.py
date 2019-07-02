@@ -33,7 +33,7 @@ from dagster import (
     SolidInvocation,
     String,
     as_dagster_type,
-    input_schema,
+    input_hydration_config,
     lambda_solid,
     logger,
     output_schema,
@@ -52,7 +52,7 @@ class PoorMansDataFrame_(list):
     pass
 
 
-@input_schema(Path)
+@input_hydration_config(Path)
 def df_input_schema(_context, path):
     with open(path, 'r') as fd:
         return PoorMansDataFrame_(
@@ -71,7 +71,7 @@ def df_output_schema(_context, path, value):
 
 
 PoorMansDataFrame = as_dagster_type(
-    PoorMansDataFrame_, input_schema=df_input_schema, output_schema=df_output_schema
+    PoorMansDataFrame_, input_hydration_config=df_input_schema, output_schema=df_output_schema
 )
 
 

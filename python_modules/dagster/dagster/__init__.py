@@ -84,7 +84,7 @@ from dagster.core.types import (
     Dict,
     Field,
     Float,
-    input_schema,
+    input_hydration_config,
     input_selector_schema,
     Int,
     List,
@@ -180,7 +180,7 @@ __all__ = [
     # types
     'Any',
     'Bool',
-    'input_schema',
+    'input_hydration_config',
     'input_selector_schema',
     'Dict',
     'Enum',
