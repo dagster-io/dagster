@@ -1,6 +1,6 @@
 # pylint: disable=unused-argument
 
-from dagster import composite_solid, ConfigMapping, Field, List, String
+from dagster import composite_solid, Field, List, String
 
 from dagster_gcp import (
     bq_load_solid_for_source,
@@ -35,11 +35,7 @@ def dataproc_spark_solid(
             }
         }
 
-    @composite_solid(
-        config_mapping=ConfigMapping(
-            config_mapping_fn=dataproc_spark_solid_fn, config={'cluster_name': Field(String)}
-        )
-    )
+    @composite_solid(config_fn=dataproc_spark_solid_fn, config={'cluster_name': Field(String)})
     def dataproc_spark_solid_internal():
         return dataproc_solid()  # pylint: disable=no-value-for-parameter
 
@@ -67,11 +63,7 @@ def gcs_to_bigquery_solid(
             }
         }
 
-    @composite_solid(
-        config_mapping=ConfigMapping(
-            config_mapping_fn=bq_load_data_fn, config={'project_id': Field(String)}
-        )
-    )
+    @composite_solid(config_fn=bq_load_data_fn, config={'project_id': Field(String)})
     def _gcs_to_bigquery_solid(source_uris: List[String]):
         return bq_load_solid_for_source(BigQueryLoadSource.GCS).alias(
             'gcs_to_bigquery_solid_internal'
@@ -101,7 +93,7 @@ def bq_sql_solid(
             }
         }
 
-    @composite_solid(config_mapping=ConfigMapping(config_mapping_fn=bq_sql_fn, config={}))
+    @composite_solid(config_fn=bq_sql_fn, config={})
     def _bq_sql_solid(start):
         return bq_solid_for_queries([sql]).alias('bq_sql_internal')(start=start)
 
