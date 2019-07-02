@@ -25,57 +25,17 @@ export interface PipelineRunLogsUpdateFragment_logs_pageInfo {
   lastCursor: any | null;
 }
 
-export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_step {
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepSkippedEvent_step {
   __typename: "ExecutionStep";
   key: string;
 }
 
-export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent {
-  __typename: "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepSkippedEvent {
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_step | null;
-}
-
-export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
-export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_error {
-  __typename: "PythonError";
-  stack: string[];
-  message: string;
-}
-
-export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent {
-  __typename: "PipelineInitFailureEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_step | null;
-  error: PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_error;
-}
-
-export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
-export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_error {
-  __typename: "PythonError";
-  stack: string[];
-  message: string;
-}
-
-export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent {
-  __typename: "ExecutionStepFailureEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_step | null;
-  error: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_error;
+  step: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepSkippedEvent_step | null;
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent_step {
@@ -143,6 +103,106 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEve
   materialization: PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_materialization;
 }
 
+export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_error {
+  __typename: "PythonError";
+  stack: string[];
+  message: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent {
+  __typename: "PipelineInitFailureEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_step | null;
+  error: PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_error;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_error {
+  __typename: "PythonError";
+  stack: string[];
+  message: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent {
+  __typename: "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_step | null;
+  error: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_error;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries {
+  __typename: "EventJsonMetadataEntry" | "EventPathMetadataEntry" | "EventTextMetadataEntry" | "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_typeCheck {
+  __typename: "TypeCheck";
+  label: string;
+  description: string | null;
+  success: boolean;
+  metadataEntries: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries[];
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent {
+  __typename: "ExecutionStepInputEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_step | null;
+  inputName: string;
+  valueRepr: string;
+  typeCheck: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_typeCheck;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries {
+  __typename: "EventJsonMetadataEntry" | "EventPathMetadataEntry" | "EventTextMetadataEntry" | "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck {
+  __typename: "TypeCheck";
+  label: string;
+  description: string | null;
+  success: boolean;
+  metadataEntries: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries[];
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent {
+  __typename: "ExecutionStepOutputEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent_step | null;
+  outputName: string;
+  valueRepr: string;
+  typeCheck: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck;
+}
+
 export interface PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent_step {
   __typename: "ExecutionStep";
   key: string;
@@ -195,7 +255,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultE
   expectationResult: PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent_expectationResult;
 }
 
-export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent;
+export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepSkippedEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent;
 
 export interface PipelineRunLogsUpdateFragment_logs {
   __typename: "LogMessageConnection";

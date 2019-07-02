@@ -29,57 +29,17 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_pageIn
   lastCursor: any | null;
 }
 
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_step {
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepSkippedEvent_step {
   __typename: "ExecutionStep";
   key: string;
 }
 
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent {
-  __typename: "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepSkippedEvent {
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_step | null;
-}
-
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent_error {
-  __typename: "PythonError";
-  stack: string[];
-  message: string;
-}
-
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent {
-  __typename: "PipelineInitFailureEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent_step | null;
-  error: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent_error;
-}
-
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent_error {
-  __typename: "PythonError";
-  stack: string[];
-  message: string;
-}
-
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent {
-  __typename: "ExecutionStepFailureEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent_step | null;
-  error: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent_error;
+  step: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepSkippedEvent_step | null;
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineProcessStartedEvent_step {
@@ -147,6 +107,106 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
   materialization: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepMaterializationEvent_materialization;
 }
 
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent_error {
+  __typename: "PythonError";
+  stack: string[];
+  message: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent {
+  __typename: "PipelineInitFailureEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent_step | null;
+  error: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent_error;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent_error {
+  __typename: "PythonError";
+  stack: string[];
+  message: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent {
+  __typename: "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent_step | null;
+  error: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent_error;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries {
+  __typename: "EventJsonMetadataEntry" | "EventPathMetadataEntry" | "EventTextMetadataEntry" | "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck {
+  __typename: "TypeCheck";
+  label: string;
+  description: string | null;
+  success: boolean;
+  metadataEntries: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries[];
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent {
+  __typename: "ExecutionStepInputEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_step | null;
+  inputName: string;
+  valueRepr: string;
+  typeCheck: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries {
+  __typename: "EventJsonMetadataEntry" | "EventPathMetadataEntry" | "EventTextMetadataEntry" | "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck {
+  __typename: "TypeCheck";
+  label: string;
+  description: string | null;
+  success: boolean;
+  metadataEntries: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries[];
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent {
+  __typename: "ExecutionStepOutputEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_step | null;
+  outputName: string;
+  valueRepr: string;
+  typeCheck: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck;
+}
+
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepExpectationResultEvent_step {
   __typename: "ExecutionStep";
   key: string;
@@ -199,7 +259,7 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
   expectationResult: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepExpectationResultEvent_expectationResult;
 }
 
-export type PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes = PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineProcessStartedEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepMaterializationEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepExpectationResultEvent;
+export type PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes = PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepSkippedEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineProcessStartedEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepMaterializationEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepExpectationResultEvent;
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs {
   __typename: "LogMessageConnection";

@@ -1,6 +1,6 @@
 import * as React from "react";
 import styled from "styled-components";
-import { Toaster, Colors, Position, Intent } from "@blueprintjs/core";
+import { Toaster, Tag, Position, Intent } from "@blueprintjs/core";
 import { IStepDisplayEvent } from "../RunMetadataProvider";
 import { showCustomAlert } from "../CustomAlertProvider";
 
@@ -77,7 +77,9 @@ export const DisplayEvent: React.FunctionComponent<DisplayEventProps> = ({
 }) => (
   <DisplayEventContainer>
     <DisplayEventHeader>
-      {IconComponents[event.icon]}
+      {"status" in event
+        ? IconComponents[(event as any).icon]("Expectation")
+        : IconComponents[event.icon]("Materialization")}
       {event.text}
     </DisplayEventHeader>
     {event.items.map((item, idx) => (
@@ -87,7 +89,6 @@ export const DisplayEvent: React.FunctionComponent<DisplayEventProps> = ({
 );
 
 const DisplayEventContainer = styled.div`
-  padding: 3.5px 3px;
   white-space: pre-wrap;
   font-size: 12px;
 `;
@@ -119,18 +120,34 @@ const TinyStatusDot = styled.div`
   flex-shrink: 0;
 `;
 
-const IconComponents: { [key: string]: React.ReactNode } = {
-  "dot-success": <TinyStatusDot style={{ background: Colors.GREEN2 }} />,
-  "dot-failure": <TinyStatusDot style={{ background: Colors.RED2 }} />,
-  "dot-pending": <TinyStatusDot style={{ background: Colors.GRAY2 }} />,
-  none: <TinyStatusDot style={{ background: "transparent" }} />,
-  file: (
+const IconComponents: { [key: string]: (word: string) => React.ReactNode } = {
+  "dot-success": (word: string) => (
+    <Tag minimal={true} intent={"success"} style={{ marginRight: 4 }}>
+      {word}
+    </Tag>
+  ),
+  "dot-failure": (word: string) => (
+    <Tag minimal={true} intent={"danger"} style={{ marginRight: 4 }}>
+      {word}
+    </Tag>
+  ),
+  "dot-pending": (word: string) => (
+    <Tag minimal={true} intent={"none"} style={{ marginRight: 4 }}>
+      {word}
+    </Tag>
+  ),
+  none: (word: string) => (
+    <Tag minimal={true} intent={"none"} style={{ marginRight: 4 }}>
+      {word}
+    </Tag>
+  ),
+  file: (word: string) => (
     <img
       style={{ flexShrink: 0, alignSelf: "center" }}
       src={require("../images/icon-file.svg")}
     />
   ),
-  link: (
+  link: (word: string) => (
     <img
       style={{ flexShrink: 0, alignSelf: "center" }}
       src={require("../images/icon-link.svg")}
