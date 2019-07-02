@@ -33,8 +33,8 @@ def test_basic_solids_config(snapshot):
         solid_defs=[
             SolidDefinition(
                 name='required_field_solid',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 config_field=Field(Dict(fields={'required_int': Field(Int)})),
                 compute_fn=lambda *_args: fail_me(),
             )

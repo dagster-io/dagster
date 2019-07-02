@@ -11,18 +11,18 @@ from dagster import (
 from dagster.core.types.evaluator import evaluate_config
 
 
-def single_output_transform(name, inputs, compute_fn, output, description=None):
+def single_output_transform(name, input_defs, compute_fn, output_def, description=None):
     '''It is commmon to want a Solid that has only inputs, a single output (with the default
     name), and no config. So this is a helper function to do that. This compute function
     must return the naked return value (as opposed to a Output object).
 
     Args:
         name (str): Name of the solid.
-        inputs (List[InputDefinition]): Inputs of solid.
+        input_defs (List[InputDefinition]): Inputs of solid.
         compute_fn (callable):
             Callable with the signature
             (context: ExecutionContext, inputs: Dict[str, Any]) : Any
-        output (OutputDefinition): Output of the solid.
+        output_def (OutputDefinition): Output of the solid.
         description (str): Descripion of the solid.
 
     Returns:
@@ -34,15 +34,15 @@ def single_output_transform(name, inputs, compute_fn, output, description=None):
 
             single_output_transform(
                 'add_one',
-                inputs=InputDefinition('num', types.Int),
-                output=OutputDefinition(types.Int),
+                input_defs=InputDefinition('num', types.Int),
+                output_def=OutputDefinition(types.Int),
                 compute_fn=lambda context, inputs: inputs['num'] + 1
             )
 
     '''
 
-    def _new_compute_fn(context, inputs):
-        value = compute_fn(context, inputs)
+    def _new_compute_fn(context, input_defs):
+        value = compute_fn(context, input_defs)
         if isinstance(value, Output):
             raise DagsterInvariantViolationError(
                 '''Single output compute Solid {name} returned a Output. Just return
@@ -52,9 +52,9 @@ def single_output_transform(name, inputs, compute_fn, output, description=None):
 
     return SolidDefinition(
         name=name,
-        inputs=inputs,
+        input_defs=input_defs,
         compute_fn=_new_compute_fn,
-        outputs=[output],
+        output_defs=[output_def],
         description=description,
     )
 

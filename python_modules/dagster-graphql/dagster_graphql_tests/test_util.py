@@ -37,7 +37,7 @@ def test_can_handle_all_step_events():
 
 
 def define_test_events_pipeline():
-    @solid(outputs=[OutputDefinition(Bool)])
+    @solid(output_defs=[OutputDefinition(Bool)])
     def materialization_and_expectation(_context):
         yield Materialization.file(path='/path/to/foo', description='This is a table.')
         yield Materialization.file(path='/path/to/bar')
@@ -46,7 +46,7 @@ def define_test_events_pipeline():
         yield Output(True)
 
     @solid(
-        outputs=[
+        output_defs=[
             OutputDefinition(name='output_one'),
             OutputDefinition(name='output_two', is_optional=True),
         ]
@@ -54,11 +54,11 @@ def define_test_events_pipeline():
     def optional_only_one(_context):  # pylint: disable=unused-argument
         yield Output(output_name='output_one', value=1)
 
-    @solid(inputs=[InputDefinition('some_input')])
+    @solid(input_defs=[InputDefinition('some_input')])
     def should_fail(_context, some_input):  # pylint: disable=unused-argument
         raise Exception('should fail')
 
-    @solid(inputs=[InputDefinition('some_input')])
+    @solid(input_defs=[InputDefinition('some_input')])
     def should_be_skipped(_context, some_input):  # pylint: disable=unused-argument
         pass
 

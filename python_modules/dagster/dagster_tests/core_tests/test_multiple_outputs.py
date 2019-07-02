@@ -22,8 +22,8 @@ def test_multiple_outputs():
 
     solid = SolidDefinition(
         name='multiple_outputs',
-        inputs=[],
-        outputs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
+        input_defs=[],
+        output_defs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
         compute_fn=_t_fn,
     )
 
@@ -59,8 +59,8 @@ def test_multiple_outputs_expectations():
 
     solid = SolidDefinition(
         name='multiple_outputs',
-        inputs=[],
-        outputs=[
+        input_defs=[],
+        output_defs=[
             OutputDefinition(
                 name='output_one',
                 expectations=[
@@ -94,8 +94,8 @@ def test_wrong_multiple_output():
 
     solid = SolidDefinition(
         name='multiple_outputs',
-        inputs=[],
-        outputs=[OutputDefinition(name='output_one')],
+        input_defs=[],
+        output_defs=[OutputDefinition(name='output_one')],
         compute_fn=_t_fn,
     )
 
@@ -114,8 +114,8 @@ def test_multiple_outputs_of_same_name_disallowed():
 
     solid = SolidDefinition(
         name='multiple_outputs',
-        inputs=[],
-        outputs=[OutputDefinition(name='output_one')],
+        input_defs=[],
+        output_defs=[OutputDefinition(name='output_one')],
         compute_fn=_t_fn,
     )
 
@@ -131,8 +131,8 @@ def test_multiple_outputs_only_emit_one():
 
     solid = SolidDefinition(
         name='multiple_outputs',
-        inputs=[],
-        outputs=[
+        input_defs=[],
+        output_defs=[
             OutputDefinition(name='output_one'),
             OutputDefinition(name='output_two', is_optional=True),
         ],
@@ -146,8 +146,8 @@ def test_multiple_outputs_only_emit_one():
 
     downstream_one = SolidDefinition(
         name='downstream_one',
-        inputs=[InputDefinition('some_input')],
-        outputs=[],
+        input_defs=[InputDefinition('some_input')],
+        output_defs=[],
         compute_fn=_compute_fn_one,
     )
 
@@ -156,8 +156,8 @@ def test_multiple_outputs_only_emit_one():
 
     downstream_two = SolidDefinition(
         name='downstream_two',
-        inputs=[InputDefinition('some_input')],
-        outputs=[],
+        input_defs=[InputDefinition('some_input')],
+        output_defs=[],
         compute_fn=_compute_fn_two,
     )
 
@@ -199,8 +199,8 @@ def test_missing_non_optional_output_fails():
 
     solid = SolidDefinition(
         name='multiple_outputs',
-        inputs=[],
-        outputs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
+        input_defs=[],
+        output_defs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
         compute_fn=_t_fn,
     )
 

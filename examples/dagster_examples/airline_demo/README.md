@@ -423,7 +423,7 @@ function that executes the statement (again, using the database engine exposed b
 resource) against the database, materializing the result as a table, and returning the name of the
 newly created table.
 
-    def sql_solid(name, select_statement, materialization_strategy, table_name=None, inputs=None):
+    def sql_solid(name, select_statement, materialization_strategy, table_name=None, input_defs=None):
         '''Return a new solid that executes and materializes a SQL select statement.
 
         Args:
@@ -495,8 +495,8 @@ newly created table.
 
         return SolidDefinition(
             name=name,
-            inputs=inputs,
-            outputs=[
+            input_defs=inputs,
+            output_defs=[
                 OutputDefinition(
                     materialization_strategy_output_types[materialization_strategy],
                     description=output_description,
@@ -566,7 +566,7 @@ code:
         ''',
         'table',
         table_name='delays_vs_fares',
-        inputs=[
+        input_defs=[
             InputDefinition('tickets_with_destination', SqlTableName),
             InputDefinition('average_sfo_outbound_avg_delays_by_destination', SqlTableName),
         ],
@@ -634,7 +634,7 @@ where to look for the notebooks. We define a new solid as follows:
     sfo_delays_by_destination = notebook_solid(
         'sfo_delays_by_destination',
         'SFO Delays by Destination.ipynb',
-        inputs=[
+        input_defs=[
             InputDefinition(
                 'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
             ),
@@ -642,7 +642,7 @@ where to look for the notebooks. We define a new solid as follows:
                 'table_name', SqlTableName, description='The SQL table to use for calcuations.'
             ),
         ],
-        outputs=[
+        output_defs=[
             OutputDefinition(
                 dagster_type=Path,
                 # name='plots_pdf_path',

@@ -17,7 +17,7 @@ def test_single_typed_input():
     def add_one_infer(_context, num: int):
         return num + 1
 
-    @solid(inputs=[InputDefinition('num', Int)])
+    @solid(input_defs=[InputDefinition('num', Int)])
     def add_one_ex(_context, num):
         return num + 1
 
@@ -30,7 +30,7 @@ def test_single_typed_input():
 
 
 def test_precedence():
-    @solid(inputs=[InputDefinition('num', Int)])
+    @solid(input_defs=[InputDefinition('num', Int)])
     def add_one(_context, num: Any):
         return num + 1
 

@@ -20,13 +20,15 @@ def parseNeighbors(urls):
     return parts[0], parts[1]
 
 
-@solid(inputs=[InputDefinition('pagerank_data', Path)], outputs=[OutputDefinition(SparkRDD)])
+@solid(
+    input_defs=[InputDefinition('pagerank_data', Path)], output_defs=[OutputDefinition(SparkRDD)]
+)
 def parse_pagerank_data_step_four(context, pagerank_data):
     lines = context.resources.spark.read.text(pagerank_data).rdd.map(lambda r: r[0])
     return lines.map(parseNeighbors)
 
 
-@solid(inputs=[InputDefinition('urls', SparkRDD)])
+@solid(input_defs=[InputDefinition('urls', SparkRDD)])
 def rest_of_pipeline(context, urls):
     links = urls.distinct().groupByKey().cache()
 

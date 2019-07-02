@@ -30,7 +30,7 @@ def create_root_success_solid(name):
         return passed_rows
 
     return single_output_transform(
-        name=name, inputs=[], compute_fn=root_transform, output=OutputDefinition()
+        name=name, input_defs=[], compute_fn=root_transform, output_def=OutputDefinition()
     )
 
 
@@ -39,7 +39,7 @@ def create_root_transform_failure_solid(name):
         raise Exception('Transform failed')
 
     return single_output_transform(
-        name=name, inputs=[], compute_fn=failed_transform, output=OutputDefinition()
+        name=name, input_defs=[], compute_fn=failed_transform, output_def=OutputDefinition()
     )
 
 
@@ -77,16 +77,16 @@ def test_failure_midstream():
 
     solid_c = single_output_transform(
         name='C',
-        inputs=[InputDefinition(name='A'), InputDefinition(name='B')],
+        input_defs=[InputDefinition(name='A'), InputDefinition(name='B')],
         compute_fn=fail_fn,
-        output=OutputDefinition(),
+        output_def=OutputDefinition(),
     )
 
     solid_d = single_output_transform(
         name='D',
-        inputs=[InputDefinition(name='C')],
+        input_defs=[InputDefinition(name='C')],
         compute_fn=success_fn,
-        output=OutputDefinition(),
+        output_def=OutputDefinition(),
     )
 
     pipeline_def = PipelineDefinition(
@@ -126,34 +126,37 @@ def test_failure_propagation():
 
     solid_b = single_output_transform(
         name='B',
-        inputs=[InputDefinition(name='A')],
+        input_defs=[InputDefinition(name='A')],
         compute_fn=success_fn,
-        output=OutputDefinition(),
+        output_def=OutputDefinition(),
     )
 
     solid_c = single_output_transform(
         name='C',
-        inputs=[InputDefinition(name='B')],
+        input_defs=[InputDefinition(name='B')],
         compute_fn=success_fn,
-        output=OutputDefinition(),
+        output_def=OutputDefinition(),
     )
 
     solid_d = single_output_transform(
-        name='D', inputs=[InputDefinition(name='A')], compute_fn=fail_fn, output=OutputDefinition()
+        name='D',
+        input_defs=[InputDefinition(name='A')],
+        compute_fn=fail_fn,
+        output_def=OutputDefinition(),
     )
 
     solid_e = single_output_transform(
         name='E',
-        inputs=[InputDefinition(name='D')],
+        input_defs=[InputDefinition(name='D')],
         compute_fn=success_fn,
-        output=OutputDefinition(),
+        output_def=OutputDefinition(),
     )
 
     solid_f = single_output_transform(
         name='F',
-        inputs=[InputDefinition(name='C'), InputDefinition(name='E')],
+        input_defs=[InputDefinition(name='C'), InputDefinition(name='E')],
         compute_fn=success_fn,
-        output=OutputDefinition(),
+        output_def=OutputDefinition(),
     )
 
     pipeline_def = PipelineDefinition(
@@ -189,8 +192,8 @@ def execute_isolated_solid(solid_def, environment_dict=None):
 def test_do_not_yield_result():
     solid_inst = SolidDefinition(
         name='do_not_yield_result',
-        inputs=[],
-        outputs=[OutputDefinition()],
+        input_defs=[],
+        output_defs=[OutputDefinition()],
         compute_fn=lambda *_args, **_kwargs: Output('foo'),
     )
 
@@ -206,7 +209,7 @@ def test_yield_non_result():
         yield 'foo'
 
     solid_inst = SolidDefinition(
-        name='yield_wrong_thing', inputs=[], outputs=[OutputDefinition()], compute_fn=_tn
+        name='yield_wrong_thing', input_defs=[], output_defs=[OutputDefinition()], compute_fn=_tn
     )
 
     with pytest.raises(
@@ -218,9 +221,9 @@ def test_yield_non_result():
 def test_single_transform_returning_result():
     solid_inst = single_output_transform(
         'test_return_result',
-        inputs=[],
+        input_defs=[],
         compute_fn=lambda *_args, **_kwargs: Output(None),
-        output=OutputDefinition(),
+        output_def=OutputDefinition(),
     )
 
     with pytest.raises(DagsterInvariantViolationError):
@@ -241,7 +244,7 @@ def test_user_error_propogation():
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def add_one(num):
         return num + 1
 

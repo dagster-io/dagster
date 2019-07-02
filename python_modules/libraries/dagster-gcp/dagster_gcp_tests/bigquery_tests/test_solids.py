@@ -202,7 +202,9 @@ def test_pd_df_load():
     query_solid = bq_solid_for_queries(['SELECT num1, num2 FROM %s' % table]).alias('query_solid')
     delete_solid = bq_delete_dataset.alias('delete_solid')
 
-    @solid(inputs=[InputDefinition('success', Nothing)], outputs=[OutputDefinition(DataFrame)])
+    @solid(
+        input_defs=[InputDefinition('success', Nothing)], output_defs=[OutputDefinition(DataFrame)]
+    )
     def return_df(_context):  # pylint: disable=unused-argument
         return test_df
 
@@ -259,7 +261,9 @@ def test_gcs_load():
     ).alias('query_solid')
     delete_solid = bq_delete_dataset.alias('delete_solid')
 
-    @solid(inputs=[InputDefinition('success', Nothing)], outputs=[OutputDefinition(List[Path])])
+    @solid(
+        input_defs=[InputDefinition('success', Nothing)], output_defs=[OutputDefinition(List[Path])]
+    )
     def return_gcs_uri(_context):  # pylint: disable=unused-argument
         return ["gs://cloud-samples-data/bigquery/us-states/us-states.csv"]
 

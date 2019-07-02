@@ -123,7 +123,7 @@ def test_input_types_succeed_in_pipeline():
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num', int)])
+    @lambda_solid(input_defs=[InputDefinition('num', int)])
     def take_num(num):
         return num
 
@@ -142,7 +142,7 @@ def test_input_types_succeed_in_pipeline():
 
 
 def test_output_types_succeed_in_pipeline():
-    @lambda_solid(output=OutputDefinition(int))
+    @lambda_solid(output_def=OutputDefinition(int))
     def return_one():
         return 1
 
@@ -166,7 +166,7 @@ def test_input_types_fail_in_pipeline():
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('string', str)])
+    @lambda_solid(input_defs=[InputDefinition('string', str)])
     def take_string(string):
         return string
 
@@ -198,7 +198,7 @@ def test_input_types_fail_in_pipeline():
 
 
 def test_output_types_fail_in_pipeline():
-    @lambda_solid(output=OutputDefinition(str))
+    @lambda_solid(output_def=OutputDefinition(str))
     def return_int_fails():
         return 1
 
@@ -256,7 +256,7 @@ def test_input_type_returns_wrong_thing():
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('value', BadType)])
+    @lambda_solid(input_defs=[InputDefinition('value', BadType)])
     def take_bad_thing(value):
         return value
 
@@ -284,7 +284,7 @@ def test_input_type_returns_wrong_thing():
 
 
 def test_output_type_returns_wrong_thing():
-    @lambda_solid(output=OutputDefinition(BadType))
+    @lambda_solid(output_def=OutputDefinition(BadType))
     def return_one_bad_thing():
         return 1
 
@@ -317,7 +317,7 @@ def test_input_type_throw_arbitrary_exception():
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('value', ThrowsExceptionType)])
+    @lambda_solid(input_defs=[InputDefinition('value', ThrowsExceptionType)])
     def take_throws(value):
         return value
 
@@ -339,7 +339,7 @@ def test_input_type_throw_arbitrary_exception():
 
 
 def test_output_type_throw_arbitrary_exception():
-    @lambda_solid(output=OutputDefinition(ThrowsExceptionType))
+    @lambda_solid(output_def=OutputDefinition(ThrowsExceptionType))
     def return_one_throws():
         return 1
 

@@ -208,7 +208,7 @@ def test_multiline_logging_complex():
 def test_default_context_logging():
     called = {}
 
-    @solid(inputs=[], outputs=[])
+    @solid(input_defs=[], output_defs=[])
     def default_context_transform(context):
         called['yes'] = True
         for logger in context.log.loggers:

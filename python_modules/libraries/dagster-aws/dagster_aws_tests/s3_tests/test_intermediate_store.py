@@ -67,7 +67,7 @@ def define_inty_pipeline():
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 

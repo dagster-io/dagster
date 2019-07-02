@@ -55,7 +55,7 @@ class MultipleOutputs(namedtuple('_MultipleResults', 'results')):
 
         .. code-block:: python
 
-            @solid(outputs=[
+            @solid(output_defs=[
                 OutputDefinition(name='foo'),
                 OutputDefinition(name='bar'),
             ])
@@ -66,7 +66,7 @@ class MultipleOutputs(namedtuple('_MultipleResults', 'results')):
                 )
 
 
-            @solid(outputs=[
+            @solid(output_defs=[
                 OutputDefinition(name='foo'),
                 OutputDefinition(name='bar'),
             ])
@@ -106,10 +106,10 @@ class MultipleOutputs(namedtuple('_MultipleResults', 'results')):
 
 
 class _LambdaSolid(object):
-    def __init__(self, name=None, inputs=None, output=None, description=None):
+    def __init__(self, name=None, input_defs=None, output_def=None, description=None):
         self.name = check.opt_str_param(name, 'name')
-        self.input_defs = check.opt_nullable_list_param(inputs, 'inputs', InputDefinition)
-        self.output_def = check.opt_inst_param(output, 'output', OutputDefinition)
+        self.input_defs = check.opt_nullable_list_param(input_defs, 'input_defs', InputDefinition)
+        self.output_def = check.opt_inst_param(output_def, 'output_def', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
 
     def __call__(self, fn):
@@ -134,8 +134,8 @@ class _LambdaSolid(object):
 
         return SolidDefinition(
             name=self.name,
-            inputs=input_defs,
-            outputs=[output_def],
+            input_defs=input_defs,
+            output_defs=[output_def],
             compute_fn=compute_fn,
             description=self.description,
         )
@@ -145,16 +145,18 @@ class _Solid(object):
     def __init__(
         self,
         name=None,
-        inputs=None,
-        outputs=None,
+        input_defs=None,
+        output_defs=None,
         description=None,
         required_resources=None,
         config_field=None,
         metadata=None,
     ):
         self.name = check.opt_str_param(name, 'name')
-        self.input_defs = check.opt_nullable_list_param(inputs, 'inputs', InputDefinition)
-        self.output_defs = check.opt_nullable_list_param(outputs, 'outputs', OutputDefinition)
+        self.input_defs = check.opt_nullable_list_param(input_defs, 'input_defs', InputDefinition)
+        self.output_defs = check.opt_nullable_list_param(
+            output_defs, 'output_defs', OutputDefinition
+        )
 
         self.description = check.opt_str_param(description, 'description')
 
@@ -189,8 +191,8 @@ class _Solid(object):
 
         return SolidDefinition(
             name=self.name,
-            inputs=input_defs,
-            outputs=output_defs,
+            input_defs=input_defs,
+            output_defs=output_defs,
             compute_fn=compute_fn,
             config_field=self.config_field,
             description=self.description,
@@ -199,19 +201,19 @@ class _Solid(object):
         )
 
 
-def lambda_solid(name=None, description=None, inputs=None, output=None):
+def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
     '''(decorator) Create a simple solid.
 
     This shortcut allows the creation of simple solids that do not require
     configuration and whose implementations do not require a context.
 
-    Lambda solids take inputs and produce a single output. The body of the function
+    Lambda solids take input_defs and produce a single output. The body of the function
     should return a single value.
 
     Args:
         name (str): Name of solid.
         description (str): Solid description.
-        inputs (list[InputDefinition]): List of inputs.
+        input_defs (list[InputDefinition]): List of input_defs.
         output (OutputDefinition): The output of the solid. Defaults to ``OutputDefinition()``.
 
     Examples:
@@ -222,24 +224,26 @@ def lambda_solid(name=None, description=None, inputs=None, output=None):
             def hello_world():
                 return 'hello'
 
-            @lambda_solid(inputs=[InputDefinition(name='foo')])
+            @lambda_solid(input_defs=[InputDefinition(name='foo')])
             def hello_world(foo):
                 return foo
 
     '''
     if callable(name):
-        check.invariant(inputs is None)
+        check.invariant(input_defs is None)
         check.invariant(description is None)
-        return _LambdaSolid(output=output)(name)
+        return _LambdaSolid(output_def=output_def)(name)
 
-    return _LambdaSolid(name=name, inputs=inputs, output=output, description=description)
+    return _LambdaSolid(
+        name=name, input_defs=input_defs, output_def=output_def, description=description
+    )
 
 
 def solid(
     name=None,
     description=None,
-    inputs=None,
-    outputs=None,
+    input_defs=None,
+    output_defs=None,
     config_field=None,
     config=None,
     required_resources=None,
@@ -258,16 +262,16 @@ def solid(
     1. Return a value. This is returned as a :py:class:`Output` for a single output solid.
     2. Return a :py:class:`Output`. Works like yielding result.
     3. Return an instance of :py:class:`MultipleOutputs`. Works like yielding several results for
-       multiple outputs. Useful for solids that have multiple outputs.
+       multiple output_defs. Useful for solids that have multiple output_defs.
     4. Yield :py:class:`Output`. Same as default compute behaviour.
 
     Args:
         name (str): Name of solid.
         description (str): Description of this solid.
-        inputs (list[InputDefinition]):
-            List of inputs. Inferred from typehints if not provided.
-        outputs (list[OutputDefinition]):
-            List of outputs. Inferred from typehints if not provided.
+        input_defs (list[InputDefinition]):
+            List of input_defs. Inferred from typehints if not provided.
+        output_defs (list[OutputDefinition]):
+            List of output_defs. Inferred from typehints if not provided.
         config (Dict[str, Field]):
             Defines the schema of configuration data provided to the solid via context.
         config_field (Field):
@@ -288,19 +292,19 @@ def solid(
             def hello_world(_context):
                 print('hello')
 
-            @solid(outputs=[OutputDefinition()])
+            @solid(output_defs=[OutputDefinition()])
             def hello_world(_context):
                 return {'foo': 'bar'}
 
-            @solid(outputs=[OutputDefinition()])
+            @solid(output_defs=[OutputDefinition()])
             def hello_world(_context):
                 return Output(value={'foo': 'bar'})
 
-            @solid(outputs=[OutputDefinition()])
+            @solid(output_defs=[OutputDefinition()])
             def hello_world(_context):
                 yield Output(value={'foo': 'bar'})
 
-            @solid(outputs=[
+            @solid(output_defs=[
                 OutputDefinition(name="left"),
                 OutputDefinition(name="right"),
             ])
@@ -311,23 +315,23 @@ def solid(
                 })
 
             @solid(
-                inputs=[InputDefinition(name="foo")],
-                outputs=[OutputDefinition()]
+                input_defs=[InputDefinition(name="foo")],
+                output_defs=[OutputDefinition()]
             )
             def hello_world(_context, foo):
                 return foo
 
             @solid(
-                inputs=[InputDefinition(name="foo")],
-                outputs=[OutputDefinition()],
+                input_defs=[InputDefinition(name="foo")],
+                output_defs=[OutputDefinition()],
             )
             def hello_world(context, foo):
                 context.log.info('log something')
                 return foo
 
             @solid(
-                inputs=[InputDefinition(name="foo")],
-                outputs=[OutputDefinition()],
+                input_defs=[InputDefinition(name="foo")],
+                output_defs=[OutputDefinition()],
                 config_field=Field(types.Dict({'str_value' : Field(types.String)})),
             )
             def hello_world(context, foo):
@@ -337,8 +341,8 @@ def solid(
     '''
     # This case is for when decorator is used bare, without arguments. e.g. @solid versus @solid()
     if callable(name):
-        check.invariant(inputs is None)
-        check.invariant(outputs is None)
+        check.invariant(input_defs is None)
+        check.invariant(output_defs is None)
         check.invariant(description is None)
         check.invariant(config_field is None)
         check.invariant(config is None)
@@ -348,8 +352,8 @@ def solid(
 
     return _Solid(
         name=name,
-        inputs=inputs,
-        outputs=outputs,
+        input_defs=input_defs,
+        output_defs=output_defs,
         config_field=resolve_config_field(config_field, config, '@solid'),
         description=description,
         required_resources=required_resources,
@@ -367,10 +371,10 @@ def _create_lambda_solid_transform_wrapper(fn, input_defs, output_def):
     ]
 
     @wraps(fn)
-    def transform(_context, inputs):
+    def transform(_context, input_defs):
         kwargs = {}
         for input_name in input_names:
-            kwargs[input_name] = inputs[input_name]
+            kwargs[input_name] = input_defs[input_name]
 
         result = fn(**kwargs)
         yield Output(value=result, output_name=output_def.name)
@@ -388,10 +392,10 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
     ]
 
     @wraps(fn)
-    def transform(context, inputs):
+    def transform(context, input_defs):
         kwargs = {}
         for input_name in input_names:
-            kwargs[input_name] = inputs[input_name]
+            kwargs[input_name] = input_defs[input_name]
 
         result = fn(context, **kwargs)
 
@@ -464,19 +468,19 @@ class FunctionValidationError(Exception):
 
 
 def _validate_solid_fn(
-    solid_name, compute_fn, inputs, expected_positionals=None, exclude_nothing=True
+    solid_name, compute_fn, input_defs, expected_positionals=None, exclude_nothing=True
 ):
     check.str_param(solid_name, 'solid_name')
     check.callable_param(compute_fn, 'compute_fn')
-    check.list_param(inputs, 'inputs', of_type=InputDefinition)
+    check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
     expected_positionals = check.opt_list_param(
         expected_positionals, 'expected_positionals', of_type=(str, tuple)
     )
     if exclude_nothing:
-        names = set(inp.name for inp in inputs if not inp.runtime_type.is_nothing)
-        nothing_names = set(inp.name for inp in inputs if inp.runtime_type.is_nothing)
+        names = set(inp.name for inp in input_defs if not inp.runtime_type.is_nothing)
+        nothing_names = set(inp.name for inp in input_defs if inp.runtime_type.is_nothing)
     else:
-        names = set(inp.name for inp in inputs)
+        names = set(inp.name for inp in input_defs)
         nothing_names = set()
 
     # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
@@ -495,13 +499,13 @@ def _validate_solid_fn(
             if e.param in nothing_names:
                 raise DagsterInvalidDefinitionError(
                     "solid '{solid_name}' decorated function has parameter '{e.param}' that is "
-                    "one of the solid inputs of type 'Nothing' which should not be included since "
+                    "one of the solid input_defs of type 'Nothing' which should not be included since "
                     "no data will be passed for it. ".format(solid_name=solid_name, e=e)
                 )
             else:
                 raise DagsterInvalidDefinitionError(
                     "solid '{solid_name}' decorated function has parameter '{e.param}' that is not "
-                    "one of the solid inputs. Solid functions should only have keyword arguments "
+                    "one of the solid input_defs. Solid functions should only have keyword arguments "
                     "that match input names and a first positional parameter named 'context'.".format(
                         solid_name=solid_name, e=e
                     )
@@ -518,7 +522,7 @@ def _validate_solid_fn(
             undeclared_inputs_printed = ", '".join(e.missing_names)
             raise DagsterInvalidDefinitionError(
                 "solid '{solid_name}' decorated function does not have parameter(s) "
-                "'{undeclared_inputs_printed}', which are in solid's inputs. Solid functions "
+                "'{undeclared_inputs_printed}', which are in solid's input_defs. Solid functions "
                 "should only have keyword arguments that match input names and a first positional "
                 "parameter named 'context'.".format(
                     solid_name=solid_name, undeclared_inputs_printed=undeclared_inputs_printed
@@ -580,11 +584,17 @@ def _validate_decorated_fn(fn, names, expected_positionals):
 
 class _CompositeSolid(object):
     def __init__(
-        self, name=None, inputs=None, outputs=None, description=None, config=None, config_fn=None
+        self,
+        name=None,
+        input_defs=None,
+        output_defs=None,
+        description=None,
+        config=None,
+        config_fn=None,
     ):
         self.name = check.opt_str_param(name, 'name')
-        self.input_defs = check.opt_nullable_list_param(inputs, 'inputs', InputDefinition)
-        self.output_defs = check.opt_nullable_list_param(outputs, 'output', OutputDefinition)
+        self.input_defs = check.opt_nullable_list_param(input_defs, 'input_defs', InputDefinition)
+        self.output_defs = check.opt_nullable_list_param(output_defs, 'output', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
 
         check.opt_dict_param(config, 'config')  # don't want to assign dict below if config is None
@@ -647,7 +657,7 @@ class _CompositeSolid(object):
         for defn in output_defs:
             mapping = context.output_mapping_dict.get(defn.name)
             if mapping is None:
-                # if we inferred outputs we will be flexible and either take a mapping or not
+                # if we inferred output_defs we will be flexible and either take a mapping or not
                 if not explicit_outputs:
                     continue
 
@@ -696,7 +706,7 @@ def _get_validated_config_mapping(name, config, config_fn):
 
 
 def composite_solid(
-    name=None, inputs=None, outputs=None, description=None, config=None, config_fn=None
+    name=None, input_defs=None, output_defs=None, description=None, config=None, config_fn=None
 ):
     ''' (decorator) Create a CompositeSolidDefinition with specified parameters.
 
@@ -706,18 +716,18 @@ def composite_solid(
     Args:
         name (Optional[str])
         description (Optional[str])
-        inputs (Optional[List[InputDefinition]]):
-            The set of inputs, inferred from typehints if not provided.
+        input_defs (Optional[List[InputDefinition]]):
+            The set of input_defs, inferred from typehints if not provided.
 
-            Where these inputs get used in the body of the decorated function create the
+            Where these input_defs get used in the body of the decorated function create the
             InputMappings for the CompositeSolidDefinition
-        outputs (Optional[List[OutputDefinition]]):
-            The set of outputs, inferred from typehints if not provided.
+        output_defs (Optional[List[OutputDefinition]]):
+            The set of output_defs, inferred from typehints if not provided.
 
-            These outputs are combined with the return value of the decorated function to
+            These output_defs are combined with the return value of the decorated function to
             create the OutputMappings for the CompositeSolidDefinition.
 
-            A dictionary is returned from the function to map multiple outputs.
+            A dictionary is returned from the function to map multiple output_defs.
         config/config_fn:
             By specifying a config mapping, you can override the configuration for child solids
             contained within this composite solid. Config mappings require both a configuration
@@ -742,8 +752,8 @@ def composite_solid(
 
     '''
     if callable(name):
-        check.invariant(inputs is None)
-        check.invariant(outputs is None)
+        check.invariant(input_defs is None)
+        check.invariant(output_defs is None)
         check.invariant(description is None)
         check.invariant(config is None)
         check.invariant(config_fn is None)
@@ -751,8 +761,8 @@ def composite_solid(
 
     return _CompositeSolid(
         name=name,
-        inputs=inputs,
-        outputs=outputs,
+        input_defs=input_defs,
+        output_defs=output_defs,
         description=description,
         config=config,
         config_fn=config_fn,

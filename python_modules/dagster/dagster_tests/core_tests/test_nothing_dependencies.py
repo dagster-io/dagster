@@ -25,12 +25,12 @@ from dagster.core.execution.api import create_execution_plan
 
 
 def _define_nothing_dep_pipeline():
-    @lambda_solid(output=OutputDefinition(Nothing, 'complete'))
+    @lambda_solid(output_def=OutputDefinition(Nothing, 'complete'))
     def start_nothing():
         pass
 
     @lambda_solid(
-        inputs=[
+        input_defs=[
             InputDefinition('add_complete', Nothing),
             InputDefinition('yield_complete', Nothing),
         ]
@@ -38,21 +38,21 @@ def _define_nothing_dep_pipeline():
     def end_nothing():
         pass
 
-    @lambda_solid(output=OutputDefinition(Int))
+    @lambda_solid(output_def=OutputDefinition(Int))
     def emit_value():
         return 1
 
     @lambda_solid(
-        inputs=[InputDefinition('on_complete', Nothing), InputDefinition('num', Int)],
-        output=OutputDefinition(Int),
+        input_defs=[InputDefinition('on_complete', Nothing), InputDefinition('num', Int)],
+        output_def=OutputDefinition(Int),
     )
     def add_value(num):
         return 1 + num
 
     @solid(
         name='yield_values',
-        inputs=[InputDefinition('on_complete', Nothing)],
-        outputs=[
+        input_defs=[InputDefinition('on_complete', Nothing)],
+        output_defs=[
             OutputDefinition(Int, 'num_1'),
             OutputDefinition(Int, 'num_2'),
             OutputDefinition(Nothing, 'complete'),
@@ -88,11 +88,11 @@ def test_valid_nothing_dependencies():
 
 
 def test_invalid_input_dependency():
-    @lambda_solid(output=OutputDefinition(Nothing))
+    @lambda_solid(output_def=OutputDefinition(Nothing))
     def do_nothing():
         pass
 
-    @lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 
@@ -105,7 +105,7 @@ def test_invalid_input_dependency():
 
 
 def test_result_type_check():
-    @solid(outputs=[OutputDefinition(Nothing)])
+    @solid(output_defs=[OutputDefinition(Nothing)])
     def bad(_context):
         yield Output('oops')
 
@@ -115,7 +115,7 @@ def test_result_type_check():
 
 
 def test_nothing_inputs():
-    @lambda_solid(inputs=[InputDefinition('never_defined', Nothing)])
+    @lambda_solid(input_defs=[InputDefinition('never_defined', Nothing)])
     def emit_one():
         return 1
 
@@ -127,12 +127,12 @@ def test_nothing_inputs():
     def emit_three():
         return 3
 
-    @lambda_solid(output=OutputDefinition(Nothing))
+    @lambda_solid(output_def=OutputDefinition(Nothing))
     def emit_nothing():
         pass
 
     @solid(
-        inputs=[
+        input_defs=[
             InputDefinition('_one', Nothing),
             InputDefinition('one', Int),
             InputDefinition('_two', Nothing),
@@ -175,12 +175,12 @@ def test_fanin_deps():
     def emit_two():
         return 2
 
-    @lambda_solid(output=OutputDefinition(Nothing))
+    @lambda_solid(output_def=OutputDefinition(Nothing))
     def emit_nothing():
         called['emit_nothing'] += 1
 
     @solid(
-        inputs=[
+        input_defs=[
             InputDefinition('ready', Nothing),
             InputDefinition('num_1', Int),
             InputDefinition('num_2', Int),
@@ -220,23 +220,23 @@ def test_fanin_deps():
 
 
 def test_valid_nothing_fns():
-    @lambda_solid(output=OutputDefinition(Nothing))
+    @lambda_solid(output_def=OutputDefinition(Nothing))
     def just_pass():
         pass
 
-    @solid(outputs=[OutputDefinition(Nothing)])
+    @solid(output_defs=[OutputDefinition(Nothing)])
     def just_pass2(_context):
         pass
 
-    @lambda_solid(output=OutputDefinition(Nothing))
+    @lambda_solid(output_def=OutputDefinition(Nothing))
     def ret_none():
         return None
 
-    @solid(outputs=[OutputDefinition(Nothing)])
+    @solid(output_defs=[OutputDefinition(Nothing)])
     def yield_none(_context):
         yield Output(None)
 
-    @solid(outputs=[OutputDefinition(Nothing)])
+    @solid(output_defs=[OutputDefinition(Nothing)])
     def yield_stuff(_context):
         yield Materialization.file('/path/to/nowhere')
 
@@ -248,11 +248,11 @@ def test_valid_nothing_fns():
 
 
 def test_invalid_nothing_fns():
-    @lambda_solid(output=OutputDefinition(Nothing))
+    @lambda_solid(output_def=OutputDefinition(Nothing))
     def ret_val():
         return 'val'
 
-    @solid(outputs=[OutputDefinition(Nothing)])
+    @solid(output_defs=[OutputDefinition(Nothing)])
     def yield_val(_context):
         yield Output('val')
 
@@ -266,35 +266,35 @@ def test_invalid_nothing_fns():
 def test_wrapping_nothing():
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(output=OutputDefinition(List[Nothing]))
+        @lambda_solid(output_def=OutputDefinition(List[Nothing]))
         def _():
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(inputs=[InputDefinition('in', List[Nothing])])
+        @lambda_solid(input_defs=[InputDefinition('in', List[Nothing])])
         def _(_in):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(output=OutputDefinition(Optional[Nothing]))
+        @lambda_solid(output_def=OutputDefinition(Optional[Nothing]))
         def _():
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(inputs=[InputDefinition('in', Optional[Nothing])])
+        @lambda_solid(input_defs=[InputDefinition('in', Optional[Nothing])])
         def _(_in):
             pass
 
 
 def test_execution_plan():
-    @solid(outputs=[OutputDefinition(Nothing)])
+    @solid(output_defs=[OutputDefinition(Nothing)])
     def emit_nothing(_context):
         yield Materialization.file(path='/path/')
 
-    @lambda_solid(inputs=[InputDefinition('ready', Nothing)])
+    @lambda_solid(input_defs=[InputDefinition('ready', Nothing)])
     def consume_nothing():
         pass
 

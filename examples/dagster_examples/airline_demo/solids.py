@@ -38,12 +38,12 @@ def _notebook_path(name):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'notebooks', name)
 
 
-def notebook_solid(name, notebook_path, inputs, outputs):
-    return define_dagstermill_solid(name, _notebook_path(notebook_path), inputs, outputs)
+def notebook_solid(name, notebook_path, input_defs, output_defs):
+    return define_dagstermill_solid(name, _notebook_path(notebook_path), input_defs, output_defs)
 
 
 # need a sql context w a sqlalchemy engine
-def sql_solid(name, select_statement, materialization_strategy, table_name=None, inputs=None):
+def sql_solid(name, select_statement, materialization_strategy, table_name=None, input_defs=None):
     '''Return a new solid that executes and materializes a SQL select statement.
 
     Args:
@@ -54,13 +54,13 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
     Kwargs:
         table_name (str): THe name of the new table to create, if the materialization strategy
             is 'table'. Default: None.
-        inputs (list[InputDefinition]): Inputs, if any, for the new solid. Default: None.
+        input_defs (list[InputDefinition]): Inputs, if any, for the new solid. Default: None.
 
     Returns:
         function:
             The new SQL solid.
     '''
-    inputs = check.opt_list_param(inputs, 'inputs', InputDefinition)
+    input_defs = check.opt_list_param(input_defs, 'input_defs', InputDefinition)
 
     materialization_strategy_output_types = {  # pylint:disable=C0103
         'table': SqlTableName,
@@ -121,8 +121,8 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
     return SolidDefinition(
         name=name,
-        inputs=inputs,
-        outputs=[
+        input_defs=input_defs,
+        output_defs=[
             OutputDefinition(
                 materialization_strategy_output_types[materialization_strategy],
                 description=output_description,
@@ -200,7 +200,7 @@ def process_sfo_weather_data(_context, sfo_weather_data: DataFrame) -> DataFrame
 
 
 @solid(
-    outputs=[OutputDefinition(name='table_name', dagster_type=String)],
+    output_defs=[OutputDefinition(name='table_name', dagster_type=String)],
     config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
 )
 def load_data_to_database_from_spark(context, data_frame: DataFrame):
@@ -294,7 +294,7 @@ average_sfo_outbound_avg_delays_by_destination = sql_solid(
     ''',
     'table',
     table_name='average_sfo_outbound_avg_delays_by_destination',
-    inputs=[InputDefinition('q2_sfo_outbound_flights', dagster_type=SqlTableName)],
+    input_defs=[InputDefinition('q2_sfo_outbound_flights', dagster_type=SqlTableName)],
 )
 
 ticket_prices_with_average_delays = sql_solid(
@@ -377,7 +377,7 @@ delays_vs_fares = sql_solid(
     ''',
     'table',
     table_name='delays_vs_fares',
-    inputs=[
+    input_defs=[
         InputDefinition('tickets_with_destination', SqlTableName),
         InputDefinition('average_sfo_outbound_avg_delays_by_destination', SqlTableName),
     ],
@@ -442,7 +442,7 @@ westbound_delays = sql_solid(
 delays_by_geography = notebook_solid(
     'delays_by_geography',
     'Delays_by_Geography.ipynb',
-    inputs=[
+    input_defs=[
         InputDefinition(
             'westbound_delays',
             SqlTableName,
@@ -454,7 +454,7 @@ delays_by_geography = notebook_solid(
             description='The SQL table containing eastbound delays.',
         ),
     ],
-    outputs=[
+    output_defs=[
         OutputDefinition(
             dagster_type=FileHandle,
             # name='plots_pdf_path',
@@ -466,12 +466,12 @@ delays_by_geography = notebook_solid(
 delays_vs_fares_nb = notebook_solid(
     'fares_vs_delays',
     'Fares_vs_Delays.ipynb',
-    inputs=[
+    input_defs=[
         InputDefinition(
             'table_name', SqlTableName, description='The SQL table to use for calcuations.'
         )
     ],
-    outputs=[
+    output_defs=[
         OutputDefinition(
             dagster_type=FileHandle,
             # name='plots_pdf_path',
@@ -483,12 +483,12 @@ delays_vs_fares_nb = notebook_solid(
 sfo_delays_by_destination = notebook_solid(
     'sfo_delays_by_destination',
     'SFO_Delays_by_Destination.ipynb',
-    inputs=[
+    input_defs=[
         InputDefinition(
             'table_name', SqlTableName, description='The SQL table to use for calcuations.'
         )
     ],
-    outputs=[
+    output_defs=[
         OutputDefinition(
             dagster_type=FileHandle,
             # name='plots_pdf_path',

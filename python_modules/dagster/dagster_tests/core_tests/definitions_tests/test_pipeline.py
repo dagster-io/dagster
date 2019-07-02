@@ -24,7 +24,7 @@ def return_one():
     return 1
 
 
-@lambda_solid(inputs=[InputDefinition('num')])
+@lambda_solid(input_defs=[InputDefinition('num')])
 def add_one(num):
     return num + 1
 
@@ -48,7 +48,7 @@ def test_basic_use_case_with_dsl():
 
 
 def test_two_inputs_without_dsl():
-    @lambda_solid(inputs=[InputDefinition('num_one'), InputDefinition('num_two')])
+    @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
     def add(num_one, num_two):
         return num_one + num_two
 
@@ -74,7 +74,7 @@ def test_two_inputs_without_dsl():
 
 
 def test_two_inputs_with_dsl():
-    @lambda_solid(inputs=[InputDefinition('num_one'), InputDefinition('num_two')])
+    @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
     def add(num_one, num_two):
         return num_one + num_two
 
@@ -102,12 +102,12 @@ def test_basic_aliasing_with_dsl():
 
 
 def test_diamond_graph():
-    @solid(outputs=[OutputDefinition(name='value_one'), OutputDefinition(name='value_two')])
+    @solid(output_defs=[OutputDefinition(name='value_one'), OutputDefinition(name='value_two')])
     def emit_values(_context):
         yield Output(1, 'value_one')
         yield Output(2, 'value_two')
 
-    @lambda_solid(inputs=[InputDefinition('num_one'), InputDefinition('num_two')])
+    @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
     def add(num_one, num_two):
         return num_one + num_two
 
@@ -141,23 +141,23 @@ def test_deep_graph():
     def download_num(context):
         return context.solid_config
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def unzip_num(num):
         return num
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def ingest_num(num):
         return num
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def subsample_num(num):
         return num
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def canonicalize_num(num):
         return num
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def load_num(num):
         return num + 3
 

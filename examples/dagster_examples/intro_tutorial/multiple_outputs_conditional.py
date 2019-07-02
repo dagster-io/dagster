@@ -4,7 +4,7 @@ from dagster import Field, Int, OutputDefinition, Output, String, pipeline, soli
 
 @solid(
     config_field=Field(String, description='Should be either out_one or out_two'),
-    outputs=[
+    output_defs=[
         OutputDefinition(dagster_type=Int, name='out_one', is_optional=True),
         OutputDefinition(dagster_type=Int, name='out_two', is_optional=True),
     ],

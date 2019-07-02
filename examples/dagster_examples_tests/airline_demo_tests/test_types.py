@@ -121,7 +121,7 @@ def test_spark_dataframe_output_csv():
 
     assert num_df.collect() == [Row(num1=1, num2=2)]
 
-    @solid(inputs=[InputDefinition('df', DataFrame)], outputs=[OutputDefinition(DataFrame)])
+    @solid(input_defs=[InputDefinition('df', DataFrame)], output_defs=[OutputDefinition(DataFrame)])
     def passthrough_df(_context, df):
         return df
 

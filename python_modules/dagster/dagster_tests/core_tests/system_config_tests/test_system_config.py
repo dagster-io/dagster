@@ -128,7 +128,9 @@ def test_provided_default_on_resources_config():
             )
         ],
         solid_defs=[
-            SolidDefinition(name='some_solid', inputs=[], outputs=[], compute_fn=lambda *args: None)
+            SolidDefinition(
+                name='some_solid', input_defs=[], output_defs=[], compute_fn=lambda *args: None
+            )
         ],
     )
 
@@ -150,7 +152,9 @@ def test_provided_default_on_resources_config():
 def test_default_environment():
     pipeline_def = PipelineDefinition(
         solid_defs=[
-            SolidDefinition(name='some_solid', inputs=[], outputs=[], compute_fn=lambda *args: None)
+            SolidDefinition(
+                name='some_solid', input_defs=[], output_defs=[], compute_fn=lambda *args: None
+            )
         ]
     )
 
@@ -228,15 +232,15 @@ def define_test_solids_config_pipeline():
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Int, is_optional=True),
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *args: None,
             ),
             SolidDefinition(
                 name='string_config_solid',
                 config_field=Field(String, is_optional=True),
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *args: None,
             ),
         ]
@@ -274,12 +278,12 @@ def test_solid_dictionary_some_no_config():
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Int),
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *args: None,
             ),
             SolidDefinition(
-                name='no_config_solid', inputs=[], outputs=[], compute_fn=lambda *args: None
+                name='no_config_solid', input_defs=[], output_defs=[], compute_fn=lambda *args: None
             ),
         ]
     )
@@ -313,12 +317,12 @@ def test_whole_environment():
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Int),
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *args: None,
             ),
             SolidDefinition(
-                name='no_config_solid', inputs=[], outputs=[], compute_fn=lambda *args: None
+                name='no_config_solid', input_defs=[], output_defs=[], compute_fn=lambda *args: None
             ),
         ],
     )
@@ -381,14 +385,14 @@ def test_optional_solid_with_no_config():
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Int),
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
             ),
             SolidDefinition(
                 name='no_config_solid',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda context, _inputs: _assert_config_none(context, None),
             ),
         ],
@@ -407,8 +411,8 @@ def test_optional_solid_with_optional_scalar_config():
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Int, is_optional=True),
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
             )
         ],
@@ -441,8 +445,8 @@ def test_optional_solid_with_required_scalar_config():
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Int),
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
             )
         ],
@@ -474,8 +478,8 @@ def test_required_solid_with_required_subfield():
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(Dict({'required_field': Field(String)})),
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *_args: None,
             )
         ],
@@ -518,8 +522,8 @@ def test_optional_solid_with_optional_subfield():
                 config_field=Field(
                     Dict({'optional_field': Field(String, is_optional=True)}), is_optional=True
                 ),
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *_args: None,
             )
         ],
@@ -659,7 +663,9 @@ def test_optional_and_required_context():
 
 
 def test_required_inputs():
-    @lambda_solid(inputs=[InputDefinition('num', types.Int)], output=OutputDefinition(types.Int))
+    @lambda_solid(
+        input_defs=[InputDefinition('num', types.Int)], output_def=OutputDefinition(types.Int)
+    )
     def add_one(num):
         return num + 1
 
@@ -692,8 +698,8 @@ def test_required_inputs():
 
 def test_mix_required_inputs():
     @lambda_solid(
-        inputs=[InputDefinition('left', types.Int), InputDefinition('right', types.Int)],
-        output=OutputDefinition(types.Int),
+        input_defs=[InputDefinition('left', types.Int), InputDefinition('right', types.Int)],
+        output_def=OutputDefinition(types.Int),
     )
     def add_numbers(left, right):
         return left + right

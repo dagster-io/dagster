@@ -34,7 +34,7 @@ def create_raw_file_solid(name):
 
     @solid(
         name=name,
-        outputs=[
+        output_defs=[
             OutputDefinition(
                 String,
                 expectations=[
@@ -79,8 +79,8 @@ def input_name_for_raw_file(raw_file):
 
 
 @solid(
-    inputs=[InputDefinition('start', Nothing)],
-    outputs=[OutputDefinition(Nothing)],
+    input_defs=[InputDefinition('start', Nothing)],
+    output_defs=[OutputDefinition(Nothing)],
     description='Load a bunch of raw tables from corresponding files',
 )
 def many_table_materializations(_context):
@@ -99,8 +99,8 @@ def many_table_materializations(_context):
 
 
 @solid(
-    inputs=[InputDefinition('start', Nothing)],
-    outputs=[OutputDefinition(Nothing)],
+    input_defs=[InputDefinition('start', Nothing)],
+    output_defs=[OutputDefinition(Nothing)],
     description='This simulates a solid that would wrap something like dbt, '
     'where it emits a bunch of tables and then say an expectation on each table, '
     'all in one solid',
@@ -132,8 +132,8 @@ def many_materializations_and_passing_expectations(_context):
 
 
 @solid(
-    inputs=[InputDefinition('start', Nothing)],
-    outputs=[],
+    input_defs=[InputDefinition('start', Nothing)],
+    output_defs=[],
     description='A solid that just does a couple inline expectations, one of which fails',
 )
 def check_users_and_groups_one_fails_one_succeeds(_context):
@@ -173,8 +173,8 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
 
 
 @solid(
-    inputs=[InputDefinition('start', Nothing)],
-    outputs=[],
+    input_defs=[InputDefinition('start', Nothing)],
+    output_defs=[],
     description='A solid that just does a couple inline expectations',
 )
 def check_admins_both_succeed(_context):

@@ -129,7 +129,7 @@ def define_add_pipeline():
     )
 
 
-@solid(inputs=[], config_field=Field(Int))
+@solid(input_defs=[], config_field=Field(Int))
 def load_constant(context):
     return context.solid_config
 
@@ -165,7 +165,7 @@ def define_error_pipeline():
 @solid_definition
 def clean_data_solid():
     return dagstermill.define_dagstermill_solid(
-        'clean_data', nb_test_path('clean_data'), outputs=[OutputDefinition(DataFrame)]
+        'clean_data', nb_test_path('clean_data'), output_defs=[OutputDefinition(DataFrame)]
     )
 
 
@@ -174,7 +174,7 @@ def LR_solid():
     return dagstermill.define_dagstermill_solid(
         'linear_regression',
         nb_test_path('tutorial_LR'),
-        inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
+        input_defs=[InputDefinition(name='df', dagster_type=DataFrame)],
     )
 
 
@@ -183,7 +183,7 @@ def RF_solid():
     return dagstermill.define_dagstermill_solid(
         'random_forest_regression',
         nb_test_path('tutorial_RF'),
-        inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
+        input_defs=[InputDefinition(name='df', dagster_type=DataFrame)],
     )
 
 
@@ -220,7 +220,7 @@ def no_repo_reg_solid():
     return dagstermill.define_dagstermill_solid(
         'no_repo_reg',
         nb_test_path('no_repo_reg_error'),
-        outputs=[OutputDefinition(name='df', dagster_type=ComplexDagsterType)],
+        output_defs=[OutputDefinition(name='df', dagster_type=ComplexDagsterType)],
     )
 
 
@@ -239,7 +239,7 @@ def hello_world_resource_solid():
     return dagstermill.define_dagstermill_solid(
         'hello_world_resource',
         nb_test_path('hello_world_resource'),
-        inputs=[InputDefinition('nonce')],
+        input_defs=[InputDefinition('nonce')],
         required_resources={'list'},
     )
 
@@ -249,7 +249,7 @@ def hello_world_resource_with_exception_solid():
     return dagstermill.define_dagstermill_solid(
         'hello_world_resource_with_exception',
         nb_test_path('hello_world_resource_with_exception'),
-        inputs=[InputDefinition('nonce')],
+        input_defs=[InputDefinition('nonce')],
         required_resources={'list'},
     )
 

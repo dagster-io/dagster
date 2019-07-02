@@ -39,7 +39,7 @@ solid_throw_config = Field(
 )
 
 
-@solid(name='emit_num', outputs=[OutputDefinition(Int)], config_field=solid_throw_config)
+@solid(name='emit_num', output_defs=[OutputDefinition(Int)], config_field=solid_throw_config)
 def emit_num(context):
     if context.solid_config['throw_in_solid']:
         raise Exception('throwing from in the solid')
@@ -52,8 +52,8 @@ def emit_num(context):
 
 @solid(
     name='num_to_str',
-    inputs=[InputDefinition('num', Int)],
-    outputs=[OutputDefinition(String)],
+    input_defs=[InputDefinition('num', Int)],
+    output_defs=[OutputDefinition(String)],
     config_field=solid_throw_config,
 )
 def num_to_str(context, num):
@@ -68,8 +68,8 @@ def num_to_str(context, num):
 
 @solid(
     name='str_to_num',
-    inputs=[InputDefinition('string', String)],
-    outputs=[OutputDefinition(Int)],
+    input_defs=[InputDefinition('string', String)],
+    output_defs=[OutputDefinition(Int)],
     config_field=solid_throw_config,
 )
 def str_to_num(context, string):

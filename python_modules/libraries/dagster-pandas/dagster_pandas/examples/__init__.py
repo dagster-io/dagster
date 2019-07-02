@@ -34,8 +34,8 @@ def define_papermill_pandas_hello_world_solid():
     return dagstermill.define_dagstermill_solid(
         name='papermill_pandas_hello_world',
         notebook_path=nb_test_path('papermill_pandas_hello_world'),
-        inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
-        outputs=[OutputDefinition(DataFrame)],
+        input_defs=[InputDefinition(name='df', dagster_type=DataFrame)],
+        output_defs=[OutputDefinition(DataFrame)],
     )
 
 

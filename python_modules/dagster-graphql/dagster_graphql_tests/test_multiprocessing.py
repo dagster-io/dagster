@@ -147,7 +147,8 @@ def test_execution_crash():
 
 
 @lambda_solid(
-    inputs=[InputDefinition('num', PoorMansDataFrame)], output=OutputDefinition(PoorMansDataFrame)
+    input_defs=[InputDefinition('num', PoorMansDataFrame)],
+    output_def=OutputDefinition(PoorMansDataFrame),
 )
 def sum_solid(num):
     sum_df = deepcopy(num)
@@ -157,16 +158,16 @@ def sum_solid(num):
 
 
 @lambda_solid(
-    inputs=[InputDefinition('sum_df', PoorMansDataFrame)],
-    output=OutputDefinition(PoorMansDataFrame),
+    input_defs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    output_def=OutputDefinition(PoorMansDataFrame),
 )
 def error_solid(sum_df):  # pylint: disable=W0613
     raise Exception('foo')
 
 
 @lambda_solid(
-    inputs=[InputDefinition('sum_df', PoorMansDataFrame)],
-    output=OutputDefinition(PoorMansDataFrame),
+    input_defs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    output_def=OutputDefinition(PoorMansDataFrame),
 )
 def crashy_solid(sum_df):  # pylint: disable=W0613
     os._exit(1)  # pylint: disable=W0212

@@ -16,8 +16,8 @@ from dagster_aws.s3.solids import S3BucketData
 
 
 @solid(
-    inputs=[InputDefinition('bucket_data', S3BucketData)],
-    outputs=[OutputDefinition(FileHandle)],
+    input_defs=[InputDefinition('bucket_data', S3BucketData)],
+    output_defs=[OutputDefinition(FileHandle)],
     config_field=Field(
         Dict(
             {

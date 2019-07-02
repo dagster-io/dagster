@@ -32,15 +32,15 @@ def env_with_fs(environment_dict):
 
 
 def define_addy_pipeline():
-    @lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 
-    @lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
     def add_two(num):
         return num + 2
 
-    @lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
     def add_three(num):
         return num + 3
 

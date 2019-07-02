@@ -23,13 +23,15 @@ def parseNeighbors(urls):
     return parts[0], parts[1]
 
 
-@solid(inputs=[InputDefinition('pagerank_data', Path)], outputs=[OutputDefinition(SparkRDD)])
+@solid(
+    input_defs=[InputDefinition('pagerank_data', Path)], output_defs=[OutputDefinition(SparkRDD)]
+)
 def parse_pagerank_data(context, pagerank_data):
     lines = context.resources.spark.read.text(pagerank_data).rdd.map(lambda r: r[0])
     return lines.map(parseNeighbors)
 
 
-@solid(inputs=[InputDefinition('urls', SparkRDD)], outputs=[OutputDefinition(SparkRDD)])
+@solid(input_defs=[InputDefinition('urls', SparkRDD)], output_defs=[OutputDefinition(SparkRDD)])
 def compute_links(_context, urls):
     return urls.distinct().groupByKey().cache()
 
@@ -42,8 +44,8 @@ def computeContribs(urls, rank):
 
 
 @solid(
-    inputs=[InputDefinition(name='links', dagster_type=SparkRDD)],
-    outputs=[OutputDefinition(name='ranks', dagster_type=SparkRDD)],
+    input_defs=[InputDefinition(name='links', dagster_type=SparkRDD)],
+    output_defs=[OutputDefinition(name='ranks', dagster_type=SparkRDD)],
     config={'iterations': Field(Int, is_optional=True, default_value=1)},
 )
 def calculate_ranks(context, links):
@@ -63,7 +65,7 @@ def calculate_ranks(context, links):
     return ranks
 
 
-@solid(inputs=[InputDefinition(name='ranks', dagster_type=SparkRDD)])
+@solid(input_defs=[InputDefinition(name='ranks', dagster_type=SparkRDD)])
 def log_ranks(context, ranks):
     for (link, rank) in ranks.collect():
         context.log.info("%s has rank: %s." % (link, rank))

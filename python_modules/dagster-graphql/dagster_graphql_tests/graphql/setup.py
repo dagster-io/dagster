@@ -85,7 +85,8 @@ def define_context(raise_on_error=True, log_dir=None):
 
 
 @lambda_solid(
-    inputs=[InputDefinition('num', PoorMansDataFrame)], output=OutputDefinition(PoorMansDataFrame)
+    input_defs=[InputDefinition('num', PoorMansDataFrame)],
+    output_def=OutputDefinition(PoorMansDataFrame),
 )
 def sum_solid(num):
     sum_df = deepcopy(num)
@@ -95,8 +96,8 @@ def sum_solid(num):
 
 
 @lambda_solid(
-    inputs=[InputDefinition('sum_df', PoorMansDataFrame)],
-    output=OutputDefinition(PoorMansDataFrame),
+    input_defs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    output_def=OutputDefinition(PoorMansDataFrame),
 )
 def sum_sq_solid(sum_df):
     sum_sq_df = deepcopy(sum_df)
@@ -106,7 +107,7 @@ def sum_sq_solid(sum_df):
 
 
 @lambda_solid(
-    inputs=[
+    input_defs=[
         InputDefinition(
             'sum_df',
             PoorMansDataFrame,
@@ -118,7 +119,7 @@ def sum_sq_solid(sum_df):
             ],
         )
     ],
-    output=OutputDefinition(
+    output_def=OutputDefinition(
         PoorMansDataFrame,
         expectations=[
             ExpectationDefinition(
@@ -170,7 +171,7 @@ def define_repository():
 
 
 def define_pipeline_with_expectation():
-    @solid(outputs=[])
+    @solid(output_defs=[])
     def emit_successful_expectation(_context):
         yield ExpectationResult(
             success=True,
@@ -181,7 +182,7 @@ def define_pipeline_with_expectation():
             ],
         )
 
-    @solid(outputs=[])
+    @solid(output_defs=[])
     def emit_failed_expectation(_context):
         yield ExpectationResult(
             success=False,
@@ -192,7 +193,7 @@ def define_pipeline_with_expectation():
             ],
         )
 
-    @solid(outputs=[])
+    @solid(output_defs=[])
     def emit_successful_expectation_no_metadata(_context):
         yield ExpectationResult(success=True, label='no_metadata', description='Successful')
 
@@ -224,8 +225,8 @@ def define_more_complicated_config():
         solid_defs=[
             SolidDefinition(
                 name='a_solid_with_three_field_config',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *_args: None,
                 config_field=Field(
                     Dict(
@@ -249,8 +250,8 @@ def define_more_complicated_nested_config():
         solid_defs=[
             SolidDefinition(
                 name='a_solid_with_multilayered_config',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *_args: None,
                 config_field=Field(
                     Dict(
@@ -328,8 +329,8 @@ def define_pipeline_with_list():
         solid_defs=[
             SolidDefinition(
                 name='solid_with_list',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *_args: None,
                 config_field=Field(List[Int]),
             )
@@ -354,19 +355,19 @@ def define_no_config_pipeline():
 
 
 def define_scalar_output_pipeline():
-    @lambda_solid(output=OutputDefinition(String))
+    @lambda_solid(output_def=OutputDefinition(String))
     def return_str():
         return 'foo'
 
-    @lambda_solid(output=OutputDefinition(Int))
+    @lambda_solid(output_def=OutputDefinition(Int))
     def return_int():
         return 34234
 
-    @lambda_solid(output=OutputDefinition(Bool))
+    @lambda_solid(output_def=OutputDefinition(Bool))
     def return_bool():
         return True
 
-    @lambda_solid(output=OutputDefinition(Any))
+    @lambda_solid(output_def=OutputDefinition(Any))
     def return_any():
         return 'dkjfkdjfe'
 
@@ -405,8 +406,8 @@ def define_naughty_programmer_pipeline():
 def define_pipeline_with_step_metadata():
     solid_def = SolidDefinition(
         name='solid_metadata_creation',
-        inputs=[],
-        outputs=[],
+        input_defs=[],
+        output_defs=[],
         compute_fn=lambda *args, **kwargs: None,
         config_field=Field(Dict({'str_value': Field(String)})),
         step_metadata_fn=lambda env_config: {
@@ -507,11 +508,11 @@ def define_multi_mode_with_loggers_pipeline():
 
 
 def define_composites_pipeline():
-    @lambda_solid(inputs=[InputDefinition('num', Int)])
+    @lambda_solid(input_defs=[InputDefinition('num', Int)])
     def add_one(num):
         return num + 1
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def div_two(num):
         return num / 2
 

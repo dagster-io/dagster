@@ -20,7 +20,7 @@ from dagster import (
 
 
 def test_simple_values():
-    @solid(inputs=[InputDefinition('numbers', List[Int])])
+    @solid(input_defs=[InputDefinition('numbers', List[Int])])
     def sum_num(_context, numbers):
         # cant guarantee order
         assert set(numbers) == set([1, 2, 3])
@@ -59,7 +59,7 @@ def test_simple_values():
     assert result.result_for_solid('sum_num').result_value() == 6
 
 
-@solid(inputs=[InputDefinition('stuff', List[Any])])
+@solid(input_defs=[InputDefinition('stuff', List[Any])])
 def collect(_context, stuff):
     assert set(stuff) == set([1, None, 'one'])
     return stuff
@@ -80,7 +80,7 @@ def emit_str():
     return 'one'
 
 
-@lambda_solid(output=OutputDefinition(Nothing))
+@lambda_solid(output_def=OutputDefinition(Nothing))
 def emit_nothing():
     pass
 

@@ -32,8 +32,8 @@ def test_solid_def():
         return 'foo'
 
     @solid(
-        inputs=[InputDefinition('input_one', String)],
-        outputs=[OutputDefinition(Any)],
+        input_defs=[InputDefinition('input_one', String)],
+        output_defs=[OutputDefinition(Any)],
         config={'another_field': Field(Int)},
     )
     def solid_one(_context, input_one):
@@ -93,7 +93,7 @@ def test_solid_def():
 def test_solid_def_bad_input_name():
     with pytest.raises(DagsterInvalidDefinitionError, match='context is not allowed'):
         # pylint: disable=unused-variable
-        @solid(inputs=[InputDefinition('context', String)])
+        @solid(input_defs=[InputDefinition('context', String)])
         def solid_one(_, _context):
             pass
 
@@ -104,8 +104,8 @@ def test_pipeline_types():
         return 'foo'
 
     @solid(
-        inputs=[InputDefinition('input_one', String)],
-        outputs=[OutputDefinition(Any)],
+        input_defs=[InputDefinition('input_one', String)],
+        output_defs=[OutputDefinition(Any)],
         config={'another_field': Field(Int)},
     )
     def solid_one(_context, input_one):

@@ -42,8 +42,8 @@ def bq_solid_for_queries(sql_queries):
     sql_queries = check.list_param(sql_queries, 'sql queries', of_type=str)
 
     @solid(
-        inputs=[InputDefinition(_START, Nothing)],
-        outputs=[OutputDefinition(List[DataFrame])],
+        input_defs=[InputDefinition(_START, Nothing)],
+        output_defs=[OutputDefinition(List[DataFrame])],
         config_field=define_bigquery_query_config(),
         required_resources={'bq'},
         metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
@@ -92,8 +92,8 @@ def bq_load_solid_for_source(source_name):
             )
 
     @solid(
-        inputs=[InputDefinition('source', _input_type_for_source(source_name))],
-        outputs=[OutputDefinition(Nothing)],
+        input_defs=[InputDefinition('source', _input_type_for_source(source_name))],
+        output_defs=[OutputDefinition(Nothing)],
         config_field=define_bigquery_load_config(),
         required_resources={'bq'},
     )
@@ -115,7 +115,7 @@ def bq_load_solid_for_source(source_name):
 
 
 @solid(
-    inputs=[InputDefinition(_START, Nothing)],
+    input_defs=[InputDefinition(_START, Nothing)],
     config_field=define_bigquery_create_dataset_config(),
     required_resources={'bq'},
 )
@@ -132,7 +132,7 @@ def bq_create_dataset(context):
 
 
 @solid(
-    inputs=[InputDefinition(_START, Nothing)],
+    input_defs=[InputDefinition(_START, Nothing)],
     config_field=define_bigquery_delete_dataset_config(),
     required_resources={'bq'},
 )

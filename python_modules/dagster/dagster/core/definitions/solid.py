@@ -106,17 +106,17 @@ class SolidDefinition(ISolidDefinition):
 
     Args:
         name (str): Name of the solid.
-        inputs (List[InputDefinition]): Inputs of the solid.
+        input_defs (List[InputDefinition]): Inputs of the solid.
 
         compute_fn (Callable[[SystemComputeExecutionContext, ], Iterable[Union[Output,
             Materialization]]]): The core of the solid, the function that does the actual
             computation. The arguments passed to this function after context are deteremined by
             ``inputs``.
 
-            This function yields :py:class:`Output` according to ``outputs`` or
+            This function yields :py:class:`Output` according to ``output_defs`` or
             :py:class:`Materialization`.
 
-        outputs (List[OutputDefinition]): Outputs of the solid.
+        input_defs (List[OutputDefinition]): Outputs of the solid.
         config_field (Optional[Field]): How the solid configured.
         description (Optional[str]): Description of the solid.
         metadata (Optional[Dict[Any, Any]]):
@@ -132,8 +132,8 @@ class SolidDefinition(ISolidDefinition):
 
             SolidDefinition(
                 name="add_one",
-                inputs=[InputDefinition("num", Int)],
-                outputs=[OutputDefinition(Int)], # default name ("result")
+                input_defs=[InputDefinition("num", Int)],
+                output_defs=[OutputDefinition(Int)], # default name ("result")
                 compute_fn=_add_one,
             )
     '''
@@ -141,9 +141,9 @@ class SolidDefinition(ISolidDefinition):
     def __init__(
         self,
         name,
-        inputs,
+        input_defs,
         compute_fn,
-        outputs,
+        output_defs,
         config_field=None,
         description=None,
         metadata=None,
@@ -163,8 +163,8 @@ class SolidDefinition(ISolidDefinition):
 
         super(SolidDefinition, self).__init__(
             name=name,
-            input_defs=check.list_param(inputs, 'inputs', InputDefinition),
-            output_defs=check.list_param(outputs, 'outputs', OutputDefinition),
+            input_defs=check.list_param(input_defs, 'input_defs', InputDefinition),
+            output_defs=check.list_param(output_defs, 'output_defs', OutputDefinition),
             description=description,
             metadata=metadata,
         )

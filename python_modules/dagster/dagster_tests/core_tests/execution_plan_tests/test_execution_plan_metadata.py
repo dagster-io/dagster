@@ -5,8 +5,8 @@ from dagster.core.execution.api import create_execution_plan
 def test_execution_plan_create_metadata():
     solid_def = SolidDefinition(
         name='solid_metadata_creation',
-        inputs=[],
-        outputs=[],
+        input_defs=[],
+        output_defs=[],
         compute_fn=lambda *args, **kwargs: None,
         config_field=Field(Dict({'str_value': Field(String)})),
         step_metadata_fn=lambda env_config: {

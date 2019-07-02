@@ -361,7 +361,7 @@ def test_pipeline_subset_with_multi_dependency():
     def return_two():
         return 2
 
-    @lambda_solid(inputs=[InputDefinition('dep', Nothing)])
+    @lambda_solid(input_defs=[InputDefinition('dep', Nothing)])
     def noop():
         return 3
 
@@ -401,15 +401,15 @@ def test_pipeline_subset_with_multi_dependency():
 
 
 def define_three_part_pipeline():
-    @lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 
-    @lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
     def add_two(num):
         return num + 2
 
-    @lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
     def add_three(num):
         return num + 3
 
@@ -450,8 +450,8 @@ def test_pipeline_execution_disjoint_subset():
 
 def test_pipeline_wrapping_types():
     @lambda_solid(
-        inputs=[InputDefinition('value', Optional[List[Optional[String]]])],
-        output=OutputDefinition(Optional[List[Optional[String]]]),
+        input_defs=[InputDefinition('value', Optional[List[Optional[String]]])],
+        output_def=OutputDefinition(Optional[List[Optional[String]]]),
     )
     def double_string_for_all(value):
         if not value:
@@ -524,7 +524,7 @@ def test_pipeline_streaming_iterator():
 def test_pipeline_streaming_multiple_outputs():
     events = []
 
-    @solid(outputs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
+    @solid(output_defs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
     def push_one_two(_context):
         events.append(1)
         yield Output(1, 'one')

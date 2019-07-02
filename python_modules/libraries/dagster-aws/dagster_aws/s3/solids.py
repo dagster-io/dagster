@@ -57,8 +57,8 @@ def last_key(key):
 
 @solid(
     config_field=put_object_configs(),
-    inputs=[InputDefinition('file_handle', FileHandle, description='The file to upload.')],
-    outputs=[OutputDefinition(name='s3_file_handle', dagster_type=S3FileHandle)],
+    input_defs=[InputDefinition('file_handle', FileHandle, description='The file to upload.')],
+    output_defs=[OutputDefinition(name='s3_file_handle', dagster_type=S3FileHandle)],
     description='''Take a file handle and upload it to s3. See configuration for all
     arguments you can pass to put_object. Returns an S3FileHandle.''',
 )

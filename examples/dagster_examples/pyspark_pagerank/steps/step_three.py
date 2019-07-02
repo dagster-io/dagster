@@ -20,7 +20,7 @@ def parseNeighbors(urls):
     return parts[0], parts[1]
 
 
-@solid(inputs=[InputDefinition('pagerank_data', Path)])
+@solid(input_defs=[InputDefinition('pagerank_data', Path)])
 def whole_pipeline_solid_using_context(context, pagerank_data):
     # two urls per line with space in between)
     lines = context.resources.spark.read.text(pagerank_data).rdd.map(lambda r: r[0])

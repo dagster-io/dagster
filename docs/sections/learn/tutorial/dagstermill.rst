@@ -152,8 +152,8 @@ The boilerplate necesary for a notebook involves some of the ``dagstermill`` API
     notebook_driven_solid = dm.define_dagstermill_solid(
         name,
         notebook_path,
-        inputs=None,
-        outputs=None,
+        input_defs=None,
+        output_defs=None,
         config_field=None
     )
 

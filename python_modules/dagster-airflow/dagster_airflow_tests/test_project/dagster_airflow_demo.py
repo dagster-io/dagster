@@ -17,12 +17,12 @@ from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 
-@solid(inputs=[InputDefinition('word', String)], config={'factor': Field(Int)})
+@solid(input_defs=[InputDefinition('word', String)], config={'factor': Field(Int)})
 def multiply_the_word(context, word):
     return word * context.solid_config['factor']
 
 
-@lambda_solid(inputs=[InputDefinition('word')])
+@lambda_solid(input_defs=[InputDefinition('word')])
 def count_letters(word):
     counts = defaultdict(int)
     for letter in word:

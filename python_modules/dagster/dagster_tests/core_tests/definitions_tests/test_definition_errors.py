@@ -29,14 +29,14 @@ def solid_a_b_list():
     return [
         SolidDefinition(
             name='A',
-            inputs=[],
-            outputs=[OutputDefinition()],
+            input_defs=[],
+            output_defs=[OutputDefinition()],
             compute_fn=lambda _context, _inputs: None,
         ),
         SolidDefinition(
             name='B',
-            inputs=[InputDefinition('b_input')],
-            outputs=[],
+            input_defs=[InputDefinition('b_input')],
+            output_defs=[],
             compute_fn=lambda _context, _inputs: None,
         ),
     ]

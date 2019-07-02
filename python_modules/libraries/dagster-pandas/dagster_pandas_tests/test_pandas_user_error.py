@@ -23,7 +23,9 @@ def test_wrong_output_value():
     csv_input = InputDefinition('num_csv', dagster_pd.DataFrame)
 
     @lambda_solid(
-        name="test_wrong_output", inputs=[csv_input], output=OutputDefinition(dagster_pd.DataFrame)
+        name="test_wrong_output",
+        input_defs=[csv_input],
+        output_def=OutputDefinition(dagster_pd.DataFrame),
     )
     def df_solid(num_csv):
         return 'not a dataframe'
@@ -40,7 +42,9 @@ def test_wrong_output_value():
 
 
 def test_wrong_input_value():
-    @lambda_solid(name="test_wrong_input", inputs=[InputDefinition('foo', dagster_pd.DataFrame)])
+    @lambda_solid(
+        name="test_wrong_input", input_defs=[InputDefinition('foo', dagster_pd.DataFrame)]
+    )
     def df_solid(foo):
         return foo
 

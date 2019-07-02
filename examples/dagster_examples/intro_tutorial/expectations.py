@@ -10,7 +10,7 @@ from dagster import (
 
 
 @lambda_solid(
-    inputs=[
+    input_defs=[
         InputDefinition(
             'num_one',
             Int,
@@ -23,7 +23,7 @@ from dagster import (
         ),
         InputDefinition('num_two', Int),
     ],
-    output=OutputDefinition(Int),
+    output_def=OutputDefinition(Int),
 )
 def add_ints(num_one, num_two):
     return num_one + num_two

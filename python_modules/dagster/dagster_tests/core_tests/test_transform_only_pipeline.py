@@ -19,16 +19,16 @@ def test_execute_solid_with_dep_only_inputs_no_api():
 
     step_one_solid = single_output_transform(
         name='step_one_solid',
-        inputs=[],
+        input_defs=[],
         compute_fn=lambda context, args: _set_key_value(did_run_dict, 'step_one', True),
-        output=OutputDefinition(),
+        output_def=OutputDefinition(),
     )
 
     step_two_solid = single_output_transform(
         name='step_two_solid',
-        inputs=[InputDefinition('step_one_solid')],
+        input_defs=[InputDefinition('step_one_solid')],
         compute_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
-        output=OutputDefinition(),
+        output_def=OutputDefinition(),
     )
 
     pipeline = PipelineDefinition(
@@ -54,16 +54,16 @@ def test_execute_solid_with_dep_only_inputs_with_api():
 
     step_one_solid = single_output_transform(
         name='step_one_solid',
-        inputs=[],
+        input_defs=[],
         compute_fn=lambda context, args: _set_key_value(did_run_dict, 'step_one', True),
-        output=OutputDefinition(),
+        output_def=OutputDefinition(),
     )
 
     step_two_solid = single_output_transform(
         name='step_two_solid',
         compute_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
-        inputs=[InputDefinition(step_one_solid.name)],
-        output=OutputDefinition(),
+        input_defs=[InputDefinition(step_one_solid.name)],
+        output_def=OutputDefinition(),
     )
 
     pipeline = PipelineDefinition(

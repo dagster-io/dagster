@@ -22,8 +22,8 @@ from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 
 @solid(
-    inputs=[InputDefinition('chase_duration', Int)],
-    outputs=[OutputDefinition(Int, 'total')],
+    input_defs=[InputDefinition('chase_duration', Int)],
+    output_defs=[OutputDefinition(Int, 'total')],
     config_field=Field(
         Dict(
             fields={
@@ -56,7 +56,7 @@ def hammer(context, chase_duration):
 
 @solid(
     config_field=Field(Int, is_optional=True, default_value=1),
-    outputs=[
+    output_defs=[
         OutputDefinition(Int, 'out_1'),
         OutputDefinition(Int, 'out_2'),
         OutputDefinition(Int, 'out_3'),
@@ -73,13 +73,13 @@ def giver(context):
 
 
 @lambda_solid(
-    inputs=[
+    input_defs=[
         InputDefinition('in_1', Int),
         InputDefinition('in_2', Int),
         InputDefinition('in_3', Int),
         InputDefinition('in_4', Int),
     ],
-    output=OutputDefinition(Int),
+    output_def=OutputDefinition(Int),
 )
 def total(in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4
