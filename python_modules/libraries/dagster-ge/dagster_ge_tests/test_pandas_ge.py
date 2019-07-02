@@ -10,7 +10,7 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
 )
-from dagster.core.errors import DagsterExpectationFailedError
+from dagster.core.definitions.expectation import DagsterIOExpectationFailedError
 from dagster.core.utility_solids import define_stub_solid
 import dagster_pandas as dagster_pd
 from dagster.utils import script_relative_path
@@ -119,6 +119,6 @@ def test_single_node_failing_expectation():
 
     # NOTE: this is not what I want to API to be but at least it exercises
     # the code path for now
-    with pytest.raises(DagsterExpectationFailedError):
+    with pytest.raises(DagsterIOExpectationFailedError):
         result = execute_pipeline(pipeline)
         assert not result.success

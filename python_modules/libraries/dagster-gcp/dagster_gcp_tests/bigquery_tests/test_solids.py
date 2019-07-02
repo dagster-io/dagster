@@ -21,6 +21,7 @@ from dagster import (
     execute_pipeline,
     pipeline,
     solid,
+    DagsterExecutionStepExecutionError,
     InputDefinition,
     List,
     ModeDefinition,
@@ -38,7 +39,6 @@ from dagster_gcp import (
     bq_delete_dataset,
     bq_load_solid_for_source,
     bq_solid_for_queries,
-    BigQueryError,
     BigQueryLoadSource,
 )
 
@@ -166,9 +166,11 @@ def test_create_delete_dataset():
     assert execute_pipeline(create_pipeline, config).result_for_solid('create_solid').success
 
     config = {'solids': {'create_solid': {'config': {'dataset': dataset, 'exists_ok': False}}}}
-    with pytest.raises(BigQueryError) as exc_info:
+    with pytest.raises(DagsterExecutionStepExecutionError) as exc_info:
         execute_pipeline(create_pipeline, config)
-    assert 'Dataset "%s" already exists and exists_ok is false' % dataset in str(exc_info.value)
+    assert 'Dataset "%s" already exists and exists_ok is false' % dataset in str(
+        exc_info.value.user_exception
+    )
 
     @pipeline(mode_defs=bq_modes())
     def delete_pipeline():
@@ -184,9 +186,11 @@ def test_create_delete_dataset():
 
     # Delete non-existent with "not_found_ok" False should fail
     config = {'solids': {'delete_solid': {'config': {'dataset': dataset, 'not_found_ok': False}}}}
-    with pytest.raises(BigQueryError) as exc_info:
+    with pytest.raises(DagsterExecutionStepExecutionError) as exc_info:
         execute_pipeline(delete_pipeline, config)
-    assert 'Dataset "%s" does not exist and not_found_ok is false' % dataset in str(exc_info.value)
+    assert 'Dataset "%s" does not exist and not_found_ok is false' % dataset in str(
+        exc_info.value.user_exception
+    )
 
     assert not dataset_exists(dataset)
 
@@ -228,11 +232,11 @@ def test_pd_df_load():
 
     # BQ loads should throw an exception if pyarrow and fastparquet aren't available
     with mock.patch.dict(sys.modules, {'pyarrow': None, 'fastparquet': None}):
-        with pytest.raises(BigQueryError) as exc_info:
+        with pytest.raises(DagsterExecutionStepExecutionError) as exc_info:
             result = execute_pipeline(bq_pipeline, config)
         assert (
             'loading data to BigQuery from pandas DataFrames requires either pyarrow or fastparquet'
-            ' to be installed' in str(exc_info.value)
+            ' to be installed' in str(exc_info.value.user_exception)
         )
         cleanup_config = {
             'solids': {'delete_solid': {'config': {'dataset': dataset, 'delete_contents': True}}}

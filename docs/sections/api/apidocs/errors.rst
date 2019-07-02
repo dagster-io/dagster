@@ -5,8 +5,6 @@ Errors
 
 Core dagster error classes.
 
-.. autoexception:: DagsterExpectationFailedError
-
 .. autoexception:: DagsterInvalidDefinitionError
 
 .. autoexception:: DagsterInvariantViolationError

@@ -60,14 +60,12 @@ from dagster.core.execution.results import PipelineExecutionResult, SolidExecuti
 from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
-    DagsterExpectationFailedError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
+    DagsterStepOutputNotFoundError,
     DagsterTypeCheckError,
     DagsterUserCodeExecutionError,
-    DagsterUserError,
-    DagsterStepOutputNotFoundError,
 )
 
 from dagster.core.storage.init import InitSystemStorageContext
@@ -153,13 +151,11 @@ __all__ = [
     # Errors
     'DagsterExecutionStepExecutionError',
     'DagsterExecutionStepNotFoundError',
-    'DagsterExpectationFailedError',
     'DagsterInvalidDefinitionError',
     'DagsterInvariantViolationError',
     'DagsterResourceFunctionError',
     'DagsterTypeCheckError',
     'DagsterUserCodeExecutionError',
-    'DagsterUserError',
     'DagsterStepOutputNotFoundError',
     # Utilities
     'execute_solid',

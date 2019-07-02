@@ -67,8 +67,8 @@ And then:
     -n expectations_tutorial_pipeline \
     -e expectations_fail.yaml
 
-    dagster.core.errors.DagsterExpectationFailedError:
-    DagsterExpectationFailedError(solid=add_ints,
+    dagster.core.errors.DagsterIOExpectationFailedError:
+    DagsterIOExpectationFailedError(solid=add_ints,
     output=num_one, expectation=check_positive
     value=-2)
 

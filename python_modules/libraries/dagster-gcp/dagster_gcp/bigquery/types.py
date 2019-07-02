@@ -13,7 +13,7 @@ from google.cloud.bigquery.job import (
     WriteDisposition,
 )
 
-from dagster import DagsterUserError, Enum, EnumValue, ConfigScalar
+from dagster import Enum, EnumValue, ConfigScalar
 
 
 class BigQueryLoadSource(PyEnum):
@@ -140,5 +140,5 @@ class Table(ConfigScalar):
         return _is_valid_table(config_value)
 
 
-class BigQueryError(DagsterUserError):
+class BigQueryError(Exception):
     pass

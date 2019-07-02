@@ -1,6 +1,7 @@
 from dagster import check
 
 from dagster.core.definitions import (
+    DagsterIOExpectationFailedError,
     IOExpectationDefinition,
     ExpectationResult,
     InputDefinition,
@@ -10,7 +11,7 @@ from dagster.core.definitions import (
     SolidHandle,
 )
 
-from dagster.core.errors import DagsterExpectationFailedError, DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvariantViolationError
 
 from dagster.core.execution.context.system import SystemStepExecutionContext
 
@@ -68,7 +69,7 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
                     key=expectation_context.step.key, value=value
                 )
             )
-            raise DagsterExpectationFailedError(expectation_context, value)
+            raise DagsterIOExpectationFailedError(expectation_context, value)
 
     return _do_expectation
 
