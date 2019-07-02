@@ -15,7 +15,8 @@ export function handleStartExecutionResult(
   pipelineName: string,
   result: void | {
     data?: { startPipelineExecution: HandleStartExecutionFragment };
-  }
+  },
+  opts: { openInNewWindow: boolean }
 ) {
   if (!result || !result.data) {
     showCustomAlert({ message: `No data was returned. Did Dagit crash?` });
@@ -25,7 +26,12 @@ export function handleStartExecutionResult(
   const obj = result.data.startPipelineExecution;
 
   if (obj.__typename === "StartPipelineExecutionSuccess") {
-    window.open(`/${pipelineName}/runs/${obj.run.runId}`, "_blank");
+    const url = `/${pipelineName}/runs/${obj.run.runId}`;
+    if (opts.openInNewWindow) {
+      window.open(url, "_blank");
+    } else {
+      window.location.href = url;
+    }
   } else {
     let message = `${pipelineName} cannot not be executed with the provided config.`;
 
