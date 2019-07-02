@@ -63,11 +63,11 @@ def get_dataset():
 
 
 def bq_modes():
-    return [ModeDefinition(resources={'bq': bigquery_resource})]
+    return [ModeDefinition(resource_defs={'bq': bigquery_resource})]
 
 
 def test_simple_queries():
-    @pipeline(mode_definitions=bq_modes())
+    @pipeline(mode_defs=bq_modes())
     def bq_pipeline():
         bq_solid_for_queries(
             [
@@ -143,7 +143,7 @@ def test_bad_config():
         ),
     ]
 
-    @pipeline(mode_definitions=bq_modes())
+    @pipeline(mode_defs=bq_modes())
     def test_config_pipeline():
         bq_solid_for_queries(['SELECT 1']).alias('test')()  # pylint: disable=no-value-for-parameter
 
@@ -157,7 +157,7 @@ def test_bad_config():
 def test_create_delete_dataset():
     dataset = get_dataset()
 
-    @pipeline(mode_definitions=bq_modes())
+    @pipeline(mode_defs=bq_modes())
     def create_pipeline():
         bq_create_dataset.alias('create_solid')()
 
@@ -170,7 +170,7 @@ def test_create_delete_dataset():
         execute_pipeline(create_pipeline, config)
     assert 'Dataset "%s" already exists and exists_ok is false' % dataset in str(exc_info.value)
 
-    @pipeline(mode_definitions=bq_modes())
+    @pipeline(mode_defs=bq_modes())
     def delete_pipeline():
         bq_delete_dataset.alias('delete_solid')()
 
@@ -216,7 +216,7 @@ def test_pd_df_load():
         }
     }
 
-    @pipeline(mode_definitions=bq_modes())
+    @pipeline(mode_defs=bq_modes())
     def bq_pipeline():
         delete_solid(query_solid(load_solid(return_df(create_solid()))))
 
@@ -238,7 +238,7 @@ def test_pd_df_load():
             'solids': {'delete_solid': {'config': {'dataset': dataset, 'delete_contents': True}}}
         }
 
-        @pipeline(mode_definitions=bq_modes())
+        @pipeline(mode_defs=bq_modes())
         def cleanup():
             delete_solid()
 
@@ -285,7 +285,7 @@ def test_gcs_load():
         }
     }
 
-    @pipeline(mode_definitions=bq_modes())
+    @pipeline(mode_defs=bq_modes())
     def bq_pipeline():
         delete_solid(query_solid(load_solid(return_gcs_uri(create_solid()))))
 

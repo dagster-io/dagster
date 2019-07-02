@@ -128,10 +128,10 @@ def define_solid_config_cls(name, config_field, inputs_field, outputs_field):
 class EnvironmentClassCreationData(
     namedtuple(
         'EnvironmentClassCreationData',
-        'pipeline_name solids dependency_structure mode_definition loggers',
+        'pipeline_name solids dependency_structure mode_definition logger_defs',
     )
 ):
-    def __new__(cls, pipeline_name, solids, dependency_structure, mode_definition, loggers):
+    def __new__(cls, pipeline_name, solids, dependency_structure, mode_definition, logger_defs):
         return super(EnvironmentClassCreationData, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
@@ -142,7 +142,9 @@ class EnvironmentClassCreationData(
             mode_definition=check.opt_inst_param(
                 mode_definition, 'mode_definition', ModeDefinition
             ),
-            loggers=check.dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition),
+            logger_defs=check.dict_param(
+                logger_defs, 'logger_defs', key_type=str, value_type=LoggerDefinition
+            ),
         )
 
 
@@ -164,7 +166,7 @@ def define_logger_dictionary_cls(name, creation_data):
 
     fields = {}
 
-    for logger_name, logger_definition in creation_data.loggers.items():
+    for logger_name, logger_definition in creation_data.logger_defs.items():
         fields[logger_name] = Field(
             SystemNamedDict(
                 '{pipeline_name}.LoggerConfig.{logger_name}'.format(

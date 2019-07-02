@@ -33,13 +33,15 @@ from dagster.core.storage.runs import InMemoryRunStorage
 
 
 def create_test_pipeline_execution_context(
-    loggers=None, scoped_resources_builder=None, tags=None, run_config_loggers=None
+    logger_defs=None, scoped_resources_builder=None, tags=None, run_config_loggers=None
 ):
     run_id = str(uuid.uuid4())
-    loggers = check.opt_dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition)
-    mode_def = ModeDefinition(loggers=loggers)
+    loggers = check.opt_dict_param(
+        logger_defs, 'logger_defs', key_type=str, value_type=LoggerDefinition
+    )
+    mode_def = ModeDefinition(logger_defs=loggers)
     pipeline_def = PipelineDefinition(
-        name='test_legacy_context', solid_defs=[], mode_definitions=[mode_def]
+        name='test_legacy_context', solid_defs=[], mode_defs=[mode_def]
     )
     run_config_loggers = check.opt_list_param(
         run_config_loggers, 'run_config_loggers', of_type=logging.Logger
@@ -170,7 +172,7 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
     return PipelineDefinition(
         name=pipeline_def.name + '_stubbed',
         solid_defs=pipeline_def.solid_defs + stub_solid_defs,
-        mode_definitions=pipeline_def.mode_definitions,
+        mode_defs=pipeline_def.mode_definitions,
         dependencies=deps,
     )
 

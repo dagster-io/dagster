@@ -83,10 +83,10 @@ def test_depends_on_s3_resource_intermediates():
     s3_fake_resource = create_s3_fake_resource()
 
     @pipeline(
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
                 system_storage_defs=s3_plus_default_storage_defs,
-                resources={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
+                resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
             )
         ]
     )
@@ -137,10 +137,10 @@ def test_depends_on_s3_resource_file_manager():
     s3_fake_resource = create_s3_fake_resource()
 
     @pipeline(
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
                 system_storage_defs=s3_plus_default_storage_defs,
-                resources={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
+                resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
             )
         ]
     )

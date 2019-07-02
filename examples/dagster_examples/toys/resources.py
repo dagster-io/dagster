@@ -45,7 +45,7 @@ def one_and_two_and_three(_):
     return 1
 
 
-@pipeline(mode_definitions=[ModeDefinition(resources=lots_of_resources)])
+@pipeline(mode_defs=[ModeDefinition(resource_defs=lots_of_resources)])
 def resource_pipeline():
     all_resources()
     one()

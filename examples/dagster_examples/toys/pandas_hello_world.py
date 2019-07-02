@@ -18,7 +18,7 @@ def sum_sq_solid(sum_df: DataFrame) -> DataFrame:
 
 
 @pipeline(
-    preset_definitions=[
+    preset_defs=[
         PresetDefinition(
             'test',
             environment_files=[

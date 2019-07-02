@@ -39,7 +39,7 @@ def test_spark_data_frame_serialization_file_system_file_handle():
     def nonce():
         return LocalFileHandle(file_relative_path(__file__, 'data/test.csv'))
 
-    @pipeline(mode_definitions=[spark_mode])
+    @pipeline(mode_defs=[spark_mode])
     def spark_df_test_pipeline():
         # pylint: disable=no-value-for-parameter
         ingest_csv_file_handle_to_spark(nonce())
@@ -77,7 +77,7 @@ def test_spark_data_frame_serialization_s3_file_handle():
         with open(os.path.join(os.path.dirname(__file__), 'data/test.csv'), 'rb') as fd:
             return context.file_manager.write_data(fd.read())
 
-    @pipeline(mode_definitions=[spark_mode])
+    @pipeline(mode_defs=[spark_mode])
     def spark_df_test_pipeline():
         # pylint: disable=no-value-for-parameter
         ingest_csv_file_handle_to_spark(nonce())

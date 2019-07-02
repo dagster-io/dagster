@@ -35,7 +35,7 @@ from .solids import (
 
 test_mode = ModeDefinition(
     name='test',
-    resources={
+    resource_defs={
         'spark': spark_session_local,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
@@ -48,7 +48,7 @@ test_mode = ModeDefinition(
 
 local_mode = ModeDefinition(
     name='local',
-    resources={
+    resource_defs={
         'spark': spark_session_local,
         's3': s3_resource,
         'db_info': postgres_db_info_resource,
@@ -61,7 +61,7 @@ local_mode = ModeDefinition(
 
 prod_mode = ModeDefinition(
     name='prod',
-    resources={
+    resource_defs={
         'spark': spark_session_local,  # FIXME
         's3': s3_resource,
         'db_info': redshift_db_info_resource,
@@ -73,8 +73,8 @@ prod_mode = ModeDefinition(
 
 
 @pipeline(
-    mode_definitions=[test_mode, local_mode, prod_mode],
-    preset_definitions=[
+    mode_defs=[test_mode, local_mode, prod_mode],
+    preset_defs=[
         PresetDefinition(
             name='local_fast',
             mode='local',
@@ -132,8 +132,8 @@ def process_delays_by_geo() -> S3FileHandle:
 
 
 @pipeline(
-    mode_definitions=[test_mode, local_mode, prod_mode],
-    preset_definitions=[
+    mode_defs=[test_mode, local_mode, prod_mode],
+    preset_defs=[
         PresetDefinition(
             name='local',
             mode='local',

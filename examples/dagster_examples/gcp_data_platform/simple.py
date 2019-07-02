@@ -23,8 +23,8 @@ def output_paths(context, start) -> List[String]:  # pylint: disable=unused-argu
 
 
 @pipeline(
-    mode_definitions=[
-        ModeDefinition(resources={'bq': bigquery_resource, 'dataproc': dataproc_resource})
+    mode_defs=[
+        ModeDefinition(resource_defs={'bq': bigquery_resource, 'dataproc': dataproc_resource})
     ]
 )
 def gcp_pipeline():

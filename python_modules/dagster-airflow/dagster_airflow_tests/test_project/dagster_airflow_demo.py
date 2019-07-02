@@ -40,9 +40,9 @@ def define_demo_execution_pipeline():
         name='demo_pipeline',
         solid_defs=[multiply_the_word, count_letters],
         dependencies={'count_letters': {'word': DependencyDefinition('multiply_the_word')}},
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                system_storage_defs=s3_plus_default_storage_defs, resources={'s3': s3_resource}
+                system_storage_defs=s3_plus_default_storage_defs, resource_defs={'s3': s3_resource}
             )
         ],
     )

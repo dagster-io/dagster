@@ -202,14 +202,14 @@ remotely in CI/CD, with access to a production or replica environment, but where
 essence; and remotely in production on live data.
 
     local_context = PipelineContextDefinition(
-        resources={
+        resource_defs={
             'db_info': define_postgres_db_info_resource(),
             ...
         },
     )
 
     prod_context = PipelineContextDefinition(
-        resources={
+        resource_defs={
             'db_info': define_redshift_db_info_resource(),
             ...
         },

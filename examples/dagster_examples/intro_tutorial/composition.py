@@ -42,7 +42,7 @@ def add_one_out(num: int) -> int:
     return adder(num, return_one())
 
 
-@composite_solid(outputs=[OutputDefinition(int, 'a_out'), OutputDefinition(int, 'b_out')])
+@composite_solid(output_defs=[OutputDefinition(int, 'a_out'), OutputDefinition(int, 'b_out')])
 def add_both(a: int, b: int):
     one = return_one()
     a = adder.alias('adder_a')(a, one)
@@ -108,13 +108,13 @@ def composed_pipeline():
     analysis(hr_table)
 
 
-@solid(outputs=[OutputDefinition(int, 'one'), OutputDefinition(int, 'two')])
+@solid(output_defs=[OutputDefinition(int, 'one'), OutputDefinition(int, 'two')])
 def return_one_and_two(_):
     yield Output(1, 'one')
     yield Output(2, 'two')
 
 
-@solid(outputs=[OutputDefinition(int, 'three'), OutputDefinition(int, 'four')])
+@solid(output_defs=[OutputDefinition(int, 'three'), OutputDefinition(int, 'four')])
 def return_three_and_four(_):
     yield Output(3, 'three')
     yield Output(4, 'four')

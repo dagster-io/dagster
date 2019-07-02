@@ -73,9 +73,9 @@ def test_unzip_file_handle_on_fake_s3():
     s3_fake_resource = create_s3_fake_resource()
 
     @pipeline(
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
+                resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
                 system_storage_defs=[s3_system_storage],
             )
         ]

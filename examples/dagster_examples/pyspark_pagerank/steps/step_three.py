@@ -50,6 +50,6 @@ def whole_pipeline_solid_using_context(context, pagerank_data):
     return ranks.collect()
 
 
-@pipeline(mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})])
+@pipeline(mode_defs=[ModeDefinition(resource_defs={'spark': spark_session_resource})])
 def pyspark_pagerank_step_three():
     whole_pipeline_solid_using_context()

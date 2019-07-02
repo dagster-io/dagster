@@ -73,7 +73,7 @@ def log_ranks_step_five(context, ranks):
     return ranks.collect()
 
 
-@pipeline(mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})])
+@pipeline(mode_defs=[ModeDefinition(resource_defs={'spark': spark_session_resource})])
 def pyspark_pagerank_step_five():
     log_ranks_step_five(
         calculate_ranks_step_five(compute_links_step_five(parse_pagerank_data_step_five()))

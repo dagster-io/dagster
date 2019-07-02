@@ -110,9 +110,9 @@ def define_hammer_pipeline():
                 'in_4': DependencyDefinition('hammer_4', 'total'),
             },
         },
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={'s3': s3_resource}, system_storage_defs=s3_plus_default_storage_defs
+                resource_defs={'s3': s3_resource}, system_storage_defs=s3_plus_default_storage_defs
             )
         ],
     )

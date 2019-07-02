@@ -42,9 +42,9 @@ def slack_to_file_resource(context):
 
 
 @pipeline(
-    mode_definitions=[
-        ModeDefinition(name='production', resources={'slack': slack_resource}),
-        ModeDefinition(name='local', resources={'slack': slack_to_file_resource}),
+    mode_defs=[
+        ModeDefinition(name='production', resource_defs={'slack': slack_resource}),
+        ModeDefinition(name='local', resource_defs={'slack': slack_to_file_resource}),
     ]
 )
 def resources_pipeline():

@@ -23,9 +23,9 @@ def test_resource_requirements_pass():
         return create_mem_system_storage_data(init_context)
 
     @pipeline(
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={
+                resource_defs={
                     'yup': ResourceDefinition.none_resource(),
                     'not_required': ResourceDefinition.none_resource(),
                 },
@@ -51,9 +51,9 @@ def test_resource_requirements_fail():
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
         @pipeline(
-            mode_definitions=[
+            mode_defs=[
                 ModeDefinition(
-                    resources={'nope': ResourceDefinition.none_resource()},
+                    resource_defs={'nope': ResourceDefinition.none_resource()},
                     system_storage_defs=[storage_with_req],
                 )
             ]

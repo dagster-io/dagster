@@ -35,7 +35,7 @@ def test_default_mode_definition():
 
 def test_mode_takes_a_name():
     pipeline_def = PipelineDefinition(
-        name='takes a mode', solid_defs=[], mode_definitions=[ModeDefinition(name='a_mode')]
+        name='takes a mode', solid_defs=[], mode_defs=[ModeDefinition(name='a_mode')]
     )
     assert pipeline_def
 
@@ -67,9 +67,7 @@ def test_wrong_single_mode():
 def test_mode_double_default_name():
     with pytest.raises(DagsterInvalidDefinitionError) as ide:
         PipelineDefinition(
-            name='double_default',
-            solid_defs=[],
-            mode_definitions=[ModeDefinition(), ModeDefinition()],
+            name='double_default', solid_defs=[], mode_defs=[ModeDefinition(), ModeDefinition()]
         )
 
     assert (
@@ -83,7 +81,7 @@ def test_mode_double_given_name():
         PipelineDefinition(
             name='double_given',
             solid_defs=[],
-            mode_definitions=[ModeDefinition(name='given'), ModeDefinition(name='given')],
+            mode_defs=[ModeDefinition(name='given'), ModeDefinition(name='given')],
         )
 
     assert (
@@ -187,7 +185,7 @@ def test_mode_with_resource_deps():
     pipeline_def_good_deps = PipelineDefinition(
         name='mode_with_good_deps',
         solid_defs=[requires_a],
-        mode_definitions=[ModeDefinition(resources={'a': resource_a})],
+        mode_defs=[ModeDefinition(resource_defs={'a': resource_a})],
     )
 
     execute_pipeline(pipeline_def_good_deps)
@@ -198,7 +196,7 @@ def test_mode_with_resource_deps():
         PipelineDefinition(
             name='mode_with_bad_deps',
             solid_defs=[requires_a],
-            mode_definitions=[ModeDefinition(resources={'ab': resource_a})],
+            mode_defs=[ModeDefinition(resource_defs={'ab': resource_a})],
         )
 
     assert (
@@ -214,7 +212,7 @@ def test_mode_with_resource_deps():
     pipeline_def_no_deps = PipelineDefinition(
         name='mode_with_no_deps',
         solid_defs=[no_deps],
-        mode_definitions=[ModeDefinition(resources={'a': resource_a})],
+        mode_defs=[ModeDefinition(resource_defs={'a': resource_a})],
     )
 
     execute_pipeline(pipeline_def_no_deps)
@@ -247,7 +245,7 @@ def test_subset_with_mode_definitions():
     pipeline_def = PipelineDefinition(
         name='subset_test',
         solid_defs=[requires_a, requires_b],
-        mode_definitions=[ModeDefinition(resources={'a': resource_a, 'b': resource_b})],
+        mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})],
     )
 
     assert execute_pipeline(pipeline_def).success is True
@@ -294,9 +292,11 @@ def define_multi_mode_with_loggers_pipeline():
         PipelineDefinition(
             name='multi_mode',
             solid_defs=[return_six],
-            mode_definitions=[
-                ModeDefinition(name='foo_mode', loggers={'foo': foo_logger}),
-                ModeDefinition(name='foo_bar_mode', loggers={'foo': foo_logger, 'bar': bar_logger}),
+            mode_defs=[
+                ModeDefinition(name='foo_mode', logger_defs={'foo': foo_logger}),
+                ModeDefinition(
+                    name='foo_bar_mode', logger_defs={'foo': foo_logger, 'bar': bar_logger}
+                ),
             ],
         ),
         foo_logger_captured_results,

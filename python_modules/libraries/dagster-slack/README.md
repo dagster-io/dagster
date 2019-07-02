@@ -6,7 +6,7 @@ This library provides an integration with Slack, to support posting messages in 
 Presently, it provides a thin wrapper on the Slack client API [chat.postMessage](https://api.slack.com/methods/chat.postMessage).
 
 ## Getting Started
-To use this integration, you'll first need to create a Slack App for it. 
+To use this integration, you'll first need to create a Slack App for it.
 
 1. **Create App**: Go to [https://api.slack.com/apps](https://api.slack.com/apps) and click "Create New App":
 
@@ -30,7 +30,7 @@ from dagster import solid, execute_pipeline, PipelineDefinition, ModeDefinition
 from dagster_slack import slack_resource
 
 
-@solid(resources={'slack'})
+@solid(resource_defs={'slack'})
 def slack_solid(context):
     context.resources.slack.chat.post_message(channel='#noise', text=':wave: hey there!')
 
@@ -38,7 +38,7 @@ def slack_solid(context):
 pipeline = PipelineDefinition(
     name='test_slack_resource',
     solids=[slack_solid],
-    mode_definitions=[ModeDefinition(resources={'slack': slack_resource})],
+    mode_defs=[ModeDefinition(resource_defs={'slack': slack_resource})],
 )
 
 execute_pipeline(

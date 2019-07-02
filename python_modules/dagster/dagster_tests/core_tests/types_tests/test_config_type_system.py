@@ -378,9 +378,9 @@ def dummy_resource(config_field=None):
 def test_wrong_resources():
     pipeline_def = PipelineDefinition(
         name='pipeline_test_multiple_context',
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={'resource_one': dummy_resource(), 'resource_two': dummy_resource()}
+                resource_defs={'resource_one': dummy_resource(), 'resource_two': dummy_resource()}
             )
         ],
         solid_defs=[],
@@ -575,7 +575,7 @@ def test_required_resource_not_given():
     pipeline_def = PipelineDefinition(
         name='required_resource_not_given',
         solid_defs=[],
-        mode_definitions=[ModeDefinition(resources={'required': dummy_resource(Field(Int))})],
+        mode_defs=[ModeDefinition(resource_defs={'required': dummy_resource(Field(Int))})],
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:

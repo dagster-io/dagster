@@ -54,6 +54,6 @@ def rest_of_pipeline(context, urls):
     return ranks.collect()
 
 
-@pipeline(mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})])
+@pipeline(mode_defs=[ModeDefinition(resource_defs={'spark': spark_session_resource})])
 def pyspark_pagerank_step_four():
     rest_of_pipeline(parse_pagerank_data_step_four())

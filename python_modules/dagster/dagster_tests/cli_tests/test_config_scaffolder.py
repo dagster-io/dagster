@@ -74,14 +74,18 @@ def test_two_modes(snapshot):
     pipeline_def = PipelineDefinition(
         name='TwoModePipelines',
         solid_defs=[],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
                 'mode_one',
-                resources={'value': dummy_resource(Field(Dict({'mode_one_field': Field(String)})))},
+                resource_defs={
+                    'value': dummy_resource(Field(Dict({'mode_one_field': Field(String)})))
+                },
             ),
             ModeDefinition(
                 'mode_two',
-                resources={'value': dummy_resource(Field(Dict({'mode_two_field': Field(Int)})))},
+                resource_defs={
+                    'value': dummy_resource(Field(Dict({'mode_two_field': Field(Int)})))
+                },
             ),
         ],
     )

@@ -45,7 +45,7 @@ def create_creation_data(pipeline_def):
         pipeline_def.solids,
         pipeline_def.dependency_structure,
         mode_definition=None,
-        loggers=default_loggers(),
+        logger_defs=default_loggers(),
     )
 
 
@@ -75,10 +75,10 @@ def test_all_types_provided():
     pipeline_def = PipelineDefinition(
         name='pipeline',
         solid_defs=[],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
                 name='SomeMode',
-                resources={
+                resource_defs={
                     'some_resource': ResourceDefinition(
                         lambda: None,
                         config_field=Field(
@@ -108,10 +108,10 @@ def test_all_types_provided():
 
 def test_provided_default_on_resources_config():
     pipeline_def = PipelineDefinition(
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
                 name='some_mode',
-                resources={
+                resource_defs={
                     'some_resource': ResourceDefinition(
                         resource_fn=lambda: None,
                         config_field=Field(
@@ -303,10 +303,10 @@ def test_solid_dictionary_some_no_config():
 def test_whole_environment():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
                 name='test_mode',
-                resources={
+                resource_defs={
                     'test_resource': ResourceDefinition(
                         resource_fn=lambda: None, config_field=Field(Any)
                     )
@@ -550,9 +550,9 @@ def test_required_resource_with_required_subfield():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
         solid_defs=[],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={
+                resource_defs={
                     'with_required': ResourceDefinition(
                         resource_fn=lambda: None,
                         config_field=Field(Dict({'required_field': Field(String)})),
@@ -578,9 +578,9 @@ def test_all_optional_field_on_single_resource():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
         solid_defs=[],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={
+                resource_defs={
                     'with_optional': ResourceDefinition(
                         resource_fn=lambda: None,
                         config_field=Field(
@@ -608,10 +608,10 @@ def test_optional_and_required_context():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
         solid_defs=[],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
                 name='mixed',
-                resources={
+                resource_defs={
                     'optional_resource': ResourceDefinition(
                         lambda: None,
                         config_field=Field(

@@ -770,14 +770,10 @@ def composite_solid(
 
 
 class _Pipeline:
-    def __init__(self, name=None, mode_definitions=None, preset_definitions=None, description=None):
+    def __init__(self, name=None, mode_defs=None, preset_defs=None, description=None):
         self.name = check.opt_str_param(name, 'name')
-        self.mode_definitions = check.opt_list_param(
-            mode_definitions, 'mode_definitions', ModeDefinition
-        )
-        self.preset_definitions = check.opt_list_param(
-            preset_definitions, 'preset_definitions', PresetDefinition
-        )
+        self.mode_definitions = check.opt_list_param(mode_defs, 'mode_defs', ModeDefinition)
+        self.preset_definitions = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)
         self.description = check.opt_str_param(description, 'description')
 
     def __call__(self, fn):
@@ -796,13 +792,13 @@ class _Pipeline:
             name=self.name,
             dependencies=context.dependencies,
             solid_defs=context.solid_defs,
-            mode_definitions=self.mode_definitions,
-            preset_definitions=self.preset_definitions,
+            mode_defs=self.mode_definitions,
+            preset_defs=self.preset_definitions,
             description=self.description,
         )
 
 
-def pipeline(name=None, description=None, mode_definitions=None, preset_definitions=None):
+def pipeline(name=None, description=None, mode_defs=None, preset_defs=None):
     ''' (decorator) Create a pipeline with specified parameters.
 
     Using this decorator allows you to build up the dependency graph of the pipeline by writing a
@@ -811,10 +807,10 @@ def pipeline(name=None, description=None, mode_definitions=None, preset_definiti
     Args:
         name (Optional[str])
         description (Optional[str])
-        mode_definitions (Optional[List[ModeDefinition]]):
+        mode_defs (Optional[List[ModeDefinition]]):
             The set of modes this pipeline can operate in. Modes can be used for example to vary
             resources and logging implementations for local testing and running in production.
-        preset_definitions (Optional[List[PresetDefinition]]):
+        preset_defs (Optional[List[PresetDefinition]]):
             Given the different ways a pipeline may execute, presets give you a way to provide
             specific valid collections of configuration.
 
@@ -844,8 +840,5 @@ def pipeline(name=None, description=None, mode_definitions=None, preset_definiti
         return _Pipeline()(name)
 
     return _Pipeline(
-        name=name,
-        mode_definitions=mode_definitions,
-        preset_definitions=preset_definitions,
-        description=description,
+        name=name, mode_defs=mode_defs, preset_defs=preset_defs, description=description
     )

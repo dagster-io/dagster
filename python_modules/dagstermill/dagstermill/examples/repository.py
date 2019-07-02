@@ -308,7 +308,7 @@ def define_resource_pipeline():
         name='resource_pipeline',
         solid_defs=[resource_solid, hello_world_resource_solid],
         dependencies={'hello_world_resource': {'nonce': DependencyDefinition('resource_solid')}},
-        mode_definitions=[ModeDefinition(resources={'list': filepicklelist_resource})],
+        mode_defs=[ModeDefinition(resource_defs={'list': filepicklelist_resource})],
     )
 
 
@@ -319,7 +319,7 @@ def define_resource_with_exception_pipeline():
         dependencies={
             'hello_world_resource_with_exception': {'nonce': DependencyDefinition('resource_solid')}
         },
-        mode_definitions=[ModeDefinition(resources={'list': filepicklelist_resource})],
+        mode_defs=[ModeDefinition(resource_defs={'list': filepicklelist_resource})],
     )
 
 

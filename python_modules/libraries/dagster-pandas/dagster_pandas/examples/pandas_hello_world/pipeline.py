@@ -57,7 +57,7 @@ def define_pandas_hello_world_pipeline():
             'sum_solid': {},
             'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
         },
-        preset_definitions=[
+        preset_defs=[
             PresetDefinition(
                 'test',
                 environment_files=[

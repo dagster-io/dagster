@@ -73,5 +73,5 @@ def define_spew_pipeline():
                 'input_0': DependencyDefinition('solid_f', 'output_0')
             },
         },
-        mode_definitions=[ModeDefinition()],
+        mode_defs=[ModeDefinition()],
     )

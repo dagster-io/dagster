@@ -140,10 +140,12 @@ def gunzipper(gzip_file):
 
 
 @pipeline(
-    mode_definitions=[
-        ModeDefinition(name='local', resources={'s3': s3_resource, 'snowflake': snowflake_resource})
+    mode_defs=[
+        ModeDefinition(
+            name='local', resource_defs={'s3': s3_resource, 'snowflake': snowflake_resource}
+        )
     ],
-    preset_definitions=[
+    preset_defs=[
         PresetDefinition(
             name='local',
             mode='local',

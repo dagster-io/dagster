@@ -70,7 +70,7 @@ def test_no_double_write_same_names():
 def test_write_dagster_meta():
     with get_temp_file_name() as tf_name:
         execution_context = create_test_pipeline_execution_context(
-            loggers={'json': define_json_file_logger('foo', tf_name, logging.DEBUG)}
+            logger_defs={'json': define_json_file_logger('foo', tf_name, logging.DEBUG)}
         )
         execution_context.log.debug('some_debug_message', context_key='context_value')
         data = list(parse_json_lines(tf_name))

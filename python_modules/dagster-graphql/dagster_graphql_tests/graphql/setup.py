@@ -290,7 +290,7 @@ def define_csv_hello_world():
             'sum_solid': {},
             'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
         },
-        preset_definitions=[
+        preset_defs=[
             PresetDefinition(
                 name='prod',
                 environment_files=[
@@ -443,21 +443,21 @@ def define_multi_mode_with_resources_pipeline():
     return PipelineDefinition(
         name='multi_mode_with_resources',
         solid_defs=[apply_to_three],
-        preset_definitions=[PresetDefinition("add", mode="add_mode")],
-        mode_definitions=[
+        preset_defs=[PresetDefinition("add", mode="add_mode")],
+        mode_defs=[
             ModeDefinition(
                 name='add_mode',
-                resources={'op': adder_resource},
+                resource_defs={'op': adder_resource},
                 description='Mode that adds things',
             ),
             ModeDefinition(
                 name='mult_mode',
-                resources={'op': multer_resource},
+                resource_defs={'op': multer_resource},
                 description='Mode that multiplies things',
             ),
             ModeDefinition(
                 name='double_adder',
-                resources={'op': double_adder_resource},
+                resource_defs={'op': double_adder_resource},
                 description='Mode that adds two numbers to thing',
             ),
         ],
@@ -493,16 +493,16 @@ def define_multi_mode_with_loggers_pipeline():
     return PipelineDefinition(
         name='multi_mode_with_loggers',
         solid_defs=[return_six],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                name='foo_mode', loggers={'foo': foo_logger}, description='Mode with foo logger'
+                name='foo_mode', logger_defs={'foo': foo_logger}, description='Mode with foo logger'
             ),
             ModeDefinition(
-                name='bar_mode', loggers={'bar': bar_logger}, description='Mode with bar logger'
+                name='bar_mode', logger_defs={'bar': bar_logger}, description='Mode with bar logger'
             ),
             ModeDefinition(
                 name='foobar_mode',
-                loggers={'foo': foo_logger, 'bar': bar_logger},
+                logger_defs={'foo': foo_logger, 'bar': bar_logger},
                 description='Mode with multiple loggers',
             ),
         ],

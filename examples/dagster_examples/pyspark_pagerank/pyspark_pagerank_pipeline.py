@@ -73,6 +73,6 @@ def log_ranks(context, ranks):
     return ranks.collect()
 
 
-@pipeline(mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})])
+@pipeline(mode_defs=[ModeDefinition(resource_defs={'spark': spark_session_resource})])
 def pyspark_pagerank():
     log_ranks(calculate_ranks(links=compute_links(urls=parse_pagerank_data())))

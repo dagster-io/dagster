@@ -83,7 +83,7 @@ def test_dataproc_resource():
         pipeline = PipelineDefinition(
             name='test_dataproc_resource',
             solid_defs=[dataproc_solid],
-            mode_definitions=[ModeDefinition(resources={'dataproc': dataproc_resource})],
+            mode_defs=[ModeDefinition(resource_defs={'dataproc': dataproc_resource})],
         )
 
         result = execute_pipeline(

@@ -560,9 +560,9 @@ def test_pipeline_init_failure():
     pipeline_def = PipelineDefinition(
         [stub_solid],
         'failing_init_pipeline',
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={'failing': ResourceDefinition(resource_fn=failing_resource_fn)}
+                resource_defs={'failing': ResourceDefinition(resource_fn=failing_resource_fn)}
             )
         ],
     )

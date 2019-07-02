@@ -235,7 +235,7 @@ def test_json_console_logger(capsys):
 
     execute_pipeline(
         PipelineDefinition(
-            [hello_world], mode_definitions=[ModeDefinition(loggers={'json': json_console_logger})]
+            [hello_world], mode_defs=[ModeDefinition(logger_defs={'json': json_console_logger})]
         ),
         {'loggers': {'json': {'config': {}}}},
     )

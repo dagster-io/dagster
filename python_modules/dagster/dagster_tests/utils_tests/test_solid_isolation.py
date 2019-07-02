@@ -113,7 +113,7 @@ def test_single_solid_with_context_config():
 
     pipeline_def = PipelineDefinition(
         solid_defs=[check_context_config_for_two],
-        mode_definitions=[ModeDefinition(resources={'num': num_resource})],
+        mode_defs=[ModeDefinition(resource_defs={'num': num_resource})],
     )
 
     result = execute_solid(

@@ -83,12 +83,12 @@ def str_to_num(context, string):
 
 
 @pipeline(
-    mode_definitions=[
+    mode_defs=[
         ModeDefinition(
-            name='errorable_mode', resources={'errorable_resource': define_errorable_resource()}
+            name='errorable_mode', resource_defs={'errorable_resource': define_errorable_resource()}
         )
     ],
-    preset_definitions=[
+    preset_defs=[
         PresetDefinition(
             'passing',
             environment_files=[file_relative_path(__file__, 'environments/error.yaml')],

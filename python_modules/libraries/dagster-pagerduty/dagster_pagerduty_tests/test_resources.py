@@ -34,7 +34,7 @@ def test_pagerduty_resource():
     pipeline = PipelineDefinition(
         name='test_pagerduty_resource',
         solid_defs=[pagerduty_solid],
-        mode_definitions=[ModeDefinition(resources={'pagerduty': pagerduty_resource})],
+        mode_defs=[ModeDefinition(resource_defs={'pagerduty': pagerduty_resource})],
     )
 
     result = execute_pipeline(
