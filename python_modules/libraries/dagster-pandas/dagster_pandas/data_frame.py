@@ -93,7 +93,7 @@ DataFrame = as_dagster_type(
     tabular data structure with labeled axes (rows and columns).
     See http://pandas.pydata.org/''',
     input_hydration_config=dataframe_input_schema,
-    output_schema=dataframe_output_schema,
+    output_materialization_config=dataframe_output_schema,
     metadata_fn=lambda value: TypeCheck(
         metadata_entries=[
             EventMetadataEntry.text(str(len(value)), 'row_count', 'Number of rows in DataFrame'),

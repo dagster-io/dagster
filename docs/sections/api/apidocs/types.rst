@@ -88,6 +88,6 @@ Schema
 
 .. autofunction:: input_selector_schema
 
-.. autofunction:: output_schema
+.. autofunction:: output_materialization_config
 
 .. autofunction:: output_selector_schema

@@ -36,7 +36,7 @@ from dagster import (
     input_hydration_config,
     lambda_solid,
     logger,
-    output_schema,
+    output_materialization_config,
     pipeline,
     resource,
     solid,
@@ -60,7 +60,7 @@ def df_input_schema(_context, path):
         )
 
 
-@output_schema(Path)
+@output_materialization_config(Path)
 def df_output_schema(_context, path, value):
     with open(path, 'w') as fd:
         writer = csv.DictWriter(fd, fieldnames=value[0].keys())
@@ -71,7 +71,9 @@ def df_output_schema(_context, path, value):
 
 
 PoorMansDataFrame = as_dagster_type(
-    PoorMansDataFrame_, input_hydration_config=df_input_schema, output_schema=df_output_schema
+    PoorMansDataFrame_,
+    input_hydration_config=df_input_schema,
+    output_materialization_config=df_output_schema,
 )
 
 

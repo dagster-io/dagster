@@ -44,7 +44,7 @@ def make_bare_input_schema(config_cls):
     return _InputSchema()
 
 
-class OutputSchema:
+class OutputMaterializationConfig:
     @property
     def schema_type(self):
         check.not_implemented(
@@ -104,7 +104,7 @@ def input_selector_schema(config_cls):
 
 
 def _create_output_schema(config_type, func):
-    class _OutputSchema(OutputSchema):
+    class _OutputSchema(OutputMaterializationConfig):
         @property
         def schema_type(self):
             return config_type
@@ -115,7 +115,7 @@ def _create_output_schema(config_type, func):
     return _OutputSchema()
 
 
-def output_schema(config_cls):
+def output_materialization_config(config_cls):
     '''
     A decorator for a annotating a function that can take a ``config_value``
     and an instance of a custom type and materialize it.

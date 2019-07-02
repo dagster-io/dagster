@@ -311,9 +311,9 @@ def get_outputs_field(solid, handle, pipeline_name):
 
     output_dict_fields = {}
     for name, out in solid_def.output_dict.items():
-        if out.runtime_type.output_schema:
+        if out.runtime_type.output_materialization_config:
             output_dict_fields[name] = Field(
-                type(out.runtime_type.output_schema.schema_type), is_optional=True
+                type(out.runtime_type.output_materialization_config.schema_type), is_optional=True
             )
 
     output_entry_dict = SystemNamedDict(
@@ -430,8 +430,8 @@ def _gather_all_schemas(solid_defs):
         if rtt.input_hydration_config:
             for ct in iterate_config_types(rtt.input_hydration_config.schema_type):
                 yield ct
-        if rtt.output_schema:
-            for ct in iterate_config_types(rtt.output_schema.schema_type):
+        if rtt.output_materialization_config:
+            for ct in iterate_config_types(rtt.output_materialization_config.schema_type):
                 yield ct
 
 

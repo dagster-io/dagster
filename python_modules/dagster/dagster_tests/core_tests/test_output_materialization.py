@@ -14,7 +14,7 @@ from dagster import (
     StepKind,
     execute_pipeline,
     lambda_solid,
-    output_schema,
+    output_materialization_config,
     solid,
     types,
 )
@@ -332,7 +332,7 @@ def test_basic_int_json_multiple_materializations():
             assert value == {'value': 1}
 
 
-@output_schema(Int)
+@output_materialization_config(Int)
 def return_int(*_args, **_kwargs):
     return 1
 
@@ -340,7 +340,7 @@ def return_int(*_args, **_kwargs):
 class SomeRuntimeType(RuntimeType):
     def __init__(self):
         super(SomeRuntimeType, self).__init__(
-            key='SomeType', name='SomeType', output_schema=return_int
+            key='SomeType', name='SomeType', output_materialization_config=return_int
         )
 
 

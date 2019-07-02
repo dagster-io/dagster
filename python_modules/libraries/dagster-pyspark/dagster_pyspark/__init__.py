@@ -76,7 +76,7 @@ def write_rdd(context, file_type, file_options, spark_rdd):
 
 
 SparkRDD = as_dagster_type(
-    RDD, 'SparkRDD', input_hydration_config=load_rdd, output_schema=write_rdd
+    RDD, 'SparkRDD', input_hydration_config=load_rdd, output_materialization_config=write_rdd
 )
 
 
@@ -163,5 +163,5 @@ DataFrame = as_dagster_type(
     name='DataFrame',
     description='A Pyspark data frame.',
     auto_plugins=[SparkDataFrameS3StoragePlugin, SparkDataFrameFilesystemStoragePlugin],
-    output_schema=spark_df_output_schema,
+    output_materialization_config=spark_df_output_schema,
 )

@@ -46,7 +46,7 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
 
     @property
     def has_configurable_outputs(self):
-        return any([out.runtime_type.output_schema for out in self.output_defs])
+        return any([out.runtime_type.output_materialization_config for out in self.output_defs])
 
     @abstractproperty
     def has_config_entry(self):

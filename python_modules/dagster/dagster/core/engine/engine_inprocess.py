@@ -510,7 +510,7 @@ def _create_output_materializations(step_context, output_name, value):
         config_output_name, output_spec = list(output_spec.items())[0]
         if config_output_name == output_name:
             step_output = step.step_output_named(output_name)
-            materialization = step_output.runtime_type.output_schema.materialize_runtime_value(
+            materialization = step_output.runtime_type.output_materialization_config.materialize_runtime_value(
                 step_context, output_spec, value
             )
 

@@ -12,7 +12,7 @@ from .config import ConfigType
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
 
-from .config_schema import InputHydrationConfig, OutputSchema
+from .config_schema import InputHydrationConfig, OutputMaterializationConfig
 
 from .marshal import SerializationStrategy, PickleSerializationStrategy
 from .dagster_type import check_dagster_type_param
@@ -39,7 +39,7 @@ class RuntimeType(object):
         is_builtin=False,
         description=None,
         input_hydration_config=None,
-        output_schema=None,
+        output_materialization_config=None,
         serialization_strategy=None,
         auto_plugins=None,
     ):
@@ -59,7 +59,11 @@ class RuntimeType(object):
         self.input_hydration_config = check.opt_inst_param(
             input_hydration_config, 'input_hydration_config', InputHydrationConfig
         )
-        self.output_schema = check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
+        self.output_materialization_config = check.opt_inst_param(
+            output_materialization_config,
+            'output_materialization_config',
+            OutputMaterializationConfig,
+        )
         self.serialization_strategy = check.opt_inst_param(
             serialization_strategy,
             'serialization_strategy',
@@ -140,7 +144,8 @@ class BuiltinScalarRuntimeType(RuntimeType):
 class Int(BuiltinScalarRuntimeType):
     def __init__(self):
         super(Int, self).__init__(
-            input_hydration_config=BuiltinSchemas.INT_INPUT, output_schema=BuiltinSchemas.INT_OUTPUT
+            input_hydration_config=BuiltinSchemas.INT_INPUT,
+            output_materialization_config=BuiltinSchemas.INT_OUTPUT,
         )
 
     def type_check(self, value):
@@ -167,7 +172,7 @@ class String(BuiltinScalarRuntimeType):
     def __init__(self):
         super(String, self).__init__(
             input_hydration_config=BuiltinSchemas.STRING_INPUT,
-            output_schema=BuiltinSchemas.STRING_OUTPUT,
+            output_materialization_config=BuiltinSchemas.STRING_OUTPUT,
         )
 
     def type_check(self, value):
@@ -178,7 +183,7 @@ class Path(BuiltinScalarRuntimeType):
     def __init__(self):
         super(Path, self).__init__(
             input_hydration_config=BuiltinSchemas.PATH_INPUT,
-            output_schema=BuiltinSchemas.PATH_OUTPUT,
+            output_materialization_config=BuiltinSchemas.PATH_OUTPUT,
         )
 
     def type_check(self, value):
@@ -189,7 +194,7 @@ class Float(BuiltinScalarRuntimeType):
     def __init__(self):
         super(Float, self).__init__(
             input_hydration_config=BuiltinSchemas.FLOAT_INPUT,
-            output_schema=BuiltinSchemas.FLOAT_OUTPUT,
+            output_materialization_config=BuiltinSchemas.FLOAT_OUTPUT,
         )
 
     def type_check(self, value):
@@ -203,7 +208,7 @@ class Bool(BuiltinScalarRuntimeType):
     def __init__(self):
         super(Bool, self).__init__(
             input_hydration_config=BuiltinSchemas.BOOL_INPUT,
-            output_schema=BuiltinSchemas.BOOL_OUTPUT,
+            output_materialization_config=BuiltinSchemas.BOOL_OUTPUT,
         )
 
     def type_check(self, value):
@@ -219,7 +224,7 @@ class Anyish(RuntimeType):
         key,
         name,
         input_hydration_config=None,
-        output_schema=None,
+        output_materialization_config=None,
         is_builtin=False,
         description=None,
     ):
@@ -227,7 +232,7 @@ class Anyish(RuntimeType):
             key=key,
             name=name,
             input_hydration_config=input_hydration_config,
-            output_schema=output_schema,
+            output_materialization_config=output_materialization_config,
             is_builtin=is_builtin,
             description=description,
         )
@@ -243,7 +248,7 @@ class Any(Anyish):
             key='Any',
             name='Any',
             input_hydration_config=BuiltinSchemas.ANY_INPUT,
-            output_schema=BuiltinSchemas.ANY_OUTPUT,
+            output_materialization_config=BuiltinSchemas.ANY_OUTPUT,
             is_builtin=True,
         )
 
@@ -262,7 +267,7 @@ class Nothing(RuntimeType):
             key='Nothing',
             name='Nothing',
             input_hydration_config=None,
-            output_schema=None,
+            output_materialization_config=None,
             is_builtin=True,
         )
 
