@@ -7,7 +7,7 @@ from dagster_slack import slack_resource
 
 @responses.activate
 def test_slack_resource():
-    @solid(required_resources={'slack'})
+    @solid(required_resource_keys={'slack'})
     def slack_solid(context):
         assert context.resources.slack
         with responses.RequestsMock() as rsps:

@@ -25,22 +25,22 @@ def define_resource(num):
 lots_of_resources = {'R' + str(r): define_resource(r) for r in range(20)}
 
 
-@solid(required_resources=set(lots_of_resources.keys()))
+@solid(required_resource_keys=set(lots_of_resources.keys()))
 def all_resources(_):
     return 1
 
 
-@solid(required_resources={'R1'})
+@solid(required_resource_keys={'R1'})
 def one(context):
     return 1 + context.resources.R1
 
 
-@solid(required_resources={'R2'})
+@solid(required_resource_keys={'R2'})
 def two(_):
     return 1
 
 
-@solid(required_resources={'R1', 'R2', 'R3'})
+@solid(required_resource_keys={'R1', 'R2', 'R3'})
 def one_and_two_and_three(_):
     return 1
 

@@ -7,7 +7,10 @@ from .file_manager import S3FileManager
 
 
 @system_storage(
-    name='s3', is_persistent=True, config={'s3_bucket': Field(String)}, required_resources={'s3'}
+    name='s3',
+    is_persistent=True,
+    config={'s3_bucket': Field(String)},
+    required_resource_keys={'s3'},
 )
 def s3_system_storage(init_context):
     s3_session = init_context.resources.s3.session

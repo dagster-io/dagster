@@ -381,7 +381,7 @@ def _validate_resource_dependencies(mode_definitions, solid_defs):
     for mode_def in mode_definitions:
         mode_resources = set(mode_def.resource_defs.keys())
         for solid in solid_defs:
-            for required_resource in solid.required_resources:
+            for required_resource in solid.required_resource_keys:
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (
@@ -394,7 +394,7 @@ def _validate_resource_dependencies(mode_definitions, solid_defs):
                         )
                     )
         for system_storage_def in mode_def.system_storage_defs:
-            for required_resource in system_storage_def.required_resources:
+            for required_resource in system_storage_def.required_resource_keys:
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (

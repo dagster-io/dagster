@@ -234,7 +234,7 @@ def create_system_storage_data(
                 resources=scoped_resources_builder.build(
                     # currently provide default for resource mapping
                     lambda resources, resources_deps: {r: resources.get(r) for r in resources_deps},
-                    context_creation_data.system_storage_def.required_resources,
+                    context_creation_data.system_storage_def.required_resource_keys,
                 ),
             )
         )

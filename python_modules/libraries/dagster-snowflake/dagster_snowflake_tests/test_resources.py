@@ -28,7 +28,7 @@ def connect_with_fetchall_returning(value):
 
 @mock.patch('snowflake.connector.connect', new_callable=create_mock_connector)
 def test_snowflake_resource(snowflake_connect):
-    @solid(required_resources={'snowflake'})
+    @solid(required_resource_keys={'snowflake'})
     def snowflake_solid(context):
         assert context.resources.snowflake
         with context.resources.snowflake.get_connection(context.log) as _:

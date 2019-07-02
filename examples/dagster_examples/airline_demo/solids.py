@@ -135,7 +135,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
 
 @solid(
-    required_resources={'spark'},
+    required_resource_keys={'spark'},
     description='''Take a file handle that contains a csv with headers and load it
 into a Spark DataFrame. It infers header names but does *not* infer schema.
 

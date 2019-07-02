@@ -148,7 +148,7 @@ class _Solid(object):
         input_defs=None,
         output_defs=None,
         description=None,
-        required_resources=None,
+        required_resource_keys=None,
         config_field=None,
         metadata=None,
     ):
@@ -161,7 +161,7 @@ class _Solid(object):
         self.description = check.opt_str_param(description, 'description')
 
         # resources will be checked within SolidDefinition
-        self.required_resources = required_resources
+        self.required_resource_keys = required_resource_keys
 
         # config_field will be checked within SolidDefinition
         self.config_field = config_field
@@ -196,7 +196,7 @@ class _Solid(object):
             compute_fn=compute_fn,
             config_field=self.config_field,
             description=self.description,
-            required_resources=self.required_resources,
+            required_resource_keys=self.required_resource_keys,
             metadata=self.metadata,
         )
 
@@ -246,7 +246,7 @@ def solid(
     output_defs=None,
     config_field=None,
     config=None,
-    required_resources=None,
+    required_resource_keys=None,
     metadata=None,
 ):
     '''(decorator) Create a solid with specified parameters.
@@ -346,7 +346,7 @@ def solid(
         check.invariant(description is None)
         check.invariant(config_field is None)
         check.invariant(config is None)
-        check.invariant(required_resources is None)
+        check.invariant(required_resource_keys is None)
         check.invariant(metadata is None)
         return _Solid()(name)
 
@@ -356,7 +356,7 @@ def solid(
         output_defs=output_defs,
         config_field=resolve_config_field(config_field, config, '@solid'),
         description=description,
-        required_resources=required_resources,
+        required_resource_keys=required_resource_keys,
         metadata=metadata,
     )
 

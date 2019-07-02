@@ -17,7 +17,7 @@ from dagster_slack import slack_resource
 HELLO_MESSAGE = '"Hello, World" from Dagster!'
 
 
-@solid(required_resources={'slack'})
+@solid(required_resource_keys={'slack'})
 def post_hello_message(context):
     context.resources.slack.chat.post_message(channel='#dagster', text=HELLO_MESSAGE)
 

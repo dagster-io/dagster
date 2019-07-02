@@ -45,7 +45,7 @@ def bq_solid_for_queries(sql_queries):
         input_defs=[InputDefinition(_START, Nothing)],
         output_defs=[OutputDefinition(List[DataFrame])],
         config_field=define_bigquery_query_config(),
-        required_resources={'bq'},
+        required_resource_keys={'bq'},
         metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
     )
     def bq_solid(context):  # pylint: disable=unused-argument
@@ -95,7 +95,7 @@ def bq_load_solid_for_source(source_name):
         input_defs=[InputDefinition('source', _input_type_for_source(source_name))],
         output_defs=[OutputDefinition(Nothing)],
         config_field=define_bigquery_load_config(),
-        required_resources={'bq'},
+        required_resource_keys={'bq'},
     )
     def bq_load_solid(context, source):
         destination = context.solid_config.get('destination')
@@ -117,7 +117,7 @@ def bq_load_solid_for_source(source_name):
 @solid(
     input_defs=[InputDefinition(_START, Nothing)],
     config_field=define_bigquery_create_dataset_config(),
-    required_resources={'bq'},
+    required_resource_keys={'bq'},
 )
 def bq_create_dataset(context):
     '''BigQuery Create Dataset.
@@ -134,7 +134,7 @@ def bq_create_dataset(context):
 @solid(
     input_defs=[InputDefinition(_START, Nothing)],
     config_field=define_bigquery_delete_dataset_config(),
-    required_resources={'bq'},
+    required_resource_keys={'bq'},
 )
 def bq_delete_dataset(context):
     '''BigQuery Delete Dataset.

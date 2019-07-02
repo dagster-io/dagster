@@ -147,7 +147,7 @@ class SolidDefinition(ISolidDefinition):
         config_field=None,
         description=None,
         metadata=None,
-        required_resources=None,
+        required_resource_keys=None,
         step_metadata_fn=None,
     ):
         self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
@@ -156,8 +156,8 @@ class SolidDefinition(ISolidDefinition):
             'config_field',
             'of a SolidDefinition or @solid named "{name}"'.format(name=name),
         )
-        self.required_resources = check.opt_set_param(
-            required_resources, 'required_resources', of_type=str
+        self.required_resource_keys = check.opt_set_param(
+            required_resource_keys, 'required_resource_keys', of_type=str
         )
         self.step_metadata_fn = step_metadata_fn
 
@@ -299,12 +299,12 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         return self._dependency_structure
 
     @property
-    def required_resources(self):
-        required_resources = set()
+    def required_resource_keys(self):
+        required_resource_keys = set()
         for solid in self.solids:
-            required_resources.update(solid.definition.required_resources)
+            required_resource_keys.update(solid.definition.required_resource_keys)
 
-        return required_resources
+        return required_resource_keys
 
     @property
     def has_config_mapping(self):

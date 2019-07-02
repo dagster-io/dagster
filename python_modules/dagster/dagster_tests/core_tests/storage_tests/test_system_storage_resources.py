@@ -14,7 +14,7 @@ from dagster.core.definitions.system_storage import create_mem_system_storage_da
 def test_resource_requirements_pass():
     called = {}
 
-    @system_storage(required_resources={'yup'})
+    @system_storage(required_resource_keys={'yup'})
     def storage_with_req(init_context):
         assert hasattr(init_context.resources, 'yup')
         assert not hasattr(init_context.resources, 'not_required')
@@ -44,7 +44,7 @@ def test_resource_requirements_pass():
 
 
 def test_resource_requirements_fail():
-    @system_storage(required_resources={'yup'})
+    @system_storage(required_resource_keys={'yup'})
     def storage_with_req(init_context):
         return create_mem_system_storage_data(init_context)
 

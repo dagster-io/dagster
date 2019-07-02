@@ -5,7 +5,7 @@ from dagster import execute_pipeline, ModeDefinition, solid, pipeline
 from dagster_slack import slack_resource
 
 
-@solid(required_resources={'slack'})
+@solid(required_resource_keys={'slack'})
 def post_hello_message(context):
     context.resources.slack.chat.post_message(
         channel='#dagster', text='"Hello, World" from Dagster!'

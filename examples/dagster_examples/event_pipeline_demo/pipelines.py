@@ -104,7 +104,7 @@ def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip
     output_defs=[
         OutputDefinition(FileExistsAtPath, description='The path to the downloaded object.')
     ],
-    required_resources={'s3'},
+    required_resource_keys={'s3'},
 )
 def download_from_s3_to_file(context):
     '''Download an object from S3 to a local file.

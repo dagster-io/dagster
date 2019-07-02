@@ -228,7 +228,7 @@ def define_no_repo_registration_error_pipeline():
     return PipelineDefinition(name='repo_registration_error', solid_defs=[no_repo_reg_solid()])
 
 
-@solid('resource_solid', required_resources={'list'})
+@solid('resource_solid', required_resource_keys={'list'})
 def resource_solid(context):
     context.resources.list.append('Hello, solid!')
     return True
@@ -240,7 +240,7 @@ def hello_world_resource_solid():
         'hello_world_resource',
         nb_test_path('hello_world_resource'),
         input_defs=[InputDefinition('nonce')],
-        required_resources={'list'},
+        required_resource_keys={'list'},
     )
 
 
@@ -250,7 +250,7 @@ def hello_world_resource_with_exception_solid():
         'hello_world_resource_with_exception',
         nb_test_path('hello_world_resource_with_exception'),
         input_defs=[InputDefinition('nonce')],
-        required_resources={'list'},
+        required_resource_keys={'list'},
     )
 
 
