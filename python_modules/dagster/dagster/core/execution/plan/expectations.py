@@ -1,7 +1,7 @@
 from dagster import check
 
 from dagster.core.definitions import (
-    ExpectationDefinition,
+    IOExpectationDefinition,
     ExpectationResult,
     InputDefinition,
     OutputDefinition,
@@ -36,7 +36,7 @@ EXPECTATION_VALUE_OUTPUT = 'expectation_value'
 def _create_expectation_lambda(solid, inout_def, expectation_def, internal_output_name):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
-    check.inst_param(expectation_def, 'expectations_def', ExpectationDefinition)
+    check.inst_param(expectation_def, 'expectations_def', IOExpectationDefinition)
     check.str_param(internal_output_name, 'internal_output_name')
 
     def _do_expectation(expectation_context, inputs):
@@ -120,7 +120,7 @@ def create_expectation_step(
 ):
     check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
-    check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition)
+    check.inst_param(expectation_def, 'expectation_def', IOExpectationDefinition)
     check.str_param(key_suffix, 'key_suffix')
     check.inst_param(kind, 'kind', StepKind)
     check.inst_param(step_input, 'step_input', StepInput)

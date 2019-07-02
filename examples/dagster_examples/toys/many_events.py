@@ -9,7 +9,7 @@ from dagster import (
     Nothing,
     OutputDefinition,
     InputDefinition,
-    ExpectationDefinition,
+    IOExpectationDefinition,
     String,
     EventMetadataEntry,
 )
@@ -38,7 +38,7 @@ def create_raw_file_solid(name):
             OutputDefinition(
                 String,
                 expectations=[
-                    ExpectationDefinition(name='something', expectation_fn=do_expectation)
+                    IOExpectationDefinition(name='something', expectation_fn=do_expectation)
                 ],
             )
         ],

@@ -114,7 +114,7 @@ way.
 Expectations can be used to enforce runtime data quality and integrity constraints, so that
 pipelines fail early -- before any downstream solids execute on bad data.
 
-Expectations are defined using the :class:`ExpectationDefinition <dagster.ExpectationDefinition>`
+Expectations are defined using the :class:`IOExpectationDefinition <dagster.IOExpectationDefinition>`
 class. We also provide a `thin wrapper <https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ge>`_
 around the `great_expectations <https://github.com/great-expectations/great_expectations>`_ library
 so you can use its existing repertoire of expectartions with Dagster.

@@ -4,7 +4,7 @@ import json
 import great_expectations as ge
 
 from dagster import check
-from dagster.core.definitions import ExpectationDefinition, ExpectationResult, EventMetadataEntry
+from dagster.core.definitions import IOExpectationDefinition, ExpectationResult, EventMetadataEntry
 
 
 # e.g.
@@ -32,7 +32,7 @@ def json_config_expectation(name, file_path):
                 metadata_entries=[EventMetadataEntry.json(label='result', data=validate_result)],
             )
 
-    return ExpectationDefinition(name, expectation_fn=_file_passes)
+    return IOExpectationDefinition(name, expectation_fn=_file_passes)
 
 
 # e.g.
@@ -49,4 +49,4 @@ def ge_expectation(name, ge_callback):
             metadata_entries=[EventMetadataEntry.json(label='result', data=ge_result)],
         )
 
-    return ExpectationDefinition(name, expectation_fn=_do_expectation)
+    return IOExpectationDefinition(name, expectation_fn=_do_expectation)

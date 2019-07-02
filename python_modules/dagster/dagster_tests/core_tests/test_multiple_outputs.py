@@ -4,7 +4,7 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
     DependencyDefinition,
-    ExpectationDefinition,
+    IOExpectationDefinition,
     ExpectationResult,
     InputDefinition,
     OutputDefinition,
@@ -64,13 +64,13 @@ def test_multiple_outputs_expectations():
             OutputDefinition(
                 name='output_one',
                 expectations=[
-                    ExpectationDefinition(name='some_expectation', expectation_fn=_expect_fn_one)
+                    IOExpectationDefinition(name='some_expectation', expectation_fn=_expect_fn_one)
                 ],
             ),
             OutputDefinition(
                 name='output_two',
                 expectations=[
-                    ExpectationDefinition(
+                    IOExpectationDefinition(
                         name='some_other_expectation', expectation_fn=_expect_fn_two
                     )
                 ],

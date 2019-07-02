@@ -4,7 +4,7 @@ from dagster import (
     CompositeSolidDefinition,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
-    ExpectationDefinition,
+    IOExpectationDefinition,
     ExpectationResult,
     Field,
     InputDefinition,
@@ -147,7 +147,7 @@ def test_mapped_composite_input_expectations():
         return ExpectationResult(True)
 
     @solid(
-        input_defs=[InputDefinition('one', expectations=[ExpectationDefinition('exp_a', exp_a)])]
+        input_defs=[InputDefinition('one', expectations=[IOExpectationDefinition('exp_a', exp_a)])]
     )
     def node_a(_context, one):
         called['node_a'] = True
@@ -166,7 +166,7 @@ def test_mapped_composite_input_expectations():
         solid_defs=[node_a],
         input_mappings=[
             InputDefinition(
-                name='inner_one', expectations=[ExpectationDefinition('inner_exp', inner_exp)]
+                name='inner_one', expectations=[IOExpectationDefinition('inner_exp', inner_exp)]
             ).mapping_to('node_a', 'one')
         ],
     )
@@ -175,7 +175,7 @@ def test_mapped_composite_input_expectations():
         solid_defs=[inner],
         input_mappings=[
             InputDefinition(
-                'outer_one', expectations=[ExpectationDefinition('outer_exp', outer_exp)]
+                'outer_one', expectations=[IOExpectationDefinition('outer_exp', outer_exp)]
             ).mapping_to('inner', 'inner_one')
         ],
     )

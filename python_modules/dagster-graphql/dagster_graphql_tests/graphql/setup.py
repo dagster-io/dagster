@@ -13,7 +13,7 @@ from dagster import (
     EnumValue,
     EventMetadataEntry,
     ExecutionTargetHandle,
-    ExpectationDefinition,
+    IOExpectationDefinition,
     ExpectationResult,
     Field,
     Float,
@@ -112,7 +112,7 @@ def sum_sq_solid(sum_df):
             'sum_df',
             PoorMansDataFrame,
             expectations=[
-                ExpectationDefinition(
+                IOExpectationDefinition(
                     name='some_expectation',
                     expectation_fn=lambda _i, _v: ExpectationResult(success=True),
                 )
@@ -122,7 +122,7 @@ def sum_sq_solid(sum_df):
     output_def=OutputDefinition(
         PoorMansDataFrame,
         expectations=[
-            ExpectationDefinition(
+            IOExpectationDefinition(
                 name='other_expectation',
                 expectation_fn=lambda _i, _v: ExpectationResult(success=True),
             )
