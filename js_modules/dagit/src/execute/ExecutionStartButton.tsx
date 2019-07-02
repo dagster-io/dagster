@@ -6,7 +6,8 @@ import { WebsocketStatusContext } from "../WebsocketStatus";
 
 interface IExecutionStartButtonProps {
   title: string;
-  style?: React.CSSProperties;
+  icon: "repeat" | "play";
+  small?: boolean;
   onClick: () => void;
 }
 
@@ -64,6 +65,9 @@ export default class ExecutionStartButton extends React.Component<
   };
 
   render() {
+    const style = this.props.small ? { height: 24, width: 120 } : {};
+    const iconSize = this.props.small ? 12 : 17;
+
     return (
       <WebsocketStatusContext.Consumer>
         {websocketStatus => {
@@ -71,13 +75,15 @@ export default class ExecutionStartButton extends React.Component<
             return (
               <Wrapper
                 role="button"
-                style={this.props.style}
+                style={style}
                 state={ExecutionButtonStatus.Disabled}
                 title={"The dagit server is offline"}
               >
-                <div style={{ marginRight: 5 }}>
-                  <Icon icon={IconNames.OFFLINE} iconSize={17} />
-                </div>
+                <Icon
+                  icon={IconNames.OFFLINE}
+                  iconSize={iconSize}
+                  style={{ textAlign: "center", marginRight: 5 }}
+                />
                 {this.props.title}
               </Wrapper>
             );
@@ -87,12 +93,12 @@ export default class ExecutionStartButton extends React.Component<
             return (
               <Wrapper
                 role="button"
-                style={this.props.style}
+                style={style}
                 state={ExecutionButtonStatus.Starting}
                 title={"Pipeline execution is in progress..."}
               >
                 <div style={{ marginRight: 5 }}>
-                  <Spinner intent={Intent.NONE} size={17} />
+                  <Spinner intent={Intent.NONE} size={iconSize} />
                 </div>
                 Starting...
               </Wrapper>
@@ -103,12 +109,16 @@ export default class ExecutionStartButton extends React.Component<
             <Wrapper
               role="button"
               ref={this._startButton}
-              style={this.props.style}
+              style={style}
               state={ExecutionButtonStatus.Ready}
               title={this.props.title}
               onClick={this.onClick}
             >
-              <Icon icon={IconNames.PLAY} iconSize={17} />
+              <Icon
+                icon={this.props.icon}
+                iconSize={iconSize}
+                style={{ textAlign: "center", marginRight: 5 }}
+              />
               {this.props.title}
             </Wrapper>
           );

@@ -29,6 +29,7 @@ import RunSubscriptionProvider from "./RunSubscriptionProvider";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
 import ApolloClient from "apollo-client";
 import ExecutionStartButton from "../execute/ExecutionStartButton";
+import { IconNames } from "@blueprintjs/icons";
 
 interface IPipelineRunProps {
   client: ApolloClient<any>;
@@ -214,7 +215,8 @@ export class PipelineRun extends React.Component<
                     >
                       <ExecutionStartButton
                         title="Re-execute"
-                        style={{ height: 24, width: 120 }}
+                        icon={IconNames.REPEAT}
+                        small={true}
                         onClick={() => this.onReexecute(reexecuteMutation)}
                       />
                     </LogsToolbar>
