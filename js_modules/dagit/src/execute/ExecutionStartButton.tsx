@@ -5,6 +5,8 @@ import { IconNames } from "@blueprintjs/icons";
 import { WebsocketStatusContext } from "../WebsocketStatus";
 
 interface IExecutionStartButtonProps {
+  title: string;
+  style?: React.CSSProperties;
   onClick: () => void;
 }
 
@@ -69,13 +71,14 @@ export default class ExecutionStartButton extends React.Component<
             return (
               <Wrapper
                 role="button"
+                style={this.props.style}
                 state={ExecutionButtonStatus.Disabled}
                 title={"The dagit server is offline"}
               >
                 <div style={{ marginRight: 5 }}>
                   <Icon icon={IconNames.OFFLINE} iconSize={17} />
                 </div>
-                Start Execution
+                {this.props.title}
               </Wrapper>
             );
           }
@@ -84,6 +87,7 @@ export default class ExecutionStartButton extends React.Component<
             return (
               <Wrapper
                 role="button"
+                style={this.props.style}
                 state={ExecutionButtonStatus.Starting}
                 title={"Pipeline execution is in progress..."}
               >
@@ -99,12 +103,13 @@ export default class ExecutionStartButton extends React.Component<
             <Wrapper
               role="button"
               ref={this._startButton}
+              style={this.props.style}
               state={ExecutionButtonStatus.Ready}
-              title={"Start pipeline execution"}
+              title={this.props.title}
               onClick={this.onClick}
             >
               <Icon icon={IconNames.PLAY} iconSize={17} />
-              Start Execution
+              {this.props.title}
             </Wrapper>
           );
         }}
@@ -128,7 +133,6 @@ const Wrapper = styled.div<{ state: ExecutionButtonStatus }>`
       starting:
         "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
     }[state])}
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   border-top: 1px solid rgba(255,255,255,0.25);
   border-bottom: 1px solid rgba(0,0,0,0.25);
   transition: background 200ms linear;

@@ -147,7 +147,9 @@ export default class PipelineExecutionContainer extends React.Component<
     if (!variables) return;
 
     const result = await startPipelineExecution({ variables });
-    handleStartExecutionResult(pipeline.name, result);
+    handleStartExecutionResult(pipeline.name, result, {
+      openInNewWindow: true
+    });
   };
 
   buildExecutionVariables = () => {
@@ -201,6 +203,7 @@ export default class PipelineExecutionContainer extends React.Component<
                   <Spinner size={17} />
                 ) : (
                   <ExecutionStartButton
+                    title="Start Execution"
                     onClick={() => this.onExecute(startPipelineExecution)}
                   />
                 ))}
