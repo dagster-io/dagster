@@ -3,7 +3,7 @@ import styled from "styled-components";
 import gql from "graphql-tag";
 import { NonIdealState, Colors, Icon } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { ExecutionPlan } from "../ExecutionPlan";
+import { ExecutionPlan } from "../plan/ExecutionPlan";
 import { RunPreviewExecutionPlanResultFragment } from "./types/RunPreviewExecutionPlanResultFragment";
 import {
   RunPreviewConfigValidationFragment,

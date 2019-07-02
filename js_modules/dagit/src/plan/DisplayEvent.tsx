@@ -1,8 +1,8 @@
 import * as React from "react";
 import styled from "styled-components";
 import { Toaster, Colors, Position, Intent } from "@blueprintjs/core";
-import { IStepDisplayEvent } from "./RunMetadataProvider";
-import { showCustomAlert } from "./CustomAlertProvider";
+import { IStepDisplayEvent } from "../RunMetadataProvider";
+import { showCustomAlert } from "../CustomAlertProvider";
 
 const SharedToaster = Toaster.create({ position: Position.TOP }, document.body);
 
@@ -127,13 +127,13 @@ const IconComponents: { [key: string]: React.ReactNode } = {
   file: (
     <img
       style={{ flexShrink: 0, alignSelf: "center" }}
-      src={require("./images/icon-file.svg")}
+      src={require("../images/icon-file.svg")}
     />
   ),
   link: (
     <img
       style={{ flexShrink: 0, alignSelf: "center" }}
-      src={require("./images/icon-link.svg")}
+      src={require("../images/icon-link.svg")}
     />
   )
 };
