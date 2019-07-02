@@ -126,7 +126,7 @@ function itemsForMetadataEntries(
   return items;
 }
 
-function extractMetadataFromLogs(
+export function extractMetadataFromLogs(
   logs: RunMetadataProviderMessageFragment[]
 ): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
@@ -187,7 +187,10 @@ function extractMetadataFromLogs(
         };
       } else if (log.__typename === "StepMaterializationEvent") {
         metadata.steps[stepKey] = produce(
-          metadata.steps[stepKey] || {},
+          metadata.steps[stepKey] || {
+            expectationResults: [],
+            materializations: []
+          },
           step => {
             step.materializations.push({
               icon: IStepDisplayIconType.LINK,
@@ -200,7 +203,10 @@ function extractMetadataFromLogs(
         );
       } else if (log.__typename == "StepExpectationResultEvent") {
         metadata.steps[stepKey] = produce(
-          metadata.steps[stepKey] || {},
+          metadata.steps[stepKey] || {
+            expectationResults: [],
+            materializations: []
+          },
           step => {
             step.expectationResults.push({
               status: log.expectationResult.success
