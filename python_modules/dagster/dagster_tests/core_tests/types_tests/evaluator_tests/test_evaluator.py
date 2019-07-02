@@ -1,4 +1,4 @@
-from dagster import Field, Dict, String, Int, Bool, Optional, List, Selector, Any
+from dagster import Field, Dict, String, Int, Bool, Optional, List, Any
 
 from dagster.core.types.evaluator.errors import DagsterEvaluationErrorReason
 from dagster.core.types.evaluator.stack import (
@@ -8,6 +8,7 @@ from dagster.core.types.evaluator.stack import (
 from dagster.core.types.evaluator import evaluate_config
 from dagster.core.types.evaluator.evaluate_value_result import EvaluateValueResult
 from dagster.core.types.field import resolve_to_config_type
+from dagster.core.types import Selector
 
 
 def eval_config_value_from_dagster_type(dagster_type, value):

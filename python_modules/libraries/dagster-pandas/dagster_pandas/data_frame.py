@@ -6,15 +6,13 @@ from dagster import (
     EventMetadataEntry,
     Field,
     Materialization,
-    NamedSelector,
     Path,
     String,
     TypeCheck,
     as_dagster_type,
     check,
-    input_selector_schema,
-    output_selector_schema,
 )
+from dagster.core.types import NamedSelector, input_selector_schema, output_selector_schema
 
 
 def define_path_dict_field():

@@ -9,19 +9,17 @@ from dagster import (
     InputDefinition,
     Int,
     NamedDict,
-    NamedSelector,
     OutputDefinition,
     PermissiveDict,
     PipelineDefinition,
     ResourceDefinition,
-    Selector,
     SolidDefinition,
     String,
     solid,
 )
 
 from dagster.core.definitions import create_environment_schema
-
+from dagster.core.types import Selector, NamedSelector
 from dagster.core.utility_solids import define_stub_solid
 
 
