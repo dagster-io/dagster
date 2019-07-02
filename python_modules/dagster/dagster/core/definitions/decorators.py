@@ -214,7 +214,7 @@ def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
         name (str): Name of solid.
         description (str): Solid description.
         input_defs (list[InputDefinition]): List of input_defs.
-        output (OutputDefinition): The output of the solid. Defaults to ``OutputDefinition()``.
+        output_def (OutputDefinition): The output of the solid. Defaults to ``OutputDefinition()``.
 
     Examples:
 
@@ -278,7 +278,8 @@ def solid(
             Used in the rare case of a top level config type other than a dictionary.
 
             Only one of config or config_field can be provided.
-        resources (set[str]): Set of resource instances required by this solid.
+        required_resource_keys (set[str]):
+            Set of resource handles required by this solid.
 
     Examples:
 

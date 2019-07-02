@@ -14,8 +14,10 @@ class ModeDefinition:
 
     Args:
         name (Optional[str]): The name of the mode, defaults to 'default'.
-        resources (Optional[List[ResourceDefinition]]): The set of resources for this mode.
-        loggers (Optional[List[LoggerDefinition]]): The set of loggers to use in this mode.
+        resource_defs (Optional[Dict[str, ResourceDefinition]]):
+            The set of resources for this mode keyed by unique identifiers.
+        logger_defs (Optional[Dict[str, LoggerDefinition]]):
+            The set of loggers to use in this mode keyed by unique identifiers.
         system_storage_defs (Optional[List[SystemStorageDefinition]]): The set of system storage
             options available when executing in this mode. Defaults to 'in_memory' and 'filesystem'.
         description (Optional[str])

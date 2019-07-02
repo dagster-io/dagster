@@ -1,4 +1,4 @@
-# The log guide
+# Logging Guide
 
 - [Logging from a solid](#logging-from-a-solid)
 - [The built-in loggers](#the-built-in-loggers)

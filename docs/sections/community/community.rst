@@ -9,6 +9,5 @@ code contributions and issue reports.
 
   code_of_conduct
   contributing
-  release_notes
   Github <https://www.github.com/dagster-io/dagster/>
   StackOverflow <https://stackoverflow.com/questions/tagged/dagster>

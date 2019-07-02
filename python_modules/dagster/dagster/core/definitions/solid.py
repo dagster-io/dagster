@@ -122,7 +122,7 @@ class SolidDefinition(ISolidDefinition):
         metadata (Optional[Dict[Any, Any]]):
             Arbitrary metadata for the solid. Some frameworks expect and require
             certain metadata to be attached to a solid.
-        resources (Optional[Set[str]]): List of resources handles required by this solid.
+        required_resource_keys (Optional[Set[str]]): List of resources handles required by this solid.
 
     Examples:
         .. code-block:: python

@@ -63,10 +63,10 @@ class PipelineDefinition(IContainSolids, object):
             A structure that declares where each solid gets its inputs. The keys at the top
             level dict are either string names of solids or SolidInvocations. The values
             are dicts that map input names to DependencyDefinitions.
-        mode_definitions (Optional[List[ModeDefinition]]):
+        mode_defs (Optional[List[ModeDefinition]]):
             The set of modes this pipeline can operate in. Modes can be used for example to vary
             resources and logging implementations for local testing and running in production.
-        preset_definitions (Optional[List[PresetDefinition]]):
+        preset_defs (Optional[List[PresetDefinition]]):
             Given the different ways a pipeline may execute, presets give you a way to provide
             specific valid collections of configuration.
     '''
