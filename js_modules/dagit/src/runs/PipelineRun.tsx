@@ -23,11 +23,13 @@ import {
   HANDLE_START_EXECUTION_FRAGMENT,
   handleStartExecutionResult
 } from "./RunUtils";
-import { ReexecuteStep, ReexecuteStepVariables } from "./types/ReexecuteStep";
+import { Reexecute, ReexecuteVariables } from "./types/Reexecute";
 import { ReexecutionConfig } from "src/types/globalTypes";
 import RunSubscriptionProvider from "./RunSubscriptionProvider";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
 import ApolloClient from "apollo-client";
+import ExecutionStartButton from "../execute/ExecutionStartButton";
+import { IconNames } from "@blueprintjs/icons";
 
 interface IPipelineRunProps {
   client: ApolloClient<any>;
@@ -136,48 +138,52 @@ export class PipelineRun extends React.Component<
     }
   };
 
-  onReexecuteStep = async (
-    mutation: MutationFn<ReexecuteStep, ReexecuteStepVariables>,
-    stepKey: string
+  onReexecute = async (
+    mutation: MutationFn<Reexecute, ReexecuteVariables>,
+    stepKey?: string
   ) => {
     const { run } = this.props;
     if (!run) return;
-    const step = run.executionPlan.steps.find(s => s.key === stepKey);
-    if (!step) return;
 
-    const reexecutionConfig: ReexecutionConfig = {
-      previousRunId: run.runId,
-      stepOutputHandles: []
+    const variables: ReexecuteVariables = {
+      executionParams: {
+        mode: run.mode,
+        environmentConfigData: yaml.parse(run.environmentConfigYaml),
+        selector: {
+          name: run.pipeline.name,
+          solidSubset: run.pipeline.solids.map(s => s.name)
+        }
+      }
     };
 
-    step.inputs.forEach(input => {
-      const dep = input.dependsOn;
-      if (dep) {
-        dep.outputs.forEach(outputOfDependentStep => {
-          reexecutionConfig.stepOutputHandles.push({
-            stepKey: dep.key,
-            outputName: outputOfDependentStep.name
+    if (stepKey) {
+      const step = run.executionPlan.steps.find(s => s.key === stepKey);
+      if (!step) return;
+
+      variables.executionParams.stepKeys = [stepKey];
+      variables.reexecutionConfig = {
+        previousRunId: run.runId,
+        stepOutputHandles: []
+      };
+
+      step.inputs.forEach(input => {
+        const dep = input.dependsOn;
+        if (dep) {
+          dep.outputs.forEach(outputOfDependentStep => {
+            variables.reexecutionConfig!.stepOutputHandles.push({
+              stepKey: dep.key,
+              outputName: outputOfDependentStep.name
+            });
           });
-        });
-      }
-    });
+        }
+      });
+    }
 
-    const result = await mutation({
-      variables: {
-        executionParams: {
-          selector: {
-            name: run.pipeline.name,
-            solidSubset: run.pipeline.solids.map(s => s.name)
-          },
-          environmentConfigData: yaml.parse(run.environmentConfigYaml),
-          stepKeys: [stepKey],
-          mode: run.mode
-        },
-        reexecutionConfig: reexecutionConfig
-      }
-    });
+    const result = await mutation({ variables });
 
-    handleStartExecutionResult(run.pipeline.name, result);
+    handleStartExecutionResult(run.pipeline.name, result, {
+      openInNewWindow: false
+    });
   };
 
   render() {
@@ -190,33 +196,40 @@ export class PipelineRun extends React.Component<
       : { __typename: "ExecutionPlan", steps: [], artifactsPersisted: false };
 
     return (
-      <PipelineRunWrapper>
-        {run && <RunSubscriptionProvider client={client} run={run} />}
-        {run && <RunStatusToPageAttributes run={run} />}
+      <Mutation<Reexecute, ReexecuteVariables> mutation={REEXECUTE_MUTATION}>
+        {reexecuteMutation => (
+          <PipelineRunWrapper>
+            {run && <RunSubscriptionProvider client={client} run={run} />}
+            {run && <RunStatusToPageAttributes run={run} />}
 
-        <LogsContainer style={{ width: `${logsVW}vw` }}>
-          <LogsFilterProvider filter={logsFilter} nodes={logs}>
-            {({ filteredNodes, busy }) => (
-              <>
-                <LogsToolbar
-                  showSpinner={busy}
-                  filter={logsFilter}
-                  onSetFilter={filter => this.setState({ logsFilter: filter })}
-                />
-                <LogsScrollingTable nodes={filteredNodes} />
-              </>
-            )}
-          </LogsFilterProvider>
-        </LogsContainer>
-        <PanelDivider
-          onMove={(vw: number) => this.setState({ logsVW: vw })}
-          axis="horizontal"
-        />
+            <LogsContainer style={{ width: `${logsVW}vw` }}>
+              <LogsFilterProvider filter={logsFilter} nodes={logs}>
+                {({ filteredNodes, busy }) => (
+                  <>
+                    <LogsToolbar
+                      showSpinner={busy}
+                      filter={logsFilter}
+                      onSetFilter={filter =>
+                        this.setState({ logsFilter: filter })
+                      }
+                    >
+                      <ExecutionStartButton
+                        title="Re-execute"
+                        icon={IconNames.REPEAT}
+                        small={true}
+                        onClick={() => this.onReexecute(reexecuteMutation)}
+                      />
+                    </LogsToolbar>
+                    <LogsScrollingTable nodes={filteredNodes} />
+                  </>
+                )}
+              </LogsFilterProvider>
+            </LogsContainer>
+            <PanelDivider
+              onMove={(vw: number) => this.setState({ logsVW: vw })}
+              axis="horizontal"
+            />
 
-        <Mutation<ReexecuteStep, ReexecuteStepVariables>
-          mutation={REEXECUTE_STEP_MUTATION}
-        >
-          {reexecuteMutation => (
             <RunMetadataProvider logs={logs || []}>
               {metadata => (
                 <ExecutionPlan
@@ -224,7 +237,7 @@ export class PipelineRun extends React.Component<
                   executionPlan={executionPlan}
                   onShowStateDetails={this.onShowStateDetails}
                   onReexecuteStep={stepKey =>
-                    this.onReexecuteStep(reexecuteMutation, stepKey)
+                    this.onReexecute(reexecuteMutation, stepKey)
                   }
                   onApplyStepFilter={stepKey =>
                     this.setState({
@@ -234,21 +247,23 @@ export class PipelineRun extends React.Component<
                 />
               )}
             </RunMetadataProvider>
-          )}
-        </Mutation>
-        <Dialog
-          icon="info-sign"
-          onClose={() => this.setState({ highlightedError: undefined })}
-          style={{ width: "80vw", maxWidth: 1400 }}
-          title={"Error"}
-          usePortal={true}
-          isOpen={!!highlightedError}
-        >
-          <div className={Classes.DIALOG_BODY}>
-            {highlightedError && <PythonErrorInfo error={highlightedError} />}
-          </div>
-        </Dialog>
-      </PipelineRunWrapper>
+            <Dialog
+              icon="info-sign"
+              onClose={() => this.setState({ highlightedError: undefined })}
+              style={{ width: "80vw", maxWidth: 1400 }}
+              title={"Error"}
+              usePortal={true}
+              isOpen={!!highlightedError}
+            >
+              <div className={Classes.DIALOG_BODY}>
+                {highlightedError && (
+                  <PythonErrorInfo error={highlightedError} />
+                )}
+              </div>
+            </Dialog>
+          </PipelineRunWrapper>
+        )}
+      </Mutation>
     );
   }
 }
@@ -265,8 +280,8 @@ const LogsContainer = styled.div`
   background: ${Colors.LIGHT_GRAY5};
 `;
 
-const REEXECUTE_STEP_MUTATION = gql`
-  mutation ReexecuteStep(
+const REEXECUTE_MUTATION = gql`
+  mutation Reexecute(
     $executionParams: ExecutionParams!
     $reexecutionConfig: ReexecutionConfig
   ) {

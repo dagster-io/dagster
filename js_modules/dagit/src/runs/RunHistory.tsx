@@ -13,7 +13,7 @@ import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
 import { titleForRun, RunStatus } from "./RunUtils";
 
 function dateString(timestamp: number) {
-  if (timestamp === null) {
+  if (timestamp === 0) {
     return null;
   }
   return new Date(timestamp).toLocaleString();

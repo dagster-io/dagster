@@ -38,6 +38,7 @@ import {
   StartPipelineExecution,
   StartPipelineExecutionVariables
 } from "./types/StartPipelineExecution";
+import { IconNames } from "@blueprintjs/icons";
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
@@ -147,7 +148,9 @@ export default class PipelineExecutionContainer extends React.Component<
     if (!variables) return;
 
     const result = await startPipelineExecution({ variables });
-    handleStartExecutionResult(pipeline.name, result);
+    handleStartExecutionResult(pipeline.name, result, {
+      openInNewWindow: true
+    });
   };
 
   buildExecutionVariables = () => {
@@ -201,6 +204,8 @@ export default class PipelineExecutionContainer extends React.Component<
                   <Spinner size={17} />
                 ) : (
                   <ExecutionStartButton
+                    title="Start Execution"
+                    icon={IconNames.PLAY}
                     onClick={() => this.onExecute(startPipelineExecution)}
                   />
                 ))}
