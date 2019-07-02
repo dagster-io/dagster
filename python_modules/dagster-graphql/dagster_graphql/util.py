@@ -19,6 +19,7 @@ from dagster.core.execution.plan.objects import (
     StepOutputHandle,
     StepSuccessData,
     TypeCheckData,
+    UserFailureData,
 )
 from dagster.utils.error import SerializableErrorInfo
 
@@ -98,6 +99,7 @@ fragment stepEventFragment on StepEvent {
     typeCheck {
       __typename
       success
+      label
       description
       metadataEntries {
         ...eventMetadataEntryFragment
@@ -107,7 +109,9 @@ fragment stepEventFragment on StepEvent {
   ... on ExecutionStepOutputEvent {
     outputName
     valueRepr
-    intermediateMaterialization {
+    typeCheck {
+      __typename
+      success
       label
       description
       metadataEntries {
@@ -118,6 +122,13 @@ fragment stepEventFragment on StepEvent {
   ... on ExecutionStepFailureEvent {
     error {
       message
+    }
+    failureMetadata {
+      label
+      description
+      metadataEntries {
+        ...eventMetadataEntryFragment
+      }
     }
   }
 }
@@ -235,8 +246,13 @@ def dagster_event_from_dict(event_dict, pipeline_name):
                 event_dict['step']['key'], event_dict['outputName']
             ),
             value_repr=event_dict['valueRepr'],
-            intermediate_materialization=materialization_from_data(
-                event_dict['intermediateMaterialization']
+            type_check_data=TypeCheckData(
+                success=event_dict['typeCheck']['success'],
+                label=event_dict['typeCheck']['label'],
+                description=event_dict.get('description'),
+                metadata_entries=list(
+                    event_metadata_entries(event_dict.get('metadataEntries')) or []
+                ),
             ),
         )
 
@@ -246,6 +262,7 @@ def dagster_event_from_dict(event_dict, pipeline_name):
             value_repr=event_dict['valueRepr'],
             type_check_data=TypeCheckData(
                 success=event_dict['typeCheck']['success'],
+                label=event_dict['typeCheck']['label'],
                 description=event_dict.get('description'),
                 metadata_entries=list(
                     event_metadata_entries(event_dict.get('metadataEntries')) or []
@@ -268,7 +285,18 @@ def dagster_event_from_dict(event_dict, pipeline_name):
         error_info = SerializableErrorInfo(
             event_dict['error']['message'], stack=None, cls_name=None
         )
-        event_specific_data = StepFailureData(error_info)
+        event_specific_data = StepFailureData(
+            error_info,
+            UserFailureData(
+                label=event_dict['failureMetadata']['label'],
+                description=event_dict['failureMetadata']['description'],
+                metadata_entries=list(
+                    event_metadata_entries(event_dict.get('metadataEntries')) or []
+                ),
+            )
+            if event_dict.get('failureMetadata')
+            else None,
+        )
 
     return DagsterEvent(
         event_type_value=event_type.value,

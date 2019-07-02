@@ -206,6 +206,7 @@ def execute_on_dask(
                     system_storage_data=SystemStorageData(
                         intermediates_manager=pipeline_context.intermediates_manager,
                         run_storage=pipeline_context.run_storage,
+                        file_manager=pipeline_context.file_manager,
                     ),
                 ),
             )

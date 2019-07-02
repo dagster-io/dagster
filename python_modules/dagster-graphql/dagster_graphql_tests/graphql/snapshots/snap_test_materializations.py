@@ -26,6 +26,7 @@ snapshots['test_materializations 1'] = [
         'message': 'DagsterEventType.STEP_START for step materialize.compute',
         'step': {
             'key': 'materialize.compute',
+            'kind': 'COMPUTE',
             'solidHandleID': 'materialize'
         }
     },
@@ -90,9 +91,17 @@ snapshots['test_materializations 1'] = [
         '__typename': 'ExecutionStepOutputEvent',
         'level': 'INFO',
         'message': 'DagsterEventType.STEP_OUTPUT for step materialize.compute',
+        'outputName': 'result',
         'step': {
             'key': 'materialize.compute',
+            'kind': 'COMPUTE',
             'solidHandleID': 'materialize'
+        },
+        'typeCheck': {
+            'description': None,
+            'label': 'result',
+            'metadataEntries': [
+            ]
         },
         'valueRepr': 'None'
     },

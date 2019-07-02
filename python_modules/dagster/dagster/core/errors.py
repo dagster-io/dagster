@@ -60,6 +60,23 @@ class DagsterUserCodeExecutionError(DagsterUserError):
         self.original_exc_info = original_exc_info
 
     @property
+    def is_user_specified_failure(self):
+        from dagster.core.definitions.events import Failure
+
+        return isinstance(self.user_exception, Failure)
+
+    @property
+    def user_specified_failure(self):
+        check.invariant(
+            self.is_user_specified_failure,
+            (
+                'Can only call if user-specified failure (i.e. the user threw '
+                'an explicit Failure event in user-code'
+            ),
+        )
+        return self.user_exception
+
+    @property
     def is_user_code_error(self):
         return True
 
@@ -164,7 +181,7 @@ def _add_inner_exception_for_py2(msg, exc_info):
 
 
 @contextmanager
-def user_code_error_boundary(error_cls, msg, **kwargs):
+def user_code_error_boundary(error_cls, msg_fn, **kwargs):
     '''
     Wraps the execution of user-space code in an error boundary. This places a uniform
     policy around an user code invoked by the framework. This ensures that all user
@@ -173,7 +190,7 @@ def user_code_error_boundary(error_cls, msg, **kwargs):
     framework code in the stack trace, if a tool author wishes to do so. This has
     been especially help in a notebooking context.
     '''
-    check.str_param(msg, 'msg')
+    check.callable_param(msg_fn, 'msg_fn')
     check.subclass_param(error_cls, 'error_cls', DagsterUserCodeExecutionError)
 
     try:
@@ -186,7 +203,7 @@ def user_code_error_boundary(error_cls, msg, **kwargs):
             # An exception has been thrown by user code and computation should cease
             # with the error reported further up the stack
             raise_from(
-                error_cls(msg, user_exception=e, original_exc_info=sys.exc_info(), **kwargs), e
+                error_cls(msg_fn(), user_exception=e, original_exc_info=sys.exc_info(), **kwargs), e
             )
 
 

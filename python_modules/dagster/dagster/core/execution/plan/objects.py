@@ -47,11 +47,24 @@ class StepInputData(namedtuple('_StepInputData', 'input_name value_repr type_che
         )
 
 
-class TypeCheckData(namedtuple('_TypeCheckData', 'success description metadata_entries')):
-    def __new__(cls, success, description=None, metadata_entries=None):
+class TypeCheckData(namedtuple('_TypeCheckData', 'success label description metadata_entries')):
+    def __new__(cls, success, label, description=None, metadata_entries=None):
         return super(TypeCheckData, cls).__new__(
             cls,
             success=check.bool_param(success, 'success'),
+            label=check.str_param(label, 'label'),
+            description=check.opt_str_param(description, 'description'),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, metadata_entries, of_type=EventMetadataEntry
+            ),
+        )
+
+
+class UserFailureData(namedtuple('_UserFailureData', 'label description metadata_entries')):
+    def __new__(cls, label, description=None, metadata_entries=None):
+        return super(UserFailureData, cls).__new__(
+            cls,
+            label=check.str_param(label, 'label'),
             description=check.opt_str_param(description, 'description'),
             metadata_entries=check.opt_list_param(
                 metadata_entries, metadata_entries, of_type=EventMetadataEntry
@@ -66,7 +79,7 @@ class StepOutputData(
     )
 ):
     def __new__(
-        cls, step_output_handle, value_repr, intermediate_materialization, type_check_data=None
+        cls, step_output_handle, value_repr, intermediate_materialization=None, type_check_data=None
     ):
         return super(StepOutputData, cls).__new__(
             cls,
@@ -85,10 +98,14 @@ class StepOutputData(
         return self.step_output_handle.output_name
 
 
-class StepFailureData(namedtuple('_StepFailureData', 'error')):
-    def __new__(cls, error):
+class StepFailureData(namedtuple('_StepFailureData', 'error user_failure_data')):
+    def __new__(cls, error, user_failure_data):
         return super(StepFailureData, cls).__new__(
-            cls, error=check.opt_inst_param(error, 'error', SerializableErrorInfo)
+            cls,
+            error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
+            user_failure_data=check.opt_inst_param(
+                user_failure_data, 'user_failure_data', UserFailureData
+            ),
         )
 
 

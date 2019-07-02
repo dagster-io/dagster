@@ -9,7 +9,7 @@ from dagster import (
     lambda_solid,
     pipeline,
     solid,
-    ConfigMapping,
+    DagsterInvalidDefinitionError,
     Field,
     Float,
     InputDefinition,
@@ -34,23 +34,17 @@ def scalar_config_solid(context):
 
 
 @composite_solid(
-    config_mapping=ConfigMapping(
-        config={'override_str': Field(String)},
-        config_mapping_fn=lambda _, cfg: {'scalar_config_solid': {'config': cfg['override_str']}},
-    )
+    config={'override_str': Field(String)},
+    config_fn=lambda _, cfg: {'scalar_config_solid': {'config': cfg['override_str']}},
 )
 def wrap():
     return scalar_config_solid()
 
 
 def test_multiple_overrides_pipeline():
-    def nesting_config_mapping_fn(_, cfg):
-        return {'wrap': {'config': {'override_str': cfg['nesting_override']}}}
-
     @composite_solid(
-        config_mapping=ConfigMapping(
-            config={'nesting_override': Field(String)}, config_mapping_fn=nesting_config_mapping_fn
-        )
+        config={'nesting_override': Field(String)},
+        config_fn=lambda _, cfg: {'wrap': {'config': {'override_str': cfg['nesting_override']}}},
     )
     def nesting_wrap():
         return wrap()
@@ -142,10 +136,8 @@ def test_missing_config():
 
 def test_bad_override():
     @composite_solid(
-        config_mapping=ConfigMapping(
-            config={'does_not_matter': Field(String)},
-            config_mapping_fn=lambda _context, _cfg: {'scalar_config_solid': {'config': 1234}},
-        )
+        config={'does_not_matter': Field(String)},
+        config_fn=lambda _context, _cfg: {'scalar_config_solid': {'config': 1234}},
     )
     def bad_wrap():
         return scalar_config_solid()
@@ -173,14 +165,10 @@ def test_bad_override():
 
 
 def test_raises_fn_override():
-    def raises_config_mapping_fn(_context, _cfg):
+    def raises_config_fn(_context, _cfg):
         assert 0
 
-    @composite_solid(
-        config_mapping=ConfigMapping(
-            config={'does_not_matter': Field(String)}, config_mapping_fn=raises_config_mapping_fn
-        )
-    )
+    @composite_solid(config={'does_not_matter': Field(String)}, config_fn=raises_config_fn)
     def bad_wrap():
         return scalar_config_solid()
 
@@ -200,7 +188,7 @@ def test_raises_fn_override():
     assert len(exc_info.value.errors) == 1
     assert (
         'Exception occurred during execution of user config mapping function '
-        'raises_config_mapping_fn defined by solid do_stuff from definition bad_wrap at path '
+        'raises_config_fn defined by solid do_stuff from definition bad_wrap at path '
         'root:solids:do_stuff'
     ) in exc_info.value.errors[0].message
     assert 'AssertionError: assert 0' in exc_info.value.errors[0].message
@@ -212,12 +200,8 @@ def test_composite_config_field():
         return context.solid_config['inner']
 
     @composite_solid(
-        config_mapping=ConfigMapping(
-            config={'override': Field(Int)},
-            config_mapping_fn=lambda _, cfg: {
-                'inner_solid': {'config': {'inner': str(cfg['override'])}}
-            },
-        )
+        config={'override': Field(Int)},
+        config_fn=lambda _, cfg: {'inner_solid': {'config': {'inner': str(cfg['override'])}}},
     )
     def test():
         return inner_solid()
@@ -238,12 +222,10 @@ def test_nested_with_inputs():
 
     @composite_solid(
         inputs=[InputDefinition('some_input', String)],
-        config_mapping=ConfigMapping(
-            config_mapping_fn=lambda _, cfg: {
-                'basic': {'config': {'basic_key': 'override.' + cfg['inner_first']}}
-            },
-            config={'inner_first': Field(String)},
-        ),
+        config_fn=lambda _, cfg: {
+            'basic': {'config': {'basic_key': 'override.' + cfg['inner_first']}}
+        },
+        config={'inner_first': Field(String)},
     )
     def inner_wrap(some_input):
         return basic(some_input)
@@ -256,11 +238,7 @@ def test_nested_with_inputs():
             }
         }
 
-    @composite_solid(
-        config_mapping=ConfigMapping(
-            config_mapping_fn=outer_wrap_fn, config={'outer_first': Field(String)}
-        )
-    )
+    @composite_solid(config_fn=outer_wrap_fn, config={'outer_first': Field(String)})
     def outer_wrap():
         return inner_wrap()
 
@@ -405,17 +383,15 @@ def test_wrap_all_config_no_inputs():
 
     @composite_solid(
         inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
-        config_mapping=ConfigMapping(
-            config_mapping_fn=lambda _, cfg: {
-                'basic': {
-                    'config': {
-                        'config_field_a': cfg['config_field_a'],
-                        'config_field_b': cfg['config_field_b'],
-                    }
+        config_fn=lambda _, cfg: {
+            'basic': {
+                'config': {
+                    'config_field_a': cfg['config_field_a'],
+                    'config_field_b': cfg['config_field_b'],
                 }
-            },
-            config={'config_field_a': Field(String), 'config_field_b': Field(String)},
-        ),
+            }
+        },
+        config={'config_field_a': Field(String), 'config_field_b': Field(String)},
     )
     def wrap_all_config_no_inputs(input_a, input_b):
         return basic(input_a, input_b)
@@ -502,18 +478,16 @@ def test_wrap_all_config_one_input():
 
     @composite_solid(
         inputs=[InputDefinition('input_a', String)],
-        config_mapping=ConfigMapping(
-            config_mapping_fn=lambda _, cfg: {
-                'basic': {
-                    'config': {
-                        'config_field_a': cfg['config_field_a'],
-                        'config_field_b': cfg['config_field_b'],
-                    },
-                    'inputs': {'input_b': {'value': 'set_input_b'}},
-                }
-            },
-            config={'config_field_a': Field(String), 'config_field_b': Field(String)},
-        ),
+        config_fn=lambda _, cfg: {
+            'basic': {
+                'config': {
+                    'config_field_a': cfg['config_field_a'],
+                    'config_field_b': cfg['config_field_b'],
+                },
+                'inputs': {'input_b': {'value': 'set_input_b'}},
+            }
+        },
+        config={'config_field_a': Field(String), 'config_field_b': Field(String)},
     )
     def wrap_all_config_one_input(input_a):
         return basic(input_a)
@@ -593,21 +567,19 @@ def test_wrap_all_config_and_inputs():
         yield Output(res)
 
     @composite_solid(
-        config_mapping=ConfigMapping(
-            config_mapping_fn=lambda _, cfg: {
-                'basic': {
-                    'config': {
-                        'config_field_a': cfg['config_field_a'],
-                        'config_field_b': cfg['config_field_b'],
-                    },
-                    'inputs': {
-                        'input_a': {'value': 'override_input_a'},
-                        'input_b': {'value': 'override_input_b'},
-                    },
-                }
-            },
-            config={'config_field_a': Field(String), 'config_field_b': Field(String)},
-        )
+        config_fn=lambda _, cfg: {
+            'basic': {
+                'config': {
+                    'config_field_a': cfg['config_field_a'],
+                    'config_field_b': cfg['config_field_b'],
+                },
+                'inputs': {
+                    'input_a': {'value': 'override_input_a'},
+                    'input_b': {'value': 'override_input_b'},
+                },
+            }
+        },
+        config={'config_field_a': Field(String), 'config_field_b': Field(String)},
     )
     def wrap_all():
         return basic()
@@ -671,12 +643,10 @@ def test_timestamp_in_run_config():
         seen['ts'] = context.solid_config['ts']
 
     @composite_solid(
-        config_mapping=ConfigMapping(
-            config_mapping_fn=lambda context, _: {
-                'basic': {'config': {'ts': context.run_config.tags['execution_epoch_time']}}
-            },
-            config={'config_field_a': Field(String)},
-        )
+        config_fn=lambda context, _: {
+            'basic': {'config': {'ts': context.run_config.tags['execution_epoch_time']}}
+        },
+        config={'config_field_a': Field(String)},
     )
     def wrap_with_context():
         return basic()
@@ -698,13 +668,9 @@ def test_empty_config():
     with pytest.raises(CheckError) as exc_info:
 
         @composite_solid(
-            config_mapping=ConfigMapping(
-                config_mapping_fn=lambda context, _: {
-                    'scalar_config_solid': {'config': 'an input'}
-                },
-                # This is not permitted:
-                config={},
-            )
+            config_fn=lambda context, _: {'scalar_config_solid': {'config': 'an input'}},
+            # This is not permitted:
+            config={},
         )
         def wrap_solid():  # pylint: disable=unused-variable
             scalar_config_solid()
@@ -712,3 +678,27 @@ def test_empty_config():
     assert 'Invariant failed. Description: Cannot specify empty config for ConfigMapping' in str(
         exc_info
     )
+
+
+def test_bad_solid_def():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+
+        @composite_solid(config={'test': Field(String)})
+        def config_only():  # pylint: disable=unused-variable
+            scalar_config_solid()
+
+    assert (
+        '@composite_solid \'config_only\' defines a configuration schema but does not define a '
+        'configuration function.'
+    ) in str(exc_info)
+
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+
+        @composite_solid(config_fn=lambda _context, _cfg: {})
+        def config_fn_only():  # pylint: disable=unused-variable
+            scalar_config_solid()
+
+    assert (
+        "@composite_solid 'config_fn_only' defines a configuration function <lambda> but does not "
+        "define a configuration schema."
+    ) in str(exc_info)

@@ -126,6 +126,17 @@ class SolidExecutionResult(object):
         return self._compute_steps_of_type(DagsterEventType.STEP_INPUT)
 
     @property
+    def compute_output_event_dict(self):
+        return {se.event_specific_data.output_name: se for se in self.output_events_during_compute}
+
+    def get_output_event_for_compute(self, output_name='result'):
+        return self.compute_output_event_dict[output_name]
+
+    @property
+    def output_events_during_compute(self):
+        return self._compute_steps_of_type(DagsterEventType.STEP_OUTPUT)
+
+    @property
     def compute_step_events(self):
         return self.step_events_by_kind.get(StepKind.COMPUTE, [])
 

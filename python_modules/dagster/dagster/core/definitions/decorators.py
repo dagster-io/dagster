@@ -579,13 +579,17 @@ def _validate_decorated_fn(fn, names, expected_positionals):
 
 
 class _CompositeSolid(object):
-    def __init__(self, name=None, inputs=None, outputs=None, description=None, config_mapping=None):
+    def __init__(
+        self, name=None, inputs=None, outputs=None, description=None, config=None, config_fn=None
+    ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_nullable_list_param(inputs, 'inputs', InputDefinition)
         self.output_defs = check.opt_nullable_list_param(outputs, 'output', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
 
-        self.config_mapping = check.opt_inst_param(config_mapping, 'config_mapping', ConfigMapping)
+        check.opt_dict_param(config, 'config')  # don't want to assign dict below if config is None
+        self.config = config
+        self.config_fn = check.opt_callable_param(config_fn, 'config_fn')
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -655,6 +659,8 @@ class _CompositeSolid(object):
                 )
             output_mappings.append(mapping)
 
+        config_mapping = _get_validated_config_mapping(self.name, self.config, self.config_fn)
+
         return CompositeSolidDefinition(
             name=self.name,
             input_mappings=input_mappings,
@@ -662,11 +668,36 @@ class _CompositeSolid(object):
             dependencies=context.dependencies,
             solid_defs=context.solid_defs,
             description=self.description,
-            config_mapping=self.config_mapping,
+            config_mapping=config_mapping,
         )
 
 
-def composite_solid(name=None, inputs=None, outputs=None, description=None, config_mapping=None):
+def _get_validated_config_mapping(name, config, config_fn):
+    '''Config mapping must set composite config and config_fn or neither.
+    '''
+
+    if config_fn is None and config is None:
+        return None
+    elif config_fn is not None and config is not None:
+        return ConfigMapping(config_fn=config_fn, config=config)
+    else:
+        if config_fn is not None:
+            raise DagsterInvalidDefinitionError(
+                "@composite_solid '{solid_name}' defines a configuration function {config_fn} but "
+                "does not define a configuration schema.".format(
+                    solid_name=name, config_fn=config_fn.__name__
+                )
+            )
+        else:
+            raise DagsterInvalidDefinitionError(
+                "@composite_solid '{solid_name}' defines a configuration schema but does not "
+                "define a configuration function.".format(solid_name=name)
+            )
+
+
+def composite_solid(
+    name=None, inputs=None, outputs=None, description=None, config=None, config_fn=None
+):
     ''' (decorator) Create a CompositeSolidDefinition with specified parameters.
 
     Using this decorator allows you to build up the dependency graph of the composite by writing a
@@ -687,7 +718,7 @@ def composite_solid(name=None, inputs=None, outputs=None, description=None, conf
             create the OutputMappings for the CompositeSolidDefinition.
 
             A dictionary is returned from the function to map multiple outputs.
-        config_mapping (ConfigMapping):
+        config/config_fn:
             By specifying a config mapping, you can override the configuration for child solids
             contained within this composite solid. Config mappings require both a configuration
             field to be specified, which is exposed as the configuration for this composite solid,
@@ -714,7 +745,8 @@ def composite_solid(name=None, inputs=None, outputs=None, description=None, conf
         check.invariant(inputs is None)
         check.invariant(outputs is None)
         check.invariant(description is None)
-        check.invariant(config_mapping is None)
+        check.invariant(config is None)
+        check.invariant(config_fn is None)
         return _CompositeSolid()(name)
 
     return _CompositeSolid(
@@ -722,7 +754,8 @@ def composite_solid(name=None, inputs=None, outputs=None, description=None, conf
         inputs=inputs,
         outputs=outputs,
         description=description,
-        config_mapping=config_mapping,
+        config=config,
+        config_fn=config_fn,
     )
 
 

@@ -143,7 +143,8 @@ def test_multiline_logging_complex():
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/builtin_config_schemas.py", line 59, in _builtin_output_schema\n    with open(json_file_path, \'w\') as ff:\n',
                     ],
                     cls_name='FileNotFoundError',
-                )
+                ),
+                user_failure_data=None,
             ),
         ),
     }
@@ -183,7 +184,8 @@ def test_multiline_logging_complex():
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/builtin_config_schemas.py", line 59, in _builtin_output_schema\n    with open(json_file_path, \'w\') as ff:\n',
                 ],
                 'FileNotFoundError',
-            ]
+            ],
+            None,  # user_failure_data
         ],
         'event_type_value': 'STEP_FAILURE',
         'pipeline_name': 'error_monster',

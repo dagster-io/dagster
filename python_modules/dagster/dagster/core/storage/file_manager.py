@@ -137,6 +137,11 @@ class LocalFileManager(FileManager):
         self._base_dir_ensured = False
         self._temp_file_manager = TempfileManager()
 
+    @staticmethod
+    def for_run_id(run_id):
+        check.str_param(run_id, 'run_id')
+        return LocalFileManager(LocalFileManager.default_base_dir(run_id))
+
     def ensure_base_dir_exists(self):
         if self._base_dir_ensured:
             return

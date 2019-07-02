@@ -118,7 +118,50 @@ def _type_check_data_for_input(solid_result, input_name):
     return solid_result.compute_input_event_dict[input_name].event_specific_data.type_check_data
 
 
-def test_input_types_in_pipeline():
+def test_input_types_succeed_in_pipeline():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid(inputs=[InputDefinition('num', int)])
+    def take_num(num):
+        return num
+
+    @pipeline
+    def pipe():
+        return take_num(return_one())
+
+    pipeline_result = execute_pipeline(pipe)
+    assert pipeline_result.success
+
+    solid_result = pipeline_result.result_for_solid('take_num')
+    assert solid_result.success
+
+    type_check_data = _type_check_data_for_input(solid_result, 'num')
+    assert type_check_data.success
+
+
+def test_output_types_succeed_in_pipeline():
+    @lambda_solid(output=OutputDefinition(int))
+    def return_one():
+        return 1
+
+    @pipeline
+    def pipe():
+        return return_one()
+
+    pipeline_result = execute_pipeline(pipe)
+    assert pipeline_result.success
+
+    solid_result = pipeline_result.result_for_solid('return_one')
+    assert solid_result.success
+
+    output_event = solid_result.get_output_event_for_compute()
+    type_check_data = output_event.event_specific_data.type_check_data
+    assert type_check_data.success
+
+
+def test_input_types_fail_in_pipeline():
     @lambda_solid
     def return_one():
         return 1
@@ -154,7 +197,7 @@ def test_input_types_in_pipeline():
     assert step_failure_event.event_specific_data.error.cls_name == 'Failure'
 
 
-def test_output_types_in_pipeline():
+def test_output_types_fail_in_pipeline():
     @lambda_solid(output=OutputDefinition(str))
     def return_int_fails():
         return 1
@@ -166,7 +209,28 @@ def test_output_types_in_pipeline():
     with pytest.raises(DagsterTypeCheckError) as exc_info:
         execute_pipeline(pipe)
 
-    assert 'In solid "return_int_fails" the output result receive value 1 ' in str(exc_info.value)
+    assert (
+        'In solid "return_int_fails" the output "result" received value 1 of Python type'
+    ) in str(exc_info.value)
+
+    pipeline_result = execute_no_throw(pipe)
+
+    assert not pipeline_result.success
+
+    solid_result = pipeline_result.result_for_solid('return_int_fails')
+
+    assert not solid_result.success
+
+    output_event = solid_result.get_output_event_for_compute()
+    type_check_data = output_event.event_specific_data.type_check_data
+    assert not type_check_data.success
+    assert type_check_data.description == 'Value "1" of python type "int" must be a string.'
+
+    step_failure_event = solid_result.compute_step_failure_event
+    assert step_failure_event.event_specific_data.error.cls_name == 'Failure'
+
+
+# TODO add more step output use cases
 
 
 class ThrowsExceptionType(RuntimeType):
@@ -219,6 +283,35 @@ def test_input_type_returns_wrong_thing():
     assert step_failure_event.event_specific_data.error.cls_name == 'DagsterInvariantViolationError'
 
 
+def test_output_type_returns_wrong_thing():
+    @lambda_solid(output=OutputDefinition(BadType))
+    def return_one_bad_thing():
+        return 1
+
+    @pipeline
+    def pipe():
+        return return_one_bad_thing()
+
+    with pytest.raises(DagsterInvariantViolationError):
+        execute_pipeline(pipe)
+
+    pipeline_result = execute_no_throw(pipe)
+    assert not pipeline_result.success
+
+    solid_result = pipeline_result.result_for_solid('return_one_bad_thing')
+    output_event = solid_result.get_output_event_for_compute()
+    type_check_data = output_event.event_specific_data.type_check_data
+    assert not type_check_data.success
+
+    assert (
+        type_check_data.description
+        == "Type checks can only return None or TypeCheck. Type BadType returned 'kdjfkjd'."
+    )
+
+    step_failure_event = solid_result.compute_step_failure_event
+    assert step_failure_event.event_specific_data.error.cls_name == 'DagsterInvariantViolationError'
+
+
 def test_input_type_throw_arbitrary_exception():
     @lambda_solid
     def return_one():
@@ -245,14 +338,30 @@ def test_input_type_throw_arbitrary_exception():
     assert step_failure_event.event_specific_data.error.cls_name == 'Exception'
 
 
-def test_output_type_returns_wrong_thing():
-    @lambda_solid(output=OutputDefinition(BadType))
-    def return_bad_type():
+def test_output_type_throw_arbitrary_exception():
+    @lambda_solid(output=OutputDefinition(ThrowsExceptionType))
+    def return_one_throws():
         return 1
 
     @pipeline
     def pipe():
-        return return_bad_type()
+        return return_one_throws()
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(DagsterTypeCheckError):
         execute_pipeline(pipe)
+
+    pipeline_result = execute_no_throw(pipe)
+    assert not pipeline_result.success
+    solid_result = pipeline_result.result_for_solid('return_one_throws')
+
+    output_event = solid_result.get_output_event_for_compute()
+    type_check_data = output_event.event_specific_data.type_check_data
+    assert not type_check_data.success
+
+    assert (
+        'In solid "return_one_throws" the output "result" received value'
+        in type_check_data.description
+    )
+
+    step_failure_event = solid_result.compute_step_failure_event
+    assert step_failure_event.event_specific_data.error.cls_name == 'Exception'

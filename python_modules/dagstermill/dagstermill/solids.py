@@ -202,7 +202,7 @@ def _dm_solid_transform(name, notebook_path):
 
             with user_code_error_boundary(
                 DagstermillExecutionError,
-                'Error occurred during the execution of Dagstermill solid '
+                lambda: 'Error occurred during the execution of Dagstermill solid '
                 '{solid_name}: {notebook_path}'.format(
                     solid_name=name, notebook_path=notebook_path
                 ),

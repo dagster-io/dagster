@@ -306,13 +306,14 @@ class ResourcesStack(object):
                 self.log_manager,
             )
 
+            def _create_msg_fn(rn):
+                return lambda: 'Error executing resource_fn on ResourceDefinition {name}'.format(
+                    name=rn
+                )
+
             resource_obj = self.stack.enter_context(
                 user_code_context_manager(
-                    user_fn,
-                    DagsterResourceFunctionError,
-                    'Error executing resource_fn on ResourceDefinition {name}'.format(
-                        name=resource_name
-                    ),
+                    user_fn, DagsterResourceFunctionError, _create_msg_fn(resource_name)
                 )
             )
 
@@ -429,14 +430,14 @@ def _ensure_gen(thing_or_gen):
 
 
 @contextmanager
-def user_code_context_manager(user_fn, error_cls, msg):
+def user_code_context_manager(user_fn, error_cls, msg_fn):
     '''Wraps the output of a user provided function that may yield or return a value and
     returns a generator that asserts it only yields a single value.
     '''
     check.callable_param(user_fn, 'user_fn')
     check.subclass_param(error_cls, 'error_cls', DagsterUserCodeExecutionError)
 
-    with user_code_error_boundary(error_cls, msg):
+    with user_code_error_boundary(error_cls, msg_fn):
         thing_or_gen = user_fn()
         gen = _ensure_gen(thing_or_gen)
 

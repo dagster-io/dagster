@@ -1,5 +1,3 @@
-import os
-import pickle
 import uuid
 
 from graphql import parse
@@ -256,18 +254,6 @@ def test_basic_filesystem_sync_execution():
     sum_solid_output = get_step_output_event(logs, 'sum_solid.compute')
     assert sum_solid_output['step']['key'] == 'sum_solid.compute'
     assert sum_solid_output['outputName'] == 'result'
-    assert len(sum_solid_output['intermediateMaterialization']['metadataEntries']) == 1
-    output_path = sum_solid_output['intermediateMaterialization']['metadataEntries'][0]['path']
-
-    assert os.path.exists(output_path)
-
-    with open(output_path, 'rb') as ff:
-        df = pickle.load(ff)
-        expected_value_repr = (
-            '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), '''
-            '''OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]'''
-        )
-        assert str(df) == expected_value_repr
 
 
 def first_event_of_type(logs, message_type):

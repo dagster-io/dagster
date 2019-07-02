@@ -1,7 +1,5 @@
 import sys
 
-import six
-
 from dagster import check
 from dagster.core.definitions import ExpectationResult, Materialization, Output, Failure, TypeCheck
 from dagster.core.errors import (
@@ -26,6 +24,7 @@ from dagster.core.execution.plan.objects import (
     StepOutputHandle,
     StepSuccessData,
     TypeCheckData,
+    UserFailureData,
 )
 from dagster.core.execution.plan.plan import ExecutionPlan
 
@@ -145,10 +144,13 @@ def _input_values_from_intermediates_manager(step_context):
     return input_values
 
 
-def _step_failure_event_from_exc_info(step_context, exc_info):
+def _step_failure_event_from_exc_info(step_context, exc_info, user_failure_data=None):
     return DagsterEvent.step_failure_event(
         step_context=step_context,
-        step_failure_data=StepFailureData(error=serializable_error_info_from_exc_info(exc_info)),
+        step_failure_data=StepFailureData(
+            error=serializable_error_info_from_exc_info(exc_info),
+            user_failure_data=user_failure_data,
+        ),
     )
 
 
@@ -161,7 +163,9 @@ def dagster_event_sequence_for_step(step_context):
         wrapped in an exception derived from DagsterUserCodeException. In that
         case the original user exc_info is stashed on the exception
         as the original_exc_info property. Examples of this are computations
-        with the compute_fn, and type checks.
+        with the compute_fn, and type checks. If the user has raised an
+        intentional error via throwing Failure, they can also optionally
+        pass along explicit metadata attached to that Failure.
         (2) The framework raised a DagsterError that indicates a usage error
         or some other error not communicated by a user-thrown exception. For example,
         if the user yields an object out of a compute function that is not a
@@ -196,7 +200,17 @@ def dagster_event_sequence_for_step(step_context):
 
     # case (1) in top comment
     except DagsterUserCodeExecutionError as dagster_user_error:  # case (1) above
-        yield _step_failure_event_from_exc_info(step_context, dagster_user_error.original_exc_info)
+        yield _step_failure_event_from_exc_info(
+            step_context,
+            dagster_user_error.original_exc_info,
+            UserFailureData(
+                label='intentional-failure',
+                description=dagster_user_error.user_specified_failure.description,
+                metadata_entries=dagster_user_error.user_specified_failure.metadata_entries,
+            )
+            if dagster_user_error.is_user_specified_failure
+            else None,
+        )
 
         if step_context.executor_config.raise_on_error:
             raise dagster_user_error
@@ -288,72 +302,129 @@ def _do_type_check(runtime_type, value):
     return type_check
 
 
-def _type_checked_input_event_sequence(step_context, inputs):
-    for input_name, input_value in inputs.items():
-        step_input = step_context.step.step_input_named(input_name)
-        try:
-            type_check = _do_type_check(step_input.runtime_type, input_value)
-            yield DagsterEvent.step_input_event(
+def _create_step_input_event(step_context, input_name, input_value, type_check, success):
+    return DagsterEvent.step_input_event(
+        step_context,
+        StepInputData(
+            input_name=input_name,
+            value_repr=repr(input_value),
+            type_check_data=TypeCheckData(
+                success=success,
+                label=input_name,
+                description=type_check.description if type_check else None,
+                metadata_entries=type_check.metadata_entries if type_check else [],
+            ),
+        ),
+    )
+
+
+def _type_check_from_failure(failure):
+    check.inst_param(failure, 'failure', Exception)
+
+    # TypeScript this ain't. pylint not aware of type discrimination
+    # pylint: disable=no-member
+
+    return (
+        TypeCheck(failure.user_exception.description, failure.user_exception.metadata_entries)
+        if isinstance(failure, DagsterTypeCheckError)
+        and isinstance(failure.user_exception, Failure)
+        else TypeCheck(str(failure), metadata_entries=[])
+    )
+
+
+def _type_checked_event_sequence_for_input(step_context, input_name, input_value):
+    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
+    check.str_param(input_name, 'input_name')
+
+    step_input = step_context.step.step_input_named(input_name)
+    try:
+        with user_code_error_boundary(
+            DagsterTypeCheckError,
+            lambda: (
+                'In solid "{handle}" the input "{input_name}" received '
+                'value {input_value} of Python type {input_type} which '
+                'does not pass the typecheck for Dagster type '
+                '{dagster_type_name}. Step {step_key}.'
+            ).format(
+                handle=str(step_context.step.solid_handle),
+                input_name=input_name,
+                input_value=input_value,
+                input_type=type(input_value),
+                dagster_type_name=step_input.runtime_type.name,
+                step_key=step_context.step.key,
+            ),
+        ):
+            yield _create_step_input_event(
                 step_context,
-                StepInputData(
-                    input_name=input_name,
-                    value_repr=repr(input_value),
-                    type_check_data=TypeCheckData(
-                        success=True,
-                        description=type_check.description if type_check else None,
-                        metadata_entries=type_check.metadata_entries if type_check else [],
-                    ),
-                ),
+                input_name,
+                input_value,
+                type_check=_do_type_check(step_input.runtime_type, input_value),
+                success=True,
             )
-        except Exception as failure:  # pylint: disable=broad-except
-            # This is an unfortunate reimplementation of the user_code_error_boundary
-            # However the yield plus the python2 behavior probably warrant a
-            # restructuring of the error boundary to be more flexible.
+    except Exception as failure:  # pylint: disable=broad-except
+        yield _create_step_input_event(
+            step_context,
+            input_name,
+            input_value,
+            type_check=_type_check_from_failure(failure),
+            success=False,
+        )
 
-            # This *must* be captured before the yield. Otherwise it returns
-            # a tuple with three None elements, but only in python2
-            exc_info = sys.exc_info()
+        raise failure
 
-            yield DagsterEvent.step_input_event(
+
+def _create_step_output_event(step_context, output, type_check, success):
+    return DagsterEvent.step_output_event(
+        step_context=step_context,
+        step_output_data=StepOutputData(
+            step_output_handle=StepOutputHandle.from_step(
+                step=step_context.step, output_name=output.output_name
+            ),
+            value_repr=repr(output.value),
+            type_check_data=TypeCheckData(
+                success=success,
+                label=output.output_name,
+                description=type_check.description if type_check else None,
+                metadata_entries=type_check.metadata_entries if type_check else [],
+            ),
+        ),
+    )
+
+
+def _type_checked_step_output_event_sequence(step_context, output):
+    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
+    check.inst_param(output, 'output', Output)
+
+    step_output = step_context.step.step_output_named(output.output_name)
+    try:
+        with user_code_error_boundary(
+            DagsterTypeCheckError,
+            lambda: (
+                'In solid "{handle}" the output "{output_name}" received '
+                'value {output_value} of Python type {output_type} which '
+                'does not pass the typecheck for Dagster type '
+                '{dagster_type_name}. Step {step_key}.'
+            ).format(
+                handle=str(step_context.step.solid_handle),
+                output_name=output.output_name,
+                output_value=output.value,
+                output_type=type(output.value),
+                dagster_type_name=step_output.runtime_type.name,
+                step_key=step_context.step.key,
+            ),
+        ):
+            yield _create_step_output_event(
                 step_context,
-                StepInputData(
-                    input_name=input_name,
-                    value_repr=repr(input_value),
-                    type_check_data=TypeCheckData(
-                        success=False,
-                        # TypeScript this ain't. pylint not aware of type discrimination
-                        # pylint: disable=no-member
-                        description=failure.description,
-                        metadata_entries=failure.metadata_entries,
-                    )
-                    if isinstance(failure, Failure)
-                    else TypeCheckData(success=False, description=str(failure)),
-                ),
+                output,
+                type_check=_do_type_check(step_output.runtime_type, output.value),
+                success=True,
             )
+    except Exception as failure:  # pylint: disable=broad-except
+        yield _create_step_output_event(
+            step_context, output, type_check=_type_check_from_failure(failure), success=False
+        )
 
-            if isinstance(failure, DagsterError):
-                raise failure
-
-            six.raise_from(
-                DagsterTypeCheckError(
-                    (
-                        'In solid "{handle}" the input "{input_name}" received '
-                        'value {input_value} of Python type {input_type} which '
-                        'does not pass the typecheck for Dagster type '
-                        '{dagster_type_name}. Step {step_key}.'
-                    ).format(
-                        handle=str(step_context.step.solid_handle),
-                        input_name=input_name,
-                        input_value=input_value,
-                        input_type=type(input_value),
-                        dagster_type_name=step_input.runtime_type.name,
-                        step_key=step_context.step.key,
-                    ),
-                    user_exception=failure,
-                    original_exc_info=exc_info,
-                ),
-                failure,
-            )
+        raise failure
 
 
 def _core_dagster_event_sequence_for_step(step_context):
@@ -368,10 +439,12 @@ def _core_dagster_event_sequence_for_step(step_context):
     yield DagsterEvent.step_start_event(step_context)
 
     inputs = _input_values_from_intermediates_manager(step_context)
-    # do runtime type checks of inputs versus step inputs
 
-    for event in check.generator(_type_checked_input_event_sequence(step_context, inputs)):
-        yield event
+    for input_name, input_value in inputs.items():
+        for evt in check.generator(
+            _type_checked_event_sequence_for_input(step_context, input_name, input_value)
+        ):
+            yield evt
 
     with time_execution_scope() as timer_result:
         user_event_sequence = check.generator(
@@ -410,26 +483,12 @@ def _create_step_events_for_output(step_context, output):
     step = step_context.step
     step_output = step.step_output_named(output.output_name)
 
-    error_str = (
-        'In solid "{solid_name}" the output {output_name} receive value {value} '
-        'of Python type {python_type} which does not pass the typecheck for '
-        'Dagster type {dagster_type_name}. Step {step_key}.'
-    ).format(
-        solid_name=step_context.solid.name,
-        output_name=step_output.name,
-        value=output.value,
-        python_type=type(output.value),
-        dagster_type_name=step_output.runtime_type.name,
-        step_key=step.key,
-    )
-
-    with user_code_error_boundary(DagsterTypeCheckError, error_str):
-        # TODO: flow the the type check into STEP_OUTPUT event
-        _do_type_check(step_output.runtime_type, output.value)
+    for output_event in _type_checked_step_output_event_sequence(step_context, output):
+        yield output_event
 
     step_output_handle = StepOutputHandle.from_step(step=step, output_name=output.output_name)
 
-    object_key = step_context.intermediates_manager.set_intermediate(
+    step_context.intermediates_manager.set_intermediate(
         context=step_context,
         runtime_type=step_output.runtime_type,
         step_output_handle=step_output_handle,
@@ -438,17 +497,6 @@ def _create_step_events_for_output(step_context, output):
 
     for evt in _create_output_materializations(step_context, output.output_name, output.value):
         yield evt
-
-    yield DagsterEvent.step_output_event(
-        step_context=step_context,
-        step_output_data=StepOutputData(
-            step_output_handle=step_output_handle,
-            value_repr=repr(output.value),
-            intermediate_materialization=Materialization.file(path=object_key)
-            if object_key
-            else None,
-        ),
-    )
 
 
 def _create_output_materializations(step_context, output_name, value):
@@ -486,19 +534,17 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(evaluated_inputs, 'evaluated_inputs', key_type=str)
 
-    error_str = '''Error occured during the execution of step:
-    step key: "{key}"
-    solid invocation: "{solid}"
-    solid definition: "{solid_def}"
-    '''.format(
-        key=step_context.step.key,
-        solid_def=step_context.solid_def.name,
-        solid=step_context.solid.name,
-    )
-
     with user_code_error_boundary(
         DagsterExecutionStepExecutionError,
-        error_str,
+        msg_fn=lambda: '''Error occured during the execution of step:
+        step key: "{key}"
+        solid invocation: "{solid}"
+        solid definition: "{solid_def}"
+        '''.format(
+            key=step_context.step.key,
+            solid_def=step_context.solid_def.name,
+            solid=step_context.solid.name,
+        ),
         step_key=step_context.step.key,
         solid_def_name=step_context.solid_def.name,
         solid_name=step_context.solid.name,
