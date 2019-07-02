@@ -161,13 +161,12 @@ class LogsScrollingTableSized extends React.Component<
   onScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (!this.grid.current) return;
 
-    const target = e.target as Element;
-    this.isAtBottomOrZero =
-      target.scrollTop === 0 ||
-      Math.abs(target.scrollTop - (target.scrollHeight - target.clientHeight)) <
-        5;
+    const { scrollTop, scrollHeight, clientHeight } = e.target as Element;
+    const atTopAndStarting = scrollTop === 0 && scrollHeight <= clientHeight;
+    const atBottom = Math.abs(scrollTop - (scrollHeight - clientHeight)) < 5;
+    this.isAtBottomOrZero = atTopAndStarting || atBottom;
 
-    this.grid.current.handleScrollEvent(target);
+    this.grid.current.handleScrollEvent(e.target as Element);
   };
 
   cellRenderer = ({
