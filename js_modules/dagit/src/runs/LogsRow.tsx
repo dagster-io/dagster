@@ -1,5 +1,9 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import styled from "styled-components";
+import { LogLevel } from "src/types/globalTypes";
+import { IconNames } from "@blueprintjs/icons";
+import { Tag, Colors, Icon } from "@blueprintjs/core";
 
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import {
@@ -10,14 +14,13 @@ import {
   LogsRowStructuredFragment_ExecutionStepInputEvent,
   LogsRowStructuredFragment_StepExpectationResultEvent,
   LogsRowStructuredFragment_PipelineProcessStartedEvent,
-  LogsRowStructuredFragment_PipelineInitFailureEvent
+  LogsRowStructuredFragment_PipelineInitFailureEvent,
+  LogsRowStructuredFragment_StepMaterializationEvent_materialization_metadataEntries
 } from "./types/LogsRowStructuredFragment";
 import { LogsRowUnstructuredFragment } from "./types/LogsRowUnstructuredFragment";
-import { Tag, Colors, Icon } from "@blueprintjs/core";
 import { Cell, StructuredContent } from "./Cells";
-import styled from "styled-components";
-import { LogLevel } from "src/types/globalTypes";
-import { IconNames } from "@blueprintjs/icons";
+import { copyValue } from "../Util";
+import { showCustomAlert } from "../CustomAlertProvider";
 
 function assertUnreachable(x: never): never {
   throw new Error("Didn't expect to get here");
@@ -172,24 +175,24 @@ export class Structured extends React.Component<{
         return (
           <DefaultStructuredEmptyEvent
             node={node}
-            message="Started"
-            level={<Icon icon={IconNames.ARROW_BOTTOM_RIGHT} iconSize={17} />}
+            message={node.message}
+            level={<Tag minimal={true}>Step Start</Tag>}
           />
         );
       case "ExecutionStepSkippedEvent":
         return (
           <DefaultStructuredEmptyEvent
             node={node}
-            message="Skipped"
-            level={<Icon icon={IconNames.DOUBLE_CHEVRON_RIGHT} iconSize={17} />}
+            message={node.message}
+            level={<Tag minimal={true}>Skipped</Tag>}
           />
         );
       case "ExecutionStepSuccessEvent":
         return (
           <DefaultStructuredEmptyEvent
             node={node}
-            message="Success"
-            level={<Icon icon={IconNames.ARROW_BOTTOM_LEFT} iconSize={17} />}
+            message={node.message}
+            level={<Tag minimal={true}>Step Finished</Tag>}
           />
         );
 
@@ -318,7 +321,7 @@ const TimestampContainer = styled.div`
 `;
 
 const LevelContainer = styled.div`
-  width: 90px;
+  width: 140px;
   flex-shrink: 0;
   color: ${Colors.GRAY3};
 `;
@@ -334,7 +337,9 @@ const PipelineProcessStartedEvent = (props: {
   node: LogsRowStructuredFragment_PipelineProcessStartedEvent;
 }) => (
   <>
-    <LevelContainer />
+    <LevelContainer>
+      <Tag minimal={true}>Started</Tag>
+    </LevelContainer>
     {`Pipeline started `}
     <span style={{ flex: 1, color: Colors.GRAY3 }}>{`PID: ${
       props.node.processId
@@ -348,7 +353,11 @@ const DefaultFailureEvent = (props: {
     | LogsRowStructuredFragment_PipelineInitFailureEvent;
 }) => (
   <>
-    <LevelContainer />
+    <LevelContainer>
+      <Tag minimal={true} intent="danger">
+        Failed
+      </Tag>
+    </LevelContainer>
     <span style={{ flex: 1, color: Colors.RED3 }}>
       {`${props.node.error.message}\n${props.node.error.stack}`}
     </span>
@@ -361,10 +370,20 @@ const StepExpectationResultEvent = ({
   node: LogsRowStructuredFragment_StepExpectationResultEvent;
 }) => (
   <>
-    <LevelContainer />
-    {/* {events.steps[(node as any).step!.key].expectationResults.map((e, idx) => (
-      <DisplayEvent event={e} key={`${idx}`} />
-    ))} */}
+    <LevelContainer>
+      <Tag
+        minimal={true}
+        intent={node.expectationResult.success ? "success" : "danger"}
+      >
+        Expectation
+      </Tag>
+    </LevelContainer>
+    <span style={{ flex: 1 }}>
+      <DisplayEventHeader>«{node.expectationResult.label}»</DisplayEventHeader>
+      {node.expectationResult.metadataEntries.map((item, idx) => (
+        <MetadataEntry entry={item} key={idx} />
+      ))}
+    </span>
   </>
 );
 
@@ -374,10 +393,15 @@ const StepMaterializationEvent = ({
   node: LogsRowStructuredFragment_StepMaterializationEvent;
 }) => (
   <>
-    <LevelContainer />
-    {/* {events.steps[node.step!.key].materializations.map((e, idx) => (
-      <DisplayEvent event={e} key={`${idx}`} />
-    ))} */}
+    <LevelContainer>
+      <Tag minimal={true}>Materialization</Tag>
+    </LevelContainer>
+    <span style={{ flex: 1 }}>
+      <DisplayEventHeader>«{node.materialization.label}»</DisplayEventHeader>
+      {node.materialization.metadataEntries.map((item, idx) => (
+        <MetadataEntry entry={item} key={idx} />
+      ))}
+    </span>
   </>
 );
 
@@ -402,7 +426,11 @@ const ExecutionStepFailureEvent = ({
   node: LogsRowStructuredFragment_ExecutionStepFailureEvent;
 }) => (
   <>
-    <LevelContainer />
+    <LevelContainer>
+      <Tag minimal={true} intent="danger">
+        Failure
+      </Tag>
+    </LevelContainer>
     <span style={{ flex: 1 }}>
       {`Failed with error: \n${node.error.message}\n${node.error.stack}`}
     </span>
@@ -449,3 +477,87 @@ const ExecutionStepInputEvent = ({
     </span>
   </>
 );
+
+const DisplayEventContainer = styled.div`
+  white-space: pre-wrap;
+  font-size: 12px;
+`;
+
+const DisplayEventHeader = styled.div`
+  display: flex;
+  align-items: baseline;
+  font-weight: 600;
+`;
+
+const DisplayEventItemContainer = styled.div`
+  display: block;
+  padding-left: 15px;
+`;
+
+const DisplayEventLink = styled.a`
+  text-decoration: underline;
+  color: inherit;
+  &:hover {
+    color: inherit;
+  }
+`;
+
+const MetadataEntry: React.FunctionComponent<{
+  entry: LogsRowStructuredFragment_StepMaterializationEvent_materialization_metadataEntries;
+}> = ({ entry }) => {
+  switch (entry.__typename) {
+    case "EventPathMetadataEntry":
+      return (
+        <DisplayEventItemContainer>
+          {entry.label}:
+          <DisplayEventLink
+            title={"Copy to clipboard"}
+            onClick={e => copyValue(e, entry.path)}
+          >
+            [Copy Path]
+          </DisplayEventLink>
+        </DisplayEventItemContainer>
+      );
+
+    case "EventJsonMetadataEntry":
+      return (
+        <DisplayEventItemContainer>
+          {entry.label}:
+          <DisplayEventLink
+            title="Show full value"
+            onClick={() =>
+              showCustomAlert({
+                message: JSON.stringify(JSON.parse(entry.jsonString), null, 2),
+                pre: true,
+                title: "Value"
+              })
+            }
+          >
+            [Show Metadata]
+          </DisplayEventLink>
+        </DisplayEventItemContainer>
+      );
+
+    case "EventUrlMetadataEntry":
+      return (
+        <DisplayEventItemContainer>
+          {entry.label}:
+          <DisplayEventLink
+            href={entry.url}
+            title={`Open in a new tab`}
+            target="__blank"
+          >
+            [Open URL]
+          </DisplayEventLink>
+        </DisplayEventItemContainer>
+      );
+    case "EventTextMetadataEntry":
+      return (
+        <DisplayEventItemContainer>
+          {entry.label}: {entry.text}
+        </DisplayEventItemContainer>
+      );
+    default:
+      return assertUnreachable(entry);
+  }
+};
