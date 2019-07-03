@@ -31,33 +31,46 @@ issues that might be introduced by local build artifacts.
 1. Check that you are on `master`, that there are no local changes or changes on the remote, and
    that you are at the root of the repository.
 
-2. Check that the current version of the projects is consistent and what you expect by running:
+2. Make sure that you have installed the release requirements by running
+   `pip install -r bin/requirements.txt`.
+
+3. Check that the current version of the projects is consistent and what you expect by running:
 
         python bin/publish.py version
 
-3. Create a new release by running (e.g., for version `0.4.3.pre0`):
+4. Create a new release by running (e.g., for version `0.4.3.pre0`):
 
         python bin/publish.py release 0.4.3.pre0
 
-4. Check that the new version has been created successfully by again running:
+5. Check that the new version has been created successfully by again running:
 
         python bin/publish.py version
 
-5. Push the new version to the remote. The new version tag will trigger a ReadTheDocs build.
+6. Push the new version to the remote. The new version tag will trigger a ReadTheDocs build.
 
         git push && git push origin 0.4.3.pre0
 
-6. Publish the new version to PyPI. Note that you must have PyPI credentials available to twine
+7. Publish the new version to PyPI. Note that you must have PyPI credentials available to twine
    (see below), and you must be permissioned as a maintainer on the projects.
 
         python bin/publish.py publish
 
-7. Manually switch the default ReadTheDocs version to the newly built docs:
+8. Manually switch the default ReadTheDocs version to the newly built docs:
    [https://readthedocs.org/projects/dagster/versions/](https://readthedocs.org/projects/dagster/versions/)
 
-   The new version will be below in the "Inactive Versions" section.
+   The new version will be below in the "Inactive Versions" section. Click on "Edit" and you will
+   be brought to a page with a header like, for version 0.5.0.pre0, "Editing 0.5.0.pre0"
+   [https://readthedocs.org/dashboard/dagster/version/0.5.0.pre0/](https://readthedocs.org/dashboard/dagster/version/0.5.0.pre0/).
+   Check the checkbox marked "Active" on this page and then click the "Save" button.
 
-8. Check that the ReadTheDocs and PyPI versions are as you expect.
+   If the build has not yet completed, you will have to wait for it.
+
+   Then, go to 
+   [https://readthedocs.org/dashboard/dagster/advanced/](https://readthedocs.org/dashboard/dagster/advanced/).
+   Select the newly built version from the "Default version" dropdown and then click the "Save"
+   button.
+
+9.  Check that the ReadTheDocs and PyPI versions are as you expect.
 
 ### PyPI credentials
 Credentials must be available to twine in order to publish to PyPI. The best way to do this is
