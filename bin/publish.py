@@ -152,7 +152,12 @@ def publish_module(module, nightly=False, library=False, additional_steps=''):
 
 def publish_all(nightly):
     for module in MODULE_NAMES:
-        publish_module(module, nightly)
+        if module == 'dagit':
+            publish_module(
+                module, nightly, additional_steps=DAGIT_ADDITIONAL_STEPS
+            )
+        else:
+            publish_module(module, nightly)
 
     for module in LIBRARY_MODULES:
         publish_module(module, nightly, library=True)
