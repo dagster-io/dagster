@@ -15,7 +15,7 @@ from dagster import (
     types,
 )
 
-from dagster.utils.test import execute_solid
+from dagster.utils.test import execute_solid_within_pipeline
 from dagster.core.errors import DagsterExecutionStepExecutionError
 
 
@@ -26,7 +26,7 @@ def test_single_solid_in_isolation():
 
     pipeline_def = PipelineDefinition(solid_defs=[solid_one])
 
-    result = execute_solid(pipeline_def, 'solid_one')
+    result = execute_solid_within_pipeline(pipeline_def, 'solid_one')
     assert result.success
     assert result.result_value() == 1
 
@@ -45,7 +45,7 @@ def test_single_solid_with_single():
         dependencies={'add_one_solid': {'num': DependencyDefinition('solid_one')}},
     )
 
-    result = execute_solid(pipeline_def, 'add_one_solid', inputs={'num': 2})
+    result = execute_solid_within_pipeline(pipeline_def, 'add_one_solid', inputs={'num': 2})
     assert result.success
     assert result.result_value() == 3
 
@@ -69,7 +69,7 @@ def test_single_solid_with_multiple_inputs():
         },
     )
 
-    result = execute_solid(
+    result = execute_solid_within_pipeline(
         pipeline_def,
         'add_solid',
         inputs={'num_one': 2, 'num_two': 3},
@@ -89,7 +89,7 @@ def test_single_solid_with_config():
         ran['check_config_for_two'] = True
 
     pipeline_def = PipelineDefinition(solid_defs=[check_config_for_two])
-    result = execute_solid(
+    result = execute_solid_within_pipeline(
         pipeline_def,
         'check_config_for_two',
         environment_dict={'solids': {'check_config_for_two': {'config': 2}}},
@@ -116,7 +116,7 @@ def test_single_solid_with_context_config():
         mode_defs=[ModeDefinition(resource_defs={'num': num_resource})],
     )
 
-    result = execute_solid(
+    result = execute_solid_within_pipeline(
         pipeline_def,
         'check_context_config_for_two',
         environment_dict={'resources': {'num': {'config': 2}}},
@@ -125,7 +125,7 @@ def test_single_solid_with_context_config():
     assert result.success
     assert ran['count'] == 1
 
-    result = execute_solid(pipeline_def, 'check_context_config_for_two')
+    result = execute_solid_within_pipeline(pipeline_def, 'check_context_config_for_two')
 
     assert result.success
     assert ran['count'] == 2
@@ -142,7 +142,7 @@ def test_single_solid_error():
     pipeline_def = PipelineDefinition(solid_defs=[throw_error])
 
     with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
-        execute_solid(pipeline_def, 'throw_error')
+        execute_solid_within_pipeline(pipeline_def, 'throw_error')
 
     assert isinstance(e_info.value.__cause__, SomeError)
 
@@ -155,10 +155,10 @@ def test_single_solid_type_checking_output_error():
     pipeline_def = PipelineDefinition(solid_defs=[return_string])
 
     with pytest.raises(DagsterTypeCheckError):
-        execute_solid(pipeline_def, 'return_string')
+        execute_solid_within_pipeline(pipeline_def, 'return_string')
 
 
-def test_failing_solid_execute_solid():
+def test_failing_solid_in_isolation():
     class ThisException(Exception):
         pass
 
@@ -169,6 +169,6 @@ def test_failing_solid_execute_solid():
     pipeline_def = PipelineDefinition(solid_defs=[throw_an_error])
 
     with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
-        execute_solid(pipeline_def, 'throw_an_error')
+        execute_solid_within_pipeline(pipeline_def, 'throw_an_error')
 
     assert isinstance(e_info.value.__cause__, ThisException)

@@ -99,7 +99,7 @@ from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.runtime import RuntimeType
 
 from dagster.utils import file_relative_path
-from dagster.utils.test import execute_solid, execute_solids
+from dagster.utils.test import execute_solid
 
 from .version import __version__
 
@@ -158,7 +158,6 @@ __all__ = [
     'DagsterStepOutputNotFoundError',
     # Utilities
     'execute_solid',
-    'execute_solids',
     'file_relative_path',
     # types
     'Any',

@@ -12,8 +12,8 @@ def create_s3_fake_resource():
 
 
 class S3FakeSession:
-    def __init__(self):
-        self.buckets = defaultdict(dict)
+    def __init__(self, buckets=None):
+        self.buckets = defaultdict(dict, buckets) if buckets else defaultdict(dict)
         self.mock_extras = mock.MagicMock()
 
     def head_bucket(self, Bucket, *args, **kwargs):  # pylint: disable=unused-argument

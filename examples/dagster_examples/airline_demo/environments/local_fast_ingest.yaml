@@ -1,7 +1,7 @@
 solids:
   process_q2_coupon_data:
     inputs:
-      bucket_data:
+      s3_coordinate:
         bucket: dagster-airline-demo-source-data
         key: test/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip
       archive_member:
@@ -11,7 +11,7 @@ solids:
       table_name: q2_coupon_data
   process_q2_market_data:
     inputs:
-      bucket_data:
+      s3_coordinate:
         bucket: dagster-airline-demo-source-data
         key: test/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip
       archive_member:
@@ -21,7 +21,7 @@ solids:
       table_name: q2_market_data
   process_q2_ticket_data:
     inputs:
-      bucket_data:
+      s3_coordinate:
         bucket: dagster-airline-demo-source-data
         key: test/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip
       archive_member:
@@ -31,21 +31,21 @@ solids:
       table_name: q2_ticket_data
   april_on_time_s3_to_df:
     inputs:
-      bucket_data:
+      s3_coordinate:
         bucket: dagster-airline-demo-source-data
         key: test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip
       archive_member:
         value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv
   may_on_time_s3_to_df:
     inputs:
-      bucket_data:
+      s3_coordinate:
         bucket: dagster-airline-demo-source-data
         key: test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip
       archive_member:
         value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv
   june_on_time_s3_to_df:
     inputs:
-      bucket_data:
+      s3_coordinate:
         bucket: dagster-airline-demo-source-data
         key: test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip
       archive_member:
@@ -54,7 +54,7 @@ solids:
     inputs:
       archive_member:
         value: "954834304_T_MASTER_CORD.csv"
-      bucket_data:
+      s3_coordinate:
         bucket: dagster-airline-demo-source-data
         key: test/954834304_T_MASTER_CORD.zip
   join_q2_data:
@@ -66,7 +66,7 @@ solids:
 
   download_q2_sfo_weather:
     inputs:
-      bucket_data:
+      s3_coordinate:
         bucket: dagster-airline-demo-source-data
         key: test/sfo_q2_weather.txt
   load_q2_sfo_weather:

@@ -22,7 +22,7 @@ from dagster import (
     composite_solid,
     solid,
 )
-from dagster_aws.s3.solids import S3BucketData
+from dagster_aws.s3.solids import S3Coordinate
 from dagster_pyspark import DataFrame
 from dagstermill import define_dagstermill_solid
 
@@ -246,10 +246,10 @@ present by default), unzip that file, and load it into a
 Spark Dataframe. See documentation in constituent solids for
 more detail.'''
 )
-def s3_to_df(bucket_data: S3BucketData, archive_member: String) -> DataFrame:
+def s3_to_df(s3_coordinate: S3Coordinate, archive_member: String) -> DataFrame:
     # pylint: disable=no-value-for-parameter
     return ingest_csv_file_handle_to_spark(
-        unzip_file_handle(cache_file_from_s3(bucket_data), archive_member)
+        unzip_file_handle(cache_file_from_s3(s3_coordinate), archive_member)
     )
 
 
@@ -265,10 +265,10 @@ subsample_spark_dataset, solid), canonicalize the column names, and then
 load it into a data warehouse.
 ''',
 )
-def s3_to_dw_table(bucket_data: S3BucketData, archive_member: String) -> String:
+def s3_to_dw_table(s3_coordinate: S3Coordinate, archive_member: String) -> String:
     # pylint: disable=no-value-for-parameter
     return load_data_to_database_from_spark(
-        canonicalize_column_names(subsample_spark_dataset(s3_to_df(bucket_data, archive_member)))
+        canonicalize_column_names(subsample_spark_dataset(s3_to_df(s3_coordinate, archive_member)))
     )
 
 

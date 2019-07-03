@@ -30,6 +30,7 @@ class S3FileCache(FileCache):
         self.s3.put_object(
             Body=source_file_object, Bucket=self.s3_bucket, Key=self.get_full_key(file_key)
         )
+        return self.get_file_handle(file_key)
 
     def get_file_handle(self, file_key):
         check.str_param(file_key, 'file_key')

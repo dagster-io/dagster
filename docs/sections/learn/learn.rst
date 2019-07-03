@@ -7,5 +7,7 @@ Learn
   tutorial/index
   principles
 
-  guides/logging/logging
   guides/solid/solid
+  guides/testing/testing
+  guides/testing/expectations
+  guides/logging/logging

@@ -17,13 +17,13 @@ from dagster import (
     OutputDefinition,
     RunConfig,
     execute_pipeline,
-    execute_solid,
     file_relative_path,
     lambda_solid,
     pipeline,
     solid,
 )
 
+from dagster.utils.test import execute_solid_within_pipeline
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 
 from dagster_aws.s3.intermediate_store import S3IntermediateStore
@@ -131,7 +131,7 @@ def test_spark_dataframe_output_csv():
 
     with tempfile.TemporaryDirectory() as tempdir:
         file_name = os.path.join(tempdir, 'output.csv')
-        result = execute_solid(
+        result = execute_solid_within_pipeline(
             passthrough,
             'passthrough_df',
             inputs={'df': num_df},

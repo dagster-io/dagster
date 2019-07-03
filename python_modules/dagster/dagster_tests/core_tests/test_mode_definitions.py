@@ -7,7 +7,6 @@ from dagster import (
     DagsterInvariantViolationError,
     Dict,
     execute_pipeline,
-    execute_solids,
     Field,
     logger,
     ModeDefinition,
@@ -18,6 +17,7 @@ from dagster import (
     solid,
     String,
 )
+from dagster.utils.test import execute_solids_within_pipeline
 from dagster.core.definitions.environment_schema import create_environment_type
 from dagster.core.log_manager import coerce_valid_log_level
 
@@ -252,7 +252,12 @@ def test_subset_with_mode_definitions():
 
     assert called == {'a': 1, 'b': 1}
 
-    assert execute_solids(pipeline_def, solid_names=['requires_a'])['requires_a'].success is True
+    assert (
+        execute_solids_within_pipeline(pipeline_def, solid_names=['requires_a'])[
+            'requires_a'
+        ].success
+        is True
+    )
 
     assert called == {'a': 2, 'b': 1}
 

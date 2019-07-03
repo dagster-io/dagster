@@ -1,22 +1,21 @@
-import itertools
 import logging
-import os
-import shutil
-import tempfile
 import uuid
 
 from collections import defaultdict
 from contextlib import contextmanager
 
+# top-level include is dangerous in terms of incurring circular deps
 from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
     ModeDefinition,
     PipelineDefinition,
+    SolidDefinition,
     SolidInvocation,
+    SystemStorageData,
     check,
     execute_pipeline,
-    SystemStorageData,
+    lambda_solid,
 )
 from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
@@ -28,8 +27,17 @@ from dagster.core.execution.context_creation_pipeline import (
 )
 from dagster.core.utility_solids import define_stub_solid
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
-from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
+from dagster.core.storage.file_manager import LocalFileManager
 from dagster.core.storage.runs import InMemoryRunStorage
+
+# pylint: disable=unused-import
+from .temp_file import (
+    get_temp_file_handle,
+    get_temp_file_handle_with_data,
+    get_temp_file_name,
+    get_temp_file_name_with_data,
+    get_temp_file_names,
+)
 
 
 def create_test_pipeline_execution_context(
@@ -67,71 +75,6 @@ def create_test_pipeline_execution_context(
         ),
         log_manager=log_manager,
     )
-
-
-def _unlink_swallow_errors(path):
-    check.str_param(path, 'path')
-    try:
-        os.unlink(path)
-    except Exception:  # pylint: disable=broad-except
-        pass
-
-
-@contextmanager
-def get_temp_file_handle_with_data(data):
-    with get_temp_file_name_with_data(data) as temp_file:
-        yield LocalFileHandle(temp_file)
-
-
-@contextmanager
-def get_temp_file_name_with_data(data):
-    with get_temp_file_name() as temp_file:
-        with open(temp_file, 'wb') as ff:
-            ff.write(data)
-
-        yield temp_file
-
-
-@contextmanager
-def get_temp_file_handle():
-    with get_temp_file_name() as temp_file:
-        yield LocalFileHandle(temp_file)
-
-
-@contextmanager
-def get_temp_file_name():
-    temp_file_name = tempfile.mkstemp()[1]
-    try:
-        yield temp_file_name
-    finally:
-        _unlink_swallow_errors(temp_file_name)
-
-
-@contextmanager
-def get_temp_file_names(number):
-    check.int_param(number, 'number')
-
-    temp_file_names = list()
-    for _ in itertools.repeat(None, number):
-        temp_file_name = tempfile.mkstemp()[1]
-        temp_file_names.append(temp_file_name)
-
-    try:
-        yield tuple(temp_file_names)
-    finally:
-        for temp_file_name in temp_file_names:
-            _unlink_swallow_errors(temp_file_name)
-
-
-@contextmanager
-def get_temp_dir():
-    temp_dir = None
-    try:
-        temp_dir = tempfile.mkdtemp()
-        yield temp_dir
-    finally:
-        if temp_dir:
-            shutil.rmtree(temp_dir)
 
 
 def _dep_key_of(solid):
@@ -177,7 +120,9 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
     )
 
 
-def execute_solids(pipeline_def, solid_names, inputs=None, environment_dict=None, run_config=None):
+def execute_solids_within_pipeline(
+    pipeline_def, solid_names, inputs=None, environment_dict=None, run_config=None
+):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.list_param(solid_names, 'solid_names', of_type=str)
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str, value_type=dict)
@@ -191,14 +136,16 @@ def execute_solids(pipeline_def, solid_names, inputs=None, environment_dict=None
     return {sr.solid.name: sr for sr in result.solid_result_list}
 
 
-def execute_solid(pipeline_def, solid_name, inputs=None, environment_dict=None, run_config=None):
+def execute_solid_within_pipeline(
+    pipeline_def, solid_name, inputs=None, environment_dict=None, run_config=None
+):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.str_param(solid_name, 'solid_name')
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str)
     environment_dict = check.opt_dict_param(environment_dict, 'environment')
     run_config = check.opt_inst_param(run_config, 'run_config', RunConfig)
 
-    return execute_solids(
+    return execute_solids_within_pipeline(
         pipeline_def,
         [solid_name],
         {solid_name: inputs} if inputs else None,
@@ -211,3 +158,43 @@ def execute_solid(pipeline_def, solid_name, inputs=None, environment_dict=None, 
 def yield_empty_pipeline_context(run_id=None):
     with scoped_pipeline_context(PipelineDefinition([]), {}, RunConfig(run_id=run_id)) as context:
         yield context
+
+
+def execute_solid(
+    solid_def, mode_def=None, input_values=None, environment_dict=None, run_config=None
+):
+    '''
+    Independently execute an individual solid without having to specify a pipeline. This
+    also allows one to directly pass in in-memory input values. This is very
+    useful for unit test cases.
+
+    '''
+    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
+    input_values = check.opt_dict_param(input_values, 'input_values', key_type=str)
+
+    solid_defs = [solid_def]
+
+    def create_value_solid(input_name, input_value):
+        @lambda_solid(name=input_name)
+        def input_solid():
+            return input_value
+
+        return input_solid
+
+    dependencies = defaultdict(dict)
+
+    for input_name, input_value in input_values.items():
+        dependencies[solid_def.name][input_name] = DependencyDefinition(input_name)
+        solid_defs.append(create_value_solid(input_name, input_value))
+
+    return execute_pipeline(
+        PipelineDefinition(
+            name='emphemeral_{}_solid_pipeline'.format(solid_def.name),
+            solid_defs=solid_defs,
+            dependencies=dependencies,
+            mode_defs=[mode_def] if mode_def else None,
+        ),
+        environment_dict=environment_dict,
+        run_config=run_config,
+    ).result_for_solid(solid_def.name)
