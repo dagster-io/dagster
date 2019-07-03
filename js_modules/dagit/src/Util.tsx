@@ -118,3 +118,7 @@ export function titleOfIO(i: {
     ? `${i.solid.name}:${i.definition.name}`
     : i.solid.name;
 }
+
+export function assertUnreachable(x: never): never {
+  throw new Error("Didn't expect to get here");
+}

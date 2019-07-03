@@ -12,7 +12,7 @@ import {
 } from "react-virtualized";
 
 import * as LogsRow from "./LogsRow";
-import { CellTruncationProvider } from "./Cells";
+import { CellTruncationProvider } from "./CellTruncationProvider";
 import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMessageFragment";
 
 interface ILogsScrollingTableProps {

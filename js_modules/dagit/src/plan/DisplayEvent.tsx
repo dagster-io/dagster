@@ -58,12 +58,12 @@ export const DisplayEvent: React.FunctionComponent<DisplayEventProps> = ({
   event
 }) => (
   <DisplayEventContainer>
-    <DisplayEventHeader>
+    <LabelColumn>
       {"status" in event
         ? IconComponents[(event as any).icon]("Expectation")
         : IconComponents[event.icon]("Materialization")}
       {event.text}
-    </DisplayEventHeader>
+    </LabelColumn>
     {event.items.map((item, idx) => (
       <DisplayEventItem {...item} key={idx} />
     ))}
@@ -75,7 +75,7 @@ const DisplayEventContainer = styled.div`
   font-size: 12px;
 `;
 
-const DisplayEventHeader = styled.div`
+const LabelColumn = styled.div`
   display: flex;
   align-items: baseline;
   font-weight: 500;
