@@ -132,11 +132,35 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_step 
   key: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries {
-  __typename: "EventJsonMetadataEntry" | "EventPathMetadataEntry" | "EventTextMetadataEntry" | "EventUrlMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
   label: string;
   description: string | null;
+  path: string;
 }
+
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries = LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTextMetadataEntry;
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck {
   __typename: "TypeCheck";
@@ -153,7 +177,6 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent {
   level: LogLevel;
   step: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_step | null;
   inputName: string;
-  valueRepr: string;
   typeCheck: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck;
 }
 
@@ -162,11 +185,35 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_step
   key: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries {
-  __typename: "EventJsonMetadataEntry" | "EventPathMetadataEntry" | "EventTextMetadataEntry" | "EventUrlMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
   label: string;
   description: string | null;
+  path: string;
 }
+
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries = LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTextMetadataEntry;
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck {
   __typename: "TypeCheck";
@@ -183,7 +230,6 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent {
   level: LogLevel;
   step: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_step | null;
   outputName: string;
-  valueRepr: string;
   typeCheck: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck;
 }
 

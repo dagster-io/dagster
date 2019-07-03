@@ -3,7 +3,7 @@ import produce from "immer";
 import gql from "graphql-tag";
 
 import { RunMetadataProviderMessageFragment } from "./types/RunMetadataProviderMessageFragment";
-import { MetadataEntryFragment } from "./runs/types/MetadataEntryFragment";
+import { TempMetadataEntryFragment } from "./types/TempMetadataEntryFragment";
 
 export enum IStepState {
   WAITING = "waiting",
@@ -75,7 +75,7 @@ export interface IRunMetadataDict {
 }
 
 function itemsForMetadataEntries(
-  metadataEntries: MetadataEntryFragment[]
+  metadataEntries: TempMetadataEntryFragment[]
 ): IDisplayEventItem[] {
   const items = [];
   for (const metadataEntry of metadataEntries) {
@@ -249,7 +249,7 @@ export default class RunMetadataProvider extends React.Component<
 > {
   static fragments = {
     RunMetadataProviderMessageFragment: gql`
-      fragment MetadataEntryFragment on EventMetadataEntry {
+      fragment TempMetadataEntryFragment on EventMetadataEntry {
         label
         description
         ... on EventPathMetadataEntry {
@@ -286,7 +286,7 @@ export default class RunMetadataProvider extends React.Component<
             label
             description
             metadataEntries {
-              ...MetadataEntryFragment
+              ...TempMetadataEntryFragment
             }
           }
         }
@@ -296,7 +296,7 @@ export default class RunMetadataProvider extends React.Component<
             label
             description
             metadataEntries {
-              ...MetadataEntryFragment
+              ...TempMetadataEntryFragment
             }
           }
         }
