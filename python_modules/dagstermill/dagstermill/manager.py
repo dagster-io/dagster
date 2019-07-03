@@ -4,8 +4,6 @@ import uuid
 
 from contextlib import contextmanager
 
-import scrapbook
-
 from dagster import (
     check,
     ExecutionTargetHandle,
@@ -155,6 +153,9 @@ class Manager:
         if not self.in_pipeline:
             return value
 
+        # deferred import for perf
+        import scrapbook
+
         if not self.solid_def.has_output(output_name):
             raise DagstermillError(
                 'Solid {solid_name} does not have output named {output_name}'.format(
@@ -170,6 +171,9 @@ class Manager:
     def yield_event(self, dagster_event):
         if not self.in_pipeline:
             return dagster_event
+
+        # deferred import for perf
+        import scrapbook
 
         event_id = 'event-{event_uuid}'.format(event_uuid=str(uuid.uuid4()))
         out_file_path = os.path.join(self.marshal_dir, event_id)
