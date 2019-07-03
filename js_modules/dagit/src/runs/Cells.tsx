@@ -19,20 +19,13 @@ export const Cell = styled.div<{ level: LogLevel }>`
   width: 100%;
   height: 100%;
   max-height: 17em;
-  overflow-y: hidden;
-  padding: 4px;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 4px 8px;
   word-break: break-all;
   white-space: pre-wrap;
   font-family: monospace;
   display: flex;
   flex-direction: row;
   border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
-  /* these wide bg-colored borders are a trick that insets the border while still
-  giving us a background color all the way to the edge. */
-  border-left: 12px solid ${props => bgcolorForLevel(props.level)};
-  border-right: 9px solid ${props => bgcolorForLevel(props.level)};
   background: ${props => bgcolorForLevel(props.level)};
   color: ${props =>
     ({
@@ -44,25 +37,20 @@ export const Cell = styled.div<{ level: LogLevel }>`
     }[props.level])};
 `;
 
-export const StructuredCell = styled.div`
+export const StructuredContent = styled.div`
   box-sizing: border-box;
-  border-left: 1px solid ${Colors.LIGHT_GRAY3};
-  border-right: 1px solid ${Colors.LIGHT_GRAY3};
   box-shadow: 0 0.7px 0.5px rgba(0, 0, 0, 0.25);
-  font-size: 0.85em;
-  width: calc(100% - 10px);
-  height: 100%;
-  max-height: 17em;
-  margin-left: 5px;
-  overflow-y: hidden;
+  margin: -4px;
+  margin-bottom: -5px;
+  border-bottom: 1px solid ${Colors.LIGHT_GRAY4};
   padding: 4px;
-  padding-left: 7px;
   word-break: break-all;
   white-space: pre-wrap;
+  overflow-y: hidden;
   font-family: monospace;
+  flex: 1;
   display: flex;
   flex-direction: row;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
   background: white;
   color: ${Colors.DARK_GRAY2};
 `;
