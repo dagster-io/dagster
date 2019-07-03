@@ -125,7 +125,7 @@ class ExpectationResult(
 ):
     ''' Output of an expectation callback.
 
-    When Expectations are evaluated in the callback passed to ExpectationDefinitions,
+    When Expectations are evaluated in the callback passed to IOExpectationDefinitions,
     the user must return an ExpectationResult object from the callback.
 
     Attributes:

@@ -3,7 +3,7 @@ from dagster import Int, OutputDefinition, Output, pipeline, solid
 
 
 @solid(
-    outputs=[
+    output_defs=[
         OutputDefinition(dagster_type=Int, name='out_one'),
         OutputDefinition(dagster_type=Int, name='out_two'),
     ]

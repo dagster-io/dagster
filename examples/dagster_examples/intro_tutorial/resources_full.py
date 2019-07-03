@@ -17,7 +17,7 @@ from dagster_slack import slack_resource
 HELLO_MESSAGE = '"Hello, World" from Dagster!'
 
 
-@solid(required_resources={'slack'})
+@solid(required_resource_keys={'slack'})
 def post_hello_message(context):
     context.resources.slack.chat.post_message(channel='#dagster', text=HELLO_MESSAGE)
 
@@ -42,9 +42,9 @@ def slack_to_file_resource(context):
 
 
 @pipeline(
-    mode_definitions=[
-        ModeDefinition(name='production', resources={'slack': slack_resource}),
-        ModeDefinition(name='local', resources={'slack': slack_to_file_resource}),
+    mode_defs=[
+        ModeDefinition(name='production', resource_defs={'slack': slack_resource}),
+        ModeDefinition(name='local', resource_defs={'slack': slack_to_file_resource}),
     ]
 )
 def resources_pipeline():

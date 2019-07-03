@@ -16,8 +16,8 @@ from dagster_aws.s3.solids import S3BucketData
 
 
 @solid(
-    inputs=[InputDefinition('bucket_data', S3BucketData)],
-    outputs=[OutputDefinition(FileHandle)],
+    input_defs=[InputDefinition('bucket_data', S3BucketData)],
+    output_defs=[OutputDefinition(FileHandle)],
     config_field=Field(
         Dict(
             {
@@ -33,7 +33,7 @@ from dagster_aws.s3.solids import S3BucketData
             }
         )
     ),
-    required_resources={'file_cache', 's3'},
+    required_resource_keys={'file_cache', 's3'},
     description='''This is a solid which caches a file in s3 into file cache.
 
 The `file_cache` is a resource type that allows a solid author to save files

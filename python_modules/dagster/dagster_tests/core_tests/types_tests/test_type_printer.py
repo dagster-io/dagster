@@ -131,8 +131,8 @@ def test_test_type_pipeline_construction():
 def define_solid_for_test_type(name, runtime_type):
     return SolidDefinition(
         name=name,
-        inputs=[],
-        outputs=[],
+        input_defs=[],
+        output_defs=[],
         config_field=Field(runtime_type),
         compute_fn=lambda _info, _inputs: None,
     )

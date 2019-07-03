@@ -29,7 +29,7 @@ snowflake_query = SnowflakeSolidDefinition('query some data', ['SELECT * FROM my
 pipeline = PipelineDefinition(
     name='snowflake example',
     solids=[snowflake_load, snowflake_query],
-    mode_definitions=[ModeDefinition(resources={'snowflake': snowflake_resource})],
+    mode_defs=[ModeDefinition(resource_defs={'snowflake': snowflake_resource})],
     dependencies={snowflake_query: {'start': DependencyDefinition('snowflake_load')}},
 )
 

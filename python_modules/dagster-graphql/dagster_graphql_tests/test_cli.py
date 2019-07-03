@@ -17,12 +17,12 @@ from dagster.utils import script_relative_path
 from dagster_graphql.cli import ui
 
 
-@lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
+@lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
 def add_one(num):
     return num + 1
 
 
-@lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
+@lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
 def mult_two(num):
     return num * 2
 

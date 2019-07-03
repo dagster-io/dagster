@@ -1,8 +1,8 @@
 from .builtin_enum import BuiltinEnum
 from .config_schema import (
-    input_schema,
+    input_hydration_config,
     input_selector_schema,
-    output_schema,
+    output_materialization_config,
     output_selector_schema,
 )
 from .field import Field

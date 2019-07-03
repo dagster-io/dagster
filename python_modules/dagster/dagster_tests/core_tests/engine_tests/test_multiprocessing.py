@@ -54,15 +54,15 @@ def define_diamond_pipeline():
     def return_two():
         return 2
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def add_three(num):
         return num + 3
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def mult_three(num):
         return num * 3
 
-    @lambda_solid(inputs=[InputDefinition('left'), InputDefinition('right')])
+    @lambda_solid(input_defs=[InputDefinition('left'), InputDefinition('right')])
     def adder(left, right):
         return left + right
 

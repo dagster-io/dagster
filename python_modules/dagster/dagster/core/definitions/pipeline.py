@@ -77,15 +77,13 @@ class PipelineDefinition(IContainSolids, object):
         name=None,
         description=None,
         dependencies=None,
-        mode_definitions=None,
-        preset_definitions=None,
+        mode_defs=None,
+        preset_defs=None,
     ):
         self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self.description = check.opt_str_param(description, 'description')
 
-        mode_definitions = check.opt_list_param(
-            mode_definitions, 'mode_definitions', of_type=ModeDefinition
-        )
+        mode_definitions = check.opt_list_param(mode_defs, 'mode_defs', of_type=ModeDefinition)
 
         if not mode_definitions:
             mode_definitions = [ModeDefinition()]
@@ -119,9 +117,7 @@ class PipelineDefinition(IContainSolids, object):
         self._runtime_type_dict = construct_runtime_type_dictionary(current_level_solid_defs)
 
         self._preset_dict = {}
-        for preset in check.opt_list_param(
-            preset_definitions, 'preset_definitions', PresetDefinition
-        ):
+        for preset in check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition):
             if preset.name in self._preset_dict:
                 raise DagsterInvalidDefinitionError(
                     (
@@ -366,7 +362,7 @@ def _build_sub_pipeline(pipeline_def, solid_names):
     return PipelineDefinition(
         name=pipeline_def.name,
         solid_defs=list({solid.definition for solid in solids}),
-        mode_definitions=pipeline_def.mode_definitions,
+        mode_defs=pipeline_def.mode_definitions,
         dependencies=deps,
     )
 
@@ -381,7 +377,7 @@ def _validate_resource_dependencies(mode_definitions, solid_defs):
     for mode_def in mode_definitions:
         mode_resources = set(mode_def.resource_defs.keys())
         for solid in solid_defs:
-            for required_resource in solid.required_resources:
+            for required_resource in solid.required_resource_keys:
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (
@@ -394,7 +390,7 @@ def _validate_resource_dependencies(mode_definitions, solid_defs):
                         )
                     )
         for system_storage_def in mode_def.system_storage_defs:
-            for required_resource in system_storage_def.required_resources:
+            for required_resource in system_storage_def.required_resource_keys:
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (

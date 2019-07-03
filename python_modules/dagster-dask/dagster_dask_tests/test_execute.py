@@ -10,7 +10,7 @@ def simple(_):
 
 def define_dask_test_pipeline():
     return PipelineDefinition(
-        name='test_dask_engine', mode_definitions=[ModeDefinition()], solid_defs=[simple]
+        name='test_dask_engine', mode_defs=[ModeDefinition()], solid_defs=[simple]
     )
 
 

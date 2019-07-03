@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from dagster import (
-    ExpectationDefinition,
+    IOExpectationDefinition,
     LoggerDefinition,
     ModeDefinition,
     PipelineDefinition,
@@ -199,7 +199,7 @@ class DauphinExpectation(dauphin.ObjectType):
     description = dauphin.String()
 
     def __init__(self, expectation):
-        check.inst_param(expectation, 'expectation', ExpectationDefinition)
+        check.inst_param(expectation, 'expectation', IOExpectationDefinition)
         super(DauphinExpectation, self).__init__(
             name=expectation.name, description=expectation.description
         )

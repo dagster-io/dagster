@@ -3,7 +3,7 @@ from dagster import check
 
 from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
 
-from .expectation import ExpectationDefinition
+from .expectation import IOExpectationDefinition
 from .utils import check_valid_name
 
 
@@ -14,7 +14,7 @@ class InputDefinition(object):
     Attributes:
         name (str): Name of the input.
         runtime_type (DagsterType): Type of the input. Defaults to types.Any
-        expectations (List[ExpectationDefinition]):
+        expectations (List[IOExpectationDefinition]):
             List of expectations that applies to the value passed to the solid.
         description (str): Description of the input. Optional.
     '''
@@ -26,7 +26,7 @@ class InputDefinition(object):
         self.runtime_type = check.inst(resolve_to_runtime_type(dagster_type), RuntimeType)
 
         self.expectations = check.opt_list_param(
-            expectations, 'expectations', of_type=ExpectationDefinition
+            expectations, 'expectations', of_type=IOExpectationDefinition
         )
         self.description = check.opt_str_param(description, 'description')
 

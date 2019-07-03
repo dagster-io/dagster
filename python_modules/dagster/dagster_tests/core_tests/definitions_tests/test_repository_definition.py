@@ -18,8 +18,8 @@ def create_single_node_pipeline(name, called):
         solid_defs=[
             SolidDefinition(
                 name=name + '_solid',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *_args, **_kwargs: None,
             )
         ],

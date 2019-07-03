@@ -70,6 +70,11 @@ a.reference {
   border-bottom: none;
 }
 
+/* Don't put a border around hand-drawn diagrams in the reference section */
+div.body .section a.reference img {
+  border: 0px;
+}
+
 .bodywrapper {
   padding-top: 21px;
   max-width: 950px;

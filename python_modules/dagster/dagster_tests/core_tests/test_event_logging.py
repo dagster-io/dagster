@@ -18,7 +18,7 @@ from dagster.loggers import colored_console_logger
 
 def mode_def(event_callback):
     return ModeDefinition(
-        loggers={
+        logger_defs={
             'callback': construct_event_logger(event_callback),
             'console': colored_console_logger,
         }
@@ -32,7 +32,7 @@ def single_dagster_event(events, event_type):
 
 def define_event_logging_pipeline(name, solids, event_callback, deps=None):
     return PipelineDefinition(
-        name=name, solid_defs=solids, description=deps, mode_definitions=[mode_def(event_callback)]
+        name=name, solid_defs=solids, description=deps, mode_defs=[mode_def(event_callback)]
     )
 
 
@@ -45,7 +45,7 @@ def test_empty_pipeline():
             events[record.dagster_event.event_type].append(record)
 
     pipeline_def = PipelineDefinition(
-        name='empty_pipeline', solid_defs=[], mode_definitions=[mode_def(_event_callback)]
+        name='empty_pipeline', solid_defs=[], mode_defs=[mode_def(_event_callback)]
     )
 
     result = execute_pipeline(pipeline_def, {'loggers': {'callback': {}, 'console': {}}})
@@ -74,9 +74,7 @@ def test_single_solid_pipeline_success():
             events[record.dagster_event.event_type].append(record)
 
     pipeline_def = PipelineDefinition(
-        name='single_solid_pipeline',
-        solid_defs=[solid_one],
-        mode_definitions=[mode_def(_event_callback)],
+        name='single_solid_pipeline', solid_defs=[solid_one], mode_defs=[mode_def(_event_callback)]
     )
 
     result = execute_pipeline(pipeline_def, {'loggers': {'callback': {}}})
@@ -114,9 +112,7 @@ def test_single_solid_pipeline_failure():
             events[record.dagster_event.event_type].append(record)
 
     pipeline_def = PipelineDefinition(
-        name='single_solid_pipeline',
-        solid_defs=[solid_one],
-        mode_definitions=[mode_def(_event_callback)],
+        name='single_solid_pipeline', solid_defs=[solid_one], mode_defs=[mode_def(_event_callback)]
     )
 
     result = execute_pipeline(

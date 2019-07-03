@@ -101,8 +101,8 @@ class SparkSolidDefinition(SolidDefinition):
         super(SparkSolidDefinition, self).__init__(
             name=name,
             description=description,
-            inputs=[InputDefinition('spark_inputs', List[Path])],
-            outputs=[OutputDefinition(dagster_type=List[Path], name='paths')],
+            input_defs=[InputDefinition('spark_inputs', List[Path])],
+            output_defs=[OutputDefinition(dagster_type=List[Path], name='paths')],
             compute_fn=_spark_compute_fn,
             config_field=define_spark_config(),
             metadata={'kind': 'spark', 'main_class': main_class},

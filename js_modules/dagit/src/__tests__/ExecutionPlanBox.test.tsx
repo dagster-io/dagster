@@ -5,7 +5,7 @@ import {
   ExecutionPlanBox,
   IExecutionPlanBoxProps,
   IExecutionPlanBoxState
-} from "../ExecutionPlanBox";
+} from "../plan/ExecutionPlanBox";
 import {
   IExpectationResult,
   IExpectationResultStatus,

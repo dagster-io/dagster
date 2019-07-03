@@ -33,8 +33,8 @@ def test_basic_solids_config(snapshot):
         solid_defs=[
             SolidDefinition(
                 name='required_field_solid',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 config_field=Field(Dict(fields={'required_int': Field(Int)})),
                 compute_fn=lambda *_args: fail_me(),
             )
@@ -74,14 +74,18 @@ def test_two_modes(snapshot):
     pipeline_def = PipelineDefinition(
         name='TwoModePipelines',
         solid_defs=[],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
                 'mode_one',
-                resources={'value': dummy_resource(Field(Dict({'mode_one_field': Field(String)})))},
+                resource_defs={
+                    'value': dummy_resource(Field(Dict({'mode_one_field': Field(String)})))
+                },
             ),
             ModeDefinition(
                 'mode_two',
-                resources={'value': dummy_resource(Field(Dict({'mode_two_field': Field(Int)})))},
+                resource_defs={
+                    'value': dummy_resource(Field(Dict({'mode_two_field': Field(Int)})))
+                },
             ),
         ],
     )

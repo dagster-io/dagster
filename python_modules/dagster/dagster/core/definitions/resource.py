@@ -74,7 +74,7 @@ def resource(config_field=None, config=None, description=None):
 
 class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_instance_dict')):
     '''There are concepts in the codebase (e.g. solids, system storage) that receive
-    only the resources that they have specified in required_resources.
+    only the resources that they have specified in required_resource_keys.
     ScopedResourcesBuilder is responsible for dynamically building a class with
     only those required resources and returning an instance of that class.'''
 
@@ -86,7 +86,7 @@ class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_inst
             ),
         )
 
-    def build(self, mapper_fn=None, required_resources=None):
+    def build(self, mapper_fn=None, required_resource_keys=None):
         '''We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.
 
@@ -100,8 +100,8 @@ class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_inst
         as, e.g., context.resources.foo.
         '''
         resource_instance_dict = (
-            mapper_fn(self.resource_instance_dict, required_resources)
-            if (mapper_fn and required_resources)
+            mapper_fn(self.resource_instance_dict, required_resource_keys)
+            if (mapper_fn and required_resource_keys)
             else self.resource_instance_dict
         )
 

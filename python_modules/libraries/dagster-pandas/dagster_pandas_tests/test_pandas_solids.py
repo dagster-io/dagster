@@ -15,9 +15,12 @@ from dagster.core.test_utils import single_output_transform
 from dagster_pandas import DataFrame
 
 
-def _dataframe_solid(name, inputs, compute_fn):
+def _dataframe_solid(name, input_defs, compute_fn):
     return single_output_transform(
-        name=name, inputs=inputs, compute_fn=compute_fn, output=OutputDefinition(DataFrame)
+        name=name,
+        input_defs=input_defs,
+        compute_fn=compute_fn,
+        output_def=OutputDefinition(DataFrame),
     )
 
 
@@ -50,25 +53,30 @@ def create_sum_table():
         return num_csv
 
     return _dataframe_solid(
-        name='sum_table', inputs=[InputDefinition('num_csv', DataFrame)], compute_fn=transform
+        name='sum_table', input_defs=[InputDefinition('num_csv', DataFrame)], compute_fn=transform
     )
 
 
-@lambda_solid(inputs=[InputDefinition('num_csv', DataFrame)], output=OutputDefinition(DataFrame))
+@lambda_solid(
+    input_defs=[InputDefinition('num_csv', DataFrame)], output_def=OutputDefinition(DataFrame)
+)
 def sum_table(num_csv):
     check.inst_param(num_csv, 'num_csv', pd.DataFrame)
     num_csv['sum'] = num_csv['num1'] + num_csv['num2']
     return num_csv
 
 
-@lambda_solid(inputs=[InputDefinition('sum_df', DataFrame)], output=OutputDefinition(DataFrame))
+@lambda_solid(
+    input_defs=[InputDefinition('sum_df', DataFrame)], output_def=OutputDefinition(DataFrame)
+)
 def sum_sq_table(sum_df):
     sum_df['sum_squared'] = sum_df['sum'] * sum_df['sum']
     return sum_df
 
 
 @lambda_solid(
-    inputs=[InputDefinition('sum_table_renamed', DataFrame)], output=OutputDefinition(DataFrame)
+    input_defs=[InputDefinition('sum_table_renamed', DataFrame)],
+    output_def=OutputDefinition(DataFrame),
 )
 def sum_sq_table_renamed_input(sum_table_renamed):
     sum_table_renamed['sum_squared'] = sum_table_renamed['sum'] * sum_table_renamed['sum']
@@ -96,7 +104,7 @@ def test_two_input_solid():
 
     two_input_solid = _dataframe_solid(
         name='two_input_solid',
-        inputs=[InputDefinition('num_csv1', DataFrame), InputDefinition('num_csv2', DataFrame)],
+        input_defs=[InputDefinition('num_csv1', DataFrame), InputDefinition('num_csv2', DataFrame)],
         compute_fn=transform,
     )
 
@@ -126,7 +134,7 @@ def test_two_input_solid():
 def test_no_transform_solid():
     num_table = _dataframe_solid(
         name='num_table',
-        inputs=[InputDefinition('num_csv', DataFrame)],
+        input_defs=[InputDefinition('num_csv', DataFrame)],
         compute_fn=lambda _context, inputs: inputs['num_csv'],
     )
     df = get_solid_result_value(num_table)
@@ -167,7 +175,7 @@ def test_pandas_multiple_inputs():
 
     double_sum = _dataframe_solid(
         name='double_sum',
-        inputs=[InputDefinition('num_csv1', DataFrame), InputDefinition('num_csv2', DataFrame)],
+        input_defs=[InputDefinition('num_csv1', DataFrame), InputDefinition('num_csv2', DataFrame)],
         compute_fn=compute_fn,
     )
 

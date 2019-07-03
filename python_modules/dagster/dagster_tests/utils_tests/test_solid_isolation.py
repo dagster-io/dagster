@@ -36,7 +36,7 @@ def test_single_solid_with_single():
     def solid_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition(name='num')])
+    @lambda_solid(input_defs=[InputDefinition(name='num')])
     def add_one_solid(num):
         return num + 1
 
@@ -55,7 +55,7 @@ def test_single_solid_with_multiple_inputs():
     def solid_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition(name='num_one'), InputDefinition('num_two')])
+    @lambda_solid(input_defs=[InputDefinition(name='num_one'), InputDefinition('num_two')])
     def add_solid(num_one, num_two):
         return num_one + num_two
 
@@ -113,7 +113,7 @@ def test_single_solid_with_context_config():
 
     pipeline_def = PipelineDefinition(
         solid_defs=[check_context_config_for_two],
-        mode_definitions=[ModeDefinition(resources={'num': num_resource})],
+        mode_defs=[ModeDefinition(resource_defs={'num': num_resource})],
     )
 
     result = execute_solid(
@@ -148,7 +148,7 @@ def test_single_solid_error():
 
 
 def test_single_solid_type_checking_output_error():
-    @lambda_solid(output=OutputDefinition(types.Int))
+    @lambda_solid(output_def=OutputDefinition(types.Int))
     def return_string():
         return 'ksjdfkjd'
 

@@ -12,9 +12,9 @@ from dagster import (
     Path,
     PipelineDefinition,
     as_dagster_type,
-    input_schema,
+    input_hydration_config,
     lambda_solid,
-    output_schema,
+    output_materialization_config,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import ExecutionSelector
@@ -33,7 +33,7 @@ class PoorMansDataFrame_(list):
     pass
 
 
-@input_schema(Path)
+@input_hydration_config(Path)
 def df_input_schema(_context, path):
     with open(path, 'r') as fd:
         return PoorMansDataFrame_(
@@ -41,7 +41,7 @@ def df_input_schema(_context, path):
         )
 
 
-@output_schema(Path)
+@output_materialization_config(Path)
 def df_output_schema(_context, path, value):
     with open(path, 'w') as fd:
         writer = csv.DictWriter(fd, fieldnames=value[0].keys())
@@ -52,7 +52,9 @@ def df_output_schema(_context, path, value):
 
 
 PoorMansDataFrame = as_dagster_type(
-    PoorMansDataFrame_, input_schema=df_input_schema, output_schema=df_output_schema
+    PoorMansDataFrame_,
+    input_hydration_config=df_input_schema,
+    output_materialization_config=df_output_schema,
 )
 
 
@@ -147,7 +149,8 @@ def test_execution_crash():
 
 
 @lambda_solid(
-    inputs=[InputDefinition('num', PoorMansDataFrame)], output=OutputDefinition(PoorMansDataFrame)
+    input_defs=[InputDefinition('num', PoorMansDataFrame)],
+    output_def=OutputDefinition(PoorMansDataFrame),
 )
 def sum_solid(num):
     sum_df = deepcopy(num)
@@ -157,16 +160,16 @@ def sum_solid(num):
 
 
 @lambda_solid(
-    inputs=[InputDefinition('sum_df', PoorMansDataFrame)],
-    output=OutputDefinition(PoorMansDataFrame),
+    input_defs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    output_def=OutputDefinition(PoorMansDataFrame),
 )
 def error_solid(sum_df):  # pylint: disable=W0613
     raise Exception('foo')
 
 
 @lambda_solid(
-    inputs=[InputDefinition('sum_df', PoorMansDataFrame)],
-    output=OutputDefinition(PoorMansDataFrame),
+    input_defs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    output_def=OutputDefinition(PoorMansDataFrame),
 )
 def crashy_solid(sum_df):  # pylint: disable=W0613
     os._exit(1)  # pylint: disable=W0212

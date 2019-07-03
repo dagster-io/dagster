@@ -44,7 +44,7 @@ Let us now add the input schema:
 
 .. code-block:: py
 
-    @input_schema(
+    @input_hydration_config(
         Selector(
             {
                 'csv': define_csv_dict_field(),

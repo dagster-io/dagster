@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { StepKind } from "./globalTypes";
+import { StepKind } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: ExecutionPlanFragment

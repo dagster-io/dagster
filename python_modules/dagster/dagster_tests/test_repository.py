@@ -23,9 +23,7 @@ def define_single_mode_pipeline():
         return 2
 
     return PipelineDefinition(
-        name='single_mode',
-        solid_defs=[return_two],
-        mode_definitions=[ModeDefinition(name='the_mode')],
+        name='single_mode', solid_defs=[return_two], mode_defs=[ModeDefinition(name='the_mode')]
     )
 
 
@@ -37,7 +35,7 @@ def define_multi_mode_pipeline():
     return PipelineDefinition(
         name='multi_mode',
         solid_defs=[return_three],
-        mode_definitions=[ModeDefinition(name='mode_one'), ModeDefinition('mode_two')],
+        mode_defs=[ModeDefinition(name='mode_one'), ModeDefinition('mode_two')],
     )
 
 
@@ -65,12 +63,12 @@ def define_multi_mode_with_resources_pipeline():
     return PipelineDefinition(
         name='multi_mode_with_resources',
         solid_defs=[apply_to_three],
-        mode_definitions=[
-            ModeDefinition(name='add_mode', resources={'op': adder_resource}),
-            ModeDefinition(name='mult_mode', resources={'op': multer_resource}),
+        mode_defs=[
+            ModeDefinition(name='add_mode', resource_defs={'op': adder_resource}),
+            ModeDefinition(name='mult_mode', resource_defs={'op': multer_resource}),
             ModeDefinition(
                 name='double_adder_mode',
-                resources={'op': double_adder_resource},
+                resource_defs={'op': double_adder_resource},
                 description='Mode that adds two numbers to thing',
             ),
         ],

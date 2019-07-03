@@ -41,22 +41,22 @@ def return_two():
     return 2
 
 
-@lambda_solid(inputs=[InputDefinition('num')])
+@lambda_solid(input_defs=[InputDefinition('num')])
 def add_one(num):
     return num + 1
 
 
-@lambda_solid(inputs=[InputDefinition('num')])
+@lambda_solid(input_defs=[InputDefinition('num')])
 def pipe(num):
     return num
 
 
-@solid(inputs=[InputDefinition('int_1', Int), InputDefinition('int_2', Int)])
+@solid(input_defs=[InputDefinition('int_1', Int), InputDefinition('int_2', Int)])
 def adder(_context, int_1, int_2):
     return int_1 + int_2
 
 
-@solid(outputs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
+@solid(output_defs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
 def return_mult(_context):
     yield Output(1, 'one')
     yield Output(2, 'two')
@@ -156,7 +156,7 @@ def test_multiple():
 
 
 def test_two_inputs_with_dsl():
-    @lambda_solid(inputs=[InputDefinition('num_one'), InputDefinition('num_two')])
+    @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
     def add(num_one, num_two):
         return num_one + num_two
 
@@ -190,12 +190,12 @@ def test_basic_aliasing_with_dsl():
 
 
 def test_diamond_graph():
-    @solid(outputs=[OutputDefinition(name='value_one'), OutputDefinition(name='value_two')])
+    @solid(output_defs=[OutputDefinition(name='value_one'), OutputDefinition(name='value_two')])
     def emit_values(_context):
         yield Output(1, 'value_one')
         yield Output(2, 'value_two')
 
-    @lambda_solid(inputs=[InputDefinition('num_one'), InputDefinition('num_two')])
+    @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
     def add(num_one, num_two):
         return num_one + num_two
 
@@ -210,12 +210,14 @@ def test_diamond_graph():
 
 
 def test_mapping():
-    @lambda_solid(inputs=[InputDefinition('num_in', Int)], output=OutputDefinition(Int, 'num_out'))
+    @lambda_solid(
+        input_defs=[InputDefinition('num_in', Int)], output_def=OutputDefinition(Int, 'num_out')
+    )
     def double(num_in):
         return num_in * 2
 
     @composite_solid(
-        inputs=[InputDefinition('num_in', Int)], outputs=[OutputDefinition(Int, 'num_out')]
+        input_defs=[InputDefinition('num_in', Int)], output_defs=[OutputDefinition(Int, 'num_out')]
     )
     def composed_inout(num_in):
         return double(num_in=num_in)
@@ -257,7 +259,7 @@ def test_mapping_args_kwargs():
 
 
 def test_output_map_mult():
-    @composite_solid(outputs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
+    @composite_solid(output_defs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
     def wrap_mult():
         return return_mult()
 
@@ -273,7 +275,7 @@ def test_output_map_mult():
 
 
 def test_output_map_mult_swizzle():
-    @composite_solid(outputs=[OutputDefinition(Int, 'x'), OutputDefinition(Int, 'y')])
+    @composite_solid(output_defs=[OutputDefinition(Int, 'x'), OutputDefinition(Int, 'y')])
     def wrap_mult():
         one, two = return_mult()
         return {'x': one, 'y': two}
@@ -292,19 +294,21 @@ def test_output_map_mult_swizzle():
 def test_output_map_fail():
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @composite_solid(outputs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
+        @composite_solid(output_defs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
         def _bad(_context):
             return return_one()
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @composite_solid(outputs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
+        @composite_solid(output_defs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
         def _bad(_context):
             return {'one': 1}
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @composite_solid(outputs=[OutputDefinition(Int, 'three'), OutputDefinition(Int, 'four')])
+        @composite_solid(
+            output_defs=[OutputDefinition(Int, 'three'), OutputDefinition(Int, 'four')]
+        )
         def _bad():
             return return_mult()
 
@@ -314,27 +318,27 @@ def test_deep_graph():
     def download_num(context):
         return context.solid_config
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def unzip_num(num):
         return num
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def ingest_num(num):
         return num
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def subsample_num(num):
         return num
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def canonicalize_num(num):
         return num
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def load_num(num):
         return num + 3
 
-    @composite_solid(outputs=[OutputDefinition(Int)])
+    @composite_solid(output_defs=[OutputDefinition(Int)])
     def test():
         return load_num(
             num=canonicalize_num(
@@ -353,7 +357,7 @@ def test_deep_graph():
 def test_recursion():
     @composite_solid
     def outer():
-        @composite_solid(outputs=[OutputDefinition()])
+        @composite_solid(output_defs=[OutputDefinition()])
         def inner():
             return add_one(return_one())
 
@@ -391,7 +395,7 @@ def test_recursion_with_exceptions():
 
 
 def test_pipeline_has_solid_def():
-    @composite_solid(outputs=[OutputDefinition()])
+    @composite_solid(output_defs=[OutputDefinition()])
     def inner():
         return add_one(return_one())
 
@@ -409,7 +413,7 @@ def test_pipeline_has_solid_def():
 
 
 def test_repositry_has_solid_def():
-    @composite_solid(outputs=[OutputDefinition()])
+    @composite_solid(output_defs=[OutputDefinition()])
     def inner():
         return add_one(return_one())
 
@@ -480,10 +484,10 @@ def test_calling_soild_outside_fn():
 
 
 def test_compose_nothing():
-    @lambda_solid(inputs=[InputDefinition('start', Nothing)])
+    @lambda_solid(input_defs=[InputDefinition('start', Nothing)])
     def go():
         pass
 
-    @composite_solid(inputs=[InputDefinition('start', Nothing)])
+    @composite_solid(input_defs=[InputDefinition('start', Nothing)])
     def _compose(start):
         go(start)  # pylint: disable=too-many-function-args

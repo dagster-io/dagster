@@ -46,7 +46,7 @@ def define_hello_cloudwatch_pipeline():
     return PipelineDefinition(
         [hello_cloudwatch],
         name='hello_cloudwatch_pipeline',
-        mode_definitions=[ModeDefinition(loggers={'cloudwatch': cloudwatch_logger})],
+        mode_defs=[ModeDefinition(logger_defs={'cloudwatch': cloudwatch_logger})],
     )
 
 

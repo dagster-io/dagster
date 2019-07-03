@@ -6,15 +6,13 @@ from dagster import (
     EventMetadataEntry,
     Field,
     Materialization,
-    NamedSelector,
     Path,
     String,
     TypeCheck,
     as_dagster_type,
     check,
-    input_selector_schema,
-    output_selector_schema,
 )
+from dagster.core.types import NamedSelector, input_selector_schema, output_selector_schema
 
 
 def define_path_dict_field():
@@ -92,8 +90,8 @@ DataFrame = as_dagster_type(
     description='''Two-dimensional size-mutable, potentially heterogeneous
     tabular data structure with labeled axes (rows and columns).
     See http://pandas.pydata.org/''',
-    input_schema=dataframe_input_schema,
-    output_schema=dataframe_output_schema,
+    input_hydration_config=dataframe_input_schema,
+    output_materialization_config=dataframe_output_schema,
     metadata_fn=lambda value: TypeCheck(
         metadata_entries=[
             EventMetadataEntry.text(str(len(value)), 'row_count', 'Number of rows in DataFrame'),

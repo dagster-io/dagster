@@ -125,8 +125,8 @@ def define_hello_modes_pipeline():
         solid_defs=[hello_logs],
         name='hello_modes',
         modes=[
-            ModeDefinition(name='local', loggers={'console': colored_console_logger}),
-            ModeDefinition(name='prod', loggers={'cloudwatch': cloudwatch_logger})
+            ModeDefinition(name='local', logger_defs={'console': colored_console_logger}),
+            ModeDefinition(name='prod', logger_defs={'cloudwatch': cloudwatch_logger})
         ]
     )
 ```

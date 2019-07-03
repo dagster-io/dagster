@@ -2,7 +2,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
 
-from .expectation import ExpectationDefinition
+from .expectation import IOExpectationDefinition
 from .utils import check_valid_name, DEFAULT_OUTPUT
 
 
@@ -15,7 +15,7 @@ class OutputDefinition(object):
     Attributes:
         runtime_type (DagsterType): Type of the output. Defaults to types.Any.
         name (str): Name of the output. Defaults to "result".
-        expectations List[ExpectationDefinition]: Expectations for this output.
+        expectations List[IOExpectationDefinition]: Expectations for this output.
         description (str): Description of the output. Optional.
         is_optional (bool): If this output is optional. Optional, defaults to false.
     '''
@@ -28,7 +28,7 @@ class OutputDefinition(object):
         self.runtime_type = check.inst(resolve_to_runtime_type(dagster_type), RuntimeType)
 
         self.expectations = check.opt_list_param(
-            expectations, 'expectations', of_type=ExpectationDefinition
+            expectations, 'expectations', of_type=IOExpectationDefinition
         )
         self.description = check.opt_str_param(description, 'description')
 

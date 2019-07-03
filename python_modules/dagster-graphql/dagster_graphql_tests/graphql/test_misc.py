@@ -124,8 +124,8 @@ def define_circular_dependency_pipeline():
         solid_defs=[
             SolidDefinition(
                 name='csolid',
-                inputs=[InputDefinition('num', PoorMansDataFrame)],
-                outputs=[OutputDefinition(PoorMansDataFrame)],
+                input_defs=[InputDefinition('num', PoorMansDataFrame)],
+                output_defs=[OutputDefinition(PoorMansDataFrame)],
                 compute_fn=lambda *_args: None,
             )
         ],

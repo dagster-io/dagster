@@ -19,7 +19,7 @@ def define_two_int_pipeline():
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def add_one(num):
         return num + 1
 
@@ -58,7 +58,9 @@ def test_execution_plan_simple_two_steps():
 
 
 def test_execution_plan_two_outputs():
-    @solid(outputs=[OutputDefinition(types.Int, 'num_one'), OutputDefinition(types.Int, 'num_two')])
+    @solid(
+        output_defs=[OutputDefinition(types.Int, 'num_one'), OutputDefinition(types.Int, 'num_two')]
+    )
     def return_one_two(_context):
         yield Output(1, 'num_one')
         yield Output(2, 'num_two')

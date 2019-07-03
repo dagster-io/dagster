@@ -49,7 +49,7 @@ def test_python_mapping():
     int_runtime = resolve_to_runtime_type(float)
     assert int_runtime.name == 'Float'
 
-    @lambda_solid(inputs=[InputDefinition('num', int)])
+    @lambda_solid(input_defs=[InputDefinition('num', int)])
     def add_one(num):
         return num + 1
 

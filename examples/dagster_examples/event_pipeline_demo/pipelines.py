@@ -101,8 +101,10 @@ def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip
         )
     ),
     description='Downloads an object from S3 to a file.',
-    outputs=[OutputDefinition(FileExistsAtPath, description='The path to the downloaded object.')],
-    required_resources={'s3'},
+    output_defs=[
+        OutputDefinition(FileExistsAtPath, description='The path to the downloaded object.')
+    ],
+    required_resource_keys={'s3'},
 )
 def download_from_s3_to_file(context):
     '''Download an object from S3 to a local file.
@@ -116,7 +118,9 @@ def download_from_s3_to_file(context):
     )
 
 
-@lambda_solid(inputs=[InputDefinition('gzip_file', String)], output=OutputDefinition(List[String]))
+@lambda_solid(
+    input_defs=[InputDefinition('gzip_file', String)], output_def=OutputDefinition(List[String])
+)
 def gunzipper(gzip_file):
     '''gunzips /path/to/foo.gz to /path/to/raw/2019/01/01/data.json
     '''
@@ -136,10 +140,12 @@ def gunzipper(gzip_file):
 
 
 @pipeline(
-    mode_definitions=[
-        ModeDefinition(name='local', resources={'s3': s3_resource, 'snowflake': snowflake_resource})
+    mode_defs=[
+        ModeDefinition(
+            name='local', resource_defs={'s3': s3_resource, 'snowflake': snowflake_resource}
+        )
     ],
-    preset_definitions=[
+    preset_defs=[
         PresetDefinition(
             name='local',
             mode='local',

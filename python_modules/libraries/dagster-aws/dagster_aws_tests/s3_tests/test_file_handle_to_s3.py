@@ -12,8 +12,8 @@ def create_file_handle_pipeline(temp_file_handle, s3_resource):
         return temp_file_handle
 
     @pipeline(
-        mode_definitions=[
-            ModeDefinition(resources={'s3': ResourceDefinition.hardcoded_resource(s3_resource)})
+        mode_defs=[
+            ModeDefinition(resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3_resource)})
         ]
     )
     def test():

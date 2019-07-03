@@ -19,7 +19,7 @@ def define_string_resource():
 def test_basic_resource():
     called = {}
 
-    @solid(required_resources={'a_string'})
+    @solid(required_resource_keys={'a_string'})
     def a_solid(context):
         called['yup'] = True
         assert context.resources.a_string == 'foo'
@@ -27,7 +27,7 @@ def test_basic_resource():
     pipeline_def = PipelineDefinition(
         name='with_a_resource',
         solid_defs=[a_solid],
-        mode_definitions=[ModeDefinition(resources={'a_string': define_string_resource()})],
+        mode_defs=[ModeDefinition(resource_defs={'a_string': define_string_resource()})],
     )
 
     result = execute_pipeline(pipeline_def, {'resources': {'a_string': {'config': 'foo'}}})
@@ -39,7 +39,7 @@ def test_basic_resource():
 def test_yield_resource():
     called = {}
 
-    @solid(required_resources={'a_string'})
+    @solid(required_resource_keys={'a_string'})
     def a_solid(context):
         called['yup'] = True
         assert context.resources.a_string == 'foo'
@@ -52,7 +52,7 @@ def test_yield_resource():
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
         solid_defs=[a_solid],
-        mode_definitions=[ModeDefinition(resources={'a_string': yield_string_resource})],
+        mode_defs=[ModeDefinition(resource_defs={'a_string': yield_string_resource})],
     )
 
     result = execute_pipeline(pipeline_def, {'resources': {'a_string': {'config': 'foo'}}})
@@ -66,7 +66,7 @@ def test_yield_multiple_resources():
 
     saw = []
 
-    @solid(required_resources={'string_one', 'string_two'})
+    @solid(required_resource_keys={'string_one', 'string_two'})
     def a_solid(context):
         called['yup'] = True
         assert context.resources.string_one == 'foo'
@@ -82,9 +82,12 @@ def test_yield_multiple_resources():
     pipeline_def = PipelineDefinition(
         name='with_yield_resources',
         solid_defs=[a_solid],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={'string_one': yield_string_resource, 'string_two': yield_string_resource}
+                resource_defs={
+                    'string_one': yield_string_resource,
+                    'string_two': yield_string_resource,
+                }
             )
         ],
     )
@@ -109,7 +112,7 @@ def test_resource_decorator():
 
     saw = []
 
-    @solid(required_resources={'string_one', 'string_two'})
+    @solid(required_resource_keys={'string_one', 'string_two'})
     def a_solid(context):
         called['yup'] = True
         assert context.resources.string_one == 'foo'
@@ -124,9 +127,9 @@ def test_resource_decorator():
     pipeline_def = PipelineDefinition(
         name='with_yield_resources',
         solid_defs=[a_solid],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={
+                resource_defs={
                     'string_one': yielding_string_resource,
                     'string_two': yielding_string_resource,
                 }
@@ -154,7 +157,7 @@ def test_mixed_multiple_resources():
 
     saw = []
 
-    @solid(required_resources={'returned_string', 'yielded_string'})
+    @solid(required_resource_keys={'returned_string', 'yielded_string'})
     def a_solid(context):
         called['yup'] = True
         assert context.resources.returned_string == 'foo'
@@ -180,9 +183,9 @@ def test_mixed_multiple_resources():
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
         solid_defs=[a_solid],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={
+                resource_defs={
                     'yielded_string': yield_string_resource,
                     'returned_string': return_string_resource,
                 }
@@ -206,7 +209,7 @@ def test_mixed_multiple_resources():
 def test_none_resource():
     called = {}
 
-    @solid(required_resources={'test_null'})
+    @solid(required_resource_keys={'test_null'})
     def solid_test_null(context):
         assert context.resources.test_null is None
         called['yup'] = True
@@ -214,9 +217,7 @@ def test_none_resource():
     pipeline = PipelineDefinition(
         name='test_none_resource',
         solid_defs=[solid_test_null],
-        mode_definitions=[
-            ModeDefinition(resources={'test_null': ResourceDefinition.none_resource()})
-        ],
+        mode_defs=[ModeDefinition(resource_defs={'test_null': ResourceDefinition.none_resource()})],
     )
 
     result = execute_pipeline(pipeline)
@@ -228,7 +229,7 @@ def test_none_resource():
 def test_string_resource():
     called = {}
 
-    @solid(required_resources={'test_string'})
+    @solid(required_resource_keys={'test_string'})
     def solid_test_string(context):
         assert context.resources.test_string == 'foo'
         called['yup'] = True
@@ -236,8 +237,8 @@ def test_string_resource():
     pipeline = PipelineDefinition(
         name='test_string_resource',
         solid_defs=[solid_test_string],
-        mode_definitions=[
-            ModeDefinition(resources={'test_string': ResourceDefinition.string_resource()})
+        mode_defs=[
+            ModeDefinition(resource_defs={'test_string': ResourceDefinition.string_resource()})
         ],
     )
 
@@ -255,7 +256,7 @@ def test_no_config_resource_pass_none():
         called['resource'] = True
         return 'thing'
 
-    @solid(required_resources={'return_thing'})
+    @solid(required_resource_keys={'return_thing'})
     def check_thing(context):
         called['solid'] = True
         assert context.resources.return_thing == 'thing'
@@ -263,7 +264,7 @@ def test_no_config_resource_pass_none():
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
         solid_defs=[check_thing],
-        mode_definitions=[ModeDefinition(resources={'return_thing': return_thing})],
+        mode_defs=[ModeDefinition(resource_defs={'return_thing': return_thing})],
     )
 
     execute_pipeline(pipeline)
@@ -280,7 +281,7 @@ def test_no_config_resource_no_arg():
         called['resource'] = True
         return 'thing'
 
-    @solid(required_resources={'return_thing'})
+    @solid(required_resource_keys={'return_thing'})
     def check_thing(context):
         called['solid'] = True
         assert context.resources.return_thing == 'thing'
@@ -288,7 +289,7 @@ def test_no_config_resource_no_arg():
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
         solid_defs=[check_thing],
-        mode_definitions=[ModeDefinition(resources={'return_thing': return_thing})],
+        mode_defs=[ModeDefinition(resource_defs={'return_thing': return_thing})],
     )
 
     execute_pipeline(pipeline)
@@ -305,7 +306,7 @@ def test_no_config_resource_bare_no_arg():
         called['resource'] = True
         return 'thing'
 
-    @solid(required_resources={'return_thing'})
+    @solid(required_resource_keys={'return_thing'})
     def check_thing(context):
         called['solid'] = True
         assert context.resources.return_thing == 'thing'
@@ -313,7 +314,7 @@ def test_no_config_resource_bare_no_arg():
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
         solid_defs=[check_thing],
-        mode_definitions=[ModeDefinition(resources={'return_thing': return_thing})],
+        mode_defs=[ModeDefinition(resource_defs={'return_thing': return_thing})],
     )
 
     execute_pipeline(pipeline)
@@ -329,7 +330,7 @@ def test_no_config_resource_definition():
         called['resource'] = True
         return 'thing'
 
-    @solid(required_resources={'return_thing'})
+    @solid(required_resource_keys={'return_thing'})
     def check_thing(context):
         called['solid'] = True
         assert context.resources.return_thing == 'thing'
@@ -337,9 +338,9 @@ def test_no_config_resource_definition():
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
         solid_defs=[check_thing],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={'return_thing': ResourceDefinition(_return_thing_resource_fn)}
+                resource_defs={'return_thing': ResourceDefinition(_return_thing_resource_fn)}
             )
         ],
     )
@@ -358,7 +359,7 @@ def test_resource_cleanup():
         yield True
         called['cleanup'] = True
 
-    @solid(required_resources={'resource_with_cleanup'})
+    @solid(required_resource_keys={'resource_with_cleanup'})
     def check_resource_created(context):
         called['solid'] = True
         assert context.resources.resource_with_cleanup is True
@@ -366,9 +367,9 @@ def test_resource_cleanup():
     pipeline = PipelineDefinition(
         name='test_resource_cleanup',
         solid_defs=[check_resource_created],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={'resource_with_cleanup': ResourceDefinition(_cleanup_resource_fn)}
+                resource_defs={'resource_with_cleanup': ResourceDefinition(_cleanup_resource_fn)}
             )
         ],
     )
@@ -393,7 +394,7 @@ def test_stacked_resource_cleanup():
         yield True
         called.append('cleanup_2')
 
-    @solid(required_resources={'resource_with_cleanup_1', 'resource_with_cleanup_2'})
+    @solid(required_resource_keys={'resource_with_cleanup_1', 'resource_with_cleanup_2'})
     def check_resource_created(context):
         called.append('solid')
         assert context.resources.resource_with_cleanup_1 is True
@@ -402,9 +403,9 @@ def test_stacked_resource_cleanup():
     pipeline = PipelineDefinition(
         name='test_resource_cleanup',
         solid_defs=[check_resource_created],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={
+                resource_defs={
                     'resource_with_cleanup_1': ResourceDefinition(_cleanup_resource_fn_1),
                     'resource_with_cleanup_2': ResourceDefinition(_cleanup_resource_fn_2),
                 }

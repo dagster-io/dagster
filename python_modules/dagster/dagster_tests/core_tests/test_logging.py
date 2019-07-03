@@ -137,7 +137,7 @@ def test_multiline_logging_complex():
                     stack=[
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/errors.py", line 186, in user_code_error_boundary\n    yield\n',
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/simple_engine.py", line 365, in _event_sequence_for_step_compute_fn\n    for step_output in gen:\n',
-                        '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/materialization_thunk.py", line 28, in _fn\n    runtime_type.output_schema.materialize_runtime_value(config_spec, runtime_value)\n',
+                        '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/materialization_thunk.py", line 28, in _fn\n    runtime_type.output_materialization_config.materialize_runtime_value(config_spec, runtime_value)\n',
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/config_schema.py", line 93, in materialize_runtime_value\n    return func(config_value, runtime_value)\n',
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/config_schema.py", line 110, in _selector\n    return func(selector_key, selector_value, runtime_value)\n',
                         '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/builtin_config_schemas.py", line 59, in _builtin_output_schema\n    with open(json_file_path, \'w\') as ff:\n',
@@ -178,7 +178,7 @@ def test_multiline_logging_complex():
                 [
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/errors.py", line 186, in user_code_error_boundary\n    yield\n',
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/simple_engine.py", line 365, in _event_sequence_for_step_compute_fn\n    for step_output in gen:\n',
-                    '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/materialization_thunk.py", line 28, in _fn\n    runtime_type.output_schema.materialize_runtime_value(config_spec, runtime_value)\n',
+                    '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/execution_plan/materialization_thunk.py", line 28, in _fn\n    runtime_type.output_materialization_config.materialize_runtime_value(config_spec, runtime_value)\n',
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/config_schema.py", line 93, in materialize_runtime_value\n    return func(config_value, runtime_value)\n',
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/config_schema.py", line 110, in _selector\n    return func(selector_key, selector_value, runtime_value)\n',
                     '  File "/Users/nate/src/dagster/python_modules/dagster/dagster/core/types/builtin_config_schemas.py", line 59, in _builtin_output_schema\n    with open(json_file_path, \'w\') as ff:\n',
@@ -208,7 +208,7 @@ def test_multiline_logging_complex():
 def test_default_context_logging():
     called = {}
 
-    @solid(inputs=[], outputs=[])
+    @solid(input_defs=[], output_defs=[])
     def default_context_transform(context):
         called['yes'] = True
         for logger in context.log.loggers:
@@ -235,7 +235,7 @@ def test_json_console_logger(capsys):
 
     execute_pipeline(
         PipelineDefinition(
-            [hello_world], mode_definitions=[ModeDefinition(loggers={'json': json_console_logger})]
+            [hello_world], mode_defs=[ModeDefinition(logger_defs={'json': json_console_logger})]
         ),
         {'loggers': {'json': {'config': {}}}},
     )

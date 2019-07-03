@@ -12,9 +12,9 @@ export enum LogLevel {
 }
 
 export const DefaultLogFilter = {
-  levels: Object.keys(LogLevel).reduce(
-    (dict, key) => ({ ...dict, [key]: true }),
-    {}
+  levels: Object.assign(
+    Object.keys(LogLevel).reduce((dict, key) => ({ ...dict, [key]: true }), {}),
+    { [LogLevel.DEBUG]: false }
   ),
   text: "",
   since: 0

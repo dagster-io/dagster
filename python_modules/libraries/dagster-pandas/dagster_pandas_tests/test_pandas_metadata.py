@@ -10,7 +10,7 @@ def test_basic_pd_df_input_metadata():
     def return_num_csv():
         return pd.read_csv(file_relative_path(__file__, 'num.csv'))
 
-    @lambda_solid(inputs=[InputDefinition('df', DataFrame)])
+    @lambda_solid(input_defs=[InputDefinition('df', DataFrame)])
     def noop(df):
         return df
 

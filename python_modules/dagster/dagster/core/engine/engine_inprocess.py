@@ -136,7 +136,7 @@ def _input_values_from_intermediates_manager(step_context):
                 step_context, step_input.runtime_type, step_input.prev_output_handle
             )
         else:  # is from config
-            input_value = step_input.runtime_type.input_schema.construct_from_config_value(
+            input_value = step_input.runtime_type.input_hydration_config.construct_from_config_value(
                 step_context, step_input.config_data
             )
         input_values[step_input.name] = input_value
@@ -510,7 +510,7 @@ def _create_output_materializations(step_context, output_name, value):
         config_output_name, output_spec = list(output_spec.items())[0]
         if config_output_name == output_name:
             step_output = step.step_output_named(output_name)
-            materialization = step_output.runtime_type.output_schema.materialize_runtime_value(
+            materialization = step_output.runtime_type.output_materialization_config.materialize_runtime_value(
                 step_context, output_spec, value
             )
 

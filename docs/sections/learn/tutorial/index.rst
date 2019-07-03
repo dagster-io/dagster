@@ -18,5 +18,7 @@ Tutorial
   expectations
   multiple_outputs
   reusable_solids
+  composite_solids
   unittesting
+  composition_functions
   dagstermill

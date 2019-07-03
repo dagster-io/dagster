@@ -13,9 +13,9 @@ def test_logging():
     pipeline_def = PipelineDefinition(
         name='hello_logging_pipeline',
         solid_defs=[define_hello_logging_solid()],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                loggers={
+                logger_defs={
                     'test': construct_single_handler_logger(
                         'test', 'debug', LogTestHandler(records)
                     ),

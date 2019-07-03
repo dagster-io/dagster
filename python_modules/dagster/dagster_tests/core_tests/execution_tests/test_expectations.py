@@ -20,7 +20,7 @@ def expt_results_for_compute_step(result, solid_name):
 
 
 def test_successful_expectation_in_compute_step():
-    @solid(outputs=[])
+    @solid(output_defs=[])
     def success_expectation_solid(_context):
         yield ExpectationResult(success=True, description='This is always true.')
 
@@ -42,7 +42,7 @@ def test_successful_expectation_in_compute_step():
 
 
 def test_failed_expectation_in_compute_step():
-    @solid(outputs=[])
+    @solid(output_defs=[])
     def failure_expectation_solid(_context):
         yield ExpectationResult(success=False, description='This is always false.')
 
@@ -63,7 +63,7 @@ def test_failed_expectation_in_compute_step():
 
 
 def test_return_expectation_failure():
-    @solid(outputs=[])
+    @solid(output_defs=[])
     def return_expectation_failure(_context):
         return ExpectationResult(success=True, description='This is always true.')
 

@@ -70,7 +70,7 @@ def test_datadog_resource(
     pipeline = PipelineDefinition(
         name='test_datadog_resource',
         solid_defs=[datadog_solid],
-        mode_definitions=[ModeDefinition(resources={'datadog': datadog_resource})],
+        mode_defs=[ModeDefinition(resource_defs={'datadog': datadog_resource})],
     )
 
     result = execute_pipeline(

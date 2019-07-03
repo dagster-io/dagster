@@ -16,11 +16,11 @@ from dagster.utils.test import get_temp_dir
 from dagster_examples.airline_demo.cache_file_from_s3 import cache_file_from_s3
 
 
-def execute_solid_with_resources(solid_def, resources, environment_dict):
+def execute_solid_with_resources(solid_def, resource_defs, environment_dict):
     pipeline_def = PipelineDefinition(
         name='{}_solid_test'.format(solid_def.name),
         solid_defs=[solid_def],
-        mode_definitions=[ModeDefinition(resources=resources)],
+        mode_defs=[ModeDefinition(resource_defs=resource_defs)],
     )
 
     return execute_pipeline(pipeline_def, environment_dict)
@@ -31,7 +31,7 @@ def test_cache_file_from_s3_basic():
     with get_temp_dir() as temp_dir:
         pipeline_result = execute_solid_with_resources(
             cache_file_from_s3,
-            resources={
+            resource_defs={
                 'file_cache': fs_file_cache,
                 's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session)),
             },
@@ -72,7 +72,7 @@ def test_cache_file_from_s3_specify_target_key():
     with get_temp_dir() as temp_dir:
         pipeline_result = execute_solid_with_resources(
             cache_file_from_s3,
-            resources={
+            resource_defs={
                 'file_cache': fs_file_cache,
                 's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session)),
             },
@@ -101,7 +101,7 @@ def test_cache_file_from_s3_skip_download():
         s3_session_one = mock.MagicMock()
         pipeline_result_one = execute_solid_with_resources(
             cache_file_from_s3,
-            resources={
+            resource_defs={
                 'file_cache': fs_file_cache,
                 's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session_one)),
             },
@@ -122,7 +122,7 @@ def test_cache_file_from_s3_skip_download():
         s3_session_two = mock.MagicMock()
         pipeline_result_two = execute_solid_with_resources(
             cache_file_from_s3,
-            resources={
+            resource_defs={
                 'file_cache': fs_file_cache,
                 's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session_two)),
             },
@@ -146,7 +146,7 @@ def test_cache_file_from_s3_overwrite():
         s3_session_one = mock.MagicMock()
         pipeline_result_one = execute_solid_with_resources(
             cache_file_from_s3,
-            resources={
+            resource_defs={
                 'file_cache': fs_file_cache,
                 's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session_one)),
             },
@@ -169,7 +169,7 @@ def test_cache_file_from_s3_overwrite():
         s3_session_two = mock.MagicMock()
         pipeline_result_two = execute_solid_with_resources(
             cache_file_from_s3,
-            resources={
+            resource_defs={
                 'file_cache': fs_file_cache,
                 's3': ResourceDefinition.hardcoded_resource(s3_session_two),
             },
@@ -195,7 +195,7 @@ def test_missing_resources():
         with get_temp_dir() as temp_dir:
             execute_solid_with_resources(
                 cache_file_from_s3,
-                resources={'file_cache': fs_file_cache},
+                resource_defs={'file_cache': fs_file_cache},
                 environment_dict={
                     'solids': {
                         'cache_file_from_s3': {

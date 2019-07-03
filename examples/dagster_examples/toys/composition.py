@@ -13,12 +13,12 @@ from dagster import (
 )
 
 
-@lambda_solid(inputs=[InputDefinition('num', Int)])
+@lambda_solid(input_defs=[InputDefinition('num', Int)])
 def add_one(num):
     return num + 1
 
 
-@lambda_solid(inputs=[InputDefinition('num')])
+@lambda_solid(input_defs=[InputDefinition('num')])
 def div_two(num):
     return num / 2
 

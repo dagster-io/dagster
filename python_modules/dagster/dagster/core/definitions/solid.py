@@ -42,11 +42,11 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
 
     @property
     def has_configurable_inputs(self):
-        return any([inp.runtime_type.input_schema for inp in self.input_defs])
+        return any([inp.runtime_type.input_hydration_config for inp in self.input_defs])
 
     @property
     def has_configurable_outputs(self):
-        return any([out.runtime_type.output_schema for out in self.output_defs])
+        return any([out.runtime_type.output_materialization_config for out in self.output_defs])
 
     @abstractproperty
     def has_config_entry(self):
@@ -106,17 +106,17 @@ class SolidDefinition(ISolidDefinition):
 
     Args:
         name (str): Name of the solid.
-        inputs (List[InputDefinition]): Inputs of the solid.
+        input_defs (List[InputDefinition]): Inputs of the solid.
 
         compute_fn (Callable[[SystemComputeExecutionContext, ], Iterable[Union[Output,
             Materialization]]]): The core of the solid, the function that does the actual
             computation. The arguments passed to this function after context are deteremined by
             ``inputs``.
 
-            This function yields :py:class:`Output` according to ``outputs`` or
+            This function yields :py:class:`Output` according to ``output_defs`` or
             :py:class:`Materialization`.
 
-        outputs (List[OutputDefinition]): Outputs of the solid.
+        input_defs (List[OutputDefinition]): Outputs of the solid.
         config_field (Optional[Field]): How the solid configured.
         description (Optional[str]): Description of the solid.
         metadata (Optional[Dict[Any, Any]]):
@@ -132,8 +132,8 @@ class SolidDefinition(ISolidDefinition):
 
             SolidDefinition(
                 name="add_one",
-                inputs=[InputDefinition("num", Int)],
-                outputs=[OutputDefinition(Int)], # default name ("result")
+                input_defs=[InputDefinition("num", Int)],
+                output_defs=[OutputDefinition(Int)], # default name ("result")
                 compute_fn=_add_one,
             )
     '''
@@ -141,13 +141,13 @@ class SolidDefinition(ISolidDefinition):
     def __init__(
         self,
         name,
-        inputs,
+        input_defs,
         compute_fn,
-        outputs,
+        output_defs,
         config_field=None,
         description=None,
         metadata=None,
-        required_resources=None,
+        required_resource_keys=None,
         step_metadata_fn=None,
     ):
         self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
@@ -156,15 +156,15 @@ class SolidDefinition(ISolidDefinition):
             'config_field',
             'of a SolidDefinition or @solid named "{name}"'.format(name=name),
         )
-        self.required_resources = check.opt_set_param(
-            required_resources, 'required_resources', of_type=str
+        self.required_resource_keys = check.opt_set_param(
+            required_resource_keys, 'required_resource_keys', of_type=str
         )
         self.step_metadata_fn = step_metadata_fn
 
         super(SolidDefinition, self).__init__(
             name=name,
-            input_defs=check.list_param(inputs, 'inputs', InputDefinition),
-            output_defs=check.list_param(outputs, 'outputs', OutputDefinition),
+            input_defs=check.list_param(input_defs, 'input_defs', InputDefinition),
+            output_defs=check.list_param(output_defs, 'output_defs', OutputDefinition),
             description=description,
             metadata=metadata,
         )
@@ -299,12 +299,12 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         return self._dependency_structure
 
     @property
-    def required_resources(self):
-        required_resources = set()
+    def required_resource_keys(self):
+        required_resource_keys = set()
         for solid in self.solids:
-            required_resources.update(solid.definition.required_resources)
+            required_resource_keys.update(solid.definition.required_resource_keys)
 
-        return required_resources
+        return required_resource_keys
 
     @property
     def has_config_mapping(self):

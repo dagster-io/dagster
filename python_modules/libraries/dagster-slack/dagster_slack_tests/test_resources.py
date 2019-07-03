@@ -7,7 +7,7 @@ from dagster_slack import slack_resource
 
 @responses.activate
 def test_slack_resource():
-    @solid(required_resources={'slack'})
+    @solid(required_resource_keys={'slack'})
     def slack_solid(context):
         assert context.resources.slack
         with responses.RequestsMock() as rsps:
@@ -27,7 +27,7 @@ def test_slack_resource():
     pipeline = PipelineDefinition(
         name='test_slack_resource',
         solid_defs=[slack_solid],
-        mode_definitions=[ModeDefinition(resources={'slack': slack_resource})],
+        mode_defs=[ModeDefinition(resource_defs={'slack': slack_resource})],
     )
 
     result = execute_pipeline(

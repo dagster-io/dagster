@@ -32,7 +32,7 @@ def create_root_solid(name):
     inp = InputDefinition(input_name)
 
     return SolidDefinition(
-        name=name, inputs=[inp], compute_fn=_compute_fn, outputs=[OutputDefinition()]
+        name=name, input_defs=[inp], compute_fn=_compute_fn, output_defs=[OutputDefinition()]
     )
 
 
@@ -40,7 +40,7 @@ def create_solid_with_deps(name, *solid_deps):
     inputs = [InputDefinition(solid_dep.name) for solid_dep in solid_deps]
 
     return SolidDefinition(
-        name=name, inputs=inputs, compute_fn=_compute_fn, outputs=[OutputDefinition()]
+        name=name, input_defs=inputs, compute_fn=_compute_fn, output_defs=[OutputDefinition()]
     )
 
 

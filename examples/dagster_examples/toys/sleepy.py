@@ -15,7 +15,9 @@ from dagster import (
 )
 
 
-@lambda_solid(inputs=[InputDefinition('units', List[Int])], output=OutputDefinition(Int, 'total'))
+@lambda_solid(
+    input_defs=[InputDefinition('units', List[Int])], output_def=OutputDefinition(Int, 'total')
+)
 def sleeper(units):
     tot = 0
     for sec in units:
@@ -27,7 +29,7 @@ def sleeper(units):
 
 @solid(
     config_field=Field(List[Int], is_optional=True, default_value=[1, 1, 1, 1]),
-    outputs=[
+    output_defs=[
         OutputDefinition(List[Int], 'out_1'),
         OutputDefinition(List[Int], 'out_2'),
         OutputDefinition(List[Int], 'out_3'),
@@ -47,13 +49,13 @@ def giver(context):
 
 
 @lambda_solid(
-    inputs=[
+    input_defs=[
         InputDefinition('in_1', Int),
         InputDefinition('in_2', Int),
         InputDefinition('in_3', Int),
         InputDefinition('in_4', Int),
     ],
-    output=OutputDefinition(Int),
+    output_def=OutputDefinition(Int),
 )
 def total(in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4

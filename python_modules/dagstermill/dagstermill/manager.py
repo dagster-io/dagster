@@ -178,7 +178,7 @@ class Manager:
             self.solid_def = None
             self.pipeline_def = PipelineDefinition(
                 [],
-                mode_definitions=[ModeDefinition(loggers=loggers)],
+                mode_defs=[ModeDefinition(logger_defs=loggers)],
                 name='Dummy Pipeline (No Repo Registration)',
             )
             self.input_name_type_dict = dict_to_enum(input_name_type_dict)

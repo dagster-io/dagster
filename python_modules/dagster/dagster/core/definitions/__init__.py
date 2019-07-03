@@ -16,7 +16,7 @@ from .environment_schema import (
     create_environment_type,
 )
 
-from .expectation import ExpectationDefinition
+from .expectation import IOExpectationDefinition
 
 from .events import (
     EventMetadataEntry,

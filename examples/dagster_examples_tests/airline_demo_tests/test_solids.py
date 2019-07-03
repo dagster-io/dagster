@@ -19,11 +19,11 @@ from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 
-tempfile_mode = ModeDefinition(name='tempfile', resources={'tempfile': tempfile_resource})
+tempfile_mode = ModeDefinition(name='tempfile', resource_defs={'tempfile': tempfile_resource})
 
 spark_mode = ModeDefinition(
     name='spark',
-    resources={'spark': spark_session_local, 'tempfile': tempfile_resource, 's3': s3_resource},
+    resource_defs={'spark': spark_session_local, 'tempfile': tempfile_resource, 's3': s3_resource},
     system_storage_defs=s3_plus_default_storage_defs,
 )
 

@@ -9,7 +9,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.utils import merge_dicts
 
-from dagster.core.definitions.expectation import ExpectationDefinition
+from dagster.core.definitions.expectation import IOExpectationDefinition
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.output import OutputDefinition
@@ -192,7 +192,7 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
         self._step = check.inst_param(step, 'step', ExecutionStep)
         super(SystemStepExecutionContext, self).__init__(pipeline_context_data, log_manager)
         self._resources = self._pipeline_context_data.scoped_resources_builder.build(
-            self.solid.resource_mapper_fn, self.solid_def.required_resources
+            self.solid.resource_mapper_fn, self.solid_def.required_resource_keys
         )
 
     def for_transform(self):
@@ -236,7 +236,7 @@ class SystemExpectationExecutionContext(SystemStepExecutionContext):
 
     def __init__(self, pipeline_context_data, log_manager, step, inout_def, expectation_def):
         self._expectation_def = check.inst_param(
-            expectation_def, 'expectation_def', ExpectationDefinition
+            expectation_def, 'expectation_def', IOExpectationDefinition
         )
         self._inout_def = check.inst_param(
             inout_def, 'inout_def', (InputDefinition, OutputDefinition)

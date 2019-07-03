@@ -3,7 +3,7 @@ from dagster.core.definitions import create_environment_schema
 
 
 def test_materialization_schema_types():
-    @lambda_solid(output=OutputDefinition(types.String))
+    @lambda_solid(output_def=OutputDefinition(types.String))
     def return_one():
         return 1
 

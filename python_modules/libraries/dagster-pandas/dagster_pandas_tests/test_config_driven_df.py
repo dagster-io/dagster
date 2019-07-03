@@ -39,7 +39,7 @@ def check_parquet_support():
 def test_dataframe_csv_from_inputs():
     called = {}
 
-    @solid(inputs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition('df', DataFrame)])
     def df_as_config(_context, df):
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
@@ -64,7 +64,7 @@ def test_dataframe_csv_from_inputs():
 def test_dataframe_wrong_sep_from_inputs():
     called = {}
 
-    @solid(inputs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition('df', DataFrame)])
     def df_as_config(_context, df):
         # this is the pandas behavior
         assert df.to_dict('list') == {'num1,num2': ['1,2', '3,4']}
@@ -90,7 +90,7 @@ def test_dataframe_wrong_sep_from_inputs():
 def test_dataframe_pipe_sep_csv_from_inputs():
     called = {}
 
-    @solid(inputs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition('df', DataFrame)])
     def df_as_config(_context, df):
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
@@ -117,7 +117,7 @@ def test_dataframe_pipe_sep_csv_from_inputs():
 def test_dataframe_csv_missing_inputs():
     called = {}
 
-    @solid(inputs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition('df', DataFrame)])
     def df_as_input(_context, df):  # pylint: disable=W0613
         called['yup'] = True
 
@@ -140,11 +140,11 @@ def test_dataframe_csv_missing_inputs():
 def test_dataframe_csv_missing_input_collision():
     called = {}
 
-    @solid(outputs=[OutputDefinition(DataFrame)])
+    @solid(output_defs=[OutputDefinition(DataFrame)])
     def df_as_output(_context):
         return pd.DataFrame()
 
-    @solid(inputs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition('df', DataFrame)])
     def df_as_input(_context, df):  # pylint: disable=W0613
         called['yup'] = True
 
@@ -177,7 +177,7 @@ def test_dataframe_parquet_from_inputs():
 
     called = {}
 
-    @solid(inputs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition('df', DataFrame)])
     def df_as_config(_context, df):
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
@@ -202,7 +202,7 @@ def test_dataframe_parquet_from_inputs():
 def test_dataframe_table_from_inputs():
     called = {}
 
-    @solid(inputs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition('df', DataFrame)])
     def df_as_config(_context, df):
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
@@ -225,7 +225,7 @@ def test_dataframe_table_from_inputs():
 
 
 def test_dataframe_csv_materialization():
-    @solid(outputs=[OutputDefinition(DataFrame)])
+    @solid(output_defs=[OutputDefinition(DataFrame)])
     def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
@@ -246,7 +246,7 @@ def test_dataframe_csv_materialization():
 def test_dataframe_parquet_materialization():
     check_parquet_support()
 
-    @solid(outputs=[OutputDefinition(DataFrame)])
+    @solid(output_defs=[OutputDefinition(DataFrame)])
     def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
@@ -265,7 +265,7 @@ def test_dataframe_parquet_materialization():
 
 
 def test_dataframe_table_materialization():
-    @solid(outputs=[OutputDefinition(DataFrame)])
+    @solid(output_defs=[OutputDefinition(DataFrame)])
     def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 

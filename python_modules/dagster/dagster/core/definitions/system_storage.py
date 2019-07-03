@@ -38,7 +38,7 @@ class SystemStorageDefinition:
         system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStorageData])
             Called by the system. The author of the StorageSystemDefinition must provide this function,
             which consumes the init context and then emits the SystemStorageData.
-        required_resources(Set[str]):
+        required_resource_keys(Set[str]):
             The resources that this storage needs at runtime to function.
     '''
 
@@ -48,7 +48,7 @@ class SystemStorageDefinition:
         is_persistent,
         config_field=None,
         system_storage_creation_fn=None,
-        required_resources=None,
+        required_resource_keys=None,
     ):
         self.name = check.str_param(name, 'name')
         self.is_persistent = check.bool_param(is_persistent, 'is_persistent')
@@ -60,8 +60,8 @@ class SystemStorageDefinition:
         self.system_storage_creation_fn = check.opt_callable_param(
             system_storage_creation_fn, 'system_storage_creation_fn'
         )
-        self.required_resources = check.opt_set_param(
-            required_resources, 'required_resources', of_type=str
+        self.required_resource_keys = check.opt_set_param(
+            required_resource_keys, 'required_resource_keys', of_type=str
         )
 
 
@@ -75,7 +75,7 @@ class SystemStorageData:
 
 
 def system_storage(
-    name=None, is_persistent=True, config_field=None, config=None, required_resources=None
+    name=None, is_persistent=True, config_field=None, config=None, required_resource_keys=None
 ):
     '''A decorator for creating a SystemStorageDefinition. The decorated function will be used as the
     system_storage_creation_fn in a SystemStorageDefinition.
@@ -85,7 +85,7 @@ def system_storage(
         is_persistent (bool): Does storage def persist in way that can cross process/node
             boundaries. Execution with, for example, the multiprocess executor or within
             the context of dagster-airflow require a persistent storage mode.
-        required_resources (Set[str]):
+        required_resource_keys (Set[str]):
             The resources that this storage needs at runtime to function.
         config (Dict[str, Field]):
             The schema for the configuration data made available to the system_storage_creation_fn.
@@ -100,23 +100,25 @@ def system_storage(
         check.invariant(name is None)
         check.invariant(is_persistent is True)
         check.invariant(config_field is None)
-        check.invariant(required_resources is None)
+        check.invariant(required_resource_keys is None)
         return _SystemStorageDecoratorCallable()(name)
 
     return _SystemStorageDecoratorCallable(
         name=name,
         is_persistent=is_persistent,
         config_field=resolve_config_field(config_field, config, '@system_storage'),
-        required_resources=required_resources,
+        required_resource_keys=required_resource_keys,
     )
 
 
 class _SystemStorageDecoratorCallable:
-    def __init__(self, name=None, is_persistent=True, config_field=None, required_resources=None):
+    def __init__(
+        self, name=None, is_persistent=True, config_field=None, required_resource_keys=None
+    ):
         self.name = check.opt_str_param(name, 'name')
         self.is_persistent = check.bool_param(is_persistent, 'is_persistent')
         self.config_field = config_field  # type check in definition
-        self.required_resources = required_resources  # type check in definition
+        self.required_resource_keys = required_resource_keys  # type check in definition
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -129,7 +131,7 @@ class _SystemStorageDecoratorCallable:
             is_persistent=self.is_persistent,
             config_field=self.config_field,
             system_storage_creation_fn=fn,
-            required_resources=self.required_resources,
+            required_resource_keys=self.required_resource_keys,
         )
 
 

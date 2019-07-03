@@ -10,16 +10,14 @@ from dagster import (
     Field,
     Materialization,
     Path,
-    Selector,
     String,
     as_dagster_type,
     check,
-    input_selector_schema,
-    output_selector_schema,
     resource,
 )
 from dagster.core.definitions.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
+from dagster.core.types import Selector, input_selector_schema, output_selector_schema
 from dagster.core.types.runtime import define_any_type
 from dagster_spark.configs_spark import spark_config
 from dagster_spark.utils import flatten_dict
@@ -75,7 +73,9 @@ def write_rdd(context, file_type, file_options, spark_rdd):
         check.failed('Unsupported file type: {}'.format(file_type))
 
 
-SparkRDD = as_dagster_type(RDD, 'SparkRDD', input_schema=load_rdd, output_schema=write_rdd)
+SparkRDD = as_dagster_type(
+    RDD, 'SparkRDD', input_hydration_config=load_rdd, output_materialization_config=write_rdd
+)
 
 
 @resource(config={'spark_conf': spark_config()})
@@ -161,5 +161,5 @@ DataFrame = as_dagster_type(
     name='DataFrame',
     description='A Pyspark data frame.',
     auto_plugins=[SparkDataFrameS3StoragePlugin, SparkDataFrameFilesystemStoragePlugin],
-    output_schema=spark_df_output_schema,
+    output_materialization_config=spark_df_output_schema,
 )

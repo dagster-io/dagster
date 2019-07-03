@@ -81,6 +81,7 @@ export default class LogsToolbar extends React.Component<ILogsToolbarProps> {
           icon={IconNames.ERASER}
           onClick={() => onSetFilter({ ...filter, since: Date.now() })}
         />
+        {this.props.children}
       </LogsToolbarContainer>
     );
   }

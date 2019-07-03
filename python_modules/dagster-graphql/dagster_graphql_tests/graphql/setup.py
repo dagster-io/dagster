@@ -13,7 +13,7 @@ from dagster import (
     EnumValue,
     EventMetadataEntry,
     ExecutionTargetHandle,
-    ExpectationDefinition,
+    IOExpectationDefinition,
     ExpectationResult,
     Field,
     Float,
@@ -33,10 +33,10 @@ from dagster import (
     SolidInvocation,
     String,
     as_dagster_type,
-    input_schema,
+    input_hydration_config,
     lambda_solid,
     logger,
-    output_schema,
+    output_materialization_config,
     pipeline,
     resource,
     solid,
@@ -52,7 +52,7 @@ class PoorMansDataFrame_(list):
     pass
 
 
-@input_schema(Path)
+@input_hydration_config(Path)
 def df_input_schema(_context, path):
     with open(path, 'r') as fd:
         return PoorMansDataFrame_(
@@ -60,7 +60,7 @@ def df_input_schema(_context, path):
         )
 
 
-@output_schema(Path)
+@output_materialization_config(Path)
 def df_output_schema(_context, path, value):
     with open(path, 'w') as fd:
         writer = csv.DictWriter(fd, fieldnames=value[0].keys())
@@ -71,7 +71,9 @@ def df_output_schema(_context, path, value):
 
 
 PoorMansDataFrame = as_dagster_type(
-    PoorMansDataFrame_, input_schema=df_input_schema, output_schema=df_output_schema
+    PoorMansDataFrame_,
+    input_hydration_config=df_input_schema,
+    output_materialization_config=df_output_schema,
 )
 
 
@@ -85,7 +87,8 @@ def define_context(raise_on_error=True, log_dir=None):
 
 
 @lambda_solid(
-    inputs=[InputDefinition('num', PoorMansDataFrame)], output=OutputDefinition(PoorMansDataFrame)
+    input_defs=[InputDefinition('num', PoorMansDataFrame)],
+    output_def=OutputDefinition(PoorMansDataFrame),
 )
 def sum_solid(num):
     sum_df = deepcopy(num)
@@ -95,8 +98,8 @@ def sum_solid(num):
 
 
 @lambda_solid(
-    inputs=[InputDefinition('sum_df', PoorMansDataFrame)],
-    output=OutputDefinition(PoorMansDataFrame),
+    input_defs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    output_def=OutputDefinition(PoorMansDataFrame),
 )
 def sum_sq_solid(sum_df):
     sum_sq_df = deepcopy(sum_df)
@@ -106,22 +109,22 @@ def sum_sq_solid(sum_df):
 
 
 @lambda_solid(
-    inputs=[
+    input_defs=[
         InputDefinition(
             'sum_df',
             PoorMansDataFrame,
             expectations=[
-                ExpectationDefinition(
+                IOExpectationDefinition(
                     name='some_expectation',
                     expectation_fn=lambda _i, _v: ExpectationResult(success=True),
                 )
             ],
         )
     ],
-    output=OutputDefinition(
+    output_def=OutputDefinition(
         PoorMansDataFrame,
         expectations=[
-            ExpectationDefinition(
+            IOExpectationDefinition(
                 name='other_expectation',
                 expectation_fn=lambda _i, _v: ExpectationResult(success=True),
             )
@@ -170,7 +173,7 @@ def define_repository():
 
 
 def define_pipeline_with_expectation():
-    @solid(outputs=[])
+    @solid(output_defs=[])
     def emit_successful_expectation(_context):
         yield ExpectationResult(
             success=True,
@@ -181,7 +184,7 @@ def define_pipeline_with_expectation():
             ],
         )
 
-    @solid(outputs=[])
+    @solid(output_defs=[])
     def emit_failed_expectation(_context):
         yield ExpectationResult(
             success=False,
@@ -192,7 +195,7 @@ def define_pipeline_with_expectation():
             ],
         )
 
-    @solid(outputs=[])
+    @solid(output_defs=[])
     def emit_successful_expectation_no_metadata(_context):
         yield ExpectationResult(success=True, label='no_metadata', description='Successful')
 
@@ -224,8 +227,8 @@ def define_more_complicated_config():
         solid_defs=[
             SolidDefinition(
                 name='a_solid_with_three_field_config',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *_args: None,
                 config_field=Field(
                     Dict(
@@ -249,8 +252,8 @@ def define_more_complicated_nested_config():
         solid_defs=[
             SolidDefinition(
                 name='a_solid_with_multilayered_config',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *_args: None,
                 config_field=Field(
                     Dict(
@@ -287,7 +290,7 @@ def define_csv_hello_world():
             'sum_solid': {},
             'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
         },
-        preset_definitions=[
+        preset_defs=[
             PresetDefinition(
                 name='prod',
                 environment_files=[
@@ -328,8 +331,8 @@ def define_pipeline_with_list():
         solid_defs=[
             SolidDefinition(
                 name='solid_with_list',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 compute_fn=lambda *_args: None,
                 config_field=Field(List[Int]),
             )
@@ -354,19 +357,19 @@ def define_no_config_pipeline():
 
 
 def define_scalar_output_pipeline():
-    @lambda_solid(output=OutputDefinition(String))
+    @lambda_solid(output_def=OutputDefinition(String))
     def return_str():
         return 'foo'
 
-    @lambda_solid(output=OutputDefinition(Int))
+    @lambda_solid(output_def=OutputDefinition(Int))
     def return_int():
         return 34234
 
-    @lambda_solid(output=OutputDefinition(Bool))
+    @lambda_solid(output_def=OutputDefinition(Bool))
     def return_bool():
         return True
 
-    @lambda_solid(output=OutputDefinition(Any))
+    @lambda_solid(output_def=OutputDefinition(Any))
     def return_any():
         return 'dkjfkdjfe'
 
@@ -405,8 +408,8 @@ def define_naughty_programmer_pipeline():
 def define_pipeline_with_step_metadata():
     solid_def = SolidDefinition(
         name='solid_metadata_creation',
-        inputs=[],
-        outputs=[],
+        input_defs=[],
+        output_defs=[],
         compute_fn=lambda *args, **kwargs: None,
         config_field=Field(Dict({'str_value': Field(String)})),
         step_metadata_fn=lambda env_config: {
@@ -440,21 +443,21 @@ def define_multi_mode_with_resources_pipeline():
     return PipelineDefinition(
         name='multi_mode_with_resources',
         solid_defs=[apply_to_three],
-        preset_definitions=[PresetDefinition("add", mode="add_mode")],
-        mode_definitions=[
+        preset_defs=[PresetDefinition("add", mode="add_mode")],
+        mode_defs=[
             ModeDefinition(
                 name='add_mode',
-                resources={'op': adder_resource},
+                resource_defs={'op': adder_resource},
                 description='Mode that adds things',
             ),
             ModeDefinition(
                 name='mult_mode',
-                resources={'op': multer_resource},
+                resource_defs={'op': multer_resource},
                 description='Mode that multiplies things',
             ),
             ModeDefinition(
                 name='double_adder',
-                resources={'op': double_adder_resource},
+                resource_defs={'op': double_adder_resource},
                 description='Mode that adds two numbers to thing',
             ),
         ],
@@ -490,16 +493,16 @@ def define_multi_mode_with_loggers_pipeline():
     return PipelineDefinition(
         name='multi_mode_with_loggers',
         solid_defs=[return_six],
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                name='foo_mode', loggers={'foo': foo_logger}, description='Mode with foo logger'
+                name='foo_mode', logger_defs={'foo': foo_logger}, description='Mode with foo logger'
             ),
             ModeDefinition(
-                name='bar_mode', loggers={'bar': bar_logger}, description='Mode with bar logger'
+                name='bar_mode', logger_defs={'bar': bar_logger}, description='Mode with bar logger'
             ),
             ModeDefinition(
                 name='foobar_mode',
-                loggers={'foo': foo_logger, 'bar': bar_logger},
+                logger_defs={'foo': foo_logger, 'bar': bar_logger},
                 description='Mode with multiple loggers',
             ),
         ],
@@ -507,11 +510,11 @@ def define_multi_mode_with_loggers_pipeline():
 
 
 def define_composites_pipeline():
-    @lambda_solid(inputs=[InputDefinition('num', Int)])
+    @lambda_solid(input_defs=[InputDefinition('num', Int)])
     def add_one(num):
         return num + 1
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')])
     def div_two(num):
         return num / 2
 

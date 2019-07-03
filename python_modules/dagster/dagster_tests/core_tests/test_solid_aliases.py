@@ -18,7 +18,7 @@ def test_aliased_solids():
     def first():
         return ['first']
 
-    @lambda_solid(inputs=[InputDefinition(name="prev")])
+    @lambda_solid(input_defs=[InputDefinition(name="prev")])
     def not_first(prev):
         return prev + ['not_first']
 
@@ -44,7 +44,7 @@ def test_only_aliased_solids():
     def first():
         return ['first']
 
-    @lambda_solid(inputs=[InputDefinition(name="prev")])
+    @lambda_solid(input_defs=[InputDefinition(name="prev")])
     def not_first(prev):
         return prev + ['not_first']
 
@@ -65,7 +65,7 @@ def test_only_aliased_solids():
 
 
 def test_aliased_configs():
-    @solid(inputs=[], config_field=Field(Int))
+    @solid(input_defs=[], config_field=Field(Int))
     def load_constant(context):
         return context.solid_config
 

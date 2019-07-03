@@ -5,7 +5,7 @@ from .configs import define_dataproc_submit_job_config
 
 
 @solid(
-    required_resources={'dataproc'},
+    required_resource_keys={'dataproc'},
     config_field=Field(
         Dict(
             fields={

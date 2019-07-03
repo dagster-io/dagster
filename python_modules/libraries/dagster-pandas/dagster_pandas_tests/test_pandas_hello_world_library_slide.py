@@ -53,16 +53,16 @@ def create_definition_based_solid():
     # supports CSV and PARQUET by default
     hello_world = single_output_transform(
         name='hello_world',
-        inputs=[table_input],
+        input_defs=[table_input],
         compute_fn=compute_fn,
-        output=OutputDefinition(DataFrame),
+        output_def=OutputDefinition(DataFrame),
     )
     return hello_world
 
 
 def create_decorator_based_solid():
     @lambda_solid(
-        inputs=[InputDefinition('num_csv', DataFrame)], output=OutputDefinition(DataFrame)
+        input_defs=[InputDefinition('num_csv', DataFrame)], output_def=OutputDefinition(DataFrame)
     )
     def hello_world(num_csv):
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']

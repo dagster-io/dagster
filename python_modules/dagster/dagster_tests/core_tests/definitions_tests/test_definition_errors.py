@@ -9,19 +9,17 @@ from dagster import (
     InputDefinition,
     Int,
     NamedDict,
-    NamedSelector,
     OutputDefinition,
     PermissiveDict,
     PipelineDefinition,
     ResourceDefinition,
-    Selector,
     SolidDefinition,
     String,
     solid,
 )
 
 from dagster.core.definitions import create_environment_schema
-
+from dagster.core.types import Selector, NamedSelector
 from dagster.core.utility_solids import define_stub_solid
 
 
@@ -29,14 +27,14 @@ def solid_a_b_list():
     return [
         SolidDefinition(
             name='A',
-            inputs=[],
-            outputs=[OutputDefinition()],
+            input_defs=[],
+            output_defs=[OutputDefinition()],
             compute_fn=lambda _context, _inputs: None,
         ),
         SolidDefinition(
             name='B',
-            inputs=[InputDefinition('b_input')],
-            outputs=[],
+            input_defs=[InputDefinition('b_input')],
+            output_defs=[],
             compute_fn=lambda _context, _inputs: None,
         ),
     ]

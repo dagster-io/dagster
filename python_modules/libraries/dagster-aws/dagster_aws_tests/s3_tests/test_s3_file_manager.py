@@ -74,8 +74,8 @@ def test_s3_file_manager_read():
 
 def test_depends_on_s3_resource_intermediates():
     @solid(
-        inputs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
-        outputs=[OutputDefinition(Int)],
+        input_defs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
+        output_defs=[OutputDefinition(Int)],
     )
     def add_numbers(_, num_one, num_two):
         return num_one + num_two
@@ -83,10 +83,10 @@ def test_depends_on_s3_resource_intermediates():
     s3_fake_resource = create_s3_fake_resource()
 
     @pipeline(
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
                 system_storage_defs=s3_plus_default_storage_defs,
-                resources={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
+                resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
             )
         ]
     )
@@ -124,11 +124,11 @@ def create_s3_key(run_id, step_key, output_name):
 def test_depends_on_s3_resource_file_manager():
     bar_bytes = 'bar'.encode()
 
-    @solid(outputs=[OutputDefinition(S3FileHandle)])
+    @solid(output_defs=[OutputDefinition(S3FileHandle)])
     def emit_file(context):
         return context.file_manager.write_data(bar_bytes)
 
-    @solid(inputs=[InputDefinition('file_handle', S3FileHandle)])
+    @solid(input_defs=[InputDefinition('file_handle', S3FileHandle)])
     def accept_file(context, file_handle):
         local_path = context.file_manager.copy_handle_to_local_temp(file_handle)
         assert isinstance(local_path, str)
@@ -137,10 +137,10 @@ def test_depends_on_s3_resource_file_manager():
     s3_fake_resource = create_s3_fake_resource()
 
     @pipeline(
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
                 system_storage_defs=s3_plus_default_storage_defs,
-                resources={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
+                resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
             )
         ]
     )

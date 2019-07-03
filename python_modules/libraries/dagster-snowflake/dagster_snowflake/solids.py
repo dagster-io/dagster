@@ -72,8 +72,8 @@ class SnowflakeSolidDefinition(SolidDefinition):
         super(SnowflakeSolidDefinition, self).__init__(
             name=name,
             description=description,
-            inputs=[InputDefinition('start', Nothing)],
-            outputs=[OutputDefinition(List[dagster_pd.DataFrame])],
+            input_defs=[InputDefinition('start', Nothing)],
+            output_defs=[OutputDefinition(List[dagster_pd.DataFrame])],
             compute_fn=_snowflake_compute_fn,
             metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
         )

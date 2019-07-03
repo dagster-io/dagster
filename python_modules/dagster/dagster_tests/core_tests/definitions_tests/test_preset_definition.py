@@ -31,7 +31,7 @@ def test_presets():
     pipeline = PipelineDefinition(
         name='simple',
         solid_defs=[can_fail, always_fail],
-        preset_definitions=[
+        preset_defs=[
             PresetDefinition(
                 'passing',
                 environment_files=[script_relative_path('pass_env.yaml')],
@@ -82,6 +82,6 @@ def test_invalid_preset():
         PipelineDefinition(
             name="preset_modes",
             solid_defs=[lil_solid],
-            mode_definitions=[ModeDefinition(name="mode_a")],
-            preset_definitions=[PresetDefinition(name="preset_b", mode="mode_b")],
+            mode_defs=[ModeDefinition(name="mode_a")],
+            preset_defs=[PresetDefinition(name="preset_b", mode="mode_b")],
         )

@@ -4,7 +4,7 @@ from dagster import (
     CompositeSolidDefinition,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
-    ExpectationDefinition,
+    IOExpectationDefinition,
     ExpectationResult,
     Field,
     InputDefinition,
@@ -92,7 +92,7 @@ def test_composite_config():
 def test_composite_config_input():
     called = {}
 
-    @solid(inputs=[InputDefinition('one')])
+    @solid(input_defs=[InputDefinition('one')])
     def node_a(_context, one):
         called['node_a'] = True
         assert one is 1
@@ -117,7 +117,7 @@ def test_composite_config_input():
 def test_mapped_composite_config_input():
     called = {}
 
-    @solid(inputs=[InputDefinition('one')])
+    @solid(input_defs=[InputDefinition('one')])
     def node_a(_context, one):
         called['node_a'] = True
         assert one is 1
@@ -146,7 +146,9 @@ def test_mapped_composite_input_expectations():
         called['exp_a'] = True
         return ExpectationResult(True)
 
-    @solid(inputs=[InputDefinition('one', expectations=[ExpectationDefinition('exp_a', exp_a)])])
+    @solid(
+        input_defs=[InputDefinition('one', expectations=[IOExpectationDefinition('exp_a', exp_a)])]
+    )
     def node_a(_context, one):
         called['node_a'] = True
         assert one is 1
@@ -164,7 +166,7 @@ def test_mapped_composite_input_expectations():
         solid_defs=[node_a],
         input_mappings=[
             InputDefinition(
-                name='inner_one', expectations=[ExpectationDefinition('inner_exp', inner_exp)]
+                name='inner_one', expectations=[IOExpectationDefinition('inner_exp', inner_exp)]
             ).mapping_to('node_a', 'one')
         ],
     )
@@ -173,7 +175,7 @@ def test_mapped_composite_input_expectations():
         solid_defs=[inner],
         input_mappings=[
             InputDefinition(
-                'outer_one', expectations=[ExpectationDefinition('outer_exp', outer_exp)]
+                'outer_one', expectations=[IOExpectationDefinition('outer_exp', outer_exp)]
             ).mapping_to('inner', 'inner_one')
         ],
     )
@@ -253,7 +255,7 @@ def test_types_descent():
     class Foo(object):
         pass
 
-    @solid(outputs=[OutputDefinition(Foo)])
+    @solid(output_defs=[OutputDefinition(Foo)])
     def inner_solid(_context):
         return Foo()
 
@@ -275,15 +277,15 @@ def test_deep_mapping():
     def emit_foo():
         return 'foo'
 
-    @composite_solid(outputs=[OutputDefinition(String, 'z')])
+    @composite_solid(output_defs=[OutputDefinition(String, 'z')])
     def az(a):
         return echo(a)
 
-    @composite_solid(outputs=[OutputDefinition(String, 'y')])
+    @composite_solid(output_defs=[OutputDefinition(String, 'y')])
     def by(b):
         return az(b)
 
-    @composite_solid(outputs=[OutputDefinition(String, 'x')])
+    @composite_solid(output_defs=[OutputDefinition(String, 'x')])
     def cx(c):
         return by(c)
 

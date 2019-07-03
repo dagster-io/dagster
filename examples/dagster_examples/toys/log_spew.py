@@ -19,8 +19,8 @@ def nonce_solid(name, n_inputs, n_outputs):
 
     @solid(
         name=name,
-        inputs=[InputDefinition(name='input_{}'.format(i)) for i in range(n_inputs)],
-        outputs=[OutputDefinition(name='output_{}'.format(i)) for i in range(n_outputs)],
+        input_defs=[InputDefinition(name='input_{}'.format(i)) for i in range(n_inputs)],
+        output_defs=[OutputDefinition(name='output_{}'.format(i)) for i in range(n_outputs)],
     )
     def solid_fn(context, **_kwargs):
         for i in range(200):
@@ -73,5 +73,5 @@ def define_spew_pipeline():
                 'input_0': DependencyDefinition('solid_f', 'output_0')
             },
         },
-        mode_definitions=[ModeDefinition()],
+        mode_defs=[ModeDefinition()],
     )

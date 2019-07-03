@@ -23,7 +23,7 @@ from dagster.check import CheckError
 
 
 # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
-@lambda_solid(inputs=[InputDefinition('input_str')])
+@lambda_solid(input_defs=[InputDefinition('input_str')])
 def pipe(input_str):
     return input_str
 
@@ -216,12 +216,12 @@ def test_composite_config_field():
 
 
 def test_nested_with_inputs():
-    @solid(inputs=[InputDefinition('some_input', String)], config={'basic_key': Field(String)})
+    @solid(input_defs=[InputDefinition('some_input', String)], config={'basic_key': Field(String)})
     def basic(context, some_input):
         yield Output(context.solid_config['basic_key'] + ' - ' + some_input)
 
     @composite_solid(
-        inputs=[InputDefinition('some_input', String)],
+        input_defs=[InputDefinition('some_input', String)],
         config_fn=lambda _, cfg: {
             'basic': {'config': {'basic_key': 'override.' + cfg['inner_first']}}
         },
@@ -257,7 +257,7 @@ def test_nested_with_inputs():
 def test_wrap_none_config_and_inputs():
     @solid(
         config={'config_field_a': Field(String), 'config_field_b': Field(String)},
-        inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
+        input_defs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
     )
     def basic(context, input_a, input_b):
         res = '.'.join(
@@ -368,7 +368,7 @@ def test_wrap_none_config_and_inputs():
 def test_wrap_all_config_no_inputs():
     @solid(
         config={'config_field_a': Field(String), 'config_field_b': Field(String)},
-        inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
+        input_defs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
     )
     def basic(context, input_a, input_b):
         res = '.'.join(
@@ -382,7 +382,7 @@ def test_wrap_all_config_no_inputs():
         yield Output(res)
 
     @composite_solid(
-        inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
+        input_defs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
         config_fn=lambda _, cfg: {
             'basic': {
                 'config': {
@@ -463,7 +463,7 @@ def test_wrap_all_config_no_inputs():
 def test_wrap_all_config_one_input():
     @solid(
         config={'config_field_a': Field(String), 'config_field_b': Field(String)},
-        inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
+        input_defs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
     )
     def basic(context, input_a, input_b):
         res = '.'.join(
@@ -477,7 +477,7 @@ def test_wrap_all_config_one_input():
         yield Output(res)
 
     @composite_solid(
-        inputs=[InputDefinition('input_a', String)],
+        input_defs=[InputDefinition('input_a', String)],
         config_fn=lambda _, cfg: {
             'basic': {
                 'config': {
@@ -553,7 +553,7 @@ def test_wrap_all_config_one_input():
 def test_wrap_all_config_and_inputs():
     @solid(
         config={'config_field_a': Field(String), 'config_field_b': Field(String)},
-        inputs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
+        input_defs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
     )
     def basic(context, input_a, input_b):
         res = '.'.join(

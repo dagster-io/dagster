@@ -8,3 +8,4 @@ Learn
   principles
 
   guides/logging/logging
+  guides/solid/solid

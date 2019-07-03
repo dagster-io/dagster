@@ -3,7 +3,7 @@ from dagster import check
 from .utils import check_valid_name
 
 
-class ExpectationDefinition(object):
+class IOExpectationDefinition(object):
     '''
     Expectations represent a data quality test. It performs an arbitrary computation
     to see if a given input or output satisfies the expectation.
@@ -28,7 +28,7 @@ class ExpectationDefinition(object):
         .. code-block:: python
 
             InputDefinition('some_input', types.Int, expectations=[
-                ExpectationDefinition(
+                IOExpectationDefinition(
                     name='is_positive',
                     expectation_fn=lambda(
                         _info,

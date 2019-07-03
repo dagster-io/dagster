@@ -129,7 +129,7 @@ def define_add_pipeline():
     )
 
 
-@solid(inputs=[], config_field=Field(Int))
+@solid(input_defs=[], config_field=Field(Int))
 def load_constant(context):
     return context.solid_config
 
@@ -165,7 +165,7 @@ def define_error_pipeline():
 @solid_definition
 def clean_data_solid():
     return dagstermill.define_dagstermill_solid(
-        'clean_data', nb_test_path('clean_data'), outputs=[OutputDefinition(DataFrame)]
+        'clean_data', nb_test_path('clean_data'), output_defs=[OutputDefinition(DataFrame)]
     )
 
 
@@ -174,7 +174,7 @@ def LR_solid():
     return dagstermill.define_dagstermill_solid(
         'linear_regression',
         nb_test_path('tutorial_LR'),
-        inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
+        input_defs=[InputDefinition(name='df', dagster_type=DataFrame)],
     )
 
 
@@ -183,7 +183,7 @@ def RF_solid():
     return dagstermill.define_dagstermill_solid(
         'random_forest_regression',
         nb_test_path('tutorial_RF'),
-        inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
+        input_defs=[InputDefinition(name='df', dagster_type=DataFrame)],
     )
 
 
@@ -220,7 +220,7 @@ def no_repo_reg_solid():
     return dagstermill.define_dagstermill_solid(
         'no_repo_reg',
         nb_test_path('no_repo_reg_error'),
-        outputs=[OutputDefinition(name='df', dagster_type=ComplexDagsterType)],
+        output_defs=[OutputDefinition(name='df', dagster_type=ComplexDagsterType)],
     )
 
 
@@ -228,7 +228,7 @@ def define_no_repo_registration_error_pipeline():
     return PipelineDefinition(name='repo_registration_error', solid_defs=[no_repo_reg_solid()])
 
 
-@solid('resource_solid', required_resources={'list'})
+@solid('resource_solid', required_resource_keys={'list'})
 def resource_solid(context):
     context.resources.list.append('Hello, solid!')
     return True
@@ -239,8 +239,8 @@ def hello_world_resource_solid():
     return dagstermill.define_dagstermill_solid(
         'hello_world_resource',
         nb_test_path('hello_world_resource'),
-        inputs=[InputDefinition('nonce')],
-        required_resources={'list'},
+        input_defs=[InputDefinition('nonce')],
+        required_resource_keys={'list'},
     )
 
 
@@ -249,8 +249,8 @@ def hello_world_resource_with_exception_solid():
     return dagstermill.define_dagstermill_solid(
         'hello_world_resource_with_exception',
         nb_test_path('hello_world_resource_with_exception'),
-        inputs=[InputDefinition('nonce')],
-        required_resources={'list'},
+        input_defs=[InputDefinition('nonce')],
+        required_resource_keys={'list'},
     )
 
 
@@ -308,7 +308,7 @@ def define_resource_pipeline():
         name='resource_pipeline',
         solid_defs=[resource_solid, hello_world_resource_solid],
         dependencies={'hello_world_resource': {'nonce': DependencyDefinition('resource_solid')}},
-        mode_definitions=[ModeDefinition(resources={'list': filepicklelist_resource})],
+        mode_defs=[ModeDefinition(resource_defs={'list': filepicklelist_resource})],
     )
 
 
@@ -319,7 +319,7 @@ def define_resource_with_exception_pipeline():
         dependencies={
             'hello_world_resource_with_exception': {'nonce': DependencyDefinition('resource_solid')}
         },
-        mode_definitions=[ModeDefinition(resources={'list': filepicklelist_resource})],
+        mode_defs=[ModeDefinition(resource_defs={'list': filepicklelist_resource})],
     )
 
 

@@ -75,7 +75,7 @@ def test_empty_solid():
 
 
 def test_solid():
-    @solid(outputs=[OutputDefinition()])
+    @solid(output_defs=[OutputDefinition()])
     def hello_world(_context):
         return {'foo': 'bar'}
 
@@ -99,7 +99,7 @@ def test_solid_one_output():
 
 
 def test_solid_yield():
-    @solid(outputs=[OutputDefinition()])
+    @solid(output_defs=[OutputDefinition()])
     def hello_world(_context):
         yield Output(value={'foo': 'bar'})
 
@@ -111,7 +111,7 @@ def test_solid_yield():
 
 
 def test_solid_result_return():
-    @solid(outputs=[OutputDefinition()])
+    @solid(output_defs=[OutputDefinition()])
     def hello_world(_context):
         return Output(value={'foo': 'bar'})
 
@@ -123,7 +123,7 @@ def test_solid_result_return():
 
 
 def test_solid_multiple_outputs():
-    @solid(outputs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
+    @solid(output_defs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
     def hello_world(_context):
         return MultipleOutputs(
             Output(value={'foo': 'left'}, output_name='left'),
@@ -140,7 +140,7 @@ def test_solid_multiple_outputs():
 
 
 def test_dict_multiple_outputs():
-    @solid(outputs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
+    @solid(output_defs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
     def hello_world(_context):
         return MultipleOutputs.from_dict({'left': {'foo': 'left'}, 'right': {'foo': 'right'}})
 
@@ -154,7 +154,7 @@ def test_dict_multiple_outputs():
 
 
 def test_solid_with_explicit_empty_outputs():
-    @solid(outputs=[])
+    @solid(output_defs=[])
     def hello_world(_context):
         return 'foo'
 
@@ -186,7 +186,7 @@ def test_solid_with_implicit_single_output():
 
 
 def test_solid_return_list_instead_of_multiple_results():
-    @solid(outputs=[OutputDefinition(name='foo'), OutputDefinition(name='bar')])
+    @solid(output_defs=[OutputDefinition(name='foo'), OutputDefinition(name='bar')])
     def hello_world(_context):
         return ['foo', 'bar']
 
@@ -209,7 +209,7 @@ def test_lambda_solid_with_name():
 
 
 def test_solid_with_name():
-    @solid(name="foobar", outputs=[OutputDefinition()])
+    @solid(name="foobar", output_defs=[OutputDefinition()])
     def hello_world(_context):
         return {'foo': 'bar'}
 
@@ -221,7 +221,7 @@ def test_solid_with_name():
 
 
 def test_solid_with_input():
-    @lambda_solid(inputs=[InputDefinition(name="foo_to_foo")])
+    @lambda_solid(input_defs=[InputDefinition(name="foo_to_foo")])
     def hello_world(foo_to_foo):
         return foo_to_foo
 
@@ -241,7 +241,7 @@ def test_solid_with_input():
 def test_lambda_solid_definition_errors():
     with pytest.raises(DagsterInvalidDefinitionError, match='positional vararg'):
 
-        @lambda_solid(inputs=[InputDefinition(name="foo")])
+        @lambda_solid(input_defs=[InputDefinition(name="foo")])
         def vargs(foo, *args):
             pass
 
@@ -249,47 +249,47 @@ def test_lambda_solid_definition_errors():
 def test_solid_definition_errors():
     with pytest.raises(DagsterInvalidDefinitionError, match='positional vararg'):
 
-        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
+        @solid(input_defs=[InputDefinition(name="foo")], output_defs=[OutputDefinition()])
         def vargs(context, foo, *args):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
+        @solid(input_defs=[InputDefinition(name="foo")], output_defs=[OutputDefinition()])
         def wrong_name(context, bar):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @solid(
-            inputs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
-            outputs=[OutputDefinition()],
+            input_defs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
+            output_defs=[OutputDefinition()],
         )
         def wrong_name_2(context, foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
+        @solid(input_defs=[InputDefinition(name="foo")], output_defs=[OutputDefinition()])
         def no_context(foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
+        @solid(input_defs=[InputDefinition(name="foo")], output_defs=[OutputDefinition()])
         def extras(_context, foo, bar):
             pass
 
     @solid(
-        inputs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
-        outputs=[OutputDefinition()],
+        input_defs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
+        output_defs=[OutputDefinition()],
     )
     def valid_kwargs(context, **kwargs):
         pass
 
     @solid(
-        inputs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
-        outputs=[OutputDefinition()],
+        input_defs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
+        output_defs=[OutputDefinition()],
     )
     def valid(context, foo, bar):
         pass

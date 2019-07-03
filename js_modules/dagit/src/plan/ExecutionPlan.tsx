@@ -4,12 +4,13 @@ import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import { ExecutionPlanFragment } from "./types/ExecutionPlanFragment";
 import { ExecutionPlanBox } from "./ExecutionPlanBox";
+import { AnimatedEllipsis } from "./AnimatedEllipsis";
 import {
   IRunMetadataDict,
   IStepState,
   IStepMetadata
-} from "./RunMetadataProvider";
-import { formatElapsedTime } from "./Util";
+} from "../RunMetadataProvider";
+import { formatElapsedTime } from "../Util";
 
 export interface IExecutionPlanProps {
   executionPlan: ExecutionPlanFragment;
@@ -187,41 +188,4 @@ const ExecutionTimelineDot = styled.div<{ completed: boolean }>`
     ${({ completed }) => (completed ? Colors.LIGHT_GRAY2 : Colors.GRAY1)};
   margin-left: 18px;
   flex-shrink: 0;
-`;
-
-const AnimatedEllipsis = () => {
-  return (
-    <AnimatedEllipsisContainer>
-      <span>.</span>
-      <span>.</span>
-      <span>.</span>
-    </AnimatedEllipsisContainer>
-  );
-};
-
-const AnimatedEllipsisContainer = styled.span`
-  @keyframes ellipsis-dot {
-    0% {
-      opacity: 0;
-    }
-    50% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0;
-    }
-  }
-  span {
-    opacity: 0;
-    animation: ellipsis-dot 1s infinite;
-  }
-  span:nth-child(1) {
-    animation-delay: 0s;
-  }
-  span:nth-child(2) {
-    animation-delay: 0.1s;
-  }
-  span:nth-child(3) {
-    animation-delay: 0.2s;
-  }
 `;

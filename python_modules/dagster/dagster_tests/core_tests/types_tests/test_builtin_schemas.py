@@ -27,59 +27,59 @@ def _execute_pipeline_with_subset(pipeline, environment_dict, solid_subset):
 
 
 def define_test_all_scalars_pipeline():
-    @lambda_solid(inputs=[InputDefinition('num', Int)])
+    @lambda_solid(input_defs=[InputDefinition('num', Int)])
     def take_int(num):
         return num
 
-    @lambda_solid(output=OutputDefinition(Int))
+    @lambda_solid(output_def=OutputDefinition(Int))
     def produce_int():
         return 2
 
-    @lambda_solid(inputs=[InputDefinition('string', String)])
+    @lambda_solid(input_defs=[InputDefinition('string', String)])
     def take_string(string):
         return string
 
-    @lambda_solid(output=OutputDefinition(String))
+    @lambda_solid(output_def=OutputDefinition(String))
     def produce_string():
         return 'foo'
 
-    @lambda_solid(inputs=[InputDefinition('path', Path)])
+    @lambda_solid(input_defs=[InputDefinition('path', Path)])
     def take_path(path):
         return path
 
-    @lambda_solid(output=OutputDefinition(Path))
+    @lambda_solid(output_def=OutputDefinition(Path))
     def produce_path():
         return '/path/to/foo'
 
-    @lambda_solid(inputs=[InputDefinition('float_number', Float)])
+    @lambda_solid(input_defs=[InputDefinition('float_number', Float)])
     def take_float(float_number):
         return float_number
 
-    @lambda_solid(output=OutputDefinition(Float))
+    @lambda_solid(output_def=OutputDefinition(Float))
     def produce_float():
         return 3.14
 
-    @lambda_solid(inputs=[InputDefinition('bool_value', Bool)])
+    @lambda_solid(input_defs=[InputDefinition('bool_value', Bool)])
     def take_bool(bool_value):
         return bool_value
 
-    @lambda_solid(output=OutputDefinition(Bool))
+    @lambda_solid(output_def=OutputDefinition(Bool))
     def produce_bool():
         return True
 
-    @lambda_solid(inputs=[InputDefinition('any_value', Any)])
+    @lambda_solid(input_defs=[InputDefinition('any_value', Any)])
     def take_any(any_value):
         return any_value
 
-    @lambda_solid(output=OutputDefinition(Any))
+    @lambda_solid(output_def=OutputDefinition(Any))
     def produce_any():
         return True
 
-    @lambda_solid(inputs=[InputDefinition('string_list', List[String])])
+    @lambda_solid(input_defs=[InputDefinition('string_list', List[String])])
     def take_string_list(string_list):
         return string_list
 
-    @lambda_solid(inputs=[InputDefinition('nullable_string', Optional[String])])
+    @lambda_solid(input_defs=[InputDefinition('nullable_string', Optional[String])])
     def take_nullable_string(nullable_string):
         return nullable_string
 

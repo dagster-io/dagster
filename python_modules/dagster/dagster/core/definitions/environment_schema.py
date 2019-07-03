@@ -61,7 +61,7 @@ def create_environment_schema(pipeline_def, mode=None):
             solids=pipeline_def.solids,
             dependency_structure=pipeline_def.dependency_structure,
             mode_definition=mode_definition,
-            loggers=mode_definition.loggers,
+            logger_defs=mode_definition.loggers,
         )
     )
 

@@ -9,7 +9,7 @@ from dagster import (
     Output,
     String,
     check,
-    input_schema,
+    input_hydration_config,
     solid,
 )
 
@@ -24,7 +24,7 @@ def dict_with_fields(name, fields):
     check.dict_param(fields, 'fields', key_type=str)
     field_names = set(fields.keys())
 
-    @input_schema(Dict(fields))
+    @input_hydration_config(Dict(fields))
     def _input_schema(_context, value):
         check.dict_param(value, 'value')
         check.param_invariant(set(value.keys()) == field_names, 'value')
@@ -33,7 +33,7 @@ def dict_with_fields(name, fields):
     class _DictWithSchema(PythonObjectType):
         def __init__(self):
             super(_DictWithSchema, self).__init__(
-                python_type=dict, name=name, input_schema=_input_schema
+                python_type=dict, name=name, input_hydration_config=_input_schema
             )
 
     return _DictWithSchema
@@ -57,8 +57,8 @@ def last_key(key):
 
 @solid(
     config_field=put_object_configs(),
-    inputs=[InputDefinition('file_handle', FileHandle, description='The file to upload.')],
-    outputs=[OutputDefinition(name='s3_file_handle', dagster_type=S3FileHandle)],
+    input_defs=[InputDefinition('file_handle', FileHandle, description='The file to upload.')],
+    output_defs=[OutputDefinition(name='s3_file_handle', dagster_type=S3FileHandle)],
     description='''Take a file handle and upload it to s3. See configuration for all
     arguments you can pass to put_object. Returns an S3FileHandle.''',
 )

@@ -30,8 +30,8 @@ def define_pass_value_solid(name, description=None):
     return SolidDefinition(
         name=name,
         description=description,
-        inputs=[],
-        outputs=[OutputDefinition(types.String)],
+        input_defs=[],
+        output_defs=[OutputDefinition(types.String)],
         config_field=Field(SingleValueDict),
         compute_fn=_value_t_fn,
     )
@@ -40,9 +40,9 @@ def define_pass_value_solid(name, description=None):
 def test_execute_solid_with_input_same_name():
     a_thing_solid = single_output_transform(
         'a_thing',
-        inputs=[InputDefinition(name='a_thing')],
+        input_defs=[InputDefinition(name='a_thing')],
         compute_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
-        output=dagster.OutputDefinition(),
+        output_def=dagster.OutputDefinition(),
     )
 
     pipeline = PipelineDefinition(
@@ -62,16 +62,16 @@ def test_execute_two_solids_with_same_input_name():
 
     solid_one = single_output_transform(
         'solid_one',
-        inputs=[input_def],
+        input_defs=[input_def],
         compute_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
-        output=dagster.OutputDefinition(),
+        output_def=dagster.OutputDefinition(),
     )
 
     solid_two = single_output_transform(
         'solid_two',
-        inputs=[input_def],
+        input_defs=[input_def],
         compute_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
-        output=dagster.OutputDefinition(),
+        output_def=dagster.OutputDefinition(),
     )
 
     pipeline = dagster.PipelineDefinition(
@@ -108,16 +108,16 @@ def test_execute_dep_solid_different_input_name():
 
     first_solid = single_output_transform(
         'first_solid',
-        inputs=[InputDefinition(name='a_thing')],
+        input_defs=[InputDefinition(name='a_thing')],
         compute_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
-        output=dagster.OutputDefinition(),
+        output_def=dagster.OutputDefinition(),
     )
 
     second_solid = single_output_transform(
         'second_solid',
-        inputs=[InputDefinition(name='an_input')],
+        input_defs=[InputDefinition(name='an_input')],
         compute_fn=lambda context, inputs: inputs['an_input'] + inputs['an_input'],
-        output=dagster.OutputDefinition(),
+        output_def=dagster.OutputDefinition(),
     )
 
     pipeline = dagster.PipelineDefinition(

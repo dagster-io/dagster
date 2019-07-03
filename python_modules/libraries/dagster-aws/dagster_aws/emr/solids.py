@@ -85,8 +85,8 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
         super(EmrRunJobFlowSolidDefinition, self).__init__(
             name=name,
             description=description,
-            inputs=[InputDefinition(_START, Nothing)],
-            outputs=[OutputDefinition(String)],
+            input_defs=[InputDefinition(_START, Nothing)],
+            output_defs=[OutputDefinition(String)],
             compute_fn=_compute_fn,
             config_field=Field(
                 Dict(

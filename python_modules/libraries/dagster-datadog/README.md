@@ -12,7 +12,7 @@ This integration uses [DogStatsD](https://docs.datadoghq.com/developers/dogstats
 You can easily publish metrics from Dagster with the `datadog` resource:
 
 ```python
-@solid(resources={'datadog'})
+@solid(resource_defs={'datadog'})
 def datadog_solid(context):
     context.resources.datadog.event('Man down!', 'This server needs assistance.')
     context.resources.datadog.gauge('users.online', 1001, tags=["protocol:http"])
@@ -34,7 +34,7 @@ def datadog_solid(context):
 pipeline = PipelineDefinition(
     name='test_datadog_resource',
     solids=[datadog_solid],
-    mode_definitions=[ModeDefinition(resources={'datadog': datadog_resource})],
+    mode_defs=[ModeDefinition(resource_defs={'datadog': datadog_resource})],
 )
 
 result = execute_pipeline(

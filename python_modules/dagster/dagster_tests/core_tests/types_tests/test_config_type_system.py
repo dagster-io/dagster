@@ -349,8 +349,8 @@ def test_wrong_solid_name():
         solid_defs=[
             SolidDefinition(
                 name='some_solid',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 config_field=Field(Int),
                 compute_fn=lambda *_args: None,
             )
@@ -378,9 +378,9 @@ def dummy_resource(config_field=None):
 def test_wrong_resources():
     pipeline_def = PipelineDefinition(
         name='pipeline_test_multiple_context',
-        mode_definitions=[
+        mode_defs=[
             ModeDefinition(
-                resources={'resource_one': dummy_resource(), 'resource_two': dummy_resource()}
+                resource_defs={'resource_one': dummy_resource(), 'resource_two': dummy_resource()}
             )
         ],
         solid_defs=[],
@@ -405,8 +405,8 @@ def test_solid_list_config():
         solid_defs=[
             SolidDefinition(
                 name='solid_list_config',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 config_field=Field(List[Int]),
                 compute_fn=_test_config,
             )
@@ -427,8 +427,8 @@ def test_two_list_types():
         solid_defs=[
             SolidDefinition(
                 name='two_list_type',
-                inputs=[],
-                outputs=[],
+                input_defs=[],
+                output_defs=[],
                 config_field=Field(
                     Dict({'list_one': Field(List[Int]), 'list_two': Field(List[Int])})
                 ),
@@ -575,7 +575,7 @@ def test_required_resource_not_given():
     pipeline_def = PipelineDefinition(
         name='required_resource_not_given',
         solid_defs=[],
-        mode_definitions=[ModeDefinition(resources={'required': dummy_resource(Field(Int))})],
+        mode_defs=[ModeDefinition(resource_defs={'required': dummy_resource(Field(Int))})],
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:

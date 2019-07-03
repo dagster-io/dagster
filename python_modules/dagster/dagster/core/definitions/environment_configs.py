@@ -128,10 +128,10 @@ def define_solid_config_cls(name, config_field, inputs_field, outputs_field):
 class EnvironmentClassCreationData(
     namedtuple(
         'EnvironmentClassCreationData',
-        'pipeline_name solids dependency_structure mode_definition loggers',
+        'pipeline_name solids dependency_structure mode_definition logger_defs',
     )
 ):
-    def __new__(cls, pipeline_name, solids, dependency_structure, mode_definition, loggers):
+    def __new__(cls, pipeline_name, solids, dependency_structure, mode_definition, logger_defs):
         return super(EnvironmentClassCreationData, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
@@ -142,7 +142,9 @@ class EnvironmentClassCreationData(
             mode_definition=check.opt_inst_param(
                 mode_definition, 'mode_definition', ModeDefinition
             ),
-            loggers=check.dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition),
+            logger_defs=check.dict_param(
+                logger_defs, 'logger_defs', key_type=str, value_type=LoggerDefinition
+            ),
         )
 
 
@@ -164,7 +166,7 @@ def define_logger_dictionary_cls(name, creation_data):
 
     fields = {}
 
-    for logger_name, logger_definition in creation_data.loggers.items():
+    for logger_name, logger_definition in creation_data.logger_defs.items():
         fields[logger_name] = Field(
             SystemNamedDict(
                 '{pipeline_name}.LoggerConfig.{logger_name}'.format(
@@ -275,14 +277,16 @@ def get_inputs_field(solid, handle, dependency_structure, pipeline_name):
 
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
-        if inp.runtime_type.input_schema:
+        if inp.runtime_type.input_hydration_config:
             inp_handle = SolidInputHandle(solid, inp)
             # If this input is not satisfied by a dependency you must
             # provide it via config
             if not dependency_structure.has_deps(inp_handle) and not solid.container_maps_input(
                 name
             ):
-                inputs_field_fields[name] = FieldImpl(inp.runtime_type.input_schema.schema_type)
+                inputs_field_fields[name] = FieldImpl(
+                    inp.runtime_type.input_hydration_config.schema_type
+                )
 
     if not inputs_field_fields:
         return None
@@ -309,9 +313,9 @@ def get_outputs_field(solid, handle, pipeline_name):
 
     output_dict_fields = {}
     for name, out in solid_def.output_dict.items():
-        if out.runtime_type.output_schema:
+        if out.runtime_type.output_materialization_config:
             output_dict_fields[name] = Field(
-                type(out.runtime_type.output_schema.schema_type), is_optional=True
+                type(out.runtime_type.output_materialization_config.schema_type), is_optional=True
             )
 
     output_entry_dict = SystemNamedDict(
@@ -425,11 +429,11 @@ def iterate_solid_def_types(solid_def):
 def _gather_all_schemas(solid_defs):
     runtime_types = construct_runtime_type_dictionary(solid_defs)
     for rtt in runtime_types.values():
-        if rtt.input_schema:
-            for ct in iterate_config_types(rtt.input_schema.schema_type):
+        if rtt.input_hydration_config:
+            for ct in iterate_config_types(rtt.input_hydration_config.schema_type):
                 yield ct
-        if rtt.output_schema:
-            for ct in iterate_config_types(rtt.output_schema.schema_type):
+        if rtt.output_materialization_config:
+            for ct in iterate_config_types(rtt.output_materialization_config.schema_type):
                 yield ct
 
 

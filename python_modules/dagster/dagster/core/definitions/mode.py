@@ -24,8 +24,8 @@ class ModeDefinition:
     def __init__(
         self,
         name=DEFAULT_MODE_NAME,
-        resources=None,
-        loggers=None,
+        resource_defs=None,
+        logger_defs=None,
         system_storage_defs=None,
         description=None,
     ):
@@ -33,10 +33,12 @@ class ModeDefinition:
 
         self.name = check.str_param(name, 'name')
         self.resource_defs = check.opt_dict_param(
-            resources, 'resources', key_type=str, value_type=ResourceDefinition
+            resource_defs, 'resource_defs', key_type=str, value_type=ResourceDefinition
         )
         self.loggers = (
-            check.opt_dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition)
+            check.opt_dict_param(
+                logger_defs, 'logger_defs', key_type=str, value_type=LoggerDefinition
+            )
             or default_loggers()
         )
         self.system_storage_defs = check.list_param(
