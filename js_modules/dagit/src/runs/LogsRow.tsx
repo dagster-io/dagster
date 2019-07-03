@@ -360,10 +360,8 @@ const ExecutionStepOutputEvent: React.FunctionComponent<{
         Output
       </Tag>
     </LevelTagColumn>
-    <LabelColumn />
-    <span style={{ flex: 1 }}>
-      {node.outputName}: {styleValueRepr(node.valueRepr)}
-    </span>
+    <LabelColumn>{node.outputName}</LabelColumn>
+    <span style={{ flex: 1 }}>{styleValueRepr(node.valueRepr)}</span>
   </>
 );
 
@@ -379,9 +377,7 @@ const ExecutionStepInputEvent: React.FunctionComponent<{
         Input
       </Tag>
     </LevelTagColumn>
-    <LabelColumn />
-    <span style={{ flex: 1 }}>
-      {node.inputName}: {styleValueRepr(node.valueRepr)}
-    </span>
+    <LabelColumn>{node.inputName}</LabelColumn>
+    <span style={{ flex: 1 }}>{styleValueRepr(node.valueRepr)}</span>
   </>
 );
