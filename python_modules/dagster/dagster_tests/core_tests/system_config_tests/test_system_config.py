@@ -2,7 +2,6 @@ import pytest
 
 from dagster import (
     Any,
-    DagsterEvaluateConfigValueError,
     DependencyDefinition,
     Dict,
     Field,
@@ -28,6 +27,7 @@ from dagster.core.definitions.environment_configs import (
     define_solid_dictionary_cls,
     EnvironmentClassCreationData,
 )
+from dagster.core.types.evaluator.errors import DagsterEvaluateConfigValueError
 from dagster.core.system_config.objects import (
     construct_solid_dictionary,
     EnvironmentConfig,

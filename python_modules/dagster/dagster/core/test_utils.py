@@ -1,14 +1,9 @@
 import time
 from functools import wraps
 
-from dagster import (
-    DagsterEvaluateConfigValueError,
-    DagsterInvariantViolationError,
-    Output,
-    SolidDefinition,
-)
-
+from dagster import DagsterInvariantViolationError, Output, SolidDefinition
 from dagster.core.types.evaluator import evaluate_config
+from dagster.core.types.evaluator.errors import DagsterEvaluateConfigValueError
 
 
 def single_output_transform(name, input_defs, compute_fn, output_def, description=None):
