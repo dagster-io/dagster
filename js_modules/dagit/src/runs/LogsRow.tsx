@@ -1,13 +1,25 @@
 import * as React from "react";
-import { Tag } from "@blueprintjs/core";
-import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMessageFragment";
-
-import { DisplayEvent } from "../plan/DisplayEvent";
-import { extractMetadataFromLogs } from "../RunMetadataProvider";
-import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import gql from "graphql-tag";
-import { LogsRowStructuredFragment } from "./types/LogsRowStructuredFragment";
+
+import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
+import {
+  LogsRowStructuredFragment,
+  LogsRowStructuredFragment_ExecutionStepFailureEvent,
+  LogsRowStructuredFragment_StepMaterializationEvent,
+  LogsRowStructuredFragment_ExecutionStepOutputEvent,
+  LogsRowStructuredFragment_ExecutionStepInputEvent,
+  LogsRowStructuredFragment_StepExpectationResultEvent,
+  LogsRowStructuredFragment_PipelineProcessStartedEvent,
+  LogsRowStructuredFragment_PipelineInitFailureEvent
+} from "./types/LogsRowStructuredFragment";
 import { LogsRowUnstructuredFragment } from "./types/LogsRowUnstructuredFragment";
+import { Tag, Colors } from "@blueprintjs/core";
+import { Cell } from "./Cells";
+import { LogLevel } from "./LogsFilterProvider";
+
+function assertUnreachable(x: never): never {
+  throw new Error("Didn't expect to get here");
+}
 
 function styleValueRepr(repr: string) {
   if (repr.startsWith("DataFrame")) {
@@ -64,6 +76,14 @@ export class Structured extends React.Component<{
       }
       fragment LogsRowStructuredFragment on PipelineRunEvent {
         __typename
+        ... on MessageEvent {
+          message
+          timestamp
+          level
+          step {
+            key
+          }
+        }
         ... on PipelineProcessStartedEvent {
           processId
         }
@@ -136,75 +156,64 @@ export class Structured extends React.Component<{
     `
   };
 
+  renderStructuredContent() {
+    const { node } = this.props;
+
+    switch (node.__typename) {
+      // Errors
+      case "ExecutionStepFailureEvent":
+        return <DefaultFailureEvent node={node} />;
+      case "PipelineInitFailureEvent":
+        return <DefaultFailureEvent node={node} />;
+
+      // Using custom messages
+      case "ExecutionStepStartEvent":
+        return <DefaultStructuredEmptyEvent node={node} message="Started" />;
+      case "ExecutionStepSkippedEvent":
+        return <DefaultStructuredEmptyEvent node={node} message="Skipped" />;
+      case "ExecutionStepSuccessEvent":
+        return <DefaultStructuredEmptyEvent node={node} message="Success" />;
+
+      // Using custom renderers
+      case "ExecutionStepInputEvent":
+        return <ExecutionStepInputEvent node={node} />;
+      case "ExecutionStepOutputEvent":
+        return <ExecutionStepOutputEvent node={node} />;
+      case "PipelineProcessStartedEvent":
+        return <PipelineProcessStartedEvent node={node} />;
+      case "StepExpectationResultEvent":
+        return <StepExpectationResultEvent node={node} />;
+      case "StepMaterializationEvent":
+        return <StepMaterializationEvent node={node} />;
+
+      // Using server-provided messages
+      case "PipelineFailureEvent":
+        return <DefaultStructuredEvent node={node} />;
+      case "PipelineProcessStartEvent":
+        return <DefaultStructuredEvent node={node} />;
+      case "PipelineStartEvent":
+        return <DefaultStructuredEvent node={node} />;
+      case "PipelineSuccessEvent":
+        return <DefaultStructuredEvent node={node} />;
+      case "LogMessageEvent":
+        return <DefaultStructuredEvent node={node} />;
+      default:
+        // This allows us to check that the switch is exhaustive because the union type should
+        // have been narrowed following each successive case to `never` at this point.
+        return assertUnreachable(node);
+    }
+  }
+
   render() {
     const { node } = this.props;
-    if (node.__typename === "StepExpectationResultEvent") {
-      const events = extractMetadataFromLogs([node as any]);
-      return (
-        <div>
-          {events.steps[(node as any).step!.key].expectationResults.map(
-            (e, idx) => (
-              <DisplayEvent event={e} key={`${idx}`} />
-            )
-          )}
-        </div>
-      );
-    }
-    if (node.__typename === "StepMaterializationEvent") {
-      const events = extractMetadataFromLogs([node as any]);
-      return (
-        <div>
-          {events.steps[node.step!.key].materializations.map((e, idx) => (
-            <DisplayEvent event={e} key={`${idx}`} />
-          ))}
-        </div>
-      );
-    }
-    if (node.__typename === "ExecutionStepStartEvent") {
-      return <span>Started</span>;
-    }
-    if (node.__typename === "ExecutionStepFailureEvent") {
-      return (
-        <span>{`Failed with error: \n${node.error.message}\n${
-          node.error.stack
-        }`}</span>
-      );
-    }
-    if (node.__typename === "ExecutionStepSkippedEvent") {
-      return <span>Skipped</span>;
-    }
-    if (node.__typename === "ExecutionStepOutputEvent") {
-      return (
-        <span>
-          <Tag
-            minimal={true}
-            intent={node.typeCheck.success ? "success" : "warning"}
-            style={{ marginRight: 4 }}
-          >
-            Output
-          </Tag>
-          {node.outputName}: {styleValueRepr(node.valueRepr)}
-        </span>
-      );
-    }
-    if (node.__typename === "ExecutionStepInputEvent") {
-      return (
-        <span>
-          <Tag
-            minimal={true}
-            intent={node.typeCheck.success ? "success" : "warning"}
-            style={{ marginRight: 4 }}
-          >
-            Input
-          </Tag>
-          {node.inputName}: {styleValueRepr(node.valueRepr)}
-        </span>
-      );
-    }
-    if (node.__typename === "ExecutionStepSuccessEvent") {
-      return <span>Success</span>;
-    }
-    return <span>{node.__typename}</span>;
+
+    return (
+      <Cell level={LogLevel.EVENT}>
+        <StepColumn stepKey={"step" in node && node.step && node.step.key} />
+        <span style={{ flex: 1 }}>{this.renderStructuredContent()}</span>
+        <TimestampColumn time={"timestamp" in node && node.timestamp} />
+      </Cell>
+    );
   }
 }
 
@@ -229,7 +238,162 @@ export class Unstructured extends React.Component<{
 
   render() {
     const { node } = this.props;
-
-    return <span>{node.message}</span>;
+    return (
+      <Cell level={node.level}>
+        <StepColumn stepKey={node.step && node.step.key} />
+        <span style={{ width: 90, flexShrink: 0, color: Colors.GRAY3 }}>
+          {node.level}
+        </span>
+        <span style={{ flex: 1 }}>{node.message}</span>
+        <TimestampColumn time={node.timestamp} />
+      </Cell>
+    );
   }
 }
+
+// Structured Content Renderers
+
+// Renders the left column with the step key broken into hierarchical components.
+// Manually implements middle text truncation since we can count on monospace font
+// rendering being fairly consistent.
+//
+const StepColumn = (props: { stepKey: string | false | null }) => {
+  const parts = (props.stepKey || "").replace(/\.compute$/, "").split(".");
+  return (
+    <div style={{ width: 250, flexShrink: 0 }}>
+      {parts.map((p, idx) => (
+        <div
+          key={idx}
+          style={{
+            paddingLeft: Math.max(0, idx * 15 - 9),
+            paddingRight: 15,
+            fontWeight: idx === parts.length - 1 ? 600 : 300
+          }}
+        >
+          {idx > 0 ? "↳" : ""}
+          {p.length > 30 - idx * 2
+            ? `${p.substr(0, 16 - idx * 2)}…${p.substr(p.length - 14)}`
+            : p}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const TimestampColumn = (props: { time: string | false }) => (
+  <div
+    style={{
+      width: 100,
+      flexShrink: 0,
+      textAlign: "right",
+      color: Colors.GRAY3
+    }}
+  >
+    {props.time &&
+      new Date(Number(props.time))
+        .toISOString()
+        .replace("Z", "")
+        .split("T")
+        .pop()}
+  </div>
+);
+
+const DefaultStructuredEvent = (props: { node: LogsRowStructuredFragment }) => (
+  <div>{props.node.message}</div>
+);
+
+const PipelineProcessStartedEvent = (props: {
+  node: LogsRowStructuredFragment_PipelineProcessStartedEvent;
+}) => (
+  <div>
+    {`Pipeline started `}
+    <span style={{ color: Colors.GRAY3 }}>{`PID: ${
+      props.node.processId
+    }`}</span>
+  </div>
+);
+
+const DefaultFailureEvent = (props: {
+  node:
+    | LogsRowStructuredFragment_ExecutionStepFailureEvent
+    | LogsRowStructuredFragment_PipelineInitFailureEvent;
+}) => (
+  <div style={{ color: Colors.RED3 }}>{`${props.node.error.message}\n${
+    props.node.error.stack
+  }`}</div>
+);
+
+const StepExpectationResultEvent = ({
+  node
+}: {
+  node: LogsRowStructuredFragment_StepExpectationResultEvent;
+}) => (
+  <div>
+    {/* {events.steps[(node as any).step!.key].expectationResults.map((e, idx) => (
+      <DisplayEvent event={e} key={`${idx}`} />
+    ))} */}
+  </div>
+);
+
+const StepMaterializationEvent = ({
+  node
+}: {
+  node: LogsRowStructuredFragment_StepMaterializationEvent;
+}) => (
+  <div>
+    {/* {events.steps[node.step!.key].materializations.map((e, idx) => (
+      <DisplayEvent event={e} key={`${idx}`} />
+    ))} */}
+  </div>
+);
+
+const DefaultStructuredEmptyEvent = ({
+  node,
+  message
+}: {
+  message: string;
+  node: LogsRowStructuredFragment;
+}) => <span>{message}</span>;
+
+const ExecutionStepFailureEvent = ({
+  node
+}: {
+  node: LogsRowStructuredFragment_ExecutionStepFailureEvent;
+}) => (
+  <span>{`Failed with error: \n${node.error.message}\n${
+    node.error.stack
+  }`}</span>
+);
+
+const ExecutionStepOutputEvent = ({
+  node
+}: {
+  node: LogsRowStructuredFragment_ExecutionStepOutputEvent;
+}) => (
+  <span>
+    <Tag
+      minimal={true}
+      intent={node.typeCheck.success ? "success" : "warning"}
+      style={{ marginRight: 4 }}
+    >
+      Output
+    </Tag>
+    {node.outputName}: {styleValueRepr(node.valueRepr)}
+  </span>
+);
+const ExecutionStepInputEvent = ({
+  node
+}: {
+  node: LogsRowStructuredFragment_ExecutionStepInputEvent;
+}) => (
+  <span>
+    <Tag
+      minimal={true}
+      intent={node.typeCheck.success ? "success" : "warning"}
+      style={{ marginRight: 4 }}
+    >
+      Input
+    </Tag>
+    {node.inputName}: {styleValueRepr(node.valueRepr)}
+  </span>
+);
