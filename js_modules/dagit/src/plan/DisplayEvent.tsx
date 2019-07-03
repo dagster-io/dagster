@@ -1,30 +1,12 @@
 import * as React from "react";
 import styled from "styled-components";
-import { Toaster, Tag, Position, Intent } from "@blueprintjs/core";
+import { Tag } from "@blueprintjs/core";
 import { IStepDisplayEvent } from "../RunMetadataProvider";
 import { showCustomAlert } from "../CustomAlertProvider";
-
-const SharedToaster = Toaster.create({ position: Position.TOP }, document.body);
+import { copyValue } from "../Util";
 
 interface DisplayEventProps {
   event: IStepDisplayEvent;
-}
-
-async function copyValue(event: React.MouseEvent<any>, value: string) {
-  event.preventDefault();
-
-  const el = document.createElement("input");
-  document.body.appendChild(el);
-  el.value = value;
-  el.select();
-  document.execCommand("copy");
-  el.remove();
-
-  SharedToaster.show({
-    message: "Copied to clipboard!",
-    icon: "clipboard",
-    intent: Intent.NONE
-  });
 }
 
 const DisplayEventItem: React.FunctionComponent<
