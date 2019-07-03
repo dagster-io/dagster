@@ -685,7 +685,7 @@ def publish(nightly, autoclean):
 
 
 @cli.command()
-@click.argument('version')
+@click.argument('ver')
 def release(ver):
     """Tags all submodules for a new release.
 
