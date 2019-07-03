@@ -674,14 +674,17 @@ def publish(nightly, autoclean):
         subprocess.check_output(['git', 'config', '--get', 'user.name']).decode('utf-8').strip()
     )
     if not nightly:
-        slack_client.api_call(
-            'chat.postMessage',
-            channel='#general',
-            text='{git_user} just published a new version: {version}. Don\'t forget to switch the '
-            'active version of the docs at ReadTheDocs!'.format(
-                git_user=git_user, version=checked_version['__version__']
-            ),
-        )
+        parsed_version = packaging.version.parse(checked_version['__version__'])
+        if not parsed_version.is_prerelease:
+            slack_client.api_call(
+                'chat.postMessage',
+                channel='#general',
+                text=(
+                    '{git_user} just published a new version: {version}.'
+                ).format(
+                    git_user=git_user, version=checked_version['__version__']
+                ),
+            )
 
 
 @cli.command()
