@@ -76,7 +76,7 @@ class RepositoryDefinition(object):
                     name=name,
                     pipeline_names=', '.join(
                         [
-                            '"{pipeline_name}"'.format(pipeline_name=name)
+                            '"{pipeline_name}"'.format(pipeline_name=pipeline_name)
                             for pipeline_name in self.pipeline_dict.keys()
                         ]
                     ),

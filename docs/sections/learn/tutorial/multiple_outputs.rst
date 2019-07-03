@@ -62,7 +62,7 @@ and then execute that pipeline.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs_conditional.py
     :linenos:
-    :caption: multiple_outputs.py
+    :caption: multiple_outputs_conditional.py
 
 You must create a config file
 

@@ -45,7 +45,7 @@ their instance name.
 
 .. code-block:: sh
 
-        $ dagit -f part_thirteen.py -n define_part_thirteen_step_two
+        $ dagit -f reusing_solids.py -n reusing_solids_pipeline
 
 Now these arithmetic operations are not particularly interesting, but one
 can imagine reusable solids doing more useful things like uploading files
