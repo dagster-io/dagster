@@ -3,7 +3,7 @@ import produce from "immer";
 import gql from "graphql-tag";
 
 import { RunMetadataProviderMessageFragment } from "./types/RunMetadataProviderMessageFragment";
-import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
+import { MetadataEntryFragment } from "./runs/types/MetadataEntryFragment";
 
 export enum IStepState {
   WAITING = "waiting",
