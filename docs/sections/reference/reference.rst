@@ -1,7 +1,7 @@
 Reference
 ---------
 As you get started with Dagster, you'll find that there are a number of important concepts
-underpinning the system. Some of these concepts, like `DAGs <#dag>`__, will undoubtably be familiar
+underpinning the system. Some of these concepts, like DAGs, will undoubtably be familiar
 if you've previously worked with tools like Airflow. However, Dagster has some important differences
 from other workflow systems to facilitate operating at a higher level of abstraction.
 
@@ -36,7 +36,7 @@ solids and how they can be used.
 Compute Function
 ^^^^^^^^^^^^^^^^
 
-.. image:: transform_fn.png
+.. image:: compute_fn.png
     :scale: 40 %
     :align: center
 
@@ -48,7 +48,7 @@ solid is invoked by the Dagster engine.
 Outputs
 ^^^^^^^
 
-.. image:: result.png
+.. image:: outputs.png
     :scale: 40 %
     :align: center
 
@@ -80,19 +80,26 @@ to just return a value instead of yielding it, and will automatically wrap the r
 
 .. _pipeline:
 
-Pipeline
-^^^^^^^^
+Pipelines & DAGs
+^^^^^^^^^^^^^^^^
 
 .. image:: pipeline.png
     :scale: 40 %
     :align: center
 
-Data pipelines are directed acyclic graphs (DAGs) of solids -- that is, they are made up of a number
-of solids which have data `dependencies <#dependency-definition>`__ on each other (but no circular
-dependencies).
+DAG is short for `directed acyclic graph`. In this context, we are concerned with graphs where the
+nodes are computations and the edges are dependencies between those computations. The dependencies
+are `directed` because the outputs of one computation are the inputs to another.
+These graphs are `acyclic` because there are no circular dependencies -- in other words, the graph
+has a clear beginning and end, and we can always figure out what order to execute its nodes in.
 
-In Dagster, pipelines are created with the Dagster :func:`@pipeline <dagster.pipeline>` decorator.
-Any solids invoked from within a pipeline function will automatically be added to the pipeline DAG.
+In Dagster, pipelines are directed acyclic graphs (DAGs) of solids -- that is, they are made up of a
+number of solids which have data `dependencies <#dependency-definition>`__ on each other (but no
+circular dependencies).
+
+These pipelines are created with the Dagster :func:`@pipeline <dagster.pipeline>` decorator. Any
+solids invoked from within a pipeline definition function will automatically be added to the
+pipeline DAG.
 
 Paired with appropriate configuration, the pipeline can be compiled by the Dagster engine into an
 execution plan that is executable on various compute substrates. To support these substrates,
@@ -156,9 +163,13 @@ repository definition.
 Composite Solids
 ^^^^^^^^^^^^^^^^
 
-To help manage the level of complexity that data applications tend to reach,
-dagster provides a unit of abstraction for composing a solid from other solids. We call this type
-of solid a **Composite Solid**.
+.. image:: composites.png
+    :scale: 40 %
+    :align: center
+
+To help manage the level of complexity that data applications tend to reach, dagster provides a unit
+of abstraction for composing a solid from other solids. We call this type of solid a **Composite
+Solid**.
 
 This ability to compose solids can be used to:
     - organize large or complicated graphs
@@ -197,29 +208,22 @@ outputs as specifying `what` data a pipeline operates on, and config as specifyi
 operates.
 
 Concretely, imagine a pipeline of solids operating on a data warehouse. The solids might emit and
-consume table partition IDs and aggregate statistics as inputs and outputs -- the data on which they
-operate. Environment config might specify how to connect to the warehouse (so that the pipeline
-could also operate against a local test database), how to log the results of intermediate
+consume table partition coordinates and aggregate statistics as inputs and outputs -- the data on
+which they operate. Environment config might specify how to connect to the warehouse (so that the
+pipeline could also operate against a local test database), how to log the results of intermediate
 computations, or where to put artifacts like plots and summary tables.
 
 Configuration Schemas
 ^^^^^^^^^^^^^^^^^^^^^
 
-Configuration schemas define how users can config pipelines (using either Python dicts, YAML,
-or JSON). They tell the Dagster engine how to type check environment config provided in one of
-these formats against the pipeline and enable many errors to be caught with rich messaging
-at compile time.
+In Dagster, configuration is explicitly typed with configuration schemas. Configuration schemas
+define how users can config pipelines. They tell the Dagster engine how to type check user-supplied
+environment config against the pipeline and enable many errors to be caught with rich messaging at
+compile time.
 
-Config fields are defined using the :class:`Field <dagster.Field>` class.
-
-DAG
-^^^
-
-DAG is short for `directed acyclic graph`. In this context, we are concerned with graphs where the
-nodes are computations and the edges are dependencies between those computations. The dependencies
-are `directed` because the outputs of one computation are the inputs to another.
-These graphs are `acyclic` because there are no circular dependencies -- in other words, the graph
-has a clear beginning and end, and we can always figure out what order to execute its nodes in.
+When creating resources :func:`@resource <dagster.solid>`, solids :func:`@solid <dagster.solid>`, or
+loggers :func:`@logger <dagster.logger>`, you can supply a configuration schema to define the
+available configuration for that object.
 
 Execution Plan
 ^^^^^^^^^^^^^^
@@ -233,10 +237,10 @@ Users do not directly instantiate or manipulate execution plans.
 Execution Step
 ^^^^^^^^^^^^^^
 
-Execution steps are concrete computations, one or more of which corresponds to a solid in a pipeline
-that has been compiled with a config. Some execution steps are generated in order to compute the
-core compute functions of solids, but execution steps may also be generated in order to
-materialize outputs, check expectations against outputs, etc.
+Execution steps are concrete computations. When a pipeline is compiled with an environment config,
+each solid is compiled into one or more corresponding execution steps. Some execution steps are
+generated in order to compute the core compute functions of solids, but execution steps may also be
+generated in order to materialize outputs, check expectations against outputs, etc.
 
 Users do not directly instantiate or manipulate execution steps.
 
@@ -249,16 +253,3 @@ fail, or are skipped due to upstream failures, and when outputs are generated an
 
 Users do not directly instantiate or manipulate Dagster events, but they are consumed by the GraphQL
 interface that supports the Dagit tool.
-
-InputDefinition
-^^^^^^^^^^^^^^^
-
-Optionally typed definition of the data that a solid requires in order to execute. Defined inputs
-may often also be shimmed through config. Inputs are defined using the
-:class:`InputDefinition <dagster.InputDefinition>` class, usually when defining a solid.
-
-OutputDefinition
-^^^^^^^^^^^^^^^^
-
-Optionally typed definition of the result that a solid will produce. Outputs are defined using the
-:class:`OutputDefinition <dagster.OutputDefinition>` class, usually when defining a solid.
