@@ -202,7 +202,6 @@ def dask_tests():
                 version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
             )
             .with_timeout(5)
-            .with_retry(3)
             .on_medium_instance()
             .build()
         )
