@@ -17,7 +17,7 @@ Tutorial
   types
   expectations
   multiple_outputs
-  reusable_solids
+  reusing_solids 
   composite_solids
   composition_functions
   dagstermill

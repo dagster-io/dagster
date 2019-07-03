@@ -1,4 +1,4 @@
-Reusable Solids
+Reusing Solids
 ---------------
 
 So far we have been using solids tailor-made for each pipeline they were resident in, and have
@@ -13,9 +13,9 @@ if one included two copies of the solid.
 Instead we introduce the ``alias`` call that allows the user to create multiple, named instances
 of a single solid:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusable_solids.py
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusing_solids.py
    :linenos:
-   :caption: reusable_solids.py
+   :caption: reusing_solids.py
 
 You'll notice that now have two copies of the adder solid.
 
@@ -23,16 +23,21 @@ We only add solids to the pipeline when they are invoked. Here we invoke them on
 given them aliases allowing us to have two invocations of the same underlying solid definition with
 unique names.
 
-If you inspect this in dagit, you'll see those two instances:
+If you inspect this in dagit, you'll see those two instances. You'll also notice that the notion
+of an *invocation* and a *definition* are actually different. The invocation is named and bound
+via a dependency graph to other invocations. The definition is the generic, resuable piece of logic
+that is invoked many times within this pipeline.
 
-.. image:: reusable_solids_figure_one.png
+.. image:: reusing_solids_figure_one.png
+
+You'll also notice in the right-hand column
 
 You also use the aliases in the environment config. In order to execute this pipeline, use
 the following config file:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusable_solids.yaml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusing_solids.yaml
    :linenos:
-   :caption: reusable_solids.yaml
+   :caption: reusing_solids.yaml
 
 
 Load this in dagit and you'll see that the node are the graph are labeled with

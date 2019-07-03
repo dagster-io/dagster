@@ -1,11 +1,11 @@
 from dagster import execute_pipeline
 
-from dagster_examples.intro_tutorial.reusable_solids import reusable_solids_pipeline
+from dagster_examples.intro_tutorial.reusing_solids import reusing_solids_pipeline
 
 
 def test_run_whole_pipeline():
     pipeline_result = execute_pipeline(
-        reusable_solids_pipeline,
+        reusing_solids_pipeline,
         {
             'solids': {
                 'a_plus_b': {'inputs': {'num1': {'value': 2}, 'num2': {'value': 6}}},
