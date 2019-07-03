@@ -98,14 +98,14 @@ div.body #reference a.image-reference {
 }
 
 /* This is the "Dagster" sidebar header */
-.sphinxsidebar h3 > a {
+div.sphinxsidebar h3 > a {
   -webkit-transition: color 0.3s ease-in-out;
   -moz-transition: color 0.3s ease-in-out;
   -o-transition: color 0.3s ease-in-out;
   transition: color 0.3s ease-in-out;
   padding-left: -2px;
 }
-.sphinxsidebar h3 > a:hover {
+div.sphinxsidebar h3 > a:hover {
   color: #2391eb;
 }
 
@@ -121,6 +121,13 @@ div.sphinxsidebar ul li.toctree-l1 > a {
   -moz-transition: color 0.2s ease-in-out;
   -o-transition: color 0.2s ease-in-out;
   transition: color 0.2s ease-in-out;
+}
+div.sphinxsidebar ul li.toctree-l1 {
+  line-height: 190%;
+}
+
+div.sphinxsidebar ul li.toctree-l2 {
+  line-height: 180%;
 }
 
 div.sphinxsidebar li.toctree-l1 > a:hover {

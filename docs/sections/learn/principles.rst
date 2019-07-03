@@ -4,6 +4,7 @@ Dagster is opinionated about how data pipelines should be built and structured. 
 is important?
 
 .. rubric:: Functional
+
 Data pipelines should be expressed as DAGs (directed acyclic graphs) of functional, idempotent
 computations. Individual nodes in the graph consume their inputs, perform some computation, and
 yield outputs, either with no side effects or with clearly advertised side effects. Given the
@@ -15,12 +16,14 @@ may execute in different environments.
      for an excellent overview of functional programing in batch computations.
 
 .. rubric:: Self-describing
+
 Data pipelines should be self-describing, with rich metadata and types. Users should be able to
 approach an unfamiliar pipeline and use tooling to inspect it and discover its structure,
 capabilities, and requirements. Pipeline metadata should be co-located with the pipeline's actual
 code: documentation and code should be delivered as a single artifact.
 
 .. rubric:: Compute-agnostic
+
 Heterogeneity in data pipelines is the norm, rather than the exception. Data pipelines are written
 collaboratively by many people in different personas -- data engineers, machine-learning engineers,
 data scientists, analysts and so on -- who have different needs and tools, and are particular about
@@ -32,6 +35,7 @@ any Python computations, whether they use Pandas, Spark, or call out to SQL or a
 library deemed appropriate to the task.
 
 .. rubric:: Testable
+
 Testing data pipelines is notoriously difficult. Because testing is so difficult, it is often never
 done, or done poorly. Dagster pipelines are designed to be tested. Dagster provides explicit support
 for pipeline authors to manage and maintain multiple execution environments -- for example, unit
@@ -40,6 +44,7 @@ subsets and nodes of pipelines, which is critical for testability (and useful in
 contexts as well).
 
 .. rubric:: Verifiable data quality
+
 Testing code is important in data pipelines, but it is not sufficient. Data quality tests -- run
 during every meaningful stage of computation in production -- are critical to reduce the
 maintenance burden of data pipelines. Pipeline authors generally do not have control over their
@@ -53,6 +58,7 @@ and diagnostic information. These expectations can also serve as contracts betwe
      data quality.
 
 .. rubric:: Gradual, optional typing
+
 Dagster contains a type system to describe the values flowing through the pipeline and the
 configuration of the pipeline. As pipelines mature, gradual typing lets nodes in a pipeline
 know if they are properly arranged and configured prior to execution, and provides rich
