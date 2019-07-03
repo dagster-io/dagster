@@ -14,8 +14,8 @@ import {
 } from "./types/LogsRowStructuredFragment";
 import { LogsRowUnstructuredFragment } from "./types/LogsRowUnstructuredFragment";
 import { Tag, Colors } from "@blueprintjs/core";
-import { Cell } from "./Cells";
-import { LogLevel } from "./LogsFilterProvider";
+import { Cell, StructuredCell } from "./Cells";
+import styled from "styled-components";
 
 function assertUnreachable(x: never): never {
   throw new Error("Didn't expect to get here");
@@ -162,7 +162,6 @@ export class Structured extends React.Component<{
     switch (node.__typename) {
       // Errors
       case "ExecutionStepFailureEvent":
-        return <DefaultFailureEvent node={node} />;
       case "PipelineInitFailureEvent":
         return <DefaultFailureEvent node={node} />;
 
@@ -188,15 +187,12 @@ export class Structured extends React.Component<{
 
       // Using server-provided messages
       case "PipelineFailureEvent":
-        return <DefaultStructuredEvent node={node} />;
       case "PipelineProcessStartEvent":
-        return <DefaultStructuredEvent node={node} />;
+      case "PipelineSuccessEvent":
+      case "LogMessageEvent":
       case "PipelineStartEvent":
         return <DefaultStructuredEvent node={node} />;
-      case "PipelineSuccessEvent":
-        return <DefaultStructuredEvent node={node} />;
-      case "LogMessageEvent":
-        return <DefaultStructuredEvent node={node} />;
+
       default:
         // This allows us to check that the switch is exhaustive because the union type should
         // have been narrowed following each successive case to `never` at this point.
@@ -208,11 +204,11 @@ export class Structured extends React.Component<{
     const { node } = this.props;
 
     return (
-      <Cell level={LogLevel.EVENT}>
-        <StepColumn stepKey={"step" in node && node.step && node.step.key} />
-        <span style={{ flex: 1 }}>{this.renderStructuredContent()}</span>
+      <StructuredCell>
+        <StepKeyColumn stepKey={"step" in node && node.step && node.step.key} />
+        {this.renderStructuredContent()}
         <TimestampColumn time={"timestamp" in node && node.timestamp} />
-      </Cell>
+      </StructuredCell>
     );
   }
 }
@@ -240,10 +236,8 @@ export class Unstructured extends React.Component<{
     const { node } = this.props;
     return (
       <Cell level={node.level}>
-        <StepColumn stepKey={node.step && node.step.key} />
-        <span style={{ width: 90, flexShrink: 0, color: Colors.GRAY3 }}>
-          {node.level}
-        </span>
+        <StepKeyColumn stepKey={node.step && node.step.key} />
+        <LevelContainer>{node.level}</LevelContainer>
         <span style={{ flex: 1 }}>{node.message}</span>
         <TimestampColumn time={node.timestamp} />
       </Cell>
@@ -257,10 +251,10 @@ export class Unstructured extends React.Component<{
 // Manually implements middle text truncation since we can count on monospace font
 // rendering being fairly consistent.
 //
-const StepColumn = (props: { stepKey: string | false | null }) => {
+const StepKeyColumn = (props: { stepKey: string | false | null }) => {
   const parts = (props.stepKey || "").replace(/\.compute$/, "").split(".");
   return (
-    <div style={{ width: 250, flexShrink: 0 }}>
+    <StepKeyContainer>
       {parts.map((p, idx) => (
         <div
           key={idx}
@@ -276,41 +270,56 @@ const StepColumn = (props: { stepKey: string | false | null }) => {
             : p}
         </div>
       ))}
-    </div>
+    </StepKeyContainer>
   );
 };
 
 const TimestampColumn = (props: { time: string | false }) => (
-  <div
-    style={{
-      width: 100,
-      flexShrink: 0,
-      textAlign: "right",
-      color: Colors.GRAY3
-    }}
-  >
+  <TimestampContainer>
     {props.time &&
       new Date(Number(props.time))
         .toISOString()
         .replace("Z", "")
         .split("T")
         .pop()}
-  </div>
+  </TimestampContainer>
 );
 
+const StepKeyContainer = styled.div`
+  width: 250px;
+  flex-shrink: 0;
+`;
+
+const TimestampContainer = styled.div`
+  width: 100px;
+  flex-shrink: 0;
+  text-align: right;
+  color: ${Colors.GRAY3};
+`;
+
+const LevelContainer = styled.div`
+  width: 90px;
+  flex-shrink: 0;
+  color: ${Colors.GRAY3};
+`;
+
 const DefaultStructuredEvent = (props: { node: LogsRowStructuredFragment }) => (
-  <div>{props.node.message}</div>
+  <>
+    <LevelContainer />
+    <span style={{ flex: 1 }}>{props.node.message}</span>
+  </>
 );
 
 const PipelineProcessStartedEvent = (props: {
   node: LogsRowStructuredFragment_PipelineProcessStartedEvent;
 }) => (
-  <div>
+  <>
+    <LevelContainer />
     {`Pipeline started `}
-    <span style={{ color: Colors.GRAY3 }}>{`PID: ${
+    <span style={{ flex: 1, color: Colors.GRAY3 }}>{`PID: ${
       props.node.processId
     }`}</span>
-  </div>
+  </>
 );
 
 const DefaultFailureEvent = (props: {
@@ -318,9 +327,12 @@ const DefaultFailureEvent = (props: {
     | LogsRowStructuredFragment_ExecutionStepFailureEvent
     | LogsRowStructuredFragment_PipelineInitFailureEvent;
 }) => (
-  <div style={{ color: Colors.RED3 }}>{`${props.node.error.message}\n${
-    props.node.error.stack
-  }`}</div>
+  <>
+    <LevelContainer />
+    <span style={{ flex: 1, color: Colors.RED3 }}>
+      {`${props.node.error.message}\n${props.node.error.stack}`}
+    </span>
+  </>
 );
 
 const StepExpectationResultEvent = ({
@@ -328,11 +340,12 @@ const StepExpectationResultEvent = ({
 }: {
   node: LogsRowStructuredFragment_StepExpectationResultEvent;
 }) => (
-  <div>
+  <>
+    <LevelContainer />
     {/* {events.steps[(node as any).step!.key].expectationResults.map((e, idx) => (
       <DisplayEvent event={e} key={`${idx}`} />
     ))} */}
-  </div>
+  </>
 );
 
 const StepMaterializationEvent = ({
@@ -340,11 +353,12 @@ const StepMaterializationEvent = ({
 }: {
   node: LogsRowStructuredFragment_StepMaterializationEvent;
 }) => (
-  <div>
+  <>
+    <LevelContainer />
     {/* {events.steps[node.step!.key].materializations.map((e, idx) => (
       <DisplayEvent event={e} key={`${idx}`} />
     ))} */}
-  </div>
+  </>
 );
 
 const DefaultStructuredEmptyEvent = ({
@@ -353,16 +367,24 @@ const DefaultStructuredEmptyEvent = ({
 }: {
   message: string;
   node: LogsRowStructuredFragment;
-}) => <span>{message}</span>;
+}) => (
+  <>
+    <LevelContainer />
+    <span style={{ flex: 1 }}>{message}</span>
+  </>
+);
 
 const ExecutionStepFailureEvent = ({
   node
 }: {
   node: LogsRowStructuredFragment_ExecutionStepFailureEvent;
 }) => (
-  <span>{`Failed with error: \n${node.error.message}\n${
-    node.error.stack
-  }`}</span>
+  <>
+    <LevelContainer />
+    <span style={{ flex: 1 }}>
+      {`Failed with error: \n${node.error.message}\n${node.error.stack}`}
+    </span>
+  </>
 );
 
 const ExecutionStepOutputEvent = ({
@@ -370,30 +392,38 @@ const ExecutionStepOutputEvent = ({
 }: {
   node: LogsRowStructuredFragment_ExecutionStepOutputEvent;
 }) => (
-  <span>
-    <Tag
-      minimal={true}
-      intent={node.typeCheck.success ? "success" : "warning"}
-      style={{ marginRight: 4 }}
-    >
-      Output
-    </Tag>
-    {node.outputName}: {styleValueRepr(node.valueRepr)}
-  </span>
+  <>
+    <LevelContainer>
+      <Tag
+        minimal={true}
+        intent={node.typeCheck.success ? "success" : "warning"}
+        style={{ marginRight: 4 }}
+      >
+        Output
+      </Tag>
+    </LevelContainer>
+    <span style={{ flex: 1 }}>
+      {node.outputName}: {styleValueRepr(node.valueRepr)}
+    </span>
+  </>
 );
 const ExecutionStepInputEvent = ({
   node
 }: {
   node: LogsRowStructuredFragment_ExecutionStepInputEvent;
 }) => (
-  <span>
-    <Tag
-      minimal={true}
-      intent={node.typeCheck.success ? "success" : "warning"}
-      style={{ marginRight: 4 }}
-    >
-      Input
-    </Tag>
-    {node.inputName}: {styleValueRepr(node.valueRepr)}
-  </span>
+  <>
+    <LevelContainer>
+      <Tag
+        minimal={true}
+        intent={node.typeCheck.success ? "success" : "warning"}
+        style={{ marginRight: 4 }}
+      >
+        Input
+      </Tag>
+    </LevelContainer>
+    <span style={{ flex: 1 }}>
+      {node.inputName}: {styleValueRepr(node.valueRepr)}
+    </span>
+  </>
 );

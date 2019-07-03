@@ -81,7 +81,7 @@ export default class LogsFilterProvider<
   runFilter = () => {
     const { nodes, filter } = this.props;
 
-    if (nodes === undefined || isEqual(filter, DefaultLogFilter)) {
+    if (nodes === undefined) {
       this.setState({ results: nodes });
       return;
     }
