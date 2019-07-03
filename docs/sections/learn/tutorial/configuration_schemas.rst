@@ -86,7 +86,7 @@ We'll get a nice error *prior* to execution:
 
 .. code-block:: console
 
-    dagster.core.execution.context_creation_pipeline.PipelineConfigEvaluationError: Pipeline
+    dagster.core.execution.context_creation_pipeline.DagsterInvalidConfigError: Pipeline
       "configuration_schema_pipeline" config errors:
     Error 1: Type failure at path "root:solids:multiply_the_word:config:factor" on type "Int". Value
       at path root:solids:multiply_the_word:config:factor is not valid. Expected "Int".
@@ -113,7 +113,7 @@ And then run the pipeline:
         -e configuration_schemas_wrong_field.yaml
 
     ...
-    dagster.core.execution.context_creation_pipeline.PipelineConfigEvaluationError:
+    dagster.core.execution.context_creation_pipeline.DagsterInvalidConfigError:
     Pipeline "configuration_schema_pipeline" config errors:
 
     Error 1: Undefined field "multiply_the_word_with_typed_config" at path root:solids

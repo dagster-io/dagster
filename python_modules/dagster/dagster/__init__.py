@@ -97,7 +97,7 @@ from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.runtime import RuntimeType
 
 from dagster.utils import file_relative_path
-from dagster.utils.test import execute_solid
+from dagster.utils.test import execute_solid, execute_solids_within_pipeline
 
 from .version import __version__
 
@@ -156,6 +156,7 @@ __all__ = [
     'DagsterStepOutputNotFoundError',
     # Utilities
     'execute_solid',
+    'execute_solids_within_pipeline',
     'file_relative_path',
     # types
     'Any',

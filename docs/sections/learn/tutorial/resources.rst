@@ -39,7 +39,7 @@ a simple resource that provides the same ``.chat.post_message()`` API, using the
 decorator:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_full.py
-   :lines: 25-42
+   :lines: 24-43
    :linenos:
    :emphasize-lines: 15
 
@@ -50,7 +50,7 @@ it'll write to.
 In order to run this pipeline, we invoke it in this way:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_full.py
-   :lines: 63-69
+   :lines: 62-68
    :linenos:
    :dedent: 4
    :emphasize-lines: 3,5
@@ -60,7 +60,7 @@ implementation of ``slack`` is used. The complete example including both "local"
 modes is shown below:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_full.py
-    :emphasize-lines: 57, 59, 65, 67
+    :emphasize-lines: 56, 58, 64, 66
     :linenos:
     :caption: resources_full.py
 

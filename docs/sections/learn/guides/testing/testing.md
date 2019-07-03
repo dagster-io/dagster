@@ -1,40 +1,38 @@
 # Testing Guide
 
-Testing computations and pipelines in data applications is notoriously challenging. Because of this, they often go relatively untested before hitting production. If there is testing in place, these tests are often slow, not run during common developer workflows, and have limited value because of the inability to simulate conditions in the production environment. 
+Testing computations and pipelines in data applications is notoriously challenging. Because of this, they often go relatively untested before hitting production. If there is testing in place, these tests are often slow, not run during common developer workflows, and have limited value because of the inability to simulate conditions in the production environment.
 
 Two underlying facts, more than any others, account for this challenge:
 
-1. *Data applications encode much of their business logic in heavy, external systems*. Examples include processing systems like Spark, and data warehouses such as Snowflake and Redshift. It is a) difficult to structure software to isolate these dependencies and b) difficult or impossible to run them in a lightweight manner. 
- 
-2. *Data applications usually do not control their inputs.* They must take the data given and compute over it. This means that the computations encode innumerable implicit, unexpressed assumptions about the incoming data. 
+1. _Data applications encode much of their business logic in heavy, external systems_. Examples include processing systems like Spark, and data warehouses such as Snowflake and Redshift. It is a) difficult to structure software to isolate these dependencies and b) difficult or impossible to run them in a lightweight manner.
 
-Without accounting for these unique properties of data applications, blindly applying traditional software techniques can results in tests that are low-value, ineffective, or more trouble than they are worth. 
+2. _Data applications usually do not control their inputs._ They must take the data given and compute over it. This means that the computations encode innumerable implicit, unexpressed assumptions about the incoming data.
+
+Without accounting for these unique properties of data applications, blindly applying traditional software techniques can results in tests that are low-value, ineffective, or more trouble than they are worth.
 
 ## Environments and Business Logic
 
-As noted above, data applications often rely on and encode their business logic in code that is executed by heavy, external dependencies. This means that it is easy and natural to couple your application to a single operating environment. However if you do this, *any* testing requires your production environment. This is a big problem.
+As noted above, data applications often rely on and encode their business logic in code that is executed by heavy, external dependencies. This means that it is easy and natural to couple your application to a single operating environment. However if you do this, _any_ testing requires your production environment. This is a big problem.
 
 To even make local testing possible, one much structure your software to, as much as possible, cleanly separate this business logic from your operating environment. This is one the reasons why Dagster flows through a context object throughout its entire computation.
 
 Attached to the context is set of user-defined resources. Examples of resources include APIs to data warehouses, Spark clusters, s3 sessions, or some other external dependency or service. We can then configure pipelines to be in different "modes", which can alter what version of the resource is vended to the user.
 
-
 ## Unit Tests in Data Application
 
-Principal: Errors that *can* be caught by unit tests *should* be caught by unit tests.
+Principal: Errors that _can_ be caught by unit tests _should_ be caught by unit tests.
 
-Corollary: Do *not* attempt to unit test for errors than *cannot* be caught by unit tests.
+Corollary: Do _not_ attempt to unit test for errors than _cannot_ be caught by unit tests.
 
 Using unit tests without keeping these principles in mind is on the reasons unit tests are frequently treated with skepticism in the data community. Unit testing is too often intepreted as simulating an external system such as Spark or data warehouse in a granular manner. Those are very complex systems which are impossible to faithfully emulate. Do not try to do so.
 
 Attempts to do this generally lead down a road where a programmer is spending huge amounts of time manually mocking, stubbing, or simulating the intricate behaviors of an externalized system. This is a massive waste of time and energy. Data applications will not be fully tested by unit tests, and one should not attempt to do so.
 
-Put another way, unit tests are not acceptance tests. They should not be the arbiter of whether a computation is correct.  However unit testing -- when properly scoped -- is still valuable in data applications.
+Put another way, unit tests are not acceptance tests. They should not be the arbiter of whether a computation is correct. However unit testing -- when properly scoped -- is still valuable in data applications.
 
-There are massive classes of errors that can be addressed without interacting with external services: refactoring errors, syntax errors in interpreted languages, configuration errors, graph structure errors, and so on. Errors caught in a fast feedback loop of unit testing can be addressed orders of magnitude faster than those caught during an expensive batch computation in staging or production.  With this dynamic in place engineers feel more empowered to do refactoring and other code quality improvements, because those errors can be caught earlier in the process.
+There are massive classes of errors that can be addressed without interacting with external services: refactoring errors, syntax errors in interpreted languages, configuration errors, graph structure errors, and so on. Errors caught in a fast feedback loop of unit testing can be addressed orders of magnitude faster than those caught during an expensive batch computation in staging or production. With this dynamic in place engineers feel more empowered to do refactoring and other code quality improvements, because those errors can be caught earlier in the process.
 
 In this domain they should be viewed primarily as productivity and code quality tools, which in the end lead to more correct calculations.
-
 
 ### Example
 
@@ -44,15 +42,15 @@ We will be using these concepts to build up a reusable Solid that downloads a fi
 
 Let's build a simple version of this Solid:
 
-```python=
+```python
 def file_cache_folder():
     return 'file_cache'
-    
+
 @solid
 def cache_file_from_s3(_, s3_coord: S3Coordinate) -> str:
     # we default the target_key to the last component of the s3 key.
     target_key = s3_coord['key'].split('/')[-1]
-    
+
     # helpful wrapper around tempfile provided by dagster.utils
     with get_temp_file_name() as tmp_file:
         # boto3 hardcoded dependency, difficult to mock
@@ -64,16 +62,16 @@ def cache_file_from_s3(_, s3_coord: S3Coordinate) -> str:
 
         # file_cache_folder dependency, difficult to mock
         target_path = os.path.join(file_cache_folder(), target_key)
-        
+
         with open(tmp_file, 'rb') as tmp_file_object:
             with open(target_path, 'wb') as target_file_object:
                 shutil.copyfileobj(tmp_file_object, target_file_object)
                 return target_path
 ```
 
-Testing this is *possible* but it is awkward. This is how one would do a simple test for this code using the built-in python `mock` module.
+Testing this is _possible_ but it is awkward. This is how one would do a simple test for this code using the built-in python `mock` module.
 
-```python=
+```python
 
 def test_cache_file_from_s3_step_one_one():
     boto_s3 = mock.MagicMock()
@@ -99,20 +97,18 @@ def test_cache_file_from_s3_step_one_one():
         assert boto_s3.download_file.call_count == 1
 
         assert os.path.exists(os.path.join(temp_dir, 'some-key'))
-        
+
 ```
-
-
 
 This is for a simple case. For more complex cases this would becoming increasingly difficult to the point where the cost of building and maintaining the test could very well be greater than the value of the test.
 
 We're going to start to introduce dagster concepts to make this testable and executable in more contexts.
 
-#### Testing utility: `execute_solid` 
+#### Testing utility: `execute_solid`
 
 This first thing we are going to do is introduce `execute_solid`, which is very convenient for unit-testing. This makes it so that the author no longer has to construct emphemeral pipelines for the sole purpose or running a test or shimming in a value.
 
-```python=
+```python
 def test_cache_file_from_s3():
     boto_s3 = mock.MagicMock()
     # mock.patch is difficult to get right and requires
@@ -143,7 +139,7 @@ def test_cache_file_from_s3():
 
 Dagster with the FileCache resource out-of-the-box, which is designed to fulfill this exact use case. Thie provides a layer of indirection for easily providing test implementations in a structure member as well as (as we'll see later) swapping out different implementations for different environments (such as a cloud environment.)
 
-```python=
+```python
 def test_cache_file_from_s3():
     boto_s3 = mock.MagicMock()
     with get_temp_dir() as temp_dir, mock.patch(
@@ -171,7 +167,7 @@ def test_cache_file_from_s3():
 
 These concepts also plug into Dagster's configuration system. Here we accomplish run the same test but by specificying configuration.
 
-```python=
+```python
 
 def test_cache_file_from_s3():
     boto_s3 = mock.MagicMock()
@@ -207,13 +203,13 @@ def test_cache_file_from_s3():
 
 Now we add also add an S3Resource to ease testability. You'll note that the monkeypatch of a global symbol via `mock.patch` has been eliminated.
 
-```python=
+```python
 def unittest_for_local_mode_def(temp_dir, s3_session):
     return ModeDefinition.from_resources({
         'file_cache': FSFileCache(temp_dir),
         's3': S3Resource(s3_session),
     })
-    
+
 def test_cache_file_from_s3():
     s3_session = mock.MagicMock()
     # the mock.patch to the global boto3.resource is gone
@@ -233,9 +229,9 @@ def test_cache_file_from_s3():
         assert os.path.exists(os.path.join(temp_dir, 'some-key'))
 ```
 
-However we can go further. For commonly used resources with a well-defined APIs, we encourage the creation of *fakes* instead of *mocks*. Furthermore, we hope that an ecosystem of fake resources develops alongside the ecosystem. With a fake, we can write better test. We'll demonstrate using the `S3FakeSession` instead a mock.
+However we can go further. For commonly used resources with a well-defined APIs, we encourage the creation of _fakes_ instead of _mocks_. Furthermore, we hope that an ecosystem of fake resources develops alongside the ecosystem. With a fake, we can write better test. We'll demonstrate using the `S3FakeSession` instead a mock.
 
-```python=
+```python
 def test_cache_file_from_s3():
     s3_session = S3FakeSession({'some-bucket': {'some-key': b'foo'}})
 
@@ -250,7 +246,7 @@ def test_cache_file_from_s3():
                 }
             },
         )
-        
+
         # now check the local file system that the fake has written to
         target_file = os.path.join(temp_dir, 'some-key')
         assert os.path.exists(target_file)
@@ -265,7 +261,7 @@ In our last stage, we will make this solid executable in multiple environments. 
 
 The first step is that we have to make a minor modification to have the solid return a `FileHandle` instead of a `str`.
 
-```python=
+```python
 @solid
 def cache_file_from_s3(context, s3_coord: S3Coordinate) -> FileHandle:
     # we default the target_key to the last component of the s3 key.
@@ -292,13 +288,13 @@ When the s3 file cache is used, `write_file_object` returns an `S3FileHandle`, a
 
 With this we can use an `S3FileCache` instead:
 
-```python=
+```python
 def unittest_for_aws_mode_def(s3_file_cache_session, s3_session):
     return ModeDefinition.from_resources(
         {
             'file_cache': S3FileCache(
                 'file-cache-bucket',
-                'file-cache', 
+                'file-cache',
                 s3_file_cache_session
              ),
             's3': S3Resource(s3_session),
@@ -321,7 +317,7 @@ def test_cache_file_from_s3_step_four(snapshot):
             }
         },
     )
-    
+
     path_desc = solid_result.result_value.path_desc
 
     # returned correct s3 path
@@ -335,13 +331,11 @@ def test_cache_file_from_s3_step_four(snapshot):
     assert file_cache_obj['Body'].read() == b'foo'
 ```
 
-Note how the developer can keep the two fakes separate in these cases, so one only has to deal with one thing at a time. 
+Note how the developer can keep the two fakes separate in these cases, so one only has to deal with one thing at a time.
 
+This resource system provides
 
-This resource system provides 
-
-1) An intuitive and logical seam where application designers can provide mock and fake implementations testing.
-2) This same seam can be used to execute the same business logic in different environments and clouds, giving users the opportunity to build reusable, sharable Solids.
-3) A point of configuration. Resources declare their configuration in a self-describing way, and can be configured in the typeahead in dagit and with high quality error message.
-4) The foundations of an entire ecosystem of resources and fakes.
-
+1. An intuitive and logical seam where application designers can provide mock and fake implementations testing.
+2. This same seam can be used to execute the same business logic in different environments and clouds, giving users the opportunity to build reusable, sharable Solids.
+3. A point of configuration. Resources declare their configuration in a self-describing way, and can be configured in the typeahead in dagit and with high quality error message.
+4. The foundations of an entire ecosystem of resources and fakes.
