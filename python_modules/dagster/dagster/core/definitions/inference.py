@@ -5,7 +5,8 @@ import six
 
 from dagster.core.errors import DagsterInvalidDefinitionError
 
-from . import InputDefinition, OutputDefinition
+from .input import InputDefinition
+from .output import OutputDefinition
 
 if hasattr(inspect, 'signature'):
     funcsigs = inspect

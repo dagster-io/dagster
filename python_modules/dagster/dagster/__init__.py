@@ -24,13 +24,14 @@ from dagster.core.definitions import (
     SystemStorageDefinition,
     SystemStorageData,
     TypeCheck,
+    composite_solid,
+    lambda_solid,
     logger,
+    pipeline,
     resource,
+    solid,
     system_storage,
 )
-
-# These specific imports are to avoid circular import issues
-from dagster.core.definitions.decorators import lambda_solid, solid, composite_solid, pipeline
 
 from dagster.core.events import DagsterEventType
 
@@ -78,17 +79,17 @@ from dagster.core.types import (
     Dict,
     Field,
     Float,
-    input_hydration_config,
     Int,
     List,
     NamedDict,
+    Nothing,
     Optional,
-    output_materialization_config,
     Path,
     PermissiveDict,
     PythonObjectType,
     String,
-    Nothing,
+    input_hydration_config,
+    output_materialization_config,
 )
 
 from dagster.core.types.config import ConfigType, ConfigScalar, Enum, EnumValue

@@ -4,25 +4,15 @@ from functools import wraps
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from . import (
-    ConfigMapping,
-    CompositeSolidDefinition,
-    ExpectationResult,
-    InputDefinition,
-    Materialization,
-    ModeDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    PresetDefinition,
-    Output,
-    SolidDefinition,
-)
 from .composition import (
     InputMappingNode,
     composite_mapping_from_output,
     enter_composition,
     exit_composition,
 )
+from .config import ConfigMapping, resolve_config_field
+from .events import ExpectationResult, Output, Materialization
+from .input import InputDefinition
 from .inference import (
     infer_input_definitions_for_lambda_solid,
     infer_input_definitions_for_solid,
@@ -30,7 +20,11 @@ from .inference import (
     infer_output_definitions,
     has_explicit_return_type,
 )
-from .config import resolve_config_field
+from .mode import ModeDefinition
+from .output import OutputDefinition
+from .pipeline import PipelineDefinition
+from .preset import PresetDefinition
+from .solid import CompositeSolidDefinition, SolidDefinition
 
 if hasattr(inspect, 'signature'):
     funcsigs = inspect

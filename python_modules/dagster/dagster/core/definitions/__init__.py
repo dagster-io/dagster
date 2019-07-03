@@ -10,6 +10,8 @@ from .dependency import (
     SolidOutputHandle,
 )
 
+from .decorators import solid, lambda_solid, composite_solid, pipeline
+
 from .environment_schema import (
     EnvironmentSchema,
     create_environment_schema,
