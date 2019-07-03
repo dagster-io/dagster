@@ -101,7 +101,7 @@ class DagsterEvent(
             _validate_event_specific_data(event_type, event_specific_data),
         )
 
-        log_fn = step_context.log.error if event_type in FAILURE_EVENTS else step_context.log.info
+        log_fn = step_context.log.error if event_type in FAILURE_EVENTS else step_context.log.debug
 
         log_fn(
             '{event_type} for step {step_key}'.format(
@@ -127,7 +127,7 @@ class DagsterEvent(
         log_fn = (
             pipeline_context.log.error
             if event_type in FAILURE_EVENTS
-            else pipeline_context.log.info
+            else pipeline_context.log.debug
         )
 
         log_fn(

@@ -60,11 +60,6 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
             )
 
         if expt_result.success:
-            expectation_context.log.debug(
-                'Expectation {key} succeeded on {value}.'.format(
-                    key=expectation_context.step.key, value=value
-                )
-            )
             yield expt_result
             yield Output(output_name=internal_output_name, value=inputs[EXPECTATION_INPUT])
         else:

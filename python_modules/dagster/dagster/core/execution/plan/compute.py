@@ -83,10 +83,6 @@ def _execute_core_transform(compute_context, inputs, compute_fn):
 
     step = compute_context.step
 
-    compute_context.log.debug(
-        'Executing core compute for solid {solid}.'.format(solid=str(step.solid_handle))
-    )
-
     all_results = []
     for step_output in _yield_transform_results(compute_context, inputs, compute_fn):
         yield step_output

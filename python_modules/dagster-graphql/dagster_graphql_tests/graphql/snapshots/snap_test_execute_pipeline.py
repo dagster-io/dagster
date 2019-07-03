@@ -15,15 +15,11 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                 'nodes': [
                     {
                         '__typename': 'PipelineStartEvent',
-                        'level': 'INFO'
-                    },
-                    {
-                        '__typename': 'LogMessageEvent',
                         'level': 'DEBUG'
                     },
                     {
                         '__typename': 'ExecutionStepStartEvent',
-                        'level': 'INFO',
+                        'level': 'DEBUG',
                         'step': {
                             'kind': 'COMPUTE'
                         }
@@ -31,7 +27,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     {
                         '__typename': 'ExecutionStepInputEvent',
                         'inputName': 'num',
-                        'level': 'INFO',
+                        'level': 'DEBUG',
                         'step': {
                             'key': 'sum_solid.compute',
                             'kind': 'COMPUTE'
@@ -45,15 +41,11 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'LogMessageEvent',
-                        'level': 'DEBUG'
-                    },
-                    {
-                        '__typename': 'LogMessageEvent',
                         'level': 'INFO'
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
-                        'level': 'INFO',
+                        'level': 'DEBUG',
                         'outputName': 'result',
                         'step': {
                             'key': 'sum_solid.compute',
@@ -72,11 +64,11 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepSuccessEvent',
-                        'level': 'INFO'
+                        'level': 'DEBUG'
                     },
                     {
                         '__typename': 'ExecutionStepStartEvent',
-                        'level': 'INFO',
+                        'level': 'DEBUG',
                         'step': {
                             'kind': 'COMPUTE'
                         }
@@ -84,7 +76,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     {
                         '__typename': 'ExecutionStepInputEvent',
                         'inputName': 'sum_df',
-                        'level': 'INFO',
+                        'level': 'DEBUG',
                         'step': {
                             'key': 'sum_sq_solid.compute',
                             'kind': 'COMPUTE'
@@ -98,15 +90,11 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'LogMessageEvent',
-                        'level': 'DEBUG'
-                    },
-                    {
-                        '__typename': 'LogMessageEvent',
                         'level': 'INFO'
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
-                        'level': 'INFO',
+                        'level': 'DEBUG',
                         'outputName': 'result',
                         'step': {
                             'key': 'sum_sq_solid.compute',
@@ -125,11 +113,11 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepSuccessEvent',
-                        'level': 'INFO'
+                        'level': 'DEBUG'
                     },
                     {
                         '__typename': 'PipelineSuccessEvent',
-                        'level': 'INFO'
+                        'level': 'DEBUG'
                     }
                 ]
             },
@@ -148,15 +136,11 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                 'nodes': [
                     {
                         '__typename': 'PipelineStartEvent',
-                        'level': 'INFO'
-                    },
-                    {
-                        '__typename': 'LogMessageEvent',
                         'level': 'DEBUG'
                     },
                     {
                         '__typename': 'ExecutionStepStartEvent',
-                        'level': 'INFO',
+                        'level': 'DEBUG',
                         'step': {
                             'kind': 'COMPUTE'
                         }
@@ -164,7 +148,7 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                     {
                         '__typename': 'ExecutionStepInputEvent',
                         'inputName': 'sum_df',
-                        'level': 'INFO',
+                        'level': 'DEBUG',
                         'step': {
                             'key': 'sum_sq_solid.compute',
                             'kind': 'COMPUTE'
@@ -178,15 +162,11 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                     },
                     {
                         '__typename': 'LogMessageEvent',
-                        'level': 'DEBUG'
-                    },
-                    {
-                        '__typename': 'LogMessageEvent',
                         'level': 'INFO'
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
-                        'level': 'INFO',
+                        'level': 'DEBUG',
                         'outputName': 'result',
                         'step': {
                             'key': 'sum_sq_solid.compute',
@@ -205,11 +185,11 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                     },
                     {
                         '__typename': 'ExecutionStepSuccessEvent',
-                        'level': 'INFO'
+                        'level': 'DEBUG'
                     },
                     {
                         '__typename': 'PipelineSuccessEvent',
-                        'level': 'INFO'
+                        'level': 'DEBUG'
                     }
                 ]
             },
