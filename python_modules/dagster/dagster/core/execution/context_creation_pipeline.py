@@ -15,6 +15,7 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterUserCodeExecutionError,
     DagsterResourceFunctionError,
+    PipelineConfigEvaluationError,
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
@@ -25,7 +26,6 @@ from dagster.core.storage.runs import DagsterRunMeta
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import evaluate_config
-from dagster.core.types.evaluator.errors import friendly_string_for_error, EvaluationError
 from dagster.loggers import default_loggers, default_system_loggers
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -34,29 +34,6 @@ from .config import RunConfig
 from .context.init import InitResourceContext
 from .context.system import SystemPipelineExecutionContextData, SystemPipelineExecutionContext
 from .context.logger import InitLoggerContext
-
-
-class PipelineConfigEvaluationError(Exception):
-    def __init__(self, pipeline, errors, config_value, *args, **kwargs):
-        self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-        self.errors = check.list_param(errors, 'errors', of_type=EvaluationError)
-        self.config_value = config_value
-
-        error_msg = 'Pipeline "{pipeline}" config errors:'.format(pipeline=pipeline.name)
-
-        error_messages = []
-
-        for i_error, error in enumerate(self.errors):
-            error_message = friendly_string_for_error(error)
-            error_messages.append(error_message)
-            error_msg += '\n    Error {i_error}: {error_message}'.format(
-                i_error=i_error + 1, error_message=error_message
-            )
-
-        self.message = error_msg
-        self.error_messages = error_messages
-
-        super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
 def create_environment_config(pipeline, environment_dict=None, run_config=None):

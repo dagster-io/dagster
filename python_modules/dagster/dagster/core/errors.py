@@ -1,17 +1,16 @@
 '''
 Errors in Dagster:
 
-All errors thrown by the Dagster framework inherit from DagsterError. Users
-should not inherit their own exceptions from DagsterError. This how
-dagster communicates errors like definition errors and invariant violations.
+All errors thrown by the Dagster framework inherit from DagsterError. Users should not inherit their
+own exceptions from DagsterError. This how dagster communicates errors like definition errors and
+invariant violations.
 
-There is another exception base class, DagsterUserCodeExecutionError, is meant to be 
-used in concert with the user_code_error_boundary. Dagster calls into
-user code which can be arbitrary computation and can itself throw. The pattern
-here is to use the error boundary to catch this exception, and then rethrow
-that exception wrapped in a DagsterUserCodeExecutionError-derived exception.
-This new exception is there to embellish the original error with additional context
-that the dagster runtime is aware of.
+There is another exception base class, DagsterUserCodeExecutionError, which is meant to be used in
+concert with the user_code_error_boundary. Dagster calls into user code which can be arbitrary
+computation and can itself throw. The pattern here is to use the error boundary to catch this
+exception, and then rethrow that exception wrapped in a DagsterUserCodeExecutionError-derived
+exception. This new exception is there to embellish the original error with additional context that
+the dagster runtime is aware of.
 '''
 
 from contextlib import contextmanager
@@ -116,9 +115,9 @@ def user_code_error_boundary(error_cls, msg_fn, **kwargs):
 
 class DagsterUserCodeExecutionError(DagsterError):
     '''
-    This is base class for any exception that is meant to wrap an Exception
-    thrown by user code. It wraps that existing user code. The original_exc_info
-    argument to the ctor is meant to be a sys.exc_info at the site of constructor.
+    This is the base class for any exception that is meant to wrap an Exception thrown by user code.
+    It wraps that existing user code. The original_exc_info argument to the ctor is meant to be a
+    sys.exc_info at the site of constructor.
     '''
 
     def __init__(self, *args, **kwargs):
@@ -163,8 +162,8 @@ class DagsterUserCodeExecutionError(DagsterError):
 
 class DagsterTypeCheckError(DagsterUserCodeExecutionError):
     '''Indicates an error in the solid type system at runtime. E.g. a solid receives an
-    unexpeccted input, or produces an output that does not match the type of the output
-    definition. '''
+    unexpected input, or produces an output that does not match the type of the output definition.
+    '''
 
 
 class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
@@ -179,3 +178,30 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
 
 class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
     '''Indicates an error occured during the body of resource_fn in a ResourceDefinition'''
+
+
+class PipelineConfigEvaluationError(Exception):
+    def __init__(self, pipeline, errors, config_value, *args, **kwargs):
+        from dagster.core.definitions import PipelineDefinition
+        from dagster.core.types.evaluator.errors import friendly_string_for_error, EvaluationError
+
+        self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        self.errors = check.list_param(errors, 'errors', of_type=EvaluationError)
+
+        self.config_value = config_value
+
+        error_msg = 'Pipeline "{pipeline}" config errors:'.format(pipeline=pipeline.name)
+
+        error_messages = []
+
+        for i_error, error in enumerate(self.errors):
+            error_message = friendly_string_for_error(error)
+            error_messages.append(error_message)
+            error_msg += '\n    Error {i_error}: {error_message}'.format(
+                i_error=i_error + 1, error_message=error_message
+            )
+
+        self.message = error_msg
+        self.error_messages = error_messages
+
+        super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)

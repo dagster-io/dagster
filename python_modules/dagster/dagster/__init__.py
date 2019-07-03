@@ -47,8 +47,6 @@ from dagster.core.execution.config import (
     RunConfig,
 )
 
-from dagster.core.execution.context_creation_pipeline import PipelineConfigEvaluationError
-
 from dagster.core.execution.context.init import InitResourceContext
 
 from dagster.core.execution.context.logger import InitLoggerContext
@@ -66,6 +64,7 @@ from dagster.core.errors import (
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckError,
     DagsterUserCodeExecutionError,
+    PipelineConfigEvaluationError,
 )
 
 from dagster.core.storage.init import InitSystemStorageContext
