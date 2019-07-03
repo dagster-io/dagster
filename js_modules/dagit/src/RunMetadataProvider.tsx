@@ -192,7 +192,6 @@ export function extractMetadataFromLogs(
             materializations: []
           },
           step => {
-            console.log(log.materialization);
             step.materializations.push({
               icon: IStepDisplayIconType.LINK,
               text: log.materialization.label || "Materialization",
