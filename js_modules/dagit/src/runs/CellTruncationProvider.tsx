@@ -2,58 +2,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
-import { LogLevel } from "./LogsFilterProvider";
 import { showCustomAlert } from "../CustomAlertProvider";
-
-const bgcolorForLevel = (level: LogLevel) =>
-  ({
-    [LogLevel.DEBUG]: `transparent`,
-    [LogLevel.INFO]: `transparent`,
-    [LogLevel.WARNING]: `rgba(166, 121, 8, 0.05)`,
-    [LogLevel.ERROR]: `rgba(206, 17, 38, 0.05)`,
-    [LogLevel.CRITICAL]: `rgba(206, 17, 38, 0.05)`
-  }[level]);
-
-export const Cell = styled.div<{ level: LogLevel }>`
-  font-size: 0.85em;
-  width: 100%;
-  height: 100%;
-  max-height: 17em;
-  padding: 4px 8px;
-  word-break: break-all;
-  white-space: pre-wrap;
-  font-family: monospace;
-  display: flex;
-  flex-direction: row;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
-  background: ${props => bgcolorForLevel(props.level)};
-  color: ${props =>
-    ({
-      [LogLevel.DEBUG]: Colors.GRAY3,
-      [LogLevel.INFO]: Colors.DARK_GRAY2,
-      [LogLevel.WARNING]: Colors.GOLD2,
-      [LogLevel.ERROR]: Colors.RED3,
-      [LogLevel.CRITICAL]: Colors.RED3
-    }[props.level])};
-`;
-
-export const StructuredContent = styled.div`
-  box-sizing: border-box;
-  box-shadow: 0 0.7px 0.5px rgba(0, 0, 0, 0.25);
-  margin: -4px;
-  margin-bottom: -5px;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY4};
-  padding: 4px;
-  word-break: break-all;
-  white-space: pre-wrap;
-  overflow-y: hidden;
-  font-family: monospace;
-  flex: 1;
-  display: flex;
-  flex-direction: row;
-  background: white;
-  color: ${Colors.DARK_GRAY2};
-`;
 
 const OverflowFade = styled.div`
   position: absolute;

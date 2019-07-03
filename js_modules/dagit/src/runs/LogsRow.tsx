@@ -1,9 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
 import { LogLevel } from "src/types/globalTypes";
-import { IconNames } from "@blueprintjs/icons";
-import { Tag, Colors, Icon } from "@blueprintjs/core";
+import { Tag, Colors } from "@blueprintjs/core";
 
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import {
@@ -14,17 +12,19 @@ import {
   LogsRowStructuredFragment_ExecutionStepInputEvent,
   LogsRowStructuredFragment_StepExpectationResultEvent,
   LogsRowStructuredFragment_PipelineProcessStartedEvent,
-  LogsRowStructuredFragment_PipelineInitFailureEvent,
-  LogsRowStructuredFragment_StepMaterializationEvent_materialization_metadataEntries
+  LogsRowStructuredFragment_PipelineInitFailureEvent
 } from "./types/LogsRowStructuredFragment";
 import { LogsRowUnstructuredFragment } from "./types/LogsRowUnstructuredFragment";
-import { Cell, StructuredContent } from "./Cells";
-import { copyValue } from "../Util";
-import { showCustomAlert } from "../CustomAlertProvider";
-
-function assertUnreachable(x: never): never {
-  throw new Error("Didn't expect to get here");
-}
+import {
+  Row,
+  StructuredContent,
+  LabelColumn,
+  LevelTagColumn,
+  StepKeyColumn,
+  TimestampColumn
+} from "./LogsRowComponents";
+import { MetadataEntry } from "./MetadataEntry";
+import { assertUnreachable } from "../Util";
 
 function styleValueRepr(repr: string) {
   if (repr.startsWith("DataFrame")) {
@@ -173,25 +173,22 @@ export class Structured extends React.Component<{
       // Using custom messages
       case "ExecutionStepStartEvent":
         return (
-          <DefaultStructuredEmptyEvent
+          <DefaultStructuredEvent
             node={node}
-            message={node.message}
             level={<Tag minimal={true}>Step Start</Tag>}
           />
         );
       case "ExecutionStepSkippedEvent":
         return (
-          <DefaultStructuredEmptyEvent
+          <DefaultStructuredEvent
             node={node}
-            message={node.message}
             level={<Tag minimal={true}>Skipped</Tag>}
           />
         );
       case "ExecutionStepSuccessEvent":
         return (
-          <DefaultStructuredEmptyEvent
+          <DefaultStructuredEvent
             node={node}
-            message={node.message}
             level={<Tag minimal={true}>Step Finished</Tag>}
           />
         );
@@ -225,13 +222,12 @@ export class Structured extends React.Component<{
 
   render() {
     const { node } = this.props;
-
     return (
-      <Cell level={LogLevel.INFO}>
+      <Row level={LogLevel.INFO}>
         <StepKeyColumn stepKey={"step" in node && node.step && node.step.key} />
         <StructuredContent>{this.renderStructuredContent()}</StructuredContent>
         <TimestampColumn time={"timestamp" in node && node.timestamp} />
-      </Cell>
+      </Row>
     );
   }
 }
@@ -258,128 +254,77 @@ export class Unstructured extends React.Component<{
   render() {
     const { node } = this.props;
     return (
-      <Cell level={node.level}>
+      <Row level={node.level}>
         <StepKeyColumn stepKey={node.step && node.step.key} />
-        <LevelContainer>{node.level}</LevelContainer>
+        <LevelTagColumn>{node.level}</LevelTagColumn>
+        <LabelColumn />
         <span style={{ flex: 1 }}>{node.message}</span>
         <TimestampColumn time={node.timestamp} />
-      </Cell>
+      </Row>
     );
   }
 }
 
 // Structured Content Renderers
 
-// Renders the left column with the step key broken into hierarchical components.
-// Manually implements middle text truncation since we can count on monospace font
-// rendering being fairly consistent.
-//
-const StepKeyColumn = (props: { stepKey: string | false | null }) => {
-  const parts = (props.stepKey || "").replace(/\.compute$/, "").split(".");
-  return (
-    <StepKeyContainer>
-      {parts.map((p, idx) => (
-        <div
-          key={idx}
-          style={{
-            paddingLeft: Math.max(0, idx * 15 - 9),
-            paddingRight: 15,
-            fontWeight: idx === parts.length - 1 ? 600 : 300
-          }}
-        >
-          {idx > 0 ? "↳" : ""}
-          {p.length > 30 - idx * 2
-            ? `${p.substr(0, 16 - idx * 2)}…${p.substr(p.length - 14)}`
-            : p}
-        </div>
-      ))}
-    </StepKeyContainer>
-  );
-};
-
-const TimestampColumn = (props: { time: string | false }) => (
-  <TimestampContainer>
-    {props.time &&
-      new Date(Number(props.time))
-        .toISOString()
-        .replace("Z", "")
-        .split("T")
-        .pop()}
-  </TimestampContainer>
-);
-
-const StepKeyContainer = styled.div`
-  width: 250px;
-  flex-shrink: 0;
-`;
-
-const TimestampContainer = styled.div`
-  width: 100px;
-  flex-shrink: 0;
-  text-align: right;
-  color: ${Colors.GRAY3};
-`;
-
-const LevelContainer = styled.div`
-  width: 140px;
-  flex-shrink: 0;
-  color: ${Colors.GRAY3};
-`;
-
-const DefaultStructuredEvent = (props: { node: LogsRowStructuredFragment }) => (
+const DefaultStructuredEvent: React.FunctionComponent<{
+  node: LogsRowStructuredFragment;
+  level?: React.ReactNode;
+}> = ({ node, level }) => (
   <>
-    <LevelContainer />
-    <span style={{ flex: 1 }}>{props.node.message}</span>
+    <LevelTagColumn>{level}</LevelTagColumn>
+    <LabelColumn />
+    <span style={{ flex: 1 }}>{node.message}</span>
   </>
 );
 
-const PipelineProcessStartedEvent = (props: {
+const PipelineProcessStartedEvent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_PipelineProcessStartedEvent;
-}) => (
+}> = ({ node }) => (
   <>
-    <LevelContainer>
+    <LevelTagColumn>
       <Tag minimal={true}>Started</Tag>
-    </LevelContainer>
+    </LevelTagColumn>
+    <LabelColumn />
     {`Pipeline started `}
-    <span style={{ flex: 1, color: Colors.GRAY3 }}>{`PID: ${
-      props.node.processId
-    }`}</span>
-  </>
-);
-
-const DefaultFailureEvent = (props: {
-  node:
-    | LogsRowStructuredFragment_ExecutionStepFailureEvent
-    | LogsRowStructuredFragment_PipelineInitFailureEvent;
-}) => (
-  <>
-    <LevelContainer>
-      <Tag minimal={true} intent="danger">
-        Failed
-      </Tag>
-    </LevelContainer>
-    <span style={{ flex: 1, color: Colors.RED3 }}>
-      {`${props.node.error.message}\n${props.node.error.stack}`}
+    <span style={{ flex: 1, color: Colors.GRAY3 }}>
+      {`PID: ${node.processId}`}
     </span>
   </>
 );
 
-const StepExpectationResultEvent = ({
-  node
-}: {
-  node: LogsRowStructuredFragment_StepExpectationResultEvent;
-}) => (
+const DefaultFailureEvent: React.FunctionComponent<{
+  node:
+    | LogsRowStructuredFragment_ExecutionStepFailureEvent
+    | LogsRowStructuredFragment_PipelineInitFailureEvent;
+}> = ({ node }) => (
   <>
-    <LevelContainer>
+    <LevelTagColumn>
+      <Tag minimal={true} intent="danger">
+        Failed
+      </Tag>
+    </LevelTagColumn>
+    <LabelColumn />
+    <span style={{ flex: 1, color: Colors.RED3 }}>
+      {`${node.error.message}\n${node.error.stack}`}
+    </span>
+  </>
+);
+
+const StepExpectationResultEvent: React.FunctionComponent<{
+  node: LogsRowStructuredFragment_StepExpectationResultEvent;
+}> = ({ node }) => (
+  <>
+    <LevelTagColumn>
       <Tag
         minimal={true}
         intent={node.expectationResult.success ? "success" : "danger"}
       >
         Expectation
       </Tag>
-    </LevelContainer>
+    </LevelTagColumn>
+    <LabelColumn>{node.expectationResult.label}</LabelColumn>
     <span style={{ flex: 1 }}>
-      <DisplayEventHeader>«{node.expectationResult.label}»</DisplayEventHeader>
       {node.expectationResult.metadataEntries.map((item, idx) => (
         <MetadataEntry entry={item} key={idx} />
       ))}
@@ -387,17 +332,15 @@ const StepExpectationResultEvent = ({
   </>
 );
 
-const StepMaterializationEvent = ({
-  node
-}: {
+const StepMaterializationEvent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_StepMaterializationEvent;
-}) => (
+}> = ({ node }) => (
   <>
-    <LevelContainer>
+    <LevelTagColumn>
       <Tag minimal={true}>Materialization</Tag>
-    </LevelContainer>
+    </LevelTagColumn>
+    <LabelColumn>{node.materialization.label}</LabelColumn>
     <span style={{ flex: 1 }}>
-      <DisplayEventHeader>«{node.materialization.label}»</DisplayEventHeader>
       {node.materialization.metadataEntries.map((item, idx) => (
         <MetadataEntry entry={item} key={idx} />
       ))}
@@ -405,159 +348,40 @@ const StepMaterializationEvent = ({
   </>
 );
 
-const DefaultStructuredEmptyEvent = ({
-  node,
-  message,
-  level
-}: {
-  message: string;
-  node: LogsRowStructuredFragment;
-  level?: React.ReactNode;
-}) => (
-  <>
-    <LevelContainer>{level}</LevelContainer>
-    <span style={{ flex: 1 }}>{message}</span>
-  </>
-);
-
-const ExecutionStepFailureEvent = ({
-  node
-}: {
-  node: LogsRowStructuredFragment_ExecutionStepFailureEvent;
-}) => (
-  <>
-    <LevelContainer>
-      <Tag minimal={true} intent="danger">
-        Failure
-      </Tag>
-    </LevelContainer>
-    <span style={{ flex: 1 }}>
-      {`Failed with error: \n${node.error.message}\n${node.error.stack}`}
-    </span>
-  </>
-);
-
-const ExecutionStepOutputEvent = ({
-  node
-}: {
+const ExecutionStepOutputEvent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_ExecutionStepOutputEvent;
-}) => (
+}> = ({ node }) => (
   <>
-    <LevelContainer>
+    <LevelTagColumn>
       <Tag
         minimal={true}
         intent={node.typeCheck.success ? "success" : "warning"}
-        style={{ marginRight: 4 }}
       >
         Output
       </Tag>
-    </LevelContainer>
+    </LevelTagColumn>
+    <LabelColumn />
     <span style={{ flex: 1 }}>
       {node.outputName}: {styleValueRepr(node.valueRepr)}
     </span>
   </>
 );
-const ExecutionStepInputEvent = ({
-  node
-}: {
+
+const ExecutionStepInputEvent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_ExecutionStepInputEvent;
-}) => (
+}> = ({ node }) => (
   <>
-    <LevelContainer>
+    <LevelTagColumn>
       <Tag
         minimal={true}
         intent={node.typeCheck.success ? "success" : "warning"}
-        style={{ marginRight: 4 }}
       >
         Input
       </Tag>
-    </LevelContainer>
+    </LevelTagColumn>
+    <LabelColumn />
     <span style={{ flex: 1 }}>
       {node.inputName}: {styleValueRepr(node.valueRepr)}
     </span>
   </>
 );
-
-const DisplayEventContainer = styled.div`
-  white-space: pre-wrap;
-  font-size: 12px;
-`;
-
-const DisplayEventHeader = styled.div`
-  display: flex;
-  align-items: baseline;
-  font-weight: 600;
-`;
-
-const DisplayEventItemContainer = styled.div`
-  display: block;
-  padding-left: 15px;
-`;
-
-const DisplayEventLink = styled.a`
-  text-decoration: underline;
-  color: inherit;
-  &:hover {
-    color: inherit;
-  }
-`;
-
-const MetadataEntry: React.FunctionComponent<{
-  entry: LogsRowStructuredFragment_StepMaterializationEvent_materialization_metadataEntries;
-}> = ({ entry }) => {
-  switch (entry.__typename) {
-    case "EventPathMetadataEntry":
-      return (
-        <DisplayEventItemContainer>
-          {entry.label}:
-          <DisplayEventLink
-            title={"Copy to clipboard"}
-            onClick={e => copyValue(e, entry.path)}
-          >
-            [Copy Path]
-          </DisplayEventLink>
-        </DisplayEventItemContainer>
-      );
-
-    case "EventJsonMetadataEntry":
-      return (
-        <DisplayEventItemContainer>
-          {entry.label}:
-          <DisplayEventLink
-            title="Show full value"
-            onClick={() =>
-              showCustomAlert({
-                message: JSON.stringify(JSON.parse(entry.jsonString), null, 2),
-                pre: true,
-                title: "Value"
-              })
-            }
-          >
-            [Show Metadata]
-          </DisplayEventLink>
-        </DisplayEventItemContainer>
-      );
-
-    case "EventUrlMetadataEntry":
-      return (
-        <DisplayEventItemContainer>
-          {entry.label}:
-          <DisplayEventLink
-            href={entry.url}
-            title={`Open in a new tab`}
-            target="__blank"
-          >
-            [Open URL]
-          </DisplayEventLink>
-        </DisplayEventItemContainer>
-      );
-    case "EventTextMetadataEntry":
-      return (
-        <DisplayEventItemContainer>
-          {entry.label}: {entry.text}
-        </DisplayEventItemContainer>
-      );
-    default:
-      return assertUnreachable(entry);
-  }
-};
