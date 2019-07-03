@@ -5,6 +5,15 @@ import { Colors } from "@blueprintjs/core";
 import { LogLevel } from "./LogsFilterProvider";
 import { showCustomAlert } from "../CustomAlertProvider";
 
+const bgcolorForLevel = (level: LogLevel) =>
+  ({
+    [LogLevel.DEBUG]: `transparent`,
+    [LogLevel.INFO]: `transparent`,
+    [LogLevel.WARNING]: `rgba(166, 121, 8, 0.05)`,
+    [LogLevel.ERROR]: `rgba(206, 17, 38, 0.05)`,
+    [LogLevel.CRITICAL]: `rgba(206, 17, 38, 0.05)`
+  }[level]);
+
 export const Cell = styled.div<{ level: LogLevel }>`
   font-size: 0.85em;
   width: 100%;
@@ -12,31 +21,50 @@ export const Cell = styled.div<{ level: LogLevel }>`
   max-height: 17em;
   overflow-y: hidden;
   padding: 4px;
-  padding-left: 15px;
+  padding-left: 0;
+  padding-right: 0;
   word-break: break-all;
   white-space: pre-wrap;
   font-family: monospace;
   display: flex;
   flex-direction: row;
   border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
-  background: ${props =>
-    ({
-      [LogLevel.DEBUG]: `transparent`,
-      [LogLevel.INFO]: `transparent`,
-      [LogLevel.WARNING]: `rgba(166, 121, 8, 0.05)`,
-      [LogLevel.ERROR]: `rgba(206, 17, 38, 0.05)`,
-      [LogLevel.CRITICAL]: `rgba(206, 17, 38, 0.05)`,
-      [LogLevel.EVENT]: `white`
-    }[props.level])};
+  /* these wide bg-colored borders are a trick that insets the border while still
+  giving us a background color all the way to the edge. */
+  border-left: 12px solid ${props => bgcolorForLevel(props.level)};
+  border-right: 9px solid ${props => bgcolorForLevel(props.level)};
+  background: ${props => bgcolorForLevel(props.level)};
   color: ${props =>
     ({
       [LogLevel.DEBUG]: Colors.GRAY3,
       [LogLevel.INFO]: Colors.DARK_GRAY2,
       [LogLevel.WARNING]: Colors.GOLD2,
       [LogLevel.ERROR]: Colors.RED3,
-      [LogLevel.CRITICAL]: Colors.RED3,
-      [LogLevel.EVENT]: Colors.DARK_GRAY2
+      [LogLevel.CRITICAL]: Colors.RED3
     }[props.level])};
+`;
+
+export const StructuredCell = styled.div`
+  box-sizing: border-box;
+  border-left: 1px solid ${Colors.LIGHT_GRAY3};
+  border-right: 1px solid ${Colors.LIGHT_GRAY3};
+  box-shadow: 0 0.7px 0.5px rgba(0, 0, 0, 0.25);
+  font-size: 0.85em;
+  width: calc(100% - 10px);
+  height: 100%;
+  max-height: 17em;
+  margin-left: 5px;
+  overflow-y: hidden;
+  padding: 4px;
+  padding-left: 7px;
+  word-break: break-all;
+  white-space: pre-wrap;
+  font-family: monospace;
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
+  background: white;
+  color: ${Colors.DARK_GRAY2};
 `;
 
 const OverflowFade = styled.div`
