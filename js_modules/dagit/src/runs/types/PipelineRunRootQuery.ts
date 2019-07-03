@@ -152,11 +152,35 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
   key: string;
 }
 
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries {
-  __typename: "EventJsonMetadataEntry" | "EventPathMetadataEntry" | "EventTextMetadataEntry" | "EventUrlMetadataEntry";
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
   label: string;
   description: string | null;
+  path: string;
 }
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries = PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTextMetadataEntry;
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck {
   __typename: "TypeCheck";
@@ -173,7 +197,6 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
   level: LogLevel;
   step: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_step | null;
   inputName: string;
-  valueRepr: string;
   typeCheck: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck;
 }
 
@@ -182,11 +205,35 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
   key: string;
 }
 
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries {
-  __typename: "EventJsonMetadataEntry" | "EventPathMetadataEntry" | "EventTextMetadataEntry" | "EventUrlMetadataEntry";
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
   label: string;
   description: string | null;
+  path: string;
 }
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries = PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTextMetadataEntry;
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck {
   __typename: "TypeCheck";
@@ -203,7 +250,6 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
   level: LogLevel;
   step: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_step | null;
   outputName: string;
-  valueRepr: string;
   typeCheck: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck;
 }
 

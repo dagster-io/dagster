@@ -132,11 +132,35 @@ export interface PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_ste
   key: string;
 }
 
-export interface PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries {
-  __typename: "EventJsonMetadataEntry" | "EventPathMetadataEntry" | "EventTextMetadataEntry" | "EventUrlMetadataEntry";
+export interface PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
   label: string;
   description: string | null;
+  path: string;
 }
+
+export interface PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries = PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry | PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry | PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry | PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTextMetadataEntry;
 
 export interface PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck {
   __typename: "TypeCheck";
@@ -153,7 +177,6 @@ export interface PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent {
   level: LogLevel;
   step: PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_step | null;
   inputName: string;
-  valueRepr: string;
   typeCheck: PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck;
 }
 
@@ -162,11 +185,35 @@ export interface PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_st
   key: string;
 }
 
-export interface PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries {
-  __typename: "EventJsonMetadataEntry" | "EventPathMetadataEntry" | "EventTextMetadataEntry" | "EventUrlMetadataEntry";
+export interface PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
   label: string;
   description: string | null;
+  path: string;
 }
+
+export interface PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries = PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry | PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry | PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry | PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTextMetadataEntry;
 
 export interface PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck {
   __typename: "TypeCheck";
@@ -183,7 +230,6 @@ export interface PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent {
   level: LogLevel;
   step: PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_step | null;
   outputName: string;
-  valueRepr: string;
   typeCheck: PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck;
 }
 

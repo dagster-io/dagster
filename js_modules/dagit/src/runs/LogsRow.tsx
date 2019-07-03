@@ -26,59 +26,11 @@ import {
 import { MetadataEntry } from "./MetadataEntry";
 import { assertUnreachable } from "../Util";
 
-function styleValueRepr(repr: string) {
-  if (repr.startsWith("DataFrame")) {
-    const content = repr.split("[")[1].split("]")[0];
-    const cells: React.ReactNode[] = [];
-    content.split(",").forEach(el => {
-      const [key, val] = el.split(":");
-      cells.push(
-        <React.Fragment key={key}>
-          <span style={{ color: "#bd4e08" }}>{key}:</span>
-          <span style={{ color: "purple" }}>{val}</span>,
-        </React.Fragment>
-      );
-    });
-    return <span>DataFrame: [{cells}]</span>;
-  }
-  if (repr.startsWith("<dagster")) {
-    return <span style={{ color: "#bd4e08" }}>{repr}</span>;
-  }
-  if (repr.startsWith("{'")) {
-    return (
-      <HighlightedCodeBlock
-        value={JSON.stringify(
-          JSON.parse(repr.replace(/"/g, "'").replace(/'/g, '"')),
-          null,
-          2
-        )}
-      />
-    );
-  }
-  return repr;
-}
-
 export class Structured extends React.Component<{
   node: LogsRowStructuredFragment;
 }> {
   static fragments = {
     LogsRowStructuredFragment: gql`
-      fragment MetadataEntryFragment on EventMetadataEntry {
-        label
-        description
-        ... on EventPathMetadataEntry {
-          path
-        }
-        ... on EventJsonMetadataEntry {
-          jsonString
-        }
-        ... on EventUrlMetadataEntry {
-          url
-        }
-        ... on EventTextMetadataEntry {
-          text
-        }
-      }
       fragment LogsRowStructuredFragment on PipelineRunEvent {
         __typename
         ... on MessageEvent {
@@ -123,27 +75,23 @@ export class Structured extends React.Component<{
         }
         ... on ExecutionStepInputEvent {
           inputName
-          valueRepr
           typeCheck {
             label
             description
             success
             metadataEntries {
-              label
-              description
+              ...MetadataEntryFragment
             }
           }
         }
         ... on ExecutionStepOutputEvent {
           outputName
-          valueRepr
           typeCheck {
             label
             description
             success
             metadataEntries {
-              label
-              description
+              ...MetadataEntryFragment
             }
           }
         }
@@ -158,6 +106,7 @@ export class Structured extends React.Component<{
           }
         }
       }
+      ${MetadataEntry.fragments.MetadataEntryFragment}
     `
   };
 
@@ -361,7 +310,13 @@ const ExecutionStepOutputEvent: React.FunctionComponent<{
       </Tag>
     </LevelTagColumn>
     <LabelColumn>{node.outputName}</LabelColumn>
-    <span style={{ flex: 1 }}>{styleValueRepr(node.valueRepr)}</span>
+    <span style={{ flex: 1 }}>
+      {node.typeCheck.metadataEntries.length
+        ? node.typeCheck.metadataEntries.map((entry, idx) => (
+            <MetadataEntry key={idx} entry={entry} />
+          ))
+        : "No typecheck metadata describing this output."}
+    </span>
   </>
 );
 
@@ -378,6 +333,12 @@ const ExecutionStepInputEvent: React.FunctionComponent<{
       </Tag>
     </LevelTagColumn>
     <LabelColumn>{node.inputName}</LabelColumn>
-    <span style={{ flex: 1 }}>{styleValueRepr(node.valueRepr)}</span>
+    <span style={{ flex: 1 }}>
+      {node.typeCheck.metadataEntries.length
+        ? node.typeCheck.metadataEntries.map((entry, idx) => (
+            <MetadataEntry key={idx} entry={entry} />
+          ))
+        : "No typecheck metadata describing this input."}
+    </span>
   </>
 );

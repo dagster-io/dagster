@@ -148,11 +148,35 @@ export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_step {
   key: string;
 }
 
-export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries {
-  __typename: "EventJsonMetadataEntry" | "EventPathMetadataEntry" | "EventTextMetadataEntry" | "EventUrlMetadataEntry";
+export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
   label: string;
   description: string | null;
+  path: string;
 }
+
+export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries = PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry | PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry | PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry | PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTextMetadataEntry;
 
 export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck {
   __typename: "TypeCheck";
@@ -169,7 +193,6 @@ export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent {
   level: LogLevel;
   step: PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_step | null;
   inputName: string;
-  valueRepr: string;
   typeCheck: PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck;
 }
 
@@ -178,11 +201,35 @@ export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_step {
   key: string;
 }
 
-export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries {
-  __typename: "EventJsonMetadataEntry" | "EventPathMetadataEntry" | "EventTextMetadataEntry" | "EventUrlMetadataEntry";
+export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
   label: string;
   description: string | null;
+  path: string;
 }
+
+export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries = PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry | PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry | PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry | PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTextMetadataEntry;
 
 export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck {
   __typename: "TypeCheck";
@@ -199,7 +246,6 @@ export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent {
   level: LogLevel;
   step: PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_step | null;
   outputName: string;
-  valueRepr: string;
   typeCheck: PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck;
 }
 
