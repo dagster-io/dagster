@@ -1,11 +1,12 @@
 # Logging Guide
 
-- [Logging from a solid](#logging-from-a-solid)
-- [The built-in loggers](#the-built-in-loggers)
-- [Debugging with logs](#debugging-with-logs)
-- [Configuring the built-in loggers](#configuring-the-built-in-loggers)
-- [Modes and logging](#modes-and-logging)
-- [Implementing custom loggers](#implementing-custom-loggers)
+- [The log guide](#The-log-guide)
+  - [Logging from a solid](#Logging-from-a-solid)
+  - [The built-in loggers](#The-built-in-loggers)
+  - [Debugging with logs](#Debugging-with-logs)
+  - [Configuring the built-in loggers](#Configuring-the-built-in-loggers)
+  - [Modes and logging](#Modes-and-logging)
+  - [Implementing custom loggers](#Implementing-custom-loggers)
 
 ## Logging from a solid
 
@@ -170,14 +171,10 @@ import json
 import logging
 
 @logger(
-    config_field=Field(
-        Dict(
-            {
-                'log_level': Field(String, is_optional=True, default_value='INFO'),
-                'name': Field(String, is_optional=True, default_value='dagster'),
-            }
-        )
-    ),
+    {
+        'log_level': Field(str, is_optional=True, default_value='INFO'),
+        'name': Field(str, is_optional=True, default_value='dagster'),
+    },
     description='A JSON-formatted console logger',
 )
 def json_console_logger(init_context):
