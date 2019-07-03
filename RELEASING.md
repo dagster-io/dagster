@@ -9,8 +9,6 @@ As the API is still in flux, we aren't following strict semantic versioning rule
 roughly intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework's capabilities and the maturity of its internals.
 
-Breaking API changes should be recorded in `CHANGELOG.rst`.
-
 You must have wheel and twine installed.
 
 ## Releasing a new version

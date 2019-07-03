@@ -254,7 +254,7 @@ def get_versions():
     for module_name in MODULE_NAMES:
         module_versions[module_name] = get_module_versions(module_name)
     for library_module in LIBRARY_MODULES:
-        module_versions[module_name] = get_module_versions(library_module, library=True)
+        module_versions[library_module] = get_module_versions(library_module, library=True)
     return module_versions
 
 
@@ -711,7 +711,7 @@ def version():
     parsed_version = packaging.version.parse(git_tag)
     errors = {}
     for module_name, module_version in module_versions.items():
-        if packaging.version.parse(module_version['__version__']) >= parsed_version:
+        if packaging.version.parse(module_version['__version__']) > parsed_version:
             errors[module_name] = module_version['__version__']
     if errors:
         print(
