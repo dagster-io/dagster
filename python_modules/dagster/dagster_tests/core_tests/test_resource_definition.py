@@ -118,7 +118,7 @@ def test_resource_decorator():
         assert context.resources.string_one == 'foo'
         assert context.resources.string_two == 'bar'
 
-    @resource(Field(String))
+    @resource(config_field=Field(String))
     def yielding_string_resource(init_context):
         saw.append('before yield ' + init_context.resource_config)
         yield init_context.resource_config

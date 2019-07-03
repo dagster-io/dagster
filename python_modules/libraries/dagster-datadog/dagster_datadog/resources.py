@@ -1,6 +1,6 @@
 from datadog import initialize, statsd, DogStatsd
 
-from dagster import resource, Dict, Field, String
+from dagster import resource, Field
 
 
 class DataDogResource:
@@ -42,14 +42,10 @@ class DataDogResource:
 
 
 @resource(
-    config_field=Field(
-        Dict(
-            {
-                'api_key': Field(String, description='Datadog API key'),
-                'app_key': Field(String, description='Datadog application key'),
-            }
-        )
-    ),
+    {
+        'api_key': Field(str, description='Datadog API key'),
+        'app_key': Field(str, description='Datadog application key'),
+    },
     description='This resource is for publishing to DataDog',
 )
 def datadog_resource(context):

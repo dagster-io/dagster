@@ -1,14 +1,13 @@
 # pylint: disable=no-value-for-parameter
 
 from dagster import (
-    resource,
-    Dict,
-    pipeline,
-    execute_pipeline,
     Field,
     ModeDefinition,
     RunConfig,
     String,
+    execute_pipeline,
+    pipeline,
+    resource,
     solid,
 )
 
@@ -36,7 +35,7 @@ class ChatToFile:
             f.write('%s -- %s\n' % (channel, text))
 
 
-@resource(Field(Dict({'output_path': Field(String)})))
+@resource({'output_path': Field(String)})
 def slack_to_file_resource(context):
     return SlackToFile(context.resource_config['output_path'])
 

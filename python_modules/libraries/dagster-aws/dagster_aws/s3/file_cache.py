@@ -1,4 +1,4 @@
-from dagster import check, resource, Bool, Field, String, Dict
+from dagster import check, resource, Field
 from dagster.core.storage.file_cache import FileCache
 from dagster_aws.s3.file_manager import S3FileHandle
 from dagster_aws.s3.utils import create_s3_session
@@ -37,15 +37,11 @@ class S3FileCache(FileCache):
 
 
 @resource(
-    config_field=Field(
-        Dict(
-            {
-                'bucket': Field(String),
-                'key': Field(String),
-                'overwrite': Field(Bool, is_optional=True, default_value=False),
-            }
-        )
-    )
+    {
+        'bucket': Field(str),
+        'key': Field(str),
+        'overwrite': Field(bool, is_optional=True, default_value=False),
+    }
 )
 def s3_file_cache(init_context):
     return S3FileCache(

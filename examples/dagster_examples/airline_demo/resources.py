@@ -1,7 +1,7 @@
 from pyspark.sql import SparkSession
 
 from dagster import resource, Field
-from .types import DbInfo, PostgresConfigData, RedshiftConfigData
+from .types import DbInfo
 from .utils import (
     create_postgres_db_url,
     create_postgres_engine,
@@ -30,7 +30,15 @@ def spark_session_local(_init_context):
     return spark
 
 
-@resource(config_field=Field(RedshiftConfigData))
+@resource(
+    {
+        'redshift_username': Field(str),
+        'redshift_password': Field(str),
+        'redshift_hostname': Field(str),
+        'redshift_db_name': Field(str),
+        's3_temp_dir': Field(str),
+    }
+)
 def redshift_db_info_resource(init_context):
     db_url_jdbc = create_redshift_db_url(
         init_context.resource_config['redshift_username'],
@@ -63,7 +71,14 @@ def redshift_db_info_resource(init_context):
     )
 
 
-@resource(config_field=Field(PostgresConfigData))
+@resource(
+    {
+        'postgres_username': Field(str),
+        'postgres_password': Field(str),
+        'postgres_hostname': Field(str),
+        'postgres_db_name': Field(str),
+    }
+)
 def postgres_db_info_resource(init_context):
     host = init_context.resource_config['postgres_hostname']
     db_name = init_context.resource_config['postgres_db_name']

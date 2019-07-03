@@ -1,6 +1,6 @@
 import pypd
 
-from dagster import resource, Dict, Field, String
+from dagster import resource, Field
 
 
 class PagerDutyService:
@@ -149,18 +149,14 @@ class PagerDutyService:
 
 
 @resource(
-    config_field=Field(
-        Dict(
-            {
-                'routing_key': Field(
-                    String,
-                    description='''The routing key provisions access to your PagerDuty service. You
+    {
+        'routing_key': Field(
+            str,
+            description='''The routing key provisions access to your PagerDuty service. You
                     will need to include the integration key for your new integration, as a
                     routing_key in the event payload.''',
-                )
-            }
         )
-    ),
+    },
     description='''This resource is for posting events to PagerDuty.''',
 )
 def pagerduty_resource(context):
