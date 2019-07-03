@@ -13,9 +13,11 @@ import {
   LogsRowStructuredFragment_PipelineInitFailureEvent
 } from "./types/LogsRowStructuredFragment";
 import { LogsRowUnstructuredFragment } from "./types/LogsRowUnstructuredFragment";
-import { Tag, Colors } from "@blueprintjs/core";
-import { Cell, StructuredCell } from "./Cells";
+import { Tag, Colors, Icon } from "@blueprintjs/core";
+import { Cell, StructuredContent } from "./Cells";
 import styled from "styled-components";
+import { LogLevel } from "src/types/globalTypes";
+import { IconNames } from "@blueprintjs/icons";
 
 function assertUnreachable(x: never): never {
   throw new Error("Didn't expect to get here");
@@ -167,11 +169,29 @@ export class Structured extends React.Component<{
 
       // Using custom messages
       case "ExecutionStepStartEvent":
-        return <DefaultStructuredEmptyEvent node={node} message="Started" />;
+        return (
+          <DefaultStructuredEmptyEvent
+            node={node}
+            message="Started"
+            level={<Icon icon={IconNames.ARROW_BOTTOM_RIGHT} iconSize={17} />}
+          />
+        );
       case "ExecutionStepSkippedEvent":
-        return <DefaultStructuredEmptyEvent node={node} message="Skipped" />;
+        return (
+          <DefaultStructuredEmptyEvent
+            node={node}
+            message="Skipped"
+            level={<Icon icon={IconNames.DOUBLE_CHEVRON_RIGHT} iconSize={17} />}
+          />
+        );
       case "ExecutionStepSuccessEvent":
-        return <DefaultStructuredEmptyEvent node={node} message="Success" />;
+        return (
+          <DefaultStructuredEmptyEvent
+            node={node}
+            message="Success"
+            level={<Icon icon={IconNames.ARROW_BOTTOM_LEFT} iconSize={17} />}
+          />
+        );
 
       // Using custom renderers
       case "ExecutionStepInputEvent":
@@ -204,11 +224,11 @@ export class Structured extends React.Component<{
     const { node } = this.props;
 
     return (
-      <StructuredCell>
+      <Cell level={LogLevel.INFO}>
         <StepKeyColumn stepKey={"step" in node && node.step && node.step.key} />
-        {this.renderStructuredContent()}
+        <StructuredContent>{this.renderStructuredContent()}</StructuredContent>
         <TimestampColumn time={"timestamp" in node && node.timestamp} />
-      </StructuredCell>
+      </Cell>
     );
   }
 }
@@ -363,13 +383,15 @@ const StepMaterializationEvent = ({
 
 const DefaultStructuredEmptyEvent = ({
   node,
-  message
+  message,
+  level
 }: {
   message: string;
   node: LogsRowStructuredFragment;
+  level?: React.ReactNode;
 }) => (
   <>
-    <LevelContainer />
+    <LevelContainer>{level}</LevelContainer>
     <span style={{ flex: 1 }}>{message}</span>
   </>
 );
