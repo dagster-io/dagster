@@ -15,7 +15,7 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterUserCodeExecutionError,
     DagsterResourceFunctionError,
-    PipelineConfigEvaluationError,
+    DagsterInvalidConfigError,
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
@@ -47,7 +47,7 @@ def create_environment_config(pipeline, environment_dict=None, run_config=None):
     result = evaluate_config(environment_type, environment_dict, pipeline, run_config)
 
     if not result.success:
-        raise PipelineConfigEvaluationError(pipeline, result.errors, environment_dict)
+        raise DagsterInvalidConfigError(pipeline, result.errors, environment_dict)
 
     return EnvironmentConfig.from_dict(result.value)
 

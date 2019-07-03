@@ -8,7 +8,7 @@ from dagster import (
     EnumValue,
     Field,
     Int,
-    PipelineConfigEvaluationError,
+    DagsterInvalidConfigError,
     PipelineDefinition,
     execute_pipeline,
     solid,
@@ -65,7 +65,7 @@ def test_enum_in_pipeline_execution():
     assert result.success
     assert called['yup']
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(
             pipeline_def,
             {'solids': {'config_me': {'config': {'int_field': 2, 'enum_field': 'NOPE'}}}},

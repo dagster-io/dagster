@@ -10,7 +10,7 @@ from dagster import (
     Field,
     logger,
     ModeDefinition,
-    PipelineConfigEvaluationError,
+    DagsterInvalidConfigError,
     PipelineDefinition,
     resource,
     RunConfig,
@@ -345,7 +345,7 @@ def test_execute_multi_mode_loggers_with_single_logger():
 def test_execute_multi_mode_loggers_with_single_logger_extra_config():
     pipeline_def, _, __ = define_multi_mode_with_loggers_pipeline()
 
-    with pytest.raises(PipelineConfigEvaluationError):
+    with pytest.raises(DagsterInvalidConfigError):
         execute_pipeline(
             pipeline_def,
             run_config=RunConfig(mode='foo_mode'),

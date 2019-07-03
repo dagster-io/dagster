@@ -180,7 +180,7 @@ class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
     '''Indicates an error occured during the body of resource_fn in a ResourceDefinition'''
 
 
-class PipelineConfigEvaluationError(Exception):
+class DagsterInvalidConfigError(DagsterError):
     def __init__(self, pipeline, errors, config_value, *args, **kwargs):
         from dagster.core.definitions import PipelineDefinition
         from dagster.core.types.evaluator.errors import friendly_string_for_error, EvaluationError
@@ -204,4 +204,4 @@ class PipelineConfigEvaluationError(Exception):
         self.message = error_msg
         self.error_messages = error_messages
 
-        super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
+        super(DagsterInvalidConfigError, self).__init__(error_msg, *args, **kwargs)

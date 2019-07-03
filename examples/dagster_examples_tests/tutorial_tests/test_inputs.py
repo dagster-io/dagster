@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import PipelineConfigEvaluationError, execute_pipeline
+from dagster import DagsterInvalidConfigError, execute_pipeline
 from dagster.utils import check_cli_execute_file_pipeline, script_relative_path
 from dagster_examples.intro_tutorial.inputs import (
     hello_typed_inputs_pipeline,
@@ -25,7 +25,7 @@ def test_hello_inputs_parameterized_cli_pipeline():
 
 def test_hello_typed_inputs():
     with pytest.raises(
-        PipelineConfigEvaluationError,
+        DagsterInvalidConfigError,
         match=(
             'Type failure at path '
             '"root:solids:add_hello_to_word_typed:inputs:word:value" on type "String"'
@@ -39,7 +39,7 @@ def test_hello_typed_inputs():
 
 def test_hello_typed_bad_structure():
     with pytest.raises(
-        PipelineConfigEvaluationError,
+        DagsterInvalidConfigError,
         match='Value for selector type String.InputHydrationConfig must be a dict',
     ):
         execute_pipeline(

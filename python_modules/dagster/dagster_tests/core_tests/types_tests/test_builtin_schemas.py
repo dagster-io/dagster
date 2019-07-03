@@ -10,7 +10,7 @@ from dagster import (
     Optional,
     OutputDefinition,
     Path,
-    PipelineConfigEvaluationError,
+    DagsterInvalidConfigError,
     PipelineDefinition,
     String,
     execute_pipeline,
@@ -120,7 +120,7 @@ def test_int_input_schema_value():
 
 
 def test_int_input_schema_failure():
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_int', 'num', {'value': 'dkjdfkdj'}),
@@ -186,7 +186,7 @@ def test_string_input_schema_value():
 
 
 def test_string_input_schema_failure():
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_string', 'string', {'value': 3343}),
@@ -211,7 +211,7 @@ def test_float_input_schema_value():
 
 
 def test_float_input_schema_failure():
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_float', 'float_number', {'value': '3343'}),
@@ -236,7 +236,7 @@ def test_bool_input_schema_value():
 
 
 def test_bool_input_schema_failure():
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_bool', 'bool_value', {'value': '3343'}),
@@ -270,7 +270,7 @@ def test_any_input_schema_value():
 
 
 def test_none_string_input_schema_failure():
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_string', 'string', None),
@@ -290,7 +290,7 @@ def test_none_string_input_schema_failure():
 
 
 def test_value_none_string_input_schema_failure():
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_string', 'string', {'value': None}),
@@ -357,7 +357,7 @@ def test_path_input_schema_value():
 
 
 def test_path_input_schema_failure():
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_path', 'path', {'value': 3343}),
@@ -398,7 +398,7 @@ def test_nullable_string_input_with_value():
 def test_nullable_string_input_with_none_value():
     # Perhaps a confusing test case. Optional makes the entire enclosing structure nullable,
     # rather than the "value" value embedded within it
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env(

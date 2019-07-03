@@ -4,7 +4,7 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
-    PipelineConfigEvaluationError,
+    DagsterInvalidConfigError,
     PipelineDefinition,
     SolidInvocation,
     execute_pipeline,
@@ -62,7 +62,7 @@ def test_string_missing_inputs():
         called['yup'] = True
 
     pipeline = PipelineDefinition(name='missing_inputs', solid_defs=[str_as_input])
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(pipeline)
 
     assert len(exc_info.value.errors) == 1
@@ -92,7 +92,7 @@ def test_string_missing_input_collision():
         solid_defs=[str_as_input, str_as_output],
         dependencies={'str_as_input': {'string_input': DependencyDefinition('str_as_output')}},
     )
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(
             pipeline, {'solids': {'str_as_input': {'inputs': {'string_input': 'bar'}}}}
         )

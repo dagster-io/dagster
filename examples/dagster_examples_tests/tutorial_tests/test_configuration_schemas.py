@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import execute_pipeline, PipelineConfigEvaluationError
+from dagster import execute_pipeline, DagsterInvalidConfigError
 from dagster_examples.intro_tutorial.configuration_schemas_basic import (
     configuration_schema_pipeline,
 )
@@ -43,7 +43,7 @@ def test_demo_configuration_schema_pipeline_runtime_error():
 
 def test_demo_configuration_schema_pipeline_wrong_field():
     with pytest.raises(
-        PipelineConfigEvaluationError,
+        DagsterInvalidConfigError,
         match=('Undefined field "multiply_the_word_with_typed_config" at path ' 'root:solids'),
     ):
         execute_pipeline(
@@ -69,7 +69,7 @@ def test_typed_demo_configuration_schema_pipeline_correct_yaml():
 
 def test_typed_demo_configuration_schema_type_mismatch_error():
     with pytest.raises(
-        PipelineConfigEvaluationError,
+        DagsterInvalidConfigError,
         match=(
             'Type failure at path "root:solids:multiply_the_word:config:factor" on type ' '"Int"'
         ),

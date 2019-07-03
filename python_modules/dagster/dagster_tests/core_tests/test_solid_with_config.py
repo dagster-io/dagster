@@ -3,7 +3,7 @@ import pytest
 from dagster import (
     Dict,
     Field,
-    PipelineConfigEvaluationError,
+    DagsterInvalidConfigError,
     PipelineDefinition,
     SolidDefinition,
     String,
@@ -49,7 +49,7 @@ def test_config_arg_mismatch():
 
     pipeline = PipelineDefinition(solid_defs=[solid])
 
-    with pytest.raises(PipelineConfigEvaluationError):
+    with pytest.raises(DagsterInvalidConfigError):
         execute_pipeline(
             pipeline, {'solids': {'solid_with_context': {'config': {'some_config': 1}}}}
         )
@@ -63,7 +63,7 @@ def test_solid_not_found():
 
     pipeline = PipelineDefinition(solid_defs=[solid])
 
-    with pytest.raises(PipelineConfigEvaluationError):
+    with pytest.raises(DagsterInvalidConfigError):
         execute_pipeline(pipeline, {'solids': {'not_found': {'config': {'some_config': 1}}}})
 
 
@@ -77,5 +77,5 @@ def test_config_for_no_config():
 
     pipeline = PipelineDefinition(solid_defs=[solid_def])
 
-    with pytest.raises(PipelineConfigEvaluationError):
+    with pytest.raises(DagsterInvalidConfigError):
         execute_pipeline(pipeline, {'solids': {'no_config_solid': {'config': {'some_config': 1}}}})
