@@ -4,7 +4,7 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     ModeDefinition,
-    MultipleOutputs,
+    Output,
     OutputDefinition,
     PipelineDefinition,
     solid,
@@ -35,7 +35,8 @@ def nonce_solid(name, n_inputs, n_outputs):
                 context.log.info('Info message seq={i} from solid {name}'.format(i=i, name=name))
             else:
                 context.log.debug('Debug message seq={i} from solid {name}'.format(i=i, name=name))
-        return MultipleOutputs.from_dict({'output_{}'.format(i): 'foo' for i in range(n_outputs)})
+        for i in range(n_outputs):
+            yield Output(value='foo', output_name='output_{}'.format(i))
 
     return solid_fn
 

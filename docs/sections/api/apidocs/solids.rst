@@ -40,8 +40,5 @@ I/O
 .. autoclass:: Output
     :members:
 
-.. autoclass:: MultipleOutputs
-    :members:
-
 .. autoclass:: Materialization
     :members:

@@ -8,34 +8,20 @@ not *necessarily* have to be fired, therefore unlocking the ability for
 downstream solids to be invoked conditionally based on something that
 happened during the computation.
 
-``MultipleResults`` Class
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Example
+~~~~~~~
 
-Here we present an example of a solid that has multiple outputs within a pipeline:
-
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs_yield.py
    :linenos:
    :caption: multiple_outputs.py
+   :lines: 5-13 
 
-This can be visualized in dagit:
-
-.. image:: multiple_results_figure_one.png
-
+Above is an example of a solid that returns multiple outputs. It does so by yielding two Output objects.
 
 Notice how ``return_dict_results`` has two outputs. For the first time
 we have provided the name argument to an :py:class:`OutputDefinition <dagster.OutputDefinition>`.
-(The name of an output defaults to ``'result'``, as it does for a
-:py:class:`DependencyDefinition <dagster.DependencyDefinition>`) Output names must be unique
-and each result returned by a solid's compute function must have a name that corresponds to
-one of these outputs.
-
-So from ``return_dict_results`` we used :py:class:`MultipleResults <dagster.MultipleResults>`
-to return all outputs from this compute.
-
-Just as this tutorial gives us the first example of a named
-:py:class:`OutputDefinition <dagster.OutputDefinition>`, this is also the first time that we've
-seen a named :py:class:`DependencyDefinition <dagster.DependencyDefinition>`. Recall that dependencies
-point to a particular **output** of a solid, rather than to the solid itself.
+Output names must be unique and each result returned by a solid's compute function must have a name
+that corresponds to one of these outputs.
 
 With this we can run the pipeline (condensed here for brevity):
 
@@ -43,33 +29,20 @@ With this we can run the pipeline (condensed here for brevity):
 
     $ dagster pipeline execute \
         -f multiple_outputs.py \
-        -n define_multiple_outputs_step_one_pipeline
+        -n multiple_outputs_yield_pipeline
 
     ... log spew
     2019-04-05 22:23:37 - dagster - INFO -
-            orig_message = "Solid return_dict_results emitted output \"out_one\" value 23"
+            orig_message = "Solid yield_outputs emitted output \"out_one\" value 23"
             ...
         solid_definition = "return_dict_results"
     ...
     2019-04-05 22:23:37 - dagster - INFO -
-            orig_message = "Solid return_dict_results emitted output \"out_two\" value 45"
+            orig_message = "Solid yield_outputs emitted output \"out_two\" value 45"
             ...
         solid_definition = "return_dict_results"
     ... more log spew
 
-Iterator of ``Result``
-^^^^^^^^^^^^^^^^^^^^^^
-
-The :py:class:`MultipleResults <dagster.MultipleResults>` class is not the only way
-to return multiple results from a solid compute function. You can also yield
-multiple instances of the ``Result`` object. (Note: this is actually the core
-specification of the compute function: all other forms are implemented in terms of
-the iterator form.)
-
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs_yield.py
-   :linenos:
-   :caption: multiple_outputs.py
-   :lines: 12-20
 
 Conditional Outputs
 ^^^^^^^^^^^^^^^^^^^

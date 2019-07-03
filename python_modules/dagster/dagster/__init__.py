@@ -30,13 +30,7 @@ from dagster.core.definitions import (
 )
 
 # These specific imports are to avoid circular import issues
-from dagster.core.definitions.decorators import (
-    MultipleOutputs,
-    lambda_solid,
-    solid,
-    composite_solid,
-    pipeline,
-)
+from dagster.core.definitions.decorators import lambda_solid, solid, composite_solid, pipeline
 
 from dagster.core.events import DagsterEventType
 
@@ -142,7 +136,6 @@ __all__ = [
     'resource',
     'solid',
     'system_storage',
-    'MultipleOutputs',
     # Execution
     'execute_pipeline_iterator',
     'execute_pipeline',

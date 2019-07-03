@@ -3,21 +3,10 @@ import pytest
 
 
 from dagster import DagsterInvariantViolationError, execute_pipeline
-from dagster_examples.intro_tutorial.multiple_outputs import multiple_outputs_pipeline
 from dagster_examples.intro_tutorial.multiple_outputs_yield import multiple_outputs_yield_pipeline
 from dagster_examples.intro_tutorial.multiple_outputs_conditional import (
     multiple_outputs_conditional_pipeline,
 )
-
-
-def test_intro_tutorial_multiple_outputs():
-    result = execute_pipeline(multiple_outputs_pipeline)
-
-    assert result.success
-    assert result.result_for_solid('return_dict_results').result_value('out_one') == 23
-    assert result.result_for_solid('return_dict_results').result_value('out_two') == 45
-    assert result.result_for_solid('log_num').result_value() == 23
-    assert result.result_for_solid('log_num_squared').result_value() == 45 * 45
 
 
 def test_intro_tutorial_multiple_outputs_yield():
