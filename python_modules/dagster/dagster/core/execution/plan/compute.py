@@ -53,7 +53,7 @@ def _yield_transform_results(compute_context, inputs, compute_fn):
         if isinstance(result, Output):
             value_repr = repr(result.value)
             compute_context.log.info(
-                'Solid {solid} emitted output "{output}" value {value}'.format(
+                "Solid '{solid}' emitted output '{output}' value {value}".format(
                     solid=str(step.solid_handle),
                     output=result.output_name,
                     value=value_repr[:200] + '...' if len(value_repr) > 200 else value_repr,
@@ -61,9 +61,24 @@ def _yield_transform_results(compute_context, inputs, compute_fn):
             )
             yield Output(output_name=result.output_name, value=result.value)
 
-        elif isinstance(result, (Materialization, ExpectationResult)):
-            yield result
+        elif isinstance(result, Materialization):
+            compute_context.log.info(
+                "Solid '{solid}' materialized '{label}'".format(
+                    solid=str(step.solid_handle), label=result.label
+                )
+            )
 
+            yield result
+        elif isinstance(result, ExpectationResult):
+            compute_context.log.info(
+                "Solid '{solid}' {status} expectation '{label}'".format(
+                    solid=str(step.solid_handle),
+                    status='passed' if result.success else 'failed',
+                    label=result.label,
+                )
+            )
+
+            yield result
         else:
             raise DagsterInvariantViolationError(
                 (

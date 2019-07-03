@@ -9,8 +9,6 @@ from dagster import (
     Nothing,
     OutputDefinition,
     InputDefinition,
-    IOExpectationDefinition,
-    String,
     EventMetadataEntry,
 )
 
@@ -34,14 +32,6 @@ def create_raw_file_solid(name):
 
     @solid(
         name=name,
-        output_defs=[
-            OutputDefinition(
-                String,
-                expectations=[
-                    IOExpectationDefinition(name='something', expectation_fn=do_expectation)
-                ],
-            )
-        ],
         description='Inject raw file for input to table {} and do expectation on output'.format(
             name
         ),
@@ -53,6 +43,7 @@ def create_raw_file_solid(name):
                 EventMetadataEntry.path(label='table_path', path='/path/to/{}.raw'.format(name))
             ],
         )
+        yield do_expectation(_context, name)
         yield Output(name)
 
     return raw_file_solid

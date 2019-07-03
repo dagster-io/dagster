@@ -36,9 +36,3 @@ I/O
 
 .. autoclass:: OutputDefinition
     :members:
-
-.. autoclass:: Output
-    :members:
-
-.. autoclass:: Materialization
-    :members:

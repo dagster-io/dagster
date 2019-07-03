@@ -1,5 +1,5 @@
-User-Defined Types & Input/Output Schemas
------------------------------------------
+User-Defined Types
+------------------
 
 Throughout the tutorial you have seen the use of builtins such as :py:class:`Int <dagster.Int>`
 and :py:class:`String <dagster.String>` for types. However you will want to be able to define your
@@ -12,7 +12,8 @@ Basic Typing
 ^^^^^^^^^^^^
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 1, 84-91, 94
+   :lines: 1, 85-92, 101
+   :linenos:
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can
 include this type and use it as an input or output of a solid. The system will do a typecheck
@@ -21,7 +22,9 @@ to ensure that the object is of type ``pd.DataFrame``.
 Now one can use it to define a solid:
 
 .. code-block:: py
+
    :emphasize-lines: 2
+   :linenos:
 
     @lambda_solid
     def sum_solid(num: DataFrame) -> DataFrame:
@@ -32,15 +35,15 @@ Now one can use it to define a solid:
 The type metadata now appears in dagit and the system will ensure the input and output to this
 solid are indeed data frames.
 
-Input Schema
-^^^^^^^^^^^^
+Input Hydration Config
+^^^^^^^^^^^^^^^^^^^^^^
 
 This solid as defined is only expressed in terms of an in-memory object; it says nothing about
 how this data should be sourced from or materialized to disk. This is where the notion of
-input and output schemas come into play. Once the user provides those she is able to use
+input and output materialization configs come into play. Once the user provides those she is able to use
 the configuration language in order to parameterize the computation.
 
-Let us now add the input schema:
+Let us now add the input hydration config:
 
 .. code-block:: py
 
@@ -74,8 +77,8 @@ Let us now add the input schema:
             )
 
 
-Any input schema is define by a decorated function with a single argument. The argument is the
-format the input schema takes. In this case it is a `Selector`. Selectors are used when you want
+Any input hydration config is define by a decorated function with a single argument. The argument is the
+format the input hydration config takes. In this case it is a `Selector`. Selectors are used when you want
 to be able present several different options to the user but force them to select one. In this case,
 for example, it would not make much sense to allow them to say that a single input should be sourced
 from a csv and a parquet file: They must choose. (In other type systems this might be called an "input
@@ -96,7 +99,8 @@ user-provided function takes the unpacked key and value of config_value directly
 case of a selector, the config_value dictionary has only 1 (key, value) pair.
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 57-81
+   :lines: 60-84
+   :linenos:
 
 You'll note that we no longer need to manipulate the ``config_value`` dictionary. It grabs
 that key and value for you and calls the provided function.
@@ -104,7 +108,8 @@ that key and value for you and calls the provided function.
 Finally insert this into the original declaration:
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 86-92, 94
+   :lines: 87-93, 101
+   :linenos:
    :emphasize-lines: 7
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
@@ -112,28 +117,30 @@ these inputs via config:
 
 .. image:: types_figure_one.png
 
-Output Schema
-^^^^^^^^^^^^^
+Output Materialization Config
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We will add output schema now. They are similar to input schema, except that they are responsible
+We will add output materialization config now. They are similar to input hydration config, except that they are responsible
 for taking the in-memory object flowed through your computation and materializing it to some
 persistent store. Outputs are purely *optional* for any computation, whereas inputs *must* be provided
 for a computation to proceed. You will likely want outputs as for a pipeline to be useful it
 should produce some materialization that outlives the computation.
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 31-54
+   :lines: 32-57
+   :linenos:
 
-This has a similar aesthetic to an input schema but performs a different function. Notice that
+This has a similar aesthetic to an input hydration config but performs a different function. Notice that
 it takes a third argument, ``pandas_df`` (it can be named anything), that is the value that was
 outputted from the solid in question. It then takes the configuration data as "instructions" as to
 how to materialize the value.
 
-One connects the output schema to the type as follows:
+One connects the output materialization config to the type as follows:
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 86-94
-   :emphasize-lines: 8
+   :lines: 86-94, 101
+   :linenos:
+   :emphasize-lines: 9
 
 Now we can provide a list of materializations to a given execution.
 
@@ -143,3 +150,16 @@ You'll note you can provide an arbitrary number of materializations. You can mat
 given output any number of times in any number of formats.
 
 .. image:: types_figure_three.png
+
+
+Type Metadata
+^^^^^^^^^^^^^
+User-defined types can also provide a metadata function that returns a :py:class:`TypeCheck <dagster.TypeCheck>`
+object containing metadata entries about an instance of the type when it successfully passes the instanceof check.
+
+We will use this to emit some summary statistics about our DataFrame type:
+
+.. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
+   :lines: 86-101
+   :linenos:
+   :emphasize-lines: 10-15

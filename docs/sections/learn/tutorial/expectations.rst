@@ -21,16 +21,13 @@ You'll note the new concept of expecatations.
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations.py
    :linenos:
    :caption: expectations.py
-   :emphasize-lines: 17-22
+   :emphasize-lines: 6
 
-At its core, an expectation is a function applied to either an input or an output.
-Generally anywhere there is a type, you can apply an expectation. This function
-can be as sophisticated as the user wants, anywhere from a simple null check to
-checking thresholds of distrbutions or querying lookup tables.
+An :py:class:`ExpectationResult <dagster.ExpectationResult>` allows your solid to communicate the result
+of performing a data quality test. This can include checks done on inputs before computing or checks done
+before returning outputs if they were computed in an external system such as Spark.
 
-
-If you run this pipeline, you'll notice some logging that indicates that the expectation
-was processed
+If you run this pipeline, you'll notice some logging for the result of the expectation.
 
 We'll use this config file.
 
@@ -50,10 +47,28 @@ In that execution you'll notice a passing expectation:
 
 .. code-block:: console
 
-    2019-01-15 13:04:17 - dagster - INFO - orig_message="Execution of add_ints.output.num_one.expectation.check_positive succeeded in 0.06198883056640625" log_message_id="e903e121-e529-42ff-9561-b17dea553fba" run_id="71affcec-1c10-4a8b-9416-10115a01783f" pipeline="expectations_tutorial_pipeline" solid="add_ints" solid_definition="add_ints" event_type="EXECUTION_PLAN_STEP_SUCCESS" millis=0.06198883056640625 step_key="add_ints.output.num_one.expectation.check_positive"
+    2019-07-03 10:38:48 - dagster - INFO -
+            orig_message = "Solid add_ints passed expectation 'num_one_positive'"
+        log_message_id = "b6a5fed4-643b-4053-9874-960d35b7fcb7"
+        log_timestamp = "2019-07-03T17:38:48.397593"
+                run_id = "1dddbca4-8473-4374-941e-b7ba852c121a"
+                pipeline = "expectations_tutorial_pipeline"
+    execution_epoch_time = 1562175528.392194
+                step_key = "add_ints.compute"
+                solid = "add_ints"
+        solid_definition = "add_ints"
+    2019-07-03 10:38:48 - dagster - INFO -
+            orig_message = "Solid add_ints emitted output 'result' value 5"
+        log_message_id = "634dc567-ed48-4d57-b623-14b980c5d36e"
+        log_timestamp = "2019-07-03T17:38:48.398001"
+                run_id = "1dddbca4-8473-4374-941e-b7ba852c121a"
+                pipeline = "expectations_tutorial_pipeline"
+    execution_epoch_time = 1562175528.392194
+                step_key = "add_ints.compute"
+                solid = "add_ints"
+        solid_definition = "add_ints"
 
-Now let's make this fail. Currently the default behavior is to throw an error and halt execution
-when an expectation fails. So:
+Now let's make this fail. So:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_fail.yaml
    :linenos:
@@ -67,25 +82,29 @@ And then:
     -n expectations_tutorial_pipeline \
     -e expectations_fail.yaml
 
-    dagster.core.errors.DagsterIOExpectationFailedError:
-    DagsterIOExpectationFailedError(solid=add_ints,
-    output=num_one, expectation=check_positive
-    value=-2)
+.. code-block:: console
 
+    2019-07-03 10:45:22 - dagster - INFO -
+            orig_message = "Solid add_ints failed expectation 'num_one_positive'"
+        log_message_id = "64ab5299-4442-4fde-8bc5-b3ae102e4d12"
+        log_timestamp = "2019-07-03T17:45:22.107882"
+                run_id = "6f85e6cd-ebf3-4e55-b862-f64c3fedba7f"
+                pipeline = "expectations_tutorial_pipeline"
+    execution_epoch_time = 1562175922.099957
+                step_key = "add_ints.compute"
+                solid = "add_ints"
+        solid_definition = "add_ints"
+    2019-07-03 10:45:22 - dagster - INFO -
+            orig_message = "Solid add_ints emitted output 'result' value 1"
+        log_message_id = "a8d82e1c-b77a-41b9-a649-2bcd87d7a9ab"
+        log_timestamp = "2019-07-03T17:45:22.108435"
+                run_id = "6f85e6cd-ebf3-4e55-b862-f64c3fedba7f"
+                pipeline = "expectations_tutorial_pipeline"
+    execution_epoch_time = 1562175922.099957
+                step_key = "add_ints.compute"
+                solid = "add_ints"
+        solid_definition = "add_ints"
 
 Because the system is explictly aware of these expectations they are viewable in dagit.
-It can also configure the execution of these expectations. The capabilities of this part of the
-system are currently quite immature, but we expect to develop these more in the future. The only
-feature right now is the ability to skip expectations entirely. This is useful in a case where
-expectations are expensive and you have a time-critical job you must execute. In that case you can
-configure the pipeline to skip expectations entirely:
-
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/expectations_skip_failed.yaml
-   :linenos:
-   :caption: expectations_skip_fail.yaml
-
-.. code-block:: sh
-
-    $ dagster pipeline execute -f expectations.py \
-    -n define_expectations_tutorial_pipeline \
-    -e expectations_skip_failed.yaml
+The capabilities of this part of the system are currently quite immature, but we expect to develop
+these more in the future.

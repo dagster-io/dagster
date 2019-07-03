@@ -11,6 +11,17 @@ def last_file_comp(path):
 
 
 class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description entry_data')):
+    '''A structure for describing metadata for Dagster events.
+
+    Args:
+        label (str):
+        description (Optional[str]):
+        entry_data (List[EntryDataUnion]):
+            A list of typed metadata entries. The different types allow for customized display in
+            tools like dagit.
+
+    '''
+
     def __new__(cls, label, description, entry_data):
         return super(EventMetadataEntry, cls).__new__(
             cls,
@@ -21,14 +32,17 @@ class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description en
 
     @staticmethod
     def text(text, label, description=None):
+        'A EventMetadataEntry with a single TextMetadataEntryData entry'
         return EventMetadataEntry(label, description, TextMetadataEntryData(text))
 
     @staticmethod
     def url(url, label, description=None):
+        'A EventMetadataEntry with a single UrlMetadataEntryData entry'
         return EventMetadataEntry(label, description, UrlMetadataEntryData(url))
 
     @staticmethod
     def path(path, label, description=None):
+        'A EventMetadataEntry with a single PathMetadataEntryData entry'
         return EventMetadataEntry(label, description, PathMetadataEntryData(path))
 
     @staticmethod
@@ -123,15 +137,14 @@ class Materialization(namedtuple('_Materialization', 'label description metadata
 class ExpectationResult(
     namedtuple('_ExpectationResult', 'success label description metadata_entries')
 ):
-    ''' Output of an expectation callback.
+    '''The result of a data quality test.
 
-    When Expectations are evaluated in the callback passed to IOExpectationDefinitions,
-    the user must return an ExpectationResult object from the callback.
+    ExpectationResults can be yielded from solids just like Output and Materialization.
 
     Attributes:
 
         success (bool): Whether the expectation passed or not.
-        name (Optional[str]): Short display name for expectation. Defaults to "result".
+        label (Optional[str]): Short display name for expectation. Defaults to "result".
         message (str): Information about the computation. Typically only used in the failure case.
         result_metadata (dict): Arbitrary information about the expectation result.
     '''
@@ -149,6 +162,10 @@ class ExpectationResult(
 
 
 class TypeCheck(namedtuple('_TypeCheck', 'description metadata_entries')):
+    '''
+
+    '''
+
     def __new__(cls, description=None, metadata_entries=None):
         return super(TypeCheck, cls).__new__(
             cls,
@@ -160,6 +177,11 @@ class TypeCheck(namedtuple('_TypeCheck', 'description metadata_entries')):
 
 
 class Failure(Exception):
+    '''Can be raised from a solid compute function to return structured metadata
+    about the failure.
+
+    '''
+
     def __init__(self, description=None, metadata_entries=None):
         super(Failure, self).__init__(description)
         self.description = check.opt_str_param(description, 'description')

@@ -41,16 +41,21 @@ CLI
 .. code-block:: console
 
     $ dagster pipeline execute -f hello_world.py -n hello_world_pipeline
-    2019-01-08 11:23:57 - dagster - INFO - orig_message="Beginning execution of pipeline hello_world_pipeline" log_message_id="5c829421-06c7-49eb-9195-7e828e37eab8" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" event_type="PIPELINE_START"
-    2019-01-08 11:23:57 - dagster - INFO - orig_message="Beginning execution of hello_world.transform" log_message_id="5878513a-b510-4837-88cb-f77205931abb" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" solid="hello_world" solid_definition="hello_world" event_type="EXECUTION_PLAN_STEP_START" step_key="hello_world.transform"
-    2019-01-08 11:23:57 - dagster - INFO - orig_message="Solid hello_world emitted output \"result\" value 'hello'" log_message_id="b27fb70a-744a-46cc-81ba-677247b1b07b" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" solid="hello_world" solid_definition="hello_world"
-    2019-01-08 11:23:57 - dagster - INFO - orig_message="Execution of hello_world.transform succeeded in 0.9558200836181641" log_message_id="25faadf5-b5a8-4251-b85c-dea6d00d99f0" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" solid="hello_world" solid_definition="hello_world" event_type="EXECUTION_PLAN_STEP_SUCCESS" millis=0.9558200836181641 step_key="hello_world.transform"
-    2019-01-08 11:23:57 - dagster - INFO - orig_message="Step hello_world.transform emitted 'hello' for output result" log_message_id="604dc47c-fe29-4d71-a531-97ae58fda0f4" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline"
-    2019-01-08 11:23:57 - dagster - INFO - orig_message="Completing successful execution of pipeline hello_world_pipeline" log_message_id="1563854b-758f-4ae2-8399-cb75946b0055" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" event_type="PIPELINE_SUCCESS"
+    2019-07-03 14:52:22 - dagster - INFO -
+            orig_message = "Solid 'hello_world' emitted output 'result' value 'hello'"
+          log_message_id = "9699de18-c262-484a-ba61-9be96f4bbe8a"
+           log_timestamp = "2019-07-03T21:52:22.077101"
+                  run_id = "5cc6ed3c-66d4-49cd-a198-be9e761fa90d"
+                pipeline = "hello_world_pipeline"
+    execution_epoch_time = 1562190742.07246
+                step_key = "hello_world.compute"
+                   solid = "hello_world"
+        solid_definition = "hello_world"
+
 
 There's a lot of information in these log lines (we'll get to how you can use, and customize,
 them later), but you can see that the third message is:
-``Solid hello_world emitted output \"result\" value 'hello'``. Success!
+``Solid 'hello_world' emitted output 'result' value 'hello'``. Success!
 
 Dagit
 ~~~~~

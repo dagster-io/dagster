@@ -1,33 +1,27 @@
 from dagster import check
-
 from dagster.core.definitions import (
     DagsterIOExpectationFailedError,
-    IOExpectationDefinition,
     ExpectationResult,
     InputDefinition,
-    OutputDefinition,
+    IOExpectationDefinition,
     Output,
+    OutputDefinition,
     Solid,
     SolidHandle,
 )
-
 from dagster.core.errors import DagsterInvariantViolationError
-
-from dagster.core.execution.context.system import SystemStepExecutionContext
-
 from dagster.core.execution.context.expectation import ExpectationExecutionContext
-
+from dagster.core.execution.context.system import SystemStepExecutionContext
 from dagster.core.system_config.objects import EnvironmentConfig
 
 from .objects import (
     ExecutionStep,
     ExecutionValueSubplan,
     StepInput,
+    StepKind,
     StepOutput,
     StepOutputHandle,
-    StepKind,
 )
-
 from .utility import create_joining_subplan
 
 EXPECTATION_INPUT = 'expectation_input'

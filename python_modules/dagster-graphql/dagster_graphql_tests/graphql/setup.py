@@ -13,7 +13,6 @@ from dagster import (
     EnumValue,
     EventMetadataEntry,
     ExecutionTargetHandle,
-    IOExpectationDefinition,
     ExpectationResult,
     Field,
     Float,
@@ -41,6 +40,7 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.definitions import IOExpectationDefinition
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import script_relative_path
 from dagster_graphql.implementation.context import DagsterGraphQLContext

@@ -1,7 +1,4 @@
-import pytest
-
 from dagster import execute_pipeline, RunConfig
-from dagster.core.definitions.expectation import DagsterIOExpectationFailedError
 from dagster_examples.intro_tutorial.expectations import expectations_tutorial_pipeline
 
 
@@ -24,16 +21,11 @@ def define_failing_environment_config():
     }
 
 
-def test_intro_tutorial_expectations_step_two_fails_hard():
-    with pytest.raises(DagsterIOExpectationFailedError):
-        execute_pipeline(expectations_tutorial_pipeline, define_failing_environment_config())
-
-
-def test_intro_tutorial_expectations_step_two_fails_soft():
+def test_intro_tutorial_expectations_step_two():
     result = execute_pipeline(
         expectations_tutorial_pipeline,
         define_failing_environment_config(),
         run_config=RunConfig.nonthrowing_in_process(),
     )
 
-    assert not result.success
+    assert result.success

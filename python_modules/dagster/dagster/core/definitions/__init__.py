@@ -22,6 +22,10 @@ from .expectation import IOExpectationDefinition, DagsterIOExpectationFailedErro
 
 from .events import (
     EventMetadataEntry,
+    TextMetadataEntryData,
+    UrlMetadataEntryData,
+    PathMetadataEntryData,
+    JsonMetadataEntryData,
     ExpectationResult,
     Failure,
     Materialization,

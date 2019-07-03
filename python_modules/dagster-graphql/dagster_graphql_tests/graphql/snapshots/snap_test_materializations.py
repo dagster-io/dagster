@@ -25,6 +25,15 @@ snapshots['test_materializations 1'] = [
         }
     },
     {
+        '__typename': 'LogMessageEvent',
+        'level': 'INFO',
+        'message': "Solid 'materialize' materialized 'all_types'",
+        'step': {
+            'key': 'materialize.compute',
+            'solidHandleID': 'materialize'
+        }
+    },
+    {
         '__typename': 'StepMaterializationEvent',
         'level': 'DEBUG',
         'materialization': {
@@ -66,7 +75,7 @@ snapshots['test_materializations 1'] = [
     {
         '__typename': 'LogMessageEvent',
         'level': 'INFO',
-        'message': 'Solid materialize emitted output "result" value None',
+        'message': "Solid 'materialize' emitted output 'result' value None",
         'step': {
             'key': 'materialize.compute',
             'solidHandleID': 'materialize'
@@ -89,15 +98,6 @@ snapshots['test_materializations 1'] = [
             ]
         },
         'valueRepr': 'None'
-    },
-    {
-        '__typename': 'LogMessageEvent',
-        'level': 'INFO',
-        'message': 'Step materialize.compute emitted None for output result',
-        'step': {
-            'key': 'materialize.compute',
-            'solidHandleID': 'materialize'
-        }
     },
     {
         '__typename': 'ExecutionStepSuccessEvent',
