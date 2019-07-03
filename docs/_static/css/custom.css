@@ -75,6 +75,12 @@ div.body .section a.reference img {
   border: 0px;
 }
 
+/* Don't make images into links in the reference section */
+div.body #reference a.image-reference {
+  pointer-events: none;
+  cursor: default;
+}
+
 .bodywrapper {
   padding-top: 21px;
   max-width: 950px;
