@@ -1,5 +1,3 @@
-from dagster.core import types
-
 from dagster.core.definitions import (
     CompositeSolidDefinition,
     DependencyDefinition,

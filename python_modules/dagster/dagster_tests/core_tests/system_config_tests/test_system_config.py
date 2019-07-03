@@ -17,7 +17,6 @@ from dagster import (
     String,
     execute_pipeline,
     lambda_solid,
-    types,
 )
 from dagster.core.definitions import create_environment_type, create_environment_schema
 from dagster.core.definitions.environment_configs import (
@@ -663,9 +662,7 @@ def test_optional_and_required_context():
 
 
 def test_required_inputs():
-    @lambda_solid(
-        input_defs=[InputDefinition('num', types.Int)], output_def=OutputDefinition(types.Int)
-    )
+    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 
@@ -698,8 +695,8 @@ def test_required_inputs():
 
 def test_mix_required_inputs():
     @lambda_solid(
-        input_defs=[InputDefinition('left', types.Int), InputDefinition('right', types.Int)],
-        output_def=OutputDefinition(types.Int),
+        input_defs=[InputDefinition('left', Int), InputDefinition('right', Int)],
+        output_def=OutputDefinition(Int),
     )
     def add_numbers(left, right):
         return left + right

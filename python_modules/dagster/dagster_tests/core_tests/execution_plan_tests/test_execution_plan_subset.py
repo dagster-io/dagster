@@ -2,13 +2,13 @@ from dagster import (
     DagsterEventType,
     DependencyDefinition,
     InputDefinition,
+    Int,
     OutputDefinition,
     PipelineDefinition,
     Output,
     RunConfig,
     lambda_solid,
     solid,
-    types,
 )
 
 from dagster.core.execution.api import create_execution_plan, execute_plan
@@ -58,9 +58,7 @@ def test_execution_plan_simple_two_steps():
 
 
 def test_execution_plan_two_outputs():
-    @solid(
-        output_defs=[OutputDefinition(types.Int, 'num_one'), OutputDefinition(types.Int, 'num_two')]
-    )
+    @solid(output_defs=[OutputDefinition(Int, 'num_one'), OutputDefinition(Int, 'num_two')])
     def return_one_two(_context):
         yield Output(1, 'num_one')
         yield Output(2, 'num_two')

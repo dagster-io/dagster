@@ -7,16 +7,16 @@ from dagster import (
     DagsterInvalidConfigError,
     PipelineDefinition,
     SolidInvocation,
+    String,
     execute_pipeline,
     solid,
-    types,
 )
 
 
 def test_string_from_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition('string_input', types.String)])
+    @solid(input_defs=[InputDefinition('string_input', String)])
     def str_as_input(_context, string_input):
         assert string_input == 'foo'
         called['yup'] = True
@@ -36,7 +36,7 @@ def test_string_from_inputs():
 def test_string_from_aliased_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition('string_input', types.String)])
+    @solid(input_defs=[InputDefinition('string_input', String)])
     def str_as_input(_context, string_input):
         assert string_input == 'foo'
         called['yup'] = True
@@ -57,7 +57,7 @@ def test_string_from_aliased_inputs():
 def test_string_missing_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition('string_input', types.String)])
+    @solid(input_defs=[InputDefinition('string_input', String)])
     def str_as_input(_context, string_input):  # pylint: disable=W0613
         called['yup'] = True
 
@@ -79,11 +79,11 @@ def test_string_missing_inputs():
 def test_string_missing_input_collision():
     called = {}
 
-    @solid(output_defs=[OutputDefinition(types.String)])
+    @solid(output_defs=[OutputDefinition(String)])
     def str_as_output(_context):
         return 'bar'
 
-    @solid(input_defs=[InputDefinition('string_input', types.String)])
+    @solid(input_defs=[InputDefinition('string_input', String)])
     def str_as_input(_context, string_input):  # pylint: disable=W0613
         called['yup'] = True
 

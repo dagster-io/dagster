@@ -12,11 +12,11 @@ from dagster import (
     Output,
     RuntimeType,
     StepKind,
+    String,
     execute_pipeline,
     lambda_solid,
     output_materialization_config,
     solid,
-    types,
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context_creation_pipeline import create_environment_config
@@ -24,7 +24,7 @@ from dagster.utils.test import get_temp_file_name, get_temp_file_names
 
 
 def single_int_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(types.Int))
+    @lambda_solid(output_def=OutputDefinition(Int))
     def return_one():
         return 1
 
@@ -32,7 +32,7 @@ def single_int_output_pipeline():
 
 
 def single_string_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(types.String))
+    @lambda_solid(output_def=OutputDefinition(String))
     def return_foo():
         return 'foo'
 
@@ -40,12 +40,7 @@ def single_string_output_pipeline():
 
 
 def multiple_output_pipeline():
-    @solid(
-        output_defs=[
-            OutputDefinition(types.Int, 'number'),
-            OutputDefinition(types.String, 'string'),
-        ]
-    )
+    @solid(output_defs=[OutputDefinition(Int, 'number'), OutputDefinition(String, 'string')])
     def return_one_and_foo(_context):
         yield Output(1, 'number')
         yield Output('foo', 'string')
@@ -54,7 +49,7 @@ def multiple_output_pipeline():
 
 
 def single_int_named_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(types.Int, name='named'))
+    @lambda_solid(output_def=OutputDefinition(Int, name='named'))
     def return_named_one():
         return Output(1, 'named')
 

@@ -12,7 +12,6 @@ from dagster import (
     lambda_solid,
     resource,
     solid,
-    types,
 )
 
 from dagster.utils.test import execute_solid_within_pipeline
@@ -148,7 +147,7 @@ def test_single_solid_error():
 
 
 def test_single_solid_type_checking_output_error():
-    @lambda_solid(output_def=OutputDefinition(types.Int))
+    @lambda_solid(output_def=OutputDefinition(Int))
     def return_string():
         return 'ksjdfkjd'
 
