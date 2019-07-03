@@ -1,8 +1,7 @@
 Install
 =======================
 
-Quick Start
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. rubric:: Quick Start
 To install dagster and dagit, run:
 
 .. code-block:: console
@@ -13,8 +12,7 @@ This will install the latest stable version of dagster's packages in your curren
 environment.
 
 
-Detailed Installation Guide
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. rubric:: Detailed Installation Guide
 Dagster is tested on Python 3.7.3, 3.6.8, 3.5.7, and 2.7.16. Python 3 is strongly
 encouraged -- if you can, you won't regret making the switch!
 
@@ -35,16 +33,14 @@ running:
 
 If these tools aren't present on your system, you can install them as follows:
 
-Ubuntu
-***********
+.. rubric:: Ubuntu
 
 .. code-block:: console
 
     $ sudo apt update
     $ sudo apt install python3-dev python3-pip
 
-macOS
-***********
+.. rubric:: macOS
 Using `Homebrew <https://brew.sh/>`_:
 
 .. code-block:: console
@@ -58,8 +54,7 @@ On Python 2.7, you can install virtualenv with:
 
     $ sudo pip install -U virtualenv  # system-wide install
 
-Windows (Python 3)
-******************
+.. rubric:: Windows (Python 3)
 - Install the *Microsoft Visual C++ 2015 Redistributable Update 3*. This comes with *Visual Studio 2015* but can be installed separately as follows:
 
   1. Go to the Visual Studio downloads,
@@ -72,8 +67,7 @@ To use the ``dagit`` tool, you will also need to
 `install yarn <https://yarnpkg.com/lang/en/docs/install/>`_.
 
 
-Notes on Python virtualenvs
-***************************
+.. rubric:: Notes on Python virtualenvs
 We strongly recommend installing dagster inside a Python virtualenv. If you are
 running Anaconda, you should install dagster inside a Conda environment.
 
@@ -123,4 +117,3 @@ Or, on Windows:
 .. code-block:: console
 
     $ activate dagster
-

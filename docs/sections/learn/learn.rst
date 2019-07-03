@@ -1,13 +1,19 @@
 Learn
 =======================
 
+Here we provide several resources for learning how to use Dagster.
+
+If you're brand new to the Dagster system, we recommend starting with the tutorial, which will walk
+you through the most important concepts in Dagster from the beginning.
+
+The principles section articulates the fundamental principles underpinning the design of Dagster.
+
+Finally, the guides section provides deep dives into major areas of the system, motivated by common
+data engineering and data science workflows.
+
 .. toctree::
   :maxdepth: 1
 
   tutorial/index
   principles
-
-  guides/solid/solid
-  guides/testing/testing
-  guides/testing/expectations
-  guides/logging/logging
+  guides/index

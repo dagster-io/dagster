@@ -31,6 +31,13 @@ div.sphinxsidebar h4 {
   font-family: "Source Sans Pro", sans-serif;
   font-weight: 600;
   color: #1c2844;
+  font-size: 30px;
+}
+
+div.body {
+  /* This is set to 450px in basic.css upstream which breaks the view on mobile, so we
+  override here */
+  min-width: 0;
 }
 
 div.body h1 {
@@ -106,7 +113,7 @@ div.body #reference a.image-reference {
 div.sphinxsidebar ul li.toctree-l1 > a {
   font-family: "Source Sans Pro", sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 17px;
   text-transform: uppercase;
   letter-spacing: 1.1px;
   color: #555;
@@ -121,11 +128,6 @@ div.sphinxsidebar li.toctree-l1 > a:hover {
   border-bottom: 1px solid #2391eb;
 }
 
-/* Currently selected main section */
-div.sphinxsidebar > div > ul > li.toctree-l1.current > ul {
-  padding-bottom: 18px;
-}
-
 div.sphinxsidebar > div > ul > li > ul {
   margin-left: 0px;
 }
@@ -138,8 +140,16 @@ div.sphinxsidebar li.toctree-l1 > ul {
   list-style: none;
 }
 
+div.sphinxsidebar ul li.toctree-l2 > a {
+  font-size: 17px;
+}
+
 div.sphinxsidebar li.toctree-l2 > ul {
   list-style: none;
+}
+
+div.sphinxsidebar ul li.toctree-l3 > a {
+  font-size: 17px;
 }
 
 div.sphinxsidebar li.toctree-l3::before {
