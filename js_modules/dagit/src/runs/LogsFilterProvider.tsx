@@ -8,7 +8,8 @@ export enum LogLevel {
   INFO = "INFO",
   WARNING = "WARNING",
   ERROR = "ERROR",
-  CRITICAL = "CRITICAL"
+  CRITICAL = "CRITICAL",
+  EVENT = "EVENT" // structured events
 }
 
 export const DefaultLogFilter = {
@@ -88,7 +89,8 @@ export default class LogsFilterProvider<
     const textLower = filter.text.toLowerCase();
 
     const nextResults = nodes.filter(node => {
-      if (!filter.levels[node.level]) return false;
+      const l = node.__typename === "LogMessageEvent" ? node.level : "EVENT";
+      if (!filter.levels[l]) return false;
       if (filter.since && Number(node.timestamp) < filter.since) return false;
 
       if (filter.text) {

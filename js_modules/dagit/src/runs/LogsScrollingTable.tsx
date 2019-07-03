@@ -12,7 +12,7 @@ import {
 } from "react-virtualized";
 
 import * as LogsRow from "./LogsRow";
-import { OverflowDetectingCell } from "./Cells";
+import { CellTruncationProvider } from "./Cells";
 import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMessageFragment";
 
 interface ILogsScrollingTableProps {
@@ -161,16 +161,13 @@ class LogsScrollingTableSized extends React.Component<
         parent={parent}
         key={key}
       >
-        <OverflowDetectingCell
-          style={{ ...style, width: this.props.width }}
-          level={node.level}
-        >
+        <CellTruncationProvider style={{ ...style, width: this.props.width }}>
           {node.__typename === "LogMessageEvent" ? (
             <LogsRow.Unstructured node={node} />
           ) : (
             <LogsRow.Structured node={node} />
           )}
-        </OverflowDetectingCell>
+        </CellTruncationProvider>
       </CellMeasurer>
     );
   };
