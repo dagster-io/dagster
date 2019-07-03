@@ -297,6 +297,22 @@ def test_execute_mode_command():
     assert 'Step apply_to_three.compute emitted 25 for output result' in double_adder_result.stdout
 
 
+def test_execute_preset_command():
+    runner = CliRunner()
+    add_result = runner_pipeline_execute(
+        runner,
+        [
+            '-y',
+            script_relative_path('../repository.yaml'),
+            '-p',
+            'add',
+            'multi_mode_with_resources',  # pipeline name
+        ],
+    )
+    # this is quite horrific and fragile easiest way to check for correcness
+    assert 'Step apply_to_three.compute emitted 5 for output result' in add_result.stdout
+
+
 def test_execute_command():
     for cli_args in valid_execute_args():
         execute_execute_command(env=None, raise_on_error=True, cli_args=cli_args)

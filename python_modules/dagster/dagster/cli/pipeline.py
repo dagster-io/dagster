@@ -301,18 +301,15 @@ def execute_execute_command(env, raise_on_error, cli_args, mode=None):
     return do_execute_command(pipeline, env, raise_on_error, mode)
 
 
-def execute_execute_command_with_preset(preset, raise_on_error, cli_args, mode):
+def execute_execute_command_with_preset(preset, raise_on_error, cli_args, _mode):
     pipeline = handle_for_pipeline_cli_args(cli_args).build_pipeline_definition()
     cli_args.pop('pipeline_name')
-    repository = handle_for_repo_cli_args(cli_args).build_repository_definition()
-    kwargs = repository.get_preset_pipeline(pipeline.name, preset)
 
-    return execute_pipeline(
-        run_config=RunConfig(
-            mode=mode, executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)
-        ),
-        **kwargs
+    kwargs = pipeline.get_preset(preset)
+    kwargs['run_config'] = kwargs['run_config'].with_executor_config(
+        InProcessExecutorConfig(raise_on_error=raise_on_error)
     )
+    return execute_pipeline(**kwargs)
 
 
 def do_execute_command(pipeline, env_file_list, raise_on_error, mode=None):
