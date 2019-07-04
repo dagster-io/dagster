@@ -4,15 +4,9 @@ Testing computations and pipelines in data applications is notoriously challengi
 
 Two underlying facts, more than any others, account for this challenge:
 
-<<<<<<< HEAD
 1. _Data applications encode much of their business logic in heavy, external systems_. Examples include processing systems like Spark, and data warehouses such as Snowflake and Redshift. It is a) difficult to structure software to isolate these dependencies and b) difficult or impossible to run them in a lightweight manner.
 
 2. _Data applications usually do not control their inputs._ They must take the data given and compute over it. This means that the computations encode innumerable implicit, unexpressed assumptions about the incoming data.
-=======
-1. *Data applications encode much of their business logic in heavy, external systems*. Examples include processing systems like Spark, and data warehouses such as Snowflake and Redshift. It is a) difficult to structure software to isolate these dependencies and b) difficult or impossible to run them in a lightweight manner.
-
-2. *Data applications usually do not control their inputs.* They must take the data given and compute over it. This means that the computations encode innumerable implicit, unexpressed assumptions about the incoming data.
->>>>>>> [1/2] Updates to reference section
 
 Without accounting for these unique properties of data applications, blindly applying traditional software techniques can results in tests that are low-value, ineffective, or more trouble than they are worth.
 
@@ -103,12 +97,6 @@ def test_cache_file_from_s3_step_one_one():
         assert boto_s3.download_file.call_count == 1
 
         assert os.path.exists(os.path.join(temp_dir, 'some-key'))
-<<<<<<< HEAD
-=======
-
-```
-
->>>>>>> [1/2] Updates to reference section
 
 ```
 
