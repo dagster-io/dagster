@@ -74,12 +74,6 @@ Making New Types
 
 .. autofunction:: NamedDict
 
-
------
-
-Schema
-------
-
 .. autofunction:: input_hydration_config
 
 .. autofunction:: output_materialization_config

@@ -88,9 +88,8 @@ EntryDataUnion = (
 
 
 class Output(namedtuple('_Result', 'value output_name')):
-    '''A solid compute function return a stream of Output objects.
-    An implementator of a SolidDefinition must provide a compute that
-    yields objects of this type.
+    '''A value produced by a solid compute function for downstream consumption. An implementer
+    of a SolidDefinition directly must provide a compute function that yields objects of this type.
 
     Attributes:
         value (Any): Value returned by the transform.
@@ -102,7 +101,7 @@ class Output(namedtuple('_Result', 'value output_name')):
 
 
 class Materialization(namedtuple('_Materialization', 'label description metadata_entries')):
-    '''A value materialized by an execution step.
+    '''A value materialized by a solid compute function.
 
     As opposed to Outputs, Materializations can not be passed to other solids and persistence
     is not controlled by dagster. They are a useful way to communicate side effects to the system
@@ -139,7 +138,7 @@ class ExpectationResult(
 ):
     '''The result of a data quality test.
 
-    ExpectationResults can be yielded from solids just like Output and Materialization.
+    ExpectationResults can be yielded from solids just like Outputs and Materializations.
 
     Attributes:
 
@@ -162,8 +161,8 @@ class ExpectationResult(
 
 
 class TypeCheck(namedtuple('_TypeCheck', 'description metadata_entries')):
-    '''
-
+    '''Used to communicate metadata about a value as it is evaluated against
+    a declared expected type.
     '''
 
     def __new__(cls, description=None, metadata_entries=None):
@@ -179,7 +178,6 @@ class TypeCheck(namedtuple('_TypeCheck', 'description metadata_entries')):
 class Failure(Exception):
     '''Can be raised from a solid compute function to return structured metadata
     about the failure.
-
     '''
 
     def __init__(self, description=None, metadata_entries=None):

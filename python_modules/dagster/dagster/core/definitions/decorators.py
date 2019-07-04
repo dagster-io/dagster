@@ -639,7 +639,8 @@ def _get_validated_config_mapping(name, config, config_fn):
 def composite_solid(
     name=None, input_defs=None, output_defs=None, description=None, config=None, config_fn=None
 ):
-    ''' (decorator) Create a CompositeSolidDefinition with specified parameters.
+    '''Create a CompositeSolidDefinition with specified parameters from the decorated
+    `composition function <../../learn/tutorial/composition_functions.html>`_ .
 
     Using this decorator allows you to build up the dependency graph of the composite by writing a
     function that invokes solids and passes the output to other solids.
@@ -730,7 +731,8 @@ class _Pipeline:
 
 
 def pipeline(name=None, description=None, mode_defs=None, preset_defs=None):
-    ''' (decorator) Create a pipeline with specified parameters.
+    '''Create a pipeline with specified parameters from the decorated
+    `composition function <../../learn/tutorial/composition_functions.html>`_ .
 
     Using this decorator allows you to build up the dependency graph of the pipeline by writing a
     function that invokes solids and passes the output to other solids.
