@@ -11,11 +11,15 @@ class InputDefinition(object):
     '''An InputDefinition instance represents an argument to a compute defined within a solid.
     Inputs are values within the dagster type system that are created from previous solids.
 
-    Attributes:
+    Args:
         name (str): Name of the input.
-        runtime_type (DagsterType): Type of the input. Defaults to types.Any
-        expectations (List[IOExpectationDefinition]):
-            List of expectations that applies to the value passed to the solid.
+        dagster_type (DagsterType):
+            Type of the input. Defaults to :py:class:`Any` . Basic python types will be
+            mapped to the appropriate DagsterType.
+        expectations (Optional[List[IOExpectationDefinition]]):
+            **Deprecated**: List of expectations that applies to the value passed to the solid.
+
+            Prefer yielding :py:class:`ExpectationResult` from solid compute function.
         description (str): Description of the input. Optional.
     '''
 

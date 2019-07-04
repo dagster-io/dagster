@@ -83,38 +83,27 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
 
 
 class SolidDefinition(ISolidDefinition):
-    '''A solid (a name extracted from the acronym of "software-structured data" (SSD)) represents
-    a unit of computation within a data pipeline.
+    '''
+    The definition of a Solid that peforms a user defined computation.
 
-    As its core, a solid is a function. It accepts inputs (which are values produced from
-    other solids) and configuration, and produces outputs. These solids are composed as a
-    directed, acyclic graph (DAG) within a pipeline to form a computation that produces
-    data assets.
+    For more details on what a solid is, reference the
+    `Solid Guide <../../learn/guides/solid/solid.html>`_ .
 
-    Solids should be implemented as idempotent, parameterizable, non-destructive functions.
-    Data computations with these properties are much easier to test, reason about, and operate.
-
-    The inputs and outputs are gradually, optionally typed by the dagster type system. Types
-    can be user-defined and can represent entities as varied as scalars, dataframe, database
-    tables, and so forth. They can represent pure in-memory objects, or handles to assets
-    on disk or in external resources.
-
-    A solid is a generalized abstraction that could take many forms.
-
-    End users should prefer the @solid and @lambda_solid decorator. SolidDefinition
-    is generally used by framework authors.
+    End users should prefer the :py:func:`solid` and :py:func:`lambda_solid`
+    decorators. SolidDefinition is generally used by framework authors.
 
     Args:
         name (str): Name of the solid.
         input_defs (List[InputDefinition]): Inputs of the solid.
 
-        compute_fn (Callable[[SystemComputeExecutionContext, ], Iterable[Union[Output,
-            Materialization]]]): The core of the solid, the function that does the actual
-            computation. The arguments passed to this function after context are deteremined by
-            ``inputs``.
+        compute_fn (Callable):
+            The core of the solid, the function that does the actual computation. The signature of
+            this function is determined by ``input_defs``, with the first argument always being
+            ``context``, a collection of information provided by the system.
 
-            This function yields :py:class:`Output` according to ``output_defs`` or
-            :py:class:`Materialization`.
+            This function must return a Generator, yielding :py:class:`Output` according to its
+            ``output_defs`` and may yield other types of dagster events including
+            :py:class:`Materialization` and :py:class:`ExpectationResult`.
 
         input_defs (List[OutputDefinition]): Outputs of the solid.
         config_field (Optional[Field]): How the solid configured.
@@ -186,11 +175,11 @@ class SolidDefinition(ISolidDefinition):
 
 class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
     '''
-    The core unit of composition and abstraction, composite solids allow you to manage
-    the complexity of your pipelines.
+    The core unit of composition and abstraction, composite solids allow you to
+    define a solid from a graph of solids.
 
     In the same way you would refactor a block of code in to a function to deduplicate, organize,
-    or manage complexity you can refactor solids in a pipeline in to a composite solid.
+    or manage complexity - you can refactor solids in a pipeline in to a composite solid.
 
     Args:
         name (str)

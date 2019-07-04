@@ -132,7 +132,7 @@ class _Solid(object):
 
 
 def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
-    '''(decorator) Create a simple solid.
+    '''Create a simple solid from the decorated function.
 
     This shortcut allows the creation of simple solids that do not require
     configuration and whose implementations do not require a context.
@@ -143,7 +143,7 @@ def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
     Args:
         name (str): Name of solid.
         description (str): Solid description.
-        input_defs (list[InputDefinition]): List of input_defs.
+        input_defs (List[InputDefinition]): List of input_defs.
         output_def (OutputDefinition): The output of the solid. Defaults to ``OutputDefinition()``.
 
     Examples:
@@ -154,8 +154,12 @@ def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
             def hello_world():
                 return 'hello'
 
-            @lambda_solid(input_defs=[InputDefinition(name='foo')])
+            @lambda_solid(input_defs=[InputDefinition(name='foo', str)])
             def hello_world(foo):
+                return foo
+
+            @lambda_solid
+            def hello_world(foo: str):
                 return foo
 
     '''
@@ -179,11 +183,13 @@ def solid(
     required_resource_keys=None,
     metadata=None,
 ):
-    '''(decorator) Create a solid with specified parameters.
+    '''Create a solid with specified parameters from the decorated function.
 
     This shortcut simplifies the core solid API by exploding arguments into kwargs of the
-    compute function and omitting additional parameters when they are not needed.
-    Parameters are otherwise as in the core API, :py:class:`SolidDefinition`.
+    compute function and omitting additional parameters when they are not needed. Input
+    and output definitions will be inferred from the type signature of the decorated
+    function if not explicitly provided. Parameters are otherwise as in the core API,
+    :py:class:`SolidDefinition`.
 
     The decorated function will be used as the solid's compute function. Unlike in the core API,
     the compute function does not have to yield :py:class:`Output` object directly. Several
@@ -196,9 +202,9 @@ def solid(
     Args:
         name (str): Name of solid.
         description (str): Description of this solid.
-        input_defs (list[InputDefinition]):
+        input_defs (Optiona[List[InputDefinition]]):
             List of input_defs. Inferred from typehints if not provided.
-        output_defs (list[OutputDefinition]):
+        output_defs (Optional[List[OutputDefinition]]):
             List of output_defs. Inferred from typehints if not provided.
         config (Dict[str, Field]):
             Defines the schema of configuration data provided to the solid via context.
@@ -221,37 +227,42 @@ def solid(
             def hello_world(_context):
                 print('hello')
 
-            @solid(output_defs=[OutputDefinition()])
+            @solid
             def hello_world(_context):
                 return {'foo': 'bar'}
 
-            @solid(output_defs=[OutputDefinition()])
+            @solid
             def hello_world(_context):
                 return Output(value={'foo': 'bar'})
 
-            @solid(output_defs=[OutputDefinition()])
+            @solid
             def hello_world(_context):
                 yield Output(value={'foo': 'bar'})
 
-            @solid(
-                input_defs=[InputDefinition(name="foo")],
-                output_defs=[OutputDefinition()]
-            )
+            @solid
             def hello_world(_context, foo):
                 return foo
 
             @solid(
-                input_defs=[InputDefinition(name="foo")],
-                output_defs=[OutputDefinition()],
+                input_defs=[InputDefinition(name="foo", str)],
+                output_defs=[OutputDefinition(str)]
             )
+            def hello_world(_context, foo):
+                # explictly type and name inputs and outputs
+                return foo
+
+            @solid
+            def hello_world(_context, foo: str) -> str:
+                # same as above inferred from signature
+                return foo
+
+            @solid
             def hello_world(context, foo):
                 context.log.info('log something')
                 return foo
 
             @solid(
-                input_defs=[InputDefinition(name="foo")],
-                output_defs=[OutputDefinition()],
-                config_field=Field(types.Dict({'str_value' : Field(types.String)})),
+                config={'str_value' : Field(str)}
             )
             def hello_world(context, foo):
                 # context.solid_config is a dictionary with 'str_value' key

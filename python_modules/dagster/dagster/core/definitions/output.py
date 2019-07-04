@@ -12,10 +12,15 @@ class OutputDefinition(object):
     output, and so the user can construct a single OutputDefinition that will have
     the default name of "result".
 
-    Attributes:
-        runtime_type (DagsterType): Type of the output. Defaults to types.Any.
-        name (str): Name of the output. Defaults to "result".
-        expectations List[IOExpectationDefinition]: Expectations for this output.
+    Args:
+        dagster_type (DagsterType):
+            Type of the output. Defaults to :py:class:`Any` . Basic python types will be
+            mapped to the appropriate DagsterType.
+        name (Optional[str]): Name of the output. Defaults to "result".
+        expectations List[IOExpectationDefinition]:
+            **Deprecated**: Expectations for this output.
+
+            Prefer yielding :py:class:`ExpectationResult` directly from solid compute function.
         description (str): Description of the output. Optional.
         is_optional (bool): If this output is optional. Optional, defaults to false.
     '''
