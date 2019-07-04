@@ -5,7 +5,8 @@ import six
 
 from dagster.core.errors import DagsterInvalidDefinitionError
 
-from . import InputDefinition, OutputDefinition
+from .input import InputDefinition
+from .output import OutputDefinition
 
 if hasattr(inspect, 'signature'):
     funcsigs = inspect
@@ -87,15 +88,5 @@ def infer_input_definitions_for_composite_solid(solid_name, fn):
 def infer_input_definitions_for_solid(solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
-    if len(params) == 0:
-        raise DagsterInvalidDefinitionError(
-            'Must provide at least one parameter for @solid "{solid}"'.format(solid=solid_name)
-        )
 
-    if params[0].name not in {'context', '_context', '_'}:
-        raise DagsterInvalidDefinitionError(
-            'First parameter for @solid "{solid}" must be "context", "_context", or "_"'.format(
-                solid=solid_name
-            )
-        )
     return _infer_inputs_from_params(params[1:], '@solid', solid_name)

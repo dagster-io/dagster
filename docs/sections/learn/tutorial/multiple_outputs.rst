@@ -8,68 +8,50 @@ not *necessarily* have to be fired, therefore unlocking the ability for
 downstream solids to be invoked conditionally based on something that
 happened during the computation.
 
-``MultipleResults`` Class
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Example
+~~~~~~~
 
-Here we present an example of a solid that has multiple outputs within a pipeline:
-
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs_yield.py
    :linenos:
    :caption: multiple_outputs.py
+   :lines: 5-13
 
-This can be visualized in dagit:
-
-.. image:: multiple_results_figure_one.png
-
+Above is an example of a solid that returns multiple outputs. It does so by yielding two Output objects.
 
 Notice how ``return_dict_results`` has two outputs. For the first time
 we have provided the name argument to an :py:class:`OutputDefinition <dagster.OutputDefinition>`.
-(The name of an output defaults to ``'result'``, as it does for a
-:py:class:`DependencyDefinition <dagster.DependencyDefinition>`) Output names must be unique
-and each result returned by a solid's compute function must have a name that corresponds to
-one of these outputs.
-
-So from ``return_dict_results`` we used :py:class:`MultipleResults <dagster.MultipleResults>`
-to return all outputs from this compute.
-
-Just as this tutorial gives us the first example of a named
-:py:class:`OutputDefinition <dagster.OutputDefinition>`, this is also the first time that we've
-seen a named :py:class:`DependencyDefinition <dagster.DependencyDefinition>`. Recall that dependencies
-point to a particular **output** of a solid, rather than to the solid itself.
+Output names must be unique and each result returned by a solid's compute function must have a name
+that corresponds to one of these outputs.
 
 With this we can run the pipeline (condensed here for brevity):
 
 .. code-block:: console
 
     $ dagster pipeline execute \
-        -f multiple_outputs.py \
-        -n define_multiple_outputs_step_one_pipeline
+        -f multiple_outputs_yield.py \
+        -n multiple_outputs_yield_pipeline
 
-    ... log spew
-    2019-04-05 22:23:37 - dagster - INFO -
-            orig_message = "Solid return_dict_results emitted output \"out_one\" value 23"
-            ...
-        solid_definition = "return_dict_results"
-    ...
-    2019-04-05 22:23:37 - dagster - INFO -
-            orig_message = "Solid return_dict_results emitted output \"out_two\" value 45"
-            ...
-        solid_definition = "return_dict_results"
-    ... more log spew
+    2019-07-03 15:19:54 - dagster - INFO -
+            orig_message = "Solid 'yield_outputs' emitted output 'out_one' value 23"
+          log_message_id = "3e223b44-3b1d-436a-bda3-4b36421893ca"
+           log_timestamp = "2019-07-03T22:19:54.854159"
+                  run_id = "68fd5aa6-a788-4ad9-922d-c288050c0c1f"
+                pipeline = "multiple_outputs_yield_pipeline"
+    execution_epoch_time = 1562192394.848578
+                step_key = "yield_outputs.compute"
+                   solid = "yield_outputs"
+        solid_definition = "yield_outputs"
+    2019-07-03 15:19:54 - dagster - INFO -
+            orig_message = "Solid 'yield_outputs' emitted output 'out_two' value 45"
+          log_message_id = "ec12d827-efc3-4db1-ade7-2821bbd99133"
+           log_timestamp = "2019-07-03T22:19:54.854632"
+                  run_id = "68fd5aa6-a788-4ad9-922d-c288050c0c1f"
+                pipeline = "multiple_outputs_yield_pipeline"
+    execution_epoch_time = 1562192394.848578
+                step_key = "yield_outputs.compute"
+                   solid = "yield_outputs"
+        solid_definition = "yield_outputs"
 
-Iterator of ``Result``
-^^^^^^^^^^^^^^^^^^^^^^
-
-The :py:class:`MultipleResults <dagster.MultipleResults>` class is not the only way
-to return multiple results from a solid compute function. You can also yield
-multiple instances of the ``Result`` object. (Note: this is actually the core
-specification of the compute function: all other forms are implemented in terms of
-the iterator form.)
-
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs_yield.py
-   :linenos:
-   :caption: multiple_outputs.py
-   :lines: 12-20
 
 Conditional Outputs
 ^^^^^^^^^^^^^^^^^^^
@@ -80,7 +62,7 @@ and then execute that pipeline.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs_conditional.py
     :linenos:
-    :caption: multiple_outputs.py
+    :caption: multiple_outputs_conditional.py
 
 You must create a config file
 
@@ -92,22 +74,33 @@ And then run it.
 
 .. code-block:: console
 
-    $ dagster pipeline execute -f multiple_outputs.py \
-    -n define_multiple_outputs_step_three_pipeline \
+    $ dagster pipeline execute -f multiple_outputs_conditional.py \
+    -n multiple_outputs_conditional_pipeline \
     -e conditional_outputs.yaml
 
-    ... log spew
-    2019-04-05 22:29:31 - dagster - INFO -
-            orig_message = "Solid conditional emitted output \"out_two\" value 45"
-            ...
-
-    2019-04-05 22:29:31 - dagster - INFO -
+    2019-07-03 15:22:55 - dagster - INFO -
+            orig_message = "Solid 'conditional' emitted output 'out_two' value 45"
+          log_message_id = "c3baeee8-f642-4f67-a649-50e2e0985782"
+           log_timestamp = "2019-07-03T22:22:55.173293"
+                  run_id = "16a7f229-ed66-46ba-ab47-d3725639662c"
+                pipeline = "multiple_outputs_conditional_pipeline"
+    execution_epoch_time = 1562192575.166923
+                step_key = "conditional.compute"
+                   solid = "conditional"
+        solid_definition = "conditional"
+    2019-07-03 15:22:55 - dagster - INFO -
             orig_message = "Solid conditional did not fire outputs {'out_one'}"
-            ...
-    ... log spew
+          log_message_id = "e07b2b81-708d-4b83-9c0c-69698bb8eb26"
+           log_timestamp = "2019-07-03T22:22:55.173857"
+                  run_id = "16a7f229-ed66-46ba-ab47-d3725639662c"
+                pipeline = "multiple_outputs_conditional_pipeline"
+    execution_epoch_time = 1562192575.166923
+                step_key = "conditional.compute"
+                   solid = "conditional"
+        solid_definition = "conditional"
 
 Note that we are configuring this solid to *only* emit ``out_two`` which will end up
 only triggering ``log_num_squared``. The solid ``log_num`` will never be executed.
 
-Next, let's look at writing :doc:`Reusable Solids <reusable_solids>` so we can avoid duplicating
+Next, let's look at :doc:`Reusing Solids <reusing_solids>` so we can avoid duplicating
 common data pipeline work.

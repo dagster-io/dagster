@@ -12,7 +12,6 @@ from dagster import (
     String,
     check,
     execute_pipeline,
-    types,
 )
 
 from dagster.core.test_utils import single_output_transform
@@ -31,7 +30,7 @@ def define_pass_value_solid(name, description=None):
         name=name,
         description=description,
         input_defs=[],
-        output_defs=[OutputDefinition(types.String)],
+        output_defs=[OutputDefinition(String)],
         config_field=Field(SingleValueDict),
         compute_fn=_value_t_fn,
     )

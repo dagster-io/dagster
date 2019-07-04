@@ -3,7 +3,7 @@ import logging
 
 import boto3
 
-from dagster import check, Dict, Field, logger, seven, String
+from dagster import check, Field, logger, seven
 from dagster.core.log_manager import coerce_valid_log_level
 
 # The maximum batch size is 1,048,576 bytes, and this size is calculated as the sum of all event
@@ -172,19 +172,15 @@ class CloudwatchLogsHandler(logging.Handler):
 
 
 @logger(
-    config_field=Field(
-        Dict(
-            {
-                'log_level': Field(String, is_optional=True, default_value='INFO'),
-                'name': Field(String, is_optional=True, default_value='dagster'),
-                'log_group_name': Field(String),
-                'log_stream_name': Field(String),
-                'aws_region': Field(String, is_optional=True),
-                'aws_secret_access_key': Field(String, is_optional=True, is_secret=True),
-                'aws_access_key_id': Field(String, is_optional=True, is_secret=True),
-            }
-        )
-    ),
+    {
+        'log_level': Field(str, is_optional=True, default_value='INFO'),
+        'name': Field(str, is_optional=True, default_value='dagster'),
+        'log_group_name': Field(str),
+        'log_stream_name': Field(str),
+        'aws_region': Field(str, is_optional=True),
+        'aws_secret_access_key': Field(str, is_optional=True, is_secret=True),
+        'aws_access_key_id': Field(str, is_optional=True, is_secret=True),
+    },
     description='The default colored console logger.',
 )
 def cloudwatch_logger(init_context):

@@ -11,7 +11,7 @@ from dagster.core.errors import (
     DagsterUserCodeExecutionError,
     user_code_error_boundary,
 )
-from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.events import DagsterEvent
 from dagster.core.execution.config import ExecutorConfig
 from dagster.core.execution.context.system import (
     SystemPipelineExecutionContext,
@@ -188,14 +188,6 @@ def dagster_event_sequence_for_step(step_context):
 
     try:
         for step_event in check.generator(_core_dagster_event_sequence_for_step(step_context)):
-            if step_event.event_type is DagsterEventType.STEP_OUTPUT:
-                step_context.log.info(
-                    'Step {step} emitted {value} for output {output}'.format(
-                        step=step_context.step.key,
-                        value=step_event.step_output_data.value_repr,
-                        output=step_event.step_output_data.output_name,
-                    )
-                )
             yield step_event
 
     # case (1) in top comment

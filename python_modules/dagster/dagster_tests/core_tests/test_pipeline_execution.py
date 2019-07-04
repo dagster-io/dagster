@@ -36,7 +36,7 @@ from dagster.core.utility_solids import (
     input_set,
 )
 
-from dagster.utils.test import execute_solid
+from dagster.utils.test import execute_solid_within_pipeline
 
 # protected members
 # pylint: disable=W0212
@@ -193,7 +193,7 @@ def test_pipeline_execution_graph_diamond():
 
 
 def test_execute_solid_in_diamond():
-    solid_result = execute_solid(
+    solid_result = execute_solid_within_pipeline(
         create_diamond_pipeline(), 'A', inputs={'A_input': [{'a key': 'a value'}]}
     )
 
@@ -211,7 +211,7 @@ def test_execute_aliased_solid_in_diamond():
         },
     )
 
-    solid_result = execute_solid(
+    solid_result = execute_solid_within_pipeline(
         pipeline_def, 'aliased', inputs={'A_input': [{'a key': 'a value'}]}
     )
 

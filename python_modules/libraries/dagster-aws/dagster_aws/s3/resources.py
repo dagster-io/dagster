@@ -1,4 +1,4 @@
-from dagster import Field, resource, Dict, Bool
+from dagster import Field, resource
 
 from .utils import create_s3_session
 
@@ -18,18 +18,14 @@ class S3Resource:
 
 
 @resource(
-    config_field=Field(
-        Dict(
-            {
-                'use_unsigned_session': Field(
-                    Bool,
-                    description='Specifies whether to use an unsigned S3 session',
-                    is_optional=True,
-                    default_value=True,
-                )
-            }
+    {
+        'use_unsigned_session': Field(
+            bool,
+            description='Specifies whether to use an unsigned S3 session',
+            is_optional=True,
+            default_value=True,
         )
-    )
+    }
 )
 def s3_resource(context):
     use_unsigned_session = context.resource_config['use_unsigned_session']

@@ -10,6 +10,7 @@ from dagster import (
     as_dagster_type,
     check,
     DependencyDefinition,
+    Dict,
     Field,
     InputDefinition,
     Int,
@@ -19,6 +20,7 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
     resource,
+    ResourceDefinition,
     SerializationStrategy,
     solid,
     SolidDefinition,
@@ -41,6 +43,22 @@ def define_hello_world_pipeline():
 
 def define_hello_world_solid():
     return dagstermill.define_dagstermill_solid('hello_world', nb_test_path('hello_world'))
+
+
+def define_hello_world_config_solid():
+    return dagstermill.define_dagstermill_solid(
+        'hello_world_config',
+        nb_test_path('hello_world_config'),
+        config_field=Field(
+            Dict({'greeting': Field(String, is_optional=True, default_value='hello')})
+        ),
+    )
+
+
+def define_hello_world_config_pipeline():
+    return PipelineDefinition(
+        name='hello_world_config_pipeline', solid_defs=[define_hello_world_config_solid()]
+    )
 
 
 def define_hello_world_with_output():
@@ -216,18 +234,6 @@ ComplexDagsterType = as_dagster_type(
 )
 
 
-def no_repo_reg_solid():
-    return dagstermill.define_dagstermill_solid(
-        'no_repo_reg',
-        nb_test_path('no_repo_reg_error'),
-        output_defs=[OutputDefinition(name='df', dagster_type=ComplexDagsterType)],
-    )
-
-
-def define_no_repo_registration_error_pipeline():
-    return PipelineDefinition(name='repo_registration_error', solid_defs=[no_repo_reg_solid()])
-
-
 @solid('resource_solid', required_resource_keys={'list'})
 def resource_solid(context):
     context.resources.list.append('Hello, solid!')
@@ -266,16 +272,11 @@ class FilePickleList(object):
         self.read()
         self.open()
 
-    def init(self):
-        self.write()
-
     def open(self):
         self.read()
         self.append('Opened')
 
     def append(self, obj):
-        if self.closed:
-            raise Exception()
         self.read()
         self.list.append(self.id + ': ' + obj)
         self.write()
@@ -308,7 +309,10 @@ def define_resource_pipeline():
         name='resource_pipeline',
         solid_defs=[resource_solid, hello_world_resource_solid],
         dependencies={'hello_world_resource': {'nonce': DependencyDefinition('resource_solid')}},
-        mode_defs=[ModeDefinition(resource_defs={'list': filepicklelist_resource})],
+        mode_defs=[
+            ModeDefinition(name='test', resource_defs={'list': ResourceDefinition(lambda _: [])}),
+            ModeDefinition(name='prod', resource_defs={'list': filepicklelist_resource}),
+        ],
     )
 
 
@@ -329,6 +333,7 @@ def define_example_repository():
         pipeline_dict={
             'error_pipeline': define_error_pipeline,
             'hello_world_pipeline': define_hello_world_pipeline,
+            'hello_world_config_pipeline': define_hello_world_config_pipeline,
             'hello_world_with_output_pipeline': define_hello_world_with_output_pipeline,
             'hello_logging_pipeline': define_hello_logging_pipeline,
             'resource_pipeline': define_resource_pipeline,
@@ -336,6 +341,5 @@ def define_example_repository():
             'test_add_pipeline': define_add_pipeline,
             'test_notebook_dag': define_test_notebook_dag_pipeline,
             'tutorial_pipeline': define_tutorial_pipeline,
-            'repo_registration_error': define_no_repo_registration_error_pipeline,
         },
     )

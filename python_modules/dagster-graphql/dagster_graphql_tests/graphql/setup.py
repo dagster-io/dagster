@@ -13,7 +13,6 @@ from dagster import (
     EnumValue,
     EventMetadataEntry,
     ExecutionTargetHandle,
-    IOExpectationDefinition,
     ExpectationResult,
     Field,
     Float,
@@ -41,6 +40,7 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.definitions import IOExpectationDefinition
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import script_relative_path
 from dagster_graphql.implementation.context import DagsterGraphQLContext
@@ -465,13 +465,13 @@ def define_multi_mode_with_resources_pipeline():
 
 
 def define_multi_mode_with_loggers_pipeline():
-    @logger(config_field=Field(String))
+    @logger(config_field=Field(str))
     def foo_logger(init_context):
         logger_ = logging.Logger('foo')
         logger_.setLevel(coerce_valid_log_level(init_context.logger_config))
         return logger_
 
-    @logger(config={'log_level': Field(String), 'prefix': Field(String)})
+    @logger({'log_level': Field(str), 'prefix': Field(str)})
     def bar_logger(init_context):
         class BarLogger(logging.Logger):
             def __init__(self, name, prefix, *args, **kwargs):

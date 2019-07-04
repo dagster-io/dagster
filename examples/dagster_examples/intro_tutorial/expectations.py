@@ -1,32 +1,11 @@
-from dagster import (
-    lambda_solid,
-    pipeline,
-    IOExpectationDefinition,
-    ExpectationResult,
-    InputDefinition,
-    Int,
-    OutputDefinition,
-)
+from dagster import solid, pipeline, ExpectationResult, Output
 
 
-@lambda_solid(
-    input_defs=[
-        InputDefinition(
-            'num_one',
-            Int,
-            expectations=[
-                IOExpectationDefinition(
-                    name='check_positive',
-                    expectation_fn=lambda _info, value: ExpectationResult(success=value > 0),
-                )
-            ],
-        ),
-        InputDefinition('num_two', Int),
-    ],
-    output_def=OutputDefinition(Int),
-)
-def add_ints(num_one, num_two):
-    return num_one + num_two
+@solid
+def add_ints(_, num_one: int, num_two: int) -> int:
+    yield ExpectationResult(label='num_one_positive', success=num_one > 0)
+
+    yield Output(num_one + num_two)
 
 
 @pipeline

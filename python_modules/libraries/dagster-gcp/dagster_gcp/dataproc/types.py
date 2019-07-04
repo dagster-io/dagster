@@ -1,5 +1,2 @@
-from dagster import DagsterUserError
-
-
-class DataprocError(DagsterUserError):
+class DataprocError(Exception):
     pass

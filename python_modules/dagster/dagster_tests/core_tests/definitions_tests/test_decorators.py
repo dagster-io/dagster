@@ -9,7 +9,6 @@ from dagster import (
     DependencyDefinition,
     Field,
     InputDefinition,
-    MultipleOutputs,
     OutputDefinition,
     PipelineDefinition,
     Output,
@@ -30,23 +29,6 @@ from dagster.core.utility_solids import define_stub_solid
 def execute_isolated_solid(solid_def, environment_dict=None):
     return execute_pipeline(
         PipelineDefinition(name='test', solid_defs=[solid_def]), environment_dict=environment_dict
-    )
-
-
-def test_multiple_single_result():
-    mr = MultipleOutputs(Output('value', 'output_one'))
-    assert mr.results == [Output('value', 'output_one')]
-
-
-def test_multiple_double_result():
-    mr = MultipleOutputs(Output('value_one', 'output_one'), Output('value_two', 'output_two'))
-    assert mr.results == [Output('value_one', 'output_one'), Output('value_two', 'output_two')]
-
-
-def test_multiple_dict():
-    mr = MultipleOutputs.from_dict({'output_one': 'value_one', 'output_two': 'value_two'})
-    assert set(mr.results) == set(
-        [Output('value_one', 'output_one'), Output('value_two', 'output_two')]
     )
 
 
@@ -120,37 +102,6 @@ def test_solid_result_return():
     assert result.success
     assert len(result.solid_result_list) == 1
     assert result.solid_result_list[0].result_value()['foo'] == 'bar'
-
-
-def test_solid_multiple_outputs():
-    @solid(output_defs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
-    def hello_world(_context):
-        return MultipleOutputs(
-            Output(value={'foo': 'left'}, output_name='left'),
-            Output(value={'foo': 'right'}, output_name='right'),
-        )
-
-    result = execute_isolated_solid(hello_world)
-
-    assert result.success
-    assert len(result.solid_result_list) == 1
-    solid_result = result.solid_result_list[0]
-    assert solid_result.result_value('left')['foo'] == 'left'
-    assert solid_result.result_value('right')['foo'] == 'right'
-
-
-def test_dict_multiple_outputs():
-    @solid(output_defs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
-    def hello_world(_context):
-        return MultipleOutputs.from_dict({'left': {'foo': 'left'}, 'right': {'foo': 'right'}})
-
-    result = execute_isolated_solid(hello_world)
-
-    assert result.success
-    assert len(result.solid_result_list) == 1
-    solid_result = result.solid_result_list[0]
-    assert solid_result.result_value('left')['foo'] == 'left'
-    assert solid_result.result_value('right')['foo'] == 'right'
 
 
 def test_solid_with_explicit_empty_outputs():

@@ -1,6 +1,32 @@
 from dagster import check
+from dagster.core.errors import DagsterError
 
 from .utils import check_valid_name
+
+
+class DagsterIOExpectationFailedError(DagsterError):
+    '''Thrown with pipeline configured to throw on expectation failure'''
+
+    def __init__(self, expectation_context, value, *args, **kwargs):
+        super(DagsterIOExpectationFailedError, self).__init__(*args, **kwargs)
+        self.expectation_context = expectation_context
+        self.value = value
+
+    def __repr__(self):
+        inout_def = self.expectation_context.inout_def
+        return (
+            'DagsterIOExpectationFailedError(solid={solid_name}, {key}={inout_name}, '
+            'expectation={e_name}, value={value})'
+        ).format(
+            solid_name=self.expectation_context.solid.name,
+            key=inout_def.descriptive_key,
+            inout_name=inout_def.name,
+            e_name=self.expectation_context.expectation_def.name,
+            value=repr(self.value),
+        )
+
+    def __str__(self):
+        return self.__repr__()
 
 
 class IOExpectationDefinition(object):

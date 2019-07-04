@@ -8,6 +8,7 @@ from contextlib2 import ExitStack
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, create_environment_type
+from dagster.core.definitions.handle import ExecutionTargetHandle
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.system_storage import SystemStorageData
 from dagster.core.errors import (
@@ -15,6 +16,7 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterUserCodeExecutionError,
     DagsterResourceFunctionError,
+    DagsterInvalidConfigError,
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
@@ -25,7 +27,6 @@ from dagster.core.storage.runs import DagsterRunMeta
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import evaluate_config
-from dagster.core.types.evaluator.errors import friendly_string_for_error, EvaluationError
 from dagster.loggers import default_loggers, default_system_loggers
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -34,29 +35,6 @@ from .config import RunConfig
 from .context.init import InitResourceContext
 from .context.system import SystemPipelineExecutionContextData, SystemPipelineExecutionContext
 from .context.logger import InitLoggerContext
-
-
-class PipelineConfigEvaluationError(Exception):
-    def __init__(self, pipeline, errors, config_value, *args, **kwargs):
-        self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-        self.errors = check.list_param(errors, 'errors', of_type=EvaluationError)
-        self.config_value = config_value
-
-        error_msg = 'Pipeline "{pipeline}" config errors:'.format(pipeline=pipeline.name)
-
-        error_messages = []
-
-        for i_error, error in enumerate(self.errors):
-            error_message = friendly_string_for_error(error)
-            error_messages.append(error_message)
-            error_msg += '\n    Error {i_error}: {error_message}'.format(
-                i_error=i_error + 1, error_message=error_message
-            )
-
-        self.message = error_msg
-        self.error_messages = error_messages
-
-        super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
 def create_environment_config(pipeline, environment_dict=None, run_config=None):
@@ -70,7 +48,7 @@ def create_environment_config(pipeline, environment_dict=None, run_config=None):
     result = evaluate_config(environment_type, environment_dict, pipeline, run_config)
 
     if not result.success:
-        raise PipelineConfigEvaluationError(pipeline, result.errors, environment_dict)
+        raise DagsterInvalidConfigError(pipeline, result.errors, environment_dict)
 
     return EnvironmentConfig.from_dict(result.value)
 
@@ -127,7 +105,8 @@ def check_persistent_storage_requirement(pipeline_def, system_storage_def, run_c
 # over the place during the context creation process so grouping here for
 # ease of argument passing etc.
 ContextCreationData = namedtuple(
-    'ContextCreationData', 'pipeline_def environment_config run_config mode_def system_storage_def'
+    'ContextCreationData',
+    'pipeline_def environment_config run_config mode_def system_storage_def execution_target_handle',
 )
 
 
@@ -145,6 +124,7 @@ def create_context_creation_data(pipeline_def, environment_dict, run_config):
         run_config=run_config,
         mode_def=mode_def,
         system_storage_def=system_storage_def,
+        execution_target_handle=ExecutionTargetHandle.get_handle(pipeline_def),
     )
 
 
@@ -271,6 +251,7 @@ def construct_pipeline_execution_context(
             run_storage=system_storage_data.run_storage,
             intermediates_manager=system_storage_data.intermediates_manager,
             file_manager=system_storage_data.file_manager,
+            execution_target_handle=context_creation_data.execution_target_handle,
         ),
         log_manager=log_manager,
     )

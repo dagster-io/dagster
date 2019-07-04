@@ -1,7 +1,7 @@
 import pytest
 
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.context_creation_pipeline import PipelineConfigEvaluationError
+from dagster.core.execution.context_creation_pipeline import DagsterInvalidConfigError
 from ..engine_tests.test_multiprocessing import define_diamond_pipeline
 
 
@@ -18,7 +18,7 @@ def test_topological_sort():
 
 
 def test_create_execution_plan_with_bad_inputs():
-    with pytest.raises(PipelineConfigEvaluationError):
+    with pytest.raises(DagsterInvalidConfigError):
         create_execution_plan(
             define_diamond_pipeline(), {'solids': {'add_three': {'inputs': {'num': 3}}}}
         )

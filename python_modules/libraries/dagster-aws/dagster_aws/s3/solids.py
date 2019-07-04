@@ -39,8 +39,8 @@ def dict_with_fields(name, fields):
     return _DictWithSchema
 
 
-S3BucketData = dict_with_fields(
-    'S3BucketData',
+S3Coordinate = dict_with_fields(
+    'S3Coordinate',
     fields={
         'bucket': Field(String, description='S3 bucket name'),
         'key': Field(String, description='S3 key name'),

@@ -8,9 +8,11 @@ from dagster import (
     ModeDefinition,
     PipelineDefinition,
     RepositoryDefinition,
+    PresetDefinition,
     resource,
     solid,
 )
+from dagster.utils import script_relative_path
 
 
 def define_empty_pipeline():
@@ -71,6 +73,15 @@ def define_multi_mode_with_resources_pipeline():
                 resource_defs={'op': double_adder_resource},
                 description='Mode that adds two numbers to thing',
             ),
+        ],
+        preset_defs=[
+            PresetDefinition(
+                'add',
+                mode='add_mode',
+                environment_files=[
+                    script_relative_path('./environments/multi_mode_with_resources/add_mode.yaml')
+                ],
+            )
         ],
     )
 

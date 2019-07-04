@@ -14,7 +14,6 @@ from dagster import (
     PresetDefinition,
     execute_pipeline,
     file_relative_path,
-    types,
 )
 
 from dagster.core.utility_solids import define_stub_solid

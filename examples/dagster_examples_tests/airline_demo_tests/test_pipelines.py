@@ -5,12 +5,25 @@ import pytest
 
 from dagster import execute_pipeline, RunConfig, file_relative_path
 
+from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.utils import load_yaml_from_globs
 
-from dagster_examples.airline_demo.pipelines import (
-    define_airline_demo_ingest_pipeline,
-    define_airline_demo_warehouse_pipeline,
+
+ingest_pipeline_handle = handle_for_pipeline_cli_args(
+    {
+        'module_name': 'dagster_examples.airline_demo.pipelines',
+        'fn_name': 'define_airline_demo_ingest_pipeline',
+    }
 )
+ingest_pipeline_def = ingest_pipeline_handle.build_pipeline_definition()
+
+warehouse_pipeline_handle = handle_for_pipeline_cli_args(
+    {
+        'module_name': 'dagster_examples.airline_demo.pipelines',
+        'fn_name': 'define_airline_demo_warehouse_pipeline',
+    }
+)
+warehouse_pipeline_def = warehouse_pipeline_handle.build_pipeline_definition()
 
 
 def enviroment_overrides(config):
@@ -37,9 +50,7 @@ def test_ingest_pipeline_fast(docker_compose_db):
     )
     ingest_config_dict = enviroment_overrides(ingest_config_dict)
     result_ingest = execute_pipeline(
-        define_airline_demo_ingest_pipeline(),
-        ingest_config_dict,
-        run_config=RunConfig(mode='local'),
+        ingest_pipeline_def, ingest_config_dict, run_config=RunConfig(mode='local')
     )
 
     assert result_ingest.success
@@ -57,9 +68,7 @@ def test_ingest_pipeline_fast_filesystem_storage(docker_compose_db):
     )
     ingest_config_dict = enviroment_overrides(ingest_config_dict)
     result_ingest = execute_pipeline(
-        define_airline_demo_ingest_pipeline(),
-        ingest_config_dict,
-        run_config=RunConfig(mode='local'),
+        ingest_pipeline_def, ingest_config_dict, run_config=RunConfig(mode='local')
     )
 
     assert result_ingest.success
@@ -75,9 +84,7 @@ def test_airline_pipeline_1_warehouse(docker_compose_db):
     )
     warehouse_config_object = enviroment_overrides(warehouse_config_object)
     result_warehouse = execute_pipeline(
-        define_airline_demo_warehouse_pipeline(),
-        warehouse_config_object,
-        run_config=RunConfig(mode='local'),
+        warehouse_pipeline_def, warehouse_config_object, run_config=RunConfig(mode='local')
     )
     assert result_warehouse.success
 
@@ -93,7 +100,7 @@ def test_airline_pipeline_s3_0_ingest(docker_compose_db):
         config_path('local_fast_ingest.yaml'),
     )
 
-    result_ingest = execute_pipeline(define_airline_demo_ingest_pipeline(), ingest_config_dict)
+    result_ingest = execute_pipeline(ingest_pipeline_def, ingest_config_dict)
 
     assert result_ingest.success
 
@@ -106,9 +113,7 @@ def test_airline_pipeline_s3_1_warehouse(docker_compose_db):
         config_path('local_warehouse.yaml'),
     )
 
-    result_warehouse = execute_pipeline(
-        define_airline_demo_warehouse_pipeline(), warehouse_config_object
-    )
+    result_warehouse = execute_pipeline(warehouse_pipeline_def, warehouse_config_object)
     assert result_warehouse.success
 
 

@@ -107,7 +107,7 @@ def test_basic_start_pipeline_execution_and_subscribe():
         else:
             # all the rest of the events are non-error system-level events
             # and should be at INFO level
-            assert message['level'] == 'INFO'
+            assert message['level'] == 'DEBUG'
 
     # skip the first one was we know it is not associatied with a step
     for log_message in log_messages[1:]:
@@ -218,7 +218,7 @@ def test_basic_inmemory_sync_execution():
     assert has_event_of_type(logs, 'PipelineSuccessEvent')
     assert not has_event_of_type(logs, 'PipelineFailureEvent')
 
-    assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'INFO'
+    assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'DEBUG'
 
     sum_solid_output = get_step_output_event(logs, 'sum_solid.compute')
     assert sum_solid_output['step']['key'] == 'sum_solid.compute'
@@ -249,7 +249,7 @@ def test_basic_filesystem_sync_execution():
     assert has_event_of_type(logs, 'PipelineSuccessEvent')
     assert not has_event_of_type(logs, 'PipelineFailureEvent')
 
-    assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'INFO'
+    assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'DEBUG'
 
     sum_solid_output = get_step_output_event(logs, 'sum_solid.compute')
     assert sum_solid_output['step']['key'] == 'sum_solid.compute'

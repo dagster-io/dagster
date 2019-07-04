@@ -1,4 +1,7 @@
+import pytest
+
 from dagster import lambda_solid, solid
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 
 def test_single_input():
@@ -24,6 +27,26 @@ def test_double_input():
 
     assert add.input_defs[1].name == 'num_two'
     assert add.input_defs[1].runtime_type.name == 'Any'
+
+
+def test_solid_arg_fails():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Solid functions should only have keyword arguments that match input names and a first positional parameter named 'context'",
+    ):
+
+        @solid
+        def _other_fails(_other):
+            pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Solid functions should only have keyword arguments that match input names and a first positional parameter named 'context'",
+    ):
+
+        @solid
+        def _empty_fails():
+            pass
 
 
 def test_noop_lambda_solid():

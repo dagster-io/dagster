@@ -22,7 +22,7 @@ snapshots['test_basic_expectations_within_compute_step_events 1'] = [
             ],
             'success': False
         },
-        'level': 'INFO',
+        'level': 'DEBUG',
         'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step emit_failed_expectation.compute',
         'step': {
             'key': 'emit_failed_expectation.compute',
@@ -46,7 +46,7 @@ snapshots['test_basic_expectations_within_compute_step_events 2'] = [
             ],
             'success': True
         },
-        'level': 'INFO',
+        'level': 'DEBUG',
         'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step emit_successful_expectation.compute',
         'step': {
             'key': 'emit_successful_expectation.compute',
@@ -65,7 +65,7 @@ snapshots['test_basic_expectations_within_compute_step_events 3'] = [
             ],
             'success': True
         },
-        'level': 'INFO',
+        'level': 'DEBUG',
         'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step emit_successful_expectation_no_metadata.compute',
         'step': {
             'key': 'emit_successful_expectation_no_metadata.compute',
@@ -84,7 +84,7 @@ snapshots['test_basic_input_output_expectations 1'] = [
             ],
             'success': True
         },
-        'level': 'INFO',
+        'level': 'DEBUG',
         'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step df_expectations_solid.output.sum_df.expectation.some_expectation',
         'step': {
             'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
@@ -100,7 +100,7 @@ snapshots['test_basic_input_output_expectations 1'] = [
             ],
             'success': True
         },
-        'level': 'INFO',
+        'level': 'DEBUG',
         'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step df_expectations_solid.output.result.expectation.other_expectation',
         'step': {
             'key': 'df_expectations_solid.output.result.expectation.other_expectation',

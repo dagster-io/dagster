@@ -1,32 +1,27 @@
 from dagster import check
-
 from dagster.core.definitions import (
-    IOExpectationDefinition,
+    DagsterIOExpectationFailedError,
     ExpectationResult,
     InputDefinition,
-    OutputDefinition,
+    IOExpectationDefinition,
     Output,
+    OutputDefinition,
     Solid,
     SolidHandle,
 )
-
-from dagster.core.errors import DagsterExpectationFailedError, DagsterInvariantViolationError
-
-from dagster.core.execution.context.system import SystemStepExecutionContext
-
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.expectation import ExpectationExecutionContext
-
+from dagster.core.execution.context.system import SystemStepExecutionContext
 from dagster.core.system_config.objects import EnvironmentConfig
 
 from .objects import (
     ExecutionStep,
     ExecutionValueSubplan,
     StepInput,
+    StepKind,
     StepOutput,
     StepOutputHandle,
-    StepKind,
 )
-
 from .utility import create_joining_subplan
 
 EXPECTATION_INPUT = 'expectation_input'
@@ -60,11 +55,6 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
             )
 
         if expt_result.success:
-            expectation_context.log.debug(
-                'Expectation {key} succeeded on {value}.'.format(
-                    key=expectation_context.step.key, value=value
-                )
-            )
             yield expt_result
             yield Output(output_name=internal_output_name, value=inputs[EXPECTATION_INPUT])
         else:
@@ -73,7 +63,7 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
                     key=expectation_context.step.key, value=value
                 )
             )
-            raise DagsterExpectationFailedError(expectation_context, value)
+            raise DagsterIOExpectationFailedError(expectation_context, value)
 
     return _do_expectation
 

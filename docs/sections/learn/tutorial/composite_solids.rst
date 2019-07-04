@@ -33,11 +33,8 @@ inputs.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/composition.py
    :linenos:
-   :lines: 95-101
+   :lines: 97-101
    :caption: composition.py
-
-.. image:: composite_solid.png
-
 
 A composite solid presents an interface of inputs and outputs like any other solid. To do this you may optionally
 map inputs and outputs from its constituent solids. In the example above, we map the input to the ``extract``
@@ -48,4 +45,12 @@ soild and then return the output of the ``load`` solid allowing us to pass it to
    :lines: 104-108
    :caption: composition.py
 
+
+This gives us a slightly cleaner pipeline:
+
 .. image:: composed_pipeline.png
+
+We can open the composite instances in dagit to see the inner solids, as well as how inputs and outputs
+are mapped.
+
+.. image:: composite_solid.png

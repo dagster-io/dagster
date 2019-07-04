@@ -1,3 +1,4 @@
+import json
 import pytest
 
 from dagster import (
@@ -14,7 +15,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions import Solid, Materialization, create_environment_schema
-from dagster.core.definitions.dependency import SolidOutputHandle
+from dagster.core.definitions.dependency import SolidHandle, SolidOutputHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 
@@ -153,3 +154,57 @@ def test_mapper_errors():
 
 def test_materialization():
     assert isinstance(Materialization('foo', 'foo.txt'), Materialization)
+
+
+def test_rehydrate_solid_handle():
+    h = SolidHandle.from_dict({'name': 'foo', 'definition_name': 'foo', 'parent': None})
+    assert h.name == 'foo'
+    assert h.definition_name == 'foo'
+    assert h.parent is None
+
+    h = SolidHandle.from_dict(json.loads(json.dumps(h._asdict())))
+    assert h.name == 'foo'
+    assert h.definition_name == 'foo'
+    assert h.parent is None
+
+    h = SolidHandle.from_dict(
+        {'name': 'foo', 'definition_name': 'foo', 'parent': ['bar', 'bar', None]}
+    )
+    assert h.name == 'foo'
+    assert h.definition_name == 'foo'
+    assert isinstance(h.parent, SolidHandle)
+    assert h.parent.name == 'bar'
+    assert h.parent.definition_name == 'bar'
+    assert h.parent.parent is None
+
+    h = SolidHandle.from_dict(json.loads(json.dumps(h._asdict())))
+    assert h.name == 'foo'
+    assert h.definition_name == 'foo'
+    assert isinstance(h.parent, SolidHandle)
+    assert h.parent.name == 'bar'
+    assert h.parent.definition_name == 'bar'
+    assert h.parent.parent is None
+
+    h = SolidHandle.from_dict(
+        {'name': 'foo', 'definition_name': 'foo', 'parent': ['bar', 'bar', ['baz', 'baz', None]]}
+    )
+    assert h.name == 'foo'
+    assert h.definition_name == 'foo'
+    assert isinstance(h.parent, SolidHandle)
+    assert h.parent.name == 'bar'
+    assert h.parent.definition_name == 'bar'
+    assert isinstance(h.parent.parent, SolidHandle)
+    assert h.parent.parent.name == 'baz'
+    assert h.parent.parent.definition_name == 'baz'
+    assert h.parent.parent.parent is None
+
+    h = SolidHandle.from_dict(json.loads(json.dumps(h._asdict())))
+    assert h.name == 'foo'
+    assert h.definition_name == 'foo'
+    assert isinstance(h.parent, SolidHandle)
+    assert h.parent.name == 'bar'
+    assert h.parent.definition_name == 'bar'
+    assert isinstance(h.parent.parent, SolidHandle)
+    assert h.parent.parent.name == 'baz'
+    assert h.parent.parent.definition_name == 'baz'
+    assert h.parent.parent.parent is None

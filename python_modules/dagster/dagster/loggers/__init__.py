@@ -3,21 +3,17 @@ import logging
 import coloredlogs
 
 from dagster import seven
-from dagster.core.types import Dict, Field, String
+from dagster.core.types import Field
 from dagster.core.definitions.logger import logger
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils.log import default_format_string
 
 
 @logger(
-    config_field=Field(
-        Dict(
-            {
-                'log_level': Field(String, is_optional=True, default_value='INFO'),
-                'name': Field(String, is_optional=True, default_value='dagster'),
-            }
-        )
-    ),
+    {
+        'log_level': Field(str, is_optional=True, default_value='INFO'),
+        'name': Field(str, is_optional=True, default_value='dagster'),
+    },
     description='The default colored console logger.',
 )
 def colored_console_logger(init_context):
@@ -31,14 +27,10 @@ def colored_console_logger(init_context):
 
 
 @logger(
-    config_field=Field(
-        Dict(
-            {
-                'log_level': Field(String, is_optional=True, default_value='INFO'),
-                'name': Field(String, is_optional=True, default_value='dagster'),
-            }
-        )
-    ),
+    {
+        'log_level': Field(str, is_optional=True, default_value='INFO'),
+        'name': Field(str, is_optional=True, default_value='dagster'),
+    },
     description='A JSON-formatted console logger',
 )
 def json_console_logger(init_context):

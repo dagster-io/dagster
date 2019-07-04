@@ -152,7 +152,12 @@ def publish_module(module, nightly=False, library=False, additional_steps=''):
 
 def publish_all(nightly):
     for module in MODULE_NAMES:
-        publish_module(module, nightly)
+        if module == 'dagit':
+            publish_module(
+                module, nightly, additional_steps=DAGIT_ADDITIONAL_STEPS
+            )
+        else:
+            publish_module(module, nightly)
 
     for module in LIBRARY_MODULES:
         publish_module(module, nightly, library=True)
@@ -254,7 +259,7 @@ def get_versions():
     for module_name in MODULE_NAMES:
         module_versions[module_name] = get_module_versions(module_name)
     for library_module in LIBRARY_MODULES:
-        module_versions[module_name] = get_module_versions(library_module, library=True)
+        module_versions[library_module] = get_module_versions(library_module, library=True)
     return module_versions
 
 
@@ -674,18 +679,21 @@ def publish(nightly, autoclean):
         subprocess.check_output(['git', 'config', '--get', 'user.name']).decode('utf-8').strip()
     )
     if not nightly:
-        slack_client.api_call(
-            'chat.postMessage',
-            channel='#general',
-            text='{git_user} just published a new version: {version}. Don\'t forget to switch the '
-            'active version of the docs at ReadTheDocs!'.format(
-                git_user=git_user, version=checked_version['__version__']
-            ),
-        )
+        parsed_version = packaging.version.parse(checked_version['__version__'])
+        if not parsed_version.is_prerelease:
+            slack_client.api_call(
+                'chat.postMessage',
+                channel='#general',
+                text=(
+                    '{git_user} just published a new version: {version}.'
+                ).format(
+                    git_user=git_user, version=checked_version['__version__']
+                ),
+            )
 
 
 @cli.command()
-@click.argument('version')
+@click.argument('ver')
 def release(ver):
     """Tags all submodules for a new release.
 
@@ -711,7 +719,7 @@ def version():
     parsed_version = packaging.version.parse(git_tag)
     errors = {}
     for module_name, module_version in module_versions.items():
-        if packaging.version.parse(module_version['__version__']) >= parsed_version:
+        if packaging.version.parse(module_version['__version__']) > parsed_version:
             errors[module_name] = module_version['__version__']
     if errors:
         print(

@@ -63,10 +63,10 @@ class PipelineDefinition(IContainSolids, object):
             A structure that declares where each solid gets its inputs. The keys at the top
             level dict are either string names of solids or SolidInvocations. The values
             are dicts that map input names to DependencyDefinitions.
-        mode_definitions (Optional[List[ModeDefinition]]):
+        mode_defs (Optional[List[ModeDefinition]]):
             The set of modes this pipeline can operate in. Modes can be used for example to vary
             resources and logging implementations for local testing and running in production.
-        preset_definitions (Optional[List[PresetDefinition]]):
+        preset_defs (Optional[List[PresetDefinition]]):
             Given the different ways a pipeline may execute, presets give you a way to provide
             specific valid collections of configuration.
     '''
@@ -199,7 +199,7 @@ class PipelineDefinition(IContainSolids, object):
 
     @property
     def solids(self):
-        '''Return the solids in the pipeline.
+        '''Return the top level solids in the pipeline.
 
         Returns:
             List[Solid]: List of solids.
@@ -207,7 +207,7 @@ class PipelineDefinition(IContainSolids, object):
         return list(set(self._solid_dict.values()))
 
     def has_solid_named(self, name):
-        '''Return whether or not the solid is in the piepline
+        '''Return whether or not there is a top level solid with this name in the piepline
 
         Args:
             name (str): Name of solid
@@ -219,13 +219,13 @@ class PipelineDefinition(IContainSolids, object):
         return name in self._solid_dict
 
     def solid_named(self, name):
-        '''Return the solid named "name". Throws if it does not exist.
+        '''Return the top level solid named "name". Throws if it does not exist.
 
         Args:
             name (str): Name of solid
 
         Returns:
-            SolidDefinition: SolidDefinition with correct name.
+            Solid:
         '''
         check.str_param(name, 'name')
         if name not in self._solid_dict:
@@ -237,6 +237,15 @@ class PipelineDefinition(IContainSolids, object):
         return self._solid_dict[name]
 
     def get_solid(self, handle):
+        '''Return the solid contained anywhere within the pipeline via its handle.
+
+        Args:
+            handle (SolidHandle):
+
+        Returns:
+            Solid:
+
+        '''
         check.inst_param(handle, 'handle', SolidHandle)
         current = handle
         lineage = []

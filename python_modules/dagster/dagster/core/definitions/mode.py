@@ -14,8 +14,10 @@ class ModeDefinition:
 
     Args:
         name (Optional[str]): The name of the mode, defaults to 'default'.
-        resources (Optional[List[ResourceDefinition]]): The set of resources for this mode.
-        loggers (Optional[List[LoggerDefinition]]): The set of loggers to use in this mode.
+        resource_defs (Optional[Dict[str, ResourceDefinition]]):
+            The set of resources for this mode keyed by unique identifiers.
+        logger_defs (Optional[Dict[str, LoggerDefinition]]):
+            The set of loggers to use in this mode keyed by unique identifiers.
         system_storage_defs (Optional[List[SystemStorageDefinition]]): The set of system storage
             options available when executing in this mode. Defaults to 'in_memory' and 'filesystem'.
         description (Optional[str])
@@ -23,7 +25,7 @@ class ModeDefinition:
 
     def __init__(
         self,
-        name=DEFAULT_MODE_NAME,
+        name=None,
         resource_defs=None,
         logger_defs=None,
         system_storage_defs=None,
@@ -31,7 +33,7 @@ class ModeDefinition:
     ):
         from .system_storage import SystemStorageDefinition, mem_system_storage, fs_system_storage
 
-        self.name = check.str_param(name, 'name')
+        self.name = check.opt_str_param(name, 'name', DEFAULT_MODE_NAME)
         self.resource_defs = check.opt_dict_param(
             resource_defs, 'resource_defs', key_type=str, value_type=ResourceDefinition
         )
@@ -55,3 +57,15 @@ class ModeDefinition:
                 return system_storage_def
 
         check.failed('{} storage definition not found'.format(name))
+
+    @staticmethod
+    def from_resources(resources, name=None):
+        check.dict_param(resources, 'resources', key_type=str)
+
+        return ModeDefinition(
+            name=name,
+            resource_defs={
+                resource_name: ResourceDefinition.hardcoded_resource(resource)
+                for resource_name, resource in resources.items()
+            },
+        )

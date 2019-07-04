@@ -4,7 +4,6 @@ from dagster import (
     CompositeSolidDefinition,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
-    IOExpectationDefinition,
     ExpectationResult,
     Field,
     InputDefinition,
@@ -12,13 +11,14 @@ from dagster import (
     PipelineDefinition,
     SolidInvocation,
     String,
+    composite_solid,
     dagster_type,
     execute_pipeline,
     lambda_solid,
-    solid,
-    composite_solid,
     pipeline,
+    solid,
 )
+from dagster.core.definitions import IOExpectationDefinition
 from dagster.core.utility_solids import (
     create_root_solid,
     create_solid_with_deps,

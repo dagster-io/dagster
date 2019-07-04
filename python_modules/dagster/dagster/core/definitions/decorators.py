@@ -1,29 +1,18 @@
 import inspect
-from collections import namedtuple
 from functools import wraps
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from . import (
-    ConfigMapping,
-    CompositeSolidDefinition,
-    ExpectationResult,
-    InputDefinition,
-    Materialization,
-    ModeDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    PresetDefinition,
-    Output,
-    SolidDefinition,
-)
 from .composition import (
     InputMappingNode,
     composite_mapping_from_output,
     enter_composition,
     exit_composition,
 )
+from .config import ConfigMapping, resolve_config_field
+from .events import ExpectationResult, Output, Materialization
+from .input import InputDefinition
 from .inference import (
     infer_input_definitions_for_lambda_solid,
     infer_input_definitions_for_solid,
@@ -31,7 +20,11 @@ from .inference import (
     infer_output_definitions,
     has_explicit_return_type,
 )
-from .config import resolve_config_field
+from .mode import ModeDefinition
+from .output import OutputDefinition
+from .pipeline import PipelineDefinition
+from .preset import PresetDefinition
+from .solid import CompositeSolidDefinition, SolidDefinition
 
 if hasattr(inspect, 'signature'):
     funcsigs = inspect
@@ -40,69 +33,6 @@ else:
 
 # Error messages are long
 # pylint: disable=C0301
-
-
-class MultipleOutputs(namedtuple('_MultipleResults', 'results')):
-    '''A shortcut to output multiple results.
-
-    When using the :py:func:`@solid <dagster.solid>` API, you may return an instance of
-    ``MultipleOutputs`` from a decorated compute function instead of yielding multiple results.
-
-    Attributes:
-      results (list[Output]): list of :py:class:`Output`
-
-    Examples:
-
-        .. code-block:: python
-
-            @solid(output_defs=[
-                OutputDefinition(name='foo'),
-                OutputDefinition(name='bar'),
-            ])
-            def my_solid():
-                return MultipleOutputs(
-                    Output('Barb', 'foo'),
-                    Output('Glarb', 'bar'),
-                )
-
-
-            @solid(output_defs=[
-                OutputDefinition(name='foo'),
-                OutputDefinition(name='bar'),
-            ])
-            def my_solid_from_dict():
-                return MultipleOutputs.from_dict({
-                    'foo': 'Barb',
-                    'bar': 'Glarb',
-                })
-
-    '''
-
-    def __new__(cls, *results):
-        return super(MultipleOutputs, cls).__new__(
-            cls,
-            # XXX(freiksenet): should check.list_param accept tuples from rest?
-            check.opt_list_param(list(results), 'results', Output),
-        )
-
-    @staticmethod
-    def from_dict(result_dict):
-        '''Create a new ``MultipleOutputs`` object from a dictionary.
-
-        Keys of the dictionary are unpacked into result names.
-
-        Args:
-            result_dict (dict) - The dictionary to unpack.
-
-        Returns:
-            (:py:class:`MultipleOutputs <dagster.MultipleOutputs>`) A new ``MultipleOutputs`` object
-
-        '''
-        check.dict_param(result_dict, 'result_dict', key_type=str)
-        results = []
-        for name, value in result_dict.items():
-            results.append(Output(value, name))
-        return MultipleOutputs(*results)
 
 
 class _LambdaSolid(object):
@@ -202,7 +132,7 @@ class _Solid(object):
 
 
 def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
-    '''(decorator) Create a simple solid.
+    '''Create a simple solid from the decorated function.
 
     This shortcut allows the creation of simple solids that do not require
     configuration and whose implementations do not require a context.
@@ -213,8 +143,8 @@ def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
     Args:
         name (str): Name of solid.
         description (str): Solid description.
-        input_defs (list[InputDefinition]): List of input_defs.
-        output (OutputDefinition): The output of the solid. Defaults to ``OutputDefinition()``.
+        input_defs (List[InputDefinition]): List of input_defs.
+        output_def (OutputDefinition): The output of the solid. Defaults to ``OutputDefinition()``.
 
     Examples:
 
@@ -224,8 +154,12 @@ def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
             def hello_world():
                 return 'hello'
 
-            @lambda_solid(input_defs=[InputDefinition(name='foo')])
+            @lambda_solid(input_defs=[InputDefinition(name='foo', str)])
             def hello_world(foo):
+                return foo
+
+            @lambda_solid
+            def hello_world(foo: str):
                 return foo
 
     '''
@@ -249,11 +183,13 @@ def solid(
     required_resource_keys=None,
     metadata=None,
 ):
-    '''(decorator) Create a solid with specified parameters.
+    '''Create a solid with specified parameters from the decorated function.
 
     This shortcut simplifies the core solid API by exploding arguments into kwargs of the
-    compute function and omitting additional parameters when they are not needed.
-    Parameters are otherwise as in the core API, :py:class:`SolidDefinition`.
+    compute function and omitting additional parameters when they are not needed. Input
+    and output definitions will be inferred from the type signature of the decorated
+    function if not explicitly provided. Parameters are otherwise as in the core API,
+    :py:class:`SolidDefinition`.
 
     The decorated function will be used as the solid's compute function. Unlike in the core API,
     the compute function does not have to yield :py:class:`Output` object directly. Several
@@ -261,16 +197,14 @@ def solid(
 
     1. Return a value. This is returned as a :py:class:`Output` for a single output solid.
     2. Return a :py:class:`Output`. Works like yielding result.
-    3. Return an instance of :py:class:`MultipleOutputs`. Works like yielding several results for
-       multiple output_defs. Useful for solids that have multiple output_defs.
-    4. Yield :py:class:`Output`. Same as default compute behaviour.
+    3. Yield :py:class:`Output`. Same as default compute behaviour.
 
     Args:
         name (str): Name of solid.
         description (str): Description of this solid.
-        input_defs (list[InputDefinition]):
+        input_defs (Optiona[List[InputDefinition]]):
             List of input_defs. Inferred from typehints if not provided.
-        output_defs (list[OutputDefinition]):
+        output_defs (Optional[List[OutputDefinition]]):
             List of output_defs. Inferred from typehints if not provided.
         config (Dict[str, Field]):
             Defines the schema of configuration data provided to the solid via context.
@@ -278,7 +212,8 @@ def solid(
             Used in the rare case of a top level config type other than a dictionary.
 
             Only one of config or config_field can be provided.
-        resources (set[str]): Set of resource instances required by this solid.
+        required_resource_keys (set[str]):
+            Set of resource handles required by this solid.
 
     Examples:
 
@@ -292,47 +227,42 @@ def solid(
             def hello_world(_context):
                 print('hello')
 
-            @solid(output_defs=[OutputDefinition()])
+            @solid
             def hello_world(_context):
                 return {'foo': 'bar'}
 
-            @solid(output_defs=[OutputDefinition()])
+            @solid
             def hello_world(_context):
                 return Output(value={'foo': 'bar'})
 
-            @solid(output_defs=[OutputDefinition()])
+            @solid
             def hello_world(_context):
                 yield Output(value={'foo': 'bar'})
 
-            @solid(output_defs=[
-                OutputDefinition(name="left"),
-                OutputDefinition(name="right"),
-            ])
-            def hello_world(_context):
-                return MultipleOutputs.from_dict({
-                    'left': {'foo': 'left'},
-                    'right': {'foo': 'right'},
-                })
-
-            @solid(
-                input_defs=[InputDefinition(name="foo")],
-                output_defs=[OutputDefinition()]
-            )
+            @solid
             def hello_world(_context, foo):
                 return foo
 
             @solid(
-                input_defs=[InputDefinition(name="foo")],
-                output_defs=[OutputDefinition()],
+                input_defs=[InputDefinition(name="foo", str)],
+                output_defs=[OutputDefinition(str)]
             )
+            def hello_world(_context, foo):
+                # explictly type and name inputs and outputs
+                return foo
+
+            @solid
+            def hello_world(_context, foo: str) -> str:
+                # same as above inferred from signature
+                return foo
+
+            @solid
             def hello_world(context, foo):
                 context.log.info('log something')
                 return foo
 
             @solid(
-                input_defs=[InputDefinition(name="foo")],
-                output_defs=[OutputDefinition()],
-                config_field=Field(types.Dict({'str_value' : Field(types.String)})),
+                config={'str_value' : Field(str)}
             )
             def hello_world(context, foo):
                 # context.solid_config is a dictionary with 'str_value' key
@@ -416,9 +346,6 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
 
             if isinstance(result, Output):
                 yield result
-            elif isinstance(result, MultipleOutputs):
-                for item in result.results:
-                    yield item
             elif len(output_defs) == 1:
                 yield Output(value=result, output_name=output_defs[0].name)
             elif result is not None:
@@ -435,7 +362,7 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
                     (
                         'Error in solid {solid_name}: Solid unexpectedly returned '
                         'output {result} of type {type_}. Should '
-                        'be a MultipleOutputs object, or a generator, containing or yielding '
+                        'be a generator, containing or yielding '
                         '{n_results} results: {{{expected_results}}}.'
                     ).format(
                         solid_name=context.solid.name,
@@ -542,6 +469,9 @@ def _validate_decorated_fn(fn, names, expected_positionals):
     expected_positional_params = params[0 : len(expected_positionals)]
     other_params = params[len(expected_positionals) :]
 
+    if len(expected_positional_params) < len(expected_positionals):
+        raise FunctionValidationError(FunctionValidationError.TYPES['missing_positional'])
+
     for expected_names, actual in zip(expected_positionals, expected_positional_params):
         possible_names = []
         for expected in expected_names:
@@ -553,6 +483,7 @@ def _validate_decorated_fn(fn, names, expected_positionals):
                     '{expected}_'.format(expected=expected),
                 ]
             )
+
         if (
             actual.kind
             not in [funcsigs.Parameter.POSITIONAL_OR_KEYWORD, funcsigs.Parameter.POSITIONAL_ONLY]
@@ -708,7 +639,8 @@ def _get_validated_config_mapping(name, config, config_fn):
 def composite_solid(
     name=None, input_defs=None, output_defs=None, description=None, config=None, config_fn=None
 ):
-    ''' (decorator) Create a CompositeSolidDefinition with specified parameters.
+    '''Create a CompositeSolidDefinition with specified parameters from the decorated
+    `composition function <../../learn/tutorial/composition_functions.html>`_ .
 
     Using this decorator allows you to build up the dependency graph of the composite by writing a
     function that invokes solids and passes the output to other solids.
@@ -799,7 +731,8 @@ class _Pipeline:
 
 
 def pipeline(name=None, description=None, mode_defs=None, preset_defs=None):
-    ''' (decorator) Create a pipeline with specified parameters.
+    '''Create a pipeline with specified parameters from the decorated
+    `composition function <../../learn/tutorial/composition_functions.html>`_ .
 
     Using this decorator allows you to build up the dependency graph of the pipeline by writing a
     function that invokes solids and passes the output to other solids.

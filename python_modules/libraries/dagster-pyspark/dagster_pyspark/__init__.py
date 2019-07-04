@@ -78,7 +78,7 @@ SparkRDD = as_dagster_type(
 )
 
 
-@resource(config={'spark_conf': spark_config()})
+@resource({'spark_conf': spark_config()})
 def spark_session_resource(init_context):
     builder = SparkSession.builder
     flat = flatten_dict(init_context.resource_config['spark_conf'])

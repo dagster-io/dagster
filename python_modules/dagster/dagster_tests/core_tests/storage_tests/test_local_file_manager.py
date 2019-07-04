@@ -1,6 +1,6 @@
 from dagster import pipeline, solid, execute_pipeline, LocalFileHandle
 from dagster.core.storage.file_manager import local_file_manager
-from dagster.utils.test import get_temp_dir, get_temp_file_handle_with_data
+from dagster.utils.temp_file import get_temp_dir, get_temp_file_handle_with_data
 
 
 def test_basic_file_manager_copy_handle_to_local_temp():

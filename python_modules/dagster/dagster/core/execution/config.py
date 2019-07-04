@@ -82,6 +82,10 @@ class RunConfig(
         new_tags = merge_dicts(self.tags, new_tags)
         return RunConfig(**merge_dicts(self._asdict(), {'tags': new_tags}))
 
+    def with_executor_config(self, executor_config):
+        check.inst_param(executor_config, 'executor_config', ExecutorConfig)
+        return RunConfig(**merge_dicts(self._asdict(), {'executor_config': executor_config}))
+
 
 class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractproperty

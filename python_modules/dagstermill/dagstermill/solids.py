@@ -15,33 +15,30 @@ from papermill.parameterize import _find_first_tagged_cell_index
 from papermill.iorw import load_notebook_node, write_ipynb
 
 from dagster import (
+    check,
+    ExecutionTargetHandle,
     EventMetadataEntry,
     InputDefinition,
     Materialization,
     OutputDefinition,
     Output,
     SolidDefinition,
-    check,
     seven,
 )
 from dagster.core.errors import user_code_error_boundary
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.execution.context.transform import ComputeExecutionContext
+from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.utils import mkdir_p
 
 from .engine import DagstermillNBConvertEngine
-from .errors import DagstermillExecutionError
+from .errors import DagstermillExecutionError, DagstermillError
 from .logger import init_db, JsonSqlite3LogWatcher
-from .serialize import (
-    input_name_serialization_enum,
-    output_name_serialization_enum,
-    read_value,
-    write_value,
-)
-from .translator import DagsterTranslator
+from .serialize import read_value, write_value
+from .translator import DagsterTranslator, RESERVED_INPUT_NAMES
 
 
-# This is a copy-paste from papermill.parameterize.parameterize_notebook
+# This is based on papermill.parameterize.parameterize_notebook
 # Typically, papermill injects the injected-parameters cell *below* the parameters cell
 # but we want to *replace* the parameters cell, which is what this function does.
 def replace_parameters(context, nb, parameters):
@@ -106,45 +103,45 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
     mkdir_p(marshal_dir)
 
+    handle = ExecutionTargetHandle.get_handle(compute_context.pipeline_def)
+
+    if not handle:
+        raise DagstermillError(
+            'Can\'t execute a dagstermill solid from a pipeline that wasn\'t instantiated using '
+            'an ExecutionTargetHandle'
+        )
+
+    dm_handle_kwargs = handle.data._asdict()
+
+    dm_handle_kwargs['pipeline_name'] = compute_context.pipeline_def.name
+
     dm_context_dict = {
-        'run_id': run_id,
-        'mode': compute_context.mode_def.name,
-        'pipeline_name': compute_context.pipeline_def.name,
-        'solid_def_name': compute_context.solid_def.name,
-        'marshal_dir': marshal_dir,
-        # TODO rename to environment_dict
-        'environment_config': compute_context.environment_dict,
         'output_log_path': output_log_path,
+        'marshal_dir': marshal_dir,
+        'environment_dict': compute_context.environment_dict,
     }
 
-    parameters = {}
+    dm_run_config_kwargs = {'run_id': run_id, 'mode': compute_context.mode_def.name}
 
-    input_name_type_dict = {}
+    dm_solid_handle_kwargs = compute_context.solid_handle._asdict()
+
+    parameters = {}
 
     input_def_dict = compute_context.solid_def.input_dict
     for input_name, input_value in inputs.items():
         assert (
-            input_name != 'dm_context'
-        ), 'Dagstermill solids cannot have inputs named "dm_context"'
+            input_name not in RESERVED_INPUT_NAMES
+        ), 'Dagstermill solids cannot have inputs named {input_name}'.format(input_name=input_name)
         runtime_type = input_def_dict[input_name].runtime_type
         parameter_value = write_value(
             runtime_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
         )
         parameters[input_name] = parameter_value
-        input_name_type_dict[input_name] = input_name_serialization_enum(
-            runtime_type, input_value
-        ).value
 
-    dm_context_dict['input_name_type_dict'] = input_name_type_dict
-
-    output_name_type_dict = {
-        name: output_name_serialization_enum(output_def.runtime_type).value
-        for name, output_def in compute_context.solid_def.output_dict.items()
-    }
-
-    dm_context_dict['output_name_type_dict'] = output_name_type_dict
-
-    parameters['dm_context'] = seven.json.dumps(dm_context_dict)
+    parameters['__dm_context'] = seven.json.dumps(dm_context_dict)
+    parameters['__dm_handle_kwargs'] = seven.json.dumps(dm_handle_kwargs)
+    parameters['__dm_run_config_kwargs'] = seven.json.dumps(dm_run_config_kwargs)
+    parameters['__dm_solid_handle_kwargs'] = seven.json.dumps(dm_solid_handle_kwargs)
 
     return parameters
 
@@ -175,6 +172,7 @@ def _dm_solid_transform(name, notebook_path):
             output_log_path = output_log_file.name
             init_db(output_log_path)
 
+            # Scaffold the registration here
             nb = load_notebook_node(notebook_path)
             nb_no_parameters = replace_parameters(
                 system_compute_context,
@@ -202,9 +200,11 @@ def _dm_solid_transform(name, notebook_path):
 
             with user_code_error_boundary(
                 DagstermillExecutionError,
-                lambda: 'Error occurred during the execution of Dagstermill solid '
-                '{solid_name}: {notebook_path}'.format(
-                    solid_name=name, notebook_path=notebook_path
+                lambda: (
+                    'Error occurred during the execution of Dagstermill solid '
+                    '{solid_name}: {notebook_path}'.format(
+                        solid_name=name, notebook_path=notebook_path
+                    )
                 ),
             ):
                 try:
@@ -261,12 +261,29 @@ def define_dagstermill_solid(
     config_field=None,
     required_resource_keys=None,
 ):
+    '''Wrap a Jupyter notebook in a solid.
+
+    Arguments:
+        name (str): The name of the solid (passed to SolidDefinition)
+        notebook_path (str): Path to the backing notebook.
+        input_defs (Optional[list[InputDefinition]]): The solid's inputs (passed to SolidDefinition).
+        output_defs (Optional[list[OutputDefinition]]): The solid's outputs
+            (passed to SolidDefinition).
+        required_resource_keys (Optional[set[str]]): The string names of any required resources
+            (passed to SolidDefinition).
+
+    Returns:
+        SolidDefinition
+    '''
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')
     input_defs = check.opt_list_param(input_defs, 'input_defs', of_type=InputDefinition)
     output_defs = check.opt_list_param(output_defs, 'output_defs', of_type=OutputDefinition)
     required_resource_keys = check.opt_set_param(
         required_resource_keys, 'required_resource_keys', of_type=str
+    )
+    config_field = check_user_facing_opt_field_param(
+        config_field, 'config_field', 'of a dagstermill solid named "{name}"'.format(name=name)
     )
 
     return SolidDefinition(

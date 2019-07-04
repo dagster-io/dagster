@@ -2,7 +2,6 @@ import pytest
 
 from dagster import (
     Any,
-    DagsterEvaluateConfigValueError,
     Dict,
     Field,
     Int,
@@ -10,7 +9,7 @@ from dagster import (
     ModeDefinition,
     Optional,
     PermissiveDict,
-    PipelineConfigEvaluationError,
+    DagsterInvalidConfigError,
     PipelineDefinition,
     ResourceDefinition,
     SolidDefinition,
@@ -23,7 +22,10 @@ from dagster import (
 
 from dagster.core.definitions import create_environment_schema
 from dagster.core.types.evaluator import evaluate_config
-from dagster.core.types.evaluator.errors import DagsterEvaluationErrorReason
+from dagster.core.types.evaluator.errors import (
+    DagsterEvaluationErrorReason,
+    DagsterEvaluateConfigValueError,
+)
 from dagster.core.test_utils import throwing_evaluate_config_value
 
 
@@ -359,7 +361,7 @@ def test_wrong_solid_name():
 
     env_config = {'solids': {'another_name': {'config': {}}}}
 
-    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+    with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(pipeline_def, env_config)
 
     pe = pe_info.value
@@ -387,7 +389,7 @@ def test_wrong_resources():
     )
 
     with pytest.raises(
-        PipelineConfigEvaluationError, match='Undefined field "nope" at path root:resources'
+        DagsterInvalidConfigError, match='Undefined field "nope" at path root:resources'
     ):
         execute_pipeline(pipeline_def, {'resources': {'nope': {}}})
 
@@ -474,10 +476,10 @@ def test_no_env_missing_required_error_handling():
         name='no_env_missing_required_error', solid_defs=[required_int_solid]
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+    with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(pipeline_def)
 
-    assert isinstance(pe_info.value, PipelineConfigEvaluationError)
+    assert isinstance(pe_info.value, DagsterInvalidConfigError)
     pe = pe_info.value
     assert len(pe.errors) == 1
     mfe = pe.errors[0]
@@ -498,7 +500,7 @@ def test_root_extra_field():
 
     pipeline_def = PipelineDefinition(name='root_extra_field', solid_defs=[required_int_solid])
 
-    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+    with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
             pipeline_def,
             environment_dict={'solids': {'required_int_solid': {'config': 948594}}, 'nope': None},
@@ -518,7 +520,7 @@ def test_deeper_path():
 
     pipeline_def = PipelineDefinition(name='deeper_path', solid_defs=[required_int_solid])
 
-    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+    with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
             pipeline_def, environment_dict={'solids': {'required_int_solid': {'config': 'asdf'}}}
         )
@@ -557,7 +559,7 @@ def test_item_error_list_path():
 
     pipeline_def = PipelineDefinition(name='list_path', solid_defs=[required_list_int_solid])
 
-    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+    with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
             pipeline_def,
             environment_dict={'solids': {'required_list_int_solid': {'config': [1, 'nope']}}},
@@ -578,7 +580,7 @@ def test_required_resource_not_given():
         mode_defs=[ModeDefinition(resource_defs={'required': dummy_resource(Field(Int))})],
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+    with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(pipeline_def, environment_dict={'resources': None})
 
     pe = pe_info.value
@@ -599,7 +601,7 @@ def test_multilevel_good_error_handling_solids():
         name='multilevel_good_error_handling', solid_defs=[good_error_handling]
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+    with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(pipeline_def, environment_dict={'solids': None})
 
     assert len(pe_info.value.errors) == 1
@@ -618,7 +620,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
         name='multilevel_good_error_handling', solid_defs=[good_error_handling]
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+    with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(pipeline_def, environment_dict={'solids': {'good_error_handling': {}}})
 
     assert len(pe_info.value.errors) == 1

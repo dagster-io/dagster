@@ -5,8 +5,6 @@ Errors
 
 Core dagster error classes.
 
-.. autoexception:: DagsterExpectationFailedError
-
 .. autoexception:: DagsterInvalidDefinitionError
 
 .. autoexception:: DagsterInvariantViolationError
@@ -15,4 +13,4 @@ Core dagster error classes.
 
 .. autoexception:: DagsterUserCodeExecutionError
 
-.. autoexception:: PipelineConfigEvaluationError
+.. autoexception:: DagsterInvalidConfigError

@@ -10,16 +10,22 @@ from .dependency import (
     SolidOutputHandle,
 )
 
+from .decorators import solid, lambda_solid, composite_solid, pipeline
+
 from .environment_schema import (
     EnvironmentSchema,
     create_environment_schema,
     create_environment_type,
 )
 
-from .expectation import IOExpectationDefinition
+from .expectation import IOExpectationDefinition, DagsterIOExpectationFailedError
 
 from .events import (
     EventMetadataEntry,
+    TextMetadataEntryData,
+    UrlMetadataEntryData,
+    PathMetadataEntryData,
+    JsonMetadataEntryData,
     ExpectationResult,
     Failure,
     Materialization,

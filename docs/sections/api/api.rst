@@ -7,6 +7,7 @@ API Docs
   :name: API Reference
 
   apidocs/solids
+  apidocs/events
   apidocs/pipeline
   apidocs/execution
   apidocs/types

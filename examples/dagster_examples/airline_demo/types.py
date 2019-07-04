@@ -4,7 +4,7 @@ from collections import namedtuple
 
 import sqlalchemy
 
-from dagster import Dict, Field, String, as_dagster_type
+from dagster import as_dagster_type
 from dagster.core.types.runtime import Stringish
 
 AirlineDemoResources = namedtuple(
@@ -25,25 +25,4 @@ class SqlTableName(Stringish):
         super(SqlTableName, self).__init__(description='The name of a database table')
 
 
-RedshiftConfigData = Dict(
-    {
-        'redshift_username': Field(String),
-        'redshift_password': Field(String),
-        'redshift_hostname': Field(String),
-        'redshift_db_name': Field(String),
-        's3_temp_dir': Field(String),
-    }
-)
-
-
 DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table host db_name')
-
-
-PostgresConfigData = Dict(
-    {
-        'postgres_username': Field(String),
-        'postgres_password': Field(String),
-        'postgres_hostname': Field(String),
-        'postgres_db_name': Field(String),
-    }
-)

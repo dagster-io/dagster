@@ -14,7 +14,7 @@ from dagster import (
     Float,
     InputDefinition,
     Int,
-    PipelineConfigEvaluationError,
+    DagsterInvalidConfigError,
     Output,
     RunConfig,
     String,
@@ -86,7 +86,7 @@ def test_missing_config():
     def wrap_pipeline():
         return wrap.alias('do_stuff')()
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline)
 
     assert len(exc_info.value.errors) == 1
@@ -95,7 +95,7 @@ def test_missing_config():
         '''"['execution', 'expectations', 'loggers', 'resources', 'solids', 'storage']".'''
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline, {})
 
     assert len(exc_info.value.errors) == 1
@@ -104,7 +104,7 @@ def test_missing_config():
         '''"['execution', 'expectations', 'loggers', 'resources', 'solids', 'storage']".'''
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline, {'solids': {}})
 
     assert len(exc_info.value.errors) == 1
@@ -113,7 +113,7 @@ def test_missing_config():
         '''"['do_stuff']".'''
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline, {'solids': {'do_stuff': {}}})
 
     assert len(exc_info.value.errors) == 1
@@ -123,7 +123,7 @@ def test_missing_config():
         '"[\'config\', \'outputs\']".'
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline, {'solids': {'do_stuff': {'config': {}}}})
 
     assert len(exc_info.value.errors) == 1
@@ -146,7 +146,7 @@ def test_bad_override():
     def wrap_pipeline():
         return bad_wrap.alias('do_stuff')()
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(
             wrap_pipeline,
             {
@@ -176,7 +176,7 @@ def test_raises_fn_override():
     def wrap_pipeline():
         return bad_wrap.alias('do_stuff')()
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(
             wrap_pipeline,
             {
@@ -307,7 +307,7 @@ def test_wrap_none_config_and_inputs():
     )
 
     # Check bad input override
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         result = execute_pipeline(
             config_mapping_pipeline,
             {
@@ -336,7 +336,7 @@ def test_wrap_none_config_and_inputs():
     )
 
     # Check bad config override
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         result = execute_pipeline(
             config_mapping_pipeline,
             {
@@ -420,7 +420,7 @@ def test_wrap_all_config_no_inputs():
         == 'override_a.override_b.set_input_a.set_input_b'
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         result = execute_pipeline(
             config_mapping_pipeline,
             {
@@ -441,7 +441,7 @@ def test_wrap_all_config_no_inputs():
         'Expected "String"'
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         result = execute_pipeline(
             config_mapping_pipeline,
             {
@@ -513,7 +513,7 @@ def test_wrap_all_config_one_input():
         == 'override_a.override_b.set_input_a.set_input_b'
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         result = execute_pipeline(
             config_mapping_pipeline,
             {
@@ -531,7 +531,7 @@ def test_wrap_all_config_one_input():
         'Expected "String"'
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         result = execute_pipeline(
             config_mapping_pipeline,
             {
@@ -605,7 +605,7 @@ def test_wrap_all_config_and_inputs():
         == 'override_a.override_b.override_input_a.override_input_b'
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         result = execute_pipeline(
             config_mapping_pipeline,
             {

@@ -56,10 +56,11 @@ class PipelineExecutionResult(object):
 
     @property
     def step_event_list(self):
+        '''The full list of step events'''
         return [event for event in self.event_list if event.is_step_event]
 
     def result_for_solid(self, name):
-        '''Get a :py:class:`SolidExecutionResult` for a given solid name.
+        '''Get a :py:class:`SolidExecutionResult` for a given top level solid name.
         '''
         check.str_param(name, 'name')
 
@@ -103,11 +104,6 @@ class PipelineExecutionResult(object):
 
 class SolidExecutionResult(object):
     '''Execution result for one solid of the pipeline.
-
-    Attributes:
-      FIXME: This is very inaccurate!
-      context (ExecutionContext): ExecutionContext of that particular Pipeline run.
-      solid (SolidDefinition): Solid for which this result is
     '''
 
     def __init__(self, solid, step_events_by_kind, reconstruct_context):
@@ -119,29 +115,36 @@ class SolidExecutionResult(object):
 
     @property
     def compute_input_event_dict(self):
+        '''input_events_during_compute keyed by input name'''
         return {se.event_specific_data.input_name: se for se in self.input_events_during_compute}
 
     @property
     def input_events_during_compute(self):
+        '''All events of type STEP_INPUT'''
         return self._compute_steps_of_type(DagsterEventType.STEP_INPUT)
 
     @property
     def compute_output_event_dict(self):
+        '''output_events_during_compute keyed by output name'''
         return {se.event_specific_data.output_name: se for se in self.output_events_during_compute}
 
     def get_output_event_for_compute(self, output_name='result'):
+        '''The STEP_OUTPUT events for the given output name'''
         return self.compute_output_event_dict[output_name]
 
     @property
     def output_events_during_compute(self):
+        '''All events of type STEP_OUTPUT'''
         return self._compute_steps_of_type(DagsterEventType.STEP_OUTPUT)
 
     @property
     def compute_step_events(self):
+        '''All events that happen during the solid compute function'''
         return self.step_events_by_kind.get(StepKind.COMPUTE, [])
 
     @property
     def materializations_during_compute(self):
+        '''The Materializations objects yielded by the solid'''
         return [
             mat_event.event_specific_data.materialization
             for mat_event in self.materialization_events_during_compute
@@ -149,10 +152,12 @@ class SolidExecutionResult(object):
 
     @property
     def materialization_events_during_compute(self):
+        '''All events of type STEP_MATERIALIZATION'''
         return self._compute_steps_of_type(DagsterEventType.STEP_MATERIALIZATION)
 
     @property
     def expectation_events_during_compute(self):
+        '''All events of type STEP_EXPECTATION_RESULT'''
         return self._compute_steps_of_type(DagsterEventType.STEP_EXPECTATION_RESULT)
 
     def _compute_steps_of_type(self, dagster_event_type):
@@ -162,12 +167,14 @@ class SolidExecutionResult(object):
 
     @property
     def expectation_results_during_compute(self):
+        '''The ExpectationResult objects yielded by the solid'''
         return [
             expt_event.event_specific_data.expectation_result
             for expt_event in self.expectation_events_during_compute
         ]
 
     def get_step_success_event(self):
+        '''The STEP_SUCCESS event, throws if not present'''
         for step_event in self.compute_step_events:
             if step_event.event_type == DagsterEventType.STEP_SUCCESS:
                 return step_event
@@ -176,14 +183,17 @@ class SolidExecutionResult(object):
 
     @property
     def input_expectation_step_events(self):
+        '''All events of type INPUT_EXPECTATION'''
         return self.step_events_by_kind.get(StepKind.INPUT_EXPECTATION, [])
 
     @property
     def output_expectation_step_events(self):
+        '''All events of type OUTPUT_EXPECTATION'''
         return self.step_events_by_kind.get(StepKind.OUTPUT_EXPECTATION, [])
 
     @property
     def compute_step_failure_event(self):
+        '''The STEP_FAILURE event, throws if it did not fail'''
         if self.success:
             raise DagsterInvariantViolationError(
                 'Cannot call compute_step_failure_event if successful'

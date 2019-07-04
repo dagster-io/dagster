@@ -5,6 +5,7 @@ import multiprocessing
 import os
 import re
 import subprocess
+import tempfile
 
 import yaml
 
@@ -220,3 +221,13 @@ def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
     except subprocess.CalledProcessError as cpe:
         print(cpe)
         raise cpe
+
+
+def safe_tempfile_path():
+    # This gets a valid temporary file path in the safest possible way, although there is still no
+    # guarantee that another process will not create a file at this path. The NamedTemporaryFile is
+    # deleted when the context manager exits and the file object is closed.
+    with tempfile.NamedTemporaryFile() as fd:
+        path = fd.name
+
+    return path

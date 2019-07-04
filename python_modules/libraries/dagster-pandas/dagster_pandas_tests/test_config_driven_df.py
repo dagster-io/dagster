@@ -7,7 +7,7 @@ import pandas as pd
 from dagster import (
     DependencyDefinition,
     InputDefinition,
-    PipelineConfigEvaluationError,
+    DagsterInvalidConfigError,
     PipelineDefinition,
     OutputDefinition,
     execute_pipeline,
@@ -122,7 +122,7 @@ def test_dataframe_csv_missing_inputs():
         called['yup'] = True
 
     pipeline = PipelineDefinition(name='missing_inputs', solid_defs=[df_as_input])
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(pipeline)
 
     assert len(exc_info.value.errors) == 1
@@ -153,7 +153,7 @@ def test_dataframe_csv_missing_input_collision():
         solid_defs=[df_as_input, df_as_output],
         dependencies={'df_as_input': {'df': DependencyDefinition('df_as_output')}},
     )
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(
             pipeline,
             {

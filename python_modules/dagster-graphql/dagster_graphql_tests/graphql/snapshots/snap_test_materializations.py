@@ -10,19 +10,13 @@ snapshots = Snapshot()
 snapshots['test_materializations 1'] = [
     {
         '__typename': 'PipelineStartEvent',
-        'level': 'INFO',
+        'level': 'DEBUG',
         'message': 'DagsterEventType.PIPELINE_START for pipeline materialization_pipeline',
         'step': None
     },
     {
-        '__typename': 'LogMessageEvent',
-        'level': 'DEBUG',
-        'message': "About to execute the compute node graph in the following order ['materialize.compute']",
-        'step': None
-    },
-    {
         '__typename': 'ExecutionStepStartEvent',
-        'level': 'INFO',
+        'level': 'DEBUG',
         'message': 'DagsterEventType.STEP_START for step materialize.compute',
         'step': {
             'key': 'materialize.compute',
@@ -32,8 +26,8 @@ snapshots['test_materializations 1'] = [
     },
     {
         '__typename': 'LogMessageEvent',
-        'level': 'DEBUG',
-        'message': 'Executing core compute for solid materialize.',
+        'level': 'INFO',
+        'message': "Solid 'materialize' materialized 'all_types'",
         'step': {
             'key': 'materialize.compute',
             'solidHandleID': 'materialize'
@@ -41,7 +35,7 @@ snapshots['test_materializations 1'] = [
     },
     {
         '__typename': 'StepMaterializationEvent',
-        'level': 'INFO',
+        'level': 'DEBUG',
         'materialization': {
             'description': 'a materialization with all metadata types',
             'label': 'all_types',
@@ -81,7 +75,7 @@ snapshots['test_materializations 1'] = [
     {
         '__typename': 'LogMessageEvent',
         'level': 'INFO',
-        'message': 'Solid materialize emitted output "result" value None',
+        'message': "Solid 'materialize' emitted output 'result' value None",
         'step': {
             'key': 'materialize.compute',
             'solidHandleID': 'materialize'
@@ -89,7 +83,7 @@ snapshots['test_materializations 1'] = [
     },
     {
         '__typename': 'ExecutionStepOutputEvent',
-        'level': 'INFO',
+        'level': 'DEBUG',
         'message': 'DagsterEventType.STEP_OUTPUT for step materialize.compute',
         'outputName': 'result',
         'step': {
@@ -106,17 +100,8 @@ snapshots['test_materializations 1'] = [
         'valueRepr': 'None'
     },
     {
-        '__typename': 'LogMessageEvent',
-        'level': 'INFO',
-        'message': 'Step materialize.compute emitted None for output result',
-        'step': {
-            'key': 'materialize.compute',
-            'solidHandleID': 'materialize'
-        }
-    },
-    {
         '__typename': 'ExecutionStepSuccessEvent',
-        'level': 'INFO',
+        'level': 'DEBUG',
         'message': 'DagsterEventType.STEP_SUCCESS for step materialize.compute',
         'step': {
             'key': 'materialize.compute',
@@ -125,7 +110,7 @@ snapshots['test_materializations 1'] = [
     },
     {
         '__typename': 'PipelineSuccessEvent',
-        'level': 'INFO',
+        'level': 'DEBUG',
         'message': 'DagsterEventType.PIPELINE_SUCCESS for pipeline materialization_pipeline',
         'step': None
     }

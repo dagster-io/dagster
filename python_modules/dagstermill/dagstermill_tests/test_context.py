@@ -1,71 +1,64 @@
 import pytest
 
-from dagster.check import CheckError
+from dagster import SolidDefinition
+from dagster.core.definitions.dependency import Solid
 from dagster.core.system_config.objects import EnvironmentConfig
 
 from dagstermill import MANAGER_FOR_NOTEBOOK_INSTANCE
 
 
-OUT_OF_PIPELINE_CONTEXT = MANAGER_FOR_NOTEBOOK_INSTANCE.define_out_of_pipeline_context()
+BARE_OUT_OF_PIPELINE_CONTEXT = MANAGER_FOR_NOTEBOOK_INSTANCE.get_context()
 
 
 def test_tags():
-    context = OUT_OF_PIPELINE_CONTEXT
+    context = BARE_OUT_OF_PIPELINE_CONTEXT
 
     assert not context.has_tag('foo')
     with pytest.raises(KeyError):
         assert not context.get_tag('foo')
 
 
-def test_bad_keys():
-    with pytest.warns(
-        UserWarning,
-        match=r'Config keys will not be respected for in-notebook execution: \[\'loggers\'\]',
-    ):
-        MANAGER_FOR_NOTEBOOK_INSTANCE.define_out_of_pipeline_context({'loggers': {'foo': {}}})
-
-
 def test_run_id():
-    assert OUT_OF_PIPELINE_CONTEXT.run_id is not None
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.run_id is not None
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.run_config.run_id == BARE_OUT_OF_PIPELINE_CONTEXT.run_id
 
 
 def test_environment_dict():
-    assert OUT_OF_PIPELINE_CONTEXT.environment_dict == {
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.environment_dict == {
         'execution': {},
         'expectations': {'evaluate': True},
-        'loggers': {},
+        'loggers': {'dagstermill': {'config': {'log_level': 'INFO', 'name': 'dagster'}}},
         'resources': {},
         'solids': {},
     }
 
 
 def test_logging_tags():
-    assert OUT_OF_PIPELINE_CONTEXT.logging_tags.get('pipeline') == 'Ephemeral Notebook Pipeline'
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.logging_tags['pipeline'] == 'ephemeral_dagstermill_pipeline'
 
 
 def test_environment_config():
-    assert isinstance(OUT_OF_PIPELINE_CONTEXT.environment_config, EnvironmentConfig)
+    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.environment_config, EnvironmentConfig)
 
 
 def test_pipeline_def():
-    assert OUT_OF_PIPELINE_CONTEXT.pipeline_def.name == 'Ephemeral Notebook Pipeline'
-    assert OUT_OF_PIPELINE_CONTEXT.pipeline_def.solids == []
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.name == 'ephemeral_dagstermill_pipeline'
+    assert len(BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.solids) == 1
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.solids[0].name == 'this_solid'
 
 
 def test_resources():
-    assert isinstance(OUT_OF_PIPELINE_CONTEXT.resources, tuple)
+    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.resources, tuple)
 
 
 def test_solid_def():
-    with pytest.raises(CheckError):
-        _ = OUT_OF_PIPELINE_CONTEXT.solid_def
+    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.solid_def, SolidDefinition)
 
 
 def test_solid():
-    with pytest.raises(CheckError):
-        _ = OUT_OF_PIPELINE_CONTEXT.solid
+    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.solid, Solid)
 
 
 def test_log(capsys):
-    OUT_OF_PIPELINE_CONTEXT.log.info('Ho ho!')
+    BARE_OUT_OF_PIPELINE_CONTEXT.log.info('Ho ho!')
     assert 'orig_message = "Ho ho!"\n' in capsys.readouterr().err

@@ -11,11 +11,7 @@ from enum import Enum
 from dagster import check
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.repository import RepositoryDefinition
-from dagster.core.errors import (
-    DagsterInvariantViolationError,
-    InvalidPipelineLoadingComboError,
-    InvalidRepositoryLoadingComboError,
-)
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils import load_yaml_from_path
 
 
@@ -387,7 +383,19 @@ class _ExecutionTargetHandleData(
                 python_file=self.python_file, fn_name=self.fn_name, from_handle=from_handle
             )
         else:
-            raise InvalidRepositoryLoadingComboError()
+            raise DagsterInvariantViolationError(
+                (
+                    'You have attempted to load a repository with an invalid '
+                    'combination of properties. repository_yaml {repository_yaml} '
+                    'module_name {module_name} python_file {python_file} '
+                    'fn_name {fn_name}.'
+                ).format(
+                    repository_yaml=self.repository_yaml,
+                    module_name=self.module_name,
+                    fn_name=self.fn_name,
+                    python_file=self.python_file,
+                )
+            )
 
     def get_pipeline_entrypoint(self, from_handle=None):
         if self.python_file and self.fn_name:
@@ -398,4 +406,13 @@ class _ExecutionTargetHandleData(
             return LoaderEntrypoint.from_module_target(
                 module_name=self.module_name, fn_name=self.fn_name, from_handle=from_handle
             )
-        raise InvalidPipelineLoadingComboError()
+
+        raise DagsterInvariantViolationError(
+            (
+                'You have attempted to directly load a pipeline with an invalid '
+                'combination of properties module_name {module_name} python_file '
+                '{python_file} fn_name {fn_name}.'
+            ).format(
+                module_name=self.module_name, fn_name=self.fn_name, python_file=self.python_file
+            )
+        )

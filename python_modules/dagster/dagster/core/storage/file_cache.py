@@ -8,7 +8,7 @@ import six
 from dagster import check
 from dagster.utils import mkdir_p
 from dagster.core.definitions import resource
-from dagster.core.types import Dict, Field, Bool, String
+from dagster.core.types import Field
 from .file_manager import LocalFileHandle
 
 
@@ -61,14 +61,7 @@ class FSFileCache(FileCache):
 
 
 @resource(
-    config_field=Field(
-        Dict(
-            {
-                'overwrite': Field(Bool, is_optional=True, default_value=False),
-                'target_folder': Field(String),
-            }
-        )
-    )
+    {'overwrite': Field(bool, is_optional=True, default_value=False), 'target_folder': Field(str)}
 )
 def fs_file_cache(init_context):
     target_folder = init_context.resource_config['target_folder']

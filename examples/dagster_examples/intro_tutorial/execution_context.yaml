@@ -1,3 +1,4 @@
 loggers:
   console:
-    log_level: DEBUG
+    config:
+      log_level: DEBUG

@@ -29,7 +29,7 @@ class DagstermillExecutePreprocessor(PapermillExecutePreprocessor):
         try:
             nb_man.cell_start(new_cell, index)
             nb_man.nb.cells[index], _ = self.preprocess_cell(new_cell, None, index)
-        except CellExecutionError as ex:
+        except CellExecutionError as ex:  # pragma: nocover
             nb_man.cell_exception(nb_man.nb.cells[index], cell_index=index, exception=ex)
         finally:
             nb_man.cell_complete(nb_man.nb.cells[index], cell_index=index)

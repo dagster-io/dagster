@@ -4,15 +4,15 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
     DependencyDefinition,
-    IOExpectationDefinition,
     ExpectationResult,
     InputDefinition,
+    Output,
     OutputDefinition,
     PipelineDefinition,
-    Output,
     SolidDefinition,
     execute_pipeline,
 )
+from dagster.core.definitions import IOExpectationDefinition
 
 
 def test_multiple_outputs():

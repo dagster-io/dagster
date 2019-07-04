@@ -1,11 +1,12 @@
-from dagster.core import types
-
 from dagster.core.definitions import (
     CompositeSolidDefinition,
     DependencyDefinition,
     EventMetadataEntry,
+    TextMetadataEntryData,
+    UrlMetadataEntryData,
+    PathMetadataEntryData,
+    JsonMetadataEntryData,
     ExecutionTargetHandle,
-    IOExpectationDefinition,
     ExpectationResult,
     Failure,
     InputDefinition,
@@ -24,18 +25,13 @@ from dagster.core.definitions import (
     SystemStorageDefinition,
     SystemStorageData,
     TypeCheck,
-    logger,
-    resource,
-    system_storage,
-)
-
-# These specific imports are to avoid circular import issues
-from dagster.core.definitions.decorators import (
-    MultipleOutputs,
-    lambda_solid,
-    solid,
     composite_solid,
+    lambda_solid,
+    logger,
     pipeline,
+    resource,
+    solid,
+    system_storage,
 )
 
 from dagster.core.events import DagsterEventType
@@ -52,8 +48,6 @@ from dagster.core.execution.config import (
     RunConfig,
 )
 
-from dagster.core.execution.context_creation_pipeline import PipelineConfigEvaluationError
-
 from dagster.core.execution.context.init import InitResourceContext
 
 from dagster.core.execution.context.logger import InitLoggerContext
@@ -65,14 +59,13 @@ from dagster.core.execution.results import PipelineExecutionResult, SolidExecuti
 from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
-    DagsterExpectationFailedError,
+    DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
+    DagsterStepOutputNotFoundError,
     DagsterTypeCheckError,
     DagsterUserCodeExecutionError,
-    DagsterUserError,
-    DagsterStepOutputNotFoundError,
 )
 
 from dagster.core.storage.init import InitSystemStorageContext
@@ -84,31 +77,30 @@ from dagster.core.types import (
     Dict,
     Field,
     Float,
-    input_hydration_config,
     Int,
     List,
     NamedDict,
+    Nothing,
     Optional,
-    output_materialization_config,
     Path,
     PermissiveDict,
     PythonObjectType,
     String,
-    Nothing,
+    input_hydration_config,
+    output_materialization_config,
 )
 
 from dagster.core.types.config import ConfigType, ConfigScalar, Enum, EnumValue
 
 from dagster.core.types.decorator import dagster_type, as_dagster_type
 
-from dagster.core.types.evaluator.errors import DagsterEvaluateConfigValueError
 
 from dagster.core.types.marshal import SerializationStrategy
 
 from dagster.core.types.runtime import RuntimeType
 
 from dagster.utils import file_relative_path
-from dagster.utils.test import execute_solid, execute_solids
+from dagster.utils.test import execute_solid, execute_solids_within_pipeline
 
 from .version import __version__
 
@@ -118,7 +110,10 @@ __all__ = [
     'CompositeSolidDefinition',
     'DependencyDefinition',
     'EventMetadataEntry',
-    'IOExpectationDefinition',
+    'TextMetadataEntryData',
+    'UrlMetadataEntryData',
+    'PathMetadataEntryData',
+    'JsonMetadataEntryData',
     'ExpectationResult',
     'Failure',
     'Field',
@@ -142,7 +137,6 @@ __all__ = [
     'resource',
     'solid',
     'system_storage',
-    'MultipleOutputs',
     # Execution
     'execute_pipeline_iterator',
     'execute_pipeline',
@@ -152,26 +146,23 @@ __all__ = [
     'InitSystemStorageContext',
     'InProcessExecutorConfig',
     'MultiprocessExecutorConfig',
-    'PipelineConfigEvaluationError',
     'PipelineExecutionResult',
     'RunConfig',
     'SolidExecutionResult',
     'SystemStorageData',
     # Errors
-    'DagsterEvaluateConfigValueError',
     'DagsterExecutionStepExecutionError',
     'DagsterExecutionStepNotFoundError',
-    'DagsterExpectationFailedError',
+    'DagsterInvalidConfigError',
     'DagsterInvalidDefinitionError',
     'DagsterInvariantViolationError',
     'DagsterResourceFunctionError',
     'DagsterTypeCheckError',
     'DagsterUserCodeExecutionError',
-    'DagsterUserError',
     'DagsterStepOutputNotFoundError',
     # Utilities
     'execute_solid',
-    'execute_solids',
+    'execute_solids_within_pipeline',
     'file_relative_path',
     # types
     'Any',

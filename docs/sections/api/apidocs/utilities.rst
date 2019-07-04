@@ -5,4 +5,4 @@ Utilities
 
 .. autofunction:: execute_solid
 
-.. autofunction:: execute_solids
+.. autofunction:: execute_solids_within_pipeline

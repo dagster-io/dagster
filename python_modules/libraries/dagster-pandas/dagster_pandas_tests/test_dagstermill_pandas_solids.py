@@ -1,13 +1,19 @@
 import pandas as pd
 
 from dagster import execute_pipeline
+from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.utils import script_relative_path
-
-from dagster_pandas.examples import define_papermill_pandas_hello_world_pipeline
 
 
 def test_papermill_pandas_hello_world_pipeline():
-    pipeline = define_papermill_pandas_hello_world_pipeline()
+    handle = handle_for_pipeline_cli_args(
+        {
+            'module_name': 'dagster_pandas.examples',
+            'fn_name': 'define_papermill_pandas_hello_world_pipeline',
+        }
+    )
+
+    pipeline = handle.build_pipeline_definition()
     pipeline_result = execute_pipeline(
         pipeline,
         {

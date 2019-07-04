@@ -23,7 +23,7 @@ Run this example pipeline on the dagster CLI:
 
 .. code-block:: console
 
-    $ dagster pipeline execute -m dagster_examples.intro_tutorial.tutorial_repository -n define_repository execution_context_pipeline
+    $ dagster pipeline execute -f execution_context.py -n execution_context_pipeline
 
 And you'll notice log messages like this:
 
@@ -61,9 +61,9 @@ Save it as execution_context.yaml and then run:
 
 .. code-block:: console
 
-    $ dagster pipeline execute  \
-    -m dagster_examples.intro_tutorial.tutorial_repository \
-    -n define_repository execution_context_pipeline \
+    $ dagster pipeline execute \
+    -f execution_context.py \
+    -n execution_context_pipeline  \
     -e execution_context.yaml
 
 You'll see now that debug messages print out to the console.
