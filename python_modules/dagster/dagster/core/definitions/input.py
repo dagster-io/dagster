@@ -8,8 +8,9 @@ from .utils import check_valid_name
 
 
 class InputDefinition(object):
-    '''An InputDefinition instance represents an argument to a compute defined within a solid.
-    Inputs are values within the dagster type system that are created from previous solids.
+    '''An InputDefinition instance represents an argument to a compute function defined within
+    a solid. Inputs are values within the dagster type system that are created from previous
+    solids.
 
     Args:
         name (str): Name of the input.

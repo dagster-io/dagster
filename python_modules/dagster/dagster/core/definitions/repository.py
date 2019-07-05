@@ -18,9 +18,6 @@ class RepositoryDefinition(object):
 
             As the pipelines are retrieved it ensures that the keys of the dictionary and the
             name of the pipeline are the same.
-        repo_config (Optional[dict]):
-            Preset configurations for pipelines such as environments and execution subsets
-
     '''
 
     def __init__(self, name, pipeline_dict):

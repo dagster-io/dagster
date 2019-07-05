@@ -91,9 +91,9 @@ class Output(namedtuple('_Result', 'value output_name')):
     '''A value produced by a solid compute function for downstream consumption. An implementer
     of a SolidDefinition directly must provide a compute function that yields objects of this type.
 
-    Attributes:
+    Args:
         value (Any): Value returned by the transform.
-        output_name (str): Name of the output returns. defaults to "result"
+        output_name (str): Name of the output returns. Defaults to "result"
 '''
 
     def __new__(cls, value, output_name=DEFAULT_OUTPUT):
@@ -107,11 +107,11 @@ class Materialization(namedtuple('_Materialization', 'label description metadata
     is not controlled by dagster. They are a useful way to communicate side effects to the system
     and display them to the end user.
 
-    Attributes:
-        path (str): The path to the materialized value.
-        name (str): A short display name for the materialized value.
-        description (str): A longer description of the materialized value.
-        result_metadata (dict): Arbitrary metadata about the materialized value.
+    Args:
+        label (str): A short display name for the materialized value.
+        description (Optional[str]): A longer description of the materialized value.
+        metadata_entries (Optional[List[EventMetadataEntry]]):
+            Arbitrary metadata about the materialized value.
     '''
 
     @staticmethod
@@ -140,12 +140,12 @@ class ExpectationResult(
 
     ExpectationResults can be yielded from solids just like Outputs and Materializations.
 
-    Attributes:
-
+    Args:
         success (bool): Whether the expectation passed or not.
         label (Optional[str]): Short display name for expectation. Defaults to "result".
-        message (str): Information about the computation. Typically only used in the failure case.
-        result_metadata (dict): Arbitrary information about the expectation result.
+        description (Optional[str]): A longer description of the data quality test.
+        metadata_entries (Optional[List[EventMetadataEntry]]):
+            Arbitrary metadata about the expectation.
     '''
 
     def __new__(cls, success, label=None, description=None, metadata_entries=None):
