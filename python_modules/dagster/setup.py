@@ -66,16 +66,6 @@ def _do_setup(name='dagster'):
             # core (not explicitly expressed atm)
             'six>=1.11.0',
             'toposort>=1.0',
-            # dev/test - Installed via dev-requirements.txt
-            # 'pylint>=2.3.0',
-            # 'pytest>=3.5.1',
-            # 'recommonmark>=0.4.0',
-            # 'rope>=0.10.7',
-            # 'snapshottest==0.5.0',
-            # 'Sphinx>=2.0.1',
-            # 'sphinx-autobuild>=0.7.1',
-            # 'twine>=1.11.0',
-            # 'pre-commit'>=1.10.1',
         ],
         tests_require=['mock'],
         extras_require={":python_version>'3'": ["reloader>=0.6"], "aws": ["boto3>=1.9.117"]},

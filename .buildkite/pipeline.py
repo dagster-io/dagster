@@ -276,6 +276,7 @@ if __name__ == "__main__":
         .build(),
         StepBuilder("docs snapshot test")
         .run(
+            "pip install -r .read-the-docs-requirements.txt -qqq",
             "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
             "pip install -e python_modules/dagster -qqq",
             "pytest -vv docs",

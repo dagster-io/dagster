@@ -1,1 +1,3 @@
+Sphinx>=2.0.1; python_version >= '3.6'
+sphinx-autobuild==0.7.1
 ./python_modules/dagster
