@@ -3,9 +3,9 @@
 Pipelines
 =========
 
-.. autoclass:: PipelineDefinition
-
 .. autodecorator:: pipeline
+
+.. autoclass:: PipelineDefinition
 
 .. autoclass:: DependencyDefinition
     :members:
@@ -27,10 +27,10 @@ Modes
 Resources
 =========
 
+.. autodecorator:: resource
+
 .. autoclass:: ResourceDefinition
     :members:
-
-.. autodecorator:: resource
 
 .. autoclass:: InitResourceContext
     :members:
@@ -40,10 +40,10 @@ Resources
 Logging
 =======
 
+.. autodecorator:: logger
+
 .. autoclass:: LoggerDefinition
     :members:
-
-.. autodecorator:: logger
 
 .. autoclass:: InitLoggerContext
     :members:

@@ -16,7 +16,16 @@ PY_IMAGE_MAP = {ver: "python:{}-stretch".format(ver) for ver in SupportedPythons
 
 class StepBuilder:
     def __init__(self, label):
-        self._step = {"label": label, "timeout_in_minutes": TIMEOUT_IN_MIN}
+        self._step = {
+            "label": label,
+            "timeout_in_minutes": TIMEOUT_IN_MIN,
+            "retry": {
+                "automatic": [
+                    {"exit_status": -1, "limit": 2},  # agent lost
+                    {"exit_status": 255, "limit": 2},  # agent forced shut down
+                ]
+            },
+        }
 
     def run(self, *argc):
         self._step["commands"] = map(lambda cmd: "time " + cmd, argc)

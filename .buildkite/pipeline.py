@@ -202,7 +202,6 @@ def dask_tests():
                 version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
             )
             .with_timeout(5)
-            .with_retry(3)
             .on_medium_instance()
             .build()
         )
@@ -277,6 +276,7 @@ if __name__ == "__main__":
         .build(),
         StepBuilder("docs snapshot test")
         .run(
+            "pip install -r .read-the-docs-requirements.txt -qqq",
             "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
             "pip install -e python_modules/dagster -qqq",
             "pytest -vv docs",

@@ -105,7 +105,7 @@ class SolidDefinition(ISolidDefinition):
             ``output_defs`` and may yield other types of dagster events including
             :py:class:`Materialization` and :py:class:`ExpectationResult`.
 
-        input_defs (List[OutputDefinition]): Outputs of the solid.
+        output_defs (List[OutputDefinition]): Outputs of the solid.
         config_field (Optional[Field]): How the solid configured.
         description (Optional[str]): Description of the solid.
         metadata (Optional[Dict[Any, Any]]):

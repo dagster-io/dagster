@@ -154,12 +154,17 @@ def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
             def hello_world():
                 return 'hello'
 
-            @lambda_solid(input_defs=[InputDefinition(name='foo', str)])
+            @lambda_solid(
+                input_defs=[InputDefinition(name='foo', str)],
+                output_def=OutputDefinition(str)
+            )
             def hello_world(foo):
+                # explictly type and name inputs and outputs
                 return foo
 
             @lambda_solid
-            def hello_world(foo: str):
+            def hello_world(foo: str) -> str:
+                # same as above inferred from signature
                 return foo
 
     '''
@@ -188,16 +193,14 @@ def solid(
     This shortcut simplifies the core solid API by exploding arguments into kwargs of the
     compute function and omitting additional parameters when they are not needed. Input
     and output definitions will be inferred from the type signature of the decorated
-    function if not explicitly provided. Parameters are otherwise as in the core API,
-    :py:class:`SolidDefinition`.
+    function if not explicitly provided.
 
     The decorated function will be used as the solid's compute function. Unlike in the core API,
-    the compute function does not have to yield :py:class:`Output` object directly. Several
-    simpler alternatives are available:
+        the expectations for the compute function are more flexible, it can:
 
-    1. Return a value. This is returned as a :py:class:`Output` for a single output solid.
-    2. Return a :py:class:`Output`. Works like yielding result.
-    3. Yield :py:class:`Output`. Same as default compute behaviour.
+    1. Return a value. This is returned as an :py:class:`Output` for a single output solid.
+    2. Return an :py:class:`Output`. Works like yielding that :py:class:`Output` .
+    3. Yield :py:class:`Output` or other event objects. Same as default compute behaviour.
 
     Args:
         name (str): Name of solid.
@@ -639,7 +642,7 @@ def _get_validated_config_mapping(name, config, config_fn):
 def composite_solid(
     name=None, input_defs=None, output_defs=None, description=None, config=None, config_fn=None
 ):
-    '''Create a CompositeSolidDefinition with specified parameters from the decorated
+    '''Create a composite solid with specified parameters from the decorated
     `composition function <../../learn/tutorial/composition_functions.html>`_ .
 
     Using this decorator allows you to build up the dependency graph of the composite by writing a
@@ -677,10 +680,10 @@ def composite_solid(
 
             @composite_solid
             def add_two(num: int) -> int:
-                add_one_1 = add_one.alias('add_one_1')
-                add_one_2 = add_one.alias('add_one_2')
+                adder_1 = add_one.alias('adder_1')
+                adder_2 = add_one.alias('adder_2')
 
-                return add_one_2(add_one_1(num))
+                return adder_2(adder_1(num))
 
     '''
     if callable(name):
