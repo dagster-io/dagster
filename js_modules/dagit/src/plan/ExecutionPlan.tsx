@@ -11,6 +11,7 @@ import {
   IStepMetadata
 } from "../RunMetadataProvider";
 import { formatElapsedTime } from "../Util";
+import { ExecutionPlanHiddenStepsBox } from "./ExecutionPlanHiddenStepsBox";
 
 export interface IExecutionPlanProps {
   executionPlan: ExecutionPlanFragment;
@@ -45,6 +46,14 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
       }
     `
   };
+
+  renderSkippedSteps(skippedCount: number) {
+    if (skippedCount > 0) {
+      return <ExecutionPlanHiddenStepsBox numberStepsSkipped={skippedCount} />;
+    }
+
+    return null;
+  }
 
   render() {
     const haveRun = !!this.props.runMetadata;
@@ -93,11 +102,16 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
           <span>
             {`Process (PID ${
               runMetadata.processId
-            }) pipeline initialization failed!`}
+              }) pipeline initialization failed!`}
           </span>
         );
       }
     }
+
+    // Keep track of skipped steps that were not part of the current run
+    let stepsSkippedCount = 0;
+    let prevSkippedCount = 0;
+
     return (
       <ExecutionPlanContainer>
         <ExecutionPlanContainerInner>
@@ -106,26 +120,40 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
             <ExecutionTimelineDot completed={startDone} /> {startText}
           </ExecutionTimelineMessage>
           {executionPlan.steps.map(step => {
+            const isStepPartOfRun =
+              !haveRun || runMetadata.steps[step.key] !== undefined;
+            if (!isStepPartOfRun) {
+              stepsSkippedCount++;
+              return;
+            } else {
+              prevSkippedCount = stepsSkippedCount;
+              stepsSkippedCount = 0;
+            }
+
             const delay = stepsOrderedByTransitionTime.indexOf(step.key) * 100;
             const metadata = runMetadata.steps[step.key] || EMPTY_STEP_METADATA;
 
             return (
-              <ExecutionPlanBox
-                state={metadata.state}
-                start={metadata.start}
-                elapsed={metadata.elapsed}
-                key={step.key}
-                stepKey={step.key}
-                expectationResults={metadata.expectationResults}
-                materializations={metadata.materializations}
-                onShowStateDetails={onShowStateDetails}
-                onApplyStepFilter={onApplyStepFilter}
-                onReexecuteStep={onReexecuteStep}
-                executionArtifactsPersisted={executionPlan.artifactsPersisted}
-                delay={delay}
-              />
+              <div key={step.key}>
+                {this.renderSkippedSteps(prevSkippedCount)}
+                <ExecutionPlanBox
+                  state={metadata.state}
+                  start={metadata.start}
+                  elapsed={metadata.elapsed}
+                  key={step.key}
+                  stepKey={step.key}
+                  expectationResults={metadata.expectationResults}
+                  materializations={metadata.materializations}
+                  onShowStateDetails={onShowStateDetails}
+                  onApplyStepFilter={onApplyStepFilter}
+                  onReexecuteStep={onReexecuteStep}
+                  executionArtifactsPersisted={executionPlan.artifactsPersisted}
+                  delay={delay}
+                />
+              </div>
             );
           })}
+          {this.renderSkippedSteps(stepsSkippedCount)}
           {runMetadata.exitedAt && runMetadata.startedProcessAt && (
             <ExecutionTimelineMessage>
               <ExecutionTimelineDot completed={startDone} />
