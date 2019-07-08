@@ -22,9 +22,10 @@ parser.add_argument('--nightly', action='store_true')
 
 
 def _do_setup(name='dagster-airflow'):
+    ver = get_version(name)
     setup(
         name=name,
-        version=get_version(name),
+        version=ver,
         author='Elementl',
         license='Apache-2.0',
         description='Airflow plugin for Dagster',
@@ -48,7 +49,7 @@ def _do_setup(name='dagster-airflow'):
             'apache-airflow>=1.10.2; python_version<"3.7"',
             'apache-airflow>=1.10.3; python_version>="3.7"',
             # dagster
-            'dagster>=0.2.0',
+            'dagster=={ver}'.format(ver=ver),
             # docker api
             'docker==3.7.0',
             # aws
