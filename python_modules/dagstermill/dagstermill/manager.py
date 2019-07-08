@@ -73,7 +73,7 @@ class Manager:
         check.inst_param(solid_handle, 'solid_handle', SolidHandle)
 
         pipeline_def = check.inst_param(
-            handle.entrypoint.perform_load(),
+            handle.build_pipeline_definition(),
             'pipeline_def (from handle {handle_dict})'.format(handle_dict=handle.data._asdict()),
             PipelineDefinition,
         )

@@ -154,14 +154,14 @@ class ExecutionTargetHandle:
         return cls.__cache__.get(repo_or_pipeline)
 
     @classmethod
-    def cache_handle(cls, repo_or_pipeline, handle):
+    def cache_handle(cls, repo_or_pipeline_def, handle):
         check.inst_param(
-            repo_or_pipeline, 'repo_or_pipeline', (RepositoryDefinition, PipelineDefinition)
+            repo_or_pipeline_def, 'repo_or_pipeline_def', (RepositoryDefinition, PipelineDefinition)
         )
         check.inst_param(handle, 'handle', ExecutionTargetHandle)
-        cls.__cache__[repo_or_pipeline] = handle
+        cls.__cache__[repo_or_pipeline_def] = handle
 
-        return repo_or_pipeline
+        return repo_or_pipeline_def
 
     @staticmethod
     def for_pipeline_fn(fn):
@@ -242,15 +242,20 @@ class ExecutionTargetHandle:
         '''Returns a new ExecutionTargetHandle that references the pipeline "pipeline_name" within
         the repository.
         '''
+        if self.is_resolved_to_pipeline and self.data.pipeline_name == pipeline_name:
+            return self
+
         check.invariant(
-            not self.is_resolved_to_pipeline,
+            not (self.is_resolved_to_pipeline and self.data.pipeline_name is not None),
             '''ExecutionTargetHandle already references a pipeline named {pipeline_name}, cannot
-            change.'''.format(
-                pipeline_name=self.data.pipeline_name
+            change to {new_pipeline_name}.'''.format(
+                pipeline_name=self.data.pipeline_name, new_pipeline_name=pipeline_name
             ),
         )
         data = self.data._replace(pipeline_name=pipeline_name)
-        return ExecutionTargetHandle(data, mode=self.mode, is_resolved_to_pipeline=True)
+        return ExecutionTargetHandle(
+            data, mode=_ExecutionTargetMode.PIPELINE, is_resolved_to_pipeline=True
+        )
 
     def build_repository_definition(self):
         '''Rehydrates a RepositoryDefinition from an ExecutionTargetHandle object.
@@ -289,13 +294,17 @@ class ExecutionTargetHandle:
                 ' ExecutionTargetHandle.',
             )
             obj = self.entrypoint.perform_load()
-            repository = check.inst(obj, RepositoryDefinition)
             return ExecutionTargetHandle.cache_handle(
-                repository.get_pipeline(self.data.pipeline_name), self
+                obj.get_pipeline(self.data.pipeline_name), self
             )
         elif self.mode == _ExecutionTargetMode.PIPELINE:
             obj = self.entrypoint.perform_load()
-            return check.inst(obj, PipelineDefinition)
+            if isinstance(obj, PipelineDefinition):
+                return ExecutionTargetHandle.cache_handle(obj, self)
+            else:
+                return ExecutionTargetHandle.cache_handle(
+                    obj.get_pipeline(self.data.pipeline_name), self
+                )
         else:
             check.failed('Unhandled mode {mode}'.format(mode=self.mode))
 
@@ -406,7 +415,8 @@ class _ExecutionTargetHandleData(
             return LoaderEntrypoint.from_module_target(
                 module_name=self.module_name, fn_name=self.fn_name, from_handle=from_handle
             )
-
+        elif self.pipeline_name:
+            return self.get_repository_entrypoint(from_handle=from_handle)
         raise DagsterInvariantViolationError(
             (
                 'You have attempted to directly load a pipeline with an invalid '

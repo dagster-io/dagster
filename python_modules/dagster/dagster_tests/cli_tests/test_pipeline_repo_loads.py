@@ -21,7 +21,7 @@ def test_repository_python_file():
     handle = handle_for_pipeline_cli_args(
         {'pipeline_name': 'foo', 'python_file': python_file, 'fn_name': 'define_bar_repo'}
     )
-    assert handle.mode == _ExecutionTargetMode.REPOSITORY
+    assert handle.mode == _ExecutionTargetMode.PIPELINE
     assert handle.entrypoint == LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo', handle)
     assert handle.data.pipeline_name == 'foo'
     assert handle.entrypoint.from_handle == handle
@@ -61,7 +61,7 @@ def test_repository_module():
             'repository_yaml': None,
         }
     )
-    assert handle.mode == _ExecutionTargetMode.REPOSITORY
+    assert handle.mode == _ExecutionTargetMode.PIPELINE
     expected = LoaderEntrypoint(module, 'dagster', 'define_bar_repo')
     assert handle.entrypoint.module == expected.module
     assert handle.entrypoint.module_name == expected.module_name
@@ -121,7 +121,7 @@ def test_yaml_file():
             'repository_yaml': script_relative_path('repository.yaml'),
         }
     )
-    assert handle.mode == _ExecutionTargetMode.REPOSITORY
+    assert handle.mode == _ExecutionTargetMode.PIPELINE
 
     expected = LoaderEntrypoint(module, 'dagster_examples.intro_tutorial.repos', 'define_repo')
     assert handle.entrypoint.module == expected.module
