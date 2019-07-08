@@ -2,21 +2,17 @@ import random
 import time
 
 from dagster import (
-    DependencyDefinition,
+    pipeline,
     Dict,
-    ExecutionTargetHandle,
     Field,
     InputDefinition,
     Int,
     ModeDefinition,
     OutputDefinition,
-    PipelineDefinition,
     Output,
-    SolidInvocation,
     lambda_solid,
     solid,
 )
-from dagster_dask import execute_on_dask
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
@@ -85,42 +81,19 @@ def total(in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4
 
 
-def define_hammer_pipeline():
-    return PipelineDefinition(
-        name="thors_hammer",
-        solid_defs=[giver, hammer, total],
-        dependencies={
-            SolidInvocation('giver'): {},
-            SolidInvocation('hammer', alias='hammer_1'): {
-                'chase_duration': DependencyDefinition('giver', 'out_1')
-            },
-            SolidInvocation('hammer', alias='hammer_2'): {
-                'chase_duration': DependencyDefinition('giver', 'out_2')
-            },
-            SolidInvocation('hammer', alias='hammer_3'): {
-                'chase_duration': DependencyDefinition('giver', 'out_3')
-            },
-            SolidInvocation('hammer', alias='hammer_4'): {
-                'chase_duration': DependencyDefinition('giver', 'out_4')
-            },
-            SolidInvocation('total'): {
-                'in_1': DependencyDefinition('hammer_1', 'total'),
-                'in_2': DependencyDefinition('hammer_2', 'total'),
-                'in_3': DependencyDefinition('hammer_3', 'total'),
-                'in_4': DependencyDefinition('hammer_4', 'total'),
-            },
-        },
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={'s3': s3_resource}, system_storage_defs=s3_plus_default_storage_defs
-            )
-        ],
+@pipeline(
+    # Needed for Dask tests which use this pipeline
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={'s3': s3_resource}, system_storage_defs=s3_plus_default_storage_defs
+        )
+    ]
+)
+def hammer_pipeline():
+    out_1, out_2, out_3, out_4 = giver()  # pylint: disable=no-value-for-parameter
+    return total(
+        in_1=hammer.alias('hammer_1')(chase_duration=out_1),
+        in_2=hammer.alias('hammer_2')(chase_duration=out_2),
+        in_3=hammer.alias('hammer_3')(chase_duration=out_3),
+        in_4=hammer.alias('hammer_4')(chase_duration=out_4),
     )
-
-
-if __name__ == '__main__':
-    result = execute_on_dask(
-        ExecutionTargetHandle.for_pipeline_fn(define_hammer_pipeline),
-        env_config={'storage': {'filesystem': {}}},
-    )
-    print('Total Hammer Time: ', result.result_for_solid('total').result_value())

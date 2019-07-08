@@ -9,7 +9,7 @@ from dagster.core.errors import DagsterExecutionStepExecutionError
 
 from dagster_pandas.examples.pandas_hello_world.pipeline import (
     pandas_hello_world,
-    define_failure_pipeline,
+    pandas_hello_world_fails,
 )
 
 
@@ -70,7 +70,7 @@ def test_cli_execute_failure():
             os.chdir(script_relative_path('../..'))
 
             do_execute_command(
-                pipeline=define_failure_pipeline(),
+                pipeline=pandas_hello_world_fails,
                 env_file_list=[
                     script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yaml')
                 ],

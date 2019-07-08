@@ -3,9 +3,9 @@ import os
 import pytest
 
 from dagster import (
+    pipeline,
     DagsterInvalidDefinitionError,
     ModeDefinition,
-    PipelineDefinition,
     ResourceDefinition,
     execute_solid,
     execute_pipeline,
@@ -20,13 +20,14 @@ from dagster_examples.airline_demo.cache_file_from_s3 import cache_file_from_s3
 
 
 def execute_solid_with_resources(solid_def, resource_defs, environment_dict):
-    pipeline_def = PipelineDefinition(
+    @pipeline(
         name='{}_solid_test'.format(solid_def.name),
-        solid_defs=[solid_def],
         mode_defs=[ModeDefinition(resource_defs=resource_defs)],
     )
+    def test_pipeline():
+        return solid_def()
 
-    return execute_pipeline(pipeline_def, environment_dict)
+    return execute_pipeline(test_pipeline, environment_dict)
 
 
 def test_cache_file_from_s3_basic():

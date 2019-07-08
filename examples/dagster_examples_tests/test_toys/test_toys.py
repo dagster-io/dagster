@@ -11,7 +11,7 @@ from dagster_examples.toys.many_events import many_events
 from dagster_examples.toys.resources import resource_pipeline
 from dagster_examples.toys.error_monster import error_monster
 from dagster_examples.toys.sleepy import sleepy_pipeline
-from dagster_examples.toys.hammer import define_hammer_pipeline
+from dagster_examples.toys.hammer import hammer_pipeline
 from dagster_examples.toys.log_spew import log_spew
 
 
@@ -30,7 +30,7 @@ def test_sleepy_pipeline():
 
 
 def test_hammer_pipeline():
-    assert execute_pipeline(define_hammer_pipeline()).success
+    assert execute_pipeline(hammer_pipeline).success
 
 
 def test_spew_pipeline():

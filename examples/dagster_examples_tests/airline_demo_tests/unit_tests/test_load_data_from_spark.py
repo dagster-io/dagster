@@ -1,6 +1,6 @@
 from pyspark.sql import DataFrame
 
-from dagster import PipelineDefinition, ModeDefinition, ResourceDefinition
+from dagster import pipeline, ModeDefinition, ResourceDefinition
 from dagster.utils.test import execute_solid_within_pipeline
 from dagster.seven import mock
 from dagster_examples.airline_demo.solids import load_data_to_database_from_spark
@@ -17,18 +17,19 @@ def test_airline_demo_load_df():
         host='host',
         db_name='db_name',
     )
-    pipeline_def = PipelineDefinition(
-        name='load_df_test',
-        solid_defs=[load_data_to_database_from_spark],
+
+    @pipeline(
         mode_defs=[
             ModeDefinition(
                 resource_defs={'db_info': ResourceDefinition.hardcoded_resource(db_info_mock)}
             )
-        ],
+        ]
     )
+    def load_df_test():
+        load_data_to_database_from_spark()  # pylint: disable=no-value-for-parameter
 
     solid_result = execute_solid_within_pipeline(
-        pipeline_def,
+        load_df_test,
         'load_data_to_database_from_spark',
         inputs={'data_frame': mock.MagicMock(spec=DataFrame)},
         environment_dict={
