@@ -1,8 +1,0 @@
--   repo: "https://github.com/ambv/black"
-    rev: "18.9b0"
-    hooks:
-    - id: black
-      args: ["--fast", "-v", "-S", "-N", "."]
-      language_version: "python3.6"
-      pass_filenames: false
-      always_run: true
