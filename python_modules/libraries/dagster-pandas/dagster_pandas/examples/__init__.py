@@ -14,6 +14,7 @@ from dagster import (
     PresetDefinition,
     execute_pipeline,
     file_relative_path,
+    pipeline,
 )
 
 from dagster.core.utility_solids import define_stub_solid
@@ -22,7 +23,7 @@ from dagster.utils import script_relative_path
 
 from ..data_frame import DataFrame
 
-from .pandas_hello_world.pipeline import define_pandas_hello_world_pipeline
+from .pandas_hello_world.pipeline import pandas_hello_world
 
 
 def nb_test_path(name):
@@ -41,35 +42,32 @@ def define_papermill_pandas_hello_world_solid():
 def define_pandas_repository():
     return RepositoryDefinition(
         name='test_dagstermill_pandas_solids',
-        pipeline_dict={
-            'papermill_pandas_hello_world_pipeline': define_papermill_pandas_hello_world_pipeline,
-            'pandas_hello_world': define_pandas_hello_world_pipeline,
-        },
+        pipeline_defs=[papermill_pandas_hello_world_pipeline, pandas_hello_world],
     )
 
 
-def define_papermill_pandas_hello_world_pipeline():
-    return PipelineDefinition(
-        name='papermill_pandas_hello_world_pipeline',
-        solid_defs=[define_papermill_pandas_hello_world_solid()],
-        preset_defs=[
-            PresetDefinition(
-                'test',
-                environment_files=[
-                    file_relative_path(
-                        __file__,
-                        'pandas_hello_world/environments/papermill_pandas_hello_world_test.yaml',
-                    )
-                ],
-            ),
-            PresetDefinition(
-                'prod',
-                environment_files=[
-                    file_relative_path(
-                        __file__,
-                        'pandas_hello_world/environments/papermill_pandas_hello_world_prod.yaml',
-                    )
-                ],
-            ),
-        ],
-    )
+@pipeline(
+    preset_defs=[
+        PresetDefinition(
+            'test',
+            environment_files=[
+                file_relative_path(
+                    __file__,
+                    'pandas_hello_world/environments/papermill_pandas_hello_world_test.yaml',
+                )
+            ],
+        ),
+        PresetDefinition(
+            'prod',
+            environment_files=[
+                file_relative_path(
+                    __file__,
+                    'pandas_hello_world/environments/papermill_pandas_hello_world_prod.yaml',
+                )
+            ],
+        ),
+    ]
+)
+def papermill_pandas_hello_world_pipeline():
+    hello_world = define_papermill_pandas_hello_world_solid()
+    hello_world()

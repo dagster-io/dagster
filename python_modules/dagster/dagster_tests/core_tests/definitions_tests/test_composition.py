@@ -425,9 +425,7 @@ def test_repositry_has_solid_def():
     def a_pipeline():
         outer()
 
-    repo_def = RepositoryDefinition.eager_construction(
-        name='has_solid_def_test', pipelines=[a_pipeline]
-    )
+    repo_def = RepositoryDefinition(name='has_solid_def_test', pipeline_defs=[a_pipeline])
 
     assert repo_def.solid_def_named('inner')
 

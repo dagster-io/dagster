@@ -12,7 +12,7 @@ from dagster_examples.toys.resources import resource_pipeline
 from dagster_examples.toys.error_monster import error_monster
 from dagster_examples.toys.sleepy import sleepy_pipeline
 from dagster_examples.toys.hammer import define_hammer_pipeline
-from dagster_examples.toys.log_spew import define_spew_pipeline
+from dagster_examples.toys.log_spew import log_spew
 
 
 def test_define_repo():
@@ -34,7 +34,7 @@ def test_hammer_pipeline():
 
 
 def test_spew_pipeline():
-    assert execute_pipeline(define_spew_pipeline()).success
+    assert execute_pipeline(log_spew).success
 
 
 def test_resource_pipeline_no_config():

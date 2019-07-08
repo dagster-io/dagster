@@ -277,7 +277,7 @@ class ExecutionTargetHandle:
         elif self.mode == _ExecutionTargetMode.PIPELINE:
             check.inst(obj, PipelineDefinition)
             return ExecutionTargetHandle.cache_handle(
-                RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_dict={obj.name: obj}),
+                RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_defs=[obj]),
                 ExecutionTargetHandle.get_handle(obj),
             )
         else:

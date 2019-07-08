@@ -9,9 +9,9 @@ from .steps.step_five import pyspark_pagerank_step_five
 
 
 def define_repository():
-    return RepositoryDefinition.eager_construction(
+    return RepositoryDefinition(
         name='pyspark_pagerank_repo_step_one',
-        pipelines=[
+        pipeline_defs=[
             pyspark_pagerank,
             pyspark_pagerank_step_one,
             pyspark_pagerank_step_two,

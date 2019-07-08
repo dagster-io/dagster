@@ -101,21 +101,7 @@ def test_non_lazy_pipeline_dict():
     called = defaultdict(int)
     repo = RepositoryDefinition(
         name='some_repo',
-        pipeline_dict={
-            'foo': create_single_node_pipeline('foo', called),
-            'bar': create_single_node_pipeline('bar', called),
-        },
-    )
-
-    assert repo.get_pipeline('foo').name == 'foo'
-    assert repo.get_pipeline('bar').name == 'bar'
-
-
-def test_eager():
-    called = defaultdict(int)
-    repo = RepositoryDefinition.eager_construction(
-        name='some_repo',
-        pipelines=[
+        pipeline_defs=[
             create_single_node_pipeline('foo', called),
             create_single_node_pipeline('bar', called),
         ],
@@ -123,3 +109,22 @@ def test_eager():
 
     assert repo.get_pipeline('foo').name == 'foo'
     assert repo.get_pipeline('bar').name == 'bar'
+
+
+def test_conflict():
+    called = defaultdict(int)
+    with pytest.raises(Exception, match='Duplicate pipelines named foo'):
+        RepositoryDefinition(
+            name='some_repo',
+            pipeline_defs=[create_single_node_pipeline('foo', called)],
+            pipeline_dict={'foo': lambda: create_single_node_pipeline('foo', called)},
+        )
+
+
+def test_key_mismatch():
+    called = defaultdict(int)
+    repo = RepositoryDefinition(
+        name='some_repo', pipeline_dict={'foo': lambda: create_single_node_pipeline('bar', called)}
+    )
+    with pytest.raises(Exception, match='Name does not match'):
+        repo.get_pipeline('foo')

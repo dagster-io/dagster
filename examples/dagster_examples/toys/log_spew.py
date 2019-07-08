@@ -1,15 +1,6 @@
 import time
 
-from dagster import (
-    DependencyDefinition,
-    InputDefinition,
-    ModeDefinition,
-    Output,
-    OutputDefinition,
-    PipelineDefinition,
-    solid,
-    SolidInvocation,
-)
+from dagster import InputDefinition, Output, OutputDefinition, solid, pipeline
 
 
 def nonce_solid(name, n_inputs, n_outputs):
@@ -41,38 +32,23 @@ def nonce_solid(name, n_inputs, n_outputs):
     return solid_fn
 
 
-def define_spew_pipeline():
-    return PipelineDefinition(
-        name='log_spew',
-        solid_defs=[
-            nonce_solid('no_in_two_out', 0, 2),
-            nonce_solid('one_in_one_out', 1, 1),
-            nonce_solid('one_in_two_out', 1, 2),
-            nonce_solid('two_in_one_out', 2, 1),
-            nonce_solid('one_in_none_out', 1, 0),
-        ],
-        dependencies={
-            SolidInvocation('no_in_two_out', alias='solid_a'): {},
-            SolidInvocation('one_in_one_out', alias='solid_b'): {
-                'input_0': DependencyDefinition('solid_a', 'output_0')
-            },
-            SolidInvocation('one_in_two_out', alias='solid_c'): {
-                'input_0': DependencyDefinition('solid_a', 'output_1')
-            },
-            SolidInvocation('two_in_one_out', alias='solid_d'): {
-                'input_0': DependencyDefinition('solid_b', 'output_0'),
-                'input_1': DependencyDefinition('solid_c', 'output_0'),
-            },
-            SolidInvocation('one_in_one_out', alias='solid_e'): {
-                'input_0': DependencyDefinition('solid_c', 'output_0')
-            },
-            SolidInvocation('two_in_one_out', alias='solid_f'): {
-                'input_0': DependencyDefinition('solid_d', 'output_0'),
-                'input_1': DependencyDefinition('solid_e', 'output_0'),
-            },
-            SolidInvocation('one_in_none_out', alias='solid_g'): {
-                'input_0': DependencyDefinition('solid_f', 'output_0')
-            },
-        },
-        mode_defs=[ModeDefinition()],
-    )
+@pipeline
+def log_spew():
+    one_in_one_out = nonce_solid('one_in_one_out', 1, 1)
+    two_in_one_out = nonce_solid('two_in_one_out', 2, 1)
+
+    solid_a = nonce_solid('no_in_two_out', 0, 2).alias('solid_a')
+    solid_b = one_in_one_out.alias('solid_b')
+    solid_c = nonce_solid('one_in_two_out', 1, 2).alias('solid_c')
+    solid_d = two_in_one_out.alias('solid_d')
+    solid_e = one_in_one_out.alias('solid_e')
+    solid_f = two_in_one_out.alias('soild_f')
+    solid_g = nonce_solid('one_in_none_out', 1, 0).alias('solid_g')
+
+    a_0, a_1 = solid_a()
+    b = solid_b(input_0=a_0)
+    c_0, _c_1 = solid_c(input_0=a_1)
+    d = solid_d(input_0=b, input_1=c_0)
+    e = solid_e(input_0=c_0)
+    f = solid_f(input_0=d, input_1=e)
+    solid_g(input_0=f)

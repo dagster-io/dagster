@@ -167,8 +167,8 @@ def define_repository():
             'multi_mode_with_resources': define_multi_mode_with_resources_pipeline,
             'multi_mode_with_loggers': define_multi_mode_with_loggers_pipeline,
             'composites_pipeline': define_composites_pipeline,
-            'materialization_pipeline': materialization_pipeline,
         },
+        pipeline_defs=[materialization_pipeline],
     )
 
 

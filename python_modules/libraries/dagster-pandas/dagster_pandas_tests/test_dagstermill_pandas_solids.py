@@ -9,7 +9,7 @@ def test_papermill_pandas_hello_world_pipeline():
     handle = handle_for_pipeline_cli_args(
         {
             'module_name': 'dagster_pandas.examples',
-            'fn_name': 'define_papermill_pandas_hello_world_pipeline',
+            'fn_name': 'papermill_pandas_hello_world_pipeline',
         }
     )
 

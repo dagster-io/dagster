@@ -11,22 +11,20 @@ from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error
-def get_pipeline(graphene_info, selector):
+def get_pipeline_or_error(graphene_info, selector):
     return get_dauphin_pipeline_from_selector(graphene_info, selector)
 
 
-@capture_dauphin_error
 def get_pipeline_or_raise(graphene_info, selector):
     return get_dauphin_pipeline_from_selector(graphene_info, selector)
 
 
 @capture_dauphin_error
-def get_pipelines(graphene_info):
+def get_pipelines_or_error(graphene_info):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     return _get_pipelines(graphene_info)
 
 
-@capture_dauphin_error
 def get_pipelines_or_raise(graphene_info):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     return _get_pipelines(graphene_info)

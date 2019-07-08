@@ -87,9 +87,9 @@ def define_multi_mode_with_resources_pipeline():
 
 
 def define_repository():
-    return RepositoryDefinition.eager_construction(
+    return RepositoryDefinition(
         name='dagster_test_repository',
-        pipelines=[
+        pipeline_defs=[
             define_empty_pipeline(),
             define_single_mode_pipeline(),
             define_multi_mode_pipeline(),

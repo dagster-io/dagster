@@ -8,24 +8,19 @@ from dagster.cli.pipeline import do_execute_command, print_pipeline
 from dagster.core.errors import DagsterExecutionStepExecutionError
 
 from dagster_pandas.examples.pandas_hello_world.pipeline import (
-    define_pandas_hello_world_pipeline,
+    pandas_hello_world,
     define_failure_pipeline,
 )
 
 
-def test_pipeline_include():
-    assert define_pandas_hello_world_pipeline()
-
-
 def test_execute_pipeline():
-    pipeline = define_pandas_hello_world_pipeline()
     environment = {
         'solids': {
             'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
         }
     }
 
-    result = execute_pipeline(pipeline, environment_dict=environment)
+    result = execute_pipeline(pandas_hello_world, environment_dict=environment)
 
     assert result.success
 
@@ -53,7 +48,7 @@ def test_cli_execute():
         os.chdir(script_relative_path('../..'))
 
         do_execute_command(
-            pipeline=define_pandas_hello_world_pipeline(),
+            pipeline=pandas_hello_world,
             env_file_list=[
                 script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yaml')
             ],
@@ -88,9 +83,5 @@ def test_cli_execute_failure():
 
 
 def test_cli_print():
-    print_pipeline(
-        define_pandas_hello_world_pipeline(), full=False, print_fn=lambda *_args, **_kwargs: None
-    )
-    print_pipeline(
-        define_pandas_hello_world_pipeline(), full=True, print_fn=lambda *_args, **_kwargs: None
-    )
+    print_pipeline(pandas_hello_world, full=False, print_fn=lambda *_args, **_kwargs: None)
+    print_pipeline(pandas_hello_world, full=True, print_fn=lambda *_args, **_kwargs: None)
