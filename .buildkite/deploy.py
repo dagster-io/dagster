@@ -37,6 +37,7 @@ def deploy_scala():
                 'GCP_DEPLOY_BUCKET',
             ],
         )
+        .on_medium_instance()
         .build()
     )
 
