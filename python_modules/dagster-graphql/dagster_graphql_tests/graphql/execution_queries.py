@@ -35,7 +35,7 @@ fragment stepEventFragment on StepEvent {
     }
     ... on ExecutionStepInputEvent {
         step { key kind }
-        inputName 
+        inputName
         typeCheck {
             label
             description
@@ -204,3 +204,15 @@ subscription subscribeTest($runId: ID!) {
 }
 '''
 )
+
+
+PIPELINE_REEXECUTION_INFO_QUERY = '''
+query ReexecutionInfoQuery($runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on PipelineRun {
+        stepKeysToExecute
+      }
+    }
+  }
+'''

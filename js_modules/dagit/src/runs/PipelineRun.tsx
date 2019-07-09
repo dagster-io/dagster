@@ -94,6 +94,7 @@ export class PipelineRun extends React.Component<
             }
           }
         }
+        stepKeysToExecute
       }
 
       ${ExecutionPlan.fragments.ExecutionPlanFragment}
@@ -191,6 +192,10 @@ export class PipelineRun extends React.Component<
     const { logsFilter, logsVW, highlightedError } = this.state;
 
     const logs = run ? run.logs.nodes : undefined;
+    const stepKeysToExecute: (string | null)[] | null = run
+      ? run.stepKeysToExecute
+      : null;
+
     const executionPlan: PipelineRunFragment_executionPlan = run
       ? run.executionPlan
       : { __typename: "ExecutionPlan", steps: [], artifactsPersisted: false };
@@ -235,6 +240,7 @@ export class PipelineRun extends React.Component<
                 <ExecutionPlan
                   runMetadata={metadata}
                   executionPlan={executionPlan}
+                  stepKeysToExecute={stepKeysToExecute}
                   onShowStateDetails={this.onShowStateDetails}
                   onReexecuteStep={stepKey =>
                     this.onReexecute(reexecuteMutation, stepKey)
