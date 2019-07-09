@@ -77,7 +77,7 @@ def dataframe_input_schema(_context, file_type, file_options):
     elif file_type == 'parquet':
         return pd.read_parquet(file_options['path'])
     elif file_type == 'table':
-        return pd.read_table(file_options['path'])
+        return pd.read_csv(file_options['path'], sep='\t')
     else:
         raise DagsterInvariantViolationError(
             'Unsupported file_type {file_type}'.format(file_type=file_type)

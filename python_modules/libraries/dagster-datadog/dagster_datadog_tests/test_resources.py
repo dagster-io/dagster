@@ -1,4 +1,4 @@
-from dagster import execute_pipeline, solid, ModeDefinition, PipelineDefinition
+from dagster import execute_pipeline, pipeline, solid, ModeDefinition
 from dagster.seven import mock
 from dagster_datadog import datadog_resource
 
@@ -67,14 +67,12 @@ def test_datadog_resource(
         run_fn()
         timed.assert_called_with('run_fn')
 
-    pipeline = PipelineDefinition(
-        name='test_datadog_resource',
-        solid_defs=[datadog_solid],
-        mode_defs=[ModeDefinition(resource_defs={'datadog': datadog_resource})],
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={'datadog': datadog_resource})])
+    def datadog_resource_pipeline():
+        datadog_solid()  # pylint: disable=no-value-for-parameter
 
     result = execute_pipeline(
-        pipeline,
+        datadog_resource_pipeline,
         {'resources': {'datadog': {'config': {'api_key': 'NOT_USED', 'app_key': 'NOT_USED'}}}},
     )
     assert result.success

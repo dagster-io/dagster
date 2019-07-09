@@ -317,7 +317,6 @@ def test_more_complicated_works():
         },
         mode='default',
     )
-
     assert not result.errors
     assert result.data
     valid_data = result.data['isPipelineConfigValid']
@@ -571,7 +570,7 @@ fragment configTypeFragment on ConfigType {
         ...configTypeFragment
       }
     }
-  } 
+  }
 }
 '''
 
