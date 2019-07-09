@@ -233,8 +233,8 @@ def get_step_input(
             input_name, input_def.runtime_type, plan_builder.get_output_handle(solid_output_handle)
         )
 
-    if dependency_structure.has_deps(input_handle):
-        solid_output_handles = dependency_structure.get_deps(input_handle)
+    if dependency_structure.has_multi_deps(input_handle):
+        solid_output_handles = dependency_structure.get_multi_deps(input_handle)
         join_data = create_join_outputs_step(
             plan_builder.pipeline_name,
             input_handle,

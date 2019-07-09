@@ -254,7 +254,13 @@ class InputToOutputHandleDict(defaultdict):
 
     def __setitem__(self, key, val):
         check.inst_param(key, 'key', SolidInputHandle)
-        check.list_param(val, 'val', of_type=SolidOutputHandle)
+        if not (isinstance(val, SolidOutputHandle) or isinstance(val, list)):
+            check.failed(
+                'Value must be SolidOutoutHandle or List[SolidOutputHandle], got {val}'.format(
+                    val=type(val)
+                )
+            )
+
         return defaultdict.__setitem__(self, key, val)
 
 
@@ -265,13 +271,17 @@ def _create_handle_dict(solid_dict, dep_dict):
     handle_dict = InputToOutputHandleDict()
 
     for solid_name, input_dict in dep_dict.items():
+        from_solid = solid_dict[solid_name]
         for input_name, dep_def in input_dict.items():
-            for dep in dep_def.get_definitions():
-                from_solid = solid_dict[solid_name]
-                to_solid = solid_dict[dep.solid]
-                handle_dict[from_solid.input_handle(input_name)].append(
-                    to_solid.output_handle(dep.output)
-                )
+            if dep_def.is_multi():
+                handle_dict[from_solid.input_handle(input_name)] = [
+                    solid_dict[dep.solid].output_handle(dep.output)
+                    for dep in dep_def.get_definitions()
+                ]
+            else:
+                handle_dict[from_solid.input_handle(input_name)] = solid_dict[
+                    dep_def.solid
+                ].output_handle(dep_def.output)
 
     return handle_dict
 
@@ -297,43 +307,67 @@ class DependencyStructure(object):
         return result
 
     def __gen_deps_of_solid(self, solid_name):
-        for input_handle, output_handles in self._handle_dict.items():
+        for input_handle, output_handle_or_list in self._handle_dict.items():
             if input_handle.solid.name == solid_name:
-                for output_handle in output_handles:
-                    yield (input_handle, output_handle)
+                if isinstance(output_handle_or_list, list):
+                    for output_handle in output_handle_or_list:
+                        yield (input_handle, output_handle)
+                else:
+                    yield (input_handle, output_handle_or_list)
 
     def depended_by_of_solid(self, solid_name):
         check.str_param(solid_name, 'solid_name')
         result = defaultdict(list)
-        for input_handle, output_handles in self._handle_dict.items():
-            for output_handle in output_handles:
-                if output_handle.solid.name == solid_name:
-                    result[output_handle].append(input_handle)
+        for input_handle, output_handle_or_list in self._handle_dict.items():
+            if isinstance(output_handle_or_list, list):
+                for output_handle in output_handle_or_list:
+                    if output_handle.solid.name == solid_name:
+                        result[output_handle].append(input_handle)
+            else:
+                if output_handle_or_list.solid.name == solid_name:
+                    result[output_handle_or_list].append(input_handle)
 
         return result
 
     def has_singular_dep(self, solid_input_handle):
         check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
-        return len(self._handle_dict.get(solid_input_handle, [])) == 1
+        return isinstance(self._handle_dict.get(solid_input_handle), SolidOutputHandle)
 
     def get_singular_dep(self, solid_input_handle):
         check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
-        deps = self._handle_dict[solid_input_handle]
+        dep = self._handle_dict[solid_input_handle]
         check.invariant(
-            len(deps) == 1,
-            'Can not call get_singular_dep when number of deps is not 1, got {n}'.format(
-                n=len(deps)
+            isinstance(dep, SolidOutputHandle),
+            'Can not call get_singular_dep when dep is not singular, got {dep}'.format(
+                dep=type(dep)
             ),
         )
-        return deps[0]
+        return dep
+
+    def has_multi_deps(self, solid_input_handle):
+        check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
+        return isinstance(self._handle_dict.get(solid_input_handle), list)
+
+    def get_multi_deps(self, solid_input_handle):
+        check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
+        dep = self._handle_dict[solid_input_handle]
+        check.invariant(
+            isinstance(dep, list),
+            'Can not call get_multi_dep when dep is singular, got {dep}'.format(dep=type(dep)),
+        )
+        return dep
 
     def has_deps(self, solid_input_handle):
         check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
         return solid_input_handle in self._handle_dict
 
-    def get_deps(self, solid_input_handle):
+    def get_deps_list(self, solid_input_handle):
         check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
-        return self._handle_dict[solid_input_handle]
+        check.invariant(self.has_deps(solid_input_handle))
+        if self.has_singular_dep(solid_input_handle):
+            return [self.get_singular_dep(solid_input_handle)]
+        else:
+            return self.get_multi_deps(solid_input_handle)
 
     def input_handles(self):
         return list(self._handle_dict.keys())
@@ -345,6 +379,10 @@ class DependencyStructure(object):
 class IDependencyDefinition(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
     def get_definitions(self):
+        pass
+
+    @abstractmethod
+    def is_multi(self):
         pass
 
 
@@ -378,6 +416,9 @@ class DependencyDefinition(
     def get_definitions(self):
         return [self]
 
+    def is_multi(self):
+        return False
+
 
 class MultiDependencyDefinition(
     namedtuple('_MultiDependencyDefinition', 'dependencies'), IDependencyDefinition
@@ -398,3 +439,6 @@ class MultiDependencyDefinition(
 
     def get_definitions(self):
         return self.dependencies
+
+    def is_multi(self):
+        return True

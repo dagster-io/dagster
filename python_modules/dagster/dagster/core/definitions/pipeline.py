@@ -338,35 +338,25 @@ def _build_sub_pipeline(pipeline_def, solid_names):
     solids = list(map(pipeline_def.solid_named, solid_names))
     deps = {_dep_key_of(solid): {} for solid in solids}
 
-    def _out_handle_of_inp(input_handle):
-        if pipeline_def.dependency_structure.has_deps(input_handle):
-            output_handles = pipeline_def.dependency_structure.get_deps(input_handle)
-            return [
-                output_handle
-                for output_handle in output_handles
-                if output_handle.solid.name in solid_name_set
-            ]
-        return []
-
     for solid in solids:
         for input_handle in solid.input_handles():
-            output_handles = _out_handle_of_inp(input_handle)
-            if output_handles:
-                inner_dep = (
-                    DependencyDefinition(
-                        solid=output_handles[0].solid.name, output=output_handles[0].output_def.name
+            if pipeline_def.dependency_structure.has_singular_dep(input_handle):
+                output_handle = pipeline_def.dependency_structure.get_singular_dep(input_handle)
+                if output_handle.solid.name in solid_name_set:
+                    deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
+                        solid=output_handle.solid.name, output=output_handle.output_def.name
                     )
-                    if len(output_handles) == 1
-                    else MultiDependencyDefinition(
-                        [
-                            DependencyDefinition(
-                                solid=output_handle.solid.name, output=output_handle.output_def.name
-                            )
-                            for output_handle in output_handles
-                        ]
-                    )
+            elif pipeline_def.dependency_structure.has_multi_deps(input_handle):
+                output_handles = pipeline_def.dependency_structure.get_multi_deps(input_handle)
+                deps[_dep_key_of(solid)][input_handle.input_def.name] = MultiDependencyDefinition(
+                    [
+                        DependencyDefinition(
+                            solid=output_handle.solid.name, output=output_handle.output_def.name
+                        )
+                        for output_handle in output_handles
+                        if output_handle.solid.name in solid_name_set
+                    ]
                 )
-                deps[_dep_key_of(solid)][input_handle.input_def.name] = inner_dep
 
     return PipelineDefinition(
         name=pipeline_def.name,

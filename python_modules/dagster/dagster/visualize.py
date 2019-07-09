@@ -18,7 +18,7 @@ def build_graphviz_graph(pipeline, only_solids):
             for name in solid.input_dict.keys():
                 input_handle = solid.input_handle(name)
                 if pipeline.dependency_structure.has_deps(input_handle):
-                    output_handles = pipeline.dependency_structure.get_deps(input_handle)
+                    output_handles = pipeline.dependency_structure.get_deps_list(input_handle)
                     for output_handle in output_handles:
                         graphviz_graph.edge(output_handle.solid.name, solid.name)
 
@@ -34,7 +34,7 @@ def build_graphviz_graph(pipeline, only_solids):
                 graphviz_graph.edge(scoped_name, solid.name)
                 input_handle = solid.input_handle(name)
                 if pipeline.dependency_structure.has_deps(input_handle):
-                    output_handles = pipeline.dependency_structure.get_deps(input_handle)
+                    output_handles = pipeline.dependency_structure.get_deps_list(input_handle)
                     for output_handle in output_handles:
                         graphviz_graph.edge(output_handle.solid.name, scoped_name)
 

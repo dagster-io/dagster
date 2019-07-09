@@ -116,6 +116,18 @@ def test_dsl():
     assert result.success
 
 
+def test_collect_one():
+    @lambda_solid
+    def collect_one(list_arg):
+        assert list_arg == ['one']
+
+    @pipeline
+    def multi_one():
+        collect_one([emit_str()])
+
+    assert execute_pipeline(multi_one).success
+
+
 def test_bad_dsl():
 
     with pytest.raises(DagsterInvalidDefinitionError, match='list containing invalid types'):
