@@ -11,22 +11,20 @@ from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error
-def get_pipeline(graphene_info, selector):
+def get_pipeline_or_error(graphene_info, selector):
     return get_dauphin_pipeline_from_selector(graphene_info, selector)
 
 
-@capture_dauphin_error
 def get_pipeline_or_raise(graphene_info, selector):
     return get_dauphin_pipeline_from_selector(graphene_info, selector)
 
 
 @capture_dauphin_error
-def get_pipelines(graphene_info):
+def get_pipelines_or_error(graphene_info):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     return _get_pipelines(graphene_info)
 
 
-@capture_dauphin_error
 def get_pipelines_or_raise(graphene_info):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     return _get_pipelines(graphene_info)
@@ -35,7 +33,7 @@ def get_pipelines_or_raise(graphene_info):
 def _get_pipelines(graphene_info):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
 
-    repository = graphene_info.context.repository_definition
+    repository = graphene_info.context.get_repository()
 
     try:
         pipeline_instances = []
@@ -61,13 +59,13 @@ def _get_pipelines(graphene_info):
 def get_dagster_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
-    repository = graphene_info.context.repository_definition
+    repository = graphene_info.context.get_repository()
     if not repository.has_pipeline(selector.name):
         raise UserFacingGraphQLError(
             graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=selector.name)
         )
 
-    orig_pipeline = repository.get_pipeline(selector.name)
+    orig_pipeline = graphene_info.context.get_pipeline(selector.name)
     if selector.solid_subset:
         for solid_name in selector.solid_subset:
             if not orig_pipeline.has_solid_named(solid_name):

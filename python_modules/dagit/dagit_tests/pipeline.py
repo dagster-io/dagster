@@ -1,9 +1,8 @@
 from dagster import (
-    DependencyDefinition,
+    pipeline,
     InputDefinition,
     Int,
     OutputDefinition,
-    PipelineDefinition,
     RepositoryDefinition,
     lambda_solid,
 )
@@ -19,13 +18,10 @@ def mult_two(num):
     return num * 2
 
 
-def define_pandas_hello_world():
-    return PipelineDefinition(
-        name='math',
-        solid_defs=[add_one, mult_two],
-        dependencies={'add_one': {}, 'mult_two': {'num': DependencyDefinition(add_one.name)}},
-    )
+@pipeline
+def math():
+    return mult_two(num=add_one())  # pylint: disable=no-value-for-parameter
 
 
 def define_repository():
-    return RepositoryDefinition(name='test', pipeline_dict={'math': define_pandas_hello_world})
+    return RepositoryDefinition(name='test', pipeline_dict={'math': math})

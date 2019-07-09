@@ -7,7 +7,6 @@ import uuid
 
 import nbformat
 import papermill
-import scrapbook
 import six
 
 from papermill.engines import papermill_engines
@@ -222,6 +221,9 @@ def _dm_solid_transform(name, notebook_path):
                 finally:
                     is_done.set()
                     log_watcher_thread.join()
+
+            # deferred import for perf
+            import scrapbook
 
             output_nb = scrapbook.read_notebook(temp_path)
 

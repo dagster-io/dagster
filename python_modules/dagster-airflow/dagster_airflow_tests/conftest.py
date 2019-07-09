@@ -77,7 +77,7 @@ def create_airflow_dags(clean_airflow_home):
             '--module-name',
             'dagster_examples.toys.log_spew',
             '--pipeline-name',
-            'define_spew_pipeline',
+            'log_spew',
         ],
     )
     runner.invoke(

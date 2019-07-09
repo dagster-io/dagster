@@ -9,7 +9,7 @@ class RepositoryDefinition(object):
 
     Args:
         name (str): The name of the pipeline.
-        pipeline_dict (Dict[str, Union[callable, PipelineDefinition]):
+        pipeline_dict (Dict[str, callable]):
             An dictionary of pipelines. The value of the dictionary is a function that takes
             no parameters and returns a PipelineDefiniton.
 
@@ -18,75 +18,41 @@ class RepositoryDefinition(object):
 
             As the pipelines are retrieved it ensures that the keys of the dictionary and the
             name of the pipeline are the same.
+        pipeline_defs (List[PipelineDefinition]):
+            A list of instantiated pipeline definitions.
     '''
 
-    def __init__(self, name, pipeline_dict):
+    def __init__(self, name, pipeline_dict=None, pipeline_defs=None):
         self.name = check.str_param(name, 'name')
 
-        check.dict_param(pipeline_dict, 'pipeline_dict', key_type=str)
+        pipeline_dict = check.opt_dict_param(pipeline_dict, 'pipeline_dict', key_type=str)
+        pipeline_defs = check.opt_list_param(pipeline_defs, 'pipeline_defs', PipelineDefinition)
 
         for val in pipeline_dict.values():
-            check.invariant(
-                callable(val) or isinstance(val, PipelineDefinition),
-                (
-                    'Value in pipeline_dict must be function, an @pipeline function, '
-                    'or a PipelineDefinition instance '
-                ),
-            )
+            check.is_callable(val, 'Value in pipeline_dict must be function')
 
-        self.pipeline_dict = pipeline_dict
+        self._lazy_pipeline_dict = pipeline_dict
 
         self._pipeline_cache = {}
+        self._pipeline_names = set(pipeline_dict.keys())
+        for defn in pipeline_defs:
+            check.invariant(
+                defn.name not in self._pipeline_names,
+                'Duplicate pipelines named {name}'.format(name=defn.name),
+            )
+            self._pipeline_names.add(defn.name)
+            self._pipeline_cache[defn.name] = defn
+
         self._all_pipelines = None
         self._solid_defs = None
 
     @property
     def pipeline_names(self):
-        return list(self.pipeline_dict.keys())
-
-    @staticmethod
-    def eager_construction(name, pipelines, *args, **kwargs):
-        '''Useful help when you are unconcerned about the the performance of
-        pipeline construction. You can just pass a list of pipelines and it will
-        handle constructing the dictionary of pipeline name to functions for you'''
-
-        check.list_param(pipelines, 'pipelines', of_type=PipelineDefinition)
-
-        # avoids lint violation cell-var-from-loop and crazy loop scoping rules
-        # see https://stackoverflow.com/questions/12423614/
-        def lambdify(item):
-            return lambda: item
-
-        return RepositoryDefinition(
-            name, {pipeline.name: lambdify(pipeline) for pipeline in pipelines}, *args, **kwargs
-        )
+        return self._pipeline_names
 
     def has_pipeline(self, name):
         check.str_param(name, 'name')
-        return name in self.pipeline_dict
-
-    def _resolve_pipeline(self, name):
-        check.str_param(name, 'name')
-        if name not in self.pipeline_dict:
-            raise DagsterInvariantViolationError(
-                'Could not find pipeline "{name}". Found: {pipeline_names}.'.format(
-                    name=name,
-                    pipeline_names=', '.join(
-                        [
-                            '"{pipeline_name}"'.format(pipeline_name=pipeline_name)
-                            for pipeline_name in self.pipeline_dict.keys()
-                        ]
-                    ),
-                )
-            )
-
-        entry = self.pipeline_dict[name]
-        if isinstance(entry, PipelineDefinition):
-            return entry
-        elif callable(entry):
-            return entry()
-        else:
-            check.failed('Should be pipeline or callable')
+        return name in self._pipeline_names
 
     def get_pipeline(self, name):
         '''Get a pipeline by name. Only constructs that pipeline and caches it.
@@ -102,7 +68,26 @@ class RepositoryDefinition(object):
         if name in self._pipeline_cache:
             return self._pipeline_cache[name]
 
-        pipeline = self._resolve_pipeline(name)
+        try:
+            pipeline = self._lazy_pipeline_dict[name]()
+        except KeyError:
+            raise DagsterInvariantViolationError(
+                'Could not find pipeline "{name}". Found: {pipeline_names}.'.format(
+                    name=name,
+                    pipeline_names=', '.join(
+                        [
+                            '"{pipeline_name}"'.format(pipeline_name=pipeline_name)
+                            for pipeline_name in self._pipeline_names
+                        ]
+                    ),
+                )
+            )
+        check.invariant(
+            pipeline.name == name,
+            'Name does not match. Name in dict {name}. Name in pipeline {pipeline.name}'.format(
+                name=name, pipeline=pipeline
+            ),
+        )
 
         self._pipeline_cache[name] = check.inst(
             pipeline,
@@ -125,7 +110,7 @@ class RepositoryDefinition(object):
         if self._all_pipelines:
             return self._all_pipelines
 
-        self._all_pipelines = list(map(self.get_pipeline, self.pipeline_dict.keys()))
+        self._all_pipelines = list(map(self.get_pipeline, self._pipeline_names))
         # This does uniqueness check
         self.get_all_solid_defs()
         return self._all_pipelines

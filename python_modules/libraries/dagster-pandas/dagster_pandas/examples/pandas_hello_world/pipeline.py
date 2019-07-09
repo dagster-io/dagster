@@ -1,11 +1,10 @@
 from dagster import (
-    DependencyDefinition,
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    PresetDefinition,
     file_relative_path,
     lambda_solid,
+    pipeline,
+    InputDefinition,
+    OutputDefinition,
+    PresetDefinition,
 )
 import dagster_pandas as dagster_pd
 
@@ -38,37 +37,28 @@ def always_fails_solid(**_kwargs):
     raise Exception('I am a programmer and I make error')
 
 
-def define_failure_pipeline():
-    return PipelineDefinition(
-        name='pandas_hello_world_fails',
-        solid_defs=[sum_solid, sum_sq_solid, always_fails_solid],
-        dependencies={
-            'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
-            'always_fails_solid': {'sum_sq_solid': DependencyDefinition(sum_sq_solid.name)},
-        },
+@pipeline
+def pandas_hello_world_fails():
+    always_fails_solid(
+        sum_sq_solid=sum_sq_solid(sum_df=sum_solid())  # pylint: disable=no-value-for-parameter
     )
 
 
-def define_pandas_hello_world_pipeline():
-    return PipelineDefinition(
-        name='pandas_hello_world',
-        solid_defs=[sum_solid, sum_sq_solid],
-        dependencies={
-            'sum_solid': {},
-            'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
-        },
-        preset_defs=[
-            PresetDefinition(
-                'test',
-                environment_files=[
-                    file_relative_path(__file__, 'environments/pandas_hello_world_test.yaml')
-                ],
-            ),
-            PresetDefinition(
-                'prod',
-                environment_files=[
-                    file_relative_path(__file__, 'environments/pandas_hello_world_prod.yaml')
-                ],
-            ),
-        ],
-    )
+@pipeline(
+    preset_defs=[
+        PresetDefinition(
+            'test',
+            environment_files=[
+                file_relative_path(__file__, 'environments/pandas_hello_world_test.yaml')
+            ],
+        ),
+        PresetDefinition(
+            'prod',
+            environment_files=[
+                file_relative_path(__file__, 'environments/pandas_hello_world_prod.yaml')
+            ],
+        ),
+    ]
+)
+def pandas_hello_world():
+    sum_sq_solid(sum_solid())  # pylint: disable=no-value-for-parameter

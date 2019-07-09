@@ -25,7 +25,3 @@ def multiply(arg_b, arg_c):
 def actual_dag_pipeline():
     one = return_one()
     multiply(multiply_by_two(one), multiply_by_three(one))
-
-
-def define_actual_dag_pipeline():
-    return actual_dag_pipeline

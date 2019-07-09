@@ -80,13 +80,12 @@ export default class LogsFilterProvider<
   runFilter = () => {
     const { nodes, filter } = this.props;
 
-    if (nodes === undefined || isEqual(filter, DefaultLogFilter)) {
+    if (nodes === undefined) {
       this.setState({ results: nodes });
       return;
     }
 
     const textLower = filter.text.toLowerCase();
-
     const nextResults = nodes.filter(node => {
       if (!filter.levels[node.level]) return false;
       if (filter.since && Number(node.timestamp) < filter.since) return false;

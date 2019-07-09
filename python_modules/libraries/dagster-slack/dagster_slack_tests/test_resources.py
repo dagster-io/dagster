@@ -1,6 +1,6 @@
 import responses
 
-from dagster import execute_pipeline, solid, PipelineDefinition, ModeDefinition
+from dagster import execute_pipeline, solid, pipeline, ModeDefinition
 
 from dagster_slack import slack_resource
 
@@ -24,14 +24,12 @@ def test_slack_resource():
             )
             context.resources.slack.chat.post_message()
 
-    pipeline = PipelineDefinition(
-        name='test_slack_resource',
-        solid_defs=[slack_solid],
-        mode_defs=[ModeDefinition(resource_defs={'slack': slack_resource})],
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={'slack': slack_resource})])
+    def test_pipeline():
+        slack_solid()  # pylint: disable=no-value-for-parameter
 
     result = execute_pipeline(
-        pipeline,
+        test_pipeline,
         {'resources': {'slack': {'config': {'token': 'xoxp-1234123412341234-12341234-1234'}}}},
     )
     assert result.success

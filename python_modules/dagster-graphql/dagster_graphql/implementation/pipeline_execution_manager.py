@@ -302,7 +302,8 @@ def execute_pipeline_through_queue(
     )
 
     try:
-        repository = handle.build_repository_definition()
+        handle.build_repository_definition()
+        pipeline_def = handle.with_pipeline_name(pipeline_name).build_pipeline_definition()
     except Exception:  # pylint: disable=broad-except
         repo_error = sys.exc_info()
         message_queue.put(MultiprocessingError(serializable_error_info_from_exc_info(repo_error)))
@@ -310,9 +311,7 @@ def execute_pipeline_through_queue(
 
     try:
         result = execute_pipeline(
-            repository.get_pipeline(pipeline_name).build_sub_pipeline(solid_subset),
-            environment_dict,
-            run_config=run_config,
+            pipeline_def.build_sub_pipeline(solid_subset), environment_dict, run_config=run_config
         )
         return result
     except Exception:  # pylint: disable=broad-except

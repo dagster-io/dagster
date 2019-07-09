@@ -22,9 +22,10 @@ parser.add_argument('--nightly', action='store_true')
 
 
 def _do_setup(name='dagster-ge'):
+    ver = get_version(name)
     setup(
         name=name,
-        version=get_version(name),
+        version=ver,
         author='Elementl',
         license='Apache-2.0',
         description='Great Expectations plugin for Dagster',
@@ -42,7 +43,7 @@ def _do_setup(name='dagster-ge'):
             # standard python 2/3 compatability things
             'enum-compat==0.0.2',
             'future>=0.16.0',
-            'dagster>=0.2.0',
+            'dagster=={ver}'.format(ver=ver),
             'great-expectations>=0.4.2,<=0.5.1',
         ],
     )

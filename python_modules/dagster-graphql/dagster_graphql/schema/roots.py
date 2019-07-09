@@ -11,9 +11,9 @@ from dagster_graphql.implementation.execution import (
 )
 from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
 from dagster_graphql.implementation.fetch_pipelines import (
-    get_pipeline,
+    get_pipeline_or_error,
     get_pipeline_or_raise,
-    get_pipelines,
+    get_pipelines_or_error,
     get_pipelines_or_raise,
 )
 from dagster_graphql.implementation.fetch_runs import (
@@ -104,13 +104,13 @@ class DauphinQuery(dauphin.ObjectType):
         return graphene_info.context.version
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
-        return get_pipeline(graphene_info, kwargs['params'].to_selector())
+        return get_pipeline_or_error(graphene_info, kwargs['params'].to_selector())
 
     def resolve_pipeline(self, graphene_info, **kwargs):
         return get_pipeline_or_raise(graphene_info, kwargs['params'].to_selector())
 
     def resolve_pipelinesOrError(self, graphene_info):
-        return get_pipelines(graphene_info)
+        return get_pipelines_or_error(graphene_info)
 
     def resolve_pipelines(self, graphene_info):
         return get_pipelines_or_raise(graphene_info)

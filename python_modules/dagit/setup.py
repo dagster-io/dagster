@@ -29,9 +29,10 @@ parser.add_argument('--nightly', action='store_true')
 
 
 def _do_setup(name='dagit'):
+    ver = get_version(name)
     setup(
         name=name,
-        version=get_version(name),
+        version=ver,
         author='Elementl',
         license='Apache-2.0',
         description='Web UI for dagster.',
@@ -56,10 +57,8 @@ def _do_setup(name='dagit'):
             'pyyaml==4.2b1',
             # cli
             'click>=6.7',
-            # FIXME: Temporarily loosen restriction while we work out kinks in publish process
-            # See Issue #499
-            'dagster',
-            'dagster-graphql',
+            'dagster=={ver}'.format(ver=ver),
+            'dagster-graphql=={ver}'.format(ver=ver),
             # graphql
             'graphql-core>=2.1',
             # server

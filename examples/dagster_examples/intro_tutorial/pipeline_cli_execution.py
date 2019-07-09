@@ -24,7 +24,4 @@ def demo_execution_pipeline():
 
 
 def define_demo_execution_repo():
-    return RepositoryDefinition(
-        name='demo_execution_repo',
-        pipeline_dict={'demo_execution_pipeline': demo_execution_pipeline},
-    )
+    return RepositoryDefinition(name='demo_execution_repo', pipeline_defs=[demo_execution_pipeline])

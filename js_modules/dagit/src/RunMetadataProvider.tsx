@@ -189,7 +189,6 @@ function extractMetadataFromLogs(
         metadata.steps[stepKey] = produce(
           metadata.steps[stepKey] || {},
           step => {
-            console.log(log.materialization);
             step.materializations.push({
               icon: IStepDisplayIconType.LINK,
               text: log.materialization.label || "Materialization",
