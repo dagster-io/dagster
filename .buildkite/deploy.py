@@ -7,12 +7,13 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(SCRIPT_PATH)
 
 from step_builder import StepBuilder
+from defines import SupportedPython
 
 
 def deploy_scala():
     # GCP tests need appropriate credentials
     creds_local_file = "/tmp/gcp-key-elementl-dev.json"
-    version = "3.7"
+    version = SupportedPython.V3_7
 
     return (
         StepBuilder("scala deploy")
