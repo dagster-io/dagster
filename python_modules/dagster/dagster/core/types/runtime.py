@@ -283,12 +283,14 @@ class Nothing(RuntimeType):
 
 
 class PythonObjectType(RuntimeType):
-    def __init__(self, python_type, key=None, name=None, metadata_fn=None, **kwargs):
+    def __init__(self, python_type, key=None, name=None, typecheck_metadata_fn=None, **kwargs):
         name = check.opt_str_param(name, 'name', type(self).__name__)
         key = check.opt_str_param(key, 'key', name)
         super(PythonObjectType, self).__init__(key=key, name=name, **kwargs)
         self.python_type = check.type_param(python_type, 'python_type')
-        self.metadata_fn = check.opt_callable_param(metadata_fn, 'metadata_fn')
+        self.typecheck_metadata_fn = check.opt_callable_param(
+            typecheck_metadata_fn, 'typecheck_metadata_fn'
+        )
 
     def type_check(self, value):
         from dagster.core.definitions.events import Failure
@@ -300,8 +302,99 @@ class PythonObjectType(RuntimeType):
                 )
             )
 
-        if self.metadata_fn:
-            return self.metadata_fn(value)
+        if self.typecheck_metadata_fn:
+            return self.typecheck_metadata_fn(value)
+
+
+def define_python_dagster_type(
+    python_type,
+    name=None,
+    description=None,
+    input_hydration_config=None,
+    output_materialization_config=None,
+    serialization_strategy=None,
+    auto_plugins=None,
+    typecheck_metadata_fn=None,
+):
+    '''
+    The dagster typesystem is very flexible, and the body of a typecheck can be
+    a function that does *anything*. (For that level of flexiblity one should inherit
+    from RuntimeType directly)  However its very common to want to generate a dagster
+    type whose only typecheck is against a python type:
+
+    DateTime = define_python_dagster_type(datetime.datetime, name='DateTime')
+
+    Args:
+        python_type (cls)
+            The python type you want check against.
+        name (Optional[str]): 
+            Name of the dagster type. Defaults to the name of the python_type. 
+        description (Optiona[str]):
+        input_hydration_config (Optional[InputHydrationConfig]):
+            An instance of a class that inherits from :py:class:`InputHydrationConfig` that
+            can map config data to a value of this type.
+
+        output_materialization_config (Optiona[OutputMaterializationConfig]):
+            An instance of a class that inherits from :py:class:`OutputMaterializationConfig` that
+            can map config data to persisting values of this type.
+
+        serialization_strategy (Optional[SerializationStrategy]):
+            The default behavior for how to serialize this value for persisting between execution
+            steps.
+
+        auto_plugins (Optional[List[type]]):
+            types *must* subclass from TypeStoragePlugin.
+            This allows for types to specify serialization that depends on what storage
+            is being used to serialize intermediates. In these cases the serialization_strategy
+            is not sufficient because serialization requires specialized API calls, e.g.
+            to call an s3 API directly instead of using a generic file object. See
+            dagster_pyspark.DataFrame for an example of auto_plugins.
+
+        typecheck_metadata_fn (Callable):
+            It is used to emit metadata when you successfully check a type. This allows
+            the user specifiy that function that emits that metadata object whenever the typecheck
+            succeeds. The passed in function takes the value being evaluated and returns a
+            TypeCheck event.
+
+            See dagster_pandas.DataFrame for an example
+
+    '''
+    check.type_param(python_type, 'python_type')
+    check.opt_str_param(name, 'name')
+    check.opt_str_param(description, 'description')
+    check.opt_inst_param(input_hydration_config, 'input_hydration_config', InputHydrationConfig)
+    check.opt_inst_param(
+        output_materialization_config, 'output_materialization_config', OutputMaterializationConfig
+    )
+    check.opt_inst_param(
+        serialization_strategy,
+        'serialization_strategy',
+        SerializationStrategy,
+        default=PickleSerializationStrategy(),
+    )
+
+    auto_plugins = check.opt_list_param(auto_plugins, 'auto_plugins', of_type=type)
+    check.param_invariant(
+        all(issubclass(auto_plugin_type, TypeStoragePlugin) for auto_plugin_type in auto_plugins),
+        'auto_plugins',
+    )
+
+    check.opt_callable_param(typecheck_metadata_fn, 'typecheck_metadata_fn')
+
+    class _ObjectType(PythonObjectType):
+        def __init__(self):
+            super(_ObjectType, self).__init__(
+                python_type=python_type,
+                name=name,
+                description=description,
+                input_hydration_config=input_hydration_config,
+                output_materialization_config=output_materialization_config,
+                serialization_strategy=serialization_strategy,
+                auto_plugins=auto_plugins,
+                typecheck_metadata_fn=typecheck_metadata_fn,
+            )
+
+    return _ObjectType
 
 
 def _create_nullable_input_schema(inner_type):

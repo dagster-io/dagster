@@ -22,7 +22,6 @@ to ensure that the object is of type ``pd.DataFrame``.
 Now one can use it to define a solid:
 
 .. code-block:: py
-
    :emphasize-lines: 2
    :linenos:
 
@@ -40,8 +39,10 @@ Input Hydration Config
 
 This solid as defined is only expressed in terms of an in-memory object; it says nothing about
 how this data should be sourced from or materialized to disk. This is where the notion of
-input and output materialization configs come into play. Once the user provides those she is able to use
-the configuration language in order to parameterize the computation.
+input and output materialization configs come into play. Once the user provides those she is
+able to use the configuration language in order to parameterize the computation. Note:
+one can always just write code in an upstream solid *instead* of using the configuration
+system to do so.
 
 Let us now add the input hydration config:
 
