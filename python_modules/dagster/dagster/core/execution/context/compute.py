@@ -56,3 +56,7 @@ class ComputeExecutionContext(StepExecutionContext, AbstractComputeExecutionCont
     @property
     def solid_config(self):
         return self._system_compute_execution_context.solid_config
+
+    @property
+    def run_config(self):
+        return self._system_compute_execution_context.run_config

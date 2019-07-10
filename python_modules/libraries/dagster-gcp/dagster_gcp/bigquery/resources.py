@@ -6,15 +6,16 @@ from google.cloud import bigquery
 from google.cloud.bigquery.client import _DEFAULT_NUM_RETRIES
 from google.cloud.bigquery.retry import DEFAULT_RETRY
 
-from dagster import resource
+from dagster import check, resource
 
 from .configs import bq_resource_config
 from .types import BigQueryError, BigQueryLoadSource
 
 
 class BigQueryClient(bigquery.Client):
-    def __init__(self, project, location):
-        super(BigQueryClient, self).__init__(project=project, location=location)
+    def __init__(self, project=None):
+        check.opt_str_param(project, 'project')
+        super(BigQueryClient, self).__init__(project=project)
 
     def create_dataset(self, dataset, exists_ok=False, retry=DEFAULT_RETRY):
         try:
@@ -92,6 +93,4 @@ class BigQueryClient(bigquery.Client):
     config_field=bq_resource_config(), description='Dagster resource for connecting to BigQuery'
 )
 def bigquery_resource(context):
-    return BigQueryClient(
-        context.resource_config.get('project'), context.resource_config.get('location')
-    )
+    return BigQueryClient(context.resource_config.get('project'))

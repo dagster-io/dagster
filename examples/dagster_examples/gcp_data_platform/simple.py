@@ -1,12 +1,12 @@
-# pylint: disable=too-many-function-args, no-value-for-parameter
-
+import datetime
 import os
 
-from dagster import pipeline, solid, List, ModeDefinition, String
+from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 
-from dagster_gcp import bigquery_resource, dataproc_resource
+from dagster import solid, pipeline, InputDefinition, Nothing
+from dagster_gcp.bigquery.resources import BigQueryClient
+from dagster_gcp.dataproc.resources import DataprocResource
 
-from .solid_operator_shims import bq_sql_solid, dataproc_spark_solid, gcs_to_bigquery_solid
 
 PROJECT_ID = os.getenv('GCP_PROJECT_ID')
 DEPLOY_BUCKET_PREFIX = os.getenv('GCP_DEPLOY_BUCKET_PREFIX')
@@ -16,69 +16,118 @@ OUTPUT_BUCKET = os.getenv('GCP_OUTPUT_BUCKET')
 REGION = 'us-west1'
 LATEST_JAR_HASH = '214f4bff2eccb4e9c08578d96bd329409b7111c8'
 
+DATAPROC_CLUSTER_CONFIG = {
+    'projectId': PROJECT_ID,
+    'clusterName': 'gcp-data-platform',
+    'region': 'us-west1',
+    'cluster_config': {
+        'masterConfig': {'machineTypeUri': 'n1-highmem-4'},
+        'workerConfig': {'numInstances': 0},
+        'softwareConfig': {
+            'properties': {
+                # Create a single-node cluster
+                # This needs to be the string "true" when
+                # serialized, not a boolean true
+                'dataproc:dataproc.allow.zero.workers': 'true'
+            }
+        },
+    },
+}
 
-@solid(description='pass configured output paths to BigQuery load command inputs')
-def output_paths(context, start) -> List[String]:  # pylint: disable=unused-argument
-    return ['gs://acme-co-events-output-dev/{{ ds_as_path }}/*.parquet']  # TODO: can't do this
+
+@solid
+def create_dataproc_cluster(_):
+    DataprocResource(DATAPROC_CLUSTER_CONFIG).create_cluster()
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(resource_defs={'bq': bigquery_resource, 'dataproc': dataproc_resource})
-    ]
-)
-def gcp_pipeline():
-    # create_dataproc_cluster
-    # (not needed) This is configured and managed by Dagster's resource system
-    #
+@solid(input_defs=[InputDefinition('start', Nothing)])
+def data_proc_spark_operator(context):
+    dt = datetime.datetime.fromtimestamp(context.run_config.tags['execution_epoch_time'])
 
-    run_dataproc_spark = dataproc_spark_solid(
-        task_id='events_dataproc',
-        project_id=PROJECT_ID,
-        cluster_name='gcp-data-platform',
-        region=REGION,
-        main_class='io.dagster.events.EventPipeline',
-        dataproc_spark_jars=['%s/events-assembly-%s.jar' % (DEPLOY_BUCKET_PREFIX, LATEST_JAR_HASH)],
-        arguments=[
-            '--gcs-input-bucket',
-            INPUT_BUCKET,
-            '--gcs-output-bucket',
-            OUTPUT_BUCKET,
-            '--date',
-            '{{ ds }}',  # this still won't work b/c Airflow won't template stuff deep in Dagster
-        ],
+    cluster_resource = DataprocResource(DATAPROC_CLUSTER_CONFIG)
+    job_config = {
+        'job': {
+            'placement': {'clusterName': 'gcp-data-platform'},
+            'reference': {'projectId': PROJECT_ID},
+            'sparkJob': {
+                'args': [
+                    '--gcs-input-bucket',
+                    INPUT_BUCKET,
+                    '--gcs-output-bucket',
+                    OUTPUT_BUCKET,
+                    '--date',
+                    dt.strftime('%Y-%m-%d'),
+                ],
+                'mainClass': 'io.dagster.events.EventPipeline',
+                'jarFileUris': [
+                    '%s/events-assembly-%s.jar' % (DEPLOY_BUCKET_PREFIX, LATEST_JAR_HASH)
+                ],
+            },
+        },
+        'projectId': PROJECT_ID,
+        'region': REGION,
+    }
+    job = cluster_resource.submit_job(job_config)
+    job_id = job['reference']['jobId']
+    cluster_resource.wait_for_job(job_id)
+
+
+@solid(input_defs=[InputDefinition('start', Nothing)])
+def delete_dataproc_cluster(_):
+    DataprocResource(DATAPROC_CLUSTER_CONFIG).delete_cluster()
+
+
+@solid(input_defs=[InputDefinition('start', Nothing)])
+def gcs_to_bigquery(context):
+    dt = datetime.datetime.fromtimestamp(context.run_config.tags['execution_epoch_time'])
+    bq = BigQueryClient(PROJECT_ID)
+
+    destination = '{project_id}.events.events${date}'.format(
+        project_id=PROJECT_ID, date=dt.strftime('%Y%m%d')
     )
 
-    # delete_dataproc_cluster
-    # (not needed) This is managed by Dagster's resource system
-
-    gcs_to_bigquery = gcs_to_bigquery_solid(
-        task_id='gcs_to_bigquery',
-        # bucket: Don't need to provide bucket
-        # source_objects: provided by solid input from output_paths
-        destination_project_dataset_table='{project_id}.events.events{{ ds_nodash }}'.format(
-            project_id=PROJECT_ID
-        ),
+    load_job_config = LoadJobConfig(
         source_format='PARQUET',
         create_disposition='CREATE_IF_NEEDED',
         write_disposition='WRITE_TRUNCATE',
     )
 
-    explore_visits_by_hour = bq_sql_solid(
-        task_id='explore_visits_by_hour',
-        sql='''
+    source_uris = [
+        'gs://{bucket}/{date}/*.parquet'.format(bucket=OUTPUT_BUCKET, date=dt.strftime('%Y/%m/%d'))
+    ]
+
+    bq.load_table_from_uri(source_uris, destination, job_config=load_job_config).result()
+
+
+@solid(input_defs=[InputDefinition('start', Nothing)])
+def explore_visits_by_hour(_):
+    bq = BigQueryClient(PROJECT_ID)
+
+    query_job_config = QueryJobConfig(
+        destination='%s.aggregations.explore_visits_per_hour' % PROJECT_ID,
+        create_disposition='CREATE_IF_NEEDED',
+        write_disposition='WRITE_TRUNCATE',
+    )
+
+    sql = '''
    SELECT FORMAT_DATETIME("%F %H:00:00", DATETIME(TIMESTAMP_SECONDS(CAST(timestamp AS INT64)))) AS ts,
           COUNT(1) AS num_visits
      FROM events.events
     WHERE url = '/explore'
  GROUP BY ts
  ORDER BY ts ASC
- ''',
-        destination_dataset_table='aggregations.explore_visits_per_hour',
-        create_disposition='CREATE_IF_NEEDED',
-        write_disposition='WRITE_TRUNCATE',
-        use_legacy_sql=False,
-    )
+'''
+    bq.query(sql, job_config=query_job_config).to_dataframe()
 
-    loaded_events = gcs_to_bigquery(output_paths(run_dataproc_spark()))
-    return explore_visits_by_hour(loaded_events)
+
+@pipeline
+def gcp_data_platform():
+    explore_visits_by_hour(
+        gcs_to_bigquery(
+            delete_dataproc_cluster(
+                data_proc_spark_operator(
+                    create_dataproc_cluster()  # pylint: disable=no-value-for-parameter
+                )
+            )
+        )
+    )
