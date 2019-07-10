@@ -4,7 +4,6 @@ from dagster import (
     CompositeSolidDefinition,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
-    ExpectationResult,
     Field,
     InputDefinition,
     OutputDefinition,
@@ -17,7 +16,6 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions import IOExpectationDefinition
 from dagster.core.utility_solids import (
     create_root_solid,
     create_solid_with_deps,
@@ -161,56 +159,6 @@ def test_mapped_composite_config_input():
     result = execute_pipeline(pipe, {'solids': {'outer': {'inputs': {'outer_one': {'value': 1}}}}})
     assert result.success
     assert called['node_a']
-
-
-def test_mapped_composite_input_expectations():
-    called = {}
-
-    def exp_a(_c, _v):
-        called['exp_a'] = True
-        return ExpectationResult(True)
-
-    @solid(
-        input_defs=[InputDefinition('one', expectations=[IOExpectationDefinition('exp_a', exp_a)])]
-    )
-    def node_a(_context, one):
-        called['node_a'] = True
-        assert one is 1
-
-    def inner_exp(_c, _v):
-        called['inner_exp'] = True
-        return ExpectationResult(True)
-
-    def outer_exp(_c, _v):
-        called['outer_exp'] = True
-        return ExpectationResult(True)
-
-    inner = CompositeSolidDefinition(
-        name='inner',
-        solid_defs=[node_a],
-        input_mappings=[
-            InputDefinition(
-                name='inner_one', expectations=[IOExpectationDefinition('inner_exp', inner_exp)]
-            ).mapping_to('node_a', 'one')
-        ],
-    )
-    outer = CompositeSolidDefinition(
-        name='outer',
-        solid_defs=[inner],
-        input_mappings=[
-            InputDefinition(
-                'outer_one', expectations=[IOExpectationDefinition('outer_exp', outer_exp)]
-            ).mapping_to('inner', 'inner_one')
-        ],
-    )
-    pipe = PipelineDefinition(name='composites_pipeline', solid_defs=[outer])
-
-    result = execute_pipeline(pipe, {'solids': {'outer': {'inputs': {'outer_one': {'value': 1}}}}})
-    assert result.success
-    assert called['node_a']
-    assert called['exp_a']
-    assert called['inner_exp']
-    assert called['outer_exp']
 
 
 def test_composite_io_mapping():

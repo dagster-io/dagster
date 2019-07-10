@@ -12,7 +12,6 @@ from dagster import (
     SolidDefinition,
     execute_pipeline,
 )
-from dagster.core.definitions import IOExpectationDefinition
 
 
 def test_multiple_outputs():
@@ -47,35 +46,24 @@ def test_multiple_outputs_expectations():
 
     def _expect_fn_one(*_args, **_kwargs):
         called['expectation_one'] = True
-        return ExpectationResult(success=True)
+        return True
 
     def _expect_fn_two(*_args, **_kwargs):
         called['expectation_two'] = True
-        return ExpectationResult(success=True)
+        return True
 
     def _compute_fn(*_args, **_kwargs):
-        yield Output('foo', 'output_one')
-        yield Output('bar', 'output_two')
+        output_one_val = 'foo'
+        output_two_val = 'bar'
+        yield ExpectationResult(label='some_expectation', success=_expect_fn_one(output_one_val))
+        yield ExpectationResult(label='some_expectation', success=_expect_fn_two(output_two_val))
+        yield Output(output_one_val, 'output_one')
+        yield Output(output_two_val, 'output_two')
 
     solid = SolidDefinition(
         name='multiple_outputs',
         input_defs=[],
-        output_defs=[
-            OutputDefinition(
-                name='output_one',
-                expectations=[
-                    IOExpectationDefinition(name='some_expectation', expectation_fn=_expect_fn_one)
-                ],
-            ),
-            OutputDefinition(
-                name='output_two',
-                expectations=[
-                    IOExpectationDefinition(
-                        name='some_other_expectation', expectation_fn=_expect_fn_two
-                    )
-                ],
-            ),
-        ],
+        output_defs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
         compute_fn=_compute_fn,
     )
 
