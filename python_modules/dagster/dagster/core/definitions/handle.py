@@ -31,11 +31,11 @@ class LoaderEntrypoint(namedtuple('_LoaderEntrypoint', 'module module_name fn_na
 
         fn_repo_or_pipeline = getattr(self.module, self.fn_name)
 
-        if isinstance(fn_repo_or_pipeline, RepositoryDefinition) or isinstance(
-            fn_repo_or_pipeline, PipelineDefinition
-        ):
+        # This is the @pipeline case
+        if isinstance(fn_repo_or_pipeline, PipelineDefinition):
             inst = fn_repo_or_pipeline
 
+        # This is the define_pipeline() or define_repo() case
         elif callable(fn_repo_or_pipeline):
             repo_or_pipeline = fn_repo_or_pipeline()
 
@@ -270,32 +270,31 @@ class ExecutionTargetHandle:
             # https://github.com/dagster-io/dagster/issues/1439
             if isinstance(obj, PipelineDefinition):
                 return ExecutionTargetHandle.cache_handle(
-                    RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_defs=[obj]),
+                    RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_dict={obj.name: obj}),
                     ExecutionTargetHandle.get_handle(obj),
                 )
             return ExecutionTargetHandle.cache_handle(check.inst(obj, RepositoryDefinition), self)
         elif self.mode == _ExecutionTargetMode.PIPELINE:
-            check.inst(obj, PipelineDefinition)
+            # This handle may have originally targeted a repository and then been qualified with
+            # with_pipeline_name()
+            if isinstance(obj, RepositoryDefinition):
+                return ExecutionTargetHandle.cache_handle(
+                    obj, ExecutionTargetHandle.get_handle(obj)
+                )
+
             return ExecutionTargetHandle.cache_handle(
                 RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_defs=[obj]),
                 ExecutionTargetHandle.get_handle(obj),
             )
-        else:
-            check.failed('Unhandled mode {mode}'.format(mode=self.mode))
 
     def build_pipeline_definition(self):
         '''Rehydrates a PipelineDefinition from an ExecutionTargetHandle object.
         '''
         if self.mode == _ExecutionTargetMode.REPOSITORY:
-            check.invariant(
-                self.data.pipeline_name is not None,
+            raise DagsterInvariantViolationError(
                 'Cannot construct a pipeline from a repository-based ExecutionTargetHandle without'
                 ' a pipeline name. Use with_pipeline_name() to construct a pipeline'
-                ' ExecutionTargetHandle.',
-            )
-            obj = self.entrypoint.perform_load()
-            return ExecutionTargetHandle.cache_handle(
-                obj.get_pipeline(self.data.pipeline_name), self
+                ' ExecutionTargetHandle.'
             )
         elif self.mode == _ExecutionTargetMode.PIPELINE:
             obj = self.entrypoint.perform_load()
