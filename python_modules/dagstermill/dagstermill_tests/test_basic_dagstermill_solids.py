@@ -9,7 +9,7 @@ import pytest
 from dagster import execute_pipeline, RunConfig
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 
-from dagstermill import DagstermillError  # , define_dagstermill_solid
+from dagstermill import DagstermillError, DagstermillExecutionError
 
 from dagster.core.definitions.events import PathMetadataEntryData
 
@@ -241,3 +241,13 @@ def test_resources_notebook_with_exception():
     finally:
         if os.path.exists(path):
             os.unlink(path)
+
+
+@pytest.mark.notebook_test
+def test_bad_kernel():
+    with pytest.raises(
+        DagstermillExecutionError,
+        match='Error occurred during the execution of Dagstermill solid bad_kernel_solid',
+    ):
+        with exec_for_test('define_bad_kernel_pipeline'):
+            pass
