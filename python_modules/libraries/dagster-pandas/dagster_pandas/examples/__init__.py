@@ -9,7 +9,6 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
-    PipelineDefinition,
     RepositoryDefinition,
     PresetDefinition,
     execute_pipeline,

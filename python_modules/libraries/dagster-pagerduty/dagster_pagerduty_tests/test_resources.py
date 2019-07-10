@@ -1,6 +1,6 @@
 import responses
 
-from dagster import execute_pipeline, solid, PipelineDefinition, ModeDefinition
+from dagster import execute_pipeline, pipeline, solid, ModeDefinition
 
 from dagster_pagerduty import pagerduty_resource
 
@@ -31,14 +31,12 @@ def test_pagerduty_resource():
                 custom_details={'ping time': '1500ms', 'load avg': 0.75},
             )
 
-    pipeline = PipelineDefinition(
-        name='test_pagerduty_resource',
-        solid_defs=[pagerduty_solid],
-        mode_defs=[ModeDefinition(resource_defs={'pagerduty': pagerduty_resource})],
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={'pagerduty': pagerduty_resource})])
+    def pagerduty_resource_pipeline():
+        pagerduty_solid()  # pylint: disable=no-value-for-parameter
 
     result = execute_pipeline(
-        pipeline,
+        pagerduty_resource_pipeline,
         {
             'resources': {
                 'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}

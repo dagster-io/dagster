@@ -9,7 +9,6 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    SolidInvocation,
     String,
     composite_solid,
     dagster_type,
@@ -34,39 +33,47 @@ def test_composite_basic_execution():
     node_c = create_solid_with_deps('C', node_a)
     node_d = create_solid_with_deps('D', node_b, node_c)
 
-    diamond_composite = CompositeSolidDefinition(
-        name='diamond_composite',
-        solid_defs=[a_source, node_a, node_b, node_c, node_d],
-        dependencies={
-            'A': {'A_input': DependencyDefinition('A_source')},
-            'B': {'A': DependencyDefinition('A')},
-            'C': {'A': DependencyDefinition('A')},
-            'D': {'B': DependencyDefinition('B'), 'C': DependencyDefinition('C')},
-        },
-    )
+    @composite_solid
+    def diamond_composite():
+        a = node_a(a_source())
+        node_d(B=node_b(a), C=node_c(a))
 
-    result = execute_pipeline(PipelineDefinition(solid_defs=[diamond_composite]))
+    @pipeline
+    def test_pipeline_single():
+        diamond_composite()
+
+    result = execute_pipeline(test_pipeline_single)
     assert result.success
 
-    result = execute_pipeline(
-        PipelineDefinition(
-            solid_defs=[diamond_composite],
-            dependencies={
-                SolidInvocation('diamond_composite', alias='D1'): {},
-                SolidInvocation('diamond_composite', alias='D2'): {},
-            },
-        )
-    )
+    @pipeline
+    def test_pipeline_double():
+        diamond_composite.alias('D1')()
+        diamond_composite.alias('D2')()
+
+    result = execute_pipeline(test_pipeline_double)
     assert result.success
 
-    wrapped_composite = CompositeSolidDefinition(
-        name='wrapped_composite', solid_defs=[diamond_composite]
-    )
-    result = execute_pipeline(PipelineDefinition(solid_defs=[diamond_composite, wrapped_composite]))
+    @composite_solid
+    def wrapped_composite():
+        diamond_composite()
+
+    @pipeline
+    def test_pipeline_mixed():
+        diamond_composite()
+        wrapped_composite()
+
+    result = execute_pipeline(test_pipeline_mixed)
     assert result.success
 
-    empty_composite = CompositeSolidDefinition(name='empty', solid_defs=[])
-    result = execute_pipeline(PipelineDefinition(solid_defs=[empty_composite]))
+    @composite_solid
+    def empty():
+        pass
+
+    @pipeline
+    def test_pipeline_empty():
+        empty()
+
+    result = execute_pipeline(test_pipeline_empty)
     assert result.success
 
 
@@ -78,11 +85,20 @@ def test_composite_config():
         called['configured'] = True
         assert context.solid_config is 'yes'
 
-    inner = CompositeSolidDefinition(name='inner', solid_defs=[configured])
-    outer = CompositeSolidDefinition(name='outer', solid_defs=[inner])
-    pipe = PipelineDefinition(name='composites_pipeline', solid_defs=[outer])
+    @composite_solid
+    def inner():
+        configured()  # pylint: disable=no-value-for-parameter
+
+    @composite_solid
+    def outer():
+        inner()
+
+    @pipeline
+    def composites_pipeline():
+        outer()
+
     result = execute_pipeline(
-        pipe,
+        composites_pipeline,
         {'solids': {'outer': {'solids': {'inner': {'solids': {'configured': {'config': 'yes'}}}}}}},
     )
     assert result.success
@@ -97,11 +113,20 @@ def test_composite_config_input():
         called['node_a'] = True
         assert one is 1
 
-    inner = CompositeSolidDefinition(name='inner', solid_defs=[node_a])
-    outer = CompositeSolidDefinition(name='outer', solid_defs=[inner])
-    pipe = PipelineDefinition(name='composites_pipeline', solid_defs=[outer])
+    @composite_solid
+    def inner():
+        node_a()  # pylint: disable=no-value-for-parameter
+
+    @composite_solid
+    def outer():
+        inner()
+
+    @pipeline
+    def composites_pipeline():
+        outer()
+
     result = execute_pipeline(
-        pipe,
+        composites_pipeline,
         {
             'solids': {
                 'outer': {
@@ -122,11 +147,10 @@ def test_mapped_composite_config_input():
         called['node_a'] = True
         assert one is 1
 
-    inner = CompositeSolidDefinition(
-        name='inner',
-        solid_defs=[node_a],
-        input_mappings=[InputDefinition('inner_one').mapping_to('node_a', 'one')],
-    )
+    @composite_solid
+    def inner(inner_one):
+        node_a(inner_one)  # pylint: disable=no-value-for-parameter
+
     outer = CompositeSolidDefinition(
         name='outer',
         solid_defs=[inner],
@@ -228,13 +252,12 @@ def test_composite_io_mapping():
             )
         ],
     )
-    result = execute_pipeline(
-        PipelineDefinition(
-            name='wrapped_io',
-            solid_defs=[comp_a_outer, comp_bc_outer],
-            dependencies={'comp_bc_outer': {'outer_B_in': DependencyDefinition('comp_a_outer')}},
-        )
-    )
+
+    @pipeline
+    def wrapped_io():
+        comp_bc_outer(comp_a_outer())
+
+    result = execute_pipeline(wrapped_io)
     assert result.success
 
 
@@ -259,13 +282,19 @@ def test_types_descent():
     def inner_solid(_context):
         return Foo()
 
-    middle_solid = CompositeSolidDefinition(name='middle_solid', solid_defs=[inner_solid])
+    @composite_solid
+    def middle_solid():
+        inner_solid()  # pylint: disable=no-value-for-parameter
 
-    outer_solid = CompositeSolidDefinition(name='outer_solid', solid_defs=[middle_solid])
+    @composite_solid
+    def outer_solid():
+        middle_solid()
 
-    pipe = PipelineDefinition(name='layered_types', solid_defs=[outer_solid])
+    @pipeline
+    def layered_types():
+        outer_solid()
 
-    assert pipe.has_runtime_type('Foo')
+    assert layered_types.has_runtime_type('Foo')
 
 
 def test_deep_mapping():

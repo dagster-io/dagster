@@ -5,12 +5,11 @@ import pytest
 import pandas as pd
 
 from dagster import (
-    DependencyDefinition,
     InputDefinition,
     DagsterInvalidConfigError,
-    PipelineDefinition,
     OutputDefinition,
     execute_pipeline,
+    pipeline,
     solid,
 )
 
@@ -44,10 +43,12 @@ def test_dataframe_csv_from_inputs():
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
 
-    pipeline = PipelineDefinition(solid_defs=[df_as_config])
+    @pipeline
+    def test_pipeline():
+        return df_as_config()  # pylint: disable=no-value-for-parameter
 
     result = execute_pipeline(
-        pipeline,
+        test_pipeline,
         {
             'solids': {
                 'df_as_config': {
@@ -70,10 +71,12 @@ def test_dataframe_wrong_sep_from_inputs():
         assert df.to_dict('list') == {'num1,num2': ['1,2', '3,4']}
         called['yup'] = True
 
-    pipeline = PipelineDefinition(solid_defs=[df_as_config])
+    @pipeline
+    def test_pipeline():
+        return df_as_config()  # pylint: disable=no-value-for-parameter
 
     result = execute_pipeline(
-        pipeline,
+        test_pipeline,
         {
             'solids': {
                 'df_as_config': {
@@ -95,10 +98,12 @@ def test_dataframe_pipe_sep_csv_from_inputs():
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
 
-    pipeline = PipelineDefinition(solid_defs=[df_as_config])
+    @pipeline
+    def test_pipeline():
+        return df_as_config()  # pylint: disable=no-value-for-parameter
 
     result = execute_pipeline(
-        pipeline,
+        test_pipeline,
         {
             'solids': {
                 'df_as_config': {
@@ -121,9 +126,12 @@ def test_dataframe_csv_missing_inputs():
     def df_as_input(_context, df):  # pylint: disable=W0613
         called['yup'] = True
 
-    pipeline = PipelineDefinition(name='missing_inputs', solid_defs=[df_as_input])
+    @pipeline
+    def missing_inputs():
+        return df_as_input()  # pylint: disable=no-value-for-parameter
+
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        execute_pipeline(pipeline)
+        execute_pipeline(missing_inputs)
 
     assert len(exc_info.value.errors) == 1
     print(exc_info.value.errors[0].message)
@@ -148,14 +156,13 @@ def test_dataframe_csv_missing_input_collision():
     def df_as_input(_context, df):  # pylint: disable=W0613
         called['yup'] = True
 
-    pipeline = PipelineDefinition(
-        name='overlapping',
-        solid_defs=[df_as_input, df_as_output],
-        dependencies={'df_as_input': {'df': DependencyDefinition('df_as_output')}},
-    )
+    @pipeline
+    def overlapping():
+        return df_as_input(df_as_output())  # pylint: disable=no-value-for-parameter
+
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(
-            pipeline,
+            overlapping,
             {
                 'solids': {
                     'df_as_input': {
@@ -182,10 +189,12 @@ def test_dataframe_parquet_from_inputs():
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
 
-    pipeline = PipelineDefinition(solid_defs=[df_as_config])
+    @pipeline
+    def test_pipeline():
+        df_as_config()  # pylint: disable=no-value-for-parameter
 
     result = execute_pipeline(
-        pipeline,
+        test_pipeline,
         {
             'solids': {
                 'df_as_config': {
@@ -207,10 +216,12 @@ def test_dataframe_table_from_inputs():
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
 
-    pipeline = PipelineDefinition(solid_defs=[df_as_config])
+    @pipeline
+    def test_pipeline():
+        df_as_config()  # pylint: disable=no-value-for-parameter
 
     result = execute_pipeline(
-        pipeline,
+        test_pipeline,
         {
             'solids': {
                 'df_as_config': {
@@ -229,11 +240,13 @@ def test_dataframe_csv_materialization():
     def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
-    pipeline_def = PipelineDefinition(name='return_df_pipeline', solid_defs=[return_df])
+    @pipeline
+    def return_df_pipeline():
+        return_df()  # pylint: disable=no-value-for-parameter
 
     with get_temp_file_name() as filename:
         result = execute_pipeline(
-            pipeline_def,
+            return_df_pipeline,
             {'solids': {'return_df': {'outputs': [{'result': {'csv': {'path': filename}}}]}}},
         )
 
@@ -250,11 +263,13 @@ def test_dataframe_parquet_materialization():
     def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
-    pipeline_def = PipelineDefinition(name='return_df_pipeline', solid_defs=[return_df])
+    @pipeline
+    def return_df_pipeline():
+        return_df()  # pylint: disable=no-value-for-parameter
 
     with get_temp_file_name() as filename:
         result = execute_pipeline(
-            pipeline_def,
+            return_df_pipeline,
             {'solids': {'return_df': {'outputs': [{'result': {'parquet': {'path': filename}}}]}}},
         )
 
@@ -269,16 +284,18 @@ def test_dataframe_table_materialization():
     def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
-    pipeline_def = PipelineDefinition(name='return_df_pipeline', solid_defs=[return_df])
+    @pipeline
+    def return_df_pipeline():
+        return_df()  # pylint: disable=no-value-for-parameter
 
     with get_temp_file_name() as filename:
         filename = '/tmp/table_test.txt'
         result = execute_pipeline(
-            pipeline_def,
+            return_df_pipeline,
             {'solids': {'return_df': {'outputs': [{'result': {'table': {'path': filename}}}]}}},
         )
 
         assert result.success
 
-        df = pd.read_table(filename)
+        df = pd.read_csv(filename, sep='\t')
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}

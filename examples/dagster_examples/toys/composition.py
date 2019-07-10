@@ -1,16 +1,6 @@
 # pylint: disable=no-value-for-parameter
 
-from dagster import (
-    pipeline,
-    CompositeSolidDefinition,
-    lambda_solid,
-    Int,
-    InputDefinition,
-    SolidInvocation,
-    DependencyDefinition,
-    OutputDefinition,
-    Float,
-)
+from dagster import composite_solid, pipeline, lambda_solid, Int, InputDefinition
 
 
 @lambda_solid(input_defs=[InputDefinition('num', Int)])
@@ -23,38 +13,19 @@ def div_two(num):
     return num / 2
 
 
-add_two = CompositeSolidDefinition(
-    'add_two',
-    solid_defs=[add_one],
-    dependencies={
-        SolidInvocation('add_one', 'adder_1'): {},
-        SolidInvocation('add_one', 'adder_2'): {'num': DependencyDefinition('adder_1')},
-    },
-    input_mappings=[InputDefinition('num', Int).mapping_to('adder_1', 'num')],
-    output_mappings=[OutputDefinition(Int).mapping_from('adder_2')],
-)
+@composite_solid
+def add_two(num):
+    return add_one.alias('adder_2')(num=add_one.alias('adder_1')(num))
 
-add_four = CompositeSolidDefinition(
-    'add_four',
-    solid_defs=[add_two],
-    dependencies={
-        SolidInvocation('add_two', 'adder_1'): {},
-        SolidInvocation('add_two', 'adder_2'): {'num': DependencyDefinition('adder_1')},
-    },
-    input_mappings=[InputDefinition('num', Int).mapping_to('adder_1', 'num')],
-    output_mappings=[OutputDefinition(Int).mapping_from('adder_2')],
-)
 
-div_four = CompositeSolidDefinition(
-    'div_four',
-    solid_defs=[div_two],
-    dependencies={
-        SolidInvocation('div_two', 'div_1'): {},
-        SolidInvocation('div_two', 'div_2'): {'num': DependencyDefinition('div_1')},
-    },
-    input_mappings=[InputDefinition('num', Int).mapping_to('div_1', 'num')],
-    output_mappings=[OutputDefinition(Float).mapping_from('div_2')],
-)
+@composite_solid
+def add_four(num):
+    return add_two.alias('adder_2')(num=add_two.alias('adder_1')(num))
+
+
+@composite_solid
+def div_four(num):
+    return div_two.alias('div_2')(num=div_two.alias('div_1')(num))
 
 
 @pipeline

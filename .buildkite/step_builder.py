@@ -45,6 +45,11 @@ class StepBuilder:
         return self
 
     def on_integration_image(self, ver, env=None):
+        if ver not in SupportedPythons:
+            raise Exception(
+                'Unsupported python version for integration image {ver}'.format(ver=ver)
+            )
+
         settings = self._base_docker_settings()
 
         # version like dagster/buildkite-integration:py3.7.3-v3

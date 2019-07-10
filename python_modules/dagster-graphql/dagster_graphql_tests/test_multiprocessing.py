@@ -4,17 +4,16 @@ from collections import OrderedDict
 from copy import deepcopy
 
 from dagster import (
-    DependencyDefinition,
     ExecutionTargetHandle,
     InputDefinition,
     Materialization,
     OutputDefinition,
     Path,
-    PipelineDefinition,
     as_dagster_type,
     input_hydration_config,
     lambda_solid,
     output_materialization_config,
+    pipeline,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import ExecutionSelector
@@ -68,8 +67,7 @@ def get_events_of_type(events, event_type):
 
 def test_running():
     run_id = make_new_run_id()
-    handle = ExecutionTargetHandle.for_pipeline_fn(define_passing_pipeline)
-    pipeline = define_passing_pipeline()
+    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'passing_pipeline')
     env_config = {
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
@@ -83,7 +81,7 @@ def test_running():
         step_keys_to_execute=None,
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(handle, pipeline, pipeline_run, raise_on_error=False)
+    execution_manager.execute_pipeline(handle, passing_pipeline, pipeline_run, raise_on_error=False)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.SUCCESS
     events = pipeline_run.all_logs()
@@ -98,8 +96,7 @@ def test_running():
 
 def test_failing():
     run_id = make_new_run_id()
-    handle = ExecutionTargetHandle.for_pipeline_fn(define_failing_pipeline)
-    pipeline = define_failing_pipeline()
+    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'failing_pipeline')
     env_config = {
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
@@ -113,7 +110,7 @@ def test_failing():
         step_keys_to_execute=None,
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(handle, pipeline, pipeline_run, raise_on_error=False)
+    execution_manager.execute_pipeline(handle, failing_pipeline, pipeline_run, raise_on_error=False)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
     assert pipeline_run.all_logs()
@@ -121,8 +118,7 @@ def test_failing():
 
 def test_execution_crash():
     run_id = make_new_run_id()
-    handle = ExecutionTargetHandle.for_pipeline_fn(define_crashy_pipeline)
-    pipeline = define_crashy_pipeline()
+    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'crashy_pipeline')
     env_config = {
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
@@ -136,7 +132,7 @@ def test_execution_crash():
         step_keys_to_execute=None,
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(handle, pipeline, pipeline_run, raise_on_error=False)
+    execution_manager.execute_pipeline(handle, crashy_pipeline, pipeline_run, raise_on_error=False)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
     last_log = pipeline_run.all_logs()[-1]
@@ -175,29 +171,16 @@ def crashy_solid(sum_df):  # pylint: disable=W0613
     os._exit(1)  # pylint: disable=W0212
 
 
-def define_passing_pipeline():
-    return PipelineDefinition(
-        name='csv_hello_world', solid_defs=[sum_solid], dependencies={'sum_solid': {}}
-    )
+@pipeline
+def passing_pipeline():
+    return sum_solid()  # pylint: disable=no-value-for-parameter
 
 
-def define_failing_pipeline():
-    return PipelineDefinition(
-        name='csv_hello_world',
-        solid_defs=[sum_solid, error_solid],
-        dependencies={
-            'sum_solid': {},
-            'error_solid': {'sum_df': DependencyDefinition('sum_solid')},
-        },
-    )
+@pipeline
+def failing_pipeline():
+    return error_solid(sum_solid())  # pylint: disable=no-value-for-parameter
 
 
-def define_crashy_pipeline():
-    return PipelineDefinition(
-        name='csv_hello_world',
-        solid_defs=[sum_solid, crashy_solid],
-        dependencies={
-            'sum_solid': {},
-            'crashy_solid': {'sum_df': DependencyDefinition('sum_solid')},
-        },
-    )
+@pipeline
+def crashy_pipeline():
+    crashy_solid(sum_solid())  # pylint: disable=no-value-for-parameter
