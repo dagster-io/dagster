@@ -18,7 +18,6 @@ from .environment_schema import (
     create_environment_type,
 )
 
-from .expectation import IOExpectationDefinition, DagsterIOExpectationFailedError
 
 from .events import (
     EventMetadataEntry,

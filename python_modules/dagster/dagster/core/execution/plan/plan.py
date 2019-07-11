@@ -156,16 +156,7 @@ class _PlanBuilder:
             # Create and add execution plan steps (and output handles) for solid outputs
             for name, output_def in solid.definition.output_dict.items():
                 subplan = create_subplan_for_output(
-<<<<<<< HEAD
-                    self.pipeline_name,
-                    self.environment_config,
-                    solid,
-                    terminal_compute_step,
-                    output_def,
-                    handle,
-=======
                     self.pipeline_name, solid, terminal_transform_step, output_def
->>>>>>> [expecations] Remove creating expectation steps from PlanBuilder
                 )
                 self.add_steps(subplan.steps)
 
@@ -175,51 +166,15 @@ class _PlanBuilder:
         return terminal_compute_step
 
 
-<<<<<<< HEAD
-def create_subplan_for_input(plan_builder, solid, step_input, input_def, handle):
-    check.inst_param(plan_builder, 'plan_builder', _PlanBuilder)
-    check.inst_param(solid, 'solid', Solid)
-    check.inst_param(step_input, 'step_input', StepInput)
-    check.inst_param(input_def, 'input_def', InputDefinition)
-    check.inst_param(handle, 'handle', SolidHandle)
-
-    if plan_builder.environment_config.expectations.evaluate and input_def.expectations:
-        subplan = create_expectations_subplan(
-            plan_builder.pipeline_name,
-            solid,
-            input_def,
-            step_input,
-            kind=StepKind.INPUT_EXPECTATION,
-            handle=handle,
-        )
-        plan_builder.add_steps(subplan.steps)
-        return StepInput(
-            input_def.name, input_def.runtime_type, subplan.terminal_step_output_handle
-        )
-    else:
-        return step_input
-
-
-def create_subplan_for_output(
-    pipeline_name, environment_config, solid, solid_compute_step, output_def, handle
-):
-=======
 def create_subplan_for_output(pipeline_name, solid, solid_transform_step, output_def):
->>>>>>> [expecations] Remove creating expectation steps from PlanBuilder
     check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(solid_compute_step, 'solid_compute_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
-<<<<<<< HEAD
-    return decorate_with_expectations(
-        pipeline_name, environment_config, solid, solid_compute_step, output_def, handle
-    )
-=======
     output_def = solid.definition.resolve_output_to_origin(output_def.name)
     terminal_step_output_handle = StepOutputHandle.from_step(solid_transform_step, output_def.name)
     return ExecutionValueSubplan.empty(terminal_step_output_handle)
->>>>>>> [expecations] Remove creating expectation steps from PlanBuilder
 
 
 def get_step_input(

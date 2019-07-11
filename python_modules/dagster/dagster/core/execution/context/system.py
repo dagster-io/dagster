@@ -9,11 +9,8 @@ from collections import namedtuple
 from dagster import check
 from dagster.utils import merge_dicts
 
-from dagster.core.definitions.expectation import IOExpectationDefinition
 from dagster.core.definitions.handle import ExecutionTargetHandle
-from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.log_manager import DagsterLogManager
 
@@ -204,11 +201,6 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
     def for_compute(self):
         return SystemComputeExecutionContext(self._pipeline_context_data, self.log, self.step)
 
-    def for_expectation(self, inout_def, expectation_def):
-        return SystemExpectationExecutionContext(
-            self._pipeline_context_data, self.log, self.step, inout_def, expectation_def
-        )
-
     @property
     def step(self):
         return self._step
@@ -235,26 +227,3 @@ class SystemComputeExecutionContext(SystemStepExecutionContext):
     def solid_config(self):
         solid_config = self.environment_config.solids.get(str(self.solid_handle))
         return solid_config.config if solid_config else None
-
-
-class SystemExpectationExecutionContext(SystemStepExecutionContext):
-    __slots__ = ['_inout_def', '_expectation_def']
-
-    def __init__(self, pipeline_context_data, log_manager, step, inout_def, expectation_def):
-        self._expectation_def = check.inst_param(
-            expectation_def, 'expectation_def', IOExpectationDefinition
-        )
-        self._inout_def = check.inst_param(
-            inout_def, 'inout_def', (InputDefinition, OutputDefinition)
-        )
-        super(SystemExpectationExecutionContext, self).__init__(
-            pipeline_context_data, log_manager, step
-        )
-
-    @property
-    def expectation_def(self):
-        return self._expectation_def
-
-    @property
-    def inout_def(self):
-        return self._inout_def

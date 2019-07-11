@@ -15,9 +15,13 @@ SystemPipelineExecutionContext                  (contains SystemPipelineExecutio
  |
  |--> SystemStepExecutionContext                (produced by .for_step() on pipeline context)
        |
+<<<<<<< HEAD
        |--> SystemComputeExecutionContext     (produced by .for_compute() on step context)
        |
        |--> SystemExpectationExecutionContext   (produced by .for_expectation() on step context)
+=======
+       |--> SystemComputeExecutionContext     (produced by .for_transform() on step context)
+>>>>>>> [expectations] Delete IOExpectationDefinition and related classes
 
 ====================================================================================================
 In the system contexts, immutable state is stored in SystemPipelineExecutionContextData, and any
@@ -33,8 +37,7 @@ StepExecutionContext
  |                |                                         |
  |                V                                         V
  |--> ComputeExecutionContext              DagstermillInNotebookExecutionContext
- |                                           (defined in dagstermill)
- |--> ExpectationExecutionContext
+                                             (defined in dagstermill)
 
 ====================================================================================================
 These contexts exist so that we can add system-defined stuff to the System* contexts without
