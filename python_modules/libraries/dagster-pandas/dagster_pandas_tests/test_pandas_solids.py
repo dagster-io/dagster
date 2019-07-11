@@ -1,3 +1,5 @@
+import datetime
+
 import pandas as pd
 
 from dagster import (
@@ -8,10 +10,9 @@ from dagster import (
     check,
     execute_pipeline,
     lambda_solid,
+    pipeline,
 )
-
 from dagster.core.test_utils import single_output_transform
-
 from dagster_pandas import DataFrame
 
 
@@ -25,7 +26,7 @@ def _dataframe_solid(name, input_defs, compute_fn):
 
 
 def get_solid_result_value(solid_inst):
-    pipeline = PipelineDefinition(
+    pipe = PipelineDefinition(
         solid_defs=[load_num_csv_solid('load_csv'), solid_inst],
         dependencies={
             solid_inst.name: {
@@ -34,7 +35,7 @@ def get_solid_result_value(solid_inst):
         },
     )
 
-    pipeline_result = execute_pipeline(pipeline)
+    pipeline_result = execute_pipeline(pipe)
 
     execution_result = pipeline_result.result_for_solid(solid_inst.name)
 
@@ -108,7 +109,7 @@ def test_two_input_solid():
         compute_fn=transform,
     )
 
-    pipeline = PipelineDefinition(
+    pipe = PipelineDefinition(
         solid_defs=[
             load_num_csv_solid('load_csv1'),
             load_num_csv_solid('load_csv2'),
@@ -122,7 +123,7 @@ def test_two_input_solid():
         },
     )
 
-    pipeline_result = execute_pipeline(pipeline)
+    pipeline_result = execute_pipeline(pipe)
     assert pipeline_result.success
 
     df = pipeline_result.result_for_solid('two_input_solid').result_value()
@@ -179,7 +180,7 @@ def test_pandas_multiple_inputs():
         compute_fn=compute_fn,
     )
 
-    pipeline = PipelineDefinition(
+    pipe = PipelineDefinition(
         solid_defs=[load_num_csv_solid('load_one'), load_num_csv_solid('load_two'), double_sum],
         dependencies={
             'double_sum': {
@@ -189,7 +190,7 @@ def test_pandas_multiple_inputs():
         },
     )
 
-    output_df = execute_pipeline(pipeline).result_for_solid('double_sum').result_value()
+    output_df = execute_pipeline(pipe).result_for_solid('double_sum').result_value()
 
     assert not output_df.empty
 
@@ -214,3 +215,15 @@ def test_rename_input():
     expected = {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7], 'sum_squared': [9, 49]}
     solid_result = result.result_for_solid('sum_sq_table_renamed_input')
     assert solid_result.result_value().to_dict('list') == expected
+
+
+def test_date_column():
+    @lambda_solid(output_def=OutputDefinition(DataFrame))
+    def dataframe_constant():
+        return pd.DataFrame([{datetime.date(2019, 1, 1): 0}])
+
+    @pipeline
+    def date_pipeline():
+        dataframe_constant()
+
+    assert execute_pipeline(date_pipeline).success
