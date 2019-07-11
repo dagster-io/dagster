@@ -201,7 +201,7 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
             self.solid.resource_mapper_fn, self.solid_def.required_resource_keys
         )
 
-    def for_transform(self):
+    def for_compute(self):
         return SystemComputeExecutionContext(self._pipeline_context_data, self.log, self.step)
 
     def for_expectation(self, inout_def, expectation_def):

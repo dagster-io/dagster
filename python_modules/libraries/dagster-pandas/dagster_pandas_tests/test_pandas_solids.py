@@ -12,12 +12,12 @@ from dagster import (
     lambda_solid,
     pipeline,
 )
-from dagster.core.test_utils import single_output_transform
+from dagster.core.test_utils import single_output_solid
 from dagster_pandas import DataFrame
 
 
 def _dataframe_solid(name, input_defs, compute_fn):
-    return single_output_transform(
+    return single_output_solid(
         name=name,
         input_defs=input_defs,
         compute_fn=compute_fn,
@@ -47,14 +47,14 @@ def get_num_csv_environment(solids_config):
 
 
 def create_sum_table():
-    def transform(_context, inputs):
+    def compute(_context, inputs):
         num_csv = inputs['num_csv']
         check.inst_param(num_csv, 'num_csv', pd.DataFrame)
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
     return _dataframe_solid(
-        name='sum_table', input_defs=[InputDefinition('num_csv', DataFrame)], compute_fn=transform
+        name='sum_table', input_defs=[InputDefinition('num_csv', DataFrame)], compute_fn=compute
     )
 
 
@@ -95,7 +95,7 @@ def _sum_only_pipeline():
 
 
 def test_two_input_solid():
-    def transform(_context, inputs):
+    def compute(_context, inputs):
         num_csv1 = inputs['num_csv1']
         num_csv2 = inputs['num_csv2']
         check.inst_param(num_csv1, 'num_csv1', pd.DataFrame)
@@ -106,7 +106,7 @@ def test_two_input_solid():
     two_input_solid = _dataframe_solid(
         name='two_input_solid',
         input_defs=[InputDefinition('num_csv1', DataFrame), InputDefinition('num_csv2', DataFrame)],
-        compute_fn=transform,
+        compute_fn=compute,
     )
 
     pipe = PipelineDefinition(
@@ -132,7 +132,7 @@ def test_two_input_solid():
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
 
-def test_no_transform_solid():
+def test_no_compute_solid():
     num_table = _dataframe_solid(
         name='num_table',
         input_defs=[InputDefinition('num_csv', DataFrame)],

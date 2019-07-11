@@ -147,18 +147,18 @@ def create_expectation_step(
 
 
 def decorate_with_expectations(
-    pipeline_name, environment_config, solid, transform_step, output_def, handle
+    pipeline_name, environment_config, solid, compute_step, output_def, handle
 ):
     check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(solid, 'solid', Solid)
-    check.inst_param(transform_step, 'transform_step', ExecutionStep)
+    check.inst_param(compute_step, 'compute_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.opt_inst_param(handle, 'handle', SolidHandle)
 
-    # resolve to the output def from the transform_step's solid
+    # resolve to the output def from the compute_step's solid
     output_def = solid.definition.resolve_output_to_origin(output_def.name)
-    terminal_step_output_handle = StepOutputHandle.from_step(transform_step, output_def.name)
+    terminal_step_output_handle = StepOutputHandle.from_step(compute_step, output_def.name)
 
     if environment_config.expectations.evaluate and output_def.expectations:
         return create_expectations_subplan(

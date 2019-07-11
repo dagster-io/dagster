@@ -235,7 +235,7 @@ class SolidExecutionResult(object):
 
     @property
     def output_values(self):
-        '''Return dictionary of transformed results, with keys being output names.
+        '''Return dictionary of computed results, with keys being output names.
         Returns None if execution result isn't a success.
 
         Reconstructs the pipeline context to materialize values.
@@ -254,7 +254,7 @@ class SolidExecutionResult(object):
             return None
 
     def output_value(self, output_name=DEFAULT_OUTPUT):
-        '''Returns transformed value either for DEFAULT_OUTPUT or for the output
+        '''Returns computed value either for DEFAULT_OUTPUT or for the output
         given as output_name. Returns None if execution result isn't a success.
 
         Reconstructs the pipeline context to materialize value.

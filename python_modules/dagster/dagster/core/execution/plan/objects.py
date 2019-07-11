@@ -230,13 +230,11 @@ class ExecutionValueSubplan(
     namedtuple('ExecutionValueSubplan', 'steps terminal_step_output_handle')
 ):
     '''
-    A frequent pattern in the execution engine is to take a single value
-    (e.g. an input or an output of a transform) and then flow that value
-    value through a sequence of system-injected steps (e.g. expectations
-    or materializations). This object captures that pattern. It contains
-    all of the steps that comprise that Subplan and also a single output
-    handle that points to output that further steps down the plan can
-    depend on.
+    A frequent pattern in the execution engine is to take a single value (e.g. an input or an output
+    of a compute function) and then flow that value value through a sequence of system-injected
+    steps (e.g. expectations or materializations). This object captures that pattern. It contains
+    all of the steps that comprise that Subplan and also a single output handle that points to
+    output that further steps down the plan can depend on.
     '''
 
     def __new__(cls, steps, terminal_step_output_handle):

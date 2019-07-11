@@ -1,3 +1,5 @@
+# pylint: disable=no-value-for-parameter
+
 import dagster.check as check
 
 from dagster import (
@@ -17,6 +19,7 @@ from dagster import (
     execute_pipeline,
     execute_pipeline_iterator,
     lambda_solid,
+    pipeline,
     solid,
 )
 
@@ -42,7 +45,7 @@ from dagster.utils.test import execute_solid_within_pipeline
 # pylint: disable=W0212
 
 
-def _default_passthrough_transform(*args, **kwargs):
+def _default_passthrough_compute_fn(*args, **kwargs):
     check.invariant(not args, 'There should be no positional args')
     return list(kwargs.values())[0]
 
@@ -51,8 +54,8 @@ def create_dep_input_fn(name):
     return lambda context, arg_dict: {name: 'input_set'}
 
 
-def make_transform():
-    def transform(context, inputs):
+def make_compute_fn():
+    def compute(context, inputs):
         passed_rows = []
         seen = set()
         for row in inputs.values():
@@ -64,10 +67,10 @@ def make_transform():
 
         result = []
         result.extend(passed_rows)
-        result.append({context.solid.name: 'transform_called'})
+        result.append({context.solid.name: 'compute_called'})
         return result
 
-    return transform
+    return compute
 
 
 def _do_construct(solids, dependencies):
@@ -165,8 +168,8 @@ def test_diamond_toposort():
     ]
 
 
-def transform_called(name):
-    return {name: 'transform_called'}
+def compute_called(name):
+    return {name: 'compute_called'}
 
 
 def assert_equivalent_results(left, right):
@@ -188,8 +191,8 @@ def assert_all_results_equivalent(expected_results, result_results):
 
 
 def test_pipeline_execution_graph_diamond():
-    pipeline = PipelineDefinition(solid_defs=create_diamond_solids(), dependencies=diamond_deps())
-    return _do_test(pipeline)
+    pipe = PipelineDefinition(solid_defs=create_diamond_solids(), dependencies=diamond_deps())
+    return _do_test(pipe)
 
 
 def test_execute_solid_in_diamond():
@@ -198,96 +201,97 @@ def test_execute_solid_in_diamond():
     )
 
     assert solid_result.success
-    assert solid_result.output_value() == [{'a key': 'a value'}, {'A': 'transform_called'}]
+    assert solid_result.output_value() == [{'a key': 'a value'}, {'A': 'compute_called'}]
 
 
 def test_execute_aliased_solid_in_diamond():
     a_source = define_stub_solid('A_source', [input_set('A_input')])
-    pipeline_def = PipelineDefinition(
-        name='aliased_pipeline',
-        solid_defs=[a_source, create_root_solid('A')],
-        dependencies={
-            SolidInvocation('A', alias='aliased'): {'A_input': DependencyDefinition(a_source.name)}
-        },
-    )
+
+    @pipeline
+    def aliased_pipeline():
+        create_root_solid('A').alias('aliased')(a_source())
 
     solid_result = execute_solid_within_pipeline(
-        pipeline_def, 'aliased', inputs={'A_input': [{'a key': 'a value'}]}
+        aliased_pipeline, 'aliased', inputs={'A_input': [{'a key': 'a value'}]}
     )
 
     assert solid_result.success
-    assert solid_result.output_value() == [{'a key': 'a value'}, {'aliased': 'transform_called'}]
+    assert solid_result.output_value() == [{'a key': 'a value'}, {'aliased': 'compute_called'}]
 
 
 def test_create_pipeline_with_empty_solids_list():
-    single_solid_pipeline = PipelineDefinition(solid_defs=[], dependencies={})
+    @pipeline
+    def empty_pipe():
+        pass
 
-    result = execute_pipeline(single_solid_pipeline)
-    assert result.success
+    assert execute_pipeline(empty_pipe).success
 
 
 def test_singleton_pipeline():
     stub_solid = define_stub_solid('stub', [{'a key': 'a value'}])
-    single_solid_pipeline = PipelineDefinition(solid_defs=[stub_solid], dependencies={})
 
-    result = execute_pipeline(single_solid_pipeline)
-    assert result.success
+    @pipeline
+    def single_solid_pipeline():
+        stub_solid()
+
+    assert execute_pipeline(single_solid_pipeline).success
 
 
 def test_two_root_solid_pipeline_with_empty_dependency_definition():
     stub_solid_a = define_stub_solid('stub_a', [{'a key': 'a value'}])
     stub_solid_b = define_stub_solid('stub_b', [{'a key': 'a value'}])
-    single_solid_pipeline = PipelineDefinition(
-        solid_defs=[stub_solid_a, stub_solid_b], dependencies={}
-    )
 
-    result = execute_pipeline(single_solid_pipeline)
-    assert result.success
+    @pipeline
+    def pipe():
+        stub_solid_a()
+        stub_solid_b()
+
+    assert execute_pipeline(pipe).success
 
 
 def test_two_root_solid_pipeline_with_partial_dependency_definition():
     stub_solid_a = define_stub_solid('stub_a', [{'a key': 'a value'}])
     stub_solid_b = define_stub_solid('stub_b', [{'a key': 'a value'}])
-    single_solid_pipeline = PipelineDefinition(
+
+    single_dep_pipe = PipelineDefinition(
         solid_defs=[stub_solid_a, stub_solid_b], dependencies={'stub_a': {}}
     )
 
-    result = execute_pipeline(single_solid_pipeline)
-    assert result.success
+    assert execute_pipeline(single_dep_pipe).success
 
 
-def _do_test(pipeline):
-    result = execute_pipeline(pipeline)
+def _do_test(pipe):
+    result = execute_pipeline(pipe)
 
     assert result.result_for_solid('A').output_value() == [
         input_set('A_input'),
-        transform_called('A'),
+        compute_called('A'),
     ]
 
     assert result.result_for_solid('B').output_value() == [
         input_set('A_input'),
-        transform_called('A'),
-        transform_called('B'),
+        compute_called('A'),
+        compute_called('B'),
     ]
 
     assert result.result_for_solid('C').output_value() == [
         input_set('A_input'),
-        transform_called('A'),
-        transform_called('C'),
+        compute_called('A'),
+        compute_called('C'),
     ]
 
     assert result.result_for_solid('D').output_value() == [
         input_set('A_input'),
-        transform_called('A'),
-        transform_called('C'),
-        transform_called('B'),
-        transform_called('D'),
+        compute_called('A'),
+        compute_called('C'),
+        compute_called('B'),
+        compute_called('D'),
     ] or result.result_for_solid('D').output_value() == [
         input_set('A_input'),
-        transform_called('A'),
-        transform_called('B'),
-        transform_called('C'),
-        transform_called('D'),
+        compute_called('A'),
+        compute_called('B'),
+        compute_called('C'),
+        compute_called('D'),
     ]
 
 
@@ -301,16 +305,16 @@ def test_pipeline_name_threaded_through_context():
     name = 'foobar'
 
     @solid()
-    def assert_name_transform(context):
+    def assert_name_solid(context):
         assert context.pipeline_def.name == name
 
-    result = execute_pipeline(PipelineDefinition(name="foobar", solid_defs=[assert_name_transform]))
+    result = execute_pipeline(PipelineDefinition(name="foobar", solid_defs=[assert_name_solid]))
 
     assert result.success
 
     for step_event in step_output_event_filter(
         execute_pipeline_iterator(
-            PipelineDefinition(name="foobar", solid_defs=[assert_name_transform]), {}
+            PipelineDefinition(name="foobar", solid_defs=[assert_name_solid]), {}
         )
     ):
         assert step_event.is_step_success
@@ -441,9 +445,7 @@ def test_pipeline_execution_disjoint_subset():
     )
 
     assert result.success
-
     assert len(result.solid_result_list) == 2
-
     assert result.result_for_solid('add_one').output_value() == 3
     assert result.result_for_solid('add_three').output_value() == 8
 
@@ -462,27 +464,29 @@ def test_pipeline_wrapping_types():
             output.append(None if item is None else item + item)
         return output
 
-    pipeline_def = PipelineDefinition(name='wrapping_test', solid_defs=[double_string_for_all])
+    @pipeline
+    def wrapping_test():
+        double_string_for_all()
 
     assert execute_pipeline(
-        pipeline_def,
+        wrapping_test,
         environment_dict={'solids': {'double_string_for_all': {'inputs': {'value': None}}}},
     ).success
 
     assert execute_pipeline(
-        pipeline_def,
+        wrapping_test,
         environment_dict={'solids': {'double_string_for_all': {'inputs': {'value': []}}}},
     ).success
 
     assert execute_pipeline(
-        pipeline_def,
+        wrapping_test,
         environment_dict={
             'solids': {'double_string_for_all': {'inputs': {'value': [{'value': 'foo'}]}}}
         },
     ).success
 
     assert execute_pipeline(
-        pipeline_def,
+        wrapping_test,
         environment_dict={
             'solids': {'double_string_for_all': {'inputs': {'value': [{'value': 'bar'}, None]}}}
         },
@@ -502,13 +506,13 @@ def test_pipeline_streaming_iterator():
         events.append(num + 1)
         return num + 1
 
-    pipeline_def = PipelineDefinition(
-        name='test_streaming_iterator',
-        solid_defs=[push_one, add_one],
-        dependencies={'add_one': {'num': DependencyDefinition('push_one')}},
-    )
+    @pipeline
+    def test_streaming_iterator():
+        add_one(push_one())
 
-    step_event_iterator = step_output_event_filter(execute_pipeline_iterator(pipeline_def))
+    step_event_iterator = step_output_event_filter(
+        execute_pipeline_iterator(test_streaming_iterator)
+    )
 
     push_one_step_event = next(step_event_iterator)
     assert push_one_step_event.is_successful_output
@@ -531,11 +535,13 @@ def test_pipeline_streaming_multiple_outputs():
         events.append(2)
         yield Output(2, 'two')
 
-    pipeline_def = PipelineDefinition(
-        name='test_streaming_iterator_multiple_outputs', solid_defs=[push_one_two]
-    )
+    @pipeline
+    def test_streaming_iterator_multiple_outputs():
+        push_one_two()
 
-    step_event_iterator = step_output_event_filter(execute_pipeline_iterator(pipeline_def))
+    step_event_iterator = step_output_event_filter(
+        execute_pipeline_iterator(test_streaming_iterator_multiple_outputs)
+    )
 
     one_output_step_event = next(step_event_iterator)
     assert one_output_step_event.is_successful_output
@@ -557,28 +563,24 @@ def test_pipeline_init_failure():
     def failing_resource_fn(*args, **kwargs):
         raise Exception()
 
-    pipeline_def = PipelineDefinition(
-        [stub_solid],
-        'failing_init_pipeline',
+    @pipeline(
         mode_defs=[
             ModeDefinition(
                 resource_defs={'failing': ResourceDefinition(resource_fn=failing_resource_fn)}
             )
-        ],
+        ]
     )
+    def failing_init_pipeline():
+        stub_solid()
 
     result = execute_pipeline(
-        pipeline_def,
+        failing_init_pipeline,
         environment_dict=env_config,
         run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
     )
 
     assert result.success is False
-
     assert len(result.event_list) == 1
-
     event = result.event_list[0]
-
     assert event.event_type_value == 'PIPELINE_INIT_FAILURE'
-
     assert event.pipeline_init_failure_data

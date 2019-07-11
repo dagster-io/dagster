@@ -102,7 +102,7 @@ class _PlanBuilder:
     def _build_from_sorted_solids(
         self, solids, dependency_structure, parent_handle=None, parent_step_inputs=None
     ):
-        terminal_transform_step = None
+        terminal_compute_step = None
         for solid in solids:
             handle = SolidHandle(solid.name, solid.definition.name, parent_handle)
 
@@ -133,13 +133,13 @@ class _PlanBuilder:
             # Create and add execution plan step for the solid compute function or
             # recurse over the solids in a CompositeSolid
             if isinstance(solid.definition, SolidDefinition):
-                solid_transform_step = create_compute_step(
+                solid_compute_step = create_compute_step(
                     self.pipeline_name, self.environment_config, solid, step_inputs, handle
                 )
-                self.add_step(solid_transform_step)
-                terminal_transform_step = solid_transform_step
+                self.add_step(solid_compute_step)
+                terminal_compute_step = solid_compute_step
             elif isinstance(solid.definition, CompositeSolidDefinition):
-                terminal_transform_step = self._build_from_sorted_solids(
+                terminal_compute_step = self._build_from_sorted_solids(
                     solids_in_topological_order(solid.definition),
                     solid.definition.dependency_structure,
                     parent_handle=handle,
@@ -160,7 +160,7 @@ class _PlanBuilder:
                     self.pipeline_name,
                     self.environment_config,
                     solid,
-                    terminal_transform_step,
+                    terminal_compute_step,
                     output_def,
                     handle,
                 )
@@ -169,7 +169,7 @@ class _PlanBuilder:
                 output_handle = solid.output_handle(name)
                 self.set_output_handle(output_handle, subplan.terminal_step_output_handle)
 
-        return terminal_transform_step
+        return terminal_compute_step
 
 
 def create_subplan_for_input(plan_builder, solid, step_input, input_def, handle):
@@ -197,15 +197,15 @@ def create_subplan_for_input(plan_builder, solid, step_input, input_def, handle)
 
 
 def create_subplan_for_output(
-    pipeline_name, environment_config, solid, solid_transform_step, output_def, handle
+    pipeline_name, environment_config, solid, solid_compute_step, output_def, handle
 ):
     check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
-    check.inst_param(solid_transform_step, 'solid_transform_step', ExecutionStep)
+    check.inst_param(solid_compute_step, 'solid_compute_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
     return decorate_with_expectations(
-        pipeline_name, environment_config, solid, solid_transform_step, output_def, handle
+        pipeline_name, environment_config, solid, solid_compute_step, output_def, handle
     )
 
 

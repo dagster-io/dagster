@@ -2,7 +2,7 @@ from dagster import check
 from dagster.core.definitions import ExpectationResult, Materialization, Output, Solid, SolidHandle
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.system import SystemComputeExecutionContext
-from dagster.core.execution.context.transform import ComputeExecutionContext
+from dagster.core.execution.context.compute import ComputeExecutionContext
 
 from .objects import ExecutionStep, StepInput, StepKind, StepOutput
 
@@ -23,8 +23,8 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
             )
             for name, output_def in solid.definition.output_dict.items()
         ],
-        compute_fn=lambda step_context, inputs: _execute_core_transform(
-            step_context.for_transform(), inputs, solid.definition.compute_fn
+        compute_fn=lambda step_context, inputs: _execute_core_compute(
+            step_context.for_compute(), inputs, solid.definition.compute_fn
         ),
         kind=StepKind.COMPUTE,
         solid_handle=handle,
@@ -32,7 +32,7 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
     )
 
 
-def _yield_transform_results(compute_context, inputs, compute_fn):
+def _yield_compute_results(compute_context, inputs, compute_fn):
     check.inst_param(compute_context, 'compute_context', SystemComputeExecutionContext)
     step = compute_context.step
     gen = compute_fn(ComputeExecutionContext(compute_context), inputs)
@@ -40,7 +40,7 @@ def _yield_transform_results(compute_context, inputs, compute_fn):
     if isinstance(gen, Output):
         raise DagsterInvariantViolationError(
             (
-                'Transform for solid {solid_name} returned a Output rather than '
+                'Compute function for solid {solid_name} returned a Output rather than '
                 'yielding it. The compute_fn of the core SolidDefinition must yield '
                 'its results'
             ).format(solid_name=str(step.solid_handle))
@@ -82,13 +82,13 @@ def _yield_transform_results(compute_context, inputs, compute_fn):
         else:
             raise DagsterInvariantViolationError(
                 (
-                    'Transform for solid {solid_name} yielded {result} rather an '
+                    'Compute function for solid {solid_name} yielded {result} rather than '
                     'an instance of the Output or Materialization class.'
                 ).format(result=repr(result), solid_name=str(step.solid_handle))
             )
 
 
-def _execute_core_transform(compute_context, inputs, compute_fn):
+def _execute_core_compute(compute_context, inputs, compute_fn):
     '''
     Execute the user-specified compute for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
@@ -99,7 +99,7 @@ def _execute_core_transform(compute_context, inputs, compute_fn):
     step = compute_context.step
 
     all_results = []
-    for step_output in _yield_transform_results(compute_context, inputs, compute_fn):
+    for step_output in _yield_compute_results(compute_context, inputs, compute_fn):
         yield step_output
         if isinstance(step_output, Output):
             all_results.append(step_output)

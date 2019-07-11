@@ -22,7 +22,7 @@ def test_diamond_simple_execution():
     assert result.result_for_solid('adder').output_value() == 11
 
 
-def transform_event(result, solid_name):
+def compute_event(result, solid_name):
     return result.result_for_solid(solid_name).compute_step_events[0]
 
 
@@ -43,7 +43,7 @@ def test_diamond_multi_execution():
 
     pids_by_solid = {}
     for solid in pipeline.solids:
-        pids_by_solid[solid.name] = transform_event(result, solid.name).logging_tags['pid']
+        pids_by_solid[solid.name] = compute_event(result, solid.name).logging_tags['pid']
 
     # guarantee that all solids ran in their own process
     assert len(set(pids_by_solid.values())) == len(pipeline.solids)

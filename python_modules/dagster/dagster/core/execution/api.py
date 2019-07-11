@@ -5,8 +5,8 @@ For public functions:
 
 execute_*
 
-These represent functions which do purely in-memory compute. They will evaluate expectations
-the core transform, and exercise all logging and metrics tracking (outside of outputs), but they
+These represent functions which do purely in-memory compute. They will evaluate expectations the
+core compute function, and exercise all logging and metrics tracking (outside of outputs), but they
 will not invoke *any* outputs (and their APIs don't allow the user to).
 
 

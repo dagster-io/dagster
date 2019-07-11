@@ -1,11 +1,11 @@
 from dagster import check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.execution.context.transform import AbstractComputeExecutionContext
+from dagster.core.execution.context.compute import AbstractComputeExecutionContext
 
 
 class DagstermillExecutionContext(AbstractComputeExecutionContext):
     '''Dagstermill-specific execution context.
-    
+
     Do not initialize directly: use :func:`dagstermill.get_context`.
     '''
 
@@ -19,10 +19,10 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
     def has_tag(self, key):
         '''Check if a logging tag is defined on the context.
-        
+
         Args:
             key (str): The key to check.
-            
+
         Returns:
             bool
         '''
@@ -30,10 +30,10 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
     def get_tag(self, key):
         '''Get a logging tag defined on the context.
-        
+
         Args:
             key (str): The key to get.
-            
+
         Returns:
             str
         '''

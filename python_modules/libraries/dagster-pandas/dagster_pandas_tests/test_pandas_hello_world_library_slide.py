@@ -1,5 +1,5 @@
 from dagster import InputDefinition, OutputDefinition, execute_pipeline, lambda_solid, pipeline
-from dagster.core.test_utils import single_output_transform
+from dagster.core.test_utils import single_output_solid
 from dagster.utils import script_relative_path
 from dagster_pandas import DataFrame
 
@@ -44,7 +44,7 @@ def create_definition_based_solid():
         return num_csv
 
     # supports CSV and PARQUET by default
-    hello_world = single_output_transform(
+    hello_world = single_output_solid(
         name='hello_world',
         input_defs=[table_input],
         compute_fn=compute_fn,

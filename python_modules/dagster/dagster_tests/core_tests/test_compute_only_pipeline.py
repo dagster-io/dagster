@@ -1,12 +1,5 @@
-from dagster import (
-    DependencyDefinition,
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-)
-
-from dagster.core.test_utils import single_output_transform
+from dagster import execute_pipeline, pipeline, InputDefinition, OutputDefinition
+from dagster.core.test_utils import single_output_solid
 
 
 def _set_key_value(ddict, key, value):
@@ -17,28 +10,25 @@ def _set_key_value(ddict, key, value):
 def test_execute_solid_with_dep_only_inputs_no_api():
     did_run_dict = {}
 
-    step_one_solid = single_output_transform(
+    step_one_solid = single_output_solid(
         name='step_one_solid',
         input_defs=[],
         compute_fn=lambda context, args: _set_key_value(did_run_dict, 'step_one', True),
         output_def=OutputDefinition(),
     )
 
-    step_two_solid = single_output_transform(
+    step_two_solid = single_output_solid(
         name='step_two_solid',
         input_defs=[InputDefinition('step_one_solid')],
         compute_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
         output_def=OutputDefinition(),
     )
 
-    pipeline = PipelineDefinition(
-        solid_defs=[step_one_solid, step_two_solid],
-        dependencies={'step_two_solid': {'step_one_solid': DependencyDefinition('step_one_solid')}},
-    )
+    @pipeline
+    def pipe():
+        step_two_solid(step_one_solid())
 
-    # from dagster.utils import logging
-
-    pipeline_result = execute_pipeline(pipeline)
+    pipeline_result = execute_pipeline(pipe)
 
     assert pipeline_result.success
 
@@ -52,28 +42,25 @@ def test_execute_solid_with_dep_only_inputs_no_api():
 def test_execute_solid_with_dep_only_inputs_with_api():
     did_run_dict = {}
 
-    step_one_solid = single_output_transform(
+    step_one_solid = single_output_solid(
         name='step_one_solid',
         input_defs=[],
         compute_fn=lambda context, args: _set_key_value(did_run_dict, 'step_one', True),
         output_def=OutputDefinition(),
     )
 
-    step_two_solid = single_output_transform(
+    step_two_solid = single_output_solid(
         name='step_two_solid',
         compute_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
         input_defs=[InputDefinition(step_one_solid.name)],
         output_def=OutputDefinition(),
     )
 
-    pipeline = PipelineDefinition(
-        solid_defs=[step_one_solid, step_two_solid],
-        dependencies={
-            'step_two_solid': {step_one_solid.name: DependencyDefinition(step_one_solid.name)}
-        },
-    )
+    @pipeline
+    def pipe():
+        step_two_solid(step_one_solid())
 
-    pipeline_result = execute_pipeline(pipeline)
+    pipeline_result = execute_pipeline(pipe)
 
     for result in pipeline_result.solid_result_list:
         assert result.success
