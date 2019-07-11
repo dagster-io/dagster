@@ -473,7 +473,14 @@ def _validate_decorated_fn(fn, names, expected_positionals):
     other_params = params[len(expected_positionals) :]
 
     if len(expected_positional_params) < len(expected_positionals):
-        raise FunctionValidationError(FunctionValidationError.TYPES['missing_positional'])
+        raise FunctionValidationError(
+            FunctionValidationError.TYPES['missing_positional'],
+            param=(
+                expected_positionals[0]
+                if isinstance(expected_positionals[0], str)
+                else expected_positionals[0][0]  # tuple
+            ),
+        )
 
     for expected_names, actual in zip(expected_positionals, expected_positional_params):
         possible_names = []
