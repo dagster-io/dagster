@@ -153,9 +153,7 @@ def publish_module(module, nightly=False, library=False, additional_steps=''):
 def publish_all(nightly):
     for module in MODULE_NAMES:
         if module == 'dagit':
-            publish_module(
-                module, nightly, additional_steps=DAGIT_ADDITIONAL_STEPS
-            )
+            publish_module(module, nightly, additional_steps=DAGIT_ADDITIONAL_STEPS)
         else:
             publish_module(module, nightly)
 
@@ -684,9 +682,7 @@ def publish(nightly, autoclean):
             slack_client.api_call(
                 'chat.postMessage',
                 channel='#general',
-                text=(
-                    '{git_user} just published a new version: {version}.'
-                ).format(
+                text=('{git_user} just published a new version: {version}.').format(
                     git_user=git_user, version=checked_version['__version__']
                 ),
             )
