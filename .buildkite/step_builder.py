@@ -32,7 +32,7 @@ class StepBuilder:
         return self
 
     def _base_docker_settings(self):
-        return {"shell": ["/bin/bash", "-xeuc"], "always-pull": True}
+        return {"shell": ["/bin/bash", "-xeuc"], "always-pull": True, "mount-ssh-agent": True}
 
     def on_python_image(self, ver, env=None):
         settings = self._base_docker_settings()
