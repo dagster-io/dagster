@@ -21,7 +21,7 @@ def wait_step():
     return "wait"
 
 
-def python_modules_tox_tests(directory, prereqs=None, env=None):
+def python_modules_tox_tests(directory, prereqs=None, env=None, integration=False):
     label = directory.replace("/", "-")
     tests = []
     for version in SupportedPythons:
@@ -41,11 +41,14 @@ def python_modules_tox_tests(directory, prereqs=None, env=None):
 
         env_vars = ['AWS_DEFAULT_REGION'] + (env or [])
 
-        builder = (
-            StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
-            .run(*tox_command)
-            .on_python_image(version, env_vars)
-        )
+        builder = StepBuilder(
+            "{label} tests ({ver})".format(label=label, ver=TOX_MAP[version])
+        ).run(*tox_command)
+
+        if integration:
+            builder = builder.on_integration_image(version, env_vars).on_medium_instance()
+        else:
+            builder = builder.on_python_image(version, env_vars)
 
         tests.append(builder.build())
 
@@ -314,7 +317,15 @@ if __name__ == "__main__":
 
     steps += python_modules_tox_tests("dagster")
     steps += python_modules_tox_tests(
-        "dagit", prereqs=["apt-get update", "apt-get install -y xdg-utils"]
+        "dagit",
+        prereqs=[
+            "apt-get update",
+            "apt-get install -y xdg-utils",
+            "pushd python_modules",
+            "make rebuild_dagit",
+            "popd",
+        ],
+        integration=True,
     )
     steps += python_modules_tox_tests("dagster-graphql")
     steps += python_modules_tox_tests("dagstermill")

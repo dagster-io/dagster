@@ -340,7 +340,7 @@ def define_example_repository():
     return RepositoryDefinition(
         name='notebook_repo',
         pipeline_dict={
-            'bad_kernel': define_bad_kernel_pipeline,
+            'bad_kernel_pipeline': define_bad_kernel_pipeline,
             'error_pipeline': define_error_pipeline,
             'hello_world_pipeline': define_hello_world_pipeline,
             'hello_world_config_pipeline': define_hello_world_config_pipeline,

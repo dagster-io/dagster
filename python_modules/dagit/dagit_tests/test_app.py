@@ -3,7 +3,7 @@ import pytest
 from dagster import ExecutionTargetHandle
 from dagster.seven import mock
 from dagster.utils import script_relative_path
-from dagit.app import create_app, notebook_view
+from dagit.app import create_app
 from dagit.cli import host_dagit_ui
 
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
@@ -18,9 +18,27 @@ def test_create_app():
 
 def test_notebook_view():
     notebook_path = script_relative_path('render_uuid_notebook.ipynb')
-    html_response, code = notebook_view({'path': notebook_path})
-    assert '6cac0c38-2c97-49ca-887c-4ac43f141213' in html_response
-    assert code == 200
+
+    with create_app(
+        ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml')),
+        PipelineRunStorage(),
+    ).test_client() as client:
+        res = client.get('/dagit/notebook?path={}'.format(notebook_path))
+
+    assert res.status_code == 200
+    # This magic guid is hardcoded in the notebook
+    assert b'6cac0c38-2c97-49ca-887c-4ac43f141213' in res.data
+
+
+def test_index_view():
+    with create_app(
+        ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml')),
+        PipelineRunStorage(),
+    ).test_client() as client:
+        res = client.get('/')
+
+    assert res.status_code == 200, res.data
+    assert b'You need to enable JavaScript to run this app' in res.data
 
 
 def test_successful_host_dagit_ui():
