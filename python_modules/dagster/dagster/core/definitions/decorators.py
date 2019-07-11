@@ -577,15 +577,16 @@ class _CompositeSolid(object):
         # line up mappings in definition order
         input_mappings = []
         for defn in input_defs:
-            mapping = context.input_mapping_dict.get(defn.name)
-            if mapping is None:
+            mappings = context.input_mapping_dict.get(defn.name, [])
+            if len(mappings) == 0:
                 raise DagsterInvalidDefinitionError(
                     "@composite_solid '{solid_name}' has unmapped input '{input_name}'. "
                     "Remove it or pass it to the appropriate solid invocation.".format(
                         solid_name=self.name, input_name=defn.name
                     )
                 )
-            input_mappings.append(mapping)
+
+            input_mappings += mappings
 
         output_mappings = []
         for defn in output_defs:

@@ -489,3 +489,20 @@ def test_compose_nothing():
     @composite_solid(input_defs=[InputDefinition('start', Nothing)])
     def _compose(start):
         go(start)  # pylint: disable=too-many-function-args
+
+
+def test_multimap():
+    @composite_solid(output_defs=[OutputDefinition(int, 'x'), OutputDefinition(int, 'y')])
+    def multimap(foo):
+        x = echo.alias('echo_1')(foo)
+        y = echo.alias('echo_2')(foo)
+        return {'x': x, 'y': y}
+
+    @pipeline
+    def multimap_pipe():
+        one = return_one()
+        multimap(one)
+
+    result = execute_pipeline(multimap_pipe)
+    assert result.result_for_handle('multimap.echo_1').result_value() == 1
+    assert result.result_for_handle('multimap.echo_2').result_value() == 1
