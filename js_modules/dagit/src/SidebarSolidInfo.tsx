@@ -99,10 +99,6 @@ export default class SidebarSolidInfo extends React.Component<
             type {
               ...RuntimeTypeWithTooltipFragment
             }
-            expectations {
-              name
-              description
-            }
           }
           dependsOn {
             definition {
@@ -119,10 +115,6 @@ export default class SidebarSolidInfo extends React.Component<
             description
             type {
               ...RuntimeTypeWithTooltipFragment
-            }
-            expectations {
-              name
-              description
             }
           }
           dependedBy {
@@ -245,7 +237,6 @@ export default class SidebarSolidInfo extends React.Component<
                 title="Mapped to:"
                 items={inputMappings[input.definition.name]}
               />
-              <Expectations items={input.definition.expectations} />
             </SectionItemContainer>
           ))}
         </SidebarSection>
@@ -261,7 +252,6 @@ export default class SidebarSolidInfo extends React.Component<
                 items={outputMappings[output.definition.name]}
               />
               <Description description={output.definition.description} />
-              <Expectations items={output.definition.expectations} />
             </SectionItemContainer>
           ))}
         </SidebarSection>

@@ -143,17 +143,10 @@ export interface SolidNodeFragment_outputs_definition_type {
   displayName: string;
 }
 
-export interface SolidNodeFragment_outputs_definition_expectations {
-  __typename: "Expectation";
-  name: string;
-  description: string | null;
-}
-
 export interface SolidNodeFragment_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
   type: SolidNodeFragment_outputs_definition_type;
-  expectations: SolidNodeFragment_outputs_definition_expectations[];
 }
 
 export interface SolidNodeFragment_outputs_dependedBy_solid {

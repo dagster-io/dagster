@@ -8,11 +8,7 @@ from dagster import (
     PresetDefinition,
     check,
 )
-from dagster.core.definitions import (
-    create_environment_schema,
-    create_environment_type,
-    IOExpectationDefinition,
-)
+from dagster.core.definitions import create_environment_schema, create_environment_type
 from dagster_graphql import dauphin
 
 from .config_types import to_dauphin_config_type
@@ -192,20 +188,6 @@ class DauphinMetadataItemDefinition(dauphin.ObjectType):
 
     key = dauphin.NonNull(dauphin.String)
     value = dauphin.NonNull(dauphin.String)
-
-
-class DauphinExpectation(dauphin.ObjectType):
-    class Meta:
-        name = 'Expectation'
-
-    name = dauphin.NonNull(dauphin.String)
-    description = dauphin.String()
-
-    def __init__(self, expectation):
-        check.inst_param(expectation, 'expectation', IOExpectationDefinition)
-        super(DauphinExpectation, self).__init__(
-            name=expectation.name, description=expectation.description
-        )
 
 
 class DauphinPipelinePreset(dauphin.ObjectType):

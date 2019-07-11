@@ -98,10 +98,6 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             type {
               displayName
             }
-            expectations {
-              name
-              description
-            }
           }
           dependedBy {
             solid {

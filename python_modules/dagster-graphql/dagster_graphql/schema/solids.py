@@ -214,7 +214,6 @@ class DauphinInputDefinition(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     type = dauphin.NonNull('RuntimeType')
-    expectations = dauphin.non_null_list('Expectation')
 
     # inputs - ?
 
@@ -231,15 +230,6 @@ class DauphinInputDefinition(dauphin.ObjectType):
     def resolve_type(self, _graphene_info):
         return to_dauphin_runtime_type(self._input_definition.runtime_type)
 
-    def resolve_expectations(self, graphene_info):
-        if self._input_definition.expectations:
-            return [
-                graphene_info.schema.type_named('Expectation')(expectation)
-                for expectation in self._input_definition.expectations
-            ]
-        else:
-            return []
-
 
 class DauphinOutputDefinition(dauphin.ObjectType):
     class Meta:
@@ -249,7 +239,6 @@ class DauphinOutputDefinition(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     type = dauphin.NonNull('RuntimeType')
-    expectations = dauphin.non_null_list('Expectation')
 
     # outputs - ?
 
@@ -265,15 +254,6 @@ class DauphinOutputDefinition(dauphin.ObjectType):
 
     def resolve_type(self, _graphene_info):
         return to_dauphin_runtime_type(self._output_definition.runtime_type)
-
-    def resolve_expectations(self, graphene_info):
-        if self._output_definition.expectations:
-            return [
-                graphene_info.schema.type_named('Expectation')(expectation)
-                for expectation in self._output_definition.expectations
-            ]
-        else:
-            return []
 
 
 class DauphinInput(dauphin.ObjectType):

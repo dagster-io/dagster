@@ -14,18 +14,11 @@ export interface SidebarSolidInfoFragment_outputs_definition_type {
   description: string | null;
 }
 
-export interface SidebarSolidInfoFragment_outputs_definition_expectations {
-  __typename: "Expectation";
-  name: string;
-  description: string | null;
-}
-
 export interface SidebarSolidInfoFragment_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
   type: SidebarSolidInfoFragment_outputs_definition_type;
   description: string | null;
-  expectations: SidebarSolidInfoFragment_outputs_definition_expectations[];
 }
 
 export interface SidebarSolidInfoFragment_outputs_dependedBy_definition {
@@ -57,18 +50,11 @@ export interface SidebarSolidInfoFragment_inputs_definition_type {
   description: string | null;
 }
 
-export interface SidebarSolidInfoFragment_inputs_definition_expectations {
-  __typename: "Expectation";
-  name: string;
-  description: string | null;
-}
-
 export interface SidebarSolidInfoFragment_inputs_definition {
   __typename: "InputDefinition";
   name: string;
   type: SidebarSolidInfoFragment_inputs_definition_type;
   description: string | null;
-  expectations: SidebarSolidInfoFragment_inputs_definition_expectations[];
 }
 
 export interface SidebarSolidInfoFragment_inputs_dependsOn_definition {

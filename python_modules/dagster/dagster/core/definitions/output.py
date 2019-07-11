@@ -2,7 +2,6 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
 
-from .expectation import IOExpectationDefinition
 from .utils import check_valid_name, DEFAULT_OUTPUT
 
 
@@ -25,16 +24,11 @@ class OutputDefinition(object):
         is_optional (bool): If this output is optional. Optional, defaults to false.
     '''
 
-    def __init__(
-        self, dagster_type=None, name=None, expectations=None, description=None, is_optional=False
-    ):
+    def __init__(self, dagster_type=None, name=None, description=None, is_optional=False):
         self.name = check_valid_name(check.opt_str_param(name, 'name', DEFAULT_OUTPUT))
 
         self.runtime_type = check.inst(resolve_to_runtime_type(dagster_type), RuntimeType)
 
-        self.expectations = check.opt_list_param(
-            expectations, 'expectations', of_type=IOExpectationDefinition
-        )
         self.description = check.opt_str_param(description, 'description')
 
         self.optional = check.bool_param(is_optional, 'is_optional')

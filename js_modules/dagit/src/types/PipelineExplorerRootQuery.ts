@@ -548,18 +548,11 @@ export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_inputs_de
   description: string | null;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_inputs_definition_expectations {
-  __typename: "Expectation";
-  name: string;
-  description: string | null;
-}
-
 export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_inputs_definition {
   __typename: "InputDefinition";
   name: string;
   type: PipelineExplorerRootQuery_pipeline_solidHandles_solid_inputs_definition_type;
   description: string | null;
-  expectations: PipelineExplorerRootQuery_pipeline_solidHandles_solid_inputs_definition_expectations[];
 }
 
 export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_inputs_dependsOn_definition_type {
@@ -597,17 +590,10 @@ export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_outputs_d
   description: string | null;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_outputs_definition_expectations {
-  __typename: "Expectation";
-  name: string;
-  description: string | null;
-}
-
 export interface PipelineExplorerRootQuery_pipeline_solidHandles_solid_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
   type: PipelineExplorerRootQuery_pipeline_solidHandles_solid_outputs_definition_type;
-  expectations: PipelineExplorerRootQuery_pipeline_solidHandles_solid_outputs_definition_expectations[];
   description: string | null;
 }
 

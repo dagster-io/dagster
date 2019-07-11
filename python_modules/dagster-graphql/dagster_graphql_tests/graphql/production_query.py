@@ -64,11 +64,6 @@ fragment SolidFragment on Solid {
         ... RuntimeTypeWithTooltipFragment
         __typename
       }
-      expectations {
-        name
-        description
-        __typename
-      }
       __typename
     }
     dependsOn {
@@ -89,16 +84,6 @@ fragment SolidFragment on Solid {
       name
       description
       type {
-        __typename
-      }
-      expectations {
-        name
-        description
-        __typename
-      }
-      expectations {
-        name
-        description
         __typename
       }
       __typename
@@ -217,11 +202,6 @@ fragment SolidNodeFragment on Solid {
       name
       type {
         name
-        __typename
-      }
-      expectations {
-        name
-        description
         __typename
       }
       __typename
