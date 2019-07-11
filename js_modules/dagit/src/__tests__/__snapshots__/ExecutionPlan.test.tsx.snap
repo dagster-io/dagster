@@ -2,134 +2,138 @@
 
 exports[`renders given an execution plan 1`] = `
 <div
-  className="sc-kAzzGY lleBIx"
+  className="sc-dxgOiQ kNbFs"
 >
   <div
-    className="sc-chPdSV iwdKyk"
+    className="sc-ckVGcZ jlSfYC"
   >
     <div
-      className="sc-kGXeez cASvMu"
+      className="sc-eNQAEJ fMUCtT"
     />
     <div
-      className="sc-kgoBCf hPVgrU"
+      className="sc-jKJlTe hCDhTu"
     >
       <div
-        className="sc-kpOJdX cHCbpC"
+        className="sc-hMqMXs dMZZro"
       />
        
     </div>
-    <div
-      className="sc-fjdhpX XVmlJ"
-    >
+    <div>
       <div
-        className="waiting sc-jzJRlG iWxyBr"
-        onClick={[Function]}
-        style={
-          Object {
-            "transitionDelay": "-100ms",
-          }
-        }
+        className="sc-fjdhpX XVmlJ"
       >
         <div
-          className="sc-jTzLTM kGsyKj"
+          className="waiting sc-jzJRlG iWxyBr"
+          onClick={[Function]}
           style={
             Object {
               "transitionDelay": "-100ms",
             }
           }
-        />
-        <div
-          style={
-            Object {
-              "alignItems": "center",
-              "display": "inline-flex",
-            }
-          }
         >
           <div
-            className="sc-dnqmqq cZXclH"
-            onClick={[Function]}
-          >
-            <div
-              className="sc-gZMcBi iQqzSo"
-              style={
-                Object {
-                  "transitionDelay": "-100ms",
-                }
+            className="sc-jTzLTM kGsyKj"
+            style={
+              Object {
+                "transitionDelay": "-100ms",
               }
-              title="Waiting"
-            />
-            <div
-              style={
-                Object {
-                  "width": 4,
-                }
-              }
-            />
-          </div>
+            }
+          />
           <div
-            className="sc-VigVT cQibIn"
-            title="raw_file_event_admins.compute"
+            style={
+              Object {
+                "alignItems": "center",
+                "display": "inline-flex",
+              }
+            }
           >
-            raw_file_event_admins.compute
+            <div
+              className="sc-dnqmqq cZXclH"
+              onClick={[Function]}
+            >
+              <div
+                className="sc-gZMcBi iQqzSo"
+                style={
+                  Object {
+                    "transitionDelay": "-100ms",
+                  }
+                }
+                title="Waiting"
+              />
+              <div
+                style={
+                  Object {
+                    "width": 4,
+                  }
+                }
+              />
+            </div>
+            <div
+              className="sc-VigVT cQibIn"
+              title="raw_file_event_admins.compute"
+            >
+              raw_file_event_admins.compute
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <div
-      className="sc-fjdhpX XVmlJ"
-    >
+    <div>
       <div
-        className="waiting sc-jzJRlG iWxyBr"
-        onClick={[Function]}
-        style={
-          Object {
-            "transitionDelay": "-100ms",
-          }
-        }
+        className="sc-fjdhpX XVmlJ"
       >
         <div
-          className="sc-jTzLTM kGsyKj"
+          className="waiting sc-jzJRlG iWxyBr"
+          onClick={[Function]}
           style={
             Object {
               "transitionDelay": "-100ms",
             }
           }
-        />
-        <div
-          style={
-            Object {
-              "alignItems": "center",
-              "display": "inline-flex",
-            }
-          }
         >
           <div
-            className="sc-dnqmqq cZXclH"
-            onClick={[Function]}
-          >
-            <div
-              className="sc-gZMcBi iQqzSo"
-              style={
-                Object {
-                  "transitionDelay": "-100ms",
-                }
+            className="sc-jTzLTM kGsyKj"
+            style={
+              Object {
+                "transitionDelay": "-100ms",
               }
-              title="Waiting"
-            />
-            <div
-              style={
-                Object {
-                  "width": 4,
-                }
-              }
-            />
-          </div>
+            }
+          />
           <div
-            className="sc-VigVT cQibIn"
-            title="raw_file_event_admins.output.result.expectation.something"
+            style={
+              Object {
+                "alignItems": "center",
+                "display": "inline-flex",
+              }
+            }
           >
-            raw_file_event_admins.output.result.expectation.something
+            <div
+              className="sc-dnqmqq cZXclH"
+              onClick={[Function]}
+            >
+              <div
+                className="sc-gZMcBi iQqzSo"
+                style={
+                  Object {
+                    "transitionDelay": "-100ms",
+                  }
+                }
+                title="Waiting"
+              />
+              <div
+                style={
+                  Object {
+                    "width": 4,
+                  }
+                }
+              />
+            </div>
+            <div
+              className="sc-VigVT cQibIn"
+              title="raw_file_event_admins.output.result.expectation.something"
+            >
+              raw_file_event_admins.output.result.expectation.something
+            </div>
           </div>
         </div>
       </div>

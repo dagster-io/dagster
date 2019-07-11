@@ -92,7 +92,7 @@ DataFrame = as_dagster_type(
     See http://pandas.pydata.org/''',
     input_hydration_config=dataframe_input_schema,
     output_materialization_config=dataframe_output_schema,
-    metadata_fn=lambda value: TypeCheck(
+    typecheck_metadata_fn=lambda value: TypeCheck(
         metadata_entries=[
             EventMetadataEntry.text(str(len(value)), 'row_count', 'Number of rows in DataFrame'),
             EventMetadataEntry.json({'columns': list(value.columns)}, 'metadata'),

@@ -37,6 +37,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     pipeline = dauphin.NonNull('Pipeline')
     logs = dauphin.NonNull('LogMessageConnection')
     executionPlan = dauphin.NonNull('ExecutionPlan')
+    stepKeysToExecute = dauphin.List(dauphin.String)
     environmentConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
 
@@ -60,6 +61,9 @@ class DauphinPipelineRun(dauphin.ObjectType):
             RunConfig(mode=self._pipeline_run.mode),
         )
         return graphene_info.schema.type_named('ExecutionPlan')(pipeline, execution_plan)
+
+    def resolve_stepKeysToExecute(self, _):
+        return self._pipeline_run.step_keys_to_execute
 
     def resolve_environmentConfigYaml(self, _graphene_info):
         return yaml.dump(self._pipeline_run.config, default_flow_style=False)

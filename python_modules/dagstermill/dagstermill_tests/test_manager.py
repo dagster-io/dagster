@@ -14,16 +14,15 @@ import dagstermill
 
 from dagster import (
     DagsterInvariantViolationError,
-    Field,
+    Materialization,
     ModeDefinition,
     ResourceDefinition,
     RunConfig,
-    SolidDefinition,
-    String,
 )
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.definitions.dependency import SolidHandle
-from dagstermill import DagstermillError, Manager
+from dagstermill import DagstermillError
+from dagstermill.manager import Manager
 
 
 @contextlib.contextmanager
@@ -73,13 +72,7 @@ def test_get_out_of_pipeline_context():
 
 
 def test_get_out_of_pipeline_solid_config():
-    assert (
-        dagstermill.get_context(
-            solid_def=SolidDefinition('foo', [], lambda _: None, [], config_field=Field(String)),
-            environment_dict={'solids': {'foo': {'config': 'bar'}}},
-        ).solid_config
-        == 'bar'
-    )
+    assert dagstermill.get_context(solid_config='bar').solid_config == 'bar'
 
 
 def test_out_of_pipeline_manager_yield_result():
@@ -139,7 +132,7 @@ def test_in_pipeline_manager_bad_yield_result():
 
 def test_out_of_pipeline_yield_event():
     manager = Manager()
-    assert manager.yield_event('foo') == 'foo'
+    assert manager.yield_event(Materialization('foo')) == Materialization('foo')
 
 
 def test_in_pipeline_manager_resources():

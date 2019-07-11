@@ -251,6 +251,7 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun {
   environmentConfigYaml: string;
   mode: string;
   executionPlan: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan;
+  stepKeysToExecute: (string | null)[] | null;
 }
 
 export type PipelineRunRootQuery_pipelineRunOrError = PipelineRunRootQuery_pipelineRunOrError_PipelineRunNotFoundError | PipelineRunRootQuery_pipelineRunOrError_PipelineRun;

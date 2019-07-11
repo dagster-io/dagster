@@ -64,7 +64,7 @@ def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
 
     check.invariant(
         not no_watch,
-        'Do not set no_watch when calling the Dagit Python CLI directly -- this flag is a no-op'
+        'Do not set no_watch when calling the Dagit Python CLI directly -- this flag is a no-op '
         'at this level and should be set only when invoking dagit/bin/dagit.',
     )
     host_dagit_ui(log, log_dir, handle, sync, host, port)

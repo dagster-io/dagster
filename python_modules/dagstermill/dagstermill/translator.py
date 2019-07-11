@@ -70,7 +70,7 @@ __dm_solid_handle = __dm_dagster_core_definitions_dependency.SolidHandle.from_di
     __dm_json.loads('{dm_solid_handle_kwargs}')
 )
 
-context = __dm_dagstermill.reconstitute_pipeline_context(
+context = __dm_dagstermill._reconstitute_pipeline_context(
     run_config=__dm_run_config,
     handle=__dm_handle,
     solid_handle=__dm_solid_handle,
@@ -97,7 +97,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
         for name, val in parameters.items():
             if name in RESERVED_INPUT_NAMES:
                 continue
-            dm_unmarshal_call = 'dagstermill.load_parameter("{name}", {val})'.format(
+            dm_unmarshal_call = '__dm_dagstermill._load_parameter("{name}", {val})'.format(
                 name=name, val='"{val}"'.format(val=val) if isinstance(val, str) else val
             )
             content += '{}\n'.format(cls.assign(name, dm_unmarshal_call))

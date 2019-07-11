@@ -5,6 +5,7 @@ import { Colors } from "@blueprintjs/core";
 import { ExecutionPlanFragment } from "./types/ExecutionPlanFragment";
 import { ExecutionPlanBox } from "./ExecutionPlanBox";
 import { AnimatedEllipsis } from "./AnimatedEllipsis";
+import { ExecutionPlanHiddenStepsBox } from "./ExecutionPlanHiddenStepsBox";
 import {
   IRunMetadataDict,
   IStepState,
@@ -14,6 +15,7 @@ import { formatElapsedTime } from "../Util";
 
 export interface IExecutionPlanProps {
   executionPlan: ExecutionPlanFragment;
+  stepKeysToExecute?: (string | null)[] | null;
   runMetadata?: IRunMetadataDict;
   onApplyStepFilter?: (step: string) => void;
   onShowStateDetails?: (step: string) => void;
@@ -46,6 +48,14 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
     `
   };
 
+  renderSkippedSteps(skippedCount: number) {
+    if (skippedCount > 0) {
+      return <ExecutionPlanHiddenStepsBox numberStepsSkipped={skippedCount} />;
+    }
+
+    return null;
+  }
+
   render() {
     const haveRun = !!this.props.runMetadata;
     const {
@@ -53,7 +63,8 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
       onShowStateDetails,
       onReexecuteStep,
       runMetadata = EMPTY_RUN_METADATA,
-      executionPlan
+      executionPlan,
+      stepKeysToExecute
     } = this.props;
 
     const stepsOrderedByTransitionTime = Object.keys(runMetadata.steps).sort(
@@ -98,6 +109,11 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
         );
       }
     }
+
+    // Keep track of skipped steps that were not part of the current run
+    let stepsSkippedCount = 0;
+    let prevSkippedCount = 0;
+
     return (
       <ExecutionPlanContainer>
         <ExecutionPlanContainerInner>
@@ -109,23 +125,39 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
             const delay = stepsOrderedByTransitionTime.indexOf(step.key) * 100;
             const metadata = runMetadata.steps[step.key] || EMPTY_STEP_METADATA;
 
+            // If stepKeysToExecute is null, then all steps are being run
+            const isStepPartOfRun =
+              !stepKeysToExecute || stepKeysToExecute.indexOf(step.key) > -1;
+
+            if (!isStepPartOfRun) {
+              stepsSkippedCount++;
+              return;
+            } else {
+              prevSkippedCount = stepsSkippedCount;
+              stepsSkippedCount = 0;
+            }
+
             return (
-              <ExecutionPlanBox
-                state={metadata.state}
-                start={metadata.start}
-                elapsed={metadata.elapsed}
-                key={step.key}
-                stepKey={step.key}
-                expectationResults={metadata.expectationResults}
-                materializations={metadata.materializations}
-                onShowStateDetails={onShowStateDetails}
-                onApplyStepFilter={onApplyStepFilter}
-                onReexecuteStep={onReexecuteStep}
-                executionArtifactsPersisted={executionPlan.artifactsPersisted}
-                delay={delay}
-              />
+              <div key={step.key}>
+                {this.renderSkippedSteps(prevSkippedCount)}
+                <ExecutionPlanBox
+                  state={metadata.state}
+                  start={metadata.start}
+                  elapsed={metadata.elapsed}
+                  key={step.key}
+                  stepKey={step.key}
+                  expectationResults={metadata.expectationResults}
+                  materializations={metadata.materializations}
+                  onShowStateDetails={onShowStateDetails}
+                  onApplyStepFilter={onApplyStepFilter}
+                  onReexecuteStep={onReexecuteStep}
+                  executionArtifactsPersisted={executionPlan.artifactsPersisted}
+                  delay={delay}
+                />
+              </div>
             );
           })}
+          {this.renderSkippedSteps(stepsSkippedCount)}
           {runMetadata.exitedAt && runMetadata.startedProcessAt && (
             <ExecutionTimelineMessage>
               <ExecutionTimelineDot completed={startDone} />

@@ -11,6 +11,7 @@ from .execution_queries import (
     SUBSCRIPTION_QUERY,
     START_PIPELINE_EXECUTION_QUERY,
     START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+    PIPELINE_REEXECUTION_INFO_QUERY,
 )
 
 from .utils import sync_execute_get_run_log_data
@@ -356,6 +357,59 @@ def test_successful_pipeline_reexecution(snapshot):
         str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame))
         == expected_value_repr
     )
+
+
+def test_pipeline_reexecution_info_query(snapshot):
+    context = define_context()
+
+    run_id = str(uuid.uuid4())
+    execute_dagster_graphql(
+        context,
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'executionMetadata': {'runId': run_id},
+                'mode': 'default',
+            }
+        },
+    )
+
+    new_run_id = str(uuid.uuid4())
+    execute_dagster_graphql(
+        context,
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'stepKeys': ['sum_sq_solid.compute'],
+                'executionMetadata': {'runId': new_run_id},
+                'mode': 'default',
+            },
+            'reexecutionConfig': {
+                'previousRunId': run_id,
+                'stepOutputHandles': [{'stepKey': 'sum_solid.compute', 'outputName': 'result'}],
+            },
+        },
+    )
+
+    result_one = execute_dagster_graphql(
+        context, PIPELINE_REEXECUTION_INFO_QUERY, variables={'runId': run_id}
+    )
+    query_result_one = result_one.data['pipelineRunOrError']
+    assert query_result_one['__typename'] == 'PipelineRun'
+    assert query_result_one['stepKeysToExecute'] is None
+
+    result_two = execute_dagster_graphql(
+        context, PIPELINE_REEXECUTION_INFO_QUERY, variables={'runId': new_run_id}
+    )
+    query_result_two = result_two.data['pipelineRunOrError']
+    assert query_result_two['__typename'] == 'PipelineRun'
+    stepKeysToExecute = query_result_two['stepKeysToExecute']
+    assert stepKeysToExecute is not None
+    snapshot.assert_match(stepKeysToExecute)
 
 
 def test_pipeline_reexecution_invalid_step_in_subset():

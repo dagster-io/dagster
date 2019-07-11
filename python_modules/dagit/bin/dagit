@@ -12,7 +12,7 @@ command = ['dagit-cli']
 for arg in sys.argv[1:]:
     if arg == '--no-watch':
         watch = False
-    if arg == '--help':
+    elif arg == '--help':
         watch = False
         command.append(arg)
     else:

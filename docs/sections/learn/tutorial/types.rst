@@ -22,7 +22,6 @@ to ensure that the object is of type ``pd.DataFrame``.
 Now one can use it to define a solid:
 
 .. code-block:: py
-
    :emphasize-lines: 2
    :linenos:
 
@@ -40,8 +39,10 @@ Input Hydration Config
 
 This solid as defined is only expressed in terms of an in-memory object; it says nothing about
 how this data should be sourced from or materialized to disk. This is where the notion of
-input and output materialization configs come into play. Once the user provides those she is able to use
-the configuration language in order to parameterize the computation.
+input and output materialization configs come into play. Once the user provides those she is
+able to use the configuration language in order to parameterize the computation. Note:
+one can always just write code in an upstream solid *instead* of using the configuration
+system to do so.
 
 Let us now add the input hydration config:
 
@@ -120,11 +121,11 @@ these inputs via config:
 Output Materialization Config
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We will add output materialization config now. They are similar to input hydration config, except that they are responsible
-for taking the in-memory object flowed through your computation and materializing it to some
-persistent store. Outputs are purely *optional* for any computation, whereas inputs *must* be provided
-for a computation to proceed. You will likely want outputs as for a pipeline to be useful it
-should produce some materialization that outlives the computation.
+We will add output materialization config now. They are similar to input hydration config, except
+that they are responsible for taking the in-memory object flowed through your computation and
+materializing it to some persistent store. Outputs are purely *optional* for any computation,
+whereas inputs *must* be provided for a computation to proceed. You will likely want outputs as for
+a pipeline to be useful it should produce some materialization that outlives the computation.
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
    :lines: 32-57

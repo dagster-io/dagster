@@ -247,4 +247,5 @@ export interface PipelineRunLogsUpdateFragment {
   environmentConfigYaml: string;
   mode: string;
   executionPlan: PipelineRunLogsUpdateFragment_executionPlan;
+  stepKeysToExecute: (string | null)[] | null;
 }

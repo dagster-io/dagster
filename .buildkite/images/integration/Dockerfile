@@ -129,6 +129,9 @@ RUN cd scala_modules && make compile
 RUN pip install tox
 RUN apt-get update && apt-get -y install libpq-dev
 
+# Pandoc required to build docs
+RUN apt-get -y install pandoc
+
 ARG PYTHON_MAJOR_VERSION
 # These are at the bottom and because they are the most likely
 # to change frequently

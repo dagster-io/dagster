@@ -601,6 +601,7 @@ type PipelineRun {
   pipeline: Pipeline!
   logs: LogMessageConnection!
   executionPlan: ExecutionPlan!
+  stepKeysToExecute: [String]
   environmentConfigYaml: String!
   mode: String!
 }

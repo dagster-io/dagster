@@ -71,6 +71,8 @@ from dagster.core.errors import (
 from dagster.core.storage.init import InitSystemStorageContext
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
 
+from dagster.core.system_config.objects import EnvironmentConfig
+
 from dagster.core.types import (
     Any,
     Bool,
@@ -84,7 +86,6 @@ from dagster.core.types import (
     Optional,
     Path,
     PermissiveDict,
-    PythonObjectType,
     String,
     input_hydration_config,
     output_materialization_config,
@@ -97,7 +98,7 @@ from dagster.core.types.decorator import dagster_type, as_dagster_type
 
 from dagster.core.types.marshal import SerializationStrategy
 
-from dagster.core.types.runtime import RuntimeType
+from dagster.core.types.runtime import RuntimeType, define_python_dagster_type
 
 from dagster.utils import file_relative_path
 from dagster.utils.test import execute_solid, execute_solids_within_pipeline
@@ -179,13 +180,13 @@ __all__ = [
     'output_materialization_config',
     'Path',
     'PermissiveDict',
-    'PythonObjectType',
     'String',
     'SerializationStrategy',
     'Nothing',
     # type creation
     'as_dagster_type',
     'dagster_type',
+    'define_python_dagster_type',
     'RuntimeType',
     'ConfigType',
     'ConfigScalar',

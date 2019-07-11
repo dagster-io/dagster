@@ -18,6 +18,12 @@ else:
     from StringIO import StringIO  # pylint:disable=import-error
 
 
+if sys.version_info.major >= 3:
+    from urllib.request import urlretrieve  # pylint:disable=import-error
+else:
+    from urllib import urlretrieve  # pylint:disable=no-name-in-module
+
+
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
 
 # https://stackoverflow.com/a/67692/324449

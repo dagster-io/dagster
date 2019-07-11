@@ -327,10 +327,20 @@ def define_resource_with_exception_pipeline():
     )
 
 
+@solid_definition
+def bad_kernel_solid():
+    return dagstermill.define_dagstermill_solid('bad_kernel_solid', nb_test_path('bad_kernel'))
+
+
+def define_bad_kernel_pipeline():
+    return PipelineDefinition(name='bad_kernel_pipeline', solid_defs=[bad_kernel_solid])
+
+
 def define_example_repository():
     return RepositoryDefinition(
         name='notebook_repo',
         pipeline_dict={
+            'bad_kernel': define_bad_kernel_pipeline,
             'error_pipeline': define_error_pipeline,
             'hello_world_pipeline': define_hello_world_pipeline,
             'hello_world_config_pipeline': define_hello_world_config_pipeline,
