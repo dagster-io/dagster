@@ -19,8 +19,8 @@ from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import toposort
 
 from .compute import create_compute_step
-from .expectations import create_expectations_subplan, decorate_with_expectations
-from .objects import ExecutionStep, StepInput, StepKind, StepOutputHandle
+
+from .objects import ExecutionStep, ExecutionValueSubplan, StepInput, StepOutputHandle
 from .utility import create_join_outputs_step
 
 
@@ -125,8 +125,7 @@ class _PlanBuilder:
                 if step_input is None:
                     continue
 
-                step_input = create_subplan_for_input(self, solid, step_input, input_def, handle)
-
+                check.inst_param(step_input, 'step_input', StepInput)
                 step_inputs.append(step_input)
 
             ### 2. COMPUTE FUNCTION OR RECURSE
@@ -157,12 +156,16 @@ class _PlanBuilder:
             # Create and add execution plan steps (and output handles) for solid outputs
             for name, output_def in solid.definition.output_dict.items():
                 subplan = create_subplan_for_output(
+<<<<<<< HEAD
                     self.pipeline_name,
                     self.environment_config,
                     solid,
                     terminal_compute_step,
                     output_def,
                     handle,
+=======
+                    self.pipeline_name, solid, terminal_transform_step, output_def
+>>>>>>> [expecations] Remove creating expectation steps from PlanBuilder
                 )
                 self.add_steps(subplan.steps)
 
@@ -172,6 +175,7 @@ class _PlanBuilder:
         return terminal_compute_step
 
 
+<<<<<<< HEAD
 def create_subplan_for_input(plan_builder, solid, step_input, input_def, handle):
     check.inst_param(plan_builder, 'plan_builder', _PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
@@ -199,14 +203,23 @@ def create_subplan_for_input(plan_builder, solid, step_input, input_def, handle)
 def create_subplan_for_output(
     pipeline_name, environment_config, solid, solid_compute_step, output_def, handle
 ):
+=======
+def create_subplan_for_output(pipeline_name, solid, solid_transform_step, output_def):
+>>>>>>> [expecations] Remove creating expectation steps from PlanBuilder
     check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(solid_compute_step, 'solid_compute_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
+<<<<<<< HEAD
     return decorate_with_expectations(
         pipeline_name, environment_config, solid, solid_compute_step, output_def, handle
     )
+=======
+    output_def = solid.definition.resolve_output_to_origin(output_def.name)
+    terminal_step_output_handle = StepOutputHandle.from_step(solid_transform_step, output_def.name)
+    return ExecutionValueSubplan.empty(terminal_step_output_handle)
+>>>>>>> [expecations] Remove creating expectation steps from PlanBuilder
 
 
 def get_step_input(
