@@ -148,4 +148,4 @@ def test_spark_dataframe_output_csv():
             spark.read.format('csv').options(header='true', inferSchema='true').load(file_name)
         )
 
-        assert result.result_value().collect() == from_file_df.collect()
+        assert result.output_value().collect() == from_file_df.collect()

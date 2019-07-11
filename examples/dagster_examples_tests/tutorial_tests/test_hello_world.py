@@ -8,7 +8,7 @@ def test_tutorial_intro_tutorial_hello_world():
 
     assert result.success
     assert len(result.solid_result_list) == 1
-    assert result.result_for_solid('hello_world').result_value() == 'hello'
+    assert result.result_for_solid('hello_world').output_value() == 'hello'
     return result
 
 

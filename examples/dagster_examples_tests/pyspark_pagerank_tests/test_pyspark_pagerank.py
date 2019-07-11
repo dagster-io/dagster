@@ -25,7 +25,7 @@ def test_run_step_two():
     )
     assert result.success
 
-    assert set(result.result_for_solid('whole_pipeline_solid').result_value()) == {
+    assert set(result.result_for_solid('whole_pipeline_solid').output_value()) == {
         ('anotherlessimportantsite.com', 0.9149999999999999),
         ('whatdoesitallmeananyways.com', 0.9149999999999999),
         ('importantsite.com', 1.255),
@@ -46,7 +46,7 @@ def test_run_step_three():
     )
     assert result.success
 
-    assert set(result.result_for_solid('whole_pipeline_solid_using_context').result_value()) == {
+    assert set(result.result_for_solid('whole_pipeline_solid_using_context').output_value()) == {
         ('anotherlessimportantsite.com', 0.9149999999999999),
         ('whatdoesitallmeananyways.com', 0.9149999999999999),
         ('importantsite.com', 1.255),
@@ -67,7 +67,7 @@ def test_run_step_four():
     )
     assert result.success
 
-    assert set(result.result_for_solid('rest_of_pipeline').result_value()) == {
+    assert set(result.result_for_solid('rest_of_pipeline').output_value()) == {
         ('anotherlessimportantsite.com', 0.9149999999999999),
         ('whatdoesitallmeananyways.com', 0.9149999999999999),
         ('importantsite.com', 1.255),
@@ -89,7 +89,7 @@ def test_run_step_five():
     )
     assert result.success
 
-    assert set(result.result_for_solid('log_ranks_step_five').result_value()) == {
+    assert set(result.result_for_solid('log_ranks_step_five').output_value()) == {
         ('alessimportantsite.com', 0.5055833333333333),
         ('whatdoesitallmeananyways.com', 0.5055833333333333),
         ('importantsite.com', 2.4832499999999995),
@@ -111,7 +111,7 @@ def test_run_final_example():
     )
     assert result.success
 
-    assert set(result.result_for_solid('log_ranks').result_value()) == {
+    assert set(result.result_for_solid('log_ranks').output_value()) == {
         ('alessimportantsite.com', 0.5055833333333333),
         ('whatdoesitallmeananyways.com', 0.5055833333333333),
         ('importantsite.com', 2.4832499999999995),

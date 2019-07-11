@@ -81,7 +81,7 @@ def test_single_node_passing_expectation():
     assert result.success
     assert len(result.solid_result_list) == 2
     assert result.solid_result_list[1].success
-    assert result.solid_result_list[1].result_value().to_dict('list') == {
+    assert result.solid_result_list[1].output_value().to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
@@ -101,7 +101,7 @@ def test_single_node_passing_json_config_expectations():
     assert result.success
     assert len(result.solid_result_list) == 2
     assert result.solid_result_list[1].success
-    assert result.solid_result_list[1].result_value().to_dict('list') == {
+    assert result.solid_result_list[1].output_value().to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],

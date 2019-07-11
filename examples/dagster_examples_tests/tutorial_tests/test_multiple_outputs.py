@@ -13,10 +13,10 @@ def test_intro_tutorial_multiple_outputs_yield():
     result = execute_pipeline(multiple_outputs_yield_pipeline)
 
     assert result.success
-    assert result.result_for_solid('yield_outputs').result_value('out_one') == 23
-    assert result.result_for_solid('yield_outputs').result_value('out_two') == 45
-    assert result.result_for_solid('log_num').result_value() == 23
-    assert result.result_for_solid('log_num_squared').result_value() == 45 * 45
+    assert result.result_for_solid('yield_outputs').output_value('out_one') == 23
+    assert result.result_for_solid('yield_outputs').output_value('out_two') == 45
+    assert result.result_for_solid('log_num').output_value() == 23
+    assert result.result_for_solid('log_num_squared').output_value() == 45 * 45
 
 
 def test_intro_tutorial_multiple_outputs_conditional():
@@ -26,9 +26,9 @@ def test_intro_tutorial_multiple_outputs_conditional():
 
     # successful things
     assert result.success
-    assert result.result_for_solid('conditional').result_value('out_two') == 45
-    assert result.result_for_solid('log_num_squared').result_value() == 45 * 45
+    assert result.result_for_solid('conditional').output_value('out_two') == 45
+    assert result.result_for_solid('log_num_squared').output_value() == 45 * 45
 
     # unsuccessful things
     with pytest.raises(DagsterInvariantViolationError):
-        assert result.result_for_solid('conditional').result_value('out_one') == 45
+        assert result.result_for_solid('conditional').output_value('out_one') == 45

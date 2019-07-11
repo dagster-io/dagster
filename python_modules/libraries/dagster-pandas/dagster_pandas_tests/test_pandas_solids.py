@@ -39,7 +39,7 @@ def get_solid_result_value(solid_inst):
 
     execution_result = pipeline_result.result_for_solid(solid_inst.name)
 
-    return execution_result.result_value()
+    return execution_result.output_value()
 
 
 def get_num_csv_environment(solids_config):
@@ -126,7 +126,7 @@ def test_two_input_solid():
     pipeline_result = execute_pipeline(pipe)
     assert pipeline_result.success
 
-    df = pipeline_result.result_for_solid('two_input_solid').result_value()
+    df = pipeline_result.result_for_solid('two_input_solid').output_value()
 
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
@@ -190,7 +190,7 @@ def test_pandas_multiple_inputs():
         },
     )
 
-    output_df = execute_pipeline(pipe).result_for_solid('double_sum').result_value()
+    output_df = execute_pipeline(pipe).result_for_solid('double_sum').output_value()
 
     assert not output_df.empty
 
@@ -214,7 +214,7 @@ def test_rename_input():
 
     expected = {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7], 'sum_squared': [9, 49]}
     solid_result = result.result_for_solid('sum_sq_table_renamed_input')
-    assert solid_result.result_value().to_dict('list') == expected
+    assert solid_result.output_value().to_dict('list') == expected
 
 
 def test_date_column():

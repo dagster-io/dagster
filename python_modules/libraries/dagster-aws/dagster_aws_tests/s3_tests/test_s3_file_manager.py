@@ -104,7 +104,7 @@ def test_depends_on_s3_resource_intermediates():
     )
 
     assert result.success
-    assert result.result_for_solid('add_numbers').result_value() == 6
+    assert result.result_for_solid('add_numbers').output_value() == 6
 
     assert 'some-bucket' in s3_fake_resource.session.buckets
 

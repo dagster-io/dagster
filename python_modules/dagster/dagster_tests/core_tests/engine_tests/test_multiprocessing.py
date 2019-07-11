@@ -19,7 +19,7 @@ def test_diamond_simple_execution():
         define_diamond_pipeline(), run_config=RunConfig(executor_config=InProcessExecutorConfig())
     )
     assert result.success
-    assert result.result_for_solid('adder').result_value() == 11
+    assert result.result_for_solid('adder').output_value() == 11
 
 
 def transform_event(result, solid_name):
@@ -39,7 +39,7 @@ def test_diamond_multi_execution():
     )
     assert result.success
 
-    assert result.result_for_solid('adder').result_value() == 11
+    assert result.result_for_solid('adder').output_value() == 11
 
     pids_by_solid = {}
     for solid in pipeline.solids:

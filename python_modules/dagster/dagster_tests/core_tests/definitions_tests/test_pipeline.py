@@ -36,7 +36,7 @@ def test_basic_use_case():
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
 
-    assert execute_pipeline(pipeline_def).result_for_solid('add_one').result_value() == 2
+    assert execute_pipeline(pipeline_def).result_for_solid('add_one').output_value() == 2
 
 
 def test_basic_use_case_with_dsl():
@@ -44,7 +44,7 @@ def test_basic_use_case_with_dsl():
     def test():
         return add_one(num=return_one())
 
-    assert execute_pipeline(test).result_for_solid('add_one').result_value() == 2
+    assert execute_pipeline(test).result_for_solid('add_one').output_value() == 2
 
 
 def test_two_inputs_without_dsl():
@@ -70,7 +70,7 @@ def test_two_inputs_without_dsl():
         },
     )
 
-    assert execute_pipeline(pipeline_def).result_for_solid('add').result_value() == 5
+    assert execute_pipeline(pipeline_def).result_for_solid('add').output_value() == 5
 
 
 def test_two_inputs_with_dsl():
@@ -90,7 +90,7 @@ def test_two_inputs_with_dsl():
     def test():
         return add(num_one=return_two(), num_two=return_three())
 
-    assert execute_pipeline(test).result_for_solid('add').result_value() == 5
+    assert execute_pipeline(test).result_for_solid('add').output_value() == 5
 
 
 def test_basic_aliasing_with_dsl():
@@ -98,7 +98,7 @@ def test_basic_aliasing_with_dsl():
     def test():
         return add_one.alias('renamed')(num=return_one())
 
-    assert execute_pipeline(test).result_for_solid('renamed').result_value() == 2
+    assert execute_pipeline(test).result_for_solid('renamed').output_value() == 2
 
 
 def test_diamond_graph():
@@ -118,7 +118,7 @@ def test_diamond_graph():
 
     result = execute_pipeline(diamond_pipeline)
 
-    assert result.result_for_solid('add').result_value() == 5
+    assert result.result_for_solid('add').output_value() == 5
 
 
 def test_two_cliques():
@@ -132,8 +132,8 @@ def test_two_cliques():
 
     result = execute_pipeline(diamond_pipeline)
 
-    assert result.result_for_solid('return_one').result_value() == 1
-    assert result.result_for_solid('return_two').result_value() == 2
+    assert result.result_for_solid('return_one').output_value() == 1
+    assert result.result_for_solid('return_two').output_value() == 2
 
 
 def test_deep_graph():
@@ -170,5 +170,5 @@ def test_deep_graph():
         )
 
     result = execute_pipeline(test, {'solids': {'download_num': {'config': 123}}})
-    assert result.result_for_solid('canonicalize_num').result_value() == 123
-    assert result.result_for_solid('load_num').result_value() == 126
+    assert result.result_for_solid('canonicalize_num').output_value() == 123
+    assert result.result_for_solid('load_num').output_value() == 126

@@ -116,7 +116,7 @@ def test_int_input_schema_value():
     )
 
     assert result.success
-    assert result.result_for_solid('take_int').result_value() == 2
+    assert result.result_for_solid('take_int').output_value() == 2
 
 
 def test_int_input_schema_failure():
@@ -152,7 +152,7 @@ def test_int_json_schema_roundtrip():
             solid_subset=['take_int'],
         )
 
-        assert source_result.result_for_solid('take_int').result_value() == 2
+        assert source_result.result_for_solid('take_int').output_value() == 2
 
 
 def test_int_pickle_schema_roundtrip():
@@ -171,7 +171,7 @@ def test_int_pickle_schema_roundtrip():
             solid_subset=['take_int'],
         )
 
-        assert source_result.result_for_solid('take_int').result_value() == 2
+        assert source_result.result_for_solid('take_int').output_value() == 2
 
 
 def test_string_input_schema_value():
@@ -182,7 +182,7 @@ def test_string_input_schema_value():
     )
 
     assert result.success
-    assert result.result_for_solid('take_string').result_value() == 'dkjkfd'
+    assert result.result_for_solid('take_string').output_value() == 'dkjkfd'
 
 
 def test_string_input_schema_failure():
@@ -207,7 +207,7 @@ def test_float_input_schema_value():
     )
 
     assert result.success
-    assert result.result_for_solid('take_float').result_value() == 3.34
+    assert result.result_for_solid('take_float').output_value() == 3.34
 
 
 def test_float_input_schema_failure():
@@ -232,7 +232,7 @@ def test_bool_input_schema_value():
     )
 
     assert result.success
-    assert result.result_for_solid('take_bool').result_value() is True
+    assert result.result_for_solid('take_bool').output_value() is True
 
 
 def test_bool_input_schema_failure():
@@ -257,7 +257,7 @@ def test_any_input_schema_value():
     )
 
     assert result.success
-    assert result.result_for_solid('take_any').result_value() == 'ff'
+    assert result.result_for_solid('take_any').output_value() == 'ff'
 
     result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
@@ -266,7 +266,7 @@ def test_any_input_schema_value():
     )
 
     assert result.success
-    assert result.result_for_solid('take_any').result_value() == 3843
+    assert result.result_for_solid('take_any').output_value() == 3843
 
 
 def test_none_string_input_schema_failure():
@@ -321,7 +321,7 @@ def test_string_json_schema_roundtrip():
             solid_subset=['take_string'],
         )
 
-        assert source_result.result_for_solid('take_string').result_value() == 'foo'
+        assert source_result.result_for_solid('take_string').output_value() == 'foo'
 
 
 def test_string_pickle_schema_roundtrip():
@@ -342,7 +342,7 @@ def test_string_pickle_schema_roundtrip():
             solid_subset=['take_string'],
         )
 
-        assert source_result.result_for_solid('take_string').result_value() == 'foo'
+        assert source_result.result_for_solid('take_string').output_value() == 'foo'
 
 
 def test_path_input_schema_value():
@@ -353,7 +353,7 @@ def test_path_input_schema_value():
     )
 
     assert result.success
-    assert result.result_for_solid('take_path').result_value() == '/a/path'
+    assert result.result_for_solid('take_path').output_value() == '/a/path'
 
 
 def test_path_input_schema_failure():
@@ -378,7 +378,7 @@ def test_string_list_input():
 
     assert result.success
 
-    assert result.result_for_solid('take_string_list').result_value() == ['foobar']
+    assert result.result_for_solid('take_string_list').output_value() == ['foobar']
 
 
 def test_nullable_string_input_with_value():
@@ -392,7 +392,7 @@ def test_nullable_string_input_with_value():
 
     assert result.success
 
-    assert result.result_for_solid('take_nullable_string').result_value() == 'foobar'
+    assert result.result_for_solid('take_nullable_string').output_value() == 'foobar'
 
 
 def test_nullable_string_input_with_none_value():
@@ -422,4 +422,4 @@ def test_nullable_string_input_without_value():
 
     assert result.success
 
-    assert result.result_for_solid('take_nullable_string').result_value() is None
+    assert result.result_for_solid('take_nullable_string').output_value() is None

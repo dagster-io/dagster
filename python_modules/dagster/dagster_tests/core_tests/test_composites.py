@@ -323,4 +323,4 @@ def test_deep_mapping():
         echo(cx(emit_foo()))
 
     result = execute_pipeline(nested)
-    assert result.result_for_solid('echo').result_value() == 'foo'
+    assert result.result_for_solid('echo').output_value() == 'foo'

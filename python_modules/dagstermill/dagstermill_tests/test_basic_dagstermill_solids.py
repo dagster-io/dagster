@@ -62,7 +62,7 @@ def test_hello_world():
 def test_hello_world_with_output():
     with exec_for_test('define_hello_world_with_output_pipeline') as result:
         assert result.success
-        assert result.result_for_solid('hello_world_output').result_value() == 'hello, world'
+        assert result.result_for_solid('hello_world_output').output_value() == 'hello, world'
 
 
 @pytest.mark.notebook_test
@@ -82,7 +82,7 @@ def test_add_pipeline():
         'define_add_pipeline', {'loggers': {'console': {'config': {'log_level': 'ERROR'}}}}
     ) as result:
         assert result.success
-        assert result.result_for_solid('add_two_numbers').result_value() == 3
+        assert result.result_for_solid('add_two_numbers').output_value() == 3
 
 
 @pytest.mark.notebook_test
@@ -92,8 +92,8 @@ def test_notebook_dag():
         {'solids': {'load_a': {'config': 1}, 'load_b': {'config': 2}}},
     ) as result:
         assert result.success
-        assert result.result_for_solid('add_two').result_value() == 3
-        assert result.result_for_solid('mult_two').result_value() == 6
+        assert result.result_for_solid('add_two').output_value() == 3
+        assert result.result_for_solid('mult_two').output_value() == 6
 
 
 @pytest.mark.notebook_test

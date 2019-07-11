@@ -71,7 +71,7 @@ def test_basic():
     assert (
         execute_pipeline(PipelineDefinition(solid_defs=[test]))
         .result_for_handle('test.add_one')
-        .result_value()
+        .output_value()
         == 2
     )
 
@@ -151,8 +151,8 @@ def test_multiple():
         add_one.alias('add_one_2')(num=two)
 
     results = execute_pipeline(PipelineDefinition(solid_defs=[test]))
-    assert results.result_for_handle('test.add_one').result_value() == 2
-    assert results.result_for_handle('test.add_one_2').result_value() == 3
+    assert results.result_for_handle('test.add_one').output_value() == 2
+    assert results.result_for_handle('test.add_one_2').output_value() == 3
 
 
 def test_two_inputs_with_dsl():
@@ -171,7 +171,7 @@ def test_two_inputs_with_dsl():
     assert (
         execute_pipeline(PipelineDefinition(solid_defs=[test]))
         .result_for_handle('test.add')
-        .result_value()
+        .output_value()
         == 5
     )
 
@@ -184,7 +184,7 @@ def test_basic_aliasing_with_dsl():
     assert (
         execute_pipeline(PipelineDefinition(solid_defs=[test]))
         .result_for_handle('test.renamed')
-        .result_value()
+        .output_value()
         == 2
     )
 
@@ -206,7 +206,7 @@ def test_diamond_graph():
 
     result = execute_pipeline(PipelineDefinition(solid_defs=[diamond]))
 
-    assert result.result_for_handle('diamond.add').result_value() == 5
+    assert result.result_for_handle('diamond.add').output_value() == 5
 
 
 def test_mapping():
@@ -234,7 +234,7 @@ def test_mapping():
             )
         )
         .result_for_solid('pipe')
-        .result_value()
+        .output_value()
         == 2
     )
 
@@ -270,8 +270,8 @@ def test_output_map_mult():
         echo.alias('echo_two')(two)
 
     result = execute_pipeline(mult_pipe)
-    assert result.result_for_solid('echo_one').result_value() == 1
-    assert result.result_for_solid('echo_two').result_value() == 2
+    assert result.result_for_solid('echo_one').output_value() == 1
+    assert result.result_for_solid('echo_two').output_value() == 2
 
 
 def test_output_map_mult_swizzle():
@@ -287,8 +287,8 @@ def test_output_map_mult_swizzle():
         echo.alias('echo_y')(y)
 
     result = execute_pipeline(mult_pipe)
-    assert result.result_for_solid('echo_x').result_value() == 1
-    assert result.result_for_solid('echo_y').result_value() == 2
+    assert result.result_for_solid('echo_x').output_value() == 1
+    assert result.result_for_solid('echo_y').output_value() == 2
 
 
 def test_output_map_fail():
@@ -350,8 +350,8 @@ def test_deep_graph():
         PipelineDefinition(solid_defs=[test]),
         {'solids': {'test': {'solids': {'download_num': {'config': 123}}}}},
     )
-    assert result.result_for_handle('test.canonicalize_num').result_value() == 123
-    assert result.result_for_handle('test.load_num').result_value() == 126
+    assert result.result_for_handle('test.canonicalize_num').output_value() == 123
+    assert result.result_for_handle('test.load_num').output_value() == 126
 
 
 def test_recursion():
@@ -504,5 +504,5 @@ def test_multimap():
         multimap(one)
 
     result = execute_pipeline(multimap_pipe)
-    assert result.result_for_handle('multimap.echo_1').result_value() == 1
-    assert result.result_for_handle('multimap.echo_2').result_value() == 1
+    assert result.result_for_handle('multimap.echo_1').output_value() == 1
+    assert result.result_for_handle('multimap.echo_2').output_value() == 1

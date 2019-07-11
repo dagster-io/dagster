@@ -32,7 +32,7 @@ def run_hello_world(hello_world):
 
     assert result.success
 
-    assert result.result_value().to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
+    assert result.output_value().to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
 
 def create_definition_based_solid():

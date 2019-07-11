@@ -4,6 +4,7 @@
 
 - Added top-level `define_python_dagster_type` function.
 - Renamed `metadata_fn` to `typecheck_metadata_fn` in all runtime type creation APIs.
+- Renamed `result_value` and `result_values` to `output_value` and `output_values` on `SolidExecutionResult`
 - Dagstermill: Reworked public API now contains only `define_dagstermill_solid`, `get_context`,
   `yield_event`, `yield_result`, `DagstermillExecutionContext`, `DagstermillError`, and
   `DagstermillExecutionError`. Please see the new
