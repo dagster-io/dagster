@@ -19,4 +19,4 @@ def test_execute_on_dask():
         env_config={'storage': {'filesystem': {}}},
         dask_config=DaskConfig(timeout=30),
     )
-    assert result.result_for_solid('simple').result_value() == 1
+    assert result.result_for_solid('simple').output_value() == 1

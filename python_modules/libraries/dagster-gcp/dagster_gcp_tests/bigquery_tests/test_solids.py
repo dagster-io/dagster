@@ -85,7 +85,7 @@ def test_simple_queries():
     res = execute_pipeline(bq_pipeline).result_for_solid('bq_query_solid')
     assert res.success
 
-    values = res.result_value()
+    values = res.output_value()
     for df in values:
         assert isinstance(df, pd.DataFrame)
     assert values[0].to_dict('list') == {'field1': [1], 'field2': [2]}
@@ -227,7 +227,7 @@ def test_pd_df_load():
     result = execute_pipeline(bq_pipeline, config)
     assert result.success
 
-    values = result.result_for_solid('query_solid').result_value()
+    values = result.result_for_solid('query_solid').output_value()
     assert values[0].to_dict() == test_df.to_dict()
 
     # BQ loads should throw an exception if pyarrow and fastparquet aren't available
@@ -296,7 +296,7 @@ def test_gcs_load():
     result = execute_pipeline(bq_pipeline, config)
     assert result.success
 
-    values = result.result_for_solid('query_solid').result_value()
+    values = result.result_for_solid('query_solid').output_value()
     assert values[0].to_dict() == {'string_field_0': {0: 'Alabama'}, 'string_field_1': {0: 'AL'}}
 
     assert not dataset_exists(dataset)

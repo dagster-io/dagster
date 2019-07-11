@@ -95,7 +95,8 @@ DataFrame = as_dagster_type(
     typecheck_metadata_fn=lambda value: TypeCheck(
         metadata_entries=[
             EventMetadataEntry.text(str(len(value)), 'row_count', 'Number of rows in DataFrame'),
-            EventMetadataEntry.json({'columns': list(value.columns)}, 'metadata'),
+            # string cast columns since they may be things like datetime
+            EventMetadataEntry.json({'columns': list(map(str, value.columns))}, 'metadata'),
         ]
     ),
 )

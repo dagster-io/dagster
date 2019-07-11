@@ -27,7 +27,7 @@ def test_single_solid_in_isolation():
 
     result = execute_solid_within_pipeline(pipeline_def, 'solid_one')
     assert result.success
-    assert result.result_value() == 1
+    assert result.output_value() == 1
 
 
 def test_single_solid_with_single():
@@ -46,7 +46,7 @@ def test_single_solid_with_single():
 
     result = execute_solid_within_pipeline(pipeline_def, 'add_one_solid', inputs={'num': 2})
     assert result.success
-    assert result.result_value() == 3
+    assert result.output_value() == 3
 
 
 def test_single_solid_with_multiple_inputs():
@@ -76,7 +76,7 @@ def test_single_solid_with_multiple_inputs():
     )
 
     assert result.success
-    assert result.result_value() == 5
+    assert result.output_value() == 5
 
 
 def test_single_solid_with_config():

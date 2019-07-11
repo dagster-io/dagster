@@ -8,8 +8,8 @@ def test_intro_tutorial_hello_dag():
 
     assert result.success
     assert len(result.solid_result_list) == 2
-    assert result.result_for_solid('solid_one').result_value() == 'foo'
-    assert result.result_for_solid('solid_two').result_value() == 'foofoo'
+    assert result.result_for_solid('solid_one').output_value() == 'foo'
+    assert result.result_for_solid('solid_two').output_value() == 'foofoo'
     return result
 
 

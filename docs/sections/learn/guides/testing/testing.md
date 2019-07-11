@@ -318,7 +318,7 @@ def test_cache_file_from_s3_step_four(snapshot):
         },
     )
 
-    path_desc = solid_result.result_value.path_desc
+    path_desc = solid_result.output_value().path_desc
 
     # returned correct s3 path
     assert path_desc == 's3://file-cache-bucket/file-cache/source-file'

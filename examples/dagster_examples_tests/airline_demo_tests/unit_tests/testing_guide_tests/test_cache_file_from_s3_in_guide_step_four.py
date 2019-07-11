@@ -40,7 +40,7 @@ def test_cache_file_from_s3_step_four(snapshot):
         input_values={'s3_coord': {'bucket': 'source-bucket', 'key': 'source-file'}},
     )
 
-    assert solid_result.result_value().path_desc == 's3://file-cache-bucket/file-cache/source-file'
+    assert solid_result.output_value().path_desc == 's3://file-cache-bucket/file-cache/source-file'
 
     file_cache_obj = s3_file_cache_session.get_object(
         Bucket='file-cache-bucket', Key='file-cache/source-file'

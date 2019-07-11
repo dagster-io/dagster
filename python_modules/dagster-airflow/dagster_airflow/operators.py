@@ -19,6 +19,7 @@ from dagster import check, seven
 from dagster.seven.json import JSONDecodeError
 
 from .query import QUERY
+from .util import convert_airflow_datestr_to_epoch_ts
 
 
 DOCKER_TEMPDIR = '/tmp'
@@ -345,7 +346,11 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
         if self.airflow_ts:
             variables['executionParams']['executionMetadata']['tags'] = [
-                {'key': 'airflow_ts', 'value': self.airflow_ts}
+                {'key': 'airflow_ts', 'value': self.airflow_ts},
+                {
+                    'key': 'execution_epoch_time',
+                    'value': '%f' % convert_airflow_datestr_to_epoch_ts(self.airflow_ts),
+                },
             ]
 
         return '-v \'{variables}\' {query}'.format(
@@ -426,7 +431,13 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                         'selector': {'name': pipeline_name},
                         'executionMetadata': {
                             'runId': run_id,
-                            'tags': [{'key': 'airflow_ts', 'value': ts}],
+                            'tags': [
+                                {'key': 'airflow_ts', 'value': ts},
+                                {
+                                    'key': 'execution_epoch_time',
+                                    'value': '%f' % convert_airflow_datestr_to_epoch_ts(ts),
+                                },
+                            ],
                         },
                         'stepKeys': step_keys,
                     }

@@ -8,10 +8,10 @@ def test_intro_tutorial_actual_dag():
 
     assert result.success
     assert len(result.solid_result_list) == 4
-    assert result.result_for_solid('return_one').result_value() == 1
-    assert result.result_for_solid('multiply_by_two').result_value() == 2
-    assert result.result_for_solid('multiply_by_three').result_value() == 3
-    assert result.result_for_solid('multiply').result_value() == 6
+    assert result.result_for_solid('return_one').output_value() == 1
+    assert result.result_for_solid('multiply_by_two').output_value() == 2
+    assert result.result_for_solid('multiply_by_three').output_value() == 3
+    assert result.result_for_solid('multiply').output_value() == 6
     return result
 
 

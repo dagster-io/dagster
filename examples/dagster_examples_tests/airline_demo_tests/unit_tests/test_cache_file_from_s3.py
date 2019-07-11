@@ -65,8 +65,8 @@ def test_cache_file_from_s3_basic():
         assert isinstance(path_in_metadata, str)
         assert os.path.exists(path_in_metadata)
 
-        assert isinstance(solid_result.result_value(), LocalFileHandle)
-        assert 'some-key' in solid_result.result_value().path_desc
+        assert isinstance(solid_result.output_value(), LocalFileHandle)
+        assert 'some-key' in solid_result.output_value().path_desc
 
 
 def test_cache_file_from_s3_specify_target_key():
@@ -94,8 +94,8 @@ def test_cache_file_from_s3_specify_target_key():
         # assert the download occured
         assert s3_session.download_file.call_count == 1
         assert solid_result.success
-        assert isinstance(solid_result.result_value(), LocalFileHandle)
-        assert 'specified-file-key' in solid_result.result_value().path_desc
+        assert isinstance(solid_result.output_value(), LocalFileHandle)
+        assert 'specified-file-key' in solid_result.output_value().path_desc
 
 
 def test_cache_file_from_s3_skip_download():

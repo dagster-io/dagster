@@ -176,7 +176,7 @@ def assert_equivalent_results(left, right):
     assert left.success == right.success
     assert left.name == right.name
     assert left.solid.name == right.solid.name
-    assert left.result_value == right.result_value
+    assert left.output_value() == right.output_value()
 
 
 def assert_all_results_equivalent(expected_results, result_results):
@@ -198,7 +198,7 @@ def test_execute_solid_in_diamond():
     )
 
     assert solid_result.success
-    assert solid_result.result_value() == [{'a key': 'a value'}, {'A': 'transform_called'}]
+    assert solid_result.output_value() == [{'a key': 'a value'}, {'A': 'transform_called'}]
 
 
 def test_execute_aliased_solid_in_diamond():
@@ -216,7 +216,7 @@ def test_execute_aliased_solid_in_diamond():
     )
 
     assert solid_result.success
-    assert solid_result.result_value() == [{'a key': 'a value'}, {'aliased': 'transform_called'}]
+    assert solid_result.output_value() == [{'a key': 'a value'}, {'aliased': 'transform_called'}]
 
 
 def test_create_pipeline_with_empty_solids_list():
@@ -259,30 +259,30 @@ def test_two_root_solid_pipeline_with_partial_dependency_definition():
 def _do_test(pipeline):
     result = execute_pipeline(pipeline)
 
-    assert result.result_for_solid('A').result_value() == [
+    assert result.result_for_solid('A').output_value() == [
         input_set('A_input'),
         transform_called('A'),
     ]
 
-    assert result.result_for_solid('B').result_value() == [
+    assert result.result_for_solid('B').output_value() == [
         input_set('A_input'),
         transform_called('A'),
         transform_called('B'),
     ]
 
-    assert result.result_for_solid('C').result_value() == [
+    assert result.result_for_solid('C').output_value() == [
         input_set('A_input'),
         transform_called('A'),
         transform_called('C'),
     ]
 
-    assert result.result_for_solid('D').result_value() == [
+    assert result.result_for_solid('D').output_value() == [
         input_set('A_input'),
         transform_called('A'),
         transform_called('C'),
         transform_called('B'),
         transform_called('D'),
-    ] or result.result_for_solid('D').result_value() == [
+    ] or result.result_for_solid('D').output_value() == [
         input_set('A_input'),
         transform_called('A'),
         transform_called('B'),
@@ -332,7 +332,7 @@ def test_pipeline_subset():
 
     pipeline_result = execute_pipeline(pipeline_def)
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid('add_one').result_value() == 2
+    assert pipeline_result.result_for_solid('add_one').output_value() == 2
 
     env_config = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
 
@@ -342,7 +342,7 @@ def test_pipeline_subset():
 
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 1
-    assert subset_result.result_for_solid('add_one').result_value() == 4
+    assert subset_result.result_for_solid('add_one').output_value() == 4
 
     events = execute_pipeline_iterator(
         pipeline_def.build_sub_pipeline(['add_one']), environment_dict=env_config
@@ -378,13 +378,13 @@ def test_pipeline_subset_with_multi_dependency():
 
     pipeline_result = execute_pipeline(pipeline_def)
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid('noop').result_value() == 3
+    assert pipeline_result.result_for_solid('noop').output_value() == 3
 
     subset_result = execute_pipeline(pipeline_def.build_sub_pipeline(['noop']))
 
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 1
-    assert pipeline_result.result_for_solid('noop').result_value() == 3
+    assert pipeline_result.result_for_solid('noop').output_value() == 3
 
     events = execute_pipeline_iterator(pipeline_def.build_sub_pipeline(['noop']))
 
@@ -397,7 +397,7 @@ def test_pipeline_subset_with_multi_dependency():
 
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 3
-    assert pipeline_result.result_for_solid('noop').result_value() == 3
+    assert pipeline_result.result_for_solid('noop').output_value() == 3
 
 
 def define_three_part_pipeline():
@@ -444,8 +444,8 @@ def test_pipeline_execution_disjoint_subset():
 
     assert len(result.solid_result_list) == 2
 
-    assert result.result_for_solid('add_one').result_value() == 3
-    assert result.result_for_solid('add_three').result_value() == 8
+    assert result.result_for_solid('add_one').output_value() == 3
+    assert result.result_for_solid('add_three').output_value() == 8
 
 
 def test_pipeline_wrapping_types():

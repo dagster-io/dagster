@@ -251,7 +251,7 @@ def test_nested_with_inputs():
     )
 
     assert result.success
-    assert result.result_for_solid('pipe').result_value() == 'override.foo - foobar'
+    assert result.result_for_solid('pipe').output_value() == 'override.foo - foobar'
 
 
 def test_wrap_none_config_and_inputs():
@@ -302,7 +302,7 @@ def test_wrap_none_config_and_inputs():
     )
     assert result.success
     assert (
-        result.result_for_solid('pipe').result_value()
+        result.result_for_solid('pipe').output_value()
         == 'set_config_a.set_config_b.set_input_a.set_input_b'
     )
 
@@ -416,7 +416,7 @@ def test_wrap_all_config_no_inputs():
     )
     assert result.success
     assert (
-        result.result_for_solid('pipe').result_value()
+        result.result_for_solid('pipe').output_value()
         == 'override_a.override_b.set_input_a.set_input_b'
     )
 
@@ -509,7 +509,7 @@ def test_wrap_all_config_one_input():
     )
     assert result.success
     assert (
-        result.result_for_solid('pipe').result_value()
+        result.result_for_solid('pipe').output_value()
         == 'override_a.override_b.set_input_a.set_input_b'
     )
 
@@ -601,7 +601,7 @@ def test_wrap_all_config_and_inputs():
 
     assert result.success
     assert (
-        result.result_for_solid('pipe').result_value()
+        result.result_for_solid('pipe').output_value()
         == 'override_a.override_b.override_input_a.override_input_b'
     )
 

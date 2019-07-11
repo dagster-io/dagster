@@ -36,7 +36,7 @@ def test_aliased_solids():
     result = execute_pipeline(pipeline)
     assert result.success
     solid_result = result.result_for_solid('third')
-    assert solid_result.result_value() == ['first', 'not_first', 'not_first', 'not_first']
+    assert solid_result.output_value() == ['first', 'not_first', 'not_first', 'not_first']
 
 
 def test_only_aliased_solids():
@@ -61,7 +61,7 @@ def test_only_aliased_solids():
     result = execute_pipeline(pipeline)
     assert result.success
     solid_result = result.result_for_solid('the_consequence')
-    assert solid_result.result_value() == ['first', 'not_first']
+    assert solid_result.output_value() == ['first', 'not_first']
 
 
 def test_aliased_configs():
@@ -82,8 +82,8 @@ def test_aliased_configs():
     )
 
     assert result.success
-    assert result.result_for_solid('load_a').result_value() == 2
-    assert result.result_for_solid('load_b').result_value() == 3
+    assert result.result_for_solid('load_a').output_value() == 2
+    assert result.result_for_solid('load_b').output_value() == 3
 
 
 def test_aliased_solids_context():

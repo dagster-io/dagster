@@ -21,7 +21,7 @@ def test_ingest_csv_file_handle_to_spark():
     result = execute_pipeline(ingest_csv_file_test)
     assert result.success
 
-    df = result.result_for_solid('ingest_csv_file_handle_to_spark').result_value()
+    df = result.result_for_solid('ingest_csv_file_handle_to_spark').output_value()
 
     assert df.collect() == [Row(num1='1', num2='2')]
 
@@ -38,6 +38,6 @@ def test_ingest_csv_file_with_special_handle_to_spark():
     result = execute_pipeline(ingest_csv_file_test)
     assert result.success
 
-    df = result.result_for_solid('ingest_csv_file_handle_to_spark').result_value()
+    df = result.result_for_solid('ingest_csv_file_handle_to_spark').output_value()
 
     assert df.collect() == [Row(num1='1', num2='2')]

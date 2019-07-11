@@ -14,7 +14,7 @@ def test_tutorial_part_four():
 
     assert result.success
     assert len(result.solid_result_list) == 1
-    assert result.result_for_solid('hello_with_config').result_value() == '你好, 世界!'
+    assert result.result_for_solid('hello_with_config').output_value() == '你好, 世界!'
 
     result = execute_pipeline(
         pipeline, {'solids': {'hello_with_config': {'config': {'language': 'haw'}}}}
@@ -22,7 +22,7 @@ def test_tutorial_part_four():
 
     assert result.success
     assert len(result.solid_result_list) == 1
-    assert result.result_for_solid('hello_with_config').result_value() == 'Aloha honua!'
+    assert result.result_for_solid('hello_with_config').output_value() == 'Aloha honua!'
 
     result = execute_pipeline(
         pipeline, {'solids': {'hello_with_config': {'config': {'language': 'es'}}}}
@@ -30,7 +30,7 @@ def test_tutorial_part_four():
 
     assert result.success
     assert len(result.solid_result_list) == 1
-    assert result.result_for_solid('hello_with_config').result_value() == 'Hello, world!'
+    assert result.result_for_solid('hello_with_config').output_value() == 'Hello, world!'
 
 
 def test_tutorial_script_part_four():
