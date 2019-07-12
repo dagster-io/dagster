@@ -21,7 +21,10 @@ import "@blueprintjs/select/lib/css/blueprint-select.css";
 const ErrorToaster = Toaster.create({ position: Position.TOP_RIGHT });
 
 const websocketClient = new SubscriptionClient(
-  process.env.REACT_APP_GRAPHQL_URI || `ws://${document.location.host}/graphql`,
+  process.env.REACT_APP_GRAPHQL_URI ||
+    `${document.location.protocol === "https:" ? "wss" : "ws"}://${
+      document.location.host
+    }/graphql`,
   {
     reconnect: true
   }
