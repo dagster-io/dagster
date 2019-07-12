@@ -60,7 +60,7 @@ class _LambdaSolid(object):
         )
 
         _validate_solid_fn(self.name, fn, input_defs)
-        compute_fn = _create_lambda_solid_transform_wrapper(fn, input_defs, output_def)
+        compute_fn = _create_lambda_solid_compute_wrapper(fn, input_defs, output_def)
 
         return SolidDefinition(
             name=self.name,
@@ -117,7 +117,7 @@ class _Solid(object):
         )
 
         _validate_solid_fn(self.name, fn, input_defs, [('context',)])
-        compute_fn = _create_solid_transform_wrapper(fn, input_defs, output_defs)
+        compute_fn = _create_solid_compute_wrapper(fn, input_defs, output_defs)
 
         return SolidDefinition(
             name=self.name,
@@ -294,7 +294,7 @@ def solid(
     )
 
 
-def _create_lambda_solid_transform_wrapper(fn, input_defs, output_def):
+def _create_lambda_solid_compute_wrapper(fn, input_defs, output_def):
     check.callable_param(fn, 'fn')
     check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
     check.inst_param(output_def, 'output_def', OutputDefinition)
@@ -304,7 +304,7 @@ def _create_lambda_solid_transform_wrapper(fn, input_defs, output_def):
     ]
 
     @wraps(fn)
-    def transform(_context, input_defs):
+    def compute(_context, input_defs):
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = input_defs[input_name]
@@ -312,10 +312,10 @@ def _create_lambda_solid_transform_wrapper(fn, input_defs, output_def):
         result = fn(**kwargs)
         yield Output(value=result, output_name=output_def.name)
 
-    return transform
+    return compute
 
 
-def _create_solid_transform_wrapper(fn, input_defs, output_defs):
+def _create_solid_compute_wrapper(fn, input_defs, output_defs):
     check.callable_param(fn, 'fn')
     check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
     check.list_param(output_defs, 'output_defs', of_type=OutputDefinition)
@@ -325,7 +325,7 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
     ]
 
     @wraps(fn)
-    def transform(context, input_defs):
+    def compute(context, input_defs):
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = input_defs[input_name]
@@ -384,7 +384,7 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
                     )
                 )
 
-    return transform
+    return compute
 
 
 class FunctionValidationError(Exception):

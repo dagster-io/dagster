@@ -13,7 +13,7 @@ def _compute_fn(context, inputs):
 
     result = []
     result.extend(passed_rows)
-    result.append({context.solid.name: 'transform_called'})
+    result.append({context.solid.name: 'compute_called'})
     yield Output(result)
 
 

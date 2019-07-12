@@ -92,7 +92,7 @@ class Output(namedtuple('_Result', 'value output_name')):
     of a SolidDefinition directly must provide a compute function that yields objects of this type.
 
     Args:
-        value (Any): Value returned by the transform.
+        value (Any): Value returned by the compute function.
         output_name (str): Name of the output returns. Defaults to "result"
 '''
 

@@ -15,7 +15,7 @@ SystemPipelineExecutionContext                  (contains SystemPipelineExecutio
  |
  |--> SystemStepExecutionContext                (produced by .for_step() on pipeline context)
        |
-       |--> SystemComputeExecutionContext     (produced by .for_transform() on step context)
+       |--> SystemComputeExecutionContext     (produced by .for_compute() on step context)
        |
        |--> SystemExpectationExecutionContext   (produced by .for_expectation() on step context)
 

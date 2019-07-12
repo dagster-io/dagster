@@ -38,7 +38,6 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.core.definitions import IOExpectationDefinition
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import script_relative_path
 from dagster_graphql.implementation.context import DagsterGraphQLContext
@@ -106,31 +105,14 @@ def sum_sq_solid(sum_df):
     return PoorMansDataFrame(sum_sq_df)
 
 
-@lambda_solid(
-    input_defs=[
-        InputDefinition(
-            'sum_df',
-            PoorMansDataFrame,
-            expectations=[
-                IOExpectationDefinition(
-                    name='some_expectation',
-                    expectation_fn=lambda _i, _v: ExpectationResult(success=True),
-                )
-            ],
-        )
-    ],
-    output_def=OutputDefinition(
-        PoorMansDataFrame,
-        expectations=[
-            IOExpectationDefinition(
-                name='other_expectation',
-                expectation_fn=lambda _i, _v: ExpectationResult(success=True),
-            )
-        ],
-    ),
+@solid(
+    input_defs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    output_defs=[OutputDefinition(PoorMansDataFrame)],
 )
-def df_expectations_solid(sum_df):
-    return sum_df
+def df_expectations_solid(_context, sum_df):
+    yield ExpectationResult(label="some_expectation", success=True)
+    yield ExpectationResult(label="other_expecation", success=True)
+    yield Output(sum_df)
 
 
 def csv_hello_world_solids_config():

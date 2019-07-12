@@ -20,31 +20,31 @@ from dagster import (
     pipeline,
 )
 
-from dagster.core.test_utils import single_output_transform
+from dagster.core.test_utils import single_output_solid
 
 
 def create_root_success_solid(name):
-    def root_transform(_context, _args):
+    def root_fn(_context, _args):
         passed_rows = []
-        passed_rows.append({name: 'transform_called'})
+        passed_rows.append({name: 'compute_called'})
         return passed_rows
 
-    return single_output_transform(
-        name=name, input_defs=[], compute_fn=root_transform, output_def=OutputDefinition()
+    return single_output_solid(
+        name=name, input_defs=[], compute_fn=root_fn, output_def=OutputDefinition()
     )
 
 
-def create_root_transform_failure_solid(name):
-    def failed_transform(**_kwargs):
-        raise Exception('Transform failed')
+def create_root_fn_failure_solid(name):
+    def failed_fn(**_kwargs):
+        raise Exception('Compute failed')
 
-    return single_output_transform(
-        name=name, input_defs=[], compute_fn=failed_transform, output_def=OutputDefinition()
+    return single_output_solid(
+        name=name, input_defs=[], compute_fn=failed_fn, output_def=OutputDefinition()
     )
 
 
-def test_transform_failure_pipeline():
-    pipeline_def = PipelineDefinition(solid_defs=[create_root_transform_failure_solid('failing')])
+def test_compute_failure_pipeline():
+    pipeline_def = PipelineDefinition(solid_defs=[create_root_fn_failure_solid('failing')])
     pipeline_result = execute_pipeline(pipeline_def, run_config=RunConfig.nonthrowing_in_process())
 
     assert not pipeline_result.success
@@ -70,19 +70,19 @@ def test_failure_midstream():
 
     def fail_fn(_context, inputs):
         check.failed('user error')
-        return [inputs['A'], inputs['B'], {'C': 'transform_called'}]
+        return [inputs['A'], inputs['B'], {'C': 'compute_called'}]
 
     def success_fn(_context, inputs):
-        return [inputs['C'], {'D': 'transform_called'}]
+        return [inputs['C'], {'D': 'compute_called'}]
 
-    solid_c = single_output_transform(
+    solid_c = single_output_solid(
         name='C',
         input_defs=[InputDefinition(name='A'), InputDefinition(name='B')],
         compute_fn=fail_fn,
         output_def=OutputDefinition(),
     )
 
-    solid_d = single_output_transform(
+    solid_d = single_output_solid(
         name='D',
         input_defs=[InputDefinition(name='C')],
         compute_fn=success_fn,
@@ -124,35 +124,35 @@ def test_failure_propagation():
     def success_fn(_context, inputs):
         return inputs
 
-    solid_b = single_output_transform(
+    solid_b = single_output_solid(
         name='B',
         input_defs=[InputDefinition(name='A')],
         compute_fn=success_fn,
         output_def=OutputDefinition(),
     )
 
-    solid_c = single_output_transform(
+    solid_c = single_output_solid(
         name='C',
         input_defs=[InputDefinition(name='B')],
         compute_fn=success_fn,
         output_def=OutputDefinition(),
     )
 
-    solid_d = single_output_transform(
+    solid_d = single_output_solid(
         name='D',
         input_defs=[InputDefinition(name='A')],
         compute_fn=fail_fn,
         output_def=OutputDefinition(),
     )
 
-    solid_e = single_output_transform(
+    solid_e = single_output_solid(
         name='E',
         input_defs=[InputDefinition(name='D')],
         compute_fn=success_fn,
         output_def=OutputDefinition(),
     )
 
-    solid_f = single_output_transform(
+    solid_f = single_output_solid(
         name='F',
         input_defs=[InputDefinition(name='C'), InputDefinition(name='E')],
         compute_fn=success_fn,
@@ -199,7 +199,7 @@ def test_do_not_yield_result():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match='Transform for solid do_not_yield_result returned a Output',
+        match='Compute function for solid do_not_yield_result returned a Output',
     ):
         execute_isolated_solid(solid_inst)
 
@@ -213,13 +213,14 @@ def test_yield_non_result():
     )
 
     with pytest.raises(
-        DagsterInvariantViolationError, match="Transform for solid yield_wrong_thing yielded 'foo'"
+        DagsterInvariantViolationError,
+        match="Compute function for solid yield_wrong_thing yielded 'foo'",
     ):
         execute_isolated_solid(solid_inst)
 
 
-def test_single_transform_returning_result():
-    solid_inst = single_output_transform(
+def test_single_compute_fn_returning_result():
+    solid_inst = single_output_solid(
         'test_return_result',
         input_defs=[],
         compute_fn=lambda *_args, **_kwargs: Output(None),

@@ -26,7 +26,7 @@ from dagster import (
 )
 from dagster.core.errors import user_code_error_boundary
 from dagster.core.execution.context.system import SystemComputeExecutionContext
-from dagster.core.execution.context.transform import ComputeExecutionContext
+from dagster.core.execution.context.compute import ComputeExecutionContext
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.utils import mkdir_p
 
@@ -145,7 +145,7 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
     return parameters
 
 
-def _dm_solid_transform(name, notebook_path):
+def _dm_solid_compute(name, notebook_path):
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')
 
@@ -288,7 +288,7 @@ def define_dagstermill_solid(
     return SolidDefinition(
         name=name,
         input_defs=input_defs,
-        compute_fn=_dm_solid_transform(name, notebook_path),
+        compute_fn=_dm_solid_compute(name, notebook_path),
         output_defs=output_defs,
         config_field=config_field,
         required_resource_keys=required_resource_keys,

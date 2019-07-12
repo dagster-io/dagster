@@ -11,7 +11,9 @@ from defines import SupportedPython
 if __name__ == "__main__":
     steps = [
         StepBuilder('publish nightlies')
-        .on_python_image(SupportedPython.V3_7)
+        .on_integration_image(
+            SupportedPython.V3_7, ['SLACK_RELEASE_BOT_TOKEN', 'PYPI_USERNAME', 'PYPI_PASSWORD']
+        )
         .run(
             # Configure git
             'git config --global user.email "$GITHUB_EMAIL"',
@@ -34,9 +36,9 @@ if __name__ == "__main__":
             'python bin/publish.py publish --nightly --autoclean',
         )
         .build(),
-        # StepBuilder('clean phabricator tags')
-        # .run('git tag | grep phabricator | xargs git push -d origin')
-        # .build(),
+        StepBuilder('clean phabricator tags')
+        .run('git tag | grep phabricator | xargs git push -d origin')
+        .build(),
     ]
 
 print(yaml.dump({"env": {}, "steps": steps}, default_flow_style=False))

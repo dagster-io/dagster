@@ -22,7 +22,6 @@ def test_execution_plan_create_metadata():
         },
     )
 
-    transform_step = execution_plan.get_step_by_key('solid_metadata_creation.compute')
-    assert transform_step
-
-    assert transform_step.metadata == {'computed': 'foobar1'}
+    compute_step = execution_plan.get_step_by_key('solid_metadata_creation.compute')
+    assert compute_step
+    assert compute_step.metadata == {'computed': 'foobar1'}

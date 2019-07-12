@@ -16,14 +16,13 @@ from .runs import base_directory_for_run
 
 
 @dagster_type(
-    description='''A file handle a reference to a file, which could
-    be resident in the local file system, an object store, or any
-    arbitrary place where file can be stored.
+    description='''A file handle a reference to a file, which could be resident in the local file
+    system, an object store, or any arbitrary place where file can be stored.
 
-    This exists to handle the very common case where you wish to write
-    a computation reads, transforms, and writes files, but written in a way
-    where the same code could work in local developement as well as in a cluster
-    where the files would be stored in globally available object store such as s3.
+    This exists to handle the very common case where you wish to write a computation that reads,
+    transforms, and writes files, but is written in a way where the same code could work in local
+    developement as well as in a cluster where the files would be stored in globally available
+    object store such as s3.
     '''
 )  # pylint: disable=no-init
 class FileHandle(six.with_metaclass(ABCMeta)):
