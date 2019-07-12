@@ -60,7 +60,7 @@ def _do_setup(name='dagit'):
             'dagster=={ver}'.format(ver=ver),
             'dagster-graphql=={ver}'.format(ver=ver),
             # graphql
-            'graphql-core>=2.1',
+            'graphql-core>=2.1,<3',
             # server
             'Flask-GraphQL>=2.0.0',
             'Flask-Sockets>=0.2.1',
