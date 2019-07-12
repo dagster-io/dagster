@@ -66,7 +66,7 @@ Making New Types
 
 .. autofunction:: dagster_type
 
-.. autoclass:: PythonObjectType
+.. autofunction:: define_python_dagster_type
 
 .. autoclass:: RuntimeType
 

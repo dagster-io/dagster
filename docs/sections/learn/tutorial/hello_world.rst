@@ -11,7 +11,7 @@ tutorial code, at ``dagster/examples/dagster_examples/intro_tutorial``.)
    :lines: 1-11
    :caption: hello_world.py
 
-This example introduces three concepts:
+This example introduces the core **solid** and **pipeline** concepts:
 
 1.  A **solid** is a functional unit of computation in a data pipeline. In this example, we use the
     decorator :py:func:`@lambda_solid <dagster.lambda_solid>` to mark the function ``hello_world``
@@ -22,18 +22,14 @@ This example introduces three concepts:
     In this example, the function decorated call to :py:func:`@pipeline <dagster.pipeline>` defines
     a pipeline with a single solid.
 
-3.  We **execute** the pipeline by running :py:func:`execute_pipeline <dagster.execute_pipeline>`.
-    Dagster will call into each solid in the pipeline, functionally transforming its inputs, if any,
-    and threading its outputs to solids further on in the DAG.
-
 Pipeline Execution
 ^^^^^^^^^^^^^^^^^^
 
 Assuming you've saved this pipeline as ``hello_world.py``, we can execute it via any of three
 different mechanisms:
 
-1. The CLI utility `dagster`
-2. The GUI tool `dagit`
+1. The CLI utility ``dagster``
+2. The GUI tool ``dagit``
 3. Using dagster as a library within your own script.
 
 CLI
@@ -88,7 +84,7 @@ Library
 ~~~~~~~
 
 If you'd rather execute your pipelines as a script, you can do that without using the dagster CLI
-at all. Just add a few lines to `hello_world.py` (highlighted in yellow):
+at all. Just add a few lines to ``hello_world.py`` (highlighted in yellow):
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_world.py
    :linenos:
