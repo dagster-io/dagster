@@ -5,14 +5,8 @@ watch:
 	"dagster-graphql/dagster_graphql_tests "\
 	"dagit/dagit_tests "
 
-
-
 black:
 	black . --line-length 100 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/" -N
-
-
-pylint:
-	pushd ../; pylint -j 0 --disable=R,C `cat .pylint_targets` --rcfile=.pylintrc; popd
 
 reinstall:
 	pip uninstall dagit
@@ -21,7 +15,7 @@ reinstall:
 	pip install -e dagit
 
 rebuild_dagit:
-	cd ../js_modules/dagit/; yarn install && yarn build-for-python
+	cd ../js_modules/dagit/; yarn install --offline && yarn build-for-python
 
 run_dagit:
 	cd ../js_modules/dagit/; make
