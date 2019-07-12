@@ -270,7 +270,7 @@ class ExecutionTargetHandle:
             # https://github.com/dagster-io/dagster/issues/1439
             if isinstance(obj, PipelineDefinition):
                 return ExecutionTargetHandle.cache_handle(
-                    RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_dict={obj.name: obj}),
+                    RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_defs=[obj]),
                     ExecutionTargetHandle.get_handle(obj),
                 )
             return ExecutionTargetHandle.cache_handle(check.inst(obj, RepositoryDefinition), self)

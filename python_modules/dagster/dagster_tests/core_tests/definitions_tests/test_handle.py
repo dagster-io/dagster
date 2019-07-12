@@ -178,6 +178,10 @@ def test_bad_modes():
         handle.build_pipeline_definition()
     assert str(exc_info.value) == 'Failure condition: Unhandled mode not a mode'
 
+    with pytest.raises(check.CheckError) as exc_info:
+        handle.build_repository_definition()
+    assert str(exc_info.value) == 'Failure condition: Unhandled mode not a mode'
+
 
 def test_exc_target_handle_data():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
@@ -281,3 +285,9 @@ def test_get_python_file_from_previous_stack_frame():
         'definitions_tests',
         'test_handle.py',
     ]
+
+
+def test_build_repository_definition():
+    handle = ExecutionTargetHandle.for_repo_python_file(__file__, 'define_foo_pipeline')
+    repo = handle.build_repository_definition()
+    assert repo.name == EPHEMERAL_NAME
