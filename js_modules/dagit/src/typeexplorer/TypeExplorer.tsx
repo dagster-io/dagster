@@ -9,6 +9,8 @@ import {
   SidebarTitle
 } from "../SidebarComponents";
 
+import Description from "../Description";
+
 interface ITypeExplorerProps {
   type: TypeExplorerFragment;
 }
@@ -46,7 +48,7 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
           <Link to="?types=true">Pipeline Types</Link> > {name}
         </SidebarTitle>
         <SidebarSection title={"Description"}>
-          {description || "No Description Provided"}
+          <Description description={description || "No Description Provided"} />
         </SidebarSection>
         {inputSchemaType && (
           <SidebarSection title={"Input"}>
