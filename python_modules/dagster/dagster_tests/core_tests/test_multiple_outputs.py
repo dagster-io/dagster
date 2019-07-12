@@ -4,7 +4,6 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
     DependencyDefinition,
-    ExpectationResult,
     InputDefinition,
     Output,
     OutputDefinition,
@@ -39,41 +38,6 @@ def test_multiple_outputs():
         DagsterInvariantViolationError, match='not_defined not defined in solid multiple_outputs'
     ):
         solid_result.output_value('not_defined')
-
-
-def test_multiple_outputs_expectations():
-    called = {}
-
-    def _expect_fn_one(*_args, **_kwargs):
-        called['expectation_one'] = True
-        return True
-
-    def _expect_fn_two(*_args, **_kwargs):
-        called['expectation_two'] = True
-        return True
-
-    def _compute_fn(*_args, **_kwargs):
-        output_one_val = 'foo'
-        output_two_val = 'bar'
-        yield ExpectationResult(label='some_expectation', success=_expect_fn_one(output_one_val))
-        yield ExpectationResult(label='some_expectation', success=_expect_fn_two(output_two_val))
-        yield Output(output_one_val, 'output_one')
-        yield Output(output_two_val, 'output_two')
-
-    solid = SolidDefinition(
-        name='multiple_outputs',
-        input_defs=[],
-        output_defs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
-        compute_fn=_compute_fn,
-    )
-
-    pipeline = PipelineDefinition(solid_defs=[solid])
-
-    result = execute_pipeline(pipeline)
-
-    assert result.success
-    assert called['expectation_one']
-    assert called['expectation_two']
 
 
 def test_wrong_multiple_output():

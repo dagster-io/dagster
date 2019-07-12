@@ -156,7 +156,7 @@ class _PlanBuilder:
             # Create and add execution plan steps (and output handles) for solid outputs
             for name, output_def in solid.definition.output_dict.items():
                 subplan = create_subplan_for_output(
-                    self.pipeline_name, solid, terminal_transform_step, output_def
+                    self.pipeline_name, solid, terminal_compute_step, output_def
                 )
                 self.add_steps(subplan.steps)
 
@@ -166,14 +166,14 @@ class _PlanBuilder:
         return terminal_compute_step
 
 
-def create_subplan_for_output(pipeline_name, solid, solid_transform_step, output_def):
+def create_subplan_for_output(pipeline_name, solid, solid_compute_step, output_def):
     check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(solid_compute_step, 'solid_compute_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
     output_def = solid.definition.resolve_output_to_origin(output_def.name)
-    terminal_step_output_handle = StepOutputHandle.from_step(solid_transform_step, output_def.name)
+    terminal_step_output_handle = StepOutputHandle.from_step(solid_compute_step, output_def.name)
     return ExecutionValueSubplan.empty(terminal_step_output_handle)
 
 
