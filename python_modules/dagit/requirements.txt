@@ -10,7 +10,8 @@ Flask==0.12.4
 future>=0.16.0, <0.17.0a0
 gevent-websocket==0.10.1
 gevent==1.3.7
-graphql-core>=2.1
+# graphql-core pinned to range for Python 2 compataibility
+graphql-core>=2.1,<3
 graphql-ws>=0.3.0
 nbconvert>=5.4.0
 # pyyaml pinned for compatibility with docker-compose
