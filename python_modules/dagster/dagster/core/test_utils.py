@@ -1,4 +1,11 @@
-from dagster import DagsterInvariantViolationError, Output, SolidDefinition
+from dagster import (
+    composite_solid,
+    pipeline,
+    solid,
+    DagsterInvariantViolationError,
+    Output,
+    SolidDefinition,
+)
 from dagster.core.types.evaluator import evaluate_config
 from dagster.core.types.evaluator.errors import DagsterEvaluateConfigValueError
 
@@ -59,3 +66,35 @@ def throwing_evaluate_config_value(config_type, config_value):
     if not result.success:
         raise DagsterEvaluateConfigValueError(result.errors[0].stack, result.errors[0].message)
     return result.value
+
+
+def nesting_composite_pipeline(depth, num_children):
+    '''Creates a pipeline of nested composite solids up to "depth" layers, with a fan-out of
+    num_children at each layer.
+
+    Total number of solids will be num_children ^ depth
+    '''
+
+    @solid
+    def leaf_node(_):
+        return 1
+
+    def create_wrap(inner, name):
+        @composite_solid
+        def wrap():
+            for i in range(num_children):
+                solid_alias = '%s_node_%d' % (name, i)
+                inner.alias(solid_alias)()
+
+        return wrap
+
+    @pipeline
+    def nested_pipeline():
+        comp_solid = create_wrap(leaf_node, 'layer_%d' % depth)
+
+        for i in range(depth):
+            comp_solid = create_wrap(comp_solid, 'layer_%d' % (depth - (i + 1)))
+
+        comp_solid.alias('outer')()
+
+    return nested_pipeline

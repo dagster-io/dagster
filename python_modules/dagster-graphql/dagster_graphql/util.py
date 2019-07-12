@@ -298,11 +298,18 @@ def dagster_event_from_dict(event_dict, pipeline_name):
             else None,
         )
 
+    # We should update the GraphQL response so that clients don't need to do this handle parsing.
+    # See: https://github.com/dagster-io/dagster/issues/1559
+    keys = event_dict['step']['solidHandleID'].split('.')
+    handle = None
+    while keys:
+        handle = SolidHandle(keys.pop(0), definition_name=None, parent=handle)
+
     return DagsterEvent(
         event_type_value=event_type.value,
         pipeline_name=pipeline_name,
         step_key=event_dict['step']['key'],
-        solid_handle=SolidHandle(event_dict['step']['solidHandleID'], None, None),
+        solid_handle=handle,
         step_kind_value=event_dict['step']['kind'],
         logging_tags=None,
         event_specific_data=event_specific_data,
