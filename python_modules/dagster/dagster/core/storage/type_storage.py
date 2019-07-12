@@ -19,18 +19,12 @@ class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @classmethod
     @abstractmethod
     def set_object(cls, intermediate_store, obj, context, runtime_type, paths):
-        from .intermediate_store import IntermediateStore
-
-        check.subclass_param(intermediate_store, 'intermediate_store', IntermediateStore)
-        return intermediate_store.set_object(obj, context, runtime_type, paths)
+        raise NotImplementedError()
 
     @classmethod
     @abstractmethod
     def get_object(cls, intermediate_store, context, runtime_type, paths):
-        from .intermediate_store import IntermediateStore
-
-        check.subclass_param(intermediate_store, 'intermediate_store', IntermediateStore)
-        return intermediate_store.get_object(context, runtime_type, paths)
+        raise NotImplementedError()
 
 
 class TypeStoragePluginRegistry:
