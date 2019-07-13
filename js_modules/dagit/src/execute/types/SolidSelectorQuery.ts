@@ -145,17 +145,10 @@ export interface SolidSelectorQuery_pipeline_solids_outputs_definition_type {
   displayName: string;
 }
 
-export interface SolidSelectorQuery_pipeline_solids_outputs_definition_expectations {
-  __typename: "Expectation";
-  name: string;
-  description: string | null;
-}
-
 export interface SolidSelectorQuery_pipeline_solids_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
   type: SolidSelectorQuery_pipeline_solids_outputs_definition_type;
-  expectations: SolidSelectorQuery_pipeline_solids_outputs_definition_expectations[];
 }
 
 export interface SolidSelectorQuery_pipeline_solids_outputs_dependedBy_solid {

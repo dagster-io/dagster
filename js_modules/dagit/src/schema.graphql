@@ -261,11 +261,6 @@ input ExecutionTag {
   value: String!
 }
 
-type Expectation {
-  name: String!
-  description: String
-}
-
 type ExpectationResult implements DisplayableEvent {
   label: String!
   description: String
@@ -306,7 +301,6 @@ type InputDefinition {
   name: String!
   description: String
   type: RuntimeType!
-  expectations: [Expectation!]!
 }
 
 type InputMapping {
@@ -487,7 +481,6 @@ type OutputDefinition {
   name: String!
   description: String
   type: RuntimeType!
-  expectations: [Expectation!]!
 }
 
 type OutputMapping {

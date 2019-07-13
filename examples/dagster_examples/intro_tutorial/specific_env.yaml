@@ -1,0 +1,7 @@
+solids:
+  multiply_the_word:
+    inputs:
+      word:
+        value: bar
+    config:
+      factor: 2

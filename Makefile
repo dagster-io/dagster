@@ -19,7 +19,7 @@ install_dev_python_modules:
 	# On machines with less memory, pyspark install will fail... see:
 	# https://stackoverflow.com/a/31526029/11295366
 	pip --no-cache-dir install pyspark==2.4.0
-	
+
 	#
 	# Dask installation will fail for Python 2.7 (Dask doesn't work w/ py27 on macOS)
 	# See https://github.com/dagster-io/dagster/issues/1486
@@ -57,7 +57,7 @@ graphql:
 	cd js_modules/dagit/; make generate-types
 
 rebuild_dagit:
-	cd js_modules/dagit/; yarn install && yarn build-for-python
+	cd js_modules/dagit/; yarn install --offline && yarn build-for-python
 
 dev_install: install_dev_python_modules rebuild_dagit
 

@@ -145,17 +145,10 @@ export interface PipelineGraphSolidFragment_outputs_definition_type {
   displayName: string;
 }
 
-export interface PipelineGraphSolidFragment_outputs_definition_expectations {
-  __typename: "Expectation";
-  name: string;
-  description: string | null;
-}
-
 export interface PipelineGraphSolidFragment_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
   type: PipelineGraphSolidFragment_outputs_definition_type;
-  expectations: PipelineGraphSolidFragment_outputs_definition_expectations[];
 }
 
 export interface PipelineGraphSolidFragment_outputs_dependedBy_solid {

@@ -238,18 +238,11 @@ export interface PipelineExplorerSolidHandleFragment_solid_inputs_definition_typ
   description: string | null;
 }
 
-export interface PipelineExplorerSolidHandleFragment_solid_inputs_definition_expectations {
-  __typename: "Expectation";
-  name: string;
-  description: string | null;
-}
-
 export interface PipelineExplorerSolidHandleFragment_solid_inputs_definition {
   __typename: "InputDefinition";
   name: string;
   type: PipelineExplorerSolidHandleFragment_solid_inputs_definition_type;
   description: string | null;
-  expectations: PipelineExplorerSolidHandleFragment_solid_inputs_definition_expectations[];
 }
 
 export interface PipelineExplorerSolidHandleFragment_solid_inputs_dependsOn_definition_type {
@@ -287,17 +280,10 @@ export interface PipelineExplorerSolidHandleFragment_solid_outputs_definition_ty
   description: string | null;
 }
 
-export interface PipelineExplorerSolidHandleFragment_solid_outputs_definition_expectations {
-  __typename: "Expectation";
-  name: string;
-  description: string | null;
-}
-
 export interface PipelineExplorerSolidHandleFragment_solid_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
   type: PipelineExplorerSolidHandleFragment_solid_outputs_definition_type;
-  expectations: PipelineExplorerSolidHandleFragment_solid_outputs_definition_expectations[];
   description: string | null;
 }
 

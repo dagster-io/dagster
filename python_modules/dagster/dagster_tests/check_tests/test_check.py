@@ -97,6 +97,13 @@ def test_set_param():
     obj_set_two = {1, 1, 2}
     obj_set_two_deduped = {1, 2}
     assert check.set_param(obj_set_two, 'set_param') == obj_set_two_deduped
+    assert check.set_param(obj_set_two, 'set_param', of_type=int) == obj_set_two_deduped
+
+    with pytest.raises(CheckError, match='Did you pass a class'):
+        check.set_param({str}, 'set_param', of_type=int)
+
+    with pytest.raises(CheckError, match='Member of set mismatches type'):
+        check.set_param({'foo'}, 'set_param', of_type=int)
 
 
 def test_is_list():
@@ -107,6 +114,9 @@ def test_is_list():
 
     with pytest.raises(CheckError):
         check.is_list('3u4')
+
+    with pytest.raises(CheckError, match='Did you pass a class'):
+        check.is_list([str], of_type=int)
 
 
 def test_typed_list_param():
@@ -164,6 +174,7 @@ def test_opt_list_param():
 def test_opt_set_param():
     assert check.opt_set_param(None, 'set_param') == set()
     assert check.opt_set_param(set(), 'set_param') == set()
+    assert check.opt_set_param({3}, 'set_param') == {3}
 
     with pytest.raises(ParameterCheckError):
         check.opt_set_param(0, 'set_param')
@@ -179,7 +190,7 @@ def test_opt_nullable_list_param():
     assert check.opt_nullable_list_param(None, 'list_param') is None
     assert check.opt_nullable_list_param([], 'list_param') == []
     obj_list = [1]
-    assert check.list_param(obj_list, 'list_param') == obj_list
+    assert check.opt_nullable_list_param(obj_list, 'list_param') == obj_list
 
     with pytest.raises(ParameterCheckError):
         check.opt_nullable_list_param(0, 'list_param')
@@ -328,6 +339,18 @@ def test_opt_nullable_dict_param():
     assert check.opt_nullable_dict_param({}, 'opt_nullable_dict_param') == {}
     ddict = {'a': 2}
     assert check.opt_nullable_dict_param(ddict, 'opt_nullable_dict_param') == ddict
+
+    class Foo:
+        pass
+
+    class Bar(Foo):
+        pass
+
+    ddict_class = {'a': Bar}
+    assert (
+        check.opt_nullable_dict_param(ddict_class, 'opt_nullable_dict_param', value_class=Foo)
+        == ddict_class
+    )
 
     with pytest.raises(ParameterCheckError):
         check.opt_nullable_dict_param(1, 'opt_nullable_dict_param')

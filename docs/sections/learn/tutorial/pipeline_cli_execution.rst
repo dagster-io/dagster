@@ -46,13 +46,11 @@ for config.
 
 Let's split up our env.yaml into two parts:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yaml
-   :lines: 1-4
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/constant_env.yaml
    :language: YAML
    :caption: constant_env.yaml
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/pipeline_execution_env.yaml
-   :lines: 6-12
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/specific_env.yaml
    :language: YAML
    :caption: specific_env.yaml
 

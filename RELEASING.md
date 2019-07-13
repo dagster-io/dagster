@@ -22,57 +22,58 @@ for a pre-release version before releasing a new version, i.e., first for versio
 then for version 0.3.0 only when you know that the process is going to succeed without issues.
 This ensures a clean release history.
 
-*WARNING*: Keep in mind that there is no undo in some of the third-party systems (e.g., PyPI) we use to
+_WARNING_: Keep in mind that there is no undo in some of the third-party systems (e.g., PyPI) we use to
 release software.
 
 You should also run releases from a clean clone of the repository. This is to guard against any
 issues that might be introduced by local build artifacts.
 
-1. Check that you are on `master`, that there are no local changes or changes on the remote, and
-   that you are at the root of the repository.
+1.  Check that you are on `master`, that there are no local changes or changes on the remote, and
+    that you are at the root of the repository.
 
-2. Make sure that you have installed the release requirements by running
-   `pip install -r bin/requirements.txt`.
+2.  Make sure that you have installed the release requirements by running
+    `pip install -r bin/requirements.txt`.
 
-3. Check that the current version of the projects is consistent and what you expect by running:
+3.  Check that the current version of the projects is consistent and what you expect by running:
 
         python bin/publish.py version
 
-4. Create a new release by running (e.g., for version `0.4.3.pre0`):
+4.  Create a new release by running (e.g., for version `0.4.3.pre0`):
 
         python bin/publish.py release 0.4.3.pre0
 
-5. Check that the new version has been created successfully by again running:
+5.  Check that the new version has been created successfully by again running:
 
         python bin/publish.py version
 
-6. Push the new version to the remote. The new version tag will trigger a ReadTheDocs build.
+6.  Push the new version to the remote. The new version tag will trigger a ReadTheDocs build.
 
         git push && git push origin 0.4.3.pre0
 
-7. Publish the new version to PyPI. Note that you must have PyPI credentials available to twine
-   (see below), and you must be permissioned as a maintainer on the projects.
+7.  Publish the new version to PyPI. Note that you must have PyPI credentials available to twine
+    (see below), and you must be permissioned as a maintainer on the projects.
 
-        python bin/publish.py publish
+         python bin/publish.py publish
 
-8. Manually switch the default ReadTheDocs version to the newly built docs:
-   [https://readthedocs.org/projects/dagster/versions/](https://readthedocs.org/projects/dagster/versions/)
+8.  Manually switch the default ReadTheDocs version to the newly built docs:
+    [https://readthedocs.org/projects/dagster/versions/](https://readthedocs.org/projects/dagster/versions/)
 
-   The new version will be below in the "Inactive Versions" section. Click on "Edit" and you will
-   be brought to a page with a header like, for version 0.5.0.pre0, "Editing 0.5.0.pre0"
-   [https://readthedocs.org/dashboard/dagster/version/0.5.0.pre0/](https://readthedocs.org/dashboard/dagster/version/0.5.0.pre0/).
-   Check the checkbox marked "Active" on this page and then click the "Save" button.
+    The new version will be below in the "Inactive Versions" section. Click on "Edit" and you will
+    be brought to a page with a header like, for version 0.5.0.pre0, "Editing 0.5.0.pre0"
+    [https://readthedocs.org/dashboard/dagster/version/0.5.0.pre0/](https://readthedocs.org/dashboard/dagster/version/0.5.0.pre0/).
+    Check the checkbox marked "Active" on this page and then click the "Save" button.
 
-   If the build has not yet completed, you will have to wait for it.
+    If the build has not yet completed, you will have to wait for it.
 
-   Then, go to 
-   [https://readthedocs.org/dashboard/dagster/advanced/](https://readthedocs.org/dashboard/dagster/advanced/).
-   Select the newly built version from the "Default version" dropdown and then click the "Save"
-   button.
+    Then, go to
+    [https://readthedocs.org/dashboard/dagster/advanced/](https://readthedocs.org/dashboard/dagster/advanced/).
+    Select the newly built version from the "Default version" dropdown and then click the "Save"
+    button.
 
 9.  Check that the ReadTheDocs and PyPI versions are as you expect.
 
 ### PyPI credentials
+
 Credentials must be available to twine in order to publish to PyPI. The best way to do this is
 with a `~/.pypirc` file in the following format:
 

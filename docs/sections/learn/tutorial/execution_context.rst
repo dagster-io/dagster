@@ -64,9 +64,9 @@ Save it as execution_context.yaml and then run:
 .. code-block:: console
 
     $ dagster pipeline execute \
-    -f execution_context.py \
-    -n execution_context_pipeline  \
-    -e execution_context.yaml
+        -f execution_context.py \
+        -n execution_context_pipeline  \
+        -e execution_context.yaml
 
 You'll see now that debug messages print out to the console.
 

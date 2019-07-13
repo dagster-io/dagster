@@ -181,8 +181,15 @@ def execute_on_dask(
                         }
                     }
 
+                    dask_task_name = '%s.%s' % (pipeline.name, step.key)
+
                     future = client.submit(
-                        query_on_dask_worker, handle, query, variables, dependencies
+                        query_on_dask_worker,
+                        handle,
+                        query,
+                        variables,
+                        dependencies,
+                        key=dask_task_name,
                     )
 
                     execution_futures.append(future)

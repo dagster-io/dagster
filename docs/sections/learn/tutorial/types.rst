@@ -12,7 +12,7 @@ Basic Typing
 ^^^^^^^^^^^^
 
 .. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 1, 85-92, 101
+   :lines: 1, 85-92, 102
    :linenos:
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can
