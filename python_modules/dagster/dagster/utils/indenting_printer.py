@@ -29,11 +29,11 @@ class IndentingPrinter(object):
         self.printer(self.current_indent_str + self._line_so_far + text)
         self._line_so_far = ''
 
-    def block(self, text, prefix=''):
+    def block(self, text, prefix='', initial_indent=''):
         '''Automagically wrap a block of text.'''
         wrapper = TextWrapper(
             width=self.line_length - len(self.current_indent_str),
-            initial_indent=prefix,
+            initial_indent=initial_indent,
             subsequent_indent=prefix,
             break_long_words=False,
             break_on_hyphens=False,
@@ -42,7 +42,7 @@ class IndentingPrinter(object):
             self.line(line)
 
     def comment(self, text):
-        self.block(text, prefix='# ')
+        self.block(text, prefix='# ', initial_indent='# ')
 
     @property
     def current_indent_str(self):

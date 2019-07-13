@@ -8,16 +8,18 @@ from __future__ import print_function
 import re
 import sys
 
+from collections import namedtuple
 from enum import Enum
 
 import click
 import requests
 import pytablereader as ptr
 
-from printer import IndentingBufferPrinter
+from .printer import IndentingBufferPrinter
 
 SPARK_VERSION = "v2.4.0"
 TABLE_REGEX = r"### (.{,30}?)\n\n(<table.*?>.*?<\/table>)"
+WHITESPACE_REGEX = r'\s+'
 
 
 class ConfigType(Enum):
@@ -152,14 +154,15 @@ CONFIG_TYPES = {
 }
 
 
-class SparkConfig:
-    def __init__(self, path, default, meaning):
-        self.path = path
-
+class SparkConfig(namedtuple('_SparkConfig', 'path default meaning')):
+    def __new__(cls, path, default, meaning):
         # The original documentation strings include extraneous newlines, spaces
-        WHITESPACE_REGEX = r'\s+'
-        self.default = re.sub(WHITESPACE_REGEX, ' ', str(default)).strip()
-        self.meaning = re.sub(WHITESPACE_REGEX, ' ', meaning).strip()
+        return super(SparkConfig, cls).__new__(
+            cls,
+            path,
+            re.sub(WHITESPACE_REGEX, ' ', str(default)).strip(),
+            re.sub(WHITESPACE_REGEX, ' ', meaning).strip(),
+        )
 
     @property
     def split_path(self):
@@ -215,16 +218,8 @@ class SparkConfigNode:
         return printer.read()
 
 
-@click.command()
-@click.option('--output-file', help='Base path to write config file to', required=True)
-def run(output_file):
-    r = requests.get(
-        'https://raw.githubusercontent.com/apache/spark/{}/docs/configuration.md'.format(
-            SPARK_VERSION
-        )
-    )
-
-    tables = re.findall(TABLE_REGEX, r.text, re.DOTALL | re.MULTILINE)
+def extract(spark_docs_markdown_text):
+    tables = re.findall(TABLE_REGEX, spark_docs_markdown_text, re.DOTALL | re.MULTILINE)
 
     spark_configs = []
     for name, table in tables:
@@ -235,21 +230,28 @@ def run(output_file):
             spark_configs.append(s)
 
     result = SparkConfigNode()
-    for s in spark_configs:
+    for spark_config in spark_configs:
         # TODO: we should handle this thing
-        if s.path == 'spark.executorEnv.[EnvironmentVariableName]':
+        if spark_config.path == 'spark.executorEnv.[EnvironmentVariableName]':
             continue
 
-        print(s.path, file=sys.stderr)
-        key_path = s.split_path
+        # Traverse spark.app.name key paths, creating SparkConfigNode at each tree node.
+        # The leaves of the tree (stored in SparkConfigNode.value) are SparkConfig values.
+        print(spark_config.path, file=sys.stderr)
+        key_path = spark_config.split_path
+
         d = result
         while key_path:
             key = key_path.pop(0)
             if key not in d.children:
                 d.children[key] = SparkConfigNode()
             d = d.children[key]
-        d.value = s
+        d.value = spark_config
 
+    return result
+
+
+def serialize(result):
     with IndentingBufferPrinter() as printer:
         printer.write_header()
         printer.line('from dagster import Bool, Field, Float, Int, PermissiveDict, String')
@@ -261,8 +263,23 @@ def run(output_file):
             printer.append('return ')
             result.write(printer)
         printer.line('# pylint: enable=line-too-long')
-        with open(output_file, 'wb') as f:
-            f.write(printer.read().strip().encode())
+        return printer.read().strip().encode()
+
+
+@click.command()
+@click.option('--output-file', help='Base path to write config file to', required=True)
+def run(output_file):
+    r = requests.get(
+        'https://raw.githubusercontent.com/apache/spark/{}/docs/configuration.md'.format(
+            SPARK_VERSION
+        )
+    )
+
+    result = extract(r.text)
+    serialized = serialize(result)
+
+    with open(output_file, 'wb') as f:
+        f.write(serialized)
 
 
 if __name__ == "__main__":
