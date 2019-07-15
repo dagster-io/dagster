@@ -23,7 +23,7 @@ import {
   StepKeyColumn,
   TimestampColumn
 } from "./LogsRowComponents";
-import { MetadataEntry } from "./MetadataEntry";
+import { MetadataEntries, MetadataEntry } from "./MetadataEntry";
 import { assertUnreachable } from "../Util";
 
 export class Structured extends React.Component<{
@@ -273,11 +273,7 @@ const StepExpectationResultEvent: React.FunctionComponent<{
       </Tag>
     </LevelTagColumn>
     <LabelColumn>{node.expectationResult.label}</LabelColumn>
-    <span style={{ flex: 1 }}>
-      {node.expectationResult.metadataEntries.map((item, idx) => (
-        <MetadataEntry entry={item} key={idx} />
-      ))}
-    </span>
+    <MetadataEntries entries={node.expectationResult.metadataEntries} />
   </>
 );
 
@@ -289,11 +285,7 @@ const StepMaterializationEvent: React.FunctionComponent<{
       <Tag minimal={true}>Materialization</Tag>
     </LevelTagColumn>
     <LabelColumn>{node.materialization.label}</LabelColumn>
-    <span style={{ flex: 1 }}>
-      {node.materialization.metadataEntries.map((item, idx) => (
-        <MetadataEntry entry={item} key={idx} />
-      ))}
-    </span>
+    <MetadataEntries entries={node.materialization.metadataEntries} />
   </>
 );
 
@@ -310,13 +302,13 @@ const ExecutionStepOutputEvent: React.FunctionComponent<{
       </Tag>
     </LevelTagColumn>
     <LabelColumn>{node.outputName}</LabelColumn>
-    <span style={{ flex: 1 }}>
-      {node.typeCheck.metadataEntries.length
-        ? node.typeCheck.metadataEntries.map((entry, idx) => (
-            <MetadataEntry key={idx} entry={entry} />
-          ))
-        : "No typecheck metadata describing this output."}
-    </span>
+    {node.typeCheck.metadataEntries.length ? (
+      <MetadataEntries entries={node.typeCheck.metadataEntries} />
+    ) : (
+      <span style={{ flex: 1 }}>
+        No typecheck metadata describing this output.
+      </span>
+    )}
   </>
 );
 
@@ -333,12 +325,12 @@ const ExecutionStepInputEvent: React.FunctionComponent<{
       </Tag>
     </LevelTagColumn>
     <LabelColumn>{node.inputName}</LabelColumn>
-    <span style={{ flex: 1 }}>
-      {node.typeCheck.metadataEntries.length
-        ? node.typeCheck.metadataEntries.map((entry, idx) => (
-            <MetadataEntry key={idx} entry={entry} />
-          ))
-        : "No typecheck metadata describing this input."}
-    </span>
+    {node.typeCheck.metadataEntries.length ? (
+      <MetadataEntries entries={node.typeCheck.metadataEntries} />
+    ) : (
+      <span style={{ flex: 1 }}>
+        No typecheck metadata describing this output.
+      </span>
+    )}
   </>
 );
