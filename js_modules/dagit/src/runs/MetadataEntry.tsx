@@ -14,7 +14,7 @@ export const MetadataEntries: React.FunctionComponent<{
       <thead>
         <tr>
           <td style={{ minWidth: 100 }}>Label</td>
-          <td>Value</td>
+          <td style={{ minWidth: 120 }}>Value</td>
         </tr>
       </thead>
       <tbody>
@@ -127,6 +127,7 @@ const MetadataEntriesTable = styled.table`
     padding-right: 8px;
     border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
     border-right: 1px solid ${Colors.LIGHT_GRAY3};
+    vertical-align: top;
     &:last-child {
       border-right: 0;
     }
