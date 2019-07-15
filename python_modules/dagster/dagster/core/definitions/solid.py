@@ -16,37 +16,65 @@ from .container import IContainSolids, create_execution_structure, validate_depe
 
 class ISolidDefinition(six.with_metaclass(ABCMeta)):
     def __init__(self, name, input_defs, output_defs, description=None, metadata=None):
-        self.name = check_valid_name(name)
-        self.description = check.opt_str_param(description, 'description')
-        self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
-        self.input_defs = frozenlist(input_defs)
-        self.input_dict = frozendict({input_def.name: input_def for input_def in input_defs})
-        self.output_defs = frozenlist(output_defs)
-        self.output_dict = frozendict({output_def.name: output_def for output_def in output_defs})
+        self._name = check_valid_name(name)
+        self._description = check.opt_str_param(description, 'description')
+        self._metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
+        self._input_defs = frozenlist(input_defs)
+        self._input_dict = frozendict({input_def.name: input_def for input_def in input_defs})
+        self._output_defs = frozenlist(output_defs)
+        self._output_dict = frozendict({output_def.name: output_def for output_def in output_defs})
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def description(self):
+        return self._description
+
+    @property
+    def metadata(self):
+        return self._metadata
+
+    @property
+    def input_defs(self):
+        return self._input_defs
+
+    @property
+    def input_dict(self):
+        return self._input_dict
+
+    @property
+    def output_defs(self):
+        return self._output_defs
+
+    @property
+    def output_dict(self):
+        return self._output_dict
 
     def has_input(self, name):
         check.str_param(name, 'name')
-        return name in self.input_dict
+        return name in self._input_dict
 
     def input_def_named(self, name):
         check.str_param(name, 'name')
-        return self.input_dict[name]
+        return self._input_dict[name]
 
     def has_output(self, name):
         check.str_param(name, 'name')
-        return name in self.output_dict
+        return name in self._output_dict
 
     def output_def_named(self, name):
         check.str_param(name, 'name')
-        return self.output_dict[name]
+        return self._output_dict[name]
 
     @property
     def has_configurable_inputs(self):
-        return any([inp.runtime_type.input_hydration_config for inp in self.input_defs])
+        return any([inp.runtime_type.input_hydration_config for inp in self._input_defs])
 
     @property
     def has_configurable_outputs(self):
-        return any([out.runtime_type.output_materialization_config for out in self.output_defs])
+        return any([out.runtime_type.output_materialization_config for out in self._output_defs])
 
     @abstractproperty
     def has_config_entry(self):
@@ -61,12 +89,12 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
         raise NotImplementedError()
 
     def all_input_output_types(self):
-        for input_def in self.input_defs:
+        for input_def in self._input_defs:
             yield input_def.runtime_type
             for inner_type in input_def.runtime_type.inner_types:
                 yield inner_type
 
-        for output_def in self.output_defs:
+        for output_def in self._output_defs:
             yield output_def.runtime_type
             for inner_type in output_def.runtime_type.inner_types:
                 yield inner_type
@@ -139,16 +167,16 @@ class SolidDefinition(ISolidDefinition):
         required_resource_keys=None,
         step_metadata_fn=None,
     ):
-        self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
-        self.config_field = check_user_facing_opt_field_param(
+        self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
+        self._config_field = check_user_facing_opt_field_param(
             config_field,
             'config_field',
             'of a SolidDefinition or @solid named "{name}"'.format(name=name),
         )
-        self.required_resource_keys = check.opt_set_param(
+        self._required_resource_keys = check.opt_set_param(
             required_resource_keys, 'required_resource_keys', of_type=str
         )
-        self.step_metadata_fn = step_metadata_fn
+        self._step_metadata_fn = step_metadata_fn
 
         super(SolidDefinition, self).__init__(
             name=name,
@@ -159,8 +187,24 @@ class SolidDefinition(ISolidDefinition):
         )
 
     @property
+    def compute_fn(self):
+        return self._compute_fn
+
+    @property
+    def config_field(self):
+        return self._config_field
+
+    @property
+    def required_resource_keys(self):
+        return self._required_resource_keys
+
+    @property
+    def step_metadata_fn(self):
+        return self._step_metadata_fn
+
+    @property
     def has_config_entry(self):
-        return self.config_field or self.has_configurable_inputs or self.has_configurable_outputs
+        return self._config_field or self.has_configurable_inputs or self.has_configurable_outputs
 
     def all_runtime_types(self):
         for tt in self.all_input_output_types():
@@ -238,27 +282,27 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         check.list_param(solid_defs, 'solid_defs', of_type=ISolidDefinition)
 
         # List[InputMapping]
-        self.input_mappings = _validate_in_mappings(
+        self._input_mappings = _validate_in_mappings(
             check.opt_list_param(input_mappings, 'input_mappings')
         )
         # List[OutputMapping]
-        self.output_mappings = _validate_out_mappings(
+        self._output_mappings = _validate_out_mappings(
             check.opt_list_param(output_mappings, 'output_mappings')
         )
 
-        self.config_mapping = check.opt_inst_param(config_mapping, 'config_mapping', ConfigMapping)
+        self._config_mapping = check.opt_inst_param(config_mapping, 'config_mapping', ConfigMapping)
 
-        self.dependencies = validate_dependency_dict(dependencies)
+        self._dependencies = validate_dependency_dict(dependencies)
         dependency_structure, pipeline_solid_dict = create_execution_structure(
-            solid_defs, self.dependencies, container_definition=self
+            solid_defs, self._dependencies, container_definition=self
         )
 
         self._solid_dict = pipeline_solid_dict
         self._dependency_structure = dependency_structure
 
-        input_defs = [input_mapping.definition for input_mapping in self.input_mappings]
+        input_defs = [input_mapping.definition for input_mapping in self._input_mappings]
 
-        output_defs = [output_mapping.definition for output_mapping in self.output_mappings]
+        output_defs = [output_mapping.definition for output_mapping in self._output_mappings]
 
         self._solid_defs = solid_defs
 
@@ -269,6 +313,22 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
             description=description,
             metadata=metadata,
         )
+
+    @property
+    def input_mappings(self):
+        return self._input_mappings
+
+    @property
+    def output_mappings(self):
+        return self._output_mappings
+
+    @property
+    def config_mapping(self):
+        return self._config_mapping
+
+    @property
+    def depencencies(self):
+        return self._dependencies
 
     def iterate_solid_defs(self):
         yield self
@@ -297,7 +357,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
 
     @property
     def has_config_mapping(self):
-        return self.config_mapping is not None
+        return self._config_mapping is not None
 
     @property
     def has_config_entry(self):
@@ -310,13 +370,13 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         )
 
     def mapped_input(self, solid_name, input_name):
-        for mapping in self.input_mappings:
+        for mapping in self._input_mappings:
             if mapping.solid_name == solid_name and mapping.input_name == input_name:
                 return mapping
         return None
 
     def get_output_mapping(self, output_name):
-        for mapping in self.output_mappings:
+        for mapping in self._output_mappings:
             if mapping.definition.name == output_name:
                 return mapping
         return None
