@@ -1,9 +1,8 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import { LogLevel } from "src/types/globalTypes";
+import { LogLevel } from "../types/globalTypes";
 import { Tag, Colors } from "@blueprintjs/core";
 
-import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import {
   LogsRowStructuredFragment,
   LogsRowStructuredFragment_ExecutionStepFailureEvent,
