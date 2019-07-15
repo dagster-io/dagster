@@ -41,3 +41,6 @@ def test_smoke_app():
 
     result = client.get('static/foo/bar')
     assert result.status_code == 404
+
+    result = client.get('vendor/foo/bar')
+    assert result.status_code == 404

@@ -77,6 +77,12 @@ def static_view(path, file):
     )
 
 
+def vendor_view(path, file):
+    return send_from_directory(
+        os.path.join(os.path.dirname(__file__), './webapp/build/vendor/', path), file
+    )
+
+
 def index_view(_path):
     try:
         return send_file(os.path.join(os.path.dirname(__file__), './webapp/build/index.html'))
@@ -157,6 +163,7 @@ def create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=F
     app.add_url_rule('/dagit/notebook', 'notebook', lambda: notebook_view(request.args))
 
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)
+    app.add_url_rule('/vendor/<path:path>/<string:file>', 'vendor_view', vendor_view)
     app.add_url_rule('/<path:_path>', 'index_catchall', index_view)
     app.add_url_rule('/', 'index', index_view, defaults={'_path': ''})
 
