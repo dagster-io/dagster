@@ -148,7 +148,9 @@ def explore_visits_by_hour(start):
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(resource_defs={'bq': bigquery_resource, 'dataproc': dataproc_resource})
+        ModeDefinition(
+            name='default', resource_defs={'bq': bigquery_resource, 'dataproc': dataproc_resource}
+        )
     ],
     preset_defs=[
         PresetDefinition(

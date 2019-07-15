@@ -1,7 +1,7 @@
 from dagster import RepositoryDefinition
 
-from .simple import gcp_data_platform
+from .final_pipeline import gcp_pipeline
 
 
 def define_repo():
-    return RepositoryDefinition(name='gcp_data_platform', pipeline_defs=[gcp_data_platform])
+    return RepositoryDefinition(name='gcp_pipeline', pipeline_defs=[gcp_pipeline])

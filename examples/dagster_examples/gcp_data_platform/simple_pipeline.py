@@ -117,17 +117,16 @@ def explore_visits_by_hour(_):
  GROUP BY ts
  ORDER BY ts ASC
 '''
-    bq.query(sql, job_config=query_job_config).to_dataframe()
+    bq.query(sql, job_config=query_job_config)
 
 
 @pipeline
 def gcp_data_platform():
-    explore_visits_by_hour(
-        gcs_to_bigquery(
-            delete_dataproc_cluster(
-                data_proc_spark_operator(
-                    create_dataproc_cluster()  # pylint: disable=no-value-for-parameter
-                )
-            )
+    dataproc_job = delete_dataproc_cluster(
+        data_proc_spark_operator(
+            create_dataproc_cluster()  # pylint: disable=no-value-for-parameter
         )
     )
+
+    events_in_bq = gcs_to_bigquery(dataproc_job)
+    explore_visits_by_hour(events_in_bq)
