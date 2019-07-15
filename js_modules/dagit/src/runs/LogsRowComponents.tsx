@@ -18,12 +18,13 @@ export const Row = styled.div<{ level: LogLevel }>`
   height: 100%;
   max-height: 17em;
   padding: 4px 8px;
-  word-break: break-all;
+  word-break: break-word;
   white-space: pre-wrap;
   font-family: monospace;
   display: flex;
   flex-direction: row;
   align-items: baseline;
+  overflow: hidden;
   border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
   background: ${props => bgcolorForLevel(props.level)};
   color: ${props =>
@@ -40,12 +41,12 @@ export const StructuredContent = styled.div`
   background: white;
   color: ${Colors.DARK_GRAY2};
   box-sizing: border-box;
-  box-shadow: 0 0.7px 0.5px rgba(0, 0, 0, 0.25);
   margin: -4px;
-  margin-bottom: -5px;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY4};
+  margin-bottom: -4px;
+  border-left: 1px solid ${Colors.LIGHT_GRAY4};
+  border-right: 1px solid ${Colors.LIGHT_GRAY4};
   padding: 4px;
-  word-break: break-all;
+  word-break: break-word;
   white-space: pre-wrap;
   font-family: monospace;
   flex: 1;

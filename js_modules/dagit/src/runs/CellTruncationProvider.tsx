@@ -22,12 +22,11 @@ const OverflowFade = styled.div`
 const OverflowBanner = styled.div`
   position: absolute;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 105px;
   user-select: none;
+  font-size: 12px;
   background: ${Colors.LIGHT_GRAY3};
   border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
   padding: 2px 12px;
   color: ${Colors.BLACK};
   &:hover {
@@ -54,9 +53,12 @@ export class CellTruncationProvider extends React.Component<
 
   detectOverflow() {
     const el = ReactDOM.findDOMNode(this);
-    if (!(el && "clientHeight" in el)) return;
+    if (!el || !(el instanceof HTMLElement)) return;
 
-    const isOverflowing = el.scrollHeight > this.props.style.height!;
+    const child = el.firstElementChild;
+    if (!child) return;
+
+    const isOverflowing = child.scrollHeight > this.props.style.height!;
     if (isOverflowing !== this.state.isOverflowing) {
       this.setState({ isOverflowing });
     }
