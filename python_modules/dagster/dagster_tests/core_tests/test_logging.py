@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import check, execute_pipeline, pipeline, solid, ModeDefinition
+from dagster import check, execute_solid, pipeline, solid, ModeDefinition
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.objects import StepFailureData
@@ -214,11 +214,7 @@ def test_default_context_logging():
         for logger in context.log.loggers:
             assert logger.level == logging.INFO
 
-    @pipeline
-    def pipe():
-        default_context_solid()  # pylint: disable=no-value-for-parameter
-
-    execute_pipeline(pipe)
+    execute_solid(default_context_solid)
 
     assert called['yes']
 
@@ -238,11 +234,11 @@ def test_json_console_logger(capsys):
     def hello_world(context):
         context.log.info('Hello, world!')
 
-    @pipeline(mode_defs=[ModeDefinition(logger_defs={'json': json_console_logger})])
-    def pipe():
-        hello_world()  # pylint: disable=no-value-for-parameter
-
-    execute_pipeline(pipe, {'loggers': {'json': {'config': {}}}})
+    execute_solid(
+        hello_world,
+        mode_def=ModeDefinition(logger_defs={'json': json_console_logger}),
+        environment_dict={'loggers': {'json': {'config': {}}}},
+    )
 
     captured = capsys.readouterr()
 

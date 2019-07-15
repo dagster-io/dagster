@@ -1,4 +1,4 @@
-from dagster import pipeline, solid, execute_pipeline, LocalFileHandle
+from dagster import solid, execute_solid, LocalFileHandle
 from dagster.core.storage.file_manager import local_file_manager
 from dagster.utils.temp_file import get_temp_dir, get_temp_file_handle_with_data
 
@@ -14,7 +14,7 @@ def test_basic_file_manager_copy_handle_to_local_temp():
                     assert ff.read() == foo_data
 
 
-def test_basic_file_manager_execute_in_pipeline():
+def test_basic_file_manager_execute():
     called = {}
 
     @solid
@@ -30,10 +30,6 @@ def test_basic_file_manager_execute_in_pipeline():
 
         called['yup'] = True
 
-    @pipeline
-    def basic_file_manager_test():
-        file_handle()  # pylint: disable=no-value-for-parameter
-
-    result = execute_pipeline(basic_file_manager_test)
+    result = execute_solid(file_handle)
     assert result.success
     assert called['yup']
