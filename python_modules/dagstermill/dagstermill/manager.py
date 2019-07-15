@@ -61,11 +61,11 @@ class Manager:
         solid_handle=None,
     ):
         '''Reconstitutes a context for dagstermill-managed execution.
-        
+
         You'll see this function called to reconstruct a pipeline context within the ``injected
         parameters`` cell of a dagstermill output notebook. Users should not call this function
         interactively except when debugging output notebooks.
-        
+
         Use :func:`dagstermill.get_context` in the ``parameters`` cell of your notebook to define a
         context for interactive exploration and development. This call will be replaced by one to
         :func:`dagstermill.reconstitute_pipeline_context` when the notebook is executed by
@@ -94,7 +94,15 @@ class Manager:
             ),
             resource_defs=mode_def.resource_defs,
         )
-        pipeline_def.mode_definitions = [shim_mode_def]
+
+        pipeline_def = PipelineDefinition(
+            pipeline_def.solid_defs,
+            name=pipeline_def.name,
+            description=pipeline_def.description,
+            dependencies=pipeline_def.dependencies,
+            mode_defs=[shim_mode_def],
+            preset_defs=pipeline_def.preset_defs,
+        )
 
         if 'loggers' not in environment_dict:
             environment_dict['loggers'] = {'dagstermill': {}}
@@ -129,7 +137,7 @@ class Manager:
                 with a console logger will be constructed.
             environment_dict(Optional[dict]): The environment config dict with which to construct
                 the context.
-        
+
         Returns:
             :class:`dagstermill.DagstermillExecutionContext`
         '''
@@ -170,12 +178,12 @@ class Manager:
 
     def yield_result(self, value, output_name='result'):
         '''Yield a result directly from notebook code.
-        
+
         When called interactively or in development, returns its input.
 
         Args:
             value (Any): The value to yield.
-            output_name (Optional[str]): The name of the result to yield (default: ``'result'``). 
+            output_name (Optional[str]): The name of the result to yield (default: ``'result'``).
         '''
         if not self.in_pipeline:
             return value
@@ -197,7 +205,7 @@ class Manager:
 
     def yield_event(self, dagster_event):
         '''Yield a dagster event directly from notebook code.
-        
+
         When called interactively or in development, returns its input.
 
         Args:
