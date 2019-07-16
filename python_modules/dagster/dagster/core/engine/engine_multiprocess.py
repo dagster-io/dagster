@@ -80,7 +80,7 @@ def bounded_parallel_executor(step_contexts, limit):
             del active_iters[key]
 
 
-class MultiprocessingEngine(IEngine):  # pylint: disable=no-init
+class MultiprocessEngine(IEngine):  # pylint: disable=no-init
     @staticmethod
     def execute(pipeline_context, execution_plan, step_keys_to_execute=None):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)

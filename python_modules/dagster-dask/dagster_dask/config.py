@@ -3,10 +3,12 @@ import re
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.execution.config import ExecutorConfig
 
 
 class DaskConfig(
-    namedtuple('DaskConfig', 'address timeout scheduler_file direct_to_workers heartbeat_interval')
+    namedtuple('DaskConfig', 'address timeout scheduler_file direct_to_workers heartbeat_interval'),
+    ExecutorConfig,
 ):
     '''DaskConfig - configuration for the Dask execution engine
     '''
@@ -37,6 +39,15 @@ class DaskConfig(
     @property
     def is_remote_execution(self):
         return self.address and not re.match(r'127\.0\.0\.1|0\.0\.0\.0|localhost', self.address)
+
+    @property
+    def requires_persistent_storage(self):
+        return True
+
+    def get_engine(self):
+        from .engine import DaskEngine
+
+        return DaskEngine
 
     def build_dict(self, pipeline_name):
         '''Returns a dict we can use for kwargs passed to dask client instantiation.

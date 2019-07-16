@@ -22,11 +22,9 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.engine.engine_multiprocessing import MultiprocessingEngine
-from dagster.core.engine.engine_inprocess import InProcessEngine
 
 from .context_creation_pipeline import create_environment_config, scoped_pipeline_context
-from .config import RunConfig, InProcessExecutorConfig, MultiprocessExecutorConfig
+from .config import RunConfig, InProcessExecutorConfig
 from .context.system import SystemPipelineExecutionContext
 from .results import PipelineExecutionResult
 
@@ -220,18 +218,9 @@ def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execu
             if not execution_plan.has_step(step_key):
                 raise DagsterExecutionStepNotFoundError(step_key=step_key)
 
-    # Toggle engine based on executor config supplied by the pipeline context
-    def get_engine_for_config(cfg):
-        if isinstance(cfg, InProcessExecutorConfig):
-            return InProcessEngine
-        elif isinstance(cfg, MultiprocessExecutorConfig):
-            return MultiprocessingEngine
-        else:
-            check.failed('Unsupported config {}'.format(cfg))
-
     # Engine execution returns a generator of yielded events, so returning here means this function
     # also returns a generator
-    return get_engine_for_config(pipeline_context.executor_config).execute(
+    return pipeline_context.executor_config.get_engine().execute(
         pipeline_context, execution_plan, step_keys_to_execute
     )
 

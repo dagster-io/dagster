@@ -1,6 +1,6 @@
 import time
 
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import namedtuple
 
 import multiprocessing
@@ -95,6 +95,10 @@ class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     def requires_persistent_storage(self):
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_engine(self):
+        raise NotImplementedError()
+
 
 class InProcessExecutorConfig(ExecutorConfig):
     def __init__(self, raise_on_error=True):
@@ -103,6 +107,11 @@ class InProcessExecutorConfig(ExecutorConfig):
     @property
     def requires_persistent_storage(self):
         return False
+
+    def get_engine(self):
+        from dagster.core.engine.engine_inprocess import InProcessEngine
+
+        return InProcessEngine
 
 
 class MultiprocessExecutorConfig(ExecutorConfig):
@@ -121,6 +130,11 @@ class MultiprocessExecutorConfig(ExecutorConfig):
     @property
     def requires_persistent_storage(self):
         return True
+
+    def get_engine(self):
+        from dagster.core.engine.engine_multiprocess import MultiprocessEngine
+
+        return MultiprocessEngine
 
 
 class ReexecutionConfig:

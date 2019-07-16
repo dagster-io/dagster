@@ -185,6 +185,10 @@ class SystemPipelineExecutionContext(object):
     def file_manager(self):
         return self._pipeline_context_data.file_manager
 
+    @property
+    def execution_target_handle(self):
+        return self._pipeline_context_data.execution_target_handle
+
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):
     __slots__ = ['_step', '_resources']
