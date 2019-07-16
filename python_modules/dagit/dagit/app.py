@@ -124,6 +124,9 @@ def create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=F
         execution_manager = SynchronousExecutionManager()
     else:
         execution_manager = MultiprocessingExecutionManager()
+
+    print('Loading repository...')
+
     context = DagsterGraphQLContext(
         handle=handle,
         pipeline_runs=pipeline_run_storage,

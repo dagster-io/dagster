@@ -46,7 +46,7 @@ handler = AutoRestartTrick(
 )
 handler.start()
 
-print('Watching for file changes...')
+print('Will be watching for file changes...')
 observer = Observer(timeout=1)
 observer.schedule(handler, '.', True)
 observer.start()
