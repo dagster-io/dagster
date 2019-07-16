@@ -28,7 +28,9 @@ def apply_default_values(config_type, config_value):
 
 
 def apply_default_values_to_selector(selector_type, config_value):
-    check.param_invariant(selector_type.is_selector, 'selector_type')
+    check.param_invariant(
+        selector_type.is_selector, 'selector_type', 'Non-selector not caught in validation'
+    )
 
     if config_value:
         check.invariant(config_value and len(config_value) == 1)
@@ -79,5 +81,9 @@ def apply_defaults_to_list_type(list_type, config_value):
 
     if not config_value:
         return []
+
+    if not list_type.inner_type.is_nullable:
+        if any((cv is None for cv in config_value)):
+            check.failed('Null list member not caught in validation')
 
     return [apply_default_values(list_type.inner_type, item) for item in config_value]

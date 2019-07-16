@@ -15,11 +15,11 @@ class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-
 
     @abstractmethod
     def serialize(self, value, write_file_obj):
-        pass
+        '''Core serialization method.'''
 
     @abstractmethod
     def deserialize(self, read_file_obj):
-        pass
+        '''Core deserialization method'''
 
     def serialize_to_file(self, value, write_path):
         check.str_param(write_path, 'write_path')
