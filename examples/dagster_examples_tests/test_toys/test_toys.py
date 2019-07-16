@@ -7,12 +7,14 @@ from dagster import (
     RunConfig,
     execute_pipeline,
 )
-from dagster_examples.toys.many_events import many_events
-from dagster_examples.toys.resources import resource_pipeline
+
+from dagster_examples.toys.config_mapping import config_mapping_pipeline
 from dagster_examples.toys.error_monster import error_monster
-from dagster_examples.toys.sleepy import sleepy_pipeline
 from dagster_examples.toys.hammer import hammer_pipeline
 from dagster_examples.toys.log_spew import log_spew
+from dagster_examples.toys.many_events import many_events
+from dagster_examples.toys.resources import resource_pipeline
+from dagster_examples.toys.sleepy import sleepy_pipeline
 
 
 def test_define_repo():
@@ -120,3 +122,16 @@ def test_error_monster_type_error():
                 'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
             },
         )
+
+
+def test_config_mapping():
+    assert execute_pipeline(
+        config_mapping_pipeline,
+        environment_dict={
+            'solids': {
+                'outer_wrap': {
+                    'config': {'outer_first': 'foo', 'outer_second': 'bar', 'outer_third': 3}
+                }
+            }
+        },
+    ).success
