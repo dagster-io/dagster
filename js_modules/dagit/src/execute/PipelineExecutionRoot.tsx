@@ -3,6 +3,8 @@ import gql from "graphql-tag";
 import { match } from "react-router";
 import PipelineExecutionContainer from "./PipelineExecutionContainer";
 import { QueryResult, Query } from "react-apollo";
+import { NonIdealState } from "@blueprintjs/core";
+import { IconNames } from "@blueprintjs/icons";
 import { StorageProvider } from "../LocalStorage";
 import { PipelineExecutionRootQuery } from "./types/PipelineExecutionRootQuery";
 
@@ -35,15 +37,38 @@ export default class PipelineExecutionRoot extends React.Component<
               partialRefetch={true}
               variables={vars}
             >
-              {(result: QueryResult<PipelineExecutionRootQuery, any>) => (
-                <PipelineExecutionContainer
-                  data={data}
-                  onSave={onSave}
-                  pipeline={result.data ? result.data.pipeline : undefined}
-                  pipelineName={pipelineName}
-                  currentSession={data.sessions[data.current]}
-                />
-              )}
+              {(result: QueryResult<PipelineExecutionRootQuery, any>) => {
+                const pipelineOrError =
+                  result.data && result.data.pipelineOrError;
+
+                if (
+                  pipelineOrError &&
+                  pipelineOrError.__typename === "PipelineNotFoundError"
+                ) {
+                  return (
+                    <NonIdealState
+                      icon={IconNames.FLOW_BRANCH}
+                      title="Pipeline Not Found"
+                      description={pipelineOrError.message}
+                    />
+                  );
+                }
+
+                const pipeline =
+                  pipelineOrError && pipelineOrError.__typename === "Pipeline"
+                    ? pipelineOrError
+                    : undefined;
+
+                return (
+                  <PipelineExecutionContainer
+                    data={data}
+                    onSave={onSave}
+                    pipeline={pipeline}
+                    pipelineName={pipelineName}
+                    currentSession={data.sessions[data.current]}
+                  />
+                );
+              }}
             </Query>
           );
         }}
@@ -58,9 +83,11 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
     $solidSubset: [String!]
     $mode: String
   ) {
-    pipeline(params: { name: $name, solidSubset: $solidSubset }) {
-      name
+    pipelineOrError(params: { name: $name, solidSubset: $solidSubset }) {
       ...PipelineExecutionContainerFragment
+      ... on PipelineNotFoundError {
+        message
+      }
     }
   }
 
