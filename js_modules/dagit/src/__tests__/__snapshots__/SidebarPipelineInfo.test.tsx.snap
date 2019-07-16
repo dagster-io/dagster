@@ -74,7 +74,13 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
               }
             }
           >
-            <div>
+            <div
+              style={
+                Object {
+                  "overflowX": "auto",
+                }
+              }
+            >
               <div>
                 <p>
                   Very friendly and helpful
@@ -152,7 +158,13 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                 }
               }
             >
-              <div>
+              <div
+                style={
+                  Object {
+                    "overflowX": "auto",
+                  }
+                }
+              >
                 <div>
                   <p>
                     A way to run your pipeline
@@ -198,7 +210,13 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                     }
                   }
                 >
-                  <div>
+                  <div
+                    style={
+                      Object {
+                        "overflowX": "auto",
+                      }
+                    }
+                  >
                     <div>
                       <p>
                         Very useful
@@ -248,7 +266,13 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                 }
               }
             >
-              <div>
+              <div
+                style={
+                  Object {
+                    "overflowX": "auto",
+                  }
+                }
+              >
                 <div>
                   <p>
                     Another nice way to run your pipeline
@@ -294,7 +318,13 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                     }
                   }
                 >
-                  <div>
+                  <div
+                    style={
+                      Object {
+                        "overflowX": "auto",
+                      }
+                    }
+                  >
                     <div>
                       <p>
                         Very useful
@@ -364,7 +394,13 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                     }
                   }
                 >
-                  <div>
+                  <div
+                    style={
+                      Object {
+                        "overflowX": "auto",
+                      }
+                    }
+                  >
                     <div>
                       <p>
                         Very useful
@@ -434,7 +470,13 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                     }
                   }
                 >
-                  <div>
+                  <div
+                    style={
+                      Object {
+                        "overflowX": "auto",
+                      }
+                    }
+                  >
                     <div>
                       <p>
                         The default colored console logger.
