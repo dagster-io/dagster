@@ -179,8 +179,9 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
                     # We ensure correctness in sequencing by letting Dask schedule futures and
                     # awaiting dependencies within each step.
                     dependencies = [
-                        execution_futures_dict[ni.prev_output_handle.step_key]
-                        for ni in step.step_inputs
+                        execution_futures_dict[step_input.prev_output_handle.step_key]
+                        for step_input in step.step_inputs
+                        if step_input.prev_output_handle is not None
                     ]
 
                     variables = {
