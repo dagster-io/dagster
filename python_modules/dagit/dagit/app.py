@@ -1,6 +1,10 @@
 from __future__ import absolute_import
 
 import os
+try:
+    from typing import Any, Dict
+except ImportError:
+    pass
 
 from six import text_type
 
