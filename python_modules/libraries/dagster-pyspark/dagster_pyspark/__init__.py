@@ -78,14 +78,19 @@ SparkRDD = as_dagster_type(
 )
 
 
-@resource({'spark_conf': spark_config()})
-def spark_session_resource(init_context):
+def spark_session_from_config(spark_conf=None):
+    spark_conf = check.opt_dict_param(spark_conf, 'spark_conf')
     builder = SparkSession.builder
-    flat = flatten_dict(init_context.resource_config['spark_conf'])
+    flat = flatten_dict(spark_conf)
     for key, value in flat:
         builder = builder.config(key, value)
 
-    spark = builder.getOrCreate()
+    return builder.getOrCreate()
+
+
+@resource({'spark_conf': spark_config()})
+def spark_session_resource(init_context):
+    spark = spark_session_from_config(init_context.resource_config['spark_conf'])
     try:
         yield spark
     finally:
