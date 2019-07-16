@@ -89,7 +89,7 @@ def index_view(_path):
     except seven.FileNotFoundError:
         text = '''<p>Can't find webapp files. Probably webapp isn't built. If you are using
         dagit, then probably it's a corrupted installation or a bug. However, if you are
-        developing dagit locally, you problem can be fixed as follows:</p>
+        developing dagit locally, your problem can be fixed as follows:</p>
 
 <pre>cd ./python_modules/
 make rebuild_dagit</pre>'''
