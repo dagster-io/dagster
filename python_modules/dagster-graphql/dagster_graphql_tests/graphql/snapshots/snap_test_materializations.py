@@ -75,7 +75,7 @@ snapshots['test_materializations 1'] = [
     {
         '__typename': 'LogMessageEvent',
         'level': 'INFO',
-        'message': "Solid 'materialize' emitted output 'result' value None",
+        'message': "Solid 'materialize' emitted output 'result'",
         'step': {
             'key': 'materialize.compute',
             'solidHandleID': 'materialize'
@@ -96,8 +96,7 @@ snapshots['test_materializations 1'] = [
             'label': 'result',
             'metadataEntries': [
             ]
-        },
-        'valueRepr': 'None'
+        }
     },
     {
         '__typename': 'ExecutionStepSuccessEvent',

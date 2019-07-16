@@ -61,8 +61,8 @@ def test_multiple_overrides_pipeline():
         },
     )
 
-    output_event = [e for e in result.step_event_list if e.event_type_value == 'STEP_OUTPUT'][0]
-    assert output_event.event_specific_data.value_repr == "'blah'"
+    assert result.success
+    assert result.result_for_handle('outer_wrap.wrap.scalar_config_solid').output_value() == 'blah'
 
 
 def test_good_override():

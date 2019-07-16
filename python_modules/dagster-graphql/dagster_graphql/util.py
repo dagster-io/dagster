@@ -95,7 +95,6 @@ fragment stepEventFragment on StepEvent {
   }
   ... on ExecutionStepInputEvent {
     inputName
-    valueRepr
     typeCheck {
       __typename
       success
@@ -108,7 +107,6 @@ fragment stepEventFragment on StepEvent {
   }
   ... on ExecutionStepOutputEvent {
     outputName
-    valueRepr
     typeCheck {
       __typename
       success
@@ -245,7 +243,6 @@ def dagster_event_from_dict(event_dict, pipeline_name):
             step_output_handle=StepOutputHandle(
                 event_dict['step']['key'], event_dict['outputName']
             ),
-            value_repr=event_dict['valueRepr'],
             type_check_data=TypeCheckData(
                 success=event_dict['typeCheck']['success'],
                 label=event_dict['typeCheck']['label'],
@@ -259,7 +256,6 @@ def dagster_event_from_dict(event_dict, pipeline_name):
     elif event_type == DagsterEventType.STEP_INPUT:
         event_specific_data = StepInputData(
             input_name=event_dict['inputName'],
-            value_repr=event_dict['valueRepr'],
             type_check_data=TypeCheckData(
                 success=event_dict['typeCheck']['success'],
                 label=event_dict['typeCheck']['label'],

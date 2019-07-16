@@ -167,10 +167,6 @@ subscription subscribeTest($runId: ID!) {
                 __typename
                 ...stepEventFragment
 
-                ... on ExecutionStepOutputEvent {
-                    valueRepr
-                }
-
                 ... on MessageEvent {
                     message
                     step { key solidHandleID }

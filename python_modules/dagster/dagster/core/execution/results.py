@@ -94,9 +94,10 @@ class PipelineExecutionResult(object):
 
         if handle not in results:
             raise DagsterInvariantViolationError(
-                'Did not find result for solid handle {handle} in pipeline execution result'.format(
-                    handle=handle
-                )
+                (
+                    'Did not find result for solid handle {handle} in pipeline execution result. '
+                    'Available handles: {handles}'
+                ).format(handle=handle, handles=list(results.keys()))
             )
 
         return results[handle]

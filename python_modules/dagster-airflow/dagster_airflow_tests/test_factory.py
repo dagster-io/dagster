@@ -1,8 +1,6 @@
 from __future__ import unicode_literals
 
 import datetime
-import json
-import re
 import uuid
 
 from dagster import ExecutionTargetHandle
@@ -32,10 +30,6 @@ class TestExecuteDagPythonFilesystemStorage(object):
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
-        expected_results = {
-            'multiply_the_word': '"barbar"',
-            'count_letters': '{"b": 2, "a": 2, "r": 2}',
-        }
         for result in dagster_airflow_python_operator_pipeline:
             assert 'data' in result
             assert 'executePlan' in result['data']
@@ -49,13 +43,6 @@ class TestExecuteDagPythonFilesystemStorage(object):
             )[0]
             if result['step']['kind'] == 'INPUT_THUNK':
                 continue
-            # This ugly beast is to deal with cross-python-version differences in `valueRepr` --
-            # in py2 we'll get 'u"barbar"', in py3 we'll get '"barbar"', etc.
-            assert json.loads(
-                re.sub(
-                    '{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
-                ).replace('\'', '"')
-            ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
 
 class TestExecuteDagPythonS3Storage(object):
@@ -70,10 +57,6 @@ class TestExecuteDagPythonS3Storage(object):
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
-        expected_results = {
-            'multiply_the_word': '"barbar"',
-            'count_letters': '{"b": 2, "a": 2, "r": 2}',
-        }
         for result in dagster_airflow_python_operator_pipeline:
             assert 'data' in result
             assert 'executePlan' in result['data']
@@ -87,16 +70,6 @@ class TestExecuteDagPythonS3Storage(object):
             )[0]
             if result['step']['kind'] == 'INPUT_THUNK':
                 continue
-            # This ugly beast is to deal with cross-python-version differences in `valueRepr` --
-            # in py2 we'll get 'u"barbar"', in py3 we'll get '"barbar"', etc.
-            assert json.loads(
-                # pylint: disable=anomalous-backslash-in-string
-                re.sub(
-                    r'\{u\'',
-                    '{\'',
-                    re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr'])),
-                ).replace('\'', '"')
-            ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
 
 @nettest
@@ -113,10 +86,6 @@ class TestExecuteDagContainerizedS3Storage(object):
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
-        expected_results = {
-            'multiply_the_word': '"barbar"',
-            'count_letters': '{"b": 2, "a": 2, "r": 2}',
-        }
         for result in dagster_airflow_docker_operator_pipeline:
             assert 'data' in result
             assert 'executePlan' in result['data']
@@ -130,14 +99,6 @@ class TestExecuteDagContainerizedS3Storage(object):
             )[0]
             if result['step']['kind'] == 'INPUT_THUNK':
                 continue
-            assert json.loads(
-                # pylint: disable=anomalous-backslash-in-string
-                re.sub(
-                    r'\{u\'',
-                    '{\'',
-                    re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr'])),
-                ).replace('\'', '"')
-            ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
 
 class TestExecuteDagContainerizedFilesystemStorage(object):
@@ -154,10 +115,6 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
-        expected_results = {
-            'multiply_the_word': '"barbar"',
-            'count_letters': '{"b": 2, "a": 2, "r": 2}',
-        }
         for result in dagster_airflow_docker_operator_pipeline:
             assert 'data' in result
             assert 'executePlan' in result['data']
@@ -171,11 +128,6 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
             )[0]
             if result['step']['kind'] == 'INPUT_THUNK':
                 continue
-            assert json.loads(
-                re.sub(
-                    '{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
-                ).replace('\'', '"')
-            ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
 
 def test_rename_for_airflow():

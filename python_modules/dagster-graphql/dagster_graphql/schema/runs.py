@@ -385,7 +385,6 @@ class DauphinExecutionStepInputEvent(dauphin.ObjectType):
 
     input_name = dauphin.NonNull(dauphin.String)
     type_check = dauphin.NonNull(DauphinTypeCheck)
-    value_repr = dauphin.NonNull(dauphin.String)
 
 
 class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
@@ -394,7 +393,6 @@ class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
     output_name = dauphin.NonNull(dauphin.String)
-    value_repr = dauphin.NonNull(dauphin.String)
     type_check = dauphin.NonNull(DauphinTypeCheck)
 
 
@@ -473,17 +471,13 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
     elif dagster_event.event_type == DagsterEventType.STEP_INPUT:
         input_data = dagster_event.event_specific_data
         return graphene_info.schema.type_named('ExecutionStepInputEvent')(
-            input_name=input_data.input_name,
-            value_repr=input_data.value_repr,
-            type_check=input_data.type_check_data,
-            **basic_params
+            input_name=input_data.input_name, type_check=input_data.type_check_data, **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.STEP_OUTPUT:
         output_data = dagster_event.step_output_data
         return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
             output_name=output_data.output_name,
             type_check=output_data.type_check_data,
-            value_repr=output_data.value_repr,
             # parens make black not put trailing commas, which in turn break py27
             # fmt: off
             **(basic_params)
