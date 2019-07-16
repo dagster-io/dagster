@@ -80,18 +80,18 @@ class PipelineDefinition(IContainSolids, object):
         mode_defs=None,
         preset_defs=None,
     ):
-        self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
-        self.description = check.opt_str_param(description, 'description')
+        self._name = check.opt_str_param(name, 'name', '<<unnamed>>')
+        self._description = check.opt_str_param(description, 'description')
 
         mode_definitions = check.opt_list_param(mode_defs, 'mode_defs', of_type=ModeDefinition)
 
         if not mode_definitions:
             mode_definitions = [ModeDefinition()]
 
-        self.mode_definitions = mode_definitions
+        self._mode_definitions = mode_definitions
 
         current_level_solid_defs = check.list_param(
-            _check_solids_arg(self.name, solid_defs), 'solid_defs', of_type=ISolidDefinition
+            _check_solids_arg(self._name, solid_defs), 'solid_defs', of_type=ISolidDefinition
         )
 
         seen_modes = set()
@@ -101,14 +101,14 @@ class PipelineDefinition(IContainSolids, object):
                     (
                         'Two modes seen with the name "{mode_name}" in "{pipeline_name}". '
                         'Modes must have unique names.'
-                    ).format(mode_name=mode_def.name, pipeline_name=self.name)
+                    ).format(mode_name=mode_def.name, pipeline_name=self._name)
                 )
             seen_modes.add(mode_def.name)
 
-        self.dependencies = validate_dependency_dict(dependencies)
+        self._dependencies = validate_dependency_dict(dependencies)
 
         dependency_structure, pipeline_solid_dict = create_execution_structure(
-            current_level_solid_defs, self.dependencies, container_definition=None
+            current_level_solid_defs, self._dependencies, container_definition=None
         )
 
         self._solid_dict = pipeline_solid_dict
@@ -116,57 +116,78 @@ class PipelineDefinition(IContainSolids, object):
 
         self._runtime_type_dict = construct_runtime_type_dictionary(current_level_solid_defs)
 
+        self._preset_defs = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)
         self._preset_dict = {}
-        for preset in check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition):
+        for preset in self._preset_defs:
             if preset.name in self._preset_dict:
                 raise DagsterInvalidDefinitionError(
                     (
                         'Two PresetDefinitions seen with the name "{name}" in "{pipeline_name}". '
                         'PresetDefinitions must have unique names.'
-                    ).format(name=preset.name, pipeline_name=self.name)
+                    ).format(name=preset.name, pipeline_name=self._name)
                 )
             if preset.mode not in seen_modes:
                 raise DagsterInvalidDefinitionError(
                     (
                         'PresetDefinition "{name}" in "{pipeline_name}" '
                         'references mode "{mode}" which is not defined.'
-                    ).format(name=preset.name, pipeline_name=self.name, mode=preset.mode)
+                    ).format(name=preset.name, pipeline_name=self._name, mode=preset.mode)
                 )
             self._preset_dict[preset.name] = preset
 
         # Validate solid resource dependencies
-        _validate_resource_dependencies(self.mode_definitions, current_level_solid_defs)
+        _validate_resource_dependencies(self._mode_definitions, current_level_solid_defs)
 
         self._all_solid_defs = {}
         for current_level_solid_def in current_level_solid_defs:
             for solid_def in current_level_solid_def.iterate_solid_defs():
                 self._all_solid_defs[solid_def.name] = solid_def
 
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def description(self):
+        return self._description
+
+    @property
+    def mode_definitions(self):
+        return self._mode_definitions
+
+    @property
+    def dependencies(self):
+        return self._dependencies
+
+    @property
+    def preset_defs(self):
+        return self._preset_defs
+
     def _get_mode_definition(self, mode):
         check.str_param(mode, 'mode')
-        for mode_definition in self.mode_definitions:
+        for mode_definition in self._mode_definitions:
             if mode_definition.name == mode:
                 return mode_definition
 
         return None
 
     def get_default_mode(self):
-        return self.mode_definitions[0]
+        return self._mode_definitions[0]
 
     @property
     def is_single_mode(self):
-        return len(self.mode_definitions) == 1
+        return len(self._mode_definitions) == 1
 
     @property
     def is_multi_mode(self):
-        return len(self.mode_definitions) > 1
+        return len(self._mode_definitions) > 1
 
     def has_mode_definition(self, mode):
         check.str_param(mode, 'mode')
         return bool(self._get_mode_definition(mode))
 
     def get_default_mode_name(self):
-        return self.mode_definitions[0].name
+        return self._mode_definitions[0].name
 
     def get_mode_definition(self, mode=None):
         check.opt_str_param(mode, 'mode')
@@ -178,14 +199,14 @@ class PipelineDefinition(IContainSolids, object):
 
         if mode_def is None:
             check.failed(
-                'Could not find mode {mode} in pipeline {name}'.format(mode=mode, name=self.name)
+                'Could not find mode {mode} in pipeline {name}'.format(mode=mode, name=self._name)
             )
 
         return mode_def
 
     @property
     def available_modes(self):
-        return [mode_def.name for mode_def in self.mode_definitions]
+        return [mode_def.name for mode_def in self._mode_definitions]
 
     @property
     def display_name(self):
@@ -195,7 +216,7 @@ class PipelineDefinition(IContainSolids, object):
         Returns:
             str: Display name of pipeline
         '''
-        return self.name if self.name else '<<unnamed>>'
+        return self._name if self._name else '<<unnamed>>'
 
     @property
     def solids(self):
@@ -231,7 +252,7 @@ class PipelineDefinition(IContainSolids, object):
         if name not in self._solid_dict:
             raise DagsterInvariantViolationError(
                 'Pipeline {pipeline_name} has no solid named {name}.'.format(
-                    pipeline_name=self.name, name=name
+                    pipeline_name=self._name, name=name
                 )
             )
         return self._solid_dict[name]
@@ -304,7 +325,7 @@ class PipelineDefinition(IContainSolids, object):
                     'Could not find preset for "{name}". Available presets '
                     'for pipeline "{pipeline_name}" are {preset_names}.'
                 ).format(
-                    name=name, preset_names=list(self._preset_dict.keys()), pipeline_name=self.name
+                    name=name, preset_names=list(self._preset_dict.keys()), pipeline_name=self._name
                 )
             )
 
@@ -316,7 +337,7 @@ class PipelineDefinition(IContainSolids, object):
 
         return {
             'pipeline': pipeline,
-            'environment_dict': preset.get_environment_dict(self.name),
+            'environment_dict': preset.get_environment_dict(self._name),
             'run_config': RunConfig(mode=preset.mode),
         }
 

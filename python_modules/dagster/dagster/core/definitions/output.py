@@ -25,13 +25,29 @@ class OutputDefinition(object):
     '''
 
     def __init__(self, dagster_type=None, name=None, description=None, is_optional=False):
-        self.name = check_valid_name(check.opt_str_param(name, 'name', DEFAULT_OUTPUT))
+        self._name = check_valid_name(check.opt_str_param(name, 'name', DEFAULT_OUTPUT))
 
-        self.runtime_type = check.inst(resolve_to_runtime_type(dagster_type), RuntimeType)
+        self._runtime_type = check.inst(resolve_to_runtime_type(dagster_type), RuntimeType)
 
-        self.description = check.opt_str_param(description, 'description')
+        self._description = check.opt_str_param(description, 'description')
 
-        self.optional = check.bool_param(is_optional, 'is_optional')
+        self._optional = check.bool_param(is_optional, 'is_optional')
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def runtime_type(self):
+        return self._runtime_type
+
+    @property
+    def description(self):
+        return self._description
+
+    @property
+    def optional(self):
+        return self._optional
 
     @property
     def descriptive_key(self):

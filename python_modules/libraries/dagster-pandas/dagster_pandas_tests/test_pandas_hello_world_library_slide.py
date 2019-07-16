@@ -1,4 +1,4 @@
-from dagster import InputDefinition, OutputDefinition, execute_pipeline, lambda_solid, pipeline
+from dagster import InputDefinition, OutputDefinition, execute_solid, lambda_solid
 from dagster.core.test_utils import single_output_solid
 from dagster.utils import script_relative_path
 from dagster_pandas import DataFrame
@@ -22,13 +22,7 @@ def test_hello_world_with_dataframe_fns():
 def run_hello_world(hello_world):
     assert len(hello_world.input_dict) == 1
 
-    @pipeline
-    def test_pipeline():
-        return hello_world()
-
-    pipeline_result = execute_pipeline(test_pipeline, environment_dict=create_num_csv_environment())
-
-    result = pipeline_result.result_for_solid('hello_world')
+    result = execute_solid(hello_world, environment_dict=create_num_csv_environment())
 
     assert result.success
 
@@ -50,6 +44,7 @@ def create_definition_based_solid():
         compute_fn=compute_fn,
         output_def=OutputDefinition(DataFrame),
     )
+
     return hello_world
 
 

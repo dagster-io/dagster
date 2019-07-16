@@ -3,9 +3,11 @@ from __future__ import print_function
 import os
 import pprint
 
+from collections import namedtuple
+
 import requests
 
-from printer import IndentingBufferPrinter
+from .printer import IndentingBufferPrinter
 
 SCALAR_TYPES = {
     'string': 'String',
@@ -35,7 +37,8 @@ class Enum:
             with printer.with_indent():
                 if self.enum_descriptions:
                     for name, value in zip(self.enum_names, self.enum_descriptions):
-                        printer.line('EnumValue(\'{}\', description=\'{}\'),'.format(name, value))
+                        prefix = 'EnumValue(\'{}\', description=\'\'\''.format(name)
+                        printer.block(value + '\'\'\'),', initial_indent=prefix)
                 else:
                     for name in self.enum_names:
                         printer.line('EnumValue(\'{}\'),'.format(name))
@@ -64,15 +67,15 @@ class Field:
     def _print_fields(self, printer):
         # Scalars
         if isinstance(self.fields, str):
-            printer.line(self.fields + ',')
+            printer.append(self.fields)
         # Enums
         elif isinstance(self.fields, Enum):
-            printer.line(self.fields.name + ',')
+            printer.append(self.fields.name)
         # Lists
         elif isinstance(self.fields, List):
-            printer.line('List(')
+            printer.append('List[')
             self.fields.inner_type.write(printer, field_wrapped=False)
-            printer.line('),')
+            printer.append(']')
         # Dicts
         else:
             printer.line('Dict(')
@@ -95,7 +98,7 @@ class Field:
                             v.write(printer)
                             printer.append(',')
                 printer.line('},')
-            printer.line('),')
+            printer.line(')')
 
     def write(self, printer, field_wrapped=True):
         '''Use field_wrapped=False for Lists that should not be wrapped in Field()
@@ -108,7 +111,7 @@ class Field:
         printer.line('')
         with printer.with_indent():
             self._print_fields(printer)
-
+            printer.append(',')
             # Print description
             if self.description:
                 printer.block(
@@ -123,17 +126,29 @@ class Field:
         return printer.read()
 
 
-class ConfigParser:
-    def __init__(self, api_url, base_path):
+class ParsedConfig(namedtuple('_ParsedConfig', 'name configs enums')):
+    def __new__(cls, name, configs, enums):
+        return super(ParsedConfig, cls).__new__(cls, name, configs, enums)
 
-        json_schema = requests.get(api_url).json()
-        self.schemas = json_schema.get('schemas')
-        self.base_path = base_path
+    def write_configs(self, base_path):
+        configs_filename = 'configs_%s.py' % self.name
+        print('Writing', configs_filename)
+        with open(os.path.join(base_path, configs_filename), 'wb') as f:
+            f.write(self.configs)
+
+        enums_filename = 'types_%s.py' % self.name
+        with open(os.path.join(base_path, enums_filename), 'wb') as f:
+            f.write(self.enums)
+
+
+class ConfigParser:
+    def __init__(self, schemas):
+        self.schemas = schemas
 
         # Stashing these in a global so that we can write out after we're done constructing configs
         self.all_enums = {}
 
-    def _write_config(self, base_field, suffix):
+    def extract_config(self, base_field, suffix):
         with IndentingBufferPrinter() as printer:
             printer.write_header()
             printer.line('from dagster import Bool, Dict, Field, Int, List, PermissiveDict, String')
@@ -151,10 +166,9 @@ class ConfigParser:
                 printer.append('return ')
                 base_field.write(printer)
 
-            with open(os.path.join(self.base_path, 'configs_%s.py' % suffix), 'wb') as f:
-                f.write(printer.read().strip().encode())
+            return printer.read().strip().encode()
 
-    def _write_enums(self, suffix):
+    def extract_enums(self):
         if not self.all_enums:
             return
 
@@ -165,15 +179,13 @@ class ConfigParser:
             for enum in self.all_enums:
                 self.all_enums[enum].write(printer)
                 printer.blank_line()
+            return printer.read().strip().encode()
 
-            with open(os.path.join(self.base_path, 'types_%s.py' % suffix), 'wb') as f:
-                f.write(printer.read().strip().encode())
-
-    def _parse_object(self, obj, name=None, depth=0, enum_descriptions=None):
+    def parse_object(self, obj, name=None, depth=0, enum_descriptions=None):
         # This is a reference to another object that we should substitute by recursing
         if '$ref' in obj:
             name = obj['$ref']
-            return self._parse_object(self.schemas.get(name), name, depth + 1)
+            return self.parse_object(self.schemas.get(name), name, depth + 1)
 
         # Print type tree
         prefix = '|' + ('-' * 4 * depth) + ' ' if depth > 0 else ''
@@ -200,13 +212,13 @@ class ConfigParser:
                 fields = 'PermissiveDict()'
             else:
                 fields = {
-                    k: self._parse_object(v, k, depth + 1) for k, v in obj['properties'].items()
+                    k: self.parse_object(v, k, depth + 1) for k, v in obj['properties'].items()
                 }
 
         # Handle arrays
         elif obj_type == 'array':
             fields = List(
-                self._parse_object(
+                self.parse_object(
                     obj.get('items'), None, depth + 1, enum_descriptions=obj.get('enumDescriptions')
                 )
             )
@@ -225,18 +237,24 @@ class ConfigParser:
         # Reset enums for this object
         self.all_enums = {}
 
-        obj = self._parse_object(self.schemas.get(object_name), object_name)
-        self._write_config(obj, name)
-        self._write_enums(name)
+        obj = self.parse_object(self.schemas.get(object_name), object_name)
+        return ParsedConfig(
+            name=name, configs=self.extract_config(obj, name), enums=self.extract_enums()
+        )
+
+
+def main():
+    api_url = 'https://www.googleapis.com/discovery/v1/apis/dataproc/v1/rest'
+    base_path = '../libraries/dagster-gcp/dagster_gcp/dataproc/'
+    json_schema = requests.get(api_url).json().get('schemas')
+
+    c = ConfigParser(json_schema)
+    parsed = c.extract_schema_for_object('Job', 'dataproc_job')
+    parsed.write_configs(base_path)
+
+    parsed = c.extract_schema_for_object('ClusterConfig', 'dataproc_cluster')
+    parsed.write_configs(base_path)
 
 
 if __name__ == '__main__':
-    c = ConfigParser(
-        api_url='https://www.googleapis.com/discovery/v1/apis/dataproc/v1/rest',
-        base_path='libraries/dagster-gcp/dagster_gcp/dataproc/',
-    )
-    c.extract_schema_for_object('Job', 'dataproc_job')
-
-    print('\n\n')
-
-    c.extract_schema_for_object('ClusterConfig', 'dataproc_cluster')
+    main()

@@ -156,6 +156,25 @@ def examples_tests():
     return tests
 
 
+def automation_tests():
+    tests = []
+    version = SupportedPython.V3_7
+    coverage = ".coverage.automation.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+    tests.append(
+        StepBuilder("automation tests ({ver})".format(ver=TOX_MAP[version]))
+        .run(
+            "pushd python_modules/automation",
+            "pip install tox",
+            "tox -e {ver}".format(ver=TOX_MAP[version]),
+            "mv .coverage {file}".format(file=coverage),
+            "buildkite-agent artifact upload {file}".format(file=coverage),
+        )
+        .on_integration_image(version)
+        .build()
+    )
+    return tests
+
+
 def gcp_tests():
     # GCP tests need appropriate credentials
     creds_local_file = "/tmp/gcp-key-elementl-dev.json"
@@ -311,6 +330,7 @@ if __name__ == "__main__":
         .build(),
     ]
     steps += airline_demo_tests()
+    steps += automation_tests()
     steps += events_demo_tests()
     steps += airflow_tests()
     steps += dask_tests()

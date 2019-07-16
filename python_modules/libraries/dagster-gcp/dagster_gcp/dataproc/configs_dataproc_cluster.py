@@ -3,7 +3,7 @@
 @generated
 
 Produced via:
-python automation/parse_dataproc_configs.py \
+parse_dataproc_configs.py \
 
 '''
 
@@ -20,17 +20,46 @@ def define_dataproc_cluster_config():
                 'masterConfig': Field(
                     Dict(
                         fields={
+                            'accelerators': Field(
+                                List[
+                                    Dict(
+                                        fields={
+                                            'acceleratorCount': Field(
+                                                Int,
+                                                description='''The number of the accelerator cards of
+                                            this type exposed to this instance.''',
+                                                is_optional=True,
+                                            ),
+                                            'acceleratorTypeUri': Field(
+                                                String,
+                                                description='''Full URL, partial URI, or short name of
+                                            the accelerator type resource to expose to this
+                                            instance. See Compute Engine AcceleratorTypes.Examples:
+                                            https://www.googleapis.com/compute/beta/projects/[project_id]/zones/us-east1-a/acceleratorTypes/nvidia-tesla-k80
+                                            projects/[project_id]/zones/us-east1-a/acceleratorTypes/nvidia-tesla-k80
+                                            nvidia-tesla-k80Auto Zone Exception: If you are using
+                                            the Cloud Dataproc Auto Zone Placement feature, you must
+                                            use the short name of the accelerator type resource, for
+                                            example, nvidia-tesla-k80.''',
+                                                is_optional=True,
+                                            ),
+                                        }
+                                    )
+                                ],
+                                description='''Optional. The Compute Engine accelerator
+                                configuration for these instances.Beta Feature: This feature is
+                                still under development. It may be changed before final release.''',
+                                is_optional=True,
+                            ),
+                            'numInstances': Field(
+                                Int,
+                                description='''Optional. The number of VM instances in the instance
+                                group. For master instance groups, must be set to 1.''',
+                                is_optional=True,
+                            ),
                             'diskConfig': Field(
                                 Dict(
                                     fields={
-                                        'bootDiskType': Field(
-                                            String,
-                                            description='''Optional. Type of the boot disk (default
-                                            is "pd-standard"). Valid values: "pd-ssd" (Persistent
-                                            Disk Solid State Drive) or "pd-standard" (Persistent
-                                            Disk Hard Disk Drive).''',
-                                            is_optional=True,
-                                        ),
                                         'numLocalSsds': Field(
                                             Int,
                                             description='''Optional. Number of attached SSDs, from 0
@@ -48,29 +77,18 @@ def define_dataproc_cluster_config():
                                             (default is 500GB).''',
                                             is_optional=True,
                                         ),
+                                        'bootDiskType': Field(
+                                            String,
+                                            description='''Optional. Type of the boot disk (default
+                                            is "pd-standard"). Valid values: "pd-ssd" (Persistent
+                                            Disk Solid State Drive) or "pd-standard" (Persistent
+                                            Disk Hard Disk Drive).''',
+                                            is_optional=True,
+                                        ),
                                     }
                                 ),
                                 description='''Specifies the config of disk options for a group of
                                 VM instances.''',
-                                is_optional=True,
-                            ),
-                            'machineTypeUri': Field(
-                                String,
-                                description='''Optional. The Compute Engine machine type used for
-                                cluster instances.A full URL, partial URI, or short name are valid.
-                                Examples:
-                                https://www.googleapis.com/compute/v1/projects/[project_id]/zones/us-east1-a/machineTypes/n1-standard-2
-                                projects/[project_id]/zones/us-east1-a/machineTypes/n1-standard-2
-                                n1-standard-2Auto Zone Exception: If you are using the Cloud
-                                Dataproc Auto Zone Placement feature, you must use the short name of
-                                the machine type resource, for example, n1-standard-2.''',
-                                is_optional=True,
-                            ),
-                            'imageUri': Field(
-                                String,
-                                description='''Optional. The Compute Engine image resource used for
-                                cluster instances. It can be specified or may be inferred from
-                                SoftwareConfig.image_version.''',
                                 is_optional=True,
                             ),
                             'managedGroupConfig': Field(
@@ -85,41 +103,23 @@ def define_dataproc_cluster_config():
                                 preemptible instances.''',
                                 is_optional=True,
                             ),
-                            'accelerators': Field(
-                                List[
-                                    Dict(
-                                        fields={
-                                            'acceleratorTypeUri': Field(
-                                                String,
-                                                description='''Full URL, partial URI, or short name of
-                                            the accelerator type resource to expose to this
-                                            instance. See Compute Engine AcceleratorTypes.Examples:
-                                            https://www.googleapis.com/compute/beta/projects/[project_id]/zones/us-east1-a/acceleratorTypes/nvidia-tesla-k80
-                                            projects/[project_id]/zones/us-east1-a/acceleratorTypes/nvidia-tesla-k80
-                                            nvidia-tesla-k80Auto Zone Exception: If you are using
-                                            the Cloud Dataproc Auto Zone Placement feature, you must
-                                            use the short name of the accelerator type resource, for
-                                            example, nvidia-tesla-k80.''',
-                                                is_optional=True,
-                                            ),
-                                            'acceleratorCount': Field(
-                                                Int,
-                                                description='''The number of the accelerator cards of
-                                            this type exposed to this instance.''',
-                                                is_optional=True,
-                                            ),
-                                        }
-                                    )
-                                ],
-                                description='''Optional. The Compute Engine accelerator
-                                configuration for these instances.Beta Feature: This feature is
-                                still under development. It may be changed before final release.''',
+                            'imageUri': Field(
+                                String,
+                                description='''Optional. The Compute Engine image resource used for
+                                cluster instances. It can be specified or may be inferred from
+                                SoftwareConfig.image_version.''',
                                 is_optional=True,
                             ),
-                            'numInstances': Field(
-                                Int,
-                                description='''Optional. The number of VM instances in the instance
-                                group. For master instance groups, must be set to 1.''',
+                            'machineTypeUri': Field(
+                                String,
+                                description='''Optional. The Compute Engine machine type used for
+                                cluster instances.A full URL, partial URI, or short name are valid.
+                                Examples:
+                                https://www.googleapis.com/compute/v1/projects/[project_id]/zones/us-east1-a/machineTypes/n1-standard-2
+                                projects/[project_id]/zones/us-east1-a/machineTypes/n1-standard-2
+                                n1-standard-2Auto Zone Exception: If you are using the Cloud
+                                Dataproc Auto Zone Placement feature, you must use the short name of
+                                the machine type resource, for example, n1-standard-2.''',
                                 is_optional=True,
                             ),
                         }
@@ -131,17 +131,46 @@ def define_dataproc_cluster_config():
                 'secondaryWorkerConfig': Field(
                     Dict(
                         fields={
+                            'accelerators': Field(
+                                List[
+                                    Dict(
+                                        fields={
+                                            'acceleratorCount': Field(
+                                                Int,
+                                                description='''The number of the accelerator cards of
+                                            this type exposed to this instance.''',
+                                                is_optional=True,
+                                            ),
+                                            'acceleratorTypeUri': Field(
+                                                String,
+                                                description='''Full URL, partial URI, or short name of
+                                            the accelerator type resource to expose to this
+                                            instance. See Compute Engine AcceleratorTypes.Examples:
+                                            https://www.googleapis.com/compute/beta/projects/[project_id]/zones/us-east1-a/acceleratorTypes/nvidia-tesla-k80
+                                            projects/[project_id]/zones/us-east1-a/acceleratorTypes/nvidia-tesla-k80
+                                            nvidia-tesla-k80Auto Zone Exception: If you are using
+                                            the Cloud Dataproc Auto Zone Placement feature, you must
+                                            use the short name of the accelerator type resource, for
+                                            example, nvidia-tesla-k80.''',
+                                                is_optional=True,
+                                            ),
+                                        }
+                                    )
+                                ],
+                                description='''Optional. The Compute Engine accelerator
+                                configuration for these instances.Beta Feature: This feature is
+                                still under development. It may be changed before final release.''',
+                                is_optional=True,
+                            ),
+                            'numInstances': Field(
+                                Int,
+                                description='''Optional. The number of VM instances in the instance
+                                group. For master instance groups, must be set to 1.''',
+                                is_optional=True,
+                            ),
                             'diskConfig': Field(
                                 Dict(
                                     fields={
-                                        'bootDiskType': Field(
-                                            String,
-                                            description='''Optional. Type of the boot disk (default
-                                            is "pd-standard"). Valid values: "pd-ssd" (Persistent
-                                            Disk Solid State Drive) or "pd-standard" (Persistent
-                                            Disk Hard Disk Drive).''',
-                                            is_optional=True,
-                                        ),
                                         'numLocalSsds': Field(
                                             Int,
                                             description='''Optional. Number of attached SSDs, from 0
@@ -159,29 +188,18 @@ def define_dataproc_cluster_config():
                                             (default is 500GB).''',
                                             is_optional=True,
                                         ),
+                                        'bootDiskType': Field(
+                                            String,
+                                            description='''Optional. Type of the boot disk (default
+                                            is "pd-standard"). Valid values: "pd-ssd" (Persistent
+                                            Disk Solid State Drive) or "pd-standard" (Persistent
+                                            Disk Hard Disk Drive).''',
+                                            is_optional=True,
+                                        ),
                                     }
                                 ),
                                 description='''Specifies the config of disk options for a group of
                                 VM instances.''',
-                                is_optional=True,
-                            ),
-                            'machineTypeUri': Field(
-                                String,
-                                description='''Optional. The Compute Engine machine type used for
-                                cluster instances.A full URL, partial URI, or short name are valid.
-                                Examples:
-                                https://www.googleapis.com/compute/v1/projects/[project_id]/zones/us-east1-a/machineTypes/n1-standard-2
-                                projects/[project_id]/zones/us-east1-a/machineTypes/n1-standard-2
-                                n1-standard-2Auto Zone Exception: If you are using the Cloud
-                                Dataproc Auto Zone Placement feature, you must use the short name of
-                                the machine type resource, for example, n1-standard-2.''',
-                                is_optional=True,
-                            ),
-                            'imageUri': Field(
-                                String,
-                                description='''Optional. The Compute Engine image resource used for
-                                cluster instances. It can be specified or may be inferred from
-                                SoftwareConfig.image_version.''',
                                 is_optional=True,
                             ),
                             'managedGroupConfig': Field(
@@ -196,41 +214,23 @@ def define_dataproc_cluster_config():
                                 preemptible instances.''',
                                 is_optional=True,
                             ),
-                            'accelerators': Field(
-                                List[
-                                    Dict(
-                                        fields={
-                                            'acceleratorTypeUri': Field(
-                                                String,
-                                                description='''Full URL, partial URI, or short name of
-                                            the accelerator type resource to expose to this
-                                            instance. See Compute Engine AcceleratorTypes.Examples:
-                                            https://www.googleapis.com/compute/beta/projects/[project_id]/zones/us-east1-a/acceleratorTypes/nvidia-tesla-k80
-                                            projects/[project_id]/zones/us-east1-a/acceleratorTypes/nvidia-tesla-k80
-                                            nvidia-tesla-k80Auto Zone Exception: If you are using
-                                            the Cloud Dataproc Auto Zone Placement feature, you must
-                                            use the short name of the accelerator type resource, for
-                                            example, nvidia-tesla-k80.''',
-                                                is_optional=True,
-                                            ),
-                                            'acceleratorCount': Field(
-                                                Int,
-                                                description='''The number of the accelerator cards of
-                                            this type exposed to this instance.''',
-                                                is_optional=True,
-                                            ),
-                                        }
-                                    )
-                                ],
-                                description='''Optional. The Compute Engine accelerator
-                                configuration for these instances.Beta Feature: This feature is
-                                still under development. It may be changed before final release.''',
+                            'imageUri': Field(
+                                String,
+                                description='''Optional. The Compute Engine image resource used for
+                                cluster instances. It can be specified or may be inferred from
+                                SoftwareConfig.image_version.''',
                                 is_optional=True,
                             ),
-                            'numInstances': Field(
-                                Int,
-                                description='''Optional. The number of VM instances in the instance
-                                group. For master instance groups, must be set to 1.''',
+                            'machineTypeUri': Field(
+                                String,
+                                description='''Optional. The Compute Engine machine type used for
+                                cluster instances.A full URL, partial URI, or short name are valid.
+                                Examples:
+                                https://www.googleapis.com/compute/v1/projects/[project_id]/zones/us-east1-a/machineTypes/n1-standard-2
+                                projects/[project_id]/zones/us-east1-a/machineTypes/n1-standard-2
+                                n1-standard-2Auto Zone Exception: If you are using the Cloud
+                                Dataproc Auto Zone Placement feature, you must use the short name of
+                                the machine type resource, for example, n1-standard-2.''',
                                 is_optional=True,
                             ),
                         }
@@ -251,6 +251,123 @@ def define_dataproc_cluster_config():
                         }
                     ),
                     description='''Encryption settings for the cluster.''',
+                    is_optional=True,
+                ),
+                'securityConfig': Field(
+                    Dict(
+                        fields={
+                            'kerberosConfig': Field(
+                                Dict(
+                                    fields={
+                                        'truststorePasswordUri': Field(
+                                            String,
+                                            description='''Optional. The Cloud Storage URI of a KMS
+                                            encrypted file containing the password to the user
+                                            provided truststore. For the self-signed certificate,
+                                            this password is generated by Dataproc.''',
+                                            is_optional=True,
+                                        ),
+                                        'enableKerberos': Field(
+                                            Bool,
+                                            description='''Optional. Flag to indicate whether to
+                                            Kerberize the cluster.''',
+                                            is_optional=True,
+                                        ),
+                                        'truststoreUri': Field(
+                                            String,
+                                            description='''Optional. The Cloud Storage URI of the
+                                            truststore file used for SSL encryption. If not
+                                            provided, Dataproc will provide a self-signed
+                                            certificate.''',
+                                            is_optional=True,
+                                        ),
+                                        'crossRealmTrustRealm': Field(
+                                            String,
+                                            description='''Optional. The remote realm the Dataproc
+                                            on-cluster KDC will trust, should the user enable cross
+                                            realm trust.''',
+                                            is_optional=True,
+                                        ),
+                                        'rootPrincipalPasswordUri': Field(
+                                            String,
+                                            description='''Required. The Cloud Storage URI of a KMS
+                                            encrypted file containing the root principal
+                                            password.''',
+                                            is_optional=True,
+                                        ),
+                                        'kmsKeyUri': Field(
+                                            String,
+                                            description='''Required. The uri of the KMS key used to
+                                            encrypt various sensitive files.''',
+                                            is_optional=True,
+                                        ),
+                                        'crossRealmTrustKdc': Field(
+                                            String,
+                                            description='''Optional. The KDC (IP or hostname) for
+                                            the remote trusted realm in a cross realm trust
+                                            relationship.''',
+                                            is_optional=True,
+                                        ),
+                                        'crossRealmTrustSharedPasswordUri': Field(
+                                            String,
+                                            description='''Optional. The Cloud Storage URI of a KMS
+                                            encrypted file containing the shared password between
+                                            the on-cluster Kerberos realm and the remote trusted
+                                            realm, in a cross realm trust relationship.''',
+                                            is_optional=True,
+                                        ),
+                                        'tgtLifetimeHours': Field(
+                                            Int,
+                                            description='''Optional. The lifetime of the ticket
+                                            granting ticket, in hours. If not specified, or user
+                                            specifies 0, then default value 10 will be used.''',
+                                            is_optional=True,
+                                        ),
+                                        'keystoreUri': Field(
+                                            String,
+                                            description='''Optional. The Cloud Storage URI of the
+                                            keystore file used for SSL encryption. If not provided,
+                                            Dataproc will provide a self-signed certificate.''',
+                                            is_optional=True,
+                                        ),
+                                        'keyPasswordUri': Field(
+                                            String,
+                                            description='''Optional. The Cloud Storage URI of a KMS
+                                            encrypted file containing the password to the user
+                                            provided key. For the self-signed certificate, this
+                                            password is generated by Dataproc.''',
+                                            is_optional=True,
+                                        ),
+                                        'keystorePasswordUri': Field(
+                                            String,
+                                            description='''Optional. The Cloud Storage URI of a KMS
+                                            encrypted file containing the password to the user
+                                            provided keystore. For the self-signed certificate, this
+                                            password is generated by Dataproc.''',
+                                            is_optional=True,
+                                        ),
+                                        'crossRealmTrustAdminServer': Field(
+                                            String,
+                                            description='''Optional. The admin server (IP or
+                                            hostname) for the remote trusted realm in a cross realm
+                                            trust relationship.''',
+                                            is_optional=True,
+                                        ),
+                                        'kdcDbKeyUri': Field(
+                                            String,
+                                            description='''Optional. The Cloud Storage URI of a KMS
+                                            encrypted file containing the master key of the KDC
+                                            database.''',
+                                            is_optional=True,
+                                        ),
+                                    }
+                                ),
+                                description='''Specifies Kerberos related configuration.''',
+                                is_optional=True,
+                            )
+                        }
+                    ),
+                    description='''Security related configuration, including Kerberos.''',
                     is_optional=True,
                 ),
                 'initializationActions': Field(
@@ -297,17 +414,46 @@ def define_dataproc_cluster_config():
                 'workerConfig': Field(
                     Dict(
                         fields={
+                            'accelerators': Field(
+                                List[
+                                    Dict(
+                                        fields={
+                                            'acceleratorCount': Field(
+                                                Int,
+                                                description='''The number of the accelerator cards of
+                                            this type exposed to this instance.''',
+                                                is_optional=True,
+                                            ),
+                                            'acceleratorTypeUri': Field(
+                                                String,
+                                                description='''Full URL, partial URI, or short name of
+                                            the accelerator type resource to expose to this
+                                            instance. See Compute Engine AcceleratorTypes.Examples:
+                                            https://www.googleapis.com/compute/beta/projects/[project_id]/zones/us-east1-a/acceleratorTypes/nvidia-tesla-k80
+                                            projects/[project_id]/zones/us-east1-a/acceleratorTypes/nvidia-tesla-k80
+                                            nvidia-tesla-k80Auto Zone Exception: If you are using
+                                            the Cloud Dataproc Auto Zone Placement feature, you must
+                                            use the short name of the accelerator type resource, for
+                                            example, nvidia-tesla-k80.''',
+                                                is_optional=True,
+                                            ),
+                                        }
+                                    )
+                                ],
+                                description='''Optional. The Compute Engine accelerator
+                                configuration for these instances.Beta Feature: This feature is
+                                still under development. It may be changed before final release.''',
+                                is_optional=True,
+                            ),
+                            'numInstances': Field(
+                                Int,
+                                description='''Optional. The number of VM instances in the instance
+                                group. For master instance groups, must be set to 1.''',
+                                is_optional=True,
+                            ),
                             'diskConfig': Field(
                                 Dict(
                                     fields={
-                                        'bootDiskType': Field(
-                                            String,
-                                            description='''Optional. Type of the boot disk (default
-                                            is "pd-standard"). Valid values: "pd-ssd" (Persistent
-                                            Disk Solid State Drive) or "pd-standard" (Persistent
-                                            Disk Hard Disk Drive).''',
-                                            is_optional=True,
-                                        ),
                                         'numLocalSsds': Field(
                                             Int,
                                             description='''Optional. Number of attached SSDs, from 0
@@ -325,29 +471,18 @@ def define_dataproc_cluster_config():
                                             (default is 500GB).''',
                                             is_optional=True,
                                         ),
+                                        'bootDiskType': Field(
+                                            String,
+                                            description='''Optional. Type of the boot disk (default
+                                            is "pd-standard"). Valid values: "pd-ssd" (Persistent
+                                            Disk Solid State Drive) or "pd-standard" (Persistent
+                                            Disk Hard Disk Drive).''',
+                                            is_optional=True,
+                                        ),
                                     }
                                 ),
                                 description='''Specifies the config of disk options for a group of
                                 VM instances.''',
-                                is_optional=True,
-                            ),
-                            'machineTypeUri': Field(
-                                String,
-                                description='''Optional. The Compute Engine machine type used for
-                                cluster instances.A full URL, partial URI, or short name are valid.
-                                Examples:
-                                https://www.googleapis.com/compute/v1/projects/[project_id]/zones/us-east1-a/machineTypes/n1-standard-2
-                                projects/[project_id]/zones/us-east1-a/machineTypes/n1-standard-2
-                                n1-standard-2Auto Zone Exception: If you are using the Cloud
-                                Dataproc Auto Zone Placement feature, you must use the short name of
-                                the machine type resource, for example, n1-standard-2.''',
-                                is_optional=True,
-                            ),
-                            'imageUri': Field(
-                                String,
-                                description='''Optional. The Compute Engine image resource used for
-                                cluster instances. It can be specified or may be inferred from
-                                SoftwareConfig.image_version.''',
                                 is_optional=True,
                             ),
                             'managedGroupConfig': Field(
@@ -362,41 +497,23 @@ def define_dataproc_cluster_config():
                                 preemptible instances.''',
                                 is_optional=True,
                             ),
-                            'accelerators': Field(
-                                List[
-                                    Dict(
-                                        fields={
-                                            'acceleratorTypeUri': Field(
-                                                String,
-                                                description='''Full URL, partial URI, or short name of
-                                            the accelerator type resource to expose to this
-                                            instance. See Compute Engine AcceleratorTypes.Examples:
-                                            https://www.googleapis.com/compute/beta/projects/[project_id]/zones/us-east1-a/acceleratorTypes/nvidia-tesla-k80
-                                            projects/[project_id]/zones/us-east1-a/acceleratorTypes/nvidia-tesla-k80
-                                            nvidia-tesla-k80Auto Zone Exception: If you are using
-                                            the Cloud Dataproc Auto Zone Placement feature, you must
-                                            use the short name of the accelerator type resource, for
-                                            example, nvidia-tesla-k80.''',
-                                                is_optional=True,
-                                            ),
-                                            'acceleratorCount': Field(
-                                                Int,
-                                                description='''The number of the accelerator cards of
-                                            this type exposed to this instance.''',
-                                                is_optional=True,
-                                            ),
-                                        }
-                                    )
-                                ],
-                                description='''Optional. The Compute Engine accelerator
-                                configuration for these instances.Beta Feature: This feature is
-                                still under development. It may be changed before final release.''',
+                            'imageUri': Field(
+                                String,
+                                description='''Optional. The Compute Engine image resource used for
+                                cluster instances. It can be specified or may be inferred from
+                                SoftwareConfig.image_version.''',
                                 is_optional=True,
                             ),
-                            'numInstances': Field(
-                                Int,
-                                description='''Optional. The number of VM instances in the instance
-                                group. For master instance groups, must be set to 1.''',
+                            'machineTypeUri': Field(
+                                String,
+                                description='''Optional. The Compute Engine machine type used for
+                                cluster instances.A full URL, partial URI, or short name are valid.
+                                Examples:
+                                https://www.googleapis.com/compute/v1/projects/[project_id]/zones/us-east1-a/machineTypes/n1-standard-2
+                                projects/[project_id]/zones/us-east1-a/machineTypes/n1-standard-2
+                                n1-standard-2Auto Zone Exception: If you are using the Cloud
+                                Dataproc Auto Zone Placement feature, you must use the short name of
+                                the machine type resource, for example, n1-standard-2.''',
                                 is_optional=True,
                             ),
                         }
@@ -408,6 +525,18 @@ def define_dataproc_cluster_config():
                 'gceClusterConfig': Field(
                     Dict(
                         fields={
+                            'networkUri': Field(
+                                String,
+                                description='''Optional. The Compute Engine network to be used for
+                                machine communications. Cannot be specified with subnetwork_uri. If
+                                neither network_uri nor subnetwork_uri is specified, the "default"
+                                network of the project is used, if it exists. Cannot be a "Custom
+                                Subnet Network" (see Using Subnetworks for more information).A full
+                                URL, partial URI, or short name are valid. Examples:
+                                https://www.googleapis.com/compute/v1/projects/[project_id]/regions/global/default
+                                projects/[project_id]/regions/global/default default''',
+                                is_optional=True,
+                            ),
                             'zoneUri': Field(
                                 String,
                                 description='''Optional. The zone where the Compute Engine cluster
@@ -479,18 +608,6 @@ def define_dataproc_cluster_config():
                                 projects/[project_id]/regions/us-east1/subnetworks/sub0 sub0''',
                                 is_optional=True,
                             ),
-                            'networkUri': Field(
-                                String,
-                                description='''Optional. The Compute Engine network to be used for
-                                machine communications. Cannot be specified with subnetwork_uri. If
-                                neither network_uri nor subnetwork_uri is specified, the "default"
-                                network of the project is used, if it exists. Cannot be a "Custom
-                                Subnet Network" (see Using Subnetworks for more information).A full
-                                URL, partial URI, or short name are valid. Examples:
-                                https://www.googleapis.com/compute/v1/projects/[project_id]/regions/global/default
-                                projects/[project_id]/regions/global/default default''',
-                                is_optional=True,
-                            ),
                         }
                     ),
                     description='''Common config settings for resources of Compute Engine cluster
@@ -500,15 +617,6 @@ def define_dataproc_cluster_config():
                 'softwareConfig': Field(
                     Dict(
                         fields={
-                            'imageVersion': Field(
-                                String,
-                                description='''Optional. The version of software inside the cluster.
-                                It must be one of the supported Cloud Dataproc Versions, such as
-                                "1.2" (including a subminor version, such as "1.2.29"), or the
-                                "preview" version. If unspecified, it defaults to the latest Debian
-                                version.''',
-                                is_optional=True,
-                            ),
                             'properties': Field(
                                 PermissiveDict(),
                                 description='''Optional. The properties to set on daemon config
@@ -525,6 +633,15 @@ def define_dataproc_cluster_config():
                                 List[Component],
                                 description='''The set of optional components to activate on the
                                 cluster.''',
+                                is_optional=True,
+                            ),
+                            'imageVersion': Field(
+                                String,
+                                description='''Optional. The version of software inside the cluster.
+                                It must be one of the supported Cloud Dataproc Versions, such as
+                                "1.2" (including a subminor version, such as "1.2.29"), or the
+                                "preview" version. If unspecified, it defaults to the latest Debian
+                                version.''',
                                 is_optional=True,
                             ),
                         }

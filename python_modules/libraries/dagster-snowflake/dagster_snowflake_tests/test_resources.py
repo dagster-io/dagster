@@ -2,7 +2,7 @@ import sys
 
 import pandas as pd
 
-from dagster import execute_pipeline, pipeline, solid, ModeDefinition
+from dagster import execute_solid, solid, ModeDefinition
 
 from dagster_snowflake import snowflake_resource
 
@@ -34,13 +34,9 @@ def test_snowflake_resource(snowflake_connect):
         with context.resources.snowflake.get_connection(context.log) as _:
             pass
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'snowflake': snowflake_resource})])
-    def test_pipeline():
-        snowflake_solid()  # pylint: disable=no-value-for-parameter
-
-    result = execute_pipeline(
-        test_pipeline,
-        {
+    result = execute_solid(
+        snowflake_solid,
+        environment_dict={
             'resources': {
                 'snowflake': {
                     'config': {
@@ -54,6 +50,7 @@ def test_snowflake_resource(snowflake_connect):
                 }
             }
         },
+        mode_def=ModeDefinition(resource_defs={'snowflake': snowflake_resource}),
     )
     assert result.success
     snowflake_connect.assert_called_once_with(

@@ -9,8 +9,8 @@ from dagster import (
     PipelineDefinition,
     check,
     execute_pipeline,
+    execute_solid,
     lambda_solid,
-    pipeline,
 )
 from dagster.core.test_utils import single_output_solid
 from dagster_pandas import DataFrame
@@ -222,8 +222,4 @@ def test_date_column():
     def dataframe_constant():
         return pd.DataFrame([{datetime.date(2019, 1, 1): 0}])
 
-    @pipeline
-    def date_pipeline():
-        dataframe_constant()
-
-    assert execute_pipeline(date_pipeline).success
+    assert execute_solid(dataframe_constant).success

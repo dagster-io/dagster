@@ -22,11 +22,23 @@ class ResourceDefinition(object):
     '''
 
     def __init__(self, resource_fn, config_field=None, description=None):
-        self.resource_fn = check.callable_param(resource_fn, 'resource_fn')
-        self.config_field = check_user_facing_opt_field_param(
+        self._resource_fn = check.callable_param(resource_fn, 'resource_fn')
+        self._config_field = check_user_facing_opt_field_param(
             config_field, 'config_field', 'of a ResourceDefinition or @resource'
         )
-        self.description = check.opt_str_param(description, 'description')
+        self._description = check.opt_str_param(description, 'description')
+
+    @property
+    def resource_fn(self):
+        return self._resource_fn
+
+    @property
+    def config_field(self):
+        return self._config_field
+
+    @property
+    def description(self):
+        return self._description
 
     @staticmethod
     def none_resource(description=None):

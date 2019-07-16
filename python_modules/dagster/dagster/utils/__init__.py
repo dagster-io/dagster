@@ -74,7 +74,7 @@ def camelcase(string):
 
 def single_item(ddict):
     check.dict_param(ddict, 'ddict')
-    check.param_invariant(len(ddict) == 1, 'ddict')
+    check.param_invariant(len(ddict) == 1, 'ddict', 'Expected dict with single item')
     return list(ddict.items())[0]
 
 

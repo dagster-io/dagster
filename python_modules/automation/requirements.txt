@@ -1,0 +1,6 @@
+autoflake
+boto3==1.9.135
+click>=6.7
+pandas
+pytablereader
+requests

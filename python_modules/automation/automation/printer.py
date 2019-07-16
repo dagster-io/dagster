@@ -1,6 +1,5 @@
+import os
 import sys
-
-from textwrap import TextWrapper
 
 from six import StringIO
 
@@ -27,25 +26,14 @@ class IndentingBufferPrinter(IndentingPrinter):
         '''Get the value of the backing StringIO.'''
         return self.buffer.getvalue()
 
-    def block(self, text, prefix='', initial_indent=''):  # pylint: disable=arguments-differ
-        '''Automagically wrap a block of text.'''
-        wrapper = TextWrapper(
-            width=self.line_length - len(self.current_indent_str),
-            initial_indent=initial_indent,
-            subsequent_indent=prefix,
-            break_long_words=False,
-            break_on_hyphens=False,
-        )
-        for line in wrapper.wrap(text):
-            self.line(line)
-
     def write_header(self):
+        args = [os.path.basename(sys.argv[0])] + sys.argv[1:]
         self.line("'''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT")
         self.blank_line()
         self.line('@generated')
         self.blank_line()
         self.line('Produced via:')
-        self.line('python ' + '\n\t'.join('%s \\' % s for s in sys.argv))
+        self.line('\n\t'.join('%s \\' % s for s in args if s != '--snapshot-update'))
         self.blank_line()
         self.line("'''")
         self.blank_line()
