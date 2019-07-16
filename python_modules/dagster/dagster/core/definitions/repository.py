@@ -23,7 +23,7 @@ class RepositoryDefinition(object):
     '''
 
     def __init__(self, name, pipeline_dict=None, pipeline_defs=None):
-        self.name = check.str_param(name, 'name')
+        self._name = check.str_param(name, 'name')
 
         pipeline_dict = check.opt_dict_param(pipeline_dict, 'pipeline_dict', key_type=str)
         pipeline_defs = check.opt_list_param(pipeline_defs, 'pipeline_defs', PipelineDefinition)
@@ -45,6 +45,10 @@ class RepositoryDefinition(object):
 
         self._all_pipelines = None
         self._solid_defs = None
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def pipeline_names(self):

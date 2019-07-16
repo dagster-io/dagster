@@ -21,11 +21,23 @@ class InputDefinition(object):
 
     def __init__(self, name, dagster_type=None, description=None):
         ''
-        self.name = check_valid_name(name)
+        self._name = check_valid_name(name)
 
-        self.runtime_type = check.inst(resolve_to_runtime_type(dagster_type), RuntimeType)
+        self._runtime_type = check.inst(resolve_to_runtime_type(dagster_type), RuntimeType)
 
-        self.description = check.opt_str_param(description, 'description')
+        self._description = check.opt_str_param(description, 'description')
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def runtime_type(self):
+        return self._runtime_type
+
+    @property
+    def description(self):
+        return self._description
 
     @property
     def descriptive_key(self):
