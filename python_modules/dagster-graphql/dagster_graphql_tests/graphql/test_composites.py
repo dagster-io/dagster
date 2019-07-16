@@ -80,6 +80,6 @@ def test_composites(snapshot):
     #            (/4)
     #           /
     #       (/2)
-    assert len(handle_map) is 10
+    assert len(handle_map) == 10
 
     snapshot.assert_match(result.data)
