@@ -1,4 +1,5 @@
 black==18.9b0; python_version >= '3.6'
+flake8>=3.7.8
 nbsphinx==0.4.2
 pylint>=2.3.0; python_version >= '3.6'
 pytest==4.6.3
