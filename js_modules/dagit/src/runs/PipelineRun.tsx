@@ -247,7 +247,10 @@ export class PipelineRun extends React.Component<
                   }
                   onApplyStepFilter={stepKey =>
                     this.setState({
-                      logsFilter: { ...logsFilter, text: `step:${stepKey}` }
+                      logsFilter: {
+                        ...this.state.logsFilter,
+                        text: `step:${stepKey}`
+                      }
                     })
                   }
                 />
