@@ -323,6 +323,10 @@ CodeMirror.registerHelper(
 
     const cur = editor.getCursor();
     const token: CodemirrorToken = editor.getTokenAt(cur);
+    const prevToken: CodemirrorToken = editor.getTokenAt({
+      line: cur.line,
+      ch: token.start
+    });
 
     let searchString: string;
     let start: number;
@@ -343,9 +347,67 @@ CodeMirror.registerHelper(
       start
     );
 
-    const shouldAddTrailingNewline = (type: { __typename: string }) =>
-      type.__typename === "ListConfigType" ||
-      type.__typename == "CompositeConfigType";
+    // Since writing meaningful tests for this functionality is difficult given a) no jsdom
+    // support for APIs that codemirror uses (and so no way to use snapshot tests) and b) no
+    // appetite (yet) for writing Selenium tests, we record here the manual tests used to verify
+    // this logic. In what follows, | represents the position of the cursor and -> the transition
+    // on accepting an autocomplete suggestion for `storage: filesystem:
+
+    // st|
+    // ->
+    // storage:
+    //   |
+
+    // storage:|
+    // ->
+    // storage:
+    //   filesystem:
+    //     |
+
+    // storage: |
+    // ->
+    // storage:
+    //   filesystem:
+    //     |
+
+    // storage:  |
+    // ->
+    // storage:
+    //   filesystem:
+    //     |
+
+    // storage:
+    //   |
+    // ->
+    // storage:
+    //   filesystem:
+    //     |
+
+    const formatReplacement = (
+      field: any,
+      start: any,
+      token: CodemirrorToken,
+      prevToken: CodemirrorToken
+    ) => {
+      let replacement = `${field.name}`;
+
+      const isCompositeOrList =
+        field.configType.__typename === "ListConfigType" ||
+        field.configType.__typename == "CompositeConfigType";
+
+      const tokenIsColon = token.string.startsWith(":");
+
+      if (isCompositeOrList && tokenIsColon) {
+        replacement = `\n${" ".repeat(prevToken.start + 2)}${
+          field.name
+        }:\n${" ".repeat(prevToken.start + 4)}`;
+      } else if (isCompositeOrList) {
+        replacement = `${field.name}:\n${" ".repeat(start + 2)}`;
+      } else if (tokenIsColon) {
+        replacement = `\n${" ".repeat(prevToken.start + 2)}${field.name}`;
+      }
+      return replacement;
+    };
 
     const buildSuggestion = (
       display: string,
@@ -383,9 +445,7 @@ CodeMirror.registerHelper(
           .map(field =>
             buildSuggestion(
               field.name,
-              shouldAddTrailingNewline(field.configType)
-                ? `${field.name}:\n${" ".repeat(start + 2)}`
-                : `${field.name}: `,
+              formatReplacement(field, start, token, prevToken),
               field.description
             )
           )
