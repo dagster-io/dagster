@@ -18,27 +18,27 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
 
     @abstractmethod
     def set_object(self, key, obj, serialization_strategy=None):
-        pass
+        '''Implement this method to set an object in the object store.'''
 
     @abstractmethod
     def get_object(self, key, serialization_strategy=None):
-        pass
+        '''Implement this method to get an object from the object store.'''
 
     @abstractmethod
     def has_object(self, key):
-        pass
+        '''Implement this method to check if an object exists in the object store.'''
 
     @abstractmethod
     def rm_object(self, key):
-        pass
+        '''Implement this method to remove an object from the object store.'''
 
     @abstractmethod
     def cp_object(self, src, dst):
-        pass
+        '''Implement this method to copy an object from one key to another in the object store.'''
 
     @abstractmethod
     def uri_for_key(self, key, protocol=None):
-        pass
+        '''Implement this method to get a URI for a key in the object store.'''
 
     def key_for_paths(self, paths):
         return self.sep.join(paths)
