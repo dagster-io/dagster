@@ -1,15 +1,14 @@
 from collections import defaultdict
 
 from dagster import (
-    DependencyDefinition,
     Field,
     InputDefinition,
     Int,
     ModeDefinition,
-    PipelineDefinition,
     RepositoryDefinition,
     String,
     lambda_solid,
+    pipeline,
     solid,
 )
 
@@ -35,28 +34,23 @@ def error_solid():
     raise Exception('Unusual error')
 
 
-def define_demo_execution_pipeline():
-    return PipelineDefinition(
-        name='demo_pipeline',
-        solid_defs=[multiply_the_word, count_letters],
-        dependencies={'count_letters': {'word': DependencyDefinition('multiply_the_word')}},
-        mode_defs=[
-            ModeDefinition(
-                system_storage_defs=s3_plus_default_storage_defs, resource_defs={'s3': s3_resource}
-            )
-        ],
-    )
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            system_storage_defs=s3_plus_default_storage_defs, resource_defs={'s3': s3_resource}
+        )
+    ]
+)
+def demo_pipeline():
+    count_letters(multiply_the_word())  # pylint: disable=no-value-for-parameter
 
 
-def define_demo_error_pipeline():
-    return PipelineDefinition(name='demo_error_pipeline', solid_defs=[error_solid])
+@pipeline
+def demo_error_pipeline():
+    error_solid()
 
 
 def define_demo_execution_repo():
     return RepositoryDefinition(
-        name='demo_execution_repo',
-        pipeline_dict={
-            'demo_pipeline': define_demo_execution_pipeline,
-            'demo_error_pipeline': define_demo_error_pipeline,
-        },
+        name='demo_execution_repo', pipeline_defs=[demo_pipeline, demo_error_pipeline]
     )
