@@ -1,5 +1,9 @@
 import * as CodeMirror from "codemirror";
 import "codemirror/addon/hint/show-hint";
+import "codemirror/addon/search/search";
+import "codemirror/addon/search/searchcursor";
+import "codemirror/addon/dialog/dialog";
+import "codemirror/addon/dialog/dialog.css";
 import * as yaml from "yaml";
 import { ConfigEditorPipelineFragment } from "../types/ConfigEditorPipelineFragment";
 
