@@ -97,7 +97,6 @@ def system_storage(
     '''
 
     if callable(name):
-        check.invariant(name is None)
         check.invariant(is_persistent is True)
         check.invariant(config_field is None)
         check.invariant(required_resource_keys is None)

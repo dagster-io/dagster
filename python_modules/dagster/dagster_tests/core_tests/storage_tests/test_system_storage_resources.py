@@ -11,6 +11,23 @@ from dagster import (
 from dagster.core.definitions.system_storage import create_mem_system_storage_data
 
 
+def test_naked_system_storage():
+    called = {}
+
+    @system_storage
+    def storage(init_context):
+        called['called'] = True
+        return create_mem_system_storage_data(init_context)
+
+    @pipeline(mode_defs=[ModeDefinition(system_storage_defs=[storage])])
+    def pass_pipeline():
+        pass
+
+    assert execute_pipeline(pass_pipeline, environment_dict={'storage': {'storage': None}}).success
+
+    assert called['called']
+
+
 def test_resource_requirements_pass():
     called = {}
 

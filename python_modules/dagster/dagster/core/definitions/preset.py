@@ -40,9 +40,6 @@ class PresetDefinition:
         self.mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
 
     def get_environment_dict(self, pipeline_name):
-        if self.environment_files is None:
-            return None
-
         file_set = set()
         for file_glob in self.environment_files:
             files = glob(file_glob)
@@ -76,7 +73,4 @@ class PresetDefinition:
 
     def get_environment_yaml(self, pipeline_name):
         merged = self.get_environment_dict(pipeline_name)
-        if merged is None:
-            return None
-
         return yaml.dump(merged, default_flow_style=False)
