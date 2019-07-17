@@ -19,13 +19,14 @@
     "types": ["jest", "node"]
   },
   "exclude": [
-    "node_modules",
-    "build",
-    "scripts",
     "acceptance-tests",
-    "webpack",
+    "build",
+    "coverage",
     "jest",
+    "node_modules",
+    "public",
+    "scripts",
     "src/setupTests.ts",
-    "coverage"
+    "webpack"
   ]
 }

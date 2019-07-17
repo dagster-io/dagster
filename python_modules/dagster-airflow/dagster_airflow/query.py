@@ -36,7 +36,6 @@ mutation(
         __typename
         ... on ExecutionStepOutputEvent {
           outputName
-          valueRepr
         }
         ... on ExecutionStepFailureEvent {
           error {

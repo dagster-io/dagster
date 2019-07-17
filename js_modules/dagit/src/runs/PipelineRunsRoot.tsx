@@ -3,6 +3,8 @@ import { match } from "react-router";
 import gql from "graphql-tag";
 import RunHistory from "./RunHistory";
 import { QueryResult, Query } from "react-apollo";
+import { NonIdealState } from "@blueprintjs/core";
+import { IconNames } from "@blueprintjs/icons";
 import { PipelineRunsRootQuery } from "./types/PipelineRunsRootQuery";
 import Loading from "../Loading";
 
@@ -25,12 +27,29 @@ export default class PipelineRunsRoot extends React.Component<
       >
         {(queryResult: QueryResult<PipelineRunsRootQuery, any>) => (
           <Loading queryResult={queryResult}>
-            {result => (
-              <RunHistory
-                pipelineName={result.pipeline.name}
-                runs={result.pipeline.runs}
-              />
-            )}
+            {result => {
+              const pipelineOrError = result.pipelineOrError;
+
+              switch (pipelineOrError.__typename) {
+                case "PipelineNotFoundError":
+                  return (
+                    <NonIdealState
+                      icon={IconNames.FLOW_BRANCH}
+                      title="Pipeline Not Found"
+                      description={pipelineOrError.message}
+                    />
+                  );
+                case "Pipeline":
+                  return (
+                    <RunHistory
+                      pipelineName={pipelineOrError.name}
+                      runs={pipelineOrError.runs}
+                    />
+                  );
+                default:
+                  return null;
+              }
+            }}
           </Loading>
         )}
       </Query>
@@ -40,10 +59,15 @@ export default class PipelineRunsRoot extends React.Component<
 
 export const PIPELINE_RUNS_ROOT_QUERY = gql`
   query PipelineRunsRootQuery($name: String!) {
-    pipeline(params: { name: $name }) {
-      name
-      runs {
-        ...RunHistoryRunFragment
+    pipelineOrError(params: { name: $name }) {
+      ... on Pipeline {
+        name
+        runs {
+          ...RunHistoryRunFragment
+        }
+      }
+      ... on PipelineNotFoundError {
+        message
       }
     }
   }

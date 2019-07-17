@@ -77,13 +77,19 @@ def static_view(path, file):
     )
 
 
+def vendor_view(path, file):
+    return send_from_directory(
+        os.path.join(os.path.dirname(__file__), './webapp/build/vendor/', path), file
+    )
+
+
 def index_view(_path):
     try:
         return send_file(os.path.join(os.path.dirname(__file__), './webapp/build/index.html'))
     except seven.FileNotFoundError:
         text = '''<p>Can't find webapp files. Probably webapp isn't built. If you are using
         dagit, then probably it's a corrupted installation or a bug. However, if you are
-        developing dagit locally, you problem can be fixed as follows:</p>
+        developing dagit locally, your problem can be fixed as follows:</p>
 
 <pre>cd ./python_modules/
 make rebuild_dagit</pre>'''
@@ -124,6 +130,9 @@ def create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=F
         execution_manager = SynchronousExecutionManager()
     else:
         execution_manager = MultiprocessingExecutionManager()
+
+    print('Loading repository...')
+
     context = DagsterGraphQLContext(
         handle=handle,
         pipeline_runs=pipeline_run_storage,
@@ -154,6 +163,7 @@ def create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=F
     app.add_url_rule('/dagit/notebook', 'notebook', lambda: notebook_view(request.args))
 
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)
+    app.add_url_rule('/vendor/<path:path>/<string:file>', 'vendor_view', vendor_view)
     app.add_url_rule('/<path:_path>', 'index_catchall', index_view)
     app.add_url_rule('/', 'index', index_view, defaults={'_path': ''})
 

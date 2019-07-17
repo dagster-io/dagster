@@ -46,7 +46,6 @@ def test_execution_plan_simple_two_steps():
 
     assert step_events[1].step_key == 'return_one.compute'
     assert step_events[1].is_successful_output
-    assert step_events[1].step_output_data.value_repr == '1'
 
     assert step_events[2].event_type == DagsterEventType.STEP_SUCCESS
     assert step_events[3].event_type == DagsterEventType.STEP_START
@@ -54,7 +53,6 @@ def test_execution_plan_simple_two_steps():
 
     assert step_events[5].step_key == 'add_one.compute'
     assert step_events[5].is_successful_output
-    assert step_events[5].step_output_data.value_repr == '2'
 
 
 def test_execution_plan_two_outputs():
@@ -70,10 +68,8 @@ def test_execution_plan_two_outputs():
     step_events = execute_plan(execution_plan)
 
     assert step_events[1].step_key == 'return_one_two.compute'
-    assert step_events[1].step_output_data.value_repr == '1'
     assert step_events[1].step_output_data.output_name == 'num_one'
     assert step_events[2].step_key == 'return_one_two.compute'
-    assert step_events[2].step_output_data.value_repr == '2'
     assert step_events[2].step_output_data.output_name == 'num_two'
 
 

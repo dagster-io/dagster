@@ -24,4 +24,4 @@ def math():
 
 
 def define_repository():
-    return RepositoryDefinition(name='test', pipeline_dict={'math': math})
+    return RepositoryDefinition(name='test', pipeline_defs=[math])

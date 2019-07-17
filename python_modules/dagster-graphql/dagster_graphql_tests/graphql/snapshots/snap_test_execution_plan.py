@@ -38,8 +38,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
                     'key': 'sum_solid.compute',
                     'metadata': [
                     ]
-                },
-                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]"
+                }
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -84,8 +83,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
                     'key': 'sum_solid.compute',
                     'metadata': [
                     ]
-                },
-                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]"
+                }
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -118,8 +116,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
-                },
-                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), ('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), ('sum_sq', 49)])]"
+                }
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -164,8 +161,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
                     'key': 'sum_solid.compute',
                     'metadata': [
                     ]
-                },
-                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]"
+                }
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -198,8 +194,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
-                },
-                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), ('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), ('sum_sq', 49)])]"
+                }
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -244,8 +239,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
                     'key': 'sum_solid.compute',
                     'metadata': [
                     ]
-                },
-                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]"
+                }
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -278,8 +272,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
-                },
-                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), ('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), ('sum_sq', 49)])]"
+                }
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -324,8 +317,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
                     'key': 'sum_solid.compute',
                     'metadata': [
                     ]
-                },
-                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]"
+                }
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -370,8 +362,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
                     ]
-                },
-                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), ('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), ('sum_sq', 49)])]"
+                }
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',

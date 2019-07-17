@@ -14,12 +14,13 @@ class DagsterGraphQLContext(object):
         )
         self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
         self.version = version
+        self.repository_definition = self.get_handle().build_repository_definition()
 
     def get_handle(self):
         return self._handle
 
     def get_repository(self):
-        return self.get_handle().build_repository_definition()
+        return self.repository_definition
 
     def get_pipeline(self, pipeline_name):
         orig_handle = self.get_handle()

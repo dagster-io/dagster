@@ -9,48 +9,59 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 // GraphQL query operation: PipelineRunsRootQuery
 // ====================================================
 
-export interface PipelineRunsRootQuery_pipeline_runs_pipeline {
+export interface PipelineRunsRootQuery_pipelineOrError_PythonError {
+  __typename: "PythonError" | "SolidNotFoundError";
+}
+
+export interface PipelineRunsRootQuery_pipelineOrError_Pipeline_runs_pipeline {
   __typename: "Pipeline";
   name: string;
 }
 
-export interface PipelineRunsRootQuery_pipeline_runs_logs_nodes {
+export interface PipelineRunsRootQuery_pipelineOrError_Pipeline_runs_logs_nodes {
   __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "StepExpectationResultEvent" | "StepMaterializationEvent";
   timestamp: string;
 }
 
-export interface PipelineRunsRootQuery_pipeline_runs_logs {
+export interface PipelineRunsRootQuery_pipelineOrError_Pipeline_runs_logs {
   __typename: "LogMessageConnection";
-  nodes: PipelineRunsRootQuery_pipeline_runs_logs_nodes[];
+  nodes: PipelineRunsRootQuery_pipelineOrError_Pipeline_runs_logs_nodes[];
 }
 
-export interface PipelineRunsRootQuery_pipeline_runs_executionPlan_steps {
+export interface PipelineRunsRootQuery_pipelineOrError_Pipeline_runs_executionPlan_steps {
   __typename: "ExecutionStep";
   key: string;
 }
 
-export interface PipelineRunsRootQuery_pipeline_runs_executionPlan {
+export interface PipelineRunsRootQuery_pipelineOrError_Pipeline_runs_executionPlan {
   __typename: "ExecutionPlan";
-  steps: PipelineRunsRootQuery_pipeline_runs_executionPlan_steps[];
+  steps: PipelineRunsRootQuery_pipelineOrError_Pipeline_runs_executionPlan_steps[];
 }
 
-export interface PipelineRunsRootQuery_pipeline_runs {
+export interface PipelineRunsRootQuery_pipelineOrError_Pipeline_runs {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
-  pipeline: PipelineRunsRootQuery_pipeline_runs_pipeline;
-  logs: PipelineRunsRootQuery_pipeline_runs_logs;
-  executionPlan: PipelineRunsRootQuery_pipeline_runs_executionPlan;
+  pipeline: PipelineRunsRootQuery_pipelineOrError_Pipeline_runs_pipeline;
+  logs: PipelineRunsRootQuery_pipelineOrError_Pipeline_runs_logs;
+  executionPlan: PipelineRunsRootQuery_pipelineOrError_Pipeline_runs_executionPlan;
 }
 
-export interface PipelineRunsRootQuery_pipeline {
+export interface PipelineRunsRootQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
   name: string;
-  runs: PipelineRunsRootQuery_pipeline_runs[];
+  runs: PipelineRunsRootQuery_pipelineOrError_Pipeline_runs[];
 }
 
+export interface PipelineRunsRootQuery_pipelineOrError_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError";
+  message: string;
+}
+
+export type PipelineRunsRootQuery_pipelineOrError = PipelineRunsRootQuery_pipelineOrError_PythonError | PipelineRunsRootQuery_pipelineOrError_Pipeline | PipelineRunsRootQuery_pipelineOrError_PipelineNotFoundError;
+
 export interface PipelineRunsRootQuery {
-  pipeline: PipelineRunsRootQuery_pipeline;
+  pipelineOrError: PipelineRunsRootQuery_pipelineOrError;
 }
 
 export interface PipelineRunsRootQueryVariables {

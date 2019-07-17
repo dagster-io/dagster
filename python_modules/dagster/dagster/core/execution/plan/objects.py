@@ -37,12 +37,11 @@ class SingleOutputStepCreationData(namedtuple('SingleOutputStepCreationData', 's
         return StepOutputHandle.from_step(self.step, self.output_name)
 
 
-class StepInputData(namedtuple('_StepInputData', 'input_name value_repr type_check_data')):
-    def __new__(cls, input_name, value_repr, type_check_data):
+class StepInputData(namedtuple('_StepInputData', 'input_name type_check_data')):
+    def __new__(cls, input_name, type_check_data):
         return super(StepInputData, cls).__new__(
             cls,
             input_name=check.str_param(input_name, 'input_name'),
-            value_repr=check.str_param(value_repr, 'value_repr'),
             type_check_data=check.opt_inst_param(type_check_data, 'type_check_data', TypeCheckData),
         )
 
@@ -73,20 +72,14 @@ class UserFailureData(namedtuple('_UserFailureData', 'label description metadata
 
 
 class StepOutputData(
-    namedtuple(
-        '_StepOutputData',
-        'step_output_handle value_repr intermediate_materialization type_check_data',
-    )
+    namedtuple('_StepOutputData', 'step_output_handle intermediate_materialization type_check_data')
 ):
-    def __new__(
-        cls, step_output_handle, value_repr, intermediate_materialization=None, type_check_data=None
-    ):
+    def __new__(cls, step_output_handle, intermediate_materialization=None, type_check_data=None):
         return super(StepOutputData, cls).__new__(
             cls,
             step_output_handle=check.inst_param(
                 step_output_handle, 'step_output_handle', StepOutputHandle
             ),
-            value_repr=check.str_param(value_repr, 'value_repr'),
             intermediate_materialization=check.opt_inst_param(
                 intermediate_materialization, 'intermediate_materialization', Materialization
             ),

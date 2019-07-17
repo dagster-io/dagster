@@ -213,7 +213,6 @@ type ExecutionStepInputEvent implements MessageEvent & StepEvent {
   step: ExecutionStep
   inputName: String!
   typeCheck: TypeCheck!
-  valueRepr: String!
 }
 
 type ExecutionStepOutput {
@@ -228,7 +227,6 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   step: ExecutionStep
   outputName: String!
-  valueRepr: String!
   typeCheck: TypeCheck!
 }
 

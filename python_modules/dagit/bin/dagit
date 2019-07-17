@@ -15,6 +15,9 @@ for arg in sys.argv[1:]:
     elif arg == '--help':
         watch = False
         command.append(arg)
+    elif arg == '--version':
+        watch = False
+        command.append(arg)
     else:
         command.append(arg)
 
@@ -46,7 +49,7 @@ handler = AutoRestartTrick(
 )
 handler.start()
 
-print('Watching for file changes...')
+print('Will be watching for file changes...')
 observer = Observer(timeout=1)
 observer.schedule(handler, '.', True)
 observer.start()

@@ -23,7 +23,7 @@ def test_multi_mode_successful():
             }
         }
     )
-    assert get_step_output(add_mode_logs, 'apply_to_three.compute')['valueRepr'] == '5'
+    assert get_step_output(add_mode_logs, 'apply_to_three.compute')
 
     mult_mode_logs = sync_execute_get_events(
         {
@@ -34,7 +34,7 @@ def test_multi_mode_successful():
             }
         }
     )
-    assert get_step_output(mult_mode_logs, 'apply_to_three.compute')['valueRepr'] == '6'
+    assert get_step_output(mult_mode_logs, 'apply_to_three.compute')
 
     double_adder_mode_logs = sync_execute_get_events(
         {
@@ -47,7 +47,7 @@ def test_multi_mode_successful():
             }
         }
     )
-    assert get_step_output(double_adder_mode_logs, 'apply_to_three.compute')['valueRepr'] == '9'
+    get_step_output(double_adder_mode_logs, 'apply_to_three.compute')
 
 
 MODE_QUERY = '''

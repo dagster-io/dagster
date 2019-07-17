@@ -20,11 +20,23 @@ class LoggerDefinition(object):
     '''
 
     def __init__(self, logger_fn, config_field=None, description=None):
-        self.logger_fn = check.callable_param(logger_fn, 'logger_fn')
-        self.config_field = check_user_facing_opt_field_param(
+        self._logger_fn = check.callable_param(logger_fn, 'logger_fn')
+        self._config_field = check_user_facing_opt_field_param(
             config_field, 'config_field', 'of a LoggerDefinition or @logger'
         )
-        self.description = check.opt_str_param(description, 'description')
+        self._description = check.opt_str_param(description, 'description')
+
+    @property
+    def logger_fn(self):
+        return self._logger_fn
+
+    @property
+    def config_field(self):
+        return self._config_field
+
+    @property
+    def description(self):
+        return self._description
 
 
 def logger(config=None, config_field=None, description=None):

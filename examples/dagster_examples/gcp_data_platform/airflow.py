@@ -36,7 +36,7 @@ with DAG(
         cluster_name='gcp-data-platform',
         num_workers=0,
         zone='us-west1a',
-        master_machine_type='n1-standard-1',
+        master_machine_type='n1-highmem-4',
     )
 
     run_dataproc_spark = dataproc_operator.DataProcSparkOperator(
@@ -58,9 +58,7 @@ with DAG(
     delete_dataproc_cluster = dataproc_operator.DataprocClusterDeleteOperator(
         project_id=PROJECT_ID,
         task_id='delete_dataproc_cluster',
-        cluster_name='quickstart-cluster-{{ ds_nodash }}',
-        # Setting trigger_rule to ALL_DONE causes the cluster to be deleted
-        # even if the Dataproc job fails.
+        cluster_name='gcp-data-platform',
         trigger_rule=trigger_rule.TriggerRule.ALL_DONE,
     )
 

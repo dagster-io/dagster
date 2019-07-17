@@ -89,7 +89,7 @@ export default class Description extends React.Component<
           </ShowMoreHandle>
         )}
 
-        <div ref={this._container}>
+        <div ref={this._container} style={{ overflowX: "auto" }}>
           <ReactMarkdown source={removeLeadingSpaces(this.props.description)} />
         </div>
       </Container>

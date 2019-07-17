@@ -294,12 +294,11 @@ def _do_type_check(runtime_type, value):
     return type_check
 
 
-def _create_step_input_event(step_context, input_name, input_value, type_check, success):
+def _create_step_input_event(step_context, input_name, type_check, success):
     return DagsterEvent.step_input_event(
         step_context,
         StepInputData(
             input_name=input_name,
-            value_repr=repr(input_value),
             type_check_data=TypeCheckData(
                 success=success,
                 label=input_name,
@@ -349,17 +348,12 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
             yield _create_step_input_event(
                 step_context,
                 input_name,
-                input_value,
                 type_check=_do_type_check(step_input.runtime_type, input_value),
                 success=True,
             )
     except Exception as failure:  # pylint: disable=broad-except
         yield _create_step_input_event(
-            step_context,
-            input_name,
-            input_value,
-            type_check=_type_check_from_failure(failure),
-            success=False,
+            step_context, input_name, type_check=_type_check_from_failure(failure), success=False
         )
 
         raise failure
@@ -372,7 +366,6 @@ def _create_step_output_event(step_context, output, type_check, success):
             step_output_handle=StepOutputHandle.from_step(
                 step=step_context.step, output_name=output.output_name
             ),
-            value_repr=repr(output.value),
             type_check_data=TypeCheckData(
                 success=success,
                 label=output.output_name,

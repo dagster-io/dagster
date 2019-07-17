@@ -93,7 +93,9 @@ export default class ConfigEditor extends React.Component<IConfigEditorProps> {
               Tab: (editor: any) => editor.execCommand("indentMore"),
               // Persistent search box in Query Editor
               "Cmd-F": "findPersistent",
-              "Ctrl-F": "findPersistent"
+              "Ctrl-F": "findPersistent",
+              "Cmd-Z": (editor: any) => editor.undo(),
+              "Cmd-Y": (editor: any) => editor.redo()
             },
             gutters: [
               "CodeMirror-foldgutter",

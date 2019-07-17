@@ -72,7 +72,7 @@ const RegExps = {
   DICT_KEY: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:)/,
   QUOTED_STRING: /^('([^']|\\.)*'?|"([^"]|\\.)*"?)/,
   BLOCKSTART_PIPE_OR_ARROW: /^\s*(\||\>)\s*/,
-  NUMBER: /^\s*-?[0-9\.]+\s?/,
+  NUMBER: /^\s*-?[0-9\.]+(?![0-9\.]*[^0-9.\s])\s?/,
   VARIABLE: /^\s*(\&|\*)[a-z0-9\._-]+\b/i
 };
 
@@ -198,6 +198,11 @@ CodeMirror.defineMode("yaml", () => {
         return "meta";
       }
 
+      // general strings
+      if (stream.match(RegExps.QUOTED_STRING)) {
+        return "string";
+      }
+
       // Handle dict key fragments. May be the first element on a line or nested within an inline
       // (eg: {a: 1, b: 2}). We add the new key to the current `parent` and push a new parent
       // in case the dict key has subkeys.
@@ -264,11 +269,6 @@ CodeMirror.defineMode("yaml", () => {
         }
 
         return result;
-      }
-
-      // general strings
-      if (stream.match(RegExps.QUOTED_STRING)) {
-        return "string";
       }
 
       stream.skipToEnd();

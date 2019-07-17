@@ -74,7 +74,6 @@ mutation ($executionParams: ExecutionParams!) {
                 }
                 ... on ExecutionStepOutputEvent {
                     outputName
-                    valueRepr
                 }
                 ... on StepMaterializationEvent {
                     materialization {
@@ -259,7 +258,6 @@ def test_successful_one_part_execute_plan(snapshot):
         '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), '''
         '''OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]'''
     )
-    assert step_events[2]['valueRepr'] == expected_value_repr
 
     assert step_events[3]['step']['key'] == 'sum_solid.compute'
     assert step_events[3]['__typename'] == 'ExecutionStepSuccessEvent'

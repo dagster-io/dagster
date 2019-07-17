@@ -274,18 +274,20 @@ export default class PipelineExecutionContainer extends React.Component<
                 )}
               </ApolloConsumer>
               <SessionSettingsFooter className="bp3-dark">
-                <SolidSelector
-                  pipelineName={pipelineName}
-                  value={currentSession.solidSubset || null}
-                  onChange={this.onSolidSubsetChange}
-                />
-
                 {pipeline && (
-                  <ConfigEditorModePicker
-                    pipeline={pipeline}
-                    onModeChange={this.onModeChange}
-                    modeName={currentSession.mode}
-                  />
+                  <>
+                    <SolidSelector
+                      pipelineName={pipelineName}
+                      value={currentSession.solidSubset || null}
+                      onChange={this.onSolidSubsetChange}
+                    />
+
+                    <ConfigEditorModePicker
+                      pipeline={pipeline}
+                      onModeChange={this.onModeChange}
+                      modeName={currentSession.mode}
+                    />
+                  </>
                 )}
               </SessionSettingsFooter>
             </Split>
