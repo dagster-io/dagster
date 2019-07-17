@@ -63,7 +63,7 @@ def get_dataset():
 
 
 def bq_modes():
-    return [ModeDefinition(resource_defs={'bq': bigquery_resource})]
+    return [ModeDefinition(resource_defs={'bigquery': bigquery_resource})]
 
 
 def test_simple_queries():
