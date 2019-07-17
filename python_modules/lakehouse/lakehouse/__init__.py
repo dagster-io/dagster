@@ -24,3 +24,4 @@ implemented so far.
 from .table import lakehouse_table, input_table, InMemTableHandle
 from .pipeline import construct_lakehouse_pipeline
 from .pyspark import PySparkMemLakehouse
+from .house import Lakehouse

@@ -6,6 +6,9 @@ from dagster import (
     check,
     define_python_dagster_type,
 )
+from dagster.core.definitions.decorators import validate_solid_fn
+
+from .house import Lakehouse
 
 
 class ITableHandle:
@@ -26,20 +29,18 @@ class LakehouseTableDefinition(SolidDefinition):
     Trivial subclass, only useful for typehcecks and to implement table_type.
     '''
 
-    def __init__(self, lakehouse_fn, output_defs, input_tables, other_input_defs, **kwargs):
+    def __init__(self, lakehouse_fn, output_defs, input_tables, input_defs, **kwargs):
         check.list_param(output_defs, 'output_defs', OutputDefinition)
         check.param_invariant(len(output_defs) == 1, 'output_defs')
         input_tables = check.opt_list_param(
             input_tables, input_tables, of_type=LakehouseTableInputDefinition
         )
-        other_input_defs = check.opt_list_param(
-            other_input_defs, other_input_defs, of_type=InputDefinition
-        )
+        input_defs = check.opt_list_param(input_defs, input_defs, of_type=InputDefinition)
 
         self.lakehouse_fn = lakehouse_fn
         self.input_tables = input_tables
         super(LakehouseTableDefinition, self).__init__(
-            output_defs=output_defs, input_defs=input_tables + other_input_defs, **kwargs
+            output_defs=output_defs, input_defs=input_defs, **kwargs
         )
 
     @property
@@ -48,7 +49,13 @@ class LakehouseTableDefinition(SolidDefinition):
 
 
 def _create_lakehouse_table_def(
-    name, lakehouse_fn, input_tables=None, other_input_defs=None, metadata=None, description=None
+    name,
+    lakehouse_fn,
+    input_tables=None,
+    other_input_defs=None,
+    required_resource_keys=None,
+    metadata=None,
+    description=None,
 ):
     metadata = check.opt_dict_param(metadata, 'metadata')
     input_tables = check.opt_list_param(
@@ -56,6 +63,9 @@ def _create_lakehouse_table_def(
     )
     other_input_defs = check.opt_list_param(
         other_input_defs, other_input_defs, of_type=InputDefinition
+    )
+    required_resource_keys = check.opt_set_param(
+        required_resource_keys, 'required_resource_keys', of_type=str
     )
 
     table_type = define_python_dagster_type(
@@ -65,6 +75,8 @@ def _create_lakehouse_table_def(
     table_type_inst = table_type.inst()
 
     table_input_dict = {input_table.name: input_table for input_table in input_tables}
+    input_defs = input_tables + other_input_defs
+    validate_solid_fn('@solid', name, lakehouse_fn, input_defs, [('context',)])
 
     def _compute(context, inputs):
         '''
@@ -82,6 +94,7 @@ def _create_lakehouse_table_def(
         a stream of events but that started to feel like I was implementing what should
         be a framework feature.
         '''
+        check.inst_param(context.resources.lakehouse, 'context.resources.lakehouse', Lakehouse)
 
         # hydrate tables
         hydrated_tables = {}
@@ -119,20 +132,28 @@ def _create_lakehouse_table_def(
         # does not return one
         yield Output(output_table_handle if output_table_handle else TableHandle())
 
+    required_resource_keys.add('lakehouse')
+
     return LakehouseTableDefinition(
         lakehouse_fn=lakehouse_fn,
         name=name,
         input_tables=input_tables,
-        other_input_defs=other_input_defs,
+        input_defs=input_defs,
         output_defs=[OutputDefinition(table_type)],
         compute_fn=_compute,
+        required_resource_keys=required_resource_keys,
         metadata=metadata,
         description=description,
     )
 
 
 def lakehouse_table(
-    name=None, input_tables=None, other_input_defs=None, metadata=None, description=None
+    name=None,
+    input_tables=None,
+    other_input_defs=None,
+    required_resource_keys=None,
+    metadata=None,
+    description=None,
 ):
     if callable(name):
         fn = name
@@ -146,6 +167,7 @@ def lakehouse_table(
             other_input_defs=other_input_defs,
             metadata=metadata,
             description=description,
+            required_resource_keys=required_resource_keys,
         )
 
     return _wrap

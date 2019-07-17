@@ -3,7 +3,7 @@ from dagster import check, Materialization, ModeDefinition, ResourceDefinition, 
 from dagster.utils.temp_file import get_temp_dir
 from dagster_pyspark import spark_session_resource, spark_session_from_config
 from pyspark.sql import Row, DataFrame as SparkDF
-from lakehouse import lakehouse_table, input_table, construct_lakehouse_pipeline
+from lakehouse import lakehouse_table, input_table, construct_lakehouse_pipeline, Lakehouse
 from lakehouse.util import invoke_compute
 
 
@@ -13,7 +13,10 @@ FEATURE_AREA = 'feature_area'
 def this_lakehouse_table(feature_area, name=None, input_tables=None):
     def _wrap(fn):
         return lakehouse_table(
-            name=name, metadata={FEATURE_AREA: feature_area}, input_tables=input_tables
+            name=name,
+            metadata={FEATURE_AREA: feature_area},
+            input_tables=input_tables,
+            required_resource_keys={'spark'},
         )(fn)
 
     return _wrap
@@ -41,7 +44,7 @@ def TableThree(_, table_one: SparkDF, table_two: SparkDF) -> SparkDF:
     return table_one.union(table_two)
 
 
-class ByFeatureParquetLakehouse:
+class ByFeatureParquetLakehouse(Lakehouse):
     def __init__(self, root_dir):
         self.lakehouse_path = check.str_param(root_dir, 'root_dir')
 

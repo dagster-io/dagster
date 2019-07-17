@@ -3,10 +3,10 @@ import os
 from dagster import Materialization, check, ResourceDefinition, ModeDefinition, execute_pipeline
 from dagster_pyspark import spark_session_resource
 
-from lakehouse import construct_lakehouse_pipeline
+from lakehouse import construct_lakehouse_pipeline, Lakehouse
 
 
-class LocalOnDiskSparkCsvLakehouse:
+class LocalOnDiskSparkCsvLakehouse(Lakehouse):
     def __init__(self, root_dir):
         self.lakehouse_path = check.str_param(root_dir, 'root_dir')
 

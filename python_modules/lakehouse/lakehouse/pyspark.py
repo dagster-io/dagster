@@ -1,4 +1,5 @@
-from dagster import resource
+from dagster import resource, check
+from pyspark.sql import DataFrame
 
 from .house import Lakehouse
 from .table import InMemTableHandle
@@ -9,9 +10,13 @@ class PySparkMemLakehouse(Lakehouse):
         self.collected_tables = {}
 
     def hydrate(self, _context, _table_type, _table_metadata, table_handle):
+        check.inst_param(table_handle, 'table_handle', InMemTableHandle)
+
         return table_handle.value
 
-    def materialize(self, _context, table_type, _table_metadata, value):
+    def materialize(self, context, table_type, table_metadata, value):
+        check.inst_param(value, 'value', DataFrame)
+
         self.collected_tables[table_type.name] = value.collect()
         return None, InMemTableHandle(value=value)
 
