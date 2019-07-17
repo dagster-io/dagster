@@ -127,9 +127,22 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent {
   error: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error;
 }
 
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_step_inputs_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+  description: string | null;
+}
+
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_step_inputs {
+  __typename: "ExecutionStepInput";
+  name: string;
+  type: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_step_inputs_type;
+}
+
 export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_step {
   __typename: "ExecutionStep";
   key: string;
+  inputs: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_step_inputs[];
 }
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -180,9 +193,22 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent {
   typeCheck: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck;
 }
 
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_step_outputs_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+  description: string | null;
+}
+
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_step_outputs {
+  __typename: "ExecutionStepOutput";
+  name: string;
+  type: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_step_outputs_type;
+}
+
 export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_step {
   __typename: "ExecutionStep";
   key: string;
+  outputs: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_step_outputs[];
 }
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {

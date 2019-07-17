@@ -1,22 +1,15 @@
 import * as React from "react";
+import gql from "graphql-tag";
 import styled from "styled-components";
 import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
 import { copyValue, assertUnreachable } from "../Util";
 import { showCustomAlert } from "../CustomAlertProvider";
-import gql from "graphql-tag";
-import { Colors } from "@blueprintjs/core";
 
 export const MetadataEntries: React.FunctionComponent<{
   entries: MetadataEntryFragment[];
 }> = props => (
-  <span style={{ flex: 1 }}>
+  <span style={{ flex: 1, alignSelf: "self-start" }}>
     <MetadataEntriesTable cellPadding="0" cellSpacing="0">
-      <thead>
-        <tr>
-          <td style={{ minWidth: 100 }}>Label</td>
-          <td style={{ minWidth: 120 }}>Value</td>
-        </tr>
-      </thead>
       <tbody>
         {props.entries.map((item, idx) => (
           <tr key={idx}>
@@ -114,27 +107,18 @@ const MetadataEntryLink = styled.a`
 const MetadataEntriesTable = styled.table`
   padding: 0;
   min-width: 50%;
-  thead td {
-    padding-left: 4px;
-    padding-right: 8px;
-    color: ${Colors.GRAY3};
-    text-transform: uppercase;
-    font-size: 11px;
-    border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
+  border-top: 1px solid #bb956a;
+  border-left: 1px solid #bb956a;
+  background: #fff8f0;
+  td:first-child {
+    color: #926d43;
   }
-  tbody td {
+  td {
     padding: 4px;
     padding-right: 8px;
-    border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
-    border-right: 1px solid ${Colors.LIGHT_GRAY3};
+    border-bottom: 1px solid #bb956a;
+    border-right: 1px solid #bb956a;
+    min-width: 120px;
     vertical-align: top;
-    &:last-child {
-      border-right: 0;
-    }
-  }
-  tbody tr:last-child {
-    td {
-      border-bottom: 0;
-    }
   }
 `;

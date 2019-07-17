@@ -127,9 +127,22 @@ export interface LogsRowStructuredFragment_ExecutionStepFailureEvent {
   error: LogsRowStructuredFragment_ExecutionStepFailureEvent_error;
 }
 
+export interface LogsRowStructuredFragment_ExecutionStepInputEvent_step_inputs_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+  description: string | null;
+}
+
+export interface LogsRowStructuredFragment_ExecutionStepInputEvent_step_inputs {
+  __typename: "ExecutionStepInput";
+  name: string;
+  type: LogsRowStructuredFragment_ExecutionStepInputEvent_step_inputs_type;
+}
+
 export interface LogsRowStructuredFragment_ExecutionStepInputEvent_step {
   __typename: "ExecutionStep";
   key: string;
+  inputs: LogsRowStructuredFragment_ExecutionStepInputEvent_step_inputs[];
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -180,9 +193,22 @@ export interface LogsRowStructuredFragment_ExecutionStepInputEvent {
   typeCheck: LogsRowStructuredFragment_ExecutionStepInputEvent_typeCheck;
 }
 
+export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_step_outputs_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+  description: string | null;
+}
+
+export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_step_outputs {
+  __typename: "ExecutionStepOutput";
+  name: string;
+  type: LogsRowStructuredFragment_ExecutionStepOutputEvent_step_outputs_type;
+}
+
 export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_step {
   __typename: "ExecutionStep";
   key: string;
+  outputs: LogsRowStructuredFragment_ExecutionStepOutputEvent_step_outputs[];
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
