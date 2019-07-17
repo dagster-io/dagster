@@ -1,4 +1,3 @@
-import pytest
 from dagster import check
 from dagster.utils import script_relative_path
 from dagster.core.types.config import ALL_CONFIG_BUILTINS
@@ -191,8 +190,15 @@ def test_multiple_not_defined_fields():
 
 
 def test_root_wrong_type():
-    with pytest.raises(check.CheckError):
-        execute_config_graphql(pipeline_name='csv_hello_world', env_config=123, mode='default')
+    result = execute_config_graphql(pipeline_name='csv_hello_world', env_config=123, mode='default')
+
+    assert not result.errors
+    assert result.data
+    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
+    assert len(result.data['isPipelineConfigValid']['errors']) == 1
+    error_data = result.data['isPipelineConfigValid']['errors'][0]
+    assert error_data['reason'] == 'RUNTIME_TYPE_MISMATCH'
 
 
 def test_basic_invalid_config_type_mismatch():
