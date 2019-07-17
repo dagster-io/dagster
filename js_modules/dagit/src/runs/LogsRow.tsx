@@ -24,6 +24,7 @@ import {
 } from "./LogsRowComponents";
 import { MetadataEntries, MetadataEntry } from "./MetadataEntry";
 import { assertUnreachable } from "../Util";
+import { TypeName } from "../TypeWithTooltip";
 
 export class Structured extends React.Component<{
   node: LogsRowStructuredFragment;
@@ -74,6 +75,15 @@ export class Structured extends React.Component<{
         }
         ... on ExecutionStepInputEvent {
           inputName
+          step {
+            inputs {
+              name
+              type {
+                displayName
+                description
+              }
+            }
+          }
           typeCheck {
             label
             description
@@ -85,6 +95,15 @@ export class Structured extends React.Component<{
         }
         ... on ExecutionStepOutputEvent {
           outputName
+          step {
+            outputs {
+              name
+              type {
+                displayName
+                description
+              }
+            }
+          }
           typeCheck {
             label
             description
@@ -290,46 +309,68 @@ const StepMaterializationEvent: React.FunctionComponent<{
 
 const ExecutionStepOutputEvent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_ExecutionStepOutputEvent;
-}> = ({ node }) => (
-  <>
-    <LevelTagColumn>
-      <Tag
-        minimal={true}
-        intent={node.typeCheck.success ? "success" : "warning"}
-      >
-        Output
-      </Tag>
-    </LevelTagColumn>
-    <LabelColumn>{node.outputName}</LabelColumn>
-    {node.typeCheck.metadataEntries.length ? (
-      <MetadataEntries entries={node.typeCheck.metadataEntries} />
-    ) : (
-      <span style={{ flex: 1 }}>
-        No typecheck metadata describing this output.
-      </span>
-    )}
-  </>
-);
+}> = ({ node }) => {
+  const output =
+    node.step && node.step.outputs.find(i => i.name === node.outputName);
+  return (
+    <>
+      <LevelTagColumn>
+        <Tag
+          minimal={true}
+          intent={node.typeCheck.success ? "success" : "warning"}
+        >
+          Output
+        </Tag>
+      </LevelTagColumn>
+      <LabelColumn>
+        {node.outputName}
+        <br />
+        {output && (
+          <TypeName style={{ fontSize: 11 }}>
+            {output.type.displayName}
+          </TypeName>
+        )}
+      </LabelColumn>
+      {node.typeCheck.metadataEntries.length ? (
+        <MetadataEntries entries={node.typeCheck.metadataEntries} />
+      ) : (
+        <span style={{ flex: 1 }}>
+          No typecheck metadata describing this output.
+        </span>
+      )}
+    </>
+  );
+};
 
 const ExecutionStepInputEvent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_ExecutionStepInputEvent;
-}> = ({ node }) => (
-  <>
-    <LevelTagColumn>
-      <Tag
-        minimal={true}
-        intent={node.typeCheck.success ? "success" : "warning"}
-      >
-        Input
-      </Tag>
-    </LevelTagColumn>
-    <LabelColumn>{node.inputName}</LabelColumn>
-    {node.typeCheck.metadataEntries.length ? (
-      <MetadataEntries entries={node.typeCheck.metadataEntries} />
-    ) : (
-      <span style={{ flex: 1 }}>
-        No typecheck metadata describing this output.
-      </span>
-    )}
-  </>
-);
+}> = ({ node }) => {
+  const input =
+    node.step && node.step.inputs.find(i => i.name === node.inputName);
+  return (
+    <>
+      <LevelTagColumn>
+        <Tag
+          minimal={true}
+          intent={node.typeCheck.success ? "success" : "warning"}
+        >
+          Input
+        </Tag>
+      </LevelTagColumn>
+      <LabelColumn>
+        {node.inputName}
+        <br />
+        {input && (
+          <TypeName style={{ fontSize: 11 }}>{input.type.displayName}</TypeName>
+        )}
+      </LabelColumn>
+      {node.typeCheck.metadataEntries.length ? (
+        <MetadataEntries entries={node.typeCheck.metadataEntries} />
+      ) : (
+        <span style={{ flex: 1 }}>
+          No typecheck metadata describing this output.
+        </span>
+      )}
+    </>
+  );
+};
