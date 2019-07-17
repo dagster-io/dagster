@@ -1,15 +1,21 @@
 import * as React from "react";
 import { Button, Classes, Dialog } from "@blueprintjs/core";
 import { IPluginSidebarProps } from ".";
-import { highlightBlock } from "highlight.js";
+import { configure, highlightBlock } from "highlight.js";
 
 import "highlight.js/styles/xcode.css";
 
-class HighlightedSQL extends React.Component<{ sql: string; style: {} }> {
+export class HighlightedSQL extends React.Component<{
+  sql: string;
+  style: {};
+}> {
   _el = React.createRef<HTMLPreElement>();
 
   componentDidMount() {
-    if (this._el.current) highlightBlock(this._el.current);
+    if (this._el.current) {
+      configure({ languages: ["sql"] });
+      highlightBlock(this._el.current);
+    }
   }
 
   render() {
