@@ -7,13 +7,18 @@ import {
   CellMeasurer,
   CellMeasurerCache,
   AutoSizer,
-  Grid,
-  GridCellProps
+  ListRowProps,
+  List
 } from "react-virtualized";
 
 import * as LogsRow from "./LogsRow";
 import { CellTruncationProvider } from "./CellTruncationProvider";
 import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMessageFragment";
+import {
+  Headers,
+  ColumnWidthsContext,
+  DefaultColumnWidths
+} from "./LogsRowComponents";
 
 interface ILogsScrollingTableProps {
   nodes?: LogsScrollingTableMessageFragment[];
@@ -25,7 +30,7 @@ interface ILogsScrollingTableSizedProps extends ILogsScrollingTableProps {
 }
 
 interface ILogsScrollingTableSizedState {
-  scrollTop: number;
+  columnWidths: typeof DefaultColumnWidths;
 }
 
 export default class LogsScrollingTable extends React.Component<
@@ -65,10 +70,13 @@ class LogsScrollingTableSized extends React.Component<
   ILogsScrollingTableSizedProps,
   ILogsScrollingTableSizedState
 > {
-  grid = React.createRef<Grid>();
+  list = React.createRef<List>();
 
-  get gridEl() {
-    const el = this.grid.current && ReactDOM.findDOMNode(this.grid.current);
+  state = {
+    columnWidths: DefaultColumnWidths
+  };
+  get listEl() {
+    const el = this.list.current && ReactDOM.findDOMNode(this.list.current);
     if (!(el instanceof HTMLElement)) {
       return null;
     }
@@ -78,8 +86,8 @@ class LogsScrollingTableSized extends React.Component<
   cache = new CellMeasurerCache({
     defaultHeight: 30,
     fixedWidth: true,
-    keyMapper: (rowIndex: number, columnIndex: number) =>
-      `${this.props.nodes && this.props.nodes[rowIndex].message}:${columnIndex}`
+    keyMapper: (rowIndex: number) =>
+      `${this.props.nodes && this.props.nodes[rowIndex].message}`
   });
 
   isAtBottomOrZero: boolean = true;
@@ -90,13 +98,13 @@ class LogsScrollingTableSized extends React.Component<
   }
 
   componentDidUpdate(prevProps: ILogsScrollingTableSizedProps) {
-    if (!this.grid.current) return;
+    if (!this.list.current) return;
 
     if (this.props.width !== prevProps.width) {
       this.cache.clearAll();
     }
     if (this.props.nodes !== prevProps.nodes) {
-      this.grid.current.recomputeGridSize();
+      this.list.current.recomputeGridSize();
     }
   }
 
@@ -107,7 +115,7 @@ class LogsScrollingTableSized extends React.Component<
   }
 
   attachScrollToBottomObserver() {
-    const el = this.gridEl;
+    const el = this.listEl;
     if (!el) return;
 
     let lastHeight: string | null = null;
@@ -132,32 +140,25 @@ class LogsScrollingTableSized extends React.Component<
   }
 
   onScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (!this.grid.current) return;
+    if (!this.list.current) return;
 
     const { scrollTop, scrollHeight, clientHeight } = e.target as Element;
     const atTopAndStarting = scrollTop === 0 && scrollHeight <= clientHeight;
     const atBottom = Math.abs(scrollTop - (scrollHeight - clientHeight)) < 5;
     this.isAtBottomOrZero = atTopAndStarting || atBottom;
 
-    this.grid.current.handleScrollEvent(e.target as Element);
+    (this.list.current as any)._onScroll(e.target as Element);
   };
 
-  cellRenderer = ({
-    parent,
-    rowIndex,
-    columnIndex,
-    key,
-    style
-  }: GridCellProps) => {
+  rowRenderer = ({ parent, index, key, style }: ListRowProps) => {
     if (!this.props.nodes) return;
-    const node = this.props.nodes[rowIndex];
+    const node = this.props.nodes[index];
     if (!node) return <span />;
 
     return (
       <CellMeasurer
         cache={this.cache}
-        rowIndex={rowIndex}
-        columnIndex={columnIndex}
+        rowIndex={index}
         parent={parent}
         key={key}
       >
@@ -184,21 +185,24 @@ class LogsScrollingTableSized extends React.Component<
   render() {
     return (
       <div onScroll={this.onScroll}>
-        <Grid
-          ref={this.grid}
-          cellRenderer={this.cellRenderer}
-          columnWidth={() => this.props.width}
-          columnCount={1}
-          width={this.props.width}
-          height={this.props.height}
-          autoContainerWidth={true}
-          deferredMeasurementCache={this.cache}
-          rowHeight={this.cache.rowHeight}
-          rowCount={this.props.nodes ? this.props.nodes.length : 0}
-          noContentRenderer={this.noContentRenderer}
-          overscanColumnCount={0}
-          overscanRowCount={20}
-        />
+        <ColumnWidthsContext.Provider
+          value={{
+            ...this.state.columnWidths,
+            onChange: columnWidths => this.setState({ columnWidths })
+          }}
+        >
+          <Headers />
+          <List
+            deferredMeasurementCache={this.cache}
+            overscanRowCount={10}
+            rowCount={this.props.nodes ? this.props.nodes.length : 0}
+            noContentRenderer={this.noContentRenderer}
+            rowHeight={this.cache.rowHeight}
+            rowRenderer={this.rowRenderer}
+            width={this.props.width}
+            height={this.props.height}
+          />
+        </ColumnWidthsContext.Provider>
       </div>
     );
   }
