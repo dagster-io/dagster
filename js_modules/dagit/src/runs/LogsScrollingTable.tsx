@@ -6,7 +6,6 @@ import { IconNames } from "@blueprintjs/icons";
 import {
   CellMeasurer,
   CellMeasurerCache,
-  AutoSizer,
   ListRowProps,
   List
 } from "react-virtualized";
@@ -14,11 +13,7 @@ import {
 import * as LogsRow from "./LogsRow";
 import { CellTruncationProvider } from "./CellTruncationProvider";
 import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMessageFragment";
-import {
-  Headers,
-  ColumnWidthsContext,
-  DefaultColumnWidths
-} from "./LogsRowComponents";
+import { Headers, ColumnWidthsProvider } from "./LogsScrollingTableHeader";
 
 interface ILogsScrollingTableProps {
   nodes?: LogsScrollingTableMessageFragment[];
@@ -27,10 +22,6 @@ interface ILogsScrollingTableProps {
 interface ILogsScrollingTableSizedProps extends ILogsScrollingTableProps {
   width: number;
   height: number;
-}
-
-interface ILogsScrollingTableSizedState {
-  columnWidths: typeof DefaultColumnWidths;
 }
 
 export default class LogsScrollingTable extends React.Component<
@@ -49,32 +40,36 @@ export default class LogsScrollingTable extends React.Component<
     `
   };
 
+  table = React.createRef<LogsScrollingTableSized>();
+
   render() {
     return (
-      <div style={{ flex: 1 }}>
+      <ColumnWidthsProvider
+        onWidthsChanged={() =>
+          this.table.current && this.table.current.didResize()
+        }
+      >
+        <Headers />
         <AutoSizer>
           {({ width, height }) => (
             <LogsScrollingTableSized
-              {...this.props}
               width={width}
               height={height}
+              ref={this.table}
+              {...this.props}
             />
           )}
         </AutoSizer>
-      </div>
+      </ColumnWidthsProvider>
     );
   }
 }
 
 class LogsScrollingTableSized extends React.Component<
-  ILogsScrollingTableSizedProps,
-  ILogsScrollingTableSizedState
+  ILogsScrollingTableSizedProps
 > {
   list = React.createRef<List>();
 
-  state = {
-    columnWidths: DefaultColumnWidths
-  };
   get listEl() {
     const el = this.list.current && ReactDOM.findDOMNode(this.list.current);
     if (!(el instanceof HTMLElement)) {
@@ -101,7 +96,7 @@ class LogsScrollingTableSized extends React.Component<
     if (!this.list.current) return;
 
     if (this.props.width !== prevProps.width) {
-      this.cache.clearAll();
+      this.didResize();
     }
     if (this.props.nodes !== prevProps.nodes) {
       this.list.current.recomputeGridSize();
@@ -112,6 +107,16 @@ class LogsScrollingTableSized extends React.Component<
     if (this.scrollToBottomObserver) {
       this.scrollToBottomObserver.disconnect();
     }
+  }
+
+  didResize() {
+    this.cache = new CellMeasurerCache({
+      defaultHeight: 30,
+      fixedWidth: true,
+      keyMapper: (rowIndex: number) =>
+        `${this.props.nodes && this.props.nodes[rowIndex].message}`
+    });
+    this.forceUpdate();
   }
 
   attachScrollToBottomObserver() {
@@ -185,24 +190,73 @@ class LogsScrollingTableSized extends React.Component<
   render() {
     return (
       <div onScroll={this.onScroll}>
-        <ColumnWidthsContext.Provider
-          value={{
-            ...this.state.columnWidths,
-            onChange: columnWidths => this.setState({ columnWidths })
-          }}
-        >
-          <Headers />
-          <List
-            deferredMeasurementCache={this.cache}
-            overscanRowCount={10}
-            rowCount={this.props.nodes ? this.props.nodes.length : 0}
-            noContentRenderer={this.noContentRenderer}
-            rowHeight={this.cache.rowHeight}
-            rowRenderer={this.rowRenderer}
-            width={this.props.width}
-            height={this.props.height}
-          />
-        </ColumnWidthsContext.Provider>
+        <List
+          ref={this.list}
+          deferredMeasurementCache={this.cache}
+          rowCount={this.props.nodes ? this.props.nodes.length : 0}
+          noContentRenderer={this.noContentRenderer}
+          rowHeight={this.cache.rowHeight}
+          rowRenderer={this.rowRenderer}
+          width={this.props.width}
+          height={this.props.height}
+          overscanRowCount={10}
+        />
+      </div>
+    );
+  }
+}
+
+class AutoSizer extends React.Component<{
+  children: (size: { width: number; height: number }) => React.ReactNode;
+}> {
+  state = {
+    width: 0,
+    height: 0
+  };
+
+  resizeObserver: any | undefined;
+
+  componentDidMount() {
+    this.measure();
+
+    const el = ReactDOM.findDOMNode(this);
+    if (el && el instanceof HTMLElement && "ResizeObserver" in window) {
+      const RO = window["ResizeObserver"] as any;
+      this.resizeObserver = new RO((entries: any) => {
+        this.setState({
+          width: entries[0].contentRect.width,
+          height: entries[0].contentRect.height
+        });
+      });
+      this.resizeObserver.observe(el);
+    }
+  }
+
+  componentDidUpdate() {
+    this.measure();
+  }
+
+  componentWillUnmount() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
+  }
+
+  measure() {
+    const el = ReactDOM.findDOMNode(this);
+    if (!el || !(el instanceof HTMLElement)) return;
+    if (
+      el.clientWidth !== this.state.width ||
+      el.clientHeight !== this.state.height
+    ) {
+      this.setState({ width: el.clientWidth, height: el.clientHeight });
+    }
+  }
+
+  render() {
+    return (
+      <div style={{ width: "100%", height: "100%" }}>
+        {this.props.children(this.state)}
       </div>
     );
   }
