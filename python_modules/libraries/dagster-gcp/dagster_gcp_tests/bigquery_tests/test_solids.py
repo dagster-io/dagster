@@ -37,9 +37,9 @@ from dagster_gcp import (
     bigquery_resource,
     bq_create_dataset,
     bq_delete_dataset,
-    bq_load_solid_for_source,
+    import_df_to_bq,
+    import_gcs_paths_to_bq,
     bq_solid_for_queries,
-    BigQueryLoadSource,
 )
 
 
@@ -202,7 +202,7 @@ def test_pd_df_load():
     test_df = pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
     create_solid = bq_create_dataset.alias('create_solid')
-    load_solid = bq_load_solid_for_source(BigQueryLoadSource.DataFrame).alias('load_solid')
+    load_solid = import_df_to_bq.alias('load_solid')
     query_solid = bq_solid_for_queries(['SELECT num1, num2 FROM %s' % table]).alias('query_solid')
     delete_solid = bq_delete_dataset.alias('delete_solid')
 
@@ -256,7 +256,6 @@ def test_gcs_load():
     table = '%s.%s' % (dataset, 'df')
 
     create_solid = bq_create_dataset.alias('create_solid')
-    load_solid = bq_load_solid_for_source(BigQueryLoadSource.GCS).alias('load_solid')
     query_solid = bq_solid_for_queries(
         [
             'SELECT string_field_0, string_field_1 FROM %s ORDER BY string_field_0 ASC LIMIT 1'
@@ -274,7 +273,7 @@ def test_gcs_load():
     config = {
         'solids': {
             'create_solid': {'config': {'dataset': dataset, 'exists_ok': True}},
-            'load_solid': {
+            'import_gcs_paths_to_bq': {
                 'config': {
                     'destination': table,
                     'load_job_config': {
@@ -291,7 +290,7 @@ def test_gcs_load():
 
     @pipeline(mode_defs=bq_modes())
     def bq_pipeline():
-        delete_solid(query_solid(load_solid(return_gcs_uri(create_solid()))))
+        delete_solid(query_solid(import_gcs_paths_to_bq(return_gcs_uri(create_solid()))))
 
     result = execute_pipeline(bq_pipeline, config)
     assert result.success

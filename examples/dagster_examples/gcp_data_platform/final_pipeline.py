@@ -17,11 +17,10 @@ from dagster import (
 
 from dagster_gcp import (
     bigquery_resource,
-    bq_load_solid_for_source,
+    import_gcs_paths_to_bq,
     bq_solid_for_queries,
     dataproc_resource,
     dataproc_solid,
-    BigQueryLoadSource,
 )
 
 PROJECT_ID = os.getenv('GCP_PROJECT_ID')
@@ -100,7 +99,7 @@ def bq_load_events_fn(context, cfg):
     table = cfg.get('table')
 
     return {
-        'bq_load_events_internal': {
+        'import_gcs_paths_to_bq': {
             'config': {
                 'destination': '{project_id}.{table}${date}'.format(
                     project_id=PROJECT_ID, table=table, date=dt.strftime('%Y%m%d')
@@ -117,9 +116,7 @@ def bq_load_events_fn(context, cfg):
 
 @composite_solid(config_fn=bq_load_events_fn, config={'table': Field(String)})
 def bq_load_events(source_uris: List[String]):
-    return bq_load_solid_for_source(BigQueryLoadSource.GCS).alias('bq_load_events_internal')(
-        source_uris
-    )
+    return import_gcs_paths_to_bq(source_uris)  # pylint: disable=no-value-for-parameter
 
 
 def explore_visits_by_hour_fn(_, cfg):

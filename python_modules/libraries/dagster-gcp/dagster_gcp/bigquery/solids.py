@@ -12,7 +12,7 @@ from .configs import (
     define_bigquery_load_config,
 )
 
-from .types import BigQueryError, BigQueryLoadSource
+from .types import BigQueryLoadSource
 
 _START = 'start'
 
@@ -68,50 +68,52 @@ def bq_solid_for_queries(sql_queries):
     return bq_solid
 
 
-def bq_load_solid_for_source(source_name):
-    '''BigQuery Load.
+BIGQUERY_LOAD_CONFIG = define_bigquery_load_config()
 
-    This solid encapsulates loading data into BigQuery from a pandas DataFrame, local file, or GCS.
 
-    Expects a BQ client to be provisioned in resources as context.resources.bq.
-    '''
+@solid(
+    input_defs=[InputDefinition('paths', List[Path])],
+    output_defs=[OutputDefinition(Nothing)],
+    config_field=BIGQUERY_LOAD_CONFIG,
+    required_resource_keys={'bq'},
+)
+def import_gcs_paths_to_bq(context, paths):
+    return _execute_load_in_source(context, paths, BigQueryLoadSource.GCS)
 
-    def _input_type_for_source(source_name):
-        if source_name == BigQueryLoadSource.DataFrame:
-            return DataFrame
-        elif source_name == BigQueryLoadSource.File:
-            return Path
-        elif source_name == BigQueryLoadSource.GCS:
-            return List[Path]
-        else:
-            raise BigQueryError(
-                'invalid source specification -- must be one of [%s]'
-                % ','.join(
-                    [BigQueryLoadSource.DataFrame, BigQueryLoadSource.File, BigQueryLoadSource.GCS]
-                )
-            )
 
-    @solid(
-        input_defs=[InputDefinition('source', _input_type_for_source(source_name))],
-        output_defs=[OutputDefinition(Nothing)],
-        config_field=define_bigquery_load_config(),
-        required_resource_keys={'bq'},
+@solid(
+    input_defs=[InputDefinition('df', DataFrame)],
+    output_defs=[OutputDefinition(Nothing)],
+    config_field=BIGQUERY_LOAD_CONFIG,
+    required_resource_keys={'bq'},
+)
+def import_df_to_bq(context, df):
+    return _execute_load_in_source(context, df, BigQueryLoadSource.DataFrame)
+
+
+@solid(
+    input_defs=[InputDefinition('path', Path)],
+    output_defs=[OutputDefinition(Nothing)],
+    config_field=BIGQUERY_LOAD_CONFIG,
+    required_resource_keys={'bq'},
+)
+def import_file_to_bq(context, path):
+    return _execute_load_in_source(context, path, BigQueryLoadSource.File)
+
+
+def _execute_load_in_source(context, source, source_name):
+    destination = context.solid_config.get('destination')
+    load_job_config = _preprocess_config(context.solid_config.get('load_job_config', {}))
+    cfg = LoadJobConfig(**load_job_config) if load_job_config else None
+
+    context.log.info(
+        'executing BQ load with config: %s for source %s'
+        % (cfg.to_api_repr() if cfg else '(no config provided)', source)
     )
-    def bq_load_solid(context, source):
-        destination = context.solid_config.get('destination')
-        load_job_config = _preprocess_config(context.solid_config.get('load_job_config', {}))
-        cfg = LoadJobConfig(**load_job_config) if load_job_config else None
 
-        context.log.info(
-            'executing BQ load with config: %s for source %s'
-            % (cfg.to_api_repr() if cfg else '(no config provided)', source)
-        )
-
-        context.resources.bq.load_table_from_source(
-            source_name, source, destination, job_config=cfg
-        ).result()
-
-    return bq_load_solid
+    context.resources.bq.load_table_from_source(
+        source_name, source, destination, job_config=cfg
+    ).result()
 
 
 @solid(
