@@ -31,14 +31,12 @@ def datadog_solid(context):
 
     run_fn()
 
-pipeline = PipelineDefinition(
-    name='test_datadog_resource',
-    solids=[datadog_solid],
-    mode_defs=[ModeDefinition(resource_defs={'datadog': datadog_resource})],
-)
+@pipeline(mode_defs=[ModeDefinition(resource_defs={'datadog': datadog_resource})])
+def dd_pipeline():
+    datadog_solid() # pylint: disable=no-value-for-parameter
 
 result = execute_pipeline(
-    pipeline,
+    dd_pipeline,
     {'resources': {'datadog': {'config': {'api_key': 'YOUR_KEY', 'app_key': 'YOUR_KEY'}}}},
 )
 

@@ -12,8 +12,8 @@ To use this library, you should first ensure that you have an appropriate [Snowf
 
 A simple example of loading data into Snowflake and subsequently querying that data is shown below:
 
-```
-from dagster import execute_pipeline, DependencyDefinition, ModeDefinition, PipelineDefinition
+```python
+from dagster import execute_pipeline, pipeline, DependencyDefinition, ModeDefinition
 from dagster_snowflake import (
     snowflake_resource,
     SnowflakeLoadSolidDefinition,
@@ -26,15 +26,14 @@ snowflake_load = SnowflakeLoadSolidDefinition(
 
 snowflake_query = SnowflakeSolidDefinition('query some data', ['SELECT * FROM mydata'])
 
-pipeline = PipelineDefinition(
-    name='snowflake example',
-    solids=[snowflake_load, snowflake_query],
+@pipeline(
     mode_defs=[ModeDefinition(resource_defs={'snowflake': snowflake_resource})],
-    dependencies={snowflake_query: {'start': DependencyDefinition('snowflake_load')}},
 )
+def snowflake_pipeline():
+    snowflake_query(snowflake_load)
 
 result = execute_pipeline(
-    pipeline,
+    snowflake_pipeline,
     {
         'resources': {
             'snowflake': {
