@@ -106,7 +106,6 @@ const MetadataEntryLink = styled.a`
 
 const MetadataEntriesTable = styled.table`
   padding: 0;
-  min-width: 50%;
   border-top: 1px solid #bb956a;
   border-left: 1px solid #bb956a;
   background: #fff8f0;
@@ -118,7 +117,6 @@ const MetadataEntriesTable = styled.table`
     padding-right: 8px;
     border-bottom: 1px solid #bb956a;
     border-right: 1px solid #bb956a;
-    min-width: 120px;
     vertical-align: top;
   }
 `;

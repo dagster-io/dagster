@@ -2,6 +2,7 @@ import * as React from "react";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import { LogLevel } from "./LogsFilterProvider";
+import { ColumnWidthsContext } from "./LogsScrollingTableHeader";
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({
@@ -63,9 +64,10 @@ export const StructuredContent = styled.div`
 // rendering being fairly consistent.
 //
 export const StepKeyColumn = (props: { stepKey: string | false | null }) => {
+  const widths = React.useContext(ColumnWidthsContext);
   const parts = (props.stepKey || "").replace(/\.compute$/, "").split(".");
   return (
-    <StepKeyColumnContainer>
+    <StepKeyColumnContainer style={{ width: widths.stepKey }}>
       {parts.map((p, idx) => (
         <div
           key={idx}
@@ -92,31 +94,49 @@ const StepKeyColumnContainer = styled.div`
 
 // Timestamp Column
 
-export const TimestampColumn = (props: { time: string | false }) => (
-  <TimestampColumnContainer>
-    {props.time &&
-      new Date(Number(props.time))
-        .toISOString()
-        .replace("Z", "")
-        .split("T")
-        .pop()}
-  </TimestampColumnContainer>
-);
+export const TimestampColumn = (props: { time: string | false }) => {
+  const widths = React.useContext(ColumnWidthsContext);
+  return (
+    <TimestampColumnContainer style={{ width: widths.timestamp }}>
+      {props.time &&
+        new Date(Number(props.time))
+          .toISOString()
+          .replace("Z", "")
+          .split("T")
+          .pop()}
+    </TimestampColumnContainer>
+  );
+};
 
 const TimestampColumnContainer = styled.div`
-  width: 100px;
   flex-shrink: 0;
   text-align: right;
   color: ${Colors.GRAY3};
 `;
 
-export const LabelColumn = styled.div`
+export const LabelColumn: React.FunctionComponent<{}> = props => {
+  const widths = React.useContext(ColumnWidthsContext);
+  return (
+    <LabelColumnContainer style={{ width: widths.label }}>
+      {props.children}
+    </LabelColumnContainer>
+  );
+};
+
+export const LabelColumnContainer = styled.div`
   font-weight: 600;
-  width: 200px;
 `;
 
-export const LevelTagColumn = styled.div`
-  width: 140px;
+export const LevelTagColumn: React.FunctionComponent<{}> = props => {
+  const widths = React.useContext(ColumnWidthsContext);
+  return (
+    <LevelTagColumnContainer style={{ width: widths.levelTag }}>
+      {props.children}
+    </LevelTagColumnContainer>
+  );
+};
+
+export const LevelTagColumnContainer = styled.div`
   flex-shrink: 0;
   color: ${Colors.GRAY3};
 `;
