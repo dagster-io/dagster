@@ -44,7 +44,8 @@ class DaskConfig(
     def requires_persistent_storage(self):
         return True
 
-    def get_engine(self):
+    @staticmethod
+    def get_engine():
         from .engine import DaskEngine
 
         return DaskEngine

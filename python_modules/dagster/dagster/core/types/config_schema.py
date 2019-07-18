@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.utils import single_item
+from dagster.utils import ensure_single_item
 
 from .builtin_enum import BuiltinEnum
 from .config import ConfigType, List, Nullable
@@ -95,7 +95,7 @@ def input_selector_schema(config_cls):
 
     def _wrap(func):
         def _selector(context, config_value):
-            selector_key, selector_value = single_item(config_value)
+            selector_key, selector_value = ensure_single_item(config_value)
             return func(context, selector_key, selector_value)
 
         return _create_input_schema(config_type, _selector)
@@ -140,7 +140,7 @@ def output_selector_schema(config_cls):
 
     def _wrap(func):
         def _selector(context, config_value, runtime_value):
-            selector_key, selector_value = single_item(config_value)
+            selector_key, selector_value = ensure_single_item(config_value)
             return func(context, selector_key, selector_value, runtime_value)
 
         return _create_output_schema(config_type, _selector)

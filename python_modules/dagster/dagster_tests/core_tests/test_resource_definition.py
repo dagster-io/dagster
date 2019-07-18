@@ -1,13 +1,16 @@
 from dagster import (
     Field,
+    InProcessExecutorConfig,
     ModeDefinition,
     PipelineDefinition,
     ResourceDefinition,
     String,
     execute_pipeline,
     resource,
+    RunConfig,
     solid,
 )
+from dagster.core.execution.api import create_execution_plan, execute_plan
 
 
 def define_string_resource():
@@ -416,3 +419,34 @@ def test_stacked_resource_cleanup():
     execute_pipeline(pipeline)
 
     assert called == ['creation_1', 'creation_2', 'solid', 'cleanup_2', 'cleanup_1']
+
+
+def test_resource_init_failure():
+    @resource
+    def failing_resource(_init_context):
+        raise Exception('Uh oh')
+
+    @solid(required_resource_keys={'failing_resource'})
+    def failing_resource_solid(_context):
+        pass
+
+    pipeline = PipelineDefinition(
+        name='test_resource_init_failure',
+        solid_defs=[failing_resource_solid],
+        mode_defs=[ModeDefinition(resource_defs={'failing_resource': failing_resource})],
+    )
+
+    run_config = RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False))
+    res = execute_pipeline(pipeline, run_config=run_config)
+
+    assert res.event_list[0].event_type_value == 'PIPELINE_INIT_FAILURE'
+
+    execution_plan = create_execution_plan(pipeline, run_config=run_config)
+
+    step_events = execute_plan(
+        execution_plan,
+        run_config=run_config,
+        step_keys_to_execute=[step.key for step in execution_plan.topological_steps()],
+    )
+
+    assert step_events[0].event_type_value == 'PIPELINE_INIT_FAILURE'

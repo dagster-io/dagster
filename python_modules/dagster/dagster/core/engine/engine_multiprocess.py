@@ -1,13 +1,13 @@
 import os
 from dagster import check
 
+from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.execution.config import MultiprocessExecutorConfig
+from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
 from dagster.core.execution.plan.plan import ExecutionPlan
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
 from .engine_base import IEngine
-from .engine_inprocess import InProcessEngine
 
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
@@ -17,25 +17,18 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         self.step_key = step_key
 
     def execute(self):
-        from dagster.core.execution.api import scoped_pipeline_context
-
         check.inst(self.run_config.executor_config, MultiprocessExecutorConfig)
-        pipeline = self.run_config.executor_config.handle.build_pipeline_definition()
+        pipeline_def = self.run_config.executor_config.handle.build_pipeline_definition()
 
-        with scoped_pipeline_context(
-            pipeline, self.environment_dict, self.run_config.with_tags(pid=str(os.getpid()))
-        ) as pipeline_context:
+        run_config = self.run_config.with_tags(pid=str(os.getpid())).with_executor_config(
+            InProcessExecutorConfig(raise_on_error=self.run_config.executor_config.raise_on_error)
+        )
+        execution_plan = create_execution_plan(pipeline_def, self.environment_dict, run_config)
 
-            execution_plan = ExecutionPlan.build(
-                pipeline_context.pipeline_def,
-                pipeline_context.environment_config,
-                pipeline_context.mode_def,
-            )
-
-            for step_event in InProcessEngine.execute(
-                pipeline_context, execution_plan, step_keys_to_execute=[self.step_key]
-            ):
-                yield step_event
+        for step_event in execute_plan_iterator(
+            execution_plan, self.environment_dict, run_config, step_keys_to_execute=[self.step_key]
+        ):
+            yield step_event
 
 
 def execute_step_out_of_process(step_context, step):

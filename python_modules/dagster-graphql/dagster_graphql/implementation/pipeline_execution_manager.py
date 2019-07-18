@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 from collections import namedtuple
+import abc
+
 import copy
 import logging
 import os
@@ -30,9 +32,10 @@ from dagster.utils import get_multiprocessing_context
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRun
 
 
-class PipelineExecutionManager(object):
+class PipelineExecutionManager(six.with_metaclass(abc.ABCMeta)):
+    @abc.abstractmethod
     def execute_pipeline(self, handle, pipeline, pipeline_run, raise_on_error):
-        raise NotImplementedError()
+        '''Subclasses must implement this method.'''
 
 
 def build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name):

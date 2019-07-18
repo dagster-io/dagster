@@ -8,7 +8,7 @@ from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.solid import CompositeSolidDefinition
 from dagster.core.execution.config import RunConfig
 from dagster.core.types.config import ConfigType
-from dagster.utils import frozendict, single_item
+from dagster.utils import frozendict, ensure_single_item
 from dagster.utils.merger import dict_merge
 
 from .evaluate_value_result import EvaluateValueResult
@@ -108,7 +108,7 @@ def evaluate_selector_config(context):
         if len(context.config_value) > 1:
             return EvaluateValueResult.for_error(create_selector_multiple_fields_error(context))
 
-        field_name, incoming_field_value = single_item(context.config_value)
+        field_name, incoming_field_value = ensure_single_item(context.config_value)
         if field_name not in context.config_type.fields:
             return EvaluateValueResult.for_error(
                 create_field_not_defined_error(context, field_name)
@@ -120,7 +120,7 @@ def evaluate_selector_config(context):
                 create_selector_multiple_fields_no_field_selected_error(context)
             )
 
-        field_name, field_def = single_item(context.config_type.fields)
+        field_name, field_def = ensure_single_item(context.config_type.fields)
 
         if not field_def.is_optional:
             return EvaluateValueResult.for_error(create_selector_unspecified_value_error(context))

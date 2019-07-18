@@ -73,7 +73,7 @@ def camelcase(string):
     )
 
 
-def single_item(ddict):
+def ensure_single_item(ddict):
     check.dict_param(ddict, 'ddict')
     check.param_invariant(len(ddict) == 1, 'ddict', 'Expected dict with single item')
     return list(ddict.items())[0]
@@ -272,3 +272,14 @@ def safe_tempfile_path():
     finally:
         if os.path.exists(path):
             os.unlink(path)
+
+
+def ensure_gen(thing_or_gen):
+    if not inspect.isgenerator(thing_or_gen):
+
+        def _gen_thing():
+            yield thing_or_gen
+
+        return _gen_thing()
+
+    return thing_or_gen

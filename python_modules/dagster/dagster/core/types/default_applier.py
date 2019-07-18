@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.utils import single_item
+from dagster.utils import ensure_single_item
 
 from .config import ConfigType
 
@@ -34,9 +34,9 @@ def apply_default_values_to_selector(selector_type, config_value):
 
     if config_value:
         check.invariant(config_value and len(config_value) == 1)
-        field_name, incoming_field_value = single_item(config_value)
+        field_name, incoming_field_value = ensure_single_item(config_value)
     else:
-        field_name, field_def = single_item(selector_type.fields)
+        field_name, field_def = ensure_single_item(selector_type.fields)
         incoming_field_value = field_def.default_value if field_def.default_provided else None
 
     parent_field = selector_type.fields[field_name]

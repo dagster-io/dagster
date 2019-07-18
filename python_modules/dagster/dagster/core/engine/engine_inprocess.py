@@ -57,8 +57,8 @@ class InProcessEngine(IEngine):  # pylint: disable=no-init
 
         step_levels = execution_plan.topological_step_levels()
 
-        # It would be good to implement a reference tracking algorithm here so we could
-        # garbage collection results that are no longer needed by any steps
+        # It would be good to implement a reference tracking algorithm here to
+        # garbage collect results that are no longer needed by any steps
         # https://github.com/dagster-io/dagster/issues/811
         for step_level in step_levels:
             for step in step_level:
@@ -169,6 +169,7 @@ def dagster_event_sequence_for_step(step_context):
     Yield a sequence of dagster events for the given step with the step context.
 
     Thie function also processes errors. It handles a few error cases:
+
         (1) The user-space code has raised an Exception. It has been
         wrapped in an exception derived from DagsterUserCodeException. In that
         case the original user exc_info is stashed on the exception
@@ -176,10 +177,12 @@ def dagster_event_sequence_for_step(step_context):
         with the compute_fn, and type checks. If the user has raised an
         intentional error via throwing Failure, they can also optionally
         pass along explicit metadata attached to that Failure.
+
         (2) The framework raised a DagsterError that indicates a usage error
         or some other error not communicated by a user-thrown exception. For example,
         if the user yields an object out of a compute function that is not a
         proper event (not an Output, ExpectationResult, etc).
+
         (3) An unexpected error occured. This is a framework error. Either there
         has been an internal error in the framewore OR we have forgtten to put a
         user code error boundary around invoked user-space code. These terminate

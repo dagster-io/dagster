@@ -93,11 +93,11 @@ class RunConfig(
 class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractproperty
     def requires_persistent_storage(self):
-        raise NotImplementedError()
+        '''(bool): Whether this executor config requires persistent storage to be configured.'''
 
     @abstractmethod
     def get_engine(self):
-        raise NotImplementedError()
+        '''(IEngine): Return the configured engine.'''
 
 
 class InProcessExecutorConfig(ExecutorConfig):

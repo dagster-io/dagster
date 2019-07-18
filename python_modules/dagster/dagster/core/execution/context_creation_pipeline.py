@@ -1,6 +1,5 @@
 from collections import namedtuple
 from contextlib import contextmanager
-import inspect
 import sys
 import time
 
@@ -28,7 +27,7 @@ from dagster.core.storage.type_storage import construct_type_storage_plugin_regi
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import evaluate_config
 from dagster.loggers import default_loggers, default_system_loggers
-from dagster.utils import merge_dicts
+from dagster.utils import ensure_gen, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config import RunConfig
@@ -400,17 +399,6 @@ def _create_context_free_log_manager(run_config, pipeline_def):
     return DagsterLogManager(run_config.run_id, get_logging_tags(run_config, pipeline_def), loggers)
 
 
-def _ensure_gen(thing_or_gen):
-    if not inspect.isgenerator(thing_or_gen):
-
-        def _gen_thing():
-            yield thing_or_gen
-
-        return _gen_thing()
-
-    return thing_or_gen
-
-
 @contextmanager
 def user_code_context_manager(user_fn, error_cls, msg_fn):
     '''Wraps the output of a user provided function that may yield or return a value and
@@ -421,7 +409,7 @@ def user_code_context_manager(user_fn, error_cls, msg_fn):
 
     with user_code_error_boundary(error_cls, msg_fn):
         thing_or_gen = user_fn()
-        gen = _ensure_gen(thing_or_gen)
+        gen = ensure_gen(thing_or_gen)
 
         try:
             thing = next(gen)

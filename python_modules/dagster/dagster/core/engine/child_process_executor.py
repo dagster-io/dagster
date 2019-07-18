@@ -1,3 +1,5 @@
+'''Facilities for running arbitrary commands in child processes.'''
+
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 import multiprocessing
@@ -18,16 +20,21 @@ ChildProcessSystemErrorEvent = namedtuple('ChildProcessSystemErrorEvent', 'pid e
 ChildProcessEvents = (ChildProcessStartEvent, ChildProcessDoneEvent, ChildProcessSystemErrorEvent)
 
 
-# Inherit from this class in order to use this library. The object must be pickable
-# and you instantiate it and pass it to execute_command_in_child_process. execute()
-# is invoked in a child process
 class ChildProcessCommand(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    '''Inherit from this class in order to use this library.
+    
+    The object must be picklable; instantiate it and pass it to _execute_command_in_child_process.'''
+
     @abstractmethod
     def execute(self):
-        pass
+        ''' This method is invoked in the child process.
+        
+        Yields a sequence of events to be handled by _execute_command_in_child_process.'''
 
 
 class ChildProcessException(Exception):
+    '''Thrown when an uncaught exception is raised in the child process.'''
+
     def __init__(self, *args, **kwargs):
         super(ChildProcessException, self).__init__(*args)
         self.error_info = check.inst_param(
@@ -36,10 +43,14 @@ class ChildProcessException(Exception):
 
 
 class ChildProcessCrashException(Exception):
-    pass
+    '''Thrown when the child process crashes.'''
 
 
-def execute_command_in_child_process(queue, command):
+def _execute_command_in_child_process(queue, command):
+    '''Wraps the execution of a ChildProcessCommand.
+    
+    Handles errors and communicates across a queue with the parent process.'''
+
     check.inst_param(command, 'command', ChildProcessCommand)
 
     pid = os.getpid()
@@ -58,12 +69,14 @@ def execute_command_in_child_process(queue, command):
         queue.close()
 
 
-TICK = 20.0 * 1.0 / 1000.0  # 20 MS
+TICK = 20.0 * 1.0 / 1000.0
+'''The minimum interval at which to check for child process liveness -- default 20ms.'''
 
 PROCESS_DEAD_AND_QUEUE_EMPTY = 'PROCESS_DEAD_AND_QUEUE_EMPTY'
+'''Sentinel value.'''
 
 
-def get_next_event(process, queue):
+def _poll_for_event(process, queue):
     try:
         return queue.get(block=True, timeout=TICK)
     except multiprocessing.queues.Empty:
@@ -82,14 +95,19 @@ def get_next_event(process, queue):
 
 
 def execute_child_process_command(command, return_process_events=False):
-    '''
-    This function polls the process until it returns a valid
-    item or returns PROCESS_DEAD_AND_QUEUE_EMPTY if it is in
-    a state where the process has terminated and the queue is empty.
+    '''Execute a ChildProcessCommand in a new process.
 
-    If wait_mode is set to YIELD, it will yield None while the process is busy executing.
+    This function starts a new process whose execution target is a ChildProcessCommand wrapped by
+    _execute_command_in_child_process; polls the queue for events yielded by the child process
+    until the process dies and the queue is empty.
 
-    Warning: if the child process is in an infinite loop. This will
+    Args:
+        command (ChildProcessCommand): The command to execute in the child process.
+        return_process_events(Optional[bool]): Set this flag to yield the control events
+            (ChildProcessEvents) back to the caller of this function, in addition to any
+            non-control events. (default: False)
+
+    Warning: if the child process is in an infinite loop, this will
     also infinitely loop.
     '''
 
@@ -100,7 +118,7 @@ def execute_child_process_command(command, return_process_events=False):
     queue = multiprocessing_context.Queue()
 
     process = multiprocessing_context.Process(
-        target=execute_command_in_child_process, args=(queue, command)
+        target=_execute_command_in_child_process, args=(queue, command)
     )
 
     process.start()
@@ -108,7 +126,7 @@ def execute_child_process_command(command, return_process_events=False):
     completed_properly = False
 
     while not completed_properly:
-        event = get_next_event(process, queue)
+        event = _poll_for_event(process, queue)
 
         # child process is busy executing, yield so we (the parent) can continue
         # other work such as checking other child_process_commands
