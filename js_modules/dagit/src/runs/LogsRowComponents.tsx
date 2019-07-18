@@ -63,11 +63,11 @@ export const StructuredContent = styled.div`
 // Manually implements middle text truncation since we can count on monospace font
 // rendering being fairly consistent.
 //
-export const StepKeyColumn = (props: { stepKey: string | false | null }) => {
+export const SolidColumn = (props: { stepKey: string | false | null }) => {
   const widths = React.useContext(ColumnWidthsContext);
   const parts = (props.stepKey || "").replace(/\.compute$/, "").split(".");
   return (
-    <StepKeyColumnContainer style={{ width: widths.stepKey }}>
+    <SolidColumnContainer style={{ width: widths.solid }}>
       {parts.map((p, idx) => (
         <div
           key={idx}
@@ -83,11 +83,11 @@ export const StepKeyColumn = (props: { stepKey: string | false | null }) => {
             : p}
         </div>
       ))}
-    </StepKeyColumnContainer>
+    </SolidColumnContainer>
   );
 };
 
-const StepKeyColumnContainer = styled.div`
+const SolidColumnContainer = styled.div`
   width: 250px;
   flex-shrink: 0;
 `;
@@ -127,16 +127,16 @@ export const LabelColumnContainer = styled.div`
   font-weight: 600;
 `;
 
-export const LevelTagColumn: React.FunctionComponent<{}> = props => {
+export const EventTypeColumn: React.FunctionComponent<{}> = props => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
-    <LevelTagColumnContainer style={{ width: widths.levelTag }}>
+    <EventTypeColumnContainer style={{ width: widths.eventType }}>
       {props.children}
-    </LevelTagColumnContainer>
+    </EventTypeColumnContainer>
   );
 };
 
-export const LevelTagColumnContainer = styled.div`
+export const EventTypeColumnContainer = styled.div`
   flex-shrink: 0;
   color: ${Colors.GRAY3};
 `;

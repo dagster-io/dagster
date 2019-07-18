@@ -5,8 +5,8 @@ import { Colors } from "@blueprintjs/core";
 const ColumnWidthsStorageKey = "ColumnWidths";
 const ColumnWidths = {
   label: 160,
-  levelTag: 140,
-  stepKey: 150,
+  eventType: 140,
+  solid: 150,
   timestamp: 100
 };
 
@@ -51,20 +51,17 @@ export class ColumnWidthsProvider extends React.Component<
   }
 }
 
-interface ResizableHeaderProps extends React.HTMLProps<HTMLDivElement> {
+interface HeaderProps extends React.HTMLProps<HTMLDivElement> {
   width: number;
   handleSide?: "left" | "right";
-  onResize: (width: number) => void;
+  onResize?: (width: number) => void;
 }
 
-interface ResizableHeaderState {
+interface HeaderState {
   dragging: boolean;
 }
 
-class ResizableHeader extends React.Component<
-  ResizableHeaderProps,
-  ResizableHeaderState
-> {
+class Header extends React.Component<HeaderProps, HeaderState> {
   state = {
     dragging: false
   };
@@ -75,9 +72,10 @@ class ResizableHeader extends React.Component<
 
     const onMouseMove = (m: MouseEvent) => {
       const dir = this.props.handleSide === "left" ? -1 : 1;
-      this.props.onResize(
-        Math.max(40, initialWidth + (m.screenX - initialX) * dir)
-      );
+      this.props.onResize &&
+        this.props.onResize(
+          Math.max(40, initialWidth + (m.screenX - initialX) * dir)
+        );
     };
     const onMouseUp = (m: MouseEvent) => {
       document.removeEventListener("mousemove", onMouseMove);
@@ -91,15 +89,13 @@ class ResizableHeader extends React.Component<
   };
 
   render() {
+    const draggable = !!this.props.onResize;
+
     return (
-      <HeaderContainer
-        style={{
-          width: this.props.width,
-          textAlign: this.props.handleSide === "left" ? "right" : "left"
-        }}
-      >
+      <HeaderContainer style={{ width: this.props.width }}>
         <HeaderDragHandle
-          onMouseDown={this.onMouseDown}
+          onMouseDown={draggable ? this.onMouseDown : undefined}
+          draggable={draggable}
           dragging={this.state.dragging}
           side={this.props.handleSide || "right"}
         >
@@ -115,33 +111,35 @@ export const Headers: React.FunctionComponent<{}> = props => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
     <HeadersContainer>
-      <ResizableHeader
-        width={widths.stepKey}
-        onResize={width => widths.onChange({ ...widths, stepKey: width })}
+      <Header
+        width={widths.solid}
+        onResize={width => widths.onChange({ ...widths, solid: width })}
       >
         Solid
-      </ResizableHeader>
-      <ResizableHeader
-        width={widths.levelTag}
-        onResize={width => widths.onChange({ ...widths, levelTag: width })}
+      </Header>
+      <Header
+        width={widths.eventType}
+        onResize={width => widths.onChange({ ...widths, eventType: width })}
       >
         Event Type
-      </ResizableHeader>
-      <ResizableHeader
+      </Header>
+      <Header
         width={widths.label}
         onResize={width => widths.onChange({ ...widths, label: width })}
       >
         Label
-      </ResizableHeader>
+      </Header>
       <HeaderContainer style={{ flex: 1 }}>Info</HeaderContainer>
-      <HeaderContainer style={{ width: widths.timestamp }} />
+      <Header handleSide="left" width={widths.timestamp}>
+        Timestamp
+      </Header>
     </HeadersContainer>
   );
 };
 
 const HeadersContainer = styled.div`
   display: flex;
-  color: gray;
+  color: ${Colors.GRAY3};
   text-transform: uppercase;
   font-size: 11px;
   border-bottom: 1px solid #cbd4da;
@@ -157,12 +155,13 @@ const HeaderContainer = styled.div`
 
 const HeaderDragHandle = styled.div<{
   side: "left" | "right";
+  draggable: boolean;
   dragging: boolean;
 }>`
   width: 17px;
   height: 20000px;
   position: absolute;
-  cursor: ew-resize;
+  cursor: ${({ draggable }) => (draggable ? "ew-resize" : "default")};
   z-index: 2;
   ${({ side }) => (side === "right" ? `right: -13px;` : `left: -13px;`)}
   padding: 0 8px;
