@@ -102,7 +102,7 @@ LIBRARY_MODULES = [
     'dagster-spark',
 ]
 
-EXPECTED_PYTHON_MODULES = ['automation', 'libraries'] + MODULE_NAMES
+EXPECTED_PYTHON_MODULES = ['automation', 'lakehouse', 'libraries'] + MODULE_NAMES
 
 EXPECTED_LIBRARIES = LIBRARY_MODULES
 

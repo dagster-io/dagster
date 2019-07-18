@@ -286,6 +286,8 @@ class ExecutionTargetHandle:
                 RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_defs=[obj]),
                 ExecutionTargetHandle.get_handle(obj),
             )
+        else:
+            check.failed('Unhandled mode {mode}'.format(mode=self.mode))
 
     def build_pipeline_definition(self):
         '''Rehydrates a PipelineDefinition from an ExecutionTargetHandle object.

@@ -154,7 +154,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         x={x - 10}
         y={y - 10}
         width={width + 20}
-        height={height + 20}
+        height={height + (this.props.solid.outputs.length > 0 ? 20 : 30)}
         stroke="rgba(255, 69, 0, 1)"
         fill="rgba(255, 69, 0, 0.2)"
         strokeWidth={this.props.minified ? 5 : 3}

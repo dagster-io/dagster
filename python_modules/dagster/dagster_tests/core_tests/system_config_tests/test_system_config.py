@@ -4,37 +4,38 @@ from dagster import (
     Any,
     DependencyDefinition,
     Dict,
+    execute_pipeline,
     Field,
     InputDefinition,
     Int,
+    lambda_solid,
     ModeDefinition,
     NamedDict,
     OutputDefinition,
-    ResourceDefinition,
     PipelineDefinition,
+    ResourceDefinition,
     SolidDefinition,
     SolidInvocation,
     String,
-    execute_pipeline,
-    lambda_solid,
 )
 from dagster.core.definitions import create_environment_type, create_environment_schema
 from dagster.core.definitions.environment_configs import (
-    define_resource_cls,
     define_expectations_config_cls,
+    define_resource_cls,
     define_solid_config_cls,
     define_solid_dictionary_cls,
     EnvironmentClassCreationData,
 )
-from dagster.core.types.evaluator.errors import DagsterEvaluateConfigValueError
 from dagster.core.system_config.objects import (
     construct_solid_dictionary,
     EnvironmentConfig,
+    ExecutionConfig,
     ExpectationsConfig,
     SolidConfig,
 )
 from dagster.core.test_utils import throwing_evaluate_config_value
 from dagster.core.types.evaluator import evaluate_config
+from dagster.core.types.evaluator.errors import DagsterEvaluateConfigValueError
 from dagster.loggers import default_loggers
 
 
@@ -740,3 +741,9 @@ def test_storage_in_memory_config():
     config_value = throwing_evaluate_config_value(env_type, {'storage': {'in_memory': {}}})
 
     assert config_value['storage'] == {'in_memory': {}}
+
+
+def test_directly_init_environment_config():
+    config = EnvironmentConfig()
+    assert isinstance(config.expectations, ExpectationsConfig)
+    assert isinstance(config.execution, ExecutionConfig)

@@ -21,36 +21,25 @@ def wait_step():
     return "wait"
 
 
-def python_modules_tox_tests(directory, prereqs=None, env=None, integration=False):
+def python_modules_tox_tests(directory):
     label = directory.replace("/", "-")
     tests = []
     for version in SupportedPythons:
         coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
             label=label, version=version
         )
-        tox_command = []
-        if prereqs:
-            tox_command += prereqs
-        tox_command += [
-            "pip install tox;",
-            "cd python_modules/{directory}".format(directory=directory),
-            "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
-            "mv .coverage {file}".format(file=coverage),
-            "buildkite-agent artifact upload {file}".format(file=coverage),
-        ]
-
-        env_vars = ['AWS_DEFAULT_REGION'] + (env or [])
-
-        builder = StepBuilder(
-            "{label} tests ({ver})".format(label=label, ver=TOX_MAP[version])
-        ).run(*tox_command)
-
-        if integration:
-            builder = builder.on_integration_image(version, env_vars).on_medium_instance()
-        else:
-            builder = builder.on_python_image(version, env_vars)
-
-        tests.append(builder.build())
+        tests.append(
+            StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
+            .run(
+                "pip install tox;",
+                "cd python_modules/{directory}".format(directory=directory),
+                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+            )
+            .on_python_image(version, ['AWS_DEFAULT_REGION'])
+            .build()
+        )
 
     return tests
 
@@ -178,17 +167,29 @@ def automation_tests():
 def gcp_tests():
     # GCP tests need appropriate credentials
     creds_local_file = "/tmp/gcp-key-elementl-dev.json"
+    tests = []
+    for version in SupportedPythons:
+        coverage = ".coverage.libraries-dagster-gcp.{version}.$BUILDKITE_BUILD_ID".format(
+            version=version
+        )
+        tests.append(
+            StepBuilder("libraries-dagster-gcp tests ({ver})".format(ver=TOX_MAP[version]))
+            .run(
+                "pip install awscli",
+                "aws s3 cp s3://${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
+                + creds_local_file,
+                "export GOOGLE_APPLICATION_CREDENTIALS=" + creds_local_file,
+                "pip install tox;",
+                "cd python_modules/libraries/dagster-gcp",
+                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+            )
+            .on_python_image(version, ['BUILDKITE_SECRETS_BUCKET', 'GCP_PROJECT_ID'])
+            .build()
+        )
 
-    return python_modules_tox_tests(
-        "libraries/dagster-gcp",
-        prereqs=[
-            "pip install awscli",
-            "aws s3 cp s3://${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
-            + creds_local_file,
-            "export GOOGLE_APPLICATION_CREDENTIALS=" + creds_local_file,
-        ],
-        env=['BUILDKITE_SECRETS_BUCKET', 'GCP_PROJECT_ID'],
-    )
+    return tests
 
 
 def dask_tests():
@@ -241,6 +242,53 @@ def library_tests():
             tests += gcp_tests()
         else:
             tests += python_modules_tox_tests("libraries/{library}".format(library=library))
+
+    return tests
+
+
+def dagit_tests():
+    tests = []
+    for version in SupportedPythons:
+        coverage = ".coverage.dagit.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        tests.append(
+            StepBuilder("dagit tests ({ver})".format(ver=TOX_MAP[version]))
+            .run(
+                "apt-get update",
+                "apt-get install -y xdg-utils",
+                "pushd python_modules",
+                "make rebuild_dagit",
+                "popd",
+                "pip install tox;",
+                "cd python_modules/dagit",
+                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+            )
+            .on_integration_image(version)
+            .on_medium_instance()
+            .build()
+        )
+
+    return tests
+
+
+def lakehouse_tests():
+    tests = []
+    for version in SupportedPython3s:
+        coverage = ".coverage.lakehouse.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        tests.append(
+            StepBuilder("lakehouse tests ({ver})".format(ver=TOX_MAP[version]))
+            .run(
+                "pip install tox;",
+                "cd python_modules/lakehouse",
+                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+            )
+            .on_integration_image(version)
+            .on_medium_instance()
+            .build()
+        )
 
     return tests
 
@@ -332,27 +380,19 @@ if __name__ == "__main__":
     steps += airline_demo_tests()
     steps += automation_tests()
     steps += events_demo_tests()
+    steps += examples_tests()
+
     steps += airflow_tests()
     steps += dask_tests()
 
+    steps += dagit_tests()
+    steps += lakehouse_tests()
+
     steps += python_modules_tox_tests("dagster")
-    steps += python_modules_tox_tests(
-        "dagit",
-        prereqs=[
-            "apt-get update",
-            "apt-get install -y xdg-utils",
-            "pushd python_modules",
-            "make rebuild_dagit",
-            "popd",
-        ],
-        integration=True,
-    )
     steps += python_modules_tox_tests("dagster-graphql")
     steps += python_modules_tox_tests("dagstermill")
-
     steps += library_tests()
 
-    steps += examples_tests()
     steps += [wait_step(), coverage_step(), wait_step(), deploy_trigger_step()]
 
     print(

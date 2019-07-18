@@ -83,7 +83,7 @@ def gcs_to_bigquery(context):
         'gs://{bucket}/{date}/*.parquet'.format(bucket=OUTPUT_BUCKET, date=dt.strftime('%Y/%m/%d'))
     ]
 
-    context.resources.bq.load_table_from_uri(
+    context.resources.bigquery.load_table_from_uri(
         source_uris, destination, job_config=load_job_config
     ).result()
 
@@ -104,13 +104,14 @@ def explore_visits_by_hour(context):
  GROUP BY ts
  ORDER BY ts ASC
 '''
-    context.resources.bq.query(sql, job_config=query_job_config)
+    context.resources.bigquery.query(sql, job_config=query_job_config)
 
 
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            name='default', resource_defs={'bq': bigquery_resource, 'dataproc': dataproc_resource}
+            name='default',
+            resource_defs={'bigquery': bigquery_resource, 'dataproc': dataproc_resource},
         )
     ],
     preset_defs=[

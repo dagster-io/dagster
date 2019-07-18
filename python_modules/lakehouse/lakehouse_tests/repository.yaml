@@ -1,0 +1,3 @@
+repository:
+  file: repo.py
+  fn: lakehouse_test_repo

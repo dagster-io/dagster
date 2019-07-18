@@ -11,35 +11,35 @@ from .system import SystemComputeExecutionContext
 class AbstractComputeExecutionContext(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
     def has_tag(self, key):
-        pass
+        '''Implement this method to check if a logging tag is set.'''
 
     @abstractmethod
     def get_tag(self, key):
-        pass
+        '''Implement this method to get a logging tag.'''
 
     @abstractproperty
     def run_id(self):
-        pass
+        '''The run id for the context.'''
 
     @abstractproperty
     def solid_def(self):
-        pass
+        '''The solid definition corresponding to the execution step being executed.'''
 
     @abstractproperty
     def solid(self):
-        pass
+        '''The solid corresponding to the execution step being executed.'''
 
     @abstractproperty
     def pipeline_def(self):
-        pass
+        '''The pipeline being executed.'''
 
     @abstractproperty
     def resources(self):
-        pass
+        '''Resources available in the execution context.'''
 
     @abstractproperty
     def log(self):
-        pass
+        '''The log manager available in the execution context.'''
 
 
 class ComputeExecutionContext(StepExecutionContext, AbstractComputeExecutionContext):

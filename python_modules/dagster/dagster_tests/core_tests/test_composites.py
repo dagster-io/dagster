@@ -16,6 +16,7 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.core.test_utils import nesting_composite_pipeline
 from dagster.core.utility_solids import (
     create_root_solid,
     create_solid_with_deps,
@@ -72,6 +73,11 @@ def test_composite_basic_execution():
         empty()
 
     result = execute_pipeline(test_pipeline_empty)
+    assert result.success
+
+    nested_pipeline = nesting_composite_pipeline(6, 2)
+
+    result = execute_pipeline(nested_pipeline)
     assert result.success
 
 
