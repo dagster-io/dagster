@@ -278,6 +278,10 @@ export default class RunMetadataProvider extends React.Component<
         ... on PipelineProcessStartedEvent {
           processId
         }
+        ... on PipelineProcessStartEvent {
+          pipelineName
+          runId
+        }
         ... on StepMaterializationEvent {
           step {
             key

@@ -11,6 +11,7 @@ import {
   LogsRowStructuredFragment_ExecutionStepInputEvent,
   LogsRowStructuredFragment_StepExpectationResultEvent,
   LogsRowStructuredFragment_PipelineProcessStartedEvent,
+  LogsRowStructuredFragment_PipelineProcessStartEvent,
   LogsRowStructuredFragment_PipelineInitFailureEvent
 } from "./types/LogsRowStructuredFragment";
 import { LogsRowUnstructuredFragment } from "./types/LogsRowUnstructuredFragment";
@@ -43,6 +44,10 @@ export class Structured extends React.Component<{
         }
         ... on PipelineProcessStartedEvent {
           processId
+        }
+        ... on PipelineProcessStartEvent {
+          pipelineName
+          runId
         }
         ... on StepMaterializationEvent {
           step {
@@ -167,6 +172,8 @@ export class Structured extends React.Component<{
         return <ExecutionStepOutputEvent node={node} />;
       case "PipelineProcessStartedEvent":
         return <PipelineProcessStartedEvent node={node} />;
+      case "PipelineProcessStartEvent":
+        return <PipelineProcessStartEvent node={node} />;
       case "StepExpectationResultEvent":
         return <StepExpectationResultEvent node={node} />;
       case "StepMaterializationEvent":
@@ -253,9 +260,24 @@ const PipelineProcessStartedEvent: React.FunctionComponent<{
       <Tag minimal={true}>Started</Tag>
     </EventTypeColumn>
     <LabelColumn />
-    {`Pipeline started `}
+    {`${node.message} `}
     <span style={{ flex: 1, color: Colors.GRAY3 }}>
       {`PID: ${node.processId}`}
+    </span>
+  </>
+);
+
+const PipelineProcessStartEvent: React.FunctionComponent<{
+  node: LogsRowStructuredFragment_PipelineProcessStartEvent;
+}> = ({ node }) => (
+  <>
+    <EventTypeColumn>
+      <Tag minimal={true}>Starting</Tag>
+    </EventTypeColumn>
+    <LabelColumn />
+    {`${node.message} `}
+    <span style={{ flex: 1, color: Colors.GRAY3 }}>
+      {`Pipeline Name: ${node.pipelineName}, Run ID: ${node.runId}`}
     </span>
   </>
 );
