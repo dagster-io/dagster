@@ -44,10 +44,6 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         }
                     },
                     {
-                        '__typename': 'LogMessageEvent',
-                        'level': 'INFO'
-                    },
-                    {
                         '__typename': 'ExecutionStepOutputEvent',
                         'level': 'DEBUG',
                         'outputName': 'result',
@@ -87,10 +83,6 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                             'metadataEntries': [
                             ]
                         }
-                    },
-                    {
-                        '__typename': 'LogMessageEvent',
-                        'level': 'INFO'
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
@@ -155,10 +147,6 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                             'metadataEntries': [
                             ]
                         }
-                    },
-                    {
-                        '__typename': 'LogMessageEvent',
-                        'level': 'INFO'
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',

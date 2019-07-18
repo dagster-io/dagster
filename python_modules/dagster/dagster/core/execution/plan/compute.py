@@ -35,9 +35,9 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
 def _yield_compute_results(compute_context, inputs, compute_fn):
     check.inst_param(compute_context, 'compute_context', SystemComputeExecutionContext)
     step = compute_context.step
-    gen = compute_fn(ComputeExecutionContext(compute_context), inputs)
+    user_event_sequence = compute_fn(ComputeExecutionContext(compute_context), inputs)
 
-    if isinstance(gen, Output):
+    if isinstance(user_event_sequence, Output):
         raise DagsterInvariantViolationError(
             (
                 'Compute function for solid {solid_name} returned a Output rather than '
@@ -46,42 +46,18 @@ def _yield_compute_results(compute_context, inputs, compute_fn):
             ).format(solid_name=str(step.solid_handle))
         )
 
-    if gen is None:
+    if user_event_sequence is None:
         return
 
-    for result in gen:
-        if isinstance(result, Output):
-            compute_context.log.info(
-                "Solid '{solid}' emitted output '{output}'".format(
-                    solid=str(step.solid_handle), output=result.output_name
-                )
-            )
-            yield Output(output_name=result.output_name, value=result.value)
-
-        elif isinstance(result, Materialization):
-            compute_context.log.info(
-                "Solid '{solid}' materialized '{label}'".format(
-                    solid=str(step.solid_handle), label=result.label
-                )
-            )
-
-            yield result
-        elif isinstance(result, ExpectationResult):
-            compute_context.log.info(
-                "Solid '{solid}' {status} expectation '{label}'".format(
-                    solid=str(step.solid_handle),
-                    status='passed' if result.success else 'failed',
-                    label=result.label,
-                )
-            )
-
-            yield result
+    for event in user_event_sequence:
+        if isinstance(event, (Output, Materialization, ExpectationResult)):
+            yield event
         else:
             raise DagsterInvariantViolationError(
                 (
-                    'Compute function for solid {solid_name} yielded {result} rather than '
+                    'Compute function for solid {solid_name} yielded {event} rather than '
                     'an instance of the Output or Materialization class.'
-                ).format(result=repr(result), solid_name=str(step.solid_handle))
+                ).format(event=repr(event), solid_name=str(step.solid_handle))
             )
 
 
