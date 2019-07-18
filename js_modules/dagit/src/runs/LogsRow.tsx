@@ -18,8 +18,8 @@ import {
   Row,
   StructuredContent,
   LabelColumn,
-  LevelTagColumn,
-  StepKeyColumn,
+  EventTypeColumn,
+  SolidColumn,
   TimestampColumn
 } from "./LogsRowComponents";
 import { MetadataEntries, MetadataEntry } from "./MetadataEntry";
@@ -191,7 +191,7 @@ export class Structured extends React.Component<{
     const { node } = this.props;
     return (
       <Row level={LogLevel.INFO}>
-        <StepKeyColumn stepKey={"step" in node && node.step && node.step.key} />
+        <SolidColumn stepKey={"step" in node && node.step && node.step.key} />
         <StructuredContent>{this.renderStructuredContent()}</StructuredContent>
         <TimestampColumn time={"timestamp" in node && node.timestamp} />
       </Row>
@@ -222,8 +222,8 @@ export class Unstructured extends React.Component<{
     const { node } = this.props;
     return (
       <Row level={node.level}>
-        <StepKeyColumn stepKey={node.step && node.step.key} />
-        <LevelTagColumn>{node.level}</LevelTagColumn>
+        <SolidColumn stepKey={node.step && node.step.key} />
+        <EventTypeColumn>{node.level}</EventTypeColumn>
         <LabelColumn />
         <span style={{ flex: 1 }}>{node.message}</span>
         <TimestampColumn time={node.timestamp} />
@@ -239,7 +239,7 @@ const DefaultStructuredEvent: React.FunctionComponent<{
   level?: React.ReactNode;
 }> = ({ node, level }) => (
   <>
-    <LevelTagColumn>{level}</LevelTagColumn>
+    <EventTypeColumn>{level}</EventTypeColumn>
     <LabelColumn />
     <span style={{ flex: 1 }}>{node.message}</span>
   </>
@@ -249,9 +249,9 @@ const PipelineProcessStartedEvent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_PipelineProcessStartedEvent;
 }> = ({ node }) => (
   <>
-    <LevelTagColumn>
+    <EventTypeColumn>
       <Tag minimal={true}>Started</Tag>
-    </LevelTagColumn>
+    </EventTypeColumn>
     <LabelColumn />
     {`Pipeline started `}
     <span style={{ flex: 1, color: Colors.GRAY3 }}>
@@ -266,11 +266,11 @@ const DefaultFailureEvent: React.FunctionComponent<{
     | LogsRowStructuredFragment_PipelineInitFailureEvent;
 }> = ({ node }) => (
   <>
-    <LevelTagColumn>
+    <EventTypeColumn>
       <Tag minimal={true} intent="danger">
         Failed
       </Tag>
-    </LevelTagColumn>
+    </EventTypeColumn>
     <LabelColumn />
     <span style={{ flex: 1, color: Colors.RED3 }}>
       {`${node.error.message}\n${node.error.stack}`}
@@ -282,14 +282,14 @@ const StepExpectationResultEvent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_StepExpectationResultEvent;
 }> = ({ node }) => (
   <>
-    <LevelTagColumn>
+    <EventTypeColumn>
       <Tag
         minimal={true}
         intent={node.expectationResult.success ? "success" : "danger"}
       >
         Expectation
       </Tag>
-    </LevelTagColumn>
+    </EventTypeColumn>
     <LabelColumn>{node.expectationResult.label}</LabelColumn>
     <MetadataEntries entries={node.expectationResult.metadataEntries} />
   </>
@@ -299,9 +299,9 @@ const StepMaterializationEvent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_StepMaterializationEvent;
 }> = ({ node }) => (
   <>
-    <LevelTagColumn>
+    <EventTypeColumn>
       <Tag minimal={true}>Materialization</Tag>
-    </LevelTagColumn>
+    </EventTypeColumn>
     <LabelColumn>{node.materialization.label}</LabelColumn>
     <MetadataEntries entries={node.materialization.metadataEntries} />
   </>
@@ -314,17 +314,16 @@ const ExecutionStepOutputEvent: React.FunctionComponent<{
     node.step && node.step.outputs.find(i => i.name === node.outputName);
   return (
     <>
-      <LevelTagColumn>
+      <EventTypeColumn>
         <Tag
           minimal={true}
           intent={node.typeCheck.success ? "success" : "warning"}
         >
           Output
         </Tag>
-      </LevelTagColumn>
+      </EventTypeColumn>
       <LabelColumn>
-        {node.outputName}
-        <br />
+        {`${node.outputName}: `}
         {output && (
           <TypeName style={{ fontSize: 11 }}>
             {output.type.displayName}
@@ -349,17 +348,16 @@ const ExecutionStepInputEvent: React.FunctionComponent<{
     node.step && node.step.inputs.find(i => i.name === node.inputName);
   return (
     <>
-      <LevelTagColumn>
+      <EventTypeColumn>
         <Tag
           minimal={true}
           intent={node.typeCheck.success ? "success" : "warning"}
         >
           Input
         </Tag>
-      </LevelTagColumn>
+      </EventTypeColumn>
       <LabelColumn>
-        {node.inputName}
-        <br />
+        {`${node.inputName}: `}
         {input && (
           <TypeName style={{ fontSize: 11 }}>{input.type.displayName}</TypeName>
         )}
