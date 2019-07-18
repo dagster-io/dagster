@@ -1,13 +1,14 @@
 import * as React from "react";
 import * as TestRenderer from "react-test-renderer";
 import { BrowserRouter } from "react-router-dom";
-import { HighlightedSQL } from "../plugins/sql";
+import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 
 it("correctly renders keywords inside a comment", () => {
   const component = TestRenderer.create(
     <BrowserRouter>
-      <HighlightedSQL
-        sql={
+      <HighlightedCodeBlock
+        languages={["sql"]}
+        value={
           "-- this comment contains a dash - do not highlight if drop table\n" +
           "select * from q2_on_time_data\n" +
           "where origin = 'SFO'"

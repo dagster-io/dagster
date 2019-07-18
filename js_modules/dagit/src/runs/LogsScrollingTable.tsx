@@ -1,19 +1,19 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import gql from "graphql-tag";
-import styled from "styled-components";
-import { Colors, NonIdealState } from "@blueprintjs/core";
-import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMessageFragment";
-import { LogLevel } from "./LogsFilterProvider";
+import { NonIdealState } from "@blueprintjs/core";
+import { IconNames } from "@blueprintjs/icons";
 import {
   CellMeasurer,
   CellMeasurerCache,
-  AutoSizer,
-  Grid,
-  GridCellProps
+  ListRowProps,
+  List
 } from "react-virtualized";
-import { IconNames } from "@blueprintjs/icons";
-import { showCustomAlert } from "../CustomAlertProvider";
+
+import * as LogsRow from "./LogsRow";
+import { CellTruncationProvider } from "./CellTruncationProvider";
+import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMessageFragment";
+import { Headers, ColumnWidthsProvider } from "./LogsScrollingTableHeader";
 
 interface ILogsScrollingTableProps {
   nodes?: LogsScrollingTableMessageFragment[];
@@ -24,20 +24,6 @@ interface ILogsScrollingTableSizedProps extends ILogsScrollingTableProps {
   height: number;
 }
 
-interface ILogsScrollingTableSizedState {
-  scrollTop: number;
-}
-
-function textForLog(log: LogsScrollingTableMessageFragment) {
-  if (
-    log.__typename === "ExecutionStepFailureEvent" ||
-    log.__typename === "PipelineInitFailureEvent"
-  ) {
-    return `${log.message}\n${log.error.message}\n${log.error.stack}`;
-  }
-  return log.message;
-}
-
 export default class LogsScrollingTable extends React.Component<
   ILogsScrollingTableProps
 > {
@@ -45,57 +31,47 @@ export default class LogsScrollingTable extends React.Component<
     LogsScrollingTableMessageFragment: gql`
       fragment LogsScrollingTableMessageFragment on PipelineRunEvent {
         __typename
-        ... on MessageEvent {
-          message
-          timestamp
-          level
-        }
-        ... on PipelineInitFailureEvent {
-          error {
-            stack
-            message
-          }
-        }
-        ... on ExecutionStepFailureEvent {
-          message
-          level
-          step {
-            key
-          }
-          error {
-            stack
-            message
-          }
-        }
+        ...LogsRowStructuredFragment
+        ...LogsRowUnstructuredFragment
       }
+
+      ${LogsRow.Structured.fragments.LogsRowStructuredFragment}
+      ${LogsRow.Unstructured.fragments.LogsRowUnstructuredFragment}
     `
   };
 
+  table = React.createRef<LogsScrollingTableSized>();
+
   render() {
     return (
-      <div style={{ flex: 1 }}>
+      <ColumnWidthsProvider
+        onWidthsChanged={() =>
+          this.table.current && this.table.current.didResize()
+        }
+      >
+        <Headers />
         <AutoSizer>
           {({ width, height }) => (
             <LogsScrollingTableSized
-              {...this.props}
               width={width}
               height={height}
+              ref={this.table}
+              {...this.props}
             />
           )}
         </AutoSizer>
-      </div>
+      </ColumnWidthsProvider>
     );
   }
 }
 
 class LogsScrollingTableSized extends React.Component<
-  ILogsScrollingTableSizedProps,
-  ILogsScrollingTableSizedState
+  ILogsScrollingTableSizedProps
 > {
-  grid = React.createRef<Grid>();
+  list = React.createRef<List>();
 
-  get gridEl() {
-    const el = this.grid.current && ReactDOM.findDOMNode(this.grid.current);
+  get listEl() {
+    const el = this.list.current && ReactDOM.findDOMNode(this.list.current);
     if (!(el instanceof HTMLElement)) {
       return null;
     }
@@ -105,8 +81,8 @@ class LogsScrollingTableSized extends React.Component<
   cache = new CellMeasurerCache({
     defaultHeight: 30,
     fixedWidth: true,
-    keyMapper: (rowIndex: number, columnIndex: number) =>
-      `${this.props.nodes && this.props.nodes[rowIndex].message}:${columnIndex}`
+    keyMapper: (rowIndex: number) =>
+      `${this.props.nodes && this.props.nodes[rowIndex].message}`
   });
 
   isAtBottomOrZero: boolean = true;
@@ -117,13 +93,13 @@ class LogsScrollingTableSized extends React.Component<
   }
 
   componentDidUpdate(prevProps: ILogsScrollingTableSizedProps) {
-    if (!this.grid.current) return;
+    if (!this.list.current) return;
 
     if (this.props.width !== prevProps.width) {
-      this.cache.clearAll();
+      this.didResize();
     }
     if (this.props.nodes !== prevProps.nodes) {
-      this.grid.current.recomputeGridSize();
+      this.list.current.recomputeGridSize();
     }
   }
 
@@ -133,8 +109,18 @@ class LogsScrollingTableSized extends React.Component<
     }
   }
 
+  didResize() {
+    this.cache = new CellMeasurerCache({
+      defaultHeight: 30,
+      fixedWidth: true,
+      keyMapper: (rowIndex: number) =>
+        `${this.props.nodes && this.props.nodes[rowIndex].message}`
+    });
+    this.forceUpdate();
+  }
+
   attachScrollToBottomObserver() {
-    const el = this.gridEl;
+    const el = this.listEl;
     if (!el) return;
 
     let lastHeight: string | null = null;
@@ -159,61 +145,35 @@ class LogsScrollingTableSized extends React.Component<
   }
 
   onScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (!this.grid.current) return;
+    if (!this.list.current) return;
 
-    const target = e.target as Element;
-    this.isAtBottomOrZero =
-      target.scrollTop === 0 ||
-      Math.abs(target.scrollTop - (target.scrollHeight - target.clientHeight)) <
-        5;
+    const { scrollTop, scrollHeight, clientHeight } = e.target as Element;
+    const atTopAndStarting = scrollTop === 0 && scrollHeight <= clientHeight;
+    const atBottom = Math.abs(scrollTop - (scrollHeight - clientHeight)) < 5;
+    this.isAtBottomOrZero = atTopAndStarting || atBottom;
 
-    this.grid.current.handleScrollEvent(target);
+    (this.list.current as any)._onScroll(e.target as Element);
   };
 
-  cellRenderer = ({
-    parent,
-    rowIndex,
-    columnIndex,
-    key,
-    style
-  }: GridCellProps) => {
+  rowRenderer = ({ parent, index, key, style }: ListRowProps) => {
     if (!this.props.nodes) return;
-
-    const node = this.props.nodes[rowIndex];
-    const width = this.columnWidth({ index: columnIndex });
-
-    let content = null;
-    let CellClass: any = Cell;
-
-    switch (columnIndex) {
-      case 0:
-        content = node.level;
-        break;
-      case 1:
-        content = textForLog(node);
-        CellClass = OverflowDetectingCell;
-        break;
-      case 2:
-        style.textAlign = "right";
-        content = new Date(Number(node.timestamp))
-          .toISOString()
-          .replace("Z", "")
-          .split("T")
-          .pop();
-        break;
-    }
+    const node = this.props.nodes[index];
+    if (!node) return <span />;
 
     return (
       <CellMeasurer
         cache={this.cache}
-        rowIndex={rowIndex}
-        columnIndex={columnIndex}
+        rowIndex={index}
         parent={parent}
         key={key}
       >
-        <CellClass style={{ ...style, width }} level={node.level}>
-          {content}
-        </CellClass>
+        <CellTruncationProvider style={{ ...style, width: this.props.width }}>
+          {node.__typename === "LogMessageEvent" ? (
+            <LogsRow.Unstructured node={node} />
+          ) : (
+            <LogsRow.Structured node={node} />
+          )}
+        </CellTruncationProvider>
       </CellMeasurer>
     );
   };
@@ -227,169 +187,77 @@ class LogsScrollingTableSized extends React.Component<
     return <span />;
   };
 
-  columnWidth = ({ index }: { index: number }) => {
-    switch (index) {
-      case 0:
-        return 80;
-      case 1:
-        return this.props.width - 110 - 80;
-      case 2:
-        return 110;
-      default:
-        return 0;
-    }
-  };
-
   render() {
     return (
       <div onScroll={this.onScroll}>
-        <Grid
-          ref={this.grid}
-          cellRenderer={this.cellRenderer}
-          columnWidth={this.columnWidth}
-          columnCount={3}
-          width={this.props.width}
-          height={this.props.height}
-          autoContainerWidth={true}
+        <List
+          ref={this.list}
           deferredMeasurementCache={this.cache}
-          rowHeight={this.cache.rowHeight}
           rowCount={this.props.nodes ? this.props.nodes.length : 0}
           noContentRenderer={this.noContentRenderer}
-          overscanColumnCount={0}
-          overscanRowCount={20}
+          rowHeight={this.cache.rowHeight}
+          rowRenderer={this.rowRenderer}
+          width={this.props.width}
+          height={this.props.height}
+          overscanRowCount={10}
         />
       </div>
     );
   }
 }
 
-const Cell = styled.div<{ level: LogLevel }>`
-  font-size: 0.85em;
-  width: 100%;
-  height: 100%;
-  max-height: 17em;
-  overflow-y: hidden;
-  padding: 4px;
-  padding-left: 15px;
-  word-break: break-all;
-  white-space: pre-wrap;
-  font-family: monospace;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
-  background: ${props =>
-    ({
-      [LogLevel.DEBUG]: `transparent`,
-      [LogLevel.INFO]: `transparent`,
-      [LogLevel.WARNING]: `rgba(166, 121, 8, 0.05)`,
-      [LogLevel.ERROR]: `rgba(206, 17, 38, 0.05)`,
-      [LogLevel.CRITICAL]: `rgba(206, 17, 38, 0.05)`
-    }[props.level])};
-  color: ${props =>
-    ({
-      [LogLevel.DEBUG]: Colors.GRAY3,
-      [LogLevel.INFO]: Colors.DARK_GRAY2,
-      [LogLevel.WARNING]: Colors.GOLD2,
-      [LogLevel.ERROR]: Colors.RED3,
-      [LogLevel.CRITICAL]: Colors.RED3
-    }[props.level])};
-`;
-
-const OverflowFade = styled.div<{ level: LogLevel }>`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 40px;
-  user-select: none;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    ${props =>
-        ({
-          [LogLevel.DEBUG]: `rgba(245, 248, 250, 0)`,
-          [LogLevel.INFO]: `rgba(245, 248, 250, 0)`,
-          [LogLevel.WARNING]: `rgba(240, 241, 237, 0)`,
-          [LogLevel.ERROR]: `rgba(243, 236, 239, 0)`,
-          [LogLevel.CRITICAL]: `rgba(243, 236, 239, 0)`
-        }[props.level])}
-      0%,
-    ${props =>
-        ({
-          [LogLevel.DEBUG]: `rgba(245, 248, 250, 255)`,
-          [LogLevel.INFO]: `rgba(245, 248, 250, 255)`,
-          [LogLevel.WARNING]: `rgba(240, 241, 237, 255)`,
-          [LogLevel.ERROR]: `rgba(243, 236, 239, 255)`,
-          [LogLevel.CRITICAL]: `rgba(243, 236, 239, 255)`
-        }[props.level])}
-      100%
-  );
-`;
-const OverflowBanner = styled.div`
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  user-select: none;
-  background: ${Colors.LIGHT_GRAY3};
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
-  padding: 2px 12px;
-  color: ${Colors.BLACK};
-  &:hover {
-    color: ${Colors.BLACK};
-    background: ${Colors.LIGHT_GRAY1};
-  }
-`;
-
-class OverflowDetectingCell extends React.Component<
-  {
-    level: LogLevel;
-    style: { height: number };
-  },
-  { isOverflowing: boolean }
-> {
+class AutoSizer extends React.Component<{
+  children: (size: { width: number; height: number }) => React.ReactNode;
+}> {
   state = {
-    isOverflowing: false
+    width: 0,
+    height: 0
   };
+
+  resizeObserver: any | undefined;
+
   componentDidMount() {
-    this.detectOverflow();
-  }
+    this.measure();
 
-  componentDidUpdate() {
-    this.detectOverflow();
-  }
-
-  detectOverflow() {
     const el = ReactDOM.findDOMNode(this);
-    if (!(el && "clientHeight" in el)) return;
-
-    const isOverflowing = el.scrollHeight > this.props.style.height;
-    if (isOverflowing !== this.state.isOverflowing) {
-      this.setState({ isOverflowing });
+    if (el && el instanceof HTMLElement && "ResizeObserver" in window) {
+      const RO = window["ResizeObserver"] as any;
+      this.resizeObserver = new RO((entries: any) => {
+        this.setState({
+          width: entries[0].contentRect.width,
+          height: entries[0].contentRect.height
+        });
+      });
+      this.resizeObserver.observe(el);
     }
   }
 
-  onView = () => {
-    const el = ReactDOM.findDOMNode(this) as HTMLElement;
-    const message = el.firstChild && el.firstChild.textContent;
-    if (!message) return;
-    showCustomAlert({ message: message, pre: true });
-  };
+  componentDidUpdate() {
+    this.measure();
+  }
+
+  componentWillUnmount() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
+  }
+
+  measure() {
+    const el = ReactDOM.findDOMNode(this);
+    if (!el || !(el instanceof HTMLElement)) return;
+    if (
+      el.clientWidth !== this.state.width ||
+      el.clientHeight !== this.state.height
+    ) {
+      this.setState({ width: el.clientWidth, height: el.clientHeight });
+    }
+  }
 
   render() {
-    const { level, style } = this.props;
-
     return (
-      <Cell style={style} level={level}>
-        {this.props.children}
-        {this.state.isOverflowing && (
-          <>
-            <OverflowFade level={level} />
-            <OverflowBanner onClick={this.onView}>
-              View Full Message
-            </OverflowBanner>
-          </>
-        )}
-      </Cell>
+      <div style={{ width: "100%", height: "100%" }}>
+        {this.props.children(this.state)}
+      </div>
     );
   }
 }

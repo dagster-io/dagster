@@ -1,32 +1,7 @@
 import * as React from "react";
 import { Button, Classes, Dialog } from "@blueprintjs/core";
 import { IPluginSidebarProps } from ".";
-import { configure, highlightBlock } from "highlight.js";
-
-import "highlight.js/styles/xcode.css";
-
-export class HighlightedSQL extends React.Component<{
-  sql: string;
-  style: {};
-}> {
-  _el = React.createRef<HTMLPreElement>();
-
-  componentDidMount() {
-    if (this._el.current) {
-      configure({ languages: ["sql"] });
-      highlightBlock(this._el.current);
-    }
-  }
-
-  render() {
-    const { sql, ...rest } = this.props;
-    return (
-      <pre ref={this._el} {...rest}>
-        {sql}
-      </pre>
-    );
-  }
-}
+import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 
 export class SidebarComponent extends React.Component<IPluginSidebarProps> {
   state = {
@@ -70,8 +45,9 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
           isOpen={this.state.open}
         >
           <div className={Classes.DIALOG_BODY} style={{ margin: 0 }}>
-            <HighlightedSQL
-              sql={sql.value}
+            <HighlightedCodeBlock
+              languages={["sql"]}
+              value={sql.value}
               style={{
                 height: 510,
                 margin: 0,
