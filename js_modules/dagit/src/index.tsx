@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { injectGlobal } from "styled-components";
+import { createGlobalStyle } from "styled-components";
 import ApolloClient from "apollo-client";
 import { ApolloLink } from "apollo-link";
 import { onError } from "apollo-link-error";
@@ -17,6 +17,32 @@ import "@blueprintjs/core/lib/css/blueprint.css";
 import "@blueprintjs/table/lib/css/table.css";
 import "@blueprintjs/icons/lib/css/blueprint-icons.css";
 import "@blueprintjs/select/lib/css/blueprint-select.css";
+
+const GlobalStyle = createGlobalStyle`
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex: 1 1;
+  }
+
+  #root {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+  }
+`;
 
 const ErrorToaster = Toaster.create({ position: Position.TOP_RIGHT });
 
@@ -57,6 +83,7 @@ const client = new ApolloClient({
 if (process.env.REACT_APP_RENDER_API_RESULTS) {
   ReactDOM.render(
     <ApolloProvider client={client}>
+      <GlobalStyle />
       <ApiResultRenderer />
     </ApolloProvider>,
     document.getElementById("root") as HTMLElement
@@ -64,6 +91,7 @@ if (process.env.REACT_APP_RENDER_API_RESULTS) {
 } else {
   ReactDOM.render(
     <WebsocketStatusProvider websocket={websocketClient}>
+      <GlobalStyle />
       <ApolloProvider client={client}>
         <App />
       </ApolloProvider>
@@ -71,29 +99,3 @@ if (process.env.REACT_APP_RENDER_API_RESULTS) {
     document.getElementById("root") as HTMLElement
   );
 }
-
-injectGlobal`
-  * {
-    box-sizing: border-box;
-  }
-
-  html, body, #root {
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex: 1 1;
-  }
-
-  #root {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  body {
-    margin: 0;
-    padding: 0;
-    font-family: sans-serif;
-  }
-`;

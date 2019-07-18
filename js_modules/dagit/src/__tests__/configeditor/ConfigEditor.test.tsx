@@ -31,6 +31,7 @@ it("renders a codemirror", () => {
         configCode={
           "solids:\n  foo:\n    config:\n      baz:\n        ['s3://foo', 'bar']\n"
         }
+        showWhitespace={true}
       />
     </BrowserRouter>
   );

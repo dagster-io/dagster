@@ -16,7 +16,7 @@ prettier:
 test:
 	yarn run test
 
-update-snaphost:
+update-snapshots:
 	yarn run jest -u
 
 jest:

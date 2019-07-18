@@ -7,6 +7,7 @@
     "@blueprintjs/icons": "^3.3.0",
     "@blueprintjs/select": "^3.3.0",
     "@blueprintjs/table": "^3.5.0",
+    "@types/styled-components": "^4.1.18",
     "@vx/gradient": "^0.0.165",
     "@vx/group": "^0.0.170",
     "@vx/legend": "^0.0.170",
@@ -37,7 +38,7 @@
     "react-router": "^4.3.1",
     "react-router-dom": "^4.3.1",
     "react-virtualized": "^9.21.0",
-    "styled-components": "^3.3.3",
+    "styled-components": "^4.3.2",
     "subscriptions-transport-ws": "^0.9.15",
     "yaml": "^1.0.1",
     "yaml-language-server": "^0.0.19"
