@@ -7,7 +7,11 @@ import click
 import yaml
 
 from dagster import InProcessExecutorConfig, PipelineDefinition, RunConfig, check, execute_pipeline
-from dagster.cli.load_handle import handle_for_pipeline_cli_args, handle_for_repo_cli_args
+from dagster.cli.load_handle import (
+    CliUsageError,
+    handle_for_pipeline_cli_args,
+    handle_for_repo_cli_args,
+)
 from dagster.core.definitions import solids_in_topological_order, Solid
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
@@ -293,7 +297,12 @@ def pipeline_execute_command(env, raise_on_error, preset, mode, **kwargs):
         return execute_execute_command_with_preset(preset, raise_on_error, kwargs, mode)
 
     env = list(env)
-    execute_execute_command(env, raise_on_error, kwargs, mode)
+    try:
+        execute_execute_command(env, raise_on_error, kwargs, mode)
+    except CliUsageError:
+        ctx = click.get_current_context()
+        click.echo(ctx.get_help())
+        ctx.exit()
 
 
 def execute_execute_command(env, raise_on_error, cli_args, mode=None):

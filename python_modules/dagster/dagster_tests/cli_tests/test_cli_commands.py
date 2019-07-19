@@ -327,6 +327,8 @@ def test_execute_command():
 
     runner = CliRunner()
 
+    runner_pipeline_execute(runner, {})
+
     for cli_args in valid_cli_args():
         runner_pipeline_execute(runner, cli_args)
 
