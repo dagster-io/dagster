@@ -1,7 +1,6 @@
 import copy
 import os
 import pickle
-import tempfile
 import threading
 import uuid
 
@@ -28,7 +27,7 @@ from dagster.core.errors import user_code_error_boundary
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.execution.context.compute import ComputeExecutionContext
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
-from dagster.utils import mkdir_p
+from dagster.utils import mkdir_p, safe_tempfile_path
 
 from .engine import DagstermillNBConvertEngine
 from .errors import DagstermillExecutionError, DagstermillError
@@ -167,8 +166,7 @@ def _dm_solid_compute(name, notebook_path):
             output_notebook_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4()))
         )
 
-        with tempfile.NamedTemporaryFile() as output_log_file:
-            output_log_path = output_log_file.name
+        with safe_tempfile_path() as output_log_path:
             init_db(output_log_path)
 
             # Scaffold the registration here
