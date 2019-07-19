@@ -26,7 +26,7 @@ Now, you can easily post messages to Slack from Dagster with the Slack resource:
 ```python
 import os
 
-from dagster import solid, execute_pipeline, PipelineDefinition, ModeDefinition
+from dagster import solid, execute_pipeline, ModeDefinition
 from dagster_slack import slack_resource
 
 
@@ -34,15 +34,14 @@ from dagster_slack import slack_resource
 def slack_solid(context):
     context.resources.slack.chat.post_message(channel='#noise', text=':wave: hey there!')
 
-
-pipeline = PipelineDefinition(
-    name='test_slack_resource',
-    solids=[slack_solid],
+@pipeline(
     mode_defs=[ModeDefinition(resource_defs={'slack': slack_resource})],
 )
+def slack_pipeline():
+    slack_solid()
 
 execute_pipeline(
-    pipeline, {'resources': {'slack': {'config': {'token': os.getenv('SLACK_TOKEN')}}}}
+    slack_pipeline, {'resources': {'slack': {'config': {'token': os.getenv('SLACK_TOKEN')}}}}
 )
 ```
 Run the above code, and you'll see the message appear in Slack:

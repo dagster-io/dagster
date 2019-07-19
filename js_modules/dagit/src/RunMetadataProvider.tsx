@@ -3,7 +3,7 @@ import produce from "immer";
 import gql from "graphql-tag";
 
 import { RunMetadataProviderMessageFragment } from "./types/RunMetadataProviderMessageFragment";
-import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
+import { TempMetadataEntryFragment } from "./types/TempMetadataEntryFragment";
 
 export enum IStepState {
   WAITING = "waiting",
@@ -75,7 +75,7 @@ export interface IRunMetadataDict {
 }
 
 function itemsForMetadataEntries(
-  metadataEntries: MetadataEntryFragment[]
+  metadataEntries: TempMetadataEntryFragment[]
 ): IDisplayEventItem[] {
   const items = [];
   for (const metadataEntry of metadataEntries) {
@@ -126,7 +126,7 @@ function itemsForMetadataEntries(
   return items;
 }
 
-function extractMetadataFromLogs(
+export function extractMetadataFromLogs(
   logs: RunMetadataProviderMessageFragment[]
 ): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
@@ -187,7 +187,10 @@ function extractMetadataFromLogs(
         };
       } else if (log.__typename === "StepMaterializationEvent") {
         metadata.steps[stepKey] = produce(
-          metadata.steps[stepKey] || {},
+          metadata.steps[stepKey] || {
+            expectationResults: [],
+            materializations: []
+          },
           step => {
             step.materializations.push({
               icon: IStepDisplayIconType.LINK,
@@ -200,7 +203,10 @@ function extractMetadataFromLogs(
         );
       } else if (log.__typename == "StepExpectationResultEvent") {
         metadata.steps[stepKey] = produce(
-          metadata.steps[stepKey] || {},
+          metadata.steps[stepKey] || {
+            expectationResults: [],
+            materializations: []
+          },
           step => {
             step.expectationResults.push({
               status: log.expectationResult.success
@@ -243,7 +249,7 @@ export default class RunMetadataProvider extends React.Component<
 > {
   static fragments = {
     RunMetadataProviderMessageFragment: gql`
-      fragment MetadataEntryFragment on EventMetadataEntry {
+      fragment TempMetadataEntryFragment on EventMetadataEntry {
         label
         description
         ... on EventPathMetadataEntry {
@@ -280,7 +286,7 @@ export default class RunMetadataProvider extends React.Component<
             label
             description
             metadataEntries {
-              ...MetadataEntryFragment
+              ...TempMetadataEntryFragment
             }
           }
         }
@@ -290,7 +296,7 @@ export default class RunMetadataProvider extends React.Component<
             label
             description
             metadataEntries {
-              ...MetadataEntryFragment
+              ...TempMetadataEntryFragment
             }
           }
         }

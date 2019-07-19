@@ -2,7 +2,8 @@ import * as React from "react";
 import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Colors, Spinner } from "@blueprintjs/core";
+import { Button, Colors, Spinner } from "@blueprintjs/core";
+import { IconNames } from "@blueprintjs/icons";
 import { ApolloConsumer, Mutation, MutationFn } from "react-apollo";
 
 import TabBar from "./TabBar";
@@ -38,7 +39,6 @@ import {
   StartPipelineExecution,
   StartPipelineExecutionVariables
 } from "./types/StartPipelineExecution";
-import { IconNames } from "@blueprintjs/icons";
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
@@ -53,6 +53,7 @@ interface IPipelineExecutionContainerProps {
 interface IPipelineExecutionContainerState {
   editorVW: number;
   preview: PreviewConfigQuery | null;
+  showWhitespace: boolean;
 }
 
 export default class PipelineExecutionContainer extends React.Component<
@@ -75,7 +76,8 @@ export default class PipelineExecutionContainer extends React.Component<
 
   state: IPipelineExecutionContainerState = {
     editorVW: 75,
-    preview: null
+    preview: null,
+    showWhitespace: true
   };
 
   mounted = false;
@@ -231,6 +233,7 @@ export default class PipelineExecutionContainer extends React.Component<
                     pipeline={pipeline}
                     configCode={currentSession.environmentConfigYaml}
                     onConfigChange={this.onConfigChange}
+                    showWhitespace={this.state.showWhitespace}
                     checkConfig={async environmentConfigData => {
                       if (!pipeline) return { isValid: true };
                       if (!currentSession.mode) {
@@ -286,6 +289,18 @@ export default class PipelineExecutionContainer extends React.Component<
                       pipeline={pipeline}
                       onModeChange={this.onModeChange}
                       modeName={currentSession.mode}
+                    />
+
+                    <Button
+                      icon="paragraph"
+                      small={true}
+                      active={this.state.showWhitespace}
+                      style={{ marginLeft: "auto" }}
+                      onClick={() =>
+                        this.setState({
+                          showWhitespace: !this.state.showWhitespace
+                        })
+                      }
                     />
                   </>
                 )}

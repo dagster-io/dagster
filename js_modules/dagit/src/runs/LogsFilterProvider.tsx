@@ -8,7 +8,8 @@ export enum LogLevel {
   INFO = "INFO",
   WARNING = "WARNING",
   ERROR = "ERROR",
-  CRITICAL = "CRITICAL"
+  CRITICAL = "CRITICAL",
+  EVENT = "EVENT" // structured events
 }
 
 export const DefaultLogFilter = {
@@ -86,16 +87,27 @@ export default class LogsFilterProvider<
     }
 
     const textLower = filter.text.toLowerCase();
+
+    // step: sum_solid
+    const textStep =
+      textLower.startsWith("step:") && filter.text.substr(5).trim();
+
+    // type: materialization or type: step start
+    const textType =
+      textLower.startsWith("type:") &&
+      textLower.substr(5).replace(/[ _-]/g, "");
+
     const nextResults = nodes.filter(node => {
-      if (!filter.levels[node.level]) return false;
+      const l = node.__typename === "LogMessageEvent" ? node.level : "EVENT";
+      if (!filter.levels[l]) return false;
       if (filter.since && Number(node.timestamp) < filter.since) return false;
 
-      if (filter.text) {
-        if (filter.text.startsWith("step:")) {
-          return node.step && node.step.key === filter.text.substr(5);
-        } else {
-          return node.message.toLowerCase().includes(textLower);
-        }
+      if (textStep) {
+        return node.step && node.step.key === textStep;
+      } else if (textType) {
+        return node.__typename.toLowerCase().includes(textType);
+      } else if (textLower) {
+        return node.message.toLowerCase().includes(textLower);
       }
       return true;
     });

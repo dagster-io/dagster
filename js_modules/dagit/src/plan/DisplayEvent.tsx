@@ -1,30 +1,12 @@
 import * as React from "react";
 import styled from "styled-components";
-import { Toaster, Colors, Position, Intent } from "@blueprintjs/core";
+import { Tag } from "@blueprintjs/core";
 import { IStepDisplayEvent } from "../RunMetadataProvider";
 import { showCustomAlert } from "../CustomAlertProvider";
-
-const SharedToaster = Toaster.create({ position: Position.TOP }, document.body);
+import { copyValue } from "../Util";
 
 interface DisplayEventProps {
   event: IStepDisplayEvent;
-}
-
-async function copyValue(event: React.MouseEvent<any>, value: string) {
-  event.preventDefault();
-
-  const el = document.createElement("input");
-  document.body.appendChild(el);
-  el.value = value;
-  el.select();
-  document.execCommand("copy");
-  el.remove();
-
-  SharedToaster.show({
-    message: "Copied to clipboard!",
-    icon: "clipboard",
-    intent: Intent.NONE
-  });
 }
 
 const DisplayEventItem: React.FunctionComponent<
@@ -76,10 +58,12 @@ export const DisplayEvent: React.FunctionComponent<DisplayEventProps> = ({
   event
 }) => (
   <DisplayEventContainer>
-    <DisplayEventHeader>
-      {IconComponents[event.icon]}
+    <LabelColumn>
+      {"status" in event
+        ? IconComponents[(event as any).icon]("Expectation")
+        : IconComponents[event.icon]("Materialization")}
       {event.text}
-    </DisplayEventHeader>
+    </LabelColumn>
     {event.items.map((item, idx) => (
       <DisplayEventItem {...item} key={idx} />
     ))}
@@ -87,12 +71,11 @@ export const DisplayEvent: React.FunctionComponent<DisplayEventProps> = ({
 );
 
 const DisplayEventContainer = styled.div`
-  padding: 3.5px 3px;
   white-space: pre-wrap;
   font-size: 12px;
 `;
 
-const DisplayEventHeader = styled.div`
+const LabelColumn = styled.div`
   display: flex;
   align-items: baseline;
   font-weight: 500;
@@ -119,18 +102,34 @@ const TinyStatusDot = styled.div`
   flex-shrink: 0;
 `;
 
-const IconComponents: { [key: string]: React.ReactNode } = {
-  "dot-success": <TinyStatusDot style={{ background: Colors.GREEN2 }} />,
-  "dot-failure": <TinyStatusDot style={{ background: Colors.RED2 }} />,
-  "dot-pending": <TinyStatusDot style={{ background: Colors.GRAY2 }} />,
-  none: <TinyStatusDot style={{ background: "transparent" }} />,
-  file: (
+const IconComponents: { [key: string]: (word: string) => React.ReactNode } = {
+  "dot-success": (word: string) => (
+    <Tag minimal={true} intent={"success"} style={{ marginRight: 4 }}>
+      {word}
+    </Tag>
+  ),
+  "dot-failure": (word: string) => (
+    <Tag minimal={true} intent={"danger"} style={{ marginRight: 4 }}>
+      {word}
+    </Tag>
+  ),
+  "dot-pending": (word: string) => (
+    <Tag minimal={true} intent={"none"} style={{ marginRight: 4 }}>
+      {word}
+    </Tag>
+  ),
+  none: (word: string) => (
+    <Tag minimal={true} intent={"none"} style={{ marginRight: 4 }}>
+      {word}
+    </Tag>
+  ),
+  file: (word: string) => (
     <img
       style={{ flexShrink: 0, alignSelf: "center" }}
       src={require("../images/icon-file.svg")}
     />
   ),
-  link: (
+  link: (word: string) => (
     <img
       style={{ flexShrink: 0, alignSelf: "center" }}
       src={require("../images/icon-link.svg")}

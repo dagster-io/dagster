@@ -207,7 +207,7 @@ export class PipelineRun extends React.Component<
             {run && <RunSubscriptionProvider client={client} run={run} />}
             {run && <RunStatusToPageAttributes run={run} />}
 
-            <LogsContainer style={{ width: `${logsVW}vw` }}>
+            <LogsContainer style={{ width: `${logsVW}vw`, minWidth: 680 }}>
               <LogsFilterProvider filter={logsFilter} nodes={logs}>
                 {({ filteredNodes, busy }) => (
                   <>

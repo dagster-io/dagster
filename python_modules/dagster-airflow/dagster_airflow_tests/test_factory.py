@@ -15,12 +15,14 @@ from dagster_airflow.factory import _rename_for_airflow, AIRFLOW_MAX_DAG_NAME_LE
 
 from dagster_airflow_tests.conftest import IMAGE
 from dagster_airflow_tests.marks import nettest
-from dagster_airflow_tests.test_project.dagster_airflow_demo import define_demo_execution_pipeline
+from dagster_airflow_tests.test_project.dagster_airflow_demo import demo_pipeline
 
 
 class TestExecuteDagPythonFilesystemStorage(object):
-    handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
+    handle = ExecutionTargetHandle.for_pipeline_module(
+        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
+    )
     environment_yaml = [
         script_relative_path('test_project/env.yaml'),
         script_relative_path('test_project/env_filesystem.yaml'),
@@ -46,8 +48,10 @@ class TestExecuteDagPythonFilesystemStorage(object):
 
 
 class TestExecuteDagPythonS3Storage(object):
-    handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
+    handle = ExecutionTargetHandle.for_pipeline_module(
+        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
+    )
     environment_yaml = [
         script_relative_path('test_project/env.yaml'),
         script_relative_path('test_project/env_s3.yaml'),
@@ -74,8 +78,10 @@ class TestExecuteDagPythonS3Storage(object):
 
 @nettest
 class TestExecuteDagContainerizedS3Storage(object):
-    handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
+    handle = ExecutionTargetHandle.for_pipeline_module(
+        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
+    )
     environment_yaml = [
         script_relative_path('test_project/env.yaml'),
         script_relative_path('test_project/env_s3.yaml'),
@@ -102,8 +108,10 @@ class TestExecuteDagContainerizedS3Storage(object):
 
 
 class TestExecuteDagContainerizedFilesystemStorage(object):
-    handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
+    handle = ExecutionTargetHandle.for_pipeline_module(
+        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
+    )
     environment_yaml = [
         script_relative_path('test_project/env.yaml'),
         script_relative_path('test_project/env_filesystem.yaml'),

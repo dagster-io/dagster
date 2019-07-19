@@ -14,7 +14,6 @@ def validate_config(graphene_info, dauphin_pipeline, env_config, mode):
 
 
 def get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode):
-    check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     check.str_param(mode, 'mode')
 
     pipeline = dauphin_pipeline.get_dagster_pipeline()

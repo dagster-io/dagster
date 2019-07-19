@@ -197,7 +197,7 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
               </span>
               <div>
                 <h4
-                  className="sc-jzJRlG hdUmqf sc-htpNat gNWcHK"
+                  className="sc-htpNat sc-jzJRlG jNaeoS"
                 >
                   a_resource
                 </h4>
@@ -305,7 +305,7 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
               </span>
               <div>
                 <h4
-                  className="sc-jzJRlG hdUmqf sc-htpNat gNWcHK"
+                  className="sc-htpNat sc-jzJRlG jNaeoS"
                 >
                   a_resource
                 </h4>
@@ -381,7 +381,7 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
               </span>
               <div>
                 <h4
-                  className="sc-jzJRlG hdUmqf sc-htpNat gNWcHK"
+                  className="sc-htpNat sc-jzJRlG jNaeoS"
                 >
                   b_resource
                 </h4>
@@ -457,7 +457,7 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
               </span>
               <div>
                 <h4
-                  className="sc-kAzzGY gNiSmw sc-htpNat gNWcHK"
+                  className="sc-htpNat sc-kAzzGY frhvrD"
                 >
                   console
                 </h4>

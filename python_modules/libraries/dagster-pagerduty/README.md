@@ -19,7 +19,7 @@ As noted in the PagerDuty documentation, you'll find an integration key (also re
 
 Once your service/integration is created, you can provision a PagerDuty resource and issue PagerDuty alerts from within your solids. A simple example is shown below:
 
-```
+```python
 @solid
 def pagerduty_solid(context):
     context.resources.pagerduty.EventV2_create(
@@ -29,14 +29,14 @@ def pagerduty_solid(context):
         event_action='trigger',
     )
 
-pipeline = PipelineDefinition(
-    name='test_pagerduty_resource',
-    solids=[pagerduty_solid],
+@pipeline(
     mode_defs=[ModeDefinition(resource_defs={'pagerduty': pagerduty_resource})],
 )
+def pd_pipeline():
+    pagerduty_solid()
 
 execute_pipeline(
-    pipeline,
+    pd_pipeline,
     {
         'resources': {
             'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}

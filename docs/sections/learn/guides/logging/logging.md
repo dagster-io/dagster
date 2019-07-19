@@ -13,7 +13,7 @@
 Dagster includes a rich and extensible logging system. Any solid can emit log messages at any point
 in its computation:
 
-```
+```python
 from dagster import solid
 
 @solid
@@ -99,7 +99,7 @@ Just like solids, loggers can be configured when you run a pipeline. For example
 messages below `ERROR` out of the colored console logger, add the following snippet to your config
 YAML:
 
-```
+```yaml
 loggers:
   console:
     config:
@@ -116,25 +116,24 @@ Dagster recognizes this by attaching loggers to modes so that you can seamlessly
 Cloudwatch logging in production to console logging in development and test, without changing any
 of your code.
 
-```
-from dagster import PipelineDefinition
+```python
+from dagster import pipeline
 from dagster.loggers import colored_console_logger
 from dagster_aws.loggers import cloudwatch_logger
 
-def define_hello_modes_pipeline():
-    return PipelineDefinition(
-        solid_defs=[hello_logs],
-        name='hello_modes',
-        modes=[
-            ModeDefinition(name='local', logger_defs={'console': colored_console_logger}),
-            ModeDefinition(name='prod', logger_defs={'cloudwatch': cloudwatch_logger})
-        ]
-    )
+@pipeline(
+    mode_defs=[
+        ModeDefinition(name='local', logger_defs={'console': colored_console_logger}),
+        ModeDefinition(name='prod', logger_defs={'cloudwatch': cloudwatch_logger})
+    ]
+)
+def hello_modes():
+    hello_logs()
 ```
 
 From Dagit, you can switch your pipeline mode to 'prod' and edit config in order to use the new Cloudwatch logger, e.g.:
 
-```
+```yaml
 loggers:
   cloudwatch:
     config:
@@ -166,7 +165,7 @@ in the Dagster codebase, the `@logger` decorator exposes a simpler API for the c
 is typically what you'll use to define your own loggers. The decorated function should take a single
 argument, the `init_context` available during logger initialization, and return a `logging.Logger`.
 
-```
+```python
 import json
 import logging
 
@@ -199,7 +198,7 @@ def json_console_logger(init_context):
 As you can see, this decorator takes a `config_field` argument, representing the config that users
 can pass to the logger, e.g.:
 
-```
+```yaml
 loggers:
   json_console:
     config:
