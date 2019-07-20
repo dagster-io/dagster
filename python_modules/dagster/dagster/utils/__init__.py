@@ -223,11 +223,23 @@ def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
         raise cpe
 
 
+@contextlib.contextmanager
 def safe_tempfile_path():
     # This gets a valid temporary file path in the safest possible way, although there is still no
     # guarantee that another process will not create a file at this path. The NamedTemporaryFile is
     # deleted when the context manager exits and the file object is closed.
+    #
+    # This is preferable to using NamedTemporaryFile as a context manager and passing the name
+    # attribute of the file object around because NamedTemporaryFiles cannot be opened a second time
+    # if already open on Windows NT or later:
+    # https://docs.python.org/3.8/library/tempfile.html#tempfile.NamedTemporaryFile
+    # https://github.com/dagster-io/dagster/issues/1582
     with tempfile.NamedTemporaryFile() as fd:
         path = fd.name
 
-    return path
+    try:
+        yield path
+
+    finally:
+        if os.path.exists(path):
+            os.unlink(path)

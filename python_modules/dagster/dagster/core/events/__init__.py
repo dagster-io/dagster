@@ -221,6 +221,13 @@ class DagsterEvent(
         return self.event_specific_data
 
     @property
+    def pipeline_process_start_data(self):
+        _assert_type(
+            'pipeline_process_start', DagsterEventType.PIPELINE_PROCESS_START, self.event_type
+        )
+        return self.event_specific_data
+
+    @property
     def step_materialization_data(self):
         _assert_type(
             'step_materialization_data', DagsterEventType.STEP_MATERIALIZATION, self.event_type
@@ -351,7 +358,13 @@ class StepExpectationResultData(namedtuple('_StepExpectationResultData', 'expect
     pass
 
 
-class PipelineProcessStartedData(namedtuple('_PipelineProcessStartedData', 'process_id')):
+class PipelineProcessStartedData(
+    namedtuple('_PipelineProcessStartedData', 'process_id pipeline_name run_id')
+):
+    pass
+
+
+class PipelineProcessStartData(namedtuple('_PipelineProcessStartData', 'pipeline_name run_id')):
     pass
 
 

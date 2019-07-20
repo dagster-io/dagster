@@ -584,6 +584,7 @@ type PipelineProcessStartEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   step: ExecutionStep
   pipeline: Pipeline!
+  pipelineName: String!
 }
 
 type PipelineRun {

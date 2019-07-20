@@ -215,6 +215,9 @@ class DauphinPipelineProcessStartEvent(dauphin.ObjectType):
         name = 'PipelineProcessStartEvent'
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
+    pipeline_name = dauphin.NonNull(dauphin.String)
+    run_id = dauphin.NonNull(dauphin.String)
+
 
 class DauphinPipelineProcessStartedEvent(dauphin.ObjectType):
     class Meta:
@@ -517,8 +520,13 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
             pipeline=dauphin_pipeline, **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_START:
+        # raise Exception(dir(dagster_event))
+        process_data = dagster_event.pipeline_process_start_data
         return graphene_info.schema.type_named('PipelineProcessStartEvent')(
-            pipeline=dauphin_pipeline, **basic_params
+            pipeline=dauphin_pipeline,
+            pipeline_name=process_data.pipeline_name,
+            run_id=process_data.run_id,
+            **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_STARTED:
         process_data = dagster_event.pipeline_process_started_data
