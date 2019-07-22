@@ -78,66 +78,6 @@ exports[`renders given an execution plan 1`] = `
         </div>
       </div>
     </div>
-    <div>
-      <div
-        className="sc-jTzLTM iGhCxz"
-      >
-        <div
-          className="waiting sc-fjdhpX hvRudt"
-          onClick={[Function]}
-          style={
-            Object {
-              "transitionDelay": "-100ms",
-            }
-          }
-        >
-          <div
-            className="sc-VigVT eXyvQa"
-            style={
-              Object {
-                "transitionDelay": "-100ms",
-              }
-            }
-          />
-          <div
-            style={
-              Object {
-                "alignItems": "center",
-                "display": "inline-flex",
-              }
-            }
-          >
-            <div
-              className="sc-htoDjs jhbWLY"
-              onClick={[Function]}
-            >
-              <div
-                className="sc-iwsKbI fGxoXJ"
-                style={
-                  Object {
-                    "transitionDelay": "-100ms",
-                  }
-                }
-                title="Waiting"
-              />
-              <div
-                style={
-                  Object {
-                    "width": 4,
-                  }
-                }
-              />
-            </div>
-            <div
-              className="sc-gqjmRU jxxYey"
-              title="raw_file_event_admins.output.result.expectation.something"
-            >
-              raw_file_event_admins.output.result.expectation.something
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 `;

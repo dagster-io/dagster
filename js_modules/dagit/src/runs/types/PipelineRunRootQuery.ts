@@ -397,7 +397,7 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPl
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs {
   __typename: "ExecutionStepInput";
-  dependsOn: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn | null;
+  dependsOn: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn[];
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps {

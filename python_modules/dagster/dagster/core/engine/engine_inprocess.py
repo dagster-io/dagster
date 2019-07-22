@@ -67,12 +67,12 @@ class InProcessEngine(IEngine):  # pylint: disable=no-init
 
                 step_context = pipeline_context.for_step(step)
 
-                failed_inputs = [
-                    step_input.prev_output_handle.step_key
-                    for step_input in step.step_inputs
-                    if step_input.is_from_output
-                    and step_input.prev_output_handle.step_key in failed_or_skipped_steps
-                ]
+                failed_inputs = []
+                for step_input in step.step_inputs:
+                    failed_inputs.extend(
+                        failed_or_skipped_steps.intersection(step_input.dependency_keys)
+                    )
+
                 if failed_inputs:
                     step_context.log.info(
                         (
@@ -132,10 +132,19 @@ def _input_values_from_intermediates_manager(step_context):
         if step_input.runtime_type.is_nothing:
             continue
 
-        if step_input.is_from_output:
+        if step_input.is_from_multiple_outputs:
+            input_value = [
+                step_context.intermediates_manager.get_intermediate(
+                    step_context, step_input.runtime_type, source_handle
+                )
+                for source_handle in step_input.source_handles
+            ]
+
+        elif step_input.is_from_single_output:
             input_value = step_context.intermediates_manager.get_intermediate(
-                step_context, step_input.runtime_type, step_input.prev_output_handle
+                step_context, step_input.runtime_type, step_input.source_handles[0]
             )
+
         else:  # is from config
             input_value = step_input.runtime_type.input_hydration_config.construct_from_config_value(
                 step_context, step_input.config_data
