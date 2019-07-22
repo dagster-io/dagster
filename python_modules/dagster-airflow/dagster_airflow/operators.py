@@ -109,7 +109,7 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
         pipeline_name,
         environment_dict,
         mode,
-        solid_name,
+        solid_handle,
         step_keys,
         dag,
         dag_id,
@@ -273,7 +273,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         pipeline_name,
         environment_dict,
         mode,
-        solid_name,
+        solid_handle,
         step_keys,
         dag,
         dag_id,
@@ -291,14 +291,14 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         # https://github.com/ambv/black/issues/768
         # fmt: off
         return DagsterDockerOperator(
-            step=solid_name,
+            step=solid_handle,
             environment_dict=environment_dict,
             dag=dag,
             tmp_dir=tmp_dir,
             pipeline_name=pipeline_name,
             mode=mode,
             step_keys=step_keys,
-            task_id=solid_name,
+            task_id=solid_handle,
             host_tmp_dir=host_tmp_dir,
             **op_kwargs
         )
@@ -441,7 +441,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
         pipeline_name,
         environment_dict,
         mode,
-        solid_name,
+        solid_handle,
         step_keys,
         dag,
         dag_id,
@@ -456,7 +456,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
         # https://github.com/ambv/black/issues/768
         # fmt: off
         return PythonOperator(
-            task_id=solid_name,
+            task_id=solid_handle,
             provide_context=True,
             python_callable=cls.make_python_callable(
                 handle,
