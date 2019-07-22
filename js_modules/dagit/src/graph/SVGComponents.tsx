@@ -250,7 +250,7 @@ export class SVGFlowLayoutRect extends React.Component<
     return (
       <>
         <rect x={x} y={y} width={finalWidth} height={layout.height} {...rest} />
-        {...arranged}
+        {arranged}
       </>
     );
   }

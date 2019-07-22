@@ -1,6 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import * as Color from "color";
+import Color from "color";
 import styled from "styled-components";
 import { History } from "history";
 import { Icon, Colors } from "@blueprintjs/core";

@@ -1,5 +1,5 @@
 // Patched lint mode that won't constantly lint
-var CodeMirror = require("codemirror");
+import CodeMirror from "codemirror";
 
 var GUTTER_ID = "CodeMirror-lint-markers";
 
@@ -49,17 +49,6 @@ function showTooltipFor(e, content, node) {
     if (!tooltip) return clearInterval(poll);
   }, 400);
   CodeMirror.on(node, "mouseout", hide);
-}
-
-function LintState(cm, options, hasGutter) {
-  this.marked = [];
-  this.options = options;
-  this.timeout = null;
-  this.hasGutter = hasGutter;
-  this.onMouseOver = function(e) {
-    onMouseOver(cm, e);
-  };
-  this.waitingFor = 0;
 }
 
 function parseOptions(_cm, options) {
@@ -120,6 +109,54 @@ function annotationTooltip(ann) {
   return tip;
 }
 
+function updateLinting(cm, annotationsNotSorted) {
+  clearMarks(cm);
+  var state = cm.state.lint,
+    options = state.options;
+
+  var annotations = groupByLine(annotationsNotSorted);
+
+  for (var line = 0; line < annotations.length; ++line) {
+    var anns = annotations[line];
+    if (!anns) continue;
+
+    var maxSeverity = null;
+    var tipLabel = state.hasGutter && document.createDocumentFragment();
+
+    for (var i = 0; i < anns.length; ++i) {
+      var ann = anns[i];
+      var severity = ann.severity;
+      if (!severity) severity = "error";
+      maxSeverity = getMaxSeverity(maxSeverity, severity);
+
+      if (options.formatAnnotation) ann = options.formatAnnotation(ann);
+      if (state.hasGutter) tipLabel.appendChild(annotationTooltip(ann));
+
+      if (ann.to)
+        state.marked.push(
+          cm.markText(ann.from, ann.to, {
+            className: "CodeMirror-lint-mark-" + severity,
+            __annotation: ann
+          })
+        );
+    }
+
+    if (state.hasGutter)
+      cm.setGutterMarker(
+        line,
+        GUTTER_ID,
+        makeMarker(
+          tipLabel,
+          maxSeverity,
+          anns.length > 1,
+          state.options.tooltips
+        )
+      );
+  }
+  if (options.onUpdateLinting)
+    options.onUpdateLinting(annotationsNotSorted, annotations, cm);
+}
+
 function lintAsync(cm, getAnnotations, passOptions) {
   var state = cm.state.lint;
   var id = ++state.waitingFor;
@@ -170,54 +207,6 @@ function startLinting(cm) {
         updateLinting(cm, annotations);
       });
   }
-}
-
-function updateLinting(cm, annotationsNotSorted) {
-  clearMarks(cm);
-  var state = cm.state.lint,
-    options = state.options;
-
-  var annotations = groupByLine(annotationsNotSorted);
-
-  for (var line = 0; line < annotations.length; ++line) {
-    var anns = annotations[line];
-    if (!anns) continue;
-
-    var maxSeverity = null;
-    var tipLabel = state.hasGutter && document.createDocumentFragment();
-
-    for (var i = 0; i < anns.length; ++i) {
-      var ann = anns[i];
-      var severity = ann.severity;
-      if (!severity) severity = "error";
-      maxSeverity = getMaxSeverity(maxSeverity, severity);
-
-      if (options.formatAnnotation) ann = options.formatAnnotation(ann);
-      if (state.hasGutter) tipLabel.appendChild(annotationTooltip(ann));
-
-      if (ann.to)
-        state.marked.push(
-          cm.markText(ann.from, ann.to, {
-            className: "CodeMirror-lint-mark-" + severity,
-            __annotation: ann
-          })
-        );
-    }
-
-    if (state.hasGutter)
-      cm.setGutterMarker(
-        line,
-        GUTTER_ID,
-        makeMarker(
-          tipLabel,
-          maxSeverity,
-          anns.length > 1,
-          state.options.tooltips
-        )
-      );
-  }
-  if (options.onUpdateLinting)
-    options.onUpdateLinting(annotationsNotSorted, annotations, cm);
 }
 
 function onChange(cm) {
@@ -272,6 +261,17 @@ function onMouseOver(cm, e) {
   if (docs || annotations.length) {
     popupTooltip(docs, annotations, e);
   }
+}
+
+function LintState(cm, options, hasGutter) {
+  this.marked = [];
+  this.options = options;
+  this.timeout = null;
+  this.hasGutter = hasGutter;
+  this.onMouseOver = function(e) {
+    onMouseOver(cm, e);
+  };
+  this.waitingFor = 0;
 }
 
 CodeMirror.defineOption("lint", false, function(cm, val, old) {

@@ -4,6 +4,7 @@ import {
   defaultDataIdFromObject
 } from "apollo-cache-inmemory";
 // this is a require cause otherwise it breaks
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { __schema } = require("./filteredSchema.generated.json");
 
 const fragmentMatcher = new IntrospectionFragmentMatcher({

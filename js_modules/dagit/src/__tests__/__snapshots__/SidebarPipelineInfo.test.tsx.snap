@@ -81,11 +81,9 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                 }
               }
             >
-              <div>
-                <p>
-                  Very friendly and helpful
-                </p>
-              </div>
+              <p>
+                Very friendly and helpful
+              </p>
             </div>
           </div>
         </div>
@@ -165,11 +163,9 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                   }
                 }
               >
-                <div>
-                  <p>
-                    A way to run your pipeline
-                  </p>
-                </div>
+                <p>
+                  A way to run your pipeline
+                </p>
               </div>
             </div>
             <div
@@ -217,11 +213,9 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                       }
                     }
                   >
-                    <div>
-                      <p>
-                        Very useful
-                      </p>
-                    </div>
+                    <p>
+                      Very useful
+                    </p>
                   </div>
                 </div>
                 <code
@@ -273,11 +267,9 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                   }
                 }
               >
-                <div>
-                  <p>
-                    Another nice way to run your pipeline
-                  </p>
-                </div>
+                <p>
+                  Another nice way to run your pipeline
+                </p>
               </div>
             </div>
             <div
@@ -325,11 +317,9 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                       }
                     }
                   >
-                    <div>
-                      <p>
-                        Very useful
-                      </p>
-                    </div>
+                    <p>
+                      Very useful
+                    </p>
                   </div>
                 </div>
                 <code
@@ -401,11 +391,9 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                       }
                     }
                   >
-                    <div>
-                      <p>
-                        Very useful
-                      </p>
-                    </div>
+                    <p>
+                      Very useful
+                    </p>
                   </div>
                 </div>
                 <code
@@ -477,11 +465,9 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                       }
                     }
                   >
-                    <div>
-                      <p>
-                        The default colored console logger.
-                      </p>
-                    </div>
+                    <p>
+                      The default colored console logger.
+                    </p>
                   </div>
                 </div>
                 <code

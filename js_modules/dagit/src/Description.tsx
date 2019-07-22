@@ -1,6 +1,6 @@
 import * as React from "react";
 import styled from "styled-components";
-import * as ReactMarkdown from "react-markdown";
+import ReactMarkdown from "react-markdown";
 
 interface IDescriptionProps {
   description: string | null;

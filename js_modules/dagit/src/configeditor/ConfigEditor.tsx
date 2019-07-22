@@ -16,10 +16,8 @@ import "codemirror/addon/dialog/dialog";
 import "./codemirror-yaml/lint"; // Patch lint
 import "codemirror/addon/lint/lint.css";
 import "codemirror/keymap/sublime";
-import {
-  Controlled as CodeMirrorReact,
-  IInstance as Editor
-} from "react-codemirror2";
+import { Controlled as CodeMirrorReact } from "react-codemirror2";
+import { Editor } from "codemirror";
 import { ConfigEditorPipelineFragment } from "./types/ConfigEditorPipelineFragment";
 import "./codemirror-yaml/mode";
 import { LintJson as YamlModeLintJson } from "./codemirror-yaml/mode";

@@ -24,7 +24,6 @@ import {
   handleStartExecutionResult
 } from "./RunUtils";
 import { Reexecute, ReexecuteVariables } from "./types/Reexecute";
-import { ReexecutionConfig } from "src/types/globalTypes";
 import RunSubscriptionProvider from "./RunSubscriptionProvider";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
 import ApolloClient from "apollo-client";
