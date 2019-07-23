@@ -1,0 +1,1 @@
+CREATE TABLE TableOne AS SELECT 1 as num

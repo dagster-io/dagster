@@ -1,0 +1,141 @@
+import os
+import sqlite3
+
+from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, file_relative_path
+from lakehouse import Lakehouse, lakehouse_table, input_table, construct_lakehouse_pipeline
+
+
+def test_basic_sqlite():
+    # delete before commit
+
+    conn = sqlite3.connect(':memory:')
+
+    conn.execute('''CREATE TABLE TableOne (num int)''')
+
+    conn.execute("INSERT INTO TableOne VALUES (1)")
+
+    conn.commit()
+
+    for row in conn.cursor().execute('SELECT * From TableOne'):
+        print(row[0])
+
+    conn.commit()
+
+    conn.execute('CREATE TABLE TableTwo AS SELECT num from TableOne')
+
+    conn.commit()
+
+    for row in conn.cursor().execute('SELECT * From TableTwo'):
+        print(row[0])
+
+
+def test_sqllite_values_query():
+    # delete before commit
+
+    conn = sqlite3.connect(':memory:')
+
+    print(conn.cursor().execute('SELECT * FROM (values(1))').fetchall())
+
+
+def create_sqllite_lakehouse_table(name, sql_text, input_tables=None):
+    @lakehouse_table(name=name, required_resource_keys={'conn'}, input_tables=input_tables)
+    def Table(context, **_kwargs):
+        context.resources.conn.execute(sql_text)
+        context.resources.conn.commit()
+
+    return Table
+
+
+# So in this case because data processing is totally within the data warehouse
+# These are complete and total no-ops
+class SqlLiteLakehouse(Lakehouse):
+    def __init__(self):
+        pass
+
+    def hydrate(self, _context, _table_type, _table_metadata, table_handle):
+        return None
+
+    def materialize(self, context, table_type, table_metadata, value):
+        return None, None
+
+
+def test_basic_sqlite_pipeline():
+    @lakehouse_table(required_resource_keys={'conn'})
+    def TableOne(context):
+        context.resources.conn.execute('''CREATE TABLE TableOne AS SELECT 1 as num''')
+        context.resources.conn.commit()
+
+    @lakehouse_table(required_resource_keys={'conn'})
+    def TableTwo(context):
+        context.resources.conn.execute('''CREATE TABLE TableTwo AS SELECT 2 as num''')
+        context.resources.conn.commit()
+
+    @lakehouse_table(
+        input_tables=[input_table('table_one', TableOne), input_table('table_two', TableTwo)],
+        required_resource_keys={'conn'},
+    )
+    def TableThree(context, **_kwargs):
+        context.resources.conn.execute(
+            'CREATE TABLE TableThree AS SELECT num from TableOne UNION SELECT num from TableTwo'
+        )
+        context.resources.conn.commit()
+
+    conn = sqlite3.connect(':memory:')
+    pipeline_def = construct_lakehouse_pipeline(
+        name='sqllite_lakehouse_pipeline',
+        lakehouse_tables=[TableOne, TableTwo, TableThree],
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    'conn': ResourceDefinition.hardcoded_resource(conn),
+                    'lakehouse': ResourceDefinition.hardcoded_resource(SqlLiteLakehouse()),
+                }
+            )
+        ],
+    )
+
+    result = execute_pipeline(pipeline_def)
+    assert result.success
+
+    assert conn.cursor().execute('SELECT * FROM TableThree').fetchall() == [(1,), (2,)]
+
+
+def create_sqllite_table_from_file(path, input_tables=None):
+    sql_file_name = os.path.basename(os.path.abspath(path))
+    table_name, _sql_ext = os.path.splitext(sql_file_name)
+    with open(path, 'r') as ff:
+        sql_text = ff.read()
+        return create_sqllite_lakehouse_table(table_name, sql_text, input_tables)
+
+
+def test_file_based_sqlite_pipeline():
+    def path_for_table(table_name):
+        return file_relative_path(
+            __file__, 'basic_sqllite_test_files/{table_name}.sql'.format(table_name=table_name)
+        )
+
+    TableOne = create_sqllite_table_from_file(path_for_table('TableOne'))
+    TableTwo = create_sqllite_table_from_file(path_for_table('TableTwo'))
+    TableThree = create_sqllite_table_from_file(
+        path_for_table('TableThree'),
+        input_tables=[input_table('table_one', TableOne), input_table('table_two', TableTwo)],
+    )
+
+    conn = sqlite3.connect(':memory:')
+    pipeline_def = construct_lakehouse_pipeline(
+        name='sqllite_lakehouse_pipeline',
+        lakehouse_tables=[TableOne, TableTwo, TableThree],
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    'conn': ResourceDefinition.hardcoded_resource(conn),
+                    'lakehouse': ResourceDefinition.hardcoded_resource(SqlLiteLakehouse()),
+                }
+            )
+        ],
+    )
+
+    result = execute_pipeline(pipeline_def)
+    assert result.success
+
+    assert conn.cursor().execute('SELECT * FROM TableThree').fetchall() == [(1,), (2,)]
