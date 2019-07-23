@@ -20,6 +20,7 @@ import Description from "./Description";
 import ConfigTypeSchema from "./ConfigTypeSchema";
 import { SidebarSolidInfoFragment } from "./types/SidebarSolidInfoFragment";
 import { SolidNameOrPath } from "./PipelineExplorer";
+import { SolidColumn } from "./runs/LogsRowComponents";
 
 type SolidLinkInfo = {
   solid: { name: string };
@@ -310,14 +311,7 @@ const Invocation = (props: {
   const handlePath = props.handleID.split(".");
   return (
     <InvocationContainer onClick={props.onClick}>
-      {handlePath.length > 1 && (
-        <SidebarSubhead>
-          {`In ${handlePath[handlePath.length - 2]}:`}
-        </SidebarSubhead>
-      )}
-      <SectionSmallHeader style={{ marginBottom: 0 }}>
-        {props.solid.name}
-      </SectionSmallHeader>
+      <SolidColumn stepKey={handlePath.join(".")} />
     </InvocationContainer>
   );
 };
@@ -402,6 +396,7 @@ const InvocationContainer = styled.div`
   &:hover {
     background: ${Colors.LIGHT_GRAY5};
   }
+  font-family: monospace;
 `;
 
 const DependencyArrow = (
