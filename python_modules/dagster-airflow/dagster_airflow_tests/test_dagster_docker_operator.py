@@ -4,6 +4,8 @@ import pytest
 
 from airflow.exceptions import AirflowException
 
+from dagster_graphql.client.mutations import DagsterGraphQLClientError
+
 from dagster_airflow.operators import DagsterDockerOperator
 
 
@@ -41,7 +43,7 @@ def test_modified_docker_operator_env():
         environment_dict={},
         pipeline_name='',
     )
-    with pytest.raises(AirflowException, match='Unhandled error type'):
+    with pytest.raises(DagsterGraphQLClientError, match='Unhandled error type'):
         operator.execute({})
 
 
@@ -58,8 +60,6 @@ def test_modified_docker_operator_bad_command():
         operator.execute({})
 
 
-# This is an artifact of the way that Circle sets up the remote Docker environment
-@pytest.mark.skip_on_circle
 def test_modified_docker_operator_url():
     try:
         docker_host = os.getenv('DOCKER_HOST')
@@ -82,7 +82,7 @@ def test_modified_docker_operator_url():
             pipeline_name='',
         )
 
-        with pytest.raises(AirflowException, match='Unhandled error type'):
+        with pytest.raises(DagsterGraphQLClientError, match='Unhandled error type'):
             operator.execute({})
 
     finally:

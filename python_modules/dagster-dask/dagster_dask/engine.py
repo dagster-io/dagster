@@ -10,107 +10,20 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 
-from dagster_graphql.cli import execute_query
-from dagster_graphql.util import (
-    dagster_event_from_dict,
-    get_log_message_event_fragment,
-    get_step_event_fragment,
-)
+from dagster_graphql.client.mutations import execute_start_pipeline_execution_query
 
 from .config import DaskConfig
-from .query import QUERY_TEMPLATE
 
 
-def query_on_dask_worker(handle, query, variables, dependencies):  # pylint: disable=unused-argument
+def query_on_dask_worker(handle, variables, dependencies):  # pylint: disable=unused-argument
     '''Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
 
-    We also pass in 'raise_on_error' here, because otherwise (currently) very little information
-    is propagated to the dask master from the workers about the state of execution; we should at
-    least inform the user of exceptions.
+    We also set 'raise_on_error' within pipeline execution, because otherwise (currently) very
+    little information is propagated to the dask master from the workers about the state of
+    execution; we should at least inform the user of exceptions.
     '''
-    res = execute_query(handle, query, variables, raise_on_error=True, use_sync_executor=True)
-    handle_errors(res)
-    return handle_result(res)
-
-
-def handle_errors(res):
-    if res.get('errors'):
-        raise Exception('Internal error in GraphQL request. Response: {}'.format(res))
-
-    if not res.get('data', {}).get('startPipelineExecution', {}).get('__typename'):
-        raise Exception('Unexpected response type. Response: {}'.format(res))
-
-
-def handle_result(res):
-    res_data = res['data']['startPipelineExecution']
-
-    res_type = res_data['__typename']
-
-    if res_type == 'InvalidStepError':
-        raise Exception('invalid step {step_key}'.format(step_key=res_data['invalidStepKey']))
-
-    if res_type == 'InvalidOutputError':
-        raise Exception(
-            'invalid output {output} for step {step_key}'.format(
-                output=res_data['invalidOutputName'], step_key=res_data['stepKey']
-            )
-        )
-
-    if res_type == 'PipelineConfigValidationInvalid':
-        errors = [err['message'] for err in res_data['errors']]
-        raise Exception(
-            'Pipeline configuration invalid:\n{errors}'.format(errors='\n'.join(errors))
-        )
-
-    if res_type == 'PipelineNotFoundError':
-        raise Exception(
-            'Pipeline "{pipeline_name}" not found: {message}:'.format(
-                pipeline_name=res_data['pipelineName'], message=res_data['message']
-            )
-        )
-
-    if res_type == 'PythonError':
-        raise Exception(
-            'Subplan execution failed: {message}\n{stack}'.format(
-                message=res_data['message'], stack=res_data['stack']
-            )
-        )
-
-    if res_type == 'StartPipelineExecutionSuccess':
-        pipeline_name = res_data['run']['pipeline']['name']
-
-        skip_events = {
-            'LogMessageEvent',
-            'PipelineStartEvent',
-            'PipelineSuccessEvent',
-            'PipelineInitFailureEvent',
-            'PipelineFailureEvent',
-        }
-
-        return [
-            dagster_event_from_dict(e, pipeline_name)
-            for e in res_data['run']['logs']['nodes']
-            if e['__typename'] not in skip_events
-        ]
-
-    raise Exception('unexpected result type')
-
-
-def build_graphql_query():
-    log_message_event_fragment = get_log_message_event_fragment()
-    step_event_fragment = get_step_event_fragment()
-
-    return '\n'.join(
-        (
-            QUERY_TEMPLATE.format(
-                step_event_fragment=step_event_fragment.include_key,
-                log_message_event_fragment=log_message_event_fragment.include_key,
-            ),
-            step_event_fragment.fragment,
-            log_message_event_fragment.fragment,
-        )
-    )
+    return execute_start_pipeline_execution_query(handle, variables)
 
 
 class DaskEngine(IEngine):  # pylint: disable=no-init
@@ -150,8 +63,6 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
             )
 
         step_levels = execution_plan.topological_step_levels()
-
-        query = build_graphql_query()
 
         pipeline_name = pipeline_context.pipeline_def.name
 
@@ -199,7 +110,6 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
                     future = client.submit(
                         query_on_dask_worker,
                         pipeline_context.execution_target_handle,
-                        query,
                         variables,
                         dependencies,
                         key=dask_task_name,

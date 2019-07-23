@@ -18,7 +18,6 @@ from docker import APIClient, from_env
 from dagster import check, seven
 from dagster.seven.json import JSONDecodeError
 
-from .query import QUERY
 from .util import convert_airflow_datestr_to_epoch_ts
 
 
@@ -47,7 +46,7 @@ def parse_raw_res(raw_res):
         except JSONDecodeError:
             continue
 
-    return (res, raw_res)
+    return res
 
 
 def airflow_storage_exception(tmp_dir):
@@ -62,6 +61,37 @@ def airflow_storage_exception(tmp_dir):
         '  s3:\n'
         '    s3_bucket: \'my-s3-bucket\'\n'.format(tmp_dir=tmp_dir)
     )
+
+
+def construct_variables(mode, environment_dict, pipeline_name, run_id, ts, step_keys):
+    check.str_param(mode, 'mode')
+    # env dict could be either string 'REDACTED' or dict
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.str_param(run_id, 'run_id')
+    check.opt_str_param(ts, 'ts')
+    check.list_param(step_keys, 'step_keys', of_type=str)
+
+    variables = {
+        'executionParams': {
+            'environmentConfigData': environment_dict,
+            'mode': mode,
+            'selector': {'name': pipeline_name},
+            'executionMetadata': {'runId': run_id},
+            'stepKeys': step_keys,
+        }
+    }
+
+    # If an Airflow timestamp string is provided, stash it (and the converted version) in tags
+    if ts is not None:
+        variables['executionParams']['executionMetadata']['tags'] = [
+            {'key': 'airflow_ts', 'value': ts},
+            {
+                'key': 'execution_epoch_time',
+                'value': '%f' % convert_airflow_datestr_to_epoch_ts(ts),
+            },
+        ]
+
+    return variables
 
 
 class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
@@ -86,57 +116,6 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
         op_kwargs,
     ):
         pass
-
-    @classmethod
-    def handle_errors(cls, res, raw_res):
-        if res is None:
-            raise AirflowException('Unhandled error type. Raw response: {}'.format(raw_res))
-
-        if res.get('errors'):
-            raise AirflowException('Internal error in GraphQL request. Response: {}'.format(res))
-
-        if not res.get('data', {}).get('executePlan', {}).get('__typename'):
-            raise AirflowException('Unexpected response type. Response: {}'.format(res))
-
-    @classmethod
-    def handle_result(cls, res):
-        res_data = res['data']['executePlan']
-
-        res_type = res_data['__typename']
-
-        if res_type == 'PipelineConfigValidationInvalid':
-            errors = [err['message'] for err in res_data['errors']]
-            raise AirflowException(
-                'Pipeline configuration invalid:\n{errors}'.format(errors='\n'.join(errors))
-            )
-
-        if res_type == 'PipelineNotFoundError':
-            raise AirflowException(
-                'Pipeline "{pipeline_name}" not found: {message}:'.format(
-                    pipeline_name=res_data['pipelineName'], message=res_data['message']
-                )
-            )
-
-        if res_type == 'ExecutePlanSuccess':
-            if res_data['hasFailures']:
-                errors = [
-                    step['errorMessage'] for step in res_data['stepEvents'] if not step['success']
-                ]
-                raise AirflowException(
-                    'Subplan execution failed:\n{errors}'.format(errors='\n'.join(errors))
-                )
-
-            return res
-
-        if res_type == 'PythonError':
-            raise AirflowException(
-                'Subplan execution failed: {message}\n{stack}'.format(
-                    message=res_data['message'], stack=res_data['stack']
-                )
-            )
-
-        # Catchall
-        return res
 
 
 # pylint: disable=len-as-condition
@@ -334,27 +313,36 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
     @property
     def query(self):
-        variables = {
-            'executionParams': {
-                'environmentConfigData': self.environment_dict,
-                'mode': self.mode,
-                'selector': {'name': self.pipeline_name},
-                'executionMetadata': {'runId': self.run_id},
-                'stepKeys': self.step_keys,
-            }
-        }
+        try:
+            from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 
-        if self.airflow_ts:
-            variables['executionParams']['executionMetadata']['tags'] = [
-                {'key': 'airflow_ts', 'value': self.airflow_ts},
-                {
-                    'key': 'execution_epoch_time',
-                    'value': '%f' % convert_airflow_datestr_to_epoch_ts(self.airflow_ts),
-                },
-            ]
+        except ImportError:
+            raise AirflowException(
+                'To use the DagsterDockerOperator, dagster and dagster_graphql must be installed '
+                'in your Airflow environment.'
+            )
 
-        return '-v \'{variables}\' {query}'.format(
-            variables=seven.json.dumps(variables), query=QUERY
+        # TODO: https://github.com/dagster-io/dagster/issues/1342
+        redacted = construct_variables(
+            self.mode, 'REDACTED', self.pipeline_name, self.run_id, self.airflow_ts, self.step_keys
+        )
+        self.log.info(
+            'Executing GraphQL query: {query}\n'.format(query=START_PIPELINE_EXECUTION_QUERY)
+            + 'with variables:\n'
+            + seven.json.dumps(redacted, indent=2)
+        )
+
+        variables = construct_variables(
+            self.mode,
+            self.environment_dict,
+            self.pipeline_name,
+            self.run_id,
+            self.airflow_ts,
+            self.step_keys,
+        )
+
+        return '-v \'{variables}\' \'{query}\''.format(
+            variables=seven.json.dumps(variables), query=START_PIPELINE_EXECUTION_QUERY
         )
 
     def get_command(self):
@@ -377,22 +365,29 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         return _DummyHook()
 
     def execute(self, context):
+        try:
+            from dagster_graphql.client.mutations import (
+                handle_start_pipeline_execution_errors,
+                handle_start_pipeline_execution_result,
+            )
+
+        except ImportError:
+            raise AirflowException(
+                'To use the DagsterPythonOperator, dagster and dagster_graphql must be installed '
+                'in your Airflow environment.'
+            )
         if 'run_id' in self.params:
             self._run_id = self.params['run_id']
         elif 'dag_run' in context and context['dag_run'] is not None:
             self._run_id = context['dag_run'].run_id
 
         try:
-            self.log.debug('Executing with query: {query}'.format(query=self.query))
-
             raw_res = super(DagsterDockerOperator, self).execute(context)
             self.log.info('Finished executing container.')
 
-            (res, raw_res) = parse_raw_res(raw_res)
-
-            self.handle_errors(res, raw_res)
-
-            return self.handle_result(res)
+            res = parse_raw_res(raw_res)
+            handle_start_pipeline_execution_errors(res)
+            return handle_start_pipeline_execution_result(res)
 
         finally:
             self._run_id = None
@@ -413,7 +408,9 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
     @classmethod
     def make_python_callable(cls, handle, pipeline_name, mode, environment_dict, step_keys):
         try:
-            from dagster_graphql.cli import execute_query_from_cli
+            from dagster_graphql.client.mutations import execute_start_pipeline_execution_query
+            from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
+
         except ImportError:
             raise AirflowException(
                 'To use the DagsterPythonOperator, dagster and dagster_graphql must be installed '
@@ -423,44 +420,17 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
         def python_callable(ts, dag_run, **kwargs):  # pylint: disable=unused-argument
             run_id = dag_run.run_id
 
-            def _construct_variables(redact=False):
-                return {
-                    'executionParams': {
-                        'environmentConfigData': 'REDACTED' if redact else environment_dict,
-                        'mode': mode,
-                        'selector': {'name': pipeline_name},
-                        'executionMetadata': {
-                            'runId': run_id,
-                            'tags': [
-                                {'key': 'airflow_ts', 'value': ts},
-                                {
-                                    'key': 'execution_epoch_time',
-                                    'value': '%f' % convert_airflow_datestr_to_epoch_ts(ts),
-                                },
-                            ],
-                        },
-                        'stepKeys': step_keys,
-                    }
-                }
-
-            # TODO: This removes the environment, pending an effective way to scrub it for secrets:
-            # it's very useful for debugging to understand the GraphQL query that's being executed.
-            # We should update to include the sanitized environment_dict.
+            # TODO: https://github.com/dagster-io/dagster/issues/1342
+            redacted = construct_variables(mode, 'REDACTED', pipeline_name, run_id, ts, step_keys)
             logging.info(
-                'Executing GraphQL query:\n'
-                + QUERY
-                + '\n'
+                'Executing GraphQL query: {query}\n'.format(query=START_PIPELINE_EXECUTION_QUERY)
                 + 'with variables:\n'
-                + seven.json.dumps(_construct_variables(redact=True), indent=2)
+                + seven.json.dumps(redacted, indent=2)
             )
-
-            res = json.loads(
-                execute_query_from_cli(
-                    handle, QUERY, variables=seven.json.dumps(_construct_variables())
-                )
+            return execute_start_pipeline_execution_query(
+                handle,
+                construct_variables(mode, environment_dict, pipeline_name, run_id, ts, step_keys),
             )
-            cls.handle_errors(res, None)
-            return cls.handle_result(res)
 
         return python_callable
 
