@@ -161,6 +161,7 @@ const BasicNameRenderer = (
 
 function activateSelect(select: Select<any> | null) {
   if (!select) return;
+  // eslint-disable-next-line react/no-find-dom-node
   const selectEl = ReactDOM.findDOMNode(select) as HTMLElement;
   const btnEl = selectEl.querySelector("button");
   if (btnEl) {

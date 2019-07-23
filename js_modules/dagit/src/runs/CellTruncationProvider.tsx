@@ -52,6 +52,7 @@ export class CellTruncationProvider extends React.Component<
   }
 
   detectOverflow() {
+    // eslint-disable-next-line react/no-find-dom-node
     const el = ReactDOM.findDOMNode(this);
     if (!el || !(el instanceof HTMLElement)) return;
 
@@ -65,6 +66,7 @@ export class CellTruncationProvider extends React.Component<
   }
 
   onView = () => {
+    // eslint-disable-next-line react/no-find-dom-node
     const el = ReactDOM.findDOMNode(this) as HTMLElement;
     const message = el.firstChild && el.firstChild.textContent;
     if (!message) return;

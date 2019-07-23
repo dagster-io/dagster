@@ -18,7 +18,7 @@ export class PanelDivider extends React.Component<
     down: false
   };
 
-  onMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+  onMouseDown = () => {
     this.setState({ down: true });
     const onMouseMove = (event: MouseEvent) => {
       this.props.onMove(

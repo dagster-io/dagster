@@ -68,7 +68,7 @@ export default class Description extends React.Component<
     const { expanded, hasMore } = this.state;
     return (
       <Container
-        onDoubleClick={e => {
+        onDoubleClick={() => {
           const sel = document.getSelection();
           if (!sel || !this._container.current) return;
           const range = document.createRange();

@@ -52,7 +52,7 @@ it("renders given materializations and passing expectations", () => {
     elapsed: 21,
     executionArtifactsPersisted: false,
     expectationResults: expectationResults,
-    materializations: [],
+    materializations,
     stepKey: "many_materializations_and_passing_expectations",
     state: IStepState.SUCCEEDED,
     start: 1558389791907

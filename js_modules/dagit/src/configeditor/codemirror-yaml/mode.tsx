@@ -415,7 +415,7 @@ CodeMirror.registerHelper(
       description: string | null
     ): CodemirrorHint => ({
       text: replacement,
-      render: (el, self, data) => {
+      render: el => {
         const div = document.createElement("div");
         div.textContent = display;
         if (description) {

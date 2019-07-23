@@ -231,6 +231,7 @@ export default class PipelineExplorer extends React.Component<
         />
         <RightInfoPanel style={{ width: `${100 - graphVW}vw` }}>
           <Route
+            // eslint-disable-next-line react/no-children-prop
             children={({ location }: { location: any }) => (
               <SidebarTabbedContainer
                 pipeline={pipeline}

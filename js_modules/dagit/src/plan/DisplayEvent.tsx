@@ -94,14 +94,6 @@ const DisplayEventLink = styled.a`
   }
 `;
 
-const TinyStatusDot = styled.div`
-  width: 10px;
-  height: 7px;
-  border-radius: 3px;
-  margin-right: 4px;
-  flex-shrink: 0;
-`;
-
 const IconComponents: { [key: string]: (word: string) => React.ReactNode } = {
   "dot-success": (word: string) => (
     <Tag minimal={true} intent={"success"} style={{ marginRight: 4 }}>
@@ -123,13 +115,13 @@ const IconComponents: { [key: string]: (word: string) => React.ReactNode } = {
       {word}
     </Tag>
   ),
-  file: (word: string) => (
+  file: () => (
     <img
       style={{ flexShrink: 0, alignSelf: "center" }}
       src={require("../images/icon-file.svg")}
     />
   ),
-  link: (word: string) => (
+  link: () => (
     <img
       style={{ flexShrink: 0, alignSelf: "center" }}
       src={require("../images/icon-link.svg")}

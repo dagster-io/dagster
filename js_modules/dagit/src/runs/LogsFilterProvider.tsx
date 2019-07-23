@@ -1,7 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { LogsFilterProviderMessageFragment } from "./types/LogsFilterProviderMessageFragment";
-import { isEqual } from "lodash";
 
 export enum LogLevel {
   DEBUG = "DEBUG",

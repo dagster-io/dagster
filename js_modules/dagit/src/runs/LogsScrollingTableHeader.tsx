@@ -18,7 +18,7 @@ try {
 
 export const ColumnWidthsContext = React.createContext({
   ...ColumnWidths,
-  onChange: (vals: typeof ColumnWidths) => {}
+  onChange: (_: typeof ColumnWidths) => {}
 });
 
 export class ColumnWidthsProvider extends React.Component<
@@ -69,14 +69,14 @@ class Header extends React.Component<HeaderProps, HeaderState> {
     const initialX = m.screenX;
     const initialWidth = this.props.width;
 
-    const onMouseMove = (m: MouseEvent) => {
+    const onMouseMove = () => {
       const dir = this.props.handleSide === "left" ? -1 : 1;
       this.props.onResize &&
         this.props.onResize(
           Math.max(40, initialWidth + (m.screenX - initialX) * dir)
         );
     };
-    const onMouseUp = (m: MouseEvent) => {
+    const onMouseUp = () => {
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
       this.setState({ dragging: false });
@@ -106,7 +106,7 @@ class Header extends React.Component<HeaderProps, HeaderState> {
   }
 }
 
-export const Headers: React.FunctionComponent<{}> = props => {
+export const Headers: React.FunctionComponent<{}> = () => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
     <HeadersContainer>

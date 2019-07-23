@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Button, Menu } from "@blueprintjs/core";
 import { Select } from "@blueprintjs/select";
-import { Query, QueryResult, ApolloConsumer } from "react-apollo";
+import { Query, QueryResult } from "react-apollo";
 import {
   ConfigPresetsQuery,
   ConfigPresetsQuery_pipeline_presets
@@ -49,7 +49,7 @@ export default class ConfigEditorPresetsPicker extends React.Component<
   };
 
   render() {
-    const { pipelineName, onCreateSession } = this.props;
+    const { pipelineName } = this.props;
 
     return (
       <Query

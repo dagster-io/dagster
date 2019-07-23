@@ -6,7 +6,6 @@ import {
   Column,
   Cell,
   ColumnHeaderCell,
-  ICellRenderer,
   SelectionModes
 } from "@blueprintjs/table";
 import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";

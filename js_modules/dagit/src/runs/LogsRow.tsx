@@ -3,15 +3,11 @@ import gql from "graphql-tag";
 import { Tag, Colors } from "@blueprintjs/core";
 
 import { LogLevel } from "../types/globalTypes";
-import { TypeName } from "../TypeWithTooltip";
 
 import {
   LogsRowStructuredFragment,
   LogsRowStructuredFragment_ExecutionStepFailureEvent,
-  LogsRowStructuredFragment_PipelineProcessStartedEvent,
-  LogsRowStructuredFragment_PipelineProcessStartEvent,
-  LogsRowStructuredFragment_PipelineInitFailureEvent,
-  LogsRowStructuredFragment_ObjectStoreOperationEvent
+  LogsRowStructuredFragment_PipelineInitFailureEvent
 } from "./types/LogsRowStructuredFragment";
 import { LogsRowUnstructuredFragment } from "./types/LogsRowUnstructuredFragment";
 import {
@@ -21,12 +17,8 @@ import {
   SolidColumn,
   TimestampColumn
 } from "./LogsRowComponents";
-import {
-  MetadataEntries,
-  MetadataEntry,
-  MetadataEntryLink
-} from "./MetadataEntry";
-import { assertUnreachable, copyValue } from "../Util";
+import { MetadataEntries, MetadataEntry } from "./MetadataEntry";
+import { assertUnreachable } from "../Util";
 import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
 
 export class Structured extends React.Component<{
