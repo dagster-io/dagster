@@ -1,7 +1,8 @@
 import * as React from "react";
 import styled from "styled-components";
 import { QueryResult } from "react-apollo";
-import { ProgressBar } from "@blueprintjs/core";
+import { ProgressBar, NonIdealState } from "@blueprintjs/core";
+import { IconNames } from "@blueprintjs/icons";
 
 interface ILoadingProps<TData> {
   queryResult: QueryResult<TData, any>;
@@ -13,7 +14,19 @@ export default class Loading<TData> extends React.Component<
 > {
   public render() {
     const { error, data } = this.props.queryResult;
-
+    if (error) {
+      console.error(error);
+      return (
+        <LoadingContainer>
+          <LoadingCentering>
+            <NonIdealState
+              icon={IconNames.ERROR}
+              title="GraphQL Error - see console for details"
+            />
+          </LoadingCentering>
+        </LoadingContainer>
+      );
+    }
     if (!data || Object.keys(data).length === 0) {
       return (
         <LoadingContainer>
@@ -22,9 +35,6 @@ export default class Loading<TData> extends React.Component<
           </LoadingCentering>
         </LoadingContainer>
       );
-    }
-    if (error) {
-      throw error;
     }
     return this.props.children(data as TData);
   }

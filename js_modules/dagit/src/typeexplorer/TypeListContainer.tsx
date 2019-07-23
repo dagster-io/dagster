@@ -50,6 +50,7 @@ export const TYPE_LIST_CONTAINER_QUERY = gql`
     pipelineOrError(params: { name: $pipelineName }) {
       __typename
       ... on Pipeline {
+        name
         runtimeTypes {
           ...TypeListFragment
         }

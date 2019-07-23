@@ -21,6 +21,7 @@ export interface TypeListContainerQuery_pipelineOrError_Pipeline_runtimeTypes {
 
 export interface TypeListContainerQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
+  name: string;
   runtimeTypes: TypeListContainerQuery_pipelineOrError_Pipeline_runtimeTypes[];
 }
 
