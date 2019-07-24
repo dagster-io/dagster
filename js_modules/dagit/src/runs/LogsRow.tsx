@@ -24,7 +24,6 @@ import {
 } from "./LogsRowComponents";
 import { MetadataEntries, MetadataEntry } from "./MetadataEntry";
 import { assertUnreachable } from "../Util";
-import { TypeName } from "../TypeWithTooltip";
 
 export class Structured extends React.Component<{
   node: LogsRowStructuredFragment;
@@ -81,15 +80,6 @@ export class Structured extends React.Component<{
         }
         ... on ExecutionStepInputEvent {
           inputName
-          step {
-            inputs {
-              name
-              type {
-                displayName
-                description
-              }
-            }
-          }
           typeCheck {
             label
             description
@@ -101,15 +91,6 @@ export class Structured extends React.Component<{
         }
         ... on ExecutionStepOutputEvent {
           outputName
-          step {
-            outputs {
-              name
-              type {
-                displayName
-                description
-              }
-            }
-          }
           typeCheck {
             label
             description
@@ -320,8 +301,6 @@ const StepMaterializationEvent: React.FunctionComponent<{
 const ExecutionStepOutputEvent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_ExecutionStepOutputEvent;
 }> = ({ node }) => {
-  const output =
-    node.step && node.step.outputs.find(i => i.name === node.outputName);
   return (
     <>
       <EventTypeColumn>
@@ -346,8 +325,6 @@ const ExecutionStepOutputEvent: React.FunctionComponent<{
 const ExecutionStepInputEvent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_ExecutionStepInputEvent;
 }> = ({ node }) => {
-  const input =
-    node.step && node.step.inputs.find(i => i.name === node.inputName);
   return (
     <>
       <EventTypeColumn>
