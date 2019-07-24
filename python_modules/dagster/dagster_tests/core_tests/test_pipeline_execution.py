@@ -7,6 +7,7 @@ from dagster import (
     InProcessExecutorConfig,
     InputDefinition,
     Int,
+    List,
     ModeDefinition,
     MultiDependencyDefinition,
     Nothing,
@@ -14,31 +15,29 @@ from dagster import (
     PipelineDefinition,
     ResourceDefinition,
     Output,
+    Optional,
     RunConfig,
     SolidInvocation,
+    String,
     execute_pipeline,
     execute_pipeline_iterator,
     lambda_solid,
     pipeline,
     solid,
 )
-
-from dagster.core.types import Optional, List, String
-
 from dagster.core.definitions import Solid, solids_in_topological_order
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.container import _create_adjacency_lists
-
 from dagster.core.execution.api import step_output_event_filter
+from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.execution.results import SolidExecutionResult
-
+from dagster.core.storage.intermediates_manager import StepOutputHandle
 from dagster.core.utility_solids import (
     define_stub_solid,
     create_root_solid,
     create_solid_with_deps,
     input_set,
 )
-
 from dagster.utils.test import execute_solid_within_pipeline
 
 # protected members
@@ -580,3 +579,41 @@ def test_pipeline_init_failure():
     event = result.event_list[0]
     assert event.event_type_value == 'PIPELINE_INIT_FAILURE'
     assert event.pipeline_init_failure_data
+
+
+def test_reexecution():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid
+    def add_one(num):
+        return num + 1
+
+    pipeline_def = PipelineDefinition(
+        solid_defs=[return_one, add_one],
+        dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
+    )
+
+    pipeline_result = execute_pipeline(
+        pipeline_def, environment_dict={'storage': {'filesystem': {}}}
+    )
+    assert pipeline_result.success
+    assert pipeline_result.result_for_solid('add_one').output_value() == 2
+
+    reexecution_run_config = RunConfig(
+        reexecution_config=ReexecutionConfig(
+            previous_run_id=pipeline_result.run_id,
+            step_output_handles=[StepOutputHandle('return_one.compute')],
+        )
+    )
+    reexecution_result = execute_pipeline(
+        pipeline_def,
+        environment_dict={'storage': {'filesystem': {}}},
+        run_config=reexecution_run_config,
+    )
+
+    assert reexecution_result.success
+    assert len(reexecution_result.solid_result_list) == 2
+    assert reexecution_result.result_for_solid('return_one').output_value() == 1
+    assert reexecution_result.result_for_solid('add_one').output_value() == 2

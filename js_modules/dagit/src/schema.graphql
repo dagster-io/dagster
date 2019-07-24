@@ -468,6 +468,29 @@ type NullableRuntimeType implements RuntimeType & WrappingRuntimeType {
   ofType: RuntimeType!
 }
 
+type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  operationResult: ObjectStoreOperationResult!
+}
+
+type ObjectStoreOperationResult implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  op: ObjectStoreOperationType!
+}
+
+enum ObjectStoreOperationType {
+  SET_OBJECT
+  GET_OBJECT
+  RM_OBJECT
+  CP_OBJECT
+}
+
 type Output {
   solid: Solid!
   definition: OutputDefinition!
@@ -598,7 +621,7 @@ type PipelineRun {
   mode: String!
 }
 
-union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | PipelineStartEvent | PipelineSuccessEvent | StepExpectationResultEvent | StepMaterializationEvent
+union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineProcessStartedEvent | PipelineProcessStartEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent
 
 type PipelineRunLogsSubscriptionMissingRunIdFailure {
   missingRunId: String!

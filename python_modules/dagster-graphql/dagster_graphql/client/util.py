@@ -31,6 +31,7 @@ HANDLED_EVENTS = {
     'ExecutionStepSuccessEvent': DagsterEventType.STEP_SUCCESS,
     'StepMaterializationEvent': DagsterEventType.STEP_MATERIALIZATION,
     'StepExpectationResultEvent': DagsterEventType.STEP_EXPECTATION_RESULT,
+    'ObjectStoreOperationEvent': DagsterEventType.OBJECT_STORE_OPERATION,
 }
 
 

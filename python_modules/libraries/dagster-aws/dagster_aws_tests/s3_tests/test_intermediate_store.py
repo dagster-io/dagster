@@ -49,7 +49,7 @@ class LowercaseString(RuntimeType):
         super(LowercaseString, self).__init__(
             'lowercase_string',
             'LowercaseString',
-            serialization_strategy=UppercaseSerializationStrategy(),
+            serialization_strategy=UppercaseSerializationStrategy('uppercase'),
         )
 
 
@@ -126,7 +126,7 @@ def test_using_s3_for_subplan(s3_bucket):
             pipeline, environment_dict, RunConfig(run_id=run_id)
         ) as context:
             assert store.has_intermediate(context, 'return_one.compute')
-            assert store.get_intermediate(context, 'return_one.compute', Int) == 1
+            assert store.get_intermediate(context, 'return_one.compute', Int).obj == 1
 
         add_one_step_events = list(
             execute_plan(
@@ -142,7 +142,7 @@ def test_using_s3_for_subplan(s3_bucket):
             pipeline, environment_dict, RunConfig(run_id=run_id)
         ) as context:
             assert store.has_intermediate(context, 'add_one.compute')
-            assert store.get_intermediate(context, 'add_one.compute', Int) == 2
+            assert store.get_intermediate(context, 'add_one.compute', Int).obj == 2
     finally:
         with scoped_pipeline_context(
             pipeline, environment_dict, RunConfig(run_id=run_id)
@@ -234,7 +234,7 @@ def test_s3_intermediate_store_composite_types_with_custom_serializer_for_inner_
             assert intermediate_store.has_object(context, ['list'])
             assert intermediate_store.get_object(
                 context, resolve_to_runtime_type(List[Bool]).inst(), ['list']
-            ) == ['foo', 'bar']
+            ).obj == ['foo', 'bar']
 
         finally:
             intermediate_store.rm_object(context, ['foo'])
@@ -263,7 +263,9 @@ def test_s3_intermediate_store_with_custom_serializer():
             )
 
             assert intermediate_store.has_object(context, ['foo'])
-            assert intermediate_store.get_object(context, LowercaseString.inst(), ['foo']) == 'foo'
+            assert (
+                intermediate_store.get_object(context, LowercaseString.inst(), ['foo']).obj == 'foo'
+            )
         finally:
             intermediate_store.rm_object(context, ['foo'])
 
@@ -282,7 +284,7 @@ def test_s3_intermediate_store():
             intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
 
             assert intermediate_store.has_object(context, ['true'])
-            assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']) is True
+            assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']).obj is True
             assert intermediate_store.uri_for_paths(['true']).startswith('s3://')
 
         finally:

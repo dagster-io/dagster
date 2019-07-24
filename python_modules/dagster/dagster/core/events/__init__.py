@@ -1,8 +1,16 @@
+'''Structured representations of system events.'''
 from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle, TypeCheck
+from dagster.core.definitions import (
+    EventMetadataEntry,
+    ExpectationResult,
+    Materialization,
+    SolidHandle,
+    TypeCheck,
+)
+from dagster.core.definitions.events import ObjectStoreOperationType
 from dagster.core.execution.plan.objects import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.utils.error import SerializableErrorInfo
@@ -27,6 +35,8 @@ class DagsterEventType(Enum):
     PIPELINE_PROCESS_START = 'PIPELINE_PROCESS_START'
     PIPELINE_PROCESS_STARTED = 'PIPELINE_PROCESS_STARTED'
 
+    OBJECT_STORE_OPERATION = 'OBJECT_STORE_OPERATION'
+
 
 STEP_EVENTS = {
     DagsterEventType.STEP_INPUT,
@@ -37,6 +47,7 @@ STEP_EVENTS = {
     DagsterEventType.STEP_SKIPPED,
     DagsterEventType.STEP_MATERIALIZATION,
     DagsterEventType.STEP_EXPECTATION_RESULT,
+    DagsterEventType.OBJECT_STORE_OPERATION,
 }
 
 FAILURE_EVENTS = {
@@ -376,6 +387,57 @@ class DagsterEvent(
         )
         return event
 
+    @staticmethod
+    def object_store_operation(step_context, object_store_operation_result):
+        object_store_name = (
+            '{object_store_name} '.format(
+                object_store_name=object_store_operation_result.object_store_name
+            )
+            if object_store_operation_result.object_store_name
+            else ''
+        )
+
+        serialization_strategy_modifier = (
+            ' using {serialization_strategy_name}'.format(
+                serialization_strategy_name=object_store_operation_result.serialization_strategy_name
+            )
+            if object_store_operation_result.serialization_strategy_name
+            else ''
+        )
+
+        if object_store_operation_result.op == ObjectStoreOperationType.SET_OBJECT:
+            message = (
+                'Stored intermediate object for output {value_name} in '
+                '{object_store_name}object store{serialization_strategy_modifier}.'
+            ).format(
+                value_name=object_store_operation_result.value_name,
+                object_store_name=object_store_name,
+                serialization_strategy_modifier=serialization_strategy_modifier,
+            )
+        elif object_store_operation_result.op == ObjectStoreOperationType.GET_OBJECT:
+            message = (
+                'Retrieved intermediate object for input {value_name} in '
+                '{object_store_name}object store{serialization_strategy_modifier}.'
+            ).format(
+                value_name=object_store_operation_result.value_name,
+                object_store_name=object_store_name,
+                serialization_strategy_modifier=serialization_strategy_modifier,
+            )
+        else:
+            message = ''
+
+        return DagsterEvent.from_step(
+            DagsterEventType.OBJECT_STORE_OPERATION,
+            step_context,
+            event_specific_data=ObjectStoreOperationResultData(
+                op=object_store_operation_result.op,
+                metadata_entries=[
+                    EventMetadataEntry.path(object_store_operation_result.key, label='key')
+                ],
+            ),
+            message=message,
+        )
+
 
 def get_step_output_event(events, step_key, output_name='result'):
     check.list_param(events, 'events', of_type=DagsterEvent)
@@ -396,6 +458,12 @@ class StepMaterializationData(namedtuple('_StepMaterializationData', 'materializ
 
 
 class StepExpectationResultData(namedtuple('_StepExpectationResultData', 'expectation_result')):
+    pass
+
+
+class ObjectStoreOperationResultData(
+    namedtuple('_ObjectStoreOperationResultData', 'op metadata_entries')
+):
     pass
 
 

@@ -14,7 +14,7 @@ const bgcolorForLevel = (level: LogLevel) =>
   }[level]);
 
 export const Row = styled.div<{ level: LogLevel }>`
-  font-size: 0.85em;
+  font-size: 0.75em;
   width: 100%;
   height: 100%;
   max-height: 17em;
@@ -68,21 +68,23 @@ export const SolidColumn = (props: { stepKey: string | false | null }) => {
   const parts = (props.stepKey || "").replace(/\.compute$/, "").split(".");
   return (
     <SolidColumnContainer style={{ width: widths.solid }}>
-      {parts.map((p, idx) => (
-        <div
-          key={idx}
-          style={{
-            paddingLeft: Math.max(0, idx * 15 - 9),
-            paddingRight: 15,
-            fontWeight: idx === parts.length - 1 ? 600 : 300
-          }}
-        >
-          {idx > 0 ? "↳" : ""}
-          {p.length > 30 - idx * 2
-            ? `${p.substr(0, 16 - idx * 2)}…${p.substr(p.length - 14)}`
-            : p}
-        </div>
-      ))}
+      {props.stepKey
+        ? parts.map((p, idx) => (
+            <div
+              key={idx}
+              style={{
+                paddingLeft: Math.max(0, idx * 15 - 9),
+                paddingRight: 15,
+                fontWeight: idx === parts.length - 1 ? 600 : 300
+              }}
+            >
+              {idx > 0 ? "↳" : ""}
+              {p.length > 30 - idx * 2
+                ? `${p.substr(0, 16 - idx * 2)}…${p.substr(p.length - 14)}`
+                : p}
+            </div>
+          ))
+        : "-"}
     </SolidColumnContainer>
   );
 };

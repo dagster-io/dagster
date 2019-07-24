@@ -1,14 +1,17 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import { LogLevel } from "../types/globalTypes";
 import { Tag, Colors } from "@blueprintjs/core";
+
+import { LogLevel } from "../types/globalTypes";
+import { TypeName } from "../TypeWithTooltip";
 
 import {
   LogsRowStructuredFragment,
   LogsRowStructuredFragment_ExecutionStepFailureEvent,
   LogsRowStructuredFragment_PipelineProcessStartedEvent,
   LogsRowStructuredFragment_PipelineProcessStartEvent,
-  LogsRowStructuredFragment_PipelineInitFailureEvent
+  LogsRowStructuredFragment_PipelineInitFailureEvent,
+  LogsRowStructuredFragment_ObjectStoreOperationEvent
 } from "./types/LogsRowStructuredFragment";
 import { LogsRowUnstructuredFragment } from "./types/LogsRowUnstructuredFragment";
 import {
@@ -18,8 +21,12 @@ import {
   SolidColumn,
   TimestampColumn
 } from "./LogsRowComponents";
-import { MetadataEntries, MetadataEntry } from "./MetadataEntry";
-import { assertUnreachable } from "../Util";
+import {
+  MetadataEntries,
+  MetadataEntry,
+  MetadataEntryLink
+} from "./MetadataEntry";
+import { assertUnreachable, copyValue } from "../Util";
 import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
 
 export class Structured extends React.Component<{
@@ -104,6 +111,17 @@ export class Structured extends React.Component<{
             }
           }
         }
+        ... on ObjectStoreOperationEvent {
+          step {
+            key
+          }
+          operationResult {
+            op
+            metadataEntries {
+              ...MetadataEntryFragment
+            }
+          }
+        }
       }
       ${MetadataEntry.fragments.MetadataEntryFragment}
     `
@@ -164,6 +182,20 @@ export class Structured extends React.Component<{
             message={node.message}
             eventType="Materialization"
             metadataEntries={node.materialization.metadataEntries}
+          />
+        );
+      case "ObjectStoreOperationEvent":
+        return (
+          <DefaultContent
+            message={node.message}
+            eventType={
+              node.operationResult.op === "SET_OBJECT"
+                ? "Store"
+                : node.operationResult.op === "GET_OBJECT"
+                ? "Retrieve"
+                : ""
+            }
+            metadataEntries={node.operationResult.metadataEntries}
           />
         );
       case "PipelineFailureEvent":
@@ -235,7 +267,7 @@ const DefaultContent: React.FunctionComponent<{
   <>
     <EventTypeColumn>
       {eventType && (
-        <Tag minimal={true} intent={eventIntent}>
+        <Tag minimal={true} intent={eventIntent} style={{ fontSize: "0.9em" }}>
           {eventType}
         </Tag>
       )}
@@ -255,7 +287,7 @@ const FailureContent: React.FunctionComponent<{
 }> = ({ node }) => (
   <>
     <EventTypeColumn>
-      <Tag minimal={true} intent="danger">
+      <Tag minimal={true} intent="danger" style={{ fontSize: "0.9em" }}>
         Failed
       </Tag>
     </EventTypeColumn>

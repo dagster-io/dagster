@@ -260,14 +260,17 @@ def test_successful_one_part_execute_plan(snapshot):
     )
 
     assert step_events[3]['step']['key'] == 'sum_solid.compute'
-    assert step_events[3]['__typename'] == 'ExecutionStepSuccessEvent'
+    assert step_events[3]['__typename'] == 'ObjectStoreOperationEvent'
+
+    assert step_events[4]['step']['key'] == 'sum_solid.compute'
+    assert step_events[4]['__typename'] == 'ExecutionStepSuccessEvent'
 
     snapshot.assert_match(result.data)
 
     store = FileSystemIntermediateStore(run_id)
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert (
-        str(store.get_intermediate(None, 'sum_solid.compute', PoorMansDataFrame))
+        str(store.get_intermediate(None, 'sum_solid.compute', PoorMansDataFrame).obj)
         == expected_value_repr
     )
 
@@ -313,11 +316,15 @@ def test_successful_two_part_execute_plan(snapshot):
     step_events = query_result['stepEvents']
     assert step_events[0]['__typename'] == 'ExecutionStepStartEvent'
     assert step_events[0]['step']['key'] == 'sum_sq_solid.compute'
-    assert step_events[1]['__typename'] == 'ExecutionStepInputEvent'
+    assert step_events[1]['__typename'] == 'ObjectStoreOperationEvent'
     assert step_events[1]['step']['key'] == 'sum_sq_solid.compute'
-    assert step_events[2]['__typename'] == 'ExecutionStepOutputEvent'
-    assert step_events[2]['outputName'] == 'result'
-    assert step_events[3]['__typename'] == 'ExecutionStepSuccessEvent'
+    assert step_events[2]['__typename'] == 'ExecutionStepInputEvent'
+    assert step_events[2]['step']['key'] == 'sum_sq_solid.compute'
+    assert step_events[3]['__typename'] == 'ExecutionStepOutputEvent'
+    assert step_events[3]['outputName'] == 'result'
+    assert step_events[4]['__typename'] == 'ObjectStoreOperationEvent'
+    assert step_events[4]['step']['key'] == 'sum_sq_solid.compute'
+    assert step_events[5]['__typename'] == 'ExecutionStepSuccessEvent'
 
     snapshot.assert_match(result_two.data)
 
@@ -330,7 +337,7 @@ def test_successful_two_part_execute_plan(snapshot):
     store = FileSystemIntermediateStore(run_id)
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
     assert (
-        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame))
+        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame).obj)
         == expected_value_repr
     )
 

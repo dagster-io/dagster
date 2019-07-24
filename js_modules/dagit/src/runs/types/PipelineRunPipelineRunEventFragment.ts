@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { LogLevel } from "./../../types/globalTypes";
+import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: PipelineRunPipelineRunEventFragment
@@ -300,4 +300,54 @@ export interface PipelineRunPipelineRunEventFragment_StepExpectationResultEvent 
   expectationResult: PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult;
 }
 
-export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_ExecutionStepSkippedEvent | PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineRunPipelineRunEventFragment_PipelineProcessStartEvent | PipelineRunPipelineRunEventFragment_StepMaterializationEvent | PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent | PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent | PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent | PipelineRunPipelineRunEventFragment_StepExpectationResultEvent;
+export interface PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries = PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry | PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry | PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry | PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry;
+
+export interface PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult {
+  __typename: "ObjectStoreOperationResult";
+  op: ObjectStoreOperationType;
+  metadataEntries: PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries[];
+}
+
+export interface PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent {
+  __typename: "ObjectStoreOperationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_step | null;
+  operationResult: PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult;
+}
+
+export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_ExecutionStepSkippedEvent | PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineRunPipelineRunEventFragment_PipelineProcessStartEvent | PipelineRunPipelineRunEventFragment_StepMaterializationEvent | PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent | PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineRunPipelineRunEventFragment_ExecutionStepInputEvent | PipelineRunPipelineRunEventFragment_ExecutionStepOutputEvent | PipelineRunPipelineRunEventFragment_StepExpectationResultEvent | PipelineRunPipelineRunEventFragment_ObjectStoreOperationEvent;

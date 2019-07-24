@@ -7,51 +7,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_successful_one_part_execute_plan 1'] = {
-    'executePlan': {
-        '__typename': 'ExecutePlanSuccess',
-        'hasFailures': False,
-        'pipeline': {
-            'name': 'csv_hello_world'
-        },
-        'stepEvents': [
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'sum_solid.compute',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepInputEvent',
-                'step': {
-                    'key': 'sum_solid.compute',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'result',
-                'step': {
-                    'key': 'sum_solid.compute',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'sum_solid.compute',
-                    'metadata': [
-                    ]
-                }
-            }
-        ]
-    }
-}
-
 snapshots['test_success_whole_execution_plan 1'] = {
     'executePlan': {
         '__typename': 'ExecutePlanSuccess',
@@ -86,6 +41,14 @@ snapshots['test_success_whole_execution_plan 1'] = {
                 }
             },
             {
+                '__typename': 'ObjectStoreOperationEvent',
+                'step': {
+                    'key': 'sum_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
                     'key': 'sum_solid.compute',
@@ -95,6 +58,14 @@ snapshots['test_success_whole_execution_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_sq_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ObjectStoreOperationEvent',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -112,6 +83,14 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
+                'step': {
+                    'key': 'sum_sq_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ObjectStoreOperationEvent',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -164,6 +143,14 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
                 }
             },
             {
+                '__typename': 'ObjectStoreOperationEvent',
+                'step': {
+                    'key': 'sum_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
                     'key': 'sum_solid.compute',
@@ -173,6 +160,14 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_sq_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ObjectStoreOperationEvent',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -190,6 +185,14 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
+                'step': {
+                    'key': 'sum_sq_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ObjectStoreOperationEvent',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -286,6 +289,59 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
     }
 }
 
+snapshots['test_successful_one_part_execute_plan 1'] = {
+    'executePlan': {
+        '__typename': 'ExecutePlanSuccess',
+        'hasFailures': False,
+        'pipeline': {
+            'name': 'csv_hello_world'
+        },
+        'stepEvents': [
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ExecutionStepInputEvent',
+                'step': {
+                    'key': 'sum_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'result',
+                'step': {
+                    'key': 'sum_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ObjectStoreOperationEvent',
+                'step': {
+                    'key': 'sum_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            }
+        ]
+    }
+}
+
 snapshots['test_successful_two_part_execute_plan 1'] = {
     'executePlan': {
         '__typename': 'ExecutePlanSuccess',
@@ -313,6 +369,14 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
+                'step': {
+                    'key': 'sum_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ObjectStoreOperationEvent',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -348,6 +412,14 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
                 }
             },
             {
+                '__typename': 'ObjectStoreOperationEvent',
+                'step': {
+                    'key': 'sum_sq_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
                 '__typename': 'ExecutionStepInputEvent',
                 'step': {
                     'key': 'sum_sq_solid.compute',
@@ -358,6 +430,14 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
+                'step': {
+                    'key': 'sum_sq_solid.compute',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ObjectStoreOperationEvent',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [

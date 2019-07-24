@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { LogLevel } from "./../../types/globalTypes";
+import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: LogsScrollingTableMessageFragment
@@ -297,4 +297,54 @@ export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent {
   expectationResult: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult;
 }
 
-export type LogsScrollingTableMessageFragment = LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent | LogsScrollingTableMessageFragment_PipelineProcessStartedEvent | LogsScrollingTableMessageFragment_PipelineProcessStartEvent | LogsScrollingTableMessageFragment_StepMaterializationEvent | LogsScrollingTableMessageFragment_PipelineInitFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepInputEvent | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent | LogsScrollingTableMessageFragment_StepExpectationResultEvent;
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries = LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry;
+
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult {
+  __typename: "ObjectStoreOperationResult";
+  op: ObjectStoreOperationType;
+  metadataEntries: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries[];
+}
+
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent {
+  __typename: "ObjectStoreOperationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_step | null;
+  operationResult: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult;
+}
+
+export type LogsScrollingTableMessageFragment = LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent | LogsScrollingTableMessageFragment_PipelineProcessStartedEvent | LogsScrollingTableMessageFragment_PipelineProcessStartEvent | LogsScrollingTableMessageFragment_StepMaterializationEvent | LogsScrollingTableMessageFragment_PipelineInitFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepInputEvent | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent | LogsScrollingTableMessageFragment_StepExpectationResultEvent | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent;

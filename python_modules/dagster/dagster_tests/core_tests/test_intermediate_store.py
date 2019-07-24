@@ -32,7 +32,7 @@ class LowercaseString(RuntimeType):
         super(LowercaseString, self).__init__(
             'lowercase_string',
             'LowercaseString',
-            serialization_strategy=UppercaseSerializationStrategy(),
+            serialization_strategy=UppercaseSerializationStrategy('uppercase'),
         )
 
 
@@ -66,7 +66,7 @@ def test_file_system_intermediate_store():
         try:
             intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
             assert intermediate_store.has_object(context, ['true'])
-            assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']) is True
+            assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']).obj is True
             assert intermediate_store.uri_for_paths(['true']).startswith('file:///')
             assert intermediate_store.rm_object(context, ['true']) is None
             assert intermediate_store.rm_object(context, ['true']) is None
@@ -91,7 +91,9 @@ def test_file_system_intermediate_store_with_base_dir():
             try:
                 intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
                 assert intermediate_store.has_object(context, ['true'])
-                assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']) is True
+                assert (
+                    intermediate_store.get_object(context, RuntimeBool.inst(), ['true']).obj is True
+                )
 
             finally:
                 try:
@@ -121,7 +123,7 @@ def test_file_system_intermediate_store_composite_types():
             assert intermediate_store.has_object(context, ['bool'])
             assert intermediate_store.get_object(
                 context, resolve_to_runtime_type(List[Bool]).inst(), ['bool']
-            ) == [True, False]
+            ).obj == [True, False]
 
         finally:
             try:
@@ -143,7 +145,9 @@ def test_file_system_intermediate_store_with_custom_serializer():
                 assert fd.read().decode('utf-8') == 'FOO'
 
             assert intermediate_store.has_object(context, ['foo'])
-            assert intermediate_store.get_object(context, LowercaseString.inst(), ['foo']) == 'foo'
+            assert (
+                intermediate_store.get_object(context, LowercaseString.inst(), ['foo']).obj == 'foo'
+            )
         finally:
             try:
                 shutil.rmtree(intermediate_store.root)
@@ -170,7 +174,7 @@ def test_file_system_intermediate_store_composite_types_with_custom_serializer_f
             assert intermediate_store.has_object(context, ['list'])
             assert intermediate_store.get_object(
                 context, resolve_to_runtime_type(List[Bool]).inst(), ['list']
-            ) == ['foo', 'bar']
+            ).obj == ['foo', 'bar']
 
         finally:
             try:

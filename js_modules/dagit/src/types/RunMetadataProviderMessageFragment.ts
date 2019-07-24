@@ -13,7 +13,7 @@ export interface RunMetadataProviderMessageFragment_ExecutionStepFailureEvent_st
 }
 
 export interface RunMetadataProviderMessageFragment_ExecutionStepFailureEvent {
-  __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
+  __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "ObjectStoreOperationEvent";
   message: string;
   timestamp: string;
   step: RunMetadataProviderMessageFragment_ExecutionStepFailureEvent_step | null;

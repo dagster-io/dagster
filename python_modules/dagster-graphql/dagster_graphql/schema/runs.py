@@ -111,6 +111,23 @@ class DauphinMessageEvent(dauphin.Interface):
     step = dauphin.Field('ExecutionStep')
 
 
+class DauphinEventMetadataEntry(dauphin.Interface):
+    class Meta:
+        name = 'EventMetadataEntry'
+
+    label = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+
+
+class DauphinDisplayableEvent(dauphin.Interface):
+    class Meta:
+        name = 'DisplayableEvent'
+
+    label = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    metadataEntries = dauphin.non_null_list(DauphinEventMetadataEntry)
+
+
 class DauphinLogMessageConnection(dauphin.ObjectType):
     class Meta:
         name = 'LogMessageConnection'
@@ -254,14 +271,6 @@ class DauphinExecutionStepSkippedEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
 
-class DauphinEventMetadataEntry(dauphin.Interface):
-    class Meta:
-        name = 'EventMetadataEntry'
-
-    label = dauphin.NonNull(dauphin.String)
-    description = dauphin.String()
-
-
 class DauphinEventPathMetadataEntry(dauphin.ObjectType):
     class Meta:
         name = 'EventPathMetadataEntry'
@@ -332,13 +341,25 @@ def _to_dauphin_metadata_entries(metadata_entries):
     return list(iterate_metadata_entries(metadata_entries) or [])
 
 
-class DauphinDisplayableEvent(dauphin.Interface):
+class DauphinObjectStoreOperationType(dauphin.Enum):
     class Meta:
-        name = 'DisplayableEvent'
+        name = 'ObjectStoreOperationType'
 
-    label = dauphin.NonNull(dauphin.String)
-    description = dauphin.String()
-    metadataEntries = dauphin.non_null_list(DauphinEventMetadataEntry)
+    SET_OBJECT = 'SET_OBJECT'
+    GET_OBJECT = 'GET_OBJECT'
+    RM_OBJECT = 'RM_OBJECT'
+    CP_OBJECT = 'CP_OBJECT'
+
+
+class DauphinObjectStoreOperationResult(dauphin.ObjectType):
+    class Meta:
+        name = 'ObjectStoreOperationResult'
+        interfaces = (DauphinDisplayableEvent,)
+
+    op = dauphin.NonNull('ObjectStoreOperationType')
+
+    def resolve_metadataEntries(self, _graphene_info):
+        return _to_dauphin_metadata_entries(self.metadata_entries)
 
 
 class DauphinMaterialization(dauphin.ObjectType):
@@ -422,6 +443,14 @@ class DauphinStepMaterializationEvent(dauphin.ObjectType):
     materialization = dauphin.NonNull(DauphinMaterialization)
 
 
+class DauphinObjectStoreOperationEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'ObjectStoreOperationEvent'
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
+
+    operation_result = dauphin.NonNull(DauphinObjectStoreOperationResult)
+
+
 class DauphinStepExpectationResultEvent(dauphin.ObjectType):
     class Meta:
         name = 'StepExpectationResultEvent'
@@ -444,10 +473,11 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinLogMessageEvent,
             DauphinPipelineFailureEvent,
             DauphinPipelineInitFailureEvent,
-            DauphinPipelineProcessStartEvent,
             DauphinPipelineProcessStartedEvent,
+            DauphinPipelineProcessStartEvent,
             DauphinPipelineStartEvent,
             DauphinPipelineSuccessEvent,
+            DauphinObjectStoreOperationEvent,
             DauphinStepExpectationResultEvent,
             DauphinStepMaterializationEvent,
         )
@@ -542,6 +572,11 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
             # fmt: off
             **(basic_params)
             # fmt: on
+        )
+    elif dagster_event.event_type == DagsterEventType.OBJECT_STORE_OPERATION:
+        operation_result = dagster_event.event_specific_data
+        return graphene_info.schema.type_named('ObjectStoreOperationEvent')(
+            operation_result=operation_result, **basic_params
         )
     else:
         raise Exception(

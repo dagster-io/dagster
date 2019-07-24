@@ -17,12 +17,15 @@ from dagster_airflow_tests.conftest import IMAGE
 from dagster_airflow_tests.marks import nettest
 from dagster_airflow_tests.test_project.dagster_airflow_demo import demo_pipeline
 
+
 AIRFLOW_DEMO_EVENTS = {
     ('STEP_START', 'multiply_the_word.compute'),
     ('STEP_INPUT', 'multiply_the_word.compute'),
     ('STEP_OUTPUT', 'multiply_the_word.compute'),
+    ('OBJECT_STORE_OPERATION', 'multiply_the_word.compute'),
     ('STEP_SUCCESS', 'multiply_the_word.compute'),
     ('STEP_START', 'count_letters.compute'),
+    ('OBJECT_STORE_OPERATION', 'count_letters.compute'),
     ('STEP_INPUT', 'count_letters.compute'),
     ('STEP_OUTPUT', 'count_letters.compute'),
     ('STEP_SUCCESS', 'count_letters.compute'),

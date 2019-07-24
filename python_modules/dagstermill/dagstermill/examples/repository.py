@@ -227,7 +227,7 @@ class ComplexSerializationStrategy(SerializationStrategy):  # pylint: disable=no
         pass  # pragma: nocover
 
 
-complex_serialization_strategy = ComplexSerializationStrategy()
+complex_serialization_strategy = ComplexSerializationStrategy('complex')
 
 ComplexDagsterType = as_dagster_type(
     pd.DataFrame, serialization_strategy=complex_serialization_strategy

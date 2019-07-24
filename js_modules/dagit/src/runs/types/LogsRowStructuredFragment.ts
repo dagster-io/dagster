@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { LogLevel } from "./../../types/globalTypes";
+import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: LogsRowStructuredFragment
@@ -297,4 +297,54 @@ export interface LogsRowStructuredFragment_StepExpectationResultEvent {
   expectationResult: LogsRowStructuredFragment_StepExpectationResultEvent_expectationResult;
 }
 
-export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_PipelineProcessStartedEvent | LogsRowStructuredFragment_PipelineProcessStartEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineInitFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent;
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries = LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry | LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry | LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry | LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry;
+
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult {
+  __typename: "ObjectStoreOperationResult";
+  op: ObjectStoreOperationType;
+  metadataEntries: LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries[];
+}
+
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent {
+  __typename: "ObjectStoreOperationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: LogsRowStructuredFragment_ObjectStoreOperationEvent_step | null;
+  operationResult: LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult;
+}
+
+export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_PipelineProcessStartedEvent | LogsRowStructuredFragment_PipelineProcessStartEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineInitFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent;

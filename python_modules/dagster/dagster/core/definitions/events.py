@@ -1,5 +1,7 @@
 import os
+
 from collections import namedtuple
+from enum import Enum
 
 from dagster import check
 
@@ -185,4 +187,71 @@ class Failure(Exception):
         self.description = check.opt_str_param(description, 'description')
         self.metadata_entries = check.opt_list_param(
             metadata_entries, 'metadata_entries', of_type=EventMetadataEntry
+        )
+
+
+class ObjectStoreOperationType(Enum):
+    SET_OBJECT = 'SET_OBJECT'
+    GET_OBJECT = 'GET_OBJECT'
+    RM_OBJECT = 'RM_OBJECT'
+    CP_OBJECT = 'CP_OBJECT'
+
+
+class ObjectStoreOperation(
+    namedtuple(
+        '_ObjectStoreOperation',
+        'op key dest_key obj serialization_strategy_name object_store_name value_name',
+    )
+):
+    '''Used internally by Dagster machinery when values are written to and read from an
+    ObjectStore.
+    
+    Args:
+        op (ObjectStoreOperationType): The type of the operation on the object store.
+        key (str): The key of the object on which the operation was performed.
+        dest_key (Optional[str]): The destination key, if any, to which the object was copied.
+        obj (Any): The object, if any, retrieved by the operation.
+        serialization_strategy_name (Optional[str]): The name of the serialization strategy, if any,
+            employed by the operation
+        object_store_name (Optional[str]): The name of the object store that performed the
+            operation.
+    '''
+
+    def __new__(
+        cls,
+        op,
+        key,
+        dest_key=None,
+        obj=None,
+        serialization_strategy_name=None,
+        object_store_name=None,
+        value_name=None,
+    ):
+        return super(ObjectStoreOperation, cls).__new__(
+            cls,
+            op=op,
+            key=check.str_param(key, 'key'),
+            dest_key=check.opt_str_param(dest_key, 'dest_key'),
+            obj=obj,
+            serialization_strategy_name=check.opt_str_param(
+                serialization_strategy_name, 'serialization_strategy_name'
+            ),
+            object_store_name=check.opt_str_param(object_store_name, 'object_store_name'),
+            value_name=check.opt_str_param(value_name, 'value_name'),
+        )
+
+    @classmethod
+    def serializable(cls, inst, **kwargs):
+        return cls(
+            **dict(
+                {
+                    'op': inst.op.value,
+                    'key': inst.key,
+                    'dest_key': inst.dest_key,
+                    'obj': None,
+                    'serialization_strategy_name': inst.serialization_strategy_name,
+                    'object_store_name': inst.object_store_name,
+                },
+                **kwargs
+            )
         )

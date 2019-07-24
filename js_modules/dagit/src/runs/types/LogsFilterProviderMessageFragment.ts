@@ -15,7 +15,7 @@ export interface LogsFilterProviderMessageFragment_step {
 }
 
 export interface LogsFilterProviderMessageFragment {
-  __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "StepExpectationResultEvent" | "StepMaterializationEvent";
+  __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineProcessStartedEvent" | "PipelineProcessStartEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "ObjectStoreOperationEvent" | "StepExpectationResultEvent" | "StepMaterializationEvent";
   message: string;
   timestamp: string;
   level: LogLevel;

@@ -27,6 +27,7 @@ from dagster.core.execution.plan.objects import (
     UserFailureData,
 )
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.storage.object_store import ObjectStoreOperation
 
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.timing import time_execution_scope
@@ -423,7 +424,15 @@ def _core_dagster_event_sequence_for_step(step_context):
 
     yield DagsterEvent.step_start_event(step_context)
 
-    inputs = _input_values_from_intermediates_manager(step_context)
+    inputs = {}
+    for input_name, input_value in _input_values_from_intermediates_manager(step_context).items():
+        if isinstance(input_value, ObjectStoreOperation):
+            yield DagsterEvent.object_store_operation(
+                step_context, ObjectStoreOperation.serializable(input_value, value_name=input_name)
+            )
+            inputs[input_name] = input_value.obj
+        else:
+            inputs[input_name] = input_value
 
     for input_name, input_value in inputs.items():
         for evt in check.generator(
@@ -473,15 +482,24 @@ def _create_step_events_for_output(step_context, output):
 
     step_output_handle = StepOutputHandle.from_step(step=step, output_name=output.output_name)
 
-    step_context.intermediates_manager.set_intermediate(
+    for evt in _set_intermediates(step_context, step_output, step_output_handle, output):
+        yield evt
+
+    for evt in _create_output_materializations(step_context, output.output_name, output.value):
+        yield evt
+
+
+def _set_intermediates(step_context, step_output, step_output_handle, output):
+    res = step_context.intermediates_manager.set_intermediate(
         context=step_context,
         runtime_type=step_output.runtime_type,
         step_output_handle=step_output_handle,
         value=output.value,
     )
-
-    for evt in _create_output_materializations(step_context, output.output_name, output.value):
-        yield evt
+    if isinstance(res, ObjectStoreOperation):
+        yield DagsterEvent.object_store_operation(
+            step_context, ObjectStoreOperation.serializable(res, value_name=output.output_name)
+        )
 
 
 def _create_output_materializations(step_context, output_name, value):

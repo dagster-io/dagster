@@ -67,8 +67,8 @@ def test_execution_plan_reexecution():
     assert result.success
 
     store = FileSystemIntermediateStore(result.run_id)
-    assert store.get_intermediate(None, 'add_one.compute', Int) == 4
-    assert store.get_intermediate(None, 'add_two.compute', Int) == 6
+    assert store.get_intermediate(None, 'add_one.compute', Int).obj == 4
+    assert store.get_intermediate(None, 'add_two.compute', Int).obj == 6
 
     ## re-execute add_two
 
@@ -93,8 +93,8 @@ def test_execution_plan_reexecution():
     )
 
     store = FileSystemIntermediateStore(new_run_id)
-    assert store.get_intermediate(None, 'add_one.compute', Int) == 4
-    assert store.get_intermediate(None, 'add_two.compute', Int) == 6
+    assert store.get_intermediate(None, 'add_one.compute', Int).obj == 4
+    assert store.get_intermediate(None, 'add_two.compute', Int).obj == 6
 
     assert not get_step_output_event(step_events, 'add_one.compute')
     assert get_step_output_event(step_events, 'add_two.compute')
@@ -249,8 +249,8 @@ def test_pipeline_step_key_subset_execution():
     assert result.success
 
     store = FileSystemIntermediateStore(result.run_id)
-    assert store.get_intermediate(None, 'add_one.compute', Int) == 4
-    assert store.get_intermediate(None, 'add_two.compute', Int) == 6
+    assert store.get_intermediate(None, 'add_one.compute', Int).obj == 4
+    assert store.get_intermediate(None, 'add_two.compute', Int).obj == 6
 
     ## re-execute add_two
 
@@ -275,8 +275,8 @@ def test_pipeline_step_key_subset_execution():
     assert step_events
 
     store = FileSystemIntermediateStore(new_run_id)
-    assert store.get_intermediate(None, 'add_one.compute', Int) == 4
-    assert store.get_intermediate(None, 'add_two.compute', Int) == 6
+    assert store.get_intermediate(None, 'add_one.compute', Int).obj == 4
+    assert store.get_intermediate(None, 'add_two.compute', Int).obj == 6
 
     assert not get_step_output_event(step_events, 'add_one.compute')
     assert get_step_output_event(step_events, 'add_two.compute')

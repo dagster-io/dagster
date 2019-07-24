@@ -281,6 +281,18 @@ def get_step_output_event(logs, step_key, output_name='result'):
 
 
 def test_successful_pipeline_reexecution(snapshot):
+    def sanitize_result_data(result_data):
+        if isinstance(result_data, dict):
+            if 'path' in result_data:
+                result_data['path'] = 'DUMMY_PATH'
+            result_data = {k: sanitize_result_data(v) for k, v in result_data.items()}
+        elif isinstance(result_data, list):
+            for i in range(len(result_data)):
+                result_data[i] = sanitize_result_data(result_data[i])
+        else:
+            pass
+        return result_data
+
     run_id = str(uuid.uuid4())
     result_one = execute_dagster_graphql(
         define_context(),
@@ -299,7 +311,7 @@ def test_successful_pipeline_reexecution(snapshot):
         result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
     )
 
-    snapshot.assert_match(result_one.data)
+    snapshot.assert_match(sanitize_result_data(result_one.data))
 
     expected_value_repr = (
         '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), '''
@@ -311,7 +323,7 @@ def test_successful_pipeline_reexecution(snapshot):
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
     assert (
-        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame))
+        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame).obj)
         == expected_value_repr
     )
 
@@ -347,14 +359,14 @@ def test_successful_pipeline_reexecution(snapshot):
     assert not get_step_output_event(logs, 'sum_solid.compute')
     assert get_step_output_event(logs, 'sum_sq_solid.compute')
 
-    snapshot.assert_match(result_two.data)
+    snapshot.assert_match(sanitize_result_data(result_two.data))
 
     store = FileSystemIntermediateStore(new_run_id)
     assert not store.has_intermediate(None, 'sum_solid.inputs.num.read', 'input_thunk_output')
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
     assert (
-        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame))
+        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame).obj)
         == expected_value_repr
     )
 

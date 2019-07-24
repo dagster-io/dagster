@@ -24,6 +24,13 @@ export enum LogLevel {
   WARNING = "WARNING",
 }
 
+export enum ObjectStoreOperationType {
+  CP_OBJECT = "CP_OBJECT",
+  GET_OBJECT = "GET_OBJECT",
+  RM_OBJECT = "RM_OBJECT",
+  SET_OBJECT = "SET_OBJECT",
+}
+
 export enum PipelineRunStatus {
   FAILURE = "FAILURE",
   NOT_STARTED = "NOT_STARTED",

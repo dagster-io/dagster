@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes";
+import { PipelineRunStatus, LogLevel, ObjectStoreOperationType, StepKind } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PipelineRunRootQuery
@@ -320,7 +320,57 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
   expectationResult: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepExpectationResultEvent_expectationResult;
 }
 
-export type PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes = PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepSkippedEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineProcessStartedEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineProcessStartEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepMaterializationEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepExpectationResultEvent;
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries = PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry;
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_operationResult {
+  __typename: "ObjectStoreOperationResult";
+  op: ObjectStoreOperationType;
+  metadataEntries: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries[];
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent {
+  __typename: "ObjectStoreOperationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_step | null;
+  operationResult: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent_operationResult;
+}
+
+export type PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes = PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepSkippedEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineProcessStartedEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineProcessStartEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepMaterializationEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_PipelineInitFailureEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_StepExpectationResultEvent | PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ObjectStoreOperationEvent;
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs {
   __typename: "LogMessageConnection";

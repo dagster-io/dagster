@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
 import { copyValue, assertUnreachable } from "../Util";
 import { showCustomAlert } from "../CustomAlertProvider";
+import { Icon } from "@blueprintjs/core";
 
 export const MetadataEntries: React.FunctionComponent<{
   entries: MetadataEntryFragment[];
@@ -54,12 +55,15 @@ export class MetadataEntry extends React.Component<{
     switch (entry.__typename) {
       case "EventPathMetadataEntry":
         return (
-          <MetadataEntryLink
-            title={"Copy to clipboard"}
-            onClick={e => copyValue(e, entry.path)}
-          >
-            [Copy Path]
-          </MetadataEntryLink>
+          <>
+            <MetadataEntryLink
+              title={"Copy to clipboard"}
+              onClick={e => copyValue(e, entry.path)}
+            >
+              {entry.path}
+            </MetadataEntryLink>{" "}
+            <Icon icon="clipboard" iconSize={10} color={"#a88860"} />
+          </>
         );
 
       case "EventJsonMetadataEntry":
@@ -80,13 +84,16 @@ export class MetadataEntry extends React.Component<{
 
       case "EventUrlMetadataEntry":
         return (
-          <MetadataEntryLink
-            href={entry.url}
-            title={`Open in a new tab`}
-            target="__blank"
-          >
-            [Open URL]
-          </MetadataEntryLink>
+          <>
+            <MetadataEntryLink
+              href={entry.url}
+              title={`Open in a new tab`}
+              target="__blank"
+            >
+              {entry.url}
+            </MetadataEntryLink>{" "}
+            <Icon icon="link" iconSize={10} color={"#a88860"} />
+          </>
         );
       case "EventTextMetadataEntry":
         return entry.text;
@@ -96,7 +103,7 @@ export class MetadataEntry extends React.Component<{
   }
 }
 
-const MetadataEntryLink = styled.a`
+export const MetadataEntryLink = styled.a`
   text-decoration: underline;
   color: inherit;
   &:hover {
@@ -107,17 +114,17 @@ const MetadataEntryLink = styled.a`
 const MetadataEntriesTable = styled.table`
   padding: 0;
   margin-top: 4px;
-  border-top: 1px solid #bb956a;
-  border-left: 1px solid #bb956a;
-  background: #fff8f0;
+  border-top: 1px solid #dbc5ad;
+  border-left: 1px solid #dbc5ad;
+  background: #fffaf5;
   td:first-child {
-    color: #926d43;
+    color: #a88860;
   }
   td {
     padding: 4px;
     padding-right: 8px;
-    border-bottom: 1px solid #bb956a;
-    border-right: 1px solid #bb956a;
+    border-bottom: 1px solid #dbc5ad;
+    border-right: 1px solid #dbc5ad;
     vertical-align: top;
   }
 `;
