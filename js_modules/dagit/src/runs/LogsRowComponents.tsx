@@ -114,19 +114,6 @@ const TimestampColumnContainer = styled.div`
   color: ${Colors.GRAY3};
 `;
 
-export const LabelColumn: React.FunctionComponent<{}> = props => {
-  const widths = React.useContext(ColumnWidthsContext);
-  return (
-    <LabelColumnContainer style={{ width: widths.label }}>
-      {props.children}
-    </LabelColumnContainer>
-  );
-};
-
-export const LabelColumnContainer = styled.div`
-  font-weight: 600;
-`;
-
 export const EventTypeColumn: React.FunctionComponent<{}> = props => {
   const widths = React.useContext(ColumnWidthsContext);
   return (

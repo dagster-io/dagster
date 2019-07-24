@@ -18,7 +18,6 @@ import { LogsRowUnstructuredFragment } from "./types/LogsRowUnstructuredFragment
 import {
   Row,
   StructuredContent,
-  LabelColumn,
   EventTypeColumn,
   SolidColumn,
   TimestampColumn
@@ -233,7 +232,6 @@ export class Unstructured extends React.Component<{
       <Row level={node.level}>
         <SolidColumn stepKey={node.step && node.step.key} />
         <EventTypeColumn>{node.level}</EventTypeColumn>
-        <LabelColumn />
         <span style={{ flex: 1 }}>{node.message}</span>
         <TimestampColumn time={node.timestamp} />
       </Row>
@@ -249,7 +247,6 @@ const DefaultStructuredEvent: React.FunctionComponent<{
 }> = ({ node, level }) => (
   <>
     <EventTypeColumn>{level}</EventTypeColumn>
-    <LabelColumn />
     <span style={{ flex: 1 }}>{node.message}</span>
   </>
 );
@@ -261,7 +258,6 @@ const PipelineProcessStartedEvent: React.FunctionComponent<{
     <EventTypeColumn>
       <Tag minimal={true}>Started</Tag>
     </EventTypeColumn>
-    <LabelColumn />
     {`${node.message} `}
   </>
 );
@@ -273,7 +269,6 @@ const PipelineProcessStartEvent: React.FunctionComponent<{
     <EventTypeColumn>
       <Tag minimal={true}>Starting</Tag>
     </EventTypeColumn>
-    <LabelColumn />
     {`${node.message} `}
   </>
 );
@@ -289,7 +284,6 @@ const DefaultFailureEvent: React.FunctionComponent<{
         Failed
       </Tag>
     </EventTypeColumn>
-    <LabelColumn />
     <span style={{ flex: 1, color: Colors.RED3 }}>
       {`${node.error.message}\n${node.error.stack}`}
     </span>
@@ -308,7 +302,6 @@ const StepExpectationResultEvent: React.FunctionComponent<{
         Expectation
       </Tag>
     </EventTypeColumn>
-    <LabelColumn>{node.expectationResult.label}</LabelColumn>
     <MetadataEntries entries={node.expectationResult.metadataEntries} />
   </>
 );
@@ -320,7 +313,6 @@ const StepMaterializationEvent: React.FunctionComponent<{
     <EventTypeColumn>
       <Tag minimal={true}>Materialization</Tag>
     </EventTypeColumn>
-    <LabelColumn>{node.materialization.label}</LabelColumn>
     <MetadataEntries entries={node.materialization.metadataEntries} />
   </>
 );
@@ -340,14 +332,6 @@ const ExecutionStepOutputEvent: React.FunctionComponent<{
           Output
         </Tag>
       </EventTypeColumn>
-      <LabelColumn>
-        {`${node.outputName}: `}
-        {output && (
-          <TypeName style={{ fontSize: 11 }}>
-            {output.type.displayName}
-          </TypeName>
-        )}
-      </LabelColumn>
       {node.typeCheck.metadataEntries.length ? (
         <MetadataEntries entries={node.typeCheck.metadataEntries} />
       ) : (
@@ -374,12 +358,6 @@ const ExecutionStepInputEvent: React.FunctionComponent<{
           Input
         </Tag>
       </EventTypeColumn>
-      <LabelColumn>
-        {`${node.inputName}: `}
-        {input && (
-          <TypeName style={{ fontSize: 11 }}>{input.type.displayName}</TypeName>
-        )}
-      </LabelColumn>
       {node.typeCheck.metadataEntries.length ? (
         <MetadataEntries entries={node.typeCheck.metadataEntries} />
       ) : (
