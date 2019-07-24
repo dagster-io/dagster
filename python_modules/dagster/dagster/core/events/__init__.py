@@ -112,7 +112,8 @@ class DagsterEvent(
         log_fn = step_context.log.error if event_type in FAILURE_EVENTS else step_context.log.debug
 
         log_fn(
-            '{event_type} for step {step_key}'.format(
+            event.message
+            or '{event_type} for step {step_key}'.format(
                 event_type=event_type, step_key=step_context.step.key
             ),
             dagster_event=event,
@@ -303,10 +304,17 @@ class DagsterEvent(
 
     @staticmethod
     def step_success_event(step_context, success):
+
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_SUCCESS,
             step_context=step_context,
             event_specific_data=success,
+            message='Finished execution of step "{step_key}" in {duration}ms.'.format(
+                # TODO: Make duration human readable
+                # See: https://github.com/dagster-io/dagster/issues/1602
+                step_key=step_context.step.key,
+                duration=round(success.duration_ms, 2),
+            ),
         )
 
     @staticmethod
