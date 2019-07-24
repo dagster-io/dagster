@@ -195,7 +195,6 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  metadataEntries: [EventMetadataEntry!]!
   error: PythonError!
   failureMetadata: FailureMetadata
 }
@@ -212,7 +211,6 @@ type ExecutionStepInputEvent implements MessageEvent & StepEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  metadataEntries: [EventMetadataEntry!]!
   inputName: String!
   typeCheck: TypeCheck!
 }
@@ -228,7 +226,6 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  metadataEntries: [EventMetadataEntry!]!
   outputName: String!
   typeCheck: TypeCheck!
 }
@@ -239,7 +236,6 @@ type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  metadataEntries: [EventMetadataEntry!]!
 }
 
 type ExecutionStepStartEvent implements MessageEvent & StepEvent {
@@ -248,7 +244,6 @@ type ExecutionStepStartEvent implements MessageEvent & StepEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  metadataEntries: [EventMetadataEntry!]!
 }
 
 type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
@@ -257,7 +252,6 @@ type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  metadataEntries: [EventMetadataEntry!]!
 }
 
 input ExecutionTag {
@@ -537,7 +531,6 @@ type PipelineConnection {
 
 interface PipelineEvent {
   pipeline: Pipeline!
-  metadataEntries: [EventMetadataEntry!]!
 }
 
 type PipelineFailureEvent implements MessageEvent & PipelineEvent {
@@ -547,7 +540,6 @@ type PipelineFailureEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   step: ExecutionStep
   pipeline: Pipeline!
-  metadataEntries: [EventMetadataEntry!]!
 }
 
 type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
@@ -557,7 +549,6 @@ type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   step: ExecutionStep
   pipeline: Pipeline!
-  metadataEntries: [EventMetadataEntry!]!
   error: PythonError!
 }
 
@@ -583,7 +574,6 @@ type PipelineProcessStartedEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   step: ExecutionStep
   pipeline: Pipeline!
-  metadataEntries: [EventMetadataEntry!]!
   processId: Int!
 }
 
@@ -594,7 +584,6 @@ type PipelineProcessStartEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   step: ExecutionStep
   pipeline: Pipeline!
-  metadataEntries: [EventMetadataEntry!]!
   pipelineName: String!
 }
 
@@ -646,7 +635,6 @@ type PipelineStartEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   step: ExecutionStep
   pipeline: Pipeline!
-  metadataEntries: [EventMetadataEntry!]!
 }
 
 type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
@@ -656,7 +644,6 @@ type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   step: ExecutionStep
   pipeline: Pipeline!
-  metadataEntries: [EventMetadataEntry!]!
 }
 
 type PythonError implements Error {
@@ -796,7 +783,6 @@ type StartPipelineExecutionSuccess {
 
 interface StepEvent {
   step: ExecutionStep
-  metadataEntries: [EventMetadataEntry!]!
 }
 
 type StepExpectationResultEvent implements MessageEvent & StepEvent {
@@ -805,7 +791,6 @@ type StepExpectationResultEvent implements MessageEvent & StepEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  metadataEntries: [EventMetadataEntry!]!
   expectationResult: ExpectationResult!
 }
 
@@ -827,7 +812,6 @@ type StepMaterializationEvent implements MessageEvent & StepEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  metadataEntries: [EventMetadataEntry!]!
   materialization: Materialization!
 }
 

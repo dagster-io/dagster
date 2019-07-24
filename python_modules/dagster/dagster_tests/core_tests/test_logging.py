@@ -172,7 +172,6 @@ def test_multiline_logging_complex():
     assert _regex_match_kv_pair(r'       log_timestamp = "{0}"'.format(REGEX_TS), kv_pairs)
 
     expected_dagster_event = {
-        'metadata_entries': [],
         'event_specific_data': [
             [
                 "FileNotFoundError: [Errno 2] No such file or directory: '/path/to/file'\n",
@@ -186,7 +185,7 @@ def test_multiline_logging_complex():
                 ],
                 'FileNotFoundError',
             ],
-            None,  # user_failure_data, TODO: remove_event_specific_metadata
+            None,  # user_failure_data
         ],
         'event_type_value': 'STEP_FAILURE',
         'pipeline_name': 'error_monster',

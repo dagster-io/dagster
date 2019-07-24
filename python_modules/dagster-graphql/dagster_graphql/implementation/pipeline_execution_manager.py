@@ -18,7 +18,6 @@ from dagster import (
     check,
     execute_pipeline,
 )
-from dagster.core.definitions.events import EventMetadataEntry
 from dagster.core.events.log import DagsterEventRecord
 from dagster.core.events import (
     DagsterEvent,
@@ -109,7 +108,6 @@ def build_process_started_event(run_id, pipeline_name, process_id):
             event_specific_data=PipelineProcessStartedData(
                 pipeline_name=pipeline_name, run_id=run_id, process_id=process_id
             ),
-            metadata_entries=[EventMetadataEntry.text(str(process_id), "processId")],
         ),
     )
 
