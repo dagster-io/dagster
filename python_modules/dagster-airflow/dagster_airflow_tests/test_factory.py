@@ -17,6 +17,26 @@ from dagster_airflow_tests.conftest import IMAGE
 from dagster_airflow_tests.marks import nettest
 from dagster_airflow_tests.test_project.dagster_airflow_demo import demo_pipeline
 
+AIRFLOW_DEMO_EVENTS = {
+    ('STEP_START', 'multiply_the_word.compute'),
+    ('STEP_INPUT', 'multiply_the_word.compute'),
+    ('STEP_OUTPUT', 'multiply_the_word.compute'),
+    ('STEP_SUCCESS', 'multiply_the_word.compute'),
+    ('STEP_START', 'count_letters.compute'),
+    ('STEP_INPUT', 'count_letters.compute'),
+    ('STEP_OUTPUT', 'count_letters.compute'),
+    ('STEP_SUCCESS', 'count_letters.compute'),
+}
+
+
+def validate_pipeline_execution(pipeline_exc_result):
+    seen_events = set()
+    for result in pipeline_exc_result:
+        for event in result:
+            seen_events.add((event.event_type_value, event.step_key))
+
+    assert seen_events == AIRFLOW_DEMO_EVENTS
+
 
 class TestExecuteDagPythonFilesystemStorage(object):
     pipeline_name = 'demo_pipeline'
@@ -32,19 +52,7 @@ class TestExecuteDagPythonFilesystemStorage(object):
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
-        for result in dagster_airflow_python_operator_pipeline:
-            assert 'data' in result
-            assert 'executePlan' in result['data']
-            assert '__typename' in result['data']['executePlan']
-            assert result['data']['executePlan']['__typename'] == 'ExecutePlanSuccess'
-            result = list(
-                filter(
-                    lambda x: x['__typename'] == 'ExecutionStepOutputEvent',
-                    result['data']['executePlan']['stepEvents'],
-                )
-            )[0]
-            if result['step']['kind'] == 'INPUT_THUNK':
-                continue
+        validate_pipeline_execution(dagster_airflow_python_operator_pipeline)
 
 
 class TestExecuteDagPythonS3Storage(object):
@@ -61,19 +69,7 @@ class TestExecuteDagPythonS3Storage(object):
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
-        for result in dagster_airflow_python_operator_pipeline:
-            assert 'data' in result
-            assert 'executePlan' in result['data']
-            assert '__typename' in result['data']['executePlan']
-            assert result['data']['executePlan']['__typename'] == 'ExecutePlanSuccess'
-            result = list(
-                filter(
-                    lambda x: x['__typename'] == 'ExecutionStepOutputEvent',
-                    result['data']['executePlan']['stepEvents'],
-                )
-            )[0]
-            if result['step']['kind'] == 'INPUT_THUNK':
-                continue
+        validate_pipeline_execution(dagster_airflow_python_operator_pipeline)
 
 
 @nettest
@@ -92,19 +88,7 @@ class TestExecuteDagContainerizedS3Storage(object):
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
-        for result in dagster_airflow_docker_operator_pipeline:
-            assert 'data' in result
-            assert 'executePlan' in result['data']
-            assert '__typename' in result['data']['executePlan']
-            assert result['data']['executePlan']['__typename'] == 'ExecutePlanSuccess'
-            result = list(
-                filter(
-                    lambda x: x['__typename'] == 'ExecutionStepOutputEvent',
-                    result['data']['executePlan']['stepEvents'],
-                )
-            )[0]
-            if result['step']['kind'] == 'INPUT_THUNK':
-                continue
+        validate_pipeline_execution(dagster_airflow_docker_operator_pipeline)
 
 
 class TestExecuteDagContainerizedFilesystemStorage(object):
@@ -123,19 +107,7 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
-        for result in dagster_airflow_docker_operator_pipeline:
-            assert 'data' in result
-            assert 'executePlan' in result['data']
-            assert '__typename' in result['data']['executePlan']
-            assert result['data']['executePlan']['__typename'] == 'ExecutePlanSuccess'
-            result = list(
-                filter(
-                    lambda x: x['__typename'] == 'ExecutionStepOutputEvent',
-                    result['data']['executePlan']['stepEvents'],
-                )
-            )[0]
-            if result['step']['kind'] == 'INPUT_THUNK':
-                continue
+        validate_pipeline_execution(dagster_airflow_docker_operator_pipeline)
 
 
 def test_rename_for_airflow():
