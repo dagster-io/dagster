@@ -586,7 +586,8 @@ def construct_basic_params(graphene_info, event_record, execution_plan):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     return {
         'runId': event_record.run_id,
-        'message': event_record.user_message,
+        'message': event_record.user_message
+        or (event_record.dagster_event.message if event_record.dagster_event else None),
         'timestamp': int(event_record.timestamp * 1000),
         'level': DauphinLogLevel.from_level(event_record.level),
         'step': create_dauphin_step(graphene_info, event_record, execution_plan),

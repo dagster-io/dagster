@@ -11,7 +11,7 @@ snapshots['test_materializations 1'] = [
     {
         '__typename': 'PipelineStartEvent',
         'level': 'DEBUG',
-        'message': 'DagsterEventType.PIPELINE_START for pipeline materialization_pipeline',
+        'message': 'Started execution of pipeline "materialization_pipeline".',
         'step': None
     },
     {

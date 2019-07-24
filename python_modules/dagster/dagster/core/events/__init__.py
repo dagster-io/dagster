@@ -3,6 +3,7 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle, TypeCheck
+from dagster.core.execution.plan.objects import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.utils.error import SerializableErrorInfo
 
@@ -55,12 +56,7 @@ def _assert_type(method, expected_type, actual_type):
 
 
 def _validate_event_specific_data(event_type, event_specific_data):
-    from dagster.core.execution.plan.objects import (
-        StepOutputData,
-        StepFailureData,
-        StepSuccessData,
-        StepInputData,
-    )
+    from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData, StepInputData
 
     if event_type == DagsterEventType.STEP_OUTPUT:
         check.inst_param(event_specific_data, 'event_specific_data', StepOutputData)
@@ -82,11 +78,11 @@ class DagsterEvent(
     namedtuple(
         '_DagsterEvent',
         'event_type_value pipeline_name step_key solid_handle step_kind_value '
-        'logging_tags event_specific_data',
+        'logging_tags event_specific_data message',
     )
 ):
     @staticmethod
-    def from_step(event_type, step_context, event_specific_data=None):
+    def from_step(event_type, step_context, event_specific_data=None, message=None):
         from dagster.core.execution.context.system import SystemStepExecutionContext
 
         check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
@@ -99,6 +95,7 @@ class DagsterEvent(
             step_context.step.kind.value,
             step_context.logging_tags,
             _validate_event_specific_data(event_type, event_specific_data),
+            check.opt_str_param(message, 'message'),
         )
 
         log_fn = step_context.log.error if event_type in FAILURE_EVENTS else step_context.log.debug
@@ -113,7 +110,7 @@ class DagsterEvent(
         return event
 
     @staticmethod
-    def from_pipeline(event_type, pipeline_context):
+    def from_pipeline(event_type, pipeline_context, message=None):
         from dagster.core.execution.context.system import SystemPipelineExecutionContext
 
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
@@ -122,6 +119,7 @@ class DagsterEvent(
         event = DagsterEvent(
             check.inst_param(event_type, 'event_type', DagsterEventType).value,
             check.str_param(pipeline_name, 'pipeline_name'),
+            message=check.opt_str_param(message, 'message'),
         )
 
         log_fn = (
@@ -131,7 +129,8 @@ class DagsterEvent(
         )
 
         log_fn(
-            '{event_type} for pipeline {pipeline_name}'.format(
+            event.message
+            or '{event_type} for pipeline {pipeline_name}'.format(
                 event_type=event_type, pipeline_name=pipeline_name
             ),
             dagster_event=event,
@@ -148,6 +147,7 @@ class DagsterEvent(
         step_kind_value=None,
         logging_tags=None,
         event_specific_data=None,
+        message=None,
     ):
         return super(DagsterEvent, cls).__new__(
             cls,
@@ -158,6 +158,7 @@ class DagsterEvent(
             check.opt_str_param(step_kind_value, 'step_kind_value'),
             check.opt_dict_param(logging_tags, 'logging_tags'),
             _validate_event_specific_data(DagsterEventType(event_type_value), event_specific_data),
+            check.opt_str_param(message, 'message'),
         )
 
     @property
@@ -243,10 +244,24 @@ class DagsterEvent(
 
     @staticmethod
     def step_output_event(step_context, step_output_data):
+        check.inst_param(step_output_data, 'step_output_data', StepOutputData)
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_OUTPUT,
             step_context=step_context,
             event_specific_data=step_output_data,
+            message='Yielded output {output_name} of type {output_type}.{type_check_clause}'.format(
+                output_name=step_output_data.step_output_handle.output_name,
+                output_type=step_context.step.step_output_named(
+                    step_output_data.step_output_handle.output_name
+                ).runtime_type.name,
+                type_check_clause=(
+                    ' Warning! Type check failed.'
+                    if not step_output_data.type_check_data.success
+                    else ' (Type check passed).'
+                )
+                if step_output_data.type_check_data
+                else ' (No type check).',
+            ),
         )
 
     @staticmethod
@@ -268,7 +283,11 @@ class DagsterEvent(
     @staticmethod
     def step_start_event(step_context):
         return DagsterEvent.from_step(
-            event_type=DagsterEventType.STEP_START, step_context=step_context
+            event_type=DagsterEventType.STEP_START,
+            step_context=step_context,
+            message='Started execution of step "{step_key}".'.format(
+                step_key=step_context.step.key
+            ),
         )
 
     @staticmethod
@@ -292,6 +311,11 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_MATERIALIZATION,
             step_context=step_context,
             event_specific_data=StepMaterializationData(materialization),
+            message='Materialized value{label_clause}.'.format(
+                label_clause=' {label}'.format(label=materialization.label)
+                if materialization.label
+                else ''
+            ),
         )
 
     @staticmethod
@@ -301,11 +325,23 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_EXPECTATION_RESULT,
             step_context=step_context,
             event_specific_data=StepExpectationResultData(expectation_result),
+            message='Expectation{label_clause} {result_verb}'.format(
+                label_clause=' {label}'.format(label=expectation_result.label)
+                if expectation_result.label
+                else '',
+                result_verb='passed' if expectation_result.success else 'failed',
+            ),
         )
 
     @staticmethod
     def pipeline_start(pipeline_context):
-        return DagsterEvent.from_pipeline(DagsterEventType.PIPELINE_START, pipeline_context)
+        return DagsterEvent.from_pipeline(
+            DagsterEventType.PIPELINE_START,
+            pipeline_context,
+            message='Started execution of pipeline "{pipeline_name}".'.format(
+                pipeline_name=pipeline_context.pipeline_def.name
+            ),
+        )
 
     @staticmethod
     def pipeline_success(pipeline_context):
@@ -327,7 +363,8 @@ class DagsterEvent(
             event_specific_data=failure_data,
         )
         log_manager.error(
-            '{event_type} for pipeline {pipeline_name}'.format(
+            event.message
+            or '{event_type} for pipeline {pipeline_name}'.format(
                 event_type=DagsterEventType.PIPELINE_INIT_FAILURE, pipeline_name=pipeline_name
             ),
             dagster_event=event,

@@ -43,9 +43,11 @@ export class Structured extends React.Component<{
           }
         }
         ... on PipelineProcessStartedEvent {
+          message
           processId
         }
         ... on PipelineProcessStartEvent {
+          message
           pipelineName
           runId
         }
@@ -261,9 +263,6 @@ const PipelineProcessStartedEvent: React.FunctionComponent<{
     </EventTypeColumn>
     <LabelColumn />
     {`${node.message} `}
-    <span style={{ flex: 1, color: Colors.GRAY3 }}>
-      {`PID: ${node.processId}`}
-    </span>
   </>
 );
 
@@ -276,9 +275,6 @@ const PipelineProcessStartEvent: React.FunctionComponent<{
     </EventTypeColumn>
     <LabelColumn />
     {`${node.message} `}
-    <span style={{ flex: 1, color: Colors.GRAY3 }}>
-      {`Pipeline Name: ${node.pipelineName}, Run ID: ${node.runId}`}
-    </span>
   </>
 );
 
