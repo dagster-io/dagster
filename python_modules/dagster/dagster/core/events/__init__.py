@@ -301,7 +301,11 @@ class DagsterEvent(
     @staticmethod
     def step_skipped_event(step_context):
         return DagsterEvent.from_step(
-            event_type=DagsterEventType.STEP_SKIPPED, step_context=step_context
+            event_type=DagsterEventType.STEP_SKIPPED,
+            step_context=step_context,
+            message='Skipped execution of step "{step_key}".'.format(
+                step_key=step_context.step.key
+            ),
         )
 
     @staticmethod
