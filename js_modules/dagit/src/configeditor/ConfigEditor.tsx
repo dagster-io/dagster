@@ -80,7 +80,7 @@ export default class ConfigEditor extends React.Component<IConfigEditorProps> {
 
   render() {
     return (
-      <div style={{ flex: 1, height: "100%", position: "relative" }}>
+      <div style={{ flex: 1, position: "relative" }}>
         <CodeMirrorShimStyle />
         {this.props.showWhitespace ? <CodeMirrorWhitespaceStyle /> : null}
         <CodeMirrorReact
