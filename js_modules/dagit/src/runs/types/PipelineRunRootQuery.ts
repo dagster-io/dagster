@@ -162,22 +162,9 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
   error: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_step_inputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-  description: string | null;
-}
-
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_step_inputs {
-  __typename: "ExecutionStepInput";
-  name: string;
-  type: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_step_inputs_type;
-}
-
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_step {
   __typename: "ExecutionStep";
   key: string;
-  inputs: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_step_inputs[];
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -228,22 +215,9 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_
   typeCheck: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepInputEvent_typeCheck;
 }
 
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_step_outputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-  description: string | null;
-}
-
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_step_outputs {
-  __typename: "ExecutionStepOutput";
-  name: string;
-  type: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_step_outputs_type;
-}
-
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_step {
   __typename: "ExecutionStep";
   key: string;
-  outputs: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_step_outputs[];
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {

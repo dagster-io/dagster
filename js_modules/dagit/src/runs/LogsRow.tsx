@@ -38,11 +38,10 @@ export class Structured extends React.Component<{
           }
         }
         ... on PipelineProcessStartedEvent {
-          processId
+          message
         }
         ... on PipelineProcessStartEvent {
-          pipelineName
-          runId
+          message
         }
         ... on StepMaterializationEvent {
           step {
@@ -119,13 +118,11 @@ export class Structured extends React.Component<{
       case "PipelineInitFailureEvent":
         return <FailureContent node={node} />;
 
-      // Special Rendering
-      case "PipelineProcessStartedEvent":
-        return <PipelineProcessStartedContent node={node} />;
-      case "PipelineProcessStartEvent":
-        return <PipelineProcessStartContent node={node} />;
-
       // Default Behavior
+      case "PipelineProcessStartEvent":
+        return <DefaultContent message={node.message} eventType="Starting" />;
+      case "PipelineProcessStartedEvent":
+        return <DefaultContent message={node.message} eventType="Started" />;
       case "ExecutionStepStartEvent":
         return <DefaultContent message={node.message} eventType="Step Start" />;
       case "ExecutionStepSkippedEvent":
@@ -247,36 +244,6 @@ const DefaultContent: React.FunctionComponent<{
       {message}
       <br />
       {metadataEntries && <MetadataEntries entries={metadataEntries} />}
-    </span>
-  </>
-);
-
-const PipelineProcessStartedContent: React.FunctionComponent<{
-  node: LogsRowStructuredFragment_PipelineProcessStartedEvent;
-}> = ({ node }) => (
-  <>
-    <EventTypeColumn>
-      <Tag minimal={true}>Started</Tag>
-    </EventTypeColumn>
-    <span style={{ flex: 1 }}>
-      {`${node.message} `}
-      <div style={{ color: Colors.GRAY3 }}>{`PID: ${node.processId}`}</div>
-    </span>
-  </>
-);
-
-const PipelineProcessStartContent: React.FunctionComponent<{
-  node: LogsRowStructuredFragment_PipelineProcessStartEvent;
-}> = ({ node }) => (
-  <>
-    <EventTypeColumn>
-      <Tag minimal={true}>Starting</Tag>
-    </EventTypeColumn>
-    <span style={{ flex: 1 }}>
-      {`${node.message} `}
-      <div style={{ color: Colors.GRAY3 }}>
-        {`Pipeline Name: ${node.pipelineName}, Run ID: ${node.runId}`}
-      </div>
     </span>
   </>
 );
