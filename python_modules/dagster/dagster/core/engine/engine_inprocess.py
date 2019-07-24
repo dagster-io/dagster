@@ -151,6 +151,7 @@ def _step_failure_event_from_exc_info(step_context, exc_info, user_failure_data=
             error=serializable_error_info_from_exc_info(exc_info),
             user_failure_data=user_failure_data,
         ),
+        metadata_entries=user_failure_data.metadata_entries if user_failure_data else [],
     )
 
 
@@ -306,6 +307,7 @@ def _create_step_input_event(step_context, input_name, type_check, success):
                 metadata_entries=type_check.metadata_entries if type_check else [],
             ),
         ),
+        metadata_entries=type_check.metadata_entries if type_check else [],
     )
 
 
@@ -345,15 +347,14 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
                 step_key=step_context.step.key,
             ),
         ):
+            type_check = _do_type_check(step_input.runtime_type, input_value)
             yield _create_step_input_event(
-                step_context,
-                input_name,
-                type_check=_do_type_check(step_input.runtime_type, input_value),
-                success=True,
+                step_context, input_name, type_check=type_check, success=True
             )
     except Exception as failure:  # pylint: disable=broad-except
+        type_check_failure = _type_check_from_failure(failure)
         yield _create_step_input_event(
-            step_context, input_name, type_check=_type_check_from_failure(failure), success=False
+            step_context, input_name, type_check=type_check_failure, success=False
         )
 
         raise failure
@@ -373,6 +374,7 @@ def _create_step_output_event(step_context, output, type_check, success):
                 metadata_entries=type_check.metadata_entries if type_check else [],
             ),
         ),
+        metadata_entries=type_check.metadata_entries if type_check else [],
     )
 
 
@@ -446,9 +448,13 @@ def _core_dagster_event_sequence_for_step(step_context):
                 for evt in _create_step_events_for_output(step_context, user_event):
                     yield evt
             elif isinstance(user_event, Materialization):
-                yield DagsterEvent.step_materialization(step_context, user_event)
+                yield DagsterEvent.step_materialization(
+                    step_context, user_event, user_event.metadata_entries
+                )
             elif isinstance(user_event, ExpectationResult):
-                yield DagsterEvent.step_expectation_result(step_context, user_event)
+                yield DagsterEvent.step_expectation_result(
+                    step_context, user_event, user_event.metadata_entries
+                )
             else:
                 check.failed(
                     'Unexpected event {event}, should have been caught earlier'.format(
@@ -512,7 +518,9 @@ def _create_output_materializations(step_context, output_name, value):
                     )
                 )
 
-            yield DagsterEvent.step_materialization(step_context, materialization)
+            yield DagsterEvent.step_materialization(
+                step_context, materialization, materialization.metadata_entries
+            )
 
 
 def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):

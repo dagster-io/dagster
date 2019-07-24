@@ -114,6 +114,13 @@ def execute_no_throw(pipeline_def):
     )
 
 
+def _type_check_metadata_for_input(solid_result, input_name):
+    return solid_result.compute_input_event_dict[input_name].metadata_entries
+
+
+# metadata_entries is currently duplicated across event.metadata_entries
+# and event.event_specific_data.type_check_data.metadata_entries.
+# TODO: remove_event_specific_metadata
 def _type_check_data_for_input(solid_result, input_name):
     return solid_result.compute_input_event_dict[input_name].event_specific_data.type_check_data
 
@@ -271,13 +278,17 @@ def test_input_type_returns_wrong_thing():
     assert not pipeline_result.success
 
     solid_result = pipeline_result.result_for_solid('take_bad_thing')
-    type_check_data = _type_check_data_for_input(solid_result, 'value')
+    type_check_data = _type_check_data_for_input(
+        solid_result, 'value'
+    )  # TODO: remove_event_specific_metadata
+    type_check_metadata_entries = _type_check_metadata_for_input(solid_result, 'value')
     assert not type_check_data.success
     assert (
         type_check_data.description
         == "Type checks can only return None or TypeCheck. Type BadType returned 'kdjfkjd'."
     )
-    assert not type_check_data.metadata_entries
+    assert not type_check_data.metadata_entries  # TODO: remove_event_specific_metadata
+    assert not type_check_metadata_entries
 
     step_failure_event = solid_result.compute_step_failure_event
     assert step_failure_event.event_specific_data.error.cls_name == 'DagsterInvariantViolationError'

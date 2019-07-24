@@ -3,6 +3,7 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle, TypeCheck
+from dagster.core.definitions.events import EventMetadataEntry
 from dagster.core.log_manager import DagsterLogManager
 from dagster.utils.error import SerializableErrorInfo
 
@@ -82,11 +83,11 @@ class DagsterEvent(
     namedtuple(
         '_DagsterEvent',
         'event_type_value pipeline_name step_key solid_handle step_kind_value '
-        'logging_tags event_specific_data',
+        'logging_tags event_specific_data metadata_entries',
     )
 ):
     @staticmethod
-    def from_step(event_type, step_context, event_specific_data=None):
+    def from_step(event_type, step_context, event_specific_data=None, metadata_entries=None):
         from dagster.core.execution.context.system import SystemStepExecutionContext
 
         check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
@@ -99,6 +100,7 @@ class DagsterEvent(
             step_context.step.kind.value,
             step_context.logging_tags,
             _validate_event_specific_data(event_type, event_specific_data),
+            check.opt_list_param(metadata_entries, metadata_entries, of_type=EventMetadataEntry),
         )
 
         log_fn = step_context.log.error if event_type in FAILURE_EVENTS else step_context.log.debug
@@ -113,7 +115,7 @@ class DagsterEvent(
         return event
 
     @staticmethod
-    def from_pipeline(event_type, pipeline_context):
+    def from_pipeline(event_type, pipeline_context, metadata_entries=None):
         from dagster.core.execution.context.system import SystemPipelineExecutionContext
 
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
@@ -122,6 +124,9 @@ class DagsterEvent(
         event = DagsterEvent(
             check.inst_param(event_type, 'event_type', DagsterEventType).value,
             check.str_param(pipeline_name, 'pipeline_name'),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, metadata_entries, of_type=EventMetadataEntry
+            ),
         )
 
         log_fn = (
@@ -148,6 +153,7 @@ class DagsterEvent(
         step_kind_value=None,
         logging_tags=None,
         event_specific_data=None,
+        metadata_entries=None,
     ):
         return super(DagsterEvent, cls).__new__(
             cls,
@@ -158,6 +164,7 @@ class DagsterEvent(
             check.opt_str_param(step_kind_value, 'step_kind_value'),
             check.opt_dict_param(logging_tags, 'logging_tags'),
             _validate_event_specific_data(DagsterEventType(event_type_value), event_specific_data),
+            check.opt_list_param(metadata_entries, metadata_entries, of_type=EventMetadataEntry),
         )
 
     @property
@@ -242,27 +249,30 @@ class DagsterEvent(
         return self.event_specific_data
 
     @staticmethod
-    def step_output_event(step_context, step_output_data):
+    def step_output_event(step_context, step_output_data, metadata_entries):
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_OUTPUT,
             step_context=step_context,
             event_specific_data=step_output_data,
+            metadata_entries=metadata_entries,
         )
 
     @staticmethod
-    def step_failure_event(step_context, step_failure_data):
+    def step_failure_event(step_context, step_failure_data, metadata_entries):
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_FAILURE,
             step_context=step_context,
             event_specific_data=step_failure_data,
+            metadata_entries=metadata_entries,
         )
 
     @staticmethod
-    def step_input_event(step_context, step_input_data):
+    def step_input_event(step_context, step_input_data, metadata_entries):
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_INPUT,
             step_context=step_context,
             event_specific_data=step_input_data,
+            metadata_entries=metadata_entries,
         )
 
     @staticmethod
@@ -286,21 +296,23 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def step_materialization(step_context, materialization):
+    def step_materialization(step_context, materialization, metadata_entries):
         check.inst_param(materialization, 'materialization', Materialization)
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_MATERIALIZATION,
             step_context=step_context,
             event_specific_data=StepMaterializationData(materialization),
+            metadata_entries=metadata_entries,
         )
 
     @staticmethod
-    def step_expectation_result(step_context, expectation_result):
+    def step_expectation_result(step_context, expectation_result, metadata_entries):
         check.inst_param(expectation_result, 'expectation_result', ExpectationResult)
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_EXPECTATION_RESULT,
             step_context=step_context,
             event_specific_data=StepExpectationResultData(expectation_result),
+            metadata_entries=metadata_entries,
         )
 
     @staticmethod

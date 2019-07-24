@@ -182,6 +182,19 @@ def test_basic_materialization_event():
             filter(lambda de: de.event_type == DagsterEventType.STEP_MATERIALIZATION, step_events)
         )[0]
 
+        # metadata_entries is currently duplicated across mat_event.metadata_entries
+        # and mat_event.event_specific_data.materialization.metadata_entries.
+        # TODO: remove_event_specific_metadata
+        metadata_entries = mat_event.metadata_entries
+
+        assert len(metadata_entries) == 1
+        assert metadata_entries[0].path
+        path = metadata_entries[0].entry_data.path
+
+        with open(path, 'r') as ff:
+            value = json.loads(ff.read())
+            assert value == {'value': 1}
+
         mat = mat_event.event_specific_data.materialization
 
         assert len(mat.metadata_entries) == 1
