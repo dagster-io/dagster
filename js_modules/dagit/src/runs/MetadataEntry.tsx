@@ -106,6 +106,7 @@ const MetadataEntryLink = styled.a`
 
 const MetadataEntriesTable = styled.table`
   padding: 0;
+  margin-top: 4px;
   border-top: 1px solid #bb956a;
   border-left: 1px solid #bb956a;
   background: #fff8f0;

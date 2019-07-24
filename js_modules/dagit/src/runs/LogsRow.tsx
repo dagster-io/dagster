@@ -6,10 +6,6 @@ import { Tag, Colors } from "@blueprintjs/core";
 import {
   LogsRowStructuredFragment,
   LogsRowStructuredFragment_ExecutionStepFailureEvent,
-  LogsRowStructuredFragment_StepMaterializationEvent,
-  LogsRowStructuredFragment_ExecutionStepOutputEvent,
-  LogsRowStructuredFragment_ExecutionStepInputEvent,
-  LogsRowStructuredFragment_StepExpectationResultEvent,
   LogsRowStructuredFragment_PipelineProcessStartedEvent,
   LogsRowStructuredFragment_PipelineProcessStartEvent,
   LogsRowStructuredFragment_PipelineInitFailureEvent
@@ -24,6 +20,7 @@ import {
 } from "./LogsRowComponents";
 import { MetadataEntries, MetadataEntry } from "./MetadataEntry";
 import { assertUnreachable } from "../Util";
+import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
 
 export class Structured extends React.Component<{
   node: LogsRowStructuredFragment;
@@ -41,11 +38,9 @@ export class Structured extends React.Component<{
           }
         }
         ... on PipelineProcessStartedEvent {
-          message
           processId
         }
         ... on PipelineProcessStartEvent {
-          message
           pipelineName
           runId
         }
@@ -122,52 +117,64 @@ export class Structured extends React.Component<{
       // Errors
       case "ExecutionStepFailureEvent":
       case "PipelineInitFailureEvent":
-        return <DefaultFailureEvent node={node} />;
+        return <FailureContent node={node} />;
 
-      // Using custom messages
+      // Special Rendering
+      case "PipelineProcessStartedEvent":
+        return <PipelineProcessStartedContent node={node} />;
+      case "PipelineProcessStartEvent":
+        return <PipelineProcessStartContent node={node} />;
+
+      // Default Behavior
       case "ExecutionStepStartEvent":
-        return (
-          <DefaultStructuredEvent
-            node={node}
-            level={<Tag minimal={true}>Step Start</Tag>}
-          />
-        );
+        return <DefaultContent message={node.message} eventType="Step Start" />;
       case "ExecutionStepSkippedEvent":
-        return (
-          <DefaultStructuredEvent
-            node={node}
-            level={<Tag minimal={true}>Skipped</Tag>}
-          />
-        );
+        return <DefaultContent message={node.message} eventType="Skipped" />;
       case "ExecutionStepSuccessEvent":
         return (
-          <DefaultStructuredEvent
-            node={node}
-            level={<Tag minimal={true}>Step Finished</Tag>}
+          <DefaultContent message={node.message} eventType="Step Finished" />
+        );
+      case "ExecutionStepInputEvent":
+        return (
+          <DefaultContent
+            message={node.message}
+            eventType="Input"
+            eventIntent={node.typeCheck.success ? "success" : "warning"}
+            metadataEntries={node.typeCheck.metadataEntries}
           />
         );
-
-      // Using custom renderers
-      case "ExecutionStepInputEvent":
-        return <ExecutionStepInputEvent node={node} />;
       case "ExecutionStepOutputEvent":
-        return <ExecutionStepOutputEvent node={node} />;
-      case "PipelineProcessStartedEvent":
-        return <PipelineProcessStartedEvent node={node} />;
-      case "PipelineProcessStartEvent":
-        return <PipelineProcessStartEvent node={node} />;
+        return (
+          <DefaultContent
+            message={node.message}
+            eventType="Output"
+            eventIntent={node.typeCheck.success ? "success" : "warning"}
+            metadataEntries={node.typeCheck.metadataEntries}
+          />
+        );
       case "StepExpectationResultEvent":
-        return <StepExpectationResultEvent node={node} />;
+        return (
+          <DefaultContent
+            message={node.message}
+            eventType="Expectation"
+            eventIntent={node.expectationResult.success ? "success" : "warning"}
+            metadataEntries={node.expectationResult.metadataEntries}
+          />
+        );
       case "StepMaterializationEvent":
-        return <StepMaterializationEvent node={node} />;
-
-      // Using server-provided messages
+        return (
+          <DefaultContent
+            message={node.message}
+            eventType="Materialization"
+            metadataEntries={node.materialization.metadataEntries}
+          />
+        );
       case "PipelineFailureEvent":
       case "PipelineProcessStartEvent":
       case "PipelineSuccessEvent":
       case "LogMessageEvent":
       case "PipelineStartEvent":
-        return <DefaultStructuredEvent node={node} />;
+        return <DefaultContent message={node.message} />;
 
       default:
         // This allows us to check that the switch is exhaustive because the union type should
@@ -222,39 +229,59 @@ export class Unstructured extends React.Component<{
 
 // Structured Content Renderers
 
-const DefaultStructuredEvent: React.FunctionComponent<{
-  node: LogsRowStructuredFragment;
-  level?: React.ReactNode;
-}> = ({ node, level }) => (
+const DefaultContent: React.FunctionComponent<{
+  message: string;
+  eventType?: string;
+  eventIntent?: "success" | "danger" | "warning";
+  metadataEntries?: MetadataEntryFragment[];
+}> = ({ message, eventType, eventIntent, metadataEntries }) => (
   <>
-    <EventTypeColumn>{level}</EventTypeColumn>
-    <span style={{ flex: 1 }}>{node.message}</span>
+    <EventTypeColumn>
+      {eventType && (
+        <Tag minimal={true} intent={eventIntent}>
+          {eventType}
+        </Tag>
+      )}
+    </EventTypeColumn>
+    <span style={{ flex: 1 }}>
+      {message}
+      <br />
+      {metadataEntries && <MetadataEntries entries={metadataEntries} />}
+    </span>
   </>
 );
 
-const PipelineProcessStartedEvent: React.FunctionComponent<{
+const PipelineProcessStartedContent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_PipelineProcessStartedEvent;
 }> = ({ node }) => (
   <>
     <EventTypeColumn>
       <Tag minimal={true}>Started</Tag>
     </EventTypeColumn>
-    {`${node.message} `}
+    <span style={{ flex: 1 }}>
+      {`${node.message} `}
+      <div style={{ color: Colors.GRAY3 }}>{`PID: ${node.processId}`}</div>
+    </span>
   </>
 );
 
-const PipelineProcessStartEvent: React.FunctionComponent<{
+const PipelineProcessStartContent: React.FunctionComponent<{
   node: LogsRowStructuredFragment_PipelineProcessStartEvent;
 }> = ({ node }) => (
   <>
     <EventTypeColumn>
       <Tag minimal={true}>Starting</Tag>
     </EventTypeColumn>
-    {`${node.message} `}
+    <span style={{ flex: 1 }}>
+      {`${node.message} `}
+      <div style={{ color: Colors.GRAY3 }}>
+        {`Pipeline Name: ${node.pipelineName}, Run ID: ${node.runId}`}
+      </div>
+    </span>
   </>
 );
 
-const DefaultFailureEvent: React.FunctionComponent<{
+const FailureContent: React.FunctionComponent<{
   node:
     | LogsRowStructuredFragment_ExecutionStepFailureEvent
     | LogsRowStructuredFragment_PipelineInitFailureEvent;
@@ -270,78 +297,3 @@ const DefaultFailureEvent: React.FunctionComponent<{
     </span>
   </>
 );
-
-const StepExpectationResultEvent: React.FunctionComponent<{
-  node: LogsRowStructuredFragment_StepExpectationResultEvent;
-}> = ({ node }) => (
-  <>
-    <EventTypeColumn>
-      <Tag
-        minimal={true}
-        intent={node.expectationResult.success ? "success" : "danger"}
-      >
-        Expectation
-      </Tag>
-    </EventTypeColumn>
-    <MetadataEntries entries={node.expectationResult.metadataEntries} />
-  </>
-);
-
-const StepMaterializationEvent: React.FunctionComponent<{
-  node: LogsRowStructuredFragment_StepMaterializationEvent;
-}> = ({ node }) => (
-  <>
-    <EventTypeColumn>
-      <Tag minimal={true}>Materialization</Tag>
-    </EventTypeColumn>
-    <MetadataEntries entries={node.materialization.metadataEntries} />
-  </>
-);
-
-const ExecutionStepOutputEvent: React.FunctionComponent<{
-  node: LogsRowStructuredFragment_ExecutionStepOutputEvent;
-}> = ({ node }) => {
-  return (
-    <>
-      <EventTypeColumn>
-        <Tag
-          minimal={true}
-          intent={node.typeCheck.success ? "success" : "warning"}
-        >
-          Output
-        </Tag>
-      </EventTypeColumn>
-      {node.typeCheck.metadataEntries.length ? (
-        <MetadataEntries entries={node.typeCheck.metadataEntries} />
-      ) : (
-        <span style={{ flex: 1 }}>
-          No typecheck metadata describing this output.
-        </span>
-      )}
-    </>
-  );
-};
-
-const ExecutionStepInputEvent: React.FunctionComponent<{
-  node: LogsRowStructuredFragment_ExecutionStepInputEvent;
-}> = ({ node }) => {
-  return (
-    <>
-      <EventTypeColumn>
-        <Tag
-          minimal={true}
-          intent={node.typeCheck.success ? "success" : "warning"}
-        >
-          Input
-        </Tag>
-      </EventTypeColumn>
-      {node.typeCheck.metadataEntries.length ? (
-        <MetadataEntries entries={node.typeCheck.metadataEntries} />
-      ) : (
-        <span style={{ flex: 1 }}>
-          No typecheck metadata describing this output.
-        </span>
-      )}
-    </>
-  );
-};
