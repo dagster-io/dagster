@@ -158,22 +158,9 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEv
   error: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
-export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_step_inputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-  description: string | null;
-}
-
-export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_step_inputs {
-  __typename: "ExecutionStepInput";
-  name: string;
-  type: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_step_inputs_type;
-}
-
 export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_step {
   __typename: "ExecutionStep";
   key: string;
-  inputs: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_step_inputs[];
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -224,22 +211,9 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEven
   typeCheck: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent_typeCheck;
 }
 
-export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent_step_outputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-  description: string | null;
-}
-
-export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent_step_outputs {
-  __typename: "ExecutionStepOutput";
-  name: string;
-  type: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent_step_outputs_type;
-}
-
 export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent_step {
   __typename: "ExecutionStep";
   key: string;
-  outputs: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent_step_outputs[];
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {

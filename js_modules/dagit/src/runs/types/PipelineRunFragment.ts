@@ -158,22 +158,9 @@ export interface PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent {
   error: PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
-export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_step_inputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-  description: string | null;
-}
-
-export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_step_inputs {
-  __typename: "ExecutionStepInput";
-  name: string;
-  type: PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_step_inputs_type;
-}
-
 export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_step {
   __typename: "ExecutionStep";
   key: string;
-  inputs: PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_step_inputs[];
 }
 
 export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -224,22 +211,9 @@ export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent {
   typeCheck: PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck;
 }
 
-export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_step_outputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-  description: string | null;
-}
-
-export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_step_outputs {
-  __typename: "ExecutionStepOutput";
-  name: string;
-  type: PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_step_outputs_type;
-}
-
 export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_step {
   __typename: "ExecutionStep";
   key: string;
-  outputs: PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_step_outputs[];
 }
 
 export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
