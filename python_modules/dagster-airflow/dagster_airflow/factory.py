@@ -6,7 +6,7 @@ from airflow import DAG
 from dagster import check, ExecutionTargetHandle, RunConfig
 from dagster.core.execution.api import create_execution_plan
 
-from .operators import DagsterDockerOperator, DagsterPythonOperator
+from .operators import DagsterDockerOperator, DagsterOperator, DagsterPythonOperator
 from .compile import coalesce_execution_steps
 
 
@@ -64,7 +64,7 @@ def _make_airflow_dag(
     dag_description = check.opt_str_param(
         dag_description, 'dag_description', _make_dag_description(pipeline_name)
     )
-
+    check.subclass_param(operator, 'operator', DagsterOperator)
     # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
     # the trailing comma after **check.opt_dict_param...) -- black 19.3b0 supports multiple python
     # versions, but currently doesn't know what to do with from __future__ import print_function --
@@ -97,7 +97,7 @@ def _make_airflow_dag(
 
         step_keys = [step.key for step in solid_steps]
 
-        task = operator(
+        task = operator.operator_for_solid(
             handle=handle,
             pipeline_name=pipeline_name,
             environment_dict=environment_dict,
@@ -106,7 +106,7 @@ def _make_airflow_dag(
             step_keys=step_keys,
             dag=dag,
             dag_id=dag_id,
-            **op_kwargs,
+            op_kwargs=op_kwargs,
         )
 
         tasks[solid_name] = task
