@@ -20,3 +20,7 @@ Tutorial
   reusing_solids 
   composite_solids
   composition_functions
+
+
+You can find all of the tutorial code checked into the dagster repository at
+``dagster/examples/dagster_examples/intro_tutorial``.
