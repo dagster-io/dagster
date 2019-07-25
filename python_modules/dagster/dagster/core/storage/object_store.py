@@ -102,12 +102,9 @@ class FileSystemObjectStore(ObjectStore):  # pylint: disable=no-init
     def get_object(self, key, serialization_strategy=DEFAULT_SERIALIZATION_STRATEGY):
         check.str_param(key, 'key')
         check.param_invariant(len(key) > 0, 'key')
+        check.inst_param(serialization_strategy, 'serialization_strategy', SerializationStrategy)
 
-        if serialization_strategy:
-            obj = serialization_strategy.deserialize_from_file(key)
-        else:
-            with open(key, 'rb') as f:
-                obj = f.read()
+        obj = serialization_strategy.deserialize_from_file(key)
 
         return ObjectStoreOperation(
             op=ObjectStoreOperationType.GET_OBJECT,

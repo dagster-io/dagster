@@ -11,6 +11,7 @@ from dagster import (
     logger,
     ModeDefinition,
     DagsterInvalidConfigError,
+    pipeline,
     PipelineDefinition,
     resource,
     RunConfig,
@@ -38,6 +39,20 @@ def test_mode_takes_a_name():
         name='takes a mode', solid_defs=[], mode_defs=[ModeDefinition(name='a_mode')]
     )
     assert pipeline_def
+
+
+def test_mode_from_resources():
+    @solid
+    def ret_three(context):
+        return context.resources.three
+
+    @pipeline(
+        name='takes a mode', mode_defs=[ModeDefinition.from_resources({'three': 3}, name='three')]
+    )
+    def pipeline_def():
+        return ret_three()  # pylint: disable=no-value-for-parameter
+
+    assert execute_pipeline(pipeline_def).result_for_solid('ret_three').output_value() == 3
 
 
 def test_execute_single_mode():

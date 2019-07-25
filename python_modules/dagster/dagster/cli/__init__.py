@@ -11,7 +11,7 @@ def create_dagster_cli():
     @click.group(commands={'pipeline': create_pipeline_cli_group(), 'run': create_run_cli_group()})
     @click.version_option(version=__version__)
     def group():
-        pass
+        'Noop'
 
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())

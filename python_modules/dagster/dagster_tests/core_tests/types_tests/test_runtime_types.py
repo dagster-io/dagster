@@ -1,6 +1,7 @@
-from dagster import List, Optional, Int, PipelineDefinition, InputDefinition, lambda_solid
+import pytest
 
-from dagster.core.types.runtime import resolve_to_runtime_type, ALL_RUNTIME_BUILTINS
+from dagster import Failure, InputDefinition, Int, lambda_solid, List, Optional, PipelineDefinition
+from dagster.core.types.runtime import ALL_RUNTIME_BUILTINS, resolve_to_runtime_type
 
 
 def inner_type_key_set(runtime_type):
@@ -18,6 +19,12 @@ def test_inner_types():
 
     list_nullable_int_runtime = resolve_to_runtime_type(List[Optional[Int]])
     assert inner_type_key_set(list_nullable_int_runtime) == set(['Int', 'Optional.Int'])
+    assert not list_nullable_int_runtime.is_scalar
+
+
+def test_is_any():
+    assert not resolve_to_runtime_type(Int).is_any
+    assert resolve_to_runtime_type(Int).is_scalar
 
 
 def test_display_name():
@@ -40,17 +47,27 @@ def test_builtins_available():
 
 
 def test_python_mapping():
-    int_runtime = resolve_to_runtime_type(int)
-    assert int_runtime.name == 'Int'
-    int_runtime = resolve_to_runtime_type(str)
-    assert int_runtime.name == 'String'
-    int_runtime = resolve_to_runtime_type(bool)
-    assert int_runtime.name == 'Bool'
-    int_runtime = resolve_to_runtime_type(float)
-    assert int_runtime.name == 'Float'
+    runtime = resolve_to_runtime_type(int)
+    assert runtime.name == 'Int'
+    runtime = resolve_to_runtime_type(str)
+    assert runtime.name == 'String'
+    runtime = resolve_to_runtime_type(bool)
+    assert runtime.name == 'Bool'
+    runtime = resolve_to_runtime_type(float)
+    assert runtime.name == 'Float'
 
     @lambda_solid(input_defs=[InputDefinition('num', int)])
     def add_one(num):
         return num + 1
 
     assert add_one.input_defs[0].runtime_type.name == 'Int'
+
+    runtime = resolve_to_runtime_type(float)
+    runtime.type_check(1.0)
+    with pytest.raises(Failure):
+        runtime.type_check(1)
+
+    runtime = resolve_to_runtime_type(bool)
+    runtime.type_check(True)
+    with pytest.raises(Failure):
+        runtime.type_check(1)

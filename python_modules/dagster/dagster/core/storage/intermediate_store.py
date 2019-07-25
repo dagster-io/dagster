@@ -65,7 +65,9 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
 
     @abstractmethod
     def copy_object_from_prev_run(self, context, previous_run_id, paths):
-        pass
+        '''Copy an object from a previous run into storage for the current run.
+        
+        Return the result from the underlying object store.'''
 
     def set_value(self, obj, context, runtime_type, paths):
         if self.type_storage_plugin_registry.is_registered(runtime_type):

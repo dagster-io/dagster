@@ -7,6 +7,7 @@ import pytest
 from click.testing import CliRunner
 
 from dagster import lambda_solid, RepositoryDefinition, pipeline, DagsterInvariantViolationError
+from dagster.check import CheckError
 from dagster.core.storage.runs import base_runs_directory
 from dagster.cli.load_handle import CliUsageError
 from dagster.cli.pipeline import (
@@ -19,6 +20,7 @@ from dagster.cli.pipeline import (
     pipeline_print_command,
     pipeline_scaffold_command,
 )
+from dagster.cli.run import run_list_command, run_nuke_command
 from dagster.utils import script_relative_path
 
 
@@ -31,6 +33,11 @@ def do_something():
     return 1
 
 
+@lambda_solid
+def do_input(x):
+    return x
+
+
 @pipeline(name='foo')
 def foo_pipeline():
     do_something()
@@ -40,8 +47,13 @@ def define_foo_pipeline():
     return foo_pipeline
 
 
+@pipeline(name='baz', description='Not much tbh')
+def baz_pipeline():
+    do_input()  # pylint: disable=no-value-for-parameter
+
+
 def define_bar_repo():
-    return RepositoryDefinition('bar', {'foo': define_foo_pipeline})
+    return RepositoryDefinition('bar', {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline})
 
 
 def test_list_command():
@@ -61,10 +73,17 @@ def test_list_command():
         pipeline_list_command,
         ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_bar_repo'],
     )
+
     assert result.exit_code == 0
     assert result.output == (
         'Repository bar\n'
         '**************\n'
+        'Pipeline: baz\n'
+        'Description:\n'
+        'Not much tbh\n'
+        'Solids: (Execution Order)\n'
+        '    do_input\n'
+        '*************\n'
         'Pipeline: foo\n'
         'Solids: (Execution Order)\n'
         '    do_something\n'
@@ -244,6 +263,19 @@ def test_print_command():
         result = runner.invoke(pipeline_print_command, ['--verbose'] + cli_args)
         assert result.exit_code == 0
 
+    res = runner.invoke(
+        pipeline_print_command,
+        [
+            '--verbose',
+            '-f',
+            script_relative_path('test_cli_commands.py'),
+            '-n',
+            'define_bar_repo',
+            'baz',
+        ],
+    )
+    assert res.exit_code == 0
+
 
 def test_execute_mode_command():
     runner = CliRunner()
@@ -313,6 +345,23 @@ def test_execute_preset_command():
     # we should check stdout for a log message
     assert add_result.stdout or add_result.stdout == ''
 
+    # Can't use -p with --env
+    bad_res = runner.invoke(
+        pipeline_execute_command,
+        [
+            '-y',
+            script_relative_path('../repository.yaml'),
+            '-p',
+            'add',
+            '--env',
+            script_relative_path(
+                '../environments/multi_mode_with_resources/double_adder_mode.yaml'
+            ),
+            'multi_mode_with_resources',  # pipeline name
+        ],
+    )
+    assert bad_res.exit_code == 2
+
 
 def test_execute_command():
     for cli_args in valid_execute_args():
@@ -335,6 +384,14 @@ def test_execute_command():
         runner_pipeline_execute(
             runner, ['--env', script_relative_path('default_log_error_env.yaml')] + cli_args
         )
+
+    res = runner.invoke(
+        pipeline_execute_command,
+        ['-y', script_relative_path('repository_module.yaml'), 'repo_demo_pipeline', 'foo'],
+    )
+    assert res.exit_code == 1
+    assert isinstance(res.exception, CheckError)
+    assert 'Can only handle zero or one pipeline args.' in str(res.exception)
 
 
 def test_fn_not_found_execute():
@@ -487,3 +544,15 @@ def test_override_with_filesystem_storage():
     run_dir = os.path.join(base_runs_directory(), result.run_id)
 
     assert os.path.exists(run_dir)
+
+
+def test_run_list():
+    runner = CliRunner()
+    result = runner.invoke(run_list_command)
+    assert result.exit_code == 0
+
+
+def test_run_nuke():
+    runner = CliRunner()
+    result = runner.invoke(run_nuke_command)
+    assert result.exit_code == 0

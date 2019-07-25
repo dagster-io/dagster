@@ -8,7 +8,6 @@ from dagster.core.storage.type_storage import TypeStoragePlugin
 from .builtin_enum import BuiltinEnum
 from .builtin_config_schemas import BuiltinSchemas
 
-from .config import ConfigType
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
 
@@ -17,14 +16,6 @@ from .config_schema import InputHydrationConfig, OutputMaterializationConfig
 from .marshal import SerializationStrategy, PickleSerializationStrategy
 from .dagster_type import check_dagster_type_param
 from .wrapping import WrappingListType, WrappingNullableType
-
-
-def check_opt_config_cls_param(config_cls, param_name):
-    if config_cls is None:
-        return config_cls
-    check.invariant(isinstance(config_cls, type))
-    check.param_invariant(issubclass(config_cls, ConfigType), param_name)
-    return config_cls
 
 
 class RuntimeType(object):
