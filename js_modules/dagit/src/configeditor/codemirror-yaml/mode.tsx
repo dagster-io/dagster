@@ -73,10 +73,14 @@ const Constants = ["true", "false", "on", "off", "yes", "no"];
 export const RegExps = {
   KEYWORD: new RegExp("\\b((" + Constants.join(")|(") + "))$", "i"),
   DICT_COLON: /^:\s*/,
+  // eslint-disable-next-line no-useless-escape
   DICT_KEY: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:)/,
   QUOTED_STRING: /^('([^']|\\.)*'?|"([^"\\]|\\.)*"?)/,
+  // eslint-disable-next-line no-useless-escape
   BLOCKSTART_PIPE_OR_ARROW: /^\s*(\||\>)\s*/,
+  // eslint-disable-next-line no-useless-escape
   NUMBER: /^\s*-?[0-9\.]+(?![0-9\.]*[^0-9.\s])\s?/,
+  // eslint-disable-next-line no-useless-escape
   VARIABLE: /^\s*(\&|\*)[a-z0-9\._-]+\b/i
 };
 
@@ -154,25 +158,25 @@ CodeMirror.defineMode("yaml", () => {
       // Handle inline objects and arrays. These can be nested arbitrarily but we
       // don't currently support them spanning multiple lines.
       if (stream.match(/^(\{|\}|\[|\])/)) {
-        if (ch == "{") {
+        if (ch === "{") {
           state.inlineContainers = [
             ...state.inlineContainers,
             ContainerType.Dict
           ];
           state.inValue = false;
-        } else if (ch == "}") {
+        } else if (ch === "}") {
           state.inlineContainers = state.inlineContainers.slice(
             0,
             state.inlineContainers.length - 1
           );
           state.parents = state.parents.slice(0, state.parents.length - 1);
           state.inValue = state.inlineContainers.length > 0;
-        } else if (ch == "[") {
+        } else if (ch === "[") {
           state.inlineContainers = [
             ...state.inlineContainers,
             ContainerType.List
           ];
-        } else if (ch == "]") {
+        } else if (ch === "]") {
           state.inlineContainers = state.inlineContainers.slice(
             0,
             state.inlineContainers.length - 1
@@ -185,7 +189,7 @@ CodeMirror.defineMode("yaml", () => {
 
       // Handle inline separators. For dictionaries, we pop from value parsing state back to
       // key parsing state after a comma and unwind the parent stack.
-      if (state.inlineContainers && !wasEscaped && ch == ",") {
+      if (state.inlineContainers && !wasEscaped && ch === ",") {
         const current =
           state.inlineContainers[state.inlineContainers.length - 1];
         if (current === ContainerType.Dict) {
@@ -393,7 +397,7 @@ CodeMirror.registerHelper(
 
       const isCompositeOrList =
         field.configType.__typename === "ListConfigType" ||
-        field.configType.__typename == "CompositeConfigType";
+        field.configType.__typename === "CompositeConfigType";
 
       const tokenIsColon = token.string.startsWith(":");
 
@@ -571,7 +575,7 @@ CodeMirror.registerHelper("dagster-docs", "yaml", (editor: any, pos: any) => {
 
   const match =
     context &&
-    context.type.__typename == "CompositeConfigType" &&
+    context.type.__typename === "CompositeConfigType" &&
     context.type.fields.find(f => f.name === token.string);
 
   if (match && match.description) {

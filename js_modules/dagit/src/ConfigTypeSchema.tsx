@@ -147,7 +147,7 @@ const DictBlockComment = ({
   indent: string;
   content: string | null;
 }) =>
-  content != null && content != "" ? (
+  content !== null && content !== "" ? (
     <DictComment>{`${indent.replace(
       / /g,
       "\u00A0"

@@ -201,7 +201,7 @@ export function extractMetadataFromLogs(
             });
           }
         );
-      } else if (log.__typename == "StepExpectationResultEvent") {
+      } else if (log.__typename === "StepExpectationResultEvent") {
         metadata.steps[stepKey] = produce(
           metadata.steps[stepKey] || {
             expectationResults: [],

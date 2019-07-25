@@ -94,13 +94,13 @@ export default class PipelineExplorer extends React.Component<
       if ("name" in arg) {
         solidNames[solidNames.length - 1] = arg.name;
       } else {
-        if (arg.path[0] != "..") {
+        if (arg.path[0] !== "..") {
           solidNames.length = 0;
         }
-        if (arg.path[0] == ".." && solidNames[solidNames.length - 1] !== "") {
+        if (arg.path[0] === ".." && solidNames[solidNames.length - 1] !== "") {
           solidNames.pop(); // remove the last path component indicating selection
         }
-        while (arg.path[0] == "..") {
+        while (arg.path[0] === "..") {
           arg.path.shift();
           solidNames.pop();
         }

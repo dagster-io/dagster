@@ -63,7 +63,7 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
           description={
             errors.length
               ? `Fix the ${errors.length.toLocaleString()} ${
-                  errors.length == 1 ? "error" : "errors"
+                  errors.length === 1 ? "error" : "errors"
                 } below to preview the execution plan.`
               : `Provide valid configuration to see an execution plan.`
           }

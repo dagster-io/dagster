@@ -129,7 +129,7 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
 
             if (!isStepPartOfRun) {
               stepsSkippedCount++;
-              return;
+              return null;
             } else {
               prevSkippedCount = stepsSkippedCount;
               stepsSkippedCount = 0;

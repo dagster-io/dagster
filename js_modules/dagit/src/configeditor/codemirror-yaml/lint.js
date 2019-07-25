@@ -39,8 +39,8 @@ function showTooltipFor(e, content, node) {
   var poll = setInterval(function() {
     if (tooltip)
       for (var n = node; ; n = n.parentNode) {
-        if (n && n.nodeType == 11) n = n.host;
-        if (n == document.body) return;
+        if (n && n.nodeType === 11) n = n.host;
+        if (n === document.body) return;
         if (!n) {
           hide();
           break;
@@ -73,7 +73,7 @@ function makeMarker(labels, severity, multiple, tooltips) {
     inner.className = "CodeMirror-lint-marker-multiple";
   }
 
-  if (tooltips != false) {
+  if (tooltips !== false) {
     CodeMirror.on(inner, "mouseover", function(e) {
       showTooltipFor(e, labels, inner);
     });
@@ -82,7 +82,7 @@ function makeMarker(labels, severity, multiple, tooltips) {
 }
 
 function getMaxSeverity(a, b) {
-  if (a == "error") return a;
+  if (a === "error") return a;
   else return b;
 }
 
@@ -169,7 +169,7 @@ function lintAsync(cm, getAnnotations, passOptions) {
     cm.getValue(),
     function(annotations, arg2) {
       cm.off("change", abort);
-      if (state.waitingFor != id) return;
+      if (state.waitingFor !== id) return;
       if (arg2 && annotations instanceof CodeMirror) annotations = arg2;
       cm.operation(function() {
         updateLinting(cm, annotations);
@@ -275,7 +275,7 @@ function LintState(cm, options, hasGutter) {
 }
 
 CodeMirror.defineOption("lint", false, function(cm, val, old) {
-  if (old && old != CodeMirror.Init) {
+  if (old && old !== CodeMirror.Init) {
     clearMarks(cm);
     if (cm.state.lint.options.lintOnChange !== false)
       cm.off("change", onChange);
@@ -292,20 +292,16 @@ CodeMirror.defineOption("lint", false, function(cm, val, old) {
     var gutters = cm.getOption("gutters"),
       hasLintGutter = false;
     for (var i = 0; i < gutters.length; ++i)
-      if (gutters[i] == GUTTER_ID) hasLintGutter = true;
+      if (gutters[i] === GUTTER_ID) hasLintGutter = true;
     var state = (cm.state.lint = new LintState(
       cm,
       parseOptions(cm, val),
       hasLintGutter
     ));
     if (state.options.lintOnChange !== false) cm.on("change", onChange);
-    if (state.options.tooltips != false && state.options.tooltips != "gutter")
+    if (state.options.tooltips !== false && state.options.tooltips !== "gutter")
       CodeMirror.on(cm.getWrapperElement(), "mouseover", state.onMouseOver);
   }
-
-  // XXX(freiksenet): This is commented out because currently codemirror
-  // reloads plugins on every change, causing infinite linting
-  // startLinting(this);
 });
 
 CodeMirror.defineExtension("performLint", function() {

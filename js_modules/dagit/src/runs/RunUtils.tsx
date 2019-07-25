@@ -52,6 +52,7 @@ export const RunStatus: React.SFC<{ status: IRunStatus }> = ({ status }) => {
   return <RunStatusDot status={status} />;
 };
 
+// eslint-disable-next-line no-unexpected-multiline
 const RunStatusDot = styled.div<{
   status: IRunStatus;
 }>`

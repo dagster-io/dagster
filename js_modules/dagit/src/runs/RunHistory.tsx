@@ -100,6 +100,7 @@ export default class RunHistory extends React.Component<
         case RunSort.END_TIME_ASC:
           return getEndTime(a) - getEndTime(b);
         case RunSort.END_TIME_DSC:
+        default:
           return getEndTime(b) - getEndTime(a);
       }
     });

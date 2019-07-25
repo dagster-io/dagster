@@ -19,9 +19,9 @@ export default class ConfigEditorModePicker extends React.PureComponent<
   IConfigEditorModePickerProps
 > {
   render() {
-    const singleMode = this.props.pipeline.modes.length == 1;
+    const singleMode = this.props.pipeline.modes.length === 1;
     const currentMode = this.props.modeName
-      ? this.props.pipeline.modes.find(m => m.name == this.props.modeName)
+      ? this.props.pipeline.modes.find(m => m.name === this.props.modeName)
       : this.props.pipeline.modes[0];
 
     if (currentMode) {

@@ -46,6 +46,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
         >
           <div className={Classes.DIALOG_BODY} style={{ margin: 0 }}>
             <iframe
+              title={notebookPath.value}
               src={`${ROOT_SERVER_URI}/dagit/notebook?path=${encodeURIComponent(
                 notebookPath.value
               )}`}

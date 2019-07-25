@@ -50,7 +50,7 @@ export const SolidIOBox: React.FunctionComponent<SolidIOBoxProps> = ({
 }) => {
   const { x, y, width, height } = layout;
   const { name, type } = item.definition;
-  const showText = width == 0 && !minified;
+  const showText = width === 0 && !minified;
   const highlighted = edges.some(e => isHighlighted(highlightedEdges, e));
 
   return (

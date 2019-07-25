@@ -93,7 +93,7 @@ export class ExecutionPlanBox extends React.Component<
     const {
       state,
       start,
-      stepKey: stepKey,
+      stepKey,
       delay,
       expectationResults,
       materializations,

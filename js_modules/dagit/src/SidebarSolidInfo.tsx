@@ -147,9 +147,9 @@ export default class SidebarSolidInfo extends React.Component<
 
     const Plugin = pluginForMetadata(definition.metadata);
 
-    const isComposite = definition.__typename == "CompositeSolidDefinition";
+    const isComposite = definition.__typename === "CompositeSolidDefinition";
     const configDefinition =
-      definition.__typename == "SolidDefinition"
+      definition.__typename === "SolidDefinition"
         ? definition.configDefinition
         : null;
 
@@ -158,7 +158,7 @@ export default class SidebarSolidInfo extends React.Component<
 
     if (
       showingSubsolids &&
-      definition.__typename == "CompositeSolidDefinition"
+      definition.__typename === "CompositeSolidDefinition"
     ) {
       definition.inputMappings.forEach(
         m =>

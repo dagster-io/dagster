@@ -191,7 +191,6 @@ export class Structured extends React.Component<{
           />
         );
       case "PipelineFailureEvent":
-      case "PipelineProcessStartEvent":
       case "PipelineSuccessEvent":
       case "LogMessageEvent":
       case "PipelineStartEvent":
