@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes";
+import { PipelineRunStatus, LogLevel, ObjectStoreOperationType, StepKind } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: PipelineRunFragment
@@ -158,22 +158,9 @@ export interface PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent {
   error: PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
-export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_step_inputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-  description: string | null;
-}
-
-export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_step_inputs {
-  __typename: "ExecutionStepInput";
-  name: string;
-  type: PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_step_inputs_type;
-}
-
 export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_step {
   __typename: "ExecutionStep";
   key: string;
-  inputs: PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_step_inputs[];
 }
 
 export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -224,22 +211,9 @@ export interface PipelineRunFragment_logs_nodes_ExecutionStepInputEvent {
   typeCheck: PipelineRunFragment_logs_nodes_ExecutionStepInputEvent_typeCheck;
 }
 
-export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_step_outputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-  description: string | null;
-}
-
-export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_step_outputs {
-  __typename: "ExecutionStepOutput";
-  name: string;
-  type: PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_step_outputs_type;
-}
-
 export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_step {
   __typename: "ExecutionStep";
   key: string;
-  outputs: PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_step_outputs[];
 }
 
 export interface PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -342,7 +316,57 @@ export interface PipelineRunFragment_logs_nodes_StepExpectationResultEvent {
   expectationResult: PipelineRunFragment_logs_nodes_StepExpectationResultEvent_expectationResult;
 }
 
-export type PipelineRunFragment_logs_nodes = PipelineRunFragment_logs_nodes_ExecutionStepSkippedEvent | PipelineRunFragment_logs_nodes_PipelineProcessStartedEvent | PipelineRunFragment_logs_nodes_PipelineProcessStartEvent | PipelineRunFragment_logs_nodes_StepMaterializationEvent | PipelineRunFragment_logs_nodes_PipelineInitFailureEvent | PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunFragment_logs_nodes_ExecutionStepInputEvent | PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent | PipelineRunFragment_logs_nodes_StepExpectationResultEvent;
+export interface PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries = PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry | PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry | PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry | PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry;
+
+export interface PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult {
+  __typename: "ObjectStoreOperationResult";
+  op: ObjectStoreOperationType;
+  metadataEntries: PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult_metadataEntries[];
+}
+
+export interface PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent {
+  __typename: "ObjectStoreOperationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_step | null;
+  operationResult: PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult;
+}
+
+export type PipelineRunFragment_logs_nodes = PipelineRunFragment_logs_nodes_ExecutionStepSkippedEvent | PipelineRunFragment_logs_nodes_PipelineProcessStartedEvent | PipelineRunFragment_logs_nodes_PipelineProcessStartEvent | PipelineRunFragment_logs_nodes_StepMaterializationEvent | PipelineRunFragment_logs_nodes_PipelineInitFailureEvent | PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunFragment_logs_nodes_ExecutionStepInputEvent | PipelineRunFragment_logs_nodes_ExecutionStepOutputEvent | PipelineRunFragment_logs_nodes_StepExpectationResultEvent | PipelineRunFragment_logs_nodes_ObjectStoreOperationEvent;
 
 export interface PipelineRunFragment_logs {
   __typename: "LogMessageConnection";

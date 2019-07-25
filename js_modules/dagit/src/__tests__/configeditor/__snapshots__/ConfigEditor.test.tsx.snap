@@ -5,7 +5,6 @@ exports[`renders a codemirror 1`] = `
   style={
     Object {
       "flex": 1,
-      "height": "100%",
       "position": "relative",
     }
   }

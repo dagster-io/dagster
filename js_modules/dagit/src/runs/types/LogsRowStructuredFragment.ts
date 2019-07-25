@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { LogLevel } from "./../../types/globalTypes";
+import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: LogsRowStructuredFragment
@@ -33,7 +33,6 @@ export interface LogsRowStructuredFragment_PipelineProcessStartedEvent {
   timestamp: string;
   level: LogLevel;
   step: LogsRowStructuredFragment_PipelineProcessStartedEvent_step | null;
-  processId: number;
 }
 
 export interface LogsRowStructuredFragment_PipelineProcessStartEvent_step {
@@ -47,8 +46,6 @@ export interface LogsRowStructuredFragment_PipelineProcessStartEvent {
   timestamp: string;
   level: LogLevel;
   step: LogsRowStructuredFragment_PipelineProcessStartEvent_step | null;
-  pipelineName: string;
-  runId: string;
 }
 
 export interface LogsRowStructuredFragment_StepMaterializationEvent_step {
@@ -142,22 +139,9 @@ export interface LogsRowStructuredFragment_ExecutionStepFailureEvent {
   error: LogsRowStructuredFragment_ExecutionStepFailureEvent_error;
 }
 
-export interface LogsRowStructuredFragment_ExecutionStepInputEvent_step_inputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-  description: string | null;
-}
-
-export interface LogsRowStructuredFragment_ExecutionStepInputEvent_step_inputs {
-  __typename: "ExecutionStepInput";
-  name: string;
-  type: LogsRowStructuredFragment_ExecutionStepInputEvent_step_inputs_type;
-}
-
 export interface LogsRowStructuredFragment_ExecutionStepInputEvent_step {
   __typename: "ExecutionStep";
   key: string;
-  inputs: LogsRowStructuredFragment_ExecutionStepInputEvent_step_inputs[];
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -208,22 +192,9 @@ export interface LogsRowStructuredFragment_ExecutionStepInputEvent {
   typeCheck: LogsRowStructuredFragment_ExecutionStepInputEvent_typeCheck;
 }
 
-export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_step_outputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-  description: string | null;
-}
-
-export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_step_outputs {
-  __typename: "ExecutionStepOutput";
-  name: string;
-  type: LogsRowStructuredFragment_ExecutionStepOutputEvent_step_outputs_type;
-}
-
 export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_step {
   __typename: "ExecutionStep";
   key: string;
-  outputs: LogsRowStructuredFragment_ExecutionStepOutputEvent_step_outputs[];
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -326,4 +297,54 @@ export interface LogsRowStructuredFragment_StepExpectationResultEvent {
   expectationResult: LogsRowStructuredFragment_StepExpectationResultEvent_expectationResult;
 }
 
-export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_PipelineProcessStartedEvent | LogsRowStructuredFragment_PipelineProcessStartEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineInitFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent;
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export type LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries = LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry | LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry | LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry | LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry;
+
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult {
+  __typename: "ObjectStoreOperationResult";
+  op: ObjectStoreOperationType;
+  metadataEntries: LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries[];
+}
+
+export interface LogsRowStructuredFragment_ObjectStoreOperationEvent {
+  __typename: "ObjectStoreOperationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: LogsRowStructuredFragment_ObjectStoreOperationEvent_step | null;
+  operationResult: LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult;
+}
+
+export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_PipelineProcessStartedEvent | LogsRowStructuredFragment_PipelineProcessStartEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineInitFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent;

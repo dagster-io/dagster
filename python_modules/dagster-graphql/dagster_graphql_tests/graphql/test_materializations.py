@@ -1,4 +1,5 @@
 from .utils import sync_execute_get_events
+import re
 
 
 def test_materializations(snapshot):
@@ -7,6 +8,12 @@ def test_materializations(snapshot):
             'executionParams': {'selector': {'name': 'materialization_pipeline'}, 'mode': 'default'}
         }
     )
+
+    # Remove execution durations from ExecutionStepSuccessEvent messages
+    for log in logs:
+        if log["__typename"] == "ExecutionStepSuccessEvent":
+            log["message"] = re.sub(r'\s.*ms', "ms", log["message"])
+
     materializations = [log for log in logs if log['__typename'] == 'StepMaterializationEvent']
     assert len(materializations) == 1
     mat = materializations[0]['materialization']

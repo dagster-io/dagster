@@ -4,7 +4,7 @@ from collections import defaultdict, OrderedDict
 
 
 def _coalesce_solid_order(execution_plan):
-    solid_order = [s.solid_name for s in execution_plan.topological_steps()]
+    solid_order = [s.solid_handle.to_string() for s in execution_plan.topological_steps()]
     reversed_coalesced_solid_order = []
     for solid in reversed(solid_order):
         if solid in reversed_coalesced_solid_order:
@@ -20,9 +20,9 @@ def coalesce_execution_steps(execution_plan):
 
     steps = defaultdict(list)
 
-    for solid_name, solid_steps in itertools.groupby(
-        execution_plan.topological_steps(), lambda x: x.solid_name
+    for solid_handle, solid_steps in itertools.groupby(
+        execution_plan.topological_steps(), lambda x: x.solid_handle.to_string()
     ):
-        steps[solid_name] += list(solid_steps)
+        steps[solid_handle] += list(solid_steps)
 
-    return OrderedDict([(solid_name, steps[solid_name]) for solid_name in solid_order])
+    return OrderedDict([(solid_handle, steps[solid_handle]) for solid_handle in solid_order])

@@ -188,6 +188,7 @@ def test_multiline_logging_complex():
             None,  # user_failure_data
         ],
         'event_type_value': 'STEP_FAILURE',
+        'message': None,
         'pipeline_name': 'error_monster',
         'solid_handle': ['start', 'emit_num', None],
         'step_key': 'start.materialization.output.result.0',

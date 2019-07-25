@@ -19,12 +19,8 @@ from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.config import InProcessExecutorConfig
 from dagster_graphql.cli import execute_query
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
-from dagster_graphql.util import (
-    _handled_events,
-    dagster_event_from_dict,
-    get_log_message_event_fragment,
-    get_step_event_fragment,
-)
+from dagster_graphql.client.util import HANDLED_EVENTS, dagster_event_from_dict
+from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 
 
 def test_can_handle_all_step_events():
@@ -32,7 +28,7 @@ def test_can_handle_all_step_events():
     must be handled by the event parsing, but this does not check that the event parsing works
     correctly.
     '''
-    handled = set(_handled_events().values())
+    handled = set(HANDLED_EVENTS.values())
     assert handled == STEP_EVENTS
 
 
@@ -92,61 +88,6 @@ def test_pipeline():
     assert result.result_for_solid('should_be_skipped').skipped
 
 
-PIPELINE_EXECUTION_QUERY_TEMPLATE = '''
-mutation(
-  $executionParams: ExecutionParams!
-) {{
-  startPipelineExecution(
-    executionParams: $executionParams,
-  ) {{
-    __typename
-    ... on PipelineConfigValidationInvalid {{
-      pipeline {{
-        name
-      }}
-      errors {{
-        __typename
-        message
-        path
-        reason
-      }}
-    }}
-    ... on PipelineNotFoundError {{
-        message
-        pipelineName
-    }}
-    ... on StartPipelineExecutionSuccess {{
-      run {{
-        runId
-        status
-        pipeline {{
-          name
-        }}
-        logs {{
-          nodes {{
-            __typename
-            {step_event_fragment}
-            {log_message_event_fragment}
-          }}
-          pageInfo {{
-            lastCursor
-            hasNextPage
-            hasPreviousPage
-            count
-            totalCount
-          }}
-        }}
-        environmentConfigYaml
-        mode
-      }}
-    }}
-  }}
-}}
-'''.strip(
-    '\n'
-)
-
-
 def test_all_step_events():  # pylint: disable=too-many-locals
     handle = ExecutionTargetHandle.for_pipeline_fn(define_test_events_pipeline)
     pipeline = handle.build_pipeline_definition()
@@ -166,19 +107,6 @@ def test_all_step_events():  # pylint: disable=too-many-locals
         'PipelineFailureEvent',
     }
 
-    step_event_fragment = get_step_event_fragment()
-    log_message_event_fragment = get_log_message_event_fragment()
-    query = '\n'.join(
-        (
-            PIPELINE_EXECUTION_QUERY_TEMPLATE.format(
-                step_event_fragment=step_event_fragment.include_key,
-                log_message_event_fragment=log_message_event_fragment.include_key,
-            ),
-            step_event_fragment.fragment,
-            log_message_event_fragment.fragment,
-        )
-    )
-
     event_counts = defaultdict(int)
 
     for step_level in step_levels:
@@ -196,7 +124,12 @@ def test_all_step_events():  # pylint: disable=too-many-locals
 
             pipeline_run_storage = PipelineRunStorage()
 
-            res = execute_query(handle, query, variables, pipeline_run_storage=pipeline_run_storage)
+            res = execute_query(
+                handle,
+                START_PIPELINE_EXECUTION_QUERY,
+                variables,
+                pipeline_run_storage=pipeline_run_storage,
+            )
 
             # go through the same dict, decrement all the event records we've seen from the GraphQL
             # response

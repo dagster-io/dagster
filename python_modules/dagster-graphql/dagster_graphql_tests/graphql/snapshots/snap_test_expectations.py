@@ -7,33 +7,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_basic_input_output_expectations 1'] = [
-    {
-        '__typename': 'StepExpectationResultEvent',
-        'expectationResult': {
-            'description': None,
-            'label': 'some_expectation',
-            'metadataEntries': [],
-            'success': True,
-        },
-        'level': 'DEBUG',
-        'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step df_expectations_solid.compute',
-        'step': {'key': 'df_expectations_solid.compute', 'solidHandleID': 'df_expectations_solid'},
-    },
-    {
-        '__typename': 'StepExpectationResultEvent',
-        'expectationResult': {
-            'description': None,
-            'label': 'other_expecation',
-            'metadataEntries': [],
-            'success': True,
-        },
-        'level': 'DEBUG',
-        'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step df_expectations_solid.compute',
-        'step': {'key': 'df_expectations_solid.compute', 'solidHandleID': 'df_expectations_solid'},
-    },
-]
-
 snapshots['test_basic_expectations_within_compute_step_events 1'] = [
     {
         '__typename': 'StepExpectationResultEvent',
@@ -44,17 +17,17 @@ snapshots['test_basic_expectations_within_compute_step_events 1'] = [
                 {
                     'description': None,
                     'jsonString': '{"reason": "Relentless pessimism."}',
-                    'label': 'data',
+                    'label': 'data'
                 }
             ],
-            'success': False,
+            'success': False
         },
         'level': 'DEBUG',
-        'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step emit_failed_expectation.compute',
+        'message': 'Expectation always_false failed',
         'step': {
             'key': 'emit_failed_expectation.compute',
-            'solidHandleID': 'emit_failed_expectation',
-        },
+            'solidHandleID': 'emit_failed_expectation'
+        }
     }
 ]
 
@@ -65,16 +38,20 @@ snapshots['test_basic_expectations_within_compute_step_events 2'] = [
             'description': 'Successful',
             'label': 'always_true',
             'metadataEntries': [
-                {'description': None, 'jsonString': '{"reason": "Just because."}', 'label': 'data'}
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Just because."}',
+                    'label': 'data'
+                }
             ],
-            'success': True,
+            'success': True
         },
         'level': 'DEBUG',
-        'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step emit_successful_expectation.compute',
+        'message': 'Expectation always_true passed',
         'step': {
             'key': 'emit_successful_expectation.compute',
-            'solidHandleID': 'emit_successful_expectation',
-        },
+            'solidHandleID': 'emit_successful_expectation'
+        }
     }
 ]
 
@@ -84,14 +61,50 @@ snapshots['test_basic_expectations_within_compute_step_events 3'] = [
         'expectationResult': {
             'description': 'Successful',
             'label': 'no_metadata',
-            'metadataEntries': [],
-            'success': True,
+            'metadataEntries': [
+            ],
+            'success': True
         },
         'level': 'DEBUG',
-        'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step emit_successful_expectation_no_metadata.compute',
+        'message': 'Expectation no_metadata passed',
         'step': {
             'key': 'emit_successful_expectation_no_metadata.compute',
-            'solidHandleID': 'emit_successful_expectation_no_metadata',
+            'solidHandleID': 'emit_successful_expectation_no_metadata'
+        }
+    }
+]
+
+snapshots['test_basic_input_output_expectations 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'some_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
         },
+        'level': 'DEBUG',
+        'message': 'Expectation some_expectation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
+    },
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'other_expecation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation other_expecation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
     }
 ]

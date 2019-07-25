@@ -65,6 +65,15 @@ fragment stepEventFragment on StepEvent {
             }
         }
     }
+    ... on ObjectStoreOperationEvent {
+        step { key }
+        operationResult {
+            op
+            metadataEntries {
+                ...metadataEntryFragment
+            }
+        }
+    }
 }
 
 '''

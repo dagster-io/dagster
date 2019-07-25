@@ -7,10 +7,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_pipeline_reexecution_info_query 1'] = [
-    'sum_sq_solid.compute'
-]
-
 snapshots['test_successful_pipeline_reexecution 1'] = {
     'startPipelineExecution': {
         '__typename': 'StartPipelineExecutionSuccess',
@@ -59,6 +55,23 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         }
                     },
                     {
+                        '__typename': 'ObjectStoreOperationEvent',
+                        'level': 'DEBUG',
+                        'operationResult': {
+                            'metadataEntries': [
+                                {
+                                    'description': None,
+                                    'label': 'key',
+                                    'path': 'DUMMY_PATH'
+                                }
+                            ],
+                            'op': 'SET_OBJECT'
+                        },
+                        'step': {
+                            'key': 'sum_solid.compute'
+                        }
+                    },
+                    {
                         '__typename': 'ExecutionStepSuccessEvent',
                         'level': 'DEBUG'
                     },
@@ -67,6 +80,23 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         'level': 'DEBUG',
                         'step': {
                             'kind': 'COMPUTE'
+                        }
+                    },
+                    {
+                        '__typename': 'ObjectStoreOperationEvent',
+                        'level': 'DEBUG',
+                        'operationResult': {
+                            'metadataEntries': [
+                                {
+                                    'description': None,
+                                    'label': 'key',
+                                    'path': 'DUMMY_PATH'
+                                }
+                            ],
+                            'op': 'GET_OBJECT'
+                        },
+                        'step': {
+                            'key': 'sum_sq_solid.compute'
                         }
                     },
                     {
@@ -97,6 +127,23 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                             'label': 'result',
                             'metadataEntries': [
                             ]
+                        }
+                    },
+                    {
+                        '__typename': 'ObjectStoreOperationEvent',
+                        'level': 'DEBUG',
+                        'operationResult': {
+                            'metadataEntries': [
+                                {
+                                    'description': None,
+                                    'label': 'key',
+                                    'path': 'DUMMY_PATH'
+                                }
+                            ],
+                            'op': 'SET_OBJECT'
+                        },
+                        'step': {
+                            'key': 'sum_sq_solid.compute'
                         }
                     },
                     {
@@ -134,6 +181,23 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                         }
                     },
                     {
+                        '__typename': 'ObjectStoreOperationEvent',
+                        'level': 'DEBUG',
+                        'operationResult': {
+                            'metadataEntries': [
+                                {
+                                    'description': None,
+                                    'label': 'key',
+                                    'path': 'DUMMY_PATH'
+                                }
+                            ],
+                            'op': 'GET_OBJECT'
+                        },
+                        'step': {
+                            'key': 'sum_sq_solid.compute'
+                        }
+                    },
+                    {
                         '__typename': 'ExecutionStepInputEvent',
                         'inputName': 'sum_df',
                         'level': 'DEBUG',
@@ -164,6 +228,23 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                         }
                     },
                     {
+                        '__typename': 'ObjectStoreOperationEvent',
+                        'level': 'DEBUG',
+                        'operationResult': {
+                            'metadataEntries': [
+                                {
+                                    'description': None,
+                                    'label': 'key',
+                                    'path': 'DUMMY_PATH'
+                                }
+                            ],
+                            'op': 'SET_OBJECT'
+                        },
+                        'step': {
+                            'key': 'sum_sq_solid.compute'
+                        }
+                    },
+                    {
                         '__typename': 'ExecutionStepSuccessEvent',
                         'level': 'DEBUG'
                     },
@@ -179,3 +260,7 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
         }
     }
 }
+
+snapshots['test_pipeline_reexecution_info_query 1'] = [
+    'sum_sq_solid.compute'
+]

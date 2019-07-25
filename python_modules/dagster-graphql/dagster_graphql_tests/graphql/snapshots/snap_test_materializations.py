@@ -11,13 +11,13 @@ snapshots['test_materializations 1'] = [
     {
         '__typename': 'PipelineStartEvent',
         'level': 'DEBUG',
-        'message': 'DagsterEventType.PIPELINE_START for pipeline materialization_pipeline',
+        'message': 'Started execution of pipeline "materialization_pipeline".',
         'step': None
     },
     {
         '__typename': 'ExecutionStepStartEvent',
         'level': 'DEBUG',
-        'message': 'DagsterEventType.STEP_START for step materialize.compute',
+        'message': 'Started execution of step "materialize.compute".',
         'step': {
             'key': 'materialize.compute',
             'kind': 'COMPUTE',
@@ -57,7 +57,7 @@ snapshots['test_materializations 1'] = [
                 }
             ]
         },
-        'message': 'DagsterEventType.STEP_MATERIALIZATION for step materialize.compute',
+        'message': 'Materialized value all_types.',
         'step': {
             'key': 'materialize.compute',
             'solidHandleID': 'materialize'
@@ -66,7 +66,7 @@ snapshots['test_materializations 1'] = [
     {
         '__typename': 'ExecutionStepOutputEvent',
         'level': 'DEBUG',
-        'message': 'DagsterEventType.STEP_OUTPUT for step materialize.compute',
+        'message': 'Yielded output "result" of type "Any". (Type check passed).',
         'outputName': 'result',
         'step': {
             'key': 'materialize.compute',
@@ -83,7 +83,7 @@ snapshots['test_materializations 1'] = [
     {
         '__typename': 'ExecutionStepSuccessEvent',
         'level': 'DEBUG',
-        'message': 'DagsterEventType.STEP_SUCCESS for step materialize.compute',
+        'message': 'Finishedms.',
         'step': {
             'key': 'materialize.compute',
             'solidHandleID': 'materialize'
@@ -92,7 +92,7 @@ snapshots['test_materializations 1'] = [
     {
         '__typename': 'PipelineSuccessEvent',
         'level': 'DEBUG',
-        'message': 'DagsterEventType.PIPELINE_SUCCESS for pipeline materialization_pipeline',
+        'message': 'Finished execution of pipeline "materialization_pipeline".',
         'step': None
     }
 ]

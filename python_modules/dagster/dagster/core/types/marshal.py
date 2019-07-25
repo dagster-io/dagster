@@ -13,6 +13,13 @@ class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-
     supported.
     '''
 
+    def __init__(self, name):
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
+
     @abstractmethod
     def serialize(self, value, write_file_obj):
         '''Core serialization method.'''
@@ -35,6 +42,9 @@ class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-
 
 
 class PickleSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
+    def __init__(self, name='pickle'):
+        super(PickleSerializationStrategy, self).__init__(name)
+
     def serialize(self, value, write_file_obj):
         pickle.dump(value, write_file_obj, PICKLE_PROTOCOL)
 

@@ -4,6 +4,7 @@ import itertools
 from dagster import check
 
 from dagster.core.definitions import PipelineDefinition, Solid
+from dagster.core.definitions.events import ObjectStoreOperation
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, DagsterEventType
@@ -289,11 +290,15 @@ class SolidExecutionResult(object):
             return None
 
     def _get_value(self, context, step_output_data):
-        return context.intermediates_manager.get_intermediate(
+        value = context.intermediates_manager.get_intermediate(
             context=context,
             runtime_type=self.solid.output_def_named(step_output_data.output_name).runtime_type,
             step_output_handle=step_output_data.step_output_handle,
         )
+        if isinstance(value, ObjectStoreOperation):
+            return value.obj
+
+        return value
 
     @property
     def failure_data(self):

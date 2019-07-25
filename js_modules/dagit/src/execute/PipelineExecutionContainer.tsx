@@ -163,7 +163,6 @@ export default class PipelineExecutionContainer extends React.Component<
     try {
       // Note: parsing `` returns null rather than an empty object,
       // which is preferable for representing empty config.
-      console.log(currentSession.environmentConfigYaml);
       environmentConfigData =
         yaml.parse(currentSession.environmentConfigYaml) || {};
     } catch (err) {

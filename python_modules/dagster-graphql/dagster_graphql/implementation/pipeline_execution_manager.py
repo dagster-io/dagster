@@ -67,7 +67,9 @@ def build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name):
 def build_process_start_event(run_id, pipeline_name):
     check.str_param(pipeline_name, 'pipeline_name')
     check.str_param(run_id, 'run_id')
-    message = 'About to start process for pipeline'
+    message = 'About to start process for pipeline "{pipeline_name}" (run_id: {run_id}).'.format(
+        pipeline_name=pipeline_name, run_id=run_id
+    )
 
     return DagsterEventRecord(
         message=message,
@@ -78,6 +80,7 @@ def build_process_start_event(run_id, pipeline_name):
         error_info=None,
         pipeline_name=pipeline_name,
         dagster_event=DagsterEvent(
+            message=message,
             event_type_value=DagsterEventType.PIPELINE_PROCESS_START.value,
             pipeline_name=pipeline_name,
             event_specific_data=PipelineProcessStartData(pipeline_name, run_id),
@@ -86,9 +89,7 @@ def build_process_start_event(run_id, pipeline_name):
 
 
 def build_process_started_event(run_id, pipeline_name, process_id):
-    message = 'Started process for pipeline'.format(
-        pipeline_name=pipeline_name, run_id=run_id, process_id=process_id
-    )
+    message = 'Started process for pipeline (pid: {process_id}).'.format(process_id=process_id)
 
     return DagsterEventRecord(
         message=message,
@@ -99,6 +100,7 @@ def build_process_started_event(run_id, pipeline_name, process_id):
         error_info=None,
         pipeline_name=pipeline_name,
         dagster_event=DagsterEvent(
+            message=message,
             event_type_value=DagsterEventType.PIPELINE_PROCESS_STARTED.value,
             pipeline_name=pipeline_name,
             step_key=None,

@@ -4,7 +4,6 @@ import { Colors } from "@blueprintjs/core";
 
 const ColumnWidthsStorageKey = "ColumnWidths";
 const ColumnWidths = {
-  label: 160,
   eventType: 140,
   solid: 150,
   timestamp: 100
@@ -122,12 +121,6 @@ export const Headers: React.FunctionComponent<{}> = props => {
         onResize={width => widths.onChange({ ...widths, eventType: width })}
       >
         Event Type
-      </Header>
-      <Header
-        width={widths.label}
-        onResize={width => widths.onChange({ ...widths, label: width })}
-      >
-        Label
       </Header>
       <HeaderContainer style={{ flex: 1 }}>Info</HeaderContainer>
       <Header handleSide="left" width={widths.timestamp}>

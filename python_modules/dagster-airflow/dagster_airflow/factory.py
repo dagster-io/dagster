@@ -93,7 +93,7 @@ def _make_airflow_dag(
 
     coalesced_plan = coalesce_execution_steps(execution_plan)
 
-    for solid_name, solid_steps in coalesced_plan.items():
+    for solid_handle, solid_steps in coalesced_plan.items():
 
         step_keys = [step.key for step in solid_steps]
 
@@ -102,25 +102,25 @@ def _make_airflow_dag(
             pipeline_name=pipeline_name,
             environment_dict=environment_dict,
             mode=mode,
-            solid_name=solid_name,
+            solid_handle=solid_handle,
             step_keys=step_keys,
             dag=dag,
             dag_id=dag_id,
             op_kwargs=op_kwargs,
         )
 
-        tasks[solid_name] = task
+        tasks[solid_handle] = task
 
         for solid_step in solid_steps:
             for step_input in solid_step.step_inputs:
                 if step_input.is_from_output:
-                    prev_solid_name = execution_plan.get_step_by_key(
+                    prev_solid_handle = execution_plan.get_step_by_key(
                         step_input.prev_output_handle.step_key
-                    ).solid_name
-                    if solid_name != prev_solid_name:
-                        tasks[prev_solid_name].set_downstream(task)
+                    ).solid_handle.to_string()
+                    if solid_handle != prev_solid_handle:
+                        tasks[prev_solid_handle].set_downstream(task)
 
-    return (dag, [tasks[solid_name] for solid_name in coalesced_plan.keys()])
+    return (dag, [tasks[solid_handle] for solid_handle in coalesced_plan.keys()])
 
 
 def make_airflow_dag(

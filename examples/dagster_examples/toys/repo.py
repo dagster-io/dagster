@@ -7,6 +7,7 @@ from dagster_examples.toys.log_demo import hello_logs_pipeline, hello_error_pipe
 from dagster_examples.toys.log_spew import log_spew
 from dagster_examples.toys.many_events import many_events
 from dagster_examples.toys.composition import composition
+from dagster_examples.toys.resources_error import resource_error_pipeline
 
 
 def define_repo():
@@ -21,5 +22,6 @@ def define_repo():
             many_events,
             composition,
             config_mapping_pipeline,
+            resource_error_pipeline,
         ],
     )

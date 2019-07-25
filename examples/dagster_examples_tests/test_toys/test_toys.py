@@ -6,6 +6,7 @@ from dagster import (
     DagsterTypeCheckError,
     RunConfig,
     execute_pipeline,
+    InProcessExecutorConfig,
 )
 
 from dagster_examples.toys.config_mapping import config_mapping_pipeline
@@ -15,6 +16,7 @@ from dagster_examples.toys.log_spew import log_spew
 from dagster_examples.toys.many_events import many_events
 from dagster_examples.toys.resources import resource_pipeline
 from dagster_examples.toys.sleepy import sleepy_pipeline
+from dagster_examples.toys.resources_error import resource_error_pipeline
 
 
 def test_define_repo():
@@ -135,3 +137,18 @@ def test_config_mapping():
             }
         },
     ).success
+
+
+def test_error_resource(snapshot):
+    result = execute_pipeline(
+        resource_error_pipeline,
+        environment_dict={'storage': {'filesystem': {}}},
+        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
+    )
+
+    assert not result.success
+    assert len(result.event_list) == 1
+
+    init_failure_event = result.event_list[0]
+    assert init_failure_event.event_type_value == 'PIPELINE_INIT_FAILURE'
+    snapshot.assert_match(init_failure_event.message)
