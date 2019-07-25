@@ -282,6 +282,7 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_FAILURE,
             step_context=step_context,
             event_specific_data=step_failure_data,
+            message='Execution of step "{step_key}" failed.'.format(step_key=step_context.step.key),
         )
 
     @staticmethod

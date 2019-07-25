@@ -135,10 +135,7 @@ def test_subscription_query_error():
     assert step_run_log_entry
     # Confirm that it is the user stack
 
-    assert (
-        step_run_log_entry['message']
-        == 'DagsterEventType.STEP_FAILURE for step throw_a_thing.compute'
-    )
+    assert step_run_log_entry['message'] == 'Execution of step "throw_a_thing.compute" failed.'
     assert step_run_log_entry['error']
     assert step_run_log_entry['level'] == 'ERROR'
     assert isinstance(step_run_log_entry['error']['stack'], list)
