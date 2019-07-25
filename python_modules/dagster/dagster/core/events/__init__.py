@@ -261,7 +261,7 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_OUTPUT,
             step_context=step_context,
             event_specific_data=step_output_data,
-            message='Yielded output {output_name} of type {output_type}.{type_check_clause}'.format(
+            message='Yielded output "{output_name}" of type "{output_type}".{type_check_clause}'.format(
                 output_name=step_output_data.step_output_handle.output_name,
                 output_type=step_context.step.step_output_named(
                     step_output_data.step_output_handle.output_name
@@ -291,6 +291,19 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_INPUT,
             step_context=step_context,
             event_specific_data=step_input_data,
+            message='Got input "{input_name}" of type "{input_type}".{type_check_clause}'.format(
+                input_name=step_input_data.input_name,
+                input_type=step_context.step.step_input_named(
+                    step_input_data.input_name
+                ).runtime_type.name,
+                type_check_clause=(
+                    ' Warning! Type check failed.'
+                    if not step_input_data.type_check_data.success
+                    else ' (Type check passed).'
+                )
+                if step_input_data.type_check_data
+                else ' (No type check).',
+            ),
         )
 
     @staticmethod
@@ -305,7 +318,6 @@ class DagsterEvent(
 
     @staticmethod
     def step_success_event(step_context, success):
-
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_SUCCESS,
             step_context=step_context,

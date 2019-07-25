@@ -66,7 +66,7 @@ snapshots['test_materializations 1'] = [
     {
         '__typename': 'ExecutionStepOutputEvent',
         'level': 'DEBUG',
-        'message': 'Yielded output result of type Any. (Type check passed).',
+        'message': 'Yielded output "result" of type "Any". (Type check passed).',
         'outputName': 'result',
         'step': {
             'key': 'materialize.compute',
