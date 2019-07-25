@@ -1,5 +1,6 @@
 # pylint: disable=no-value-for-parameter
-from dagster import pipeline, lambda_solid, PresetDefinition, file_relative_path
+import pandas as pd
+from dagster import pipeline, lambda_solid, PresetDefinition, file_relative_path, Path
 from dagster_pandas import DataFrame
 
 
@@ -35,3 +36,13 @@ def sum_sq_solid(sum_df: DataFrame) -> DataFrame:
 )
 def pandas_hello_world_pipeline():
     return sum_sq_solid(sum_solid())
+
+
+@lambda_solid
+def read_csv(path: Path) -> DataFrame:
+    return pd.read_csv(path)
+
+
+@pipeline
+def pandas_hello_world_pipeline_no_config():
+    return sum_sq_solid(sum_solid(read_csv()))
