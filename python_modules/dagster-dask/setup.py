@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 
 def get_version(name):
     version = {}
-    with open("dagster_dask/version.py") as fp:
+    with open('dagster_dask/version.py') as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     if name == 'dagster-dask':
@@ -43,6 +43,7 @@ def _do_setup(name='dagster-dask'):
             'dagster_graphql',
             'dask==1.2.2',
             'distributed==1.28.1',
+            'Jinja2==2.10.0',  # https://github.com/dagster-io/dagster/issues/1600
         ],
         zip_safe=False,
     )
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     parsed, unparsed = parser.parse_known_args()
     sys.argv = [sys.argv[0]] + unparsed
 
-    if sys.version_info[0] < 3 and sys.platform == "darwin":
+    if sys.version_info[0] < 3 and sys.platform == 'darwin':
         raise Exception('dagster-dask does not work on Python 2 + macOS')
 
     if parsed.nightly:

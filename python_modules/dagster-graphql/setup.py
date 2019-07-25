@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 
 def get_version(name):
     version = {}
-    with open("dagster_graphql/version.py") as fp:
+    with open('dagster_graphql/version.py') as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     if name == 'dagster-graphql':
@@ -44,8 +44,8 @@ def _do_setup(name='dagster-graphql'):
             'pyrsistent>=0.14.8',
             'rx==1.6.1',
         ],
-        entry_points={"console_scripts": ['dagster-graphql = dagster_graphql.cli:main']},
-        extras_require={":python_version<'3'": ["backports.tempfile"]},
+        entry_points={'console_scripts': ['dagster-graphql = dagster_graphql.cli:main']},
+        extras_require={':python_version<"3"': ['backports.tempfile']},
     )
 
 

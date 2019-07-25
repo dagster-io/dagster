@@ -13,7 +13,7 @@ def long_description():
 
 def get_version(name):
     version = {}
-    with open("dagit/version.py") as fp:
+    with open('dagit/version.py') as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     if name == 'dagit':
@@ -62,20 +62,23 @@ def _do_setup(name='dagit'):
             # graphql
             'graphql-core>=2.1,<3',
             # server
+            'flask-cors>=3.0.6',
             'Flask-GraphQL>=2.0.0',
             'Flask-Sockets>=0.2.1',
-            'Flask>=0.12.4',
-            'flask-cors>=3.0.6',
+            'Flask>=0.12.4, <1.1.0',  # https://github.com/dagster-io/dagster/issues/1600
             'gevent-websocket==0.10.1',
             'gevent==1.3.7',
             'graphql-ws>=0.3.0',
+            'Jinja2==2.10.0',  # https://github.com/dagster-io/dagster/issues/1600
+            'tzlocal==1.5.1',  # https://github.com/dagster-io/dagster/issues/1600
+            'werkzeug==0.14.1',  # https://github.com/dagster-io/dagster/issues/1600
             # watchdog
             'watchdog>=0.8.3',
             # notebooks support
             'nbconvert>=5.4.0',
         ],
-        scripts=["bin/dagit"],
-        entry_points={"console_scripts": ['dagit-cli = dagit.cli:main']},
+        scripts=['bin/dagit'],
+        entry_points={'console_scripts': ['dagit-cli = dagit.cli:main']},
     )
 
 
