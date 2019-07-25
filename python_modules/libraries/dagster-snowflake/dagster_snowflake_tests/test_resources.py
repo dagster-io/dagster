@@ -1,7 +1,5 @@
 import sys
 
-import pandas as pd
-
 from dagster import execute_solid, solid, ModeDefinition
 
 from dagster_snowflake import snowflake_resource
@@ -13,7 +11,7 @@ else:
 
 
 def create_mock_connector(*_args, **_kwargs):
-    return connect_with_fetchall_returning(pd.DataFrame())
+    return connect_with_fetchall_returning(None)
 
 
 def connect_with_fetchall_returning(value):
@@ -31,7 +29,7 @@ def test_snowflake_resource(snowflake_connect):
     @solid(required_resource_keys={'snowflake'})
     def snowflake_solid(context):
         assert context.resources.snowflake
-        with context.resources.snowflake.get_connection(context.log) as _:
+        with context.resources.snowflake.get_connection() as _:
             pass
 
     result = execute_solid(

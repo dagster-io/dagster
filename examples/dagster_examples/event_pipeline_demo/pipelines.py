@@ -28,7 +28,7 @@ from dagster.utils import safe_isfile, mkdir_p
 
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.utils import S3Logger
-from dagster_snowflake import snowflake_resource, SnowflakeLoadSolidDefinition
+from dagster_snowflake import snowflake_resource, snowflake_load_parquet_solid_for_table
 from dagster_spark import SparkSolidDefinition
 
 
@@ -142,13 +142,13 @@ def gunzipper(gzip_file):
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            name='local', resource_defs={'s3': s3_resource, 'snowflake': snowflake_resource}
+            name='default', resource_defs={'s3': s3_resource, 'snowflake': snowflake_resource}
         )
     ],
     preset_defs=[
         PresetDefinition(
-            name='local',
-            mode='local',
+            name='default',
+            mode='default',
             environment_files=[file_relative_path(__file__, 'environments/default.yaml')],
         )
     ],
@@ -161,11 +161,8 @@ def event_ingest_pipeline():
     )
 
     # TODO: express dependency of this solid on event_ingest
-    snowflake_load = SnowflakeLoadSolidDefinition(
-        'snowflake_load',
-        # TODO: need to pull this out to a config
-        src='file:///tmp/dagster/events/data/output/2019/01/01/*.parquet',
-        table='events',
+    snowflake_load = snowflake_load_parquet_solid_for_table(
+        src='file:///tmp/dagster/events/data/output/2019/01/01/*.parquet', table='events'
     )
     # pylint: disable=no-value-for-parameter
-    snowflake_load(start=event_ingest(spark_inputs=gunzipper(gzip_file=download_from_s3_to_file())))
+    snowflake_load(event_ingest(spark_inputs=gunzipper(gzip_file=download_from_s3_to_file())))
