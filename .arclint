@@ -5,11 +5,6 @@
       "pylint.config": ".pylintrc",
       "include": "(\\.py$)"
     },
-    "black": {
-      "type": "black",
-      "include": "(\\.py$)",
-      "black.linelen": 100
-    },
     "eslint": {
       "type": "eslint",
       "include": "(\\.(ts|tsx)$)",
