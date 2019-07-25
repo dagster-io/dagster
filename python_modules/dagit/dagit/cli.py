@@ -19,7 +19,7 @@ from .version import __version__
 
 
 def create_dagit_cli():
-    return ui
+    return ui(auto_envvar_prefix='DAGIT')  # pylint: disable=no-value-for-parameter
 
 
 REPO_TARGET_WARNING = (
@@ -41,6 +41,9 @@ REPO_TARGET_WARNING = (
             '\n\n4. dagit -m some_module -n define_repo'
             '\n\n5. dagit -f path/to/file.py -n define_pipeline'
             '\n\n6. dagit -m some_module -n define_pipeline'
+            '\n\n7. dagit -p 3333'
+            '\n\nOptions Can also provide arguments via environment variables prefixed with DAGIT_'
+            '\n\n    DAGIT_PORT=3333 dagit'
         ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME)
     ),
 )
