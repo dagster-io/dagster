@@ -409,6 +409,10 @@ class DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_INIT_FAILURE.value,
             pipeline_name=pipeline_name,
             event_specific_data=failure_data,
+            message=(
+                'Pipeline failure during initialization of pipeline "{pipeline_name}. '
+                'This may be due to a failure in initializing a resource or logger".'
+            ).format(pipeline_name=pipeline_name),
         )
         log_manager.error(
             event.message
