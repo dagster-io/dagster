@@ -12,7 +12,7 @@ def test_materializations(snapshot):
     # Remove execution durations from ExecutionStepSuccessEvent messages
     for log in logs:
         if log["__typename"] == "ExecutionStepSuccessEvent":
-            log["message"] = re.sub(r'\s.*ms', "ms", log["message"])
+            log["message"] = re.sub(r'in .*', "in", log["message"])
 
     materializations = [log for log in logs if log['__typename'] == 'StepMaterializationEvent']
     assert len(materializations) == 1

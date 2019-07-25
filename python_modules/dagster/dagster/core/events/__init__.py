@@ -14,6 +14,7 @@ from dagster.core.definitions.events import ObjectStoreOperationType
 from dagster.core.execution.plan.objects import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.utils.error import SerializableErrorInfo
+from dagster.utils.timing import format_duration
 
 
 class DagsterEventType(Enum):
@@ -326,7 +327,7 @@ class DagsterEvent(
                 # TODO: Make duration human readable
                 # See: https://github.com/dagster-io/dagster/issues/1602
                 step_key=step_context.step.key,
-                duration=round(success.duration_ms, 2),
+                duration=format_duration(success.duration_ms),
             ),
         )
 
