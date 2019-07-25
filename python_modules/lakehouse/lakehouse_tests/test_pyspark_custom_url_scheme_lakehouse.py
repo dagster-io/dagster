@@ -1,5 +1,5 @@
 import os
-from dagster import check, Materialization, ModeDefinition, ResourceDefinition, execute_pipeline
+from dagster import check, Materialization, execute_pipeline
 from dagster.utils.temp_file import get_temp_dir
 from dagster_pyspark import spark_session_resource, spark_session_from_config
 from pyspark.sql import Row, DataFrame as SparkDF
@@ -64,14 +64,7 @@ def test_execute_byfeature_parquet_lakehouse():
         pipeline_def = construct_lakehouse_pipeline(
             name='test',
             lakehouse_tables=[TableOne, TableTwo, TableThree],
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={
-                        'spark': spark_session_resource,
-                        'lakehouse': ResourceDefinition.hardcoded_resource(lakehouse),
-                    }
-                )
-            ],
+            resources={'spark': spark_session_resource, 'lakehouse': lakehouse},
         )
 
         pipeline_result = execute_pipeline(pipeline_def)

@@ -1,6 +1,6 @@
 import os
 
-from dagster import Materialization, check, ResourceDefinition, ModeDefinition, execute_pipeline
+from dagster import Materialization, check, execute_pipeline
 from dagster_pyspark import spark_session_resource
 
 from lakehouse import construct_lakehouse_pipeline, Lakehouse
@@ -28,14 +28,7 @@ def execute_spark_lakehouse_build(tables, lakehouse, environment_dict=None):
         construct_lakehouse_pipeline(
             name='spark_lakehouse_pipeline',
             lakehouse_tables=tables,
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={
-                        'spark': spark_session_resource,
-                        'lakehouse': ResourceDefinition.hardcoded_resource(lakehouse),
-                    }
-                )
-            ],
+            resources={'lakehouse': lakehouse, 'spark': spark_session_resource},
         ),
         environment_dict=environment_dict,
     )

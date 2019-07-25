@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, file_relative_path
+from dagster import execute_pipeline, file_relative_path
 from lakehouse import SqlLiteLakehouse, construct_lakehouse_pipeline, input_table, sqlite_table
 
 
@@ -70,14 +70,7 @@ def test_basic_sqlite_pipeline():
     pipeline_def = construct_lakehouse_pipeline(
         name='sqllite_lakehouse_pipeline',
         lakehouse_tables=[TableOne, TableTwo, TableThree],
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    'conn': ResourceDefinition.hardcoded_resource(conn),
-                    'lakehouse': ResourceDefinition.hardcoded_resource(SqlLiteLakehouse()),
-                }
-            )
-        ],
+        resources={'conn': conn, 'lakehouse': SqlLiteLakehouse()},
     )
 
     result = execute_pipeline(pipeline_def)
@@ -111,14 +104,7 @@ def test_file_based_sqlite_pipeline():
     pipeline_def = construct_lakehouse_pipeline(
         name='sqllite_lakehouse_pipeline',
         lakehouse_tables=[TableOne, TableTwo, TableThree],
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    'conn': ResourceDefinition.hardcoded_resource(conn),
-                    'lakehouse': ResourceDefinition.hardcoded_resource(SqlLiteLakehouse()),
-                }
-            )
-        ],
+        resources={'conn': conn, 'lakehouse': SqlLiteLakehouse()},
     )
 
     result = execute_pipeline(pipeline_def)

@@ -1,14 +1,21 @@
 from collections import defaultdict
 
-from dagster import DependencyDefinition, PipelineDefinition, check
+from dagster import (
+    DependencyDefinition,
+    PipelineDefinition,
+    ModeDefinition,
+    ResourceDefinition,
+    check,
+)
 from .table import LakehouseTableDefinition
 
 
-def construct_lakehouse_pipeline(name, lakehouse_tables, mode_defs=None):
+def construct_lakehouse_pipeline(name, lakehouse_tables, resources):
     '''
     Dynamically construct the pipeline from the table definitions
     '''
     check.list_param(lakehouse_tables, 'lakehouse_tables', of_type=LakehouseTableDefinition)
+    check.dict_param(resources, 'resources')
 
     type_to_solid = {}
     for lakehouse_table in lakehouse_tables:
@@ -29,6 +36,16 @@ def construct_lakehouse_pipeline(name, lakehouse_tables, mode_defs=None):
                 type_to_solid[input_type_name].name
             )
 
+    resource_defs = {}
+    for key, resource in resources.items():
+        if isinstance(resource, ResourceDefinition):
+            resource_defs[key] = resource
+        else:
+            resource_defs[key] = ResourceDefinition.hardcoded_resource(resource)
+
     return PipelineDefinition(
-        name=name, mode_defs=mode_defs, solid_defs=lakehouse_tables, dependencies=dependencies
+        name=name,
+        mode_defs=[ModeDefinition(resource_defs=resource_defs)],
+        solid_defs=lakehouse_tables,
+        dependencies=dependencies,
     )

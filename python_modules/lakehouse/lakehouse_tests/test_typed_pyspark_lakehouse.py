@@ -2,7 +2,7 @@ from datetime import datetime
 import os
 import sys
 
-from dagster import ModeDefinition, resource, file_relative_path
+from dagster import resource, file_relative_path
 from dagster_pyspark import spark_session_resource
 
 from pyspark.sql import Row, DataFrame as SparkDF, types as spark_types
@@ -152,12 +152,5 @@ def test_execute_typed_in_mem_lakehouse():
 typed_lakehouse_pipeline = construct_lakehouse_pipeline(
     name='typed_lakehouse_pipeline',
     lakehouse_tables=[NumberTable, StringTable, JoinTable],
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                'lakehouse': typed_pyspark_mem_lakehouse,
-                'spark': spark_session_resource,
-            }
-        )
-    ],
+    resources={'lakehouse': typed_pyspark_mem_lakehouse, 'spark': spark_session_resource},
 )

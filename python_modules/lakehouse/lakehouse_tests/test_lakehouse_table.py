@@ -11,7 +11,7 @@ def test_missing_resource():
         def missing(_):
             pass
 
-        construct_lakehouse_pipeline('test', lakehouse_tables=[missing])
+        construct_lakehouse_pipeline('test', lakehouse_tables=[missing], resources={})
 
 
 def test_missing_context_args():
