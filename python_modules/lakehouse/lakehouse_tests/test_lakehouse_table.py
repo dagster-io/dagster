@@ -1,5 +1,5 @@
 import pytest
-from lakehouse import lakehouse_table, construct_lakehouse_pipeline
+from lakehouse import construct_lakehouse_pipeline, pyspark_table
 from dagster import DagsterInvalidDefinitionError
 
 
@@ -7,7 +7,7 @@ def test_missing_resource():
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lakehouse_table(required_resource_keys={'foo'})
+        @pyspark_table
         def missing(_):
             pass
 
@@ -18,6 +18,6 @@ def test_missing_context_args():
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lakehouse_table
+        @pyspark_table
         def _no_context():
             pass

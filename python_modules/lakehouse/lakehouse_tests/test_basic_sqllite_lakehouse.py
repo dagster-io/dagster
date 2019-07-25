@@ -2,7 +2,7 @@ import os
 import sqlite3
 
 from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, file_relative_path
-from lakehouse import Lakehouse, lakehouse_table, input_table, construct_lakehouse_pipeline
+from lakehouse import SqlLiteLakehouse, construct_lakehouse_pipeline, input_table, sqlite_table
 
 
 def test_basic_sqlite():
@@ -38,7 +38,7 @@ def test_sqllite_values_query():
 
 
 def create_sqllite_lakehouse_table(name, sql_text, input_tables=None):
-    @lakehouse_table(name=name, required_resource_keys={'conn'}, input_tables=input_tables)
+    @sqlite_table(name=name, input_tables=input_tables)
     def Table(context, **_kwargs):
         context.resources.conn.execute(sql_text)
         context.resources.conn.commit()
@@ -46,33 +46,19 @@ def create_sqllite_lakehouse_table(name, sql_text, input_tables=None):
     return Table
 
 
-# So in this case because data processing is totally within the data warehouse
-# These are complete and total no-ops
-class SqlLiteLakehouse(Lakehouse):
-    def __init__(self):
-        pass
-
-    def hydrate(self, _context, _table_type, _table_metadata, table_handle):
-        return None
-
-    def materialize(self, context, table_type, table_metadata, value):
-        return None, None
-
-
 def test_basic_sqlite_pipeline():
-    @lakehouse_table(required_resource_keys={'conn'})
+    @sqlite_table
     def TableOne(context):
         context.resources.conn.execute('''CREATE TABLE TableOne AS SELECT 1 as num''')
         context.resources.conn.commit()
 
-    @lakehouse_table(required_resource_keys={'conn'})
+    @sqlite_table
     def TableTwo(context):
         context.resources.conn.execute('''CREATE TABLE TableTwo AS SELECT 2 as num''')
         context.resources.conn.commit()
 
-    @lakehouse_table(
-        input_tables=[input_table('table_one', TableOne), input_table('table_two', TableTwo)],
-        required_resource_keys={'conn'},
+    @sqlite_table(
+        input_tables=[input_table('table_one', TableOne), input_table('table_two', TableTwo)]
     )
     def TableThree(context, **_kwargs):
         context.resources.conn.execute(

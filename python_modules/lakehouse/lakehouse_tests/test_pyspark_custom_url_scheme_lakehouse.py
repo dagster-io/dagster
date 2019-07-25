@@ -3,20 +3,17 @@ from dagster import check, Materialization, ModeDefinition, ResourceDefinition, 
 from dagster.utils.temp_file import get_temp_dir
 from dagster_pyspark import spark_session_resource, spark_session_from_config
 from pyspark.sql import Row, DataFrame as SparkDF
-from lakehouse import lakehouse_table, input_table, construct_lakehouse_pipeline, Lakehouse
+from lakehouse import pyspark_table, input_table, construct_lakehouse_pipeline, Lakehouse
 from lakehouse.util import invoke_compute
 
 
 FEATURE_AREA = 'feature_area'
 
 
-def this_lakehouse_table(feature_area, name=None, input_tables=None):
+def this_pyspark_table(feature_area, name=None, input_tables=None):
     def _wrap(fn):
-        return lakehouse_table(
-            name=name,
-            metadata={FEATURE_AREA: feature_area},
-            input_tables=input_tables,
-            required_resource_keys={'spark'},
+        return pyspark_table(
+            name=name, metadata={FEATURE_AREA: feature_area}, input_tables=input_tables
         )(fn)
 
     return _wrap
@@ -26,17 +23,17 @@ FEATURE_ONE = 'feature_one'
 FEATURE_TWO = 'feature_two'
 
 
-@this_lakehouse_table(feature_area=FEATURE_ONE)
+@this_pyspark_table(feature_area=FEATURE_ONE)
 def TableOne(context) -> SparkDF:
     return context.resources.spark.createDataFrame([Row(num=1)])
 
 
-@this_lakehouse_table(feature_area=FEATURE_ONE)
+@this_pyspark_table(feature_area=FEATURE_ONE)
 def TableTwo(context) -> SparkDF:
     return context.resources.spark.createDataFrame([Row(num=2)])
 
 
-@this_lakehouse_table(
+@this_pyspark_table(
     input_tables=[input_table('table_one', TableOne), input_table('table_two', TableTwo)],
     feature_area=FEATURE_TWO,
 )

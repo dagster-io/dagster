@@ -8,26 +8,25 @@ from dagster.utils.temp_file import get_temp_dir
 
 from dagster import InputDefinition
 
-from lakehouse import PySparkMemLakehouse, lakehouse_table, input_table
+from lakehouse import PySparkMemLakehouse, input_table, pyspark_table
 
 from .common import LocalOnDiskSparkCsvLakehouse, execute_spark_lakehouse_build
 
 # Note typehints in lakehouse purely optional and behave as vanilla typehints
 
 
-@lakehouse_table(other_input_defs=[InputDefinition('num', int)], required_resource_keys={'spark'})
+@pyspark_table(other_input_defs=[InputDefinition('num', int)])
 def TableOne(context, num) -> SparkDF:
     return context.resources.spark.createDataFrame([Row(num=num)])
 
 
-@lakehouse_table(required_resource_keys={'spark'})
+@pyspark_table
 def TableTwo(context) -> SparkDF:
     return context.resources.spark.createDataFrame([Row(num=2)])
 
 
-@lakehouse_table(
-    input_tables=[input_table('table_one', TableOne), input_table('table_two', TableTwo)],
-    required_resource_keys={'spark'},
+@pyspark_table(
+    input_tables=[input_table('table_one', TableOne), input_table('table_two', TableTwo)]
 )
 def TableThree(_, table_one: SparkDF, table_two: SparkDF) -> SparkDF:
     return table_one.union(table_two)

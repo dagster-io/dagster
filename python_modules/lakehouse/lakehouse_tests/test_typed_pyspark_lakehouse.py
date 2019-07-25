@@ -9,7 +9,7 @@ from pyspark.sql import Row, DataFrame as SparkDF, types as spark_types
 
 from lakehouse import (
     InMemTableHandle,
-    lakehouse_table,
+    pyspark_table,
     input_table,
     construct_lakehouse_pipeline,
     Lakehouse,
@@ -72,11 +72,10 @@ def typed_pyspark_mem_lakehouse(_):
 
 def typed_pyspark_table(spark_type, name=None, input_tables=None, description=None):
     def _wrap(fn):
-        return lakehouse_table(
+        return pyspark_table(
             name=name,
             metadata={'spark_type': spark_type},
             input_tables=input_tables,
-            required_resource_keys={'spark'},
             description=description + '\n\n' + create_column_descriptions(spark_type)
             if description
             else create_column_descriptions(spark_type),
