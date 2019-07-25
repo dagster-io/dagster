@@ -369,11 +369,23 @@ class DagsterEvent(
 
     @staticmethod
     def pipeline_success(pipeline_context):
-        return DagsterEvent.from_pipeline(DagsterEventType.PIPELINE_SUCCESS, pipeline_context)
+        return DagsterEvent.from_pipeline(
+            DagsterEventType.PIPELINE_SUCCESS,
+            pipeline_context,
+            message='Finished execution of pipeline "{pipeline_name}".'.format(
+                pipeline_name=pipeline_context.pipeline_def.name
+            ),
+        )
 
     @staticmethod
     def pipeline_failure(pipeline_context):
-        return DagsterEvent.from_pipeline(DagsterEventType.PIPELINE_FAILURE, pipeline_context)
+        return DagsterEvent.from_pipeline(
+            DagsterEventType.PIPELINE_FAILURE,
+            pipeline_context,
+            message='Execution of pipeline "{pipeline_name}" failed.'.format(
+                pipeline_name=pipeline_context.pipeline_def.name
+            ),
+        )
 
     @staticmethod
     def pipeline_init_failure(pipeline_name, failure_data, log_manager):

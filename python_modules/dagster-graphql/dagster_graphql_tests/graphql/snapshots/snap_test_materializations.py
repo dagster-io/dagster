@@ -92,7 +92,7 @@ snapshots['test_materializations 1'] = [
     {
         '__typename': 'PipelineSuccessEvent',
         'level': 'DEBUG',
-        'message': 'DagsterEventType.PIPELINE_SUCCESS for pipeline materialization_pipeline',
+        'message': 'Finished execution of pipeline "materialization_pipeline".',
         'step': None
     }
 ]
