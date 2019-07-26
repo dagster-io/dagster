@@ -1,32 +1,20 @@
-from dagster import resource, check
-from pyspark.sql import DataFrame
-
+from dagster import check
 from .house import Lakehouse
-from .table import InMemTableHandle, create_lakehouse_table_def
+from .table import create_lakehouse_table_def
 
 
-class PySparkMemLakehouse(Lakehouse):
+class SnowflakeLakehouse(Lakehouse):
     def __init__(self):
-        self.collected_tables = {}
+        pass
 
-    def hydrate(self, _context, table_type, _table_metadata, table_handle):
-        check.inst_param(table_handle, 'table_handle', InMemTableHandle)
-
-        return table_handle.value
+    def hydrate(self, _context, _table_type, _table_metadata, table_handle):
+        return None
 
     def materialize(self, context, table_type, table_metadata, value):
-        check.inst_param(value, 'value', DataFrame)
-
-        self.collected_tables[table_type.name] = value.collect()
-        return None, InMemTableHandle(value=value)
+        return None, None
 
 
-@resource
-def pyspark_mem_lakehouse_resource(_):
-    return PySparkMemLakehouse()
-
-
-def pyspark_table(
+def snowflake_table(
     name=None,
     input_tables=None,
     other_input_defs=None,
@@ -34,10 +22,11 @@ def pyspark_table(
     required_resource_keys=None,
     description=None,
 ):
-    required_resource_keys = check.opt_set_param(required_resource_keys, 'required_resource_keys')
-    required_resource_keys.add('spark')
     metadata = check.opt_dict_param(metadata, 'metadata')
-    metadata['lakehouse_type'] = 'pyspark_table'
+    metadata['lakehouse_type'] = 'snowflake_table'
+
+    required_resource_keys = check.opt_set_param(required_resource_keys, 'required_resource_keys')
+    required_resource_keys.add('snowflake')
 
     if callable(name):
         fn = name
@@ -46,7 +35,6 @@ def pyspark_table(
             lakehouse_fn=fn,
             input_tables=[],
             required_resource_keys=required_resource_keys,
-            metadata=metadata,
         )
 
     def _wrap(fn):

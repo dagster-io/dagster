@@ -19,8 +19,9 @@ See lakehouse_tests/__init__.py for a description of the use cases
 implemented so far.
 '''
 
-from .table import input_table, InMemTableHandle
+from .table import input_table, InMemTableHandle, ITableHandle
 from .pipeline import construct_lakehouse_pipeline
 from .house import Lakehouse
 from .pyspark import PySparkMemLakehouse, pyspark_table
 from .sqlite import SqlLiteLakehouse, sqlite_table
+from .snowflake_table import SnowflakeLakehouse, snowflake_table

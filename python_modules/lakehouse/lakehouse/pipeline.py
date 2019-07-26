@@ -10,7 +10,7 @@ from dagster import (
 from .table import LakehouseTableDefinition
 
 
-def construct_lakehouse_pipeline(name, lakehouse_tables, resources):
+def construct_lakehouse_pipeline(name, lakehouse_tables, resources, preset_defs=None):
     '''
     Dynamically construct the pipeline from the table definitions
     '''
@@ -48,4 +48,5 @@ def construct_lakehouse_pipeline(name, lakehouse_tables, resources):
         mode_defs=[ModeDefinition(resource_defs=resource_defs)],
         solid_defs=lakehouse_tables,
         dependencies=dependencies,
+        preset_defs=preset_defs,
     )
