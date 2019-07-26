@@ -100,3 +100,7 @@ def define_repository():
 
 def test_repository_construction():
     assert define_repository()
+
+
+def test_empty_repo():
+    return RepositoryDefinition(name='empty_repository', pipeline_defs=[])
