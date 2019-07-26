@@ -6,7 +6,8 @@ import * as generic from "./generic";
 
 const plugins = {
   sql: sql,
-  ipynb: ipynb
+  ipynb: ipynb,
+  snowflake: sql
 };
 
 export interface IPluginSidebarProps {

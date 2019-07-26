@@ -211,13 +211,14 @@ export default class SidebarSolidInfo extends React.Component<
           <SidebarTitle>{definition.name}</SidebarTitle>
           <SolidTypeSignature solid={solid} />
         </SidebarSection>
-
         {definition.description && (
           <SidebarSection title={"Description"}>
             <Description description={definition.description} />
-            {Plugin && Plugin.SidebarComponent && (
-              <Plugin.SidebarComponent solid={solid} />
-            )}
+          </SidebarSection>
+        )}
+        {definition.metadata && Plugin && Plugin.SidebarComponent && (
+          <SidebarSection title={"Metadata"}>
+            <Plugin.SidebarComponent solid={solid} />
           </SidebarSection>
         )}
         {configDefinition && (
