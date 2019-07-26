@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 
 def get_version(name):
     version = {}
-    with open("dagstermill/version.py") as fp:
+    with open('dagstermill/version.py') as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     if name == 'dagstermill':
@@ -45,8 +45,9 @@ def _do_setup(name='dagstermill'):
             'nteract-scrapbook>=0.2.0',
             'papermill>=1.0.0',
             'scikit-learn==0.20.3',
+            'Jinja2==2.10.0',  # https://github.com/dagster-io/dagster/issues/1600
         ],
-        entry_points={"console_scripts": ['dagstermill = dagstermill.cli:main']},
+        entry_points={'console_scripts': ['dagstermill = dagstermill.cli:main']},
     )
 
 

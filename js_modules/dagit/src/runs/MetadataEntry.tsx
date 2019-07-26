@@ -9,13 +9,20 @@ import { Icon } from "@blueprintjs/core";
 export const MetadataEntries: React.FunctionComponent<{
   entries: MetadataEntryFragment[];
 }> = props => (
-  <span style={{ flex: 1, alignSelf: "self-start" }}>
+  <span>
     <MetadataEntriesTable cellPadding="0" cellSpacing="0">
       <tbody>
         {props.entries.map((item, idx) => (
-          <tr key={idx}>
-            <td>{item.label}</td>
-            <td>
+          <tr key={idx} style={{ display: "flex" }}>
+            <td
+              style={{
+                flex: "0 0 auto",
+                width: "max-content"
+              }}
+            >
+              {item.label}
+            </td>
+            <td style={{ flex: 1 }}>
               <MetadataEntry entry={item} />
             </td>
           </tr>

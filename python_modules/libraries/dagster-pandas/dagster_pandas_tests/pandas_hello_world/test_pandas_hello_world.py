@@ -4,7 +4,7 @@ import pytest
 
 from dagster import execute_pipeline
 from dagster.utils import script_relative_path
-from dagster.cli.pipeline import do_execute_command, print_pipeline
+from dagster.cli.pipeline import do_execute_command
 from dagster.core.errors import DagsterExecutionStepExecutionError
 
 from dagster_pandas.examples.pandas_hello_world.pipeline import (
@@ -80,8 +80,3 @@ def test_cli_execute_failure():
             # restore cwd
             os.chdir(cwd)
     assert 'I am a programmer and I make error' in str(e_info.value.__cause__)
-
-
-def test_cli_print():
-    print_pipeline(pandas_hello_world, full=False, print_fn=lambda *_args, **_kwargs: None)
-    print_pipeline(pandas_hello_world, full=True, print_fn=lambda *_args, **_kwargs: None)

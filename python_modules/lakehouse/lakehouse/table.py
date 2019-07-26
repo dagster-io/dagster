@@ -48,7 +48,7 @@ class LakehouseTableDefinition(SolidDefinition):
         return self.output_defs[0].runtime_type
 
 
-def _create_lakehouse_table_def(
+def create_lakehouse_table_def(
     name,
     lakehouse_fn,
     input_tables=None,
@@ -145,32 +145,6 @@ def _create_lakehouse_table_def(
         metadata=metadata,
         description=description,
     )
-
-
-def lakehouse_table(
-    name=None,
-    input_tables=None,
-    other_input_defs=None,
-    required_resource_keys=None,
-    metadata=None,
-    description=None,
-):
-    if callable(name):
-        fn = name
-        return _create_lakehouse_table_def(name=fn.__name__, lakehouse_fn=fn, input_tables=[])
-
-    def _wrap(fn):
-        return _create_lakehouse_table_def(
-            name=name if name is not None else fn.__name__,
-            lakehouse_fn=fn,
-            input_tables=input_tables,
-            other_input_defs=other_input_defs,
-            metadata=metadata,
-            description=description,
-            required_resource_keys=required_resource_keys,
-        )
-
-    return _wrap
 
 
 def table_def_of_type(pipeline_def, type_name):

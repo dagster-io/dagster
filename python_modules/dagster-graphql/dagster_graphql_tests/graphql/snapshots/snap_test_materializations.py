@@ -83,7 +83,7 @@ snapshots['test_materializations 1'] = [
     {
         '__typename': 'ExecutionStepSuccessEvent',
         'level': 'DEBUG',
-        'message': 'Finishedms.',
+        'message': 'Finished execution of step "materialize.compute" in',
         'step': {
             'key': 'materialize.compute',
             'solidHandleID': 'materialize'

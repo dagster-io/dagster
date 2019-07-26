@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.4
+- Reworked the display of structured log information and system events in Dagit, including support
+  for structured rendering of client-provided event metadata.
+- Dagster now generates events when intermediates are written to filesystem and S3 storage, and
+  these events are displayed in Dagit and exposed in the GraphQL API.
+- Whitespace display styling in Dagit can now be toggled on and off.
+- Bug fixes, display nits and improvements, and improvements to JS build process, including better
+  display for some classes of errors in Dagit and improvements to the config editor in Dagit.
+
 ## 0.5.3
 - Pinned RxPY to 1.6.1 to avoid breaking changes in 3.0.0 (py3-only).
 - Most definition objects are now read-only, with getters corresponding to the previous properties.

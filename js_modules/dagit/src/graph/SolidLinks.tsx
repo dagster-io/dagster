@@ -31,9 +31,7 @@ export const SolidLinks = React.memo(
                 source: solids[from.solidName].outputs[from.edgeName].port,
                 target: solids[to.solidName].inputs[to.edgeName].port
               }}
-            >
-              <title>{`${from.solidName} - ${to.solidName}`}</title>
-            </StyledLink>
+            />
           </g>
         ))}
       </g>

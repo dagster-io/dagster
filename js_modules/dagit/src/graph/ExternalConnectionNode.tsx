@@ -4,7 +4,6 @@ import { LinkVertical as Link } from "@vx/shape";
 import { IPoint } from "./getFullSolidLayout";
 import { Edge } from "./SolidLinks";
 import { isHighlighted } from "./highlighting";
-import { SolidNameOrPath } from "src/PipelineExplorer";
 import { Colors } from "@blueprintjs/core";
 import styled from "styled-components";
 

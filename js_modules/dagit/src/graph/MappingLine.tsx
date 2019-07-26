@@ -30,18 +30,14 @@ export const MappingLine: React.FunctionComponent<MappingLineProps> = ({
       onMouseLeave={() => onHighlightEdges([])}
     >
       <path
-        d={`M ${source.x} ${source.y} H ${leftEdgeX} V ${target.y} H ${
-          target.x
-        }`}
+        d={`M ${source.x} ${source.y} H ${leftEdgeX} V ${target.y} H ${target.x}`}
         fill="none"
         strokeWidth={minified ? 6 : 5}
         strokeLinecap="round"
         stroke={highlighted ? "black" : "rgb(137, 206, 206)"}
       />
       <path
-        d={`M ${source.x} ${source.y} H ${leftEdgeX} V ${target.y} H ${
-          target.x
-        }`}
+        d={`M ${source.x} ${source.y} H ${leftEdgeX} V ${target.y} H ${target.x}`}
         fill="none"
         strokeWidth={4}
         strokeLinecap="round"

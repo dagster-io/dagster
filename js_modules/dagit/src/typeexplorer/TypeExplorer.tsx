@@ -45,7 +45,7 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
       <div>
         <SidebarSubhead />
         <SidebarTitle>
-          <Link to="?types=true">Pipeline Types</Link> > {name}
+          <Link to="?types=true">Pipeline Types</Link> {">"} {name}
         </SidebarTitle>
         <SidebarSection title={"Description"}>
           <Description description={description || "No Description Provided"} />

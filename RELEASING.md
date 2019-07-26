@@ -28,6 +28,15 @@ release software.
 You should also run releases from a clean clone of the repository. This is to guard against any
 issues that might be introduced by local build artifacts.
 
+## Before releasing
+- You must have PyPI credentials available to twine (see below), and you must be permissioned as a
+  maintainer on the projects.
+- You must be permissioned as a maintainer on ReadTheDocs.
+- You must export `SLACK_RELEASE_BOT_TOKEN` with an appropriate value.
+- You should also export `PYTHONDONTWRITEBYTECODE=1` to avoid writing any extraneous .pyc files.
+
+### Release checklist
+
 1.  Check that you are on `master`, that there are no local changes or changes on the remote, and
     that you are at the root of the repository.
 
@@ -50,8 +59,7 @@ issues that might be introduced by local build artifacts.
 
         git push && git push origin 0.4.3.pre0
 
-7.  Publish the new version to PyPI. Note that you must have PyPI credentials available to twine
-    (see below), and you must be permissioned as a maintainer on the projects.
+7.  Publish the new version to PyPI.
 
          python bin/publish.py publish
 

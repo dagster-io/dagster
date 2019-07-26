@@ -184,7 +184,7 @@ export class SVGFlowLayoutRect extends React.Component<
   }
 
   render() {
-    const { x, y, spacing, children, padding, maxWidth, ...rest } = this.props;
+    const { x, y, spacing, padding, maxWidth, ...rest } = this.props;
     const layout = SVGFlowLayoutRect.computeLayout(this.props);
 
     // Use the explicit width we're given, fall back to our intrinsic layout width
@@ -250,7 +250,7 @@ export class SVGFlowLayoutRect extends React.Component<
     return (
       <>
         <rect x={x} y={y} width={finalWidth} height={layout.height} {...rest} />
-        {...arranged}
+        {arranged}
       </>
     );
   }

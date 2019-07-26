@@ -102,9 +102,7 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
         startDone = true;
         startText = (
           <span>
-            {`Process (PID ${
-              runMetadata.processId
-            }) pipeline initialization failed!`}
+            {`Process (PID ${runMetadata.processId}) pipeline initialization failed!`}
           </span>
         );
       }

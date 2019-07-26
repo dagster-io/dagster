@@ -60,9 +60,7 @@ export default class App extends React.Component {
                 <TopNav pipelines={pipelines} />
                 {error ? (
                   <PythonErrorInfo
-                    contextMsg={`${
-                      error.__typename
-                    } encountered when loading pipelines:`}
+                    contextMsg={`${error.__typename} encountered when loading pipelines:`}
                     error={error}
                     centered={true}
                   />

@@ -13,6 +13,11 @@ Array [
         onClick={[Function]}
       >
         <img
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
           style={
             Object {
               "height": 34,
@@ -157,6 +162,11 @@ Array [
         onClick={[Function]}
       >
         <img
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
           style={
             Object {
               "height": 34,
@@ -273,6 +283,11 @@ Array [
         onClick={[Function]}
       >
         <img
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
           style={
             Object {
               "height": 34,
@@ -417,6 +432,11 @@ Array [
         onClick={[Function]}
       >
         <img
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
           style={
             Object {
               "height": 34,
@@ -561,6 +581,11 @@ Array [
         onClick={[Function]}
       >
         <img
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
           style={
             Object {
               "height": 34,
@@ -705,6 +730,11 @@ Array [
         onClick={[Function]}
       >
         <img
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
           style={
             Object {
               "height": 34,

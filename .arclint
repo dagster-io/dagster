@@ -1,9 +1,15 @@
 {
   "linters": {
-    "repro": {
+    "pylint": {
       "type": "pylint",
       "pylint.config": ".pylintrc",
       "include": "(\\.py$)"
+    },
+    "eslint": {
+      "type": "eslint",
+      "include": "(\\.(ts|tsx)$)",
+      "bin": "./js_modules/dagit/node_modules/.bin/eslint",
+      "eslint.config": "./js_modules/dagit/.eslintrc.js"
     }
   }
 }

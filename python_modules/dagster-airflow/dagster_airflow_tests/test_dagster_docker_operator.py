@@ -14,7 +14,7 @@ def test_init_modified_docker_operator():
         image='dagster-airflow-demo',
         api_version='auto',
         task_id='nonce',
-        environment_dict={},
+        environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
     )
 
@@ -26,7 +26,7 @@ def test_modified_docker_operator_bad_docker_conn():
         task_id='nonce',
         docker_conn_id='foo_conn',
         command='--help',
-        environment_dict={},
+        environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
     )
 
@@ -40,7 +40,7 @@ def test_modified_docker_operator_env():
         api_version='auto',
         task_id='nonce',
         command='--help',
-        environment_dict={},
+        environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
     )
     with pytest.raises(DagsterGraphQLClientError, match='Unhandled error type'):
@@ -53,7 +53,7 @@ def test_modified_docker_operator_bad_command():
         api_version='auto',
         task_id='nonce',
         command='gargle bargle',
-        environment_dict={},
+        environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
     )
     with pytest.raises(AirflowException, match='\'StatusCode\': 2'):
@@ -78,7 +78,7 @@ def test_modified_docker_operator_url():
             tls_hostname=docker_host if docker_tls_verify else False,
             tls_ca_cert=docker_cert_path,
             command='--help',
-            environment_dict={},
+            environment_dict={'storage': {'filesystem': {}}},
             pipeline_name='',
         )
 

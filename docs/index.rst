@@ -8,7 +8,5 @@
   Learn <sections/learn/learn>
   API Docs <sections/api/api>
   Reference <sections/reference/reference>
-
+  Deploying <sections/deploying/deploying>
   Community <sections/community/community>
-
-.. TODO: Write this section  Deploying <sections/deploying/deploying>

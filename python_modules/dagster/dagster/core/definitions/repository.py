@@ -114,7 +114,9 @@ class RepositoryDefinition(object):
         if self._all_pipelines:
             return self._all_pipelines
 
-        self._all_pipelines = list(map(self.get_pipeline, self._pipeline_names))
+        self._all_pipelines = list(
+            sorted(map(self.get_pipeline, self._pipeline_names), key=lambda x: x.name)
+        )
         # This does uniqueness check
         self.get_all_solid_defs()
         return self._all_pipelines

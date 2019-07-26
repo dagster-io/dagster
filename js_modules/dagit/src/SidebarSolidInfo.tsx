@@ -2,7 +2,7 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { H6, Text, Code, UL, Button, Colors } from "@blueprintjs/core";
+import { Text, Code, Button, Colors } from "@blueprintjs/core";
 
 import { titleOfIO } from "./Util";
 import { pluginForMetadata } from "./plugins";
@@ -315,22 +315,6 @@ const Invocation = (props: {
     </InvocationContainer>
   );
 };
-
-const Expectations = (props: {
-  items: { name: string; description: string | null }[];
-}) => (
-  <>
-    {props.items.length > 0 && <H6>Expectations</H6>}
-    <UL>
-      {props.items.map((expectation, i) => (
-        <li key={i}>
-          {expectation.name}
-          <Description description={expectation.description} />
-        </li>
-      ))}
-    </UL>
-  </>
-);
 
 const DependencyRow = ({
   from,

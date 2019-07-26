@@ -34,7 +34,7 @@ export function debounce<T extends (...args: any[]) => any>(
 ): T {
   let timeout: any | null = null;
   let args: any[] | null = null;
-  let timestamp: number = 0;
+  let timestamp = 0;
   let result: ReturnType<T>;
 
   function later() {
@@ -119,6 +119,6 @@ export function titleOfIO(i: {
     : i.solid.name;
 }
 
-export function assertUnreachable(x: never): never {
+export function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
 }

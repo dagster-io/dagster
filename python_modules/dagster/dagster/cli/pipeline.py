@@ -162,7 +162,7 @@ def execute_print_command(verbose, cli_args, print_fn):
     pipeline = create_pipeline_from_cli_args(cli_args)
 
     if verbose:
-        print_pipeline(pipeline, full=True, print_fn=print_fn)
+        print_pipeline(pipeline, print_fn=print_fn)
     else:
         print_solids(pipeline, print_fn=print_fn)
 
@@ -180,17 +180,13 @@ def print_solids(pipeline, print_fn):
             printer.line('Solid: {name}'.format(name=solid.name))
 
 
-def print_pipeline(pipeline, full, print_fn):
+def print_pipeline(pipeline, print_fn):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.bool_param(full, 'full')
     check.callable_param(print_fn, 'print_fn')
 
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
     printer.line('Pipeline: {name}'.format(name=pipeline.name))
     print_description(printer, pipeline.description)
-
-    if not full:
-        return
 
     printer.line('Solids:')
     for solid in pipeline.solids:
@@ -224,15 +220,6 @@ def print_inputs(printer, solid):
     for name in solid.definition.input_dict.keys():
         with printer.with_indent():
             printer.line('Input: {name}'.format(name=name))
-
-
-def format_argument_dict(arg_def_dict):
-    return ', '.join(
-        [
-            '{name}: {type}'.format(name=name, type=arg_def.runtime_type.name)
-            for name, arg_def in arg_def_dict.items()
-        ]
-    )
 
 
 @click.command(

@@ -3,6 +3,16 @@ from dagster.core.types.evaluator import evaluate_config
 from dagster.core.types.field import resolve_to_config_type
 
 
+def test_config_any():
+    any_inst = resolve_to_config_type(None)
+    assert evaluate_config(any_inst, 1).success
+    assert evaluate_config(any_inst, None).success
+    assert evaluate_config(any_inst, 'r').success
+    assert not any_inst.is_list
+    assert not any_inst.is_nullable
+    assert any_inst.is_any
+
+
 def test_config_int():
     int_inst = resolve_to_config_type(Int)
     assert evaluate_config(int_inst, 1).success

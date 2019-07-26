@@ -71,6 +71,7 @@ class LogsScrollingTableSized extends React.Component<
   list = React.createRef<List>();
 
   get listEl() {
+    // eslint-disable-next-line react/no-find-dom-node
     const el = this.list.current && ReactDOM.findDOMNode(this.list.current);
     if (!(el instanceof HTMLElement)) {
       return null;
@@ -219,6 +220,7 @@ class AutoSizer extends React.Component<{
   componentDidMount() {
     this.measure();
 
+    // eslint-disable-next-line react/no-find-dom-node
     const el = ReactDOM.findDOMNode(this);
     if (el && el instanceof HTMLElement && "ResizeObserver" in window) {
       const RO = window["ResizeObserver"] as any;
@@ -243,6 +245,7 @@ class AutoSizer extends React.Component<{
   }
 
   measure() {
+    // eslint-disable-next-line react/no-find-dom-node
     const el = ReactDOM.findDOMNode(this);
     if (!el || !(el instanceof HTMLElement)) return;
     if (

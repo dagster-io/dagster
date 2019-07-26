@@ -17,7 +17,7 @@ reliable data needed in today's world.
 
 def get_version(name):
     version = {}
-    with open("dagster/version.py") as fp:
+    with open('dagster/version.py') as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     if name == 'dagster':
@@ -68,8 +68,8 @@ def _do_setup(name='dagster'):
             'toposort>=1.0',
         ],
         tests_require=['mock'],
-        extras_require={":python_version>'3'": ["reloader>=0.6"], "aws": ["boto3>=1.9.117"]},
-        entry_points={"console_scripts": ['dagster = dagster.cli:main']},
+        extras_require={':python_version>"3"': ['reloader>=0.6'], 'aws': ['boto3>=1.9.117']},
+        entry_points={'console_scripts': ['dagster = dagster.cli:main']},
     )
 
 

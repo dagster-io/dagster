@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 
 def get_version(name):
     version = {}
-    with open("dagster_slack/version.py") as fp:
+    with open('dagster_slack/version.py') as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     if name == 'dagster-slack':
