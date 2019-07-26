@@ -38,6 +38,7 @@ def pyspark_table(
     required_resource_keys.add('spark')
     metadata = check.opt_dict_param(metadata, 'metadata')
     metadata['lakehouse_type'] = 'pyspark_table'
+    metadata['kind'] = 'pyspark'
 
     if callable(name):
         fn = name

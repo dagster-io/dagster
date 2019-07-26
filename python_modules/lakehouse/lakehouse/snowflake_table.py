@@ -24,6 +24,7 @@ def snowflake_table(
 ):
     metadata = check.opt_dict_param(metadata, 'metadata')
     metadata['lakehouse_type'] = 'snowflake_table'
+    metadata['kind'] = 'snowflake'
 
     required_resource_keys = check.opt_set_param(required_resource_keys, 'required_resource_keys')
     required_resource_keys.add('snowflake')
