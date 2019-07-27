@@ -21,6 +21,15 @@ from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 
 from .util import airflow_storage_exception, construct_variables, parse_raw_res
 
+# Importing this will crash if Kubernetes libraries aren't installed.
+IMPORTED_KUBERNETES = False
+try:
+    from airflow.contrib.operators.kubernetes_operator import KubernetesPodOperator
+    from .kubernetes_operator import DagsterKubernetesPodOperator
+    IMPORTED_KUBERNETES = True
+except ImportError:
+    pass
+
 
 DOCKER_TEMPDIR = '/tmp'
 
@@ -131,7 +140,37 @@ class ModifiedDockerOperator(DockerOperator):
         return super(ModifiedDockerOperator, self)._DockerOperator__get_tls_config()
 
 
-class DagsterDockerOperator(ModifiedDockerOperator, DagsterSkipMixin):
+class GenericExec:
+    """
+    Base class for shared machinery for operators that will exec: Docker, Kubernetes, venvs, etc.
+    """
+    @property
+    def query(self):
+        # TODO: https://github.com/dagster-io/dagster/issues/1342
+        redacted = construct_variables(
+            self.mode, 'REDACTED', self.pipeline_name, self.run_id, self.airflow_ts, self.step_keys
+        )
+        self.log.info(
+            'Executing GraphQL query: {query}\n'.format(query=START_PIPELINE_EXECUTION_QUERY)
+            + 'with variables:\n'
+            + seven.json.dumps(redacted, indent=2)
+        )
+
+        variables = construct_variables(
+            self.mode,
+            self.environment_dict,
+            self.pipeline_name,
+            self.run_id,
+            self.airflow_ts,
+            self.step_keys,
+        )
+
+        return '-v \'{variables}\' \'{query}\''.format(
+            variables=seven.json.dumps(variables), query=START_PIPELINE_EXECUTION_QUERY
+        )
+
+
+class DagsterDockerOperator(ModifiedDockerOperator, GenericExec, DagsterSkipMixin):
     '''Dagster operator for Apache Airflow.
 
     Wraps a modified DockerOperator incorporating https://github.com/apache/airflow/pull/4315.
@@ -208,31 +247,6 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterSkipMixin):
             return ''
         else:
             return self._run_id
-
-    @property
-    def query(self):
-        # TODO: https://github.com/dagster-io/dagster/issues/1342
-        redacted = construct_variables(
-            self.mode, 'REDACTED', self.pipeline_name, self.run_id, self.airflow_ts, self.step_keys
-        )
-        self.log.info(
-            'Executing GraphQL query: {query}\n'.format(query=START_PIPELINE_EXECUTION_QUERY)
-            + 'with variables:\n'
-            + seven.json.dumps(redacted, indent=2)
-        )
-
-        variables = construct_variables(
-            self.mode,
-            self.environment_dict,
-            self.pipeline_name,
-            self.run_id,
-            self.airflow_ts,
-            self.step_keys,
-        )
-
-        return '-v \'{variables}\' \'{query}\''.format(
-            variables=seven.json.dumps(variables), query=START_PIPELINE_EXECUTION_QUERY
-        )
 
     def get_command(self):
         if self.command is not None and self.command.strip().find('[') == 0:
