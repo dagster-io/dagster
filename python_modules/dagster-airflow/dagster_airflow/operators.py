@@ -33,10 +33,6 @@ except ImportError:
 
 DOCKER_TEMPDIR = '/tmp'
 
-DEFAULT_ENVIRONMENT = {
-    'AWS_ACCESS_KEY_ID': os.getenv('AWS_ACCESS_KEY_ID'),
-    'AWS_SECRET_ACCESS_KEY': os.getenv('AWS_SECRET_ACCESS_KEY'),
-}
 
 LINE_LENGTH = 100
 
@@ -144,6 +140,10 @@ class GenericExec:
     """
     Base class for shared machinery for operators that will exec: Docker, Kubernetes, venvs, etc.
     """
+    def __init__(self, propagate_aws_vars, *args, **kwargs):
+        self.propagate_aws_vars = propagate_aws_vars
+        super(GenericExec, self).__init__(*args, **kwargs)
+
     @property
     def query(self):
         # TODO: https://github.com/dagster-io/dagster/issues/1342
@@ -169,8 +169,35 @@ class GenericExec:
             variables=seven.json.dumps(variables), query=START_PIPELINE_EXECUTION_QUERY
         )
 
+    @property
+    def default_environment(self):
+        default_env = {}
 
-class DagsterDockerOperator(ModifiedDockerOperator, GenericExec, DagsterSkipMixin):
+        if self.propagate_aws_vars:
+            # If these env vars are set in Kubernetes, anyone with access to pods in that namespace
+            # can retreive them. This may not be appropriate for all environments, so provide a
+            # toggle if users want to provide credentials more securely.
+
+            # Also, if these env vars are set as blank vars, the behavior depends on boto version:
+            # https://github.com/boto/botocore/pull/1687
+            # It's safer to check-and-set since if interpreted as blank strings they'll break the
+            # cred retrieval chain (such as on-disk or metadata-API creds).
+            aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+            aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+
+            # The creds _also_ break if you only set one of them.
+            if aws_access_key_id and aws_secret_access_key:
+                default_env.update({
+                    'AWS_ACCESS_KEY_ID': aws_access_key_id,
+                    'AWS_SECRET_ACCESS_KEY': aws_secret_access_key,
+                })
+            elif aws_access_key_id or aws_secret_access_key:
+                # TODO: log warning, this'll fail at runtime
+
+        return default_env
+
+
+class DagsterDockerOperator(GenericExec, ModifiedDockerOperator, DagsterSkipMixin):
     '''Dagster operator for Apache Airflow.
 
     Wraps a modified DockerOperator incorporating https://github.com/apache/airflow/pull/4315.
@@ -235,7 +262,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, GenericExec, DagsterSkipMixi
         self.airflow_ts = kwargs.get('ts')
 
         if 'environment' not in kwargs:
-            kwargs['environment'] = DEFAULT_ENVIRONMENT
+            kwargs['environment'] = self.default_environment
 
         super(DagsterDockerOperator, self).__init__(
             task_id=task_id, dag=dag, tmp_dir=tmp_dir, host_tmp_dir=host_tmp_dir, *args, **kwargs

@@ -5,7 +5,7 @@ from .operators import DagsterSkipMixin, GenericExec
 from .util import airflow_storage_exception
 
 
-class DagsterKubernetesPodOperator(KubernetesPodOperator, GenericExec, DagsterSkipMixin):
+class DagsterKubernetesPodOperator(GenericExec, KubernetesPodOperator, DagsterSkipMixin):
     def __init__(
         self,
         task_id,
@@ -41,3 +41,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator, GenericExec, DagsterSk
 
         # Store Airflow DAG run timestamp so that we can pass along via execution metadata
         self.airflow_ts = kwargs.get('ts')
+
+        # TODO: don't blow away S3 creds on providing an env
+        if 'env_vars' not in kwargs:
+            kwargs['env_vars'] = self.default_environment
