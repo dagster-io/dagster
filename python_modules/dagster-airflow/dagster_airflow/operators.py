@@ -303,7 +303,7 @@ class DagsterDockerOperator(GenericExec, ModifiedDockerOperator, DagsterSkipMixi
 
         except ImportError:
             raise AirflowException(
-                'To use the DagsterPythonOperator, dagster and dagster_graphql must be installed '
+                'To use the DagsterDockerOperator, dagster and dagster_graphql must be installed '
                 'in your Airflow environment.'
             )
         if 'run_id' in self.params:
