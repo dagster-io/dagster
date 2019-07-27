@@ -33,6 +33,7 @@ class DagsterKubernetesPodOperator(GenericExec, KubernetesPodOperator, DagsterSk
             'Cannot use in-memory storage with Airflow, must use S3',
         )
 
+        # TODO: decide whether any of this CRUD can go into a base class too
         self.environment_dict = environment_dict
         self.pipeline_name = pipeline_name
         self.mode = mode
@@ -45,3 +46,7 @@ class DagsterKubernetesPodOperator(GenericExec, KubernetesPodOperator, DagsterSk
         # TODO: don't blow away S3 creds on providing an env
         if 'env_vars' not in kwargs:
             kwargs['env_vars'] = self.default_environment
+
+        super(DagsterKubernetesPodOperator, self).__init__(
+            task_id=task_id, dag=dag, *args, **kwargs
+        )
