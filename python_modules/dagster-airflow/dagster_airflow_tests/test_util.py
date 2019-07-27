@@ -1,4 +1,4 @@
-from dagster_airflow.util import convert_airflow_datestr_to_epoch_ts
+from dagster_airflow.operators.util import convert_airflow_datestr_to_epoch_ts
 
 EPS = 1e-6
 
