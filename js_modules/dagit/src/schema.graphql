@@ -202,7 +202,7 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
 type ExecutionStepInput {
   name: String!
   type: RuntimeType!
-  dependsOn: ExecutionStep
+  dependsOn: [ExecutionStep!]!
 }
 
 type ExecutionStepInputEvent implements MessageEvent & StepEvent {
@@ -819,14 +819,6 @@ type StepExpectationResultEvent implements MessageEvent & StepEvent {
 
 enum StepKind {
   COMPUTE
-  INPUT_EXPECTATION
-  OUTPUT_EXPECTATION
-  JOIN
-  SERIALIZE
-  INPUT_THUNK
-  MATERIALIZATION_THUNK
-  UNMARSHAL_INPUT
-  MARSHAL_OUTPUT
 }
 
 type StepMaterializationEvent implements MessageEvent & StepEvent {

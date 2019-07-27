@@ -61,7 +61,7 @@ def test_event_pipeline(snowflake_connect):
 
         # We're not testing Snowflake loads here, so at least test that we called the connect
         # appropriately
-        snowflake_connect.assert_called_once_with(
+        snowflake_connect.assert_called_with(
             user='<< SET ME >>',
             password='<< SET ME >>',
             account='<< SET ME >>',

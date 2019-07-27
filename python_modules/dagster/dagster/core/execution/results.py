@@ -1,5 +1,4 @@
 from collections import defaultdict, OrderedDict
-import itertools
 
 from dagster import check
 
@@ -184,16 +183,6 @@ class SolidExecutionResult(object):
         check.failed('Step success not found for solid {}'.format(self.solid.name))
 
     @property
-    def input_expectation_step_events(self):
-        '''All events of type INPUT_EXPECTATION'''
-        return self.step_events_by_kind.get(StepKind.INPUT_EXPECTATION, [])
-
-    @property
-    def output_expectation_step_events(self):
-        '''All events of type OUTPUT_EXPECTATION'''
-        return self.step_events_by_kind.get(StepKind.OUTPUT_EXPECTATION, [])
-
-    @property
     def compute_step_failure_event(self):
         '''The STEP_FAILURE event, throws if it did not fail'''
         if self.success:
@@ -209,11 +198,7 @@ class SolidExecutionResult(object):
     def success(self):
         '''Whether the solid execution was successful'''
         any_success = False
-        for step_event in itertools.chain(
-            self.input_expectation_step_events,
-            self.output_expectation_step_events,
-            self.compute_step_events,
-        ):
+        for step_event in self.compute_step_events:
             if step_event.event_type == DagsterEventType.STEP_FAILURE:
                 return False
             if step_event.event_type == DagsterEventType.STEP_SUCCESS:
@@ -227,11 +212,7 @@ class SolidExecutionResult(object):
         return all(
             [
                 step_event.event_type == DagsterEventType.STEP_SKIPPED
-                for step_event in itertools.chain(
-                    self.input_expectation_step_events,
-                    self.output_expectation_step_events,
-                    self.compute_step_events,
-                )
+                for step_event in self.compute_step_events
             ]
         )
 
@@ -303,10 +284,6 @@ class SolidExecutionResult(object):
     @property
     def failure_data(self):
         '''Returns the failing step's data that happened during this solid's execution, if any'''
-        for step_event in itertools.chain(
-            self.input_expectation_step_events,
-            self.output_expectation_step_events,
-            self.compute_step_events,
-        ):
+        for step_event in self.compute_step_events:
             if step_event.event_type == DagsterEventType.STEP_FAILURE:
                 return step_event.step_failure_data

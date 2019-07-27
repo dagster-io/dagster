@@ -167,15 +167,15 @@ export class PipelineRun extends React.Component<
       };
 
       step.inputs.forEach(input => {
-        const dep = input.dependsOn;
-        if (dep) {
+        const deps = input.dependsOn;
+        deps.forEach(dep => {
           dep.outputs.forEach(outputOfDependentStep => {
             variables.reexecutionConfig!.stepOutputHandles.push({
               stepKey: dep.key,
               outputName: outputOfDependentStep.name
             });
           });
-        }
+        });
       });
     }
 

@@ -108,13 +108,12 @@ class MultiprocessEngine(IEngine):  # pylint: disable=no-init
                 step_context = pipeline_context.for_step(step)
 
                 if not intermediates_manager.all_inputs_covered(step_context, step):
-                    expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
-
+                    uncovered_inputs = intermediates_manager.uncovered_inputs(step_context, step)
                     step_context.log.error(
                         (
                             'Not all inputs covered for {step}. Not executing.'
-                            'Outputs need for inputs {expected_outputs}'
-                        ).format(expected_outputs=expected_outputs, step=step.key)
+                            'Output missing for inputs: {uncovered_inputs}'
+                        ).format(uncovered_inputs=uncovered_inputs, step=step.key)
                     )
                     continue
 

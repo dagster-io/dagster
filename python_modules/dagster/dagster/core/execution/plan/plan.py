@@ -4,9 +4,8 @@ from dagster import check
 from dagster.core.definitions import (
     CompositeSolidDefinition,
     InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
     ModeDefinition,
+    PipelineDefinition,
     Solid,
     SolidDefinition,
     SolidHandle,
@@ -19,9 +18,7 @@ from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import toposort
 
 from .compute import create_compute_step
-
-from .objects import ExecutionStep, ExecutionValueSubplan, StepInput, StepOutputHandle
-from .utility import create_join_outputs_step
+from .objects import ExecutionStep, StepInput, StepInputSourceType, StepOutputHandle
 
 
 class _PlanBuilder:
@@ -88,8 +85,7 @@ class _PlanBuilder:
 
         for step in self.steps:
             for step_input in step.step_inputs:
-                if step_input.is_from_output:
-                    deps[step.key].add(step_input.prev_output_handle.step_key)
+                deps[step.key].update(step_input.dependency_keys)
 
         step_dict = {step.key: step for step in self.steps}
 
@@ -155,26 +151,14 @@ class _PlanBuilder:
             ### 3. OUTPUTS
             # Create and add execution plan steps (and output handles) for solid outputs
             for name, output_def in solid.definition.output_dict.items():
-                subplan = create_subplan_for_output(
-                    self.pipeline_name, solid, terminal_compute_step, output_def
-                )
-                self.add_steps(subplan.steps)
-
                 output_handle = solid.output_handle(name)
-                self.set_output_handle(output_handle, subplan.terminal_step_output_handle)
+                output_def = solid.definition.resolve_output_to_origin(output_def.name)
+                self.set_output_handle(
+                    output_handle,
+                    StepOutputHandle.from_step(terminal_compute_step, output_def.name),
+                )
 
         return terminal_compute_step
-
-
-def create_subplan_for_output(pipeline_name, solid, solid_compute_step, output_def):
-    check.str_param(pipeline_name, 'pipeline_name')
-    check.inst_param(solid, 'solid', Solid)
-    check.inst_param(solid_compute_step, 'solid_compute_step', ExecutionStep)
-    check.inst_param(output_def, 'output_def', OutputDefinition)
-
-    output_def = solid.definition.resolve_output_to_origin(output_def.name)
-    terminal_step_output_handle = StepOutputHandle.from_step(solid_compute_step, output_def.name)
-    return ExecutionValueSubplan.empty(terminal_step_output_handle)
 
 
 def get_step_input(
@@ -191,30 +175,33 @@ def get_step_input(
     solid_config = plan_builder.environment_config.solids.get(str(handle))
     if solid_config and input_name in solid_config.inputs:
         return StepInput(
-            input_name, input_def.runtime_type, config_data=solid_config.inputs[input_name]
+            input_name,
+            input_def.runtime_type,
+            StepInputSourceType.CONFIG,
+            config_data=solid_config.inputs[input_name],
         )
 
     input_handle = solid.input_handle(input_name)
     if dependency_structure.has_singular_dep(input_handle):
         solid_output_handle = dependency_structure.get_singular_dep(input_handle)
         return StepInput(
-            input_name, input_def.runtime_type, plan_builder.get_output_handle(solid_output_handle)
+            input_name,
+            input_def.runtime_type,
+            StepInputSourceType.SINGLE_OUTPUT,
+            [plan_builder.get_output_handle(solid_output_handle)],
         )
 
     if dependency_structure.has_multi_deps(input_handle):
         solid_output_handles = dependency_structure.get_multi_deps(input_handle)
-        join_data = create_join_outputs_step(
-            plan_builder.pipeline_name,
-            input_handle,
-            solid_output_handles,
-            {
-                solid_output_handle: plan_builder.get_output_handle(solid_output_handle)
+        return StepInput(
+            input_name,
+            input_def.runtime_type,
+            StepInputSourceType.MULTIPLE_OUTPUTS,
+            [
+                plan_builder.get_output_handle(solid_output_handle)
                 for solid_output_handle in solid_output_handles
-            },
-            handle,
+            ],
         )
-        plan_builder.add_step(join_data.step)
-        return StepInput(input_name, input_def.runtime_type, join_data.step_output_handle)
 
     if solid.container_maps_input(input_name):
         parent_name = solid.container_mapped_input(input_name).definition.name
@@ -224,7 +211,8 @@ def get_step_input(
             return StepInput(
                 input_name,
                 input_def.runtime_type,
-                parent_input.prev_output_handle,
+                parent_input.source_type,
+                parent_input.source_handles,
                 parent_input.config_data,
             )
 

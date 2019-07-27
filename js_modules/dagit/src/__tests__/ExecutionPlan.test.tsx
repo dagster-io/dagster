@@ -14,11 +14,6 @@ it("renders given an execution plan", () => {
           __typename: "ExecutionStep",
           key: "raw_file_event_admins.compute",
           kind: StepKind.COMPUTE
-        },
-        {
-          __typename: "ExecutionStep",
-          key: "raw_file_event_admins.output.result.expectation.something",
-          kind: StepKind.OUTPUT_EXPECTATION
         }
       ]
     }

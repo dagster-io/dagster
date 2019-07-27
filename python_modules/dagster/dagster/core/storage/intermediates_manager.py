@@ -36,10 +36,9 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
         check.inst_param(step, 'step', ExecutionStep)
         uncovered_inputs = []
         for step_input in step.step_inputs:
-            if step_input.is_from_output and not self.has_intermediate(
-                context, step_input.prev_output_handle
-            ):
-                uncovered_inputs.append(step_input.prev_output_handle)
+            for source_handle in step_input.source_handles:
+                if not self.has_intermediate(context, source_handle):
+                    uncovered_inputs.append(source_handle)
         return uncovered_inputs
 
 

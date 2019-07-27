@@ -25,18 +25,6 @@ class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
         )
 
 
-class SingleOutputStepCreationData(namedtuple('SingleOutputStepCreationData', 'step output_name')):
-    '''
-    It is very common for step creation to involve processing a single value (e.g. an input thunk).
-    This tuple is meant to be used by those functions to return both a new step and the output
-    that deals with the value in question.
-    '''
-
-    @property
-    def step_output_handle(self):
-        return StepOutputHandle.from_step(self.step, self.output_name)
-
-
 class StepInputData(namedtuple('_StepInputData', 'input_name type_check_data')):
     def __new__(cls, input_name, type_check_data):
         return super(StepInputData, cls).__new__(
@@ -111,29 +99,47 @@ class StepSuccessData(namedtuple('_StepSuccessData', 'duration_ms')):
 
 class StepKind(Enum):
     COMPUTE = 'COMPUTE'
-    INPUT_EXPECTATION = 'INPUT_EXPECTATION'
-    OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
-    JOIN = 'JOIN'
-    SERIALIZE = 'SERIALIZE'
-    UNMARSHAL_INPUT = 'UNMARSHAL_INPUT'
-    MARSHAL_OUTPUT = 'MARSHAL_OUTPUT'
 
 
-class StepInput(namedtuple('_StepInput', 'name runtime_type prev_output_handle config_data')):
-    def __new__(cls, name, runtime_type, prev_output_handle=None, config_data=None):
+class StepInputSourceType(Enum):
+    SINGLE_OUTPUT = 'SINGLE_OUTPUT'
+    MULTIPLE_OUTPUTS = 'MULTIPLE_OUTPUTS'
+    CONFIG = 'CONFIG'
+
+
+class StepInput(
+    namedtuple('_StepInput', 'name runtime_type source_type source_handles config_data')
+):
+    def __new__(cls, name, runtime_type, source_type, source_handles=None, config_data=None):
         return super(StepInput, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             runtime_type=check.inst_param(runtime_type, 'runtime_type', RuntimeType),
-            prev_output_handle=check.opt_inst_param(
-                prev_output_handle, 'prev_output_handle', StepOutputHandle
+            source_type=check.inst_param(source_type, 'source_type', StepInputSourceType),
+            source_handles=check.opt_list_param(
+                source_handles, 'source_handles', of_type=StepOutputHandle
             ),
             config_data=config_data,  # can be any type
         )
 
     @property
     def is_from_output(self):
-        return bool(self.prev_output_handle)
+        return (
+            self.source_type == StepInputSourceType.SINGLE_OUTPUT
+            or self.source_type == StepInputSourceType.MULTIPLE_OUTPUTS
+        )
+
+    @property
+    def is_from_single_output(self):
+        return self.source_type == StepInputSourceType.SINGLE_OUTPUT
+
+    @property
+    def is_from_multiple_outputs(self):
+        return self.source_type == StepInputSourceType.MULTIPLE_OUTPUTS
+
+    @property
+    def dependency_keys(self):
+        return {handle.step_key for handle in self.source_handles}
 
 
 class StepOutput(namedtuple('_StepOutput', 'name runtime_type optional')):
@@ -217,28 +223,3 @@ class ExecutionStep(
     def step_input_named(self, name):
         check.str_param(name, 'name')
         return self.step_input_dict[name]
-
-
-class ExecutionValueSubplan(
-    namedtuple('ExecutionValueSubplan', 'steps terminal_step_output_handle')
-):
-    '''
-    A frequent pattern in the execution engine is to take a single value (e.g. an input or an output
-    of a compute function) and then flow that value value through a sequence of system-injected
-    steps (e.g. expectations or materializations). This object captures that pattern. It contains
-    all of the steps that comprise that Subplan and also a single output handle that points to
-    output that further steps down the plan can depend on.
-    '''
-
-    def __new__(cls, steps, terminal_step_output_handle):
-        return super(ExecutionValueSubplan, cls).__new__(
-            cls,
-            check.list_param(steps, 'steps', of_type=ExecutionStep),
-            check.inst_param(
-                terminal_step_output_handle, 'terminal_step_output_handle', StepOutputHandle
-            ),
-        )
-
-    @staticmethod
-    def empty(terminal_step_output_handle):
-        return ExecutionValueSubplan([], terminal_step_output_handle)

@@ -107,7 +107,7 @@ def _execute_pipeline_iterator(context_or_failure_event):
     _setup_reexecution(pipeline_context.run_config, pipeline_context, execution_plan)
 
     check.invariant(
-        len([step_input for step_input in steps[0].step_inputs if step_input.is_from_output]) == 0
+        len([step_input for step_input in steps[0].step_inputs if step_input.dependency_keys]) == 0
     )
 
     pipeline_success = True

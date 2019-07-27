@@ -58,14 +58,12 @@ def dagster_airflow_python_operator_pipeline(request):
     for task in tasks:
         assert isinstance(task, PythonOperator)
 
-    results = []
+    results = {}
     for task in tasks:
         ti = TaskInstance(task=task, execution_date=execution_date)
         context = ti.get_template_context()
         context['dag_run'] = namedtuple('_', 'run_id')(run_id=run_id)
-
-        res = task.execute(context)
-        results.append(res)
+        results[ti] = task.execute(context)
 
     yield results
 
@@ -115,13 +113,11 @@ def dagster_airflow_docker_operator_pipeline(request):
     for task in tasks:
         assert isinstance(task, DagsterDockerOperator)
 
-    results = []
+    results = {}
     for task in tasks:
         ti = TaskInstance(task=task, execution_date=execution_date)
         context = ti.get_template_context()
         context['dag_run'] = namedtuple('_', 'run_id')(run_id=run_id)
-
-        res = task.execute(context)
-        results.append(res)
+        results[ti] = task.execute(context)
 
     yield results

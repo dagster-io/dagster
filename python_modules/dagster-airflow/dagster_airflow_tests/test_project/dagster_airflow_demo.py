@@ -1,3 +1,4 @@
+# pylint: disable=no-value-for-parameter, no-member
 from collections import defaultdict
 
 from dagster import (
@@ -5,6 +6,8 @@ from dagster import (
     InputDefinition,
     Int,
     ModeDefinition,
+    Output,
+    OutputDefinition,
     RepositoryDefinition,
     String,
     lambda_solid,
@@ -50,7 +53,32 @@ def demo_error_pipeline():
     error_solid()
 
 
+@solid(
+    output_defs=[
+        OutputDefinition(Int, 'out_1', is_optional=True),
+        OutputDefinition(Int, 'out_2', is_optional=True),
+        OutputDefinition(Int, 'out_3', is_optional=True),
+    ]
+)
+def foo(_):
+    yield Output(1, 'out_1')
+
+
+@solid
+def bar(_, input_arg):
+    return input_arg
+
+
+@pipeline
+def optional_outputs():
+    foo_res = foo()
+    bar.alias('first_consumer')(input_arg=foo_res.out_1)
+    bar.alias('second_consumer')(input_arg=foo_res.out_2)
+    bar.alias('third_consumer')(input_arg=foo_res.out_3)
+
+
 def define_demo_execution_repo():
     return RepositoryDefinition(
-        name='demo_execution_repo', pipeline_defs=[demo_pipeline, demo_error_pipeline]
+        name='demo_execution_repo',
+        pipeline_defs=[demo_pipeline, demo_error_pipeline, optional_outputs],
     )

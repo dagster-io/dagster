@@ -1,5 +1,6 @@
 '''The dagster-airflow operators.'''
 import ast
+import datetime
 import json
 import logging
 import os
@@ -7,12 +8,14 @@ import os
 from contextlib import contextmanager
 
 from airflow.exceptions import AirflowException
+from airflow.models import BaseOperator, SkipMixin
 from airflow.operators.docker_operator import DockerOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, from_env
 
-from dagster import check, seven
+from dagster import check, seven, DagsterEventType
+from dagster.core.events import DagsterEvent
 from dagster_graphql.client.mutations import execute_start_pipeline_execution_query
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 
@@ -27,6 +30,18 @@ DEFAULT_ENVIRONMENT = {
 }
 
 LINE_LENGTH = 100
+
+
+class DagsterSkipMixin(SkipMixin):
+    def skip_self_if_necessary(self, events, execution_date, task):
+        check.list_param(events, 'events', of_type=DagsterEvent)
+        check.inst_param(execution_date, 'execution_date', datetime.datetime)
+        check.inst_param(task, 'task', BaseOperator)
+
+        skipped = any([e.event_type_value == DagsterEventType.STEP_SKIPPED.value for e in events])
+
+        if skipped:
+            self.skip(None, execution_date, [task])
 
 
 class ModifiedDockerOperator(DockerOperator):
@@ -116,7 +131,7 @@ class ModifiedDockerOperator(DockerOperator):
         return super(ModifiedDockerOperator, self)._DockerOperator__get_tls_config()
 
 
-class DagsterDockerOperator(ModifiedDockerOperator):
+class DagsterDockerOperator(ModifiedDockerOperator, DagsterSkipMixin):
     '''Dagster operator for Apache Airflow.
 
     Wraps a modified DockerOperator incorporating https://github.com/apache/airflow/pull/4315.
@@ -155,11 +170,11 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             'Cannot use in-memory storage with Airflow, must use S3',
         )
 
+        self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
         self.environment_dict = environment_dict
         self.pipeline_name = pipeline_name
         self.mode = mode
         self.step_keys = step_keys
-        self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
         self._run_id = None
 
         # These shenanigans are so we can override DockerOperator.get_hook in order to configure
@@ -262,7 +277,11 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             res = parse_raw_res(raw_res)
 
             handle_start_pipeline_execution_errors(res)
-            return handle_start_pipeline_execution_result(res)
+            events = handle_start_pipeline_execution_result(res)
+
+            self.skip_self_if_necessary(events, context['execution_date'], context['task'])
+
+            return events
 
         finally:
             self._run_id = None
@@ -279,7 +298,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         yield self.host_tmp_dir
 
 
-class DagsterPythonOperator(PythonOperator):
+class DagsterPythonOperator(PythonOperator, DagsterSkipMixin):
     def __init__(
         self,
         task_id,
@@ -310,10 +329,14 @@ class DagsterPythonOperator(PythonOperator):
                 + 'with variables:\n'
                 + seven.json.dumps(redacted, indent=2)
             )
-            return execute_start_pipeline_execution_query(
+            events = execute_start_pipeline_execution_query(
                 handle,
                 construct_variables(mode, environment_dict, pipeline_name, run_id, ts, step_keys),
             )
+
+            self.skip_self_if_necessary(events, kwargs['execution_date'], kwargs['task'])
+
+            return events
 
         super(DagsterPythonOperator, self).__init__(
             task_id=task_id,

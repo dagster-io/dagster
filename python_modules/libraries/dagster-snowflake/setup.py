@@ -37,7 +37,7 @@ def _do_setup(name='dagster-snowflake'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster', 'dagster-pandas', 'snowflake-connector-python==1.7.*'],
+        install_requires=['dagster', 'snowflake-connector-python==1.7.*'],
         zip_safe=False,
     )
 

@@ -5,38 +5,6 @@ from dagster import execute_pipeline, file_relative_path
 from lakehouse import SqlLiteLakehouse, construct_lakehouse_pipeline, input_table, sqlite_table
 
 
-def test_basic_sqlite():
-    # delete before commit
-
-    conn = sqlite3.connect(':memory:')
-
-    conn.execute('''CREATE TABLE TableOne (num int)''')
-
-    conn.execute("INSERT INTO TableOne VALUES (1)")
-
-    conn.commit()
-
-    for row in conn.cursor().execute('SELECT * From TableOne'):
-        print(row[0])
-
-    conn.commit()
-
-    conn.execute('CREATE TABLE TableTwo AS SELECT num from TableOne')
-
-    conn.commit()
-
-    for row in conn.cursor().execute('SELECT * From TableTwo'):
-        print(row[0])
-
-
-def test_sqllite_values_query():
-    # delete before commit
-
-    conn = sqlite3.connect(':memory:')
-
-    print(conn.cursor().execute('SELECT * FROM (values(1))').fetchall())
-
-
 def create_sqllite_lakehouse_table(name, sql_text, input_tables=None):
     @sqlite_table(name=name, input_tables=input_tables)
     def Table(context, **_kwargs):

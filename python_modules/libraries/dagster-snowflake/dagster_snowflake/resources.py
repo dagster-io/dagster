@@ -1,8 +1,10 @@
-from contextlib import contextmanager
+import sys
+
+from contextlib import contextmanager, closing
 
 import snowflake.connector
 
-from dagster import resource
+from dagster import check, resource
 
 from .configs import define_snowflake_config
 
@@ -38,16 +40,42 @@ class SnowflakeConnection:
         self.autocommit = self.conn_args.get('autocommit', False)
 
     @contextmanager
-    def get_connection(self, log):
-        log.info(
-            '''Connecting to Snowflake with conn_args %s ''' % str(_filter_password(self.conn_args))
-        )
-
+    def get_connection(self):
         conn = snowflake.connector.connect(**self.conn_args)
         yield conn
         if not self.autocommit:
             conn.commit()
         conn.close()
+
+    def execute_query(self, sql, parameters=None, fetch_results=False):
+        check.str_param(sql, 'sql')
+        check.opt_dict_param(parameters, 'parameters')
+        check.bool_param(fetch_results, 'fetch_results')
+
+        with self.get_connection() as conn:
+            with closing(conn.cursor()) as cursor:
+                if sys.version_info[0] < 3:
+                    query = query.encode('utf-8')
+
+                cursor.execute(sql, parameters)  # pylint: disable=E1101
+                if fetch_results:
+                    return cursor.fetchall()  # pylint: disable=E1101
+
+    def load_table_from_parquet(self, src, table):
+        check.str_param(src, 'src')
+        check.str_param(table, 'table')
+
+        sql_queries = [
+            'CREATE OR REPLACE TABLE {table} ( data VARIANT DEFAULT NULL);'.format(table=table),
+            'CREATE OR REPLACE FILE FORMAT parquet_format TYPE = \'parquet\';',
+            'PUT {src} @%{table};'.format(src=src, table=table),
+            'COPY INTO {table} FROM @%{table} FILE_FORMAT = (FORMAT_NAME = \'parquet_format\');'.format(
+                table=table
+            ),
+        ]
+
+        for sql in sql_queries:
+            self.execute_query(sql)
 
 
 @resource(

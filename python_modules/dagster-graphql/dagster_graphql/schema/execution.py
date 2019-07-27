@@ -53,7 +53,7 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     type = dauphin.Field(dauphin.NonNull('RuntimeType'))
-    dependsOn = dauphin.Field('ExecutionStep')
+    dependsOn = dauphin.non_null_list('ExecutionStep')
 
     def __init__(self, execution_plan, step_input):
         super(DauphinExecutionStepInput, self).__init__()
@@ -67,11 +67,12 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
         return to_dauphin_runtime_type(self._step_input.runtime_type)
 
     def resolve_dependsOn(self, graphene_info):
-        if self._step_input.is_from_output:
-            return graphene_info.schema.type_named('ExecutionStep')(
-                self._execution_plan,
-                self._execution_plan.get_step_by_key(self._step_input.prev_output_handle.step_key),
+        return [
+            graphene_info.schema.type_named('ExecutionStep')(
+                self._execution_plan, self._execution_plan.get_step_by_key(key)
             )
+            for key in self._step_input.dependency_keys
+        ]
 
 
 class DauphinStepKind(dauphin.Enum):
@@ -79,14 +80,6 @@ class DauphinStepKind(dauphin.Enum):
         name = 'StepKind'
 
     COMPUTE = 'COMPUTE'
-    INPUT_EXPECTATION = 'INPUT_EXPECTATION'
-    OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
-    JOIN = 'JOIN'
-    SERIALIZE = 'SERIALIZE'
-    INPUT_THUNK = 'INPUT_THUNK'
-    MATERIALIZATION_THUNK = 'MATERIALIZATION_THUNK'
-    UNMARSHAL_INPUT = 'UNMARSHAL_INPUT'
-    MARSHAL_OUTPUT = 'MARSHAL_OUTPUT'
 
     @property
     def description(self):
@@ -94,29 +87,6 @@ class DauphinStepKind(dauphin.Enum):
         # so we can't do a dictionary lookup which is awesome
         if self == DauphinStepKind.COMPUTE:
             return 'This is the user-defined computation step'
-        elif self == DauphinStepKind.INPUT_EXPECTATION:
-            return 'Expectation defined on an input'
-        elif self == DauphinStepKind.OUTPUT_EXPECTATION:
-            return 'Expectation defined on an output'
-        elif self == DauphinStepKind.JOIN:
-            return (
-                'Sometimes we fan out compute on identical values (e.g. multiple expectations '
-                'in parallel). We synthesize these in a join step to consolidate to a single '
-                'output that the next computation can depend on.'
-            )
-        elif self == DauphinStepKind.SERIALIZE:
-            return (
-                'This is a special system-defined step to serialize an intermediate value if '
-                'the pipeline is configured to do that.'
-            )
-
-        elif self == DauphinStepKind.INPUT_THUNK:
-            return 'Special system-defined step to represent an input specified in the environment'
-        elif self == DauphinStepKind.MATERIALIZATION_THUNK:
-            return (
-                'Special system-defined step to represent an output materialization specified in '
-                'the environment'
-            )
         else:
             return None
 

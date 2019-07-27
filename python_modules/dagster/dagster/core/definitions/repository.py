@@ -111,7 +111,7 @@ class RepositoryDefinition(object):
             List[PipelineDefinition]:
 
         '''
-        if self._all_pipelines:
+        if self._all_pipelines is not None:
             return self._all_pipelines
 
         self._all_pipelines = list(
@@ -122,7 +122,7 @@ class RepositoryDefinition(object):
         return self._all_pipelines
 
     def get_all_solid_defs(self):
-        if self._solid_defs:
+        if self._solid_defs is not None:
             return self._solid_defs
 
         self._solid_defs = self._construct_solid_defs()
