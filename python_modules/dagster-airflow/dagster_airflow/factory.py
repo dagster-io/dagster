@@ -12,7 +12,8 @@ from .compile import coalesce_execution_steps
 
 IMPORTED_KUBERNETES = False
 try:
-    from .kubernetes_operator import DagsterKubernetesPodOperator
+    from .kubernetes_operators import DagsterKubernetesPodOperator
+
     IMPORTED_KUBERNETES = True
 except:
     pass

@@ -1,4 +1,4 @@
-from airflow.contrib.operators.kubernetes_operator import KubernetesPodOperator
+from airflow.contrib.operators.kubernetes_pod_operator import KubernetesPodOperator
 from dagster import check
 from .operators import DagsterSkipMixin, GenericExec
 
