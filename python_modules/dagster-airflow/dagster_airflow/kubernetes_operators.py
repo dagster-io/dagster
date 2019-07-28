@@ -1,5 +1,3 @@
-import json
-
 from airflow.contrib.operators.kubernetes_pod_operator import KubernetesPodOperator
 from airflow.contrib.kubernetes import kube_client, pod_generator, pod_launcher
 from airflow.exceptions import AirflowException
