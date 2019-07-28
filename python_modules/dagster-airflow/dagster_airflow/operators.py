@@ -132,7 +132,7 @@ class GenericExecMixin:
     Base class for shared machinery for operators that will exec: Docker, Kubernetes, venvs, etc.
     """
 
-    def __init__(self, propagate_aws_vars, *args, **kwargs):
+    def __init__(self, propagate_aws_vars=True, *args, **kwargs):
         self.propagate_aws_vars = propagate_aws_vars
         super(GenericExecMixin, self).__init__(*args, **kwargs)
 
@@ -190,8 +190,10 @@ class GenericExecMixin:
                     }
                 )
             elif aws_access_key_id or aws_secret_access_key:
-                # TODO: log warning, this'll fail at runtime
-
+                raise ValueError(
+                    "If `propagate_aws_vars=True`, must provide either both of AWS_ACCESS_KEY_ID"
+                    " and AWS_SECRET_ACCESS_KEY env vars, or neither."
+                )
         return default_env
 
 
