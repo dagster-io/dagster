@@ -21,15 +21,6 @@ from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 
 from .util import airflow_storage_exception, construct_variables, parse_raw_res
 
-# Importing this will crash if Kubernetes libraries aren't installed.
-IMPORTED_KUBERNETES = False
-try:
-    from airflow.contrib.operators.kubernetes_operator import KubernetesPodOperator
-    from .kubernetes_operator import DagsterKubernetesPodOperator
-    IMPORTED_KUBERNETES = True
-except ImportError:
-    pass
-
 
 DOCKER_TEMPDIR = '/tmp'
 
