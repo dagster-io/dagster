@@ -5,6 +5,13 @@ from .util import airflow_storage_exception
 
 
 class DagsterKubernetesPodOperator(GenericExecMixin, KubernetesPodOperator, DagsterSkipMixin):
+    '''Dagster operator for Apache Airflow.
+
+    Wraps a modified KubernetesPodOperator.
+    '''
+
+    # py2 compat
+    # pylint: disable=keyword-arg-before-vararg
     def __init__(
         self,
         task_id,

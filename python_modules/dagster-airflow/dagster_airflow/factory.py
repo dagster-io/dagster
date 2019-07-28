@@ -265,7 +265,8 @@ def make_airflow_dag_kubernetized(
     if not IMPORTED_KUBERNETES:
         raise ImportError(
             "DagsterKubernetesPodOperator is not available"
-            " if the kubernetes module isn't installed")
+            " if the kubernetes module isn't installed"
+        )
 
     check.str_param(module_name, 'module_name')
 

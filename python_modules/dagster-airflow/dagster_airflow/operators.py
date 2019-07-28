@@ -163,6 +163,9 @@ class GenericExecMixin:
 
     @property
     def default_environment(self):
+        """
+        Return a default set of environment variables for Docker and Kubernetes execution.
+        """
         default_env = {}
 
         if self.propagate_aws_vars:
