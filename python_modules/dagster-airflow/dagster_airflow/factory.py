@@ -255,6 +255,7 @@ def make_airflow_dag_kubernetized(
     module_name,
     pipeline_name,
     image,
+    namespace,
     environment_dict=None,
     mode=None,
     dag_id=None,
@@ -274,6 +275,9 @@ def make_airflow_dag_kubernetized(
 
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
     op_kwargs['image'] = image
+    # TODO: It would probably be better to require a Kubernetes config section in the environment
+    # YAML, since there's multiple relevant settings
+    op_kwargs['namespace'] = namespace
     return _make_airflow_dag(
         handle=handle,
         pipeline_name=pipeline_name,
