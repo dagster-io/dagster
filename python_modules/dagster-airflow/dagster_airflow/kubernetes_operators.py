@@ -137,7 +137,7 @@ class DagsterKubernetesPodOperator(GenericExecMixin, KubernetesPodOperator, Dags
 
             launcher = pod_launcher.PodLauncher(kube_client=client, extract_xcom=self.xcom_push)
             try:
-                # we won't use the "result", which is the returned pod object
+                # we won't use the "result", which is the pod's xcom json file
                 (final_state, _) = launcher.run_pod(
                     pod, startup_timeout=self.startup_timeout_seconds, get_logs=self.get_logs
                 )
