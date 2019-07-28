@@ -15,7 +15,8 @@ try:
     from .kubernetes_operators import DagsterKubernetesPodOperator
 
     IMPORTED_KUBERNETES = True
-except:
+except ImportError:
+    # TODO: raise an appropriate warning here
     pass
 
 DEFAULT_ARGS = {
