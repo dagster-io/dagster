@@ -16,8 +16,8 @@ export const MetadataEntries: React.FunctionComponent<{
           <tr key={idx} style={{ display: "flex" }}>
             <td
               style={{
-                flex: "0 0 auto",
-                width: "max-content"
+                flex: 1,
+                maxWidth: "max-content"
               }}
             >
               {item.label}
@@ -141,4 +141,5 @@ const MetadataEntriesTable = styled.table`
     border-right: 1px solid #dbc5ad;
     vertical-align: top;
   }
+  width: 100%;
 `;
