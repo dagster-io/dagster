@@ -28,6 +28,9 @@ class DagsterKubernetesPodOperator(GenericExecMixin, KubernetesPodOperator, Dags
         *args,
         **kwargs
     ):
+        # TODO: choose a better generated dns-compliant k8s pod name
+        kwargs["name"] = "dagster.{pipeline_name}.{task_id}".format(
+            pipeline_name=pipeline_name, task_id=task_id).replace("_", "--")
 
         # TODO: reduce boilerplate
         check.str_param(pipeline_name, 'pipeline_name')
