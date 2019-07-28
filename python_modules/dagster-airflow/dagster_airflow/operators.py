@@ -182,10 +182,13 @@ class GenericExecMixin:
 
             # The creds _also_ break if you only set one of them.
             if aws_access_key_id and aws_secret_access_key:
-                default_env.update({
-                    'AWS_ACCESS_KEY_ID': aws_access_key_id,
-                    'AWS_SECRET_ACCESS_KEY': aws_secret_access_key,
-                })
+                # TODO: also get region env var this way, since boto commands may fail without it
+                default_env.update(
+                    {
+                        'AWS_ACCESS_KEY_ID': aws_access_key_id,
+                        'AWS_SECRET_ACCESS_KEY': aws_secret_access_key,
+                    }
+                )
             elif aws_access_key_id or aws_secret_access_key:
                 # TODO: log warning, this'll fail at runtime
 
