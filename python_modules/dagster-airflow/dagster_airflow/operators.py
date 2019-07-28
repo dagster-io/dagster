@@ -164,7 +164,7 @@ class GenericExecMixin:
         return [
             '-v',
             '{}'.format(seven.json.dumps(variables)),
-            '{}'.format(START_PIPELINE_EXECUTION_QUERY)
+            '{}'.format(START_PIPELINE_EXECUTION_QUERY),
         ]
 
     @property
