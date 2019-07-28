@@ -161,9 +161,11 @@ class GenericExecMixin:
             self.step_keys,
         )
 
-        return '-v \'{variables}\' \'{query}\''.format(
-            variables=seven.json.dumps(variables), query=START_PIPELINE_EXECUTION_QUERY
-        )
+        return [
+            '-v',
+            '{}'.format(seven.json.dumps(variables)),
+            '{}'.format(START_PIPELINE_EXECUTION_QUERY)
+        ]
 
     @property
     def default_environment(self):
@@ -279,7 +281,8 @@ class DagsterDockerOperator(GenericExecMixin, ModifiedDockerOperator, DagsterSki
         elif self.command is not None:
             commands = self.command
         else:
-            commands = self.query
+            # return a string-joined version of the query text
+            commands = " ".join(self.query)
         return commands
 
     def get_hook(self):

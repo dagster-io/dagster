@@ -115,7 +115,9 @@ class DagsterKubernetesPodOperator(GenericExecMixin, KubernetesPodOperator, Dags
                 image=self.image,
                 pod_id=self.name,
                 cmds=self.cmds,
-                arguments=self.arguments,
+                # TODO: should we even accept self.arguments?
+                # TODO: would it be better to expose dagster query vars as airflow template vars
+                arguments=self.query,
                 labels=self.labels,
             )
 
