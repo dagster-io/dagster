@@ -144,6 +144,7 @@ class DagsterKubernetesPodOperator(GenericExecMixin, KubernetesPodOperator, Dags
                 # fetch the last line independently of whether logs were read
                 # unbelievably, if you set tail_lines=1, the returned json has its double quotes
                 # turned into unparseable single quotes
+                # TODO: add retries - k8s log servers are _extremely_ flaky
                 raw_res = client.read_namespaced_pod_log(
                     name=pod.name, namespace=pod.namespace, container='base', tail_lines=5
                 )
