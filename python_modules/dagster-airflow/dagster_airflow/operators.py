@@ -137,6 +137,10 @@ class GenericExecMixin:
         super(GenericExecMixin, self).__init__(*args, **kwargs)
 
     @property
+    def run_id(self):
+        return getattr(self, "_run_id", '')
+
+    @property
     def query(self):
         # TODO: https://github.com/dagster-io/dagster/issues/1342
         redacted = construct_variables(
@@ -268,12 +272,6 @@ class DagsterDockerOperator(GenericExecMixin, ModifiedDockerOperator, DagsterSki
             task_id=task_id, dag=dag, tmp_dir=tmp_dir, host_tmp_dir=host_tmp_dir, *args, **kwargs
         )
 
-    @property
-    def run_id(self):
-        if self._run_id is None:
-            return ''
-        else:
-            return self._run_id
 
     def get_command(self):
         if self.command is not None and self.command.strip().find('[') == 0:
