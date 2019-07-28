@@ -6,7 +6,7 @@ from airflow.exceptions import AirflowException
 from airflow.utils.state import State
 from dagster import check
 from .operators import DagsterSkipMixin, GenericExecMixin
-from .util import airflow_storage_exception
+from .util import airflow_storage_exception, parse_raw_res
 
 
 class DagsterKubernetesPodOperator(GenericExecMixin, KubernetesPodOperator, DagsterSkipMixin):
@@ -143,14 +143,15 @@ class DagsterKubernetesPodOperator(GenericExecMixin, KubernetesPodOperator, Dags
                 )
 
                 # fetch the last line independently of whether logs were read
-                dagster_json_line = client.read_namespaced_pod_log(
-                    name=pod.name, namespace=pod.namespace, container='base', tail_lines=1
+                # unbelievably, if you set tail_lines=1, the returned json has its double quotes
+                # turned into unparseable single quotes
+                raw_res = client.read_namespaced_pod_log(
+                    name=pod.name, namespace=pod.namespace, container='base', tail_lines=5
                 )
 
-                # read the last line directly as json
-                # TODO: handle bytes type?
-                # TODO: handle garbage API string responses
-                res = json.loads(dagster_json_line)
+                # find the relevant line
+                # TODO: raise sensible exception on garbage API string responses
+                res = parse_raw_res(raw_res)
                 handle_start_pipeline_execution_errors(res)
                 events = handle_start_pipeline_execution_result(res)
 
