@@ -10,6 +10,12 @@ from dagster.core.execution.api import create_execution_plan
 from .operators import DagsterDockerOperator, DagsterPythonOperator
 from .compile import coalesce_execution_steps
 
+IMPORTED_KUBERNETES = False
+try:
+    from .kubernetes_operator import DagsterKubernetesPodOperator
+    IMPORTED_KUBERNETES = True
+except:
+    pass
 
 DEFAULT_ARGS = {
     'depends_on_past': False,
@@ -240,4 +246,39 @@ def make_airflow_dag_containerized_for_handle(
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
         operator=DagsterDockerOperator,
+    )
+
+
+def make_airflow_dag_kubernetized(
+    module_name,
+    pipeline_name,
+    image,
+    environment_dict=None,
+    mode=None,
+    dag_id=None,
+    dag_description=None,
+    dag_kwargs=None,
+    op_kwargs=None,
+):
+    if not IMPORTED_KUBERNETES:
+        raise ImportError(
+            "DagsterKubernetesPodOperator is not available"
+            " if the kubernetes module isn't installed")
+
+    check.str_param(module_name, 'module_name')
+
+    handle = ExecutionTargetHandle.for_pipeline_module(module_name, pipeline_name)
+
+    op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
+    op_kwargs['image'] = image
+    return _make_airflow_dag(
+        handle=handle,
+        pipeline_name=pipeline_name,
+        environment_dict=environment_dict,
+        mode=mode,
+        dag_id=dag_id,
+        dag_description=dag_description,
+        dag_kwargs=dag_kwargs,
+        op_kwargs=op_kwargs,
+        operator=DagsterKubernetesPodOperator,
     )
