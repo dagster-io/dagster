@@ -1,11 +1,10 @@
 from airflow.contrib.operators.kubernetes_pod_operator import KubernetesPodOperator
 from dagster import check
-from .operators import DagsterSkipMixin, GenericExec
-
+from .operators import DagsterSkipMixin, GenericExecMixin
 from .util import airflow_storage_exception
 
 
-class DagsterKubernetesPodOperator(GenericExec, KubernetesPodOperator, DagsterSkipMixin):
+class DagsterKubernetesPodOperator(GenericExecMixin, KubernetesPodOperator, DagsterSkipMixin):
     def __init__(
         self,
         task_id,

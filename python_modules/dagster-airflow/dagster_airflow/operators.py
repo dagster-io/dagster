@@ -127,13 +127,14 @@ class ModifiedDockerOperator(DockerOperator):
         return super(ModifiedDockerOperator, self)._DockerOperator__get_tls_config()
 
 
-class GenericExec:
+class GenericExecMixin:
     """
     Base class for shared machinery for operators that will exec: Docker, Kubernetes, venvs, etc.
     """
+
     def __init__(self, propagate_aws_vars, *args, **kwargs):
         self.propagate_aws_vars = propagate_aws_vars
-        super(GenericExec, self).__init__(*args, **kwargs)
+        super(GenericExecMixin, self).__init__(*args, **kwargs)
 
     @property
     def query(self):
@@ -188,7 +189,7 @@ class GenericExec:
         return default_env
 
 
-class DagsterDockerOperator(GenericExec, ModifiedDockerOperator, DagsterSkipMixin):
+class DagsterDockerOperator(GenericExecMixin, ModifiedDockerOperator, DagsterSkipMixin):
     '''Dagster operator for Apache Airflow.
 
     Wraps a modified DockerOperator incorporating https://github.com/apache/airflow/pull/4315.
