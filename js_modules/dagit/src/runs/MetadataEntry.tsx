@@ -69,7 +69,12 @@ export class MetadataEntry extends React.Component<{
             >
               {entry.path}
             </MetadataEntryLink>{" "}
-            <Icon icon="clipboard" iconSize={10} color={"#a88860"} />
+            <Icon
+              icon="clipboard"
+              iconSize={10}
+              color={"#a88860"}
+              onClick={e => copyValue(e, entry.path)}
+            />
           </>
         );
 
@@ -99,7 +104,9 @@ export class MetadataEntry extends React.Component<{
             >
               {entry.url}
             </MetadataEntryLink>{" "}
-            <Icon icon="link" iconSize={10} color={"#a88860"} />
+            <a href={entry.url} target="__blank">
+              <Icon icon="link" iconSize={10} color={"#a88860"} />
+            </a>
           </>
         );
       case "EventTextMetadataEntry":
