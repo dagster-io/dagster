@@ -68,7 +68,13 @@ export class CellTruncationProvider extends React.Component<
   onView = () => {
     // eslint-disable-next-line react/no-find-dom-node
     const el = ReactDOM.findDOMNode(this) as HTMLElement;
-    const message = el.firstChild && el.firstChild.textContent;
+    // Would be nice to have a better selector here
+    // https://github.com/dagster-io/dagster/issues/1623
+    const message =
+      el.firstChild &&
+      el.firstChild.childNodes[1] &&
+      el.firstChild.childNodes[1].childNodes[1] &&
+      el.firstChild.childNodes[1].childNodes[1].textContent;
     if (!message) return;
     showCustomAlert({ message: message, pre: true });
   };
