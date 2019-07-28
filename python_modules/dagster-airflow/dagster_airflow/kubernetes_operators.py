@@ -62,6 +62,12 @@ class DagsterKubernetesPodOperator(GenericExecMixin, KubernetesPodOperator, Dags
         kwargs.setdefault("labels", {})
         kwargs["labels"].setdefault("dagster_pipeline", self.pipeline_name)
 
+        # The xcom mechanism for the pod operator is very unlike that of the Docker operator:
+        # https://github.com/apache/airflow/blob/1.10.3/airflow/contrib/operators/kubernetes_pod_operator.py#L76
+        # We therefore need to disable it
+        # TODO: Warn if the user tried to set this, since it won't work as expected
+        kwargs["xcom_push"] = False
+
         # TODO: don't blow away S3 creds on providing an env
         if 'env_vars' not in kwargs:
             kwargs['env_vars'] = self.default_environment
