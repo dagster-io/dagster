@@ -132,6 +132,8 @@ class GenericExecMixin:
     Base class for shared machinery for operators that will exec: Docker, Kubernetes, venvs, etc.
     """
 
+    # py2 compat
+    # pylint: disable=keyword-arg-before-vararg
     def __init__(self, propagate_aws_vars=True, *args, **kwargs):
         self.propagate_aws_vars = propagate_aws_vars
         super(GenericExecMixin, self).__init__(*args, **kwargs)
