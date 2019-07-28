@@ -265,13 +265,13 @@ class DagsterDockerOperator(GenericExecMixin, ModifiedDockerOperator, DagsterSki
         # Store Airflow DAG run timestamp so that we can pass along via execution metadata
         self.airflow_ts = kwargs.get('ts')
 
-        if 'environment' not in kwargs:
-            kwargs['environment'] = self.default_environment
-
         super(DagsterDockerOperator, self).__init__(
             task_id=task_id, dag=dag, tmp_dir=tmp_dir, host_tmp_dir=host_tmp_dir, *args, **kwargs
         )
 
+        # Update environment with applicable defaults
+        for k, v in self.default_environment.items():
+            self.environment.setdefault(k, v)
 
     def get_command(self):
         if self.command is not None and self.command.strip().find('[') == 0:

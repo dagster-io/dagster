@@ -71,13 +71,13 @@ class DagsterKubernetesPodOperator(GenericExecMixin, KubernetesPodOperator, Dags
         # TODO: Warn if the user tried to set this, since it won't work as expected
         kwargs["xcom_push"] = False
 
-        # TODO: don't blow away S3 creds on providing an env
-        if 'env_vars' not in kwargs:
-            kwargs['env_vars'] = self.default_environment
-
         super(DagsterKubernetesPodOperator, self).__init__(
             task_id=task_id, dag=dag, *args, **kwargs
         )
+
+        # Update environment with applicable defaults
+        for k, v in self.env_vars.items():
+            self.env_vars.setdefault(k, v)
 
     def execute(self, context):
         try:
