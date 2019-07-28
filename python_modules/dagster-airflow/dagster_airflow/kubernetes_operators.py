@@ -54,6 +54,14 @@ class DagsterKubernetesPodOperator(GenericExecMixin, KubernetesPodOperator, Dags
         # Store Airflow DAG run timestamp so that we can pass along via execution metadata
         self.airflow_ts = kwargs.get('ts')
 
+        # TODO: This should be moved into a general, non-Airflow class if native integration is
+        # implemented, in order to keep labels consistent
+        # TODO: add some common Kubernetes labels
+        # https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels
+        # TODO: may make sense to set these as env vars too
+        kwargs.setdefault("labels", {})
+        kwargs["labels"].setdefault("dagster_pipeline", self.pipeline_name)
+
         # TODO: don't blow away S3 creds on providing an env
         if 'env_vars' not in kwargs:
             kwargs['env_vars'] = self.default_environment
