@@ -118,13 +118,14 @@ def create_context_creation_data(pipeline_def, environment_dict, run_config):
 
     check_persistent_storage_requirement(pipeline_def, system_storage_def, run_config)
 
+    execution_target_handle, _ = ExecutionTargetHandle.get_handle(pipeline_def)
     return ContextCreationData(
         pipeline_def=pipeline_def,
         environment_config=environment_config,
         run_config=run_config,
         mode_def=mode_def,
         system_storage_def=system_storage_def,
-        execution_target_handle=ExecutionTargetHandle.get_handle(pipeline_def),
+        execution_target_handle=execution_target_handle,
     )
 
 

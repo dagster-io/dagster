@@ -13,6 +13,7 @@ RESERVED_INPUT_NAMES = [
     '__dm_run_config',
     '__dm_run_config_kwargs',
     '__dm_solid_handle_kwargs',
+    '__dm_solid_subset',
     '__dm_sys',
 ]
 
@@ -73,6 +74,7 @@ __dm_solid_handle = __dm_dagster_core_definitions_dependency.SolidHandle.from_di
 context = __dm_dagstermill._reconstitute_pipeline_context(
     run_config=__dm_run_config,
     handle=__dm_handle,
+    solid_subset=__dm_json.loads('{dm_solid_subset}'),
     solid_handle=__dm_solid_handle,
     **__dm_json.loads('{dm_context}')
 )
@@ -86,12 +88,14 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
         assert '__dm_handle_kwargs' in parameters
         assert '__dm_run_config_kwargs' in parameters
         assert '__dm_solid_handle_kwargs' in parameters
+        assert '__dm_solid_subset' in parameters
 
         content = INJECTED_BOILERPLATE.format(
             dm_context=parameters['__dm_context'],
             dm_handle_kwargs=parameters['__dm_handle_kwargs'],
             dm_run_config_kwargs=parameters['__dm_run_config_kwargs'],
             dm_solid_handle_kwargs=parameters['__dm_solid_handle_kwargs'],
+            dm_solid_subset=parameters['__dm_solid_subset'],
         )
 
         for name, val in parameters.items():

@@ -209,7 +209,7 @@ def test_repo_yaml_module_dynamic_load():
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'demo_repository'
-    assert ExecutionTargetHandle.get_handle(repository) == handle
+    assert ExecutionTargetHandle.get_handle(repository) == (handle, None)
 
 
 def test_repo_yaml_file_dynamic_load():
@@ -220,7 +220,7 @@ def test_repo_yaml_file_dynamic_load():
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'bar'
-    assert ExecutionTargetHandle.get_handle(repository) == handle
+    assert ExecutionTargetHandle.get_handle(repository) == (handle, None)
 
 
 def test_repo_module_dynamic_load():
@@ -231,7 +231,7 @@ def test_repo_module_dynamic_load():
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == EPHEMERAL_NAME
-    assert ExecutionTargetHandle.get_handle(repository) == handle
+    assert ExecutionTargetHandle.get_handle(repository) == (handle, None)
 
 
 def test_repo_file_dynamic_load():
@@ -242,7 +242,7 @@ def test_repo_file_dynamic_load():
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'bar'
-    assert ExecutionTargetHandle.get_handle(repository) == handle
+    assert ExecutionTargetHandle.get_handle(repository) == (handle, None)
 
 
 def test_repo_module_dynamic_load_from_pipeline():
@@ -254,7 +254,7 @@ def test_repo_module_dynamic_load_from_pipeline():
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == '<<unnamed>>'
     assert repository.get_pipeline('repo_demo_pipeline').name == 'repo_demo_pipeline'
-    assert ExecutionTargetHandle.get_handle(repository) == handle
+    assert ExecutionTargetHandle.get_handle(repository) == (handle, None)
 
 
 def test_repo_file_dynamic_load_from_pipeline():
@@ -266,7 +266,7 @@ def test_repo_file_dynamic_load_from_pipeline():
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == EPHEMERAL_NAME
     assert repository.get_pipeline('foo_pipeline').name == 'foo_pipeline'
-    assert ExecutionTargetHandle.get_handle(repository) == handle
+    assert ExecutionTargetHandle.get_handle(repository) == (handle, None)
 
 
 def test_get_python_file_from_previous_stack_frame():

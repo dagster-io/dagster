@@ -91,6 +91,15 @@ class LoaderEntrypoint(namedtuple('_LoaderEntrypoint', 'module module_name fn_na
             return LoaderEntrypoint.from_file_target(file_name, fn_name, from_handle)
 
 
+class ExecutionTargetHandleCacheEntry(
+    namedtuple('_ExecutionTargetHandleCacheEntry', 'handle solid_subset')
+):
+    def __new__(cls, handle, solid_subset=None):
+        check.inst_param(handle, 'handle', ExecutionTargetHandle)
+        check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+        return super(ExecutionTargetHandleCacheEntry, cls).__new__(cls, handle, solid_subset)
+
+
 class ExecutionTargetHandle:
     '''ExecutionTargetHandle represents an immutable, serializable reference to a Dagster
     RepositoryDefinition or PipelineDefinition, to support dynamically loading these in various
@@ -148,18 +157,35 @@ class ExecutionTargetHandle:
 
     @classmethod
     def get_handle(cls, repo_or_pipeline):
+        '''Get the handle and, optionally, solid subset used to construct a repo or (sub-)pipeline.
+
+        Returns: Union[ExecutionTargetHandleCacheEntry, (None, None)]
+        '''
         check.inst_param(
             repo_or_pipeline, 'repo_or_pipeline', (RepositoryDefinition, PipelineDefinition)
         )
-        return cls.__cache__.get(repo_or_pipeline)
+        return cls.__cache__.get(repo_or_pipeline) or (None, None)
 
     @classmethod
-    def cache_handle(cls, repo_or_pipeline_def, handle):
+    def cache_handle(cls, repo_or_pipeline_def, handle=None, solid_names=None):
+        '''Record a pipeline or repository in the cache.
+
+        Args:
+            repo_or_pipeline_def (Union[RepositoryDefinition, PipelineDefinition]): The repo or
+                pipeline definition for which to cache the handle.
+
+        Kwargs:
+            handle (ExecutionTargetHandle): The handle to cache.
+            solid_names (Optional[List[str]]): The solid names constituting the constructed
+                sub-pipeline, if any; arg should be as for
+                dagster.core.definitions.pipeline.build_sub_pipeline.
+        '''
         check.inst_param(
             repo_or_pipeline_def, 'repo_or_pipeline_def', (RepositoryDefinition, PipelineDefinition)
         )
         check.inst_param(handle, 'handle', ExecutionTargetHandle)
-        cls.__cache__[repo_or_pipeline_def] = handle
+        check.opt_list_param(solid_names, 'solid_names', of_type=str)
+        cls.__cache__[repo_or_pipeline_def] = ExecutionTargetHandleCacheEntry(handle, solid_names)
 
         return repo_or_pipeline_def
 
@@ -271,7 +297,7 @@ class ExecutionTargetHandle:
             if isinstance(obj, PipelineDefinition):
                 return ExecutionTargetHandle.cache_handle(
                     RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_defs=[obj]),
-                    ExecutionTargetHandle.get_handle(obj),
+                    *ExecutionTargetHandle.get_handle(obj)
                 )
             return ExecutionTargetHandle.cache_handle(check.inst(obj, RepositoryDefinition), self)
         elif self.mode == _ExecutionTargetMode.PIPELINE:
@@ -279,12 +305,12 @@ class ExecutionTargetHandle:
             # with_pipeline_name()
             if isinstance(obj, RepositoryDefinition):
                 return ExecutionTargetHandle.cache_handle(
-                    obj, ExecutionTargetHandle.get_handle(obj)
+                    obj, *ExecutionTargetHandle.get_handle(obj)
                 )
 
             return ExecutionTargetHandle.cache_handle(
                 RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_defs=[obj]),
-                ExecutionTargetHandle.get_handle(obj),
+                *ExecutionTargetHandle.get_handle(obj)
             )
         else:
             check.failed('Unhandled mode {mode}'.format(mode=self.mode))
