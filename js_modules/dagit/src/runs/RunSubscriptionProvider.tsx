@@ -35,6 +35,7 @@ export default class RunSubscriptionProvider extends React.Component<
 
   _subscriptionRunId: string | null = null;
   _subscription: ZenObservable.Subscription;
+  _localData: PipelineRunLogsUpdateFragment | null;
 
   componentDidMount() {
     this.subscribeToRun();
@@ -45,7 +46,7 @@ export default class RunSubscriptionProvider extends React.Component<
   }
 
   componentWillUnmount() {
-    this.unsubscribeFromRuns();
+    this.unsubscribeFromRun();
   }
 
   subscribeToRun() {
@@ -57,7 +58,7 @@ export default class RunSubscriptionProvider extends React.Component<
     } = this.props.run;
 
     if (this._subscriptionRunId === runId) return;
-    if (this._subscription) this._subscription.unsubscribe();
+    if (this._subscription) this.unsubscribeFromRun();
 
     const observable = this.props.client.subscribe({
       query: PIPELINE_RUN_LOGS_SUBSCRIPTION,
@@ -75,9 +76,10 @@ export default class RunSubscriptionProvider extends React.Component<
     });
   }
 
-  unsubscribeFromRuns() {
+  unsubscribeFromRun() {
     this._subscription.unsubscribe();
     this._subscriptionRunId = null;
+    this._localData = null;
   }
 
   handleNewMessages = (result: PipelineRunLogsSubscription) => {
@@ -88,43 +90,40 @@ export default class RunSubscriptionProvider extends React.Component<
       return;
     }
     const messages = result.pipelineRunLogs.messages;
-    const runId = messages[0].runId;
-    const id = `PipelineRun.${runId}`;
+    const id = `PipelineRun.${messages[0].runId}`;
 
-    let localData: PipelineRunLogsUpdateFragment | null = this.props.client.readFragment(
-      {
+    this._localData =
+      this._localData ||
+      this.props.client.readFragment<PipelineRunLogsUpdateFragment>({
         fragmentName: "PipelineRunLogsUpdateFragment",
         fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
         id
-      }
-    );
-    if (localData === null) {
+      });
+    if (this._localData === null) {
       return;
     }
-    localData = produce(
-      localData as PipelineRunLogsUpdateFragment,
-      draftData => {
-        messages.forEach(message => {
-          draftData.logs.nodes.push(message);
-          if (message.__typename === "PipelineProcessStartEvent") {
-            draftData.status = PipelineRunStatus.STARTED;
-          } else if (message.__typename === "PipelineSuccessEvent") {
-            draftData.status = PipelineRunStatus.SUCCESS;
-          } else if (
-            message.__typename === "PipelineFailureEvent" ||
-            message.__typename === "PipelineInitFailureEvent"
-          ) {
-            draftData.status = PipelineRunStatus.FAILURE;
-          }
-        });
-      }
-    );
+
+    this._localData = produce(this._localData, draftData => {
+      messages.forEach(message => {
+        draftData.logs.nodes.push(message);
+        if (message.__typename === "PipelineProcessStartEvent") {
+          draftData.status = PipelineRunStatus.STARTED;
+        } else if (message.__typename === "PipelineSuccessEvent") {
+          draftData.status = PipelineRunStatus.SUCCESS;
+        } else if (
+          message.__typename === "PipelineFailureEvent" ||
+          message.__typename === "PipelineInitFailureEvent"
+        ) {
+          draftData.status = PipelineRunStatus.FAILURE;
+        }
+      });
+    });
 
     this.props.client.writeFragment({
       fragmentName: "PipelineRunLogsUpdateFragment",
       fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
       id,
-      data: localData
+      data: this._localData
     });
   };
 
