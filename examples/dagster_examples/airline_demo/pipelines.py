@@ -73,7 +73,8 @@ prod_mode = ModeDefinition(
 
 
 @pipeline(
-    mode_defs=[test_mode, local_mode, prod_mode],
+    # ordered so the local is first and therefore the default
+    mode_defs=[local_mode, test_mode, prod_mode],
     preset_defs=[
         PresetDefinition(
             name='local_fast',

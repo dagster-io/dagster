@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Button, Dialog, Classes, Colors } from "@blueprintjs/core";
 import styled from "styled-components";
+import { copyValue } from "./Util";
 
 const SHOW_ALERT_EVENT = "show-alert";
 
@@ -49,6 +50,14 @@ export default class CustomAlertProvider extends React.Component<
         </Body>
         <div className={Classes.DIALOG_FOOTER}>
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+            <Button
+              autoFocus={false}
+              onClick={(e: React.MouseEvent<any, MouseEvent>) =>
+                copyValue(e, this.state.message || "")
+              }
+            >
+              Copy
+            </Button>
             <Button
               intent="primary"
               autoFocus={true}

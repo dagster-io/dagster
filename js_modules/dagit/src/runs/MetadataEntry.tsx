@@ -16,8 +16,8 @@ export const MetadataEntries: React.FunctionComponent<{
           <tr key={idx} style={{ display: "flex" }}>
             <td
               style={{
-                flex: "0 0 auto",
-                width: "max-content"
+                flex: 1,
+                maxWidth: "max-content"
               }}
             >
               {item.label}
@@ -69,7 +69,12 @@ export class MetadataEntry extends React.Component<{
             >
               {entry.path}
             </MetadataEntryLink>{" "}
-            <Icon icon="clipboard" iconSize={10} color={"#a88860"} />
+            <Icon
+              icon="clipboard"
+              iconSize={10}
+              color={"#a88860"}
+              onClick={e => copyValue(e, entry.path)}
+            />
           </>
         );
 
@@ -99,7 +104,9 @@ export class MetadataEntry extends React.Component<{
             >
               {entry.url}
             </MetadataEntryLink>{" "}
-            <Icon icon="link" iconSize={10} color={"#a88860"} />
+            <a href={entry.url} target="__blank">
+              <Icon icon="link" iconSize={10} color={"#a88860"} />
+            </a>
           </>
         );
       case "EventTextMetadataEntry":
@@ -134,4 +141,5 @@ const MetadataEntriesTable = styled.table`
     border-right: 1px solid #dbc5ad;
     vertical-align: top;
   }
+  width: 100%;
 `;
