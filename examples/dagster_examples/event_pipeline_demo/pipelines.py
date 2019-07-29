@@ -14,6 +14,7 @@ from dagster import (
     InputDefinition,
     List,
     ModeDefinition,
+    Nothing,
     OutputDefinition,
     Path,
     PresetDefinition,
@@ -28,7 +29,7 @@ from dagster.utils import safe_isfile, mkdir_p
 
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.utils import S3Logger
-from dagster_snowflake import snowflake_resource, snowflake_load_parquet_solid_for_table
+from dagster_snowflake import snowflake_resource
 from dagster_spark import SparkSolidDefinition
 
 
@@ -160,9 +161,14 @@ def event_ingest_pipeline():
         description='Ingest events from JSON to Parquet',
     )
 
-    # TODO: express dependency of this solid on event_ingest
-    snowflake_load = snowflake_load_parquet_solid_for_table(
-        src='file:///tmp/dagster/events/data/output/2019/01/01/*.parquet', table='events'
-    )
+    @solid(input_defs=[InputDefinition('start', Nothing)], required_resource_keys={'snowflake'})
+    def snowflake_load(context):
+        # TODO: express dependency of this solid on event_ingest
+        context.resources.snowflake.load_table_from_local_parquet(
+            src='file:///tmp/dagster/events/data/output/2019/01/01/*.parquet',
+            table='events',
+            logger=context.log,
+        )
+
     # pylint: disable=no-value-for-parameter
     snowflake_load(event_ingest(spark_inputs=gunzipper(gzip_file=download_from_s3_to_file())))
