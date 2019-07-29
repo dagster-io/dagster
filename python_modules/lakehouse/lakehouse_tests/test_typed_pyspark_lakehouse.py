@@ -57,7 +57,7 @@ class TypedPySparkMemLakehouse(Lakehouse):
     def __init__(self):
         self.collected_tables = {}
 
-    def hydrate(self, _context, _table_type, _table_metadata, table_handle):
+    def hydrate(self, _context, _table_type, _table_metadata, table_handle, _dest_metadata):
         return table_handle.value
 
     def materialize(self, _context, table_type, _table_metadata, value):

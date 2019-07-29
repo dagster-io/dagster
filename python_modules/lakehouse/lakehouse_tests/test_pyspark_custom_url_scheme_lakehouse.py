@@ -48,7 +48,7 @@ class ByFeatureParquetLakehouse(Lakehouse):
     def _path_for_table(self, table_type, table_metadata):
         return os.path.join(self.lakehouse_path, table_metadata[FEATURE_AREA], table_type.name)
 
-    def hydrate(self, context, table_type, table_metadata, _table_handle):
+    def hydrate(self, context, table_type, table_metadata, _table_handle, _dest_metadata):
         path = self._path_for_table(table_type, table_metadata)
         return context.resources.spark.read.parquet(path)
 
