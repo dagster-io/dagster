@@ -79,10 +79,18 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
     if (haveRun) {
       startText = (
         <span>
-          {`Process starting`}
+          {`Loading`}
           <AnimatedEllipsis />
         </span>
       );
+      if (runMetadata.startingProcessAt) {
+        startText = (
+          <span>
+            {`Process starting`}
+            <AnimatedEllipsis />
+          </span>
+        );
+      }
       if (runMetadata.processId) {
         startText = (
           <span>
