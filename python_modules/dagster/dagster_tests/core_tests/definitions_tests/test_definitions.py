@@ -135,7 +135,10 @@ def test_mapper_errors():
             solid_defs=[solid_a],
             dependencies={'solid_b': {'arg_a': DependencyDefinition('solid_a')}},
         )
-    assert str(excinfo_1.value) == 'Solid solid_b in dependency dictionary not found in solid list'
+    assert (
+        str(excinfo_1.value)
+        == 'Invalid dependencies: solid "solid_b" in dependency dictionary not found in solid list'
+    )
 
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_2:
         PipelineDefinition(
@@ -148,7 +151,7 @@ def test_mapper_errors():
         )
     assert (
         str(excinfo_2.value)
-        == 'Solid solid_b (aliased by solid_c in dependency dictionary) not found in solid list'
+        == 'Invalid dependencies: solid "solid_b" (aliased by "solid_c" in dependency dictionary) not found in solid list'
     )
 
 
