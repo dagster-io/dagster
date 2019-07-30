@@ -159,7 +159,7 @@ def create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=F
         ),
     )
     sockets.add_url_rule(
-        '/graphql', 'graphql', dagster_graphql_subscription_view(subscription_server, context),
+        '/graphql', 'graphql', dagster_graphql_subscription_view(subscription_server, context)
     )
 
     # these routes are specifically for the Dagit UI and are not part of the graphql
