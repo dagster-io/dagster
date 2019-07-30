@@ -2,6 +2,11 @@ from __future__ import absolute_import
 
 import os
 
+try:
+    from typing import Any, Dict
+except ImportError:
+    pass
+
 from six import text_type
 
 import nbformat
@@ -102,8 +107,8 @@ def notebook_view(request_args):
     # This currently provides open access to your file system - the very least we can
     # do is limit it to notebook files until we create a more permanent solution.
     path = request_args['path']
-    if not path.endswith(".ipynb"):
-        return "Invalid Path", 400
+    if not path.endswith('.ipynb'):
+        return 'Invalid Path', 400
 
     with open(os.path.abspath(path)) as f:
         read_data = f.read()
@@ -111,7 +116,7 @@ def notebook_view(request_args):
         html_exporter = HTMLExporter()
         html_exporter.template_file = 'basic'
         (body, resources) = html_exporter.from_notebook_node(notebook)
-        return "<style>" + resources['inlining']['css'][0] + "</style>" + body, 200
+        return '<style>' + resources['inlining']['css'][0] + '</style>' + body, 200
 
 
 def create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=False):
@@ -159,7 +164,7 @@ def create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=F
 
     # these routes are specifically for the Dagit UI and are not part of the graphql
     # API that we want other people to consume, so they're separate for now.
-    # Also grabbing the magic glabl request args dict so that notebook_view is testable
+    # Also grabbing the magic global request args dict so that notebook_view is testable
     app.add_url_rule('/dagit/notebook', 'notebook', lambda: notebook_view(request.args))
 
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)

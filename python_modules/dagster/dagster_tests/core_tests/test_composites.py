@@ -87,7 +87,7 @@ def test_composite_config():
     @solid(config_field=Field(String))
     def configured(context):
         called['configured'] = True
-        assert context.solid_config is 'yes'
+        assert context.solid_config == 'yes'
 
     @composite_solid
     def inner():
@@ -115,7 +115,7 @@ def test_composite_config_input():
     @solid(input_defs=[InputDefinition('one')])
     def node_a(_context, one):
         called['node_a'] = True
-        assert one is 1
+        assert one == 1
 
     @composite_solid
     def inner():
@@ -149,7 +149,7 @@ def test_mapped_composite_config_input():
     @solid(input_defs=[InputDefinition('one')])
     def node_a(_context, one):
         called['node_a'] = True
-        assert one is 1
+        assert one == 1
 
     @composite_solid
     def inner(inner_one):
