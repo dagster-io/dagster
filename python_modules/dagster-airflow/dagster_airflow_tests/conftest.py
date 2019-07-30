@@ -15,12 +15,8 @@ import docker
 import pytest
 
 
-from click.testing import CliRunner
-
 from dagster import check
 from dagster.utils import load_yaml_from_path, mkdir_p, pushd, script_relative_path
-
-from dagster_airflow.cli import scaffold
 
 IMAGE = 'dagster-airflow-demo'
 
@@ -50,69 +46,34 @@ def temp_dir():
 @pytest.fixture(scope='module')
 def clean_airflow_home(airflow_home):
     '''Ensure that the existing contents of AIRFLOW_HOME do not interfere with test.'''
+
+    airflow_dags_path = os.path.join(airflow_home, 'dags')
+
+    # Ensure Airflow DAGs folder exists
+    if not os.path.exists(airflow_dags_path):
+        os.makedirs(airflow_dags_path)
+
     tempdir_path = tempfile.mkdtemp()
 
-    file_paths = os.listdir(airflow_home)
-    for file_path in file_paths:
-        shutil.move(os.path.join(airflow_home, file_path), tempdir_path)
+    # Move existing DAGs aside for test
+    dags_files = os.listdir(airflow_dags_path)
+    for dag_file in dags_files:
+        shutil.move(os.path.join(airflow_dags_path, dag_file), tempdir_path)
 
     yield
 
+    # Clean up DAGs produced by test
+    shutil.rmtree(airflow_dags_path)
+    os.makedirs(airflow_dags_path)
+
+    # Move original DAGs back
     file_paths = os.listdir(tempdir_path)
     for file_path in file_paths:
-        shutil.move(os.path.join(tempdir_path, file_path), os.path.join(airflow_home, file_path))
+        shutil.move(
+            os.path.join(tempdir_path, file_path), os.path.join(airflow_dags_path, file_path)
+        )
 
     shutil.rmtree(tempdir_path)
-
-
-@pytest.fixture(scope='module')
-def create_airflow_dags(clean_airflow_home):
-    runner = CliRunner()
-
-    runner.invoke(
-        scaffold,
-        [
-            '--dag-name',
-            'toys_log_spew',
-            '--module-name',
-            'dagster_examples.toys.log_spew',
-            '--pipeline-name',
-            'log_spew',
-        ],
-    )
-    runner.invoke(
-        scaffold,
-        [
-            '--dag-name',
-            'toys_many_events',
-            '--module-name',
-            'dagster_examples.toys.many_events',
-            '--pipeline-name',
-            'many_events',
-        ],
-    )
-    runner.invoke(
-        scaffold,
-        [
-            '--dag-name',
-            'toys_resources',
-            '--module-name',
-            'dagster_examples.toys.resources',
-            '--fn-name',
-            'resource_pipeline',
-        ],
-    )
-    runner.invoke(
-        scaffold,
-        [
-            '--dag-name',
-            'toys_sleepy',
-            '--module-name',
-            'dagster_examples.toys.sleepy',
-            '--fn-name',
-            'sleepy_pipeline',
-        ],
-    )
 
 
 @pytest.fixture(scope='session')

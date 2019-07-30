@@ -1,65 +1,45 @@
-import contextlib
 import os
-import sys
 
 import click
+import six
 import yaml
 
+from dagster import check, seven
+from dagster.cli.load_handle import handle_for_pipeline_cli_args
+from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
-if sys.version_info.major >= 3:
-    from io import StringIO  # pylint:disable=import-error
-else:
-    from StringIO import StringIO  # pylint:disable=import-error
 
+def construct_environment_yaml(preset, env, pipeline_name, module_name):
+    # Load environment dict from either a preset or yaml file globs
+    if preset:
+        if env:
+            raise click.UsageError('Can not use --preset with --env.')
 
-def _construct_yml(environment_yaml_file, dag_name):
-    environment_dict = {}
-    if environment_yaml_file is not None:
-        with open(environment_yaml_file, 'rb') as f:
-            environment_dict = yaml.safe_load(f)
+        cli_args = {
+            'fn_name': pipeline_name,
+            'pipeline_name': pipeline_name,
+            'module_name': module_name,
+        }
+        pipeline = handle_for_pipeline_cli_args(cli_args).build_pipeline_definition()
+        environment_dict = pipeline.get_preset(preset)['environment_dict']
 
+    else:
+        env = list(env)
+        environment_dict = load_yaml_from_glob_list(env) if env else {}
+
+    # If not provided by the user, ensure we have storage location defined
     if 'storage' not in environment_dict:
+        system_tmp_path = seven.get_system_temp_directory()
+        dagster_tmp_path = os.path.join(system_tmp_path, 'dagster-airflow', pipeline_name)
         environment_dict['storage'] = {
-            'filesystem': {'config': {'base_dir': '/tmp/dagster-airflow/{}'.format(dag_name)}}
+            'filesystem': {'config': {'base_dir': six.ensure_str(dagster_tmp_path)}}
         }
 
-    # See http://bit.ly/309sTOu
-    with contextlib.closing(StringIO()) as f:
-        yaml.dump(environment_dict, f, default_flow_style=False, allow_unicode=True)
-        return f.getvalue()
+    return environment_dict
 
 
-@click.group()
-def main():
-    pass
-
-
-@main.command()
-@click.option('--dag-name', help='The name of the output Airflow DAG', required=True)
-@click.option('--module-name', '-m', help='The name of the source module', required=True)
-@click.option('--pipeline-name', '-n', help='The name of the pipeline', required=True)
-@click.option(
-    '--output-path',
-    '-o',
-    help='Optional. If unset, $AIRFLOW_HOME will be used.',
-    default=os.getenv('AIRFLOW_HOME'),
-)
-@click.option(
-    '--environment-file',
-    '-c',
-    help='''Optional. Path to a YAML file to install into the Dagster environment.''',
-)
-def scaffold(dag_name, module_name, pipeline_name, output_path, environment_file):
-    '''Creates a DAG file for a specified dagster pipeline'''
-
-    # Validate output path
-    if not output_path:
-        raise Exception('You must specify --output-path or set AIRFLOW_HOME to use this script.')
-
-    # We construct the YAML environment and then put it directly in the DAG file
-    environment_yaml = _construct_yml(environment_file, dag_name)
-
+def construct_scaffolded_file_contents(module_name, pipeline_name, environment_dict):
     printer = IndentingStringIoPrinter(indent_level=4)
     printer.line('\'\'\'')
     printer.line(
@@ -79,7 +59,7 @@ def scaffold(dag_name, module_name, pipeline_name, output_path, environment_file
     printer.blank_line()
     printer.blank_line()
     printer.line('ENVIRONMENT = \'\'\'')
-    printer.line(environment_yaml)
+    printer.line(yaml.dump(environment_dict, default_flow_style=False))
     printer.line('\'\'\'')
     printer.blank_line()
     printer.blank_line()
@@ -106,14 +86,69 @@ def scaffold(dag_name, module_name, pipeline_name, output_path, environment_file
         printer.line("dag_kwargs={'default_args': DEFAULT_ARGS, 'max_active_runs': 1}")
     printer.line(')')
 
+    return printer.read().encode()
+
+
+@click.group()
+def main():
+    pass
+
+
+@main.command()
+@click.option(
+    '--module-name', '-m', type=click.STRING, help='The name of the source module', required=True
+)
+@click.option('--pipeline-name', type=click.STRING, help='The name of the pipeline', required=True)
+@click.option(
+    '--output-path',
+    '-o',
+    type=click.STRING,
+    help='Optional. If unset, $AIRFLOW_HOME will be used.',
+    default=os.getenv('AIRFLOW_HOME'),
+)
+@click.option(
+    '-e',
+    '--env',
+    type=click.STRING,
+    multiple=True,
+    help=(
+        'Specify one or more environment files. These can also be file patterns. '
+        'If more than one environment file is captured then those files are merged. '
+        'Files listed first take precendence. They will smash the values of subsequent '
+        'files at the key-level granularity. If the file is a pattern then you must '
+        'enclose it in double quotes'
+    ),
+)
+@click.option(
+    '-p',
+    '--preset',
+    type=click.STRING,
+    help='Specify a preset to use for this pipeline. Presets are defined on pipelines under '
+    'preset_defs.',
+)
+def scaffold(module_name, pipeline_name, output_path, env, preset):
+    '''Creates a DAG file for a specified dagster pipeline'''
+
+    check.invariant(isinstance(env, tuple))
+    check.invariant(
+        output_path is not None,
+        'You must specify --output-path or set AIRFLOW_HOME to use this script.',
+    )
+
+    environment_dict = construct_environment_yaml(preset, env, pipeline_name, module_name)
+    file_contents = construct_scaffolded_file_contents(module_name, pipeline_name, environment_dict)
+
     # Ensure output_path/dags exists
-    dags_path = os.path.join(output_path, 'dags')
+    dags_path = os.path.join(os.path.expanduser(output_path), 'dags')
     if not os.path.isdir(dags_path):
         os.makedirs(dags_path)
 
-    dag_file = os.path.join(output_path, 'dags', dag_name + '.py')
+    dag_file = os.path.join(os.path.expanduser(output_path), 'dags', pipeline_name + '.py')
+
+    click.echo('Wrote DAG scaffold to file: %s' % dag_file)
+
     with open(dag_file, 'wb') as f:
-        f.write(printer.read().encode())
+        f.write(file_contents)
 
 
 if __name__ == '__main__':
