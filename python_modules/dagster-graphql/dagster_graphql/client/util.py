@@ -73,6 +73,14 @@ def event_metadata_entries(metadata_entry_datas):
                 description=description,
                 data=json.loads(metadata_entry_data.get('jsonString', '')),
             )
+        elif typename == 'EventTextMetadataEntry':
+            yield EventMetadataEntry.text(
+                label=label, description=description, text=metadata_entry_data['text']
+            )
+        elif typename == 'EventUrlMetadataEntry':
+            yield EventMetadataEntry.url(
+                label=label, description=description, url=metadata_entry_data['url']
+            )
         else:
             check.not_implemented('TODO for type {}'.format(typename))
 

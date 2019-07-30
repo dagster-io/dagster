@@ -67,6 +67,12 @@ fragment eventMetadataEntryFragment on EventMetadataEntry {
   ... on EventJsonMetadataEntry {
       jsonString
   }
+  ... on EventUrlMetadataEntry {
+      url
+  }
+  ... on EventTextMetadataEntry {
+      text
+  }
 }
 
 
