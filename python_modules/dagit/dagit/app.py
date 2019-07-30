@@ -90,9 +90,7 @@ def vendor_view(path, file):
 
 def index_view(_path):
     try:
-        return send_file(
-            os.path.join(os.path.dirname(__file__), './webapp/build/index.html')
-        )
+        return send_file(os.path.join(os.path.dirname(__file__), './webapp/build/index.html'))
     except seven.FileNotFoundError:
         text = '''<p>Can't find webapp files. Probably webapp isn't built. If you are using
         dagit, then probably it's a corrupted installation or a bug. However, if you are
@@ -124,9 +122,7 @@ def notebook_view(request_args):
 def create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=False):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.inst_param(pipeline_run_storage, 'pipeline_run_storage', PipelineRunStorage)
-    check.bool_param(
-        use_synchronous_execution_manager, 'use_synchronous_execution_manager'
-    )
+    check.bool_param(use_synchronous_execution_manager, 'use_synchronous_execution_manager')
 
     app = Flask('dagster-ui')
     sockets = Sockets(app)
@@ -163,9 +159,7 @@ def create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=F
         ),
     )
     sockets.add_url_rule(
-        '/graphql',
-        'graphql',
-        dagster_graphql_subscription_view(subscription_server, context),
+        '/graphql', 'graphql', dagster_graphql_subscription_view(subscription_server, context),
     )
 
     # these routes are specifically for the Dagit UI and are not part of the graphql
