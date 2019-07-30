@@ -1,18 +1,36 @@
-import datetime
 import uuid
-
-from collections import namedtuple
 
 import pytest
 
 from airflow import DAG
+from airflow.exceptions import AirflowSkipException
 from airflow.models import TaskInstance
 from airflow.operators.python_operator import PythonOperator
+from airflow.utils import timezone
 
 from dagster.utils import load_yaml_from_glob_list
 
 from .operators import DagsterDockerOperator
 from .factory import make_airflow_dag_for_handle, make_airflow_dag_containerized_for_handle
+
+
+def execute_tasks_in_dag(dag, tasks, run_id, execution_date):
+    assert isinstance(dag, DAG)
+
+    dag_run = dag.create_dagrun(run_id=run_id, state='success', execution_date=execution_date)
+
+    results = {}
+    for task in tasks:
+        ti = TaskInstance(task=task, execution_date=execution_date)
+        context = ti.get_template_context()
+        context['dag_run'] = dag_run
+
+        try:
+            results[ti] = task.execute(context)
+        except AirflowSkipException as exc:
+            results[ti] = exc
+
+    return results
 
 
 @pytest.fixture(scope='class')
@@ -47,7 +65,7 @@ def dagster_airflow_python_operator_pipeline(request):
     if environment_dict is None and environment_yaml is not None:
         environment_dict = load_yaml_from_glob_list(environment_yaml)
     run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
-    execution_date = getattr(request.cls, 'execution_date', datetime.datetime.utcnow())
+    execution_date = getattr(request.cls, 'execution_date', timezone.utcnow())
 
     dag, tasks = make_airflow_dag_for_handle(
         handle, pipeline_name, environment_dict, mode=mode, op_kwargs=op_kwargs
@@ -58,14 +76,7 @@ def dagster_airflow_python_operator_pipeline(request):
     for task in tasks:
         assert isinstance(task, PythonOperator)
 
-    results = {}
-    for task in tasks:
-        ti = TaskInstance(task=task, execution_date=execution_date)
-        context = ti.get_template_context()
-        context['dag_run'] = namedtuple('_', 'run_id')(run_id=run_id)
-        results[ti] = task.execute(context)
-
-    yield results
+    return execute_tasks_in_dag(dag, tasks, run_id, execution_date)
 
 
 @pytest.fixture(scope='class')
@@ -102,22 +113,13 @@ def dagster_airflow_docker_operator_pipeline(request):
     if environment_dict is None and environment_yaml is not None:
         environment_dict = load_yaml_from_glob_list(environment_yaml)
     run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
-    execution_date = getattr(request.cls, 'execution_date', datetime.datetime.utcnow())
+    execution_date = getattr(request.cls, 'execution_date', timezone.utcnow())
 
     dag, tasks = make_airflow_dag_containerized_for_handle(
         handle, pipeline_name, image, environment_dict, op_kwargs=op_kwargs
     )
 
-    assert isinstance(dag, DAG)
-
     for task in tasks:
         assert isinstance(task, DagsterDockerOperator)
 
-    results = {}
-    for task in tasks:
-        ti = TaskInstance(task=task, execution_date=execution_date)
-        context = ti.get_template_context()
-        context['dag_run'] = namedtuple('_', 'run_id')(run_id=run_id)
-        results[ti] = task.execute(context)
-
-    yield results
+    return execute_tasks_in_dag(dag, tasks, run_id, execution_date)

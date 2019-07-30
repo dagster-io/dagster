@@ -1,14 +1,12 @@
 '''The dagster-airflow operators.'''
 import ast
-import datetime
 import json
 import logging
 import os
 
 from contextlib import contextmanager
 
-from airflow.exceptions import AirflowException
-from airflow.models import BaseOperator, SkipMixin
+from airflow.exceptions import AirflowException, AirflowSkipException
 from airflow.operators.docker_operator import DockerOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.file import TemporaryDirectory
@@ -32,16 +30,16 @@ DEFAULT_ENVIRONMENT = {
 LINE_LENGTH = 100
 
 
-class DagsterSkipMixin(SkipMixin):
-    def skip_self_if_necessary(self, events, execution_date, task):
-        check.list_param(events, 'events', of_type=DagsterEvent)
-        check.inst_param(execution_date, 'execution_date', datetime.datetime)
-        check.inst_param(task, 'task', BaseOperator)
+def skip_self_if_necessary(events):
+    '''Using AirflowSkipException is a canonical way for tasks to skip themselves; see example
+    here: http://bit.ly/2YtigEm
+    '''
+    check.list_param(events, 'events', of_type=DagsterEvent)
 
-        skipped = any([e.event_type_value == DagsterEventType.STEP_SKIPPED.value for e in events])
+    skipped = any([e.event_type_value == DagsterEventType.STEP_SKIPPED.value for e in events])
 
-        if skipped:
-            self.skip(None, execution_date, [task])
+    if skipped:
+        raise AirflowSkipException('Dagster emitted skip event, skipping execution in Airflow')
 
 
 class ModifiedDockerOperator(DockerOperator):
@@ -131,7 +129,7 @@ class ModifiedDockerOperator(DockerOperator):
         return super(ModifiedDockerOperator, self)._DockerOperator__get_tls_config()
 
 
-class DagsterDockerOperator(ModifiedDockerOperator, DagsterSkipMixin):
+class DagsterDockerOperator(ModifiedDockerOperator):
     '''Dagster operator for Apache Airflow.
 
     Wraps a modified DockerOperator incorporating https://github.com/apache/airflow/pull/4315.
@@ -279,7 +277,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterSkipMixin):
             handle_start_pipeline_execution_errors(res)
             events = handle_start_pipeline_execution_result(res)
 
-            self.skip_self_if_necessary(events, context['execution_date'], context['task'])
+            skip_self_if_necessary(events)
 
             return events
 
@@ -298,7 +296,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterSkipMixin):
         yield self.host_tmp_dir
 
 
-class DagsterPythonOperator(PythonOperator, DagsterSkipMixin):
+class DagsterPythonOperator(PythonOperator):
     def __init__(
         self,
         task_id,
@@ -334,7 +332,7 @@ class DagsterPythonOperator(PythonOperator, DagsterSkipMixin):
                 construct_variables(mode, environment_dict, pipeline_name, run_id, ts, step_keys),
             )
 
-            self.skip_self_if_necessary(events, kwargs['execution_date'], kwargs['task'])
+            skip_self_if_necessary(events)
 
             return events
 
