@@ -113,6 +113,7 @@ def create_lakehouse_table_def(
                     input_type,
                     table_def_of_type(context.pipeline_def, input_type.name).metadata,
                     table_handle,
+                    metadata,
                 )
             else:
                 other_inputs[input_name] = value

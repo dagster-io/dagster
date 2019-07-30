@@ -9,7 +9,7 @@ class PySparkMemLakehouse(Lakehouse):
     def __init__(self):
         self.collected_tables = {}
 
-    def hydrate(self, _context, table_type, _table_metadata, table_handle):
+    def hydrate(self, _context, table_type, _table_metadata, table_handle, _dest_metadata):
         check.inst_param(table_handle, 'table_handle', InMemTableHandle)
 
         return table_handle.value

@@ -5,7 +5,8 @@ import PipelineGraph from "../graph/PipelineGraph";
 import { QueryResult, Query } from "react-apollo";
 import {
   SolidSelectorQuery,
-  SolidSelectorQuery_pipeline
+  SolidSelectorQuery_pipeline,
+  SolidSelectorQuery_pipeline_solids
 } from "./types/SolidSelectorQuery";
 import Loading from "../Loading";
 import {
@@ -62,8 +63,13 @@ function subsetDescription(
       let solidName = startName;
       let rest = solidSubset.filter(s => s !== solidName);
 
+      const nameMatch = (s: SolidSelectorQuery_pipeline_solids) =>
+        s.name === solidName;
+
+      const downstreamSolidSearch = (n: string) => rest.indexOf(n) !== -1;
+
       while (rest.length > 0) {
-        const solid = pipeline.solids.find(s => s.name === solidName);
+        const solid = pipeline.solids.find(nameMatch);
         if (!solid) return false;
 
         const downstreamSolidNames = solid.outputs.reduce(
@@ -71,9 +77,7 @@ function subsetDescription(
           []
         );
 
-        const nextSolidName = downstreamSolidNames.find(
-          n => rest.indexOf(n) !== -1
-        );
+        const nextSolidName = downstreamSolidNames.find(downstreamSolidSearch);
         if (!nextSolidName) return false;
         rest = rest.filter(s => s !== nextSolidName);
         solidName = nextSolidName;

@@ -64,6 +64,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
         intent: Intent.DANGER
       });
       console.error("[GraphQL error]", error);
+      return null;
     });
 
   if (networkError) {

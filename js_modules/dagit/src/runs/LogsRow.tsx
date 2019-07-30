@@ -191,7 +191,6 @@ export class Structured extends React.Component<{
           />
         );
       case "PipelineFailureEvent":
-      case "PipelineProcessStartEvent":
       case "PipelineSuccessEvent":
       case "LogMessageEvent":
       case "PipelineStartEvent":
@@ -255,22 +254,32 @@ const DefaultContent: React.FunctionComponent<{
   eventType?: string;
   eventIntent?: "success" | "danger" | "warning";
   metadataEntries?: MetadataEntryFragment[];
-}> = ({ message, eventType, eventIntent, metadataEntries }) => (
-  <>
-    <EventTypeColumn>
-      {eventType && (
-        <Tag minimal={true} intent={eventIntent} style={{ fontSize: "0.9em" }}>
-          {eventType}
-        </Tag>
-      )}
-    </EventTypeColumn>
-    <span style={{ flex: 1 }}>
-      {message}
-      <br />
-      {metadataEntries && <MetadataEntries entries={metadataEntries} />}
-    </span>
-  </>
-);
+}> = ({ message, eventType, eventIntent, metadataEntries }) => {
+  return (
+    <>
+      <EventTypeColumn>
+        {eventType && (
+          <Tag
+            minimal={true}
+            intent={eventIntent}
+            style={{ fontSize: "0.9em" }}
+          >
+            {eventType}
+          </Tag>
+        )}
+      </EventTypeColumn>
+      <span style={{ flex: 1 }}>
+        {message}
+        {metadataEntries && metadataEntries.length > 0 && (
+          <>
+            <br />
+            <MetadataEntries entries={metadataEntries} />
+          </>
+        )}
+      </span>
+    </>
+  );
+};
 
 const FailureContent: React.FunctionComponent<{
   node:

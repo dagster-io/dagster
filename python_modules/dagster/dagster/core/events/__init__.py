@@ -443,7 +443,10 @@ class DagsterEvent(
             else ''
         )
 
-        if object_store_operation_result.op == ObjectStoreOperationType.SET_OBJECT:
+        if (
+            ObjectStoreOperationType(object_store_operation_result.op)
+            == ObjectStoreOperationType.SET_OBJECT
+        ):
             message = (
                 'Stored intermediate object for output {value_name} in '
                 '{object_store_name}object store{serialization_strategy_modifier}.'
@@ -452,7 +455,10 @@ class DagsterEvent(
                 object_store_name=object_store_name,
                 serialization_strategy_modifier=serialization_strategy_modifier,
             )
-        elif object_store_operation_result.op == ObjectStoreOperationType.GET_OBJECT:
+        elif (
+            ObjectStoreOperationType(object_store_operation_result.op)
+            == ObjectStoreOperationType.GET_OBJECT
+        ):
             message = (
                 'Retrieved intermediate object for input {value_name} in '
                 '{object_store_name}object store{serialization_strategy_modifier}.'

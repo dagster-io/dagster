@@ -1,8 +1,9 @@
 # Changelog
 
-## pending release
-
-- dagit now accepts parameters via DAGIT\_ prefixed environment variables.
+## 0.5.5
+- Dagit now accepts parameters via environment variables prefixed with `DAGIT_`, e.g. `DAGIT_PORT`.
+- Fixes an issue with reexecuting Dagstermill notebooks from Dagit.
+- Bug fixes and display improvments in Dagit.
 
 ## 0.5.4
 

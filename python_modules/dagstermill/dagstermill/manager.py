@@ -58,6 +58,7 @@ class Manager:
         environment_dict=None,
         handle=None,
         run_config=None,
+        solid_subset=None,
         solid_handle=None,
     ):
         '''Reconstitutes a context for dagstermill-managed execution.
@@ -76,13 +77,14 @@ class Manager:
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
         check.inst_param(run_config, 'run_config', RunConfig)
         check.inst_param(handle, 'handle', ExecutionTargetHandle)
+        check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
         check.inst_param(solid_handle, 'solid_handle', SolidHandle)
 
         pipeline_def = check.inst_param(
             handle.build_pipeline_definition(),
             'pipeline_def (from handle {handle_dict})'.format(handle_dict=handle.data._asdict()),
             PipelineDefinition,
-        )
+        ).build_sub_pipeline(solid_subset)
 
         solid_def = pipeline_def.get_solid(solid_handle)
 

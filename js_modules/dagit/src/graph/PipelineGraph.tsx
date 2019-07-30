@@ -140,7 +140,7 @@ class PipelineGraphContents extends React.PureComponent<
             }
             dim={
               highlightedSolids.length > 0 &&
-              highlightedSolids.indexOf(solid) == -1
+              highlightedSolids.indexOf(solid) === -1
             }
           />
         ))}

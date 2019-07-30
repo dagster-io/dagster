@@ -101,7 +101,7 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
     mkdir_p(marshal_dir)
 
-    handle = ExecutionTargetHandle.get_handle(compute_context.pipeline_def)
+    (handle, solid_subset) = ExecutionTargetHandle.get_handle(compute_context.pipeline_def)
 
     if not handle:
         raise DagstermillError(
@@ -140,6 +140,7 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
     parameters['__dm_handle_kwargs'] = seven.json.dumps(dm_handle_kwargs)
     parameters['__dm_run_config_kwargs'] = seven.json.dumps(dm_run_config_kwargs)
     parameters['__dm_solid_handle_kwargs'] = seven.json.dumps(dm_solid_handle_kwargs)
+    parameters['__dm_solid_subset'] = seven.json.dumps(solid_subset)
 
     return parameters
 

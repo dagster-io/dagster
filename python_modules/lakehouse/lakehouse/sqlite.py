@@ -8,7 +8,7 @@ class SqlLiteLakehouse(Lakehouse):
     def __init__(self):
         pass
 
-    def hydrate(self, _context, _table_type, _table_metadata, table_handle):
+    def hydrate(self, _context, _table_type, _table_metadata, table_handle, _dest_metadata):
         return None
 
     def materialize(self, context, table_type, table_metadata, value):

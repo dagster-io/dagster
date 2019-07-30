@@ -59,15 +59,23 @@ const PipelineExplorerRoot: React.FunctionComponent<
                   | PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
                   | undefined;
 
+                const nameMatch = (parentName: string) => (
+                  h: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
+                ) => h.solid.name === parentName;
+
+                const filterHandle = (
+                  parent:
+                    | PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
+                    | undefined
+                ) => (
+                  h: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
+                ) =>
+                  h.parent && parent && h.parent.handleID === parent.handleID;
+
                 for (const parentName of parentNames) {
-                  parent = displayedHandles.find(
-                    h => h.solid.name === parentName
-                  );
+                  parent = displayedHandles.find(nameMatch(parentName));
                   displayedHandles = pipeline.solidHandles.filter(
-                    h =>
-                      h.parent &&
-                      parent &&
-                      h.parent.handleID === parent.handleID
+                    filterHandle(parent)
                   );
                 }
                 const selectedHandle = displayedHandles.find(

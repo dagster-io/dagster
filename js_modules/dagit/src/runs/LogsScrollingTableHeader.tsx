@@ -149,6 +149,7 @@ const HeaderContainer = styled.div`
   padding: 4px 8px;
 `;
 
+// eslint-disable-next-line no-unexpected-multiline
 const HeaderDragHandle = styled.div<{
   side: "left" | "right";
   draggable: boolean;

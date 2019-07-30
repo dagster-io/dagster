@@ -150,7 +150,7 @@ def test_load_from_repository_file():
     assert isinstance(pipeline, PipelineDefinition)
     assert pipeline.name == 'foo'
 
-    assert ExecutionTargetHandle.get_handle(pipeline) == handle
+    assert ExecutionTargetHandle.get_handle(pipeline) == (handle, None)
 
 
 def test_load_from_repository_module():
@@ -165,7 +165,7 @@ def test_load_from_repository_module():
 
     assert isinstance(pipeline, PipelineDefinition)
     assert pipeline.name == 'repo_demo_pipeline'
-    assert ExecutionTargetHandle.get_handle(pipeline) == handle
+    assert ExecutionTargetHandle.get_handle(pipeline) == (handle, None)
 
 
 def test_load_from_pipeline_file():
@@ -176,7 +176,7 @@ def test_load_from_pipeline_file():
 
     assert isinstance(pipeline, PipelineDefinition)
     assert pipeline.name == 'foo'
-    assert ExecutionTargetHandle.get_handle(pipeline) == handle
+    assert ExecutionTargetHandle.get_handle(pipeline) == (handle, None)
 
 
 def test_load_from_pipeline_module():
@@ -187,7 +187,7 @@ def test_load_from_pipeline_module():
 
     assert isinstance(pipeline, PipelineDefinition)
     assert pipeline.name == 'repo_demo_pipeline'
-    assert ExecutionTargetHandle.get_handle(pipeline) == handle
+    assert ExecutionTargetHandle.get_handle(pipeline) == (handle, None)
 
 
 def test_loader_from_default_repository_module_yaml():
@@ -201,7 +201,7 @@ def test_loader_from_default_repository_module_yaml():
 
     assert isinstance(pipeline, PipelineDefinition)
     assert pipeline.name == 'repo_demo_pipeline'
-    assert ExecutionTargetHandle.get_handle(pipeline) == handle
+    assert ExecutionTargetHandle.get_handle(pipeline) == (handle, None)
 
 
 def test_loader_from_default_repository_file_yaml():
@@ -212,7 +212,7 @@ def test_loader_from_default_repository_file_yaml():
 
     assert isinstance(pipeline, PipelineDefinition)
     assert pipeline.name == 'foo'
-    assert ExecutionTargetHandle.get_handle(pipeline) == handle
+    assert ExecutionTargetHandle.get_handle(pipeline) == (handle, None)
 
 
 def define_foo_pipeline():

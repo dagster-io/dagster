@@ -81,9 +81,7 @@ class LogsScrollingTableSized extends React.Component<
 
   cache = new CellMeasurerCache({
     defaultHeight: 30,
-    fixedWidth: true,
-    keyMapper: (rowIndex: number) =>
-      `${this.props.nodes && this.props.nodes[rowIndex].message}`
+    fixedWidth: true
   });
 
   isAtBottomOrZero: boolean = true;
@@ -96,11 +94,11 @@ class LogsScrollingTableSized extends React.Component<
   componentDidUpdate(prevProps: ILogsScrollingTableSizedProps) {
     if (!this.list.current) return;
 
-    if (this.props.width !== prevProps.width) {
+    if (
+      this.props.width !== prevProps.width ||
+      this.props.nodes !== prevProps.nodes
+    ) {
       this.didResize();
-    }
-    if (this.props.nodes !== prevProps.nodes) {
-      this.list.current.recomputeGridSize();
     }
   }
 
@@ -113,9 +111,7 @@ class LogsScrollingTableSized extends React.Component<
   didResize() {
     this.cache = new CellMeasurerCache({
       defaultHeight: 30,
-      fixedWidth: true,
-      keyMapper: (rowIndex: number) =>
-        `${this.props.nodes && this.props.nodes[rowIndex].message}`
+      fixedWidth: true
     });
     this.forceUpdate();
   }
