@@ -1,7 +1,8 @@
 import os
 
+from six.moves.urllib.request import urlretrieve
+
 from dagster import Field, OutputDefinition, Path, solid, String
-from dagster.seven import urlretrieve
 
 
 @solid(

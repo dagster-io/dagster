@@ -12,10 +12,6 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-from six import StringIO
-from six.moves import reload_module
-from six.moves.urllib.request import urlretrieve  # pylint:disable=import-error
-
 
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
 
