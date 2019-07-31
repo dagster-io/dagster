@@ -90,7 +90,7 @@ class PipelineDefinition(IContainSolids, object):
 
         self._mode_definitions = mode_definitions
 
-        current_level_solid_defs = check.list_param(
+        self._current_level_solid_defs = check.list_param(
             _check_solids_arg(self._name, solid_defs), 'solid_defs', of_type=ISolidDefinition
         )
 
@@ -108,13 +108,13 @@ class PipelineDefinition(IContainSolids, object):
         self._dependencies = validate_dependency_dict(dependencies)
 
         dependency_structure, pipeline_solid_dict = create_execution_structure(
-            current_level_solid_defs, self._dependencies, container_definition=None
+            self._current_level_solid_defs, self._dependencies, container_definition=None
         )
 
         self._solid_dict = pipeline_solid_dict
         self._dependency_structure = dependency_structure
 
-        self._runtime_type_dict = construct_runtime_type_dictionary(current_level_solid_defs)
+        self._runtime_type_dict = construct_runtime_type_dictionary(self._current_level_solid_defs)
 
         self._preset_defs = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)
         self._preset_dict = {}
@@ -136,10 +136,13 @@ class PipelineDefinition(IContainSolids, object):
             self._preset_dict[preset.name] = preset
 
         # Validate solid resource dependencies
-        _validate_resource_dependencies(self._mode_definitions, current_level_solid_defs)
+        _validate_resource_dependencies(self._mode_definitions, self._current_level_solid_defs)
+
+        # Validate unsatisfied inputs can be materialized from config
+        _validate_inputs(self._dependency_structure, self._solid_dict)
 
         self._all_solid_defs = {}
-        for current_level_solid_def in current_level_solid_defs:
+        for current_level_solid_def in self._current_level_solid_defs:
             for solid_def in current_level_solid_def.iterate_solid_defs():
                 self._all_solid_defs[solid_def.name] = solid_def
 
@@ -298,8 +301,12 @@ class PipelineDefinition(IContainSolids, object):
         return self._runtime_type_dict.values()
 
     @property
-    def solid_defs(self):
+    def all_solid_defs(self):
         return list(self._all_solid_defs.values())
+
+    @property
+    def top_level_solid_defs(self):
+        return self._current_level_solid_defs
 
     def solid_def_named(self, name):
         check.str_param(name, 'name')
@@ -340,6 +347,16 @@ class PipelineDefinition(IContainSolids, object):
             'environment_dict': preset.get_environment_dict(self._name),
             'run_config': RunConfig(mode=preset.mode),
         }
+
+    def new_with(self, name=None, mode_defs=None, preset_defs=None):
+        return PipelineDefinition(
+            solid_defs=self._current_level_solid_defs,
+            name=name if name is not None else self._name,
+            description=self._description,
+            dependencies=self._dependencies,
+            mode_defs=mode_defs if mode_defs is not None else self._mode_definitions,
+            preset_defs=preset_defs if preset_defs is not None else self._preset_defs,
+        )
 
 
 def _dep_key_of(solid):
@@ -427,5 +444,26 @@ def _validate_resource_dependencies(mode_definitions, solid_defs):
                             resource=required_resource,
                             storage_name=system_storage_def.name,
                             mode_name=mode_def.name,
+                        )
+                    )
+
+
+def _validate_inputs(dependency_structure, solid_dict):
+    for solid in solid_dict.values():
+        for handle in solid.input_handles():
+            if not dependency_structure.has_deps(handle):
+                if (
+                    not handle.input_def.runtime_type.input_hydration_config
+                    and not handle.input_def.runtime_type.is_nothing
+                ):
+                    raise DagsterInvalidDefinitionError(
+                        'Input "{input_name}" in solid "{solid_name}" is not connected to '
+                        'any outputs and can not be hydrated from configuration, creating an impossible to execute pipeline. '
+                        'Posible solutions are:\n'
+                        '  * add a input_hydration_config for the type "{runtime_type}"\n'
+                        '  * connect "{input_name}" to the output of another solid\n'.format(
+                            solid_name=solid.name,
+                            input_name=handle.input_def.name,
+                            runtime_type=handle.input_def.runtime_type.name,
                         )
                     )

@@ -149,7 +149,7 @@ def create_lakehouse_table_def(
 
 
 def table_def_of_type(pipeline_def, type_name):
-    for solid_def in pipeline_def.solid_defs:
+    for solid_def in pipeline_def.all_solid_defs:
         if (
             isinstance(solid_def, LakehouseTableDefinition)
             and solid_def.table_type.name == type_name

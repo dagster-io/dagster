@@ -97,14 +97,7 @@ class Manager:
             resource_defs=mode_def.resource_defs,
         )
 
-        pipeline_def = PipelineDefinition(
-            pipeline_def.solid_defs,
-            name=pipeline_def.name,
-            description=pipeline_def.description,
-            dependencies=pipeline_def.dependencies,
-            mode_defs=[shim_mode_def],
-            preset_defs=pipeline_def.preset_defs,
-        )
+        pipeline_def = pipeline_def.new_with(mode_defs=[shim_mode_def])
 
         if 'loggers' not in environment_dict:
             environment_dict['loggers'] = {'dagstermill': {}}

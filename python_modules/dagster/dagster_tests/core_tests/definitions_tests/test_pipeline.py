@@ -1,17 +1,20 @@
 # pylint: disable=no-value-for-parameter
+import pytest
 
 from dagster import (
+    DagsterInvalidDefinitionError,
     DependencyDefinition,
     Field,
     InputDefinition,
     Int,
+    Output,
     OutputDefinition,
     PipelineDefinition,
-    Output,
+    dagster_type,
     execute_pipeline,
     lambda_solid,
-    solid,
     pipeline,
+    solid,
 )
 
 
@@ -172,3 +175,19 @@ def test_deep_graph():
     result = execute_pipeline(test, {'solids': {'download_num': {'config': 123}}})
     assert result.result_for_solid('canonicalize_num').output_value() == 123
     assert result.result_for_solid('load_num').output_value() == 126
+
+
+def test_unconfigurable_inputs_pipeline():
+    @dagster_type
+    class NewType(object):
+        pass
+
+    @lambda_solid(input_defs=[InputDefinition('_', NewType)])
+    def noop(_):
+        pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        # NewType is not connect and can not be provided with config
+        @pipeline
+        def _bad_inputs():
+            noop()

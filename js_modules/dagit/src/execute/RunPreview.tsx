@@ -5,14 +5,15 @@ import { NonIdealState, Colors, Icon } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { ExecutionPlan } from "../plan/ExecutionPlan";
 import { RunPreviewExecutionPlanResultFragment } from "./types/RunPreviewExecutionPlanResultFragment";
-import {
-  RunPreviewConfigValidationFragment,
-  RunPreviewConfigValidationFragment_PipelineConfigValidationInvalid_errors
-} from "./types/RunPreviewConfigValidationFragment";
+import { RunPreviewConfigValidationFragment } from "./types/RunPreviewConfigValidationFragment";
 
 interface IRunPreviewProps {
   plan?: RunPreviewExecutionPlanResultFragment;
   validation?: RunPreviewConfigValidationFragment;
+}
+
+interface IErrorMessage {
+  message: string;
 }
 
 export class RunPreview extends React.Component<IRunPreviewProps> {
@@ -37,6 +38,9 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
         ... on PipelineNotFoundError {
           message
         }
+        ... on InvalidSubsetError {
+          message
+        }
       }
       ${ExecutionPlan.fragments.ExecutionPlanFragment}
     `
@@ -45,12 +49,16 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
   render() {
     const { plan, validation } = this.props;
 
-    let errors: RunPreviewConfigValidationFragment_PipelineConfigValidationInvalid_errors[] = [];
+    let errors: IErrorMessage[] = [];
     if (
       validation &&
       validation.__typename === "PipelineConfigValidationInvalid"
     ) {
       errors = validation.errors;
+    }
+
+    if (plan && plan.__typename === "InvalidSubsetError") {
+      errors = [plan];
     }
 
     return plan && plan.__typename === "ExecutionPlan" ? (

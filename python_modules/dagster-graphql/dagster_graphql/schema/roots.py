@@ -401,6 +401,6 @@ class DauphinEnvironmentSchemaOrError(dauphin.Union):
         types = (
             'EnvironmentSchema',
             'PipelineNotFoundError',
-            'SolidNotFoundError',
+            'InvalidSubsetError',
             'ModeNotFoundError',
         )

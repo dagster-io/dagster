@@ -70,9 +70,22 @@ def get_dagster_pipeline_from_selector(graphene_info, selector):
         for solid_name in selector.solid_subset:
             if not orig_pipeline.has_solid_named(solid_name):
                 raise UserFacingGraphQLError(
-                    graphene_info.schema.type_named('SolidNotFoundError')(solid_name=solid_name)
+                    graphene_info.schema.type_named('InvalidSubsetError')(
+                        message='Solid "{solid_name}" does not exist in "{pipeline_name}"'.format(
+                            solid_name=solid_name, pipeline_name=selector.name
+                        ),
+                        pipeline=graphene_info.schema.type_named('Pipeline')(orig_pipeline),
+                    )
                 )
-    return orig_pipeline.build_sub_pipeline(selector.solid_subset)
+    try:
+        return orig_pipeline.build_sub_pipeline(selector.solid_subset)
+    except DagsterInvalidDefinitionError:
+        raise UserFacingGraphQLError(
+            graphene_info.schema.type_named('InvalidSubsetError')(
+                message=serializable_error_info_from_exc_info(sys.exc_info()).message,
+                pipeline=graphene_info.schema.type_named('Pipeline')(orig_pipeline),
+            )
+        )
 
 
 def get_dauphin_pipeline_from_selector(graphene_info, selector):

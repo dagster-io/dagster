@@ -48,7 +48,7 @@ def test_environment_schema_solid_not_found():
             'mode': 'add_mode',
         },
     )
-    assert result.data['environmentSchemaOrError']['__typename'] == 'SolidNotFoundError'
+    assert result.data['environmentSchemaOrError']['__typename'] == 'InvalidSubsetError'
 
 
 def test_environment_schema_mode_not_found():

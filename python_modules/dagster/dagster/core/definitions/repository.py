@@ -135,7 +135,7 @@ class RepositoryDefinition(object):
         # memoization of all_pipelines and _solids_defs short
         # circuits that
         for pipeline in self.get_all_pipelines():
-            for solid_def in pipeline.solid_defs:
+            for solid_def in pipeline.all_solid_defs:
                 if solid_def.name not in solid_defs:
                     solid_defs[solid_def.name] = solid_def
                     solid_to_pipeline[solid_def.name] = pipeline.name

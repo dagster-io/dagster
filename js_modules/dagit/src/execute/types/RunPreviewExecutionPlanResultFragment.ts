@@ -30,4 +30,9 @@ export interface RunPreviewExecutionPlanResultFragment_PipelineNotFoundError {
   message: string;
 }
 
-export type RunPreviewExecutionPlanResultFragment = RunPreviewExecutionPlanResultFragment_PipelineConfigValidationInvalid | RunPreviewExecutionPlanResultFragment_ExecutionPlan | RunPreviewExecutionPlanResultFragment_PipelineNotFoundError;
+export interface RunPreviewExecutionPlanResultFragment_InvalidSubsetError {
+  __typename: "InvalidSubsetError";
+  message: string;
+}
+
+export type RunPreviewExecutionPlanResultFragment = RunPreviewExecutionPlanResultFragment_PipelineConfigValidationInvalid | RunPreviewExecutionPlanResultFragment_ExecutionPlan | RunPreviewExecutionPlanResultFragment_PipelineNotFoundError | RunPreviewExecutionPlanResultFragment_InvalidSubsetError;

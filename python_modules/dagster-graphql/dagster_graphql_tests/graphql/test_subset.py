@@ -27,8 +27,8 @@ query PipelineQuery($name: String! $solidSubset: [String!])
                 }
             }
         }
-        ... on SolidNotFoundError {
-            solidName
+        ... on InvalidSubsetError {
+            message
         }
     }
 }
@@ -114,5 +114,5 @@ def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name():
 
     assert not result.errors
     assert result.data
-    assert result.data['pipelineOrError']['__typename'] == 'SolidNotFoundError'
-    assert result.data['pipelineOrError']['solidName'] == 'nope'
+    assert result.data['pipelineOrError']['__typename'] == 'InvalidSubsetError'
+    assert '"nope" does not exist' in result.data['pipelineOrError']['message']

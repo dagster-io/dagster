@@ -375,6 +375,20 @@ class DependencyStructure(object):
     def items(self):
         return self._handle_dict.items()
 
+    def debug_str(self):
+        if not self.items():
+            return 'DependencyStructure: EMPTY'
+
+        debug = 'DependencyStructure: \n'
+        for in_handle, out_handle in self.items():
+            debug += '  {out_solid}.{out_name} ---> {in_solid}.{in_name}\n'.format(
+                out_solid=out_handle.solid.name,
+                out_name=out_handle.output_def.name,
+                in_name=in_handle.input_def.name,
+                in_solid=in_handle.solid.name,
+            )
+        return debug
+
 
 class IDependencyDefinition(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod

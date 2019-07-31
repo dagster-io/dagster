@@ -16,9 +16,11 @@ import {
 } from "../graph/getFullSolidLayout";
 import SVGViewport from "../graph/SVGViewport";
 import { IconNames } from "@blueprintjs/icons";
+import { SubsetError } from "./PipelineExecutionContainer";
 
 interface ISolidSelectorProps {
   pipelineName: string;
+  subsetError: SubsetError;
   value: string[] | null;
   onChange: (value: string[] | null) => void;
 }
@@ -178,14 +180,10 @@ class SolidSelector extends React.PureComponent<
   };
 
   render() {
-    const { pipeline } = this.props;
+    const { pipeline, subsetError } = this.props;
     const { open, highlighted, toolRectEnd, toolRectStart } = this.state;
 
-    const valid =
-      !this.props.value ||
-      this.props.value.every(
-        name => !!pipeline.solids.find(s => s.name === name)
-      );
+    const valid = !subsetError;
 
     const allSolidsSelected =
       !highlighted.length || highlighted.length === pipeline.solids.length;

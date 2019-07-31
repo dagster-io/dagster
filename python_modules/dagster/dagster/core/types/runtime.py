@@ -318,8 +318,8 @@ def define_python_dagster_type(
     Args:
         python_type (cls)
             The python type you want check against.
-        name (Optional[str]): 
-            Name of the dagster type. Defaults to the name of the python_type. 
+        name (Optional[str]):
+            Name of the dagster type. Defaults to the name of the python_type.
         description (Optiona[str]):
         input_hydration_config (Optional[InputHydrationConfig]):
             An instance of a class that inherits from :py:class:`InputHydrationConfig` that
@@ -507,7 +507,13 @@ class Stringish(RuntimeType):
     def __init__(self, key=None, name=None, **kwargs):
         name = check.opt_str_param(name, 'name', type(self).__name__)
         key = check.opt_str_param(key, 'key', name)
-        super(Stringish, self).__init__(key=key, name=name, **kwargs)
+        super(Stringish, self).__init__(
+            key=key,
+            name=name,
+            input_hydration_config=BuiltinSchemas.STRING_INPUT,
+            output_materialization_config=BuiltinSchemas.STRING_OUTPUT,
+            **kwargs
+        )
 
     def is_scalar(self):
         return True

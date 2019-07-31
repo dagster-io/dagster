@@ -93,7 +93,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         In interactive contexts, this may be a dagstermill-specific shim, depending whether a
         solid definition was passed to ``dagstermill.get_context``.
         '''
-        return self.pipeline_def.solid_defs[0]
+        return self.pipeline_def.all_solid_defs[0]
 
     @property
     def solid(self):

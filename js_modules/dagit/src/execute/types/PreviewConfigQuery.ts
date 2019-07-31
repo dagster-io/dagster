@@ -9,8 +9,8 @@ import { ExecutionSelector, EvaluationErrorReason, StepKind } from "./../../type
 // GraphQL query operation: PreviewConfigQuery
 // ====================================================
 
-export interface PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidationValid {
-  __typename: "PipelineConfigValidationValid" | "PipelineNotFoundError";
+export interface PreviewConfigQuery_isPipelineConfigValid_InvalidSubsetError {
+  __typename: "InvalidSubsetError" | "PipelineConfigValidationValid" | "PipelineNotFoundError";
 }
 
 export interface PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry_field {
@@ -47,7 +47,7 @@ export interface PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidati
   errors: PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors[];
 }
 
-export type PreviewConfigQuery_isPipelineConfigValid = PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidationValid | PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid;
+export type PreviewConfigQuery_isPipelineConfigValid = PreviewConfigQuery_isPipelineConfigValid_InvalidSubsetError | PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid;
 
 export interface PreviewConfigQuery_executionPlan_PipelineConfigValidationInvalid {
   __typename: "PipelineConfigValidationInvalid";
@@ -70,7 +70,12 @@ export interface PreviewConfigQuery_executionPlan_PipelineNotFoundError {
   message: string;
 }
 
-export type PreviewConfigQuery_executionPlan = PreviewConfigQuery_executionPlan_PipelineConfigValidationInvalid | PreviewConfigQuery_executionPlan_ExecutionPlan | PreviewConfigQuery_executionPlan_PipelineNotFoundError;
+export interface PreviewConfigQuery_executionPlan_InvalidSubsetError {
+  __typename: "InvalidSubsetError";
+  message: string;
+}
+
+export type PreviewConfigQuery_executionPlan = PreviewConfigQuery_executionPlan_PipelineConfigValidationInvalid | PreviewConfigQuery_executionPlan_ExecutionPlan | PreviewConfigQuery_executionPlan_PipelineNotFoundError | PreviewConfigQuery_executionPlan_InvalidSubsetError;
 
 export interface PreviewConfigQuery {
   isPipelineConfigValid: PreviewConfigQuery_isPipelineConfigValid;

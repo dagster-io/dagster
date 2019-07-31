@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface TypeListContainerQuery_pipelineOrError_PythonError {
-  __typename: "PythonError" | "PipelineNotFoundError" | "SolidNotFoundError";
+  __typename: "PythonError" | "InvalidSubsetError" | "PipelineNotFoundError";
 }
 
 export interface TypeListContainerQuery_pipelineOrError_Pipeline_runtimeTypes {

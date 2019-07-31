@@ -34,7 +34,11 @@ import {
   PreviewConfigQuery,
   PreviewConfigQueryVariables
 } from "./types/PreviewConfigQuery";
-import { PipelineExecutionContainerFragment } from "./types/PipelineExecutionContainerFragment";
+import {
+  PipelineExecutionContainerFragment,
+  PipelineExecutionContainerFragment_InvalidSubsetError
+} from "./types/PipelineExecutionContainerFragment";
+import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
 import {
   StartPipelineExecution,
   StartPipelineExecutionVariables
@@ -45,7 +49,7 @@ const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fi
 interface IPipelineExecutionContainerProps {
   data: IStorageData;
   onSave: (data: IStorageData) => void;
-  pipeline?: PipelineExecutionContainerFragment;
+  pipelineOrError: PipelineExecutionContainerFragment;
   pipelineName: string;
   currentSession: IExecutionSession;
 }
@@ -56,13 +60,27 @@ interface IPipelineExecutionContainerState {
   showWhitespace: boolean;
 }
 
+export type SubsetError =
+  | PipelineExecutionContainerFragment_InvalidSubsetError
+  | undefined;
+
 export default class PipelineExecutionContainer extends React.Component<
   IPipelineExecutionContainerProps,
   IPipelineExecutionContainerState
 > {
   static fragments = {
     PipelineExecutionContainerFragment: gql`
-      fragment PipelineExecutionContainerFragment on Pipeline {
+      fragment PipelineExecutionContainerFragment on PipelineOrError {
+        ...PipelineDetailsFragment
+        ... on InvalidSubsetError {
+          message
+          pipeline {
+            ...PipelineDetailsFragment
+          }
+        }
+      }
+
+      fragment PipelineDetailsFragment on Pipeline {
         name
         modes {
           name
@@ -70,6 +88,7 @@ export default class PipelineExecutionContainer extends React.Component<
         }
         ...ConfigEditorPipelineFragment
       }
+
       ${CONFIG_EDITOR_PIPELINE_FRAGMENT}
     `
   };
@@ -84,20 +103,10 @@ export default class PipelineExecutionContainer extends React.Component<
 
   componentDidMount() {
     this.mounted = true;
-    this.ensureSessionStateValid();
-  }
-
-  componentDidUpdate() {
-    this.ensureSessionStateValid();
   }
 
   componentWillUnmount() {
     this.mounted = false;
-  }
-
-  ensureSessionStateValid() {
-    const { pipeline } = this.props;
-    if (!pipeline) return;
   }
 
   onConfigChange = (config: any) => {
@@ -130,16 +139,34 @@ export default class PipelineExecutionContainer extends React.Component<
     this.props.onSave(applyRemoveSession(this.props.data, session));
   };
 
+  getPipeline = (): PipelineDetailsFragment => {
+    const obj = this.props.pipelineOrError;
+    if (obj.__typename === "Pipeline") {
+      return obj;
+    } else if (obj.__typename === "InvalidSubsetError") {
+      return obj.pipeline;
+    }
+    throw new Error(`Recieved unexpected "${obj.__typename}"`);
+  };
+
+  getSubsetError = (): SubsetError => {
+    const obj = this.props.pipelineOrError;
+    if (obj.__typename === "InvalidSubsetError") {
+      return obj;
+    }
+    return undefined;
+  };
+
   onExecute = async (
     startPipelineExecution: MutationFn<
       StartPipelineExecution,
       StartPipelineExecutionVariables
     >
   ) => {
-    const { pipeline } = this.props;
     const { preview } = this.state;
+    const pipeline = this.getPipeline();
 
-    if (!pipeline || !preview) {
+    if (!preview) {
       alert(
         "Dagit is still retrieving pipeline info. Please try again in a moment."
       );
@@ -156,8 +183,9 @@ export default class PipelineExecutionContainer extends React.Component<
   };
 
   buildExecutionVariables = () => {
-    const { currentSession, pipeline } = this.props;
-    if (!currentSession || !pipeline || !currentSession.mode) return;
+    const { currentSession } = this.props;
+    const pipeline = this.getPipeline();
+    if (!currentSession || !currentSession.mode) return;
 
     let environmentConfigData = {};
     try {
@@ -183,8 +211,10 @@ export default class PipelineExecutionContainer extends React.Component<
   };
 
   render() {
-    const { currentSession, pipeline, pipelineName } = this.props;
+    const { currentSession, pipelineName } = this.props;
     const { preview } = this.state;
+    const pipeline = this.getPipeline();
+    const subsetError = this.getSubsetError();
 
     return (
       <>
@@ -276,33 +306,30 @@ export default class PipelineExecutionContainer extends React.Component<
                 )}
               </ApolloConsumer>
               <SessionSettingsFooter className="bp3-dark">
-                {pipeline && (
-                  <>
-                    <SolidSelector
-                      pipelineName={pipelineName}
-                      value={currentSession.solidSubset || null}
-                      onChange={this.onSolidSubsetChange}
-                    />
-
-                    <ConfigEditorModePicker
-                      pipeline={pipeline}
-                      onModeChange={this.onModeChange}
-                      modeName={currentSession.mode}
-                    />
-
-                    <Button
-                      icon="paragraph"
-                      small={true}
-                      active={this.state.showWhitespace}
-                      style={{ marginLeft: "auto" }}
-                      onClick={() =>
-                        this.setState({
-                          showWhitespace: !this.state.showWhitespace
-                        })
-                      }
-                    />
-                  </>
-                )}
+                <>
+                  <SolidSelector
+                    pipelineName={pipelineName}
+                    subsetError={subsetError}
+                    value={currentSession.solidSubset || null}
+                    onChange={this.onSolidSubsetChange}
+                  />
+                  <ConfigEditorModePicker
+                    pipeline={pipeline}
+                    onModeChange={this.onModeChange}
+                    modeName={currentSession.mode}
+                  />
+                  <Button
+                    icon="paragraph"
+                    small={true}
+                    active={this.state.showWhitespace}
+                    style={{ marginLeft: "auto" }}
+                    onClick={() =>
+                      this.setState({
+                        showWhitespace: !this.state.showWhitespace
+                      })
+                    }
+                  />
+                </>
               </SessionSettingsFooter>
             </Split>
             <PanelDivider

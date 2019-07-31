@@ -8,7 +8,7 @@ commands =
   pip install --no-deps -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark -e ../python_modules/dagster-airflow -e .[full,airflow]
   pip install -r ./dev-requirements.txt -r ../python_modules/dagster/dev-requirements.txt -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark -e ../python_modules/dagster-airflow -e .[full,airflow]
   ipython kernel install --name "dagster" --user
-  pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov=../python_modules --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow" --pdb
+  pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov=../python_modules --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow"
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered
   coverage html --omit='.tox/*,**/test_*.py'
   coverage xml --omit='.tox/*,**/test_*.py'
@@ -18,7 +18,7 @@ commands =
   coverage erase
   pip install --no-deps -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark .[full]
   pip install -r ./dev-requirements.txt -r ../python_modules/dagster/dev-requirements.txt -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark -e .[full]
-  pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov=../python_modules --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow and not airflow" --pdb
+  pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov=../python_modules --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow and not airflow"
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered
   coverage html --omit='.tox/*,**/test_*.py'
   coverage xml --omit='.tox/*,**/test_*.py'

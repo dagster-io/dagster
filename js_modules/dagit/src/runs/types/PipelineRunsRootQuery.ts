@@ -10,7 +10,7 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 // ====================================================
 
 export interface PipelineRunsRootQuery_pipelineOrError_PythonError {
-  __typename: "PythonError" | "SolidNotFoundError";
+  __typename: "PythonError" | "InvalidSubsetError";
 }
 
 export interface PipelineRunsRootQuery_pipelineOrError_Pipeline_runs_pipeline {

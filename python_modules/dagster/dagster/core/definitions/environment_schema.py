@@ -68,7 +68,7 @@ def create_environment_schema(pipeline_def, mode=None):
     environment_type = environment_cls.inst()
 
     config_type_dict_by_name, config_type_dict_by_key = construct_config_type_dictionary(
-        pipeline_def.solid_defs, environment_type
+        pipeline_def.all_solid_defs, environment_type
     )
 
     return EnvironmentSchema(

@@ -23,7 +23,6 @@ from dagster import (
     solid,
 )
 
-from dagster.utils.test import execute_solid_within_pipeline
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 
 from dagster_aws.s3.intermediate_store import S3IntermediateStore
@@ -121,20 +120,22 @@ def test_spark_dataframe_output_csv():
 
     assert num_df.collect() == [Row(num1=1, num2=2)]
 
+    @lambda_solid
+    def emit():
+        return num_df
+
     @solid(input_defs=[InputDefinition('df', DataFrame)], output_defs=[OutputDefinition(DataFrame)])
     def passthrough_df(_context, df):
         return df
 
     @pipeline
     def passthrough():
-        passthrough_df()  # pylint: disable=no-value-for-parameter
+        passthrough_df(emit())  # pylint: disable=no-value-for-parameter
 
     with tempfile.TemporaryDirectory() as tempdir:
         file_name = os.path.join(tempdir, 'output.csv')
-        result = execute_solid_within_pipeline(
+        result = execute_pipeline(
             passthrough,
-            'passthrough_df',
-            inputs={'df': num_df},
             environment_dict={
                 'solids': {
                     'passthrough_df': {
@@ -148,4 +149,7 @@ def test_spark_dataframe_output_csv():
             spark.read.format('csv').options(header='true', inferSchema='true').load(file_name)
         )
 
-        assert result.output_value().collect() == from_file_df.collect()
+        assert (
+            result.result_for_solid('passthrough_df').output_value().collect()
+            == from_file_df.collect()
+        )

@@ -87,7 +87,7 @@ type EnvironmentSchema {
   isEnvironmentConfigValid(environmentConfigData: EnvironmentConfigData): PipelineConfigValidationResult!
 }
 
-union EnvironmentSchemaOrError = EnvironmentSchema | PipelineNotFoundError | SolidNotFoundError | ModeNotFoundError
+union EnvironmentSchemaOrError = EnvironmentSchema | PipelineNotFoundError | InvalidSubsetError | ModeNotFoundError
 
 interface Error {
   message: String!
@@ -173,7 +173,7 @@ type ExecutionPlan {
   artifactsPersisted: Boolean!
 }
 
-union ExecutionPlanResult = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError
+union ExecutionPlanResult = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError
 
 input ExecutionSelector {
   name: String!
@@ -318,6 +318,12 @@ type InvalidOutputError {
 
 type InvalidStepError {
   invalidStepKey: String!
+}
+
+type InvalidSubsetError implements Error {
+  message: String!
+  stack: [String!]!
+  pipeline: Pipeline!
 }
 
 interface ISolidDefinition {
@@ -542,7 +548,7 @@ type PipelineConfigValidationInvalid {
   errors: [PipelineConfigValidationError!]!
 }
 
-union PipelineConfigValidationResult = PipelineConfigValidationValid | PipelineConfigValidationInvalid | PipelineNotFoundError
+union PipelineConfigValidationResult = InvalidSubsetError | PipelineConfigValidationValid | PipelineConfigValidationInvalid | PipelineNotFoundError
 
 type PipelineConfigValidationValid {
   pipeline: Pipeline!
@@ -581,7 +587,7 @@ type PipelineNotFoundError implements Error {
   pipelineName: String!
 }
 
-union PipelineOrError = Pipeline | PythonError | PipelineNotFoundError | SolidNotFoundError
+union PipelineOrError = Pipeline | PythonError | InvalidSubsetError | PipelineNotFoundError
 
 type PipelinePreset {
   name: String!
@@ -790,12 +796,6 @@ type SolidHandle {
   handleID: String!
   solid: Solid!
   parent: SolidHandle
-}
-
-type SolidNotFoundError implements Error {
-  message: String!
-  stack: [String!]!
-  solidName: String!
 }
 
 union StartPipelineExecutionResult = InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess

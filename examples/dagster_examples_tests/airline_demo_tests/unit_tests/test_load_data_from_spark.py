@@ -1,7 +1,6 @@
 from pyspark.sql import DataFrame
 
-from dagster import pipeline, ModeDefinition, ResourceDefinition
-from dagster.utils.test import execute_solid_within_pipeline
+from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, lambda_solid, pipeline
 from dagster.seven import mock
 from dagster_examples.airline_demo.solids import load_data_to_database_from_spark
 from dagster_examples.airline_demo.types import DbInfo
@@ -18,6 +17,10 @@ def test_airline_demo_load_df():
         db_name='db_name',
     )
 
+    @lambda_solid
+    def emit_mock():
+        return mock.MagicMock(spec=DataFrame)
+
     @pipeline(
         mode_defs=[
             ModeDefinition(
@@ -26,16 +29,15 @@ def test_airline_demo_load_df():
         ]
     )
     def load_df_test():
-        load_data_to_database_from_spark()  # pylint: disable=no-value-for-parameter
+        load_data_to_database_from_spark(emit_mock())  # pylint: disable=no-value-for-parameter
 
-    solid_result = execute_solid_within_pipeline(
+    solid_result = execute_pipeline(
         load_df_test,
-        'load_data_to_database_from_spark',
-        inputs={'data_frame': mock.MagicMock(spec=DataFrame)},
         environment_dict={
             'solids': {'load_data_to_database_from_spark': {'config': {'table_name': 'foo'}}}
         },
-    )
+    ).result_for_solid('load_data_to_database_from_spark')
+
     assert solid_result.success
     mats = solid_result.materializations_during_compute
     assert len(mats) == 1

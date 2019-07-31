@@ -9,8 +9,8 @@ import { EvaluationErrorReason } from "./../../types/globalTypes";
 // GraphQL fragment: ConfigEditorValidationFragment
 // ====================================================
 
-export interface ConfigEditorValidationFragment_PipelineConfigValidationValid {
-  __typename: "PipelineConfigValidationValid" | "PipelineNotFoundError";
+export interface ConfigEditorValidationFragment_InvalidSubsetError {
+  __typename: "InvalidSubsetError" | "PipelineConfigValidationValid" | "PipelineNotFoundError";
 }
 
 export interface ConfigEditorValidationFragment_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry_field {
@@ -47,4 +47,4 @@ export interface ConfigEditorValidationFragment_PipelineConfigValidationInvalid 
   errors: ConfigEditorValidationFragment_PipelineConfigValidationInvalid_errors[];
 }
 
-export type ConfigEditorValidationFragment = ConfigEditorValidationFragment_PipelineConfigValidationValid | ConfigEditorValidationFragment_PipelineConfigValidationInvalid;
+export type ConfigEditorValidationFragment = ConfigEditorValidationFragment_InvalidSubsetError | ConfigEditorValidationFragment_PipelineConfigValidationInvalid;

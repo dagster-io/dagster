@@ -7,39 +7,43 @@
 // GraphQL fragment: PipelineExecutionContainerFragment
 // ====================================================
 
-export interface PipelineExecutionContainerFragment_modes {
+export interface PipelineExecutionContainerFragment_PythonError {
+  __typename: "PythonError" | "PipelineNotFoundError";
+}
+
+export interface PipelineExecutionContainerFragment_Pipeline_modes {
   __typename: "Mode";
   name: string;
   description: string | null;
 }
 
-export interface PipelineExecutionContainerFragment_environmentType {
+export interface PipelineExecutionContainerFragment_Pipeline_environmentType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface PipelineExecutionContainerFragment_configTypes_RegularConfigType {
+export interface PipelineExecutionContainerFragment_Pipeline_configTypes_RegularConfigType {
   __typename: "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   isSelector: boolean;
 }
 
-export interface PipelineExecutionContainerFragment_configTypes_EnumConfigType_values {
+export interface PipelineExecutionContainerFragment_Pipeline_configTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface PipelineExecutionContainerFragment_configTypes_EnumConfigType {
+export interface PipelineExecutionContainerFragment_Pipeline_configTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   name: string | null;
   isSelector: boolean;
-  values: PipelineExecutionContainerFragment_configTypes_EnumConfigType_values[];
+  values: PipelineExecutionContainerFragment_Pipeline_configTypes_EnumConfigType_values[];
 }
 
-export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_EnumConfigType {
+export interface PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_EnumConfigType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
@@ -47,63 +51,172 @@ export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigT
   isNullable: boolean;
 }
 
-export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_EnumConfigType {
+export interface PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_EnumConfigType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType_ofType {
+export interface PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType_ofType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType {
+export interface PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType {
   __typename: "ListConfigType";
   key: string;
-  ofType: PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType_ofType;
+  ofType: PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType_ofType;
 }
 
-export type PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes = PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_EnumConfigType | PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType;
+export type PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes = PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_EnumConfigType | PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType;
 
-export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType {
+export interface PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType {
+export interface PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType {
   __typename: "ListConfigType";
   key: string;
   name: string | null;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes[];
-  ofType: PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType;
+  innerTypes: PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes[];
+  ofType: PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType;
 }
 
-export type PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType = PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_EnumConfigType | PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType;
+export type PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType = PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_EnumConfigType | PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType;
 
-export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields {
+export interface PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType;
+  configType: PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType {
+export interface PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   isSelector: boolean;
-  fields: PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields[];
+  fields: PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExecutionContainerFragment_configTypes = PipelineExecutionContainerFragment_configTypes_RegularConfigType | PipelineExecutionContainerFragment_configTypes_EnumConfigType | PipelineExecutionContainerFragment_configTypes_CompositeConfigType;
+export type PipelineExecutionContainerFragment_Pipeline_configTypes = PipelineExecutionContainerFragment_Pipeline_configTypes_RegularConfigType | PipelineExecutionContainerFragment_Pipeline_configTypes_EnumConfigType | PipelineExecutionContainerFragment_Pipeline_configTypes_CompositeConfigType;
 
-export interface PipelineExecutionContainerFragment {
+export interface PipelineExecutionContainerFragment_Pipeline {
   __typename: "Pipeline";
   name: string;
-  modes: PipelineExecutionContainerFragment_modes[];
-  environmentType: PipelineExecutionContainerFragment_environmentType;
-  configTypes: PipelineExecutionContainerFragment_configTypes[];
+  modes: PipelineExecutionContainerFragment_Pipeline_modes[];
+  environmentType: PipelineExecutionContainerFragment_Pipeline_environmentType;
+  configTypes: PipelineExecutionContainerFragment_Pipeline_configTypes[];
 }
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_modes {
+  __typename: "Mode";
+  name: string;
+  description: string | null;
+}
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_environmentType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_RegularConfigType {
+  __typename: "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
+  isSelector: boolean;
+}
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  name: string | null;
+  isSelector: boolean;
+  values: PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_EnumConfigType_values[];
+}
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_EnumConfigType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
+  isList: boolean;
+  isNullable: boolean;
+}
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType_ofType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType {
+  __typename: "ListConfigType";
+  key: string;
+  ofType: PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType_ofType;
+}
+
+export type PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes = PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_EnumConfigType | PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType;
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType {
+  __typename: "ListConfigType";
+  key: string;
+  name: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes[];
+  ofType: PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType;
+}
+
+export type PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType = PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_EnumConfigType | PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType_ListConfigType;
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields_configType;
+}
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  isSelector: boolean;
+  fields: PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType_fields[];
+}
+
+export type PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes = PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_RegularConfigType | PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_EnumConfigType | PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes_CompositeConfigType;
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError_pipeline {
+  __typename: "Pipeline";
+  name: string;
+  modes: PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_modes[];
+  environmentType: PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_environmentType;
+  configTypes: PipelineExecutionContainerFragment_InvalidSubsetError_pipeline_configTypes[];
+}
+
+export interface PipelineExecutionContainerFragment_InvalidSubsetError {
+  __typename: "InvalidSubsetError";
+  message: string;
+  pipeline: PipelineExecutionContainerFragment_InvalidSubsetError_pipeline;
+}
+
+export type PipelineExecutionContainerFragment = PipelineExecutionContainerFragment_PythonError | PipelineExecutionContainerFragment_Pipeline | PipelineExecutionContainerFragment_InvalidSubsetError;

@@ -42,28 +42,37 @@ export default class PipelineExecutionRoot extends React.Component<
                   result.data && result.data.pipelineOrError;
 
                 if (
-                  pipelineOrError &&
+                  !pipelineOrError ||
                   pipelineOrError.__typename === "PipelineNotFoundError"
                 ) {
                   return (
                     <NonIdealState
                       icon={IconNames.FLOW_BRANCH}
                       title="Pipeline Not Found"
+                      description={
+                        pipelineOrError
+                          ? pipelineOrError.message
+                          : "No data returned from GraphQL"
+                      }
+                    />
+                  );
+                }
+
+                if (pipelineOrError.__typename === "PythonError") {
+                  return (
+                    <NonIdealState
+                      icon={IconNames.ERROR}
+                      title="Python Error"
                       description={pipelineOrError.message}
                     />
                   );
                 }
 
-                const pipeline =
-                  pipelineOrError && pipelineOrError.__typename === "Pipeline"
-                    ? pipelineOrError
-                    : undefined;
-
                 return (
                   <PipelineExecutionContainer
                     data={data}
                     onSave={onSave}
-                    pipeline={pipeline}
+                    pipelineOrError={pipelineOrError}
                     pipelineName={pipelineName}
                     currentSession={data.sessions[data.current]}
                   />
@@ -84,10 +93,13 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
     $mode: String
   ) {
     pipelineOrError(params: { name: $name, solidSubset: $solidSubset }) {
-      ...PipelineExecutionContainerFragment
       ... on PipelineNotFoundError {
         message
       }
+      ... on PythonError {
+        message
+      }
+      ...PipelineExecutionContainerFragment
     }
   }
 

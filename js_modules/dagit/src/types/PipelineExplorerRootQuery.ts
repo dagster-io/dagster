@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface PipelineExplorerRootQuery_pipelineOrError_PythonError {
-  __typename: "PythonError" | "SolidNotFoundError";
+  __typename: "PythonError" | "InvalidSubsetError";
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {

@@ -70,17 +70,17 @@ class DauphinPipelineRunNotFoundError(dauphin.ObjectType):
         self.message = 'Pipeline run {run_id} does not exist'.format(run_id=run_id)
 
 
-class DauphinSolidNotFoundError(dauphin.ObjectType):
+class DauphinInvalidSubsetError(dauphin.ObjectType):
     class Meta:
-        name = 'SolidNotFoundError'
+        name = 'InvalidSubsetError'
         interfaces = (DauphinError,)
 
-    solid_name = dauphin.NonNull(dauphin.String)
+    pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
 
-    def __init__(self, solid_name):
-        super(DauphinSolidNotFoundError, self).__init__()
-        self.solid_name = check.str_param(solid_name, 'solid_name')
-        self.message = 'Solid {solid_name} does not exist'.format(solid_name=solid_name)
+    def __init__(self, message, pipeline):
+        super(DauphinInvalidSubsetError, self).__init__()
+        self.message = check.str_param(message, 'message')
+        self.pipeline = pipeline
 
 
 class DauphinModeNotFoundError(dauphin.ObjectType):
@@ -128,6 +128,7 @@ class DauphinPipelineConfigValidationResult(dauphin.Union):
     class Meta:
         name = 'PipelineConfigValidationResult'
         types = (
+            DauphinInvalidSubsetError,
             DauphinPipelineConfigValidationValid,
             DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
@@ -342,8 +343,8 @@ class DauphinPipelineOrError(dauphin.Union):
         types = (
             'Pipeline',
             DauphinPythonError,
+            DauphinInvalidSubsetError,
             DauphinPipelineNotFoundError,
-            DauphinSolidNotFoundError,
         )
 
 
@@ -360,6 +361,7 @@ class DauphinExecutionPlanResult(dauphin.Union):
             'ExecutionPlan',
             DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
+            DauphinInvalidSubsetError,
         )
 
 

@@ -1,10 +1,10 @@
 import * as React from "react";
 import { Button, Menu } from "@blueprintjs/core";
 import { Select } from "@blueprintjs/select";
-import { PipelineExecutionContainerFragment } from "./types/PipelineExecutionContainerFragment";
+import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
 
 interface IConfigEditorModePickerProps {
-  pipeline: PipelineExecutionContainerFragment;
+  pipeline: PipelineDetailsFragment;
   modeName: string | null;
   onModeChange: (mode: string) => void;
 }

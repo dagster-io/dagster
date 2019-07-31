@@ -9,8 +9,8 @@ import { EvaluationErrorReason } from "./../../types/globalTypes";
 // GraphQL fragment: RunPreviewConfigValidationFragment
 // ====================================================
 
-export interface RunPreviewConfigValidationFragment_PipelineConfigValidationValid {
-  __typename: "PipelineConfigValidationValid" | "PipelineNotFoundError";
+export interface RunPreviewConfigValidationFragment_InvalidSubsetError {
+  __typename: "InvalidSubsetError" | "PipelineConfigValidationValid" | "PipelineNotFoundError";
 }
 
 export interface RunPreviewConfigValidationFragment_PipelineConfigValidationInvalid_errors {
@@ -24,4 +24,4 @@ export interface RunPreviewConfigValidationFragment_PipelineConfigValidationInva
   errors: RunPreviewConfigValidationFragment_PipelineConfigValidationInvalid_errors[];
 }
 
-export type RunPreviewConfigValidationFragment = RunPreviewConfigValidationFragment_PipelineConfigValidationValid | RunPreviewConfigValidationFragment_PipelineConfigValidationInvalid;
+export type RunPreviewConfigValidationFragment = RunPreviewConfigValidationFragment_InvalidSubsetError | RunPreviewConfigValidationFragment_PipelineConfigValidationInvalid;
