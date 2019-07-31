@@ -269,10 +269,8 @@ def pipeline_graphviz_command(only_solids, **kwargs):
     '-p',
     '--preset',
     type=click.STRING,
-    help=(
-        'Specify a preset to use for this pipeline. Presets are defined on the repo_config '
-        'on RepositoryDefinition, typically managed under the config key in {default_filename}.'
-    ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
+    help='Specify a preset to use for this pipeline. Presets are defined on pipelines under '
+    'preset_defs.',
 )
 @click.option('-d', '--mode', type=click.STRING)
 def pipeline_execute_command(env, raise_on_error, preset, mode, **kwargs):

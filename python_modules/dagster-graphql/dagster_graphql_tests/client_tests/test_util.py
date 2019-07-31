@@ -1,26 +1,27 @@
 from collections import defaultdict
 
 from dagster import (
-    execute_pipeline,
-    solid,
     Bool,
     DependencyDefinition,
+    EventMetadataEntry,
     ExecutionTargetHandle,
     ExpectationResult,
     InputDefinition,
     Materialization,
+    Output,
     OutputDefinition,
     PipelineDefinition,
-    Output,
     RunConfig,
+    execute_pipeline,
+    solid,
 )
 from dagster.core.events import STEP_EVENTS, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.config import InProcessExecutorConfig
 from dagster_graphql.cli import execute_query
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
-from dagster_graphql.client.util import HANDLED_EVENTS, dagster_event_from_dict
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
+from dagster_graphql.client.util import HANDLED_EVENTS, dagster_event_from_dict
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 
 
 def test_can_handle_all_step_events():
@@ -35,8 +36,16 @@ def test_can_handle_all_step_events():
 def define_test_events_pipeline():
     @solid(output_defs=[OutputDefinition(Bool)])
     def materialization_and_expectation(_context):
-        yield Materialization.file(path='/path/to/foo', description='This is a table.')
-        yield Materialization.file(path='/path/to/bar')
+        yield Materialization(
+            label='all_types',
+            description='a materialization with all metadata types',
+            metadata_entries=[
+                EventMetadataEntry.text('text is cool', 'text'),
+                EventMetadataEntry.url('https://bigty.pe/neato', 'url'),
+                EventMetadataEntry.fspath('/tmp/awesome', 'path'),
+                EventMetadataEntry.json({'is_dope': True}, 'json'),
+            ],
+        )
         yield ExpectationResult(success=True, label='row_count', description='passed')
         yield ExpectationResult(True)
         yield Output(True)

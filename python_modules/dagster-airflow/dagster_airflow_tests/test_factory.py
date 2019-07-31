@@ -1,7 +1,8 @@
 from __future__ import unicode_literals
 
-import datetime
 import uuid
+
+from airflow.exceptions import AirflowSkipException
 
 from dagster import ExecutionTargetHandle
 from dagster.utils import script_relative_path
@@ -50,7 +51,6 @@ class TestExecuteDagPythonFilesystemStorage(object):
         script_relative_path('test_project/env_filesystem.yaml'),
     ]
     run_id = str(uuid.uuid4())
-    execution_date = datetime.datetime.utcnow()
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
@@ -67,7 +67,6 @@ class TestExecuteDagPythonS3Storage(object):
         script_relative_path('test_project/env_s3.yaml'),
     ]
     run_id = str(uuid.uuid4())
-    execution_date = datetime.datetime.utcnow()
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
@@ -85,7 +84,6 @@ class TestExecuteDagContainerizedS3Storage(object):
         script_relative_path('test_project/env_s3.yaml'),
     ]
     run_id = str(uuid.uuid4())
-    execution_date = datetime.datetime.utcnow()
     image = IMAGE
 
     # pylint: disable=redefined-outer-name
@@ -103,7 +101,6 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
         script_relative_path('test_project/env_filesystem.yaml'),
     ]
     run_id = str(uuid.uuid4())
-    execution_date = datetime.datetime.utcnow()
     op_kwargs = {'host_tmp_dir': '/tmp'}
     image = IMAGE
 
@@ -128,6 +125,18 @@ def test_rename_for_airflow():
         assert after == _rename_for_airflow(before)
 
 
+def validate_skip_pipeline_execution(result):
+    expected_airflow_task_states = {
+        ('foo', False),
+        ('first_consumer', False),
+        ('second_consumer', True),
+        ('third_consumer', True),
+    }
+
+    seen = {(ti.task_id, isinstance(value, AirflowSkipException)) for ti, value in result.items()}
+    assert seen == expected_airflow_task_states
+
+
 class TestExecuteSkipsPythonOperator(object):
     pipeline_name = 'optional_outputs'
     handle = ExecutionTargetHandle.for_pipeline_module(
@@ -135,22 +144,10 @@ class TestExecuteSkipsPythonOperator(object):
     )
     environment_yaml = [script_relative_path('test_project/env_filesystem.yaml')]
     run_id = str(uuid.uuid4())
-    execution_date = datetime.datetime.utcnow()
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
-        expected_airflow_task_states = {
-            ('foo', None),
-            ('first_consumer', None),
-            ('second_consumer', 'skipped'),
-            ('third_consumer', 'skipped'),
-        }
-
-        seen = {
-            (ti.task_id, ti.current_state())
-            for ti in dagster_airflow_python_operator_pipeline.keys()
-        }
-        assert seen == expected_airflow_task_states
+        validate_skip_pipeline_execution(dagster_airflow_python_operator_pipeline)
 
 
 class TestExecuteSkipsContainerized(object):
@@ -160,21 +157,9 @@ class TestExecuteSkipsContainerized(object):
     )
     environment_yaml = [script_relative_path('test_project/env_filesystem.yaml')]
     run_id = str(uuid.uuid4())
-    execution_date = datetime.datetime.utcnow()
     op_kwargs = {'host_tmp_dir': '/tmp'}
     image = IMAGE
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
-        expected_airflow_task_states = {
-            ('foo', None),
-            ('first_consumer', None),
-            ('second_consumer', 'skipped'),
-            ('third_consumer', 'skipped'),
-        }
-
-        seen = {
-            (ti.task_id, ti.current_state())
-            for ti in dagster_airflow_docker_operator_pipeline.keys()
-        }
-        assert seen == expected_airflow_task_states
+        validate_skip_pipeline_execution(dagster_airflow_docker_operator_pipeline)
