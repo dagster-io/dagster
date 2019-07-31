@@ -12,16 +12,9 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-if sys.version_info.major >= 3:
-    from io import StringIO  # pylint:disable=import-error
-else:
-    from StringIO import StringIO  # pylint:disable=import-error
-
-
-if sys.version_info.major >= 3:
-    from urllib.request import urlretrieve  # pylint:disable=import-error
-else:
-    from urllib import urlretrieve  # pylint:disable=no-name-in-module
+from six import StringIO
+from six.moves import reload_module
+from six.moves.urllib.request import urlretrieve  # pylint:disable=import-error
 
 
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
@@ -47,21 +40,6 @@ def import_module_from_path(module_name, path_to_file):
         module = load_source(module_name, path_to_file)
 
     return module
-
-
-# https://stackoverflow.com/a/437591/324449
-def reload_module(module):
-    version = sys.version_info
-    if version.major >= 3 and version.minor >= 4:
-        from importlib import reload as reload_
-
-        return reload_(module)
-    elif version.major >= 3:
-        from imp import reload as reload_
-
-        return reload_(module)
-
-    return reload(module)  # pylint: disable=undefined-variable
 
 
 def is_ascii(str_):
