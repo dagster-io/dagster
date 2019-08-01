@@ -15,5 +15,6 @@ data engineering and data science workflows.
   :maxdepth: 1
 
   tutorial/index
+  airline_demo
   principles
   guides/index
