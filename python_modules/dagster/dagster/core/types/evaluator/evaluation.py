@@ -1,5 +1,4 @@
 import traceback
-
 import six
 
 from dagster import check
@@ -249,7 +248,7 @@ def _evaluate_composite_solid_config(context):
         mapped_config_value = solid_def.config_mapping.config_fn(
             ConfigMappingContext(run_config=context.run_config),
             # ensure we don't mutate the source environment dict
-            frozendict(context.config_value.get('config')),
+            frozendict(evaluate_value_result.value.get('config')),
         )
     except Exception:  # pylint: disable=W0703
         return EvaluateValueResult.for_error(
