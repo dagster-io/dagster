@@ -55,7 +55,7 @@ class SnowflakeConnection:
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
                 if sys.version_info[0] < 3:
-                    query = query.encode('utf-8')
+                    sql = sql.encode('utf-8')
 
                 logger.info('[snowflake] Executing query: ' + sql)
                 cursor.execute(sql, parameters)  # pylint: disable=E1101
@@ -73,10 +73,9 @@ class SnowflakeConnection:
         results = []
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
-                if sys.version_info[0] < 3:
-                    query = query.encode('utf-8')
-
                 for sql in sql_queries:
+                    if sys.version_info[0] < 3:
+                        sql = sql.encode('utf-8')
                     logger.info('[snowflake] Executing query: ' + sql)
                     cursor.execute(sql, parameters)  # pylint: disable=E1101
                     if fetch_results:

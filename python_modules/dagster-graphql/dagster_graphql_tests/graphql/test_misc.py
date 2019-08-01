@@ -173,7 +173,7 @@ def test_pipelines_or_error_invalid():
         context, '{ pipelinesOrError { ... on InvalidDefinitionError { message } } }'
     )
     msg = result.data['pipelinesOrError']['message']
-    assert "Circular reference detected in solid csolid" in msg
+    assert 'circular reference detected in solid "csolid"' in msg
 
 
 def test_pipeline_by_name():

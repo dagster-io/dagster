@@ -1,6 +1,6 @@
 ## Versioning guidelines
 
-Dagster versions follow the guidelines in [PEP 440](https://www.python.org/dev/peps/pep-0440//).
+Dagster versions follow the guidelines in [PEP 440](https://www.python.org/dev/peps/pep-0440/).
 
 To make dependency management easier in the context of a monorepo with many installable projects,
 package versions move in lockstep with each other and with git tags.
