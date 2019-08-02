@@ -1,3 +1,5 @@
+# pylint: disable=no-value-for-parameter
+
 import pytest
 
 from dagster import (
@@ -17,6 +19,8 @@ from dagster import (
     SolidDefinition,
     SolidInvocation,
     String,
+    solid,
+    pipeline,
 )
 from dagster.core.definitions import create_environment_type, create_environment_schema
 from dagster.core.definitions.environment_configs import (
@@ -107,7 +111,11 @@ def test_all_types_provided():
 
 
 def test_provided_default_on_resources_config():
-    pipeline_def = PipelineDefinition(
+    @solid(name='some_solid', input_defs=[], output_defs=[])
+    def some_solid(_):
+        return None
+
+    @pipeline(
         mode_defs=[
             ModeDefinition(
                 name='some_mode',
@@ -126,13 +134,10 @@ def test_provided_default_on_resources_config():
                     )
                 },
             )
-        ],
-        solid_defs=[
-            SolidDefinition(
-                name='some_solid', input_defs=[], output_defs=[], compute_fn=lambda *args: None
-            )
-        ],
+        ]
     )
+    def pipeline_def():
+        some_solid()
 
     env_type = create_environment_type(pipeline_def)
     assert env_type.type_attributes.is_system_config
@@ -150,13 +155,13 @@ def test_provided_default_on_resources_config():
 
 
 def test_default_environment():
-    pipeline_def = PipelineDefinition(
-        solid_defs=[
-            SolidDefinition(
-                name='some_solid', input_defs=[], output_defs=[], compute_fn=lambda *args: None
-            )
-        ]
-    )
+    @solid(name='some_solid', input_defs=[], output_defs=[])
+    def some_solid(_):
+        return None
+
+    @pipeline
+    def pipeline_def():
+        some_solid()
 
     env_obj = EnvironmentConfig.from_dict(
         throwing_evaluate_config_value(create_environment_type(pipeline_def), {})
@@ -227,24 +232,30 @@ def test_solid_dictionary_type():
 
 
 def define_test_solids_config_pipeline():
-    return PipelineDefinition(
-        solid_defs=[
-            SolidDefinition(
-                name='int_config_solid',
-                config_field=Field(Int, is_optional=True),
-                input_defs=[],
-                output_defs=[],
-                compute_fn=lambda *args: None,
-            ),
-            SolidDefinition(
-                name='string_config_solid',
-                config_field=Field(String, is_optional=True),
-                input_defs=[],
-                output_defs=[],
-                compute_fn=lambda *args: None,
-            ),
-        ]
+    @solid(
+        name='int_config_solid',
+        config_field=Field(Int, is_optional=True),
+        input_defs=[],
+        output_defs=[],
     )
+    def int_config_solid(_):
+        return None
+
+    @solid(
+        name='string_config_solid',
+        config_field=Field(String, is_optional=True),
+        input_defs=[],
+        output_defs=[],
+    )
+    def string_config_solid(_):
+        return None
+
+    @pipeline
+    def pipeline_def():
+        int_config_solid()
+        string_config_solid()
+
+    return pipeline_def
 
 
 def assert_has_fields(dtype, *fields):
@@ -273,20 +284,18 @@ def test_solid_configs_defaults():
 
 
 def test_solid_dictionary_some_no_config():
-    pipeline_def = PipelineDefinition(
-        solid_defs=[
-            SolidDefinition(
-                name='int_config_solid',
-                config_field=Field(Int),
-                input_defs=[],
-                output_defs=[],
-                compute_fn=lambda *args: None,
-            ),
-            SolidDefinition(
-                name='no_config_solid', input_defs=[], output_defs=[], compute_fn=lambda *args: None
-            ),
-        ]
-    )
+    @solid(name='int_config_solid', config_field=Field(Int), input_defs=[], output_defs=[])
+    def int_config_solid(_):
+        return None
+
+    @solid(name='no_config_solid', input_defs=[], output_defs=[])
+    def no_config_solid(_):
+        return None
+
+    @pipeline
+    def pipeline_def():
+        int_config_solid()
+        no_config_solid()
 
     solid_dict_type = define_solid_dictionary_cls(
         'foobar', pipeline_def.solids, pipeline_def.dependency_structure, pipeline_def.name

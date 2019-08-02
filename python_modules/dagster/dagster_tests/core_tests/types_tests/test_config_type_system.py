@@ -13,7 +13,6 @@ from dagster import (
     DagsterInvalidConfigError,
     PipelineDefinition,
     ResourceDefinition,
-    SolidDefinition,
     String,
     check,
     execute_pipeline,
@@ -444,18 +443,13 @@ def test_build_optionality():
 
 
 def test_wrong_solid_name():
-    pipeline_def = PipelineDefinition(
-        name='pipeline_wrong_solid_name',
-        solid_defs=[
-            SolidDefinition(
-                name='some_solid',
-                input_defs=[],
-                output_defs=[],
-                config_field=Field(Int),
-                compute_fn=lambda *_args: None,
-            )
-        ],
-    )
+    @solid(name='some_solid', input_defs=[], output_defs=[], config_field=Field(Int))
+    def some_solid(_):
+        return None
+
+    @pipeline(name='pipeline_wrong_solid_name')
+    def pipeline_def():
+        some_solid()
 
     env_config = {'solids': {'another_name': {'config': {}}}}
 
@@ -496,22 +490,14 @@ def test_solid_list_config():
     value = [1, 2]
     called = {}
 
-    def _test_config(context, _inputs):
+    @solid(name='solid_list_config', input_defs=[], output_defs=[], config_field=Field(List[Int]))
+    def solid_list_config(context):
         assert context.solid_config == value
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(
-        name='solid_list_config_pipeline',
-        solid_defs=[
-            SolidDefinition(
-                name='solid_list_config',
-                input_defs=[],
-                output_defs=[],
-                config_field=Field(List[Int]),
-                compute_fn=_test_config,
-            )
-        ],
-    )
+    @pipeline(name='solid_list_config_pipeline')
+    def pipeline_def():
+        solid_list_config()
 
     result = execute_pipeline(
         pipeline_def, environment_dict={'solids': {'solid_list_config': {'config': value}}}
@@ -522,20 +508,20 @@ def test_solid_list_config():
 
 
 def test_two_list_types():
-    assert PipelineDefinition(
-        name='two_types',
-        solid_defs=[
-            SolidDefinition(
-                name='two_list_type',
-                input_defs=[],
-                output_defs=[],
-                config_field=Field(
-                    Dict({'list_one': Field(List[Int]), 'list_two': Field(List[Int])})
-                ),
-                compute_fn=lambda *_args: None,
-            )
-        ],
+    @solid(
+        name='two_list_type',
+        input_defs=[],
+        output_defs=[],
+        config_field=Field(Dict({'list_one': Field(List[Int]), 'list_two': Field(List[Int])})),
     )
+    def two_list_type(_):
+        return None
+
+    @pipeline(name='two_types')
+    def pipeline_def():
+        two_list_type()
+
+    assert pipeline_def
 
 
 def test_multilevel_default_handling():
@@ -596,7 +582,9 @@ def test_root_extra_field():
     def required_int_solid(_context):
         pass
 
-    pipeline_def = PipelineDefinition(name='root_extra_field', solid_defs=[required_int_solid])
+    @pipeline
+    def pipeline_def():
+        required_int_solid()
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
@@ -616,7 +604,9 @@ def test_deeper_path():
     def required_int_solid(_context):
         pass
 
-    pipeline_def = PipelineDefinition(name='deeper_path', solid_defs=[required_int_solid])
+    @pipeline
+    def pipeline_def():
+        required_int_solid()
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
@@ -637,7 +627,9 @@ def test_working_list_path():
         assert context.solid_config == [1, 2]
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(name='list_path', solid_defs=[required_list_int_solid])
+    @pipeline
+    def pipeline_def():
+        required_list_int_solid()
 
     result = execute_pipeline(
         pipeline_def, environment_dict={'solids': {'required_list_int_solid': {'config': [1, 2]}}}
@@ -655,7 +647,9 @@ def test_item_error_list_path():
         assert context.solid_config == [1, 2]
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(name='list_path', solid_defs=[required_list_int_solid])
+    @pipeline
+    def pipeline_def():
+        required_list_int_solid()
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
@@ -672,11 +666,12 @@ def test_item_error_list_path():
 
 
 def test_required_resource_not_given():
-    pipeline_def = PipelineDefinition(
+    @pipeline(
         name='required_resource_not_given',
-        solid_defs=[],
         mode_defs=[ModeDefinition(resource_defs={'required': dummy_resource(Field(Int))})],
     )
+    def pipeline_def():
+        pass
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(pipeline_def, environment_dict={'resources': None})
@@ -695,9 +690,9 @@ def test_multilevel_good_error_handling_solids():
     def good_error_handling(_context):
         pass
 
-    pipeline_def = PipelineDefinition(
-        name='multilevel_good_error_handling', solid_defs=[good_error_handling]
-    )
+    @pipeline
+    def pipeline_def():
+        good_error_handling()
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(pipeline_def, environment_dict={'solids': None})
@@ -714,9 +709,9 @@ def test_multilevel_good_error_handling_solid_name_solids():
     def good_error_handling(_context):
         pass
 
-    pipeline_def = PipelineDefinition(
-        name='multilevel_good_error_handling', solid_defs=[good_error_handling]
-    )
+    @pipeline
+    def pipeline_def():
+        good_error_handling()
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(pipeline_def, environment_dict={'solids': {'good_error_handling': {}}})
@@ -733,9 +728,9 @@ def test_multilevel_good_error_handling_config_solids_name_solids():
     def good_error_handling(_context):
         pass
 
-    pipeline_def = PipelineDefinition(
-        name='multilevel_good_error_handling', solid_defs=[good_error_handling]
-    )
+    @pipeline
+    def pipeline_def():
+        good_error_handling()
 
     execute_pipeline(
         pipeline_def, environment_dict={'solids': {'good_error_handling': {'config': None}}}
@@ -759,7 +754,9 @@ def test_secret_field():
     def solid_with_secret(_context):
         pass
 
-    pipeline_def = PipelineDefinition(name='secret_pipeline', solid_defs=[solid_with_secret])
+    @pipeline(name='secret_pipeline')
+    def pipeline_def():
+        solid_with_secret()
 
     environment_schema = create_environment_schema(pipeline_def)
     config_type = environment_schema.config_type_named('SecretPipeline.SolidConfig.SolidWithSecret')

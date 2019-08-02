@@ -1,34 +1,27 @@
+# pylint: disable=no-value-for-parameter
 import pytest
 
-from dagster import (
-    Dict,
-    Field,
-    DagsterInvalidConfigError,
-    PipelineDefinition,
-    SolidDefinition,
-    String,
-    execute_pipeline,
-)
+from dagster import Field, DagsterInvalidConfigError, String, execute_pipeline, solid, pipeline
 
 
 def test_basic_solid_with_config():
     did_get = {}
 
-    def _t_fn(context, _inputs):
-        did_get['yep'] = context.solid_config
-
-    solid = SolidDefinition(
+    @solid(
         name='solid_with_context',
         input_defs=[],
         output_defs=[],
-        config_field=Field(Dict({'some_config': Field(String)})),
-        compute_fn=_t_fn,
+        config={'some_config': Field(String)},
     )
+    def solid_with_context(context):
+        did_get['yep'] = context.solid_config
 
-    pipeline = PipelineDefinition(solid_defs=[solid])
+    @pipeline
+    def pipeline_def():
+        solid_with_context()
 
     execute_pipeline(
-        pipeline, {'solids': {'solid_with_context': {'config': {'some_config': 'foo'}}}}
+        pipeline_def, {'solids': {'solid_with_context': {'config': {'some_config': 'foo'}}}}
     )
 
     assert 'yep' in did_get
@@ -39,43 +32,48 @@ def test_config_arg_mismatch():
     def _t_fn(*_args):
         raise Exception('should not reach')
 
-    solid = SolidDefinition(
+    @solid(
         name='solid_with_context',
         input_defs=[],
         output_defs=[],
-        config_field=Field(Dict({'some_config': Field(String)})),
-        compute_fn=_t_fn,
+        config={'some_config': Field(String)},
     )
+    def solid_with_context(context):
+        raise Exception('should not reach')
 
-    pipeline = PipelineDefinition(solid_defs=[solid])
+    @pipeline
+    def pipeline_def():
+        solid_with_context()
 
     with pytest.raises(DagsterInvalidConfigError):
         execute_pipeline(
-            pipeline, {'solids': {'solid_with_context': {'config': {'some_config': 1}}}}
+            pipeline_def, {'solids': {'solid_with_context': {'config': {'some_config': 1}}}}
         )
 
 
 def test_solid_not_found():
-    def _t_fn(*_args):
+    @solid(name='find_me_solid', input_defs=[], output_defs=[])
+    def find_me_solid(_):
         raise Exception('should not reach')
 
-    solid = SolidDefinition(name='find_me_solid', input_defs=[], output_defs=[], compute_fn=_t_fn)
-
-    pipeline = PipelineDefinition(solid_defs=[solid])
+    @pipeline
+    def pipeline_def():
+        find_me_solid()
 
     with pytest.raises(DagsterInvalidConfigError):
-        execute_pipeline(pipeline, {'solids': {'not_found': {'config': {'some_config': 1}}}})
+        execute_pipeline(pipeline_def, {'solids': {'not_found': {'config': {'some_config': 1}}}})
 
 
 def test_config_for_no_config():
-    def _t_fn(*_args):
+    @solid(name='no_config_solid', input_defs=[], output_defs=[])
+    def no_config_solid(_):
         raise Exception('should not reach')
 
-    solid_def = SolidDefinition(
-        name='no_config_solid', input_defs=[], output_defs=[], compute_fn=_t_fn
-    )
-
-    pipeline = PipelineDefinition(solid_defs=[solid_def])
+    @pipeline
+    def pipeline_def():
+        return no_config_solid()
 
     with pytest.raises(DagsterInvalidConfigError):
-        execute_pipeline(pipeline, {'solids': {'no_config_solid': {'config': {'some_config': 1}}}})
+        execute_pipeline(
+            pipeline_def, {'solids': {'no_config_solid': {'config': {'some_config': 1}}}}
+        )

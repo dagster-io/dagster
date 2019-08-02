@@ -18,6 +18,7 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     pipeline,
+    solid,
 )
 
 from dagster.core.test_utils import single_output_solid
@@ -205,18 +206,15 @@ def test_do_not_yield_result():
 
 
 def test_yield_non_result():
-    def _tn(*_args, **_kwargs):
+    @solid
+    def yield_wrong_thing(_):
         yield 'foo'
-
-    solid_inst = SolidDefinition(
-        name='yield_wrong_thing', input_defs=[], output_defs=[OutputDefinition()], compute_fn=_tn
-    )
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match="Compute function for solid yield_wrong_thing yielded 'foo'",
     ):
-        execute_isolated_solid(solid_inst)
+        execute_isolated_solid(yield_wrong_thing)
 
 
 def test_single_compute_fn_returning_result():

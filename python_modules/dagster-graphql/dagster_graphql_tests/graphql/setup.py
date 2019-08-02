@@ -274,15 +274,13 @@ def csv_hello_world_two():
     return sum_solid()
 
 
+@solid(name='solid_with_list', input_defs=[], output_defs=[], config_field=Field(List[Int]))
+def solid_def(_):
+    return None
+
+
 @pipeline
 def pipeline_with_list():
-    solid_def = SolidDefinition(
-        name='solid_with_list',
-        input_defs=[],
-        output_defs=[],
-        compute_fn=lambda *_args: None,
-        config_field=Field(List[Int]),
-    )
     solid_def()
 
 
@@ -355,7 +353,7 @@ def naughty_programmer_pipeline():
 
 @pipeline
 def pipeline_with_step_metadata():
-    solid_def = SolidDefinition(
+    solid_metadata = SolidDefinition(
         name='solid_metadata_creation',
         input_defs=[],
         output_defs=[],
@@ -365,7 +363,7 @@ def pipeline_with_step_metadata():
             'computed': env_config.solids['solid_metadata_creation'].config['str_value'] + '1'
         },
     )
-    return solid_def()
+    return solid_metadata()
 
 
 @resource(config_field=Field(Int))
