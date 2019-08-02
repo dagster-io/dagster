@@ -1,3 +1,4 @@
+# pylint: disable=no-value-for-parameter
 import pytest
 
 from dagster import (
@@ -16,6 +17,8 @@ from dagster import (
     String,
     check,
     execute_pipeline,
+    composite_solid,
+    pipeline,
     solid,
 )
 
@@ -29,13 +32,17 @@ from dagster.core.types.evaluator.errors import (
 from dagster.core.test_utils import throwing_evaluate_config_value
 
 
+def assert_config_type_snapshot(snapshot, config_field):
+    snapshot.assert_match(config_field.config_type.debug_str())
+
+
 def test_noop_config():
     assert Field(Any)
 
 
-def test_int_field():
+def test_int_field(snapshot):
     config_field = Field(Dict({'int_field': Field(Int)}))
-
+    assert_config_type_snapshot(snapshot, config_field)
     assert evaluate_config(config_field.config_type, {'int_field': 1}).value == {'int_field': 1}
 
 
@@ -49,16 +56,18 @@ def assert_eval_failure(config_type, value):
     assert not evaluate_config(config_type, value).success
 
 
-def test_int_fails():
+def test_int_fails(snapshot):
     config_field = Field(Dict({'int_field': Field(Int)}))
 
+    assert_config_type_snapshot(snapshot, config_field)
     assert_eval_failure(config_field.config_type, {'int_field': 'fjkdj'})
     assert_eval_failure(config_field.config_type, {'int_field': True})
 
 
-def test_default_arg():
+def test_default_arg(snapshot):
     config_field = Field(Dict({'int_field': Field(Int, default_value=2, is_optional=True)}))
 
+    assert_config_type_snapshot(snapshot, config_field)
     assert_config_value_success(config_field.config_type, {}, {'int_field': 2})
 
 
@@ -280,6 +289,12 @@ def test_single_nested_config():
     }
 
 
+def test_print_schema(snapshot):
+    assert_config_type_snapshot(snapshot, _single_nested_config())
+    assert_config_type_snapshot(snapshot, _nested_optional_config_with_default())
+    assert_config_type_snapshot(snapshot, _nested_optional_config_with_no_default())
+
+
 def test_single_nested_config_undefined_errors():
     with pytest.raises(
         DagsterEvaluateConfigValueError,
@@ -325,6 +340,89 @@ def test_nested_optional_with_no_default():
     }
 
     assert _validate(_nested_optional_config_with_no_default(), {'nested': {}}) == {'nested': {}}
+
+
+def test_config_defaults():
+    @solid(config={"sum": Field(Int)})
+    def two(_context):
+        assert _context.solid_config['sum'] == 6
+        return _context.solid_config['sum']
+
+    @solid(config={"sum": Field(Int)})
+    def one(_context, prev_sum):
+        assert prev_sum == 6
+        return prev_sum + _context.solid_config['sum']
+
+    # addition_composite_solid
+    def addition_composite_solid_config_fn(_, config):
+        child_config = {'config': {"sum": config['a'] + config['b'] + config['c']}}
+        return {'one': child_config, 'two': child_config}
+
+    @composite_solid(
+        config_fn=addition_composite_solid_config_fn,
+        config={
+            "a": Field(Int, is_optional=True, default_value=1),
+            "b": Field(Int, is_optional=True, default_value=2),
+            "c": Field(Int),
+        },
+    )
+    def addition_composite_solid():
+        return one(two())
+
+    @pipeline
+    def addition_pipeline():
+        addition_composite_solid()
+
+    result = execute_pipeline(
+        addition_pipeline, {'solids': {'addition_composite_solid': {'config': {'c': 3}}}}
+    )
+
+    assert result.success
+
+
+def test_config_with_and_without_config():
+    @solid(config={'prefix': Field(str, is_optional=True, default_value='_')})
+    def prefix_value(context, v):
+        return '{prefix}{v}'.format(prefix=context.solid_config["prefix"], v=v)
+
+    @composite_solid(
+        config_fn=lambda _, cfg: {'prefix_value': {'config': {'prefix': cfg['prefix']}}},
+        config={'prefix': Field(str, is_optional=True, default_value='_id_')},
+    )
+    def prefix_id(val):
+        return prefix_value(val)
+
+    @solid
+    def print_value(_, v):
+        return str(v)
+
+    @pipeline
+    def config_issue_pipeline():
+        v = prefix_id()
+        print_value(v)
+
+    result = execute_pipeline(
+        config_issue_pipeline,
+        {
+            'solids': {
+                'prefix_id': {
+                    'config': {'prefix': '_customprefix_'},
+                    'inputs': {'val': {'value': "12345"}},
+                }
+            }
+        },
+    )
+
+    result_using_default = execute_pipeline(
+        config_issue_pipeline,
+        {'solids': {'prefix_id': {'config': {}, 'inputs': {'val': {'value': "12345"}}}}},
+    )
+
+    assert result.success
+    assert result.result_for_solid('print_value').output_value() == '_customprefix_12345'
+
+    assert result_using_default.success
+    assert result_using_default.result_for_solid('print_value').output_value() == '_id_12345'
 
 
 def single_elem(ddict):
