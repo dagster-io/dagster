@@ -190,7 +190,7 @@ def execute_solid(
 
     return execute_pipeline(
         PipelineDefinition(
-            name='emphemeral_{}_solid_pipeline'.format(solid_def.name),
+            name='ephemeral_{}_solid_pipeline'.format(solid_def.name),
             solid_defs=solid_defs,
             dependencies=dependencies,
             mode_defs=[mode_def] if mode_def else None,
