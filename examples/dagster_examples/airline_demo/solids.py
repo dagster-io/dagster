@@ -16,7 +16,6 @@ from dagster import (
     Materialization,
     OutputDefinition,
     Output,
-    SolidDefinition,
     String,
     check,
     composite_solid,
@@ -101,7 +100,19 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         'drop table if exists {table_name};\n' 'create table {table_name} as {select_statement};'
     ).format(table_name=table_name, select_statement=select_statement)
 
-    def compute_fn(context, _inputs):
+    @solid(
+        name=name,
+        input_defs=input_defs,
+        output_defs=[
+            OutputDefinition(
+                materialization_strategy_output_types[materialization_strategy],
+                description=output_description,
+            )
+        ],
+        description=description,
+        metadata={'kind': 'sql', 'sql': sql_statement},
+    )
+    def _sql_solid(context, **input_defs):  # pylint: disable=unused-argument
         '''Inner function defining the new solid.
 
         Args:
@@ -112,26 +123,13 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
             str:
                 The table name of the newly materialized SQL select statement.
         '''
-
         context.log.info(
             'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
         )
         context.resources.db_info.engine.execute(text(sql_statement))
         yield Output(value=table_name, output_name='result')
 
-    return SolidDefinition(
-        name=name,
-        input_defs=input_defs,
-        output_defs=[
-            OutputDefinition(
-                materialization_strategy_output_types[materialization_strategy],
-                description=output_description,
-            )
-        ],
-        compute_fn=compute_fn,
-        description=description,
-        metadata={'kind': 'sql', 'sql': sql_statement},
-    )
+    return _sql_solid
 
 
 @solid(
