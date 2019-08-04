@@ -23,15 +23,15 @@ class SSHResource:
         self,
         remote_host,
         remote_port,
-        username,
-        password,
-        key_file,
-        timeout,
-        keepalive_interval,
-        compress,
-        no_host_key_check,
-        allow_host_key_change,
-        logger,
+        username=None,
+        password=None,
+        key_file=None,
+        timeout=10,
+        keepalive_interval=30,
+        compress=True,
+        no_host_key_check=True,
+        allow_host_key_change=False,
+        logger=None,
     ):
         self.remote_host = check.str_param(remote_host, 'remote_host')
         self.remote_port = check.opt_int_param(remote_port, 'remote_port')
@@ -99,6 +99,7 @@ class SSHResource:
                 compress=self.compress,
                 port=self.remote_port,
                 sock=self.host_proxy,
+                look_for_keys=False,
             )
         else:
             client.connect(
@@ -157,7 +158,7 @@ class SSHResource:
 @resource(
     {
         'remote_host': Field(str, description='remote host to connect', is_optional=False),
-        'port': Field(
+        'remote_port': Field(
             int,
             description='port of remote host to connect (Default is paramiko SSH_PORT)',
             is_optional=True,

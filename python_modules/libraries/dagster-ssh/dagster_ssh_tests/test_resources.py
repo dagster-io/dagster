@@ -31,6 +31,7 @@ def test_ssh_connection_with_password(ssh_mock):
             compress=True,
             port=12345,
             sock=None,
+            look_for_keys=False,
         )
 
 
