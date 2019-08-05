@@ -1,24 +1,22 @@
 import json
 
 import click
-
 from graphql import graphql
 from graphql.execution.executors.gevent import GeventExecutor
 from graphql.execution.executors.sync import SyncExecutor
 
-from dagster import check, seven, ExecutionTargetHandle
-from dagster.cli.pipeline import repository_target_argument
+from dagster import ExecutionTargetHandle, check, seven
 from dagster.cli.load_handle import handle_for_repo_cli_args
+from dagster.cli.pipeline import repository_target_argument
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, dagster_logs_dir_for_handle
 from dagster.utils.log import get_stack_trace_array
 
+from .client.query import START_PIPELINE_EXECUTION_QUERY
 from .implementation.context import DagsterGraphQLContext
 from .implementation.pipeline_execution_manager import SynchronousExecutionManager
 from .implementation.pipeline_run_storage import PipelineRunStorage
-
 from .schema import create_schema
 from .version import __version__
-
 
 # TODO we may want to start extracting shared copy like this to some central location.
 REPO_TARGET_WARNING = (
@@ -115,6 +113,9 @@ def execute_query_from_cli(handle, query, variables=None, log=False, log_dir=Non
     return str_res
 
 
+PREDEFINED_QUERIES = {'startPipelineExecution': START_PIPELINE_EXECUTION_QUERY}
+
+
 @repository_target_argument
 @click.command(
     name='ui',
@@ -132,9 +133,7 @@ def execute_query_from_cli(handle, query, variables=None, log=False, log_dir=Non
         '\n\n6. dagster-graphql -m some_module -n define_pipeline'
     ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
 )
-@click.option('--variables', '-v', type=click.STRING)
 @click.version_option(version=__version__)
-@click.argument('query', type=click.STRING)
 @click.option('--log', is_flag=True, help='Record logs of pipeline runs')
 @click.option(
     '--log-dir',
@@ -144,10 +143,38 @@ def execute_query_from_cli(handle, query, variables=None, log=False, log_dir=Non
     ),
     default=None,
 )
-def ui(variables, query, log, log_dir, **kwargs):
+@click.option(
+    '--text', '-t', type=click.STRING, help='GraphQL document to execute passed as a string'
+)
+@click.option('--file', type=click.STRING, help='GraphQL document to execute passed as a file')
+@click.option(
+    '--predefined',
+    '-p',
+    type=click.Choice(PREDEFINED_QUERIES.keys()),
+    help='GraphQL document to execute, from a predefined set provided by dagster-graphql.',
+)
+@click.option(
+    '--variables',
+    '-v',
+    type=click.STRING,
+    help='A JSON encoded string containing the variables for GraphQL execution.',
+)
+def ui(log, log_dir, text, file, predefined, variables, **kwargs):
     handle = handle_for_repo_cli_args(kwargs)
 
-    query = query.strip('\'" \n\t')
+    query = None
+    if text is not None and file is None and predefined is None:
+        query = text.strip('\'" \n\t')
+    elif file is not None and text is None and predefined is None:
+        with open(file) as ff:
+            query = ff.read()
+    elif predefined is not None and text is None and file is None:
+        query = PREDEFINED_QUERIES[predefined]
+    else:
+        raise click.UsageError(
+            'Must select one and only one of text (-t), file (-f), or predefined (-p) '
+            'to select GraphQL document to execute.'
+        )
 
     if log and not log_dir:
         log_dir = dagster_logs_dir_for_handle(handle)

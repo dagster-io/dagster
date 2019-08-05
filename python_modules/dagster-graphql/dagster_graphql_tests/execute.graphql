@@ -1,0 +1,30 @@
+mutation ($executionParams: ExecutionParams!) {
+    startPipelineExecution(executionParams: $executionParams) {
+        __typename
+        ... on StartPipelineExecutionSuccess {
+            run {
+                runId
+                pipeline { name }
+                logs {
+                    nodes {
+                        __typename
+                        ... on MessageEvent {
+                            message
+                            level
+                        }
+                        ... on ExecutionStepStartEvent {
+                            step { kind }
+                        }
+                    }
+                }
+            }
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+    }
+}

@@ -228,7 +228,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             self.step_keys,
         )
 
-        return '-v \'{variables}\' \'{query}\''.format(
+        return '-v \'{variables}\' -t \'{query}\''.format(
             variables=seven.json.dumps(variables), query=START_PIPELINE_EXECUTION_QUERY
         )
 

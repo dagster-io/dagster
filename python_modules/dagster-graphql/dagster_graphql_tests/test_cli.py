@@ -13,7 +13,6 @@ from dagster import (
     seven,
 )
 from dagster.utils import script_relative_path
-
 from dagster_graphql.cli import ui
 
 
@@ -45,7 +44,7 @@ def test_basic_introspection():
     repo_path = script_relative_path('./cli_test_repository.yaml')
 
     runner = CliRunner()
-    result = runner.invoke(ui, ['-y', repo_path, query])
+    result = runner.invoke(ui, ['-y', repo_path, '-t', query])
 
     assert result.exit_code == 0
 
@@ -59,7 +58,7 @@ def test_basic_pipelines():
     repo_path = script_relative_path('./cli_test_repository.yaml')
 
     runner = CliRunner()
-    result = runner.invoke(ui, ['-y', repo_path, query])
+    result = runner.invoke(ui, ['-y', repo_path, '-t', query])
 
     assert result.exit_code == 0
 
@@ -73,7 +72,7 @@ def test_basic_variables():
     repo_path = script_relative_path('./cli_test_repository.yaml')
 
     runner = CliRunner()
-    result = runner.invoke(ui, ['-y', repo_path, '-v', variables, query])
+    result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-t', query])
 
     assert result.exit_code == 0
 
@@ -115,7 +114,7 @@ mutation ($executionParams: ExecutionParams!) {
 '''
 
 
-def test_start_execution():
+def test_start_execution_text():
     variables = seven.json.dumps(
         {
             'executionParams': {
@@ -131,7 +130,64 @@ def test_start_execution():
     repo_path = script_relative_path('./repository.yaml')
 
     runner = CliRunner()
-    result = runner.invoke(ui, ['-y', repo_path, '-v', variables, START_PIPELINE_EXECUTION_QUERY])
+    result = runner.invoke(
+        ui, ['-y', repo_path, '-v', variables, '-t', START_PIPELINE_EXECUTION_QUERY]
+    )
+
+    assert result.exit_code == 0
+
+    try:
+        result_data = json.loads(result.output.strip('\n').split('\n')[-1])
+        assert result_data['data']
+    except Exception as e:
+        raise Exception('Failed with {} Exception: {}'.format(result.output, e))
+
+
+def test_start_execution_file():
+    variables = seven.json.dumps(
+        {
+            'executionParams': {
+                'selector': {'name': 'math'},
+                'environmentConfigData': {
+                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
+                },
+                'mode': 'default',
+            }
+        }
+    )
+
+    repo_path = script_relative_path('./repository.yaml')
+    runner = CliRunner()
+    result = runner.invoke(
+        ui, ['-y', repo_path, '-v', variables, '--file', script_relative_path('./execute.graphql')]
+    )
+
+    assert result.exit_code == 0
+
+    try:
+        result_data = json.loads(result.output.strip('\n').split('\n')[-1])
+        assert result_data['data']
+    except Exception as e:
+        raise Exception('Failed with {} Exception: {}'.format(result.output, e))
+
+
+def test_start_execution_predefined():
+    variables = seven.json.dumps(
+        {
+            'executionParams': {
+                'selector': {'name': 'math'},
+                'environmentConfigData': {
+                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
+                },
+                'mode': 'default',
+            }
+        }
+    )
+
+    repo_path = script_relative_path('./repository.yaml')
+
+    runner = CliRunner()
+    result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution'])
 
     assert result.exit_code == 0
 
