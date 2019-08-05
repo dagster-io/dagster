@@ -1,4 +1,5 @@
 from dagster import check
+
 from dagster.core.storage.file_manager import LocalFileManager, FileManager
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.core.storage.intermediates_manager import (
@@ -9,31 +10,32 @@ from dagster.core.storage.intermediates_manager import (
 from dagster.core.storage.runs import RunStorage, InMemoryRunStorage, FileSystemRunStorage
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.core.types import Field, String
+
 from .config import resolve_config_field
 
 
 class SystemStorageDefinition:
     '''
     Dagster stores run metadata and intermediate data on the user's behalf.
-    The SystemStorageDefinition exists is in order to configure and customized
+    The SystemStorageDefinition exists in order to configure and customize
     those behaviors.
 
     Example storage definitions are the mem_system_storage in this module,
-    which storages all intermediates and run data in memory. and the fs_system_storage,
+    which stores all intermediates and run data in memory. and the fs_system_storage,
     which stores all that data in the local filesystem.
 
-    In dagster_aws there is the S3SystemStorageDefinition. We anticipated having
+    In dagster_aws there is the S3SystemStorageDefinition. We anticipate having
     system storage for every major cloud provider. And it is user customizable
     for users with custom infrastructure needs.
 
-    The storage definitions pass into the ModeDefinition determinees the config
+    The storage definitions passed into the ModeDefinition determine the config
     schema of the "storage" section of the environment configuration.
 
     Args:
         name (str): Name of the storage mode.
-        is_persistent (bool): Does storage def persist in way that can cross process/node
+        is_persistent (bool): Does storage def persist in a way that can cross process/node
             boundaries. Execution with, for example, the multiprocess executor or within
-            the context of dagster-airflow require a persistent storage mode.
+            the context of dagster-airflow requires a persistent storage mode.
         config_field (Field): Configuration field for its section of the storage config.
         system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStorageData])
             Called by the system. The author of the StorageSystemDefinition must provide this function,
@@ -55,7 +57,7 @@ class SystemStorageDefinition:
         self.config_field = check_user_facing_opt_field_param(
             config_field,
             'config_field',
-            'of a SystemStorageDefinition named {name}'.format(name=name),
+            'of a SystemStorageDefinition named {name}'.format(name=self.name),
         )
         self.system_storage_creation_fn = check.opt_callable_param(
             system_storage_creation_fn, 'system_storage_creation_fn'
@@ -99,6 +101,7 @@ def system_storage(
     if callable(name):
         check.invariant(is_persistent is True)
         check.invariant(config_field is None)
+        check.invariant(config is None)
         check.invariant(required_resource_keys is None)
         return _SystemStorageDecoratorCallable()(name)
 
@@ -163,3 +166,6 @@ def fs_system_storage(init_context):
             )
         ),
     )
+
+
+default_system_storage_defs = [mem_system_storage, fs_system_storage]

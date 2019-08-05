@@ -365,13 +365,11 @@ def test_execute_preset_command():
 
 def test_execute_command():
     for cli_args in valid_execute_args():
-        execute_execute_command(env=None, raise_on_error=True, cli_args=cli_args)
+        execute_execute_command(env=None, cli_args=cli_args)
 
     for cli_args in valid_execute_args():
         execute_execute_command(
-            env=[script_relative_path('default_log_error_env.yaml')],
-            raise_on_error=True,
-            cli_args=cli_args,
+            env=[script_relative_path('default_log_error_env.yaml')], cli_args=cli_args
         )
 
     runner = CliRunner()
@@ -398,7 +396,6 @@ def test_fn_not_found_execute():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         execute_execute_command(
             env=None,
-            raise_on_error=True,
             cli_args={
                 'repository_yaml': None,
                 'pipeline_name': (),
@@ -421,8 +418,7 @@ not_a_repo_or_pipeline = 123
 def test_fn_is_wrong_thing():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         execute_execute_command(
-            env=None,
-            raise_on_error=True,
+            env={'execution': {'in_process': {'config': {'raise_on_error': True}}}},
             cli_args={
                 'repository_yaml': None,
                 'pipeline_name': (),
@@ -442,8 +438,7 @@ def test_fn_is_wrong_thing():
 def test_fn_returns_wrong_thing():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         execute_execute_command(
-            env=None,
-            raise_on_error=True,
+            env={'execution': {'in_process': {'config': {'raise_on_error': True}}}},
             cli_args={
                 'repository_yaml': None,
                 'pipeline_name': (),
@@ -502,7 +497,7 @@ def test_default_memory_run_storage():
         'module_name': None,
         'fn_name': None,
     }
-    result = execute_execute_command(env=None, raise_on_error=True, cli_args=cli_args)
+    result = execute_execute_command(env=None, cli_args=cli_args)
     assert result.success
 
     run_dir = os.path.join(base_runs_directory(), result.run_id)
@@ -519,7 +514,7 @@ def test_override_with_in_memory_storage():
         'fn_name': None,
     }
     result = execute_execute_command(
-        env=[script_relative_path('in_memory_env.yaml')], raise_on_error=True, cli_args=cli_args
+        env=[script_relative_path('in_memory_env.yaml')], cli_args=cli_args
     )
     assert result.success
 
@@ -537,7 +532,7 @@ def test_override_with_filesystem_storage():
         'fn_name': None,
     }
     result = execute_execute_command(
-        env=[script_relative_path('filesystem_env.yaml')], raise_on_error=True, cli_args=cli_args
+        env=[script_relative_path('filesystem_env.yaml')], cli_args=cli_args
     )
     assert result.success
 

@@ -24,6 +24,7 @@ from dagster.core.execution.context_creation_pipeline import (
     create_log_manager,
     construct_pipeline_execution_context,
     create_context_creation_data,
+    create_executor_config,
 )
 from dagster.core.utility_solids import define_stub_solid
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
@@ -58,13 +59,13 @@ def create_test_pipeline_execution_context(
     environment_dict = {'loggers': {key: {} for key in loggers}}
     creation_data = create_context_creation_data(pipeline_def, environment_dict, run_config)
     log_manager = create_log_manager(creation_data)
-
     scoped_resources_builder = check.opt_inst_param(
         scoped_resources_builder,
         'scoped_resources_builder',
         ScopedResourcesBuilder,
         default=ScopedResourcesBuilder(),
     )
+    executor_config = create_executor_config(creation_data)
     return construct_pipeline_execution_context(
         context_creation_data=creation_data,
         scoped_resources_builder=scoped_resources_builder,
@@ -74,6 +75,7 @@ def create_test_pipeline_execution_context(
             file_manager=LocalFileManager.for_run_id(run_id),
         ),
         log_manager=log_manager,
+        executor_config=executor_config,
     )
 
 

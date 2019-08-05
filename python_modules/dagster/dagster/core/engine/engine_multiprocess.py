@@ -1,9 +1,11 @@
 import os
+
 from dagster import check
 
+from dagster.core.events import DagsterEvent, log_step_event
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
+from dagster.core.execution.config import MultiprocessExecutorConfig, RunConfig
 from dagster.core.execution.plan.plan import ExecutionPlan
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
@@ -11,41 +13,63 @@ from .engine_base import IEngine
 
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
-    def __init__(self, environment_dict, run_config, step_key):
+    def __init__(self, environment_dict, run_config, executor_config, step_key):
         self.environment_dict = environment_dict
+        self.executor_config = executor_config
         self.run_config = run_config
         self.step_key = step_key
 
     def execute(self):
-        check.inst(self.run_config.executor_config, MultiprocessExecutorConfig)
-        pipeline_def = self.run_config.executor_config.handle.build_pipeline_definition()
+        check.inst(self.executor_config, MultiprocessExecutorConfig)
+        pipeline_def = self.executor_config.handle.build_pipeline_definition()
 
-        run_config = self.run_config.with_tags(pid=str(os.getpid())).with_executor_config(
-            InProcessExecutorConfig(raise_on_error=self.run_config.executor_config.raise_on_error)
+        run_config = self.run_config.with_tags(pid=str(os.getpid()))
+
+        environment_dict = dict(
+            self.environment_dict,
+            execution={
+                'in_process': {'config': {'raise_on_error': self.executor_config.raise_on_error}}
+            },
         )
-        execution_plan = create_execution_plan(pipeline_def, self.environment_dict, run_config)
+        execution_plan = create_execution_plan(pipeline_def, environment_dict, run_config)
 
         for step_event in execute_plan_iterator(
-            execution_plan, self.environment_dict, run_config, step_keys_to_execute=[self.step_key]
+            execution_plan, environment_dict, run_config, step_keys_to_execute=[self.step_key]
         ):
             yield step_event
 
 
 def execute_step_out_of_process(step_context, step):
-    check.invariant(
-        not step_context.run_config.loggers,
-        'Cannot inject loggers via RunConfig with the Multiprocess executor',
-    )
+    if step_context.run_config.loggers:
+        step_context.log.debug(
+            'Loggers cannot be injected via RunConfig using the multiprocess executor. Define '
+            'loggers on the mode instead. Ignoring loggers: [{logger_names}]'.format(
+                logger_names=', '.join(
+                    [
+                        '\'{name}\''.format(name=logger.name)
+                        for logger in step_context.run_config.loggers
+                    ]
+                )
+            )
+        )
 
-    check.invariant(
-        not step_context.event_callback, 'Cannot use event_callback across this process currently'
+    run_config = RunConfig(
+        run_id=step_context.run_config.run_id,
+        tags=step_context.run_config.tags,
+        loggers=None,
+        event_callback=None,
+        reexecution_config=None,
+        step_keys_to_execute=step_context.run_config.step_keys_to_execute,
+        mode=step_context.run_config.mode,
     )
 
     command = InProcessExecutorChildProcessCommand(
-        step_context.environment_dict, step_context.run_config, step.key
+        step_context.environment_dict, run_config, step_context.executor_config, step.key
     )
 
     for step_event in execute_child_process_command(command):
+        if step_context.run_config.event_callback and isinstance(step_event, DagsterEvent):
+            log_step_event(step_context, step_event)
         yield step_event
 
 

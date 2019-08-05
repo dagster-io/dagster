@@ -1,6 +1,8 @@
 #! /bin/bash
-# For the avoidance of doubt, this script is meant to be run with the
-# test_project directory as pwd.
+
+# For the avoidance of doubt, this script is meant to be run from within a checkout of the
+# dagster repo
+
 # The filesystem manipulation below is to support installing local development
 # versions of dagster-graphql, dagster-aws, dagster-dask, and dagster.
 

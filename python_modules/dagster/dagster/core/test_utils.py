@@ -68,7 +68,7 @@ def throwing_evaluate_config_value(config_type, config_value):
     return result.value
 
 
-def nesting_composite_pipeline(depth, num_children):
+def nesting_composite_pipeline(depth, num_children, *args, **kwargs):
     '''Creates a pipeline of nested composite solids up to "depth" layers, with a fan-out of
     num_children at each layer.
 
@@ -88,7 +88,7 @@ def nesting_composite_pipeline(depth, num_children):
 
         return wrap
 
-    @pipeline
+    @pipeline(*args, **kwargs)
     def nested_pipeline():
         comp_solid = create_wrap(leaf_node, 'layer_%d' % depth)
 

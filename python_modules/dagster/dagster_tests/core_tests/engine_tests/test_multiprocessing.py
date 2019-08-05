@@ -3,21 +3,16 @@ import pytest
 from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
-    ExecutionTargetHandle,
-    InProcessExecutorConfig,
-    InputDefinition,
-    MultiprocessExecutorConfig,
-    PipelineDefinition,
-    RunConfig,
     execute_pipeline,
+    ExecutionTargetHandle,
+    InputDefinition,
     lambda_solid,
+    PipelineDefinition,
 )
 
 
 def test_diamond_simple_execution():
-    result = execute_pipeline(
-        define_diamond_pipeline(), run_config=RunConfig(executor_config=InProcessExecutorConfig())
-    )
+    result = execute_pipeline(define_diamond_pipeline())
     assert result.success
     assert result.result_for_solid('adder').output_value() == 11
 
@@ -27,15 +22,12 @@ def compute_event(result, solid_name):
 
 
 def test_diamond_multi_execution():
-    pipeline = define_diamond_pipeline()
+    pipeline = ExecutionTargetHandle.for_pipeline_python_file(
+        __file__, 'define_diamond_pipeline'
+    ).build_pipeline_definition()
     result = execute_pipeline(
         pipeline,
-        environment_dict={'storage': {'filesystem': {}}},
-        run_config=RunConfig(
-            executor_config=MultiprocessExecutorConfig(
-                ExecutionTargetHandle.for_pipeline_fn(define_diamond_pipeline)
-            )
-        ),
+        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
     )
     assert result.success
 
@@ -92,21 +84,15 @@ def test_error_pipeline():
     pipeline = define_error_pipeline()
     result = execute_pipeline(
         pipeline,
-        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
+        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
     )
     assert not result.success
 
 
 def test_error_pipeline_multiprocess():
-    pipeline = define_error_pipeline()
     result = execute_pipeline(
-        pipeline,
-        run_config=RunConfig(
-            executor_config=MultiprocessExecutorConfig(
-                ExecutionTargetHandle.for_pipeline_fn(define_error_pipeline)
-            )
-        ),
-        environment_dict={'storage': {'filesystem': {}}},
+        ExecutionTargetHandle.for_pipeline_fn(define_error_pipeline).build_pipeline_definition(),
+        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
     )
     assert not result.success
 
@@ -114,12 +100,10 @@ def test_error_pipeline_multiprocess():
 def test_mem_storage_error_pipeline_multiprocess():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         execute_pipeline(
-            define_diamond_pipeline(),
-            run_config=RunConfig(
-                executor_config=MultiprocessExecutorConfig(
-                    ExecutionTargetHandle.for_pipeline_fn(define_error_pipeline)
-                )
-            ),
+            ExecutionTargetHandle.for_pipeline_fn(
+                define_diamond_pipeline
+            ).build_pipeline_definition(),
+            environment_dict={'execution': {'multiprocess': {}}},
         )
 
     assert (

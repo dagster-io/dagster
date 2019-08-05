@@ -18,27 +18,24 @@ EXECUTION_TIME_KEY = 'execution_epoch_time'
 class RunConfig(
     namedtuple(
         '_RunConfig',
-        (
-            'run_id tags event_callback loggers executor_config reexecution_config '
-            'step_keys_to_execute mode'
-        ),
+        'run_id tags event_callback loggers reexecution_config step_keys_to_execute mode',
     )
 ):
     '''
     Configuration that controls the details of how Dagster will execute a pipeline.
 
     Args:
-      run_id (str): The ID to use for this run. If not provided a new UUID will
-        be created using `uuid4`.
-      tags (dict[str, str]): Key value pairs that will be added to logs.
-      event_callback (callable): A callback to invoke with each :py:class:`EventRecord`
-        produced during execution.
-      loggers (list): Additional loggers that log messages will be sent to.
-      executor_config (ExecutorConfig): Configuration for where and how computation will occur.
-      rexecution_config (RexecutionConfig): Information about a previous run to allow
-        for subset rexecution.
-      step_keys_to_execute (list[str]): The subset of steps from a pipeline to execute this run.
-      mode (Optional[str]): The name of the mode in which to execute the pipeline.
+        run_id (Optional[str]): The ID to use for this run. If not provided a new UUID will
+            be created using `uuid4`.
+        tags (Optional[dict[str, str]]): Key value pairs that will be added to logs.
+        event_callback (Optional[callable]): A callback to invoke with each :py:class:`EventRecord`
+            produced during execution.
+        loggers (Optional[list]): Additional loggers that log messages will be sent to.
+        rexecution_config (Optional[RexecutionConfig]): Information about a previous run to allow
+            for subset rexecution.
+        step_keys_to_execute (Optional[list[str]]): The subset of steps from a pipeline to execute
+            this run.
+        mode (Optional[str]): The name of the mode in which to execute the pipeline.
     '''
 
     def __new__(
@@ -47,7 +44,6 @@ class RunConfig(
         tags=None,
         event_callback=None,
         loggers=None,
-        executor_config=None,
         reexecution_config=None,
         step_keys_to_execute=None,
         mode=None,
@@ -67,9 +63,6 @@ class RunConfig(
             tags=tags,
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
             loggers=check.opt_list_param(loggers, 'loggers'),
-            executor_config=check.inst_param(executor_config, 'executor_config', ExecutorConfig)
-            if executor_config
-            else InProcessExecutorConfig(),
             reexecution_config=check.opt_inst_param(
                 reexecution_config, 'reexecution_config', ReexecutionConfig
             ),
@@ -77,20 +70,20 @@ class RunConfig(
             mode=check.opt_str_param(mode, 'mode'),
         )
 
-    @staticmethod
-    def nonthrowing_in_process():
-        return RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False))
-
     def with_tags(self, **new_tags):
         new_tags = merge_dicts(self.tags, new_tags)
         return RunConfig(**merge_dicts(self._asdict(), {'tags': new_tags}))
 
-    def with_executor_config(self, executor_config):
-        check.inst_param(executor_config, 'executor_config', ExecutorConfig)
-        return RunConfig(**merge_dicts(self._asdict(), {'executor_config': executor_config}))
-
 
 class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    _raise_on_error = True
+
+    @property
+    def raise_on_error(self):
+        '''(bool): Whether errors encountered during execution should be reraised, or encapsulated
+        in DagsterEvents.'''
+        return self._raise_on_error
+
     @abstractproperty
     def requires_persistent_storage(self):
         '''(bool): Whether this executor config requires persistent storage to be configured.'''
@@ -102,7 +95,7 @@ class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 class InProcessExecutorConfig(ExecutorConfig):
     def __init__(self, raise_on_error=True):
-        self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
+        self._raise_on_error = check.opt_bool_param(raise_on_error, 'raise_on_error', default=True)
 
     @property
     def requires_persistent_storage(self):
@@ -118,14 +111,20 @@ class MultiprocessExecutorConfig(ExecutorConfig):
     def __init__(self, handle, max_concurrent=None):
         from dagster import ExecutionTargetHandle
 
-        self.handle = check.inst_param(handle, 'handle', ExecutionTargetHandle)
-
-        max_concurrent = (
-            max_concurrent if max_concurrent is not None else multiprocessing.cpu_count()
+        # TODO: These gnomic process boundary/execution target handle exceptions should link to
+        # a fuller explanation in the docs.
+        # https://github.com/dagster-io/dagster/issues/1649
+        self.handle = check.inst_param(
+            handle,
+            'handle',
+            ExecutionTargetHandle,
+            additional_message='Multiprocessing can only be configured when a pipeline is executed '
+            'from an ExecutionTargetHandle: do not pass a pure in-memory pipeline definition.',
         )
+
+        max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
         self.max_concurrent = check.int_param(max_concurrent, 'max_concurrent')
-        check.invariant(self.max_concurrent > 0, 'max_concurrent processes must be greater than 0')
-        self.raise_on_error = False
+        self._raise_on_error = False
 
     @property
     def requires_persistent_storage(self):

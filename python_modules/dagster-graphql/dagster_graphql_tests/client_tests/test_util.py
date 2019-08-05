@@ -4,6 +4,7 @@ from dagster import (
     Bool,
     DependencyDefinition,
     EventMetadataEntry,
+    execute_pipeline,
     ExecutionTargetHandle,
     ExpectationResult,
     InputDefinition,
@@ -12,12 +13,11 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     RunConfig,
-    execute_pipeline,
     solid,
 )
 from dagster.core.events import STEP_EVENTS, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.config import InProcessExecutorConfig
+
 from dagster_graphql.cli import execute_query
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 from dagster_graphql.client.util import HANDLED_EVENTS, dagster_event_from_dict
@@ -90,7 +90,8 @@ def define_test_events_pipeline():
 def test_pipeline():
     '''just a sanity check to ensure the above pipeline works without layering on graphql'''
     result = execute_pipeline(
-        define_test_events_pipeline(), run_config=RunConfig.nonthrowing_in_process()
+        define_test_events_pipeline(),
+        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
     )
     assert result.result_for_solid('materialization_and_expectation').success
     assert not result.result_for_solid('should_fail').success
@@ -101,7 +102,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
     handle = ExecutionTargetHandle.for_pipeline_fn(define_test_events_pipeline)
     pipeline = handle.build_pipeline_definition()
     mode = pipeline.get_default_mode_name()
-    run_config = RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False), mode=mode)
+    run_config = RunConfig(mode=mode)
     execution_plan = create_execution_plan(pipeline, {}, run_config=run_config)
     step_levels = execution_plan.topological_step_levels()
 

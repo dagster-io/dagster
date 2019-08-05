@@ -11,6 +11,14 @@ class DaskConfig(
     ExecutorConfig,
 ):
     '''DaskConfig - configuration for the Dask execution engine
+
+    Params:
+        address (Optional[str]): The address of a `Scheduler` server, e.g., `'127.0.0.1:8786'`.
+        timeout (Optional[int]): Timeout duration for initial connection to the scheduler.
+        scheduler_file (Optional[str]): Path to a file with scheduler information if available.
+        direct_to_workers (Optional[bool]): Whether or not to connect directly to the workers, or
+            to ask the scheduler to serve as intermediary.
+        heartbeat_interval (Optional[int]): Time in milliseconds between heartbeats to scheduler.
     '''
 
     def __new__(
@@ -23,16 +31,10 @@ class DaskConfig(
     ):
         return super(DaskConfig, cls).__new__(
             cls,
-            # The address of a ``Scheduler`` server like a string '127.0.0.1:8786'
             address=check.opt_str_param(address, 'address'),
-            # Timeout duration for initial connection to the scheduler
             timeout=check.opt_int_param(timeout, 'timeout'),
-            # Path to a file with scheduler information if available
             scheduler_file=check.opt_str_param(scheduler_file, 'scheduler_file'),
-            # Whether or not to connect directly to the workers, or to ask the scheduler to serve as
-            # intermediary.
             direct_to_workers=check.opt_bool_param(direct_to_workers, 'direct_to_workers'),
-            # Time in milliseconds between heartbeats to scheduler
             heartbeat_interval=check.opt_int_param(heartbeat_interval, 'heartbeat_interval'),
         )
 

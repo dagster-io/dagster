@@ -6,13 +6,13 @@ import textwrap
 import click
 import yaml
 
-from dagster import InProcessExecutorConfig, PipelineDefinition, RunConfig, check, execute_pipeline
+from dagster import check, execute_pipeline, PipelineDefinition, RunConfig
 from dagster.cli.load_handle import (
     CliUsageError,
     handle_for_pipeline_cli_args,
     handle_for_repo_cli_args,
 )
-from dagster.core.definitions import solids_in_topological_order, Solid
+from dagster.core.definitions import Solid, solids_in_topological_order
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.visualize import build_graphviz_graph
@@ -264,7 +264,6 @@ def pipeline_graphviz_command(only_solids, **kwargs):
         '-e pandas_hello_world/env.yaml'
     ),
 )
-@click.option('--raise-on-error/--no-raise-on-error', default=True)
 @click.option(
     '-p',
     '--preset',
@@ -273,51 +272,44 @@ def pipeline_graphviz_command(only_solids, **kwargs):
     'preset_defs.',
 )
 @click.option('-d', '--mode', type=click.STRING)
-def pipeline_execute_command(env, raise_on_error, preset, mode, **kwargs):
+def pipeline_execute_command(env, preset, mode, **kwargs):
     check.invariant(isinstance(env, tuple))
 
     if preset:
         if env:
             raise click.UsageError('Can not use --preset with --env.')
-        return execute_execute_command_with_preset(preset, raise_on_error, kwargs, mode)
+        return execute_execute_command_with_preset(preset, kwargs, mode)
 
     env = list(env)
     try:
-        execute_execute_command(env, raise_on_error, kwargs, mode)
+        execute_execute_command(env, kwargs, mode)
     except CliUsageError:
         ctx = click.get_current_context()
         click.echo(ctx.get_help())
         ctx.exit()
 
 
-def execute_execute_command(env, raise_on_error, cli_args, mode=None):
+def execute_execute_command(env, cli_args, mode=None):
     pipeline = create_pipeline_from_cli_args(cli_args)
-    return do_execute_command(pipeline, env, raise_on_error, mode)
+    return do_execute_command(pipeline, env, mode)
 
 
-def execute_execute_command_with_preset(preset, raise_on_error, cli_args, _mode):
+def execute_execute_command_with_preset(preset, cli_args, _mode):
     pipeline = handle_for_pipeline_cli_args(cli_args).build_pipeline_definition()
     cli_args.pop('pipeline_name')
 
     kwargs = pipeline.get_preset(preset)
-    kwargs['run_config'] = kwargs['run_config'].with_executor_config(
-        InProcessExecutorConfig(raise_on_error=raise_on_error)
-    )
     return execute_pipeline(**kwargs)
 
 
-def do_execute_command(pipeline, env_file_list, raise_on_error, mode=None):
+def do_execute_command(pipeline, env_file_list, mode=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
 
     environment_dict = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
     return execute_pipeline(
-        pipeline,
-        environment_dict=environment_dict,
-        run_config=RunConfig(
-            mode=mode, executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)
-        ),
+        pipeline, environment_dict=environment_dict, run_config=RunConfig(mode=mode)
     )
 
 

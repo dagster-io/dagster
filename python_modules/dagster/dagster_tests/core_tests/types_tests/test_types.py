@@ -1,18 +1,16 @@
 import pytest
 
 from dagster import (
-    RunConfig,
-    InProcessExecutorConfig,
     DagsterInvariantViolationError,
     DagsterTypeCheckError,
+    execute_pipeline,
     Failure,
     InputDefinition,
+    lambda_solid,
     OutputDefinition,
+    pipeline,
     RuntimeType,
     TypeCheck,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
 )
 
 from dagster.core.types import Int, Optional, List, PythonObjectType
@@ -110,7 +108,7 @@ def test_nullable_list_combos_coerciion():
 def execute_no_throw(pipeline_def):
     return execute_pipeline(
         pipeline_def,
-        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
+        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
     )
 
 

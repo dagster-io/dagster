@@ -5,10 +5,12 @@ from dagster import (
     solid,
     ExecutionTargetHandle,
     InputDefinition,
-    RunConfig,
+    ModeDefinition,
 )
 from dagster.core.test_utils import nesting_composite_pipeline
-from dagster_dask import DaskConfig
+from dagster.core.definitions.executor import default_executors
+
+from dagster_dask import dask_executor
 
 import dagster_pandas as dagster_pd
 
@@ -18,7 +20,7 @@ def simple(_):
     return 1
 
 
-@pipeline
+@pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
 def dask_engine_pipeline():
     return simple()  # pylint: disable=no-value-for-parameter
 
@@ -28,14 +30,18 @@ def test_execute_on_dask():
         ExecutionTargetHandle.for_pipeline_python_file(
             __file__, 'dask_engine_pipeline'
         ).build_pipeline_definition(),
-        environment_dict={'storage': {'filesystem': {}}},
-        run_config=RunConfig(executor_config=DaskConfig(timeout=30)),
+        environment_dict={
+            'storage': {'filesystem': {}},
+            'execution': {'dask': {'config': {'timeout': 30}}},
+        },
     )
     assert result.result_for_solid('simple').output_value() == 1
 
 
 def dask_composite_pipeline():
-    return nesting_composite_pipeline(6, 2)
+    return nesting_composite_pipeline(
+        6, 2, mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])]
+    )
 
 
 def test_composite_execute():
@@ -43,8 +49,10 @@ def test_composite_execute():
         ExecutionTargetHandle.for_pipeline_python_file(
             __file__, 'dask_composite_pipeline'
         ).build_pipeline_definition(),
-        environment_dict={'storage': {'filesystem': {}}},
-        run_config=RunConfig(executor_config=DaskConfig(timeout=30)),
+        environment_dict={
+            'storage': {'filesystem': {}},
+            'execution': {'dask': {'config': {'timeout': 30}}},
+        },
     )
     assert result.success
 
@@ -54,7 +62,7 @@ def pandas_solid(_, df):  # pylint: disable=unused-argument
     pass
 
 
-@pipeline
+@pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
 def pandas_pipeline():
     return pandas_solid()  # pylint: disable=no-value-for-parameter
 
@@ -72,8 +80,11 @@ def test_pandas_dask():
         ExecutionTargetHandle.for_pipeline_python_file(
             __file__, pandas_pipeline.name
         ).build_pipeline_definition(),
-        environment_dict={'storage': {'filesystem': {}}, **environment_dict},
-        run_config=RunConfig(executor_config=DaskConfig(timeout=30)),
+        environment_dict={
+            'storage': {'filesystem': {}},
+            'execution': {'dask': {'config': {'timeout': 30}}},
+            **environment_dict,
+        },
     )
 
     assert result.success

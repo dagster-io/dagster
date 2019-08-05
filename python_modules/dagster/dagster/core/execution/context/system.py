@@ -27,7 +27,7 @@ class SystemPipelineExecutionContextData(
         (
             'run_config scoped_resources_builder environment_config pipeline_def '
             'mode_def system_storage_def run_storage intermediates_manager file_manager '
-            'execution_target_handle'
+            'execution_target_handle executor_config'
         ),
     )
 ):
@@ -48,9 +48,11 @@ class SystemPipelineExecutionContextData(
         intermediates_manager,
         file_manager,
         execution_target_handle,
+        executor_config,
     ):
         from dagster.core.definitions import PipelineDefinition
         from dagster.core.definitions.system_storage import SystemStorageDefinition
+        from dagster.core.execution.config import ExecutorConfig
         from dagster.core.storage.intermediates_manager import IntermediatesManager
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
@@ -71,12 +73,11 @@ class SystemPipelineExecutionContextData(
             intermediates_manager=check.inst_param(
                 intermediates_manager, 'intermediates_manager', IntermediatesManager
             ),
-            # TODO: Make required when https://github.com/dagster-io/dagster/issues/1456
-            # is complete
-            file_manager=check.opt_inst_param(file_manager, 'file_manager', FileManager),
+            file_manager=check.inst_param(file_manager, 'file_manager', FileManager),
             execution_target_handle=check.opt_inst_param(
                 execution_target_handle, 'execution_target_handle', ExecutionTargetHandle
             ),
+            executor_config=check.inst_param(executor_config, 'executor_config', ExecutorConfig),
         )
 
     @property
@@ -116,7 +117,7 @@ class SystemPipelineExecutionContext(object):
 
     @property
     def executor_config(self):
-        return self.run_config.executor_config
+        return self._pipeline_context_data.executor_config
 
     @property
     def run_config(self):
@@ -201,6 +202,7 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
         self._resources = self._pipeline_context_data.scoped_resources_builder.build(
             self.solid.resource_mapper_fn, self.solid_def.required_resource_keys
         )
+        self._log_manager = log_manager
 
     def for_compute(self):
         return SystemComputeExecutionContext(self._pipeline_context_data, self.log, self.step)
@@ -224,6 +226,10 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
     @property
     def resources(self):
         return self._resources
+
+    @property
+    def log(self):
+        return self._log_manager
 
 
 class SystemComputeExecutionContext(SystemStepExecutionContext):

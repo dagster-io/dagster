@@ -8,8 +8,6 @@ execute_*
 These represent functions which do purely in-memory compute. They will evaluate expectations the
 core compute function, and exercise all logging and metrics tracking (outside of outputs), but they
 will not invoke *any* outputs (and their APIs don't allow the user to).
-
-
 '''
 
 from dagster import check
@@ -25,8 +23,8 @@ from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.utils import ensure_gen
 
+from .config import RunConfig
 from .context_creation_pipeline import create_environment_config, scoped_pipeline_context
-from .config import RunConfig, InProcessExecutorConfig
 from .results import PipelineExecutionResult
 
 
@@ -56,9 +54,7 @@ def check_run_config_param(run_config, pipeline_def):
     return (
         check.inst_param(run_config, 'run_config', RunConfig)
         if run_config
-        else RunConfig(
-            executor_config=InProcessExecutorConfig(), mode=pipeline_def.get_default_mode_name()
-        )
+        else RunConfig(mode=pipeline_def.get_default_mode_name())
     )
 
 
@@ -126,12 +122,16 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
     execution_plan = create_execution_plan(
         pipeline, environment_dict=environment_dict, run_config=run_config
     )
-    return execute_plan_iterator(
-        execution_plan,
-        environment_dict=environment_dict,
-        run_config=run_config,
-        step_keys_to_execute=run_config.step_keys_to_execute,
-    )
+
+    with scoped_pipeline_context(pipeline, environment_dict, run_config) as pipeline_context:
+
+        for event in _execute_pipeline_iterator(
+            pipeline_context,
+            execution_plan,
+            run_config=run_config,
+            step_keys_to_execute=run_config.step_keys_to_execute,
+        ):
+            yield event
 
 
 def execute_pipeline(pipeline, environment_dict=None, run_config=None):
@@ -140,9 +140,6 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
 
     This is the entry point for dagster CLI and dagit execution. For the dagster-graphql entry
     point, see execute_plan() below.
-
-    Note: raise_on_error is very useful in testing contexts when not testing for error
-    conditions
 
     Parameters:
       pipeline (PipelineDefinition): Pipeline to run
@@ -214,6 +211,7 @@ def _invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_exec
 
     # Engine execution returns a generator of yielded events, so returning here means this function
     # also returns a generator
+
     return pipeline_context.executor_config.get_engine().execute(
         pipeline_context, execution_plan, step_keys_to_execute
     )
@@ -234,6 +232,11 @@ def _check_reexecution_config(pipeline_context, execution_plan, run_config):
             'Run id {} set as previous run id was not found in run storage'.format(previous_run_id),
             invalid_run_id=previous_run_id,
         )
+
+    check.invariant(
+        run_config.run_id != previous_run_id,
+        'Run id {} is identical to previous run id'.format(run_config.run_id),
+    )
 
     for step_output_handle in run_config.reexecution_config.step_output_handles:
         if not execution_plan.has_step(step_output_handle.step_key):

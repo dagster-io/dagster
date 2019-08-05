@@ -1,16 +1,6 @@
 # pylint: disable=no-value-for-parameter
 
-from dagster import (
-    execute_pipeline,
-    pipeline,
-    resource,
-    solid,
-    Field,
-    Int,
-    ModeDefinition,
-    InProcessExecutorConfig,
-    RunConfig,
-)
+from dagster import execute_pipeline, Field, Int, ModeDefinition, pipeline, resource, solid
 
 
 @resource(config_field=Field(Int, is_optional=True))
@@ -34,6 +24,8 @@ def resource_error_pipeline():
 if __name__ == '__main__':
     result = execute_pipeline(
         resource_error_pipeline,
-        environment_dict={'storage': {'filesystem': {}}},
-        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
+        environment_dict={
+            'storage': {'filesystem': {}},
+            'execution': {'in_process': {'config': {'raise_on_error': False}}},
+        },
     )

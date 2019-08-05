@@ -1,34 +1,36 @@
 from __future__ import absolute_import
-from collections import namedtuple
-import abc
 
+import abc
+import atexit
 import copy
 import logging
 import os
 import sys
 import time
-import atexit
+
+from collections import namedtuple
 
 import gevent
 import six
 
 from dagster import (
-    ExecutionTargetHandle,
-    InProcessExecutorConfig,
-    PipelineDefinition,
-    RunConfig,
     check,
-    execute_pipeline,
+    execute_pipeline_iterator,
+    ExecutionTargetHandle,
+    PipelineDefinition,
+    PipelineExecutionResult,
+    RunConfig,
 )
-from dagster.core.events.log import DagsterEventRecord
 from dagster.core.events import (
     DagsterEvent,
     DagsterEventType,
-    PipelineProcessStartedData,
     PipelineProcessStartData,
+    PipelineProcessStartedData,
 )
-from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
+from dagster.core.events.log import DagsterEventRecord
 from dagster.utils import get_multiprocessing_context
+from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
+
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRun
 
 
@@ -120,19 +122,24 @@ def build_process_started_event(run_id, pipeline_name, process_id):
 class SynchronousExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, _, pipeline, pipeline_run, raise_on_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+
+        run_config = RunConfig(
+            pipeline_run.run_id,
+            mode=pipeline_run.mode,
+            event_callback=pipeline_run.handle_new_event,
+            reexecution_config=pipeline_run.reexecution_config,
+            step_keys_to_execute=pipeline_run.step_keys_to_execute,
+        )
+
+        # We do this instead of just using execute_pipeline to avoid spurious pipeline start and
+        # pipeline success or pipeline failure events.
         try:
-            return execute_pipeline(
-                pipeline,
-                pipeline_run.config,
-                run_config=RunConfig(
-                    pipeline_run.run_id,
-                    mode=pipeline_run.mode,
-                    event_callback=pipeline_run.handle_new_event,
-                    executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error),
-                    reexecution_config=pipeline_run.reexecution_config,
-                    step_keys_to_execute=pipeline_run.step_keys_to_execute,
-                ),
-            )
+            event_list = []
+            for event in execute_pipeline_iterator(
+                pipeline, pipeline_run.config, run_config=run_config
+            ):
+                event_list.append(event)
+            return PipelineExecutionResult(pipeline, run_config.run_id, event_list, lambda: None)
         except Exception:  # pylint: disable=broad-except
             if raise_on_error:
                 six.reraise(*sys.exc_info())
@@ -167,7 +174,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         self._processes = []
         # This is actually a reverse semaphore. We keep track of number of
         # processes we have by releasing semaphore every time we start
-        # processing, we release after processing is finished
+        # processing, we acquire after processing is finished
         self._processing_semaphore = gevent.lock.Semaphore(0)
 
         gevent.spawn(self._start_polling)
@@ -211,11 +218,9 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                         )
 
             if not done:
-                with self._processes_lock:
-                    self._processes.append(process)
+                self._processes.append(process)
 
-            with self._processes_lock:
-                self._processing_semaphore.acquire()
+            self._processing_semaphore.acquire()
 
     def _consume_process_queue(self, process):
         while not process.message_queue.empty():
@@ -312,10 +317,12 @@ def execute_pipeline_through_queue(
         run_id,
         mode=mode,
         event_callback=message_queue.put,
-        executor_config=InProcessExecutorConfig(raise_on_error=False),
         reexecution_config=reexecution_config,
         step_keys_to_execute=step_keys_to_execute,
     )
+
+    if 'execution' not in environment_dict or not environment_dict['execution']:
+        environment_dict['execution'] = {'in_process': {'config': {'raise_on_error': False}}}
 
     try:
         handle.build_repository_definition()
@@ -326,10 +333,13 @@ def execute_pipeline_through_queue(
         return
 
     try:
-        result = execute_pipeline(
+        event_list = []
+        for event in execute_pipeline_iterator(
             pipeline_def.build_sub_pipeline(solid_subset), environment_dict, run_config=run_config
-        )
-        return result
+        ):
+            # message_queue.put(event)
+            event_list.append(event)
+        return PipelineExecutionResult(pipeline_def, run_config.run_id, event_list, lambda: None)
     except Exception:  # pylint: disable=broad-except
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         message_queue.put(MultiprocessingError(error_info))

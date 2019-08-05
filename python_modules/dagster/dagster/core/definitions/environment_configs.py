@@ -219,9 +219,14 @@ def define_environment_cls(creation_data):
                     is_optional=True,
                 ),
                 'execution': Field(
-                    define_execution_config_cls(
-                        '{pipeline_name}.ExecutionConfig'.format(pipeline_name=pipeline_name)
-                    )
+                    define_executor_config_cls(
+                        '{pipeline_name}.{mode_name}.ExecutionConfig'.format(
+                            pipeline_name=pipeline_name,
+                            mode_name=camelcase(creation_data.mode_definition.name),
+                        ),
+                        creation_data.mode_definition,
+                    ),
+                    is_optional=True,
                 ),
                 'loggers': Field(
                     define_logger_dictionary_cls(
@@ -260,6 +265,25 @@ def define_storage_config_cls(type_name, mode_definition):
                     type_name=type_name, storage_name=camelcase(storage_def.name)
                 ),
                 fields={'config': storage_def.config_field} if storage_def.config_field else {},
+            )
+        )
+
+    return SystemNamedSelector(type_name, fields)
+
+
+def define_executor_config_cls(type_name, mode_definition):
+    check.str_param(type_name, 'type_name')
+    check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
+
+    fields = {}
+
+    for executor_def in mode_definition.executor_defs:
+        fields[executor_def.name] = Field(
+            SystemNamedDict(
+                name='{type_name}.{executor_name}'.format(
+                    type_name=type_name, executor_name=camelcase(executor_def.name)
+                ),
+                fields={'config': executor_def.config_field} if executor_def.config_field else {},
             )
         )
 
@@ -404,11 +428,6 @@ def define_solid_dictionary_cls(
             )
 
     return SystemNamedDict(name, fields)
-
-
-def define_execution_config_cls(name):
-    check.str_param(name, 'name')
-    return SystemNamedDict(name, {})
 
 
 def iterate_solid_def_types(solid_def):

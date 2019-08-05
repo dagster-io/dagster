@@ -9,14 +9,13 @@ from dagster import (
     ExecutionTargetHandle,
     InputDefinition,
     Int,
-    MultiprocessExecutorConfig,
+    lambda_solid,
     OutputDefinition,
     PipelineDefinition,
     RunConfig,
-    lambda_solid,
 )
 
-from dagster.core.execution.api import DagsterEventType, create_execution_plan, execute_plan
+from dagster.core.execution.api import create_execution_plan, DagsterEventType, execute_plan
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 
 
@@ -94,11 +93,13 @@ def test_using_file_system_for_subplan():
 
 
 def test_using_file_system_for_subplan_multiprocessing():
-    pipeline = define_inty_pipeline()
 
     environment_dict = {'storage': {'filesystem': {}}}
 
-    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(
+        ExecutionTargetHandle.for_pipeline_fn(define_inty_pipeline).build_pipeline_definition(),
+        environment_dict=environment_dict,
+    )
 
     assert execution_plan.get_step_by_key('return_one.compute')
 
@@ -109,13 +110,8 @@ def test_using_file_system_for_subplan_multiprocessing():
     return_one_step_events = list(
         execute_plan(
             execution_plan,
-            environment_dict=environment_dict,
-            run_config=RunConfig(
-                run_id=run_id,
-                executor_config=MultiprocessExecutorConfig(
-                    handle=ExecutionTargetHandle.for_pipeline_fn(define_inty_pipeline)
-                ),
-            ),
+            environment_dict=dict(environment_dict, execution={'multiprocess': {}}),
+            run_config=RunConfig(run_id=run_id),
             step_keys_to_execute=step_keys,
         )
     )
@@ -129,13 +125,8 @@ def test_using_file_system_for_subplan_multiprocessing():
     add_one_step_events = list(
         execute_plan(
             execution_plan,
-            environment_dict=environment_dict,
-            run_config=RunConfig(
-                run_id=run_id,
-                executor_config=MultiprocessExecutorConfig(
-                    handle=ExecutionTargetHandle.for_pipeline_fn(define_inty_pipeline)
-                ),
-            ),
+            environment_dict=dict(environment_dict, execution={'multiprocess': {}}),
+            run_config=RunConfig(run_id=run_id),
             step_keys_to_execute=['add_one.compute'],
         )
     )

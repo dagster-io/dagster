@@ -101,6 +101,12 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': None
             },
             {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
                 'name': 'Float'
             },
             {
@@ -119,6 +125,15 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': 'Int.MaterializationSchema'
             },
             {
+                'name': 'MultiModeWithResources.AddMode.ExecutionConfig'
+            },
+            {
+                'name': 'MultiModeWithResources.AddMode.ExecutionConfig.InProcess'
+            },
+            {
+                'name': 'MultiModeWithResources.AddMode.ExecutionConfig.Multiprocess'
+            },
+            {
                 'name': 'MultiModeWithResources.AddMode.StorageConfig'
             },
             {
@@ -129,9 +144,6 @@ snapshots['test_query_multi_mode 1'] = {
             },
             {
                 'name': 'MultiModeWithResources.ApplyToThree.Outputs'
-            },
-            {
-                'name': 'MultiModeWithResources.ExecutionConfig'
             },
             {
                 'name': 'MultiModeWithResources.ExpectationsConfig'
@@ -177,7 +189,7 @@ snapshots['test_query_multi_mode 1'] = {
             'fields': [
                 {
                     'configType': {
-                        'name': 'MultiModeWithResources.ExecutionConfig'
+                        'name': 'MultiModeWithResources.AddMode.ExecutionConfig'
                     }
                 },
                 {

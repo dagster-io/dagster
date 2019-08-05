@@ -3,22 +3,21 @@ import sys
 import pytest
 
 from dagster import (
+    check,
     DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
     DependencyDefinition,
     EventMetadataEntry,
+    execute_pipeline,
     Failure,
     InputDefinition,
+    lambda_solid,
     Output,
     OutputDefinition,
-    PipelineDefinition,
-    RunConfig,
-    SolidDefinition,
-    check,
-    execute_pipeline,
-    lambda_solid,
     pipeline,
+    PipelineDefinition,
     solid,
+    SolidDefinition,
 )
 
 from dagster.core.test_utils import single_output_solid
@@ -46,7 +45,10 @@ def create_root_fn_failure_solid(name):
 
 def test_compute_failure_pipeline():
     pipeline_def = PipelineDefinition(solid_defs=[create_root_fn_failure_solid('failing')])
-    pipeline_result = execute_pipeline(pipeline_def, run_config=RunConfig.nonthrowing_in_process())
+    pipeline_result = execute_pipeline(
+        pipeline_def,
+        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
+    )
 
     assert not pipeline_result.success
 
@@ -97,7 +99,10 @@ def test_failure_midstream():
             'D': {'C': DependencyDefinition(solid_c.name)},
         },
     )
-    pipeline_result = execute_pipeline(pipeline_def, run_config=RunConfig.nonthrowing_in_process())
+    pipeline_result = execute_pipeline(
+        pipeline_def,
+        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
+    )
 
     assert pipeline_result.result_for_solid('A').success
     assert pipeline_result.result_for_solid('B').success
@@ -171,7 +176,10 @@ def test_failure_propagation():
         },
     )
 
-    pipeline_result = execute_pipeline(pipeline_def, run_config=RunConfig.nonthrowing_in_process())
+    pipeline_result = execute_pipeline(
+        pipeline_def,
+        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
+    )
 
     assert pipeline_result.result_for_solid('A').success
     assert pipeline_result.result_for_solid('B').success

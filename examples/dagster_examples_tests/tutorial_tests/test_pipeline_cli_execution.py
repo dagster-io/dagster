@@ -13,6 +13,4 @@ def test_execute_pipeline():
         'fn_name': None,
     }
     with pushd(script_relative_path('../../dagster_examples/intro_tutorial/')):
-        execute_execute_command(
-            ['pipeline_execution_env.yaml'], raise_on_error=True, cli_args=execute_kwargs
-        )
+        execute_execute_command(['pipeline_execution_env.yaml'], cli_args=execute_kwargs)
