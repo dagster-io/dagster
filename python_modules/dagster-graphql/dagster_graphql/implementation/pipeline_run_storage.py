@@ -13,7 +13,7 @@ import pyrsistent
 import six
 from rx import Observable
 
-from dagster import check, seven
+from dagster import check, seven, utils
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import ExecutionSelector
@@ -35,6 +35,7 @@ class PipelineRunStorage(object):
             self._load_runs()
 
     def _load_runs(self):
+        utils.mkdir_p(self._log_dir)
         for file in os.listdir(self._log_dir):
             if not file.endswith('.json'):
                 continue

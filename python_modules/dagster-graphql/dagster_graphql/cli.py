@@ -89,14 +89,23 @@ def execute_query(
     return result_dict
 
 
-def execute_query_from_cli(handle, query, variables=None):
+def execute_query_from_cli(handle, query, variables=None, log=False, log_dir=None):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.str_param(query, 'query')
     check.opt_str_param(variables, 'variables')
+    check.bool_param(log, 'log')
+    check.opt_str_param(log_dir, 'log_dir')
 
     query = query.strip('\'" \n\t')
 
-    result_dict = execute_query(handle, query, json.loads(variables) if variables else None)
+    pipeline_run_storage = PipelineRunStorage(log_dir if log else None)
+
+    result_dict = execute_query(
+        handle,
+        query,
+        variables=json.loads(variables) if variables else None,
+        pipeline_run_storage=pipeline_run_storage,
+    )
     str_res = seven.json.dumps(result_dict)
 
     # Since this the entry point for CLI execution, some tests depend on us putting the result on
@@ -126,12 +135,14 @@ def execute_query_from_cli(handle, query, variables=None):
 @click.option('--variables', '-v', type=click.STRING)
 @click.version_option(version=__version__)
 @click.argument('query', type=click.STRING)
-def ui(variables, query, **kwargs):
+@click.option('--log', is_flag=True, help='Record logs of pipeline runs')
+@click.option('--log-dir', help="Directory to record logs to", default='dagit_run_logs/')
+def ui(variables, query, log, log_dir, **kwargs):
     handle = handle_for_repo_cli_args(kwargs)
 
     query = query.strip('\'" \n\t')
 
-    execute_query_from_cli(handle, query, variables)
+    execute_query_from_cli(handle, query, variables, log, log_dir)
 
 
 def main():
