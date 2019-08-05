@@ -69,10 +69,9 @@ class Header extends React.Component<HeaderProps, HeaderState> {
     const initialX = m.screenX;
     const initialWidth = this.props.width;
 
-    const onMouseMove = (evt: Event) => {
+    const onMouseMove = (evt: MouseEvent) => {
       const dir = this.props.handleSide === "left" ? -1 : 1;
-      const m = (evt as unknown) as React.MouseEvent<HTMLDivElement>;
-      const screenX = m.screenX;
+      const screenX = evt.screenX;
 
       this.props.onResize &&
         this.props.onResize(
