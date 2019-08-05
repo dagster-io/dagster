@@ -52,6 +52,7 @@ install_dev_python_modules:
 	pip install -r python_modules/dagit/dev-requirements.txt
 	pip install -r python_modules/libraries/dagster-aws/dev-requirements.txt
 	pip install -r bin/requirements.txt
+	pip install -r .read-the-docs-requirements.txt
 
 graphql:
 	cd js_modules/dagit/; make generate-types
