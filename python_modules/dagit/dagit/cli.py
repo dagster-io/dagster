@@ -10,7 +10,7 @@ from geventwebsocket.handler import WebSocketHandler
 from dagster import check, ExecutionTargetHandle
 from dagster.cli.pipeline import repository_target_argument
 from dagster.cli.load_handle import handle_for_repo_cli_args
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
+from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, dagster_logs_dir_for_handle
 
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 
@@ -51,8 +51,15 @@ REPO_TARGET_WARNING = (
 @click.option('--host', '-h', type=click.STRING, default='127.0.0.1', help="Host to run server on")
 @click.option('--port', '-p', type=click.INT, default=3000, help="Port to run server on")
 @click.option('--sync', is_flag=True, help='Use the synchronous execution manager')
-@click.option('--log', is_flag=True, help='Record logs of pipeline runs')
-@click.option('--log-dir', help="Directory to record logs to", default='dagit_run_logs/')
+@click.option(
+    '--log',
+    is_flag=True,
+    help=(
+        'Record logs of pipeline runs. Use --log-dir to specify the directory to record logs to. '
+        'By default, logs will be stored under $DAGSTER_HOME.'
+    ),
+)
+@click.option('--log-dir', help="Directory to record logs to", default=None)
 @click.option(
     '--no-watch',
     is_flag=True,
@@ -64,6 +71,9 @@ def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
 
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
+
+    if log and not log_dir:
+        log_dir = dagster_logs_dir_for_handle(handle)
 
     check.invariant(
         not no_watch,

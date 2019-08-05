@@ -12,6 +12,7 @@ import yaml
 from dagster import check
 from dagster.seven.abc import Mapping
 
+
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
 
@@ -221,6 +222,34 @@ def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
     except subprocess.CalledProcessError as cpe:
         print(cpe)
         raise cpe
+
+
+def dagster_home_dir():
+    dagster_home_path = os.getenv('DAGSTER_HOME')
+
+    if not dagster_home_path:
+        raise RuntimeError(
+            "$DAGSTER_HOME is not set and log-dir is not provided. "
+            "Set the home directory for dagster by exporting  DAGSTER_HOME in your "
+            ".bashrc or .bash_profile, or pass in a default directory using the --log-dir flag"
+            "\nExamples:"
+            "\n1. export DAGSTER_HOME=\"~/dagster\""
+            "\n2. --log --logdir=\"/dagster_logs\""
+        )
+
+    return os.path.expanduser(dagster_home_path)
+
+
+def dagster_logs_dir():
+    return os.path.join(dagster_home_dir(), "logs", "experimental")
+
+
+def dagster_logs_dir_for_handle(handle):
+    from dagster.core.definitions.handle import ExecutionTargetHandle
+
+    check.inst_param(handle, 'handle', ExecutionTargetHandle)
+    repository_name = handle.build_repository_definition().name
+    return os.path.join(dagster_logs_dir(), repository_name)
 
 
 @contextlib.contextmanager

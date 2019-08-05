@@ -9,7 +9,7 @@ from graphql.execution.executors.sync import SyncExecutor
 from dagster import check, seven, ExecutionTargetHandle
 from dagster.cli.pipeline import repository_target_argument
 from dagster.cli.load_handle import handle_for_repo_cli_args
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
+from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, dagster_logs_dir_for_handle
 from dagster.utils.log import get_stack_trace_array
 
 from .implementation.context import DagsterGraphQLContext
@@ -136,11 +136,21 @@ def execute_query_from_cli(handle, query, variables=None, log=False, log_dir=Non
 @click.version_option(version=__version__)
 @click.argument('query', type=click.STRING)
 @click.option('--log', is_flag=True, help='Record logs of pipeline runs')
-@click.option('--log-dir', help="Directory to record logs to", default='dagit_run_logs/')
+@click.option(
+    '--log-dir',
+    help=(
+        'Record logs of pipeline runs. Use --log-dir to specify the directory to record logs to. '
+        'By default, logs will be stored under $DAGSTER_HOME.'
+    ),
+    default=None,
+)
 def ui(variables, query, log, log_dir, **kwargs):
     handle = handle_for_repo_cli_args(kwargs)
 
     query = query.strip('\'" \n\t')
+
+    if log and not log_dir:
+        log_dir = dagster_logs_dir_for_handle(handle)
 
     execute_query_from_cli(handle, query, variables, log, log_dir)
 
