@@ -91,15 +91,18 @@ MODULE_NAMES = [
 
 LIBRARY_MODULES = [
     'dagster-aws',
+    'dagster-bash',
     'dagster-datadog',
     'dagster-gcp',
     'dagster-ge',
     'dagster-pagerduty',
+    'dagster-papertrail',
     'dagster-pandas',
     'dagster-pyspark',
     'dagster-slack',
     'dagster-snowflake',
     'dagster-spark',
+    'dagster-ssh',
 ]
 
 EXPECTED_PYTHON_MODULES = ['automation', 'lakehouse', 'libraries'] + MODULE_NAMES
