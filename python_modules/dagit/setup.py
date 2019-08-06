@@ -69,9 +69,6 @@ def _do_setup(name='dagit'):
             'gevent-websocket==0.10.1',
             'gevent==1.3.7',
             'graphql-ws>=0.3.0',
-            'Jinja2==2.10.0',  # https://github.com/dagster-io/dagster/issues/1600
-            'tzlocal==1.5.1',  # https://github.com/dagster-io/dagster/issues/1600
-            'werkzeug==0.14.1',  # https://github.com/dagster-io/dagster/issues/1600
             # watchdog
             'watchdog>=0.8.3',
             # notebooks support

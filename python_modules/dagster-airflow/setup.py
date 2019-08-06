@@ -55,9 +55,6 @@ def _do_setup(name='dagster-airflow'):
             # aws
             'boto3==1.9.*',
             'python-dateutil>=2.8.0',
-            'Jinja2==2.10.0',  # https://github.com/dagster-io/dagster/issues/1600
-            'tzlocal==1.5.1',  # https://github.com/dagster-io/dagster/issues/1600
-            'werkzeug==0.14.1',  # https://github.com/dagster-io/dagster/issues/1600
         ],
         entry_points={'console_scripts': ['dagster-airflow = dagster_airflow.cli:main']},
     )
