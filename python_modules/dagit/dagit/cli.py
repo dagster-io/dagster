@@ -1,18 +1,19 @@
 import os
 import sys
-import six
 
 import click
-
+import six
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
-from dagster import check, ExecutionTargetHandle
-from dagster.cli.pipeline import repository_target_argument
+from dagster import ExecutionTargetHandle, check
 from dagster.cli.load_handle import handle_for_repo_cli_args
+from dagster.cli.pipeline import repository_target_argument
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, dagster_logs_dir_for_handle
-
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_run_storage import (
+    FilesystemRunStorage,
+    InMemoryRunStorage,
+)
 
 from .app import create_app
 from .version import __version__
@@ -86,7 +87,7 @@ def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
 def host_dagit_ui(log, log_dir, handle, use_sync, host, port):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
 
-    pipeline_run_storage = PipelineRunStorage(log_dir if log else None)
+    pipeline_run_storage = FilesystemRunStorage(log_dir) if log else InMemoryRunStorage()
 
     app = create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=use_sync)
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
@@ -101,7 +102,7 @@ def host_dagit_ui(log, log_dir, handle, use_sync, host, port):
                         'Another process on your machine is already listening on port {port}. '
                         'It is possible that you have another instance of dagit '
                         'running somewhere using the same port. Or it could be another '
-                        'random process. Either kill that process or us the -p option to '
+                        'random process. Either kill that process or use the -p option to '
                         'select another port.'
                     ).format(port=port)
                 ),

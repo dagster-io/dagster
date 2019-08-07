@@ -1,33 +1,54 @@
-import os
-import sys
-
+import csv
+from collections import OrderedDict
 
 from dagster import (
-    ExecutionTargetHandle,
     DependencyDefinition,
+    ExecutionTargetHandle,
     InputDefinition,
+    Materialization,
     OutputDefinition,
+    Path,
     PipelineDefinition,
     RepositoryDefinition,
     SolidDefinition,
+    as_dagster_type,
+    input_hydration_config,
+    output_materialization_config,
 )
-
-from dagster.utils import script_relative_path
-
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_run_storage import InMemoryRunStorage
 from dagster_graphql.test.utils import execute_dagster_graphql
-
 from dagster_graphql_tests.graphql.setup import define_context, define_repository
 
-# This is needed to find production query in all cases
-sys.path.insert(0, os.path.abspath(script_relative_path('.')))
 
-from production_query import (  # pylint: disable=wrong-import-position,wrong-import-order
-    PRODUCTION_QUERY,
+class PoorMansDataFrame_(list):
+    pass
+
+
+@input_hydration_config(Path)
+def df_input_schema(_context, path):
+    with open(path, 'r') as fd:
+        return PoorMansDataFrame_(
+            [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
+        )
+
+
+@output_materialization_config(Path)
+def df_output_schema(_context, path, value):
+    with open(path, 'w') as fd:
+        writer = csv.DictWriter(fd, fieldnames=value[0].keys())
+        writer.writeheader()
+        writer.writerows(rowdicts=value)
+
+    return Materialization.file(path)
+
+
+PoorMansDataFrame = as_dagster_type(
+    PoorMansDataFrame_,
+    input_hydration_config=df_input_schema,
+    output_materialization_config=df_output_schema,
 )
-from setup import PoorMansDataFrame  # pylint: disable=no-name-in-module
 
 
 def test_enum_query():
@@ -165,7 +186,7 @@ def test_pipelines_or_error_invalid():
 
     context = DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_test_repository),
-        pipeline_runs=PipelineRunStorage(),
+        pipeline_runs=InMemoryRunStorage(),
         execution_manager=SynchronousExecutionManager(),
     )
 
@@ -210,8 +231,8 @@ def test_pipeline_or_error_by_name():
     assert result.data['pipelineOrError']['name'] == 'csv_hello_world_two'
 
 
-def test_production_query():
-    result = execute_dagster_graphql(define_context(), PRODUCTION_QUERY)
+def test_production_query(production_query):
+    result = execute_dagster_graphql(define_context(), production_query)
 
     assert not result.errors
     assert result.data

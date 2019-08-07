@@ -1,17 +1,16 @@
 import pytest
 
+from dagit.app import create_app
+from dagit.cli import host_dagit_ui
 from dagster import ExecutionTargetHandle
 from dagster.seven import mock
 from dagster.utils import script_relative_path
-from dagit.app import create_app
-from dagit.cli import host_dagit_ui
-
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_run_storage import InMemoryRunStorage
 
 
 def test_create_app():
     handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
-    pipeline_run_storage = PipelineRunStorage()
+    pipeline_run_storage = InMemoryRunStorage()
     assert create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=True)
     assert create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=False)
 
@@ -21,7 +20,7 @@ def test_notebook_view():
 
     with create_app(
         ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml')),
-        PipelineRunStorage(),
+        InMemoryRunStorage(),
     ).test_client() as client:
         res = client.get('/dagit/notebook?path={}'.format(notebook_path))
 
@@ -33,7 +32,7 @@ def test_notebook_view():
 def test_index_view():
     with create_app(
         ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml')),
-        PipelineRunStorage(),
+        InMemoryRunStorage(),
     ).test_client() as client:
         res = client.get('/')
 

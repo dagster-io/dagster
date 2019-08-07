@@ -230,11 +230,11 @@ def dagster_home_dir():
     if not dagster_home_path:
         raise RuntimeError(
             "$DAGSTER_HOME is not set and log-dir is not provided. "
-            "Set the home directory for dagster by exporting  DAGSTER_HOME in your "
+            "Set the home directory for dagster by exporting DAGSTER_HOME in your "
             ".bashrc or .bash_profile, or pass in a default directory using the --log-dir flag"
             "\nExamples:"
             "\n1. export DAGSTER_HOME=\"~/dagster\""
-            "\n2. --log --logdir=\"/dagster_logs\""
+            "\n2. --log --log-dir=\"/dagster_logs\""
         )
 
     return os.path.expanduser(dagster_home_path)

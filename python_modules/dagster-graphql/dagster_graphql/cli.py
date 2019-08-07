@@ -14,7 +14,11 @@ from dagster.utils.log import get_stack_trace_array
 from .client.query import START_PIPELINE_EXECUTION_QUERY
 from .implementation.context import DagsterGraphQLContext
 from .implementation.pipeline_execution_manager import SynchronousExecutionManager
-from .implementation.pipeline_run_storage import PipelineRunStorage
+from .implementation.pipeline_run_storage import (
+    FilesystemRunStorage,
+    InMemoryRunStorage,
+    RunStorage,
+)
 from .schema import create_schema
 from .version import __version__
 
@@ -39,17 +43,17 @@ def execute_query(
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.str_param(query, 'query')
     check.opt_dict_param(variables, 'variables')
-    check.opt_inst_param(pipeline_run_storage, 'pipeline_run_storage', PipelineRunStorage)
+    # We allow external creation of the pipeline_run_storage to support testing contexts where we
+    # need access to the underlying run storage
+    check.opt_inst_param(pipeline_run_storage, 'pipeline_run_storage', RunStorage)
     check.bool_param(raise_on_error, 'raise_on_error')
     check.bool_param(use_sync_executor, 'use_sync_executor')
 
     query = query.strip('\'" \n\t')
 
-    # We allow external creation of the pipeline_run_storage to support testing contexts where we
-    # need access to the underlying run storage
-    pipeline_run_storage = pipeline_run_storage or PipelineRunStorage()
-
     execution_manager = SynchronousExecutionManager()
+
+    pipeline_run_storage = pipeline_run_storage or InMemoryRunStorage()
 
     context = DagsterGraphQLContext(
         handle=handle,
@@ -96,7 +100,7 @@ def execute_query_from_cli(handle, query, variables=None, log=False, log_dir=Non
 
     query = query.strip('\'" \n\t')
 
-    pipeline_run_storage = PipelineRunStorage(log_dir if log else None)
+    pipeline_run_storage = FilesystemRunStorage(log_dir) if log else InMemoryRunStorage()
 
     result_dict = execute_query(
         handle,
