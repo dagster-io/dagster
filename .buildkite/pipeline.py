@@ -293,6 +293,26 @@ def lakehouse_tests():
     return tests
 
 
+def pipenv_smoke_tests():
+    tests = []
+    for version in SupportedPythons:
+        tests.append(
+            StepBuilder("pipenv smoke tests ({ver})".format(ver=TOX_MAP[version]))
+            .run(
+                "pip install pipenv",
+                "mkdir /tmp/pipenv_smoke_tests",
+                "pushd /tmp/pipenv_smoke_tests",
+                "pipenv install -e /workdir/python_modules/dagster",
+                "pipenv install -e /workdir/python_modules/dagit",
+            )
+            .on_integration_image(version)
+            .on_medium_instance()
+            .build()
+        )
+
+    return tests
+
+
 def coverage_step():
     return (
         StepBuilder("coverage")
@@ -387,6 +407,7 @@ if __name__ == "__main__":
 
     steps += dagit_tests()
     steps += lakehouse_tests()
+    steps += pipenv_smoke_tests()
 
     steps += python_modules_tox_tests("dagster")
     steps += python_modules_tox_tests("dagster-graphql")

@@ -54,7 +54,8 @@ def _do_setup(name='dagit'):
             'enum-compat==0.0.2',
             'future>=0.16.0, <0.17.0a0',
             # pyyaml pinned for compatibility with docker-compose
-            'pyyaml==4.2b1',
+            # https://github.com/docker/compose/blob/master/setup.py#L35
+            'PyYAML>=3.10,<5',
             # cli
             'click>=6.7',
             'dagster=={ver}'.format(ver=ver),
