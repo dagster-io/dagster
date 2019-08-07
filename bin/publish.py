@@ -266,17 +266,14 @@ def get_versions():
 
 def check_versions_equal(nightly=False):
     module_versions = get_versions()
+
+    source = '__nightly__' if nightly else '__version__'
+
     assert all_equal(
-        [module_version['__version__'] for module_version in module_versions.values()]
+        [module_version[source] for module_version in module_versions.values()]
     ), 'Module versions must be in lockstep to release. Found:\n{versions}'.format(
         versions=format_module_versions(module_versions)
     )
-    if nightly:
-        assert all_equal(
-            [module_version['__nightly__'] for module_version in module_versions.values()]
-        ), 'Module versions must be in lockstep to release. Found:\n{versions}'.format(
-            versions=format_module_versions(module_versions)
-        )
     return module_versions[MODULE_NAMES[0]]
 
 
