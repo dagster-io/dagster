@@ -3,6 +3,8 @@ from dagster.utils import script_relative_path
 
 from dagster_examples.pyspark_pagerank.repository import define_repository
 
+from .util import checks_for_helper_functions
+
 
 def test_pyspark_pagerank_repo():
     assert define_repository().get_all_pipelines()
@@ -33,6 +35,12 @@ def test_run_step_two():
     }
 
 
+def test_step_two_fns():
+    from dagster_examples.pyspark_pagerank.steps.step_two import computeContribs, parseNeighbors
+
+    checks_for_helper_functions(computeContribs, parseNeighbors)
+
+
 def test_run_step_three():
     result = execute_pipeline(
         define_repository().get_pipeline('pyspark_pagerank_step_three'),
@@ -52,6 +60,12 @@ def test_run_step_three():
         ('importantsite.com', 1.255),
         ('alessimportantsite.com', 0.9149999999999999),
     }
+
+
+def test_step_three_fns():
+    from dagster_examples.pyspark_pagerank.steps.step_three import computeContribs, parseNeighbors
+
+    checks_for_helper_functions(computeContribs, parseNeighbors)
 
 
 def test_run_step_four():
@@ -75,6 +89,12 @@ def test_run_step_four():
     }
 
 
+def test_step_four_fns():
+    from dagster_examples.pyspark_pagerank.steps.step_four import computeContribs, parseNeighbors
+
+    checks_for_helper_functions(computeContribs, parseNeighbors)
+
+
 def test_run_step_five():
     result = execute_pipeline(
         define_repository().get_pipeline('pyspark_pagerank_step_five'),
@@ -95,6 +115,12 @@ def test_run_step_five():
         ('importantsite.com', 2.4832499999999995),
         ('anotherlessimportantsite.com', 0.5055833333333333),
     }
+
+
+def test_step_five_fns():
+    from dagster_examples.pyspark_pagerank.steps.step_five import computeContribs, parseNeighbors
+
+    checks_for_helper_functions(computeContribs, parseNeighbors)
 
 
 def test_run_final_example():
