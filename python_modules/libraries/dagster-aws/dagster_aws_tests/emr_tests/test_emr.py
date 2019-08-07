@@ -1,16 +1,17 @@
 import pytest
 from moto import mock_emr
 
-from dagster import PipelineDefinition, execute_pipeline
-
+from dagster import execute_pipeline, pipeline
 from dagster_aws.emr.solids import EmrRunJobFlowSolidDefinition
 
 
 @pytest.mark.skip
 @mock_emr
 def test_run_emr_job():
-    e = EmrRunJobFlowSolidDefinition('test')
-    pipeline = PipelineDefinition(name='test', solid_defs=[e])
+    @pipeline
+    def test_pipe():
+        EmrRunJobFlowSolidDefinition('test')()
+
     emr_config = {
         'Name': 'test-pyspark',
         'ReleaseLabel': 'emr-5.23.0',
@@ -63,5 +64,5 @@ def test_run_emr_job():
         'ServiceRole': 'EMR_DefaultRole',
     }
     config = {'solids': {'test': {'config': {'job_config': emr_config, 'aws_region': 'us-east-1'}}}}
-    result = execute_pipeline(pipeline, config)
+    result = execute_pipeline(test_pipe, config)
     assert result.success
