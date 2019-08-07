@@ -12,11 +12,10 @@ def test_preset_yaml_roundtrip():
     with open(
         script_relative_path('../environments/multi_mode_with_resources/add_mode.yaml'), 'r'
     ) as fd:
-        assert preset_def.get_environment_yaml(pipeline.name) == fd.read()
+        assert preset_def.get_environment_yaml() == fd.read()
 
 
 def test_empty_preset():
-    pipeline = define_multi_mode_with_resources_pipeline()
     empty_preset = PresetDefinition('empty')
-    assert empty_preset.get_environment_dict(pipeline.name) == {}
-    assert empty_preset.get_environment_yaml(pipeline.name) == '{}\n'
+    assert empty_preset.environment_dict == {}
+    assert empty_preset.get_environment_yaml() == '{}\n'

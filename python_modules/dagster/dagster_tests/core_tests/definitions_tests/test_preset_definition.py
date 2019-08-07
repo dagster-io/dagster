@@ -32,42 +32,46 @@ def test_presets():
         name='simple',
         solid_defs=[can_fail, always_fail],
         preset_defs=[
-            PresetDefinition(
+            PresetDefinition.from_files(
                 'passing',
                 environment_files=[script_relative_path('pass_env.yaml')],
                 solid_subset=['can_fail'],
             ),
             PresetDefinition(
+                'passing_direct_dict',
+                environment_dict={'solids': {'can_fail': {'config': {'error': False}}}},
+                solid_subset=['can_fail'],
+            ),
+            PresetDefinition.from_files(
                 'failing_1',
                 environment_files=[script_relative_path('fail_env.yaml')],
                 solid_subset=['can_fail'],
             ),
-            PresetDefinition(
+            PresetDefinition.from_files(
                 'failing_2', environment_files=[script_relative_path('pass_env.yaml')]
-            ),
-            PresetDefinition(
-                'invalid_1', environment_files=[script_relative_path('not_a_file.yaml')]
-            ),
-            PresetDefinition(
-                'invalid_2',
-                environment_files=[script_relative_path('test_repository_definition.py')],
             ),
         ],
     )
 
-    execute_pipeline_with_preset(pipeline, 'passing')
+    with pytest.raises(DagsterInvalidDefinitionError):
+        PresetDefinition.from_files(
+            'invalid_1', environment_files=[script_relative_path('not_a_file.yaml')]
+        )
+
+    with pytest.raises(DagsterInvariantViolationError):
+        PresetDefinition.from_files(
+            'invalid_2', environment_files=[script_relative_path('test_repository_definition.py')]
+        )
+
+    assert execute_pipeline_with_preset(pipeline, 'passing').success
+
+    assert execute_pipeline_with_preset(pipeline, 'passing_direct_dict').success
 
     with pytest.raises(DagsterExecutionStepExecutionError):
         execute_pipeline_with_preset(pipeline, 'failing_1')
 
     with pytest.raises(DagsterExecutionStepExecutionError):
         execute_pipeline_with_preset(pipeline, 'failing_2')
-
-    with pytest.raises(DagsterInvalidDefinitionError, match="not_a_file.yaml"):
-        execute_pipeline_with_preset(pipeline, 'invalid_1')
-
-    with pytest.raises(DagsterInvariantViolationError, match="error attempting to parse yaml"):
-        execute_pipeline_with_preset(pipeline, 'invalid_2')
 
     with pytest.raises(DagsterInvariantViolationError, match="Could not find preset"):
         execute_pipeline_with_preset(pipeline, 'not_failing')

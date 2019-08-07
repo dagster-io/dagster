@@ -248,11 +248,11 @@ def more_complicated_nested_config():
 
 @pipeline(
     preset_defs=[
-        PresetDefinition(
+        PresetDefinition.from_files(
             name='prod',
             environment_files=[script_relative_path('../environments/csv_hello_world_prod.yaml')],
         ),
-        PresetDefinition(
+        PresetDefinition.from_files(
             name='test',
             environment_files=[script_relative_path('../environments/csv_hello_world_test.yaml')],
         ),
@@ -403,7 +403,7 @@ def double_adder_resource(init_context):
             description='Mode that adds two numbers to thing',
         ),
     ],
-    preset_defs=[PresetDefinition("add", mode="add_mode")],
+    preset_defs=[PresetDefinition.from_files("add", mode="add_mode")],
 )
 def multi_mode_with_resources():
     @solid

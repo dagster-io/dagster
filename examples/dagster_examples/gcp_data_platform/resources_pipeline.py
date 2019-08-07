@@ -115,7 +115,7 @@ def explore_visits_by_hour(context):
         )
     ],
     preset_defs=[
-        PresetDefinition(
+        PresetDefinition.from_files(
             name='default',
             mode='default',
             environment_files=[

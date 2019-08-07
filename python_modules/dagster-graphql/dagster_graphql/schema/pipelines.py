@@ -210,7 +210,7 @@ class DauphinPipelinePreset(dauphin.ObjectType):
         return self._preset.solid_subset
 
     def resolve_environmentConfigYaml(self, _graphene_info):
-        yaml = self._preset.get_environment_yaml(self._pipeline_name)
+        yaml = self._preset.get_environment_yaml()
         return yaml if yaml else ''
 
     def resolve_mode(self, _graphene_info):
