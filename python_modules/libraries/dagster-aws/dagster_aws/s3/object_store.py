@@ -19,6 +19,9 @@ class S3ObjectStore(ObjectStore):
 
     def set_object(self, key, obj, serialization_strategy=None):
         check.str_param(key, 'key')
+
+        logging.info('Writing S3 object at: ' + self.uri_for_key(key))
+
         # cannot check obj since could be arbitrary Python object
         check.inst_param(
             serialization_strategy, 'serialization_strategy', SerializationStrategy

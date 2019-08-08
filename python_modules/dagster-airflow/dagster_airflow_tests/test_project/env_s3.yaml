@@ -1,4 +1,4 @@
 storage:
   s3:
     config:
-      s3_bucket: dagster-airflow-scratch
+      s3_bucket: dagster-scratch

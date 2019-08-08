@@ -329,16 +329,16 @@ snapshots['test_presets_on_examples 7'] = {
 solids:
   upload_delays_by_geography_pdf_plots:
     config:
-      Bucket: dagster-airline-demo-sink
-      Key: delays_by_geography.pdf
+      Bucket: dagster-scratch
+      Key: airline_outputs/delays_by_geography.pdf
   upload_delays_vs_fares_pdf_plots:
     config:
-      Bucket: dagster-airline-demo-sink
-      Key: delays_vs_fares.pdf
+        Bucket: dagster-scratch
+        Key: airline_outputs/delays_vs_fares.pdf
   upload_outbound_avg_delay_pdf_plots:
     config:
-      Bucket: dagster-airline-demo-sink
-      Key: sfo_outbound_avg_delay_plots.pdf
+      Bucket: dagster-scratch
+      Key: airline_outputs/sfo_outbound_avg_delay_plots.pdf
 ''',
                 'mode': 'local',
                 'name': 'local',

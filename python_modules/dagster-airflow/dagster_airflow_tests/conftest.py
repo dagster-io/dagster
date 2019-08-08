@@ -137,4 +137,4 @@ def environment_dict(s3_bucket):
 
 @pytest.fixture(scope='session')
 def s3_bucket():
-    yield 'dagster-airflow-scratch'
+    yield 'dagster-scratch'
