@@ -311,13 +311,6 @@ def test_pipeline_name_threaded_through_context():
 
     assert result.success
 
-    for step_event in step_output_event_filter(
-        execute_pipeline_iterator(
-            PipelineDefinition(name="foobar", solid_defs=[assert_name_solid]), {}
-        )
-    ):
-        assert step_event.is_step_success
-
 
 def test_pipeline_subset():
     @lambda_solid
@@ -346,13 +339,6 @@ def test_pipeline_subset():
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 1
     assert subset_result.result_for_solid('add_one').output_value() == 4
-
-    events = execute_pipeline_iterator(
-        pipeline_def.build_sub_pipeline(['add_one']), environment_dict=env_config
-    )
-
-    for step_event in step_output_event_filter(events):
-        assert step_event.is_step_success
 
 
 def test_pipeline_subset_with_multi_dependency():
@@ -388,11 +374,6 @@ def test_pipeline_subset_with_multi_dependency():
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 1
     assert pipeline_result.result_for_solid('noop').output_value() == 3
-
-    events = execute_pipeline_iterator(pipeline_def.build_sub_pipeline(['noop']))
-
-    for step_event in step_output_event_filter(events):
-        assert step_event.is_step_success
 
     subset_result = execute_pipeline(
         pipeline_def.build_sub_pipeline(['return_one', 'return_two', 'noop'])
@@ -617,3 +598,29 @@ def test_reexecution():
     assert len(reexecution_result.solid_result_list) == 2
     assert reexecution_result.result_for_solid('return_one').output_value() == 1
     assert reexecution_result.result_for_solid('add_one').output_value() == 2
+
+
+def test_optional():
+    @solid(output_defs=[OutputDefinition(Int, 'x'), OutputDefinition(Int, 'y', is_optional=True)])
+    def return_optional(_context):
+        yield Output(1, 'x')
+
+    @lambda_solid
+    def echo(x):
+        return x
+
+    @pipeline
+    def opt_pipeline():
+        x, y = return_optional()
+        echo.alias('echo_x')(x)
+        echo.alias('echo_y')(y)
+
+    pipeline_result = execute_pipeline(opt_pipeline)
+    assert pipeline_result.success
+
+    result_required = pipeline_result.result_for_solid('echo_x')
+    assert result_required.success
+
+    result_optional = pipeline_result.result_for_solid('echo_y')
+    assert not result_optional.success
+    assert result_optional.skipped

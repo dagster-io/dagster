@@ -1,6 +1,5 @@
 # pylint: disable=no-value-for-parameter
 
-import re
 from operator import add
 
 from dagster import (
@@ -16,11 +15,7 @@ from dagster import (
 
 from dagster_pyspark import spark_session_resource, SparkRDD
 
-
-def parseNeighbors(urls):
-    """Parses a urls pair string into urls pair."""
-    parts = re.split(r'\s+', urls)
-    return parts[0], parts[1]
+from .original import computeContribs, parseNeighbors
 
 
 @solid(
@@ -34,13 +29,6 @@ def parse_pagerank_data(context, pagerank_data):
 @solid(input_defs=[InputDefinition('urls', SparkRDD)], output_defs=[OutputDefinition(SparkRDD)])
 def compute_links(_context, urls):
     return urls.distinct().groupByKey().cache()
-
-
-def computeContribs(urls, rank):
-    """Calculates URL contributions to the rank of other URLs."""
-    num_urls = len(urls)
-    for url in urls:
-        yield (url, rank / num_urls)
 
 
 @solid(

@@ -198,7 +198,7 @@ class DagsterEvent(
 
     @property
     def is_step_success(self):
-        return not self.is_step_failure
+        return self.event_type == DagsterEventType.STEP_SUCCESS
 
     @property
     def is_successful_output(self):

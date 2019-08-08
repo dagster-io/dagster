@@ -45,12 +45,12 @@ def parseNeighbors(urls):
     return parts[0], parts[1]
 
 
-def execute_pagerank():
+def execute_pagerank(filename, iterations):
     # Initialize the spark context.
     spark = SparkSession.builder.appName("PythonPageRank").getOrCreate()
 
     # two urls per line with space in between)
-    lines = spark.read.text(sys.argv[1]).rdd.map(lambda r: r[0])
+    lines = spark.read.text(filename).rdd.map(lambda r: r[0])
 
     # Loads all URLs from input file and initialize their neighbors.
     links = lines.map(parseNeighbors).distinct().groupByKey().cache()
@@ -59,7 +59,7 @@ def execute_pagerank():
     ranks = links.map(lambda url_neighbors: (url_neighbors[0], 1.0))
 
     # Calculates and updates URL ranks continuously using PageRank algorithm.
-    for _ in range(int(sys.argv[2])):
+    for _ in range(int(iterations)):
         # Calculates URL contributions to the rank of other URLs.
         contribs = links.join(ranks).flatMap(
             lambda url_urls_rank: computeContribs(url_urls_rank[1][0], url_urls_rank[1][1])
@@ -69,10 +69,12 @@ def execute_pagerank():
         ranks = contribs.reduceByKey(add).mapValues(lambda rank: rank * 0.85 + 0.15)
 
     # Collects all URL ranks and dump them to console.
-    for (link, rank) in ranks.collect():
+    result = ranks.collect()
+    for (link, rank) in result:
         print("%s has rank: %s." % (link, rank))
 
     spark.stop()
+    return result
 
 
 if __name__ == "__main__":
@@ -87,4 +89,4 @@ if __name__ == "__main__":
     )
 
     # Initialize the spark context.
-    execute_pagerank()
+    execute_pagerank(sys.argv[1], sys.argv[2])
