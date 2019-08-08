@@ -1,5 +1,6 @@
-import os
+from collections import namedtuple
 from glob import glob
+import os
 
 import six
 import yaml
@@ -10,7 +11,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from .mode import DEFAULT_MODE_NAME
 
 
-class PresetDefinition:
+class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict solid_subset mode')):
     '''Defines a preset configuration that a pipeline can execute in. Presets can be used in Dagit to
     load the predefined configuration in to the tool, or in a script or test as follows:
 
@@ -64,11 +65,14 @@ class PresetDefinition:
 
         return PresetDefinition(name, merged, solid_subset, mode)
 
-    def __init__(self, name, environment_dict=None, solid_subset=None, mode=None):
-        self.name = check.str_param(name, 'name')
-        self.environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-        self.solid_subset = check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
-        self.mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
+    def __new__(cls, name, environment_dict=None, solid_subset=None, mode=None):
+        return super(PresetDefinition, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            environment_dict=check.opt_dict_param(environment_dict, 'environment_dict'),
+            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str),
+            mode=check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME),
+        )
 
     def get_environment_yaml(self):
         return yaml.dump(self.environment_dict, default_flow_style=False)
