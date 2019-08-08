@@ -36,7 +36,7 @@ the Python versions 2.7, 3.5, 3.6, and 3.7.
 
 .. code-block:: console
 
-    $ pytest python_modules/dagster/dagster_tests
+    $ python -m pytest python_modules/dagster/dagster_tests
 
 Have fun coding!
 
