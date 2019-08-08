@@ -1,20 +1,17 @@
 from functools import partial
+
 import six
 
 from dagster import check
-
 from dagster.core.storage.type_storage import TypeStoragePlugin
 
-from .builtin_enum import BuiltinEnum
 from .builtin_config_schemas import BuiltinSchemas
-
+from .builtin_enum import BuiltinEnum
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
-
 from .config_schema import InputHydrationConfig, OutputMaterializationConfig
-
-from .marshal import SerializationStrategy, PickleSerializationStrategy
 from .dagster_type import check_dagster_type_param
+from .marshal import PickleSerializationStrategy, SerializationStrategy
 from .wrapping import WrappingListType, WrappingNullableType
 
 

@@ -3,17 +3,15 @@ from __future__ import print_function
 import os
 
 import pytest
-
 from click.testing import CliRunner
 
-from dagster import lambda_solid, RepositoryDefinition, pipeline, DagsterInvariantViolationError
+from dagster import DagsterInvariantViolationError, RepositoryDefinition, lambda_solid, pipeline
 from dagster.check import CheckError
-from dagster.core.storage.runs import base_runs_directory
 from dagster.cli.load_handle import CliUsageError
 from dagster.cli.pipeline import (
-    execute_print_command,
-    execute_list_command,
     execute_execute_command,
+    execute_list_command,
+    execute_print_command,
     execute_scaffold_command,
     pipeline_execute_command,
     pipeline_list_command,
@@ -21,6 +19,7 @@ from dagster.cli.pipeline import (
     pipeline_scaffold_command,
 )
 from dagster.cli.run import run_list_command, run_nuke_command
+from dagster.core.storage.runs import base_runs_directory
 from dagster.utils import script_relative_path
 
 

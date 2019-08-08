@@ -11,7 +11,7 @@ from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.log_manager import DagsterLogManager
 from dagster.utils.log import construct_single_handler_logger
 
-from dagstermill.logger import init_db, JsonSqlite3Handler, JsonSqlite3LogWatcher
+from dagstermill.logger import JsonSqlite3Handler, JsonSqlite3LogWatcher, init_db
 
 
 class LogTestHandler(logging.Handler):

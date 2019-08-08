@@ -1,6 +1,5 @@
 import itertools
-
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
 
 from dagster import check
 

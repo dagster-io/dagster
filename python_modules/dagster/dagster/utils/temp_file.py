@@ -2,7 +2,6 @@ import itertools
 import os
 import shutil
 import tempfile
-
 from contextlib import contextmanager
 
 from dagster import check

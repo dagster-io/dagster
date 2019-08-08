@@ -1,9 +1,11 @@
 import os
 
-from dagster import Materialization, check, execute_pipeline
-from dagster_pyspark import spark_session_resource
+import pytest
 
-from lakehouse import construct_lakehouse_pipeline, Lakehouse
+from dagster import Materialization, check, execute_pipeline
+
+from dagster_pyspark import spark_session_resource
+from lakehouse import Lakehouse, construct_lakehouse_pipeline
 
 
 class LocalOnDiskSparkCsvLakehouse(Lakehouse):
@@ -23,12 +25,21 @@ class LocalOnDiskSparkCsvLakehouse(Lakehouse):
         return Materialization.file(path), None
 
 
-def execute_spark_lakehouse_build(tables, lakehouse, environment_dict=None):
-    return execute_pipeline(
-        construct_lakehouse_pipeline(
-            name='spark_lakehouse_pipeline',
-            lakehouse_tables=tables,
-            resources={'lakehouse': lakehouse, 'spark': spark_session_resource},
-        ),
-        environment_dict=environment_dict,
-    )
+@pytest.fixture(scope='session')
+def local_on_disk_spark_lakehouse():
+    return LocalOnDiskSparkCsvLakehouse
+
+
+@pytest.fixture(scope='session')
+def execute_spark_lakehouse_build():
+    def _execute_spark_lakehouse_build(tables, lakehouse, environment_dict=None):
+        return execute_pipeline(
+            construct_lakehouse_pipeline(
+                name='spark_lakehouse_pipeline',
+                lakehouse_tables=tables,
+                resources={'lakehouse': lakehouse, 'spark': spark_session_resource},
+            ),
+            environment_dict=environment_dict,
+        )
+
+    return _execute_spark_lakehouse_build

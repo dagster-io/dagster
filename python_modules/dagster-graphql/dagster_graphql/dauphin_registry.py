@@ -25,14 +25,15 @@ graphene.NonNull(graphene.List(graphene.NonNull(graphene.String)))
 
 '''
 from functools import partial
-from graphql.type.introspection import IntrospectionSchema
 
 import graphene
 from graphene.types.definitions import GrapheneGraphQLType, GrapheneObjectType, GrapheneUnionType
 from graphene.types.enum import EnumMeta
 from graphene.types.generic import GenericScalar
-from graphene.types.typemap import TypeMap as GrapheneTypeMap, resolve_type
+from graphene.types.typemap import TypeMap as GrapheneTypeMap
+from graphene.types.typemap import resolve_type
 from graphene.utils.subclass_with_meta import SubclassWithMeta_Meta
+from graphql.type.introspection import IntrospectionSchema
 
 GRAPHENE_TYPES = [
     graphene.ObjectType,

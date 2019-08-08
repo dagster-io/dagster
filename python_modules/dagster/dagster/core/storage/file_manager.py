@@ -1,18 +1,18 @@
-from abc import ABCMeta, abstractproperty, abstractmethod
-from contextlib import contextmanager
 import io
 import os
 import shutil
 import uuid
+from abc import ABCMeta, abstractmethod, abstractproperty
+from contextlib import contextmanager
 
 import six
 
 from dagster import check
-from dagster.utils import mkdir_p
 from dagster.core.types.decorator import dagster_type
+from dagster.utils import mkdir_p
 
-from .temp_file_manager import TempfileManager
 from .runs import base_directory_for_run
+from .temp_file_manager import TempfileManager
 
 
 @dagster_type(

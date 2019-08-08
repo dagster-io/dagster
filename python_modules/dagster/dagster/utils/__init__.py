@@ -11,11 +11,10 @@ import yaml
 from six.moves import configparser
 
 from dagster import check
-from dagster.seven.abc import Mapping
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.seven.abc import Mapping
 
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
-
 
 PICKLE_PROTOCOL = 2
 

@@ -3,11 +3,11 @@ import pytest
 from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
-    execute_pipeline,
     ExecutionTargetHandle,
     InputDefinition,
-    lambda_solid,
     PipelineDefinition,
+    execute_pipeline,
+    lambda_solid,
 )
 
 

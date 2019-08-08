@@ -1,5 +1,4 @@
 import nbformat
-
 from nbconvert.preprocessors.execute import CellExecutionError
 from papermill.engines import NBConvertEngine
 from papermill.log import logger

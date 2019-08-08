@@ -1,4 +1,4 @@
-from dagster import ExpectationResult, check, EventMetadataEntry
+from dagster import EventMetadataEntry, ExpectationResult, check
 
 
 def create_expectation_result(label, ge_evr):

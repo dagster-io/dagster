@@ -1,5 +1,4 @@
 from dagster import check
-
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
 from dagster.core.types import Bool, Field, Int
 from dagster.core.types.field_utils import check_user_facing_opt_field_param

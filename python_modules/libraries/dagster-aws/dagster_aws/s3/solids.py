@@ -1,21 +1,20 @@
 from dagster import (
-    EventMetadataEntry,
-    FileHandle,
     Dict,
+    EventMetadataEntry,
     Field,
+    FileHandle,
     InputDefinition,
-    OutputDefinition,
     Materialization,
     Output,
+    OutputDefinition,
     String,
     check,
     input_hydration_config,
     solid,
 )
+from dagster.core.types.runtime import PythonObjectType
 
 from .file_manager import S3FileHandle
-
-from dagster.core.types.runtime import PythonObjectType
 
 
 def dict_with_fields(name, fields):

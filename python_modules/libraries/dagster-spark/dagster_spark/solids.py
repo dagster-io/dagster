@@ -1,12 +1,11 @@
 import functools
 import os
 
-from dagster import check, InputDefinition, List, OutputDefinition, Path, Output, SolidDefinition
-
+from dagster import InputDefinition, List, Output, OutputDefinition, Path, SolidDefinition, check
 
 from .configs import define_spark_config
 from .types import SparkSolidError
-from .utils import run_spark_subprocess, parse_spark_config
+from .utils import parse_spark_config, run_spark_subprocess
 
 
 def create_spark_shell_cmd(solid_config, main_class):

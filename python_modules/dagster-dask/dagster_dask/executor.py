@@ -1,5 +1,4 @@
 from dagster import Bool, Field, Int, String
-
 from dagster.core.definitions.executor import executor
 
 from .config import DaskConfig

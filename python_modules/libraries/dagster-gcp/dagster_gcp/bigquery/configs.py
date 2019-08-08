@@ -4,17 +4,17 @@ See the BigQuery Python API documentation for reference:
     https://googleapis.github.io/google-cloud-python/latest/bigquery/reference.html
 '''
 
-from dagster import Bool, Dict, Field, List, Int, String
+from dagster import Bool, Dict, Field, Int, List, String
 
 from .types import (
-    Dataset,
-    Table,
     BQCreateDisposition,
     BQEncoding,
     BQPriority,
     BQSchemaUpdateOption,
     BQSourceFormat,
     BQWriteDisposition,
+    Dataset,
+    Table,
 )
 
 

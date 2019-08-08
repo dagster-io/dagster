@@ -1,13 +1,13 @@
-from abc import ABCMeta, abstractmethod
-from collections import namedtuple, OrderedDict
 import json
 import os
 import shutil
+from abc import ABCMeta, abstractmethod
+from collections import OrderedDict, namedtuple
 
 import six
 
 from dagster import check, seven
-from dagster.utils import mkdir_p, list_pull
+from dagster.utils import list_pull, mkdir_p
 
 
 def base_runs_directory():

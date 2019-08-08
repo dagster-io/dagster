@@ -1,21 +1,19 @@
 from __future__ import absolute_import
 
 from dagster import check
-
 from dagster.core.types.evaluator.errors import (
     EvaluationError,
-    MissingFieldErrorData,
-    MissingFieldsErrorData,
     FieldNotDefinedErrorData,
     FieldsNotDefinedErrorData,
+    MissingFieldErrorData,
+    MissingFieldsErrorData,
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
 )
 from dagster.core.types.evaluator.stack import (
-    EvaluationStackPathEntry,
     EvaluationStackListItemEntry,
+    EvaluationStackPathEntry,
 )
-
 from dagster.utils.error import SerializableErrorInfo
 
 from dagster_graphql import dauphin

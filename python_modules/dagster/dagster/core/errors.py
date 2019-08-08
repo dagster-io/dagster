@@ -13,11 +13,11 @@ exception. This new exception is there to embellish the original error with addi
 the dagster runtime is aware of.
 '''
 
-from contextlib import contextmanager
-from future.utils import raise_from
-
 import sys
 import traceback
+from contextlib import contextmanager
+
+from future.utils import raise_from
 
 from dagster import check
 

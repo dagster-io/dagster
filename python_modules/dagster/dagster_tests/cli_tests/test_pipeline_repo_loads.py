@@ -1,8 +1,9 @@
 import imp
 import importlib
-import pytest
-from dagster.utils import script_relative_path
 
+import pytest
+
+from dagster.cli.load_handle import CliUsageError, handle_for_pipeline_cli_args
 from dagster.core.definitions import (
     ExecutionTargetHandle,
     LoaderEntrypoint,
@@ -11,7 +12,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.decorators import lambda_solid
 from dagster.core.definitions.handle import _ExecutionTargetMode
-from dagster.cli.load_handle import handle_for_pipeline_cli_args, CliUsageError
+from dagster.utils import script_relative_path
 
 
 def test_repository_python_file():

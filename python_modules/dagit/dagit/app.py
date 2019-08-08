@@ -2,25 +2,18 @@ from __future__ import absolute_import
 
 import os
 
-try:
-    from typing import Any, Dict
-except ImportError:
-    pass
-
-from six import text_type
-
 import nbformat
-from flask import Flask, send_file, send_from_directory, request
+from flask import Flask, request, send_file, send_from_directory
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
 from graphql.error.base import GraphQLError
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
+from six import text_type
 
-from dagster import check, seven, ExecutionTargetHandle
+from dagster import ExecutionTargetHandle, check, seven
 from dagster.utils.log import get_stack_trace_array
-from dagster_graphql.schema import create_schema
 
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import (
@@ -28,9 +21,16 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
     SynchronousExecutionManager,
 )
 from dagster_graphql.implementation.pipeline_run_storage import RunStorage
+from dagster_graphql.schema import create_schema
+
 from .subscription_server import DagsterSubscriptionServer
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 from .version import __version__
+
+try:
+    from typing import Any, Dict
+except ImportError:
+    pass
 
 
 # based on default_format_error copied and pasted from graphql_server 1.1.1

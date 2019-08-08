@@ -1,13 +1,13 @@
-from contextlib import contextmanager
 import io
 import uuid
+from contextlib import contextmanager
 
 from dagster import check
 from dagster.core.storage.file_manager import (
     FileHandle,
     FileManager,
-    check_file_like_obj,
     TempfileManager,
+    check_file_like_obj,
 )
 
 

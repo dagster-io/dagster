@@ -1,4 +1,4 @@
-from dagster import execute_pipeline, pipeline, InputDefinition, OutputDefinition
+from dagster import InputDefinition, OutputDefinition, execute_pipeline, pipeline
 from dagster.core.test_utils import single_output_solid
 
 

@@ -1,7 +1,7 @@
 # pylint: disable=no-value-for-parameter
 import pytest
 
-from dagster import Field, DagsterInvalidConfigError, String, execute_pipeline, solid, pipeline
+from dagster import DagsterInvalidConfigError, Field, String, execute_pipeline, pipeline, solid
 
 
 def test_basic_solid_with_config():

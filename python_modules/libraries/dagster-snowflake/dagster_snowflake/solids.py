@@ -1,4 +1,4 @@
-from dagster import check, InputDefinition, Nothing, solid
+from dagster import InputDefinition, Nothing, check, solid
 
 
 def snowflake_solid_for_query(sql, parameters):

@@ -1,10 +1,10 @@
 import pytest
 
 from dagster import (
+    DagsterInvalidConfigError,
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
-    DagsterInvalidConfigError,
     PipelineDefinition,
     SolidInvocation,
     String,

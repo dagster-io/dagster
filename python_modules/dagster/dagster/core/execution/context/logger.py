@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 from dagster import check
-
 from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 

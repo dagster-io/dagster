@@ -7,16 +7,14 @@ in the user_context module
 from collections import namedtuple
 
 from dagster import check
-from dagster.utils import merge_dicts
-
 from dagster.core.definitions.handle import ExecutionTargetHandle
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.log_manager import DagsterLogManager
-
 from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.runs import RunStorage
 from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.utils import merge_dicts
 
 from ..config import RunConfig
 

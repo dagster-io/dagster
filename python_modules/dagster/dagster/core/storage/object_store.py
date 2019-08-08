@@ -1,14 +1,13 @@
 import logging
 import os
 import shutil
-
 from abc import ABCMeta, abstractmethod
 
 import six
 
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
-from dagster.core.types.marshal import SerializationStrategy, PickleSerializationStrategy
+from dagster.core.types.marshal import PickleSerializationStrategy, SerializationStrategy
 from dagster.utils import mkdir_p
 
 

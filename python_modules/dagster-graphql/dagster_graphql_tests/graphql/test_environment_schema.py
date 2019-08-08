@@ -1,5 +1,6 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
-from .setup import define_context, csv_hello_world_solids_config
+
+from .setup import csv_hello_world_solids_config, define_context
 
 ENVIRONMENT_SCHEMA_QUERY = '''
 query($selector: ExecutionSelector! $mode: String!)

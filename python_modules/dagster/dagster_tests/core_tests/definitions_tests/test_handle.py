@@ -17,12 +17,10 @@ from dagster import (
 from dagster.core.definitions import LoaderEntrypoint
 from dagster.core.definitions.handle import (
     EPHEMERAL_NAME,
-    _get_python_file_from_previous_stack_frame,
     _ExecutionTargetHandleData,
+    _get_python_file_from_previous_stack_frame,
 )
-
 from dagster.utils import script_relative_path
-
 
 NOPE = 'this is not a pipeline or repo or callable'
 

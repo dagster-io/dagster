@@ -1,4 +1,5 @@
 import sys
+
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 

@@ -1,7 +1,7 @@
 import logging
 import socket
 
-from dagster import logger, Field
+from dagster import Field, logger
 
 
 class ContextFilter(logging.Filter):

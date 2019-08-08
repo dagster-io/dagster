@@ -1,8 +1,8 @@
 import itertools
 import re
 import subprocess
-
 from threading import Thread
+
 from six.moves import queue
 
 

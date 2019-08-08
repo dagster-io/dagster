@@ -3,25 +3,22 @@ import sys
 import pandas as pd
 import pytest
 
-import dagstermill
-
 from dagster import (
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
-    RepositoryDefinition,
     PresetDefinition,
+    RepositoryDefinition,
     execute_pipeline,
     file_relative_path,
     pipeline,
 )
-
 from dagster.core.utility_solids import define_stub_solid
-
 from dagster.utils import script_relative_path
 
-from ..data_frame import DataFrame
+import dagstermill
 
+from ..data_frame import DataFrame
 from .pandas_hello_world.pipeline import pandas_hello_world
 
 

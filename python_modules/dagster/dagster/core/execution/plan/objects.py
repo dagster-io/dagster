@@ -1,13 +1,12 @@
 from collections import namedtuple
 from enum import Enum
 
-
 from dagster import check
-from dagster.core.definitions import SolidHandle, Materialization
+from dagster.core.definitions import Materialization, SolidHandle
+from dagster.core.definitions.events import EventMetadataEntry
 from dagster.core.types.runtime import RuntimeType
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
-from dagster.core.definitions.events import EventMetadataEntry
 
 
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):

@@ -9,14 +9,13 @@ from dagster import (
     DependencyDefinition,
     Field,
     InputDefinition,
+    Output,
     OutputDefinition,
     PipelineDefinition,
-    Output,
     execute_pipeline,
     lambda_solid,
     solid,
 )
-
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.utility_solids import define_stub_solid
 

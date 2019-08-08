@@ -2,8 +2,8 @@ import pytest
 
 from dagster import Any, Dict, Enum, EnumValue, Field, List, Optional, PermissiveDict, String
 from dagster.check import CheckError, ParameterCheckError
-from dagster.core.types.default_applier import apply_default_values
 from dagster.core.types.config import ConfigType
+from dagster.core.types.default_applier import apply_default_values
 from dagster.core.types.field import resolve_to_config_type
 from dagster.core.types.field_utils import Selector
 

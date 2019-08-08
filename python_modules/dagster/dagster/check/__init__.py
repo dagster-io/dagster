@@ -1,8 +1,6 @@
 import inspect
 
 from future.utils import raise_with_traceback
-
-
 from six import string_types
 
 

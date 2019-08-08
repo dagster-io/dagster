@@ -1,4 +1,4 @@
-from dagster import PipelineDefinition, SolidDefinition, Field, Dict, String
+from dagster import Dict, Field, PipelineDefinition, SolidDefinition, String
 from dagster.core.execution.api import create_execution_plan
 
 

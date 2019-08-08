@@ -1,8 +1,8 @@
 import pytest
-
 from moto import mock_emr
 
-from dagster import execute_pipeline, PipelineDefinition
+from dagster import PipelineDefinition, execute_pipeline
+
 from dagster_aws.emr.solids import EmrRunJobFlowSolidDefinition
 
 

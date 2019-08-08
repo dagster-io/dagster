@@ -3,7 +3,7 @@ import time
 
 import pytest
 
-from dagster import solid, Output, PipelineDefinition, execute_pipeline
+from dagster import Output, PipelineDefinition, execute_pipeline, solid
 
 
 @pytest.mark.skipif(

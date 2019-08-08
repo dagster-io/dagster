@@ -3,9 +3,9 @@ import pickle
 
 from dagster import check, seven
 
-from .config import ConfigTypeAttributes, Path, Int, String, Bool, Any, Float
-from .config_schema import make_bare_input_schema, input_selector_schema, output_selector_schema
-from .field_utils import FieldImpl, Dict, NamedSelector
+from .config import Any, Bool, ConfigTypeAttributes, Float, Int, Path, String
+from .config_schema import input_selector_schema, make_bare_input_schema, output_selector_schema
+from .field_utils import Dict, FieldImpl, NamedSelector
 
 
 def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):

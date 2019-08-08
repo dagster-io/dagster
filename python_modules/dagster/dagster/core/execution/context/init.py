@@ -1,10 +1,9 @@
 from collections import namedtuple
 
 from dagster import check
-
-from dagster.core.log_manager import DagsterLogManager
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.log_manager import DagsterLogManager
 
 
 class InitResourceContext(

@@ -1,5 +1,6 @@
-from .utils import sync_execute_get_events
 import re
+
+from .utils import sync_execute_get_events
 
 
 def test_materializations(snapshot):

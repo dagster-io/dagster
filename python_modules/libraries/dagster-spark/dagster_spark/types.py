@@ -2,7 +2,6 @@
 
 from dagster import Enum, EnumValue
 
-
 SparkDeployModeCluster = EnumValue('cluster')
 SparkDeployModeClient = EnumValue('client')
 SparkDeployMode = Enum(

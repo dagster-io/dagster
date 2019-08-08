@@ -2,29 +2,29 @@ from dagster.core.definitions import (
     CompositeSolidDefinition,
     DependencyDefinition,
     EventMetadataEntry,
-    TextMetadataEntryData,
-    UrlMetadataEntryData,
-    PathMetadataEntryData,
-    JsonMetadataEntryData,
     ExecutionTargetHandle,
     ExpectationResult,
     Failure,
     InputDefinition,
+    JsonMetadataEntryData,
     LoggerDefinition,
     Materialization,
     ModeDefinition,
     MultiDependencyDefinition,
+    Output,
     OutputDefinition,
+    PathMetadataEntryData,
     PipelineDefinition,
     PresetDefinition,
     RepositoryDefinition,
     ResourceDefinition,
-    Output,
     SolidDefinition,
     SolidInvocation,
-    SystemStorageDefinition,
     SystemStorageData,
+    SystemStorageDefinition,
+    TextMetadataEntryData,
     TypeCheck,
+    UrlMetadataEntryData,
     composite_solid,
     lambda_solid,
     logger,
@@ -33,29 +33,6 @@ from dagster.core.definitions import (
     solid,
     system_storage,
 )
-
-from dagster.core.events import DagsterEventType
-
-from dagster.core.execution.api import (
-    execute_pipeline,
-    execute_pipeline_iterator,
-    execute_pipeline_with_preset,
-)
-
-from dagster.core.execution.config import (
-    InProcessExecutorConfig,
-    MultiprocessExecutorConfig,
-    RunConfig,
-)
-
-from dagster.core.execution.context.init import InitResourceContext
-
-from dagster.core.execution.context.logger import InitLoggerContext
-
-from dagster.core.execution.plan.objects import StepKind
-
-from dagster.core.execution.results import PipelineExecutionResult, SolidExecutionResult
-
 from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
@@ -67,12 +44,24 @@ from dagster.core.errors import (
     DagsterTypeCheckError,
     DagsterUserCodeExecutionError,
 )
-
-from dagster.core.storage.init import InitSystemStorageContext
+from dagster.core.events import DagsterEventType
+from dagster.core.execution.api import (
+    execute_pipeline,
+    execute_pipeline_iterator,
+    execute_pipeline_with_preset,
+)
+from dagster.core.execution.config import (
+    InProcessExecutorConfig,
+    MultiprocessExecutorConfig,
+    RunConfig,
+)
+from dagster.core.execution.context.init import InitResourceContext
+from dagster.core.execution.context.logger import InitLoggerContext
+from dagster.core.execution.plan.objects import StepKind
+from dagster.core.execution.results import PipelineExecutionResult, SolidExecutionResult
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
-
+from dagster.core.storage.init import InitSystemStorageContext
 from dagster.core.system_config.objects import EnvironmentConfig
-
 from dagster.core.types import (
     Any,
     Bool,
@@ -90,21 +79,14 @@ from dagster.core.types import (
     input_hydration_config,
     output_materialization_config,
 )
-
-from dagster.core.types.config import ConfigType, ConfigScalar, Enum, EnumValue
-
-from dagster.core.types.decorator import dagster_type, as_dagster_type
-
-
+from dagster.core.types.config import ConfigScalar, ConfigType, Enum, EnumValue
+from dagster.core.types.decorator import as_dagster_type, dagster_type
 from dagster.core.types.marshal import SerializationStrategy
-
 from dagster.core.types.runtime import RuntimeType, define_python_dagster_type
-
 from dagster.utils import file_relative_path
 from dagster.utils.test import execute_solid, execute_solids_within_pipeline
 
 from .version import __version__
-
 
 __all__ = [
     # Definition

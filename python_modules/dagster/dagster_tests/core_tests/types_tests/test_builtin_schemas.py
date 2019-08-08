@@ -3,6 +3,7 @@ import pytest
 from dagster import (
     Any,
     Bool,
+    DagsterInvalidConfigError,
     Float,
     InputDefinition,
     Int,
@@ -10,13 +11,11 @@ from dagster import (
     Optional,
     OutputDefinition,
     Path,
-    DagsterInvalidConfigError,
     PipelineDefinition,
     String,
     execute_pipeline,
     lambda_solid,
 )
-
 from dagster.utils.test import get_temp_file_name
 
 

@@ -4,8 +4,8 @@ from collections import defaultdict, namedtuple
 import six
 
 from dagster import check
-from dagster.utils import camelcase
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.utils import camelcase
 
 from .input import InputDefinition
 from .output import OutputDefinition

@@ -1,10 +1,10 @@
 from dagster import (
-    pipeline,
     InputDefinition,
     Int,
     OutputDefinition,
     RepositoryDefinition,
     lambda_solid,
+    pipeline,
 )
 
 

@@ -1,10 +1,9 @@
 import os
 import signal
-
-from subprocess import Popen, STDOUT, PIPE
+from subprocess import PIPE, STDOUT, Popen
 from tempfile import NamedTemporaryFile
 
-from dagster import check, seven, solid, Enum, EnumValue, Failure, Field, PermissiveDict
+from dagster import Enum, EnumValue, Failure, Field, PermissiveDict, check, seven, solid
 
 
 def bash_command_solid(bash_command, name=None, output_encoding=None):

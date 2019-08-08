@@ -1,6 +1,6 @@
 import argparse
-import sys
 import os
+import sys
 
 from setuptools import find_packages, setup
 

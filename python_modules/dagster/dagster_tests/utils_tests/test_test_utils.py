@@ -2,8 +2,8 @@ import pytest
 
 from dagster import PipelineDefinition
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.utils.test import execute_solids_within_pipeline
 from dagster.utils.temp_file import _unlink_swallow_errors
+from dagster.utils.test import execute_solids_within_pipeline
 
 
 def test_unlink_swallow_errors():

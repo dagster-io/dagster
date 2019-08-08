@@ -1,9 +1,10 @@
-from dagster import system_storage, SystemStorageData, Field, String
-from dagster.core.definitions.system_storage import mem_system_storage, fs_system_storage
+from dagster import Field, String, SystemStorageData, system_storage
+from dagster.core.definitions.system_storage import fs_system_storage, mem_system_storage
 from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
 from dagster.core.storage.runs import FileSystemRunStorage
-from .intermediate_store import S3IntermediateStore
+
 from .file_manager import S3FileManager
+from .intermediate_store import S3IntermediateStore
 
 
 @system_storage(

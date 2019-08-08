@@ -63,3 +63,6 @@ dev_install: install_dev_python_modules rebuild_dagit
 
 graphql_tests:
 	pytest examples/dagster_examples_tests/graphql_tests/ python_modules/dagster-graphql/dagster_graphql_tests/graphql/ -s -vv
+
+isort:
+	cd python_modules && isort -rc .

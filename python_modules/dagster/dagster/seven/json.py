@@ -2,7 +2,8 @@
 from __future__ import absolute_import
 
 from functools import partial
-from json import dump as dump_, dumps as dumps_
+from json import dump as dump_
+from json import dumps as dumps_
 
 try:
     from json import JSONDecodeError

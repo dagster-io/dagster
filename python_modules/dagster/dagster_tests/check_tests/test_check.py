@@ -1,15 +1,15 @@
+import sys
 from collections import defaultdict
 from contextlib import contextmanager
-import sys
 
 import pytest
 
 from dagster import check
 from dagster.check import (
-    ParameterCheckError,
-    ElementCheckError,
     CheckError,
+    ElementCheckError,
     NotImplementedCheckError,
+    ParameterCheckError,
 )
 
 

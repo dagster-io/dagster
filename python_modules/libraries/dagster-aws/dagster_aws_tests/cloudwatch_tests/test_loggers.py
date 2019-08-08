@@ -4,7 +4,8 @@ import time
 
 import pytest
 
-from dagster import execute_pipeline, ModeDefinition, PipelineDefinition, solid
+from dagster import ModeDefinition, PipelineDefinition, execute_pipeline, solid
+
 from dagster_aws.cloudwatch import cloudwatch_logger
 from dagster_aws.cloudwatch.loggers import millisecond_timestamp
 

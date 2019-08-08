@@ -1,13 +1,12 @@
 import pytest
 
 from dagster import check
+from dagster.utils import script_relative_path
 from dagster.utils.yaml_utils import (
     load_yaml_from_glob_list,
     load_yaml_from_globs,
     load_yaml_from_path,
 )
-
-from dagster.utils import script_relative_path
 
 
 def test_load_yaml():

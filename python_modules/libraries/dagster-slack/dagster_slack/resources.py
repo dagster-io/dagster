@@ -1,6 +1,6 @@
 from slackclient import SlackClient
 
-from dagster import resource, seven, Field
+from dagster import Field, resource, seven
 
 
 class SlackConnection:

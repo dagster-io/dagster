@@ -5,25 +5,23 @@ import logging
 
 import yaml
 
-from dagster import check, RunConfig
-
+from dagster import RunConfig, check
 from dagster.core.definitions.events import (
-    PathMetadataEntryData,
     EventMetadataEntry,
     JsonMetadataEntryData,
+    PathMetadataEntryData,
     TextMetadataEntryData,
     UrlMetadataEntryData,
 )
-
-from dagster.core.events.log import EventRecord
 from dagster.core.events import DagsterEventType
-
+from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.objects import StepFailureData
+from dagster.core.execution.plan.plan import ExecutionPlan
+
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_or_raise
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStatus, PipelineRun
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRun, PipelineRunStatus
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
 

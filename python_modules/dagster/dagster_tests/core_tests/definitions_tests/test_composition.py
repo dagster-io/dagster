@@ -8,17 +8,16 @@ from dagster import (
     InputDefinition,
     Int,
     Nothing,
+    Output,
     OutputDefinition,
     PipelineDefinition,
     RepositoryDefinition,
-    Output,
     composite_solid,
     execute_pipeline,
     lambda_solid,
     pipeline,
     solid,
 )
-
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 

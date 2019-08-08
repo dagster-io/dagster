@@ -1,7 +1,5 @@
-import six
-
 import google.api_core.exceptions
-
+import six
 from google.cloud import bigquery
 from google.cloud.bigquery.client import _DEFAULT_NUM_RETRIES
 from google.cloud.bigquery.retry import DEFAULT_RETRY

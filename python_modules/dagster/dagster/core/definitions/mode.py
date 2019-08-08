@@ -1,11 +1,9 @@
 from dagster import check
-
+from dagster.core.definitions.executor import ExecutorDefinition, default_executors
 from dagster.loggers import default_loggers
-from dagster.core.definitions.executor import default_executors, ExecutorDefinition
 
 from .logger import LoggerDefinition
 from .resource import ResourceDefinition
-
 
 DEFAULT_MODE_NAME = 'default'
 

@@ -1,6 +1,7 @@
-from dagster import check, ExecutionTargetHandle
-from .pipeline_run_storage import RunStorage
+from dagster import ExecutionTargetHandle, check
+
 from .pipeline_execution_manager import PipelineExecutionManager
+from .pipeline_run_storage import RunStorage
 
 
 class DagsterGraphQLContext(object):

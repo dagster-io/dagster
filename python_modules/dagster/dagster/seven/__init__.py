@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-from .json import dump, dumps, JSONDecodeError
+from .json import JSONDecodeError, dump, dumps
 from .temp_dir import get_system_temp_directory
 
 try:

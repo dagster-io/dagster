@@ -2,10 +2,10 @@ import copy
 import os
 
 import click
-from papermill.iorw import load_notebook_node, write_ipynb
 import nbformat
+from papermill.iorw import load_notebook_node, write_ipynb
 
-from dagster.utils import safe_isfile, mkdir_p
+from dagster.utils import mkdir_p, safe_isfile
 
 
 def get_notebook_scaffolding():

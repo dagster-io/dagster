@@ -9,13 +9,12 @@ from dagster import (
     ExecutionTargetHandle,
     InputDefinition,
     Int,
-    lambda_solid,
     OutputDefinition,
     PipelineDefinition,
     RunConfig,
+    lambda_solid,
 )
-
-from dagster.core.execution.api import create_execution_plan, DagsterEventType, execute_plan
+from dagster.core.execution.api import DagsterEventType, create_execution_plan, execute_plan
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 
 

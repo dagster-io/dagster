@@ -2,8 +2,9 @@ from __future__ import absolute_import, unicode_literals
 
 import json
 
-from dagit import app
 from dagster import ExecutionTargetHandle
+
+from dagit import app
 from dagster_graphql.implementation.pipeline_run_storage import InMemoryRunStorage
 
 

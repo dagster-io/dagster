@@ -3,25 +3,24 @@ import uuid
 from graphql import parse
 
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
-from dagster.utils import script_relative_path, merge_dicts
+from dagster.utils import merge_dicts, script_relative_path
 from dagster.utils.test import get_temp_file_name
+
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from .execution_queries import (
-    SUBSCRIPTION_QUERY,
+    PIPELINE_REEXECUTION_INFO_QUERY,
     START_PIPELINE_EXECUTION_QUERY,
     START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
-    PIPELINE_REEXECUTION_INFO_QUERY,
+    SUBSCRIPTION_QUERY,
 )
-
-from .utils import sync_execute_get_run_log_data
-
 from .setup import (
-    define_context,
+    PoorMansDataFrame,
     csv_hello_world_solids_config,
     csv_hello_world_solids_config_fs_storage,
-    PoorMansDataFrame,
+    define_context,
 )
+from .utils import sync_execute_get_run_log_data
 
 
 def test_basic_start_pipeline_execution():

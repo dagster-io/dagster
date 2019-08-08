@@ -1,12 +1,13 @@
 import os
 import uuid
-import yaml
 
 import pytest
+import yaml
 
 from dagster import PipelineDefinition, execute_pipeline
 from dagster.core.execution.api import create_execution_plan
 from dagster.utils import script_relative_path
+
 from dagster_spark import SparkSolidDefinition, SparkSolidError
 
 CONFIG_FILE = '''

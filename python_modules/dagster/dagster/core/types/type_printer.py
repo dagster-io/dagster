@@ -1,6 +1,6 @@
 from __future__ import print_function
-from dagster import check
 
+from dagster import check
 from dagster.utils.indenting_printer import IndentingPrinter
 
 from .config import ConfigType

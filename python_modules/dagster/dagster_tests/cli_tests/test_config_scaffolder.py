@@ -9,10 +9,9 @@ from dagster import (
     String,
     check,
 )
-
+from dagster.cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster.core.definitions import create_environment_type
 from dagster.core.types import config
-from dagster.cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 
 
 def fail_me():

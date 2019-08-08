@@ -7,8 +7,8 @@ from dagster import (
     Int,
     ModeDefinition,
     PipelineDefinition,
-    RepositoryDefinition,
     PresetDefinition,
+    RepositoryDefinition,
     resource,
     solid,
 )

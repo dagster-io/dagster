@@ -1,18 +1,16 @@
 from __future__ import unicode_literals
 
+import pandas as pd
 import pytest
 
-import pandas as pd
-
 from dagster import (
-    InputDefinition,
     DagsterInvalidConfigError,
+    InputDefinition,
     OutputDefinition,
     execute_pipeline,
     pipeline,
     solid,
 )
-
 from dagster.utils import script_relative_path
 from dagster.utils.test import get_temp_file_name
 

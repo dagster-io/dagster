@@ -1,15 +1,16 @@
+from typing import Any, List, Optional, Union
+
 import pytest
 
 from dagster import (
+    DagsterInvalidDefinitionError,
+    InputDefinition,
+    Int,
+    composite_solid,
+    dagster_type,
     lambda_solid,
     solid,
-    composite_solid,
-    DagsterInvalidDefinitionError,
-    Int,
-    InputDefinition,
-    dagster_type,
 )
-from typing import List, Optional, Any, Union
 
 
 def test_single_typed_input():

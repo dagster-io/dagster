@@ -2,9 +2,7 @@ import keyword
 import re
 
 from dagster import check
-
 from dagster.core.errors import DagsterInvalidDefinitionError
-
 
 DEFAULT_OUTPUT = 'result'
 

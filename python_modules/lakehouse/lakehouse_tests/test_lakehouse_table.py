@@ -1,6 +1,8 @@
 import pytest
-from lakehouse import construct_lakehouse_pipeline, pyspark_table
+
 from dagster import DagsterInvalidDefinitionError
+
+from lakehouse import construct_lakehouse_pipeline, pyspark_table
 
 
 def test_missing_resource():

@@ -1,14 +1,13 @@
-import re
 import os
+import re
 import uuid
 
 import httplib2
 
-from dagster import execute_pipeline, seven, PipelineDefinition, ModeDefinition
+from dagster import ModeDefinition, PipelineDefinition, execute_pipeline, seven
 from dagster.seven import mock
 
-from dagster_gcp import dataproc_solid, dataproc_resource
-
+from dagster_gcp import dataproc_resource, dataproc_solid
 
 PROJECT_ID = os.getenv('GCP_PROJECT_ID')
 CLUSTER_NAME = 'test-%s' % uuid.uuid4().hex

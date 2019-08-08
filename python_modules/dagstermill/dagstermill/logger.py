@@ -43,7 +43,6 @@ from dagster import check, seven
 from dagster.core.log_manager import DagsterLogManager
 from dagster.utils.log import construct_single_handler_logger
 
-
 CREATE_LOG_TABLE_STATEMENT = '''create table if not exists logs (
     timestamp integer primary key asc,
     json_log text

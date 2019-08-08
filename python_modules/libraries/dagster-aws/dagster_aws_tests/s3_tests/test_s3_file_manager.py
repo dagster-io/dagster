@@ -1,21 +1,21 @@
-import uuid
 import os
+import uuid
 
 from dagster import (
-    ResourceDefinition,
     InputDefinition,
     Int,
     ModeDefinition,
     OutputDefinition,
+    ResourceDefinition,
     execute_pipeline,
     pipeline,
     solid,
 )
 from dagster.seven import mock
 
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
-from dagster_aws.s3.file_manager import S3FileManager, S3FileHandle
+from dagster_aws.s3.file_manager import S3FileHandle, S3FileManager
 from dagster_aws.s3.s3_fake_resource import create_s3_fake_resource
+from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 # For deps
 # pylint: disable=no-value-for-parameter

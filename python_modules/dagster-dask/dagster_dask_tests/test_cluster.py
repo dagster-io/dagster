@@ -1,4 +1,4 @@
-from dagster import execute_pipeline, ExecutionTargetHandle
+from dagster import ExecutionTargetHandle, execute_pipeline
 
 
 def test_dask_cluster(dask_address, s3_bucket):

@@ -1,6 +1,5 @@
-from collections import namedtuple
-
 import traceback
+from collections import namedtuple
 
 SerializableErrorInfo = namedtuple('SerializableErrorInfo', 'message stack cls_name')
 

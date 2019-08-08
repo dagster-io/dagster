@@ -1,7 +1,6 @@
 import uuid
 
 import pytest
-
 from airflow import DAG
 from airflow.exceptions import AirflowSkipException
 from airflow.models import TaskInstance
@@ -10,8 +9,8 @@ from airflow.utils import timezone
 
 from dagster.utils import load_yaml_from_glob_list
 
+from .factory import make_airflow_dag_containerized_for_handle, make_airflow_dag_for_handle
 from .operators import DagsterDockerOperator
-from .factory import make_airflow_dag_for_handle, make_airflow_dag_containerized_for_handle
 
 
 def execute_tasks_in_dag(dag, tasks, run_id, execution_date):

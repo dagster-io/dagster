@@ -1,4 +1,4 @@
-from dagster.utils import safe_isfile, script_relative_path, file_relative_path
+from dagster.utils import file_relative_path, safe_isfile, script_relative_path
 
 
 def test_safe_isfile():

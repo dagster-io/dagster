@@ -2,11 +2,12 @@ from collections import defaultdict
 
 from dagster import (
     DependencyDefinition,
-    PipelineDefinition,
     ModeDefinition,
+    PipelineDefinition,
     ResourceDefinition,
     check,
 )
+
 from .table import LakehouseTableDefinition
 
 

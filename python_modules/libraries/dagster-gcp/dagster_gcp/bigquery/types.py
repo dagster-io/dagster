@@ -1,19 +1,17 @@
 import re
-
 from enum import Enum as PyEnum
 
 import six
-
 from google.cloud.bigquery.job import (
     CreateDisposition,
     Encoding,
+    QueryPriority,
     SchemaUpdateOption,
     SourceFormat,
-    QueryPriority,
     WriteDisposition,
 )
 
-from dagster import Enum, EnumValue, ConfigScalar
+from dagster import ConfigScalar, Enum, EnumValue
 
 
 class BigQueryLoadSource(PyEnum):

@@ -1,16 +1,13 @@
 import os
 
-from pyspark.sql import Row, DataFrame as SparkDF
-
-from dagster_pyspark import spark_session_from_config
-
-from dagster.utils.temp_file import get_temp_dir
+from pyspark.sql import DataFrame as SparkDF
+from pyspark.sql import Row
 
 from dagster import InputDefinition
+from dagster.utils.temp_file import get_temp_dir
 
+from dagster_pyspark import spark_session_from_config
 from lakehouse import PySparkMemLakehouse, input_table, pyspark_table
-
-from .common import LocalOnDiskSparkCsvLakehouse, execute_spark_lakehouse_build
 
 # Note typehints in lakehouse purely optional and behave as vanilla typehints
 
@@ -32,7 +29,7 @@ def TableThree(_, table_one: SparkDF, table_two: SparkDF) -> SparkDF:
     return table_one.union(table_two)
 
 
-def test_execute_in_mem_lakehouse():
+def test_execute_in_mem_lakehouse(execute_spark_lakehouse_build):
     lakehouse = PySparkMemLakehouse()
     pipeline_result = execute_spark_lakehouse_build(
         tables=[TableOne, TableTwo, TableThree],
@@ -49,11 +46,13 @@ def test_execute_in_mem_lakehouse():
     }
 
 
-def test_execute_file_system_lakehouse():
+def test_execute_file_system_lakehouse(
+    local_on_disk_spark_lakehouse, execute_spark_lakehouse_build
+):
     with get_temp_dir() as temp_dir:
         pipeline_result = execute_spark_lakehouse_build(
             tables=[TableOne, TableTwo, TableThree],
-            lakehouse=LocalOnDiskSparkCsvLakehouse(temp_dir),
+            lakehouse=local_on_disk_spark_lakehouse(temp_dir),
             environment_dict={'solids': {'TableOne': {'inputs': {'num': {'value': 1}}}}},
         )
 

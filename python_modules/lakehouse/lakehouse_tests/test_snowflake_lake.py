@@ -1,6 +1,5 @@
-from lakehouse import snowflake_table, SnowflakeLakehouse, construct_lakehouse_pipeline
-
 from dagster_snowflake import snowflake_resource
+from lakehouse import SnowflakeLakehouse, construct_lakehouse_pipeline, snowflake_table
 
 
 @snowflake_table

@@ -3,23 +3,22 @@ import sys
 import pytest
 
 from dagster import (
-    check,
     DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
     DependencyDefinition,
     EventMetadataEntry,
-    execute_pipeline,
     Failure,
     InputDefinition,
-    lambda_solid,
     Output,
     OutputDefinition,
-    pipeline,
     PipelineDefinition,
-    solid,
     SolidDefinition,
+    check,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
+    solid,
 )
-
 from dagster.core.test_utils import single_output_solid
 
 

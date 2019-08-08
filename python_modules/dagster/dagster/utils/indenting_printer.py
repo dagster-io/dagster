@@ -7,7 +7,6 @@ from six import StringIO
 
 from dagster import check
 
-
 LINE_LENGTH = 100
 
 

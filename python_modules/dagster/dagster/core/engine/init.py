@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 from dagster import check
-
 from dagster.core.definitions import ExecutorDefinition, ModeDefinition, PipelineDefinition
 from dagster.core.execution.config import RunConfig
 from dagster.core.system_config.objects import EnvironmentConfig

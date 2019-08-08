@@ -1,4 +1,5 @@
 import traceback
+
 import six
 
 from dagster import check
@@ -8,10 +9,9 @@ from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.solid import CompositeSolidDefinition
 from dagster.core.execution.config import RunConfig
 from dagster.core.types.config import ConfigType
-from dagster.utils import frozendict, ensure_single_item
+from dagster.utils import ensure_single_item, frozendict
 from dagster.utils.merger import dict_merge
 
-from .evaluate_value_result import EvaluateValueResult
 from .errors import (
     create_bad_mapping_error,
     create_bad_mapping_solids_key_error,
@@ -30,7 +30,8 @@ from .errors import (
     create_selector_type_error,
     create_selector_unspecified_value_error,
 )
-from .stack import get_friendly_path_msg, EvaluationStack
+from .evaluate_value_result import EvaluateValueResult
+from .stack import EvaluationStack, get_friendly_path_msg
 from .traversal_context import TraversalContext
 
 

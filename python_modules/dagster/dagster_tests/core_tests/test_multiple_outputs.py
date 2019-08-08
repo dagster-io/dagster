@@ -9,8 +9,8 @@ from dagster import (
     Output,
     OutputDefinition,
     execute_pipeline,
-    solid,
     pipeline,
+    solid,
 )
 
 

@@ -3,20 +3,19 @@ import time
 import boto3
 
 from dagster import (
-    check,
     Dict,
     Field,
     InputDefinition,
     Nothing,
-    OutputDefinition,
     Output,
+    OutputDefinition,
     SolidDefinition,
     String,
+    check,
 )
 
 from .configs import define_emr_run_job_flow_config
 from .types import EmrClusterState
-
 
 _START = 'start'
 

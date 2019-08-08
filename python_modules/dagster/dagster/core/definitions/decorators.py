@@ -11,15 +11,15 @@ from .composition import (
     exit_composition,
 )
 from .config import ConfigMapping, resolve_config_field
-from .events import ExpectationResult, Output, Materialization
-from .input import InputDefinition
+from .events import ExpectationResult, Materialization, Output
 from .inference import (
+    has_explicit_return_type,
+    infer_input_definitions_for_composite_solid,
     infer_input_definitions_for_lambda_solid,
     infer_input_definitions_for_solid,
-    infer_input_definitions_for_composite_solid,
     infer_output_definitions,
-    has_explicit_return_type,
 )
+from .input import InputDefinition
 from .mode import ModeDefinition
 from .output import OutputDefinition
 from .pipeline import PipelineDefinition

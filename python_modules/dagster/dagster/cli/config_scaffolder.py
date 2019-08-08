@@ -1,6 +1,5 @@
 from dagster import PipelineDefinition, check
 from dagster.core.definitions import create_environment_type
-
 from dagster.core.types.config import ConfigType
 
 

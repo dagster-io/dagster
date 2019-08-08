@@ -3,9 +3,9 @@ import os
 import pytest
 
 from dagster import execute_pipeline
-from dagster.utils import script_relative_path
 from dagster.cli.pipeline import do_execute_command
 from dagster.core.errors import DagsterExecutionStepExecutionError
+from dagster.utils import script_relative_path
 
 from dagster_pandas.examples.pandas_hello_world.pipeline import (
     pandas_hello_world,

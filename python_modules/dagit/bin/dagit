@@ -1,8 +1,9 @@
 #!/usr/bin/env python
+import os
+import signal
 import sys
 import time
-import signal
-import os
+
 from watchdog.observers import Observer
 from watchdog.tricks import AutoRestartTrick
 

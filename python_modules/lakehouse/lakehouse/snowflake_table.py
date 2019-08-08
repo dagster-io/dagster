@@ -1,4 +1,5 @@
 from dagster import check
+
 from .house import Lakehouse
 from .table import create_lakehouse_table_def
 

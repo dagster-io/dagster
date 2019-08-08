@@ -79,6 +79,6 @@ def test_resource_requirements_fail():
             pass
 
     assert str(exc_info.value) == (
-        'Resource "yup" is required by system storagestorage_with_req, but '
-        'is not provided by mode "default".'
+        'Resource \'yup\' is required by system storage \'storage_with_req\', but '
+        'is not provided by mode \'default\'.'
     )

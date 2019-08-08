@@ -355,6 +355,11 @@ if __name__ == "__main__":
         .on_integration_image(SupportedPython.V3_7)
         .on_medium_instance()
         .build(),
+        StepBuilder("isort")
+        .run("pip install isort>=4.3.21", "make isort")
+        .on_integration_image(SupportedPython.V3_7)
+        .on_medium_instance()
+        .build(),
         StepBuilder("black")
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
         # the trailing comma after **check.opt_dict_param...) -- black 19.3b0 supports multiple

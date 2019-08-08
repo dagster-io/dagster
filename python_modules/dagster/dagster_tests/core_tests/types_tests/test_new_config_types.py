@@ -1,4 +1,4 @@
-from dagster.core.types import Int, Optional, List
+from dagster.core.types import Int, List, Optional
 from dagster.core.types.evaluator import evaluate_config
 from dagster.core.types.field import resolve_to_config_type
 

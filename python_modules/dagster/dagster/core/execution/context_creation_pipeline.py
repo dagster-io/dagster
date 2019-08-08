@@ -1,7 +1,7 @@
-from collections import namedtuple
-from contextlib import contextmanager
 import sys
 import time
+from collections import namedtuple
+from contextlib import contextmanager
 
 from contextlib2 import ExitStack
 
@@ -13,10 +13,10 @@ from dagster.core.definitions.system_storage import SystemStorageData
 from dagster.core.engine.init import InitExecutorContext
 from dagster.core.errors import (
     DagsterError,
-    DagsterInvariantViolationError,
-    DagsterUserCodeExecutionError,
-    DagsterResourceFunctionError,
     DagsterInvalidConfigError,
+    DagsterInvariantViolationError,
+    DagsterResourceFunctionError,
+    DagsterUserCodeExecutionError,
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
@@ -34,8 +34,8 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config import RunConfig
 from .context.init import InitResourceContext
-from .context.system import SystemPipelineExecutionContextData, SystemPipelineExecutionContext
 from .context.logger import InitLoggerContext
+from .context.system import SystemPipelineExecutionContext, SystemPipelineExecutionContextData
 
 
 def create_environment_config(pipeline, environment_dict=None, run_config=None):
