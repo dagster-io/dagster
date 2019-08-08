@@ -16,6 +16,12 @@ class S3Resource:
         '''
         return self.session.put_object(**kwargs)
 
+    def upload_fileobj(self, fileobj, bucket, key):
+        '''This mirrors the upload_file boto3 API:
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj
+        '''
+        return self.session.upload_fileobj(fileobj, bucket, key)
+
 
 @resource(
     {

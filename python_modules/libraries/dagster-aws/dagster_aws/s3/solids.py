@@ -13,7 +13,6 @@ from dagster import (
     solid,
 )
 
-from .configs import put_object_configs
 from .file_manager import S3FileHandle
 
 from dagster.core.types.runtime import PythonObjectType
@@ -56,23 +55,22 @@ def last_key(key):
 
 
 @solid(
-    config_field=put_object_configs(),
+    config={
+        'Bucket': Field(
+            String, description='The name of the bucket to upload to.', is_optional=False
+        ),
+        'Key': Field(String, description='The name of the key to upload to.', is_optional=False),
+    },
     input_defs=[InputDefinition('file_handle', FileHandle, description='The file to upload.')],
     output_defs=[OutputDefinition(name='s3_file_handle', dagster_type=S3FileHandle)],
-    description='''Take a file handle and upload it to s3. See configuration for all
-    arguments you can pass to put_object. Returns an S3FileHandle.''',
+    description='''Take a file handle and upload it to s3. Returns an S3FileHandle.''',
 )
 def file_handle_to_s3(context, file_handle):
     bucket = context.solid_config['Bucket']
     key = context.solid_config['Key']
 
-    # the s3 put_object API expects the actual bytes to be on the 'Body' key in kwargs; since we
-    # get all other fields from config, we copy the config object and add 'Body' here.
-    cfg = context.solid_config.copy()
-    with context.file_manager.read(file_handle, 'rb') as file_obj:
-        cfg['Body'] = file_obj
-
-        context.resources.s3.put_object(**cfg)
+    with context.file_manager.read(file_handle, 'rb') as fileobj:
+        context.resources.s3.upload_fileobj(fileobj, bucket, key)
         s3_file_handle = S3FileHandle(bucket, key)
 
         yield Materialization(

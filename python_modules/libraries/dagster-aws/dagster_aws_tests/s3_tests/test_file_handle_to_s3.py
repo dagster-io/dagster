@@ -37,7 +37,7 @@ def test_successful_file_handle_to_s3():
 
         assert result.success
 
-        assert s3_fake_resource.session.mock_extras.put_object.call_count == 1
+        assert s3_fake_resource.session.mock_extras.upload_fileobj.call_count == 1
 
         assert (
             s3_fake_resource.session.get_object('some-bucket', 'some-key')['Body'].read()
@@ -53,30 +53,3 @@ def test_successful_file_handle_to_s3():
             materializations[0].metadata_entries[0].entry_data.path == 's3://some-bucket/some-key'
         )
         assert materializations[0].metadata_entries[0].label == 'some-key'
-
-
-def test_successful_file_handle_to_s3_with_configs():
-    foo_bytes = 'foo'.encode()
-    with get_temp_file_handle_with_data(foo_bytes) as temp_file_handle:
-        s3_fake_resource = create_s3_fake_resource()
-
-        result = execute_pipeline(
-            create_file_handle_pipeline(temp_file_handle, s3_fake_resource),
-            environment_dict={
-                'solids': {
-                    'file_handle_to_s3': {
-                        'config': {
-                            'Bucket': 'some-bucket',
-                            'Key': 'some-key',
-                            'CacheControl': 'some-value',
-                        }
-                    }
-                }
-            },
-        )
-
-        assert result.success
-
-        s3_fake_resource.session.mock_extras.put_object.assert_called_once_with(
-            CacheControl='some-value'
-        )
