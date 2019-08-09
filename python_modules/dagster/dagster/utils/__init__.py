@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 
 import yaml
+from six.moves import configparser
 
 from dagster import check
 from dagster.seven.abc import Mapping
@@ -239,6 +240,11 @@ def dagster_home_dir():
     return os.path.expanduser(dagster_home_path)
 
 
+def dagster_config_path():
+    dagster_config_file = "dagster.cfg"
+    return os.path.join(dagster_home_dir(), dagster_config_file)
+
+
 def dagster_logs_dir():
     return os.path.join(dagster_home_dir(), "logs", "experimental")
 
@@ -249,6 +255,25 @@ def dagster_logs_dir_for_handle(handle):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     repository_name = handle.build_repository_definition().name
     return os.path.join(dagster_logs_dir(), repository_name)
+
+
+def get_enabled_features():
+    if not is_dagster_home_set():
+        return []
+
+    config_path = dagster_config_path()
+    if not os.path.exists(config_path):
+        return []
+
+    config = configparser.ConfigParser()
+    config.read(config_path)
+
+    try:
+        items = config.items("FEATURES")
+        flags = [k for (k, v) in items]
+        return flags
+    except configparser.NoSectionError:
+        return []
 
 
 @contextlib.contextmanager

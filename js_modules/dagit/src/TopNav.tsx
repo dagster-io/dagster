@@ -10,6 +10,7 @@ import VersionLabel from "./VersionLabel";
 import { PipelineJumpBar } from "./PipelineJumpComponents";
 import { TopNavPipelinesFragment } from "./types/TopNavPipelinesFragment";
 import gql from "graphql-tag";
+import FlaggedFeature from "./FlaggedFeature";
 
 export const TopNav = ({
   pipelines
@@ -60,6 +61,14 @@ export const TopNav = ({
                 >
                   Runs
                 </Tab>
+                <FlaggedFeature name="experimentalScheduler">
+                  <Tab
+                    to={`/${params.pipeline}/schedule`}
+                    className={params.tab === "schedule" ? "active" : ""}
+                  >
+                    Schedule
+                  </Tab>
+                </FlaggedFeature>
               </Tabs>
             )}
           </div>
