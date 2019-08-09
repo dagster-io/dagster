@@ -8,7 +8,11 @@ from graphql.execution.executors.sync import SyncExecutor
 from dagster import ExecutionTargetHandle, check, seven
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, dagster_logs_dir_for_handle
+from dagster.utils import (
+    DEFAULT_REPOSITORY_YAML_FILENAME,
+    dagster_logs_dir_for_handle,
+    is_dagster_home_set,
+)
 from dagster.utils.log import get_stack_trace_array
 
 from .client.query import START_PIPELINE_EXECUTION_QUERY
@@ -181,6 +185,15 @@ def ui(log, log_dir, text, file, predefined, variables, **kwargs):
         )
 
     if log and not log_dir:
+        if not is_dagster_home_set():
+            raise click.UsageError(
+                '$DAGSTER_HOME is not set and log-dir is not provided. '
+                'Set the home directory for dagster by exporting DAGSTER_HOME in your '
+                '.bashrc or .bash_profile, or pass in a default directory using the --log-dir flag '
+                '\nExamples:'
+                '\n  1. export DAGSTER_HOME="~/dagster"'
+                '\n  2. --log --logdir="/dagster_logs"'
+            )
         log_dir = dagster_logs_dir_for_handle(handle)
 
     execute_query_from_cli(handle, query, variables, log, log_dir)

@@ -11,7 +11,7 @@ import yaml
 
 from dagster import check
 from dagster.seven.abc import Mapping
-
+from dagster.core.errors import DagsterInvariantViolationError
 
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
@@ -224,17 +224,16 @@ def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
         raise cpe
 
 
+def is_dagster_home_set():
+    return bool(os.getenv('DAGSTER_HOME'))
+
+
 def dagster_home_dir():
     dagster_home_path = os.getenv('DAGSTER_HOME')
 
     if not dagster_home_path:
-        raise RuntimeError(
-            "$DAGSTER_HOME is not set and log-dir is not provided. "
-            "Set the home directory for dagster by exporting DAGSTER_HOME in your "
-            ".bashrc or .bash_profile, or pass in a default directory using the --log-dir flag"
-            "\nExamples:"
-            "\n1. export DAGSTER_HOME=\"~/dagster\""
-            "\n2. --log --log-dir=\"/dagster_logs\""
+        raise DagsterInvariantViolationError(
+            'DAGSTER_HOME is not set, check is_dagster_home_set before invoking.'
         )
 
     return os.path.expanduser(dagster_home_path)

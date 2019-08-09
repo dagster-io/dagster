@@ -9,7 +9,11 @@ from geventwebsocket.handler import WebSocketHandler
 from dagster import ExecutionTargetHandle, check
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, dagster_logs_dir_for_handle
+from dagster.utils import (
+    DEFAULT_REPOSITORY_YAML_FILENAME,
+    dagster_logs_dir_for_handle,
+    is_dagster_home_set,
+)
 from dagster_graphql.implementation.pipeline_run_storage import (
     FilesystemRunStorage,
     InMemoryRunStorage,
@@ -74,6 +78,16 @@ def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
     sys.path.append(os.getcwd())
 
     if log and not log_dir:
+        if not is_dagster_home_set():
+            raise click.UsageError(
+                '$DAGSTER_HOME is not set and log-dir is not provided. '
+                'Set the home directory for dagster by exporting DAGSTER_HOME in your '
+                '.bashrc or .bash_profile, or pass in a default directory using the --log-dir flag '
+                '\nExamples:'
+                '\n  1. export DAGSTER_HOME="~/dagster"'
+                '\n  2. --log --logdir="/dagster_logs"'
+            )
+
         log_dir = dagster_logs_dir_for_handle(handle)
 
     check.invariant(
