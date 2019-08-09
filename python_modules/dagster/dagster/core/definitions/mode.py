@@ -1,5 +1,7 @@
 from dagster import check
+
 from dagster.loggers import default_loggers
+from dagster.core.definitions.executor import default_executors, ExecutorDefinition
 
 from .logger import LoggerDefinition
 from .resource import ResourceDefinition
@@ -20,6 +22,8 @@ class ModeDefinition:
             The set of loggers to use in this mode keyed by unique identifiers.
         system_storage_defs (Optional[List[SystemStorageDefinition]]): The set of system storage
             options available when executing in this mode. Defaults to 'in_memory' and 'filesystem'.
+        executor_defs (Optional[List[ExecutorDefinition]]): The set of executors available when
+            executing in this mode. Defaults to 'in_process' and 'multiprocess'.
         description (Optional[str])
     '''
 
@@ -29,9 +33,10 @@ class ModeDefinition:
         resource_defs=None,
         logger_defs=None,
         system_storage_defs=None,
+        executor_defs=None,
         description=None,
     ):
-        from .system_storage import SystemStorageDefinition, mem_system_storage, fs_system_storage
+        from .system_storage import default_system_storage_defs, SystemStorageDefinition
 
         self.name = check.opt_str_param(name, 'name', DEFAULT_MODE_NAME)
         self.resource_defs = check.opt_dict_param(
@@ -44,9 +49,14 @@ class ModeDefinition:
             or default_loggers()
         )
         self.system_storage_defs = check.list_param(
-            system_storage_defs if system_storage_defs else [mem_system_storage, fs_system_storage],
-            'system_storage_def',
+            system_storage_defs if system_storage_defs else default_system_storage_defs,
+            'system_storage_defs',
             of_type=SystemStorageDefinition,
+        )
+        self.executor_defs = check.list_param(
+            executor_defs if executor_defs else default_executors,
+            'executor_defs',
+            of_type=ExecutorDefinition,
         )
         self.description = check.opt_str_param(description, 'description')
 

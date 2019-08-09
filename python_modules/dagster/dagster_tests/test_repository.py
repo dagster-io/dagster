@@ -75,7 +75,7 @@ def define_multi_mode_with_resources_pipeline():
             ),
         ],
         preset_defs=[
-            PresetDefinition(
+            PresetDefinition.from_files(
                 'add',
                 mode='add_mode',
                 environment_files=[

@@ -86,6 +86,37 @@ def _validate_event_specific_data(event_type, event_specific_data):
     return event_specific_data
 
 
+def log_step_event(step_context, event):
+    event_type = DagsterEventType(event.event_type_value)
+    log_fn = step_context.log.error if event_type in FAILURE_EVENTS else step_context.log.debug
+
+    log_fn(
+        event.message
+        or '{event_type} for step {step_key}'.format(
+            event_type=event_type, step_key=step_context.step.key
+        ),
+        dagster_event=event,
+        pipeline_name=step_context.pipeline_def.name,
+    )
+
+
+def log_pipeline_event(pipeline_context, event):
+    event_type = DagsterEventType(event.event_type_value)
+
+    log_fn = (
+        pipeline_context.log.error if event_type in FAILURE_EVENTS else pipeline_context.log.debug
+    )
+
+    log_fn(
+        event.message
+        or '{event_type} for pipeline {pipeline_name}'.format(
+            event_type=event_type, pipeline_name=pipeline_context.pipeline_def.name
+        ),
+        dagster_event=event,
+        pipeline_name=pipeline_context.pipeline_def.name,
+    )
+
+
 class DagsterEvent(
     namedtuple(
         '_DagsterEvent',
@@ -110,16 +141,8 @@ class DagsterEvent(
             check.opt_str_param(message, 'message'),
         )
 
-        log_fn = step_context.log.error if event_type in FAILURE_EVENTS else step_context.log.debug
+        log_step_event(step_context, event)
 
-        log_fn(
-            event.message
-            or '{event_type} for step {step_key}'.format(
-                event_type=event_type, step_key=step_context.step.key
-            ),
-            dagster_event=event,
-            pipeline_name=step_context.pipeline_def.name,
-        )
         return event
 
     @staticmethod
@@ -135,20 +158,8 @@ class DagsterEvent(
             message=check.opt_str_param(message, 'message'),
         )
 
-        log_fn = (
-            pipeline_context.log.error
-            if event_type in FAILURE_EVENTS
-            else pipeline_context.log.debug
-        )
+        log_pipeline_event(pipeline_context, event)
 
-        log_fn(
-            event.message
-            or '{event_type} for pipeline {pipeline_name}'.format(
-                event_type=event_type, pipeline_name=pipeline_name
-            ),
-            dagster_event=event,
-            pipeline_name=pipeline_name,
-        )
         return event
 
     def __new__(

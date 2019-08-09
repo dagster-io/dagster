@@ -9,6 +9,16 @@ snapshots = Snapshot()
 
 snapshots['test_basic_solids_config 1'] = {
     'execution': {
+        'in_process': {
+            'config': {
+                'raise_on_error': True
+            }
+        },
+        'multiprocess': {
+            'config': {
+                'max_concurrent': 0
+            }
+        }
     },
     'expectations': {
         'evaluate': True
@@ -53,6 +63,16 @@ snapshots['test_two_modes 1'] = {
 
 snapshots['test_two_modes 2'] = {
     'execution': {
+        'in_process': {
+            'config': {
+                'raise_on_error': True
+            }
+        },
+        'multiprocess': {
+            'config': {
+                'max_concurrent': 0
+            }
+        }
     },
     'expectations': {
         'evaluate': True
@@ -97,6 +117,16 @@ snapshots['test_two_modes 3'] = {
 
 snapshots['test_two_modes 4'] = {
     'execution': {
+        'in_process': {
+            'config': {
+                'raise_on_error': True
+            }
+        },
+        'multiprocess': {
+            'config': {
+                'max_concurrent': 0
+            }
+        }
     },
     'expectations': {
         'evaluate': True

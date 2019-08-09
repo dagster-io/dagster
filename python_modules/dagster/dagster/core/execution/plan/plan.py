@@ -268,7 +268,7 @@ class ExecutionPlan(
 
     def topological_step_levels(self):
         return [
-            [self.step_dict[step_key] for step_key in step_key_level]
+            [self.step_dict[step_key] for step_key in sorted(step_key_level)]
             for step_key_level in toposort(self.deps)
         ]
 

@@ -22,18 +22,28 @@ class NotImplementedCheckError(CheckError):
     pass
 
 
-def _param_type_mismatch_exception(obj, ttype, param_name):
+def _param_type_mismatch_exception(obj, ttype, param_name, additional_message=None):
     if isinstance(ttype, tuple):
         type_names = sorted([t.__name__ for t in ttype])
         return ParameterCheckError(
-            'Param "{name}" is not one of {type_names}. Got {obj} which is type {obj_type}.'.format(
-                name=param_name, obj=repr(obj), type_names=type_names, obj_type=type(obj)
+            'Param "{name}" is not one of {type_names}. Got {obj} which is type {obj_type}.'
+            '{additional_message}'.format(
+                name=param_name,
+                obj=repr(obj),
+                type_names=type_names,
+                obj_type=type(obj),
+                additional_message=' ' + additional_message if additional_message else '',
             )
         )
     else:
         return ParameterCheckError(
-            'Param "{name}" is not a {type}. Got {obj} which is type {obj_type}.'.format(
-                name=param_name, obj=repr(obj), type=ttype.__name__, obj_type=type(obj)
+            'Param "{name}" is not a {type}. Got {obj} which is type {obj_type}.'
+            '{additional_message}'.format(
+                name=param_name,
+                obj=repr(obj),
+                type=ttype.__name__,
+                obj_type=type(obj),
+                additional_message=' ' + additional_message if additional_message else '',
             )
         )
 
@@ -152,9 +162,13 @@ def param_invariant(condition, param_name, desc=None):
         raise_with_traceback(_param_invariant_exception(param_name, desc))
 
 
-def inst_param(obj, param_name, ttype):
+def inst_param(obj, param_name, ttype, additional_message=None):
     if not isinstance(obj, ttype):
-        raise_with_traceback(_param_type_mismatch_exception(obj, ttype, param_name))
+        raise_with_traceback(
+            _param_type_mismatch_exception(
+                obj, ttype, param_name, additional_message=additional_message
+            )
+        )
     return obj
 
 

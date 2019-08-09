@@ -46,13 +46,13 @@ def pandas_hello_world_fails():
 
 @pipeline(
     preset_defs=[
-        PresetDefinition(
+        PresetDefinition.from_files(
             'test',
             environment_files=[
                 file_relative_path(__file__, 'environments/pandas_hello_world_test.yaml')
             ],
         ),
-        PresetDefinition(
+        PresetDefinition.from_files(
             'prod',
             environment_files=[
                 file_relative_path(__file__, 'environments/pandas_hello_world_prod.yaml')

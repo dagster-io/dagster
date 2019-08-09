@@ -2,15 +2,13 @@
 
 from dagster import (
     execute_pipeline,
-    pipeline,
-    resource,
-    solid,
     ExecutionTargetHandle,
     Field,
     Int,
+    pipeline,
+    resource,
+    solid,
     ModeDefinition,
-    MultiprocessExecutorConfig,
-    RunConfig,
 )
 
 
@@ -55,11 +53,6 @@ def resource_pipeline():
 
 if __name__ == '__main__':
     result = execute_pipeline(
-        resource_pipeline,
-        environment_dict={'storage': {'filesystem': {}}},
-        run_config=RunConfig(
-            executor_config=MultiprocessExecutorConfig(
-                ExecutionTargetHandle.for_pipeline_fn(resource_pipeline)
-            )
-        ),
+        ExecutionTargetHandle.for_pipeline_fn(resource_pipeline).build_pipeline_definition(),
+        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocessing': {}}},
     )

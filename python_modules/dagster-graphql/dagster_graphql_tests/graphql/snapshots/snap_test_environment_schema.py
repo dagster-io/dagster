@@ -7,10 +7,51 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
+snapshots['test_basic_invalid_config_on_environment_schema 1'] = {
+    'environmentSchemaOrError': {
+        'isEnvironmentConfigValid': {
+            '__typename': 'PipelineConfigValidationInvalid',
+            'errors': [
+                {
+                    '__typename': 'FieldNotDefinedConfigError',
+                    'fieldName': 'nope',
+                    'message': 'Field "nope" is not defined at document config root. Expected: "{ execution?: CsvHelloWorld.Default.ExecutionConfig expectations?: CsvHelloWorld.ExpectationsConfig loggers?: CsvHelloWorld.LoggerConfig resources?: CsvHelloWorld.Mode.Default.Resources solids: CsvHelloWorld.SolidsConfigDictionary storage?: CsvHelloWorld.Default.StorageConfig }"',
+                    'reason': 'FIELD_NOT_DEFINED',
+                    'stack': {
+                        'entries': [
+                        ]
+                    }
+                },
+                {
+                    '__typename': 'MissingFieldConfigError',
+                    'field': {
+                        'name': 'solids'
+                    },
+                    'message': 'Missing required field "solids" at document config root. Available Fields: "[\'execution\', \'expectations\', \'loggers\', \'resources\', \'solids\', \'storage\']".',
+                    'reason': 'MISSING_REQUIRED_FIELD',
+                    'stack': {
+                        'entries': [
+                        ]
+                    }
+                }
+            ],
+            'pipeline': {
+                'name': 'csv_hello_world'
+            }
+        }
+    }
+}
+
 snapshots['test_successful_enviroment_schema 1'] = {
     'environmentSchemaOrError': {
         '__typename': 'EnvironmentSchema',
         'allConfigTypes': [
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
             {
                 'name': None
             },
@@ -120,6 +161,15 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'Int.MaterializationSchema'
             },
             {
+                'name': 'MultiModeWithResources.AddMode.ExecutionConfig'
+            },
+            {
+                'name': 'MultiModeWithResources.AddMode.ExecutionConfig.InProcess'
+            },
+            {
+                'name': 'MultiModeWithResources.AddMode.ExecutionConfig.Multiprocess'
+            },
+            {
                 'name': 'MultiModeWithResources.AddMode.StorageConfig'
             },
             {
@@ -130,9 +180,6 @@ snapshots['test_successful_enviroment_schema 1'] = {
             },
             {
                 'name': 'MultiModeWithResources.ApplyToThree.Outputs'
-            },
-            {
-                'name': 'MultiModeWithResources.ExecutionConfig'
             },
             {
                 'name': 'MultiModeWithResources.ExpectationsConfig'
@@ -203,41 +250,6 @@ snapshots['test_basic_valid_config_on_environment_schema 1'] = {
     'environmentSchemaOrError': {
         'isEnvironmentConfigValid': {
             '__typename': 'PipelineConfigValidationValid',
-            'pipeline': {
-                'name': 'csv_hello_world'
-            }
-        }
-    }
-}
-
-snapshots['test_basic_invalid_config_on_environment_schema 1'] = {
-    'environmentSchemaOrError': {
-        'isEnvironmentConfigValid': {
-            '__typename': 'PipelineConfigValidationInvalid',
-            'errors': [
-                {
-                    '__typename': 'FieldNotDefinedConfigError',
-                    'fieldName': 'nope',
-                    'message': 'Field "nope" is not defined at document config root. Expected: "{ execution?: CsvHelloWorld.ExecutionConfig expectations?: CsvHelloWorld.ExpectationsConfig loggers?: CsvHelloWorld.LoggerConfig resources?: CsvHelloWorld.Mode.Default.Resources solids: CsvHelloWorld.SolidsConfigDictionary storage?: CsvHelloWorld.Default.StorageConfig }"',
-                    'reason': 'FIELD_NOT_DEFINED',
-                    'stack': {
-                        'entries': [
-                        ]
-                    }
-                },
-                {
-                    '__typename': 'MissingFieldConfigError',
-                    'field': {
-                        'name': 'solids'
-                    },
-                    'message': 'Missing required field "solids" at document config root. Available Fields: "[\'execution\', \'expectations\', \'loggers\', \'resources\', \'solids\', \'storage\']".',
-                    'reason': 'MISSING_REQUIRED_FIELD',
-                    'stack': {
-                        'entries': [
-                        ]
-                    }
-                }
-            ],
             'pipeline': {
                 'name': 'csv_hello_world'
             }

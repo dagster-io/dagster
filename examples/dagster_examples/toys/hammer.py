@@ -13,8 +13,20 @@ from dagster import (
     lambda_solid,
     solid,
 )
+
+from dagster.core.definitions.executor import default_executors
+
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+
+
+def get_executor_defs():
+    try:
+        from dagster_dask import dask_executor
+
+        return default_executors + [dask_executor]
+    except ImportError:
+        return default_executors
 
 
 @solid(
@@ -59,7 +71,7 @@ def hammer(context, chase_duration):
         OutputDefinition(Int, 'out_4'),
     ],
 )
-def giver(context):
+def chase_giver(context):
     chase_duration = context.solid_config
 
     yield Output(chase_duration, 'out_1')
@@ -77,7 +89,7 @@ def giver(context):
     ],
     output_def=OutputDefinition(Int),
 )
-def total(in_1, in_2, in_3, in_4):
+def reducer(in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4
 
 
@@ -85,13 +97,15 @@ def total(in_1, in_2, in_3, in_4):
     # Needed for Dask tests which use this pipeline
     mode_defs=[
         ModeDefinition(
-            resource_defs={'s3': s3_resource}, system_storage_defs=s3_plus_default_storage_defs
+            resource_defs={'s3': s3_resource},
+            system_storage_defs=s3_plus_default_storage_defs,
+            executor_defs=get_executor_defs(),
         )
     ]
 )
 def hammer_pipeline():
-    out_1, out_2, out_3, out_4 = giver()  # pylint: disable=no-value-for-parameter
-    return total(
+    out_1, out_2, out_3, out_4 = chase_giver()  # pylint: disable=no-value-for-parameter
+    return reducer(
         in_1=hammer.alias('hammer_1')(chase_duration=out_1),
         in_2=hammer.alias('hammer_2')(chase_duration=out_2),
         in_3=hammer.alias('hammer_3')(chase_duration=out_3),

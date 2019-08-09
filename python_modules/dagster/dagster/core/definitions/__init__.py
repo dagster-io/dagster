@@ -32,6 +32,8 @@ from .events import (
     TypeCheck,
 )
 
+from .executor import executor, ExecutorDefinition
+
 from .handle import ExecutionTargetHandle, LoaderEntrypoint
 
 from .input import InputDefinition, InputMapping

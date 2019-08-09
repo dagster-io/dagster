@@ -35,7 +35,7 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
 
         step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
 
-        dask_config = pipeline_context.run_config.executor_config
+        dask_config = pipeline_context.executor_config
 
         check.param_invariant(
             isinstance(pipeline_context.executor_config, DaskConfig),
@@ -77,15 +77,19 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
 
                     step_context = pipeline_context.for_step(step)
 
-                    check.invariant(
-                        not step_context.run_config.loggers,
-                        'Cannot inject loggers via RunConfig with the Dask executor',
-                    )
-
-                    check.invariant(
-                        not step_context.event_callback,
-                        'Cannot use event_callback with Dask executor',
-                    )
+                    if step_context.run_config.loggers:
+                        step_context.log.debug(
+                            'Loggers cannot be injected via RunConfig using the multiprocess '
+                            'executor. Define loggers on the mode instead. Ignoring loggers: '
+                            '[{logger_names}]'.format(
+                                logger_names=', '.join(
+                                    [
+                                        '\'{name}\''.format(name=logger.name)
+                                        for logger in step_context.run_config.loggers
+                                    ]
+                                )
+                            )
+                        )
 
                     # We ensure correctness in sequencing by letting Dask schedule futures and
                     # awaiting dependencies within each step.
@@ -94,10 +98,14 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
                         for key in step_input.dependency_keys:
                             dependencies.append(execution_futures_dict[key])
 
+                    environment_dict = dict(
+                        pipeline_context.environment_dict,
+                        execution={'in_process': {'config': {'raise_on_error': False}}},
+                    )
                     variables = {
                         'executionParams': {
                             'selector': {'name': pipeline_name},
-                            'environmentConfigData': pipeline_context.environment_dict,
+                            'environmentConfigData': environment_dict,
                             'mode': pipeline_context.mode_def.name,
                             'executionMetadata': {'runId': pipeline_context.run_config.run_id},
                             'stepKeys': [step.key],

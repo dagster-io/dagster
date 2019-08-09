@@ -76,7 +76,7 @@ prod_mode = ModeDefinition(
     # ordered so the local is first and therefore the default
     mode_defs=[local_mode, test_mode, prod_mode],
     preset_defs=[
-        PresetDefinition(
+        PresetDefinition.from_files(
             name='local_fast',
             mode='local',
             environment_files=[
@@ -84,7 +84,7 @@ prod_mode = ModeDefinition(
                 file_relative_path(__file__, 'environments/local_fast_ingest.yaml'),
             ],
         ),
-        PresetDefinition(
+        PresetDefinition.from_files(
             name='local_full',
             mode='local',
             environment_files=[
@@ -135,7 +135,7 @@ def process_delays_by_geo() -> S3FileHandle:
 @pipeline(
     mode_defs=[test_mode, local_mode, prod_mode],
     preset_defs=[
-        PresetDefinition(
+        PresetDefinition.from_files(
             name='local',
             mode='local',
             environment_files=[

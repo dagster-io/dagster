@@ -147,7 +147,7 @@ def gunzipper(gzip_file):
         )
     ],
     preset_defs=[
-        PresetDefinition(
+        PresetDefinition.from_files(
             name='default',
             mode='default',
             environment_files=[file_relative_path(__file__, 'environments/default.yaml')],

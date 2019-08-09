@@ -52,7 +52,6 @@ def test_cli_execute():
             env_file_list=[
                 script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yaml')
             ],
-            raise_on_error=True,
         )
     finally:
         # restore cwd
@@ -74,7 +73,6 @@ def test_cli_execute_failure():
                 env_file_list=[
                     script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yaml')
                 ],
-                raise_on_error=True,
             )
         finally:
             # restore cwd

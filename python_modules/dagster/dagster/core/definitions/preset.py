@@ -1,5 +1,6 @@
-import os
+from collections import namedtuple
 from glob import glob
+import os
 
 import six
 import yaml
@@ -10,7 +11,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from .mode import DEFAULT_MODE_NAME
 
 
-class PresetDefinition:
+class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict solid_subset mode')):
     '''Defines a preset configuration that a pipeline can execute in. Presets can be used in Dagit to
     load the predefined configuration in to the tool, or in a script or test as follows:
 
@@ -31,24 +32,20 @@ class PresetDefinition:
             The mode to apply when executing this preset. Defaults to 'default'.
     '''
 
-    def __init__(self, name, environment_files=None, solid_subset=None, mode=None):
-        self.name = check.str_param(name, 'name')
-        self.environment_files = check.opt_list_param(
-            environment_files, 'environment_files', of_type=str
-        )
-        self.solid_subset = check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
-        self.mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
+    @staticmethod
+    def from_files(name, environment_files=None, solid_subset=None, mode=None):
+        check.str_param(name, 'name')
+        environment_files = check.opt_list_param(environment_files, 'environment_files')
+        solid_subset = check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+        mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
 
-    def get_environment_dict(self, pipeline_name):
         file_set = set()
-        for file_glob in self.environment_files:
+        for file_glob in environment_files or []:
             files = glob(file_glob)
             if not files:
                 raise DagsterInvalidDefinitionError(
                     'File or glob pattern "{file_glob}" for "environment_files" in preset '
-                    '"{name}" for pipline "{pipeline}" produced no results.'.format(
-                        name=self.name, file_glob=file_glob, pipeline=pipeline_name
-                    )
+                    '"{name}" produced no results.'.format(name=name, file_glob=file_glob)
                 )
 
             file_set.update(map(os.path.realpath, files))
@@ -59,18 +56,23 @@ class PresetDefinition:
             six.raise_from(
                 DagsterInvariantViolationError(
                     'Encountered error attempting to parse yaml. Parsing files {file_set} '
-                    'loaded by file/patterns {files} on preset "{name}" for pipeline "{pipeline}".'.format(
-                        file_set=file_set,
-                        files=self.environment_files,
-                        name=self.name,
-                        pipeline=pipeline_name,
+                    'loaded by file/patterns {files} on preset "{name}".'.format(
+                        file_set=file_set, files=environment_files, name=name
                     )
                 ),
                 err,
             )
 
-        return merged
+        return PresetDefinition(name, merged, solid_subset, mode)
 
-    def get_environment_yaml(self, pipeline_name):
-        merged = self.get_environment_dict(pipeline_name)
-        return yaml.dump(merged, default_flow_style=False)
+    def __new__(cls, name, environment_dict=None, solid_subset=None, mode=None):
+        return super(PresetDefinition, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            environment_dict=check.opt_dict_param(environment_dict, 'environment_dict'),
+            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str),
+            mode=check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME),
+        )
+
+    def get_environment_yaml(self):
+        return yaml.dump(self.environment_dict, default_flow_style=False)

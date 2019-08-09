@@ -42,6 +42,10 @@ class S3FakeSession:
         self.mock_extras.get_object(*args, **kwargs)
         return {'Body': self._get_byte_stream(Bucket, Key)}
 
+    def upload_fileobj(self, fileobj, bucket, key, *args, **kwargs):
+        self.mock_extras.upload_fileobj(*args, **kwargs)
+        self.buckets[bucket][key] = fileobj.read()
+
     def _has_object(self, bucket, key):
         return bucket in self.buckets and key in self.buckets[bucket]
 

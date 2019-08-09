@@ -25,7 +25,6 @@ def test_run_id():
 
 def test_environment_dict():
     assert BARE_OUT_OF_PIPELINE_CONTEXT.environment_dict == {
-        'execution': {},
         'expectations': {'evaluate': True},
         'loggers': {'dagstermill': {'config': {'log_level': 'INFO', 'name': 'dagster'}}},
         'resources': {},

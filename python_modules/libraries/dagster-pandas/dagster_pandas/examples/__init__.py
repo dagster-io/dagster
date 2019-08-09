@@ -47,7 +47,7 @@ def define_pandas_repository():
 
 @pipeline(
     preset_defs=[
-        PresetDefinition(
+        PresetDefinition.from_files(
             'test',
             environment_files=[
                 file_relative_path(
@@ -56,7 +56,7 @@ def define_pandas_repository():
                 )
             ],
         ),
-        PresetDefinition(
+        PresetDefinition.from_files(
             'prod',
             environment_files=[
                 file_relative_path(

@@ -2,14 +2,7 @@ import logging
 
 from collections import defaultdict
 
-from dagster import (
-    execute_pipeline,
-    InProcessExecutorConfig,
-    lambda_solid,
-    ModeDefinition,
-    PipelineDefinition,
-    RunConfig,
-)
+from dagster import execute_pipeline, lambda_solid, ModeDefinition, PipelineDefinition
 
 from dagster.core.events.log import construct_event_logger, EventRecord
 from dagster.core.events import DagsterEventType
@@ -117,8 +110,10 @@ def test_single_solid_pipeline_failure():
 
     result = execute_pipeline(
         pipeline_def,
-        {'loggers': {'callback': {}}},
-        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
+        {
+            'loggers': {'callback': {}},
+            'execution': {'in_process': {'config': {'raise_on_error': False}}},
+        },
     )
     assert not result.success
 

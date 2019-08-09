@@ -1,14 +1,12 @@
 from dagster import (
+    execute_pipeline,
     Field,
-    InProcessExecutorConfig,
     ModeDefinition,
     PipelineDefinition,
-    ResourceDefinition,
-    String,
-    execute_pipeline,
     resource,
-    RunConfig,
+    ResourceDefinition,
     solid,
+    String,
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
 
@@ -436,16 +434,18 @@ def test_resource_init_failure():
         mode_defs=[ModeDefinition(resource_defs={'failing_resource': failing_resource})],
     )
 
-    run_config = RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False))
-    res = execute_pipeline(pipeline, run_config=run_config)
+    res = execute_pipeline(
+        pipeline,
+        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
+    )
 
     assert res.event_list[0].event_type_value == 'PIPELINE_INIT_FAILURE'
 
-    execution_plan = create_execution_plan(pipeline, run_config=run_config)
+    execution_plan = create_execution_plan(pipeline)
 
     step_events = execute_plan(
         execution_plan,
-        run_config=run_config,
+        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
         step_keys_to_execute=[step.key for step in execution_plan.topological_steps()],
     )
 

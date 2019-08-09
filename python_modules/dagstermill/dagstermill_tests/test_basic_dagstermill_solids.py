@@ -107,7 +107,8 @@ def test_error_notebook():
     assert 'Someone set up us the bomb' in exc.value.original_exc_info[1].args[0]
 
     with exec_for_test(
-        'define_error_pipeline', run_config=RunConfig.nonthrowing_in_process()
+        'define_error_pipeline',
+        env={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
     ) as result:
         assert not result.success
         assert result.step_event_list[1].event_type.value == 'STEP_MATERIALIZATION'
@@ -210,8 +211,10 @@ def test_resources_notebook_with_exception():
     try:
         with exec_for_test(
             'define_resource_with_exception_pipeline',
-            {'resources': {'list': {'config': path}}},
-            run_config=RunConfig.nonthrowing_in_process(),
+            {
+                'resources': {'list': {'config': path}},
+                'execution': {'in_process': {'config': {'raise_on_error': False}}},
+            },
         ) as result:
             assert not result.success
             assert result.step_event_list[6].event_type.value == 'STEP_FAILURE'

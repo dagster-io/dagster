@@ -4,30 +4,29 @@ import dagster.check as check
 
 from dagster import (
     DependencyDefinition,
-    InProcessExecutorConfig,
+    execute_pipeline_iterator,
+    execute_pipeline,
     InputDefinition,
     Int,
+    lambda_solid,
     List,
     ModeDefinition,
     MultiDependencyDefinition,
     Nothing,
+    Optional,
+    Output,
     OutputDefinition,
+    pipeline,
     PipelineDefinition,
     ResourceDefinition,
-    Output,
-    Optional,
     RunConfig,
+    solid,
     SolidInvocation,
     String,
-    execute_pipeline,
-    execute_pipeline_iterator,
-    lambda_solid,
-    pipeline,
-    solid,
 )
 from dagster.core.definitions import Solid, solids_in_topological_order
-from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.container import _create_adjacency_lists
+from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.execution.api import step_output_event_filter
 from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.execution.results import SolidExecutionResult
@@ -551,8 +550,9 @@ def test_pipeline_init_failure():
 
     result = execute_pipeline(
         failing_init_pipeline,
-        environment_dict=env_config,
-        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
+        environment_dict=dict(
+            env_config, execution={'in_process': {'config': {'raise_on_error': False}}}
+        ),
     )
 
     assert result.success is False

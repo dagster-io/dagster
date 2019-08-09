@@ -344,7 +344,7 @@ class PipelineDefinition(IContainSolids, object):
 
         return {
             'pipeline': pipeline,
-            'environment_dict': preset.get_environment_dict(self._name),
+            'environment_dict': preset.environment_dict,
             'run_config': RunConfig(mode=preset.mode),
         }
 
