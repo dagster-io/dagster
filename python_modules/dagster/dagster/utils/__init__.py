@@ -306,3 +306,9 @@ def ensure_gen(thing_or_gen):
         return _gen_thing()
 
     return thing_or_gen
+
+
+def ensure_dir(file_path):
+    directory = os.path.dirname(file_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)

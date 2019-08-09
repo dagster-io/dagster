@@ -33,7 +33,7 @@ class RunStorage(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def add_run(self, pipeline_run):
         '''Add a run to storage.
-        
+
         Args:
             pipeline_run (PipelineRun): The run to add.
         '''
@@ -41,7 +41,7 @@ class RunStorage(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def all_runs(self):
         '''Return all the runs present in the storage.
-        
+
         Returns:
             Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
         '''
@@ -49,7 +49,7 @@ class RunStorage(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def all_runs_for_pipeline(self, pipeline_name):
         '''Return all the runs present in the storage for a given pipeline.
-        
+
         Args:
             pipeline_name (str): The pipeline to index on
 
@@ -63,7 +63,7 @@ class RunStorage(six.with_metaclass(abc.ABCMeta)):
 
         Args:
             id_ (str): THe id of the run
-            
+
         Returns:
             Optional[PipelineRun]
         '''
@@ -270,7 +270,7 @@ class LogFilePipelineRun(InMemoryPipelineRun):
         self._file_prefix = os.path.join(
             self._log_dir, '{}_{}'.format(int(time.time()), self.run_id)
         )
-        ensure_dir(log_dir)
+        utils.ensure_dir(log_dir)
         self._log_file = '{}.log'.format(self._file_prefix)
         self._log_file_lock = gevent.lock.Semaphore()
         self._write_metadata_to_file()
@@ -302,12 +302,6 @@ class LogFilePipelineRun(InMemoryPipelineRun):
             with open(self._log_file, 'ab') as log_file_handle:
                 log_file_handle.seek(0, os.SEEK_END)
                 pickle.dump(new_event, log_file_handle)
-
-
-def ensure_dir(file_path):
-    directory = os.path.dirname(file_path)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
 
 
 class PipelineRunObservableSubscribe(object):
