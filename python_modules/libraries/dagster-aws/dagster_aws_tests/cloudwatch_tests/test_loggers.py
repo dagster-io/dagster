@@ -92,6 +92,7 @@ def test_cloudwatch_logging(cloudwatch_client):
     now = millisecond_timestamp(datetime.datetime.utcnow())
 
     attempt_num = 0
+
     found_orig_message = False
 
     while not found_orig_message and attempt_num < NUM_POLL_ATTEMPTS:
