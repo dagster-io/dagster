@@ -8,14 +8,11 @@ from dagster import (
     RepositoryDefinition,
     solid,
 )
-
 from dagster.utils.error import serializable_error_info_from_exc_info
-
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_run_storage import InMemoryRunStorage
 from dagster_graphql.schema.errors import DauphinPythonError
-
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 
@@ -62,7 +59,7 @@ PIPELINES = '''
 def test_pipelines_python_error():
     ctx = DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_error_pipeline_repo),
-        pipeline_runs=PipelineRunStorage(),
+        pipeline_runs=InMemoryRunStorage(),
         execution_manager=SynchronousExecutionManager(),
     )
     result = execute_dagster_graphql(ctx, PIPELINES)

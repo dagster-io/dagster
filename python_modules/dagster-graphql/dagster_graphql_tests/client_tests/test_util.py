@@ -21,7 +21,7 @@ from dagster.core.execution.api import create_execution_plan
 from dagster_graphql.cli import execute_query
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 from dagster_graphql.client.util import HANDLED_EVENTS, dagster_event_from_dict
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_run_storage import InMemoryRunStorage
 
 
 def test_can_handle_all_step_events():
@@ -132,7 +132,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
                 }
             }
 
-            pipeline_run_storage = PipelineRunStorage()
+            pipeline_run_storage = InMemoryRunStorage()
 
             res = execute_query(
                 handle,

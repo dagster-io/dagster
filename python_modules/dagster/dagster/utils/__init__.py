@@ -8,10 +8,11 @@ import subprocess
 import tempfile
 
 import yaml
+from six.moves import configparser
 
 from dagster import check
 from dagster.seven.abc import Mapping
-
+from dagster.core.errors import DagsterInvariantViolationError
 
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
@@ -224,20 +225,24 @@ def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
         raise cpe
 
 
+def is_dagster_home_set():
+    return bool(os.getenv('DAGSTER_HOME'))
+
+
 def dagster_home_dir():
     dagster_home_path = os.getenv('DAGSTER_HOME')
 
     if not dagster_home_path:
-        raise RuntimeError(
-            "$DAGSTER_HOME is not set and log-dir is not provided. "
-            "Set the home directory for dagster by exporting  DAGSTER_HOME in your "
-            ".bashrc or .bash_profile, or pass in a default directory using the --log-dir flag"
-            "\nExamples:"
-            "\n1. export DAGSTER_HOME=\"~/dagster\""
-            "\n2. --log --logdir=\"/dagster_logs\""
+        raise DagsterInvariantViolationError(
+            'DAGSTER_HOME is not set, check is_dagster_home_set before invoking.'
         )
 
     return os.path.expanduser(dagster_home_path)
+
+
+def dagster_config_path():
+    dagster_config_file = "dagster.cfg"
+    return os.path.join(dagster_home_dir(), dagster_config_file)
 
 
 def dagster_logs_dir():
@@ -250,6 +255,25 @@ def dagster_logs_dir_for_handle(handle):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     repository_name = handle.build_repository_definition().name
     return os.path.join(dagster_logs_dir(), repository_name)
+
+
+def get_enabled_features():
+    if not is_dagster_home_set():
+        return []
+
+    config_path = dagster_config_path()
+    if not os.path.exists(config_path):
+        return []
+
+    config = configparser.ConfigParser()
+    config.read(config_path)
+
+    try:
+        items = config.items("FEATURES")
+        flags = [k for (k, v) in items]
+        return flags
+    except configparser.NoSectionError:
+        return []
 
 
 @contextlib.contextmanager

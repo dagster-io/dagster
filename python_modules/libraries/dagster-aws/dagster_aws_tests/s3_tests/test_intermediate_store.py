@@ -175,13 +175,13 @@ class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-in
 
 @aws
 @nettest
-def test_s3_intermediate_store_with_type_storage_plugin():
+def test_s3_intermediate_store_with_type_storage_plugin(s3_bucket):
     run_id = str(uuid.uuid4())
 
     # FIXME need a dedicated test bucket
     intermediate_store = S3IntermediateStore(
         run_id=run_id,
-        s3_bucket='dagster-airflow-scratch',
+        s3_bucket=s3_bucket,
         type_storage_plugin_registry={RuntimeString.inst(): FancyStringS3TypeStoragePlugin},
     )
 
@@ -200,13 +200,13 @@ def test_s3_intermediate_store_with_type_storage_plugin():
 
 @aws
 @nettest
-def test_s3_intermediate_store_with_composite_type_storage_plugin():
+def test_s3_intermediate_store_with_composite_type_storage_plugin(s3_bucket):
     run_id = str(uuid.uuid4())
 
     # FIXME need a dedicated test bucket
     intermediate_store = S3IntermediateStore(
         run_id=run_id,
-        s3_bucket='dagster-airflow-scratch',
+        s3_bucket=s3_bucket,
         type_storage_plugin_registry={RuntimeString.inst(): FancyStringS3TypeStoragePlugin},
     )
 
@@ -219,10 +219,10 @@ def test_s3_intermediate_store_with_composite_type_storage_plugin():
 
 @aws
 @nettest
-def test_s3_intermediate_store_composite_types_with_custom_serializer_for_inner_type():
+def test_s3_intermediate_store_composite_types_with_custom_serializer_for_inner_type(s3_bucket):
     run_id = str(uuid.uuid4())
 
-    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket='dagster-airflow-scratch')
+    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             intermediate_store.set_object(
@@ -242,11 +242,11 @@ def test_s3_intermediate_store_composite_types_with_custom_serializer_for_inner_
 
 @aws
 @nettest
-def test_s3_intermediate_store_with_custom_serializer():
+def test_s3_intermediate_store_with_custom_serializer(s3_bucket):
     run_id = str(uuid.uuid4())
 
     # FIXME need a dedicated test bucket
-    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket='dagster-airflow-scratch')
+    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
@@ -272,11 +272,11 @@ def test_s3_intermediate_store_with_custom_serializer():
 
 @aws
 @nettest
-def test_s3_intermediate_store():
+def test_s3_intermediate_store(s3_bucket):
     run_id = str(uuid.uuid4())
 
     # FIXME need a dedicated test bucket
-    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket='dagster-airflow-scratch')
+    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
     assert intermediate_store.root == '/'.join(['dagster', 'runs', run_id, 'files'])
 
     with yield_empty_pipeline_context(run_id=run_id) as context:

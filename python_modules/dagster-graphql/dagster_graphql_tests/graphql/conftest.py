@@ -1,4 +1,9 @@
-PRODUCTION_QUERY = '''
+import pytest
+
+
+@pytest.fixture(scope='session')
+def production_query():
+    return '''
 query AppQuery {
   pipelinesOrError {
     ... on Error {

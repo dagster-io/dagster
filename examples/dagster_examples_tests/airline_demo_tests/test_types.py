@@ -70,7 +70,7 @@ def test_spark_data_frame_serialization_file_system_file_handle():
     assert df.head()[0] == '1'
 
 
-def test_spark_data_frame_serialization_s3_file_handle():
+def test_spark_data_frame_serialization_s3_file_handle(s3_bucket):
     @solid
     def nonce(context):
         with open(os.path.join(os.path.dirname(__file__), 'data/test.csv'), 'rb') as fd:
@@ -83,11 +83,11 @@ def test_spark_data_frame_serialization_s3_file_handle():
 
     run_id = str(uuid.uuid4())
 
-    intermediate_store = S3IntermediateStore(s3_bucket='dagster-airflow-scratch', run_id=run_id)
+    intermediate_store = S3IntermediateStore(s3_bucket=s3_bucket, run_id=run_id)
 
     result = execute_pipeline(
         spark_df_test_pipeline,
-        environment_dict={'storage': {'s3': {'config': {'s3_bucket': 'dagster-airflow-scratch'}}}},
+        environment_dict={'storage': {'s3': {'config': {'s3_bucket': s3_bucket}}}},
         run_config=RunConfig(run_id=run_id, mode='spark'),
     )
 

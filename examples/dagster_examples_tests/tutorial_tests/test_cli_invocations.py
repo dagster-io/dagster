@@ -4,13 +4,12 @@ import subprocess
 
 from click.testing import CliRunner
 
+from dagit.app import create_app
 from dagster import DagsterInvalidConfigError
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, script_relative_path
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
-from dagit.app import create_app
-
+from dagster_graphql.implementation.pipeline_run_storage import InMemoryRunStorage
 
 PIPELINES_OR_ERROR_QUERY = '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } }'
 
@@ -21,7 +20,7 @@ def path_to_tutorial_file(path):
 
 def load_dagit_for_repo_cli_args(n_pipelines=1, **kwargs):
     handle = handle_for_repo_cli_args(kwargs)
-    pipeline_run_storage = PipelineRunStorage()
+    pipeline_run_storage = InMemoryRunStorage()
 
     app = create_app(handle, pipeline_run_storage)
 

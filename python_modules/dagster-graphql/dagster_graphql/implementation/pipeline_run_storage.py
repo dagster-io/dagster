@@ -1,4 +1,6 @@
+import abc
 import atexit
+import glob
 import io
 import json
 import os
@@ -27,28 +29,59 @@ class PipelineRunStatus(Enum):
     FAILURE = 'FAILURE'
 
 
-class PipelineRunStorage(object):
-    def __init__(self, log_dir=None):
-        self._runs = OrderedDict()
-        self._log_dir = log_dir
-        if self._log_dir:
-            self._load_runs()
+class RunStorage(six.with_metaclass(abc.ABCMeta)):
+    @abc.abstractmethod
+    def add_run(self, pipeline_run):
+        '''Add a run to storage.
+        
+        Args:
+            pipeline_run (PipelineRun): The run to add.
+        '''
 
-    def _load_runs(self):
-        utils.mkdir_p(self._log_dir)
-        for file in os.listdir(self._log_dir):
-            if not file.endswith('.json'):
-                continue
-            with open(os.path.join(self._log_dir, file)) as data:
-                try:
-                    self.add_run(InMemoryPipelineRun.from_json(json.load(data)))
-                except Exception as ex:  # pylint: disable=broad-except
-                    print(
-                        'Could not parse dagit run from {file_name} in {dir_name}. {ex}: {msg}'.format(
-                            file_name=file, dir_name=self._log_dir, ex=type(ex).__name__, msg=ex
-                        )
-                    )
-                    continue
+    @abc.abstractmethod
+    def all_runs(self):
+        '''Return all the runs present in the storage.
+        
+        Returns:
+            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+        '''
+
+    @abc.abstractmethod
+    def all_runs_for_pipeline(self, pipeline_name):
+        '''Return all the runs present in the storage for a given pipeline.
+        
+        Args:
+            pipeline_name (str): The pipeline to index on
+
+        Returns:
+            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+        '''
+
+    @abc.abstractmethod
+    def get_run_by_id(self, id_):
+        '''Get a run by its id.
+
+        Args:
+            id_ (str): THe id of the run
+            
+        Returns:
+            Optional[PipelineRun]
+        '''
+
+    @abc.abstractmethod
+    def create_run(self, *args, **kwargs):
+        '''Create a new pipeline run.
+
+        Passes args and kwargs to the new PipelineRun.
+
+        Returns:
+            PipelineRun
+        '''
+
+
+class InMemoryRunStorage(RunStorage):
+    def __init__(self):
+        self._runs = OrderedDict()
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
@@ -63,14 +96,37 @@ class PipelineRunStorage(object):
     def get_run_by_id(self, id_):
         return self._runs.get(id_)
 
+    def create_run(self, *args, **kwargs):
+        return InMemoryPipelineRun(*args, **kwargs)
+
     def __getitem__(self, id_):
         return self.get_run_by_id(id_)
 
+
+class FilesystemRunStorage(InMemoryRunStorage):
+    def __init__(self, log_dir):
+        check.str_param(log_dir, 'log_dir')
+
+        super(FilesystemRunStorage, self).__init__()
+
+        self._log_dir = log_dir
+        self._load_runs()
+
+    def _load_runs(self):
+        utils.mkdir_p(self._log_dir)
+        for filename in glob.glob(os.path.join(self._log_dir, '*.json')):
+            with open(filename, 'r') as fd:
+                try:
+                    self.add_run(InMemoryPipelineRun.from_json(json.load(fd)))
+                except Exception as ex:  # pylint: disable=broad-except
+                    print(
+                        'Could not parse pipeline run from {filename}, continuing. '
+                        '{ex}: {msg}'.format(filename=filename, ex=type(ex).__name__, msg=ex)
+                    )
+                    return
+
     def create_run(self, *args, **kwargs):
-        if self._log_dir:
-            return LogFilePipelineRun(self._log_dir, *args, **kwargs)
-        else:
-            return InMemoryPipelineRun(*args, **kwargs)
+        return LogFilePipelineRun(self._log_dir, *args, **kwargs)
 
 
 class PipelineRun(object):

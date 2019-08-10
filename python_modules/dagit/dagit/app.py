@@ -27,7 +27,7 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
     MultiprocessingExecutionManager,
     SynchronousExecutionManager,
 )
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_run_storage import RunStorage
 from .subscription_server import DagsterSubscriptionServer
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 from .version import __version__
@@ -121,7 +121,7 @@ def notebook_view(request_args):
 
 def create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=False):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
-    check.inst_param(pipeline_run_storage, 'pipeline_run_storage', PipelineRunStorage)
+    check.inst_param(pipeline_run_storage, 'pipeline_run_storage', RunStorage)
     check.bool_param(use_synchronous_execution_manager, 'use_synchronous_execution_manager')
 
     app = Flask('dagster-ui')

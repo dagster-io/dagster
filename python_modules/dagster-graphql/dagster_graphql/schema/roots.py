@@ -1,6 +1,7 @@
 from dagster.core.execution.api import ExecutionSelector
 
 from dagster import check
+from dagster.utils import get_enabled_features
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.execution import (
     ExecutionMetadata,
@@ -92,6 +93,8 @@ class DauphinQuery(dauphin.ObjectType):
         See the descripton on EnvironmentSchema for more information.''',
     )
 
+    enabledFeatures = dauphin.non_null_list(dauphin.String)
+
     def resolve_configTypeOrError(self, graphene_info, **kwargs):
         return get_config_type(
             graphene_info, kwargs['pipelineName'], kwargs['configTypeName'], kwargs.get('mode')
@@ -141,6 +144,9 @@ class DauphinQuery(dauphin.ObjectType):
         return resolve_environment_schema_or_error(
             graphene_info, kwargs['selector'].to_selector(), kwargs['mode']
         )
+
+    def resolve_enabledFeatures(self, _):
+        return get_enabled_features()
 
 
 class DauphinStepOutputHandle(dauphin.InputObjectType):

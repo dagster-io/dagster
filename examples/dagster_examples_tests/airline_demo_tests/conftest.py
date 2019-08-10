@@ -35,3 +35,8 @@ def docker_compose_db():
         subprocess.check_output(['docker-compose', 'rm', '-f', 'airline-demo-db'])
 
     return
+
+
+@pytest.fixture(scope='session')
+def s3_bucket():
+    yield 'dagster-scratch'

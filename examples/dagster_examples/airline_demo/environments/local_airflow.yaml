@@ -1,3 +1,3 @@
 storage:
   s3:
-    s3_bucket: dagster-airflow-scratch
+    s3_bucket: dagster-scratch

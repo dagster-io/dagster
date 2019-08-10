@@ -6,7 +6,6 @@ from collections import OrderedDict
 from copy import deepcopy
 
 from dagster import (
-    composite_solid,
     Any,
     Bool,
     Dict,
@@ -30,6 +29,7 @@ from dagster import (
     SolidDefinition,
     String,
     as_dagster_type,
+    composite_solid,
     input_hydration_config,
     lambda_solid,
     logger,
@@ -42,7 +42,10 @@ from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import script_relative_path
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_run_storage import (
+    FilesystemRunStorage,
+    InMemoryRunStorage,
+)
 
 
 class PoorMansDataFrame_(list):
@@ -77,7 +80,7 @@ PoorMansDataFrame = as_dagster_type(
 def define_context(raise_on_error=True, log_dir=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
-        pipeline_runs=PipelineRunStorage(log_dir),
+        pipeline_runs=FilesystemRunStorage(log_dir) if log_dir else InMemoryRunStorage(),
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,
     )

@@ -693,6 +693,7 @@ type Query {
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
   environmentSchemaOrError(selector: ExecutionSelector!, mode: String!): EnvironmentSchemaOrError!
+  enabledFeatures: [String!]!
 }
 
 input ReexecutionConfig {

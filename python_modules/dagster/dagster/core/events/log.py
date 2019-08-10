@@ -1,13 +1,13 @@
-from collections import namedtuple
 import json
+from collections import namedtuple
 
 from dagster import check
 from dagster.core.events import DagsterEvent
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils.error import SerializableErrorInfo
 from dagster.utils.log import (
-    StructuredLoggerHandler,
     JsonEventLoggerHandler,
+    StructuredLoggerHandler,
     StructuredLoggerMessage,
     construct_single_handler_logger,
 )
