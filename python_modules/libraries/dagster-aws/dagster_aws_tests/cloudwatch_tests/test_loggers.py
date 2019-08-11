@@ -1,40 +1,17 @@
 import datetime
 import json
+import time
 
-import boto3
 import pytest
 
 from dagster import execute_pipeline, ModeDefinition, PipelineDefinition, solid
 from dagster_aws.cloudwatch import cloudwatch_logger
 from dagster_aws.cloudwatch.loggers import millisecond_timestamp
 
+from .conftest import AWS_REGION, TEST_CLOUDWATCH_LOG_GROUP_NAME, TEST_CLOUDWATCH_LOG_STREAM_NAME
 
-TEST_CLOUDWATCH_LOG_GROUP_NAME = '/dagster-test/test-cloudwatch-logging'
-TEST_CLOUDWATCH_LOG_STREAM_NAME = 'test-logging'
-
-
-def permissioned_and_connected():
-    try:
-        client = boto3.client('logs', 'us-west-1')
-        client.describe_log_groups(logGroupNamePrefix=TEST_CLOUDWATCH_LOG_GROUP_NAME)
-        res = client.describe_log_streams(
-            logGroupName=TEST_CLOUDWATCH_LOG_GROUP_NAME,
-            logStreamNamePrefix=TEST_CLOUDWATCH_LOG_STREAM_NAME,
-        )
-        if TEST_CLOUDWATCH_LOG_STREAM_NAME in (
-            log_stream['logStreamName'] for log_stream in res['logStreams']
-        ):
-            return True
-        else:
-            return False
-    except:  # pylint: disable=bare-except
-        return False
-
-
-cloudwatch_test = pytest.mark.skipif(
-    not permissioned_and_connected(),
-    reason='Not credentialed for cloudwatch tests or could not connect to AWS',
-)
+TEN_MINUTES_MS = 10 * 60 * 1000  # in milliseconds
+NUM_POLL_ATTEMPTS = 5
 
 
 @solid(name='hello_cloudwatch')
@@ -50,7 +27,6 @@ def define_hello_cloudwatch_pipeline():
     )
 
 
-@cloudwatch_test
 def test_cloudwatch_logging_bad_log_group_name():
     with pytest.raises(
         Exception,
@@ -64,7 +40,7 @@ def test_cloudwatch_logging_bad_log_group_name():
                         'config': {
                             'log_group_name': 'foo',
                             'log_stream_name': 'bar',
-                            'aws_region': 'us-east-1',
+                            'aws_region': 'us-east-1',  # different region
                         }
                     }
                 }
@@ -72,7 +48,6 @@ def test_cloudwatch_logging_bad_log_group_name():
         )
 
 
-@cloudwatch_test
 def test_cloudwatch_logging_bad_log_stream_name():
     with pytest.raises(
         Exception,
@@ -86,7 +61,7 @@ def test_cloudwatch_logging_bad_log_stream_name():
                         'config': {
                             'log_group_name': TEST_CLOUDWATCH_LOG_GROUP_NAME,
                             'log_stream_name': 'bar',
-                            'aws_region': 'us-west-1',
+                            'aws_region': AWS_REGION,
                         }
                     }
                 }
@@ -97,8 +72,7 @@ def test_cloudwatch_logging_bad_log_stream_name():
 # TODO: Test bad region
 
 
-@cloudwatch_test
-def test_cloudwatch_logging():
+def test_cloudwatch_logging(cloudwatch_client):
     res = execute_pipeline(
         define_hello_cloudwatch_pipeline(),
         {
@@ -107,30 +81,37 @@ def test_cloudwatch_logging():
                     'config': {
                         'log_group_name': TEST_CLOUDWATCH_LOG_GROUP_NAME,
                         'log_stream_name': TEST_CLOUDWATCH_LOG_STREAM_NAME,
-                        'aws_region': 'us-west-1',
+                        'aws_region': AWS_REGION,
                     }
                 }
             }
         },
     )
 
-    client = boto3.client('logs', 'us-west-1')
-
     now = millisecond_timestamp(datetime.datetime.utcnow())
 
-    # This is implicitly assuming that we're not running these tests with too much concurrency, etc.
-    events = client.get_log_events(
-        endTime=now,
-        logGroupName=TEST_CLOUDWATCH_LOG_GROUP_NAME,
-        logStreamName=TEST_CLOUDWATCH_LOG_STREAM_NAME,
-        limit=100,
-    )['events']
-
+    attempt_num = 0
     found_orig_message = False
-    for parsed_msg in (json.loads(event['message']) for event in events):
-        if parsed_msg['dagster_meta']['run_id'] == res.run_id:
-            if parsed_msg['dagster_meta']['orig_message'] == 'Hello, Cloudwatch!':
-                found_orig_message = True
-                break
+
+    while not found_orig_message and attempt_num < NUM_POLL_ATTEMPTS:
+        # Hack: the get_log_events call below won't include events logged in the pipeline execution
+        # above if we query too soon after completion.
+        time.sleep(1)
+
+        # This is implicitly assuming that we're not running these tests with too much concurrency, etc.
+        events = cloudwatch_client.get_log_events(
+            startTime=now - TEN_MINUTES_MS,
+            logGroupName=TEST_CLOUDWATCH_LOG_GROUP_NAME,
+            logStreamName=TEST_CLOUDWATCH_LOG_STREAM_NAME,
+            limit=100,
+        )['events']
+
+        for parsed_msg in (json.loads(event['message']) for event in events):
+            if parsed_msg['dagster_meta']['run_id'] == res.run_id:
+                if parsed_msg['dagster_meta']['orig_message'] == 'Hello, Cloudwatch!':
+                    found_orig_message = True
+                    break
+
+        attempt_num += 1
 
     assert found_orig_message
