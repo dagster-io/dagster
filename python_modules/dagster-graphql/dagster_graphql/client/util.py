@@ -67,6 +67,12 @@ def event_metadata_entries(metadata_entry_datas):
                 description=description,
                 data=json.loads(metadata_entry_data.get('jsonString', '')),
             )
+        elif typename == 'EventMarkdownMetadataEntry':
+            yield EventMetadataEntry.md(
+                label=label,
+                description=description,
+                mdString=metadata_entry_data.get('mdString', ''),
+            )
         elif typename == 'EventTextMetadataEntry':
             yield EventMetadataEntry.text(
                 label=label, description=description, text=metadata_entry_data['text']

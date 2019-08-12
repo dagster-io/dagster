@@ -1,6 +1,7 @@
 # pylint: disable=no-value-for-parameter
 
 from dagster import (
+    file_relative_path,
     pipeline,
     solid,
     ExpectationResult,
@@ -11,6 +12,8 @@ from dagster import (
     InputDefinition,
     EventMetadataEntry,
 )
+
+MARKDOWN_EXAMPLE = 'markdown_example.md'
 
 raw_files = [
     'raw_file_users',
@@ -75,18 +78,21 @@ def input_name_for_raw_file(raw_file):
     description='Load a bunch of raw tables from corresponding files',
 )
 def many_table_materializations(_context):
-    for table in raw_tables:
-        yield Materialization(
-            label='table_info',
-            metadata_entries=[
-                EventMetadataEntry.text(text=table, label='table_name'),
-                EventMetadataEntry.fspath(path='/path/to/{}'.format(table), label='table_path'),
-                EventMetadataEntry.json(data={'name': table}, label='table_data'),
-                EventMetadataEntry.url(
-                    url='https://bigty.pe/{}'.format(table), label='table_name_big'
-                ),
-            ],
-        )
+    with open(file_relative_path(__file__, MARKDOWN_EXAMPLE), 'r') as f:
+        mdString = f.read()
+        for table in raw_tables:
+            yield Materialization(
+                label='table_info',
+                metadata_entries=[
+                    EventMetadataEntry.text(text=table, label='table_name'),
+                    EventMetadataEntry.fspath(path='/path/to/{}'.format(table), label='table_path'),
+                    EventMetadataEntry.json(data={'name': table}, label='table_data'),
+                    EventMetadataEntry.url(
+                        url='https://bigty.pe/{}'.format(table), label='table_name_big'
+                    ),
+                    EventMetadataEntry.md(mdString=mdString, label='table_blurb'),
+                ],
+            )
 
 
 @solid(

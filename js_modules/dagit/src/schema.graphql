@@ -123,6 +123,12 @@ type EventJsonMetadataEntry implements EventMetadataEntry {
   jsonString: String!
 }
 
+type EventMarkdownMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  mdString: String!
+}
+
 interface EventMetadataEntry {
   label: String!
   description: String

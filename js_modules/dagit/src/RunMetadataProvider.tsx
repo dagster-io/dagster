@@ -120,6 +120,15 @@ function itemsForMetadataEntries(
         });
 
         break;
+      case "EventMarkdownMetadataEntry":
+        items.push({
+          text: metadataEntry.label,
+          actionText: "[Show Metadata]",
+          action: IStepDisplayActionType.SHOW_IN_MODAL,
+          actionValue: metadataEntry.mdString
+        });
+
+        break;
     }
   }
 
@@ -263,6 +272,9 @@ export default class RunMetadataProvider extends React.Component<
         }
         ... on EventTextMetadataEntry {
           text
+        }
+        ... on EventMarkdownMetadataEntry {
+          mdString
         }
       }
 

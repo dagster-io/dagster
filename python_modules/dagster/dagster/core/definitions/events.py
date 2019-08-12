@@ -57,6 +57,10 @@ class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description en
     def json(data, label, description=None):
         return EventMetadataEntry(label, description, JsonMetadataEntryData(data))
 
+    @staticmethod
+    def md(mdString, label, description=None):
+        return EventMetadataEntry(label, description, MarkdownMetadataEntryData(mdString))
+
 
 class TextMetadataEntryData(namedtuple('_TextMetadataEntryData', 'text')):
     def __new__(cls, text):
@@ -80,11 +84,19 @@ class JsonMetadataEntryData(namedtuple('_JsonMetadataEntryData', 'data')):
         )
 
 
+class MarkdownMetadataEntryData(namedtuple('_MarkdownMetadataEntryData', 'mdString')):
+    def __new__(cls, mdString):
+        return super(MarkdownMetadataEntryData, cls).__new__(
+            cls, check.str_param(mdString, 'mdString')
+        )
+
+
 EntryDataUnion = (
     TextMetadataEntryData,
     UrlMetadataEntryData,
     PathMetadataEntryData,
     JsonMetadataEntryData,
+    MarkdownMetadataEntryData,
 )
 
 
@@ -204,7 +216,7 @@ class ObjectStoreOperation(
 ):
     '''Used internally by Dagster machinery when values are written to and read from an
     ObjectStore.
-    
+
     Args:
         op (ObjectStoreOperationType): The type of the operation on the object store.
         key (str): The key of the object on which the operation was performed.

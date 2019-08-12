@@ -12,6 +12,7 @@ from dagster.core.definitions.events import (
     PathMetadataEntryData,
     TextMetadataEntryData,
     UrlMetadataEntryData,
+    MarkdownMetadataEntryData,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
@@ -301,6 +302,14 @@ class DauphinEventUrlMetadataEntry(dauphin.ObjectType):
     url = dauphin.NonNull(dauphin.String)
 
 
+class DauphinEventMarkdownMetadataEntry(dauphin.ObjectType):
+    class Meta:
+        name = 'EventMarkdownMetadataEntry'
+        interfaces = (DauphinEventMetadataEntry,)
+
+    mdString = dauphin.NonNull(dauphin.String)
+
+
 def iterate_metadata_entries(metadata_entries):
     check.list_param(metadata_entries, 'metadata_entries', of_type=EventMetadataEntry)
     for metadata_entry in metadata_entries:
@@ -327,6 +336,12 @@ def iterate_metadata_entries(metadata_entries):
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 url=metadata_entry.entry_data.url,
+            )
+        elif isinstance(metadata_entry.entry_data, MarkdownMetadataEntryData):
+            yield DauphinEventMarkdownMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                mdString=metadata_entry.entry_data.mdString,
             )
         else:
             # skip rest for now
