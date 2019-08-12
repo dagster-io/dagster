@@ -46,9 +46,3 @@ Configuration
 
 .. autoclass:: RunConfig
    :members:
-
-.. autoclass:: InProcessExecutorConfig
-   :members:
-
-.. autoclass:: MultiprocessExecutorConfig
-   :members:

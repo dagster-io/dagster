@@ -50,6 +50,18 @@ Logging
 
 ----
 
+Executors
+=========
+.. autodecorator:: executor
+
+.. autoclass:: ExecutorDefinition
+   :members:
+
+.. autoclass:: InitExecutorContext
+    :members:
+
+----
+
 Presets
 =======
 
