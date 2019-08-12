@@ -9,6 +9,7 @@ import tempfile
 
 import yaml
 from six.moves import configparser
+from enum import Enum
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
@@ -244,6 +245,18 @@ def dagster_config_path():
     return os.path.join(dagster_home_dir(), dagster_config_file)
 
 
+def dagster_schedules_dir():
+    return os.path.join(dagster_home_dir(), "schedules", "experimental")
+
+
+def dagster_schedule_dir_for_handle(handle):
+    from dagster.core.definitions.handle import ExecutionTargetHandle
+
+    check.inst_param(handle, 'handle', ExecutionTargetHandle)
+    repository_name = handle.build_repository_definition().name
+    return os.path.join(dagster_schedules_dir(), repository_name)
+
+
 def dagster_logs_dir():
     return os.path.join(dagster_home_dir(), "logs", "experimental")
 
@@ -273,6 +286,25 @@ def get_enabled_features():
         return flags
     except configparser.NoSectionError:
         return []
+
+
+class Features(Enum):
+    class FeatureFlag(object):
+        _features = get_enabled_features()
+
+        def __init__(self, name):
+            self.enabled = name in type(self)._features
+
+        @property
+        def is_enabled(self):
+            return self.enabled
+
+    # Add new feature flags here
+    SCHEDULER = FeatureFlag("scheduler")
+
+    @property
+    def is_enabled(self):
+        return self.value.is_enabled  # pylint: disable=no-member
 
 
 @contextlib.contextmanager

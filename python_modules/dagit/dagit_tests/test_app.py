@@ -13,7 +13,6 @@ def test_create_app():
     handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
     pipeline_run_storage = InMemoryRunStorage()
     assert create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=True)
-    assert create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=False)
 
 
 def test_notebook_view():
@@ -44,7 +43,15 @@ def test_index_view():
 def test_successful_host_dagit_ui():
     with mock.patch('gevent.pywsgi.WSGIServer'):
         handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
-        host_dagit_ui(log=False, log_dir=None, handle=handle, use_sync=True, host=None, port=2343)
+        host_dagit_ui(
+            log=False,
+            log_dir=None,
+            schedule_dir=None,
+            handle=handle,
+            use_sync=True,
+            host=None,
+            port=2343,
+        )
 
 
 def _define_mock_server(fn):
@@ -69,7 +76,13 @@ def test_unknown_error():
         handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
         with pytest.raises(AnException):
             host_dagit_ui(
-                log=False, log_dir=None, handle=handle, use_sync=True, host=None, port=2343
+                log=False,
+                log_dir=None,
+                schedule_dir=None,
+                handle=handle,
+                use_sync=True,
+                host=None,
+                port=2343,
             )
 
 
@@ -81,7 +94,13 @@ def test_port_collision():
         handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
         with pytest.raises(Exception) as exc_info:
             host_dagit_ui(
-                log=False, log_dir=None, handle=handle, use_sync=True, host=None, port=2343
+                log=False,
+                log_dir=None,
+                schedule_dir=None,
+                handle=handle,
+                use_sync=True,
+                host=None,
+                port=2343,
             )
 
         assert 'Another process ' in str(exc_info.value)

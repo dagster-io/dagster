@@ -11,7 +11,9 @@ from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
 from dagster.utils import (
     DEFAULT_REPOSITORY_YAML_FILENAME,
+    Features,
     dagster_logs_dir_for_handle,
+    dagster_schedule_dir_for_handle,
     is_dagster_home_set,
 )
 
@@ -19,6 +21,8 @@ from dagster_graphql.implementation.pipeline_run_storage import (
     FilesystemRunStorage,
     InMemoryRunStorage,
 )
+
+from dagster_graphql.implementation.scheduler import SystemCronScheduler
 
 from .app import create_app
 from .version import __version__
@@ -66,13 +70,14 @@ REPO_TARGET_WARNING = (
     ),
 )
 @click.option('--log-dir', help="Directory to record logs to", default=None)
+@click.option('--schedule-dir', help="Directory to record logs to", default=None)
 @click.option(
     '--no-watch',
     is_flag=True,
     help='Disable autoreloading when there are changes to the repo/pipeline being served',
 )
 @click.version_option(version=__version__, prog_name='dagit')
-def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
+def ui(host, port, sync, log, log_dir, schedule_dir, no_watch=False, **kwargs):
     handle = handle_for_repo_cli_args(kwargs)
 
     # add the path for the cwd so imports in dynamically loaded code work correctly
@@ -91,20 +96,32 @@ def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
 
         log_dir = dagster_logs_dir_for_handle(handle)
 
+    if Features.SCHEDULER.is_enabled:
+        # Don't error if $DAGSTER_HOME is not set
+        if not schedule_dir and is_dagster_home_set():
+            schedule_dir = dagster_schedule_dir_for_handle(handle)
+
     check.invariant(
         not no_watch,
         'Do not set no_watch when calling the Dagit Python CLI directly -- this flag is a no-op '
         'at this level and should be set only when invoking dagit/bin/dagit.',
     )
-    host_dagit_ui(log, log_dir, handle, sync, host, port)
+    host_dagit_ui(log, log_dir, schedule_dir, handle, sync, host, port)
 
 
-def host_dagit_ui(log, log_dir, handle, use_sync, host, port):
+def host_dagit_ui(log, log_dir, schedule_dir, handle, use_sync, host, port):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
 
     pipeline_run_storage = FilesystemRunStorage(log_dir) if log else InMemoryRunStorage()
 
-    app = create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=use_sync)
+    if Features.SCHEDULER.is_enabled:
+        scheduler = SystemCronScheduler(schedule_dir)
+        app = create_app(
+            handle, pipeline_run_storage, scheduler, use_synchronous_execution_manager=use_sync
+        )
+    else:
+        app = create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=use_sync)
+
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
     print('Serving on http://{host}:{port}'.format(host=host, port=port))
     try:

@@ -12,7 +12,8 @@ from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 from six import text_type
 
-from dagster import ExecutionTargetHandle, check, seven
+from dagster import check, seven, ExecutionTargetHandle
+from dagster.utils import Features
 from dagster.utils.log import get_stack_trace_array
 
 from dagster_graphql.implementation.context import DagsterGraphQLContext
@@ -23,6 +24,7 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
 from dagster_graphql.implementation.pipeline_run_storage import RunStorage
 from dagster_graphql.schema import create_schema
 
+from dagster_graphql.implementation.scheduler import Scheduler
 from .subscription_server import DagsterSubscriptionServer
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 from .version import __version__
@@ -119,9 +121,12 @@ def notebook_view(request_args):
         return '<style>' + resources['inlining']['css'][0] + '</style>' + body, 200
 
 
-def create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=False):
+def create_app(
+    handle, pipeline_run_storage, scheduler=None, use_synchronous_execution_manager=False
+):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.inst_param(pipeline_run_storage, 'pipeline_run_storage', RunStorage)
+    check.opt_inst_param(scheduler, 'scheduler', Scheduler)
     check.bool_param(use_synchronous_execution_manager, 'use_synchronous_execution_manager')
 
     app = Flask('dagster-ui')
@@ -138,12 +143,21 @@ def create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=F
 
     print('Loading repository...')
 
-    context = DagsterGraphQLContext(
-        handle=handle,
-        pipeline_runs=pipeline_run_storage,
-        execution_manager=execution_manager,
-        version=__version__,
-    )
+    if Features.SCHEDULER.is_enabled:
+        context = DagsterGraphQLContext(
+            handle=handle,
+            execution_manager=execution_manager,
+            pipeline_runs=pipeline_run_storage,
+            scheduler=scheduler,  # Add schedule argument
+            version=__version__,
+        )
+    else:
+        context = DagsterGraphQLContext(
+            handle=handle,
+            execution_manager=execution_manager,
+            pipeline_runs=pipeline_run_storage,
+            version=__version__,
+        )
 
     app.add_url_rule(
         '/graphql',

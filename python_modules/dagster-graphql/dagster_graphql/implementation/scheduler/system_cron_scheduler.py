@@ -86,11 +86,14 @@ class SystemCronScheduler(Scheduler):
 
                     self._schedules[schedule.schedule_id] = schedule
                 except Exception as ex:  # pylint: disable=broad-except
-                    raise Exception(
-                        'Could not parse dagit schedule from {file_name} in {dir_name}. {ex}: {msg}'.format(
-                            file_name=file,
-                            dir_name=self._schedule_dir,
-                            ex=type(ex).__name__,
-                            msg=ex,
-                        )
+                    six.raise_from(
+                        Exception(
+                            'Could not parse dagit schedule from {file_name} in {dir_name}. {ex}: {msg}'.format(
+                                file_name=file,
+                                dir_name=self._schedule_dir,
+                                ex=type(ex).__name__,
+                                msg=ex,
+                            )
+                        ),
+                        ex,
                     )
