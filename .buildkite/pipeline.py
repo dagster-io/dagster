@@ -1,13 +1,15 @@
 import os
 import sys
+
 import yaml
+
+from defines import SupportedPython, SupportedPython3s, SupportedPythons
+from step_builder import StepBuilder
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(SCRIPT_PATH)
 
-from defines import SupportedPython, SupportedPythons, SupportedPython3s
-from step_builder import StepBuilder
 
 TOX_MAP = {
     SupportedPython.V3_7: "py37",
@@ -50,7 +52,7 @@ def airline_demo_tests():
         coverage = ".coverage.airline-demo.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder('airline-demo tests ({version})'.format(version=TOX_MAP[version]))
-            .on_integration_image(version)
+            .on_integration_image(version, ['BUILDKITE'])
             .on_medium_instance()
             .run(
                 "cd examples",
