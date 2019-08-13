@@ -149,7 +149,7 @@ def test_provided_default_on_resources_config():
 
     assert some_resource_field.default_value == {'config': {'with_default_int': 23434}}
 
-    value = EnvironmentConfig.from_dict(throwing_evaluate_config_value(env_type, {}))
+    value = EnvironmentConfig.from_config_value(throwing_evaluate_config_value(env_type, {}), {})
     assert value.resources == {'some_resource': {'config': {'with_default_int': 23434}}}
 
 
@@ -162,8 +162,8 @@ def test_default_environment():
     def pipeline_def():
         some_solid()
 
-    env_obj = EnvironmentConfig.from_dict(
-        throwing_evaluate_config_value(create_environment_type(pipeline_def), {})
+    env_obj = EnvironmentConfig.from_config_value(
+        throwing_evaluate_config_value(create_environment_type(pipeline_def), {}), {}
     )
 
     assert env_obj.expectations.evaluate is True
@@ -352,14 +352,18 @@ def test_whole_environment():
         == 'SomePipeline.ExpectationsConfig'
     )
 
-    env = EnvironmentConfig.from_dict(
+    env = EnvironmentConfig.from_config_value(
         throwing_evaluate_config_value(
             environment_type,
             {
                 'resources': {'test_resource': {'config': 1}},
                 'solids': {'int_config_solid': {'config': 123}},
             },
-        )
+        ),
+        {
+            'resources': {'test_resource': {'config': 1}},
+            'solids': {'int_config_solid': {'config': 123}},
+        },
     )
 
     assert isinstance(env, EnvironmentConfig)
@@ -438,7 +442,7 @@ def test_optional_solid_with_optional_scalar_config():
 
     assert solids_default_obj['int_config_solid'].config is None
 
-    env_obj = EnvironmentConfig.from_dict(throwing_evaluate_config_value(env_type, {}))
+    env_obj = EnvironmentConfig.from_config_value(throwing_evaluate_config_value(env_type, {}), {})
 
     assert env_obj.solids['int_config_solid'].config is None
 
@@ -506,10 +510,11 @@ def test_required_solid_with_required_subfield():
     assert env_type.fields['execution'].is_optional
     assert env_type.fields['expectations'].is_optional
 
-    env_obj = EnvironmentConfig.from_dict(
+    env_obj = EnvironmentConfig.from_config_value(
         throwing_evaluate_config_value(
             env_type, {'solids': {'int_config_solid': {'config': {'required_field': 'foobar'}}}}
-        )
+        ),
+        {'solids': {'int_config_solid': {'config': {'required_field': 'foobar'}}}},
     )
 
     assert env_obj.solids['int_config_solid'].config['required_field'] == 'foobar'
@@ -658,10 +663,11 @@ def test_optional_and_required_context():
         env_type, 'resources', 'required_resource', 'config', 'required_field'
     ).is_required
 
-    env_obj = EnvironmentConfig.from_dict(
+    env_obj = EnvironmentConfig.from_config_value(
         throwing_evaluate_config_value(
             env_type, {'resources': {'required_resource': {'config': {'required_field': 'foo'}}}}
-        )
+        ),
+        {'resources': {'required_resource': {'config': {'required_field': 'foo'}}}},
     )
 
     assert env_obj.resources == {

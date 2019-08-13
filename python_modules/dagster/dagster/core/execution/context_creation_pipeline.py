@@ -51,7 +51,7 @@ def create_environment_config(pipeline, environment_dict=None, run_config=None):
     if not result.success:
         raise DagsterInvalidConfigError(pipeline, result.errors, environment_dict)
 
-    return EnvironmentConfig.from_dict(result.value)
+    return EnvironmentConfig.from_config_value(result.value, original_config_dict=environment_dict)
 
 
 @contextmanager
