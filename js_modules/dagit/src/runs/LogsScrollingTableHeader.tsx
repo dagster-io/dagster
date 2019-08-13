@@ -8,6 +8,7 @@ const ColumnWidths = {
   solid: 150,
   timestamp: 100
 };
+const MIN_COLUMN_WIDTH = 40;
 
 try {
   const saved = window.localStorage.getItem(ColumnWidthsStorageKey);
@@ -57,47 +58,60 @@ interface HeaderProps extends React.HTMLProps<HTMLDivElement> {
 }
 
 interface HeaderState {
-  dragging: boolean;
+  isDragging: boolean;
+  width: number;
+  screenX: number;
 }
 
 class Header extends React.Component<HeaderProps, HeaderState> {
   state = {
-    dragging: false
+    isDragging: false,
+    width: 0,
+    screenX: 0
   };
 
+  componentWillUnmount() {
+    document.removeEventListener("mousemove", this.onMouseMove);
+    document.removeEventListener("mouseup", this.onMouseUp);
+  }
+
   onMouseDown = (m: React.MouseEvent<HTMLDivElement>) => {
-    const initialX = m.screenX;
-    const initialWidth = this.props.width;
+    const { width } = this.props;
+    this.setState({
+      isDragging: true,
+      screenX: m.screenX,
+      width
+    });
+    document.addEventListener("mousemove", this.onMouseMove);
+    document.addEventListener("mouseup", this.onMouseUp);
+  };
 
-    const onMouseMove = (evt: MouseEvent) => {
-      const dir = this.props.handleSide === "left" ? -1 : 1;
-      const screenX = evt.screenX;
+  onMouseMove = (evt: MouseEvent) => {
+    const { onResize, handleSide } = this.props;
+    const { isDragging, width, screenX } = this.state;
+    if (!evt.screenX || !isDragging || !onResize) {
+      return;
+    }
+    const dir = handleSide === "left" ? -1 : 1;
+    onResize(Math.max(MIN_COLUMN_WIDTH, width + (evt.screenX - screenX) * dir));
+  };
 
-      this.props.onResize &&
-        this.props.onResize(
-          Math.max(40, initialWidth + (screenX - initialX) * dir)
-        );
-    };
-    const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-      this.setState({ dragging: false });
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-    this.setState({ dragging: true });
+  onMouseUp = () => {
+    const { isDragging } = this.state;
+    isDragging && this.setState({ isDragging: false });
+    document.removeEventListener("mousemove", this.onMouseMove);
+    document.removeEventListener("mouseup", this.onMouseUp);
   };
 
   render() {
-    const draggable = !!this.props.onResize;
+    const isDraggable = !!this.props.onResize;
 
     return (
       <HeaderContainer style={{ width: this.props.width }}>
         <HeaderDragHandle
-          onMouseDown={draggable ? this.onMouseDown : undefined}
-          draggable={draggable}
-          dragging={this.state.dragging}
+          onMouseDown={isDraggable ? this.onMouseDown : undefined}
+          isDraggable={isDraggable}
+          isDragging={this.state.isDragging}
           side={this.props.handleSide || "right"}
         >
           <div />
@@ -151,20 +165,20 @@ const HeaderContainer = styled.div`
 // eslint-disable-next-line no-unexpected-multiline
 const HeaderDragHandle = styled.div<{
   side: "left" | "right";
-  draggable: boolean;
-  dragging: boolean;
+  isDraggable: boolean;
+  isDragging: boolean;
 }>`
   width: 17px;
   height: 20000px;
   position: absolute;
-  cursor: ${({ draggable }) => (draggable ? "ew-resize" : "default")};
+  cursor: ${({ isDraggable }) => (isDraggable ? "ew-resize" : "default")};
   z-index: 2;
   ${({ side }) => (side === "right" ? `right: -13px;` : `left: -13px;`)}
   padding: 0 8px;
   & > div {
     width: 1px;
     height: 100%;
-    background: ${({ dragging }) =>
-      dragging ? Colors.GRAY1 : Colors.LIGHT_GRAY3};
+    background: ${({ isDragging }) =>
+      isDragging ? Colors.GRAY1 : Colors.LIGHT_GRAY3};
   }
 `;
