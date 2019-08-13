@@ -19,10 +19,10 @@ from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import ResourcesStack
 from dagster.loggers import colored_console_logger
+from dagster.loggers.xproc_log_sink import construct_sqlite_logger
 
 from .context import DagstermillExecutionContext
 from .errors import DagstermillError
-from .logger import construct_sqlite_logger
 from .serialize import PICKLE_PROTOCOL, read_value, write_value
 
 
