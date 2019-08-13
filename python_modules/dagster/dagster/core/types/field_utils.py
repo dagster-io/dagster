@@ -2,7 +2,8 @@ import re
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
-from .config import ConfigType, ConfigTypeAttributes, DEFAULT_TYPE_ATTRIBUTES
+
+from .config import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttributes
 from .default_applier import apply_default_values
 
 

@@ -1,12 +1,12 @@
 from graphql.execution.base import ResolveInfo
 
-from dagster import check, RunConfig
+from dagster import RunConfig, check
 from dagster.core.definitions import create_environment_schema
 from dagster.core.execution.api import ExecutionSelector, create_execution_plan
 from dagster.core.types.evaluator import evaluate_config
 
 from .fetch_pipelines import get_dauphin_pipeline_from_selector
-from .utils import capture_dauphin_error, UserFacingGraphQLError
+from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 def validate_config(graphene_info, dauphin_pipeline, env_config, mode):

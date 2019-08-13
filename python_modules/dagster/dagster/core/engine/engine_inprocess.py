@@ -1,7 +1,7 @@
 import sys
 
 from dagster import check
-from dagster.core.definitions import ExpectationResult, Materialization, Output, Failure, TypeCheck
+from dagster.core.definitions import ExpectationResult, Failure, Materialization, Output, TypeCheck
 from dagster.core.errors import (
     DagsterError,
     DagsterExecutionStepExecutionError,
@@ -28,10 +28,8 @@ from dagster.core.execution.plan.objects import (
 )
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.object_store import ObjectStoreOperation
-
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.timing import time_execution_scope
-
 
 from .engine_base import IEngine
 

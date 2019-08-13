@@ -1,9 +1,10 @@
-from dagster.core.types import Int, Float, Bool, String
+from dagster.core.types import Bool, Float, Int, String
+
 from .wrapping import (
     is_python_list_typehint,
     is_python_optional_typehint,
-    remap_to_dagster_optional_type,
     remap_to_dagster_list_type,
+    remap_to_dagster_optional_type,
 )
 
 

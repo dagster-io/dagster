@@ -1,6 +1,5 @@
 import sys
-
-from contextlib import contextmanager, closing
+from contextlib import closing, contextmanager
 
 import snowflake.connector
 

@@ -14,7 +14,6 @@ import uuid
 import docker
 import pytest
 
-
 from dagster import check
 from dagster.utils import load_yaml_from_path, mkdir_p, pushd, script_relative_path
 

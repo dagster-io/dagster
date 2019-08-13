@@ -7,8 +7,8 @@ Spark deployment contexts and configuration.
 '''
 from dagster import Dict, Field, List, Path, String
 
-from .types import SparkDeployMode
 from .configs_spark import spark_config
+from .types import SparkDeployMode
 
 
 def define_spark_config():

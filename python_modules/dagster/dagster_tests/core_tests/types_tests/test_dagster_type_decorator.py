@@ -1,8 +1,9 @@
 from collections import namedtuple
+
 from dagster.core.types.decorator import (
+    as_dagster_type,
     dagster_type,
     get_runtime_type_on_decorated_klass,
-    as_dagster_type,
 )
 
 

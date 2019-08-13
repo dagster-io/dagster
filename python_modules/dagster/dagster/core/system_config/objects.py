@@ -2,7 +2,6 @@
 from collections import namedtuple
 
 from dagster import check
-
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.utils import ensure_single_item
 

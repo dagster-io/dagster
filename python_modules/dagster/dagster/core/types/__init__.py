@@ -6,9 +6,9 @@ from .config_schema import (
     output_selector_schema,
 )
 from .field import Field
-from .field_utils import Dict, NamedDict, Selector, NamedSelector, PermissiveDict
+from .field_utils import Dict, NamedDict, NamedSelector, PermissiveDict, Selector
 from .runtime import PythonObjectType
-from .wrapping import Optional, List
+from .wrapping import List, Optional
 
 Any = BuiltinEnum.ANY
 String = BuiltinEnum.STRING

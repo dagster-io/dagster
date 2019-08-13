@@ -3,7 +3,6 @@ import ast
 import json
 import logging
 import os
-
 from contextlib import contextmanager
 
 from airflow.exceptions import AirflowException, AirflowSkipException
@@ -12,13 +11,13 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, from_env
 
-from dagster import check, seven, DagsterEventType
+from dagster import DagsterEventType, check, seven
 from dagster.core.events import DagsterEvent
+
 from dagster_graphql.client.mutations import execute_start_pipeline_execution_query
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 
 from .util import airflow_storage_exception, construct_variables, parse_raw_res
-
 
 DOCKER_TEMPDIR = '/tmp'
 

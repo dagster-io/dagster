@@ -1,18 +1,17 @@
 from dagster import (
+    ExecutionTargetHandle,
+    InputDefinition,
+    ModeDefinition,
     execute_pipeline,
     file_relative_path,
     pipeline,
     solid,
-    ExecutionTargetHandle,
-    InputDefinition,
-    ModeDefinition,
 )
-from dagster.core.test_utils import nesting_composite_pipeline
 from dagster.core.definitions.executor import default_executors
-
-from dagster_dask import dask_executor
+from dagster.core.test_utils import nesting_composite_pipeline
 
 import dagster_pandas as dagster_pd
+from dagster_dask import dask_executor
 
 
 @solid

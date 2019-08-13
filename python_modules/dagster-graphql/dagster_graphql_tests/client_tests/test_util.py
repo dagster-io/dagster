@@ -4,7 +4,6 @@ from dagster import (
     Bool,
     DependencyDefinition,
     EventMetadataEntry,
-    execute_pipeline,
     ExecutionTargetHandle,
     ExpectationResult,
     InputDefinition,
@@ -13,6 +12,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     RunConfig,
+    execute_pipeline,
     solid,
 )
 from dagster.core.events import STEP_EVENTS, DagsterEventType

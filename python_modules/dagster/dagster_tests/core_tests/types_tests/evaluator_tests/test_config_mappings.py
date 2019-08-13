@@ -4,20 +4,20 @@ import time
 import pytest
 
 from dagster import (
-    composite_solid,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
+    DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     Field,
     Float,
     InputDefinition,
     Int,
-    DagsterInvalidConfigError,
     Output,
     RunConfig,
     String,
+    composite_solid,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
+    solid,
 )
 from dagster.check import CheckError
 

@@ -1,6 +1,6 @@
 import sys
 
-from dagster import execute_solid, solid, ModeDefinition
+from dagster import ModeDefinition, execute_solid, solid
 
 from dagster_snowflake import snowflake_resource
 

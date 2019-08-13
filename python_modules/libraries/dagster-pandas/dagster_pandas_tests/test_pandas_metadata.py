@@ -1,6 +1,6 @@
 import pandas as pd
 
-from dagster import lambda_solid, pipeline, file_relative_path, InputDefinition, execute_pipeline
+from dagster import InputDefinition, execute_pipeline, file_relative_path, lambda_solid, pipeline
 
 from dagster_pandas import DataFrame
 

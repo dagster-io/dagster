@@ -1,18 +1,18 @@
 import pytest
 
 from dagster import (
+    Bool,
+    DagsterExecutionStepExecutionError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+    Dict,
+    Field,
+    ModeDefinition,
     PipelineDefinition,
+    PresetDefinition,
+    execute_pipeline_with_preset,
     lambda_solid,
     solid,
-    Field,
-    Bool,
-    Dict,
-    execute_pipeline_with_preset,
-    DagsterExecutionStepExecutionError,
-    PresetDefinition,
-    ModeDefinition,
 )
 from dagster.utils import script_relative_path
 

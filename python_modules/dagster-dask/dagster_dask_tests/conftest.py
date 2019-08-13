@@ -1,6 +1,6 @@
-import pytest
-
 import os
+
+import pytest
 
 
 @pytest.fixture(scope='session')

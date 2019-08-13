@@ -1,6 +1,6 @@
 import responses
 
-from dagster import execute_solid, solid, ModeDefinition
+from dagster import ModeDefinition, execute_solid, solid
 
 from dagster_pagerduty import pagerduty_resource
 

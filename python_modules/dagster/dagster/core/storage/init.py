@@ -1,11 +1,10 @@
 from collections import namedtuple
 
 from dagster import check
-
-from dagster.core.definitions import PipelineDefinition, ModeDefinition, SystemStorageDefinition
+from dagster.core.definitions import ModeDefinition, PipelineDefinition, SystemStorageDefinition
 from dagster.core.execution.config import RunConfig
-from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.storage.type_storage import TypeStoragePluginRegistry
+from dagster.core.system_config.objects import EnvironmentConfig
 
 
 class InitSystemStorageContext(

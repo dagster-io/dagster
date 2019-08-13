@@ -359,7 +359,9 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_MATERIALIZATION,
             step_context=step_context,
             event_specific_data=StepMaterializationData(materialization),
-            message='Materialized value{label_clause}.'.format(
+            message=materialization.description
+            if materialization.description
+            else 'Materialized value{label_clause}.'.format(
                 label_clause=' {label}'.format(label=materialization.label)
                 if materialization.label
                 else ''

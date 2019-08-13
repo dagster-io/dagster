@@ -1,10 +1,10 @@
 from dagster import (
-    composite_solid,
-    pipeline,
-    solid,
     DagsterInvariantViolationError,
     Output,
     SolidDefinition,
+    composite_solid,
+    pipeline,
+    solid,
 )
 from dagster.core.types.evaluator import evaluate_config
 from dagster.core.types.evaluator.errors import DagsterEvaluateConfigValueError

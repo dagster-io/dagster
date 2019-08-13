@@ -35,4 +35,11 @@ export interface TempMetadataEntryFragment_EventTextMetadataEntry {
   text: string;
 }
 
-export type TempMetadataEntryFragment = TempMetadataEntryFragment_EventPathMetadataEntry | TempMetadataEntryFragment_EventJsonMetadataEntry | TempMetadataEntryFragment_EventUrlMetadataEntry | TempMetadataEntryFragment_EventTextMetadataEntry;
+export interface TempMetadataEntryFragment_EventMarkdownMetadataEntry {
+  __typename: "EventMarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdString: string;
+}
+
+export type TempMetadataEntryFragment = TempMetadataEntryFragment_EventPathMetadataEntry | TempMetadataEntryFragment_EventJsonMetadataEntry | TempMetadataEntryFragment_EventUrlMetadataEntry | TempMetadataEntryFragment_EventTextMetadataEntry | TempMetadataEntryFragment_EventMarkdownMetadataEntry;

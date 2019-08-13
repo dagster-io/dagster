@@ -1,17 +1,16 @@
 # pylint: disable=no-value-for-parameter
 
 from dagster import (
+    Field,
+    InputDefinition,
+    Output,
+    OutputDefinition,
+    String,
     check,
     execute_pipeline,
     pipeline,
     solid,
-    Field,
-    InputDefinition,
-    OutputDefinition,
-    Output,
-    String,
 )
-
 from dagster.core.test_utils import single_output_solid
 
 

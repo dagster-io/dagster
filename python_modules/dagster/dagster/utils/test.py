@@ -1,6 +1,5 @@
 import logging
 import uuid
-
 from collections import defaultdict
 from contextlib import contextmanager
 
@@ -21,15 +20,15 @@ from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.execution.api import RunConfig, scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import (
-    create_log_manager,
     construct_pipeline_execution_context,
     create_context_creation_data,
     create_executor_config,
+    create_log_manager,
 )
-from dagster.core.utility_solids import define_stub_solid
-from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.storage.file_manager import LocalFileManager
+from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.utility_solids import define_stub_solid
 
 # pylint: disable=unused-import
 from .temp_file import (

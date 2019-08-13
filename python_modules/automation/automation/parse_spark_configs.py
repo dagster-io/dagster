@@ -7,13 +7,12 @@ from __future__ import print_function
 
 import re
 import sys
-
 from collections import namedtuple
 from enum import Enum
 
 import click
-import requests
 import pytablereader as ptr
+import requests
 
 from .printer import IndentingBufferPrinter
 

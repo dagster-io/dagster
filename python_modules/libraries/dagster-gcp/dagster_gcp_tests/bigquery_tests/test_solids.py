@@ -4,23 +4,12 @@ import datetime
 import sys
 import uuid
 
-import pytest
 import pandas as pd
-
-try:
-    import unittest.mock as mock
-except ImportError:
-    import mock
-
+import pytest
 from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
 
-from dagster_pandas import DataFrame
-
 from dagster import (
-    execute_pipeline,
-    pipeline,
-    solid,
     DagsterExecutionStepExecutionError,
     InputDefinition,
     List,
@@ -28,6 +17,9 @@ from dagster import (
     Nothing,
     OutputDefinition,
     Path,
+    execute_pipeline,
+    pipeline,
+    solid,
 )
 from dagster.core.definitions import create_environment_type
 from dagster.core.types.evaluator import evaluate_config
@@ -37,10 +29,11 @@ from dagster_gcp import (
     bigquery_resource,
     bq_create_dataset,
     bq_delete_dataset,
+    bq_solid_for_queries,
     import_df_to_bq,
     import_gcs_paths_to_bq,
-    bq_solid_for_queries,
 )
+from dagster_pandas import DataFrame
 
 
 def dataset_exists(name):

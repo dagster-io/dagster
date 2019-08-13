@@ -1,11 +1,10 @@
-from contextlib import contextmanager
-
 import os
+import shutil
 import tempfile
 import time
-import shutil
+from contextlib import contextmanager
 
-from dagster import PipelineDefinition, solid, execute_pipeline
+from dagster import PipelineDefinition, execute_pipeline, solid
 from dagster.core.storage.runs import (
     DagsterRunMeta,
     FileSystemRunStorage,

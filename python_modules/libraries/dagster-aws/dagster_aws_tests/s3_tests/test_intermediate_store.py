@@ -5,35 +5,29 @@ import pytest
 
 from dagster import (
     Bool,
-    DependencyDefinition,
     InputDefinition,
     Int,
     List,
+    ModeDefinition,
     OutputDefinition,
-    PipelineDefinition,
     RunConfig,
     SerializationStrategy,
     String,
     check,
     lambda_solid,
+    pipeline,
 )
-
 from dagster.core.events import DagsterEventType
-
 from dagster.core.execution.api import create_execution_plan, execute_plan, scoped_pipeline_context
-
-from dagster.core.storage.type_storage import TypeStoragePlugin
-
-from dagster.core.types.runtime import (
-    String as RuntimeString,
-    resolve_to_runtime_type,
-    RuntimeType,
-    Bool as RuntimeBool,
-)
-
+from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
+from dagster.core.types.runtime import Bool as RuntimeBool
+from dagster.core.types.runtime import RuntimeType
+from dagster.core.types.runtime import String as RuntimeString
+from dagster.core.types.runtime import resolve_to_runtime_type
 from dagster.utils.test import yield_empty_pipeline_context
-
 from dagster_aws.s3.intermediate_store import S3IntermediateStore
+from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
@@ -57,8 +51,6 @@ def aws_credentials_present():
     return os.getenv('AWS_ACCESS_KEY_ID') and os.getenv('AWS_SECRET_ACCESS_KEY')
 
 
-aws = pytest.mark.skipif(not aws_credentials_present(), reason='Couldn\'t find AWS credentials')
-
 nettest = pytest.mark.nettest
 
 
@@ -75,12 +67,18 @@ def define_inty_pipeline():
     def user_throw_exception():
         raise Exception('whoops')
 
-    pipeline = PipelineDefinition(
-        name='basic_external_plan_execution',
-        solid_defs=[return_one, add_one, user_throw_exception],
-        dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                system_storage_defs=s3_plus_default_storage_defs, resource_defs={'s3': s3_resource}
+            )
+        ]
     )
-    return pipeline
+    def basic_external_plan_execution():
+        add_one(return_one())
+        user_throw_exception()
+
+    return basic_external_plan_execution
 
 
 def get_step_output(step_events, step_key, output_name='result'):
@@ -94,22 +92,21 @@ def get_step_output(step_events, step_key, output_name='result'):
     return None
 
 
-@aws
 @nettest
 def test_using_s3_for_subplan(s3_bucket):
-    pipeline = define_inty_pipeline()
+    pipeline_def = define_inty_pipeline()
 
-    environment_dict = {'storage': {'s3': {'s3_bucket': s3_bucket}}}
+    environment_dict = {'storage': {'s3': {'config': {'s3_bucket': s3_bucket}}}}
 
-    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+    run_id = str(uuid.uuid4())
+
+    execution_plan = create_execution_plan(
+        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=run_id)
+    )
 
     assert execution_plan.get_step_by_key('return_one.compute')
 
     step_keys = ['return_one.compute']
-
-    run_id = str(uuid.uuid4())
-
-    store = S3IntermediateStore(s3_bucket, run_id)
 
     try:
         return_one_step_events = list(
@@ -123,8 +120,11 @@ def test_using_s3_for_subplan(s3_bucket):
 
         assert get_step_output(return_one_step_events, 'return_one.compute')
         with scoped_pipeline_context(
-            pipeline, environment_dict, RunConfig(run_id=run_id)
+            pipeline_def, environment_dict, RunConfig(run_id=run_id)
         ) as context:
+            store = S3IntermediateStore(
+                s3_bucket, run_id, s3_session=context.scoped_resources_builder.build().s3.session
+            )
             assert store.has_intermediate(context, 'return_one.compute')
             assert store.get_intermediate(context, 'return_one.compute', Int).obj == 1
 
@@ -139,16 +139,17 @@ def test_using_s3_for_subplan(s3_bucket):
 
         assert get_step_output(add_one_step_events, 'add_one.compute')
         with scoped_pipeline_context(
-            pipeline, environment_dict, RunConfig(run_id=run_id)
+            pipeline_def, environment_dict, RunConfig(run_id=run_id)
         ) as context:
             assert store.has_intermediate(context, 'add_one.compute')
             assert store.get_intermediate(context, 'add_one.compute', Int).obj == 2
     finally:
-        with scoped_pipeline_context(
-            pipeline, environment_dict, RunConfig(run_id=run_id)
-        ) as context:
-            store.rm_intermediate(context, 'return_one.compute')
-            store.rm_intermediate(context, 'add_one.compute')
+        pass
+        # with scoped_pipeline_context(
+        #     pipeline, environment_dict, RunConfig(run_id=run_id)
+        # ) as context:
+        #     store.rm_intermediate(context, 'return_one.compute')
+        #     store.rm_intermediate(context, 'add_one.compute')
 
 
 class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
@@ -173,7 +174,6 @@ class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-in
         return res['Contents'][0]['Key'].split('/')[-1]
 
 
-@aws
 @nettest
 def test_s3_intermediate_store_with_type_storage_plugin(s3_bucket):
     run_id = str(uuid.uuid4())
@@ -182,7 +182,9 @@ def test_s3_intermediate_store_with_type_storage_plugin(s3_bucket):
     intermediate_store = S3IntermediateStore(
         run_id=run_id,
         s3_bucket=s3_bucket,
-        type_storage_plugin_registry={RuntimeString.inst(): FancyStringS3TypeStoragePlugin},
+        type_storage_plugin_registry=TypeStoragePluginRegistry(
+            {RuntimeString.inst(): FancyStringS3TypeStoragePlugin}
+        ),
     )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -198,7 +200,6 @@ def test_s3_intermediate_store_with_type_storage_plugin(s3_bucket):
             intermediate_store.rm_object(context, ['obj_name'])
 
 
-@aws
 @nettest
 def test_s3_intermediate_store_with_composite_type_storage_plugin(s3_bucket):
     run_id = str(uuid.uuid4())
@@ -207,7 +208,9 @@ def test_s3_intermediate_store_with_composite_type_storage_plugin(s3_bucket):
     intermediate_store = S3IntermediateStore(
         run_id=run_id,
         s3_bucket=s3_bucket,
-        type_storage_plugin_registry={RuntimeString.inst(): FancyStringS3TypeStoragePlugin},
+        type_storage_plugin_registry=TypeStoragePluginRegistry(
+            {RuntimeString.inst(): FancyStringS3TypeStoragePlugin}
+        ),
     )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -217,7 +220,6 @@ def test_s3_intermediate_store_with_composite_type_storage_plugin(s3_bucket):
             )
 
 
-@aws
 @nettest
 def test_s3_intermediate_store_composite_types_with_custom_serializer_for_inner_type(s3_bucket):
     run_id = str(uuid.uuid4())
@@ -240,7 +242,6 @@ def test_s3_intermediate_store_composite_types_with_custom_serializer_for_inner_
             intermediate_store.rm_object(context, ['foo'])
 
 
-@aws
 @nettest
 def test_s3_intermediate_store_with_custom_serializer(s3_bucket):
     run_id = str(uuid.uuid4())
@@ -270,7 +271,6 @@ def test_s3_intermediate_store_with_custom_serializer(s3_bucket):
             intermediate_store.rm_object(context, ['foo'])
 
 
-@aws
 @nettest
 def test_s3_intermediate_store(s3_bucket):
     run_id = str(uuid.uuid4())

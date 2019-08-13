@@ -8,22 +8,21 @@ from dagster import (
     Int,
     OutputDefinition,
     PipelineDefinition,
+    RunConfig,
     execute_pipeline,
     lambda_solid,
-    RunConfig,
 )
-
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
     DagsterRunNotFoundError,
     DagsterStepOutputNotFoundError,
 )
+from dagster.core.events import get_step_output_event
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.config import ReexecutionConfig
-from dagster.core.storage.intermediates_manager import StepOutputHandle
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
-from dagster.core.events import get_step_output_event
+from dagster.core.storage.intermediates_manager import StepOutputHandle
 from dagster.utils import merge_dicts
 
 

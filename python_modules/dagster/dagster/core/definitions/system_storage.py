@@ -1,15 +1,14 @@
 from dagster import check
-
-from dagster.core.storage.file_manager import LocalFileManager, FileManager
+from dagster.core.storage.file_manager import FileManager, LocalFileManager
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.core.storage.intermediates_manager import (
-    IntermediatesManager,
     InMemoryIntermediatesManager,
     IntermediateStoreIntermediatesManager,
+    IntermediatesManager,
 )
-from dagster.core.storage.runs import RunStorage, InMemoryRunStorage, FileSystemRunStorage
-from dagster.core.types.field_utils import check_user_facing_opt_field_param
+from dagster.core.storage.runs import FileSystemRunStorage, InMemoryRunStorage, RunStorage
 from dagster.core.types import Field, String
+from dagster.core.types.field_utils import check_user_facing_opt_field_param
 
 from .config import resolve_config_field
 

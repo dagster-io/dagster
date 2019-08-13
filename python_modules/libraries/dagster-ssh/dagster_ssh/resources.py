@@ -2,11 +2,10 @@ import getpass
 import os
 
 import paramiko
-
 from paramiko.config import SSH_PORT
 from sshtunnel import SSHTunnelForwarder
 
-from dagster import check, resource, Field
+from dagster import Field, check, resource
 
 
 class SSHResource:

@@ -3,12 +3,12 @@ from enum import Enum as PythonEnum
 import pytest
 
 from dagster import (
+    DagsterInvalidConfigError,
     Dict,
     Enum,
     EnumValue,
     Field,
     Int,
-    DagsterInvalidConfigError,
     PipelineDefinition,
     execute_pipeline,
     solid,

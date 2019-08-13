@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['test_materializations 1'] = [
@@ -57,7 +56,7 @@ snapshots['test_materializations 1'] = [
                 }
             ]
         },
-        'message': 'Materialized value all_types.',
+        'message': 'a materialization with all metadata types',
         'step': {
             'key': 'materialize.compute',
             'solidHandleID': 'materialize'

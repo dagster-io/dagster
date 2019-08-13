@@ -1,5 +1,7 @@
 import great_expectations as ge
-from dagster import file_relative_path, pipeline, solid, execute_pipeline
+
+from dagster import execute_pipeline, file_relative_path, pipeline, solid
+
 from dagster_ge import (
     create_expectation_result,
     expectation_result_list_from_validation,

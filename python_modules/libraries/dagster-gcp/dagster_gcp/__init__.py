@@ -1,5 +1,4 @@
-from .version import __version__
-
+from .bigquery.resources import bigquery_resource
 from .bigquery.solids import (
     bq_create_dataset,
     bq_delete_dataset,
@@ -8,12 +7,10 @@ from .bigquery.solids import (
     import_file_to_bq,
     import_gcs_paths_to_bq,
 )
-
-from .bigquery.resources import bigquery_resource
 from .bigquery.types import BigQueryError
-
-from .dataproc.solids import dataproc_solid
 from .dataproc.resources import dataproc_resource
+from .dataproc.solids import dataproc_solid
+from .version import __version__
 
 __all__ = [
     'BigQueryError',

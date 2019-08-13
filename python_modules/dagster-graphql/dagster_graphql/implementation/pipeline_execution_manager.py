@@ -7,19 +7,18 @@ import logging
 import os
 import sys
 import time
-
 from collections import namedtuple
 
 import gevent
 import six
 
 from dagster import (
-    check,
-    execute_pipeline_iterator,
     ExecutionTargetHandle,
     PipelineDefinition,
     PipelineExecutionResult,
     RunConfig,
+    check,
+    execute_pipeline_iterator,
 )
 from dagster.core.events import (
     DagsterEvent,
@@ -29,7 +28,7 @@ from dagster.core.events import (
 )
 from dagster.core.events.log import DagsterEventRecord
 from dagster.utils import get_multiprocessing_context
-from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRun
 

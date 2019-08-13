@@ -1,6 +1,6 @@
 import json
-import dateutil.parser
 
+import dateutil.parser
 from airflow.exceptions import AirflowException
 
 from dagster import check

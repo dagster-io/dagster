@@ -4,7 +4,8 @@ import styled from "styled-components";
 import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
 import { copyValue, assertUnreachable } from "../Util";
 import { showCustomAlert } from "../CustomAlertProvider";
-import { Icon } from "@blueprintjs/core";
+import { Button, Dialog, Classes, Colors, Icon } from "@blueprintjs/core";
+import ReactMarkdown from "react-markdown";
 
 export const MetadataEntries: React.FunctionComponent<{
   entries: MetadataEntryFragment[];
@@ -52,6 +53,9 @@ export class MetadataEntry extends React.Component<{
         }
         ... on EventTextMetadataEntry {
           text
+        }
+        ... on EventMarkdownMetadataEntry {
+          mdString
         }
       }
     `
@@ -111,11 +115,77 @@ export class MetadataEntry extends React.Component<{
         );
       case "EventTextMetadataEntry":
         return entry.text;
+      case "EventMarkdownMetadataEntry":
+        return (
+          <MarkdownMetadataLink title={entry.label} mdString={entry.mdString} />
+        );
       default:
         return assertUnreachable(entry);
     }
   }
 }
+
+class MarkdownMetadataLink extends React.Component<{
+  title: string;
+  mdString: string;
+}> {
+  state = { isExpanded: false };
+  onView = () => {
+    this.setState({ isExpanded: true });
+  };
+  onClose = () => {
+    this.setState({ isExpanded: false });
+  };
+
+  render() {
+    const { mdString, title } = this.props;
+    const { isExpanded } = this.state;
+    return (
+      <>
+        <MetadataEntryLink onClick={this.onView}>
+          [Show Metadata]
+        </MetadataEntryLink>
+        {isExpanded && (
+          <Dialog
+            icon="info-sign"
+            usePortal={true}
+            style={{ width: "auto", maxWidth: "80vw" }}
+            title={title}
+            onClose={this.onClose}
+            isOpen={true}
+          >
+            <MarkdownMetadataExpanded>
+              <ReactMarkdown source={mdString} />
+            </MarkdownMetadataExpanded>
+
+            <div className={Classes.DIALOG_FOOTER}>
+              <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+                <Button
+                  intent="primary"
+                  autoFocus={true}
+                  onClick={this.onClose}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </Dialog>
+        )}
+      </>
+    );
+  }
+}
+
+const MarkdownMetadataExpanded = styled.div`
+  font-size: 13px;
+  overflow: auto;
+  max-height: 500px;
+  background: ${Colors.WHITE};
+  border-top: 1px solid ${Colors.LIGHT_GRAY3};
+  padding: 20px;
+  margin: 0;
+  margin-bottom: 20px;
+`;
 
 export const MetadataEntryLink = styled.a`
   text-decoration: underline;

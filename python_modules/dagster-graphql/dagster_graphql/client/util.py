@@ -1,9 +1,7 @@
 import json
 
-from dagster import check
-
+from dagster import EventMetadataEntry, check
 from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
-
 from dagster.core.events import (
     DagsterEvent,
     DagsterEventType,
@@ -21,7 +19,6 @@ from dagster.core.execution.plan.objects import (
 )
 from dagster.utils.error import SerializableErrorInfo
 
-
 HANDLED_EVENTS = {
     'ExecutionStepStartEvent': DagsterEventType.STEP_START,
     'ExecutionStepInputEvent': DagsterEventType.STEP_INPUT,
@@ -33,9 +30,6 @@ HANDLED_EVENTS = {
     'StepExpectationResultEvent': DagsterEventType.STEP_EXPECTATION_RESULT,
     'ObjectStoreOperationEvent': DagsterEventType.OBJECT_STORE_OPERATION,
 }
-
-
-from dagster import EventMetadataEntry
 
 
 def expectation_result_from_data(data):
@@ -72,6 +66,12 @@ def event_metadata_entries(metadata_entry_datas):
                 label=label,
                 description=description,
                 data=json.loads(metadata_entry_data.get('jsonString', '')),
+            )
+        elif typename == 'EventMarkdownMetadataEntry':
+            yield EventMetadataEntry.md(
+                label=label,
+                description=description,
+                mdString=metadata_entry_data.get('mdString', ''),
             )
         elif typename == 'EventTextMetadataEntry':
             yield EventMetadataEntry.text(

@@ -1,8 +1,13 @@
-from dagster.core.execution.api import ExecutionSelector
-
 from dagster import check
+from dagster.core.execution.api import ExecutionSelector
 from dagster.utils import get_enabled_features
+
 from dagster_graphql import dauphin
+from dagster_graphql.implementation.environment_schema import (
+    resolve_config_type_or_error,
+    resolve_environment_schema_or_error,
+    resolve_is_environment_config_valid,
+)
 from dagster_graphql.implementation.execution import (
     ExecutionMetadata,
     ExecutionParams,
@@ -10,7 +15,6 @@ from dagster_graphql.implementation.execution import (
     get_pipeline_run_observable,
     start_pipeline_execution,
 )
-from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
 from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline_or_error,
     get_pipeline_or_raise,
@@ -23,12 +27,7 @@ from dagster_graphql.implementation.fetch_runs import (
     get_runs,
     validate_pipeline_config,
 )
-from dagster_graphql.implementation.environment_schema import (
-    resolve_environment_schema_or_error,
-    resolve_config_type_or_error,
-    resolve_is_environment_config_valid,
-)
-
+from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
 
 from .config_types import to_dauphin_config_type
 

@@ -1,7 +1,6 @@
 import graphviz
 
 from dagster import check
-
 from dagster.core.definitions import PipelineDefinition
 
 

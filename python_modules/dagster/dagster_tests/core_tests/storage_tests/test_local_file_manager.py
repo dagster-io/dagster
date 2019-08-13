@@ -1,4 +1,4 @@
-from dagster import solid, execute_solid, LocalFileHandle
+from dagster import LocalFileHandle, execute_solid, solid
 from dagster.core.storage.file_manager import local_file_manager
 from dagster.utils.temp_file import get_temp_dir, get_temp_file_handle_with_data
 

@@ -4,9 +4,9 @@ from dagster import check
 from dagster.core.types.config import ConfigType
 
 from .environment_configs import (
+    EnvironmentClassCreationData,
     construct_config_type_dictionary,
     define_environment_cls,
-    EnvironmentClassCreationData,
 )
 from .pipeline import PipelineDefinition
 

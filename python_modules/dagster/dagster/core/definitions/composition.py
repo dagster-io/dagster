@@ -1,11 +1,11 @@
-from collections import namedtuple, defaultdict
+from collections import defaultdict, namedtuple
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from .dependency import DependencyDefinition, SolidInvocation, MultiDependencyDefinition
-from .solid import ISolidDefinition
+from .dependency import DependencyDefinition, MultiDependencyDefinition, SolidInvocation
 from .output import OutputDefinition
+from .solid import ISolidDefinition
 
 _composition_stack = []
 

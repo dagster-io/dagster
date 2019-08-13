@@ -5,15 +5,14 @@ from dagster import (
     Field,
     InputDefinition,
     Int,
-    OutputDefinition,
     ModeDefinition,
+    OutputDefinition,
     lambda_solid,
     resource,
     solid,
 )
-
-from dagster.utils.test import execute_solid
 from dagster.core.errors import DagsterExecutionStepExecutionError
+from dagster.utils.test import execute_solid
 
 
 def test_single_solid_in_isolation():

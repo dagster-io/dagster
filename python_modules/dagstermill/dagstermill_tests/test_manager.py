@@ -5,12 +5,9 @@ import shutil
 import tempfile
 import threading
 import uuid
-
 from collections import OrderedDict
 
 import pytest
-
-import dagstermill
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -21,6 +18,8 @@ from dagster import (
 )
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.definitions.dependency import SolidHandle
+
+import dagstermill
 from dagstermill import DagstermillError
 from dagstermill.manager import Manager
 

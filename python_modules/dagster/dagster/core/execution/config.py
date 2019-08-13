@@ -1,16 +1,13 @@
+import multiprocessing
 import time
-
 from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import namedtuple
-
-import multiprocessing
 
 import six
 
 from dagster import check
-from dagster.utils import merge_dicts
 from dagster.core.utils import make_new_run_id
-
+from dagster.utils import merge_dicts
 
 EXECUTION_TIME_KEY = 'execution_epoch_time'
 

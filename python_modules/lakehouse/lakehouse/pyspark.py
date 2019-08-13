@@ -1,5 +1,6 @@
-from dagster import resource, check
 from pyspark.sql import DataFrame
+
+from dagster import check, resource
 
 from .house import Lakehouse
 from .table import InMemTableHandle, create_lakehouse_table_def

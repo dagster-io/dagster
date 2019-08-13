@@ -1,17 +1,16 @@
-from google.cloud.bigquery.job import QueryJobConfig, LoadJobConfig
+from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
+
+from dagster import InputDefinition, List, Nothing, OutputDefinition, Path, check, solid
 
 from dagster_pandas import DataFrame
 
-from dagster import check, solid, InputDefinition, List, OutputDefinition, Path, Nothing
-
 from .configs import (
-    define_bigquery_query_config,
     define_bigquery_create_dataset_config,
     define_bigquery_delete_dataset_config,
     define_bigquery_load_config,
+    define_bigquery_query_config,
 )
-
 from .types import BigQueryLoadSource
 
 _START = 'start'

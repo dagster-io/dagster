@@ -40,6 +40,7 @@ from dagster import (
 )
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import script_relative_path
+
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.pipeline_run_storage import (

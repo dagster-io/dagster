@@ -3,17 +3,16 @@ import pytest
 from dagster import (
     DagsterInvariantViolationError,
     DagsterTypeCheckError,
-    execute_pipeline,
     Failure,
     InputDefinition,
-    lambda_solid,
     OutputDefinition,
-    pipeline,
     RuntimeType,
     TypeCheck,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
 )
-
-from dagster.core.types import Int, Optional, List, PythonObjectType
+from dagster.core.types import Int, List, Optional, PythonObjectType
 from dagster.core.types.runtime import resolve_to_runtime_type
 
 

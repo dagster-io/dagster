@@ -1,8 +1,9 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
+
 from .builtin_enum import BuiltinEnum
 from .config import Any, ConfigType, List, Nullable
-from .field_utils import FieldImpl, FIELD_NO_DEFAULT_PROVIDED, INFER_OPTIONAL_COMPOSITE_FIELD
+from .field_utils import FIELD_NO_DEFAULT_PROVIDED, INFER_OPTIONAL_COMPOSITE_FIELD, FieldImpl
 from .wrapping import WrappingListType, WrappingNullableType
 
 

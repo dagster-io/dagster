@@ -1,5 +1,4 @@
 import os
-
 from abc import ABCMeta, abstractmethod
 
 import six
@@ -8,7 +7,7 @@ from dagster import check, seven
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
 
-from .object_store import ObjectStore, FileSystemObjectStore
+from .object_store import FileSystemObjectStore, ObjectStore
 from .type_storage import TypeStoragePluginRegistry
 
 

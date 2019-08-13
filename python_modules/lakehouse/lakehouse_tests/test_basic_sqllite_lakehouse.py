@@ -2,6 +2,7 @@ import os
 import sqlite3
 
 from dagster import execute_pipeline, file_relative_path
+
 from lakehouse import SqlLiteLakehouse, construct_lakehouse_pipeline, input_table, sqlite_table
 
 

@@ -1,8 +1,8 @@
 from dagster import check
 from dagster.core.definitions import ExpectationResult, Materialization, Output, Solid, SolidHandle
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.execution.context.compute import ComputeExecutionContext
+from dagster.core.execution.context.system import SystemComputeExecutionContext
 
 from .objects import ExecutionStep, StepInput, StepKind, StepOutput
 

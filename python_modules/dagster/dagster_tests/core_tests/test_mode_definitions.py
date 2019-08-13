@@ -3,24 +3,24 @@ import logging
 import pytest
 
 from dagster import (
+    DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     Dict,
-    execute_pipeline,
     Field,
-    logger,
     ModeDefinition,
-    DagsterInvalidConfigError,
-    pipeline,
     PipelineDefinition,
-    resource,
     RunConfig,
-    solid,
     String,
+    execute_pipeline,
+    logger,
+    pipeline,
+    resource,
+    solid,
 )
-from dagster.utils.test import execute_solids_within_pipeline
 from dagster.core.definitions.environment_schema import create_environment_type
 from dagster.core.log_manager import coerce_valid_log_level
+from dagster.utils.test import execute_solids_within_pipeline
 
 from ..test_repository import (
     define_multi_mode_pipeline,

@@ -1,12 +1,13 @@
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.core.execution.api import ExecutionSelector
-from dagster.core.definitions.environment_schema import create_environment_schema, EnvironmentSchema
+from dagster.core.definitions.environment_schema import EnvironmentSchema, create_environment_schema
 from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.execution.api import ExecutionSelector
 from dagster.core.types.evaluator import evaluate_config
+
 from .fetch_pipelines import get_dagster_pipeline_from_selector
-from .utils import capture_dauphin_error, UserFacingGraphQLError
+from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error

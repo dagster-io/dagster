@@ -4,7 +4,6 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from .builtin_enum import BuiltinEnum
 from .wrapping import WrappingType
 
-
 MAGIC_RUNTIME_TYPE_NAME = '__runtime_type'
 
 

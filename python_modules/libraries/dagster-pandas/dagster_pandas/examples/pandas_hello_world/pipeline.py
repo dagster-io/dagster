@@ -1,11 +1,12 @@
 from dagster import (
-    file_relative_path,
-    lambda_solid,
-    pipeline,
     InputDefinition,
     OutputDefinition,
     PresetDefinition,
+    file_relative_path,
+    lambda_solid,
+    pipeline,
 )
+
 import dagster_pandas as dagster_pd
 
 

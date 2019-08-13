@@ -4,7 +4,6 @@ import inspect
 import os
 import sys
 import weakref
-
 from collections import namedtuple
 from enum import Enum
 
@@ -13,7 +12,6 @@ from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.repository import RepositoryDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils import load_yaml_from_path
-
 
 EPHEMERAL_NAME = '<<unnamed>>'
 

@@ -1,10 +1,9 @@
 from dagster import RunConfig
-from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.context_creation_pipeline import create_environment_config
-
-from dagster_examples.toys.composition import composition
+from dagster.core.execution.plan.plan import ExecutionPlan
 
 from dagster_airflow.compile import coalesce_execution_steps
+from dagster_examples.toys.composition import composition
 
 
 def test_compile():

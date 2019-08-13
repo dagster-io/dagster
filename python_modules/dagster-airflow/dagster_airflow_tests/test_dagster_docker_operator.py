@@ -1,12 +1,10 @@
 import os
 
 import pytest
-
 from airflow.exceptions import AirflowException
 
-from dagster_graphql.client.mutations import DagsterGraphQLClientError
-
 from dagster_airflow.operators import DagsterDockerOperator
+from dagster_graphql.client.mutations import DagsterGraphQLClientError
 
 
 def test_init_modified_docker_operator():

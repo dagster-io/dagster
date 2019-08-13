@@ -1,6 +1,5 @@
 from .utils import execute_dagster_graphql
 
-
 PRESETS_QUERY = '''
 query PresetsQuery($name: String!) {
     pipeline(params: { name: $name }) {

@@ -3,14 +3,13 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     Int,
+    Output,
     OutputDefinition,
     PipelineDefinition,
-    Output,
     RunConfig,
     lambda_solid,
     solid,
 )
-
 from dagster.core.execution.api import create_execution_plan, execute_plan
 
 

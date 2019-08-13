@@ -1,4 +1,5 @@
 import json
+
 import pytest
 
 from dagster import (
@@ -14,7 +15,7 @@ from dagster import (
     lambda_solid,
     solid,
 )
-from dagster.core.definitions import Solid, Materialization, create_environment_schema
+from dagster.core.definitions import Materialization, Solid, create_environment_schema
 from dagster.core.definitions.dependency import SolidHandle, SolidOutputHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 

@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import Failure, InputDefinition, Int, lambda_solid, List, Optional, PipelineDefinition
+from dagster import Failure, InputDefinition, Int, List, Optional, PipelineDefinition, lambda_solid
 from dagster.core.types.runtime import ALL_RUNTIME_BUILTINS, resolve_to_runtime_type
 
 

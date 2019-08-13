@@ -3,6 +3,7 @@ import pytest
 
 from dagster import (
     Any,
+    DagsterInvalidConfigError,
     Dict,
     Field,
     Int,
@@ -10,25 +11,22 @@ from dagster import (
     ModeDefinition,
     Optional,
     PermissiveDict,
-    DagsterInvalidConfigError,
     PipelineDefinition,
     ResourceDefinition,
     String,
     check,
-    execute_pipeline,
     composite_solid,
+    execute_pipeline,
     pipeline,
     solid,
 )
-
-
 from dagster.core.definitions import create_environment_schema
+from dagster.core.test_utils import throwing_evaluate_config_value
 from dagster.core.types.evaluator import evaluate_config
 from dagster.core.types.evaluator.errors import (
-    DagsterEvaluationErrorReason,
     DagsterEvaluateConfigValueError,
+    DagsterEvaluationErrorReason,
 )
-from dagster.core.test_utils import throwing_evaluate_config_value
 
 
 def assert_config_type_snapshot(snapshot, config_field):

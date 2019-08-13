@@ -17,9 +17,8 @@ from dagster import (
     String,
     solid,
 )
-
 from dagster.core.definitions import create_environment_schema
-from dagster.core.types import Selector, NamedSelector
+from dagster.core.types import NamedSelector, Selector
 from dagster.core.utility_solids import define_stub_solid
 
 

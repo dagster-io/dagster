@@ -1,4 +1,5 @@
 from collections import namedtuple
+
 from dagster.utils import list_pull
 
 

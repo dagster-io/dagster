@@ -1,11 +1,10 @@
 import os
 
 from dagster import check
-
 from dagster.core.events import DagsterEvent, log_step_event
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.config import MultiprocessExecutorConfig, RunConfig
+from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command

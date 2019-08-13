@@ -1,24 +1,25 @@
-from datetime import datetime
 import os
 import sys
+from datetime import datetime
 
-from dagster import resource, file_relative_path
+from pyspark.sql import DataFrame as SparkDF
+from pyspark.sql import Row
+from pyspark.sql import types as spark_types
+
+from dagster import file_relative_path, resource
+
 from dagster_pyspark import spark_session_resource
-
-from pyspark.sql import Row, DataFrame as SparkDF, types as spark_types
-
 from lakehouse import (
     InMemTableHandle,
-    pyspark_table,
-    input_table,
-    construct_lakehouse_pipeline,
     Lakehouse,
+    construct_lakehouse_pipeline,
+    input_table,
+    pyspark_table,
 )
 
 # This is needed to common when loading from dagit
 sys.path.insert(0, os.path.abspath(file_relative_path(__file__, '.')))
 
-from common import execute_spark_lakehouse_build
 
 ## Library-ish stuff
 
@@ -134,7 +135,7 @@ def JoinTable(_context, number_df: NumberTable, string_df: StringTable) -> Spark
     return number_df.join(string_df, number_df.id == string_df.id, 'inner').drop(string_df.id)
 
 
-def test_execute_typed_in_mem_lakehouse():
+def test_execute_typed_in_mem_lakehouse(execute_spark_lakehouse_build):
     lakehouse = TypedPySparkMemLakehouse()
     pipeline_result = execute_spark_lakehouse_build(
         tables=[NumberTable, StringTable, JoinTable], lakehouse=lakehouse

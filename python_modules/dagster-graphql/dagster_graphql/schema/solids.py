@@ -2,8 +2,8 @@ from dagster import check
 from dagster.core.definitions import (
     CompositeSolidDefinition,
     IContainSolids,
-    InputDefinition,
     ISolidDefinition,
+    InputDefinition,
     OutputDefinition,
     Solid,
     SolidDefinition,
@@ -11,6 +11,7 @@ from dagster.core.definitions import (
     SolidInputHandle,
     SolidOutputHandle,
 )
+
 from dagster_graphql import dauphin
 
 from .runtime_types import to_dauphin_runtime_type

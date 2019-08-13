@@ -1,16 +1,15 @@
 import json
 import logging
 import re
-
 from contextlib import contextmanager
 
 import pytest
 
-from dagster import check, execute_solid, pipeline, solid, ModeDefinition
+from dagster import ModeDefinition, check, execute_solid, pipeline, solid
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
-from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.context.logger import InitLoggerContext
+from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo

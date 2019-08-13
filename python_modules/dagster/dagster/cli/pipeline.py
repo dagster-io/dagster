@@ -6,7 +6,7 @@ import textwrap
 import click
 import yaml
 
-from dagster import check, execute_pipeline, PipelineDefinition, RunConfig
+from dagster import PipelineDefinition, RunConfig, check, execute_pipeline
 from dagster.cli.load_handle import (
     CliUsageError,
     handle_for_pipeline_cli_args,

@@ -1,14 +1,15 @@
-from abc import ABCMeta, abstractmethod
 import io
 import os
 import shutil
+from abc import ABCMeta, abstractmethod
 
 import six
 
 from dagster import check
-from dagster.utils import mkdir_p
 from dagster.core.definitions import resource
 from dagster.core.types import Field
+from dagster.utils import mkdir_p
+
 from .file_manager import LocalFileHandle
 
 

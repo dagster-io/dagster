@@ -4,12 +4,11 @@ import re
 from airflow import DAG
 from airflow.operators import BaseOperator
 
-from dagster import check, ExecutionTargetHandle, RunConfig
+from dagster import ExecutionTargetHandle, RunConfig, check
 from dagster.core.execution.api import create_execution_plan
 
-from .operators import DagsterDockerOperator, DagsterPythonOperator
 from .compile import coalesce_execution_steps
-
+from .operators import DagsterDockerOperator, DagsterPythonOperator
 
 DEFAULT_ARGS = {
     'depends_on_past': False,

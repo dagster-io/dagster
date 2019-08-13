@@ -1,5 +1,4 @@
-from dagster import check, RuntimeType, seven
-
+from dagster import RuntimeType, check, seven
 
 PICKLE_PROTOCOL = 2
 

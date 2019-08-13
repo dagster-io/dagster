@@ -1,14 +1,10 @@
 # pylint: disable=no-value-for-parameter
 
 import dagster.check as check
-
 from dagster import (
     DependencyDefinition,
-    execute_pipeline_iterator,
-    execute_pipeline,
     InputDefinition,
     Int,
-    lambda_solid,
     List,
     ModeDefinition,
     MultiDependencyDefinition,
@@ -16,13 +12,16 @@ from dagster import (
     Optional,
     Output,
     OutputDefinition,
-    pipeline,
     PipelineDefinition,
     ResourceDefinition,
     RunConfig,
-    solid,
     SolidInvocation,
     String,
+    execute_pipeline,
+    execute_pipeline_iterator,
+    lambda_solid,
+    pipeline,
+    solid,
 )
 from dagster.core.definitions import Solid, solids_in_topological_order
 from dagster.core.definitions.container import _create_adjacency_lists
@@ -32,9 +31,9 @@ from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.execution.results import SolidExecutionResult
 from dagster.core.storage.intermediates_manager import StepOutputHandle
 from dagster.core.utility_solids import (
-    define_stub_solid,
     create_root_solid,
     create_solid_with_deps,
+    define_stub_solid,
     input_set,
 )
 from dagster.utils.test import execute_solid_within_pipeline

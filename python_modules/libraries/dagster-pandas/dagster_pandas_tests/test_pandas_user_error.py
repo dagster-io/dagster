@@ -1,8 +1,7 @@
 # pylint: disable=W0613
 
-import pytest
-
 import pandas as pd
+import pytest
 
 from dagster import (
     DagsterTypeCheckError,
@@ -12,10 +11,9 @@ from dagster import (
     lambda_solid,
     pipeline,
 )
+from dagster.core.utility_solids import define_stub_solid
 
 import dagster_pandas as dagster_pd
-
-from dagster.core.utility_solids import define_stub_solid
 
 
 def test_wrong_output_value():

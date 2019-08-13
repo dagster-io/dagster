@@ -1,6 +1,6 @@
 import pypd
 
-from dagster import resource, Field
+from dagster import Field, resource
 
 
 class PagerDutyService:

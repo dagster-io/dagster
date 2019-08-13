@@ -1,6 +1,6 @@
 from dagster import check
-
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
+
 from .config import resolve_config_field
 
 

@@ -9,6 +9,7 @@ from dagster import (
     solid,
 )
 from dagster.utils.error import serializable_error_info_from_exc_info
+
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.pipeline_run_storage import InMemoryRunStorage

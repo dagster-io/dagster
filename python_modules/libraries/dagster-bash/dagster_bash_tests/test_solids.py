@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from dagster import execute_solid, DagsterExecutionStepExecutionError
+from dagster import DagsterExecutionStepExecutionError, execute_solid
 
 from dagster_bash import bash_command_solid, bash_script_solid
 

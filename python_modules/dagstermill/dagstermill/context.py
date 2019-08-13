@@ -1,6 +1,6 @@
 from dagster import check
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.context.compute import AbstractComputeExecutionContext
+from dagster.core.execution.context.system import SystemPipelineExecutionContext
 
 
 class DagstermillExecutionContext(AbstractComputeExecutionContext):

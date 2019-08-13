@@ -5,16 +5,14 @@ import uuid
 
 import pytest
 
-from dagster import check, String, Optional, seven, List, Bool
+from dagster import Bool, List, Optional, String, check, seven
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.marshal import SerializationStrategy
-from dagster.core.types.runtime import (
-    Bool as RuntimeBool,
-    resolve_to_runtime_type,
-    RuntimeType,
-    String as RuntimeString,
-)
+from dagster.core.types.runtime import Bool as RuntimeBool
+from dagster.core.types.runtime import RuntimeType
+from dagster.core.types.runtime import String as RuntimeString
+from dagster.core.types.runtime import resolve_to_runtime_type
 from dagster.utils import mkdir_p
 from dagster.utils.test import yield_empty_pipeline_context
 

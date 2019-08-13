@@ -1,17 +1,15 @@
 import os
 import pickle
 import tempfile
-
 from contextlib import contextmanager
 
 import pytest
 
-from dagster import execute_pipeline, RunConfig
+from dagster import RunConfig, execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
+from dagster.core.definitions.events import PathMetadataEntryData
 
 from dagstermill import DagstermillError, DagstermillExecutionError
-
-from dagster.core.definitions.events import PathMetadataEntryData
 
 
 def get_path(materialization_event):

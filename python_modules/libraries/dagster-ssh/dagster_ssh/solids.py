@@ -2,7 +2,7 @@ import os
 
 import six
 
-from dagster import solid, DagsterExecutionStepExecutionError, Enum, EnumValue, Field
+from dagster import DagsterExecutionStepExecutionError, Enum, EnumValue, Field, solid
 from dagster.utils import mkdir_p
 
 

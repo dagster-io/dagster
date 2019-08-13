@@ -2,7 +2,7 @@ import six
 
 from dagster import check
 from dagster.core.definitions import ExecutionTargetHandle
-from dagster.utils import all_none, DEFAULT_REPOSITORY_YAML_FILENAME
+from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, all_none
 
 
 class CliUsageError(Exception):

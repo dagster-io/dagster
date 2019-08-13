@@ -1,11 +1,9 @@
 import os
 import pickle
 import uuid
-
 from contextlib import contextmanager
 
 from dagster import (
-    check,
     ExecutionTargetHandle,
     ExpectationResult,
     Failure,
@@ -15,10 +13,11 @@ from dagster import (
     RunConfig,
     SolidDefinition,
     TypeCheck,
+    check,
 )
+from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import ResourcesStack
-from dagster.core.definitions.dependency import SolidHandle
 from dagster.loggers import colored_console_logger
 
 from .context import DagstermillExecutionContext

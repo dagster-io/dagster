@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from dagster import execute_pipeline, RunConfig
+from dagster import RunConfig, execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord

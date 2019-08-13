@@ -1,12 +1,12 @@
 from dagster import (
-    execute_pipeline,
     Field,
     ModeDefinition,
     PipelineDefinition,
-    resource,
     ResourceDefinition,
-    solid,
     String,
+    execute_pipeline,
+    resource,
+    solid,
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
 

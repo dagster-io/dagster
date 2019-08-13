@@ -4,12 +4,12 @@ import pytest
 
 from dagster import (
     DagsterEventType,
+    DagsterInvalidConfigError,
     InputDefinition,
     Int,
-    OutputDefinition,
-    DagsterInvalidConfigError,
-    PipelineDefinition,
     Output,
+    OutputDefinition,
+    PipelineDefinition,
     RuntimeType,
     StepKind,
     String,

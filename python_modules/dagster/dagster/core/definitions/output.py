@@ -1,8 +1,9 @@
 from collections import namedtuple
+
 from dagster import check
 from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
 
-from .utils import check_valid_name, DEFAULT_OUTPUT
+from .utils import DEFAULT_OUTPUT, check_valid_name
 
 
 class OutputDefinition(object):

@@ -1,4 +1,5 @@
 from dagster import RepositoryDefinition
+
 from test_typed_pyspark_lakehouse import typed_lakehouse_pipeline
 
 

@@ -4,7 +4,8 @@ import time
 
 import pytest
 
-from dagster import execute_pipeline, ModeDefinition, PipelineDefinition, solid
+from dagster import ModeDefinition, PipelineDefinition, execute_pipeline, solid
+
 from dagster_aws.cloudwatch import cloudwatch_logger
 from dagster_aws.cloudwatch.loggers import millisecond_timestamp
 
@@ -91,6 +92,7 @@ def test_cloudwatch_logging(cloudwatch_client):
     now = millisecond_timestamp(datetime.datetime.utcnow())
 
     attempt_num = 0
+
     found_orig_message = False
 
     while not found_orig_message and attempt_num < NUM_POLL_ATTEMPTS:

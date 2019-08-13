@@ -1,5 +1,4 @@
 import re
-
 from collections import namedtuple
 
 from dagster import check

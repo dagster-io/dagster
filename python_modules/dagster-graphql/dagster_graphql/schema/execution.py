@@ -1,8 +1,9 @@
 from __future__ import absolute_import
 
 from dagster import check
-from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.objects import ExecutionStep, StepInput, StepOutput
+from dagster.core.execution.plan.plan import ExecutionPlan
+
 from dagster_graphql import dauphin
 from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
 

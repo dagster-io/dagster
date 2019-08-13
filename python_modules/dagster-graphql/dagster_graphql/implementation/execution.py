@@ -1,22 +1,21 @@
 from __future__ import absolute_import
+
 from collections import namedtuple
 
+from graphql.execution.base import ResolveInfo
 from rx import Observable
 
-from graphql.execution.base import ResolveInfo
-
 from dagster import RunConfig, check
-
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import ExecutionSelector, create_execution_plan, execute_plan
 from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.utils import make_new_run_id
 
-from dagster_graphql.schema.runs import from_event_record, from_dagster_event_record
+from dagster_graphql.schema.runs import from_dagster_event_record, from_event_record
 
-from .fetch_runs import get_validated_config, validate_config
 from .fetch_pipelines import get_dauphin_pipeline_from_selector
-from .utils import capture_dauphin_error, UserFacingGraphQLError
+from .fetch_runs import get_validated_config, validate_config
+from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error

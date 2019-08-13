@@ -7,33 +7,32 @@ import uuid
 import nbformat
 import papermill
 import six
-
 from papermill.engines import papermill_engines
-from papermill.parameterize import _find_first_tagged_cell_index
 from papermill.iorw import load_notebook_node, write_ipynb
+from papermill.parameterize import _find_first_tagged_cell_index
 
 from dagster import (
-    check,
-    ExecutionTargetHandle,
     EventMetadataEntry,
+    ExecutionTargetHandle,
     InputDefinition,
     Materialization,
-    OutputDefinition,
     Output,
+    OutputDefinition,
     SolidDefinition,
+    check,
     seven,
 )
 from dagster.core.errors import user_code_error_boundary
-from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.execution.context.compute import ComputeExecutionContext
+from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.utils import mkdir_p, safe_tempfile_path
 
 from .engine import DagstermillNBConvertEngine
-from .errors import DagstermillExecutionError, DagstermillError
-from .logger import init_db, JsonSqlite3LogWatcher
+from .errors import DagstermillError, DagstermillExecutionError
+from .logger import JsonSqlite3LogWatcher, init_db
 from .serialize import read_value, write_value
-from .translator import DagsterTranslator, RESERVED_INPUT_NAMES
+from .translator import RESERVED_INPUT_NAMES, DagsterTranslator
 
 
 # This is based on papermill.parameterize.parameterize_notebook

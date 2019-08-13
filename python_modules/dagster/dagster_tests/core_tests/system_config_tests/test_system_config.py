@@ -6,11 +6,9 @@ from dagster import (
     Any,
     DependencyDefinition,
     Dict,
-    execute_pipeline,
     Field,
     InputDefinition,
     Int,
-    lambda_solid,
     ModeDefinition,
     NamedDict,
     OutputDefinition,
@@ -19,22 +17,24 @@ from dagster import (
     SolidDefinition,
     SolidInvocation,
     String,
-    solid,
+    execute_pipeline,
+    lambda_solid,
     pipeline,
+    solid,
 )
-from dagster.core.definitions import create_environment_type, create_environment_schema
+from dagster.core.definitions import create_environment_schema, create_environment_type
 from dagster.core.definitions.environment_configs import (
+    EnvironmentClassCreationData,
     define_expectations_config_cls,
     define_resource_cls,
     define_solid_config_cls,
     define_solid_dictionary_cls,
-    EnvironmentClassCreationData,
 )
 from dagster.core.system_config.objects import (
-    construct_solid_dictionary,
     EnvironmentConfig,
     ExpectationsConfig,
     SolidConfig,
+    construct_solid_dictionary,
 )
 from dagster.core.test_utils import throwing_evaluate_config_value
 from dagster.core.types.evaluator import evaluate_config

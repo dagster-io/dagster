@@ -1,6 +1,6 @@
-from rx import Observable
-from graphql_ws.constants import GQL_DATA, GQL_COMPLETE
+from graphql_ws.constants import GQL_COMPLETE, GQL_DATA
 from graphql_ws.gevent import GeventSubscriptionServer, SubscriptionObserver
+from rx import Observable
 
 
 class DagsterSubscriptionServer(GeventSubscriptionServer):

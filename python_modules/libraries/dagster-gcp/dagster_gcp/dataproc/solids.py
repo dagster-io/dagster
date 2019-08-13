@@ -1,4 +1,4 @@
-from dagster import solid, Bool, Dict, Field
+from dagster import Bool, Dict, Field, solid
 from dagster.seven import json
 
 from .configs import define_dataproc_submit_job_config

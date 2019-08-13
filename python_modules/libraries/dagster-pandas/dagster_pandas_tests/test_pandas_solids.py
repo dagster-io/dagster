@@ -13,6 +13,7 @@ from dagster import (
     lambda_solid,
 )
 from dagster.core.test_utils import single_output_solid
+
 from dagster_pandas import DataFrame
 
 

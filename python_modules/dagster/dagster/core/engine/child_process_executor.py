@@ -1,17 +1,16 @@
 '''Facilities for running arbitrary commands in child processes.'''
 
-from abc import ABCMeta, abstractmethod
-from collections import namedtuple
 import multiprocessing
 import os
 import sys
+from abc import ABCMeta, abstractmethod
+from collections import namedtuple
 
 import six
 
 from dagster import check
-from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils import get_multiprocessing_context
-
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 ChildProcessStartEvent = namedtuple('ChildProcessStartEvent', 'pid')
 ChildProcessDoneEvent = namedtuple('ChildProcessDoneEvent', 'pid')

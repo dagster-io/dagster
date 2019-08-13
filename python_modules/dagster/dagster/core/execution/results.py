@@ -1,7 +1,6 @@
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
 
 from dagster import check
-
 from dagster.core.definitions import PipelineDefinition, Solid
 from dagster.core.definitions.events import ObjectStoreOperation
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
