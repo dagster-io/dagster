@@ -47,6 +47,7 @@ from dagster_graphql.implementation.pipeline_run_storage import (
     FilesystemRunStorage,
     InMemoryRunStorage,
 )
+from dagster_graphql.implementation.scheduler import SystemCronScheduler
 
 
 class PoorMansDataFrame_(list):
@@ -78,10 +79,11 @@ PoorMansDataFrame = as_dagster_type(
 )
 
 
-def define_context(raise_on_error=True, log_dir=None):
+def define_context(raise_on_error=True, log_dir=None, schedule_dir=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
         pipeline_runs=FilesystemRunStorage(log_dir) if log_dir else InMemoryRunStorage(),
+        scheduler=SystemCronScheduler(schedule_dir) if schedule_dir else None,
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,
     )

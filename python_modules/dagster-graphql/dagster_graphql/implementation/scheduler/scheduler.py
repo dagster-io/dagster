@@ -3,7 +3,6 @@ import abc
 from collections import namedtuple
 
 from dagster import check
-from dagster_graphql.implementation.execution import ExecutionParams
 
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
@@ -79,5 +78,5 @@ class RunSchedule(namedtuple('RunSchedule', 'schedule_id name cron_schedule exec
             check.str_param(schedule_id, 'schedule_id'),
             check.str_param(name, 'name'),
             check.str_param(cron_schedule, 'cron_schedule'),
-            check.inst_param(execution_params, 'execution_params', ExecutionParams),
+            check.dict_param(execution_params, 'execution_params'),
         )

@@ -30,6 +30,11 @@ from dagster_graphql.implementation.fetch_runs import (
 from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
 
 from .config_types import to_dauphin_config_type
+from .run_schedule import (
+    DauphinCreateRunScheduleMutation,
+    DauphineDeleteRunScheduleMutation,
+    get_scheduler,
+)
 
 
 class DauphinQuery(dauphin.ObjectType):
@@ -58,6 +63,9 @@ class DauphinQuery(dauphin.ObjectType):
         pipelineName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
         runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
+
+    scheduler = dauphin.Field('Scheduler')
+
     pipelineRuns = dauphin.non_null_list('PipelineRun')
 
     pipelineRunOrError = dauphin.Field(
@@ -104,6 +112,9 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_version(self, graphene_info):
         return graphene_info.context.version
+
+    def resolve_scheduler(self, graphene_info):
+        return get_scheduler(graphene_info)
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
         return get_pipeline_or_error(graphene_info, kwargs['params'].to_selector())
@@ -276,6 +287,8 @@ class DauphinMutation(dauphin.ObjectType):
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
     execute_plan = DauphinExecutePlan.Field()
+    create_run_schedule = DauphinCreateRunScheduleMutation.Field()
+    delete_run_schedule = DauphineDeleteRunScheduleMutation.Field()
 
 
 class DauphinSubscription(dauphin.ObjectType):

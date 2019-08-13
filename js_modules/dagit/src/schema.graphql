@@ -52,7 +52,15 @@ type ConfigTypeNotFoundError implements Error {
 
 union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigType | PipelineNotFoundError | ConfigTypeNotFoundError
 
+type CreateRunScheduleResult {
+  schedule: RunSchedule!
+}
+
 scalar Cursor
+
+type DeleteRunScheduleResult {
+  deletedSchedule: RunSchedule!
+}
 
 interface DisplayableEvent {
   label: String!
@@ -450,6 +458,8 @@ type ModeNotFoundError implements Error {
 type Mutation {
   startPipelineExecution(executionParams: ExecutionParams!, reexecutionConfig: ReexecutionConfig): StartPipelineExecutionResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
+  createRunSchedule(schedule: RunScheduleInput!): CreateRunScheduleResult!
+  deleteRunSchedule(scheduleId: String!): DeleteRunScheduleResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -694,6 +704,7 @@ type Query {
   pipelines: PipelineConnection!
   configTypeOrError(pipelineName: String!, configTypeName: String!, mode: String!): ConfigTypeOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
+  scheduler: Scheduler
   pipelineRuns: [PipelineRun!]!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
@@ -739,6 +750,19 @@ type Resource {
   configField: ConfigTypeField
 }
 
+type RunSchedule {
+  scheduleId: String!
+  name: String!
+  cronSchedule: String!
+  executionParamsString: String!
+}
+
+input RunScheduleInput {
+  name: String!
+  cronSchedule: String!
+  executionParams: ExecutionParams!
+}
+
 type RuntimeMismatchConfigError implements PipelineConfigValidationError {
   message: String!
   path: [String!]!
@@ -770,6 +794,11 @@ type RuntimeTypeNotFoundError implements Error {
 }
 
 union RuntimeTypeOrError = RegularRuntimeType | PipelineNotFoundError | RuntimeTypeNotFoundError
+
+type Scheduler {
+  schedulerType: String!
+  schedules: [RunSchedule!]!
+}
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
   message: String!
