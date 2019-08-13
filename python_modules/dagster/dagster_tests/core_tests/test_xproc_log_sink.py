@@ -1,6 +1,5 @@
 import logging
 import multiprocessing
-import os
 import sqlite3
 import tempfile
 import threading
@@ -9,9 +8,8 @@ import uuid
 from dagster import PipelineDefinition, seven
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.log_manager import DagsterLogManager
-from dagster.utils.log import construct_single_handler_logger
-
 from dagster.loggers.xproc_log_sink import JsonSqlite3Handler, JsonSqlite3LogWatcher, init_db
+from dagster.utils.log import construct_single_handler_logger
 
 
 class LogTestHandler(logging.Handler):
@@ -31,9 +29,8 @@ def test_json_sqlite3_handler():
     run_id = str(uuid.uuid4())
     with tempfile.NamedTemporaryFile() as sqlite3_db:
         sqlite3_db_path = sqlite3_db.name
+        init_db(sqlite3_db_path)
 
-    # Test that the handler works even if the file does not yet exist
-    try:
         sqlite3_handler = JsonSqlite3Handler(sqlite3_db_path)
         sqlite3_logger_def = construct_single_handler_logger('sqlite3', 'debug', sqlite3_handler)
         sqlite3_logger = sqlite3_logger_def.logger_fn(
@@ -48,9 +45,6 @@ def test_json_sqlite3_handler():
         cursor = conn.cursor()
         count = cursor.execute('select count(1) from logs').fetchall()
         assert count[0][0] == 1000
-    finally:
-        if os.path.exists(sqlite3_db_path):
-            os.unlink(sqlite3_db_path)
 
 
 def test_json_sqlite3_watcher():
@@ -58,6 +52,7 @@ def test_json_sqlite3_watcher():
     run_id = str(uuid.uuid4())
     with tempfile.NamedTemporaryFile() as sqlite3_db:
         sqlite3_db_path = sqlite3_db.name
+        init_db(sqlite3_db_path)
 
         sqlite3_handler = JsonSqlite3Handler(sqlite3_db_path)
         sqlite3_logger_def = construct_single_handler_logger('sqlite3', 'debug', sqlite3_handler)
@@ -164,7 +159,6 @@ def test_concurrent_multiprocessing_logging():
     with tempfile.NamedTemporaryFile() as sqlite3_db:
 
         sqlite3_db_path = sqlite3_db.name
-
         is_done = threading.Event()
 
         def sqlite3_process_target(sqlite3_db_path):
@@ -225,14 +219,15 @@ def test_error_during_logging(caplog):
     run_id = str(uuid.uuid4())
     with tempfile.NamedTemporaryFile() as sqlite3_db:
         sqlite3_db_path = sqlite3_db.name
+        init_db(sqlite3_db_path)
 
         sqlite3_handler = JsonSqlite3Handler(sqlite3_db_path)
 
-        class MockCursor:
-            def execute(self, *args, **kwargs):
-                raise Exception('Bailing!')
+        def err_conn(*args, **kwargs):
+            raise Exception('Bailing!')
 
-        sqlite3_handler.cursor = MockCursor()
+        sqlite3_handler.connect = err_conn
+
         sqlite3_logger_def = construct_single_handler_logger('sqlite3', 'debug', sqlite3_handler)
         sqlite3_logger = sqlite3_logger_def.logger_fn(
             dummy_init_logger_context(sqlite3_logger_def, run_id)

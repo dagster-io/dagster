@@ -15,12 +15,13 @@ from dagster import (
 )
 
 
-@lambda_solid(
-    input_defs=[InputDefinition('units', List[Int])], output_def=OutputDefinition(Int, 'total')
+@solid(
+    input_defs=[InputDefinition('units', List[Int])], output_defs=[OutputDefinition(Int, 'total')]
 )
-def sleeper(units):
+def sleeper(context, units):
     tot = 0
     for sec in units:
+        context.log.info('Sleeping for {} seconds'.format(sec))
         sleep(sec)
         tot += sec
 

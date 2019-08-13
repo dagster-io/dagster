@@ -65,31 +65,34 @@ else:
 
 
 def init_db(sqlite_db_path):
-    conn = sqlite3.connect(sqlite_db_path)
-    cursor = conn.cursor()
-    cursor.execute(CREATE_LOG_TABLE_STATEMENT)
-    conn.commit()
+    with sqlite3.connect(sqlite_db_path) as con:
+        con.execute(CREATE_LOG_TABLE_STATEMENT)
 
 
 class JsonSqlite3Handler(logging.Handler):
-    def __init__(self, sqlite_db_path):
+    def __init__(self, sqlite_db_path, log_msg_only=False):
         check.str_param(sqlite_db_path, 'sqlite_db_path')
 
         self.sqlite_db_path = sqlite_db_path
-        self.conn = sqlite3.connect(self.sqlite_db_path)
-        self.cursor = self.conn.cursor()
-
-        init_db(sqlite_db_path)
+        self.log_msg_only = log_msg_only
 
         super(JsonSqlite3Handler, self).__init__()
+
+    def connect(self):
+        return sqlite3.connect(self.sqlite_db_path)
 
     def emit(self, record):
         try:
             log_dict = copy.copy(record.__dict__)
-            self.cursor.execute(
-                INSERT_LOG_RECORD_STATEMENT.format(json_log=seven.json.dumps(log_dict))
-            )
-            self.conn.commit()
+
+            if self.log_msg_only and log_dict.get('dagster_meta', {}).get('dagster_event'):
+                return
+
+            # while it may seem reasonable hold this connection open, that caused a
+            # difficult to debug race-condition-esque problem on py2 where the connect call
+            # would sporadically lock up despite setting the timeout argument.
+            with self.connect() as con:
+                con.execute(INSERT_LOG_RECORD_STATEMENT.format(json_log=seven.json.dumps(log_dict)))
 
         except Exception as e:  # pylint: disable=W0703
             logging.critical('Error during logging!')
@@ -129,15 +132,15 @@ class JsonSqlite3LogWatcher(object):
                             if handler.level <= record.levelno:
                                 handler.handle(record)
 
-            time.sleep(1)
+            time.sleep(0.5)  # 500 ms
             if last_pass:
                 break
             if self.is_done.is_set():
                 last_pass = True
 
 
-def construct_sqlite_logger(sqlite_db_path):
+def construct_sqlite_logger(sqlite_db_path, log_msg_only=False):
     logger = logging.Logger('xproc_sqlite')
-    logger.addHandler(JsonSqlite3Handler(sqlite_db_path))
+    logger.addHandler(JsonSqlite3Handler(sqlite_db_path, log_msg_only))
     logger.setLevel(10)
     return logger
