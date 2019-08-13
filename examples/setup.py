@@ -24,6 +24,7 @@ setup(
             'dagstermill',
             'dagster-aws',
             'dagster-slack',
+            'dbt-postgres',
             'descartes==1.1.0',
             'geopandas==0.4.0',
             'matplotlib==3.0.2; python_version >= "3.5"',
