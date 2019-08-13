@@ -39,23 +39,10 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
 
 
 def execute_step_out_of_process(step_context, step):
-    if step_context.run_config.loggers:
-        step_context.log.debug(
-            'Loggers cannot be injected via RunConfig using the multiprocess executor. Define '
-            'loggers on the mode instead. Ignoring loggers: [{logger_names}]'.format(
-                logger_names=', '.join(
-                    [
-                        '\'{name}\''.format(name=logger.name)
-                        for logger in step_context.run_config.loggers
-                    ]
-                )
-            )
-        )
-
     run_config = RunConfig(
         run_id=step_context.run_config.run_id,
         tags=step_context.run_config.tags,
-        loggers=None,
+        log_sink=None,
         event_callback=None,
         reexecution_config=None,
         step_keys_to_execute=step_context.run_config.step_keys_to_execute,

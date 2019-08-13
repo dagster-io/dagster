@@ -41,7 +41,6 @@ import time
 
 from dagster import check, seven
 from dagster.core.log_manager import DagsterLogManager
-from dagster.utils.log import construct_single_handler_logger
 
 CREATE_LOG_TABLE_STATEMENT = '''create table if not exists logs (
     timestamp integer primary key asc,
@@ -138,6 +137,7 @@ class JsonSqlite3LogWatcher(object):
 
 
 def construct_sqlite_logger(sqlite_db_path):
-    return construct_single_handler_logger(
-        'xproc_sqlite', 'debug', JsonSqlite3Handler(sqlite_db_path)
-    )
+    logger = logging.Logger('xproc_sqlite')
+    logger.addHandler(JsonSqlite3Handler(sqlite_db_path))
+    logger.setLevel(10)
+    return logger
