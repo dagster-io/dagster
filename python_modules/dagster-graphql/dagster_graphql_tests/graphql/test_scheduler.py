@@ -1,6 +1,8 @@
 import json
+import os
 
 from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster.seven import mock
 
 from .utils import define_context
 
@@ -10,9 +12,19 @@ try:
 except ImportError:
     import tempfile
 
+GET_SCHEDULES_QUERY = '''
+{
+  scheduler {
+        schedulerType
+        schedules {
+            scheduleId
+        }
+    }
+}
+'''
 
-CREATE_PIPELINE_SCHEDULE_QUERY = '''
-mutation CreatePipelineScheduleResult($schedule: RunScheduleInput!) {
+CREATE_SCHEDULE_QUERY = '''
+mutation CreateSchedule($schedule: RunScheduleInput!) {
   createRunSchedule(schedule: $schedule) {
     schedule {
       scheduleId
@@ -24,19 +36,9 @@ mutation CreatePipelineScheduleResult($schedule: RunScheduleInput!) {
 }
 '''
 
-GET_SCHEDULES_QUERY = '''
-{
-	scheduler {
-        schedulerType
-        schedules {
-            scheduleId
-        }
-    }
-}
-'''
 
 DELETE_SCHEDULE_QUERY = '''
-mutation DeletePipelineSchedule($scheduleId: String!) {
+mutation DeleteSchedule($scheduleId: String!) {
   deleteRunSchedule(scheduleId: $scheduleId) {
     deletedSchedule {
       scheduleId
@@ -45,15 +47,35 @@ mutation DeletePipelineSchedule($scheduleId: String!) {
 }
 '''
 
+START_SCHEDULE_QUERY = '''
+mutation StartSchedule($scheduleId: String!) {
+  startRunSchedule(scheduleId: $scheduleId) {
+    schedule {
+      scheduleId
+      pythonPath
+      repositoryPath
+    }
+  }
+}
+'''
 
-def create_default_schedule(context):
-    execution_params = {
+END_SCHEDULE_QUERY = '''
+mutation EndSchedule($scheduleId: String!) {
+  endRunSchedule(scheduleId: $scheduleId) {
+    schedule {
+      scheduleId
+    }
+  }
+}
+'''
+
+
+def default_execution_params():
+    return {
         "environmentConfigData": {"storage": {"filesystem": None}},
-        "selector": {"name": "many_events", "solidSubset": None},
+        "selector": {"name": "no_config_pipeline", "solidSubset": None},
         "mode": "default",
     }
-
-    return create_schedule(context, "run_many_events", "* * * * *", execution_params)
 
 
 def create_schedule(context, name, cron_schedule, execution_params):
@@ -65,20 +87,20 @@ def create_schedule(context, name, cron_schedule, execution_params):
         }
     }
 
-    return execute_dagster_graphql(context, CREATE_PIPELINE_SCHEDULE_QUERY, variables=variables)
+    return execute_dagster_graphql(context, CREATE_SCHEDULE_QUERY, variables=variables)
+
+
+def create_default_schedule(context):
+    execution_params = default_execution_params()
+    return create_schedule(context, "run_no_config_pipeline", "* * * * *", execution_params)
 
 
 def test_create_schedule():
     with tempfile.TemporaryDirectory() as schedule_dir:
         context = define_context(schedule_dir=schedule_dir)
 
-        execution_params = {
-            "environmentConfigData": {"storage": {"filesystem": None}},
-            "selector": {"name": "many_events", "solidSubset": None},
-            "mode": "default",
-        }
-
-        result = create_schedule(context, "run_many_events", "* * * * *", execution_params)
+        execution_params = default_execution_params()
+        result = create_schedule(context, "run_no_config_pipeline", "* * * * *", execution_params)
 
         assert result.data
         assert result.data['createRunSchedule']
@@ -86,29 +108,46 @@ def test_create_schedule():
         schedule = result.data['createRunSchedule']['schedule']
         assert schedule
         assert schedule['scheduleId']
-        assert schedule['name'] == "run_many_events"
+        assert schedule['name'] == "run_no_config_pipeline"
         assert schedule['cronSchedule'] == "* * * * *"
         assert json.loads(schedule['executionParamsString']) == execution_params
 
 
-def test_get_all_schedules():
+@mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
+def test_start_and_end_schedule():
     with tempfile.TemporaryDirectory() as schedule_dir:
         context = define_context(schedule_dir=schedule_dir)
 
         result = create_default_schedule(context)
+        schedule_name = result.data['createRunSchedule']['schedule']['name']
         schedule_id = result.data['createRunSchedule']['schedule']['scheduleId']
 
-        # Query Scheduler + all Schedules
-        scheduler_result = execute_dagster_graphql(
-            context, GET_SCHEDULES_QUERY, variables={"pipelineName": "many_events"}
+        # Delete Schedule
+        start_result = execute_dagster_graphql(
+            context, START_SCHEDULE_QUERY, variables={"scheduleId": schedule_id}
         )
 
-        assert scheduler_result.data
-        assert scheduler_result.data['scheduler']
-        assert scheduler_result.data['scheduler']['schedules']
-        assert len(scheduler_result.data['scheduler']['schedules']) == 1
+        assert start_result.data
+        assert start_result.data['startRunSchedule']
+        assert start_result.data['startRunSchedule']['schedule']
+        assert start_result.data['startRunSchedule']['schedule']['scheduleId'] == schedule_id
 
-        assert scheduler_result.data['scheduler']['schedules'][0]['scheduleId'] == schedule_id
+        assert "/bin/python" in start_result.data['startRunSchedule']['schedule']['pythonPath']
+
+        # Check bash script was created
+        assert "{}_{}.sh".format(schedule_name, schedule_id) in os.listdir(schedule_dir)
+
+        end_result = execute_dagster_graphql(
+            context, END_SCHEDULE_QUERY, variables={"scheduleId": schedule_id}
+        )
+
+        assert end_result.data
+        assert end_result.data['endRunSchedule']
+        assert end_result.data['endRunSchedule']['schedule']
+        assert end_result.data['endRunSchedule']['schedule']['scheduleId'] == schedule_id
+
+        # Check bash script was deleted
+        assert "{}_{}.sh".format(schedule_name, schedule_id) not in os.listdir(schedule_dir)
 
 
 def test_delete_schedule():
@@ -132,8 +171,28 @@ def test_delete_schedule():
 
         # Query all Schedules
         scheduler_result = execute_dagster_graphql(
-            context, GET_SCHEDULES_QUERY, variables={"pipelineName": "many_events"}
+            context, GET_SCHEDULES_QUERY, variables={"pipelineName": "no_config_pipeline"}
         )
 
         assert scheduler_result.data
         assert len(scheduler_result.data['scheduler']['schedules']) == 0
+
+
+def test_get_all_schedules():
+    with tempfile.TemporaryDirectory() as schedule_dir:
+        context = define_context(schedule_dir=schedule_dir)
+
+        result = create_default_schedule(context)
+        schedule_id = result.data['createRunSchedule']['schedule']['scheduleId']
+
+        # Query Scheduler + all Schedules
+        scheduler_result = execute_dagster_graphql(
+            context, GET_SCHEDULES_QUERY, variables={"pipelineName": "no_config_pipeline"}
+        )
+
+        assert scheduler_result.data
+        assert scheduler_result.data['scheduler']
+        assert scheduler_result.data['scheduler']['schedules']
+        assert len(scheduler_result.data['scheduler']['schedules']) == 1
+
+        assert scheduler_result.data['scheduler']['schedules'][0]['scheduleId'] == schedule_id
