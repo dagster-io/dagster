@@ -119,12 +119,14 @@ const IconComponents: { [key: string]: (word: string) => React.ReactNode } = {
     <img
       style={{ flexShrink: 0, alignSelf: "center" }}
       src={require("../images/icon-file.svg")}
+      alt="file icon"
     />
   ),
   link: () => (
     <img
       style={{ flexShrink: 0, alignSelf: "center" }}
       src={require("../images/icon-link.svg")}
+      alt="link icon"
     />
   )
 };

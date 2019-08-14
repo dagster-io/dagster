@@ -131,7 +131,9 @@ export default class RunHistory extends React.Component<
               name=""
               cellRenderer={idx => (
                 <Cell tooltip={sortedRuns[idx].status}>
-                  {<RunStatus status={sortedRuns[idx].status} />}
+                  <>
+                    <RunStatus status={sortedRuns[idx].status} />
+                  </>
                 </Cell>
               )}
             />
@@ -139,9 +141,11 @@ export default class RunHistory extends React.Component<
               name="Run ID"
               cellRenderer={idx => (
                 <Cell tooltip={sortedRuns[idx].runId}>
-                  <a href={`/${pipelineName}/runs/${sortedRuns[idx].runId}`}>
-                    {titleForRun(sortedRuns[idx])}
-                  </a>
+                  <>
+                    <a href={`/${pipelineName}/runs/${sortedRuns[idx].runId}`}>
+                      {titleForRun(sortedRuns[idx])}
+                    </a>
+                  </>
                 </Cell>
               )}
             />
