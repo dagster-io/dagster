@@ -155,7 +155,10 @@ def test_concurrent_multithreaded_logging():
 
 
 # https://docs.python.org/2.7/library/multiprocessing.html#windows
-@pytest.mark.skipif(sys.version_info >= (2, 7) and sys.version_info < (3,) and os.name == 'nt')
+@pytest.mark.skipif(
+    sys.version_info >= (2, 7) and sys.version_info < (3,) and os.name == 'nt',
+    reason='Special multiprocessing restrictions on py27/nt make this test setup infeasible',
+)
 def test_concurrent_multiprocessing_logging():
     test_log_records = []
     run_id = str(uuid.uuid4())
