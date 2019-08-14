@@ -243,5 +243,3 @@ def test_error_during_logging(caplog):
             ('root', 50, 'Error during logging!'),
             ('root', 40, 'Bailing!'),
         ]
-
-        conn.close()
