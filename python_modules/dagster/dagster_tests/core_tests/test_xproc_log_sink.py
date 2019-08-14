@@ -11,8 +11,7 @@ import pytest
 from dagster import PipelineDefinition, seven
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.log_manager import DagsterLogManager
-from dagster.loggers.xproc_log_sink import (JsonSqlite3Handler,
-                                            JsonSqlite3LogWatcher, init_db)
+from dagster.loggers.xproc_log_sink import JsonSqlite3Handler, JsonSqlite3LogWatcher, init_db
 from dagster.utils import safe_tempfile_path
 from dagster.utils.log import construct_single_handler_logger
 
@@ -153,6 +152,7 @@ def test_concurrent_multithreaded_logging():
             assert json_record == seven.json.dumps(test_log_records[i].__dict__)
 
         conn.close()
+
 
 # https://docs.python.org/2.7/library/multiprocessing.html#windows
 @pytest.mark.skipif(sys.version_info >= (2, 7) and sys.version_info < (3,) and os.name == 'nt')
