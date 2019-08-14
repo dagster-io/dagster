@@ -1,8 +1,12 @@
 import logging
 import multiprocessing
+import os
 import sqlite3
+import sys
 import threading
 import uuid
+
+import pytest
 
 from dagster import PipelineDefinition, seven
 from dagster.core.execution.context.logger import InitLoggerContext
@@ -148,6 +152,8 @@ def test_concurrent_multithreaded_logging():
             assert json_record == seven.json.dumps(test_log_records[i].__dict__)
 
 
+# https://docs.python.org/2.7/library/multiprocessing.html#windows
+@pytest.mark.skipif(sys.version_info >= (2, 7) and sys.version_info < (3,) and os.name == 'nt')
 def test_concurrent_multiprocessing_logging():
     test_log_records = []
     run_id = str(uuid.uuid4())
