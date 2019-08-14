@@ -26,11 +26,10 @@ for arg in sys.argv[1:]:
 if not watch:
     os.execvp(command[0], command)
 
-
 # Use watchdog's python API to auto-restart the dagit-cli process when
 # python files in the current directory change. This is a slightly modified
 # version of the code in watchdog's `watchmedo` CLI. We've modified the
-# KeyboardInterupt handler below to call handler.stop() before tearing
+# KeyboardInterrupt handler below to call handler.stop() before tearing
 # down the observer so that repeated Ctrl-C's don't cause the process to
 # exit and leave dagit-cli dangling.
 #
@@ -39,6 +38,15 @@ if not watch:
 #
 # Issue:
 # https://github.com/gorakhargosh/watchdog/issues/543
+class DagsterAutoRestartTrick(AutoRestartTrick):
+    def __init__(self, *args, **kwargs):
+        super(DagsterAutoRestartTrick, self).__init__(*args, **kwargs)
+        self.restarting = False
+
+    def on_any_event(self, event):
+        self.restarting = True
+        super(DagsterAutoRestartTrick, self).on_any_event(event)
+        self.restarting = False
 
 
 def handle_sigterm(_signum, _frame):
@@ -47,7 +55,7 @@ def handle_sigterm(_signum, _frame):
 
 signal.signal(signal.SIGTERM, handle_sigterm)
 
-handler = AutoRestartTrick(
+handler = DagsterAutoRestartTrick(
     command=command,
     patterns=['*.py'],
     ignore_patterns=[],
@@ -64,11 +72,11 @@ observer.schedule(handler, '.', True)
 observer.start()
 
 try:
-    while True:
+    while not handler.process or handler.restarting or handler.process.poll() is None:
         time.sleep(1)
 except KeyboardInterrupt:
-    handler.stop()
-    observer.stop()
+    pass
 
 handler.stop()
+observer.stop()
 observer.join()

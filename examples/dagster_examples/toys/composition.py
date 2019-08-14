@@ -1,6 +1,6 @@
 # pylint: disable=no-value-for-parameter
 
-from dagster import composite_solid, pipeline, lambda_solid, Int, InputDefinition
+from dagster import InputDefinition, Int, composite_solid, lambda_solid, pipeline
 
 
 @lambda_solid(input_defs=[InputDefinition('num', Int)])
