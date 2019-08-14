@@ -2,7 +2,8 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { Text, Code, Button, Colors } from "@blueprintjs/core";
+import { Icon, Text, Code, Button, Colors } from "@blueprintjs/core";
+import { IconNames } from "@blueprintjs/icons";
 
 import { titleOfIO } from "./Util";
 import { pluginForMetadata } from "./plugins";
@@ -11,6 +12,7 @@ import TypeWithTooltip from "./TypeWithTooltip";
 import {
   SidebarSection,
   SidebarDivider,
+  SectionHeader,
   SidebarTitle,
   SidebarSubhead,
   SectionSmallHeader,
@@ -56,6 +58,9 @@ export default class SidebarSolidInfo extends React.Component<
           metadata {
             key
             value
+          }
+          requiredResources {
+            resourceKey
           }
           ... on SolidDefinition {
             configDefinition {
@@ -176,6 +181,8 @@ export default class SidebarSolidInfo extends React.Component<
       );
     }
 
+    const hasRequiredResources =
+      definition.requiredResources && definition.requiredResources.length;
     return (
       <div>
         <SidebarSection title={"Invocation"}>
@@ -224,6 +231,20 @@ export default class SidebarSolidInfo extends React.Component<
         {configDefinition && (
           <SidebarSection title={"Config"}>
             <ConfigTypeSchema type={configDefinition.configType} />
+          </SidebarSection>
+        )}
+        {hasRequiredResources && (
+          <SidebarSection title={"Required Resources"}>
+            {definition.requiredResources.sort().map(requirement => (
+              <ResourceContainer key={requirement.resourceKey}>
+                <Icon
+                  iconSize={14}
+                  icon={IconNames.LAYERS}
+                  color={Colors.DARK_GRAY2}
+                />
+                <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
+              </ResourceContainer>
+            ))}
           </SidebarSection>
         )}
         <SidebarSection title={"Inputs"}>
@@ -358,6 +379,23 @@ const DependencyRow = ({
     </tr>
   );
 };
+
+const ResourceHeader = styled(SectionHeader)`
+  font-size: 13px;
+`;
+
+const ResourceContainer = styled.div`
+  display: flex;
+  align-items: flex-start;
+  padding-top: 15px;
+  & .bp3-icon {
+    padding-top: 7px;
+    padding-right: 10px;
+  }
+  &:first-child {
+    padding-top: 0;
+  }
+`;
 
 const DependencyLocalIOName = styled.div`
   font-family: monospace;

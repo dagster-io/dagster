@@ -85,6 +85,11 @@ export interface SidebarSolidInfoFragment_definition_SolidDefinition_metadata {
   value: string;
 }
 
+export interface SidebarSolidInfoFragment_definition_SolidDefinition_requiredResources {
+  __typename: "ResourceRequirement";
+  resourceKey: string;
+}
+
 export interface SidebarSolidInfoFragment_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
@@ -229,6 +234,7 @@ export interface SidebarSolidInfoFragment_definition_SolidDefinition {
   name: string;
   description: string | null;
   metadata: SidebarSolidInfoFragment_definition_SolidDefinition_metadata[];
+  requiredResources: SidebarSolidInfoFragment_definition_SolidDefinition_requiredResources[];
   configDefinition: SidebarSolidInfoFragment_definition_SolidDefinition_configDefinition | null;
 }
 
@@ -236,6 +242,11 @@ export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_me
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_requiredResources {
+  __typename: "ResourceRequirement";
+  resourceKey: string;
 }
 
 export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings_definition {
@@ -297,6 +308,7 @@ export interface SidebarSolidInfoFragment_definition_CompositeSolidDefinition {
   name: string;
   description: string | null;
   metadata: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_metadata[];
+  requiredResources: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_requiredResources[];
   inputMappings: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: SidebarSolidInfoFragment_definition_CompositeSolidDefinition_outputMappings[];
 }

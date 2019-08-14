@@ -17,6 +17,7 @@ type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
+  requiredResources: [ResourceRequirement!]!
   solids: [Solid!]!
   inputMappings: [InputMapping!]!
   outputMappings: [OutputMapping!]!
@@ -346,6 +347,7 @@ interface ISolidDefinition {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
+  requiredResources: [ResourceRequirement!]!
 }
 
 type ListConfigType implements ConfigType & WrappingConfigType {
@@ -750,6 +752,10 @@ type Resource {
   configField: ConfigTypeField
 }
 
+type ResourceRequirement {
+  resourceKey: String!
+}
+
 type RunSchedule {
   scheduleId: String!
   name: String!
@@ -825,6 +831,7 @@ type SolidDefinition implements ISolidDefinition {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
+  requiredResources: [ResourceRequirement!]!
   configDefinition: ConfigTypeField
 }
 

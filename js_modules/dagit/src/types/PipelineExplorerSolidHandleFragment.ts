@@ -152,12 +152,18 @@ export interface PipelineExplorerSolidHandleFragment_solid_definition_SolidDefin
   configType: PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_configDefinition_configType;
 }
 
+export interface PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_requiredResources {
+  __typename: "ResourceRequirement";
+  resourceKey: string;
+}
+
 export interface PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition {
   __typename: "SolidDefinition";
   name: string;
   metadata: PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_metadata[];
   configDefinition: PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_configDefinition | null;
   description: string | null;
+  requiredResources: PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_requiredResources[];
 }
 
 export interface PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_metadata {
@@ -220,6 +226,11 @@ export interface PipelineExplorerSolidHandleFragment_solid_definition_CompositeS
   mappedOutput: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_outputMappings_mappedOutput;
 }
 
+export interface PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_requiredResources {
+  __typename: "ResourceRequirement";
+  resourceKey: string;
+}
+
 export interface PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
   name: string;
@@ -227,6 +238,7 @@ export interface PipelineExplorerSolidHandleFragment_solid_definition_CompositeS
   inputMappings: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_outputMappings[];
   description: string | null;
+  requiredResources: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_requiredResources[];
 }
 
 export type PipelineExplorerSolidHandleFragment_solid_definition = PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition | PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition;

@@ -152,6 +152,7 @@ def define_repository():
             pipeline_with_expectations,
             pipeline_with_list,
             pipeline_with_step_metadata,
+            required_resource_pipeline,
             scalar_output_pipeline,
             secret_pipeline,
         ],
@@ -417,6 +418,20 @@ def multi_mode_with_resources():
         return context.resources.op(3)
 
     return apply_to_three()
+
+
+@resource(config_field=Field(Int, is_optional=True))
+def req_resource(_):
+    return 1
+
+
+@pipeline(mode_defs=[ModeDefinition(resource_defs={'R1': req_resource})])
+def required_resource_pipeline():
+    @solid(required_resource_keys={'R1'})
+    def solid_with_required_resource(_):
+        return 1
+
+    solid_with_required_resource()
 
 
 @logger(config_field=Field(str))

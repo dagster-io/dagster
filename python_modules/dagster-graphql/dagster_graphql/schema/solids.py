@@ -33,6 +33,7 @@ class DauphinISolidDefinition(dauphin.Interface):
     metadata = dauphin.non_null_list('MetadataItemDefinition')
     input_definitions = dauphin.non_null_list('InputDefinition')
     output_definitions = dauphin.non_null_list('OutputDefinition')
+    required_resources = dauphin.non_null_list('ResourceRequirement')
 
 
 class ISolidDefinitionMixin:
@@ -56,6 +57,9 @@ class ISolidDefinitionMixin:
             graphene_info.schema.type_named('OutputDefinition')(output_definition, self)
             for output_definition in self._solid_def.output_defs
         ]
+
+    def resolve_required_resources(self, _):
+        return [{'resource_key': key} for key in self._solid_def.required_resource_keys]
 
 
 class DauphinSolid(dauphin.ObjectType):
@@ -337,6 +341,13 @@ class DauphinOutputMapping(dauphin.ObjectType):
             output_definition, 'output_definition', DauphinOutputDefinition
         )
         self.mapped_output = check.inst_param(mapped_output, 'mapped_output', DauphinOutput)
+
+
+class DauphinResourceRequirement(dauphin.ObjectType):
+    class Meta:
+        name = 'ResourceRequirement'
+
+    resource_key = dauphin.NonNull(dauphin.String)
 
 
 def build_dauphin_solid(solid, deps):
