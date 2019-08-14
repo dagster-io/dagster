@@ -18,6 +18,9 @@ TOX_MAP = {
     SupportedPython.V2_7: "py27",
 }
 
+# https://github.com/dagster-io/dagster/issues/1662
+DO_COVERAGE = False
+
 
 def wait_step():
     return "wait"
@@ -421,7 +424,10 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("dagstermill")
     steps += library_tests()
 
-    steps += [wait_step(), coverage_step(), wait_step(), deploy_trigger_step()]
+    if DO_COVERAGE:
+        steps += [wait_step(), coverage_step(), wait_step(), deploy_trigger_step()]
+    else:
+        steps += [wait_step(), deploy_trigger_step()]
 
     print(
         yaml.dump(

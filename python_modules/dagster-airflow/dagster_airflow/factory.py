@@ -8,7 +8,9 @@ from dagster import ExecutionTargetHandle, RunConfig, check
 from dagster.core.execution.api import create_execution_plan
 
 from .compile import coalesce_execution_steps
-from .operators import DagsterDockerOperator, DagsterPythonOperator
+from .operators.python_operator import DagsterPythonOperator
+from .operators.docker_operator import DagsterDockerOperator
+
 
 DEFAULT_ARGS = {
     'depends_on_past': False,
@@ -239,4 +241,40 @@ def make_airflow_dag_containerized_for_handle(
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
         operator=DagsterDockerOperator,
+    )
+
+
+def make_airflow_dag_kubernetized(
+    module_name,
+    pipeline_name,
+    image,
+    namespace,
+    environment_dict=None,
+    mode=None,
+    dag_id=None,
+    dag_description=None,
+    dag_kwargs=None,
+    op_kwargs=None,
+):
+    from .operators.kubernetes_operator import DagsterKubernetesPodOperator
+
+    check.str_param(module_name, 'module_name')
+
+    handle = ExecutionTargetHandle.for_pipeline_module(module_name, pipeline_name)
+
+    # See: https://github.com/dagster-io/dagster/issues/1663
+    op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
+    op_kwargs['image'] = image
+    op_kwargs['namespace'] = namespace
+
+    return _make_airflow_dag(
+        handle=handle,
+        pipeline_name=pipeline_name,
+        environment_dict=environment_dict,
+        mode=mode,
+        dag_id=dag_id,
+        dag_description=dag_description,
+        dag_kwargs=dag_kwargs,
+        op_kwargs=op_kwargs,
+        operator=DagsterKubernetesPodOperator,
     )

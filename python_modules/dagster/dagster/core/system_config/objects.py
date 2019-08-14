@@ -79,17 +79,20 @@ class EnvironmentConfig(
         )
 
     @staticmethod
-    def from_dict(config):
-        check.dict_param(config, 'config', key_type=str)
+    def from_config_value(config_value, original_config_dict=None):
+        check.dict_param(config_value, 'config_value', key_type=str)
+        original_config_dict = check.opt_dict_param(
+            original_config_dict, 'original_config_dict', key_type=str
+        )
 
         return EnvironmentConfig(
-            solids=construct_solid_dictionary(config['solids']),
-            execution=ExecutionConfig.from_dict(config.get('execution')),
-            expectations=ExpectationsConfig(**config['expectations']),
-            storage=StorageConfig.from_dict(config.get('storage')),
-            loggers=config.get('loggers'),
-            original_config_dict=config,
-            resources=config.get('resources'),
+            solids=construct_solid_dictionary(config_value['solids']),
+            execution=ExecutionConfig.from_dict(config_value.get('execution')),
+            expectations=ExpectationsConfig(**config_value['expectations']),
+            storage=StorageConfig.from_dict(config_value.get('storage')),
+            loggers=config_value.get('loggers'),
+            original_config_dict=original_config_dict,
+            resources=config_value.get('resources'),
         )
 
 

@@ -20,6 +20,8 @@ def get_version(name):
 parser = argparse.ArgumentParser()
 parser.add_argument('--nightly', action='store_true')
 
+kubernetes = ['kubernetes>=3.0.0', 'cryptography>=2.0.0']
+
 
 def _do_setup(name='dagster-airflow'):
     ver = get_version(name)
@@ -56,6 +58,7 @@ def _do_setup(name='dagster-airflow'):
             'boto3==1.9.*',
             'python-dateutil>=2.8.0',
         ],
+        extras_require={'kubernetes': kubernetes},
         entry_points={'console_scripts': ['dagster-airflow = dagster_airflow.cli:main']},
     )
 

@@ -3,7 +3,6 @@ import pytest
 from dagster import SolidDefinition
 from dagster.core.definitions.dependency import Solid
 from dagster.core.system_config.objects import EnvironmentConfig
-
 from dagstermill.manager import MANAGER_FOR_NOTEBOOK_INSTANCE
 
 BARE_OUT_OF_PIPELINE_CONTEXT = MANAGER_FOR_NOTEBOOK_INSTANCE.get_context()
@@ -23,12 +22,7 @@ def test_run_id():
 
 
 def test_environment_dict():
-    assert BARE_OUT_OF_PIPELINE_CONTEXT.environment_dict == {
-        'expectations': {'evaluate': True},
-        'loggers': {'dagstermill': {'config': {'log_level': 'INFO', 'name': 'dagster'}}},
-        'resources': {},
-        'solids': {},
-    }
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.environment_dict == {'loggers': {'dagstermill': {}}}
 
 
 def test_logging_tags():

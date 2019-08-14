@@ -1,44 +1,21 @@
-'''The dagster-airflow operators.'''
 import ast
 import json
-import logging
-import os
+
 from contextlib import contextmanager
 
-from airflow.exceptions import AirflowException, AirflowSkipException
-from airflow.operators.docker_operator import DockerOperator
-from airflow.operators.python_operator import PythonOperator
+from airflow.exceptions import AirflowException
 from airflow.utils.file import TemporaryDirectory
+
 from docker import APIClient, from_env
 
-from dagster import DagsterEventType, check, seven
-from dagster.core.events import DagsterEvent
-
-from dagster_graphql.client.mutations import execute_start_pipeline_execution_query
+from dagster import check, seven
+from dagster_airflow.vendor.docker_operator import DockerOperator
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 
-from .util import airflow_storage_exception, construct_variables, parse_raw_res
+from .util import construct_variables, get_aws_environment, parse_raw_res, skip_self_if_necessary
+
 
 DOCKER_TEMPDIR = '/tmp'
-
-DEFAULT_ENVIRONMENT = {
-    'AWS_ACCESS_KEY_ID': os.getenv('AWS_ACCESS_KEY_ID'),
-    'AWS_SECRET_ACCESS_KEY': os.getenv('AWS_SECRET_ACCESS_KEY'),
-}
-
-LINE_LENGTH = 100
-
-
-def skip_self_if_necessary(events):
-    '''Using AirflowSkipException is a canonical way for tasks to skip themselves; see example
-    here: http://bit.ly/2YtigEm
-    '''
-    check.list_param(events, 'events', of_type=DagsterEvent)
-
-    skipped = any([e.event_type_value == DagsterEventType.STEP_SKIPPED.value for e in events])
-
-    if skipped:
-        raise AirflowSkipException('Dagster emitted skip event, skipping execution in Airflow')
 
 
 class ModifiedDockerOperator(DockerOperator):
@@ -160,7 +137,17 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         host_tmp_dir = kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
 
         if 'storage' not in environment_dict:
-            raise airflow_storage_exception(tmp_dir)
+            raise AirflowException(
+                'No storage config found -- must configure either filesystem or s3 storage for '
+                'the DagsterDockerOperator. Ex.: \n'
+                'storage:\n'
+                '  filesystem:\n'
+                '    base_dir: \'/some/shared/volume/mount/special_place\''
+                '\n\n --or--\n\n'
+                'storage:\n'
+                '  s3:\n'
+                '    s3_bucket: \'my-s3-bucket\'\n'
+            )
 
         check.invariant(
             'in_memory' not in environment_dict.get('storage', {}),
@@ -193,7 +180,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         self.airflow_ts = kwargs.get('ts')
 
         if 'environment' not in kwargs:
-            kwargs['environment'] = DEFAULT_ENVIRONMENT
+            kwargs['environment'] = get_aws_environment()
 
         super(DagsterDockerOperator, self).__init__(
             task_id=task_id, dag=dag, tmp_dir=tmp_dir, host_tmp_dir=host_tmp_dir, *args, **kwargs
@@ -259,7 +246,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
 
         except ImportError:
             raise AirflowException(
-                'To use the DagsterPythonOperator, dagster and dagster_graphql must be installed '
+                'To use the DagsterDockerOperator, dagster and dagster_graphql must be installed '
                 'in your Airflow environment.'
             )
         if 'run_id' in self.params:
@@ -293,53 +280,3 @@ class DagsterDockerOperator(ModifiedDockerOperator):
     @contextmanager
     def get_host_tmp_dir(self):
         yield self.host_tmp_dir
-
-
-class DagsterPythonOperator(PythonOperator):
-    def __init__(
-        self,
-        task_id,
-        handle,
-        pipeline_name,
-        environment_dict,
-        mode,
-        step_keys,
-        dag,
-        *args,
-        **kwargs
-    ):
-        if 'storage' not in environment_dict:
-            raise airflow_storage_exception('/tmp/special_place')
-
-        check.invariant(
-            'in_memory' not in environment_dict.get('storage', {}),
-            'Cannot use in-memory storage with Airflow, must use filesystem or S3',
-        )
-
-        def python_callable(ts, dag_run, **kwargs):  # pylint: disable=unused-argument
-            run_id = dag_run.run_id
-
-            # TODO: https://github.com/dagster-io/dagster/issues/1342
-            redacted = construct_variables(mode, 'REDACTED', pipeline_name, run_id, ts, step_keys)
-            logging.info(
-                'Executing GraphQL query: {query}\n'.format(query=START_PIPELINE_EXECUTION_QUERY)
-                + 'with variables:\n'
-                + seven.json.dumps(redacted, indent=2)
-            )
-            events = execute_start_pipeline_execution_query(
-                handle,
-                construct_variables(mode, environment_dict, pipeline_name, run_id, ts, step_keys),
-            )
-
-            skip_self_if_necessary(events)
-
-            return events
-
-        super(DagsterPythonOperator, self).__init__(
-            task_id=task_id,
-            provide_context=True,
-            python_callable=python_callable,
-            dag=dag,
-            *args,
-            **kwargs
-        )

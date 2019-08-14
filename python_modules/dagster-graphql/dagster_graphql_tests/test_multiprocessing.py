@@ -5,15 +5,20 @@ from copy import deepcopy
 
 from dagster import (
     ExecutionTargetHandle,
+    Field,
     InputDefinition,
+    Int,
     Materialization,
     OutputDefinition,
     Path,
+    String,
     as_dagster_type,
+    composite_solid,
     input_hydration_config,
     lambda_solid,
     output_materialization_config,
     pipeline,
+    solid,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import ExecutionSelector
@@ -185,3 +190,147 @@ def failing_pipeline():
 @pipeline
 def crashy_pipeline():
     crashy_solid(sum_solid())  # pylint: disable=no-value-for-parameter
+
+
+@solid(config={'foo': Field(String)})
+def node_a(context):
+    return context.solid_config['foo']
+
+
+@solid(config={'bar': Field(Int)})
+def node_b(context, input_):
+    return input_ * context.solid_config['bar']
+
+
+@composite_solid
+def composite_with_nested_config_solid():
+    return node_b(node_a())  # pylint: disable=no-value-for-parameter
+
+
+@pipeline
+def composite_pipeline():
+    return composite_with_nested_config_solid()
+
+
+@composite_solid(
+    config_fn=lambda _, cfg: {
+        'node_a': {'config': {'foo': cfg['foo']}},
+        'node_b': {'config': {'bar': cfg['bar']}},
+    },
+    config={'foo': Field(String), 'bar': Field(Int)},
+)
+def composite_with_nested_config_solid_and_config_mapping():
+    return node_b(node_a())  # pylint: disable=no-value-for-parameter
+
+
+@pipeline
+def composite_pipeline_with_config_mapping():
+    return composite_with_nested_config_solid_and_config_mapping()
+
+
+def test_multiprocessing_execution_for_composite_solid():
+    environment_dict = {
+        'solids': {
+            'composite_with_nested_config_solid': {
+                'solids': {'node_a': {'config': {'foo': 'baz'}}, 'node_b': {'config': {'bar': 3}}}
+            }
+        }
+    }
+
+    run_id = make_new_run_id()
+    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'composite_pipeline')
+    pipeline_run = InMemoryPipelineRun(
+        run_id,
+        ExecutionSelector('nonce'),
+        environment_dict,
+        mode='default',
+        reexecution_config=None,
+        step_keys_to_execute=None,
+    )
+    execution_manager = MultiprocessingExecutionManager()
+    execution_manager.execute_pipeline(
+        handle, composite_pipeline, pipeline_run, raise_on_error=False
+    )
+    execution_manager.join()
+    assert pipeline_run.status == PipelineRunStatus.SUCCESS
+
+    environment_dict = {
+        'solids': {
+            'composite_with_nested_config_solid': {
+                'solids': {'node_a': {'config': {'foo': 'baz'}}, 'node_b': {'config': {'bar': 3}}}
+            }
+        },
+        'execution': {'multiprocess': {}},
+        'storage': {'filesystem': {}},
+    }
+
+    run_id = make_new_run_id()
+    pipeline_run = InMemoryPipelineRun(
+        run_id,
+        ExecutionSelector('nonce'),
+        environment_dict,
+        mode='default',
+        reexecution_config=None,
+        step_keys_to_execute=None,
+    )
+    execution_manager = MultiprocessingExecutionManager()
+    execution_manager.execute_pipeline(
+        handle, composite_pipeline, pipeline_run, raise_on_error=False
+    )
+    execution_manager.join()
+
+
+def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
+    environment_dict = {
+        'solids': {
+            'composite_with_nested_config_solid_and_config_mapping': {
+                'config': {'foo': 'baz', 'bar': 3}
+            }
+        }
+    }
+
+    run_id = make_new_run_id()
+    handle = ExecutionTargetHandle.for_pipeline_python_file(
+        __file__, 'composite_pipeline_with_config_mapping'
+    )
+    pipeline_run = InMemoryPipelineRun(
+        run_id,
+        ExecutionSelector('nonce'),
+        environment_dict,
+        mode='default',
+        reexecution_config=None,
+        step_keys_to_execute=None,
+    )
+    execution_manager = MultiprocessingExecutionManager()
+    execution_manager.execute_pipeline(
+        handle, composite_pipeline_with_config_mapping, pipeline_run, raise_on_error=False
+    )
+    execution_manager.join()
+    assert pipeline_run.status == PipelineRunStatus.SUCCESS
+
+    environment_dict = {
+        'solids': {
+            'composite_with_nested_config_solid_and_config_mapping': {
+                'config': {'foo': 'baz', 'bar': 3}
+            }
+        },
+        'execution': {'multiprocess': {}},
+        'storage': {'filesystem': {}},
+    }
+
+    run_id = make_new_run_id()
+    pipeline_run = InMemoryPipelineRun(
+        run_id,
+        ExecutionSelector('nonce'),
+        environment_dict,
+        mode='default',
+        reexecution_config=None,
+        step_keys_to_execute=None,
+    )
+    execution_manager = MultiprocessingExecutionManager()
+    execution_manager.execute_pipeline(
+        handle, composite_pipeline, pipeline_run, raise_on_error=False
+    )
+
+    execution_manager.join()
+    assert pipeline_run.status == PipelineRunStatus.SUCCESS
