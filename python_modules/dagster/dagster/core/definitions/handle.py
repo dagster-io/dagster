@@ -216,7 +216,7 @@ class ExecutionTargetHandle:
         '''Builds an ExecutionTargetHandle for a repository.yml file.
         '''
         return ExecutionTargetHandle(
-            _ExecutionTargetHandleData(repository_yaml=repository_yaml),
+            _ExecutionTargetHandleData(repository_yaml=os.path.abspath(repository_yaml)),
             _ExecutionTargetMode.REPOSITORY,
         )
 

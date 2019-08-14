@@ -3,12 +3,13 @@ import pickle
 import tempfile
 from contextlib import contextmanager
 
+import nbformat
 import pytest
+from nbconvert.preprocessors import ExecutePreprocessor
 
 from dagster import RunConfig, execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.definitions.events import PathMetadataEntryData
-
 from dagstermill import DagstermillError, DagstermillExecutionError
 
 
@@ -54,6 +55,26 @@ def exec_for_test(fn_name, env=None, **kwargs):
 def test_hello_world():
     with exec_for_test('define_hello_world_pipeline') as result:
         assert result.success
+
+
+@pytest.mark.notebook_test
+def test_reexecute_result_notebook():
+    with exec_for_test('define_hello_world_pipeline') as result:
+        assert result.success
+
+        materialization_events = [
+            x for x in result.step_event_list if x.event_type_value == 'STEP_MATERIALIZATION'
+        ]
+        for materialization_event in materialization_events:
+            result_path = get_path(materialization_event)
+
+        if result_path.endswith('.ipynb'):
+            with open(result_path) as fd:
+                nb = nbformat.read(fd, as_version=4)
+            ep = ExecutePreprocessor()
+            ep.preprocess(nb, {})
+            with open(result_path) as fd:
+                assert nbformat.read(fd, as_version=4) == nb
 
 
 @pytest.mark.notebook_test
