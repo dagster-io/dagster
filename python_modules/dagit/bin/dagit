@@ -40,6 +40,13 @@ if not watch:
 # Issue:
 # https://github.com/gorakhargosh/watchdog/issues/543
 
+
+def handle_sigterm(_signum, _frame):
+    raise KeyboardInterrupt()
+
+
+signal.signal(signal.SIGTERM, handle_sigterm)
+
 handler = AutoRestartTrick(
     command=command,
     patterns=['*.py'],
@@ -49,6 +56,7 @@ handler = AutoRestartTrick(
     kill_after=0.5,
 )
 handler.start()
+
 
 print('Will be watching for file changes...')
 observer = Observer(timeout=1)
