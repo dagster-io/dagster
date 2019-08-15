@@ -1,6 +1,6 @@
 import json
 import logging
-import tempfile
+import os
 
 from dagster import (
     Dict,
@@ -13,14 +13,16 @@ from dagster import (
     seven,
 )
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
-from dagster.utils import script_relative_path
-
+from dagster.utils import safe_tempfile_path, script_relative_path
 from dagstermill.examples.repository import define_hello_logging_solid
 
 
 class LogTestFileHandler(logging.Handler):
     def __init__(self, file_path):
         self.file_path = file_path
+        if not os.path.isfile(self.file_path):
+            with open(self.file_path, 'a'):  # Create file if does not exist
+                pass
         super(LogTestFileHandler, self).__init__()
 
     def emit(self, record):
@@ -65,8 +67,8 @@ def test_logging():
 
     pipeline_def = handle.build_pipeline_definition()
 
-    with tempfile.NamedTemporaryFile() as test_file:
-        with tempfile.NamedTemporaryFile() as critical_file:
+    with safe_tempfile_path() as test_file_path:
+        with safe_tempfile_path() as critical_file_path:
             execute_pipeline(
                 pipeline_def,
                 {
@@ -74,14 +76,14 @@ def test_logging():
                         'test': {
                             'config': {
                                 'name': 'test',
-                                'file_path': test_file.name,
+                                'file_path': test_file_path,
                                 'log_level': 'DEBUG',
                             }
                         },
                         'critical': {
                             'config': {
                                 'name': 'critical',
-                                'file_path': critical_file.name,
+                                'file_path': critical_file_path,
                                 'log_level': 'CRITICAL',
                             }
                         },
@@ -89,19 +91,17 @@ def test_logging():
                 },
             )
 
-            test_file.seek(0)
-            critical_file.seek(0)
+            with open(test_file_path, 'r') as test_file:
+                records = [
+                    json.loads(line) for line in test_file.read().strip('\n').split('\n') if line
+                ]
 
-            records = [
-                json.loads(line)
-                for line in test_file.read().decode('utf-8').strip('\n').split('\n')
-                if line
-            ]
-            critical_records = [
-                json.loads(line)
-                for line in critical_file.read().decode('utf-8').strip('\n').split('\n')
-                if line
-            ]
+            with open(critical_file_path, 'r') as critical_file:
+                critical_records = [
+                    json.loads(line)
+                    for line in critical_file.read().strip('\n').split('\n')
+                    if line
+                ]
 
     messages = [x['dagster_meta']['orig_message'] for x in records]
 
