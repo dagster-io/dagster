@@ -2,7 +2,7 @@ import * as React from "react";
 import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Colors, Classes, Dialog } from "@blueprintjs/core";
+import { Colors } from "@blueprintjs/core";
 import LogsFilterProvider, {
   ILogFilter,
   DefaultLogFilter
@@ -14,7 +14,6 @@ import {
   PipelineRunFragment_executionPlan
 } from "./types/PipelineRunFragment";
 import { PanelDivider } from "../PanelDivider";
-import PythonErrorInfo from "../PythonErrorInfo";
 import { ExecutionPlan } from "../plan/ExecutionPlan";
 import RunMetadataProvider from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
@@ -29,6 +28,8 @@ import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
 import ApolloClient from "apollo-client";
 import ExecutionStartButton from "../execute/ExecutionStartButton";
 import { IconNames } from "@blueprintjs/icons";
+import InfoModal from "../InfoModal";
+import PythonErrorInfo from "../PythonErrorInfo";
 
 interface IPipelineRunProps {
   client: ApolloClient<any>;
@@ -205,7 +206,6 @@ export class PipelineRun extends React.Component<
           <PipelineRunWrapper>
             {run && <RunSubscriptionProvider client={client} run={run} />}
             {run && <RunStatusToPageAttributes run={run} />}
-
             <LogsContainer style={{ width: `${logsVW}vw`, minWidth: 680 }}>
               <LogsFilterProvider filter={logsFilter} nodes={logs}>
                 {({ filteredNodes, busy }) => (
@@ -233,7 +233,6 @@ export class PipelineRun extends React.Component<
               onMove={(vw: number) => this.setState({ logsVW: vw })}
               axis="horizontal"
             />
-
             <RunMetadataProvider logs={logs || []}>
               {metadata => (
                 <ExecutionPlan
@@ -255,20 +254,15 @@ export class PipelineRun extends React.Component<
                 />
               )}
             </RunMetadataProvider>
-            <Dialog
-              icon="info-sign"
-              onClose={() => this.setState({ highlightedError: undefined })}
-              style={{ width: "80vw", maxWidth: 1400 }}
-              title={"Error"}
-              usePortal={true}
-              isOpen={!!highlightedError}
-            >
-              <div className={Classes.DIALOG_BODY}>
-                {highlightedError && (
-                  <PythonErrorInfo error={highlightedError} />
-                )}
-              </div>
-            </Dialog>
+            {highlightedError && (
+              <InfoModal
+                onRequestClose={() =>
+                  this.setState({ highlightedError: undefined })
+                }
+              >
+                <PythonErrorInfo error={highlightedError} />
+              </InfoModal>
+            )}
           </PipelineRunWrapper>
         )}
       </Mutation>

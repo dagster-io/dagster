@@ -48,7 +48,7 @@ const Trace = styled.div`
   font-family: Consolas, Menlo, monospace;
   font-size: 0.85em;
   white-space: pre;
-  overflow-x: scroll;
+  overflow-x: auto;
   padding-bottom: 1em;
 `;
 

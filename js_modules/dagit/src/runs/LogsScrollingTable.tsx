@@ -11,7 +11,6 @@ import {
 } from "react-virtualized";
 
 import * as LogsRow from "./LogsRow";
-import { CellTruncationProvider } from "./CellTruncationProvider";
 import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMessageFragment";
 import { Headers, ColumnWidthsProvider } from "./LogsScrollingTableHeader";
 
@@ -164,13 +163,17 @@ class LogsScrollingTableSized extends React.Component<
         parent={parent}
         key={key}
       >
-        <CellTruncationProvider style={{ ...style, width: this.props.width }}>
-          {node.__typename === "LogMessageEvent" ? (
-            <LogsRow.Unstructured node={node} />
-          ) : (
-            <LogsRow.Structured node={node} />
-          )}
-        </CellTruncationProvider>
+        {node.__typename === "LogMessageEvent" ? (
+          <LogsRow.Unstructured
+            node={node}
+            style={{ ...style, width: this.props.width }}
+          />
+        ) : (
+          <LogsRow.Structured
+            node={node}
+            style={{ ...style, width: this.props.width }}
+          />
+        )}
       </CellMeasurer>
     );
   };
