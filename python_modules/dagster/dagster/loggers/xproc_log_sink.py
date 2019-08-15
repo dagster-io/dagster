@@ -118,7 +118,7 @@ class JsonSqlite3LogWatcher(object):
     def watch(self):
         last_pass = False
         while True:
-            with self.connect(self.sqlite_db_path) as conn:
+            with self.connect() as conn:
                 res = (
                     conn.cursor()
                     .execute(RETRIEVE_LOG_RECORDS_STATEMENT.format(timestamp=self.next_timestamp))
@@ -137,7 +137,7 @@ class JsonSqlite3LogWatcher(object):
                                 # we need to filter for log level here
                                 if handler.level <= record.levelno:
                                     handler.handle(record)
-
+            conn.close()
             time.sleep(0.5)  # 500 ms
             if last_pass:
                 break
