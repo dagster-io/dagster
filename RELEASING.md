@@ -25,8 +25,13 @@ This ensures a clean release history.
 _WARNING_: Keep in mind that there is no undo in some of the third-party systems (e.g., PyPI) we use to
 release software.
 
-You should also run releases from a clean clone of the repository. This is to guard against any
-issues that might be introduced by local build artifacts.
+You should also run releases from a clean clone of the repository.
+
+     git clone git@github.com:dagster-io/dagster.git
+
+This is to guard against any issues that might be introduced by local build artifacts.
+
+It's also prudent to release from a fresh virtualenv.
 
 ## Before releasing
 - You must have PyPI credentials available to twine (see below), and you must be permissioned as a
@@ -66,8 +71,9 @@ issues that might be introduced by local build artifacts.
 8.  Manually switch the default ReadTheDocs version to the newly built docs:
     [https://readthedocs.org/projects/dagster/versions/](https://readthedocs.org/projects/dagster/versions/)
 
-    The new version will be below in the "Inactive Versions" section. Click on "Edit" and you will
-    be brought to a page with a header like, for version 0.5.0.pre0, "Editing 0.5.0.pre0"
+    If the new version is a prerelease, it will be below in the "Inactive Versions" section. In
+    this case, click on "Edit" and you will be brought to a page with a header like, for version
+    0.5.0.pre0, "Editing 0.5.0.pre0"
     [https://readthedocs.org/dashboard/dagster/version/0.5.0.pre0/](https://readthedocs.org/dashboard/dagster/version/0.5.0.pre0/).
     Check the checkbox marked "Active" on this page and then click the "Save" button.
 
