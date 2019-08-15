@@ -18,15 +18,35 @@ const ModeSelect = Select.ofType<Mode>();
 export default class ConfigEditorModePicker extends React.PureComponent<
   IConfigEditorModePickerProps
 > {
-  render() {
-    const singleMode = this.props.pipeline.modes.length === 1;
-    const currentMode = this.props.modeName
-      ? this.props.pipeline.modes.find(m => m.name === this.props.modeName)
-      : this.props.pipeline.modes[0];
+  getModeFromProps = (props: IConfigEditorModePickerProps) => {
+    return props.modeName
+      ? props.pipeline.modes.find(m => m.name === props.modeName)
+      : props.pipeline.modes[0];
+  };
 
+  getCurrentMode = () => {
+    return this.getModeFromProps(this.props);
+  };
+
+  componentDidMount() {
+    const currentMode = this.getCurrentMode();
     if (currentMode) {
       this.props.onModeChange(currentMode.name);
     }
+  }
+
+  componentDidUpdate(prevProps: IConfigEditorModePickerProps) {
+    const currentMode = this.getCurrentMode();
+    const prevMode = this.getModeFromProps(prevProps);
+
+    if (currentMode && currentMode !== prevMode) {
+      this.props.onModeChange(currentMode.name);
+    }
+  }
+
+  render() {
+    const singleMode = this.props.pipeline.modes.length === 1;
+    const currentMode = this.getCurrentMode();
 
     return (
       <div>
