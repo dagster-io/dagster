@@ -27,22 +27,36 @@ install_dev_python_modules:
 	# dagster-pandas must come before dasgtermill because of dependency
 	# See https://github.com/dagster-io/dagster/issues/1485
 
+	echo "\n\nInstalling dagster\n\n"
 	pip install -e python_modules/dagster
+
+	echo "\n\nInstalling dagster-graphql\n\n"
 	pip install -e python_modules/dagster-graphql
+
+	echo "\n\nInstalling dagit\n\n"
 	pip install -e python_modules/dagit
+
+	echo "\n\nInstalling dagster-pandas\n\n"
 	pip install -e python_modules/libraries/dagster-pandas
+
+	echo "\n\nInstalling dagstermill\n\n"
 	pip install -e python_modules/dagstermill
+
+	echo "\n\nInstalling dagster-airflow\n\n"
 	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow
+
 	# This installation will fail for Python 2.7 (Dask doesn't work w/ py27 on macOS)
 	-pip install -e python_modules/dagster-dask
 	pip install -e python_modules/libraries/dagster-aws
+	pip install -e python_modules/libraries/dagster-bash
 	pip install -e python_modules/libraries/dagster-datadog
+	pip install -e python_modules/libraries/dagster-dbt
 	pip install -e python_modules/libraries/dagster-gcp
 	pip install -e python_modules/libraries/dagster-ge
 	pip install -e python_modules/libraries/dagster-pagerduty
+	pip install -e python_modules/libraries/dagster-papertrail
 	pip install -e python_modules/libraries/dagster-pyspark
 	pip install -e python_modules/libraries/dagster-slack
-	pip install -e python_modules/libraries/dagster-dbt
 	pip install -e python_modules/libraries/dagster-snowflake
 	pip install -e python_modules/libraries/dagster-spark
 	pip install -e python_modules/libraries/dagster-ssh

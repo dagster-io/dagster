@@ -14,6 +14,3 @@ twine==1.11.0
 Flask-Sockets>=0.2.1
 graphql-ws>=0.3.0
 mock
-Jinja2==2.10.0  # https://github.com/dagster-io/dagster/issues/1600
-tzlocal==1.5.1  # https://github.com/dagster-io/dagster/issues/1600
-werkzeug==0.14.1  # https://github.com/dagster-io/dagster/issues/1600
