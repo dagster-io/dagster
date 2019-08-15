@@ -67,6 +67,7 @@ else:
 def init_db(sqlite_db_path):
     with sqlite3.connect(sqlite_db_path) as con:
         con.execute(CREATE_LOG_TABLE_STATEMENT)
+    con.close()
 
 
 class JsonSqlite3Handler(logging.Handler):
