@@ -93,6 +93,7 @@ class JsonSqlite3Handler(logging.Handler):
             # would sporadically lock up despite setting the timeout argument.
             with self.connect() as con:
                 con.execute(INSERT_LOG_RECORD_STATEMENT.format(json_log=seven.json.dumps(log_dict)))
+            con.close()
 
         except Exception as e:  # pylint: disable=W0703
             logging.critical('Error during logging!')
