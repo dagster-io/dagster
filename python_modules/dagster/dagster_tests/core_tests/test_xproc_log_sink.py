@@ -11,7 +11,8 @@ import pytest
 from dagster import PipelineDefinition, seven
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.log_manager import DagsterLogManager
-from dagster.loggers.xproc_log_sink import JsonSqlite3Handler, JsonSqlite3LogWatcher, init_db
+from dagster.loggers.xproc_log_sink import (JsonSqlite3Handler,
+                                            JsonSqlite3LogWatcher, init_db)
 from dagster.utils import safe_tempfile_path
 from dagster.utils.log import construct_single_handler_logger
 
@@ -48,6 +49,7 @@ def test_json_sqlite3_handler():
             cursor = conn.cursor()
             count = cursor.execute('select count(1) from logs').fetchall()
             assert count[0][0] == 1000
+        conn.close()
 
 
 def test_json_sqlite3_watcher():
@@ -92,7 +94,7 @@ def test_json_sqlite3_watcher():
             for i, record in enumerate(records):
                 json_record = record[1]
                 assert json_record == seven.json.dumps(test_log_records[i].__dict__)
-
+        conn.close()
 
 def thread_target_source(sqlite3_db_path, run_id):
     sqlite3_handler = JsonSqlite3Handler(sqlite3_db_path)
@@ -152,7 +154,7 @@ def test_concurrent_multithreaded_logging():
             for i, record in enumerate(records):
                 json_record = record[1]
                 assert json_record == seven.json.dumps(test_log_records[i].__dict__)
-
+        conn.close()
 
 def sqlite3_process_target(sqlite3_db_path, run_id):
     sqlite3_handler = JsonSqlite3Handler(sqlite3_db_path)
