@@ -108,31 +108,35 @@ class JsonSqlite3LogWatcher(object):
         check.inst_param(is_done, 'is_done', EVENT_TYPE)
 
         self.sqlite_db_path = sqlite_db_path
-        self.conn = sqlite3.connect(self.sqlite_db_path)
-        self.cursor = self.conn.cursor()
         self.next_timestamp = 0
         self.log_manager = log_manager
         self.is_done = is_done
 
+    def connect(self):
+        return sqlite3.connect(self.sqlite_db_path)
+
     def watch(self):
         last_pass = False
         while True:
-            res = self.cursor.execute(
-                RETRIEVE_LOG_RECORDS_STATEMENT.format(timestamp=self.next_timestamp)
-            ).fetchall()
-            if res:
-                self.next_timestamp = res[-1][0] + 1
-                json_records = [r[1] for r in res]
-                for json_record in json_records:
-                    record = logging.makeLogRecord(json.loads(json_record))
+            with self.connect(self.sqlite_db_path) as conn:
+                res = (
+                    conn.cursor()
+                    .execute(RETRIEVE_LOG_RECORDS_STATEMENT.format(timestamp=self.next_timestamp))
+                    .fetchall()
+                )
+                if res:
+                    self.next_timestamp = res[-1][0] + 1
+                    json_records = [r[1] for r in res]
+                    for json_record in json_records:
+                        record = logging.makeLogRecord(json.loads(json_record))
 
-                    for logger in self.log_manager.loggers:
-                        for handler in logger.handlers:
-                            # Because we're rehydrating the LogMessage, rather than passing
-                            # through Logger._log again (which would obscure the original metadata)
-                            # we need to filter for log level here
-                            if handler.level <= record.levelno:
-                                handler.handle(record)
+                        for logger in self.log_manager.loggers:
+                            for handler in logger.handlers:
+                                # Because we're rehydrating the LogMessage, rather than passing
+                                # through Logger._log again (which would obscure the original metadata)
+                                # we need to filter for log level here
+                                if handler.level <= record.levelno:
+                                    handler.handle(record)
 
             time.sleep(0.5)  # 500 ms
             if last_pass:
