@@ -181,8 +181,9 @@ export default class SidebarSolidInfo extends React.Component<
       );
     }
 
-    const hasRequiredResources =
-      definition.requiredResources && definition.requiredResources.length;
+    const hasRequiredResources = !!(
+      definition.requiredResources && definition.requiredResources.length
+    );
     return (
       <div>
         <SidebarSection title={"Invocation"}>
