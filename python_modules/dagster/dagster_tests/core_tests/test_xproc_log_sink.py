@@ -12,6 +12,7 @@ from dagster import PipelineDefinition, seven
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.log_manager import DagsterLogManager
 from dagster.loggers.xproc_log_sink import JsonSqlite3Handler, JsonSqlite3LogWatcher, init_db
+from dagster.utils import safe_tempfile_path
 from dagster.utils.log import construct_single_handler_logger
 
 
@@ -75,7 +76,9 @@ def test_json_sqlite3_watcher():
 
             test_handler = LogTestHandler(test_log_records)
             test_logger_def = construct_single_handler_logger('test', 'debug', test_handler)
-            test_logger = test_logger_def.logger_fn(dummy_init_logger_context(test_logger_def, run_id))
+            test_logger = test_logger_def.logger_fn(
+                dummy_init_logger_context(test_logger_def, run_id)
+            )
             test_logger = test_logger_def.logger_fn(
                 dummy_init_logger_context(test_logger_def, run_id)
             )
@@ -87,7 +90,6 @@ def test_json_sqlite3_watcher():
 
             assert len(test_log_records) == 1000
 
-            
             for i, record in enumerate(records):
                 json_record = record[1]
                 assert json_record == seven.json.dumps(test_log_records[i].__dict__)
