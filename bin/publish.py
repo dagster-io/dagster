@@ -93,6 +93,7 @@ LIBRARY_MODULES = [
     'dagster-aws',
     'dagster-bash',
     'dagster-datadog',
+    'dagster-dbt',
     'dagster-gcp',
     'dagster-ge',
     'dagster-pagerduty',
