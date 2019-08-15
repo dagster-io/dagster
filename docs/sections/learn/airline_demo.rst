@@ -397,7 +397,7 @@ Let's start with the definition of our ``notebook_solid`` helper:
 
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
-   :lines: 41-42
+   :lines: 40-41
 
 
 This is just a wrapper around Dagstermill's ``define_dagstermill_solid`` which tells Dagstermill
@@ -406,7 +406,7 @@ a notebook file:
 
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
-   :lines: 442-464
+   :lines: 440-462
 
 
 As usual, we define the inputs and outputs of the new solid. Within the notebook itself, we only
