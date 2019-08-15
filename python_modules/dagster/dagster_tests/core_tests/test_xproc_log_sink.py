@@ -79,9 +79,7 @@ def test_json_sqlite3_watcher():
             test_logger = test_logger_def.logger_fn(
                 dummy_init_logger_context(test_logger_def, run_id)
             )
-            test_logger = test_logger_def.logger_fn(
-                dummy_init_logger_context(test_logger_def, run_id)
-            )
+            sqlite3_watcher_log_manager = DagsterLogManager(run_id, {}, [test_logger])
             sqlite3_watcher = JsonSqlite3LogWatcher(
                 sqlite3_db_path, sqlite3_watcher_log_manager, is_done
             )
@@ -90,6 +88,7 @@ def test_json_sqlite3_watcher():
 
             assert len(test_log_records) == 1000
 
+            records = cursor.execute('select * from logs').fetchall()
             for i, record in enumerate(records):
                 json_record = record[1]
                 assert json_record == seven.json.dumps(test_log_records[i].__dict__)
