@@ -1,10 +1,10 @@
 import os
 import pickle
+import six
 import uuid
 from contextlib import contextmanager
 
 from dagster import (
-    ExecutionTargetHandle,
     ExpectationResult,
     Failure,
     Materialization,
@@ -15,6 +15,7 @@ from dagster import (
     TypeCheck,
     check,
 )
+from dagster.cli import load_handle
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import ResourcesStack
@@ -55,10 +56,10 @@ class Manager:
         output_log_path=None,
         marshal_dir=None,
         environment_dict=None,
-        handle=None,
-        run_config=None,
+        handle_kwargs=None,
+        run_config_kwargs=None,
         solid_subset=None,
-        solid_handle=None,
+        solid_handle_kwargs=None,
     ):
         '''Reconstitutes a context for dagstermill-managed execution.
 
@@ -74,10 +75,25 @@ class Manager:
         check.opt_str_param(output_log_path, 'output_log_path')
         check.opt_str_param(marshal_dir, 'marshal_dir')
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
-        check.inst_param(run_config, 'run_config', RunConfig)
-        check.inst_param(handle, 'handle', ExecutionTargetHandle)
+        check.dict_param(run_config_kwargs, 'run_config_kwargs')
+        check.dict_param(handle_kwargs, 'handle_kwargs')
         check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
-        check.inst_param(solid_handle, 'solid_handle', SolidHandle)
+        check.dict_param(solid_handle_kwargs, 'solid_handle_kwargs')
+
+        try:
+            handle = load_handle.handle_for_pipeline_cli_args(
+                handle_kwargs, use_default_repository_yaml=False
+            )
+        except (check.CheckError, load_handle.CliUsageError) as err:
+            six.raise_from(
+                DagstermillError(
+                    'Cannot invoke a dagstermill solid from an in-memory pipeline that was not loaded '
+                    'from an ExecutionTargetHandle. Run this pipeline using dagit, the dagster CLI, '
+                    'through dagster-graphql, or in-memory after loading it through an '
+                    'ExecutionTargetHandle.'
+                ),
+                err,
+            )
 
         pipeline_def = check.inst_param(
             handle.build_pipeline_definition(),
@@ -85,8 +101,10 @@ class Manager:
             PipelineDefinition,
         ).build_sub_pipeline(solid_subset)
 
+        solid_handle = SolidHandle.from_dict(solid_handle_kwargs)
         solid_def = pipeline_def.get_solid(solid_handle)
 
+        run_config = RunConfig(**run_config_kwargs)
         run_config = run_config.with_log_sink(construct_sqlite_logger(output_log_path))
 
         self.marshal_dir = marshal_dir
