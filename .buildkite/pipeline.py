@@ -125,6 +125,7 @@ def airflow_tests():
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(version, ['AIRFLOW_HOME'])
+            .on_medium_instance()
             .build()
         )
     return tests
