@@ -166,7 +166,7 @@ def sqlite3_process_target(sqlite3_db_path, run_id):
         sqlite3_log_manager.info('Testing ' + str(i))
 
 
-def test_thread_target(sqlite3_db_path, is_done, run_id, test_log_records):
+def check_thread_target(sqlite3_db_path, is_done, run_id, test_log_records):
     test_handler = LogTestHandler(test_log_records)
     test_logger_def = construct_single_handler_logger('test', 'debug', test_handler)
     test_logger = test_logger_def.logger_fn(dummy_init_logger_context(test_logger_def, run_id))
@@ -192,7 +192,7 @@ def test_concurrent_multiprocessing_logging():
         )
 
         test_thread = threading.Thread(
-            target=test_thread_target, args=(sqlite3_db_path, is_done, run_id, test_log_records)
+            target=check_thread_target, args=(sqlite3_db_path, is_done, run_id, test_log_records)
         )
 
         init_db(sqlite3_db_path)
