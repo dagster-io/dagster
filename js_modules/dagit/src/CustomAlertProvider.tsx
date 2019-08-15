@@ -34,18 +34,19 @@ export default class CustomAlertProvider extends React.Component<
   }
 
   render() {
+    const { title, message, pre } = this.state;
     return (
       <Dialog
-        icon="info-sign"
+        icon={title ? "info-sign" : undefined}
         usePortal={true}
         onClose={() => this.setState({ message: undefined })}
         style={{ width: "auto", maxWidth: "80vw" }}
-        title={this.state.title}
-        isOpen={!!this.state.message}
+        title={title}
+        isOpen={!!message}
       >
         <Body>
-          <div style={{ whiteSpace: this.state.pre ? "pre-wrap" : "initial" }}>
-            {this.state.message}
+          <div style={{ whiteSpace: pre ? "pre-wrap" : "initial" }}>
+            {message}
           </div>
         </Body>
         <div className={Classes.DIALOG_FOOTER}>
@@ -53,7 +54,7 @@ export default class CustomAlertProvider extends React.Component<
             <Button
               autoFocus={false}
               onClick={(e: React.MouseEvent<any, MouseEvent>) =>
-                copyValue(e, this.state.message || "")
+                copyValue(e, message || "")
               }
             >
               Copy

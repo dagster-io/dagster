@@ -3,6 +3,7 @@ from dagster.core.definitions import (
     DependencyDefinition,
     EventMetadataEntry,
     ExecutionTargetHandle,
+    ExecutorDefinition,
     ExpectationResult,
     Failure,
     InputDefinition,
@@ -26,6 +27,7 @@ from dagster.core.definitions import (
     TypeCheck,
     UrlMetadataEntryData,
     composite_solid,
+    executor,
     lambda_solid,
     logger,
     pipeline,
@@ -33,6 +35,7 @@ from dagster.core.definitions import (
     solid,
     system_storage,
 )
+from dagster.core.engine.init import InitExecutorContext
 from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
@@ -50,11 +53,7 @@ from dagster.core.execution.api import (
     execute_pipeline_iterator,
     execute_pipeline_with_preset,
 )
-from dagster.core.execution.config import (
-    InProcessExecutorConfig,
-    MultiprocessExecutorConfig,
-    RunConfig,
-)
+from dagster.core.execution.config import RunConfig
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.plan.objects import StepKind
@@ -93,6 +92,7 @@ __all__ = [
     'CompositeSolidDefinition',
     'DependencyDefinition',
     'EventMetadataEntry',
+    'ExecutorDefinition',
     'TextMetadataEntryData',
     'UrlMetadataEntryData',
     'PathMetadataEntryData',
@@ -114,6 +114,7 @@ __all__ = [
     'SystemStorageDefinition',
     # Decorators
     'composite_solid',
+    'executor',
     'lambda_solid',
     'logger',
     'pipeline',
@@ -124,11 +125,10 @@ __all__ = [
     'execute_pipeline_iterator',
     'execute_pipeline',
     'DagsterEventType',
+    'InitExecutorContext',
     'InitLoggerContext',
     'InitResourceContext',
     'InitSystemStorageContext',
-    'InProcessExecutorConfig',
-    'MultiprocessExecutorConfig',
     'PipelineExecutionResult',
     'RunConfig',
     'SolidExecutionResult',

@@ -22,7 +22,7 @@ export const TopNav = ({
       <Route
         render={({ history }) => (
           <Navbar.Heading onClick={() => history.push("/")}>
-            <img src={navBarImage} style={{ height: 34 }} />
+            <img src={navBarImage} style={{ height: 34 }} alt="logo" />
           </Navbar.Heading>
         )}
       />

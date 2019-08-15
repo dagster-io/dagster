@@ -26,11 +26,11 @@ from dagster.core.errors import user_code_error_boundary
 from dagster.core.execution.context.compute import ComputeExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
+from dagster.loggers.xproc_log_sink import JsonSqlite3LogWatcher, init_db
 from dagster.utils import mkdir_p, safe_tempfile_path
 
 from .engine import DagstermillNBConvertEngine
 from .errors import DagstermillError, DagstermillExecutionError
-from .logger import JsonSqlite3LogWatcher, init_db
 from .serialize import read_value, write_value
 from .translator import RESERVED_INPUT_NAMES, DagsterTranslator
 

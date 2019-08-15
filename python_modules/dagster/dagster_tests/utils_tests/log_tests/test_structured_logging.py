@@ -40,7 +40,7 @@ def test_construct_event_record():
         logger = logger_def.logger_fn(init_logger_context)
 
         context = create_test_pipeline_execution_context(
-            run_config_loggers=[logger], tags={'pipeline': 'some_pipeline'}
+            log_sink=logger, tags={'pipeline': 'some_pipeline'}
         )
         context.log.info('random message')
 

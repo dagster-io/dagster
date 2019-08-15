@@ -19,10 +19,10 @@ from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import ResourcesStack
 from dagster.loggers import colored_console_logger
+from dagster.loggers.xproc_log_sink import construct_sqlite_logger
 
 from .context import DagstermillExecutionContext
 from .errors import DagstermillError
-from .logger import construct_sqlite_logger
 from .serialize import PICKLE_PROTOCOL, read_value, write_value
 
 
@@ -87,22 +87,7 @@ class Manager:
 
         solid_def = pipeline_def.get_solid(solid_handle)
 
-        mode_def = pipeline_def.get_mode_definition(run_config.mode)
-        shim_mode_def = ModeDefinition(
-            name=mode_def.name,
-            logger_defs=dict(
-                mode_def.loggers, dagstermill=construct_sqlite_logger(output_log_path)
-            ),
-            resource_defs=mode_def.resource_defs,
-        )
-
-        pipeline_def = pipeline_def.new_with(mode_defs=[shim_mode_def])
-
-        if 'loggers' not in environment_dict:
-            environment_dict['loggers'] = {'dagstermill': {}}
-
-        if 'dagstermill' not in environment_dict['loggers']:
-            environment_dict['loggers']['dagstermill'] = {}
+        run_config = run_config.with_log_sink(construct_sqlite_logger(output_log_path))
 
         self.marshal_dir = marshal_dir
         self.in_pipeline = True

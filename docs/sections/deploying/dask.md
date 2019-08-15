@@ -31,8 +31,9 @@ Then:
 # dask_hello_world.py
 
 python
-from dagster import execute_pipeline, ExecutionTargetHandle, pipeline, solid
-from dagster_dask import DaskConfig
+from dagster import execute_pipeline, ExecutionTargetHandle, ModeDefinition, pipeline, solid
+from dagster.core.definitions.executor import default_executors
+from dagster_dask import dask_executor
 
 
 @solid
@@ -40,15 +41,14 @@ def hello_world(_):
     return "Hello, World!"
 
 
-@pipeline
+@pipeline(mode_defs=ModeDefinition(executor_defs=default_executors + [dask_executor]))
 def dask_pipeline():
     return hello_world()  # pylint: disable=no-value-for-parameter
 
 
 execute_pipeline(
     ExecutionTargetHandle.for_pipeline_python_file(__file__, 'dask_pipeline'),
-    env_config={'storage': {'filesystem': {}}},
-    run_config=RunConfig(executor_config=DaskConfig())
+    env_config={'storage': {'filesystem': {}}, 'execution': {'dask': {}}},
 )
 ```
 
@@ -68,8 +68,10 @@ the address/port of the Dask scheduler:
 ```
 execute_pipeline(
     ExecutionTargetHandle.for_pipeline_module('your.python.module', 'your_pipeline_name'),
-    env_config={'storage': {'s3': {'config': {'s3_bucket': 'YOUR_BUCKET_HERE'}}}},
-    dask_config=DaskConfig(address='dask_scheduler.dns-name:8787')
+    env_config={
+        'storage': {'s3': {'config': {'s3_bucket': 'YOUR_BUCKET_HERE'}}},
+        'execution': {'dask': {'config': {'address': 'dask_scheduler.dns-name:8787'}}}
+    },
 )
 ```
 
@@ -79,7 +81,6 @@ module `your.python.module` that is importable on `PYTHONPATH`.
 
 
 ## Limitations
-* Presently, `dagster-dask` does not support launching Dask workloads from Dagit.
 * For distributed execution, you must use S3 for intermediates and run storage, as shown above.
 * Dagster logs are not yet retrieved from Dask workers; this will be addressed in follow-up work.
 

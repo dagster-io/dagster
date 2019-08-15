@@ -47,6 +47,7 @@ from dagster_graphql.implementation.pipeline_run_storage import (
     FilesystemRunStorage,
     InMemoryRunStorage,
 )
+from dagster_graphql.implementation.scheduler import SystemCronScheduler
 
 
 class PoorMansDataFrame_(list):
@@ -78,10 +79,11 @@ PoorMansDataFrame = as_dagster_type(
 )
 
 
-def define_context(raise_on_error=True, log_dir=None):
+def define_context(raise_on_error=True, log_dir=None, schedule_dir=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
         pipeline_runs=FilesystemRunStorage(log_dir) if log_dir else InMemoryRunStorage(),
+        scheduler=SystemCronScheduler(schedule_dir) if schedule_dir else None,
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,
     )
@@ -150,6 +152,7 @@ def define_repository():
             pipeline_with_expectations,
             pipeline_with_list,
             pipeline_with_step_metadata,
+            required_resource_pipeline,
             scalar_output_pipeline,
             secret_pipeline,
         ],
@@ -415,6 +418,20 @@ def multi_mode_with_resources():
         return context.resources.op(3)
 
     return apply_to_three()
+
+
+@resource(config_field=Field(Int, is_optional=True))
+def req_resource(_):
+    return 1
+
+
+@pipeline(mode_defs=[ModeDefinition(resource_defs={'R1': req_resource})])
+def required_resource_pipeline():
+    @solid(required_resource_keys={'R1'})
+    def solid_with_required_resource(_):
+        return 1
+
+    solid_with_required_resource()
 
 
 @logger(config_field=Field(str))

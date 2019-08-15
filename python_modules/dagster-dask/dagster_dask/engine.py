@@ -74,22 +74,6 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
                     if step_key_set and step.key not in step_key_set:
                         continue
 
-                    step_context = pipeline_context.for_step(step)
-
-                    if step_context.run_config.loggers:
-                        step_context.log.debug(
-                            'Loggers cannot be injected via RunConfig using the multiprocess '
-                            'executor. Define loggers on the mode instead. Ignoring loggers: '
-                            '[{logger_names}]'.format(
-                                logger_names=', '.join(
-                                    [
-                                        '\'{name}\''.format(name=logger.name)
-                                        for logger in step_context.run_config.loggers
-                                    ]
-                                )
-                            )
-                        )
-
                     # We ensure correctness in sequencing by letting Dask schedule futures and
                     # awaiting dependencies within each step.
                     dependencies = []

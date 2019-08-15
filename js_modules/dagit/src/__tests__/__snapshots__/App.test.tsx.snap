@@ -13,6 +13,7 @@ Array [
         onClick={[Function]}
       >
         <img
+          alt="logo"
           src={
             Object {
               "process": [Function],
@@ -162,6 +163,7 @@ Array [
         onClick={[Function]}
       >
         <img
+          alt="logo"
           src={
             Object {
               "process": [Function],
@@ -283,6 +285,7 @@ Array [
         onClick={[Function]}
       >
         <img
+          alt="logo"
           src={
             Object {
               "process": [Function],
@@ -432,6 +435,7 @@ Array [
         onClick={[Function]}
       >
         <img
+          alt="logo"
           src={
             Object {
               "process": [Function],
@@ -581,6 +585,7 @@ Array [
         onClick={[Function]}
       >
         <img
+          alt="logo"
           src={
             Object {
               "process": [Function],
@@ -730,6 +735,7 @@ Array [
         onClick={[Function]}
       >
         <img
+          alt="logo"
           src={
             Object {
               "process": [Function],

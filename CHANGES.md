@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.5.6
+- Execution details are now configurable. The new top-level `ExecutorDefinition` and `@executor`
+  APIs are used to define in-process, multiprocess, and Dask executors, and may be used by users to
+  define new executors. Like loggers and storage, executors may be added to a `ModeDefinition` and
+  may be selected and configured through the `execution` field in the environment dict or YAML,
+  including through Dagit. Executors may no longer be configured through the `RunConfig`.
+- The API of dagster-dask has changed. Pipelines are now executed on Dask using the
+  ordinary `execute_pipeline` API, and the Dask executor is configured through the environment.
+  (See the dagster-dask README for details.)
+- Added the `PresetDefinition.from_files` API for constructing a preset from a list of environment
+  files (replacing the old usage of this class). `PresetDefinition` may now be directly
+  instantiated with an environment dict.
+- Added a prototype integration with [dbt](https://www.getdbt.com/).
+- Added a prototype integration with [Great Expectations](https://greatexpectations.io/).
+- Added a prototype integration with [Papertrail](https://papertrailapp.com/).
+- Added the dagster-bash library.
+- Added the dagster-ssh library.
+- Added the dagster-sftp library.
+- Loosened the PyYAML compatibility requirement.
+- The dagster CLI no longer takes a `--raise-on-error` or `--no-raise-on-error` flag. Set this
+  option in executor config.
+- Added a `MarkdownMetadataEntryData` class, so events yielded from client code may now render
+  markdown in their metadata.
+- Bug fixes, documentation improvements, and improvements to error display.
+  
 ## 0.5.5
 - Dagit now accepts parameters via environment variables prefixed with `DAGIT_`, e.g. `DAGIT_PORT`.
 - Fixes an issue with reexecuting Dagstermill notebooks from Dagit.

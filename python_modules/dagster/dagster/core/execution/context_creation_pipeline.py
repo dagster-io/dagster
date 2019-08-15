@@ -392,10 +392,6 @@ def create_log_manager(context_creation_data):
                 )
             )
 
-    if run_config.loggers:
-        for logger in run_config.loggers:
-            loggers.append(logger)
-
     if not loggers:
         for (logger_def, logger_config) in default_system_loggers():
             loggers.append(
@@ -403,6 +399,9 @@ def create_log_manager(context_creation_data):
                     InitLoggerContext(logger_config, pipeline_def, logger_def, run_config.run_id)
                 )
             )
+
+    if run_config.log_sink:
+        loggers.append(run_config.log_sink)
 
     if run_config.event_callback:
         init_logger_context = InitLoggerContext({}, pipeline_def, logger_def, run_config.run_id)
@@ -444,8 +443,8 @@ def _create_context_free_log_manager(run_config, pipeline_def):
                 InitLoggerContext({}, pipeline_def, event_logger_def, run_config.run_id)
             )
         ]
-    elif run_config.loggers:
-        loggers += run_config.loggers
+    if run_config.log_sink:
+        loggers.append(run_config.log_sink)
 
     return DagsterLogManager(run_config.run_id, get_logging_tags(run_config, pipeline_def), loggers)
 
