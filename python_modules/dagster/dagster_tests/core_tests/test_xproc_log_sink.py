@@ -221,6 +221,7 @@ def test_concurrent_multiprocessing_logging():
             for i, record in enumerate(records):
                 json_record = record[1]
                 assert json_record == seven.json.dumps(test_log_records[i].__dict__)
+        conn.close()
 
 
 def test_error_during_logging(caplog):
