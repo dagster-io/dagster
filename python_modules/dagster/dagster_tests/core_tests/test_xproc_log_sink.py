@@ -154,6 +154,27 @@ def test_concurrent_multithreaded_logging():
                 assert json_record == seven.json.dumps(test_log_records[i].__dict__)
 
 
+def sqlite3_process_target(sqlite3_db_path, run_id):
+    sqlite3_handler = JsonSqlite3Handler(sqlite3_db_path)
+    sqlite3_logger_def = construct_single_handler_logger('sqlite3', 'debug', sqlite3_handler)
+    sqlite3_logger = sqlite3_logger_def.logger_fn(
+        dummy_init_logger_context(sqlite3_logger_def, run_id)
+    )
+    sqlite3_log_manager = DagsterLogManager(run_id, {}, [sqlite3_logger])
+
+    for i in range(1000):
+        sqlite3_log_manager.info('Testing ' + str(i))
+
+
+def test_thread_target(sqlite3_db_path, is_done, run_id, test_log_records):
+    test_handler = LogTestHandler(test_log_records)
+    test_logger_def = construct_single_handler_logger('test', 'debug', test_handler)
+    test_logger = test_logger_def.logger_fn(dummy_init_logger_context(test_logger_def, run_id))
+    test_log_manager = DagsterLogManager(run_id, {}, [test_logger])
+    test_log_watcher = JsonSqlite3LogWatcher(sqlite3_db_path, test_log_manager, is_done)
+    test_log_watcher.watch()
+
+
 # https://docs.python.org/2.7/library/multiprocessing.html#windows
 @pytest.mark.skipif(
     sys.version_info >= (2, 7) and sys.version_info < (3,) and os.name == 'nt',
@@ -166,34 +187,13 @@ def test_concurrent_multiprocessing_logging():
     with safe_tempfile_path() as sqlite3_db_path:
         is_done = threading.Event()
 
-        def sqlite3_process_target(sqlite3_db_path):
-            sqlite3_handler = JsonSqlite3Handler(sqlite3_db_path)
-            sqlite3_logger_def = construct_single_handler_logger(
-                'sqlite3', 'debug', sqlite3_handler
-            )
-            sqlite3_logger = sqlite3_logger_def.logger_fn(
-                dummy_init_logger_context(sqlite3_logger_def, run_id)
-            )
-            sqlite3_log_manager = DagsterLogManager(run_id, {}, [sqlite3_logger])
-
-            for i in range(1000):
-                sqlite3_log_manager.info('Testing ' + str(i))
-
-        def test_thread_target(sqlite3_db_path, is_done):
-            test_handler = LogTestHandler(test_log_records)
-            test_logger_def = construct_single_handler_logger('test', 'debug', test_handler)
-            test_logger = test_logger_def.logger_fn(
-                dummy_init_logger_context(test_logger_def, run_id)
-            )
-            test_log_manager = DagsterLogManager(run_id, {}, [test_logger])
-            test_log_watcher = JsonSqlite3LogWatcher(sqlite3_db_path, test_log_manager, is_done)
-            test_log_watcher.watch()
-
         sqlite3_process = multiprocessing.Process(
-            target=sqlite3_process_target, args=(sqlite3_db_path,)
+            target=sqlite3_process_target, args=(sqlite3_db_path, run_id)
         )
 
-        test_thread = threading.Thread(target=test_thread_target, args=(sqlite3_db_path, is_done))
+        test_thread = threading.Thread(
+            target=test_thread_target, args=(sqlite3_db_path, is_done, run_id, test_log_records)
+        )
 
         init_db(sqlite3_db_path)
 
