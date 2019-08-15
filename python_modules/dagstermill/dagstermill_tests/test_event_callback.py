@@ -4,6 +4,7 @@ from dagster import RunConfig, execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
+from dagster.core.events import CallbackEventSink
 
 
 def test_event_callback_logging():
@@ -22,7 +23,8 @@ def test_event_callback_logging():
     )
 
     execute_pipeline(
-        handle.build_pipeline_definition(), run_config=RunConfig(event_callback=_event_callback)
+        handle.build_pipeline_definition(),
+        run_config=RunConfig(event_sink=CallbackEventSink(_event_callback)),
     )
 
     assert DagsterEventType.PIPELINE_SUCCESS in events.keys()

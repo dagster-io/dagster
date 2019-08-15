@@ -1,8 +1,8 @@
 import os
 
 from dagster import check
-from dagster.core.events import DagsterEvent, log_step_event
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
+from dagster.core.events import log_step_event
 from dagster.core.execution.config import MultiprocessExecutorConfig, RunConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
@@ -58,11 +58,10 @@ def execute_step_out_of_process(step_context, step):
         )
 
         with event_sink.log_forwarding(step_context.log):
-
-            for step_event in execute_child_process_command(command):
-                if step_context.run_config.event_callback and isinstance(step_event, DagsterEvent):
-                    log_step_event(step_context, step_event)
-                yield step_event
+            for event_or_none in execute_child_process_command(command):
+                yield event_or_none
+                if event_or_none is not None:
+                    log_step_event(step_context, event_or_none)
 
 
 def bounded_parallel_executor(step_contexts, limit):

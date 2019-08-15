@@ -11,11 +11,16 @@ from dagster.core.definitions import (
     TypeCheck,
 )
 from dagster.core.definitions.events import ObjectStoreOperationType
+from dagster.core.execution.context.system import (
+    SystemStepExecutionContext,
+    SystemPipelineExecutionContext,
+)
 from dagster.core.execution.plan.objects import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.utils.error import SerializableErrorInfo
 from dagster.utils.timing import format_duration
-from .event_sink import EventSink
+
+from .event_sink import CallbackEventSink, EventSink, InMemoryEventSink
 from .sqlite_event_sink import SqliteEventSink
 
 
@@ -89,6 +94,9 @@ def _validate_event_specific_data(event_type, event_specific_data):
 
 
 def log_step_event(step_context, event):
+    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
+    check.inst_param(event, 'event', DagsterEvent)
+
     event_type = DagsterEventType(event.event_type_value)
     log_fn = step_context.log.error if event_type in FAILURE_EVENTS else step_context.log.debug
 
@@ -128,7 +136,6 @@ class DagsterEvent(
 ):
     @staticmethod
     def from_step(event_type, step_context, event_specific_data=None, message=None):
-        from dagster.core.execution.context.system import SystemStepExecutionContext
 
         check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
 
@@ -149,9 +156,8 @@ class DagsterEvent(
 
     @staticmethod
     def from_pipeline(event_type, pipeline_context, message=None):
-        from dagster.core.execution.context.system import SystemPipelineExecutionContext
-
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+
         pipeline_name = pipeline_context.pipeline_def.name
 
         event = DagsterEvent(

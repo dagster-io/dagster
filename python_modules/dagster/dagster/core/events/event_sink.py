@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
 import six
 
@@ -26,16 +26,19 @@ class EventSink(six.with_metaclass(ABCMeta)):
     EventSinks are used to to capture the events that are produced during a dagster run.
     '''
 
-    @abstractmethod
-    def on_log_record(self, record):
-        pass
-
-    @abstractmethod
     def on_pipeline_init(self):
         pass
 
-    @abstractmethod
     def on_pipeline_teardown(self):
+        pass
+
+    def on_raw_log_record(self, record):
+        pass
+
+    def on_dagster_event(self, dagster_event):
+        pass
+
+    def on_log_message(self, log_message):
         pass
 
     def get_logger(self):
@@ -45,4 +48,48 @@ class EventSink(six.with_metaclass(ABCMeta)):
         return logger
 
     def handle_record(self, record):
-        self.on_log_record(record)
+        from dagster.core.events.log import (
+            construct_event_record,
+            DagsterEventRecord,
+            LogMessageRecord,
+            StructuredLoggerMessage,
+        )
+
+        self.on_raw_log_record(record)
+
+        event = construct_event_record(
+            StructuredLoggerMessage(
+                name=record.name,
+                message=record.msg,
+                level=record.levelno,
+                meta=record.dagster_meta,
+                record=record,
+            )
+        )
+        if isinstance(event, LogMessageRecord):
+            self.on_log_message(event)
+        elif isinstance(event, DagsterEventRecord):
+            self.on_dagster_event(event)
+
+
+class InMemoryEventSink(EventSink):
+    def __init__(self):
+        self.dagster_events = []
+        self.log_messages = []
+
+    def on_dagster_event(self, dagster_event):
+        self.dagster_events.append(dagster_event)
+
+    def on_log_message(self, log_message):
+        self.log_messages.append(log_message)
+
+
+class CallbackEventSink(EventSink):
+    def __init__(self, cb):
+        self.cb = cb
+
+    def on_dagster_event(self, dagster_event):
+        self.cb(dagster_event)
+
+    def on_log_message(self, log_message):
+        self.cb(log_message)

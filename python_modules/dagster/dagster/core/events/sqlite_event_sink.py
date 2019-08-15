@@ -120,15 +120,12 @@ class SqliteEventSink(EventSink):
                 con.execute(CREATE_LOG_TABLE_STATEMENT)
             con.close()
 
-    def on_pipeline_init(self):
-        pass
-
     def on_pipeline_teardown(self):
         if self.conn:
             self.conn.close()
             self.conn = None
 
-    def on_log_record(self, record):
+    def on_raw_log_record(self, record):
         log_dict = copy.copy(record.__dict__)
 
         if self.log_msg_only and log_dict.get('dagster_meta', {}).get('dagster_event'):
