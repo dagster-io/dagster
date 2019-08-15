@@ -20,7 +20,7 @@ from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import ResourcesStack
 from dagster.loggers import colored_console_logger
-from dagster.loggers.xproc_log_sink import construct_sqlite_logger
+from dagster.core.events import SqliteEventSink
 
 from .context import DagstermillExecutionContext
 from .errors import DagstermillError
@@ -105,7 +105,8 @@ class Manager:
         solid_def = pipeline_def.get_solid(solid_handle)
 
         run_config = RunConfig(**run_config_kwargs)
-        run_config = run_config.with_log_sink(construct_sqlite_logger(output_log_path))
+        # since we are rehydrating the SqliteEventSink we will skip the db init
+        run_config = run_config.with_event_sink(SqliteEventSink(output_log_path, skip_db_init=True))
 
         self.marshal_dir = marshal_dir
         self.in_pipeline = True

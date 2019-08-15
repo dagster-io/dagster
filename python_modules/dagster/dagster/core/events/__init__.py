@@ -15,6 +15,8 @@ from dagster.core.execution.plan.objects import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.utils.error import SerializableErrorInfo
 from dagster.utils.timing import format_duration
+from .event_sink import EventSink
+from .sqlite_event_sink import SqliteEventSink
 
 
 class DagsterEventType(Enum):

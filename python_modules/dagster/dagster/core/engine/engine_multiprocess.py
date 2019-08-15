@@ -1,5 +1,4 @@
 import os
-import threading
 
 from dagster import check
 from dagster.core.events import DagsterEvent, log_step_event
@@ -7,7 +6,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan_itera
 from dagster.core.execution.config import MultiprocessExecutorConfig, RunConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.loggers.xproc_log_sink import JsonSqlite3LogWatcher, construct_sqlite_logger, init_db
+from dagster.core.events import SqliteEventSink
 from dagster.utils import safe_tempfile_path
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
@@ -15,20 +14,17 @@ from .engine_base import IEngine
 
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
-    def __init__(self, environment_dict, run_config, executor_config, step_key, log_sink_file):
+    def __init__(self, environment_dict, run_config, executor_config, step_key):
         self.environment_dict = environment_dict
         self.executor_config = executor_config
         self.run_config = run_config
         self.step_key = step_key
-        self.log_sink_file = log_sink_file
 
     def execute(self):
         check.inst(self.executor_config, MultiprocessExecutorConfig)
         pipeline_def = self.executor_config.handle.build_pipeline_definition()
 
-        run_config = self.run_config.with_tags(pid=str(os.getpid())).with_log_sink(
-            construct_sqlite_logger(self.log_sink_file, log_msg_only=True)
-        )
+        run_config = self.run_config.with_tags(pid=str(os.getpid()))
 
         environment_dict = dict(
             self.environment_dict,
@@ -45,46 +41,28 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
 
 
 def execute_step_out_of_process(step_context, step):
-    child_run_config = RunConfig(
-        run_id=step_context.run_config.run_id,
-        tags=step_context.run_config.tags,
-        log_sink=None,
-        event_callback=None,
-        reexecution_config=None,
-        step_keys_to_execute=step_context.run_config.step_keys_to_execute,
-        mode=step_context.run_config.mode,
-    )
 
-    with safe_tempfile_path() as log_sink_file:
-        init_db(log_sink_file)
-        # Although the type of is_done is threading._Event in py2, not threading.Event,
-        # it is still constructed using the threading.Event() factory
-        is_done = threading.Event()
+    with safe_tempfile_path() as sqlite_file:
+        event_sink = SqliteEventSink(sqlite_file, log_msg_only=True)
 
-        def log_watcher_thread_target():
-            log_watcher = JsonSqlite3LogWatcher(log_sink_file, step_context.log, is_done)
-            log_watcher.watch()
-
-        log_watcher_thread = threading.Thread(target=log_watcher_thread_target)
-
-        log_watcher_thread.start()
+        child_run_config = RunConfig(
+            run_id=step_context.run_config.run_id,
+            tags=step_context.run_config.tags,
+            event_sink=event_sink,
+            step_keys_to_execute=step_context.run_config.step_keys_to_execute,
+            mode=step_context.run_config.mode,
+        )
 
         command = InProcessExecutorChildProcessCommand(
-            step_context.environment_dict,
-            child_run_config,
-            step_context.executor_config,
-            step.key,
-            log_sink_file,
+            step_context.environment_dict, child_run_config, step_context.executor_config, step.key
         )
-        try:
+
+        with event_sink.log_forwarding(step_context.log):
+
             for step_event in execute_child_process_command(command):
                 if step_context.run_config.event_callback and isinstance(step_event, DagsterEvent):
                     log_step_event(step_context, step_event)
                 yield step_event
-
-        finally:
-            is_done.set()
-            log_watcher_thread.join()
 
 
 def bounded_parallel_executor(step_contexts, limit):

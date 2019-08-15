@@ -169,6 +169,9 @@ def scoped_pipeline_context(
     try:
         log_manager = create_log_manager(context_creation_data)
 
+        if run_config.event_sink:
+            run_config.event_sink.on_pipeline_init()
+
         with scoped_resources_builder_cm(
             context_creation_data.pipeline_def,
             context_creation_data.environment_config,
@@ -206,6 +209,9 @@ def scoped_pipeline_context(
             failure_data=PipelineInitFailureData(error=error_info),
             log_manager=_create_context_free_log_manager(run_config, pipeline_def),
         )
+    finally:
+        if run_config.event_sink:
+            run_config.event_sink.on_pipeline_teardown()
 
 
 def create_system_storage_data(
@@ -400,8 +406,8 @@ def create_log_manager(context_creation_data):
                 )
             )
 
-    if run_config.log_sink:
-        loggers.append(run_config.log_sink)
+    if run_config.event_sink:
+        loggers.append(run_config.event_sink.get_logger())
 
     if run_config.event_callback:
         init_logger_context = InitLoggerContext({}, pipeline_def, logger_def, run_config.run_id)
@@ -443,8 +449,8 @@ def _create_context_free_log_manager(run_config, pipeline_def):
                 InitLoggerContext({}, pipeline_def, event_logger_def, run_config.run_id)
             )
         ]
-    if run_config.log_sink:
-        loggers.append(run_config.log_sink)
+    if run_config.event_sink:
+        loggers.append(run_config.event_sink.get_logger())
 
     return DagsterLogManager(run_config.run_id, get_logging_tags(run_config, pipeline_def), loggers)
 
