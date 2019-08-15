@@ -212,7 +212,7 @@ def test_default_context_logging():
     def default_context_solid(context):
         called['yes'] = True
         for logger in context.log.loggers:
-            assert logger.level == logging.INFO
+            assert logger.level == logging.DEBUG
 
     execute_solid(default_context_solid)
 
