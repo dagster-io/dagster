@@ -13,18 +13,20 @@ class _EventSinkLogHandler(logging.Handler):
         try:
             self.sink.handle_record(record)
 
-        # preserving existing behavior here - but i think the right thing to do
-        # depends on what the EventSink is being used for, likely need an is_critical
-        # flag or something
         except Exception as e:  # pylint: disable=W0703
             logging.critical('Error during logging!')
             logging.exception(str(e))
+            if self.sink.raise_on_error:
+                raise
 
 
 class EventSink(six.with_metaclass(ABCMeta)):
     '''
     EventSinks are used to to capture the events that are produced during a dagster run.
     '''
+
+    def __init__(self, raise_on_error=False):
+        self.raise_on_error = raise_on_error
 
     def on_pipeline_init(self):
         pass
@@ -74,18 +76,20 @@ class EventSink(six.with_metaclass(ABCMeta)):
 
 class InMemoryEventSink(EventSink):
     def __init__(self):
-        self.dagster_events = []
-        self.log_messages = []
+        super(InMemoryEventSink, self).__init__()
+        self.dagster_event_records = []
+        self.log_message_records = []
 
     def on_dagster_event(self, dagster_event):
-        self.dagster_events.append(dagster_event)
+        self.dagster_event_records.append(dagster_event)
 
     def on_log_message(self, log_message):
-        self.log_messages.append(log_message)
+        self.log_message_records.append(log_message)
 
 
 class CallbackEventSink(EventSink):
     def __init__(self, cb):
+        super(CallbackEventSink, self).__init__()
         self.cb = cb
 
     def on_dagster_event(self, dagster_event):

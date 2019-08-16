@@ -226,8 +226,8 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
         pipeline=dauphin_pipeline,
         has_failures=any(
             er
-            for er in event_sink.dagster_events
+            for er in event_sink.dagster_event_records
             if er.is_dagster_event and er.dagster_event.event_type == DagsterEventType.STEP_FAILURE
         ),
-        step_events=list(map(to_graphql_event, event_sink.dagster_events)),
+        step_events=list(map(to_graphql_event, event_sink.dagster_event_records)),
     )

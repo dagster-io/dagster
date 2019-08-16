@@ -10,6 +10,7 @@ from dagster.utils import camelcase
 from .input import InputDefinition
 from .output import OutputDefinition
 from .utils import DEFAULT_OUTPUT, struct_to_string
+from dagster.core.serdes import whitelist_for_serdes
 
 
 class SolidInvocation(namedtuple('Solid', 'name alias resource_mapper_fn')):
@@ -134,6 +135,7 @@ class Solid(object):
         return self.container_definition.mapped_input(self.name, input_name)
 
 
+@whitelist_for_serdes
 class SolidHandle(namedtuple('_SolidHandle', 'name definition_name parent')):
     def __new__(cls, name, definition_name, parent):
         return super(SolidHandle, cls).__new__(

@@ -18,13 +18,10 @@ CREATE_LOG_TABLE_STATEMENT = '''create table if not exists logs (
 )
 '''
 
-INSERT_LOG_RECORD_STATEMENT = '''insert into logs (json_log) values (
-    '{json_log}'
-)
-'''
+INSERT_LOG_RECORD_STATEMENT = '''insert into logs (json_log) values (?)'''
 
 RETRIEVE_LOG_RECORDS_STATEMENT = '''select * from logs
-    where timestamp >= {timestamp}
+    where timestamp >= ?
     order by timestamp asc
 '''
 
@@ -44,24 +41,40 @@ class _LogWatcher(object):
         self.next_timestamp = 0
         self.log_manager = log_manager
         self.is_done = is_done
+        self.conn = None
 
     def connect(self):
-        return sqlite3.connect(self.sqlite_db_path)
+        if self.conn is None:
+            self.conn = sqlite3.connect(self.sqlite_db_path)
+        return self.conn
 
     def watch(self):
+        from dagster.core.serdes import unpack_value
+
         last_pass = False
         while True:
+            if self.is_done.is_set():
+                last_pass = True
+            else:
+                time.sleep(0.1)  # 100 ms
+
             with self.connect() as conn:
                 res = (
                     conn.cursor()
-                    .execute(RETRIEVE_LOG_RECORDS_STATEMENT.format(timestamp=self.next_timestamp))
+                    .execute(RETRIEVE_LOG_RECORDS_STATEMENT, (self.next_timestamp,))
                     .fetchall()
                 )
+
                 if res:
                     self.next_timestamp = res[-1][0] + 1
                     json_records = [r[1] for r in res]
                     for json_record in json_records:
-                        record = logging.makeLogRecord(json.loads(json_record))
+                        base_dict = json.loads(json_record)
+
+                        if base_dict.get('dagster_meta'):
+                            base_dict['dagster_meta'] = unpack_value(base_dict['dagster_meta'])
+
+                        record = logging.makeLogRecord(base_dict)
 
                         for logger in self.log_manager.loggers:
                             for handler in logger.handlers:
@@ -70,12 +83,10 @@ class _LogWatcher(object):
                                 # we need to filter for log level here
                                 if handler.level <= record.levelno:
                                     handler.handle(record)
-            conn.close()
-            time.sleep(0.5)  # 500 ms
+
             if last_pass:
-                break
-            if self.is_done.is_set():
-                last_pass = True
+                conn.close()
+                return
 
 
 class SqliteEventSink(EventSink):
@@ -110,34 +121,34 @@ class SqliteEventSink(EventSink):
     process to complete logging.
     '''
 
-    def __init__(self, sqlite_path, log_msg_only=False, skip_db_init=False):
-        self.sqlite_path = sqlite_path
-        self.log_msg_only = log_msg_only
+    def __init__(self, sqlite_path, skip_db_init=False, raise_on_error=False):
+        super(SqliteEventSink, self).__init__(raise_on_error=raise_on_error)
         self.conn = None
+        self.sqlite_path = sqlite_path
 
         if not skip_db_init:
-            with sqlite3.connect(self.sqlite_path) as con:
+            with sqlite3.connect(sqlite_path) as con:
                 con.execute(CREATE_LOG_TABLE_STATEMENT)
             con.close()
 
-    def on_pipeline_teardown(self):
-        if self.conn:
-            self.conn.close()
-            self.conn = None
-
     def on_raw_log_record(self, record):
-        log_dict = copy.copy(record.__dict__)
+        from dagster.core.serdes import pack_value
 
-        if self.log_msg_only and log_dict.get('dagster_meta', {}).get('dagster_event'):
-            return
+        log_dict = copy.copy(record.__dict__)
+        if log_dict.get('dagster_meta'):
+            log_dict['dagster_meta'] = pack_value(log_dict['dagster_meta'])
 
         with self.connect() as con:
-            con.execute(INSERT_LOG_RECORD_STATEMENT.format(json_log=seven.json.dumps(log_dict)))
+            con.execute(INSERT_LOG_RECORD_STATEMENT, (seven.json.dumps(log_dict),))
 
     def connect(self):
         if self.conn is None:
             self.conn = sqlite3.connect(self.sqlite_path)
         return self.conn
+
+    def on_pipeline_teardown(self):
+        if self.conn:
+            self.conn.close()
 
     @contextmanager
     def log_forwarding(self, log_manager):

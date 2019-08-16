@@ -2,7 +2,6 @@ import os
 
 from dagster import check
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster.core.events import log_step_event
 from dagster.core.execution.config import MultiprocessExecutorConfig, RunConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
@@ -43,7 +42,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
 def execute_step_out_of_process(step_context, step):
 
     with safe_tempfile_path() as sqlite_file:
-        event_sink = SqliteEventSink(sqlite_file, log_msg_only=True)
+        event_sink = SqliteEventSink(sqlite_file, raise_on_error=True)
 
         child_run_config = RunConfig(
             run_id=step_context.run_config.run_id,
@@ -60,8 +59,6 @@ def execute_step_out_of_process(step_context, step):
         with event_sink.log_forwarding(step_context.log):
             for event_or_none in execute_child_process_command(command):
                 yield event_or_none
-                if event_or_none is not None:
-                    log_step_event(step_context, event_or_none)
 
 
 def bounded_parallel_executor(step_contexts, limit):

@@ -8,6 +8,8 @@ from dagster import (
     PipelineDefinition,
     execute_pipeline,
     lambda_solid,
+    RunConfig,
+    InMemoryEventSink,
 )
 
 
@@ -115,3 +117,20 @@ def test_mem_storage_error_pipeline_multiprocess():
         'configure your pipeline in the storage config section to use '
         'persistent system storage such as the filesystem.'
     ) in str(exc_info.value)
+
+
+def test_multiproc_event_sink():
+    pipeline = ExecutionTargetHandle.for_pipeline_python_file(
+        __file__, 'define_diamond_pipeline'
+    ).build_pipeline_definition()
+
+    sink = InMemoryEventSink()
+
+    result = execute_pipeline(
+        pipeline,
+        run_config=RunConfig(event_sink=sink),
+        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+    )
+
+    assert result.success
+    assert len(result.event_list) == len(sink.dagster_event_records)
