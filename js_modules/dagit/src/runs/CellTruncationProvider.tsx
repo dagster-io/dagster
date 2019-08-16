@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as ReactDOM from "react-dom";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import { showCustomAlert } from "../CustomAlertProvider";
@@ -36,12 +35,19 @@ const OverflowBanner = styled.div`
 `;
 
 export class CellTruncationProvider extends React.Component<
-  { style: React.CSSProperties },
+  {
+    style: React.CSSProperties;
+    onExpand?: () => void;
+  },
   { isOverflowing: boolean }
 > {
   state = {
     isOverflowing: false
   };
+
+  private contentContainerRef: React.RefObject<
+    HTMLDivElement
+  > = React.createRef();
 
   componentDidMount() {
     this.detectOverflow();
@@ -52,12 +58,13 @@ export class CellTruncationProvider extends React.Component<
   }
 
   detectOverflow() {
-    // eslint-disable-next-line react/no-find-dom-node
-    const el = ReactDOM.findDOMNode(this);
-    if (!el || !(el instanceof HTMLElement)) return;
+    const child =
+      this.contentContainerRef.current &&
+      this.contentContainerRef.current.firstElementChild;
 
-    const child = el.firstElementChild;
-    if (!child) return;
+    if (!child) {
+      return;
+    }
 
     const isOverflowing = child.scrollHeight > this.props.style.height!;
     if (isOverflowing !== this.state.isOverflowing) {
@@ -65,18 +72,16 @@ export class CellTruncationProvider extends React.Component<
     }
   }
 
-  onView = () => {
-    // eslint-disable-next-line react/no-find-dom-node
-    const el = ReactDOM.findDOMNode(this) as HTMLElement;
-    // Would be nice to have a better selector here
-    // https://github.com/dagster-io/dagster/issues/1623
+  defaultExpand() {
     const message =
-      el.firstChild &&
-      el.firstChild.childNodes[1] &&
-      el.firstChild.childNodes[1].childNodes[1] &&
-      el.firstChild.childNodes[1].childNodes[1].textContent;
-    if (!message) return;
-    showCustomAlert({ message: message, pre: true });
+      this.contentContainerRef.current &&
+      this.contentContainerRef.current.textContent;
+    message && showCustomAlert({ message, pre: true });
+  }
+
+  onView = () => {
+    const { onExpand } = this.props;
+    onExpand ? onExpand() : this.defaultExpand();
   };
 
   render() {
@@ -84,7 +89,7 @@ export class CellTruncationProvider extends React.Component<
 
     return (
       <div style={style}>
-        {this.props.children}
+        <div ref={this.contentContainerRef}>{this.props.children}</div>
         {this.state.isOverflowing && (
           <>
             <OverflowFade />

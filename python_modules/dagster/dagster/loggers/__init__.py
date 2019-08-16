@@ -58,7 +58,7 @@ def default_system_loggers():
 
     Returns:
         List[Tuple[LoggerDefinition, dict]]: Default loggers and their associated configs.'''
-    return [(colored_console_logger, {'name': 'dagster', 'log_level': 'INFO'})]
+    return [(colored_console_logger, {'name': 'dagster', 'log_level': 'DEBUG'})]
 
 
 def default_loggers():

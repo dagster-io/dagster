@@ -18,6 +18,7 @@ from dagster import (
 )
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.definitions.dependency import SolidHandle
+from dagster.utils import safe_tempfile_path
 
 import dagstermill
 from dagstermill import DagstermillError
@@ -45,14 +46,14 @@ def in_pipeline_manager(
     )
 
     try:
-        with tempfile.NamedTemporaryFile() as output_log_file:
+        with safe_tempfile_path() as output_log_file_path:
             context_dict = {
                 'run_config': RunConfig(run_id=run_id, mode='default'),
                 'solid_handle': solid_handle,
                 'handle': handle,
                 'marshal_dir': marshal_dir,
                 'environment_dict': {},
-                'output_log_path': output_log_file.name,
+                'output_log_path': output_log_file_path,
             }
 
             manager.reconstitute_pipeline_context(**dict(context_dict, **kwargs))

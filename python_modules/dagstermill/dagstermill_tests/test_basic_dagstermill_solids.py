@@ -10,6 +10,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 from dagster import RunConfig, execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.definitions.events import PathMetadataEntryData
+from dagster.utils import safe_tempfile_path
 from dagstermill import DagstermillError, DagstermillExecutionError
 
 
@@ -187,10 +188,7 @@ def test_hello_world_reexecution():
 
 @pytest.mark.notebook_test
 def test_resources_notebook():
-    with tempfile.NamedTemporaryFile() as fd:
-        path = fd.name
-
-    try:
+    with safe_tempfile_path() as path:
         with exec_for_test(
             'define_resource_pipeline',
             {'resources': {'list': {'config': path}}},
@@ -216,18 +214,12 @@ def test_resources_notebook():
             assert msgs[4] == msgs[5] == 'Closed'
             assert msgs[1] == 'Hello, solid!'
             assert msgs[3] == 'Hello, notebook!'
-    finally:
-        if os.path.exists(path):
-            os.unlink(path)
 
 
 @pytest.mark.notebook_test
 def test_resources_notebook_with_exception():
     result = None
-    with tempfile.NamedTemporaryFile() as fd:
-        path = fd.name
-
-    try:
+    with safe_tempfile_path() as path:
         with exec_for_test(
             'define_resource_with_exception_pipeline',
             {
@@ -259,10 +251,6 @@ def test_resources_notebook_with_exception():
             assert msgs[4] == msgs[5] == 'Closed'
             assert msgs[1] == 'Hello, solid!'
             assert msgs[3] == 'Hello, notebook!'
-
-    finally:
-        if os.path.exists(path):
-            os.unlink(path)
 
 
 @pytest.mark.notebook_test
