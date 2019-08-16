@@ -360,7 +360,7 @@ metadata along with their SQL query:
 
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
-   :lines: 346-384
+   :lines: 344-382
 
 
 This kind of interface can supercharge the work of analysts who are highly skilled in SQL, but for
