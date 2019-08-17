@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['test_basic_expectations_within_compute_step_events 1'] = [
@@ -22,7 +23,7 @@ snapshots['test_basic_expectations_within_compute_step_events 1'] = [
             'success': False
         },
         'level': 'DEBUG',
-        'message': 'Expectation always_false failed',
+        'message': 'Failure',
         'step': {
             'key': 'emit_failed_expectation.compute',
             'solidHandleID': 'emit_failed_expectation'
@@ -46,7 +47,7 @@ snapshots['test_basic_expectations_within_compute_step_events 2'] = [
             'success': True
         },
         'level': 'DEBUG',
-        'message': 'Expectation always_true passed',
+        'message': 'Successful',
         'step': {
             'key': 'emit_successful_expectation.compute',
             'solidHandleID': 'emit_successful_expectation'
@@ -65,7 +66,7 @@ snapshots['test_basic_expectations_within_compute_step_events 3'] = [
             'success': True
         },
         'level': 'DEBUG',
-        'message': 'Expectation no_metadata passed',
+        'message': 'Successful',
         'step': {
             'key': 'emit_successful_expectation_no_metadata.compute',
             'solidHandleID': 'emit_successful_expectation_no_metadata'

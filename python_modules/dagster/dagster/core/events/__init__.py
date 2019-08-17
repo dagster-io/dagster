@@ -371,16 +371,21 @@ class DagsterEvent(
     @staticmethod
     def step_expectation_result(step_context, expectation_result):
         check.inst_param(expectation_result, 'expectation_result', ExpectationResult)
+
+        def _msg():
+            if expectation_result.description:
+                return expectation_result.description
+
+            return 'Expectation{label_clause} {result_verb}'.format(
+                label_clause=' ' + expectation_result.label if expectation_result.label else '',
+                result_verb='passed' if expectation_result.success else 'failed',
+            )
+
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_EXPECTATION_RESULT,
             step_context=step_context,
             event_specific_data=StepExpectationResultData(expectation_result),
-            message='Expectation{label_clause} {result_verb}'.format(
-                label_clause=' {label}'.format(label=expectation_result.label)
-                if expectation_result.label
-                else '',
-                result_verb='passed' if expectation_result.success else 'failed',
-            ),
+            message=_msg(),
         )
 
     @staticmethod

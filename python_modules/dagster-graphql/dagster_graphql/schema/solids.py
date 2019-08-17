@@ -58,8 +58,11 @@ class ISolidDefinitionMixin:
             for output_definition in self._solid_def.output_defs
         ]
 
-    def resolve_required_resources(self, _):
-        return [{'resource_key': key} for key in self._solid_def.required_resource_keys]
+    def resolve_required_resources(self, graphene_info):
+        return [
+            graphene_info.schema.type_named('ResourceRequirement')(key)
+            for key in self._solid_def.required_resource_keys
+        ]
 
 
 class DauphinSolid(dauphin.ObjectType):
@@ -348,6 +351,9 @@ class DauphinResourceRequirement(dauphin.ObjectType):
         name = 'ResourceRequirement'
 
     resource_key = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, resource_key):
+        self.resource_key = resource_key
 
 
 def build_dauphin_solid(solid, deps):
