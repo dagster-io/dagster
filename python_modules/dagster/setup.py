@@ -65,6 +65,9 @@ def _do_setup(name='dagster'):
             # https://github.com/docker/compose/blob/master/setup.py#L35
             'PyYAML>=3.10,<5',
             # core (not explicitly expressed atm)
+            'gevent==1.3.7',
+            'pyrsistent>=0.14.8',
+            'rx==1.6.1',
             'six>=1.11.0',
             'toposort>=1.0',
             "python-crontab>=2.3.8",

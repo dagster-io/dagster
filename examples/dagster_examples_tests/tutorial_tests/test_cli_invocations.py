@@ -8,8 +8,8 @@ from dagit.app import create_app
 from dagster import DagsterInvalidConfigError
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import pipeline_execute_command
+from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, script_relative_path
-from dagster_graphql.implementation.pipeline_run_storage import InMemoryRunStorage
 
 PIPELINES_OR_ERROR_QUERY = '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } }'
 

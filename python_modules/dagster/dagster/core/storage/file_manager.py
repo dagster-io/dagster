@@ -11,7 +11,7 @@ from dagster import check
 from dagster.core.types.decorator import dagster_type
 from dagster.utils import mkdir_p
 
-from .runs import base_directory_for_run
+from .config import base_directory_for_run
 from .temp_file_manager import TempfileManager
 
 

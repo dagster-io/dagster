@@ -16,6 +16,7 @@ from dagster_graphql.schema.runs import from_dagster_event_record, from_event_re
 
 from .fetch_pipelines import get_dauphin_pipeline_from_selector
 from .fetch_runs import get_validated_config, validate_config
+from .pipeline_run_storage import PipelineRunObservableSubscribe
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
@@ -47,6 +48,7 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
     )
 
     run = pipeline_run_storage.create_run(
+        pipeline_name=dauphin_pipeline.get_dagster_pipeline().name,
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id
         else make_new_run_id(),
@@ -122,7 +124,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         execution_plan = create_execution_plan(
             pipeline.get_dagster_pipeline(), run.config, RunConfig(mode=run.mode)
         )
-        return run.observable_after_cursor(after).map(
+        return run.observable_after_cursor(PipelineRunObservableSubscribe, after).map(
             lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
                 runId=run_id,
                 messages=[

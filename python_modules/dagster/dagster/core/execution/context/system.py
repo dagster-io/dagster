@@ -12,7 +12,6 @@ from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileManager
-from dagster.core.storage.runs import RunStorage
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.utils import merge_dicts
 
@@ -52,6 +51,7 @@ class SystemPipelineExecutionContextData(
         from dagster.core.definitions.system_storage import SystemStorageDefinition
         from dagster.core.execution.config import ExecutorConfig
         from dagster.core.storage.intermediates_manager import IntermediatesManager
+        from dagster.core.storage.runs import RunStorage
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
             cls,

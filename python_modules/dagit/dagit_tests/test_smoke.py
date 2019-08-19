@@ -3,9 +3,9 @@ from __future__ import absolute_import, unicode_literals
 import json
 
 from dagster import ExecutionTargetHandle
+from dagster.core.storage.runs import InMemoryRunStorage
 
 from dagit import app
-from dagster_graphql.implementation.pipeline_run_storage import InMemoryRunStorage
 
 
 def test_smoke_app():

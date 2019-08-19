@@ -8,7 +8,7 @@ from dagster import (
     pipeline,
     system_storage,
 )
-from dagster.core.definitions.system_storage import create_mem_system_storage_data
+from dagster.core.storage.system_storage import create_mem_system_storage_data
 
 
 def test_naked_system_storage():

@@ -15,10 +15,9 @@ from dagster import (
     input_hydration_config,
     output_materialization_config,
 )
-
+from dagster.core.storage.runs import InMemoryRunStorage
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_graphql.implementation.pipeline_run_storage import InMemoryRunStorage
 from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster_graphql_tests.graphql.setup import define_context, define_repository
 

@@ -315,6 +315,7 @@ def test_pipeline_step_key_subset_execution_wrong_step_key_in_step_output_handle
         pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
     )
     assert result.success
+    assert result.run_id == old_run_id
 
     new_run_id = str(uuid.uuid4())
 
@@ -343,6 +344,7 @@ def test_pipeline_step_key_subset_execution_wrong_output_name_in_step_output_han
         run_config=RunConfig(run_id=old_run_id),
     )
     assert result.success
+    assert result.run_id == old_run_id
 
     new_run_id = str(uuid.uuid4())
 

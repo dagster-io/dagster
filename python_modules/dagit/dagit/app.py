@@ -12,7 +12,8 @@ from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 from six import text_type
 
-from dagster import check, seven, ExecutionTargetHandle
+from dagster import ExecutionTargetHandle, check, seven
+from dagster.core.storage.runs import RunStorage
 from dagster.utils import Features
 from dagster.utils.log import get_stack_trace_array
 
@@ -21,7 +22,6 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
     MultiprocessingExecutionManager,
     SynchronousExecutionManager,
 )
-from dagster_graphql.implementation.pipeline_run_storage import RunStorage
 from dagster_graphql.schema import create_schema
 
 from dagster.core.scheduler import Scheduler

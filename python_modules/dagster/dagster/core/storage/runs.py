@@ -1,158 +1,299 @@
+import abc
+import glob
+import io
 import json
 import os
+import pickle
 import shutil
-from abc import ABCMeta, abstractmethod
-from collections import OrderedDict, namedtuple
-
-import six
 import sqlite3
+import time
+from collections import OrderedDict
+from enum import Enum
 
+import gevent.lock
+import pyrsistent
+import six
+from rx import Observable
 
 from dagster import check, seven
-from dagster.utils import list_pull, mkdir_p
+from dagster.core.events import DagsterEventType
+from dagster.core.events.log import EventRecord
+from dagster.utils import ensure_dir, mkdir_p
+
+from .config import base_runs_directory
 
 
-def base_runs_directory():
-    return os.path.join(seven.get_system_temp_directory(), 'dagster', 'runs')
+class PipelineRunStatus(Enum):
+    NOT_STARTED = 'NOT_STARTED'
+    STARTED = 'STARTED'
+    SUCCESS = 'SUCCESS'
+    FAILURE = 'FAILURE'
 
 
-def base_directory_for_run(run_id):
-    check.str_param(run_id, 'run_id')
-    return os.path.join(base_runs_directory(), run_id)
+class RunStorage(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-init
+    @abc.abstractmethod
+    def add_run(self, pipeline_run):
+        '''Add a run to storage.
 
+        Args:
+            pipeline_run (PipelineRun): The run to add. If this is not a PipelineRun,
+        '''
 
-def meta_file(base_dir):
-    return os.path.join(base_dir, 'runmeta.jsonl')
+    @abc.abstractmethod
+    def create_run(self, *args, **kwargs):
+        '''Create a new run in storage.
 
+        Takes the *args and **kwargs of self.pipeline_run_class.
 
-class DagsterRunMeta(namedtuple('_DagsterRunMeta', 'run_id timestamp pipeline_name')):
-    def __new__(cls, run_id, timestamp, pipeline_name):
-        return super(DagsterRunMeta, cls).__new__(
-            cls,
-            check.str_param(run_id, 'run_id'),
-            check.float_param(timestamp, 'timestamp'),
-            check.str_param(pipeline_name, 'pipeline_name'),
-        )
+        Returns:
+            (PipelineRun) The new pipeline run.
+        '''
 
+    @abc.abstractmethod
+    def all_runs(self):
+        '''Return all the runs present in the storage.
 
-class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
-    @abstractmethod
-    def write_dagster_run_meta(self, dagster_run_meta):
-        pass
+        Returns:
+            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+        '''
 
-    def has_run(self, run_id):
-        check.str_param(run_id, 'run_id')
-        return run_id in self.get_run_ids()
+    @abc.abstractmethod
+    def all_runs_for_pipeline(self, pipeline_name):
+        '''Return all the runs present in the storage for a given pipeline.
 
-    @abstractmethod
-    def get_run_ids(self):
-        pass
+        Args:
+            pipeline_name (str): The pipeline to index on
 
-    @abstractmethod
-    def get_run_metas(self):
-        pass
+        Returns:
+            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+        '''
 
-    @abstractmethod
-    def get_run_meta(self, run_id):
-        pass
+    @abc.abstractmethod
+    def get_run_by_id(self, run_id):
+        '''Get a run by its id.
 
-    @abstractmethod
-    def nuke(self):
-        pass
+        Args:
+            run_id (str): THe id of the run
+
+        Returns:
+            Optional[PipelineRun]
+        '''
+
+    @abc.abstractmethod
+    def wipe(self):
+        '''Clears the run storage.'''
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def is_persistent(self):
-        pass
+        '''(bool) Whether the run storage persists after the process that
+        created it dies.'''
+
+    @property
+    @classmethod
+    @abc.abstractmethod
+    def pipeline_run_class(cls):
+        '''(Type[PipelineRun]) The subclass of PipelineRun appropriate to this storage class.'''
 
 
-class FileSystemRunStorage(RunStorage):
-    def __init__(self, base_dir=None):
-        self._base_dir = check.opt_str_param(base_dir, 'base_dir', base_runs_directory())
-        mkdir_p(base_runs_directory())
-        self._meta_file = meta_file(self._base_dir)
+class InMemoryRunStorage(RunStorage):
+    def __init__(self):
+        self._runs = OrderedDict()
 
-    def write_dagster_run_meta(self, dagster_run_meta):
-        check.inst_param(dagster_run_meta, 'dagster_run_meta', DagsterRunMeta)
+    def add_run(self, pipeline_run):
+        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        self._runs[pipeline_run.run_id] = pipeline_run
 
-        run_dir = os.path.join(self._base_dir, dagster_run_meta.run_id)
+    @property
+    def all_runs(self):
+        return self._runs.values()
 
-        mkdir_p(run_dir)
+    def all_runs_for_pipeline(self, pipeline_name):
+        return [r for r in self.all_runs if r.pipeline_name == pipeline_name]
 
-        with open(self._meta_file, 'a+') as ff:
-            ff.write(seven.json.dumps(dagster_run_meta._asdict()) + '\n')
+    def get_run_by_id(self, run_id):
+        return self._runs.get(run_id)
 
-    def get_run_ids(self):
-        return list_pull(self.get_run_metas(), 'run_id')
+    def __getitem__(self, run_id):
+        return self.get_run_by_id(run_id)
 
-    def get_run_meta(self, run_id):
-        check.str_param(run_id, 'run_id')
-        for run_meta in self.get_run_metas():
-            if run_meta.run_id == run_id:
-                return run_meta
+    def __contains__(self, run_id):
+        return run_id in self._runs
 
-        return None
+    @property
+    def is_persistent(self):
+        return False
 
-    def get_run_metas(self):
-        if not os.path.exists(self._meta_file):
-            return []
+    def wipe(self):
+        self._runs = OrderedDict()
 
-        run_metas = []
-        with open(self._meta_file, 'r') as ff:
-            line = ff.readline()
-            while line:
-                raw_run_meta = json.loads(line)
-                run_metas.append(
-                    DagsterRunMeta(
-                        run_id=raw_run_meta['run_id'],
-                        timestamp=raw_run_meta['timestamp'],
-                        pipeline_name=raw_run_meta['pipeline_name'],
+    @property
+    def pipeline_run_class(self):
+        return InMemoryPipelineRun
+
+    def create_run(self, *args, **kwargs):
+        pipeline_run = self.pipeline_run_class(*args, **kwargs)
+        self.add_run(pipeline_run)
+        return pipeline_run
+
+
+class FilesystemRunStorage(InMemoryRunStorage):
+    def __init__(self, log_dir=None):
+        self._log_dir = check.opt_str_param(log_dir, 'log_dir', base_runs_directory())
+        mkdir_p(self._log_dir)
+
+        super(FilesystemRunStorage, self).__init__()
+
+        self._load_runs()
+
+    def _load_runs(self):
+        for filename in glob.glob(os.path.join(self._log_dir, '*.json')):
+            with open(filename, 'r') as fd:
+                try:
+                    self.add_run(InMemoryPipelineRun.from_json(json.load(fd), self))
+                except Exception as ex:  # pylint: disable=broad-except
+                    print(
+                        'Could not parse pipeline run from {filename}, continuing. Original '
+                        'exception: {ex}: {msg}'.format(
+                            filename=filename, ex=type(ex).__name__, msg=ex
+                        )
                     )
-                )
-                line = ff.readline()
+                    continue
 
-        return run_metas
+    def wipe(self):
+        shutil.rmtree(os.path.join(self._log_dir, ''))
+        self._runs = OrderedDict([])
 
-    def nuke(self):
-        shutil.rmtree(self._base_dir)
+    @property
+    def pipeline_run_class(self):
+        return LogFilePipelineRun
+
+    def create_run(self, *args, **kwargs):
+        pipeline_run = self.pipeline_run_class(self._log_dir, *args, **kwargs)
+        self.add_run(pipeline_run)
+        return pipeline_run
 
     @property
     def is_persistent(self):
         return True
 
 
-class InMemoryRunStorage(RunStorage):
-    def __init__(self):
-        self._run_metas = OrderedDict()
+class PipelineRun(object):
+    def __init__(
+        self,
+        pipeline_name=None,
+        run_id=None,
+        env_config=None,
+        mode=None,
+        selector=None,
+        reexecution_config=None,
+        step_keys_to_execute=None,
+    ):
+        from dagster.core.execution.api import ExecutionSelector
+        from dagster.core.execution.config import ReexecutionConfig
 
-    def write_dagster_run_meta(self, dagster_run_meta):
-        check.inst_param(dagster_run_meta, 'dagster_run_meta', DagsterRunMeta)
-        self._run_metas[dagster_run_meta.run_id] = dagster_run_meta
+        self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
+        self._run_id = check.str_param(run_id, 'run_id')
+        self._env_config = check.opt_dict_param(env_config, 'environment_config', key_type=str)
+        self._mode = check.opt_str_param(mode, 'mode')
+        self._selector = check.opt_inst_param(
+            selector,
+            'selector',
+            ExecutionSelector,
+            default=ExecutionSelector(name=self.pipeline_name),
+        )
+        self._reexecution_config = check.opt_inst_param(
+            reexecution_config, 'reexecution_config', ReexecutionConfig
+        )
+        if step_keys_to_execute is not None:
+            self._step_keys_to_execute = check.list_param(
+                step_keys_to_execute, 'step_keys_to_execute', of_type=str
+            )
+        else:
+            self._step_keys_to_execute = None
 
-    def get_run_ids(self):
-        return list_pull(self.get_run_metas(), 'run_id')
+        self.__subscribers = []
 
-    def get_run_metas(self):
-        return list(self._run_metas.values())
+        self._status = PipelineRunStatus.NOT_STARTED
 
-    def get_run_meta(self, run_id):
-        check.str_param(run_id, 'run_id')
-        return self._run_metas[run_id]
+    @property
+    def mode(self):
+        return self._mode
 
-    def nuke(self):
-        self._run_metas = OrderedDict()
+    @property
+    def run_id(self):
+        return self._run_id
+
+    @property
+    def status(self):
+        return self._status
 
     @property
     def is_persistent(self):
         return False
 
+    @property
+    def pipeline_name(self):
+        return self._pipeline_name
+
+    @property
+    def config(self):
+        return self._env_config
+
+    def logs_after(self, cursor):
+        raise NotImplementedError()
+
+    def all_logs(self):
+        raise NotImplementedError()
+
+    @property
+    def selector(self):
+        return self._selector
+
+    def store_event(self, new_event):
+        pass
+
+    @property
+    def reexecution_config(self):
+        return self._reexecution_config
+
+    @property
+    def step_keys_to_execute(self):
+        return self._step_keys_to_execute
+
+    def handle_new_event(self, new_event):
+        check.inst_param(new_event, 'new_event', EventRecord)
+
+        if new_event.is_dagster_event:
+            event = new_event.dagster_event
+            if event.event_type == DagsterEventType.PIPELINE_START:
+                self._status = PipelineRunStatus.STARTED
+            elif event.event_type == DagsterEventType.PIPELINE_SUCCESS:
+                self._status = PipelineRunStatus.SUCCESS
+            elif event.event_type == DagsterEventType.PIPELINE_FAILURE:
+                self._status = PipelineRunStatus.FAILURE
+
+        self.store_event(new_event)
+        for subscriber in self.__subscribers:
+            subscriber.handle_new_event(new_event)
+
+    def subscribe(self, subscriber):
+        self.__subscribers.append(subscriber)
+
+    def observable_after_cursor(self, observable_cls=None, cursor=None):
+        check.type_param(observable_cls, 'observable_cls')
+        return Observable.create(observable_cls(self, cursor))  # pylint: disable=E1101
+
 
 CREATE_RUNS_TABLE = '''
     CREATE TABLE IF NOT EXISTS runs (
         run_id varchar(255) NOT NULL,
-        timestamp real NOT NULL,
         pipeline_name varchar(1023) NOT NULL
     )
+'''
+
+INSERT_RUN_STATEMENT = '''
+    INSERT INTO runs (run_id, pipeline_name) VALUES (?, ?)
 '''
 
 
@@ -167,48 +308,152 @@ class SqliteRunStorage(RunStorage):
     def __init__(self, conn):
         self.conn = conn
 
-    def write_dagster_run_meta(self, dagster_run_meta):
-        INSERT_RUN_STATEMENT = '''
-        INSERT INTO runs (run_id, timestamp, pipeline_name) VALUES (
-            '{run_id}',
-            '{timestamp}',
-            '{pipeline_name}'
-        )
-        '''
+    def add_run(self, pipeline_run):
+        self.conn.execute(INSERT_RUN_STATEMENT, (pipeline_run.run_id, pipeline_run.pipeline_name))
 
-        self.conn.execute(
-            INSERT_RUN_STATEMENT.format(
-                run_id=dagster_run_meta.run_id,
-                timestamp=dagster_run_meta.timestamp,
-                pipeline_name=dagster_run_meta.pipeline_name,
-            )
-        )
+    def create_run(self, *args, **kwargs):
+        run = InMemoryPipelineRun(*args, **kwargs)
+        self.add_run(run)
+        return run
 
-    def get_run_ids(self):
-        return list_pull(self.get_run_metas(), 'run_id')
+    @property
+    def all_runs(self):
+        raw_runs = self.conn.cursor().execute('SELECT run_id, pipeline_name FROM runs').fetchall()
+        return list(map(lambda x: InMemoryPipelineRun(run_id=x[0], pipeline_name=x[1]), raw_runs))
 
-    def get_run_metas(self):
+    def all_runs_for_pipeline(self, pipeline_name):
         raw_runs = (
             self.conn.cursor()
-            .execute('SELECT run_id, timestamp, pipeline_name FROM runs')
+            .execute(
+                'SELECT run_id, pipeline_name FROM runs WHERE pipeline_name=?', (pipeline_name,)
+            )
             .fetchall()
         )
-        return list(map(run_meta_from_row, raw_runs))
+        return list(map(lambda x: InMemoryPipelineRun(run_id=x[0], pipeline_name=x[1]), raw_runs))
 
-    def get_run_meta(self, run_id):
-        sql = "SELECT run_id, timestamp, pipeline_name FROM runs WHERE run_id = '{run_id}'".format(
-            run_id=run_id
+    def get_run_by_id(self, run_id):
+        sql = 'SELECT run_id, pipeline_name FROM runs WHERE run_id = ?'
+
+        return (lambda x: InMemoryPipelineRun(run_id=x[0], pipeline_name=x[1]))(
+            self.conn.cursor().execute(sql, (run_id,)).fetchone()
         )
 
-        return run_meta_from_row(self.conn.cursor().execute(sql).fetchone())
-
-    def nuke(self):
+    def wipe(self):
         self.conn.execute('DELETE FROM runs')
 
     @property
     def is_persistent(self):
         return True
 
+    @property
+    def pipeline_run_class(self):
+        return InMemoryPipelineRun
 
-def run_meta_from_row(row):
-    return DagsterRunMeta(row[0], row[1], row[2])
+
+class InMemoryPipelineRun(PipelineRun):
+    def __init__(self, *args, **kwargs):
+        super(InMemoryPipelineRun, self).__init__(*args, **kwargs)
+        self._log_storage_lock = gevent.lock.Semaphore()
+        self._log_sequence = LogSequence()
+
+    def logs_after(self, cursor):
+        cursor = int(cursor) + 1
+        with self._log_storage_lock:
+            return self._log_sequence[cursor:]
+
+    def all_logs(self):
+        with self._log_storage_lock:
+            return self._log_sequence
+
+    def store_event(self, new_event):
+        check.inst_param(new_event, 'new_event', EventRecord)
+
+        with self._log_storage_lock:
+            self._log_sequence = self._log_sequence.append(new_event)
+
+    def store_events(self, new_events):
+        check.list_param(new_events, 'new_events', of_type=EventRecord)
+
+        with self._log_storage_lock:
+            self._log_sequence = self._log_sequence.extend(new_events)
+
+    @staticmethod
+    def from_json(data, run_storage):
+        from dagster.core.execution.api import ExecutionSelector
+
+        check.opt_inst_param(run_storage, 'run_storage', RunStorage)
+        selector = ExecutionSelector(
+            name=data['pipeline_name'], solid_subset=data.get('pipeline_solid_subset')
+        )
+        run = InMemoryPipelineRun(
+            pipeline_name=data['pipeline_name'],
+            run_id=data['run_id'],
+            selector=selector,
+            env_config=data['config'],
+            mode=data['mode'],
+        )
+        events = []
+        try:
+            with open(data['log_file'], 'rb') as logs:
+                while True:
+                    try:
+                        event_record = pickle.load(logs)
+                        check.invariant(
+                            isinstance(event_record, EventRecord), 'log file entry not EventRecord'
+                        )
+                        events.append(event_record)
+                    except EOFError:
+                        break
+        except seven.FileNotFoundError:
+            pass
+
+        run.store_events(events)
+
+        if run_storage:
+            run_storage.add_run(run)
+        return run
+
+
+class LogFilePipelineRun(InMemoryPipelineRun):
+    def __init__(self, log_dir, *args, **kwargs):
+        super(LogFilePipelineRun, self).__init__(*args, **kwargs)
+        self._log_dir = check.str_param(log_dir, 'log_dir')
+        self._file_prefix = os.path.join(
+            self._log_dir, '{}_{}'.format(int(time.time()), self.run_id)
+        )
+        ensure_dir(log_dir)
+        self._log_file = '{}.log'.format(self._file_prefix)
+        self._log_file_lock = gevent.lock.Semaphore()
+        self._write_metadata_to_file()
+
+    def _write_metadata_to_file(self):
+        metadata_file = '{}.json'.format(self._file_prefix)
+        with io.open(metadata_file, 'w', encoding='utf-8') as f:
+            json_str = seven.json.dumps(
+                {
+                    'run_id': self.run_id,
+                    'pipeline_name': self.pipeline_name,
+                    'pipeline_solid_subset': self.selector.solid_subset,
+                    'config': self.config,
+                    'mode': self.mode,
+                    'log_file': self._log_file,
+                }
+            )
+            f.write(six.text_type(json_str))
+
+    def store_event(self, new_event):
+        check.inst_param(new_event, 'new_event', EventRecord)
+
+        super(LogFilePipelineRun, self).store_event(new_event)
+
+        with self._log_file_lock:
+            # Going to do the less error-prone, simpler, but slower strategy:
+            # open, append, close for every log message for now.
+            # Open the file for binary content and create if it doesn't exist.
+            with open(self._log_file, 'ab') as log_file_handle:
+                log_file_handle.seek(0, os.SEEK_END)
+                pickle.dump(new_event, log_file_handle)
+
+
+class LogSequence(pyrsistent.CheckedPVector):
+    __type__ = EventRecord

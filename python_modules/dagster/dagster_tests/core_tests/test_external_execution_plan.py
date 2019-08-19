@@ -145,7 +145,7 @@ def test_execute_step_wrong_step_key():
 
     assert exc_info.value.step_key == 'nope'
 
-    assert str(exc_info.value) == 'Execution plan does not contain step "nope"'
+    assert str(exc_info.value) == 'Execution plan does not contain step \'nope\''
 
 
 def test_using_file_system_for_subplan_missing_input():

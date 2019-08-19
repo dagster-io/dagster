@@ -40,14 +40,10 @@ from dagster import (
     solid,
 )
 from dagster.core.log_manager import coerce_valid_log_level
+from dagster.core.storage.runs import FilesystemRunStorage, InMemoryRunStorage
 from dagster.utils import script_relative_path
-
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_graphql.implementation.pipeline_run_storage import (
-    FilesystemRunStorage,
-    InMemoryRunStorage,
-)
 from dagster.core.scheduler import SystemCronScheduler
 
 

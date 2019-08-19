@@ -9,6 +9,7 @@ from dagster import ExecutionTargetHandle, check, seven
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
 from dagster.core.scheduler import Scheduler
+from dagster.core.storage.runs import FilesystemRunStorage, InMemoryRunStorage, RunStorage
 from dagster.utils import (
     DEFAULT_REPOSITORY_YAML_FILENAME,
     dagster_logs_dir_for_handle,
@@ -19,11 +20,6 @@ from dagster.utils.log import get_stack_trace_array
 from .client.query import START_PIPELINE_EXECUTION_QUERY
 from .implementation.context import DagsterGraphQLContext
 from .implementation.pipeline_execution_manager import SynchronousExecutionManager
-from .implementation.pipeline_run_storage import (
-    FilesystemRunStorage,
-    InMemoryRunStorage,
-    RunStorage,
-)
 from .schema import create_schema
 from .version import __version__
 

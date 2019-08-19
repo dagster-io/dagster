@@ -1,6 +1,7 @@
 from dagster import check, ExecutionTargetHandle
 from dagster.core.scheduler import Scheduler
-from .pipeline_run_storage import RunStorage
+from dagster.core.storage.runs import RunStorage
+
 from .pipeline_execution_manager import PipelineExecutionManager
 
 

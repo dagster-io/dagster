@@ -1,12 +1,12 @@
 import pytest
 
 from dagster import ExecutionTargetHandle
+from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.seven import mock
 from dagster.utils import script_relative_path
 
 from dagit.app import create_app
 from dagit.cli import host_dagit_ui
-from dagster_graphql.implementation.pipeline_run_storage import InMemoryRunStorage
 
 
 def test_create_app():
