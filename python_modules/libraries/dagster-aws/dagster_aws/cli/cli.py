@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import datetime
@@ -6,18 +5,16 @@ import os
 import signal
 import subprocess
 import sys
-import yaml
 
 import boto3
 import click
 import six
 
-import time
-import threading
-
-from collections import namedtuple
-
 from botocore.exceptions import ClientError
+
+from .config import HostConfig
+from .term import Spinner, Term
+
 
 # Default to northern CA
 DEFAULT_REGION = 'us-west-1'
@@ -33,139 +30,6 @@ DEFAULT_AMI = 'ami-09eb5e8a83c7aa890'
 
 # Dagit EC2 machine name
 DAGIT_EC2_NAME = 'dagit-ec2'
-
-# Init script to install Dagster/Dagit etc.
-INIT_SCRIPT = '''#!/bin/bash
-
-# For updating nodejs
-curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
-
-# For updating yarn
-curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-
-# Install base deps
-apt-get update && apt-get install -y git make python3 python3-pip python-virtualenv nodejs yarn
-
-# Set up a virtualenv for us to use
-virtualenv --python=/usr/bin/python3 venv
-source venv/bin/activate
-
-pip install -U pip
-
-git clone https://github.com/dagster-io/dagster.git /dagster
-
-pushd /dagster
-make dev_install
-'''
-
-
-class Spinner:
-    '''Spinning CLI prompt, shown while long-running activity is in flight.
-
-    From: https://stackoverflow.com/a/39504463/11295366
-    '''
-
-    busy = False
-    delay = 0.08
-    spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-
-    @staticmethod
-    def spinning_cursor():
-        while 1:
-            for cursor in Spinner.spinner:
-                yield cursor
-
-    def __init__(self, delay=None):
-        self.spinner_generator = self.spinning_cursor()
-        if delay and float(delay):
-            self.delay = delay
-
-    def spinner_task(self):
-        while self.busy:
-            sys.stdout.write(next(self.spinner_generator))
-            sys.stdout.flush()
-            time.sleep(self.delay)
-            sys.stdout.write('\b')
-            sys.stdout.flush()
-
-    def __enter__(self):
-        self.busy = True
-        threading.Thread(target=self.spinner_task).start()
-
-    def __exit__(self, exception, value, tb):
-        self.busy = False
-        time.sleep(self.delay)
-        if exception is not None:
-            return False
-
-
-class Term:
-    @staticmethod
-    def fatal(msg):
-        click.echo(click.style('💣 ' + msg, fg='red'), err=True)
-        sys.exit(1)
-
-    @staticmethod
-    def error(msg):
-        click.echo(click.style('❌  ' + msg, fg='red'))
-
-    @staticmethod
-    def info(msg):
-        click.echo('ℹ️  ' + msg)
-
-    @staticmethod
-    def success(msg):
-        click.echo(click.style('✅ ' + msg, fg='green'))
-
-    @staticmethod
-    def waiting(msg):
-        click.echo(click.style('🔄 ' + msg, fg='yellow'))
-
-
-class HostConfig(
-    namedtuple(
-        '_HostConfig', 'public_dns_name region security_group_id key_pair_name key_file_path ami_id'
-    )
-):
-    '''Serialize the user's AWS host configuration to a YAML file for future use.
-    '''
-
-    def __new__(
-        cls, public_dns_name, region, security_group_id, key_pair_name, key_file_path, ami_id
-    ):
-        return super(HostConfig, cls).__new__(
-            cls, public_dns_name, region, security_group_id, key_pair_name, key_file_path, ami_id
-        )
-
-    def save(self, dagster_home):
-        # Save configuration to a file for future use
-        cfg_path = os.path.join(dagster_home, '.dagit-aws-config')
-        with open(cfg_path, 'wb') as f:
-            output_record = {
-                'dagit-aws-host': {
-                    'public_dns_name': self.public_dns_name,
-                    'region': self.region,
-                    'security_group_id': self.security_group_id,
-                    'key_pair_name': self.key_pair_name,
-                    'key_file_path': self.key_file_path,
-                    'ami_id': self.ami_id,
-                }
-            }
-            f.write(six.ensure_binary(yaml.dump(output_record, default_flow_style=False)))
-        Term.info('Saved host configuration to %s' % cfg_path)
-
-    @staticmethod
-    def load(dagster_home):
-        cfg_path = os.path.join(dagster_home, '.dagit-aws-config')
-        with open(cfg_path, 'rb') as f:
-            raw_cfg = yaml.load(f)
-        return HostConfig(**raw_cfg['dagit-aws-host'])
-
-
-@click.group()
-def cli():
-    pass
 
 
 def get_dagster_home():
@@ -400,6 +264,9 @@ def create_ec2_instance(ec2, security_group_id, ami_id, key_pair_name):
 
     # Here we actually create the EC2 instance
     with Spinner():
+        with open(os.path.join(os.path.dirname(__file__), 'shell', 'init.sh'), 'rb') as f:
+            init_script = six.ensure_str(f.read())
+
         instances = ec2.create_instances(
             ImageId=ami_id,
             InstanceType=instance_type,
@@ -407,7 +274,7 @@ def create_ec2_instance(ec2, security_group_id, ami_id, key_pair_name):
             MinCount=1,
             SecurityGroupIds=[security_group_id],
             KeyName=key_pair_name,
-            UserData=INIT_SCRIPT,
+            UserData=init_script,
         )
         inst = instances[0]
         inst.wait_until_running()
@@ -421,11 +288,24 @@ def create_ec2_instance(ec2, security_group_id, ami_id, key_pair_name):
     return inst
 
 
-@cli.command()
+def exit_gracefully(_signum, _frame):
+    '''Prevent stack trace spew on Ctrl-C
+    '''
+    click.echo(click.style('\n\nCommand killed by keyboard interrupt, quitting\n\n', fg='yellow'))
+    sys.exit(1)
+
+
+@click.group()
+def main():
+    signal.signal(signal.SIGINT, exit_gracefully)
+
+
+@main.command()
 def init():
     click.echo('\n🌈 Welcome to Dagit + AWS quickstart cloud init!\n')
 
-    dagster_home = get_dagster_home()  # this ensures DAGSTER_HOME exists before we continue
+    # this ensures DAGSTER_HOME exists before we continue
+    dagster_home = get_dagster_home()
 
     region = select_region()
 
@@ -452,7 +332,7 @@ def init():
     click.echo(click.style('🚀 To connect, just use: dagit-aws shell\n', fg='green'))
 
 
-@cli.command()
+@main.command()
 def shell():
     dagster_home = get_dagster_home()
     cfg = HostConfig.load(dagster_home)
@@ -460,15 +340,3 @@ def shell():
     ssh_cmd = 'ssh -i %s ubuntu@%s' % (cfg.key_file_path, cfg.public_dns_name)
     Term.waiting('Connecting to host...\n%s' % ssh_cmd)
     subprocess.call(ssh_cmd, shell=True)
-
-
-def exit_gracefully(_signum, _frame):
-    '''Prevent stack trace spew on Ctrl-C
-    '''
-    click.echo(click.style('\n\nCommand killed by keyboard interrupt, quitting\n\n', fg='yellow'))
-    sys.exit(1)
-
-
-if __name__ == '__main__':
-    signal.signal(signal.SIGINT, exit_gracefully)
-    cli(obj={})  # pylint: disable=unexpected-keyword-arg
