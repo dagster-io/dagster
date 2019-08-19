@@ -31,10 +31,8 @@ from dagster_graphql.implementation.fetch_types import get_config_type, get_runt
 
 from .config_types import to_dauphin_config_type
 from .run_schedule import (
-    DauphinCreateRunScheduleMutation,
-    DauphinStartRunScheduleMutation,
-    DauphinEndRunScheduleMutation,
-    DauphineDeleteRunScheduleMutation,
+    DauphinStartScheduleMutation,
+    DauphinEndRunningScheduleMutation,
     get_scheduler,
 )
 
@@ -289,10 +287,8 @@ class DauphinMutation(dauphin.ObjectType):
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
     execute_plan = DauphinExecutePlan.Field()
-    create_run_schedule = DauphinCreateRunScheduleMutation.Field()
-    start_run_schedule = DauphinStartRunScheduleMutation.Field()
-    end_run_schedule = DauphinEndRunScheduleMutation.Field()
-    delete_run_schedule = DauphineDeleteRunScheduleMutation.Field()
+    start_schedule = DauphinStartScheduleMutation.Field()
+    end_running_schedule = DauphinEndRunningScheduleMutation.Field()
 
 
 class DauphinSubscription(dauphin.ObjectType):

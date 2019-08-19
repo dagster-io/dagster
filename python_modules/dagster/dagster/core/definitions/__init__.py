@@ -37,5 +37,6 @@ from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
 from .repository import RepositoryDefinition
 from .resource import ResourceDefinition, resource
+from .schedule import ScheduleDefinition
 from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
 from .system_storage import SystemStorageData, SystemStorageDefinition, system_storage

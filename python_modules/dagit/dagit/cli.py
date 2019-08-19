@@ -20,7 +20,7 @@ from dagster_graphql.implementation.pipeline_run_storage import (
     FilesystemRunStorage,
     InMemoryRunStorage,
 )
-from dagster_graphql.implementation.scheduler import SystemCronScheduler
+from dagster.core.scheduler import SystemCronScheduler
 
 from .app import create_app
 from .version import __version__
