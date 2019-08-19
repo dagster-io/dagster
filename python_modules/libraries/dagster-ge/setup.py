@@ -44,7 +44,7 @@ def _do_setup(name='dagster-ge'):
             'enum-compat==0.0.2',
             'future>=0.16.0',
             'dagster=={ver}'.format(ver=ver),
-            'great-expectations',
+            'great-expectations<=0.7.6',
         ],
     )
 
