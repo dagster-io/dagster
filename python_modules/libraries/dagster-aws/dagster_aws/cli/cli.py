@@ -373,6 +373,9 @@ def up():
         cfg = cfg._replace(local_path=cwd)
         cfg.save(dagster_home)
 
+    if not os.path.exists(os.path.join(cfg.local_path, 'repository.yaml')):
+        Term.fatal('No repository.yaml found in %s, create before continuing.' % cfg.local_path)
+
     rsync_command = [
         'rsync',
         '-avL',
@@ -394,3 +397,13 @@ def up():
     Term.info('rsyncing local path %s to %s' % (cfg.local_path, cfg.public_dns_name))
     click.echo('\n' + ' '.join(rsync_command) + '\n')
     subprocess.call(' '.join(rsync_command), shell=True)
+
+    ssh_command = [
+        'ssh',
+        '-i',
+        cfg.key_file_path,
+        '-t',
+        'ubuntu@%s' % cfg.public_dns_name,
+        '\"sudo systemctl restart dagit\"',
+    ]
+    subprocess.call(' '.join(ssh_command), shell=True)
