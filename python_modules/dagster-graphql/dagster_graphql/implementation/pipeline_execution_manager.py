@@ -29,7 +29,7 @@ from dagster.core.events import (
 from dagster.core.events.log import DagsterEventRecord
 from dagster.utils import get_multiprocessing_context
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-
+from dagster.core.events import CallbackEventSink
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRun
 
 
@@ -125,7 +125,7 @@ class SynchronousExecutionManager(PipelineExecutionManager):
         run_config = RunConfig(
             pipeline_run.run_id,
             mode=pipeline_run.mode,
-            event_callback=pipeline_run.handle_new_event,
+            event_sink=CallbackEventSink(pipeline_run.handle_new_event),
             reexecution_config=pipeline_run.reexecution_config,
             step_keys_to_execute=pipeline_run.step_keys_to_execute,
         )
@@ -315,7 +315,7 @@ def execute_pipeline_through_queue(
     run_config = RunConfig(
         run_id,
         mode=mode,
-        event_callback=message_queue.put,
+        event_sink=CallbackEventSink(message_queue.put),
         reexecution_config=reexecution_config,
         step_keys_to_execute=step_keys_to_execute,
     )

@@ -1,7 +1,6 @@
 import copy
 import os
 import pickle
-import threading
 import uuid
 
 import nbformat
@@ -26,7 +25,7 @@ from dagster.core.errors import user_code_error_boundary
 from dagster.core.execution.context.compute import ComputeExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
-from dagster.loggers.xproc_log_sink import JsonSqlite3LogWatcher, init_db
+from dagster.core.events import SqliteEventSink
 from dagster.utils import mkdir_p, safe_tempfile_path
 
 from .engine import DagstermillNBConvertEngine
@@ -167,7 +166,7 @@ def _dm_solid_compute(name, notebook_path):
         )
 
         with safe_tempfile_path() as output_log_path:
-            init_db(output_log_path)
+            event_sink = SqliteEventSink(output_log_path)
 
             # Scaffold the registration here
             nb = load_notebook_node(notebook_path)
@@ -181,20 +180,6 @@ def _dm_solid_compute(name, notebook_path):
             )
             write_ipynb(nb_no_parameters, intermediate_path)
 
-            # Although the type of is_done is threading._Event in py2, not threading.Event,
-            # it is still constructed using the threading.Event() factory
-            is_done = threading.Event()
-
-            def log_watcher_thread_target():
-                log_watcher = JsonSqlite3LogWatcher(
-                    output_log_path, system_compute_context.log, is_done
-                )
-                log_watcher.watch()
-
-            log_watcher_thread = threading.Thread(target=log_watcher_thread_target)
-
-            log_watcher_thread.start()
-
             with user_code_error_boundary(
                 DagstermillExecutionError,
                 lambda: (
@@ -204,21 +189,19 @@ def _dm_solid_compute(name, notebook_path):
                     )
                 ),
             ):
-                try:
-                    papermill_engines.register('dagstermill', DagstermillNBConvertEngine)
-                    papermill.execute_notebook(
-                        intermediate_path, temp_path, engine_name='dagstermill', log_output=True
-                    )
-                except Exception as exc:
-                    yield Materialization(
-                        label='output_notebook',
-                        description='Location of output notebook on the filesystem',
-                        metadata_entries=[EventMetadataEntry.fspath(temp_path)],
-                    )
-                    raise exc
-                finally:
-                    is_done.set()
-                    log_watcher_thread.join()
+                with event_sink.log_forwarding(system_compute_context.log):
+                    try:
+                        papermill_engines.register('dagstermill', DagstermillNBConvertEngine)
+                        papermill.execute_notebook(
+                            intermediate_path, temp_path, engine_name='dagstermill', log_output=True
+                        )
+                    except Exception as exc:
+                        yield Materialization(
+                            label='output_notebook',
+                            description='Location of output notebook on the filesystem',
+                            metadata_entries=[EventMetadataEntry.fspath(temp_path)],
+                        )
+                        raise exc
 
             # deferred import for perf
             import scrapbook

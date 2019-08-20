@@ -83,10 +83,6 @@ class SystemPipelineExecutionContextData(
         return self.run_config.run_id
 
     @property
-    def event_callback(self):
-        return self.run_config.event_callback
-
-    @property
     def environment_dict(self):
         return self.environment_config.original_config_dict
 
@@ -160,13 +156,6 @@ class SystemPipelineExecutionContext(object):
     @property
     def system_storage_def(self):
         return self._pipeline_context_data.system_storage_def
-
-    @property
-    def event_callback(self):
-        return self._pipeline_context_data.event_callback
-
-    def has_event_callback(self):
-        return self._pipeline_context_data.event_callback is not None
 
     @property
     def log(self):

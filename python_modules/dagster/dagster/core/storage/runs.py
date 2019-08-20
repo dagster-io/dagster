@@ -5,6 +5,8 @@ from abc import ABCMeta, abstractmethod
 from collections import OrderedDict, namedtuple
 
 import six
+import sqlite3
+
 
 from dagster import check, seven
 from dagster.utils import list_pull, mkdir_p
@@ -143,3 +145,70 @@ class InMemoryRunStorage(RunStorage):
     @property
     def is_persistent(self):
         return False
+
+
+CREATE_RUNS_TABLE = '''
+    CREATE TABLE IF NOT EXISTS runs (
+        run_id varchar(255) NOT NULL,
+        timestamp real NOT NULL,
+        pipeline_name varchar(1023) NOT NULL
+    )
+'''
+
+
+class SqliteRunStorage(RunStorage):
+    @staticmethod
+    def mem():
+        conn = sqlite3.connect(':memory:')
+        conn.execute(CREATE_RUNS_TABLE)
+        conn.commit()
+        return SqliteRunStorage(conn)
+
+    def __init__(self, conn):
+        self.conn = conn
+
+    def write_dagster_run_meta(self, dagster_run_meta):
+        INSERT_RUN_STATEMENT = '''
+        INSERT INTO runs (run_id, timestamp, pipeline_name) VALUES (
+            '{run_id}',
+            '{timestamp}',
+            '{pipeline_name}'
+        )
+        '''
+
+        self.conn.execute(
+            INSERT_RUN_STATEMENT.format(
+                run_id=dagster_run_meta.run_id,
+                timestamp=dagster_run_meta.timestamp,
+                pipeline_name=dagster_run_meta.pipeline_name,
+            )
+        )
+
+    def get_run_ids(self):
+        return list_pull(self.get_run_metas(), 'run_id')
+
+    def get_run_metas(self):
+        raw_runs = (
+            self.conn.cursor()
+            .execute('SELECT run_id, timestamp, pipeline_name FROM runs')
+            .fetchall()
+        )
+        return list(map(run_meta_from_row, raw_runs))
+
+    def get_run_meta(self, run_id):
+        sql = "SELECT run_id, timestamp, pipeline_name FROM runs WHERE run_id = '{run_id}'".format(
+            run_id=run_id
+        )
+
+        return run_meta_from_row(self.conn.cursor().execute(sql).fetchone())
+
+    def nuke(self):
+        self.conn.execute('DELETE FROM runs')
+
+    @property
+    def is_persistent(self):
+        return True
+
+
+def run_meta_from_row(row):
+    return DagsterRunMeta(row[0], row[1], row[2])

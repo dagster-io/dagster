@@ -20,7 +20,6 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
-from dagster.core.events.log import construct_event_logger
 from dagster.core.execution.config import ExecutorConfig
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitSystemStorageContext
@@ -169,6 +168,9 @@ def scoped_pipeline_context(
     try:
         log_manager = create_log_manager(context_creation_data)
 
+        if run_config.event_sink:
+            run_config.event_sink.on_pipeline_init()
+
         with scoped_resources_builder_cm(
             context_creation_data.pipeline_def,
             context_creation_data.environment_config,
@@ -206,6 +208,9 @@ def scoped_pipeline_context(
             failure_data=PipelineInitFailureData(error=error_info),
             log_manager=_create_context_free_log_manager(run_config, pipeline_def),
         )
+    finally:
+        if run_config.event_sink:
+            run_config.event_sink.on_pipeline_teardown()
 
 
 def create_system_storage_data(
@@ -400,14 +405,8 @@ def create_log_manager(context_creation_data):
                 )
             )
 
-    if run_config.log_sink:
-        loggers.append(run_config.log_sink)
-
-    if run_config.event_callback:
-        init_logger_context = InitLoggerContext({}, pipeline_def, logger_def, run_config.run_id)
-        loggers.append(
-            construct_event_logger(run_config.event_callback).logger_fn(init_logger_context)
-        )
+    if run_config.event_sink:
+        loggers.append(run_config.event_sink.get_logger())
 
     return DagsterLogManager(
         run_id=run_config.run_id,
@@ -436,15 +435,9 @@ def _create_context_free_log_manager(run_config, pipeline_def):
                 InitLoggerContext(logger_config, pipeline_def, logger_def, run_config.run_id)
             )
         ]
-    if run_config.event_callback:
-        event_logger_def = construct_event_logger(run_config.event_callback)
-        loggers += [
-            event_logger_def.logger_fn(
-                InitLoggerContext({}, pipeline_def, event_logger_def, run_config.run_id)
-            )
-        ]
-    if run_config.log_sink:
-        loggers.append(run_config.log_sink)
+
+    if run_config.event_sink:
+        loggers.append(run_config.event_sink.get_logger())
 
     return DagsterLogManager(run_config.run_id, get_logging_tags(run_config, pipeline_def), loggers)
 

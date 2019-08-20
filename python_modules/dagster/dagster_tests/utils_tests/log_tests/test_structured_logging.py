@@ -3,9 +3,6 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import PipelineDefinition
-from dagster.core.events.log import LogMessageRecord, construct_event_record
-from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.utils.log import define_structured_logger
 from dagster.utils.test import create_test_pipeline_execution_context
 
@@ -31,22 +28,6 @@ def test_structured_logger_in_context():
         assert message.level == logging.DEBUG
         assert message.meta['foo'] == 2
         assert message.meta['orig_message'] == 'from_context'
-
-
-def test_construct_event_record():
-    with construct_structured_logger(construct_event_record) as (logger_def, messages):
-
-        init_logger_context = InitLoggerContext({}, PipelineDefinition([]), logger_def, '')
-        logger = logger_def.logger_fn(init_logger_context)
-
-        context = create_test_pipeline_execution_context(
-            log_sink=logger, tags={'pipeline': 'some_pipeline'}
-        )
-        context.log.info('random message')
-
-        assert len(messages) == 1
-        message = messages[0]
-        assert isinstance(message, LogMessageRecord)
 
 
 def test_structured_logger_in_context_with_bad_log_level():

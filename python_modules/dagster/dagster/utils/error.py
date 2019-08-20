@@ -1,7 +1,11 @@
 import traceback
 from collections import namedtuple
+from dagster.core.serdes import whitelist_for_serdes
 
-SerializableErrorInfo = namedtuple('SerializableErrorInfo', 'message stack cls_name')
+
+@whitelist_for_serdes
+class SerializableErrorInfo(namedtuple('SerializableErrorInfo', 'message stack cls_name')):
+    pass
 
 
 def serializable_error_info_from_exc_info(exc_info):

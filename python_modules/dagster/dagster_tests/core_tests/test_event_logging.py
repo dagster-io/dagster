@@ -1,10 +1,20 @@
 import logging
 from collections import defaultdict
 
-from dagster import ModeDefinition, PipelineDefinition, execute_pipeline, lambda_solid
-from dagster.core.events import DagsterEventType
+from dagster import (
+    ExecutionTargetHandle,
+    ModeDefinition,
+    PipelineDefinition,
+    RunConfig,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
+)
+from dagster.core.events import DagsterEventType, EventSink
 from dagster.core.events.log import EventRecord, construct_event_logger
 from dagster.loggers import colored_console_logger
+
+from dagster_examples.toys.many_events import many_events
 
 
 def mode_def(event_callback):
@@ -128,3 +138,58 @@ def test_single_solid_pipeline_failure():
     assert failure_event.dagster_event.solid_name == 'solid_one'
     assert failure_event.dagster_event.solid_definition_name == 'solid_one'
     assert failure_event.level == logging.ERROR
+
+
+def define_simple():
+    @lambda_solid
+    def yes():
+        return 'yes'
+
+    @pipeline
+    def simple():
+        yes()
+
+    return simple
+
+
+def test_event_sink_serialization():
+    event_records = []
+
+    class TestEventSink(EventSink):
+        def on_dagster_event(self, dagster_event):
+            event_records.append(dagster_event)
+
+        def on_log_message(self, log_message):
+            event_records.append(log_message)
+
+    @lambda_solid
+    def no():
+        raise Exception('no')
+
+    @pipeline
+    def fails():
+        no()
+
+    sink = TestEventSink()
+
+    # basic success
+    execute_pipeline(define_simple(), run_config=RunConfig(event_sink=sink))
+    # basic failure
+    execute_pipeline(
+        fails,
+        run_config=RunConfig(event_sink=sink),
+        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
+    )
+    # multiproc
+    execute_pipeline(
+        ExecutionTargetHandle.for_pipeline_fn(define_simple).build_pipeline_definition(),
+        run_config=RunConfig(event_sink=sink),
+        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+    )
+    # kitchen sink
+    execute_pipeline(many_events, run_config=RunConfig(event_sink=sink))
+
+    for dagster_event in event_records:
+        payload = dagster_event.to_json()
+        clone = EventRecord.from_json(payload)
+        assert clone == dagster_event

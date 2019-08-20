@@ -43,7 +43,6 @@ def _do_setup(name='dagster-dask'):
             'dagster_graphql',
             'dask==1.2.2',
             'distributed==1.28.1',
-            'Jinja2==2.10.0',  # https://github.com/dagster-io/dagster/issues/1600
         ],
         zip_safe=False,
     )

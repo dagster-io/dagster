@@ -7,8 +7,10 @@ from dagster.core.definitions.events import EventMetadataEntry
 from dagster.core.types.runtime import RuntimeType
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
+from dagster.core.serdes import whitelist_for_serdes
 
 
+@whitelist_for_serdes
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
     @staticmethod
     def from_step(step, output_name='result'):
@@ -24,6 +26,7 @@ class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
         )
 
 
+@whitelist_for_serdes
 class StepInputData(namedtuple('_StepInputData', 'input_name type_check_data')):
     def __new__(cls, input_name, type_check_data):
         return super(StepInputData, cls).__new__(
@@ -33,6 +36,7 @@ class StepInputData(namedtuple('_StepInputData', 'input_name type_check_data')):
         )
 
 
+@whitelist_for_serdes
 class TypeCheckData(namedtuple('_TypeCheckData', 'success label description metadata_entries')):
     def __new__(cls, success, label, description=None, metadata_entries=None):
         return super(TypeCheckData, cls).__new__(
@@ -46,6 +50,7 @@ class TypeCheckData(namedtuple('_TypeCheckData', 'success label description meta
         )
 
 
+@whitelist_for_serdes
 class UserFailureData(namedtuple('_UserFailureData', 'label description metadata_entries')):
     def __new__(cls, label, description=None, metadata_entries=None):
         return super(UserFailureData, cls).__new__(
@@ -58,6 +63,7 @@ class UserFailureData(namedtuple('_UserFailureData', 'label description metadata
         )
 
 
+@whitelist_for_serdes
 class StepOutputData(
     namedtuple('_StepOutputData', 'step_output_handle intermediate_materialization type_check_data')
 ):
@@ -78,6 +84,7 @@ class StepOutputData(
         return self.step_output_handle.output_name
 
 
+@whitelist_for_serdes
 class StepFailureData(namedtuple('_StepFailureData', 'error user_failure_data')):
     def __new__(cls, error, user_failure_data):
         return super(StepFailureData, cls).__new__(
@@ -89,6 +96,7 @@ class StepFailureData(namedtuple('_StepFailureData', 'error user_failure_data'))
         )
 
 
+@whitelist_for_serdes
 class StepSuccessData(namedtuple('_StepSuccessData', 'duration_ms')):
     def __new__(cls, duration_ms):
         return super(StepSuccessData, cls).__new__(

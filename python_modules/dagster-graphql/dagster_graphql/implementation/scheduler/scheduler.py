@@ -1,7 +1,7 @@
 import six
 import abc
-from collections import namedtuple
 
+from collections import namedtuple
 from dagster import check
 
 
@@ -55,11 +55,14 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def start_schedule(self, id_):
+    def start_schedule(self, id_, python_path, repository_path):
         '''Start a pipeline schedule.
 
         Args:
             id_ (str): The id of the schedule
+            python_path (str): Path to the virtualenv python executable
+            repository_path (str): Path to the repository yaml file for the repository the schedule
+                targets
         '''
 
     @abc.abstractmethod
@@ -71,12 +74,31 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         '''
 
 
-class RunSchedule(namedtuple('RunSchedule', 'schedule_id name cron_schedule execution_params')):
-    def __new__(cls, schedule_id, name, cron_schedule, execution_params):
+class RunSchedule(
+    namedtuple(
+        'RunSchedule', 'schedule_id name cron_schedule execution_params python_path repository_path'
+    )
+):
+    def __new__(cls, schedule_id, name, cron_schedule, execution_params, **kwargs):
         return super(RunSchedule, cls).__new__(
             cls,
             check.str_param(schedule_id, 'schedule_id'),
             check.str_param(name, 'name'),
             check.str_param(cron_schedule, 'cron_schedule'),
             check.dict_param(execution_params, 'execution_params'),
+            check.opt_str_param(kwargs.get("python_path"), 'python_path'),
+            check.opt_str_param(kwargs.get("repository_path"), 'repository_path'),
         )
+
+    def start_schedule(self, python_path, repository_path):
+        return RunSchedule(
+            self.schedule_id,
+            self.name,
+            self.cron_schedule,
+            self.execution_params,
+            python_path=python_path,
+            repository_path=repository_path,
+        )
+
+    def end_schedule(self):
+        return RunSchedule(self.schedule_id, self.name, self.cron_schedule, self.execution_params)

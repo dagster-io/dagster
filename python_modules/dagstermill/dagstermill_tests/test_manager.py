@@ -14,9 +14,7 @@ from dagster import (
     Materialization,
     ModeDefinition,
     ResourceDefinition,
-    RunConfig,
 )
-from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.utils import safe_tempfile_path
 
@@ -29,6 +27,7 @@ from dagstermill.manager import Manager
 def in_pipeline_manager(
     pipeline_name='hello_world_pipeline',
     solid_handle=SolidHandle('hello_world', 'hello_world', None),
+    handle_kwargs=None,
     **kwargs
 ):
     manager = Manager()
@@ -37,20 +36,19 @@ def in_pipeline_manager(
 
     marshal_dir = tempfile.mkdtemp()
 
-    handle = handle_for_pipeline_cli_args(
-        {
+    if not handle_kwargs:
+        handle_kwargs = {
             'pipeline_name': pipeline_name,
             'module_name': 'dagstermill.examples.repository',
             'fn_name': 'define_hello_world_pipeline',
         }
-    )
 
     try:
         with safe_tempfile_path() as output_log_file_path:
             context_dict = {
-                'run_config': RunConfig(run_id=run_id, mode='default'),
-                'solid_handle': solid_handle,
-                'handle': handle,
+                'run_config_kwargs': dict(run_id=run_id, mode='default'),
+                'solid_handle_kwargs': solid_handle._asdict(),
+                'handle_kwargs': handle_kwargs,
                 'marshal_dir': marshal_dir,
                 'environment_dict': {},
                 'output_log_path': output_log_file_path,
@@ -102,12 +100,10 @@ def test_yield_unserializable_result():
 
     with in_pipeline_manager(
         solid_handle=SolidHandle('hello_world_output', 'hello_world_output', None),
-        handle=handle_for_pipeline_cli_args(
-            {
-                'module_name': 'dagstermill.examples.repository',
-                'fn_name': 'define_hello_world_with_output_pipeline',
-            }
-        ),
+        handle_kwargs={
+            'module_name': 'dagstermill.examples.repository',
+            'fn_name': 'define_hello_world_with_output_pipeline',
+        },
     ) as manager:
         with pytest.raises(TypeError):
             manager.yield_result(threading.Lock())
@@ -146,24 +142,20 @@ def test_in_pipeline_manager_solid_config():
 
     with in_pipeline_manager(
         solid_handle=SolidHandle('hello_world_config', 'hello_world_config', None),
-        handle=handle_for_pipeline_cli_args(
-            {
-                'module_name': 'dagstermill.examples.repository',
-                'fn_name': 'define_hello_world_config_pipeline',
-            }
-        ),
+        handle_kwargs={
+            'module_name': 'dagstermill.examples.repository',
+            'fn_name': 'define_hello_world_config_pipeline',
+        },
     ) as manager:
         assert manager.context.solid_config == {'greeting': 'hello'}
 
     with in_pipeline_manager(
         solid_handle=SolidHandle('hello_world_config', 'hello_world_config', None),
         environment_dict={'solids': {'hello_world_config': {'config': {'greeting': 'bonjour'}}}},
-        handle=handle_for_pipeline_cli_args(
-            {
-                'module_name': 'dagstermill.examples.repository',
-                'fn_name': 'define_hello_world_config_pipeline',
-            }
-        ),
+        handle_kwargs={
+            'module_name': 'dagstermill.examples.repository',
+            'fn_name': 'define_hello_world_config_pipeline',
+        },
     ) as manager:
         assert manager.context.solid_config == {'greeting': 'bonjour'}
 
@@ -174,16 +166,14 @@ def test_in_pipeline_manager_with_resources():
 
     try:
         with in_pipeline_manager(
-            handle=handle_for_pipeline_cli_args(
-                {
-                    'pipeline_name': 'resource_pipeline',
-                    'fn_name': 'define_resource_pipeline',
-                    'module_name': 'dagstermill.examples.repository',
-                }
-            ),
+            handle_kwargs={
+                'pipeline_name': 'resource_pipeline',
+                'fn_name': 'define_resource_pipeline',
+                'module_name': 'dagstermill.examples.repository',
+            },
             solid_handle=SolidHandle('hello_world_resource', 'hello_world_resource', None),
             environment_dict={'resources': {'list': {'config': path}}},
-            run_config=RunConfig(mode='prod'),
+            run_config_kwargs=dict(mode='prod'),
         ) as manager:
             assert len(manager.context.resources._asdict()) == 1
 

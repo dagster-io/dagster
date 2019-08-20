@@ -3,6 +3,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.events import DagsterEvent
+
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils.error import SerializableErrorInfo
 from dagster.utils.log import (
@@ -10,6 +11,11 @@ from dagster.utils.log import (
     StructuredLoggerHandler,
     StructuredLoggerMessage,
     construct_single_handler_logger,
+)
+from dagster.core.serdes import (
+    whitelist_for_serdes,
+    serialize_dagster_namedtuple,
+    deserialize_json_to_dagster_namedtuple,
 )
 
 
@@ -48,11 +54,20 @@ class EventRecord(
     def is_dagster_event(self):
         return bool(self.dagster_event)
 
+    def to_json(self):
+        return serialize_dagster_namedtuple(self)
 
+    @staticmethod
+    def from_json(json_str):
+        return deserialize_json_to_dagster_namedtuple(json_str)
+
+
+@whitelist_for_serdes
 class DagsterEventRecord(EventRecord):
     pass
 
 
+@whitelist_for_serdes
 class LogMessageRecord(EventRecord):
     pass
 

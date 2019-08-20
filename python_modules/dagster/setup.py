@@ -67,6 +67,7 @@ def _do_setup(name='dagster'):
             # core (not explicitly expressed atm)
             'six>=1.11.0',
             'toposort>=1.0',
+            "python-crontab>=2.3.8",
         ],
         tests_require=['mock'],
         extras_require={':python_version>"3"': ['reloader>=0.6'], 'aws': ['boto3>=1.9.117']},

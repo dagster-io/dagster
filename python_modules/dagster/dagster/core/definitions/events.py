@@ -3,6 +3,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
+from dagster.core.serdes import whitelist_for_serdes
 
 from .utils import DEFAULT_OUTPUT
 
@@ -11,6 +12,7 @@ def last_file_comp(path):
     return os.path.basename(os.path.normpath(path))
 
 
+@whitelist_for_serdes
 class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description entry_data')):
     '''A structure for describing metadata for Dagster events.
 
@@ -62,21 +64,25 @@ class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description en
         return EventMetadataEntry(label, description, MarkdownMetadataEntryData(mdString))
 
 
+@whitelist_for_serdes
 class TextMetadataEntryData(namedtuple('_TextMetadataEntryData', 'text')):
     def __new__(cls, text):
         return super(TextMetadataEntryData, cls).__new__(cls, check.str_param(text, 'text'))
 
 
+@whitelist_for_serdes
 class UrlMetadataEntryData(namedtuple('_UrlMetadataEntryData', 'url')):
     def __new__(cls, url):
         return super(UrlMetadataEntryData, cls).__new__(cls, check.str_param(url, 'url'))
 
 
+@whitelist_for_serdes
 class PathMetadataEntryData(namedtuple('_PathMetadataEntryData', 'path')):
     def __new__(cls, path):
         return super(PathMetadataEntryData, cls).__new__(cls, check.str_param(path, 'path'))
 
 
+@whitelist_for_serdes
 class JsonMetadataEntryData(namedtuple('_JsonMetadataEntryData', 'data')):
     def __new__(cls, data):
         return super(JsonMetadataEntryData, cls).__new__(
@@ -84,6 +90,7 @@ class JsonMetadataEntryData(namedtuple('_JsonMetadataEntryData', 'data')):
         )
 
 
+@whitelist_for_serdes
 class MarkdownMetadataEntryData(namedtuple('_MarkdownMetadataEntryData', 'mdString')):
     def __new__(cls, mdString):
         return super(MarkdownMetadataEntryData, cls).__new__(
@@ -113,6 +120,7 @@ class Output(namedtuple('_Result', 'value output_name')):
         return super(Output, cls).__new__(cls, value, check.str_param(output_name, 'output_name'))
 
 
+@whitelist_for_serdes
 class Materialization(namedtuple('_Materialization', 'label description metadata_entries')):
     '''A value materialized by a solid compute function.
 
@@ -146,6 +154,7 @@ class Materialization(namedtuple('_Materialization', 'label description metadata
         )
 
 
+@whitelist_for_serdes
 class ExpectationResult(
     namedtuple('_ExpectationResult', 'success label description metadata_entries')
 ):
@@ -173,6 +182,7 @@ class ExpectationResult(
         )
 
 
+@whitelist_for_serdes
 class TypeCheck(namedtuple('_TypeCheck', 'description metadata_entries')):
     '''Used to communicate metadata about a value as it is evaluated against
     a declared expected type.

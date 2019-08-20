@@ -1,6 +1,5 @@
 import multiprocessing
 import time
-import logging
 from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import namedtuple
 
@@ -14,10 +13,7 @@ EXECUTION_TIME_KEY = 'execution_epoch_time'
 
 
 class RunConfig(
-    namedtuple(
-        '_RunConfig',
-        'run_id tags event_callback log_sink reexecution_config step_keys_to_execute mode',
-    )
+    namedtuple('_RunConfig', 'run_id tags event_sink reexecution_config step_keys_to_execute mode')
 ):
     '''
     Configuration that controls the details of how Dagster will execute a pipeline.
@@ -26,10 +22,8 @@ class RunConfig(
         run_id (Optional[str]): The ID to use for this run. If not provided a new UUID will
             be created using `uuid4`.
         tags (Optional[dict[str, str]]): Key value pairs that will be added to logs.
-        event_callback (Optional[callable]): A callback to invoke with each :py:class:`EventRecord`
-            produced during execution.
-        log_sink (Optional[Logger]):
-            An optionally provided logger used for handling logs outside of the single process executor.
+        event_sink (Optional[EventSink]):
+            An optionally provided object used for handling dagster_events and logs.
         rexecution_config (Optional[RexecutionConfig]): Information about a previous run to allow
             for subset rexecution.
         step_keys_to_execute (Optional[list[str]]): The subset of steps from a pipeline to execute
@@ -41,12 +35,13 @@ class RunConfig(
         cls,
         run_id=None,
         tags=None,
-        event_callback=None,
-        log_sink=None,
+        event_sink=None,
         reexecution_config=None,
         step_keys_to_execute=None,
         mode=None,
     ):
+        from dagster.core.events import EventSink
+
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
         tags = check.opt_dict_param(tags, 'tags', key_type=str)
@@ -60,8 +55,7 @@ class RunConfig(
             cls,
             run_id=check.str_param(run_id, 'run_id') if run_id else make_new_run_id(),
             tags=tags,
-            event_callback=check.opt_callable_param(event_callback, 'event_callback'),
-            log_sink=check.opt_inst_param(log_sink, 'log_sink', logging.Logger),
+            event_sink=check.opt_inst_param(event_sink, 'event_sink', EventSink),
             reexecution_config=check.opt_inst_param(
                 reexecution_config, 'reexecution_config', ReexecutionConfig
             ),
@@ -73,8 +67,8 @@ class RunConfig(
         new_tags = merge_dicts(self.tags, new_tags)
         return RunConfig(**merge_dicts(self._asdict(), {'tags': new_tags}))
 
-    def with_log_sink(self, sink):
-        return RunConfig(**merge_dicts(self._asdict(), {'log_sink': sink}))
+    def with_event_sink(self, sink):
+        return RunConfig(**merge_dicts(self._asdict(), {'event_sink': sink}))
 
 
 class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init

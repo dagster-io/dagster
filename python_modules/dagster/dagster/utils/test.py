@@ -41,7 +41,7 @@ from .temp_file import (
 
 
 def create_test_pipeline_execution_context(
-    logger_defs=None, scoped_resources_builder=None, log_sink=None, tags=None
+    logger_defs=None, scoped_resources_builder=None, event_sink=None, tags=None
 ):
     run_id = str(uuid.uuid4())
     loggers = check.opt_dict_param(
@@ -51,8 +51,8 @@ def create_test_pipeline_execution_context(
     pipeline_def = PipelineDefinition(
         name='test_legacy_context', solid_defs=[], mode_defs=[mode_def]
     )
-    log_sink = check.opt_inst_param(log_sink, 'log_sink', logging.Logger)
-    run_config = RunConfig(run_id, tags=tags, log_sink=log_sink)
+    event_sink = check.opt_inst_param(event_sink, 'event_sink', logging.Logger)
+    run_config = RunConfig(run_id, tags=tags, event_sink=event_sink)
     environment_dict = {'loggers': {key: {} for key in loggers}}
     creation_data = create_context_creation_data(pipeline_def, environment_dict, run_config)
     log_manager = create_log_manager(creation_data)

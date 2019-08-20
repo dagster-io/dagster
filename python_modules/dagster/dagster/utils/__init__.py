@@ -6,10 +6,11 @@ import os
 import re
 import subprocess
 import tempfile
+from collections import namedtuple
+from enum import Enum
 
 import yaml
 from six.moves import configparser
-from enum import Enum
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError

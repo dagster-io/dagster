@@ -53,10 +53,6 @@ type ConfigTypeNotFoundError implements Error {
 
 union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigType | PipelineNotFoundError | ConfigTypeNotFoundError
 
-type CreateRunScheduleResult {
-  schedule: RunSchedule!
-}
-
 scalar Cursor
 
 type DeleteRunScheduleResult {
@@ -460,7 +456,9 @@ type ModeNotFoundError implements Error {
 type Mutation {
   startPipelineExecution(executionParams: ExecutionParams!, reexecutionConfig: ReexecutionConfig): StartPipelineExecutionResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
-  createRunSchedule(schedule: RunScheduleInput!): CreateRunScheduleResult!
+  createRunSchedule(schedule: RunScheduleInput!): RunScheduleResult!
+  startRunSchedule(scheduleId: String!): RunScheduleResult!
+  endRunSchedule(scheduleId: String!): RunScheduleResult!
   deleteRunSchedule(scheduleId: String!): DeleteRunScheduleResult!
 }
 
@@ -761,12 +759,18 @@ type RunSchedule {
   name: String!
   cronSchedule: String!
   executionParamsString: String!
+  pythonPath: String
+  repositoryPath: String
 }
 
 input RunScheduleInput {
   name: String!
   cronSchedule: String!
   executionParams: ExecutionParams!
+}
+
+type RunScheduleResult {
+  schedule: RunSchedule!
 }
 
 type RuntimeMismatchConfigError implements PipelineConfigValidationError {
