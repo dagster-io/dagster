@@ -12,6 +12,7 @@ from .container import IContainSolids, create_execution_structure, validate_depe
 from .input import InputDefinition, InputMapping
 from .output import OutputDefinition, OutputMapping
 from .utils import check_valid_name
+from .dependency import SolidHandle
 
 
 class ISolidDefinition(six.with_metaclass(ABCMeta)):
@@ -85,7 +86,7 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
         raise NotImplementedError()
 
     @abstractmethod
-    def resolve_output_to_origin(self, output_name):
+    def resolve_output_to_origin(self, output_name, handle):
         raise NotImplementedError()
 
     def all_input_output_types(self):
@@ -213,8 +214,8 @@ class SolidDefinition(ISolidDefinition):
     def iterate_solid_defs(self):
         yield self
 
-    def resolve_output_to_origin(self, output_name):
-        return self.output_def_named(output_name)
+    def resolve_output_to_origin(self, output_name, handle):
+        return self.output_def_named(output_name), handle
 
 
 class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
@@ -381,11 +382,13 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
                 return mapping
         return None
 
-    def resolve_output_to_origin(self, output_name):
+    def resolve_output_to_origin(self, output_name, handle):
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, 'Can only resolve outputs for valid output names')
-        return self.solid_named(mapping.solid_name).definition.resolve_output_to_origin(
-            mapping.output_name
+        mapped_solid = self.solid_named(mapping.solid_name)
+        return mapped_solid.definition.resolve_output_to_origin(
+            mapping.output_name,
+            SolidHandle(mapped_solid.name, mapped_solid.definition.name, handle),
         )
 
     def all_runtime_types(self):

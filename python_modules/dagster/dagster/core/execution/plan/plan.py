@@ -38,9 +38,9 @@ class _PlanBuilder:
             environment_config, 'environment_config', EnvironmentConfig
         )
         self.mode_definition = check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
-        self.steps = []
+        self._steps = dict()
         self.step_output_map = dict()
-        self.seen_keys = set()
+        self._seen_keys = set()
 
     @property
     def pipeline_name(self):
@@ -48,19 +48,23 @@ class _PlanBuilder:
 
     def add_step(self, step):
         # Keep track of the step keys we've seen so far to ensure we don't add duplicates
-        if step.key in self.seen_keys:
-            keys = [s.key for s in self.steps]
+        if step.key in self._seen_keys:
+            keys = [s.key for s in self._steps]
             check.failed(
                 'Duplicated key {key}. Full list seen so far: {key_list}.'.format(
                     key=step.key, key_list=keys
                 )
             )
-        self.seen_keys.add(step.key)
-        self.steps.append(step)
+        self._seen_keys.add(step.key)
+        self._steps[step.solid_handle.to_string()] = step
 
     def add_steps(self, steps):
         for step in steps:
             self.add_step(step)
+
+    def get_step_by_handle(self, handle):
+        check.inst_param(handle, 'handle', SolidHandle)
+        return self._steps[handle.to_string()]
 
     def get_output_handle(self, key):
         check.inst_param(key, 'key', SolidOutputHandle)
@@ -81,13 +85,13 @@ class _PlanBuilder:
         )
 
         # Construct dependency dictionary
-        deps = {step.key: set() for step in self.steps}
+        deps = {step.key: set() for step in self._steps.values()}
 
-        for step in self.steps:
+        for step in self._steps.values():
             for step_input in step.step_inputs:
                 deps[step.key].update(step_input.dependency_keys)
 
-        step_dict = {step.key: step for step in self.steps}
+        step_dict = {step.key: step for step in self._steps.values()}
 
         system_storage_def = self.mode_definition.get_system_storage_def(
             self.environment_config.storage.system_storage_name
@@ -98,7 +102,6 @@ class _PlanBuilder:
     def _build_from_sorted_solids(
         self, solids, dependency_structure, parent_handle=None, parent_step_inputs=None
     ):
-        terminal_compute_step = None
         for solid in solids:
             handle = SolidHandle(solid.name, solid.definition.name, parent_handle)
 
@@ -124,22 +127,24 @@ class _PlanBuilder:
                 check.inst_param(step_input, 'step_input', StepInput)
                 step_inputs.append(step_input)
 
-            ### 2. COMPUTE FUNCTION OR RECURSE
-            # Create and add execution plan step for the solid compute function or
-            # recurse over the solids in a CompositeSolid
+            ### 2a. COMPUTE FUNCTION
+            # Create and add execution plan step for the solid compute function
             if isinstance(solid.definition, SolidDefinition):
                 solid_compute_step = create_compute_step(
                     self.pipeline_name, self.environment_config, solid, step_inputs, handle
                 )
                 self.add_step(solid_compute_step)
-                terminal_compute_step = solid_compute_step
+
+            ### 2b. RECURSE
+            # Recurse over the solids contained in an instance of CompositeSolidDefinition
             elif isinstance(solid.definition, CompositeSolidDefinition):
-                terminal_compute_step = self._build_from_sorted_solids(
+                self._build_from_sorted_solids(
                     solids_in_topological_order(solid.definition),
                     solid.definition.dependency_structure,
                     parent_handle=handle,
                     parent_step_inputs=step_inputs,
                 )
+
             else:
                 check.invariant(
                     False,
@@ -149,16 +154,20 @@ class _PlanBuilder:
                 )
 
             ### 3. OUTPUTS
-            # Create and add execution plan steps (and output handles) for solid outputs
+            # Create output handles for solid outputs
             for name, output_def in solid.definition.output_dict.items():
                 output_handle = solid.output_handle(name)
-                output_def = solid.definition.resolve_output_to_origin(output_def.name)
+
+                # Punch through layers of composition scope to map to the output of the
+                # actual compute step
+                resolved_output_def, resolved_handle = solid.definition.resolve_output_to_origin(
+                    output_def.name, handle
+                )
+                compute_step = self.get_step_by_handle(resolved_handle)
                 self.set_output_handle(
                     output_handle,
-                    StepOutputHandle.from_step(terminal_compute_step, output_def.name),
+                    StepOutputHandle.from_step(compute_step, resolved_output_def.name),
                 )
-
-        return terminal_compute_step
 
 
 def get_step_input(
