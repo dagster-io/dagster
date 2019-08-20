@@ -44,6 +44,7 @@ def test_sink_logger():
             count = cursor.execute('select count(1) from logs').fetchall()
             assert count[0][0] == 1000
         conn.close()
+        sink.on_pipeline_teardown()
 
 
 def test_sink_log_forwarding():
@@ -80,6 +81,7 @@ def test_sink_log_forwarding():
                 assert json_record == seven.json.dumps(test_log_records[i].__dict__)
 
         conn.close()
+        sink.on_pipeline_teardown()
 
 
 def write_logs(event_sink, run_id):
@@ -87,6 +89,8 @@ def write_logs(event_sink, run_id):
 
     for i in range(1000):
         sqlite3_log_manager.info('Testing ' + str(i))
+
+    event_sink.on_pipeline_teardown()
 
 
 def forward_logs(event_sink, wrap_it_up, run_id, test_log_records):
@@ -195,3 +199,4 @@ def test_error_during_logging(caplog):
             ('root', 50, 'Error during logging!'),
             ('root', 40, 'Bailing!'),
         ]
+        event_sink.on_pipeline_teardown()
