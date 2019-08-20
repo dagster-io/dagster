@@ -22,7 +22,7 @@ from dagster import (
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import ExecutionSelector
-from dagster.core.storage.runs import InMemoryPipelineRun, PipelineRunStatus
+from dagster.core.storage.runs import InMemoryRunStorage, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.utils import script_relative_path
 
@@ -75,7 +75,8 @@ def test_running():
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
     selector = ExecutionSelector('csv_hello_world')
-    pipeline_run = InMemoryPipelineRun(
+    run_storage = InMemoryRunStorage()
+    pipeline_run = run_storage.create_run(
         pipeline_name=passing_pipeline.name,
         run_id=run_id,
         selector=selector,
@@ -105,7 +106,9 @@ def test_failing():
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
     selector = ExecutionSelector('csv_hello_world')
-    pipeline_run = InMemoryPipelineRun(
+    run_storage = InMemoryRunStorage()
+    pipeline_run = run_storage.create_run(
+        run_storage=run_storage,
         pipeline_name=failing_pipeline.name,
         run_id=run_id,
         selector=selector,
@@ -128,7 +131,9 @@ def test_execution_crash():
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
     selector = ExecutionSelector('csv_hello_world')
-    pipeline_run = InMemoryPipelineRun(
+    run_storage = InMemoryRunStorage()
+    pipeline_run = run_storage.create_run(
+        run_storage=run_storage,
         pipeline_name=crashy_pipeline.name,
         run_id=run_id,
         selector=selector,
@@ -239,7 +244,9 @@ def test_multiprocessing_execution_for_composite_solid():
 
     run_id = make_new_run_id()
     handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'composite_pipeline')
-    pipeline_run = InMemoryPipelineRun(
+    run_storage = InMemoryRunStorage()
+    pipeline_run = run_storage.create_run(
+        run_storage=run_storage,
         pipeline_name=composite_pipeline.name,
         run_id=run_id,
         selector=ExecutionSelector('nonce'),
@@ -266,7 +273,8 @@ def test_multiprocessing_execution_for_composite_solid():
     }
 
     run_id = make_new_run_id()
-    pipeline_run = InMemoryPipelineRun(
+    pipeline_run = run_storage.create_run(
+        run_storage=run_storage,
         pipeline_name=composite_pipeline.name,
         run_id=run_id,
         selector=ExecutionSelector('nonce'),
@@ -295,7 +303,9 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     handle = ExecutionTargetHandle.for_pipeline_python_file(
         __file__, 'composite_pipeline_with_config_mapping'
     )
-    pipeline_run = InMemoryPipelineRun(
+    run_storage = InMemoryRunStorage()
+    pipeline_run = run_storage.create_run(
+        run_storage=run_storage,
         pipeline_name=composite_pipeline_with_config_mapping.name,
         run_id=run_id,
         selector=ExecutionSelector('nonce'),
@@ -322,7 +332,8 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     }
 
     run_id = make_new_run_id()
-    pipeline_run = InMemoryPipelineRun(
+    pipeline_run = run_storage.create_run(
+        run_storage=run_storage,
         pipeline_name=composite_pipeline.name,
         run_id=run_id,
         selector=ExecutionSelector('nonce'),

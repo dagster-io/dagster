@@ -58,7 +58,6 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
         reexecution_config=reexecution_config,
         step_keys_to_execute=execution_params.step_keys,
     )
-    pipeline_run_storage.add_run(run)
 
     graphene_info.context.execution_manager.execute_pipeline(
         graphene_info.context.get_handle(),
