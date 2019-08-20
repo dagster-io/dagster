@@ -64,7 +64,7 @@ class Term:
 
     @staticmethod
     def info(msg):
-        click.echo(Term.INFO_PREFIX + msg)
+        click.echo(click.style(Term.INFO_PREFIX + msg, fg='blue'))
 
     @staticmethod
     def success(msg):

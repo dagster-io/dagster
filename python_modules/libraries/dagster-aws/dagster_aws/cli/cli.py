@@ -307,6 +307,12 @@ def init():
     # this ensures DAGSTER_HOME exists before we continue
     dagster_home = get_dagster_home()
 
+    already_run = HostConfig.exists(dagster_home)
+    if already_run:
+        click.confirm(
+            'dagster-aws has already been initialized! Continue?', default=False, abort=True
+        )
+
     region = select_region()
 
     client = boto3.client('ec2', region_name=region)
@@ -329,7 +335,21 @@ def init():
     )
     cfg.save(dagster_home)
 
-    click.echo(click.style('🚀 To connect, just use: dagit-aws shell\n', fg='green'))
+    click.echo(
+        click.style(
+            '''🚀 To sync your Dagster project, in your project directory, run:
+
+    dagster-aws up
+
+You can also open a shell on your dagster-aws instance with:
+
+    dagster-aws shell
+
+For full details, see dagster-aws --help
+            ''',
+            fg='green',
+        )
+    )
 
 
 @main.command()
@@ -340,3 +360,37 @@ def shell():
     ssh_cmd = 'ssh -i %s ubuntu@%s' % (cfg.key_file_path, cfg.public_dns_name)
     Term.waiting('Connecting to host...\n%s' % ssh_cmd)
     subprocess.call(ssh_cmd, shell=True)
+
+
+@main.command()
+def up():
+    dagster_home = get_dagster_home()
+    cfg = HostConfig.load(dagster_home)
+
+    if cfg.local_path is None:
+        cwd = os.getcwd()
+        Term.info('Local path not configured; setting to %s' % cwd)
+        cfg = cfg._replace(local_path=cwd)
+        cfg.save(dagster_home)
+
+    rsync_command = [
+        'rsync',
+        '-avL',
+        '--progress',
+        # Exclude a few common paths
+        '--exclude',
+        '\'.pytest_cache\'',
+        '--exclude',
+        '\'.git\'',
+        '--exclude',
+        '\'__pycache__\'',
+        '--exclude',
+        '\'*.pyc\'',
+        '-e',
+        '"ssh -i %s"' % cfg.key_file_path,
+        '%s/*' % cfg.local_path,
+        'ubuntu@%s:/opt/dagster/app' % cfg.public_dns_name,
+    ]
+    Term.info('rsyncing local path %s to %s' % (cfg.local_path, cfg.public_dns_name))
+    click.echo('\n' + ' '.join(rsync_command) + '\n')
+    subprocess.call(' '.join(rsync_command), shell=True)
