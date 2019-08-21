@@ -27,58 +27,74 @@ export const TopNav = ({
         )}
       />
       <Navbar.Divider />
+
       <Route
         path="/:pipeline?/:tab?"
-        render={({ match: { params }, history }) => (
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <PipelineJumpBar
-              pipelines={pipelines}
-              selectedPipeline={pipelines.find(p => p.name === params.pipeline)}
-              onItemSelect={pipeline => {
-                history.push(`/${pipeline.name}/${params.tab || "explore"}`);
-              }}
-            />
-            {params.pipeline && <Navbar.Divider />}
-            {params.pipeline && (
-              <Tabs>
-                <Tab
-                  to={`/${params.pipeline}/explore`}
-                  className={params.tab === "explore" ? "active" : ""}
-                >
-                  Explore
-                </Tab>
-
-                <Tab
-                  to={`/${params.pipeline}/execute`}
-                  className={params.tab === "execute" ? "active" : ""}
-                >
-                  Execute
-                </Tab>
-
-                <Tab
-                  to={`/${params.pipeline}/runs`}
-                  className={params.tab === "runs" ? "active" : ""}
-                >
-                  Runs
-                </Tab>
-                <FlaggedFeature name="experimentalScheduler">
+        render={({ match: { params }, history }) => {
+          if (params.pipeline === "runs" || params.pipeline === "solids") {
+            params.pipeline = null;
+          }
+          return (
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <PipelineJumpBar
+                pipelines={pipelines}
+                selectedPipeline={pipelines.find(
+                  p => p.name === params.pipeline
+                )}
+                onItemSelect={pipeline => {
+                  history.push(`/${pipeline.name}/${params.tab || "explore"}`);
+                }}
+              />
+              {params.pipeline && <Navbar.Divider />}
+              {params.pipeline && (
+                <Tabs>
                   <Tab
-                    to={`/${params.pipeline}/schedule`}
-                    className={params.tab === "schedule" ? "active" : ""}
+                    to={`/${params.pipeline}/explore`}
+                    className={params.tab === "explore" ? "active" : ""}
                   >
-                    Schedule
+                    Explore
                   </Tab>
-                </FlaggedFeature>
-              </Tabs>
-            )}
-          </div>
-        )}
+
+                  <Tab
+                    to={`/${params.pipeline}/execute`}
+                    className={params.tab === "execute" ? "active" : ""}
+                  >
+                    Execute
+                  </Tab>
+                </Tabs>
+              )}
+            </div>
+          );
+        }}
       />
     </Navbar.Group>
-    <Navbar.Group align={Alignment.RIGHT}>
-      <WebsocketStatus />
-      <VersionLabel />
-    </Navbar.Group>
+    <Route
+      path="/:tab?"
+      render={({ match: { params }, history }) => (
+        <Navbar.Group align={Alignment.RIGHT}>
+          <Tab to={`/runs`} className={params.tab === "runs" ? "active" : ""}>
+            Runs
+          </Tab>
+          <Tab
+            to={`/solids`}
+            className={params.tab === "solids" ? "active" : ""}
+          >
+            Solids
+          </Tab>
+          <Tab
+            to={`/schedule`}
+            className={params.tab === "schedule" ? "active" : ""}
+          >
+            Schedule
+          </Tab>
+
+          <Navbar.Divider />
+
+          <WebsocketStatus />
+          <VersionLabel />
+        </Navbar.Group>
+      )}
+    />
   </Navbar>
 );
 
@@ -104,7 +120,6 @@ const Tab = styled(Link)`
   border-bottom: 3px solid transparent;
   text-decoration: none;
   white-space: nowrap;
-  min-width: 40px;
   padding: 0 10px;
   display: flex;
   height: 50px;
