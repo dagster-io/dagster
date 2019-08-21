@@ -123,8 +123,9 @@ function getDagrePipelineLayoutHeavy(
   // parent solid AROUND it. We pass this padding in to dagre, and then we have enough
   // room to add our parent layout around the result.
   let parentIOPadding = 0;
-  let marginy = 100;
-  let marginx = 100;
+  const marginBase = 100;
+  let marginy = marginBase;
+  let marginx = marginBase;
   if (parentSolid) {
     parentIOPadding =
       Math.max(parentSolid.inputs.length, parentSolid.outputs.length) *
@@ -197,7 +198,7 @@ function getDagrePipelineLayoutHeavy(
 
   let rows = Object.keys(nodesInRows)
     .map(a => Number(a))
-    .sort();
+    .sort((a, b) => a - b);
 
   let firstRow = nodesInRows[`${rows[0]}`];
   let firstRowCenterX =
@@ -292,7 +293,7 @@ function getDagrePipelineLayoutHeavy(
     solids,
     connections,
     width: maxWidth,
-    height: maxHeight,
+    height: maxHeight + marginBase,
     parent: null
   };
 
