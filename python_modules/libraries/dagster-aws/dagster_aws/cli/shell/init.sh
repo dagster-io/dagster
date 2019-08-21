@@ -26,7 +26,7 @@ pip install -U pip
 sudo -u ubuntu git clone https://github.com/dagster-io/dagster.git $INSTALL_PATH/dagster
 
 pushd $INSTALL_PATH/dagster
-sudo -u ubuntu make dev_install
+sudo -u ubuntu /bin/bash -c 'source /opt/dagster/venv/bin/activate && make dev_install'
 
 # user code will go here
 mkdir -p $INSTALL_PATH/app
