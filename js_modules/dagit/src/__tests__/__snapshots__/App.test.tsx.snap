@@ -95,25 +95,18 @@ Array [
           className="sc-htpNat dMCWdO"
         >
           <a
-            className="sc-bxivhb cpwKZw"
+            className="sc-bxivhb iHwkSZ"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-bxivhb cpwKZw"
+            className="sc-bxivhb iHwkSZ"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute
-          </a>
-          <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/runs"
-            onClick={[Function]}
-          >
-            Runs
           </a>
         </div>
       </div>
@@ -121,6 +114,16 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
       <div
         className="sc-bdVaJa cgCJAY"
         style={
@@ -243,6 +246,16 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
       <div
         className="sc-bdVaJa cgCJAY"
         style={
@@ -367,25 +380,18 @@ Array [
           className="sc-htpNat dMCWdO"
         >
           <a
-            className="sc-bxivhb cpwKZw"
+            className="sc-bxivhb iHwkSZ"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-bxivhb cpwKZw"
+            className="sc-bxivhb iHwkSZ"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute
-          </a>
-          <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/runs"
-            onClick={[Function]}
-          >
-            Runs
           </a>
         </div>
       </div>
@@ -393,6 +399,16 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
       <div
         className="sc-bdVaJa cgCJAY"
         style={
@@ -517,25 +533,18 @@ Array [
           className="sc-htpNat dMCWdO"
         >
           <a
-            className="sc-bxivhb cpwKZw"
+            className="sc-bxivhb iHwkSZ"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-bxivhb cpwKZw"
+            className="sc-bxivhb iHwkSZ"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute
-          </a>
-          <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/runs"
-            onClick={[Function]}
-          >
-            Runs
           </a>
         </div>
       </div>
@@ -543,6 +552,16 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
       <div
         className="sc-bdVaJa cgCJAY"
         style={
@@ -667,25 +686,18 @@ Array [
           className="sc-htpNat dMCWdO"
         >
           <a
-            className="sc-bxivhb cpwKZw"
+            className="sc-bxivhb iHwkSZ"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-bxivhb cpwKZw"
+            className="sc-bxivhb iHwkSZ"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute
-          </a>
-          <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/runs"
-            onClick={[Function]}
-          >
-            Runs
           </a>
         </div>
       </div>
@@ -693,6 +705,16 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
       <div
         className="sc-bdVaJa cgCJAY"
         style={
@@ -815,6 +837,16 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
       <div
         className="sc-bdVaJa cgCJAY"
         style={
