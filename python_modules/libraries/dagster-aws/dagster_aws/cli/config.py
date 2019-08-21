@@ -15,7 +15,8 @@ HOST_CONFIG_FILE = '.dagit-aws-config'
 
 class HostConfig(
     namedtuple(
-        '_HostConfig', 'public_dns_name region security_group_id key_pair_name key_file_path ami_id'
+        '_HostConfig',
+        'public_dns_name region security_group_id key_pair_name key_file_path ami_id local_path',
     )
 ):
     '''Serialize the user's AWS host configuration to a YAML file for future use.
@@ -29,6 +30,7 @@ class HostConfig(
         key_pair_name=None,
         key_file_path=None,
         ami_id=None,
+        local_path=None,
     ):
         return super(HostConfig, cls).__new__(
             cls,
@@ -38,7 +40,13 @@ class HostConfig(
             key_pair_name=check.opt_str_param(key_pair_name, 'key_pair_name'),
             key_file_path=check.opt_str_param(key_file_path, 'key_file_path'),
             ami_id=check.opt_str_param(ami_id, 'ami_id'),
+            local_path=check.opt_str_param(local_path, 'local_path'),
         )
+
+    @staticmethod
+    def exists(dagster_home):
+        cfg_path = os.path.join(dagster_home, HOST_CONFIG_FILE)
+        return os.path.exists(cfg_path)
 
     def save(self, dagster_home):
         # Save configuration to a file for future use
@@ -52,6 +60,7 @@ class HostConfig(
                     'key_pair_name': self.key_pair_name,
                     'key_file_path': self.key_file_path,
                     'ami_id': self.ami_id,
+                    'local_path': self.local_path,
                 }
             }
             f.write(six.ensure_binary(yaml.dump(output_record, default_flow_style=False)))

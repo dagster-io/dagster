@@ -8,6 +8,7 @@ from graphql.execution.executors.sync import SyncExecutor
 from dagster import ExecutionTargetHandle, check, seven
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
+from dagster.core.scheduler import Scheduler
 from dagster.utils import (
     DEFAULT_REPOSITORY_YAML_FILENAME,
     dagster_logs_dir_for_handle,
@@ -41,6 +42,7 @@ def execute_query(
     query,
     variables=None,
     pipeline_run_storage=None,
+    scheduler=None,
     raise_on_error=False,
     use_sync_executor=False,
 ):
@@ -50,6 +52,7 @@ def execute_query(
     # We allow external creation of the pipeline_run_storage to support testing contexts where we
     # need access to the underlying run storage
     check.opt_inst_param(pipeline_run_storage, 'pipeline_run_storage', RunStorage)
+    check.opt_inst_param(scheduler, 'scheduler', Scheduler)
     check.bool_param(raise_on_error, 'raise_on_error')
     check.bool_param(use_sync_executor, 'use_sync_executor')
 
@@ -62,6 +65,7 @@ def execute_query(
     context = DagsterGraphQLContext(
         handle=handle,
         pipeline_runs=pipeline_run_storage,
+        scheduler=scheduler,
         execution_manager=execution_manager,
         raise_on_error=raise_on_error,
         version=__version__,

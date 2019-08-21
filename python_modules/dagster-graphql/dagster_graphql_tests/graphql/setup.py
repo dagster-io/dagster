@@ -26,6 +26,7 @@ from dagster import (
     Path,
     PresetDefinition,
     RepositoryDefinition,
+    ScheduleDefinition,
     SolidDefinition,
     String,
     as_dagster_type,
@@ -47,7 +48,7 @@ from dagster_graphql.implementation.pipeline_run_storage import (
     FilesystemRunStorage,
     InMemoryRunStorage,
 )
-from dagster_graphql.implementation.scheduler import SystemCronScheduler
+from dagster.core.scheduler import SystemCronScheduler
 
 
 class PoorMansDataFrame_(list):
@@ -168,6 +169,7 @@ def define_repository():
             scalar_output_pipeline,
             secret_pipeline,
         ],
+        experimental={'schedule_defs': [no_config_pipeline_hourly_schedule]},
     )
 
 
@@ -306,6 +308,17 @@ def pipeline_with_list():
 @pipeline
 def csv_hello_world_df_input():
     return sum_sq_solid(sum_solid())
+
+
+no_config_pipeline_hourly_schedule = ScheduleDefinition(
+    name="no_config_pipeline_hourly_schedule",
+    cron_schedule="0 0 * * *",
+    execution_params={
+        "environmentConfigData": {"storage": {"filesystem": None}},
+        "selector": {"name": "no_config_pipeline", "solidSubset": None},
+        "mode": "default",
+    },
+)
 
 
 @pipeline

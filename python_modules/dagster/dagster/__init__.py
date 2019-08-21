@@ -19,6 +19,7 @@ from dagster.core.definitions import (
     PresetDefinition,
     RepositoryDefinition,
     ResourceDefinition,
+    ScheduleDefinition,
     SolidDefinition,
     SolidInvocation,
     SystemStorageData,

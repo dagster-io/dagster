@@ -55,8 +55,8 @@ union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigTy
 
 scalar Cursor
 
-type DeleteRunScheduleResult {
-  deletedSchedule: RunSchedule!
+type DeleteRunningScheduleResult {
+  deletedSchedule: RunningSchedule!
 }
 
 interface DisplayableEvent {
@@ -456,10 +456,8 @@ type ModeNotFoundError implements Error {
 type Mutation {
   startPipelineExecution(executionParams: ExecutionParams!, reexecutionConfig: ReexecutionConfig): StartPipelineExecutionResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
-  createRunSchedule(schedule: RunScheduleInput!): RunScheduleResult!
-  startRunSchedule(scheduleId: String!): RunScheduleResult!
-  endRunSchedule(scheduleId: String!): RunScheduleResult!
-  deleteRunSchedule(scheduleId: String!): DeleteRunScheduleResult!
+  startSchedule(scheduleId: String!): RunningScheduleResult!
+  endRunningSchedule(scheduleId: String!): RunningScheduleResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -754,23 +752,15 @@ type ResourceRequirement {
   resourceKey: String!
 }
 
-type RunSchedule {
+type RunningSchedule {
   scheduleId: String!
-  name: String!
-  cronSchedule: String!
-  executionParamsString: String!
+  scheduleDefinition: ScheduleDefinition!
   pythonPath: String
   repositoryPath: String
 }
 
-input RunScheduleInput {
-  name: String!
-  cronSchedule: String!
-  executionParams: ExecutionParams!
-}
-
-type RunScheduleResult {
-  schedule: RunSchedule!
+type RunningScheduleResult {
+  schedule: RunningSchedule!
 }
 
 type RuntimeMismatchConfigError implements PipelineConfigValidationError {
@@ -805,9 +795,15 @@ type RuntimeTypeNotFoundError implements Error {
 
 union RuntimeTypeOrError = RegularRuntimeType | PipelineNotFoundError | RuntimeTypeNotFoundError
 
+type ScheduleDefinition {
+  name: String!
+  cronSchedule: String!
+  executionParamsString: String!
+}
+
 type Scheduler {
   schedulerType: String!
-  schedules: [RunSchedule!]!
+  schedules: [RunningSchedule!]!
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {

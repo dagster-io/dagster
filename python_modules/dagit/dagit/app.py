@@ -24,7 +24,7 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
 from dagster_graphql.implementation.pipeline_run_storage import RunStorage
 from dagster_graphql.schema import create_schema
 
-from dagster_graphql.implementation.scheduler import Scheduler
+from dagster.core.scheduler import Scheduler
 from .subscription_server import DagsterSubscriptionServer
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 from .version import __version__
