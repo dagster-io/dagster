@@ -1,4 +1,5 @@
 import datetime
+import getpass
 import os
 
 import boto3
@@ -18,9 +19,6 @@ DEFAULT_SECURITY_GROUP = 'dagit-sg'
 
 # Ubuntu LTS
 DEFAULT_AMI = 'ami-09eb5e8a83c7aa890'
-
-# Dagit EC2 machine name
-DAGIT_EC2_NAME = 'dagit-ec2'
 
 
 def get_all_regions():
@@ -223,11 +221,21 @@ def create_ec2_instance(ec2, security_group_id, ami_id, key_pair_name):
         show_default=False,
     )
 
+    ec2_default_name = 'dagit-ec2-%s' % getpass.getuser()
+    ec2_instance_name = click.prompt(
+        '\nChoose an EC2 instance name '
+        + click.style('[default is %s]' % ec2_default_name, fg='green'),
+        type=str,
+        default=ec2_default_name,
+        show_default=False,
+    )
+
     Term.waiting('Creating dagit EC2 instance...')
     click.echo(
         '  '
         + '\n  '.join(
             [
+                'Name: %s' % ec2_instance_name,
                 'AMI: %s' % ami_id,
                 'Instance Type: %s' % instance_type,
                 'Security Group: %s' % security_group_id,
@@ -253,7 +261,8 @@ def create_ec2_instance(ec2, security_group_id, ami_id, key_pair_name):
         inst = instances[0]
         inst.wait_until_running()
 
-        ec2.create_tags(Resources=[inst.id], Tags=[{'Key': 'Name', 'Value': DAGIT_EC2_NAME}])
+        # Add name tag to instance after creation
+        ec2.create_tags(Resources=[inst.id], Tags=[{'Key': 'Name', 'Value': ec2_instance_name}])
 
         # Load details like public DNS name, etc.
         inst.reload()
