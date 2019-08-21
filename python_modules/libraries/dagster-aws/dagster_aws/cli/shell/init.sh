@@ -26,7 +26,7 @@ pip install -U pip
 sudo -u ubuntu git clone https://github.com/dagster-io/dagster.git $INSTALL_PATH/dagster
 
 pushd $INSTALL_PATH/dagster
-make dev_install
+sudo -u ubuntu make dev_install
 
 # user code will go here
 mkdir -p $INSTALL_PATH/app
@@ -41,7 +41,7 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-ExecStart=/bin/bash -c 'export LC_ALL=C.UTF-8 && export LANG=C.UTF-8 && source /opt/dagster/venv/bin/activate && /opt/dagster/venv/bin/dagit --no-watch -h 0.0.0.0 -p 3000 -y /opt/dagster/app/repository.yaml'
+ExecStart=/bin/bash -c 'export PYTHONPATH=$PYTHONPATH:/opt/dagster/app && export LC_ALL=C.UTF-8 && export LANG=C.UTF-8 && source /opt/dagster/venv/bin/activate && /opt/dagster/venv/bin/dagit --no-watch -h 0.0.0.0 -p 3000 -y /opt/dagster/app/repository.yaml'
 Restart=always
 
 [Install]

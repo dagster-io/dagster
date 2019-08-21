@@ -4,6 +4,8 @@ import os
 import signal
 import subprocess
 import sys
+import time
+import webbrowser
 
 import boto3
 import click
@@ -20,7 +22,11 @@ from .aws_util import (
     select_vpc,
 )
 from .config import HostConfig
-from .term import Term
+from .term import run_remote_cmd, Term
+
+
+# Client code will be deposited here on the remote EC2 instance
+SERVER_CLIENT_CODE_HOME = '/opt/dagster/app/'
 
 
 def get_dagster_home():
@@ -38,7 +44,7 @@ You may want to add this line to your .bashrc or .zshrc file.
 '''
         )
 
-    Term.info('Found DAGSTER_HOME in environment at: %s\n' % dagster_home)
+    Term.info('Found DAGSTER_HOME in environment at: %s' % dagster_home)
 
     if not os.path.isdir(dagster_home):
         Term.fatal('The specified DAGSTER_HOME folder does not exist! Create before continuing.')
@@ -59,6 +65,7 @@ def main():
 
 @main.command()
 def init():
+    '''🚀 Initialize an EC2 VM to host Dagit'''
     click.echo('\n🌈 Welcome to Dagit + AWS quickstart cloud init!\n')
 
     # this ensures DAGSTER_HOME exists before we continue
@@ -110,16 +117,17 @@ For full details, see dagster-aws --help
 
 @main.command()
 def shell():
+    '''Open an SSH shell on the remote server'''
     dagster_home = get_dagster_home()
     cfg = HostConfig.load(dagster_home)
 
-    ssh_cmd = 'ssh -i %s ubuntu@%s' % (cfg.key_file_path, cfg.public_dns_name)
-    Term.waiting('Connecting to host...\n%s' % ssh_cmd)
-    subprocess.call(ssh_cmd, shell=True)
+    # Lands us directly in SERVER_CLIENT_CODE_HOME
+    run_remote_cmd(cfg.key_file_path, cfg.public_dns_name, 'cd %s; bash' % SERVER_CLIENT_CODE_HOME)
 
 
 @main.command()
 def up():
+    '''🌱 Sync your Dagster project to the remote server'''
     dagster_home = get_dagster_home()
     cfg = HostConfig.load(dagster_home)
 
@@ -148,18 +156,62 @@ def up():
         '-e',
         '"ssh -i %s"' % cfg.key_file_path,
         '%s/*' % cfg.local_path,
-        'ubuntu@%s:/opt/dagster/app' % cfg.public_dns_name,
+        'ubuntu@%s:%s' % (cfg.public_dns_name, SERVER_CLIENT_CODE_HOME),
     ]
     Term.info('rsyncing local path %s to %s' % (cfg.local_path, cfg.public_dns_name))
     click.echo('\n' + ' '.join(rsync_command) + '\n')
     subprocess.call(' '.join(rsync_command), shell=True)
 
-    ssh_command = [
-        'ssh',
-        '-i',
+    Term.waiting('Testing that pipeline loads correctly on remote host...')
+    retval = run_remote_cmd(
         cfg.key_file_path,
-        '-t',
-        'ubuntu@%s' % cfg.public_dns_name,
-        '\"sudo systemctl restart dagit\"',
-    ]
-    subprocess.call(' '.join(ssh_command), shell=True)
+        cfg.public_dns_name,
+        'export PYTHONPATH=$PYTHONPATH:/opt/dagster/app && '
+        'source /opt/dagster/venv/bin/activate && '
+        'cd /opt/dagster/app/ && '
+        '/opt/dagster/venv/bin/dagster pipeline list',
+    )
+
+    if retval == 0:
+        Term.success('Pipeline test succeeded')
+    else:
+        Term.fatal('Errors in pipeline; fix before proceeding')
+
+    Term.waiting('Restarting dagit systemd service...')
+    retval = run_remote_cmd(cfg.key_file_path, cfg.public_dns_name, 'sudo systemctl restart dagit')
+    Term.success('Synchronization succeeded. Opening in browser...')
+
+    # Open dagit in browser, but sleep for a few seconds first to give the service time to finish
+    # restarting
+    time.sleep(2)
+    webbrowser.open_new_tab('http://%s:3000' % cfg.public_dns_name)
+
+
+@main.command()
+def update_dagster():
+    '''Update the remote copy of Dagster'''
+    dagster_home = get_dagster_home()
+    cfg = HostConfig.load(dagster_home)
+
+    Term.waiting(
+        'Running a git pull and make rebuild_dagit on the remote dagster, this may take a while...'
+    )
+    retval = run_remote_cmd(
+        cfg.key_file_path, cfg.public_dns_name, 'cd /opt/dagster/dagster && git pull'
+    )
+    if retval == 0:
+        Term.info('Dagster git refresh completed! Rebuilding dagit...')
+    else:
+        Term.fatal('git pull failed')
+
+    retval = run_remote_cmd(
+        cfg.key_file_path,
+        cfg.public_dns_name,
+        'source /opt/dagster/venv/bin/activate && '
+        'cd /opt/dagster/dagster/ && '
+        'make rebuild_dagit',
+    )
+    if retval == 0:
+        Term.success('Updating complete!')
+    else:
+        Term.fatal('Rebuilding dagit failed')

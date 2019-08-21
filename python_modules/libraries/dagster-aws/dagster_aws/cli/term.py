@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import subprocess
 import sys
 import time
 import threading
@@ -51,7 +52,7 @@ class Term:
     FATAL_PREFIX = u'💣 '
     INFO_PREFIX = u'ℹ️  '
     SUCCESS_PREFIX = u'✅ '
-    WAITING_PREFIX = u'🔄 '
+    WAITING_PREFIX = u'⌛ '
 
     @staticmethod
     def fatal(msg):
@@ -73,3 +74,8 @@ class Term:
     @staticmethod
     def waiting(msg):
         click.echo(click.style(Term.WAITING_PREFIX + msg, fg='yellow'))
+
+
+def run_remote_cmd(key_file_path, host, cmd):
+    ssh_cmd = 'ssh -i %s ubuntu@%s -t "%s"' % (key_file_path, host, cmd)
+    return subprocess.call(ssh_cmd, shell=True)
