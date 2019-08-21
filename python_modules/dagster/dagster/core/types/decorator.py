@@ -74,7 +74,7 @@ def dagster_type(
     for configuration, serialization, and metadata emission.
 
     Decorator version of as_dagster_type. See :py:func:`as_dagster_type` for parameter
-    documentation. 
+    documentation.
     '''
 
     def _with_args(bare_cls):
@@ -135,7 +135,7 @@ def as_dagster_type(
 
     Frequently you want to import a data processing library and use its types
     directly in solid definitions. To support this dagster has this facility
-    that allows one to annotate *existing* classes as dagster type. 
+    that allows one to annotate *existing* classes as dagster type.
 
     Note: It does this by setting a magical property (current "__runtime_type") on the
     class itself pointing to the dagster type associated with the python class
