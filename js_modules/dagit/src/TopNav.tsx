@@ -70,23 +70,19 @@ export const TopNav = ({
     </Navbar.Group>
     <Route
       path="/:tab?"
-      render={({ match: { params }, history }) => (
+      render={({ match: { params } }) => (
         <Navbar.Group align={Alignment.RIGHT}>
           <Tab to={`/runs`} className={params.tab === "runs" ? "active" : ""}>
             Runs
           </Tab>
-          <Tab
-            to={`/solids`}
-            className={params.tab === "solids" ? "active" : ""}
-          >
-            Solids
-          </Tab>
-          <Tab
-            to={`/schedule`}
-            className={params.tab === "schedule" ? "active" : ""}
-          >
-            Schedule
-          </Tab>
+          <FlaggedFeature name="experimentalScheduler">
+            <Tab
+              to={`/schedule`}
+              className={params.tab === "schedule" ? "active" : ""}
+            >
+              Schedule
+            </Tab>
+          </FlaggedFeature>
 
           <Navbar.Divider />
 
