@@ -3,31 +3,18 @@ import glob
 import io
 import json
 import os
-import pickle
-import shutil
 import sqlite3
-import weakref
 from collections import defaultdict, OrderedDict
-from enum import Enum
 
 import gevent.lock
-import pyrsistent
 import six
-from rx import Observable
 
 from dagster import check, seven
-from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventRecord
 from dagster.utils import mkdir_p
 
 from .config import base_runs_directory
-
-
-class PipelineRunStatus(Enum):
-    NOT_STARTED = 'NOT_STARTED'
-    STARTED = 'STARTED'
-    SUCCESS = 'SUCCESS'
-    FAILURE = 'FAILURE'
+from .event_log import EventLogStorage, InMemoryEventLogStorage, FilesystemEventLogStorage
+from .pipeline_run import PipelineRun
 
 
 class RunStorage(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-init
@@ -87,30 +74,16 @@ class RunStorage(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-init
         '''(bool) Whether the run storage persists after the process that
         created it dies.'''
 
-    @abc.abstractmethod
-    def get_logs_for_run(self, run_id, cursor=-1):
-        pass
-
-
-class InMemoryEventHandler(object):
-    def __init__(self, pipeline_run, run_storage):
-        self.pipeline_run = pipeline_run
-        self.run_storage = run_storage
-
-    def handle_new_event(self, event):
-        check.inst_param(event, 'new_event', EventRecord)
-
-        with self.run_storage.log_storage_lock[self.pipeline_run.run_id]:
-            self.run_storage.log_storage[self.pipeline_run.run_id] = self.run_storage.log_storage[
-                self.pipeline_run.run_id
-            ].append(event)
-
 
 class InMemoryRunStorage(RunStorage):
-    def __init__(self):
+    def __init__(self, event_log_storage=None):
+        self.event_log_storage = check.opt_inst_param(
+            event_log_storage,
+            'event_log_storage',
+            EventLogStorage,
+            default=InMemoryEventLogStorage(),
+        )
         self._runs = OrderedDict()
-        self.log_storage = defaultdict(LogSequence)
-        self.log_storage_lock = defaultdict(gevent.lock.Semaphore)
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
@@ -143,52 +116,30 @@ class InMemoryRunStorage(RunStorage):
         kwargs['run_storage'] = self
         pipeline_run = PipelineRun(**kwargs)
         self.add_run(pipeline_run)
-        pipeline_run.subscribe(InMemoryEventHandler(pipeline_run, self))
+        pipeline_run.subscribe(self.event_log_storage.event_handler(pipeline_run))
         return pipeline_run
-
-    def get_logs_for_run(self, run_id, cursor=-1):
-        cursor = int(cursor) + 1
-        with self.log_storage_lock[run_id]:
-            return self.log_storage[run_id][cursor:]
-
-
-class FilesystemEventHandler(object):
-    def __init__(self, pipeline_run, run_storage):
-        self.pipeline_run = pipeline_run
-        self.run_storage = run_storage
-
-    def handle_new_event(self, event):
-        check.inst_param(event, 'new_event', EventRecord)
-        with self.run_storage.log_file_lock[self.pipeline_run.run_id]:
-            # Going to do the less error-prone, simpler, but slower strategy:
-            # open, append, close for every log message for now.
-            # Open the file for binary content and create if it doesn't exist.
-            with open(
-                self.run_storage.log_filepath_for_run_id(self.pipeline_run.run_id), 'ab'
-            ) as log_file_handle:
-                log_file_handle.seek(0, os.SEEK_END)
-                pickle.dump(event, log_file_handle)
 
 
 class FilesystemRunStorage(RunStorage):
-    def __init__(self, log_dir=None):
-        self._log_dir = check.opt_str_param(log_dir, 'log_dir', base_runs_directory())
-        mkdir_p(self._log_dir)
+    def __init__(self, event_log_storage=None, base_dir=None):
+        self._base_dir = check.opt_str_param(base_dir, 'base_dir', base_runs_directory())
+        mkdir_p(self._base_dir)
 
         self._runs = OrderedDict()
 
         self._load_runs()
 
-        self.log_file_cursors = defaultdict(lambda: (0, 0))
-        # Swap these out to use lockfiles
-        self.log_file_lock = defaultdict(gevent.lock.Semaphore)
-        self._metadata_file_lock = defaultdict(gevent.lock.Semaphore)
+        self._file_lock = defaultdict(gevent.lock.Semaphore)
 
-    def log_filepath_for_run_id(self, run_id):
-        return os.path.join(self._log_dir, '{run_id}.log'.format(run_id=run_id))
+        self.event_log_storage = check.opt_inst_param(
+            event_log_storage,
+            'event_log_storage',
+            EventLogStorage,
+            default=FilesystemEventLogStorage(base_dir=self._base_dir),
+        )
 
-    def _metadata_filepath_for_run_id(self, run_id):
-        return os.path.join(self._log_dir, '{run_id}.json'.format(run_id=run_id))
+    def filepath_for_run_id(self, run_id):
+        return os.path.join(self._base_dir, '{run_id}.json'.format(run_id=run_id))
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
@@ -213,7 +164,7 @@ class FilesystemRunStorage(RunStorage):
         )
 
     def _load_runs(self):
-        for filename in glob.glob(os.path.join(self._log_dir, '*.json')):
+        for filename in glob.glob(os.path.join(self._base_dir, '*.json')):
             with open(filename, 'r') as fd:
                 try:
                     self._load_run(json.load(fd))
@@ -227,7 +178,8 @@ class FilesystemRunStorage(RunStorage):
                     continue
 
     def wipe(self):
-        shutil.rmtree(os.path.join(self._log_dir, ''))
+        for filename in glob.glob(os.path.join(self._base_dir, '*.json')):
+            os.unlink(filename)
         self._runs = OrderedDict([])
 
     def all_runs_for_pipeline(self, pipeline_name):
@@ -247,48 +199,30 @@ class FilesystemRunStorage(RunStorage):
         pipeline_run = PipelineRun(**kwargs)
         self.add_run(pipeline_run)
         self._write_metadata_to_file(pipeline_run)
-        pipeline_run.subscribe(FilesystemEventHandler(pipeline_run, self))
+        pipeline_run.subscribe(self.event_log_storage.event_handler(pipeline_run))
         return pipeline_run
 
     @property
     def is_persistent(self):
         return True
 
-    def get_logs_for_run(self, run_id, cursor=0):
-        events = []
-        with self.log_file_lock[run_id]:
-            with open(self.log_filepath_for_run_id(run_id), 'rb') as fd:
-                # There might be a path to make this more performant, at the expense of interop,
-                # by using a modified file format: https://stackoverflow.com/a/8936927/324449
-                # Alternatively, we could use .jsonl and linecache instead of pickle
-                if cursor == self.log_file_cursors[run_id][0]:
-                    fd.seek(self.log_file_cursors[run_id][1])
-                else:
-                    i = 0
-                    while i < cursor:
-                        pickle.load(fd)
-                        i = fd.tell()
-                try:
-                    while True:
-                        events.append(pickle.load(fd))
-                except EOFError:
-                    pass
-        return events
-
     def _write_metadata_to_file(self, pipeline_run):
-        metadata_filepath = self._metadata_filepath_for_run_id(pipeline_run.run_id)
+        metadata_filepath = self.filepath_for_run_id(pipeline_run.run_id)
 
         with io.open(metadata_filepath, 'w', encoding='utf-8') as f:
-            json_str = seven.json.dumps(
-                {
-                    'run_id': pipeline_run.run_id,
-                    'pipeline_name': pipeline_run.pipeline_name,
-                    'pipeline_solid_subset': pipeline_run.selector.solid_subset,
-                    'config': pipeline_run.config,
-                    'mode': pipeline_run.mode,
-                    'log_file': self.log_filepath_for_run_id(pipeline_run.run_id),
-                }
-            )
+            metadata = {
+                'run_id': pipeline_run.run_id,
+                'pipeline_name': pipeline_run.pipeline_name,
+                'pipeline_solid_subset': pipeline_run.selector.solid_subset,
+                'config': pipeline_run.config,
+                'mode': pipeline_run.mode,
+            }
+            if isinstance(self.event_log_storage, FilesystemEventLogStorage):
+                metadata['log_file'] = self.event_log_storage.filepath_for_run_id(
+                    pipeline_run.run_id
+                )
+
+            json_str = seven.json.dumps(metadata)
             f.write(six.text_type(json_str))
 
 
@@ -355,130 +289,3 @@ class SqliteRunStorage(RunStorage):
 
     def get_logs_for_run(self, run_id, cursor=0):
         raise NotImplementedError()
-
-
-class PipelineRun(object):
-    __slots__ = [
-        '_run_storage',
-        '_pipeline_name',
-        '_run_id',
-        '_env_config',
-        '_mode',
-        '_selector',
-        '_reexecution_config',
-        '_step_keys_to_execute',
-        '__subscribers',
-        '_status',
-    ]
-
-    def __init__(
-        self,
-        run_storage=None,
-        pipeline_name=None,
-        run_id=None,
-        env_config=None,
-        mode=None,
-        selector=None,
-        reexecution_config=None,
-        step_keys_to_execute=None,
-    ):
-        from dagster.core.execution.api import ExecutionSelector
-        from dagster.core.execution.config import ReexecutionConfig
-
-        self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
-        self._run_id = check.str_param(run_id, 'run_id')
-        self._env_config = check.opt_dict_param(env_config, 'environment_config', key_type=str)
-        self._mode = check.opt_str_param(mode, 'mode')
-        self._selector = check.opt_inst_param(
-            selector,
-            'selector',
-            ExecutionSelector,
-            default=ExecutionSelector(name=self.pipeline_name),
-        )
-        self._reexecution_config = check.opt_inst_param(
-            reexecution_config, 'reexecution_config', ReexecutionConfig
-        )
-        if step_keys_to_execute is not None:
-            self._step_keys_to_execute = check.list_param(
-                step_keys_to_execute, 'step_keys_to_execute', of_type=str
-            )
-        else:
-            self._step_keys_to_execute = None
-
-        run_storage = check.opt_inst_param(run_storage, 'run_storage', RunStorage)
-        if run_storage:
-            self._run_storage = weakref.proxy(run_storage)
-        else:
-            self._run_storage = None
-
-        self.__subscribers = []
-
-        self._status = PipelineRunStatus.NOT_STARTED
-
-    @property
-    def mode(self):
-        return self._mode
-
-    @property
-    def run_id(self):
-        return self._run_id
-
-    @property
-    def status(self):
-        return self._status
-
-    @property
-    def is_persistent(self):
-        return False
-
-    @property
-    def pipeline_name(self):
-        return self._pipeline_name
-
-    @property
-    def config(self):
-        return self._env_config
-
-    def logs_after(self, cursor):
-        return self._run_storage.get_logs_for_run(self.run_id, cursor=cursor)
-
-    def all_logs(self):
-        return self._run_storage.get_logs_for_run(self.run_id)
-
-    @property
-    def selector(self):
-        return self._selector
-
-    @property
-    def reexecution_config(self):
-        return self._reexecution_config
-
-    @property
-    def step_keys_to_execute(self):
-        return self._step_keys_to_execute
-
-    def handle_new_event(self, new_event):
-        check.inst_param(new_event, 'new_event', EventRecord)
-
-        if new_event.is_dagster_event:
-            event = new_event.dagster_event
-            if event.event_type == DagsterEventType.PIPELINE_START:
-                self._status = PipelineRunStatus.STARTED
-            elif event.event_type == DagsterEventType.PIPELINE_SUCCESS:
-                self._status = PipelineRunStatus.SUCCESS
-            elif event.event_type == DagsterEventType.PIPELINE_FAILURE:
-                self._status = PipelineRunStatus.FAILURE
-
-        for subscriber in self.__subscribers:
-            subscriber.handle_new_event(new_event)
-
-    def subscribe(self, subscriber):
-        self.__subscribers.append(subscriber)
-
-    def observable_after_cursor(self, observable_cls=None, cursor=None):
-        check.type_param(observable_cls, 'observable_cls')
-        return Observable.create(observable_cls(self, cursor))  # pylint: disable=E1101
-
-
-class LogSequence(pyrsistent.CheckedPVector):
-    __type__ = EventRecord

@@ -30,7 +30,7 @@ def fs_system_storage(init_context):
     base_dir = init_context.system_storage_config.get('base_dir')
     return SystemStorageData(
         file_manager=LocalFileManager.for_run_id(init_context.run_config.run_id),
-        run_storage=FilesystemRunStorage(log_dir=base_dir),
+        run_storage=FilesystemRunStorage(base_dir=base_dir),
         intermediates_manager=IntermediateStoreIntermediatesManager(
             FileSystemIntermediateStore(
                 run_id=init_context.run_config.run_id,

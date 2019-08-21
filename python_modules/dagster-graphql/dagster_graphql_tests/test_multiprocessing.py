@@ -22,7 +22,8 @@ from dagster import (
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import ExecutionSelector
-from dagster.core.storage.runs import InMemoryRunStorage, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.utils import make_new_run_id
 from dagster.utils import script_relative_path
 

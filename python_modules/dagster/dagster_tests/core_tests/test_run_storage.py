@@ -13,7 +13,7 @@ from dagster.core.storage.runs import FilesystemRunStorage, InMemoryRunStorage, 
 def temp_run_storage():
     try:
         base_dir = tempfile.mkdtemp()
-        yield FilesystemRunStorage(base_dir)
+        yield FilesystemRunStorage(base_dir=base_dir)
     finally:
         if os.path.exists(base_dir):
             shutil.rmtree(base_dir)

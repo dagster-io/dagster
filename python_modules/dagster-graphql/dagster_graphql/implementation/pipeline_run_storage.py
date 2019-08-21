@@ -3,12 +3,12 @@ import atexit
 import gevent
 import gevent.lock
 
-from dagster.core.storage.runs import LogSequence
+from dagster.core.storage.event_log import EventLogSequence
 
 
 class PipelineRunObservableSubscribe(object):
     def __init__(self, pipeline_run, after_cursor=None):
-        self.log_sequence = LogSequence()
+        self.event_log_sequence = EventLogSequence()
         self.pipeline_run = pipeline_run
         self.observer = None
         self.after_cursor = after_cursor or -1
@@ -26,11 +26,11 @@ class PipelineRunObservableSubscribe(object):
 
     def handle_new_event(self, new_event):
         with self.lock:
-            self.log_sequence = self.log_sequence.append(new_event)
+            self.event_log_sequence = self.event_log_sequence.append(new_event)
 
             if self.flush_after is None:
-                self.observer.on_next(self.log_sequence)
-                self.log_sequence = LogSequence()
+                self.observer.on_next(self.event_log_sequence)
+                self.event_log_sequence = EventLogSequence()
                 return
 
             if not self.flush_scheduled:
@@ -40,8 +40,8 @@ class PipelineRunObservableSubscribe(object):
     def _flush_logs_after_delay(self):
         gevent.sleep(self.flush_after)
         with self.lock:
-            self.observer.on_next(self.log_sequence)
-            self.log_sequence = LogSequence()
+            self.observer.on_next(self.event_log_sequence)
+            self.event_log_sequence = EventLogSequence()
             self.flush_scheduled = False
 
     def _cleanup(self):

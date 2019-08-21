@@ -91,7 +91,7 @@ class TestSystemCronScheduler(SystemCronScheduler):
 def define_context(raise_on_error=True, log_dir=None, schedule_dir=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
-        pipeline_runs=FilesystemRunStorage(log_dir) if log_dir else InMemoryRunStorage(),
+        pipeline_runs=FilesystemRunStorage(base_dir=log_dir) if log_dir else InMemoryRunStorage(),
         scheduler=TestSystemCronScheduler(schedule_dir) if schedule_dir else None,
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,
