@@ -1,6 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import { parse as parseQueryString } from "query-string";
+import * as querystring from "query-string";
 import { LogsFilterProviderMessageFragment } from "./types/LogsFilterProviderMessageFragment";
 
 export enum LogLevel {
@@ -13,7 +13,7 @@ export enum LogLevel {
 }
 
 export const GetDefaultLogFilter = () => {
-  const { q } = parseQueryString(window.location.search);
+  const { q } = querystring.parse(window.location.search);
 
   return {
     levels: Object.assign(

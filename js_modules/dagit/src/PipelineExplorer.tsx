@@ -6,7 +6,7 @@ import { History } from "history";
 import { Icon, Colors } from "@blueprintjs/core";
 import { Route } from "react-router";
 import { Link } from "react-router-dom";
-import { parse as parseQueryString } from "query-string";
+import * as querystring from "query-string";
 
 import { PipelineExplorerFragment } from "./types/PipelineExplorerFragment";
 import PipelineGraph from "./graph/PipelineGraph";
@@ -240,7 +240,7 @@ export default class PipelineExplorer extends React.Component<
                 parentSolid={parentHandle && parentHandle.solid}
                 onEnterCompositeSolid={this.handleEnterCompositeSolid}
                 onClickSolid={this.handleClickSolid}
-                {...parseQueryString(location.search || "")}
+                {...querystring.parse(location.search || "")}
               />
             )}
           />
