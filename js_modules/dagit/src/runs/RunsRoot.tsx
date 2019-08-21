@@ -11,6 +11,7 @@ export default class RunsRoot extends React.Component {
       <Query
         query={RUNS_ROOT_QUERY}
         fetchPolicy="cache-and-network"
+        pollInterval={15 * 1000}
         partialRefetch={true}
       >
         {(queryResult: QueryResult<RunsRootQuery, any>) => (
