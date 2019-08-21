@@ -12,6 +12,9 @@ import six
 
 from botocore.exceptions import ClientError
 
+from dagster import DagsterInvariantViolationError
+from dagster.utils import dagster_home_dir
+
 from .config import HostConfig
 from .term import Spinner, Term
 
@@ -35,8 +38,9 @@ DAGIT_EC2_NAME = 'dagit-ec2'
 def get_dagster_home():
     '''Ensures that the user has set a valid DAGSTER_HOME in environment and that it exists
     '''
-    dagster_home = os.getenv('DAGSTER_HOME')
-    if not dagster_home:
+    try:
+        dagster_home = dagster_home_dir()
+    except DagsterInvariantViolationError:
         Term.fatal(
             '''DAGSTER_HOME is not set! Before continuing, set with e.g.:
 
@@ -45,8 +49,8 @@ export DAGSTER_HOME=~/.dagster
 You may want to add this line to your .bashrc or .zshrc file.
 '''
         )
-    else:
-        Term.info('Found DAGSTER_HOME in environment at: %s\n' % dagster_home)
+
+    Term.info('Found DAGSTER_HOME in environment at: %s\n' % dagster_home)
 
     if not os.path.isdir(dagster_home):
         Term.fatal('The specified DAGSTER_HOME folder does not exist! Create before continuing.')
