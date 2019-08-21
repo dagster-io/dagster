@@ -732,7 +732,8 @@ type Query {
   pipelines: PipelineConnection!
   configTypeOrError(pipelineName: String!, configTypeName: String!, mode: String!): ConfigTypeOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
-  scheduler: Scheduler
+  schedules: [ScheduleDefinition!]!
+  scheduler: SchedulerOrError!
   pipelineRuns: [PipelineRun!]!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
@@ -787,6 +788,7 @@ type RunningSchedule {
   scheduleDefinition: ScheduleDefinition!
   pythonPath: String
   repositoryPath: String
+  runs: [PipelineRun!]!
 }
 
 type RunningScheduleResult {
@@ -832,8 +834,15 @@ type ScheduleDefinition {
 }
 
 type Scheduler {
-  schedules: [RunningSchedule!]!
+  runningSchedules: [RunningSchedule!]!
 }
+
+type SchedulerNotDefinedError implements Error {
+  message: String!
+  stack: [String!]!
+}
+
+union SchedulerOrError = Scheduler | SchedulerNotDefinedError
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
   message: String!

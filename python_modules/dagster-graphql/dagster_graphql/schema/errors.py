@@ -42,6 +42,16 @@ class DauphinPythonError(dauphin.ObjectType):
         self.stack = error_info.stack
 
 
+class DauphinSchedulerNotDefinedError(dauphin.ObjectType):
+    class Meta:
+        name = 'SchedulerNotDefinedError'
+        interfaces = (DauphinError,)
+
+    def __init__(self):
+        super(DauphinSchedulerNotDefinedError, self).__init__()
+        self.message = 'Scheduler is not defined for this repository'
+
+
 class DauphinPipelineNotFoundError(dauphin.ObjectType):
     class Meta:
         name = 'PipelineNotFoundError'

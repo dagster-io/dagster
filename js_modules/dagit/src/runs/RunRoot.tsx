@@ -1,11 +1,13 @@
 import * as React from "react";
-import { match, Redirect } from "react-router";
-import gql from "graphql-tag";
+
+import { Redirect, match } from "react-router";
 import { useApolloClient, useQuery } from "react-apollo";
-import { NonIdealState } from "@blueprintjs/core";
+
 import { IconNames } from "@blueprintjs/icons";
+import { NonIdealState } from "@blueprintjs/core";
 import { Run } from "./Run";
 import { RunRootQuery } from "./types/RunRootQuery";
+import gql from "graphql-tag";
 
 interface IRunRootProps {
   match: match<{ runId: string; pipelineName?: string }>;

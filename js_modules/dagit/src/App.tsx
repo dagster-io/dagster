@@ -1,18 +1,20 @@
 import * as React from "react";
-import gql from "graphql-tag";
-import { useQuery } from "react-apollo";
-import { BrowserRouter, Switch, Redirect, Route } from "react-router-dom";
 
-import { TopNav } from "./TopNav";
-import PythonErrorInfo from "./PythonErrorInfo";
+import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
+
 import CustomAlertProvider from "./CustomAlertProvider";
-import { RootPipelinesQuery } from "./types/RootPipelinesQuery";
+import { NonIdealState } from "@blueprintjs/core";
 import { PipelineExecutionRoot } from "./execute/PipelineExecutionRoot";
 import { PipelineExecutionSetupRoot } from "./execute/PipelineExecutionSetupRoot";
+import PipelineExplorerRoot from "./PipelineExplorerRoot";
+import PythonErrorInfo from "./PythonErrorInfo";
+import { RootPipelinesQuery } from "./types/RootPipelinesQuery";
 import { RunRoot } from "./runs/RunRoot";
 import { RunsRoot } from "./runs/RunsRoot";
-import PipelineExplorerRoot from "./PipelineExplorerRoot";
-import { NonIdealState } from "@blueprintjs/core";
+import SchedulesRoot from "./schedules/SchedulesRoot";
+import { TopNav } from "./TopNav";
+import gql from "graphql-tag";
+import { useQuery } from "react-apollo";
 
 function extractData(result?: RootPipelinesQuery) {
   if (!result || !result.pipelinesOrError) {
@@ -57,6 +59,7 @@ const AppRoutes = () => (
       to="/p/:pipelineName/explore/:rest?"
     />
     {/* Index default */}
+    <Route path="/scheduler/:rest?" component={SchedulesRoot} />
     <Route
       render={() => (
         <NonIdealState

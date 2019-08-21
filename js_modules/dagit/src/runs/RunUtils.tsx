@@ -1,9 +1,11 @@
 import * as React from "react";
-import styled from "styled-components";
+
 import { Colors, Spinner } from "@blueprintjs/core";
-import gql from "graphql-tag";
+
 import { HandleStartExecutionFragment } from "./types/HandleStartExecutionFragment";
+import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
+import styled from "styled-components";
 
 export type IRunStatus = "SUCCESS" | "NOT_STARTED" | "FAILURE" | "STARTED";
 
@@ -47,7 +49,11 @@ export function handleStartExecutionResult(
 
 export const RunStatus: React.SFC<{ status: IRunStatus }> = ({ status }) => {
   if (status === "STARTED") {
-    return <Spinner size={11} />;
+    return (
+      <div style={{ display: "inline-block" }}>
+        <Spinner size={11} />
+      </div>
+    );
   }
   return <RunStatusDot status={status} />;
 };

@@ -34,7 +34,8 @@ from .config_types import to_dauphin_config_type
 from .run_schedule import (
     DauphinEndRunningScheduleMutation,
     DauphinStartScheduleMutation,
-    get_scheduler,
+    get_scheduler_or_error,
+    get_schedules,
 )
 
 
@@ -65,7 +66,9 @@ class DauphinQuery(dauphin.ObjectType):
         runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
 
-    scheduler = dauphin.Field('Scheduler')
+    schedules = dauphin.non_null_list('ScheduleDefinition')
+
+    scheduler = dauphin.Field(dauphin.NonNull('SchedulerOrError'))
 
     pipelineRuns = dauphin.non_null_list('PipelineRun')
 
@@ -114,8 +117,11 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_version(self, graphene_info):
         return graphene_info.context.version
 
+    def resolve_schedules(self, graphene_info):
+        return get_schedules(graphene_info)
+
     def resolve_scheduler(self, graphene_info):
-        return get_scheduler(graphene_info)
+        return get_scheduler_or_error(graphene_info)
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
         return get_pipeline_or_error(graphene_info, kwargs['params'].to_selector())

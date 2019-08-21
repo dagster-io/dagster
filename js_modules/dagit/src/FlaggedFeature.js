@@ -10,7 +10,6 @@ class FlaggedFeature extends React.Component {
       <Query query={ENABLED_FEATURES_ROOT_QUERY} fetchPolicy="cache-first">
         {({ data }) => {
           if (!data || !data.enabledFeatures) return null;
-
           const hasFeature = data.enabledFeatures.some(
             feature => feature.toLowerCase() === name.toLowerCase()
           );

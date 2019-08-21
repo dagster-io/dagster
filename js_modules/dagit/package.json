@@ -26,6 +26,7 @@
     "apollo-utilities": "^1.3.2",
     "codemirror": "^5.48.2",
     "color": "^3.1.2",
+    "cronstrue": "^1.83.0",
     "d3-hierarchy": "^1.1.6",
     "dagre": "^0.8.2",
     "graphql": "^14.4.2",

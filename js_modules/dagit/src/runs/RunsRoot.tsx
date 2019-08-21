@@ -1,9 +1,10 @@
 import * as React from "react";
-import gql from "graphql-tag";
-import RunHistory from "./RunHistory";
-import { useQuery } from "react-apollo";
-import { RunsRootQuery } from "./types/RunsRootQuery";
+
 import Loading from "../Loading";
+import RunHistory from "./RunHistory";
+import { RunsRootQuery } from "./types/RunsRootQuery";
+import gql from "graphql-tag";
+import { useQuery } from "react-apollo";
 
 export const RunsRoot: React.FunctionComponent = () => {
   const queryResult = useQuery<RunsRootQuery>(RUNS_ROOT_QUERY, {

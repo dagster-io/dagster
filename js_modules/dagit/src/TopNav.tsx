@@ -1,16 +1,17 @@
 import * as React from "react";
-import { Route } from "react-router";
-import styled from "styled-components";
-import { Colors, Alignment, Navbar } from "@blueprintjs/core";
-import { Link } from "react-router-dom";
-import gql from "graphql-tag";
 
-import navBarImage from "./images/nav-logo.png";
-import WebsocketStatus from "./WebsocketStatus";
-import VersionLabel from "./VersionLabel";
+import { Alignment, Colors, Navbar } from "@blueprintjs/core";
+
 import FlaggedFeature from "./FlaggedFeature";
+import { Link } from "react-router-dom";
 import { PipelineJumpBar } from "./PipelineJumpComponents";
+import { Route } from "react-router";
 import { TopNavPipelinesFragment } from "./types/TopNavPipelinesFragment";
+import VersionLabel from "./VersionLabel";
+import WebsocketStatus from "./WebsocketStatus";
+import gql from "graphql-tag";
+import navBarImage from "./images/nav-logo.png";
+import styled from "styled-components";
 
 export const TopNav = ({
   pipelines
@@ -74,9 +75,9 @@ export const TopNav = ({
               >
                 Runs
               </Tab>
-              <FlaggedFeature name="experimentalScheduler">
+              <FlaggedFeature name="scheduler">
                 <Tab
-                  to={`/schedule`}
+                  to={`/scheduler`}
                   className={selectedTab === "schedule" ? "active" : ""}
                 >
                   Schedule

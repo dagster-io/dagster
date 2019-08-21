@@ -1,26 +1,34 @@
 import * as React from "react";
-import gql from "graphql-tag";
+import * as qs from "query-string";
+
 import {
-  NonIdealState,
+  Button,
+  ButtonGroup,
+  Icon,
   Menu,
   MenuItem,
-  Colors,
-  Icon,
+  NonIdealState,
   Popover,
-  Button,
   Position,
-  ButtonGroup,
   Spinner
 } from "@blueprintjs/core";
-import styled from "styled-components";
-import { Link } from "react-router-dom";
+import {
+  Details,
+  Header,
+  Legend,
+  LegendColumn,
+  RowColumn,
+  RowContainer,
+  ScrollContainer
+} from "../ListComponents";
+import { IRunStatus, RunStatus, titleForRun } from "./RunUtils";
+import { formatElapsedTime, formatStepKey } from "../Util";
 
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
+import { Link } from "react-router-dom";
 import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
-import { titleForRun, RunStatus, IRunStatus } from "./RunUtils";
+import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
-import * as qs from "query-string";
-import { formatElapsedTime, formatStepKey } from "../Util";
 
 function dateString(timestamp: number) {
   if (timestamp === 0) {
@@ -185,7 +193,7 @@ export default class RunHistory extends React.Component<
     );
 
     return (
-      <RunsScrollContainer>
+      <ScrollContainer>
         {runs.length === 0 ? (
           <div style={{ marginTop: 100 }}>
             <NonIdealState
@@ -206,7 +214,7 @@ export default class RunHistory extends React.Component<
             />
           </>
         )}
-      </RunsScrollContainer>
+      </ScrollContainer>
     );
   }
 }
@@ -302,20 +310,18 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
   const stats = getDetailedStats(run);
 
   return (
-    <RunRowContainer key={run.runId}>
-      <RunRowColumn
-        style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}
-      >
+    <RowContainer key={run.runId}>
+      <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
         <RunStatus status={start && end ? run.status : "STARTED"} />
-      </RunRowColumn>
-      <RunRowColumn style={{ flex: 2.4 }}>
+      </RowColumn>
+      <RowColumn style={{ flex: 2.4 }}>
         <Link
           style={{ display: "block" }}
           to={`/p/${run.pipeline.name}/runs/${run.runId}`}
         >
           {titleForRun(run)}
         </Link>
-        <RunDetails>
+        <Details>
           {`${stats.stepsSucceeded}/${stats.stepsSucceeded +
             stats.stepsFailed} steps succeeded, `}
           <Link
@@ -326,17 +332,17 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
             to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:expectation`}
           >{`${stats.expectationsSucceeded}/${stats.expectationsSucceeded +
             stats.expectationsFailed} expectations passed`}</Link>
-        </RunDetails>
-      </RunRowColumn>
-      <RunRowColumn>
+        </Details>
+      </RowColumn>
+      <RowColumn>
         <Link
           style={{ display: "block" }}
           to={`/p/${run.pipeline.name}/explore/`}
         >
           <Icon icon="diagram-tree" /> {run.pipeline.name}
         </Link>
-      </RunRowColumn>
-      <RunRowColumn
+      </RowColumn>
+      <RowColumn
         style={{
           display: "flex",
           alignItems: "flex-start"
@@ -389,8 +395,8 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
         >
           <Button minimal={true} icon="chevron-down" />
         </Popover>
-      </RunRowColumn>
-      <RunRowColumn style={{ flex: 1.6 }}>
+      </RowColumn>
+      <RowColumn style={{ flex: 1.6 }}>
         {start ? (
           <div style={{ marginBottom: 4 }}>
             <Icon icon="calendar" /> {dateString(start)}
@@ -406,56 +412,10 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
           </div>
         )}
         <RunTime start={start} end={end} />
-      </RunRowColumn>
-    </RunRowContainer>
+      </RowColumn>
+    </RowContainer>
   );
 };
-
-const Header = styled.div`
-  color: ${Colors.BLACK};
-  font-size: 1.1rem;
-  line-height: 3rem;
-  margin-top: 40px;
-`;
-const Legend = styled.div`
-  display: flex;
-  margin-bottom: 9px;
-`;
-const LegendColumn = styled.div`
-  flex: 1;
-  padding-left: 10px;
-  color: #8a9ba8;
-  text-transform: uppercase;
-  font-size: 11px;
-`;
-const RunRowContainer = styled.div`
-  display: flex;
-  background: ${Colors.WHITE};
-  color: ${Colors.DARK_GRAY5};
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
-  margin-bottom: 9px;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-  padding: 2px 10px;
-  text-decoration: none;
-`;
-const RunRowColumn = styled.div`
-  flex: 1;
-  padding: 7px 10px;
-  border-right: 1px solid ${Colors.LIGHT_GRAY3};
-  &:last-child {
-    border-right: none;
-  }
-`;
-const RunsScrollContainer = styled.div`
-  background-color: rgb(245, 248, 250);
-  padding: 20px;
-  overflow: scroll;
-  min-height: calc(100vh - 50px);
-`;
-const RunDetails = styled.div`
-  font-size: 0.8rem;
-  margin-top: 4px;
-`;
 
 class RunTime extends React.Component<{ start: number; end: number }> {
   _interval?: NodeJS.Timer;

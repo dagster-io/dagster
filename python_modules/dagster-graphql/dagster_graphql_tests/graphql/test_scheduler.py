@@ -10,10 +10,17 @@ from .utils import define_context
 
 GET_SCHEDULES_QUERY = '''
 {
-  scheduler {
-        schedules {
-            scheduleId
+    scheduler {
+      ... on Scheduler {
+        runningSchedules {
+          scheduleId
+          scheduleDefinition {
+            name
+          }
+          pythonPath
+          repositoryPath
         }
+      }
     }
 }
 '''
@@ -51,7 +58,10 @@ def test_get_all_schedules():
 
     assert scheduler_result.data
     assert scheduler_result.data['scheduler']
-    assert scheduler_result.data['scheduler']['schedules']
-    assert len(scheduler_result.data['scheduler']['schedules']) == 1
+    assert scheduler_result.data['scheduler']['runningSchedules']
+    assert len(scheduler_result.data['scheduler']['runningSchedules']) == 1
 
-    assert scheduler_result.data['scheduler']['schedules'][0]['scheduleId'] == schedule.schedule_id
+    assert (
+        scheduler_result.data['scheduler']['runningSchedules'][0]['scheduleId']
+        == schedule.schedule_id
+    )
