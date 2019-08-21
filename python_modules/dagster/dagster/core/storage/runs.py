@@ -358,6 +358,19 @@ class SqliteRunStorage(RunStorage):
 
 
 class PipelineRun(object):
+    __slots__ = [
+        '_run_storage',
+        '_pipeline_name',
+        '_run_id',
+        '_env_config',
+        '_mode',
+        '_selector',
+        '_reexecution_config',
+        '_step_keys_to_execute',
+        '__subscribers',
+        '_status',
+    ]
+
     def __init__(
         self,
         run_storage=None,
