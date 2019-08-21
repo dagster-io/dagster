@@ -79,7 +79,12 @@ def init():
         )
         prev_config = HostConfig.load(dagster_home)
 
-    region = select_region()
+    # Get region
+    if prev_config and prev_config.region:
+        Term.success('Found existing region, continuing with %s' % prev_config.region)
+        region = prev_config.region
+    else:
+        region = select_region()
 
     client = boto3.client('ec2', region_name=region)
     ec2 = boto3.resource('ec2', region_name=region)
@@ -103,7 +108,13 @@ def init():
 
     # Save host configuration for future commands
     cfg = HostConfig(
-        inst.public_dns_name, region, security_group_id, key_pair_name, key_file_path, ami_id
+        inst.public_dns_name,
+        inst.id,
+        region,
+        security_group_id,
+        key_pair_name,
+        key_file_path,
+        ami_id,
     )
     cfg.save(dagster_home)
 
@@ -224,3 +235,58 @@ def update_dagster():
         Term.success('Updating complete!')
     else:
         Term.fatal('Rebuilding dagit failed')
+
+
+@main.command()
+def nuke():
+    '''💥 Terminate your EC2 instance'''
+    dagster_home = get_dagster_home()
+
+    already_run = HostConfig.exists(dagster_home)
+
+    if not already_run:
+        Term.fatal('No existing configuration detected, exiting')
+
+    cfg = HostConfig.load(dagster_home)
+
+    client = boto3.client('ec2', region_name=cfg.region)
+    ec2 = boto3.resource('ec2', region_name=cfg.region)
+
+    instances = ec2.instances.filter(InstanceIds=[cfg.instance_id])
+
+    Term.warning('This will terminate the following: ')
+    for instance in instances:
+        name = None
+        for tag in instance.tags:
+            if tag.get('Key') == 'Name':
+                name = tag.get('Value')
+        click.echo('\t%s %s %s' % (instance.id, name, instance.instance_type))
+
+    click.confirm('\nThis step cannot be undone. Continue?', default=False, abort=True)
+
+    Term.waiting('Terminating...')
+    instances.terminate()
+
+    # Wipe all instance-related configs
+    cfg = cfg._replace(public_dns_name=None, instance_id=None, ami_id=None, local_path=None)
+
+    # Prompt user to remove key pair
+    should_delete_key_pair = click.confirm(
+        'Do you also want to remove the key pair %s?' % cfg.key_pair_name
+    )
+    if should_delete_key_pair:
+        client.delete_key_pair(KeyName=cfg.key_pair_name)
+        cfg = cfg._replace(key_pair_name=None, key_file_path=None)
+
+    # Prompt user to delete security group also
+    should_remove_security_group = click.confirm(
+        'Do you also want to remove the security group %s?' % cfg.security_group_id
+    )
+    if should_remove_security_group:
+        client.delete_security_group(GroupId=cfg.security_group_id)
+        cfg = cfg._replace(security_group_id=None)
+
+    # Write out updated config
+    cfg.save(dagster_home)
+
+    Term.success('Done!')

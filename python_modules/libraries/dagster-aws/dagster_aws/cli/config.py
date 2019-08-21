@@ -16,7 +16,7 @@ HOST_CONFIG_FILE = '.dagit-aws-config'
 class HostConfig(
     namedtuple(
         '_HostConfig',
-        'public_dns_name region security_group_id key_pair_name key_file_path ami_id local_path',
+        'public_dns_name instance_id region security_group_id key_pair_name key_file_path ami_id local_path',
     )
 ):
     '''Serialize the user's AWS host configuration to a YAML file for future use.
@@ -25,6 +25,7 @@ class HostConfig(
     def __new__(
         cls,
         public_dns_name=None,
+        instance_id=None,
         region=None,
         security_group_id=None,
         key_pair_name=None,
@@ -35,6 +36,7 @@ class HostConfig(
         return super(HostConfig, cls).__new__(
             cls,
             public_dns_name=check.opt_str_param(public_dns_name, 'public_dns_name'),
+            instance_id=check.opt_str_param(instance_id, 'instance_id'),
             region=check.opt_str_param(region, 'region'),
             security_group_id=check.opt_str_param(security_group_id, 'security_group_id'),
             key_pair_name=check.opt_str_param(key_pair_name, 'key_pair_name'),
@@ -55,6 +57,7 @@ class HostConfig(
             output_record = {
                 'dagit-aws-host': {
                     'public_dns_name': self.public_dns_name,
+                    'instance_id': self.instance_id,
                     'region': self.region,
                     'security_group_id': self.security_group_id,
                     'key_pair_name': self.key_pair_name,

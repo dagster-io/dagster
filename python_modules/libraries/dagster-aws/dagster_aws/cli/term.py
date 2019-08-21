@@ -53,6 +53,7 @@ class Term:
     INFO_PREFIX = u'ℹ️  '
     SUCCESS_PREFIX = u'✅ '
     WAITING_PREFIX = u'⌛ '
+    WARNING_PREFIX = u'⚠️  '
 
     @staticmethod
     def fatal(msg):
@@ -74,6 +75,10 @@ class Term:
     @staticmethod
     def waiting(msg):
         click.echo(click.style(Term.WAITING_PREFIX + msg, fg='yellow'))
+
+    @staticmethod
+    def warning(msg):
+        click.echo(click.style(Term.WARNING_PREFIX + msg, fg='yellow'))
 
 
 def run_remote_cmd(key_file_path, host, cmd):

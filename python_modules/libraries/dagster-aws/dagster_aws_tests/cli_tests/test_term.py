@@ -24,6 +24,7 @@ def test_term():
         (Term.info, Term.INFO_PREFIX),
         (Term.success, Term.SUCCESS_PREFIX),
         (Term.waiting, Term.WAITING_PREFIX),
+        (Term.warning, Term.WARNING_PREFIX),
     ]
     for term_cmd, prefix in expected:
         term_helper(term_cmd, prefix)
