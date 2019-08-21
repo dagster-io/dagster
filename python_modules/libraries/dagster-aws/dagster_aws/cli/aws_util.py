@@ -138,7 +138,10 @@ def create_key_pair(client, dagster_home):
     machine once it is created.
     '''
     now = datetime.datetime.utcnow()
-    default_key_pair_name = 'dagit-key-pair-%s' % now.strftime("%Y%m%dT%H%M%S")
+    default_key_pair_name = 'dagster-keypair-%s-%s' % (
+        getpass.getuser(),
+        now.strftime("%Y%m%dT%H%M%S"),
+    )
 
     Term.waiting('Creating new key pair...')
 

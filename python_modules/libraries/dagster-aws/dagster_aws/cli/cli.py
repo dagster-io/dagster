@@ -72,10 +72,12 @@ def init():
     dagster_home = get_dagster_home()
 
     already_run = HostConfig.exists(dagster_home)
+    prev_config = None
     if already_run:
         click.confirm(
             'dagster-aws has already been initialized! Continue?', default=False, abort=True
         )
+        prev_config = HostConfig.load(dagster_home)
 
     region = select_region()
 
@@ -88,7 +90,14 @@ def init():
 
     ami_id = get_validated_ami_id(client)
 
-    key_pair_name, key_file_path = create_key_pair(client, dagster_home)
+    if prev_config and os.path.exists(prev_config.key_file_path):
+        Term.success(
+            'Found existing key pair %s, continuing with %s'
+            % (prev_config.key_pair_name, prev_config.key_file_path)
+        )
+        key_pair_name, key_file_path = prev_config.key_pair_name, prev_config.key_file_path
+    else:
+        key_pair_name, key_file_path = create_key_pair(client, dagster_home)
 
     inst = create_ec2_instance(ec2, security_group_id, ami_id, key_pair_name)
 
