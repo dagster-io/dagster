@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
 import { titleForRun, RunStatus, IRunStatus } from "./RunUtils";
 import { showCustomAlert } from "../CustomAlertProvider";
+import * as querystring from "query-string";
 
 function dateString(timestamp: number) {
   if (timestamp === 0) {
@@ -27,6 +28,7 @@ function dateString(timestamp: number) {
 }
 
 function elapsedTimeString(start: number, end?: number) {
+  if (start === 0) return ``;
   const s = ((end || Date.now()) - start) / 1000;
   return `${Math.ceil(s)} seconds`;
 }
@@ -109,9 +111,14 @@ interface IRunHistoryProps {
   runs: RunHistoryRunFragment[];
 }
 
+interface IRunHistoryState {
+  sort: RunSort;
+  statuses: IRunStatus[];
+}
+
 export default class RunHistory extends React.Component<
   IRunHistoryProps,
-  { sort: RunSort; statuses: IRunStatus[] }
+  IRunHistoryState
 > {
   static fragments = {
     RunHistoryRunFragment: gql`
@@ -123,12 +130,6 @@ export default class RunHistory extends React.Component<
         environmentConfigYaml
         pipeline {
           name
-          presets {
-            name
-            mode
-            solidSubset
-            environmentConfigYaml
-          }
         }
         logs {
           nodes {
@@ -282,9 +283,9 @@ const RunTable: React.FunctionComponent<RunTableProps> = props => (
     </Header>
     <Legend>
       <LegendColumn style={{ maxWidth: 40 }}></LegendColumn>
-      <LegendColumn style={{ flex: 2.3 }}>Run ID</LegendColumn>
+      <LegendColumn style={{ flex: 2.3 }}>Run</LegendColumn>
       <LegendColumn>Pipeline</LegendColumn>
-      <LegendColumn>Config</LegendColumn>
+      <LegendColumn>Execution Params</LegendColumn>
       <LegendColumn style={{ flex: 1.6 }}>Timing</LegendColumn>
     </Legend>
     {props.runs.map(run => (
@@ -299,11 +300,6 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
   const start = getStartTime(run);
   const end = getEndTime(run);
   const stats = getDetailedStats(run);
-  const preset = run.pipeline.presets.find(
-    preset =>
-      preset.mode === run.mode &&
-      preset.environmentConfigYaml === run.environmentConfigYaml
-  );
 
   return (
     <RunRowContainer key={run.runId}>
@@ -334,27 +330,58 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
           <Icon icon="diagram-tree" /> {run.pipeline.name}
         </Link>
       </RunRowColumn>
-      <RunRowColumn>
-        <a
-          title="View configuration..."
-          style={{
-            display: "flex",
-            alignItems: "baseline"
-          }}
-          onClick={() =>
-            showCustomAlert({
-              title: "Config",
-              message: run.environmentConfigYaml,
-              messageLang: ["yaml"],
-              pre: true
-            })
+      <RunRowColumn
+        style={{
+          display: "flex",
+          alignItems: "flex-start"
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <div>{`Mode: ${run.mode}`}</div>
+
+          {run.stepKeysToExecute && (
+            <div>
+              {run.stepKeysToExecute.length === 1
+                ? `Step: ${run.stepKeysToExecute.join("")}`
+                : `${run.stepKeysToExecute.length} Steps`}
+            </div>
+          )}
+        </div>
+        <Popover
+          content={
+            <Menu>
+              <MenuItem
+                text="View Configuration..."
+                icon="share"
+                onClick={() =>
+                  showCustomAlert({
+                    title: "Config",
+                    message: run.environmentConfigYaml,
+                    messageLang: ["yaml"],
+                    pre: true
+                  })
+                }
+              />
+              <MenuItem
+                text="Open in Execute View..."
+                icon="edit"
+                target="_blank"
+                href={`/${run.pipeline.name}/execute?${querystring.stringify({
+                  mode: run.mode,
+                  config: run.environmentConfigYaml,
+                  solidSubset: run.stepKeysToExecute
+                    ? run.stepKeysToExecute.map(key =>
+                        (key || "").replace(".compute", "")
+                      )
+                    : undefined
+                })}`}
+              />
+            </Menu>
           }
+          position={"bottom"}
         >
-          <span style={{ paddingRight: 7 }}>
-            {preset ? `Preset: ${preset.name}` : "Custom"}
-          </span>
-          <Icon iconSize={12} icon="share" />
-        </a>
+          <Button minimal={true} icon="chevron-down" />
+        </Popover>
       </RunRowColumn>
       <RunRowColumn style={{ flex: 1.6 }}>
         {start ? (
