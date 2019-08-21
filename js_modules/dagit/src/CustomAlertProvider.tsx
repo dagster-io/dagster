@@ -2,11 +2,13 @@ import * as React from "react";
 import { Button, Dialog, Classes, Colors } from "@blueprintjs/core";
 import styled from "styled-components";
 import { copyValue } from "./Util";
+import { HighlightedCodeBlock } from "./HighlightedCodeBlock";
 
 const SHOW_ALERT_EVENT = "show-alert";
 
 interface ICustomAlert {
   message: string;
+  messageLang: string[];
   title: string;
   pre: boolean;
 }
@@ -34,7 +36,7 @@ export default class CustomAlertProvider extends React.Component<
   }
 
   render() {
-    const { title, message, pre } = this.state;
+    const { title, message, messageLang, pre } = this.state;
     return (
       <Dialog
         icon={title ? "info-sign" : undefined}
@@ -45,9 +47,13 @@ export default class CustomAlertProvider extends React.Component<
         isOpen={!!message}
       >
         <Body>
-          <div style={{ whiteSpace: pre ? "pre-wrap" : "initial" }}>
-            {message}
-          </div>
+          {messageLang ? (
+            <HighlightedCodeBlock value={message || ""} languages={["yaml"]} />
+          ) : (
+            <div style={{ whiteSpace: pre ? "pre-wrap" : "initial" }}>
+              {message}
+            </div>
+          )}
         </Body>
         <div className={Classes.DIALOG_FOOTER}>
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>

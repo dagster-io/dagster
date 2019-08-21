@@ -26,7 +26,7 @@ export function handleStartExecutionResult(
   const obj = result.data.startPipelineExecution;
 
   if (obj.__typename === "StartPipelineExecutionSuccess") {
-    const url = `/${pipelineName}/runs/${obj.run.runId}`;
+    const url = `/runs/${obj.run.runId}`;
     if (opts.openInNewWindow) {
       window.open(url, "_blank");
     } else {
