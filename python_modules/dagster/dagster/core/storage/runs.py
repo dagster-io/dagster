@@ -169,7 +169,7 @@ class FilesystemRunStorage(RunStorage):
             with open(filename, 'r') as fd:
                 try:
                     run = self._load_run(json.load(fd))
-                    self.event_log_storage.verify_log(run.run_id)
+                    self.event_log_storage.verify_event_log_exists(run.run_id)
                 except Exception as ex:  # pylint: disable=broad-except
                     print(
                         'Could not load pipeline run from {filename}, continuing.\n  Original '
