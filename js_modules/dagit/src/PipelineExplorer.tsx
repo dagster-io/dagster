@@ -266,7 +266,9 @@ const PipelinePanel = styled.div`
 `;
 
 const RightInfoPanel = styled.div`
-  // very important for performance for some reason
+  // Fixes major perofmance hit. To reproduce, add enough content to
+  // the sidebar that it scrolls (via overflow-y below) and then try
+  // to pan the DAG.
   position: relative;
 
   height: 100%;

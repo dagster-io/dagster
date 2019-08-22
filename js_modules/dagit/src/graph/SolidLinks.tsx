@@ -18,12 +18,7 @@ const buildSVGPath = pathVerticalDiagonal({
   y: (s: any) => s.y
 });
 
-// This method creates a single SVG path string (eg: `MX1,Y1LX2,Y2`, etc.)
-// by concatenating the nice curved paths D3 provides for each source+target
-// in the DAG. This is possible because each one begins with a `M` move
-// instruction and is much, much faster than rendering a separate <path> SVG
-// node for every one.
-const buildJoinedPaths = weakmapMemoize(
+const buildSVGPaths = weakmapMemoize(
   (
     connections: ILayoutConnection[],
     solids: { [name: string]: IFullSolidLayout }
@@ -47,7 +42,7 @@ export const SolidLinks = React.memo(
     onHighlight: (arr: Edge[]) => void;
   }) => (
     <g opacity={props.opacity}>
-      {buildJoinedPaths(props.connections, props.layout.solids).map(
+      {buildSVGPaths(props.connections, props.layout.solids).map(
         ({ path, from, to }, idx) => (
           <g
             key={idx}

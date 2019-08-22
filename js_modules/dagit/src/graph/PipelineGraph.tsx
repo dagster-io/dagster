@@ -149,8 +149,8 @@ class PipelineGraphContents extends React.PureComponent<
   }
 }
 
-// This is a specific empty array so that SolidNode can use shallow equality comparisons
-// in shouldComponentUpdate, which are faster.
+// This is a specific empty array we pass to represent the common / empty case
+// so that SolidNode can use shallow equality comparisons in shouldComponentUpdate.
 const EmptyHighlightedArray: never[] = [];
 
 export default class PipelineGraph extends React.Component<
