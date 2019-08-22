@@ -16,7 +16,7 @@ solid. Put the following into a file ``resources.py``:
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_one.py
     :caption: resources.py
     :linenos:
-    :lines: 3-26
+    :lines: 1-26
 
 Provide your Slack token, and choose a channel and message. Then running this with ``python
 resources.py``, you should see a message from ``dagsterbot`` appear in your Slack channel.

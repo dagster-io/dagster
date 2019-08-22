@@ -12,7 +12,6 @@ from dagster import (
     ModeDefinition,
     Output,
     OutputDefinition,
-    lambda_solid,
     pipeline,
     solid,
 )
@@ -79,16 +78,16 @@ def chase_giver(context):
     yield Output(chase_duration, 'out_4')
 
 
-@lambda_solid(
+@solid(
     input_defs=[
         InputDefinition('in_1', Int),
         InputDefinition('in_2', Int),
         InputDefinition('in_3', Int),
         InputDefinition('in_4', Int),
     ],
-    output_def=OutputDefinition(Int),
+    output_defs=[OutputDefinition(Int)],
 )
-def reducer(in_1, in_2, in_3, in_4):
+def reducer(_, in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4
 
 
@@ -103,7 +102,8 @@ def reducer(in_1, in_2, in_3, in_4):
     ]
 )
 def hammer_pipeline():
-    out_1, out_2, out_3, out_4 = chase_giver()  # pylint: disable=no-value-for-parameter
+    # pylint: disable=no-value-for-parameter
+    out_1, out_2, out_3, out_4 = chase_giver()
     return reducer(
         in_1=hammer.alias('hammer_1')(chase_duration=out_1),
         in_2=hammer.alias('hammer_2')(chase_duration=out_2),

@@ -2,7 +2,7 @@
 
 import collections
 
-from dagster import Field, Int, as_dagster_type, lambda_solid, pipeline, solid
+from dagster import Field, Int, as_dagster_type, pipeline, solid
 
 Counter = as_dagster_type(collections.Counter)
 
@@ -12,8 +12,8 @@ def multiply_the_word(context, word: str) -> str:
     return word * context.solid_config['factor']
 
 
-@lambda_solid
-def count_letters(word: str) -> Counter:
+@solid
+def count_letters(_, word: str) -> Counter:
     return collections.Counter(word)
 
 

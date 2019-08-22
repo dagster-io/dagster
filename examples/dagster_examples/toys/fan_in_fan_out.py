@@ -1,18 +1,18 @@
-from dagster import InputDefinition, List, OutputDefinition, lambda_solid, pipeline
+from dagster import InputDefinition, List, OutputDefinition, pipeline, solid
 
 
-@lambda_solid(output_def=OutputDefinition(int))
-def return_one():
+@solid(output_defs=[OutputDefinition(int)])
+def return_one(_):
     return 1
 
 
-@lambda_solid(input_defs=[InputDefinition('num', int)])
-def add_one_fan(num):
+@solid(input_defs=[InputDefinition('num', int)])
+def add_one_fan(_, num):
     return num + 1
 
 
-@lambda_solid(input_defs=[InputDefinition('nums', List[int])])
-def sum_fan_in(nums):
+@solid(input_defs=[InputDefinition('nums', List[int])])
+def sum_fan_in(_, nums):
     return sum(nums)
 
 
@@ -27,6 +27,7 @@ def construct_fan_in_level(source, level, fanout):
 def construct_level_pipeline(name, levels, fanout):
     @pipeline(name=name)
     def _pipe():
+        # pylint: disable=no-value-for-parameter
         return_one_out = return_one()
         prev_level_out = return_one_out
         for level in range(0, levels):

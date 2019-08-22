@@ -1,20 +1,20 @@
-# pylint: disable=no-value-for-parameter,unused-variable, no-member
+# pylint: disable=no-value-for-parameter,unused-variable,no-member
 
-from dagster import Output, OutputDefinition, composite_solid, lambda_solid, pipeline, solid
+from dagster import Output, OutputDefinition, composite_solid, pipeline, solid
 
 
-@lambda_solid
-def return_one() -> int:
+@solid
+def return_one(_) -> int:
     return 1
 
 
-@lambda_solid
-def adder(a: int, b: int) -> int:
+@solid
+def adder(_, a: int, b: int) -> int:
     return a + b
 
 
-@lambda_solid
-def multer(a: int, b: int) -> int:
+@solid
+def multer(_, a: int, b: int) -> int:
     return a * b
 
 
@@ -50,33 +50,33 @@ def add_both(a: int, b: int):
     return {'a_out': a, 'b_out': b}
 
 
-@lambda_solid
-def sales_team_path():
+@solid
+def sales_team_path(_):
     pass
 
 
-@lambda_solid
-def hr_team_path():
+@solid
+def hr_team_path(_):
     pass
 
 
-@lambda_solid
-def extract(_):
+@solid
+def extract(_, _unused_input):
     pass
 
 
-@lambda_solid
-def transform(_):
+@solid
+def transform(_, _unused_input):
     pass
 
 
-@lambda_solid
-def load(_):
+@solid
+def load(_, _unused_inputj):
     pass
 
 
-@lambda_solid
-def analysis(_):
+@solid
+def analysis(_, _unused_input):
     pass
 
 

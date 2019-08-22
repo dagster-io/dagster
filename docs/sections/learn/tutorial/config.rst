@@ -13,11 +13,11 @@ linked by a dependency definition to **outputs** of a previous computation in a 
 **configuration** should be used to specify *how* a computation executes.
 
 We'll illustrate this by configuring our hello world example to speak a couple of different
-languages. This time, we'll use a more fully-featured API to define our solid --
-:py:func:`@solid <dagster.solid>` instead of :py:func:`@lambda_solid <dagster.lambda_solid>`.
+languages. Also, this time will be actually use the context object passed into the solid,
+so the first argument will be named ``context`` instead of ``_``.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config.py
-   :lines: 4-19
+   :lines: 1-19
    :caption: config.py
 
 We will be exploring the :py:func:`@solid <dagster.solid>` API in much more detail as this tutorial

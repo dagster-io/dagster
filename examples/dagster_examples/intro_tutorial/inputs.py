@@ -1,9 +1,9 @@
 # pylint: disable=no-value-for-parameter
-from dagster import String, execute_pipeline, lambda_solid, pipeline
+from dagster import String, execute_pipeline, pipeline, solid
 
 
-@lambda_solid
-def add_hello_to_word(word):
+@solid
+def add_hello_to_word(_, word):
     return 'Hello, ' + word + '!'
 
 
@@ -27,8 +27,8 @@ def execute_with_another_world():
     )
 
 
-@lambda_solid
-def add_hello_to_word_typed(word: String) -> String:
+@solid
+def add_hello_to_word_typed(_, word: String) -> String:
     return 'Hello, ' + word + '!'
 
 

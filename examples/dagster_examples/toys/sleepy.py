@@ -2,17 +2,7 @@
 
 from time import sleep
 
-from dagster import (
-    Field,
-    InputDefinition,
-    Int,
-    List,
-    Output,
-    OutputDefinition,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster import Field, InputDefinition, Int, List, Output, OutputDefinition, pipeline, solid
 
 
 @solid(
@@ -49,16 +39,16 @@ def giver(context):
     yield Output(queues[3], 'out_4')
 
 
-@lambda_solid(
+@solid(
     input_defs=[
         InputDefinition('in_1', Int),
         InputDefinition('in_2', Int),
         InputDefinition('in_3', Int),
         InputDefinition('in_4', Int),
     ],
-    output_def=OutputDefinition(Int),
+    output_defs=[OutputDefinition(Int)],
 )
-def total(in_1, in_2, in_3, in_4):
+def total(_, in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4
 
 

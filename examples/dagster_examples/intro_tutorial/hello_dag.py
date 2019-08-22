@@ -1,13 +1,14 @@
-from dagster import lambda_solid, pipeline
+# pylint: disable=no-value-for-parameter
+from dagster import pipeline, solid
 
 
-@lambda_solid
-def solid_one():
+@solid
+def solid_one(_):
     return 'foo'
 
 
-@lambda_solid
-def solid_two(arg_one):
+@solid
+def solid_two(_, arg_one):
     return arg_one * 2
 
 

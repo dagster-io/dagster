@@ -15,7 +15,6 @@ from dagster import (
     RunConfig,
     execute_pipeline,
     file_relative_path,
-    lambda_solid,
     pipeline,
     solid,
 )
@@ -31,8 +30,8 @@ except ImportError:
 
 
 def test_spark_data_frame_serialization_file_system_file_handle():
-    @lambda_solid
-    def nonce():
+    @solid
+    def nonce(_):
         return LocalFileHandle(file_relative_path(__file__, 'data/test.csv'))
 
     @pipeline(mode_defs=[spark_mode])
@@ -117,8 +116,8 @@ def test_spark_dataframe_output_csv():
 
     assert num_df.collect() == [Row(num1=1, num2=2)]
 
-    @lambda_solid
-    def emit():
+    @solid
+    def emit(_):
         return num_df
 
     @solid(input_defs=[InputDefinition('df', DataFrame)], output_defs=[OutputDefinition(DataFrame)])

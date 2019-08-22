@@ -1,13 +1,13 @@
-from dagster import lambda_solid, pipeline
+from dagster import pipeline, solid
 
 
-@lambda_solid
-def adder(num1: int, num2: int) -> int:
+@solid
+def adder(_, num1: int, num2: int) -> int:
     return num1 + num2
 
 
-@lambda_solid
-def multer(num1: int, num2: int) -> int:
+@solid
+def multer(_, num1: int, num2: int) -> int:
     return num1 * num2
 
 

@@ -1,14 +1,14 @@
-from dagster import RepositoryDefinition, lambda_solid, pipeline
+from dagster import RepositoryDefinition, pipeline, solid
 
 
-@lambda_solid
-def hello_world():
+@solid
+def hello_world(_):
     pass
 
 
 @pipeline
 def repo_demo_pipeline():
-    hello_world()
+    hello_world()  # pylint: disable=no-value-for-parameter
 
 
 def define_repo():

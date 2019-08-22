@@ -1,5 +1,6 @@
 # pylint: disable=no-value-for-parameter
 
+
 from dagster_slack import slack_resource
 
 from dagster import ModeDefinition, execute_pipeline, pipeline, solid
