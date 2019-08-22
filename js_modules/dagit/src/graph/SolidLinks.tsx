@@ -23,33 +23,45 @@ const buildSVGPath = pathVerticalDiagonal({
 // in the DAG. This is possible because each one begins with a `M` move
 // instruction and is much, much faster than rendering a separate <path> SVG
 // node for every one.
-const buildJoinedPathForAll = weakmapMemoize(
+const buildJoinedPaths = weakmapMemoize(
   (
     connections: ILayoutConnection[],
     solids: { [name: string]: IFullSolidLayout }
-  ) => {
-    return connections
-      .map(({ from, to }, i) =>
-        buildSVGPath({
-          // can also use from.point for the "Dagre" closest point on node
-          source: solids[from.solidName].outputs[from.edgeName].port,
-          target: solids[to.solidName].inputs[to.edgeName].port
-        })
-      )
-      .join("");
-  }
+  ) =>
+    connections.map(({ from, to }) => ({
+      path: buildSVGPath({
+        // can also use from.point for the "Dagre" closest point on node
+        source: solids[from.solidName].outputs[from.edgeName].port,
+        target: solids[to.solidName].inputs[to.edgeName].port
+      }),
+      from,
+      to
+    }))
 );
 
-export const SolidLinks = (props: {
-  opacity: number;
-  layout: IFullPipelineLayout;
-  connections: ILayoutConnection[];
-  onHighlight: (arr: Edge[]) => void;
-}) => (
-  <StyledPath
-    d={buildJoinedPathForAll(props.connections, props.layout.solids)}
-    style={{ opacity: props.opacity }}
-  />
+export const SolidLinks = React.memo(
+  (props: {
+    opacity: number;
+    layout: IFullPipelineLayout;
+    connections: ILayoutConnection[];
+    onHighlight: (arr: Edge[]) => void;
+  }) => (
+    <g opacity={props.opacity}>
+      {buildJoinedPaths(props.connections, props.layout.solids).map(
+        ({ path, from, to }, idx) => (
+          <g
+            key={idx}
+            onMouseLeave={() => props.onHighlight([])}
+            onMouseEnter={() =>
+              props.onHighlight([{ a: from.solidName, b: to.solidName }])
+            }
+          >
+            <StyledPath d={path} />
+          </g>
+        )
+      )}
+    </g>
+  )
 );
 
 SolidLinks.displayName = "SolidLinks";
