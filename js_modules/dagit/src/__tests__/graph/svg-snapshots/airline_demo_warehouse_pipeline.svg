@@ -1,0 +1,255 @@
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 1435 1126" width="1435" height="1126">
+  <style data-styled="" data-styled-version="4.3.2">
+    /* sc-component-id: sc-bdVaJa */
+    .gyNVNt {
+      stroke-width: 6;
+      stroke: #10161A;
+      fill: none;
+    }
+  </style>
+  <g>
+    <g style="opacity:0.2">
+      <g>
+        <path class="vx-link vx-link-vertical-diagonal sc-bdVaJa gyNVNt" d="M525,178C525,221,525,221,525,264"></path>
+      </g>
+      <g>
+        <path class="vx-link vx-link-vertical-diagonal sc-bdVaJa gyNVNt" d="M115,342C115,394,125,394,125,446"></path>
+      </g>
+      <g>
+        <path class="vx-link vx-link-vertical-diagonal sc-bdVaJa gyNVNt" d="M525,360C525,421,125,421,125,482"></path>
+      </g>
+      <g>
+        <path class="vx-link vx-link-vertical-diagonal sc-bdVaJa gyNVNt" d="M125,578C125,621,125,621,125,664"></path>
+      </g>
+      <g>
+        <path class="vx-link vx-link-vertical-diagonal sc-bdVaJa gyNVNt" d="M525,360C525,412,535,412,535,464"></path>
+      </g>
+      <g>
+        <path class="vx-link vx-link-vertical-diagonal sc-bdVaJa gyNVNt" d="M125,760C125,803,125,803,125,846"></path>
+      </g>
+      <g>
+        <path class="vx-link vx-link-vertical-diagonal sc-bdVaJa gyNVNt" d="M535,560C535,612,535,612,535,664"></path>
+      </g>
+    </g>
+    <g style="opacity:0.55"></g>
+    <g opacity="1">
+      <rect x="510" y="276" width="350" height="72" fill="#DBE6EE" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="456.32" dominant-baseline="hanging">average_sfo_outbound_avg_delays_by_destination</text></rect><text fill="#222" x="522" y="304" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="327.36" dominant-baseline="hanging">average_sfo_outbound_avg_delays_…</text>
+      <g>
+        <title>q2_sfo_outbound_flights: SqlTableName</title>
+        <rect x="510" y="246" width="300" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="208.32" dominant-baseline="hanging">q2_sfo_outbound_flights:</text>
+          <rect width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+        </rect>
+        <ellipse cx="525" cy="264" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="539" y="257" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="164.92" dominant-baseline="hanging">q2_sfo_outbound_fl…</text>
+        <rect x="712.4063904143784" y="250.5" width="89.59360958562156" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="716.4063904143784" y="257" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="78.12" dominant-baseline="hanging">SqlTable…</text>
+      </g>
+      <g>
+        <title>result: SqlTableName</title>
+        <rect x="510" y="342" width="149.16" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+          <rect width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+        </rect>
+        <ellipse cx="525" cy="360" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+        <rect x="539" y="346.5" width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="543" y="353" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+      </g>
+      <rect x="510" y="334" width="355" height="20" fill="transparent" stroke="transparent">
+        <g></g>
+        <rect width="34.04" height="20" rx="0" ry="0" fill="hsl(336, 10%, 95%)" stroke="hsl(336, 75%, 55%)" stroke-width="1"><text fill="hsl(336, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text></rect><text fill="hsl(336, 75%, 55%)" x="4" y="3" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text>
+      </rect>
+      <g></g>
+      <rect x="830.96" y="334" width="34.04" height="20" rx="0" ry="0" fill="hsl(336, 10%, 95%)" stroke="hsl(336, 75%, 55%)" stroke-width="1"><text fill="hsl(336, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text></rect><text fill="hsl(336, 75%, 55%)" x="834.96" y="337" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text>
+    </g>
+    <g opacity="1">
+      <rect x="110" y="494" width="350" height="72" fill="#DBE6EE" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="148.8" dominant-baseline="hanging">delays_vs_fares</text></rect><text fill="#222" x="122" y="522" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="148.8" dominant-baseline="hanging">delays_vs_fares</text>
+      <g>
+        <title>tickets_with_destination: SqlTableName</title>
+        <rect x="110" y="428" width="300" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="217" dominant-baseline="hanging">tickets_with_destination:</text>
+          <rect width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+        </rect>
+        <ellipse cx="125" cy="446" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="139" y="439" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="164.92" dominant-baseline="hanging">tickets_with_desti…</text>
+        <rect x="314.7689877263337" y="432.5" width="87.23101227366631" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="318.7689877263337" y="439" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="78.12" dominant-baseline="hanging">SqlTable…</text>
+      </g>
+      <g>
+        <title>average_sfo_outbound_avg_delays_by_destination: SqlTableName</title>
+        <rect x="110" y="464" width="300" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="407.96" dominant-baseline="hanging">average_sfo_outbound_avg_delays_by_destination:</text>
+          <rect width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+        </rect>
+        <ellipse cx="125" cy="482" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="139" y="475" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="199.64" dominant-baseline="hanging">average_sfo_outbound_a…</text>
+        <rect x="346.79550872875484" y="468.5" width="55.20449127124509" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="350.79550872875484" y="475" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="43.4" dominant-baseline="hanging">SqlT…</text>
+      </g>
+      <g>
+        <title>result: SqlTableName</title>
+        <rect x="110" y="560" width="149.16" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+          <rect width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+        </rect>
+        <ellipse cx="125" cy="578" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+        <rect x="139" y="564.5" width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="143" y="571" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+      </g>
+      <rect x="110" y="552" width="355" height="20" fill="transparent" stroke="transparent">
+        <g></g>
+        <rect width="34.04" height="20" rx="0" ry="0" fill="hsl(336, 10%, 95%)" stroke="hsl(336, 75%, 55%)" stroke-width="1"><text fill="hsl(336, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text></rect><text fill="hsl(336, 75%, 55%)" x="4" y="3" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text>
+      </rect>
+      <g></g>
+      <rect x="430.96000000000004" y="552" width="34.04" height="20" rx="0" ry="0" fill="hsl(336, 10%, 95%)" stroke="hsl(336, 75%, 55%)" stroke-width="1"><text fill="hsl(336, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text></rect><text fill="hsl(336, 75%, 55%)" x="434.96000000000004" y="555" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text>
+    </g>
+    <g opacity="1">
+      <rect x="110" y="676" width="350" height="72" fill="#DBE6EE" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="148.8" dominant-baseline="hanging">fares_vs_delays</text></rect><text fill="#222" x="122" y="704" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="148.8" dominant-baseline="hanging">fares_vs_delays</text>
+      <g>
+        <title>table_name: SqlTableName</title>
+        <rect x="110" y="646" width="251.64" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="95.48" dominant-baseline="hanging">table_name:</text>
+          <rect width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+        </rect>
+        <ellipse cx="125" cy="664" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="139" y="657" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="95.48" dominant-baseline="hanging">table_name:</text>
+        <rect x="241.48000000000002" y="650.5" width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="245.48000000000002" y="657" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+      </g>
+      <g>
+        <title>result: FileHandle</title>
+        <rect x="110" y="742" width="131.8" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+          <rect width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+        </rect>
+        <ellipse cx="125" cy="760" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+        <rect x="139" y="746.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="143" y="753" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+      </g>
+      <rect x="110" y="734" width="355" height="20" fill="transparent" stroke="transparent">
+        <g></g>
+        <rect width="51.4" height="20" rx="0" ry="0" fill="hsl(25, 10%, 95%)" stroke="hsl(25, 75%, 55%)" stroke-width="1"><text fill="hsl(25, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="43.4" dominant-baseline="hanging">ipynb</text></rect><text fill="hsl(25, 75%, 55%)" x="4" y="3" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="43.4" dominant-baseline="hanging">ipynb</text>
+      </rect>
+      <g></g>
+      <rect x="413.5999999999999" y="734" width="51.4" height="20" rx="0" ry="0" fill="hsl(25, 10%, 95%)" stroke="hsl(25, 75%, 55%)" stroke-width="1"><text fill="hsl(25, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="43.4" dominant-baseline="hanging">ipynb</text></rect><text fill="hsl(25, 75%, 55%)" x="417.5999999999999" y="737" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="43.4" dominant-baseline="hanging">ipynb</text>
+    </g>
+    <g opacity="1">
+      <rect x="904" y="94" width="362" height="84" fill="rgb(230, 219, 238)" stroke="#979797" stroke-width="1"></rect>
+      <rect x="907" y="97" width="356" height="78" fill="rgb(230, 219, 238)" stroke="#979797" stroke-width="1"></rect>
+      <rect x="910" y="100" width="350" height="72" fill="rgb(230, 219, 238)" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="208.32" dominant-baseline="hanging">process_delays_by_geo</text></rect><text fill="#222" x="922" y="128" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="208.32" dominant-baseline="hanging">process_delays_by_geo</text>
+      <g>
+        <title>result: FileHandle</title>
+        <rect x="910" y="160" width="131.8" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+          <rect width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+        </rect>
+        <ellipse cx="925" cy="178" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+        <rect x="939" y="164.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="943" y="171" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+      </g>
+      <rect x="910" y="158" width="355" height="20" fill="transparent" stroke="transparent">
+        <g></g>
+        <rect width="60.08" height="20" rx="0" ry="0" fill="hsl(248, 10%, 95%)" stroke="hsl(248, 75%, 55%)" stroke-width="1"><text fill="hsl(248, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">Expand</text></rect><text fill="hsl(248, 75%, 55%)" x="4" y="3" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">Expand</text>
+      </rect>
+      <g></g>
+      <rect x="1204.92" y="158" width="60.08" height="20" rx="0" ry="0" fill="hsl(248, 10%, 95%)" stroke="hsl(248, 75%, 55%)" stroke-width="1"><text fill="hsl(248, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">Expand</text></rect><text fill="hsl(248, 75%, 55%)" x="1208.92" y="161" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">Expand</text>
+    </g>
+    <g opacity="1">
+      <rect x="510" y="100" width="350" height="72" fill="#DBE6EE" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="228.16" dominant-baseline="hanging">q2_sfo_outbound_flights</text></rect><text fill="#222" x="522" y="128" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="228.16" dominant-baseline="hanging">q2_sfo_outbound_flights</text>
+      <g>
+        <title>result: SqlTableName</title>
+        <rect x="510" y="160" width="149.16" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+          <rect width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+        </rect>
+        <ellipse cx="525" cy="178" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+        <rect x="539" y="164.5" width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="543" y="171" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+      </g>
+      <rect x="510" y="158" width="355" height="20" fill="transparent" stroke="transparent">
+        <g></g>
+        <rect width="34.04" height="20" rx="0" ry="0" fill="hsl(336, 10%, 95%)" stroke="hsl(336, 75%, 55%)" stroke-width="1"><text fill="hsl(336, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text></rect><text fill="hsl(336, 75%, 55%)" x="4" y="3" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text>
+      </rect>
+      <g></g>
+      <rect x="830.96" y="158" width="34.04" height="20" rx="0" ry="0" fill="hsl(336, 10%, 95%)" stroke="hsl(336, 75%, 55%)" stroke-width="1"><text fill="hsl(336, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text></rect><text fill="hsl(336, 75%, 55%)" x="834.96" y="161" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text>
+    </g>
+    <g opacity="1">
+      <rect x="520" y="476" width="350" height="72" fill="#DBE6EE" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="248" dominant-baseline="hanging">sfo_delays_by_destination</text></rect><text fill="#222" x="532" y="504" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="248" dominant-baseline="hanging">sfo_delays_by_destination</text>
+      <g>
+        <title>table_name: SqlTableName</title>
+        <rect x="520" y="446" width="251.64" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="95.48" dominant-baseline="hanging">table_name:</text>
+          <rect width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+        </rect>
+        <ellipse cx="535" cy="464" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="549" y="457" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="95.48" dominant-baseline="hanging">table_name:</text>
+        <rect x="651.48" y="450.5" width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="655.48" y="457" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+      </g>
+      <g>
+        <title>result: FileHandle</title>
+        <rect x="520" y="542" width="131.8" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+          <rect width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+        </rect>
+        <ellipse cx="535" cy="560" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+        <rect x="549" y="546.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="553" y="553" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+      </g>
+      <rect x="520" y="534" width="355" height="20" fill="transparent" stroke="transparent">
+        <g></g>
+        <rect width="51.4" height="20" rx="0" ry="0" fill="hsl(25, 10%, 95%)" stroke="hsl(25, 75%, 55%)" stroke-width="1"><text fill="hsl(25, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="43.4" dominant-baseline="hanging">ipynb</text></rect><text fill="hsl(25, 75%, 55%)" x="4" y="3" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="43.4" dominant-baseline="hanging">ipynb</text>
+      </rect>
+      <g></g>
+      <rect x="823.5999999999999" y="534" width="51.4" height="20" rx="0" ry="0" fill="hsl(25, 10%, 95%)" stroke="hsl(25, 75%, 55%)" stroke-width="1"><text fill="hsl(25, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="43.4" dominant-baseline="hanging">ipynb</text></rect><text fill="hsl(25, 75%, 55%)" x="827.5999999999999" y="537" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="43.4" dominant-baseline="hanging">ipynb</text>
+    </g>
+    <g opacity="1">
+      <rect x="100" y="264" width="350" height="72" fill="#DBE6EE" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="238.07999999999998" dominant-baseline="hanging">tickets_with_destination</text></rect><text fill="#222" x="112" y="292" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="238.07999999999998" dominant-baseline="hanging">tickets_with_destination</text>
+      <g>
+        <title>result: SqlTableName</title>
+        <rect x="100" y="324" width="149.16" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+          <rect width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+        </rect>
+        <ellipse cx="115" cy="342" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+        <rect x="129" y="328.5" width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text></rect><text fill="#222" x="133" y="335" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">SqlTableName</text>
+      </g>
+      <rect x="100" y="322" width="355" height="20" fill="transparent" stroke="transparent">
+        <g></g>
+        <rect width="34.04" height="20" rx="0" ry="0" fill="hsl(336, 10%, 95%)" stroke="hsl(336, 75%, 55%)" stroke-width="1"><text fill="hsl(336, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text></rect><text fill="hsl(336, 75%, 55%)" x="4" y="3" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text>
+      </rect>
+      <g></g>
+      <rect x="420.96000000000004" y="322" width="34.04" height="20" rx="0" ry="0" fill="hsl(336, 10%, 95%)" stroke="hsl(336, 75%, 55%)" stroke-width="1"><text fill="hsl(336, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text></rect><text fill="hsl(336, 75%, 55%)" x="424.96000000000004" y="325" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">sql</text>
+    </g>
+    <g opacity="1">
+      <rect x="110" y="858" width="350" height="72" fill="#DBE6EE" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="317.44" dominant-baseline="hanging">upload_delays_vs_fares_pdf_plots</text></rect><text fill="#222" x="122" y="886" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="317.44" dominant-baseline="hanging">upload_delays_vs_fares_pdf_plots</text>
+      <g>
+        <title>file_handle: FileHandle</title>
+        <rect x="110" y="828" width="242.95999999999998" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">file_handle:</text>
+          <rect width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+        </rect>
+        <ellipse cx="125" cy="846" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="139" y="839" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">file_handle:</text>
+        <rect x="250.16" y="832.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="254.16" y="839" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+      </g>
+      <g>
+        <title>s3_file_handle: FileHandle</title>
+        <rect x="110" y="924" width="269" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="130.2" dominant-baseline="hanging">s3_file_handle:</text>
+          <rect width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+        </rect>
+        <ellipse cx="125" cy="942" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="139" y="935" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="130.2" dominant-baseline="hanging">s3_file_handle:</text>
+        <rect x="276.2" y="928.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="280.2" y="935" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+      </g>
+      <ellipse cx="440" cy="858" rx="13" ry="13" stroke="#8A9BA8" fill="#DBE6EE" pathLength="100" stroke-width="1" stroke-dasharray="0 50 0"></ellipse>
+      <ellipse cx="440" cy="858" rx="10" ry="10" stroke="#FFFFFF" fill="#7D8C97" pathLength="100" stroke-width="2"></ellipse><text x="435" y="852.5" style="font:14px &quot;Arial&quot;, san-serif" fill="#FFFFFF" dominant-baseline="hanging">C</text>
+    </g>
+    <g opacity="1">
+      <rect x="520" y="676" width="350" height="72" fill="#DBE6EE" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="347.2" dominant-baseline="hanging">upload_outbound_avg_delay_pdf_plots</text></rect><text fill="#222" x="532" y="704" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="327.36" dominant-baseline="hanging">upload_outbound_avg_delay_pdf_pl…</text>
+      <g>
+        <title>file_handle: FileHandle</title>
+        <rect x="520" y="646" width="242.95999999999998" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">file_handle:</text>
+          <rect width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+        </rect>
+        <ellipse cx="535" cy="664" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="549" y="657" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">file_handle:</text>
+        <rect x="660.16" y="650.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="664.16" y="657" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+      </g>
+      <g>
+        <title>s3_file_handle: FileHandle</title>
+        <rect x="520" y="742" width="269" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="130.2" dominant-baseline="hanging">s3_file_handle:</text>
+          <rect width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+        </rect>
+        <ellipse cx="535" cy="760" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="549" y="753" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="130.2" dominant-baseline="hanging">s3_file_handle:</text>
+        <rect x="686.2" y="746.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="690.2" y="753" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+      </g>
+      <ellipse cx="850" cy="676" rx="13" ry="13" stroke="#8A9BA8" fill="#DBE6EE" pathLength="100" stroke-width="1" stroke-dasharray="0 50 0"></ellipse>
+      <ellipse cx="850" cy="676" rx="10" ry="10" stroke="#FFFFFF" fill="#7D8C97" pathLength="100" stroke-width="2"></ellipse><text x="845" y="670.5" style="font:14px &quot;Arial&quot;, san-serif" fill="#FFFFFF" dominant-baseline="hanging">C</text>
+    </g>
+  </g>
+</svg>

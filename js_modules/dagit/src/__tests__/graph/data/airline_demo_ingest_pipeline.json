@@ -1,0 +1,4082 @@
+{
+  "data": {
+    "pipelineOrError": {
+      "name": "airline_demo_ingest_pipeline",
+      "description": null,
+      "modes": [
+        {
+          "name": "local",
+          "description": null,
+          "resources": [
+            {
+              "name": "db_info",
+              "description": null,
+              "configField": {
+                "configType": {
+                  "key": "Dict.44",
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "postgres_db_name",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "postgres_hostname",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "postgres_password",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "postgres_username",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "file_cache",
+              "description": null,
+              "configField": {
+                "configType": {
+                  "key": "Dict.36",
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    },
+                    {
+                      "key": "Bool",
+                      "name": "Bool",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "overwrite",
+                      "description": null,
+                      "isOptional": true,
+                      "configType": { "key": "Bool" }
+                    },
+                    {
+                      "name": "target_folder",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "s3",
+              "description": null,
+              "configField": {
+                "configType": {
+                  "key": "Dict.38",
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "Bool",
+                      "name": "Bool",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "use_unsigned_session",
+                      "description": "Specifies whether to use an unsigned S3 session",
+                      "isOptional": true,
+                      "configType": { "key": "Bool" }
+                    }
+                  ]
+                }
+              }
+            },
+            { "name": "spark", "description": null, "configField": null },
+            { "name": "tempfile", "description": null, "configField": null }
+          ],
+          "loggers": [
+            {
+              "name": "console",
+              "description": "The default colored console logger.",
+              "configField": {
+                "configType": {
+                  "key": "Dict.25",
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "log_level",
+                      "description": null,
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "name",
+                      "description": null,
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "prod",
+          "description": null,
+          "resources": [
+            {
+              "name": "db_info",
+              "description": null,
+              "configField": {
+                "configType": {
+                  "key": "Dict.43",
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "redshift_db_name",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "redshift_hostname",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "redshift_password",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "redshift_username",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "s3_temp_dir",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "file_cache",
+              "description": null,
+              "configField": {
+                "configType": {
+                  "key": "Dict.37",
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    },
+                    {
+                      "key": "Bool",
+                      "name": "Bool",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "bucket",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "key",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "overwrite",
+                      "description": null,
+                      "isOptional": true,
+                      "configType": { "key": "Bool" }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "s3",
+              "description": null,
+              "configField": {
+                "configType": {
+                  "key": "Dict.38",
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "Bool",
+                      "name": "Bool",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "use_unsigned_session",
+                      "description": "Specifies whether to use an unsigned S3 session",
+                      "isOptional": true,
+                      "configType": { "key": "Bool" }
+                    }
+                  ]
+                }
+              }
+            },
+            { "name": "spark", "description": null, "configField": null },
+            { "name": "tempfile", "description": null, "configField": null }
+          ],
+          "loggers": [
+            {
+              "name": "console",
+              "description": "The default colored console logger.",
+              "configField": {
+                "configType": {
+                  "key": "Dict.25",
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "log_level",
+                      "description": null,
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "name",
+                      "description": null,
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "test",
+          "description": null,
+          "resources": [
+            {
+              "name": "db_info",
+              "description": null,
+              "configField": {
+                "configType": {
+                  "key": "Dict.43",
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "redshift_db_name",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "redshift_hostname",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "redshift_password",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "redshift_username",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "s3_temp_dir",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "file_cache",
+              "description": null,
+              "configField": {
+                "configType": {
+                  "key": "Dict.36",
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    },
+                    {
+                      "key": "Bool",
+                      "name": "Bool",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "overwrite",
+                      "description": null,
+                      "isOptional": true,
+                      "configType": { "key": "Bool" }
+                    },
+                    {
+                      "name": "target_folder",
+                      "description": null,
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "s3",
+              "description": null,
+              "configField": {
+                "configType": {
+                  "key": "Dict.38",
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "Bool",
+                      "name": "Bool",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "use_unsigned_session",
+                      "description": "Specifies whether to use an unsigned S3 session",
+                      "isOptional": true,
+                      "configType": { "key": "Bool" }
+                    }
+                  ]
+                }
+              }
+            },
+            { "name": "spark", "description": null, "configField": null },
+            { "name": "tempfile", "description": null, "configField": null }
+          ],
+          "loggers": [
+            {
+              "name": "console",
+              "description": "The default colored console logger.",
+              "configField": {
+                "configType": {
+                  "key": "Dict.25",
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "log_level",
+                      "description": null,
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    },
+                    {
+                      "name": "name",
+                      "description": null,
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "solids": [
+        { "name": "april_on_time_s3_to_df" },
+        { "name": "download_q2_sfo_weather" },
+        { "name": "ingest_q2_sfo_weather" },
+        { "name": "join_q2_data" },
+        { "name": "june_on_time_s3_to_df" },
+        { "name": "load_q2_on_time_data" },
+        { "name": "load_q2_sfo_weather" },
+        { "name": "master_cord_s3_to_df" },
+        { "name": "may_on_time_s3_to_df" },
+        { "name": "process_q2_coupon_data" },
+        { "name": "process_q2_market_data" },
+        { "name": "process_q2_ticket_data" },
+        { "name": "process_sfo_weather_data" }
+      ],
+      "solidHandles": [
+        {
+          "handleID": "april_on_time_s3_to_df",
+          "parent": null,
+          "solid": {
+            "name": "april_on_time_s3_to_df",
+            "definition": {
+              "name": "s3_to_df",
+              "__typename": "CompositeSolidDefinition",
+              "metadata": [],
+              "inputMappings": [
+                {
+                  "definition": { "name": "s3_coordinate" },
+                  "mappedInput": {
+                    "definition": { "name": "s3_coordinate" },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                },
+                {
+                  "definition": { "name": "archive_member" },
+                  "mappedInput": {
+                    "definition": { "name": "archive_member" },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                }
+              ],
+              "outputMappings": [
+                {
+                  "definition": { "name": "result" },
+                  "mappedOutput": {
+                    "definition": { "name": "result" },
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" }
+                  }
+                }
+              ],
+              "description": "Ingest a zipped csv file from s3,\nstash in a keyed file store (does not download if already\npresent by default), unzip that file, and load it into a\nSpark Dataframe. See documentation in constituent solids for\nmore detail.",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" },
+                { "resourceKey": "spark" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "join_q2_data" },
+                    "definition": {
+                      "name": "april_data",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "april_on_time_s3_to_df.cache_file_from_s3",
+          "parent": { "handleID": "april_on_time_s3_to_df" },
+          "solid": {
+            "name": "cache_file_from_s3",
+            "definition": {
+              "name": "cache_file_from_s3",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.42",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "file_key",
+                      "description": "Optionally specify the key for the file to be ingested into the keyed store. Defaults to the last path component of the downloaded s3 key.",
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": "This is a solid which caches a file in s3 into file cache.\n\nThe `file_cache` is a resource type that allows a solid author to save files\nand assign a key to them. The keyed file store can be backed by local file or any\nobject store (currently we support s3). This keyed file store can be configured\nto be at an external location so that is persists in a well known spot between runs.\nIt is designed for the case where there is an expensive download step that should not\noccur unless the downloaded file does not exist. Redownload can be instigated either\nby configuring the source to overwrite files or to just delete the file in the underlying\nstorage manually.\n\nThis works by downloading the file to a temporary file, and then ingesting it into\nthe file cache. In the case of a filesystem-backed file cache, this is a file\ncopy. In the case of a object-store-backed file cache, this is an upload.\n\nIn order to work this must be executed within a mode that provides an `s3`\nand `file_cache` resource.\n    ",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "unzip_file_handle" },
+                    "definition": {
+                      "name": "archive_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "april_on_time_s3_to_df.ingest_csv_file_handle_to_spark",
+          "parent": { "handleID": "april_on_time_s3_to_df" },
+          "solid": {
+            "name": "ingest_csv_file_handle_to_spark",
+            "definition": {
+              "name": "ingest_csv_file_handle_to_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Take a file handle that contains a csv with headers and load it\ninto a Spark DataFrame. It infers header names but does *not* infer schema.\n\nIt also ensures that the column names are valid parquet column names by\nfiltering out any of the following characters from column names:\n\nCharacters (within quotations): \"`[ ,;{}()\\n\\t=]`\"\n\n",
+              "requiredResources": [{ "resourceKey": "spark" }]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "csv_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "april_on_time_s3_to_df.unzip_file_handle",
+          "parent": { "handleID": "april_on_time_s3_to_df" },
+          "solid": {
+            "name": "unzip_file_handle",
+            "definition": {
+              "name": "unzip_file_handle",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Unzip a file that is resident in an archive file as a member.\n    This solid operates on FileHandles, meaning that their physical is dependent\n    on what system storage is operating in the pipeline. The physical file could\n    be on local disk, or it could be in s3. If on s3, this solid will download\n    that file to local disk, perform the unzip, upload that file back to s3, and\n    then return that file handle for downstream use in the computations.\n    ",
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "archive_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                ]
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" },
+                    "definition": {
+                      "name": "csv_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "download_q2_sfo_weather",
+          "parent": null,
+          "solid": {
+            "name": "download_q2_sfo_weather",
+            "definition": {
+              "name": "cache_file_from_s3",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.42",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "file_key",
+                      "description": "Optionally specify the key for the file to be ingested into the keyed store. Defaults to the last path component of the downloaded s3 key.",
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": "This is a solid which caches a file in s3 into file cache.\n\nThe `file_cache` is a resource type that allows a solid author to save files\nand assign a key to them. The keyed file store can be backed by local file or any\nobject store (currently we support s3). This keyed file store can be configured\nto be at an external location so that is persists in a well known spot between runs.\nIt is designed for the case where there is an expensive download step that should not\noccur unless the downloaded file does not exist. Redownload can be instigated either\nby configuring the source to overwrite files or to just delete the file in the underlying\nstorage manually.\n\nThis works by downloading the file to a temporary file, and then ingesting it into\nthe file cache. In the case of a filesystem-backed file cache, this is a file\ncopy. In the case of a object-store-backed file cache, this is an upload.\n\nIn order to work this must be executed within a mode that provides an `s3`\nand `file_cache` resource.\n    ",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "ingest_q2_sfo_weather" },
+                    "definition": {
+                      "name": "csv_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "ingest_q2_sfo_weather",
+          "parent": null,
+          "solid": {
+            "name": "ingest_q2_sfo_weather",
+            "definition": {
+              "name": "ingest_csv_file_handle_to_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Take a file handle that contains a csv with headers and load it\ninto a Spark DataFrame. It infers header names but does *not* infer schema.\n\nIt also ensures that the column names are valid parquet column names by\nfiltering out any of the following characters from column names:\n\nCharacters (within quotations): \"`[ ,;{}()\\n\\t=]`\"\n\n",
+              "requiredResources": [{ "resourceKey": "spark" }]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "csv_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "download_q2_sfo_weather" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "process_sfo_weather_data" },
+                    "definition": {
+                      "name": "sfo_weather_data",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "join_q2_data",
+          "parent": null,
+          "solid": {
+            "name": "join_q2_data",
+            "definition": {
+              "name": "join_q2_data",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.163",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "Int",
+                      "name": "Int",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "subsample_pct",
+                      "description": "",
+                      "isOptional": false,
+                      "configType": { "key": "Int" }
+                    }
+                  ]
+                }
+              },
+              "description": "\n    This solid takes April, May, and June data and coalesces it into a q2 data set.\n    It then joins the that origin and destination airport with the data in the\n    master_cord_data.\n    ",
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "april_data",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "april_on_time_s3_to_df" }
+                  }
+                ]
+              },
+              {
+                "definition": {
+                  "name": "may_data",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "may_on_time_s3_to_df" }
+                  }
+                ]
+              },
+              {
+                "definition": {
+                  "name": "june_data",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "june_on_time_s3_to_df" }
+                  }
+                ]
+              },
+              {
+                "definition": {
+                  "name": "master_cord_data",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "master_cord_s3_to_df" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "load_q2_on_time_data" },
+                    "definition": {
+                      "name": "data_frame",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "june_on_time_s3_to_df",
+          "parent": null,
+          "solid": {
+            "name": "june_on_time_s3_to_df",
+            "definition": {
+              "name": "s3_to_df",
+              "__typename": "CompositeSolidDefinition",
+              "metadata": [],
+              "inputMappings": [
+                {
+                  "definition": { "name": "s3_coordinate" },
+                  "mappedInput": {
+                    "definition": { "name": "s3_coordinate" },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                },
+                {
+                  "definition": { "name": "archive_member" },
+                  "mappedInput": {
+                    "definition": { "name": "archive_member" },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                }
+              ],
+              "outputMappings": [
+                {
+                  "definition": { "name": "result" },
+                  "mappedOutput": {
+                    "definition": { "name": "result" },
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" }
+                  }
+                }
+              ],
+              "description": "Ingest a zipped csv file from s3,\nstash in a keyed file store (does not download if already\npresent by default), unzip that file, and load it into a\nSpark Dataframe. See documentation in constituent solids for\nmore detail.",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" },
+                { "resourceKey": "spark" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "join_q2_data" },
+                    "definition": {
+                      "name": "june_data",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "june_on_time_s3_to_df.cache_file_from_s3",
+          "parent": { "handleID": "june_on_time_s3_to_df" },
+          "solid": {
+            "name": "cache_file_from_s3",
+            "definition": {
+              "name": "cache_file_from_s3",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.42",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "file_key",
+                      "description": "Optionally specify the key for the file to be ingested into the keyed store. Defaults to the last path component of the downloaded s3 key.",
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": "This is a solid which caches a file in s3 into file cache.\n\nThe `file_cache` is a resource type that allows a solid author to save files\nand assign a key to them. The keyed file store can be backed by local file or any\nobject store (currently we support s3). This keyed file store can be configured\nto be at an external location so that is persists in a well known spot between runs.\nIt is designed for the case where there is an expensive download step that should not\noccur unless the downloaded file does not exist. Redownload can be instigated either\nby configuring the source to overwrite files or to just delete the file in the underlying\nstorage manually.\n\nThis works by downloading the file to a temporary file, and then ingesting it into\nthe file cache. In the case of a filesystem-backed file cache, this is a file\ncopy. In the case of a object-store-backed file cache, this is an upload.\n\nIn order to work this must be executed within a mode that provides an `s3`\nand `file_cache` resource.\n    ",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "unzip_file_handle" },
+                    "definition": {
+                      "name": "archive_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "june_on_time_s3_to_df.ingest_csv_file_handle_to_spark",
+          "parent": { "handleID": "june_on_time_s3_to_df" },
+          "solid": {
+            "name": "ingest_csv_file_handle_to_spark",
+            "definition": {
+              "name": "ingest_csv_file_handle_to_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Take a file handle that contains a csv with headers and load it\ninto a Spark DataFrame. It infers header names but does *not* infer schema.\n\nIt also ensures that the column names are valid parquet column names by\nfiltering out any of the following characters from column names:\n\nCharacters (within quotations): \"`[ ,;{}()\\n\\t=]`\"\n\n",
+              "requiredResources": [{ "resourceKey": "spark" }]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "csv_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "june_on_time_s3_to_df.unzip_file_handle",
+          "parent": { "handleID": "june_on_time_s3_to_df" },
+          "solid": {
+            "name": "unzip_file_handle",
+            "definition": {
+              "name": "unzip_file_handle",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Unzip a file that is resident in an archive file as a member.\n    This solid operates on FileHandles, meaning that their physical is dependent\n    on what system storage is operating in the pipeline. The physical file could\n    be on local disk, or it could be in s3. If on s3, this solid will download\n    that file to local disk, perform the unzip, upload that file back to s3, and\n    then return that file handle for downstream use in the computations.\n    ",
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "archive_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                ]
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" },
+                    "definition": {
+                      "name": "csv_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "load_q2_on_time_data",
+          "parent": null,
+          "solid": {
+            "name": "load_q2_on_time_data",
+            "definition": {
+              "name": "load_data_to_database_from_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.160",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "table_name",
+                      "description": "",
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": null,
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "data_frame",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "join_q2_data" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "table_name",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "load_q2_sfo_weather",
+          "parent": null,
+          "solid": {
+            "name": "load_q2_sfo_weather",
+            "definition": {
+              "name": "load_data_to_database_from_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.160",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "table_name",
+                      "description": "",
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": null,
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "data_frame",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "process_sfo_weather_data" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "table_name",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "master_cord_s3_to_df",
+          "parent": null,
+          "solid": {
+            "name": "master_cord_s3_to_df",
+            "definition": {
+              "name": "s3_to_df",
+              "__typename": "CompositeSolidDefinition",
+              "metadata": [],
+              "inputMappings": [
+                {
+                  "definition": { "name": "s3_coordinate" },
+                  "mappedInput": {
+                    "definition": { "name": "s3_coordinate" },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                },
+                {
+                  "definition": { "name": "archive_member" },
+                  "mappedInput": {
+                    "definition": { "name": "archive_member" },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                }
+              ],
+              "outputMappings": [
+                {
+                  "definition": { "name": "result" },
+                  "mappedOutput": {
+                    "definition": { "name": "result" },
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" }
+                  }
+                }
+              ],
+              "description": "Ingest a zipped csv file from s3,\nstash in a keyed file store (does not download if already\npresent by default), unzip that file, and load it into a\nSpark Dataframe. See documentation in constituent solids for\nmore detail.",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" },
+                { "resourceKey": "spark" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "join_q2_data" },
+                    "definition": {
+                      "name": "master_cord_data",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "master_cord_s3_to_df.cache_file_from_s3",
+          "parent": { "handleID": "master_cord_s3_to_df" },
+          "solid": {
+            "name": "cache_file_from_s3",
+            "definition": {
+              "name": "cache_file_from_s3",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.42",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "file_key",
+                      "description": "Optionally specify the key for the file to be ingested into the keyed store. Defaults to the last path component of the downloaded s3 key.",
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": "This is a solid which caches a file in s3 into file cache.\n\nThe `file_cache` is a resource type that allows a solid author to save files\nand assign a key to them. The keyed file store can be backed by local file or any\nobject store (currently we support s3). This keyed file store can be configured\nto be at an external location so that is persists in a well known spot between runs.\nIt is designed for the case where there is an expensive download step that should not\noccur unless the downloaded file does not exist. Redownload can be instigated either\nby configuring the source to overwrite files or to just delete the file in the underlying\nstorage manually.\n\nThis works by downloading the file to a temporary file, and then ingesting it into\nthe file cache. In the case of a filesystem-backed file cache, this is a file\ncopy. In the case of a object-store-backed file cache, this is an upload.\n\nIn order to work this must be executed within a mode that provides an `s3`\nand `file_cache` resource.\n    ",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "unzip_file_handle" },
+                    "definition": {
+                      "name": "archive_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "master_cord_s3_to_df.ingest_csv_file_handle_to_spark",
+          "parent": { "handleID": "master_cord_s3_to_df" },
+          "solid": {
+            "name": "ingest_csv_file_handle_to_spark",
+            "definition": {
+              "name": "ingest_csv_file_handle_to_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Take a file handle that contains a csv with headers and load it\ninto a Spark DataFrame. It infers header names but does *not* infer schema.\n\nIt also ensures that the column names are valid parquet column names by\nfiltering out any of the following characters from column names:\n\nCharacters (within quotations): \"`[ ,;{}()\\n\\t=]`\"\n\n",
+              "requiredResources": [{ "resourceKey": "spark" }]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "csv_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "master_cord_s3_to_df.unzip_file_handle",
+          "parent": { "handleID": "master_cord_s3_to_df" },
+          "solid": {
+            "name": "unzip_file_handle",
+            "definition": {
+              "name": "unzip_file_handle",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Unzip a file that is resident in an archive file as a member.\n    This solid operates on FileHandles, meaning that their physical is dependent\n    on what system storage is operating in the pipeline. The physical file could\n    be on local disk, or it could be in s3. If on s3, this solid will download\n    that file to local disk, perform the unzip, upload that file back to s3, and\n    then return that file handle for downstream use in the computations.\n    ",
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "archive_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                ]
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" },
+                    "definition": {
+                      "name": "csv_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "may_on_time_s3_to_df",
+          "parent": null,
+          "solid": {
+            "name": "may_on_time_s3_to_df",
+            "definition": {
+              "name": "s3_to_df",
+              "__typename": "CompositeSolidDefinition",
+              "metadata": [],
+              "inputMappings": [
+                {
+                  "definition": { "name": "s3_coordinate" },
+                  "mappedInput": {
+                    "definition": { "name": "s3_coordinate" },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                },
+                {
+                  "definition": { "name": "archive_member" },
+                  "mappedInput": {
+                    "definition": { "name": "archive_member" },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                }
+              ],
+              "outputMappings": [
+                {
+                  "definition": { "name": "result" },
+                  "mappedOutput": {
+                    "definition": { "name": "result" },
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" }
+                  }
+                }
+              ],
+              "description": "Ingest a zipped csv file from s3,\nstash in a keyed file store (does not download if already\npresent by default), unzip that file, and load it into a\nSpark Dataframe. See documentation in constituent solids for\nmore detail.",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" },
+                { "resourceKey": "spark" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "join_q2_data" },
+                    "definition": {
+                      "name": "may_data",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "may_on_time_s3_to_df.cache_file_from_s3",
+          "parent": { "handleID": "may_on_time_s3_to_df" },
+          "solid": {
+            "name": "cache_file_from_s3",
+            "definition": {
+              "name": "cache_file_from_s3",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.42",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "file_key",
+                      "description": "Optionally specify the key for the file to be ingested into the keyed store. Defaults to the last path component of the downloaded s3 key.",
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": "This is a solid which caches a file in s3 into file cache.\n\nThe `file_cache` is a resource type that allows a solid author to save files\nand assign a key to them. The keyed file store can be backed by local file or any\nobject store (currently we support s3). This keyed file store can be configured\nto be at an external location so that is persists in a well known spot between runs.\nIt is designed for the case where there is an expensive download step that should not\noccur unless the downloaded file does not exist. Redownload can be instigated either\nby configuring the source to overwrite files or to just delete the file in the underlying\nstorage manually.\n\nThis works by downloading the file to a temporary file, and then ingesting it into\nthe file cache. In the case of a filesystem-backed file cache, this is a file\ncopy. In the case of a object-store-backed file cache, this is an upload.\n\nIn order to work this must be executed within a mode that provides an `s3`\nand `file_cache` resource.\n    ",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "unzip_file_handle" },
+                    "definition": {
+                      "name": "archive_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "may_on_time_s3_to_df.ingest_csv_file_handle_to_spark",
+          "parent": { "handleID": "may_on_time_s3_to_df" },
+          "solid": {
+            "name": "ingest_csv_file_handle_to_spark",
+            "definition": {
+              "name": "ingest_csv_file_handle_to_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Take a file handle that contains a csv with headers and load it\ninto a Spark DataFrame. It infers header names but does *not* infer schema.\n\nIt also ensures that the column names are valid parquet column names by\nfiltering out any of the following characters from column names:\n\nCharacters (within quotations): \"`[ ,;{}()\\n\\t=]`\"\n\n",
+              "requiredResources": [{ "resourceKey": "spark" }]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "csv_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "may_on_time_s3_to_df.unzip_file_handle",
+          "parent": { "handleID": "may_on_time_s3_to_df" },
+          "solid": {
+            "name": "unzip_file_handle",
+            "definition": {
+              "name": "unzip_file_handle",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Unzip a file that is resident in an archive file as a member.\n    This solid operates on FileHandles, meaning that their physical is dependent\n    on what system storage is operating in the pipeline. The physical file could\n    be on local disk, or it could be in s3. If on s3, this solid will download\n    that file to local disk, perform the unzip, upload that file back to s3, and\n    then return that file handle for downstream use in the computations.\n    ",
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "archive_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                ]
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" },
+                    "definition": {
+                      "name": "csv_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_coupon_data",
+          "parent": null,
+          "solid": {
+            "name": "process_q2_coupon_data",
+            "definition": {
+              "name": "s3_to_dw_table",
+              "__typename": "CompositeSolidDefinition",
+              "metadata": [],
+              "inputMappings": [
+                {
+                  "definition": { "name": "s3_coordinate" },
+                  "mappedInput": {
+                    "definition": { "name": "s3_coordinate" },
+                    "solid": { "name": "s3_to_df" }
+                  }
+                },
+                {
+                  "definition": { "name": "archive_member" },
+                  "mappedInput": {
+                    "definition": { "name": "archive_member" },
+                    "solid": { "name": "s3_to_df" }
+                  }
+                }
+              ],
+              "outputMappings": [
+                {
+                  "definition": { "name": "result" },
+                  "mappedOutput": {
+                    "definition": { "name": "table_name" },
+                    "solid": { "name": "load_data_to_database_from_spark" }
+                  }
+                }
+              ],
+              "description": "Ingest zipped csv file from s3, load into a Spark\nDataFrame, optionally subsample it (via configuring the\nsubsample_spark_dataset, solid), canonicalize the column names, and then\nload it into a data warehouse.\n",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" },
+                { "resourceKey": "spark" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_coupon_data.canonicalize_column_names",
+          "parent": { "handleID": "process_q2_coupon_data" },
+          "solid": {
+            "name": "canonicalize_column_names",
+            "definition": {
+              "name": "canonicalize_column_names",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": null,
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "data_frame",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "subsample_spark_dataset" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "load_data_to_database_from_spark" },
+                    "definition": {
+                      "name": "data_frame",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_coupon_data.load_data_to_database_from_spark",
+          "parent": { "handleID": "process_q2_coupon_data" },
+          "solid": {
+            "name": "load_data_to_database_from_spark",
+            "definition": {
+              "name": "load_data_to_database_from_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.160",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "table_name",
+                      "description": "",
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": null,
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "data_frame",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "canonicalize_column_names" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "table_name",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_coupon_data.s3_to_df",
+          "parent": { "handleID": "process_q2_coupon_data" },
+          "solid": {
+            "name": "s3_to_df",
+            "definition": {
+              "name": "s3_to_df",
+              "__typename": "CompositeSolidDefinition",
+              "metadata": [],
+              "inputMappings": [
+                {
+                  "definition": { "name": "s3_coordinate" },
+                  "mappedInput": {
+                    "definition": { "name": "s3_coordinate" },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                },
+                {
+                  "definition": { "name": "archive_member" },
+                  "mappedInput": {
+                    "definition": { "name": "archive_member" },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                }
+              ],
+              "outputMappings": [
+                {
+                  "definition": { "name": "result" },
+                  "mappedOutput": {
+                    "definition": { "name": "result" },
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" }
+                  }
+                }
+              ],
+              "description": "Ingest a zipped csv file from s3,\nstash in a keyed file store (does not download if already\npresent by default), unzip that file, and load it into a\nSpark Dataframe. See documentation in constituent solids for\nmore detail.",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" },
+                { "resourceKey": "spark" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "subsample_spark_dataset" },
+                    "definition": {
+                      "name": "data_frame",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_coupon_data.s3_to_df.cache_file_from_s3",
+          "parent": { "handleID": "process_q2_coupon_data.s3_to_df" },
+          "solid": {
+            "name": "cache_file_from_s3",
+            "definition": {
+              "name": "cache_file_from_s3",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.42",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "file_key",
+                      "description": "Optionally specify the key for the file to be ingested into the keyed store. Defaults to the last path component of the downloaded s3 key.",
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": "This is a solid which caches a file in s3 into file cache.\n\nThe `file_cache` is a resource type that allows a solid author to save files\nand assign a key to them. The keyed file store can be backed by local file or any\nobject store (currently we support s3). This keyed file store can be configured\nto be at an external location so that is persists in a well known spot between runs.\nIt is designed for the case where there is an expensive download step that should not\noccur unless the downloaded file does not exist. Redownload can be instigated either\nby configuring the source to overwrite files or to just delete the file in the underlying\nstorage manually.\n\nThis works by downloading the file to a temporary file, and then ingesting it into\nthe file cache. In the case of a filesystem-backed file cache, this is a file\ncopy. In the case of a object-store-backed file cache, this is an upload.\n\nIn order to work this must be executed within a mode that provides an `s3`\nand `file_cache` resource.\n    ",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "unzip_file_handle" },
+                    "definition": {
+                      "name": "archive_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_coupon_data.s3_to_df.ingest_csv_file_handle_to_spark",
+          "parent": { "handleID": "process_q2_coupon_data.s3_to_df" },
+          "solid": {
+            "name": "ingest_csv_file_handle_to_spark",
+            "definition": {
+              "name": "ingest_csv_file_handle_to_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Take a file handle that contains a csv with headers and load it\ninto a Spark DataFrame. It infers header names but does *not* infer schema.\n\nIt also ensures that the column names are valid parquet column names by\nfiltering out any of the following characters from column names:\n\nCharacters (within quotations): \"`[ ,;{}()\\n\\t=]`\"\n\n",
+              "requiredResources": [{ "resourceKey": "spark" }]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "csv_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_coupon_data.s3_to_df.unzip_file_handle",
+          "parent": { "handleID": "process_q2_coupon_data.s3_to_df" },
+          "solid": {
+            "name": "unzip_file_handle",
+            "definition": {
+              "name": "unzip_file_handle",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Unzip a file that is resident in an archive file as a member.\n    This solid operates on FileHandles, meaning that their physical is dependent\n    on what system storage is operating in the pipeline. The physical file could\n    be on local disk, or it could be in s3. If on s3, this solid will download\n    that file to local disk, perform the unzip, upload that file back to s3, and\n    then return that file handle for downstream use in the computations.\n    ",
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "archive_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                ]
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" },
+                    "definition": {
+                      "name": "csv_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_coupon_data.subsample_spark_dataset",
+          "parent": { "handleID": "process_q2_coupon_data" },
+          "solid": {
+            "name": "subsample_spark_dataset",
+            "definition": {
+              "name": "subsample_spark_dataset",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.161",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "Int",
+                      "name": "Int",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "subsample_pct",
+                      "description": "The integer percentage of rows to sample from the input dataset.",
+                      "isOptional": false,
+                      "configType": { "key": "Int" }
+                    }
+                  ]
+                }
+              },
+              "description": "Subsample a spark dataset via the configuration option.",
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "data_frame",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "s3_to_df" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "canonicalize_column_names" },
+                    "definition": {
+                      "name": "data_frame",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_market_data",
+          "parent": null,
+          "solid": {
+            "name": "process_q2_market_data",
+            "definition": {
+              "name": "s3_to_dw_table",
+              "__typename": "CompositeSolidDefinition",
+              "metadata": [],
+              "inputMappings": [
+                {
+                  "definition": { "name": "s3_coordinate" },
+                  "mappedInput": {
+                    "definition": { "name": "s3_coordinate" },
+                    "solid": { "name": "s3_to_df" }
+                  }
+                },
+                {
+                  "definition": { "name": "archive_member" },
+                  "mappedInput": {
+                    "definition": { "name": "archive_member" },
+                    "solid": { "name": "s3_to_df" }
+                  }
+                }
+              ],
+              "outputMappings": [
+                {
+                  "definition": { "name": "result" },
+                  "mappedOutput": {
+                    "definition": { "name": "table_name" },
+                    "solid": { "name": "load_data_to_database_from_spark" }
+                  }
+                }
+              ],
+              "description": "Ingest zipped csv file from s3, load into a Spark\nDataFrame, optionally subsample it (via configuring the\nsubsample_spark_dataset, solid), canonicalize the column names, and then\nload it into a data warehouse.\n",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" },
+                { "resourceKey": "spark" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_market_data.canonicalize_column_names",
+          "parent": { "handleID": "process_q2_market_data" },
+          "solid": {
+            "name": "canonicalize_column_names",
+            "definition": {
+              "name": "canonicalize_column_names",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": null,
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "data_frame",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "subsample_spark_dataset" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "load_data_to_database_from_spark" },
+                    "definition": {
+                      "name": "data_frame",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_market_data.load_data_to_database_from_spark",
+          "parent": { "handleID": "process_q2_market_data" },
+          "solid": {
+            "name": "load_data_to_database_from_spark",
+            "definition": {
+              "name": "load_data_to_database_from_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.160",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "table_name",
+                      "description": "",
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": null,
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "data_frame",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "canonicalize_column_names" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "table_name",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_market_data.s3_to_df",
+          "parent": { "handleID": "process_q2_market_data" },
+          "solid": {
+            "name": "s3_to_df",
+            "definition": {
+              "name": "s3_to_df",
+              "__typename": "CompositeSolidDefinition",
+              "metadata": [],
+              "inputMappings": [
+                {
+                  "definition": { "name": "s3_coordinate" },
+                  "mappedInput": {
+                    "definition": { "name": "s3_coordinate" },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                },
+                {
+                  "definition": { "name": "archive_member" },
+                  "mappedInput": {
+                    "definition": { "name": "archive_member" },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                }
+              ],
+              "outputMappings": [
+                {
+                  "definition": { "name": "result" },
+                  "mappedOutput": {
+                    "definition": { "name": "result" },
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" }
+                  }
+                }
+              ],
+              "description": "Ingest a zipped csv file from s3,\nstash in a keyed file store (does not download if already\npresent by default), unzip that file, and load it into a\nSpark Dataframe. See documentation in constituent solids for\nmore detail.",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" },
+                { "resourceKey": "spark" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "subsample_spark_dataset" },
+                    "definition": {
+                      "name": "data_frame",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_market_data.s3_to_df.cache_file_from_s3",
+          "parent": { "handleID": "process_q2_market_data.s3_to_df" },
+          "solid": {
+            "name": "cache_file_from_s3",
+            "definition": {
+              "name": "cache_file_from_s3",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.42",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "file_key",
+                      "description": "Optionally specify the key for the file to be ingested into the keyed store. Defaults to the last path component of the downloaded s3 key.",
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": "This is a solid which caches a file in s3 into file cache.\n\nThe `file_cache` is a resource type that allows a solid author to save files\nand assign a key to them. The keyed file store can be backed by local file or any\nobject store (currently we support s3). This keyed file store can be configured\nto be at an external location so that is persists in a well known spot between runs.\nIt is designed for the case where there is an expensive download step that should not\noccur unless the downloaded file does not exist. Redownload can be instigated either\nby configuring the source to overwrite files or to just delete the file in the underlying\nstorage manually.\n\nThis works by downloading the file to a temporary file, and then ingesting it into\nthe file cache. In the case of a filesystem-backed file cache, this is a file\ncopy. In the case of a object-store-backed file cache, this is an upload.\n\nIn order to work this must be executed within a mode that provides an `s3`\nand `file_cache` resource.\n    ",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "unzip_file_handle" },
+                    "definition": {
+                      "name": "archive_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_market_data.s3_to_df.ingest_csv_file_handle_to_spark",
+          "parent": { "handleID": "process_q2_market_data.s3_to_df" },
+          "solid": {
+            "name": "ingest_csv_file_handle_to_spark",
+            "definition": {
+              "name": "ingest_csv_file_handle_to_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Take a file handle that contains a csv with headers and load it\ninto a Spark DataFrame. It infers header names but does *not* infer schema.\n\nIt also ensures that the column names are valid parquet column names by\nfiltering out any of the following characters from column names:\n\nCharacters (within quotations): \"`[ ,;{}()\\n\\t=]`\"\n\n",
+              "requiredResources": [{ "resourceKey": "spark" }]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "csv_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_market_data.s3_to_df.unzip_file_handle",
+          "parent": { "handleID": "process_q2_market_data.s3_to_df" },
+          "solid": {
+            "name": "unzip_file_handle",
+            "definition": {
+              "name": "unzip_file_handle",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Unzip a file that is resident in an archive file as a member.\n    This solid operates on FileHandles, meaning that their physical is dependent\n    on what system storage is operating in the pipeline. The physical file could\n    be on local disk, or it could be in s3. If on s3, this solid will download\n    that file to local disk, perform the unzip, upload that file back to s3, and\n    then return that file handle for downstream use in the computations.\n    ",
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "archive_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                ]
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" },
+                    "definition": {
+                      "name": "csv_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_market_data.subsample_spark_dataset",
+          "parent": { "handleID": "process_q2_market_data" },
+          "solid": {
+            "name": "subsample_spark_dataset",
+            "definition": {
+              "name": "subsample_spark_dataset",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.161",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "Int",
+                      "name": "Int",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "subsample_pct",
+                      "description": "The integer percentage of rows to sample from the input dataset.",
+                      "isOptional": false,
+                      "configType": { "key": "Int" }
+                    }
+                  ]
+                }
+              },
+              "description": "Subsample a spark dataset via the configuration option.",
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "data_frame",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "s3_to_df" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "canonicalize_column_names" },
+                    "definition": {
+                      "name": "data_frame",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_ticket_data",
+          "parent": null,
+          "solid": {
+            "name": "process_q2_ticket_data",
+            "definition": {
+              "name": "s3_to_dw_table",
+              "__typename": "CompositeSolidDefinition",
+              "metadata": [],
+              "inputMappings": [
+                {
+                  "definition": { "name": "s3_coordinate" },
+                  "mappedInput": {
+                    "definition": { "name": "s3_coordinate" },
+                    "solid": { "name": "s3_to_df" }
+                  }
+                },
+                {
+                  "definition": { "name": "archive_member" },
+                  "mappedInput": {
+                    "definition": { "name": "archive_member" },
+                    "solid": { "name": "s3_to_df" }
+                  }
+                }
+              ],
+              "outputMappings": [
+                {
+                  "definition": { "name": "result" },
+                  "mappedOutput": {
+                    "definition": { "name": "table_name" },
+                    "solid": { "name": "load_data_to_database_from_spark" }
+                  }
+                }
+              ],
+              "description": "Ingest zipped csv file from s3, load into a Spark\nDataFrame, optionally subsample it (via configuring the\nsubsample_spark_dataset, solid), canonicalize the column names, and then\nload it into a data warehouse.\n",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" },
+                { "resourceKey": "spark" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_ticket_data.canonicalize_column_names",
+          "parent": { "handleID": "process_q2_ticket_data" },
+          "solid": {
+            "name": "canonicalize_column_names",
+            "definition": {
+              "name": "canonicalize_column_names",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": null,
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "data_frame",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "subsample_spark_dataset" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "load_data_to_database_from_spark" },
+                    "definition": {
+                      "name": "data_frame",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_ticket_data.load_data_to_database_from_spark",
+          "parent": { "handleID": "process_q2_ticket_data" },
+          "solid": {
+            "name": "load_data_to_database_from_spark",
+            "definition": {
+              "name": "load_data_to_database_from_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.160",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "table_name",
+                      "description": "",
+                      "isOptional": false,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": null,
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "data_frame",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "canonicalize_column_names" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "table_name",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_ticket_data.s3_to_df",
+          "parent": { "handleID": "process_q2_ticket_data" },
+          "solid": {
+            "name": "s3_to_df",
+            "definition": {
+              "name": "s3_to_df",
+              "__typename": "CompositeSolidDefinition",
+              "metadata": [],
+              "inputMappings": [
+                {
+                  "definition": { "name": "s3_coordinate" },
+                  "mappedInput": {
+                    "definition": { "name": "s3_coordinate" },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                },
+                {
+                  "definition": { "name": "archive_member" },
+                  "mappedInput": {
+                    "definition": { "name": "archive_member" },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                }
+              ],
+              "outputMappings": [
+                {
+                  "definition": { "name": "result" },
+                  "mappedOutput": {
+                    "definition": { "name": "result" },
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" }
+                  }
+                }
+              ],
+              "description": "Ingest a zipped csv file from s3,\nstash in a keyed file store (does not download if already\npresent by default), unzip that file, and load it into a\nSpark Dataframe. See documentation in constituent solids for\nmore detail.",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" },
+                { "resourceKey": "spark" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "subsample_spark_dataset" },
+                    "definition": {
+                      "name": "data_frame",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_ticket_data.s3_to_df.cache_file_from_s3",
+          "parent": { "handleID": "process_q2_ticket_data.s3_to_df" },
+          "solid": {
+            "name": "cache_file_from_s3",
+            "definition": {
+              "name": "cache_file_from_s3",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.42",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "String",
+                      "name": "String",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "file_key",
+                      "description": "Optionally specify the key for the file to be ingested into the keyed store. Defaults to the last path component of the downloaded s3 key.",
+                      "isOptional": true,
+                      "configType": { "key": "String" }
+                    }
+                  ]
+                }
+              },
+              "description": "This is a solid which caches a file in s3 into file cache.\n\nThe `file_cache` is a resource type that allows a solid author to save files\nand assign a key to them. The keyed file store can be backed by local file or any\nobject store (currently we support s3). This keyed file store can be configured\nto be at an external location so that is persists in a well known spot between runs.\nIt is designed for the case where there is an expensive download step that should not\noccur unless the downloaded file does not exist. Redownload can be instigated either\nby configuring the source to overwrite files or to just delete the file in the underlying\nstorage manually.\n\nThis works by downloading the file to a temporary file, and then ingesting it into\nthe file cache. In the case of a filesystem-backed file cache, this is a file\ncopy. In the case of a object-store-backed file cache, this is an upload.\n\nIn order to work this must be executed within a mode that provides an `s3`\nand `file_cache` resource.\n    ",
+              "requiredResources": [
+                { "resourceKey": "s3" },
+                { "resourceKey": "file_cache" }
+              ]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "s3_coordinate",
+                  "type": {
+                    "displayName": "S3Coordinate",
+                    "name": "S3Coordinate",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "unzip_file_handle" },
+                    "definition": {
+                      "name": "archive_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_ticket_data.s3_to_df.ingest_csv_file_handle_to_spark",
+          "parent": { "handleID": "process_q2_ticket_data.s3_to_df" },
+          "solid": {
+            "name": "ingest_csv_file_handle_to_spark",
+            "definition": {
+              "name": "ingest_csv_file_handle_to_spark",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Take a file handle that contains a csv with headers and load it\ninto a Spark DataFrame. It infers header names but does *not* infer schema.\n\nIt also ensures that the column names are valid parquet column names by\nfiltering out any of the following characters from column names:\n\nCharacters (within quotations): \"`[ ,;{}()\\n\\t=]`\"\n\n",
+              "requiredResources": [{ "resourceKey": "spark" }]
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "csv_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "unzip_file_handle" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": []
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_ticket_data.s3_to_df.unzip_file_handle",
+          "parent": { "handleID": "process_q2_ticket_data.s3_to_df" },
+          "solid": {
+            "name": "unzip_file_handle",
+            "definition": {
+              "name": "unzip_file_handle",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": "Unzip a file that is resident in an archive file as a member.\n    This solid operates on FileHandles, meaning that their physical is dependent\n    on what system storage is operating in the pipeline. The physical file could\n    be on local disk, or it could be in s3. If on s3, this solid will download\n    that file to local disk, perform the unzip, upload that file back to s3, and\n    then return that file handle for downstream use in the computations.\n    ",
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "archive_file_handle",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "FileHandle" }
+                    },
+                    "solid": { "name": "cache_file_from_s3" }
+                  }
+                ]
+              },
+              {
+                "definition": {
+                  "name": "archive_member",
+                  "type": {
+                    "displayName": "String",
+                    "name": "String",
+                    "description": null
+                  },
+                  "description": null
+                },
+                "dependsOn": []
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "FileHandle",
+                    "name": "FileHandle",
+                    "description": "A file handle a reference to a file, which could be resident in the local file\n    system, an object store, or any arbitrary place where file can be stored.\n\n    This exists to handle the very common case where you wish to write a computation that reads,\n    transforms, and writes files, but is written in a way where the same code could work in local\n    developement as well as in a cluster where the files would be stored in globally available\n    object store such as s3.\n    "
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "ingest_csv_file_handle_to_spark" },
+                    "definition": {
+                      "name": "csv_file_handle",
+                      "type": { "displayName": "FileHandle" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_q2_ticket_data.subsample_spark_dataset",
+          "parent": { "handleID": "process_q2_ticket_data" },
+          "solid": {
+            "name": "subsample_spark_dataset",
+            "definition": {
+              "name": "subsample_spark_dataset",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": {
+                "configType": {
+                  "name": null,
+                  "description": "A configuration dictionary with typed fields",
+                  "key": "Dict.161",
+                  "isList": false,
+                  "isNullable": false,
+                  "isSelector": false,
+                  "innerTypes": [
+                    {
+                      "key": "Int",
+                      "name": "Int",
+                      "description": "",
+                      "isList": false,
+                      "isNullable": false,
+                      "isSelector": false,
+                      "innerTypes": []
+                    }
+                  ],
+                  "fields": [
+                    {
+                      "name": "subsample_pct",
+                      "description": "The integer percentage of rows to sample from the input dataset.",
+                      "isOptional": false,
+                      "configType": { "key": "Int" }
+                    }
+                  ]
+                }
+              },
+              "description": "Subsample a spark dataset via the configuration option.",
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "data_frame",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "s3_to_df" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "canonicalize_column_names" },
+                    "definition": {
+                      "name": "data_frame",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "handleID": "process_sfo_weather_data",
+          "parent": null,
+          "solid": {
+            "name": "process_sfo_weather_data",
+            "definition": {
+              "name": "process_sfo_weather_data",
+              "__typename": "SolidDefinition",
+              "metadata": [],
+              "configDefinition": null,
+              "description": null,
+              "requiredResources": []
+            },
+            "inputs": [
+              {
+                "definition": {
+                  "name": "sfo_weather_data",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependsOn": [
+                  {
+                    "definition": {
+                      "name": "result",
+                      "type": { "displayName": "DataFrame" }
+                    },
+                    "solid": { "name": "ingest_q2_sfo_weather" }
+                  }
+                ]
+              }
+            ],
+            "outputs": [
+              {
+                "definition": {
+                  "name": "result",
+                  "type": {
+                    "displayName": "DataFrame",
+                    "name": "DataFrame",
+                    "description": "A Pyspark data frame."
+                  },
+                  "description": null
+                },
+                "dependedBy": [
+                  {
+                    "solid": { "name": "load_q2_sfo_weather" },
+                    "definition": {
+                      "name": "data_frame",
+                      "type": { "displayName": "DataFrame" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

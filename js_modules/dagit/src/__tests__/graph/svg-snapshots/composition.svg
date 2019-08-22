@@ -1,0 +1,76 @@
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 625 580" width="625" height="580">
+  <style data-styled="" data-styled-version="4.3.2">
+    /* sc-component-id: sc-bdVaJa */
+    .gyNVNt {
+      stroke-width: 6;
+      stroke: #10161A;
+      fill: none;
+    }
+  </style>
+  <g>
+    <g style="opacity:0.2">
+      <g>
+        <path class="vx-link vx-link-vertical-diagonal sc-bdVaJa gyNVNt" d="M115,214C115,257,115,257,115,300"></path>
+      </g>
+    </g>
+    <g style="opacity:0.55"></g>
+    <g opacity="1">
+      <rect x="94" y="124" width="362" height="84" fill="rgb(230, 219, 238)" stroke="#979797" stroke-width="1"></rect>
+      <rect x="97" y="127" width="356" height="78" fill="rgb(230, 219, 238)" stroke="#979797" stroke-width="1"></rect>
+      <rect x="100" y="130" width="350" height="72" fill="rgb(230, 219, 238)" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="79.36" dominant-baseline="hanging">add_four</text></rect><text fill="#222" x="112" y="158" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="79.36" dominant-baseline="hanging">add_four</text>
+      <g>
+        <title>num: Any</title>
+        <rect x="100" y="100" width="112.75999999999999" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="34.72" dominant-baseline="hanging">num:</text>
+          <rect width="34.04" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text>
+        </rect>
+        <ellipse cx="115" cy="118" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="129" y="111" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="34.72" dominant-baseline="hanging">num:</text>
+        <rect x="170.72" y="104.5" width="34.04" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text></rect><text fill="#222" x="174.72" y="111" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text>
+      </g>
+      <g>
+        <title>result: Any</title>
+        <rect x="100" y="196" width="71.03999999999999" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+          <rect width="34.04" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text>
+        </rect>
+        <ellipse cx="115" cy="214" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+        <rect x="129" y="200.5" width="34.04" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text></rect><text fill="#222" x="133" y="207" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text>
+      </g>
+      <rect x="100" y="188" width="355" height="20" fill="transparent" stroke="transparent">
+        <g></g>
+        <rect width="60.08" height="20" rx="0" ry="0" fill="hsl(248, 10%, 95%)" stroke="hsl(248, 75%, 55%)" stroke-width="1"><text fill="hsl(248, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">Expand</text></rect><text fill="hsl(248, 75%, 55%)" x="4" y="3" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">Expand</text>
+      </rect>
+      <g></g>
+      <rect x="394.9200000000001" y="188" width="60.08" height="20" rx="0" ry="0" fill="hsl(248, 10%, 95%)" stroke="hsl(248, 75%, 55%)" stroke-width="1"><text fill="hsl(248, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">Expand</text></rect><text fill="hsl(248, 75%, 55%)" x="398.9200000000001" y="191" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">Expand</text>
+    </g>
+    <g opacity="1">
+      <rect x="94" y="306" width="362" height="84" fill="rgb(230, 219, 238)" stroke="#979797" stroke-width="1"></rect>
+      <rect x="97" y="309" width="356" height="78" fill="rgb(230, 219, 238)" stroke="#979797" stroke-width="1"></rect>
+      <rect x="100" y="312" width="350" height="72" fill="rgb(230, 219, 238)" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="79.36" dominant-baseline="hanging">div_four</text></rect><text fill="#222" x="112" y="340" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="79.36" dominant-baseline="hanging">div_four</text>
+      <g>
+        <title>num: Any</title>
+        <rect x="100" y="282" width="112.75999999999999" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="34.72" dominant-baseline="hanging">num:</text>
+          <rect width="34.04" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text>
+        </rect>
+        <ellipse cx="115" cy="300" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="129" y="293" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="34.72" dominant-baseline="hanging">num:</text>
+        <rect x="170.72" y="286.5" width="34.04" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text></rect><text fill="#222" x="174.72" y="293" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text>
+      </g>
+      <g>
+        <title>result: Any</title>
+        <rect x="100" y="378" width="71.03999999999999" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+          <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+          <rect width="34.04" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text>
+        </rect>
+        <ellipse cx="115" cy="396" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+        <rect x="129" y="382.5" width="34.04" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text></rect><text fill="#222" x="133" y="389" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" dominant-baseline="hanging">Any</text>
+      </g>
+      <rect x="100" y="370" width="355" height="20" fill="transparent" stroke="transparent">
+        <g></g>
+        <rect width="60.08" height="20" rx="0" ry="0" fill="hsl(248, 10%, 95%)" stroke="hsl(248, 75%, 55%)" stroke-width="1"><text fill="hsl(248, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">Expand</text></rect><text fill="hsl(248, 75%, 55%)" x="4" y="3" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">Expand</text>
+      </rect>
+      <g></g>
+      <rect x="394.9200000000001" y="370" width="60.08" height="20" rx="0" ry="0" fill="hsl(248, 10%, 95%)" stroke="hsl(248, 75%, 55%)" stroke-width="1"><text fill="hsl(248, 75%, 55%)" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">Expand</text></rect><text fill="hsl(248, 75%, 55%)" x="398.9200000000001" y="373" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">Expand</text>
+    </g>
+  </g>
+</svg>
