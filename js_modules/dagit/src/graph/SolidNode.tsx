@@ -119,6 +119,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     if (prevProps.selected !== this.props.selected) return true;
     if (prevProps.minified !== this.props.minified) return true;
     if (prevProps.highlightedEdges !== this.props.highlightedEdges) return true;
+    if (prevProps.solid.name !== this.props.solid.name) return true;
     return false;
   }
 
