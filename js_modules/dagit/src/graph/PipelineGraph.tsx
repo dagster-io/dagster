@@ -40,7 +40,7 @@ interface IPipelineContentsState {
   highlighted: Edge[];
 }
 
-class PipelineGraphContents extends React.PureComponent<
+export class PipelineGraphContents extends React.PureComponent<
   IPipelineContentsProps,
   IPipelineContentsState
 > {
