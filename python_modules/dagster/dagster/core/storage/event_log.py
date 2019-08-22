@@ -1,4 +1,4 @@
-import abc
+from abc import ABCMeta, abstractmethod
 import glob
 import os
 import pickle
@@ -20,18 +20,18 @@ class EventLogSequence(pyrsistent.CheckedPVector):
     __type__ = EventRecord
 
 
-class EventLogStorage(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-init
-    @abc.abstractmethod
+class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    @abstractmethod
     def get_logs_for_run(self, run_id, cursor=-1):
         '''Get all of the logs corresponding to a run.
-        
+
         Args:
             run_id (str): The id of the run for which to fetch logs.
             cursor (Optional[int]): Zero-indexed logs will be returned starting from cursor + 1,
                 i.e., if cursor is -1, all logs will be returned. (default: -1)
         '''
 
-    @abc.abstractmethod
+    @abstractmethod
     def store_event(self, run_id, event):
         '''Store an event corresponding to a pipeline run.
 
@@ -41,7 +41,7 @@ class EventLogStorage(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-in
         '''
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def is_persistent(self):
         '''(bool) Whether the log storage persists after the process that
         created it dies.'''
@@ -64,9 +64,13 @@ class EventLogStorage(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-in
 
         return _make_handler_class(self)
 
-    @abc.abstractmethod
+    @abstractmethod
     def wipe(self):
         '''Clear the log storage.'''
+
+    @abstractmethod
+    def verify_event_log(self, run_id):
+        '''Perform basic checks that event logs for a run_id are available'''
 
 
 class InMemoryEventLogStorage(EventLogStorage):
@@ -91,6 +95,12 @@ class InMemoryEventLogStorage(EventLogStorage):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
 
+    def verify_event_log(self, run_id):
+        check.invariant(
+            self._logs.get('run_id'),
+            'No entry for run {run_id} in event log dict'.format(run_id=run_id),
+        )
+
 
 class FilesystemEventLogStorage(EventLogStorage):
     def __init__(self, base_dir=None):
@@ -103,6 +113,12 @@ class FilesystemEventLogStorage(EventLogStorage):
 
     def filepath_for_run_id(self, run_id):
         return os.path.join(self._base_dir, '{run_id}.log'.format(run_id=run_id))
+
+    def verify_event_log(self, run_id):
+        check.invariant(
+            os.path.isfile(self.filepath_for_run_id(run_id)),
+            'Event log file for run id {run_id} is not a file'.format(run_id=run_id),
+        )
 
     def store_event(self, run_id, event):
         with self.file_lock[run_id]:

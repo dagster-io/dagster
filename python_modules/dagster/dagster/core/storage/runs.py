@@ -127,8 +127,6 @@ class FilesystemRunStorage(RunStorage):
 
         self._runs = OrderedDict()
 
-        self._load_runs()
-
         self._file_lock = defaultdict(gevent.lock.Semaphore)
 
         self.event_log_storage = check.opt_inst_param(
@@ -137,6 +135,8 @@ class FilesystemRunStorage(RunStorage):
             EventLogStorage,
             default=FilesystemEventLogStorage(base_dir=self._base_dir),
         )
+
+        self._load_runs()
 
     def filepath_for_run_id(self, run_id):
         return os.path.join(self._base_dir, '{run_id}.json'.format(run_id=run_id))
@@ -155,22 +155,24 @@ class FilesystemRunStorage(RunStorage):
         selector = ExecutionSelector(
             name=json_data['pipeline_name'], solid_subset=json_data.get('pipeline_solid_subset')
         )
-        self.create_run(
+        run = self.create_run(
             pipeline_name=json_data['pipeline_name'],
             run_id=json_data['run_id'],
             selector=selector,
             env_config=json_data['config'],
             mode=json_data['mode'],
         )
+        return run
 
     def _load_runs(self):
         for filename in glob.glob(os.path.join(self._base_dir, '*.json')):
             with open(filename, 'r') as fd:
                 try:
-                    self._load_run(json.load(fd))
+                    run = self._load_run(json.load(fd))
+                    self.event_log_storage.verify_log(run.run_id)
                 except Exception as ex:  # pylint: disable=broad-except
                     print(
-                        'Could not parse pipeline run from {filename}, continuing. Original '
+                        'Could not load pipeline run from {filename}, continuing.\n  Original '
                         'exception: {ex}: {msg}'.format(
                             filename=filename, ex=type(ex).__name__, msg=ex
                         )
