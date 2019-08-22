@@ -40,14 +40,10 @@ from dagster import (
     solid,
 )
 from dagster.core.log_manager import coerce_valid_log_level
+from dagster.core.storage.runs import FilesystemRunStorage, InMemoryRunStorage
 from dagster.utils import script_relative_path
-
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_graphql.implementation.pipeline_run_storage import (
-    FilesystemRunStorage,
-    InMemoryRunStorage,
-)
 from dagster.core.scheduler import SystemCronScheduler
 
 
@@ -95,7 +91,7 @@ class TestSystemCronScheduler(SystemCronScheduler):
 def define_context(raise_on_error=True, log_dir=None, schedule_dir=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
-        pipeline_runs=FilesystemRunStorage(log_dir) if log_dir else InMemoryRunStorage(),
+        pipeline_runs=FilesystemRunStorage(base_dir=log_dir) if log_dir else InMemoryRunStorage(),
         scheduler=TestSystemCronScheduler(schedule_dir) if schedule_dir else None,
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,

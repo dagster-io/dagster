@@ -227,7 +227,7 @@ def _check_reexecution_config(pipeline_context, execution_plan, run_config):
 
     previous_run_id = run_config.reexecution_config.previous_run_id
 
-    if not pipeline_context.run_storage.has_run(previous_run_id):
+    if previous_run_id not in pipeline_context.run_storage:
         raise DagsterRunNotFoundError(
             'Run id {} set as previous run id was not found in run storage'.format(previous_run_id),
             invalid_run_id=previous_run_id,
@@ -291,7 +291,8 @@ def _execute_plan_iterator(pipeline_context, execution_plan, run_config, step_ke
         for step_key in step_keys_to_execute:
             if not execution_plan.has_step(step_key):
                 raise DagsterExecutionStepNotFoundError(
-                    'Execution plan does not contain step "{}"'.format(step_key), step_key=step_key
+                    'Execution plan does not contain step \'{}\''.format(step_key),
+                    step_key=step_key,
                 )
 
     _setup_reexecution(run_config, pipeline_context, execution_plan)

@@ -18,8 +18,8 @@ from dagster.cli.pipeline import (
     pipeline_print_command,
     pipeline_scaffold_command,
 )
-from dagster.cli.run import run_list_command, run_nuke_command
-from dagster.core.storage.runs import base_runs_directory
+from dagster.cli.run import run_list_command, run_wipe_command
+from dagster.core.storage.config import base_runs_directory
 from dagster.utils import script_relative_path
 
 
@@ -546,7 +546,7 @@ def test_run_list():
     assert result.exit_code == 0
 
 
-def test_run_nuke():
+def test_run_wipe():
     runner = CliRunner()
-    result = runner.invoke(run_nuke_command)
+    result = runner.invoke(run_wipe_command)
     assert result.exit_code == 0

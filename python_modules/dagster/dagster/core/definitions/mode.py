@@ -34,7 +34,9 @@ class ModeDefinition:
         executor_defs=None,
         description=None,
     ):
-        from .system_storage import default_system_storage_defs, SystemStorageDefinition
+        from dagster.core.storage.system_storage import default_system_storage_defs
+
+        from .system_storage import SystemStorageDefinition
 
         self.name = check.opt_str_param(name, 'name', DEFAULT_MODE_NAME)
         self.resource_defs = check.opt_dict_param(

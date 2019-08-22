@@ -17,11 +17,11 @@ from dagster import (
 )
 from dagster.core.events import STEP_EVENTS, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.storage.runs import InMemoryRunStorage
 
 from dagster_graphql.cli import execute_query
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 from dagster_graphql.client.util import HANDLED_EVENTS, dagster_event_from_dict
-from dagster_graphql.implementation.pipeline_run_storage import InMemoryRunStorage
 
 
 def test_can_handle_all_step_events():

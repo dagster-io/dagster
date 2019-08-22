@@ -15,7 +15,7 @@ from dagster import (
     check,
     resource,
 )
-from dagster.core.definitions.system_storage import fs_system_storage
+from dagster.core.storage.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types import Selector, input_selector_schema, output_selector_schema
 from dagster.core.types.runtime import define_any_type

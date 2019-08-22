@@ -1,5 +1,4 @@
 import sys
-import time
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -23,7 +22,6 @@ from dagster.core.events import DagsterEvent, PipelineInitFailureData
 from dagster.core.execution.config import ExecutorConfig
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitSystemStorageContext
-from dagster.core.storage.runs import DagsterRunMeta
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import evaluate_config
@@ -248,11 +246,13 @@ def create_system_storage_data(
         )
     )
 
-    system_storage_data.run_storage.write_dagster_run_meta(
-        DagsterRunMeta(
-            run_id=run_config.run_id, timestamp=time.time(), pipeline_name=pipeline_def.name
-        )
+    system_storage_data.run_storage.create_run(
+        pipeline_name=pipeline_def.name,
+        run_id=run_config.run_id,
+        env_config=environment_config.original_config_dict,
+        mode=context_creation_data.mode_def.name,
     )
+
     return system_storage_data
 
 

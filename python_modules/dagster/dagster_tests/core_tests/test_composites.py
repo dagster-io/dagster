@@ -278,3 +278,57 @@ def test_deep_mapping():
 
     result = execute_pipeline(nested)
     assert result.result_for_solid('echo').output_value() == 'foo'
+
+
+def test_mapping_parrallel_composite():
+    @lambda_solid
+    def one():
+        return 1
+
+    @lambda_solid
+    def two():
+        return 2
+
+    @lambda_solid(
+        input_defs=[
+            InputDefinition(dagster_type=int, name='a'),
+            InputDefinition(dagster_type=int, name='b'),
+        ]
+    )
+    def adder(a, b):
+        return a + b
+
+    @composite_solid(
+        output_defs=[
+            OutputDefinition(dagster_type=int, name='two'),
+            OutputDefinition(dagster_type=int, name='four'),
+        ]
+    )
+    def composite_adder():
+        result_one = one()
+        result_two = two()
+
+        calc_two = adder.alias('calc_two')
+        calc_four = adder.alias('calc_four')
+
+        calc_result_two = calc_two(result_one, result_one)
+        calc_result_four = calc_four(result_two, result_two)
+
+        return {'two': calc_result_two, 'four': calc_result_four}
+
+    @lambda_solid
+    def assert_four(val):
+        assert val == 4
+
+    @lambda_solid
+    def assert_two(val):
+        assert val == 2
+
+    @pipeline
+    def recreate_issue_pipeline():
+        result = composite_adder()
+
+        assert_two(result.two)  # pylint: disable=no-member
+        assert_four(result.four)  # pylint: disable=no-member
+
+    assert execute_pipeline(recreate_issue_pipeline).success
