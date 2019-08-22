@@ -8,7 +8,7 @@ and whose second solid concatenates two copies of its input. The output of the p
 two concatenated copies of the hardcoded string.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_dag.py
-   :lines: 1-16
+   :lines: 1-17
    :caption: hello_dag.py
 
 This pipeline introduces a few new concepts.
@@ -29,7 +29,7 @@ This pipeline introduces a few new concepts.
     :doc:`composition functions section <composition_functions>`.
 
     .. literalinclude::  ../../../../examples/dagster_examples/intro_tutorial/hello_dag.py
-       :lines: 14-16
+       :lines: 15-17
 
     The above pipeline constructs a two solid pipeline with solid_two depending on solid_one.
 

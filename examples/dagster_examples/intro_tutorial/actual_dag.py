@@ -1,23 +1,24 @@
-from dagster import lambda_solid, pipeline
+# pylint: disable=no-value-for-parameter
+from dagster import pipeline, solid
 
 
-@lambda_solid
-def return_one():
+@solid
+def return_one(_):
     return 1
 
 
-@lambda_solid
-def multiply_by_two(arg_a):
+@solid
+def multiply_by_two(_, arg_a):
     return arg_a * 2
 
 
-@lambda_solid
-def multiply_by_three(arg_a):
+@solid
+def multiply_by_three(_, arg_a):
     return arg_a * 3
 
 
-@lambda_solid
-def multiply(arg_b, arg_c):
+@solid
+def multiply(_, arg_b, arg_c):
     return arg_b * arg_c
 
 

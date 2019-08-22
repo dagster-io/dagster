@@ -8,7 +8,7 @@ Let's return to our hello world example. But this time, we'll make the string
 the solid returns be parameterized based on inputs.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
-   :lines: 2-12
+   :lines: 1-12
    :linenos:
    :caption: inputs.py
 

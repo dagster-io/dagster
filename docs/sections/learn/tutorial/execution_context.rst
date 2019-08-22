@@ -18,7 +18,7 @@ Logging
 One of the most common places you'll interact with the execution context is when logging:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/execution_context.py
-   :lines: 3-20
+   :lines: 1-20
    :caption: execution_context.py
 
 Run this example pipeline on the dagster CLI:

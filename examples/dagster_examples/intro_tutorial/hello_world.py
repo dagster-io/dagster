@@ -1,8 +1,9 @@
-from dagster import execute_pipeline, lambda_solid, pipeline
+# pylint: disable=no-value-for-parameter
+from dagster import execute_pipeline, pipeline, solid
 
 
-@lambda_solid
-def hello_world():
+@solid
+def hello_world(_):
     return 'hello'
 
 

@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 
-from dagster import Field, Int, RepositoryDefinition, lambda_solid, pipeline, solid
+from dagster import Field, Int, RepositoryDefinition, pipeline, solid
 
 
 @solid(config={'factor': Field(Int)})
@@ -10,8 +10,8 @@ def multiply_the_word(context, word: str) -> str:
     return word * context.solid_config['factor']
 
 
-@lambda_solid
-def count_letters(word: str):  # TODO type return as dict?
+@solid
+def count_letters(_, word: str):  # TODO type return as dict?
     counts = defaultdict(int)
     for letter in word:
         counts[letter] += 1

@@ -8,19 +8,24 @@ tutorial code, at ``dagster/examples/dagster_examples/intro_tutorial``.)
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_world.py
    :linenos:
-   :lines: 1-11
+   :lines: 1-13
    :caption: hello_world.py
 
 This example introduces the core **solid** and **pipeline** concepts:
 
 1.  A **solid** is a functional unit of computation in a data pipeline. In this example, we use the
-    decorator :py:func:`@lambda_solid <dagster.lambda_solid>` to mark the function ``hello_world``
+    decorator :py:func:`@solid <dagster.solid>` to mark the function ``hello_world``
     as a solid: a functional unit which takes no inputs and returns the output ``'hello'`` every
-    time it's run.
+    time it's run. Note every solid receives a context argument as its first argument. We'll explain
+    its purpose and usage later in this tutorial. For now, this is unused in this example so we just
+    name it ``_`` to indicate that.
 
 2.  A **pipeline** is a set of solids arranged into a DAG of computation that produces data assets.
     In this example, the function decorated call to :py:func:`@pipeline <dagster.pipeline>` defines
-    a pipeline with a single solid.
+    a pipeline with a single solid. The solid is not actually invoked during pipeline construction.
+    The invocation places that solid within the pipeline. Context arguments are only passed when the
+    solids are actually executed, and so we disable the pylint warning with the
+    ``# pylint: disable=no-value-for-parameter`` pylint directive within the comment. 
 
 Pipeline Execution
 ^^^^^^^^^^^^^^^^^^
@@ -89,7 +94,7 @@ at all. Just add a few lines to ``hello_world.py`` (highlighted in yellow):
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_world.py
    :linenos:
    :caption: hello_world.py
-   :emphasize-lines: 14-16
+   :emphasize-lines: 15-17
 
 Then you can just run:
 

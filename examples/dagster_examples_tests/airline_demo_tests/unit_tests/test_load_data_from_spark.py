@@ -2,7 +2,7 @@ from dagster_examples.airline_demo.solids import load_data_to_database_from_spar
 from dagster_examples.airline_demo.types import DbInfo
 from pyspark.sql import DataFrame
 
-from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, lambda_solid, pipeline
+from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, solid
 from dagster.seven import mock
 
 
@@ -17,8 +17,8 @@ def test_airline_demo_load_df():
         db_name='db_name',
     )
 
-    @lambda_solid
-    def emit_mock():
+    @solid
+    def emit_mock(_):
         return mock.MagicMock(spec=DataFrame)
 
     @pipeline(

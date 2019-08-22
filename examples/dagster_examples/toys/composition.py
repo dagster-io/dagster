@@ -1,15 +1,15 @@
 # pylint: disable=no-value-for-parameter
 
-from dagster import InputDefinition, Int, composite_solid, lambda_solid, pipeline
+from dagster import InputDefinition, Int, composite_solid, pipeline, solid
 
 
-@lambda_solid(input_defs=[InputDefinition('num', Int)])
-def add_one(num):
+@solid(input_defs=[InputDefinition('num', Int)])
+def add_one(_, num):
     return num + 1
 
 
-@lambda_solid(input_defs=[InputDefinition('num')])
-def div_two(num):
+@solid(input_defs=[InputDefinition('num')])
+def div_two(_, num):
     return num / 2
 
 

@@ -25,7 +25,6 @@ from dagster import (
     RuntimeType,
     String,
     file_relative_path,
-    lambda_solid,
     pipeline,
     solid,
 )
@@ -118,10 +117,10 @@ def download_from_s3_to_file(context):
     )
 
 
-@lambda_solid(
-    input_defs=[InputDefinition('gzip_file', String)], output_def=OutputDefinition(List[String])
+@solid(
+    input_defs=[InputDefinition('gzip_file', String)], output_defs=[OutputDefinition(List[String])]
 )
-def gunzipper(gzip_file):
+def gunzipper(_, gzip_file):
     '''gunzips /path/to/foo.gz to /path/to/raw/2019/01/01/data.json
     '''
     # TODO: take date as an input

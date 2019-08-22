@@ -10,7 +10,7 @@ consider a simple pipeline that replicates a word several times, then counts the
 characters:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_basic.py
-   :lines: 3-22
+   :lines: 1-22
    :linenos:
    :caption: configuration_schemas.py
 

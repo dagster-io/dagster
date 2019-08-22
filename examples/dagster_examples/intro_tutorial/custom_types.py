@@ -5,7 +5,6 @@ from dagster import (
     TypeCheck,
     dagster_type,
     input_hydration_config,
-    lambda_solid,
     output_materialization_config,
     pipeline,
     solid,
@@ -48,13 +47,13 @@ class Sauce:
         self.flavor = flavor
 
 
-@lambda_solid
-def make_burger():
+@solid
+def make_burger(_):
     return 'cheese burger'
 
 
-@lambda_solid
-def add_sauce(food, sauce: Sauce):
+@solid
+def add_sauce(_, food, sauce: Sauce):
     return '{food} with {flavor} sauce'.format(food=food, flavor=sauce.flavor)
 
 

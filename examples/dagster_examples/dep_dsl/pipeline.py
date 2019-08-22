@@ -7,32 +7,27 @@ and this should serve as a reasonable template to build upon.
 '''
 from dagster import (
     DependencyDefinition,
-    InputDefinition,
-    OutputDefinition,
     PipelineDefinition,
     SolidInvocation,
     check,
     file_relative_path,
-    lambda_solid,
+    solid,
 )
 from dagster.utils import load_yaml_from_path
 
 
-@lambda_solid(input_defs=[InputDefinition('num', int)], output_def=OutputDefinition(int))
-def add_one(num: int) -> int:
+@solid
+def add_one(_, num: int) -> int:
     return num + 1
 
 
-@lambda_solid(input_defs=[InputDefinition('num', int)], output_def=OutputDefinition(int))
-def add_two(num: int) -> int:
+@solid
+def add_two(_, num: int) -> int:
     return num + 2
 
 
-@lambda_solid(
-    input_defs=[InputDefinition('left', int), InputDefinition('right', int)],
-    output_def=OutputDefinition(int),
-)
-def add(left: int, right: int) -> int:
+@solid
+def add(_, left: int, right: int) -> int:
     return left + right
 
 
