@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.7
+- Fixed an issue with specifying composite output mappings (#1674)
+- Added support for specifying
+  [Dask worker resources](https://distributed.dask.org/en/latest/resources.html) (#1679)
+- Fixed an issue with launching Dagit on Windows
+
 ## 0.5.6
 - Execution details are now configurable. The new top-level `ExecutorDefinition` and `@executor`
   APIs are used to define in-process, multiprocess, and Dask executors, and may be used by users to
@@ -24,7 +30,7 @@
 - Added a `MarkdownMetadataEntryData` class, so events yielded from client code may now render
   markdown in their metadata.
 - Bug fixes, documentation improvements, and improvements to error display.
-  
+
 ## 0.5.5
 - Dagit now accepts parameters via environment variables prefixed with `DAGIT_`, e.g. `DAGIT_PORT`.
 - Fixes an issue with reexecuting Dagstermill notebooks from Dagit.
