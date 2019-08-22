@@ -51,7 +51,7 @@ export const ParentSolidNode: React.FunctionComponent<
   };
 
   return (
-    <g>
+    <>
       <SVGLabeledParentRect
         {...boundingBox}
         label={solid.definition.name}
@@ -152,7 +152,7 @@ export const ParentSolidNode: React.FunctionComponent<
           </React.Fragment>
         );
       })}
-    </g>
+    </>
   );
 };
 
