@@ -266,6 +266,9 @@ const PipelinePanel = styled.div`
 `;
 
 const RightInfoPanel = styled.div`
+  // very important for performance for some reason
+  position: relative;
+
   height: 100%;
   overflow-y: scroll;
   background: ${Colors.WHITE};
