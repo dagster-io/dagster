@@ -68,7 +68,7 @@ class PipelineGraphContents extends React.PureComponent<
     } = this.props;
 
     return (
-      <g>
+      <>
         {parentSolid && layout.parent && (
           <SVGLabeledParentRect
             {...layout.parent.invocationBoundingBox}
@@ -144,7 +144,7 @@ class PipelineGraphContents extends React.PureComponent<
             }
           />
         ))}
-      </g>
+      </>
     );
   }
 }
