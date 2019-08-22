@@ -44,8 +44,11 @@ interface ISidebarSolidInfoProps {
   onClickSolid: (arg: SolidNameOrPath) => void;
 }
 
+const DEFAULT_INVOCATIONS_SHOWN = 20;
+
 export default class SidebarSolidInfo extends React.Component<
-  ISidebarSolidInfoProps
+  ISidebarSolidInfoProps,
+  { showingAllInvocations: boolean }
 > {
   static fragments = {
     SidebarSolidInfoFragment: gql`
@@ -140,6 +143,10 @@ export default class SidebarSolidInfo extends React.Component<
     `
   };
 
+  state = {
+    showingAllInvocations: false
+  };
+
   public render() {
     const {
       solid,
@@ -148,6 +155,8 @@ export default class SidebarSolidInfo extends React.Component<
       onClickSolid,
       onEnterCompositeSolid
     } = this.props;
+    const { showingAllInvocations } = this.state;
+
     const { name, definition, inputs, outputs } = solid;
 
     const Plugin = pluginForMetadata(definition.metadata);
@@ -281,7 +290,10 @@ export default class SidebarSolidInfo extends React.Component<
         </SidebarSection>
         {solidDefinitionInvocations && (
           <SidebarSection title={"All Invocations"}>
-            {solidDefinitionInvocations.map(({ solid, handleID }, idx) => (
+            {(showingAllInvocations
+              ? solidDefinitionInvocations
+              : solidDefinitionInvocations.slice(0, DEFAULT_INVOCATIONS_SHOWN)
+            ).map(({ solid, handleID }, idx) => (
               <Invocation
                 key={idx}
                 solid={solid}
@@ -289,6 +301,15 @@ export default class SidebarSolidInfo extends React.Component<
                 onClick={() => onClickSolid({ path: handleID.split(".") })}
               />
             ))}
+            {solidDefinitionInvocations.length > DEFAULT_INVOCATIONS_SHOWN &&
+              !showingAllInvocations && (
+                <ShowAllButton
+                  onClick={() => this.setState({ showingAllInvocations: true })}
+                >
+                  {`Show ${solidDefinitionInvocations.length -
+                    DEFAULT_INVOCATIONS_SHOWN} More Invocations`}
+                </ShowAllButton>
+              )}
           </SidebarSection>
         )}
       </div>
@@ -296,6 +317,14 @@ export default class SidebarSolidInfo extends React.Component<
   }
 }
 
+const ShowAllButton = styled.button`
+  background: transparent;
+  border: none;
+  color: ${Colors.BLUE3};
+  text-decoration: underline;
+  padding-top: 10px;
+  font-size: 0.9rem;
+`;
 const TypeWrapper = styled.div`
   margin-bottom: 10px;
 `;

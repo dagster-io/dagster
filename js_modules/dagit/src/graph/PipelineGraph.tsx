@@ -68,7 +68,7 @@ class PipelineGraphContents extends React.PureComponent<
     } = this.props;
 
     return (
-      <g>
+      <>
         {parentSolid && layout.parent && (
           <SVGLabeledParentRect
             {...layout.parent.invocationBoundingBox}
@@ -136,7 +136,7 @@ class PipelineGraphContents extends React.PureComponent<
             highlightedEdges={
               isSolidHighlighted(this.state.highlighted, solid.name)
                 ? this.state.highlighted
-                : []
+                : EmptyHighlightedArray
             }
             dim={
               highlightedSolids.length > 0 &&
@@ -144,10 +144,14 @@ class PipelineGraphContents extends React.PureComponent<
             }
           />
         ))}
-      </g>
+      </>
     );
   }
 }
+
+// This is a specific empty array we pass to represent the common / empty case
+// so that SolidNode can use shallow equality comparisons in shouldComponentUpdate.
+const EmptyHighlightedArray: never[] = [];
 
 export default class PipelineGraph extends React.Component<
   IPipelineGraphProps
