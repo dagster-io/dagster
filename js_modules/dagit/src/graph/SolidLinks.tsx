@@ -1,8 +1,13 @@
 import * as React from "react";
 import { Colors } from "@blueprintjs/core";
 import { pathVerticalDiagonal } from "@vx/shape";
-import { ILayoutConnection, IFullPipelineLayout } from "./getFullSolidLayout";
+import {
+  ILayoutConnection,
+  IFullPipelineLayout,
+  IFullSolidLayout
+} from "./getFullSolidLayout";
 import styled from "styled-components";
+import { weakmapMemoize } from "../Util";
 
 export type Edge = { a: string; b: string };
 
@@ -13,24 +18,38 @@ const buildSVGPath = pathVerticalDiagonal({
   y: (s: any) => s.y
 });
 
-export const SolidLinks = React.memo(
-  (props: {
-    opacity: number;
-    layout: IFullPipelineLayout;
-    connections: ILayoutConnection[];
-    onHighlight: (arr: Edge[]) => void;
-  }) => {
-    const solids = props.layout.solids;
-    const paths = props.connections.map(({ from, to }, i) =>
-      buildSVGPath({
-        // can also use from.point for the "Dagre" closest point on node
-        source: solids[from.solidName].outputs[from.edgeName].port,
-        target: solids[to.solidName].inputs[to.edgeName].port
-      })
-    );
-
-    return <StyledPath d={paths.join("")} style={{ opacity: props.opacity }} />;
+// This method creates a single SVG path string (eg: `MX1,Y1LX2,Y2`, etc.)
+// by concatenating the nice curved paths D3 provides for each source+target
+// in the DAG. This is possible because each one begins with a `M` move
+// instruction and is much, much faster than rendering a separate <path> SVG
+// node for every one.
+const buildJoinedPathForAll = weakmapMemoize(
+  (
+    connections: ILayoutConnection[],
+    solids: { [name: string]: IFullSolidLayout }
+  ) => {
+    return connections
+      .map(({ from, to }, i) =>
+        buildSVGPath({
+          // can also use from.point for the "Dagre" closest point on node
+          source: solids[from.solidName].outputs[from.edgeName].port,
+          target: solids[to.solidName].inputs[to.edgeName].port
+        })
+      )
+      .join("");
   }
+);
+
+export const SolidLinks = (props: {
+  opacity: number;
+  layout: IFullPipelineLayout;
+  connections: ILayoutConnection[];
+  onHighlight: (arr: Edge[]) => void;
+}) => (
+  <StyledPath
+    d={buildJoinedPathForAll(props.connections, props.layout.solids)}
+    style={{ opacity: props.opacity }}
+  />
 );
 
 SolidLinks.displayName = "SolidLinks";
