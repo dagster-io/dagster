@@ -104,7 +104,7 @@ def execute_query_from_cli(handle, query, variables=None, log=False, log_dir=Non
 
     query = query.strip('\'" \n\t')
 
-    pipeline_run_storage = FilesystemRunStorage(log_dir) if log else InMemoryRunStorage()
+    pipeline_run_storage = FilesystemRunStorage(base_dir=log_dir) if log else InMemoryRunStorage()
 
     result_dict = execute_query(
         handle,

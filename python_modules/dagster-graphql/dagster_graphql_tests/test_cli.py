@@ -1,4 +1,5 @@
 import json
+import os
 
 from click.testing import CliRunner
 
@@ -13,7 +14,7 @@ from dagster import (
     seven,
 )
 from dagster.utils import script_relative_path
-
+from dagster.seven import mock
 from dagster_graphql.cli import ui
 
 
@@ -197,3 +198,27 @@ def test_start_execution_predefined():
         assert result_data['data']
     except Exception as e:
         raise Exception('Failed with {} Exception: {}'.format(result.output, e))
+
+
+@mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
+def test_start_execution_predefined_with_logs():
+    variables = seven.json.dumps(
+        {
+            'executionParams': {
+                'selector': {'name': 'math'},
+                'environmentConfigData': {
+                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
+                },
+                'mode': 'default',
+            }
+        }
+    )
+
+    repo_path = script_relative_path('./repository.yaml')
+
+    runner = CliRunner()
+    result = runner.invoke(
+        ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution', '--log']
+    )
+
+    assert result.exit_code == 0
