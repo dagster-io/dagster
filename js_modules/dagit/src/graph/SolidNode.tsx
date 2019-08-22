@@ -239,7 +239,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       <g
         onClick={this.handleClick}
         onDoubleClick={this.handleDoubleClick}
-        opacity={dim ? 0.3 : 1}
+        opacity={dim ? 0.3 : undefined}
       >
         {selected && this.renderSelectedBox()}
         {composite && this.renderSolidCompositeIndicator()}
