@@ -33,7 +33,35 @@ This installs two modules:
 
 ### Learn
 
-Next, jump right into our [tutorial](https://dagster.readthedocs.io/en/stable/sections/learn/tutorial/index.html), or read our [complete documentation](https://dagster.readthedocs.io). If you're actively using Dagster or have questions on getting started, we'd love to hear from you; [come join our slack!](https://tinyurl.com/dagsterslack)
+Next, jump right into our [tutorial](https://dagster.readthedocs.io/en/stable/sections/learn/tutorial/index.html), or read our [complete documentation](https://dagster.readthedocs.io). If you're actively using Dagster or have questions on getting started, we'd love to hear from you:
+
+<html>
+<style>
+.button {
+  background-color: #4A154A;
+  border: none;
+  color: #eee;
+  font-face: "Proxima Nova","Open Sans","Gill Sans MT","Gill Sans",Corbel,Arial,sans-serif;
+  font-weight: 700;
+  padding: 12px 30px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+.button:hover {
+    text-decoration: underline;
+
+}
+</style>
+<p align="center">
+<a class="button" href="https://tinyurl.com/dagsterslack">
+<img style="vertical-align: middle;" src="https://user-images.githubusercontent.com/609349/63486306-db30fe80-c45b-11e9-8e65-9694e184fff4.png" width=30px; /><span style="margin-left:7px;">Join us on Slack!</span>
+</a>
+</p>
+</html>
 
 ### Contributing
 
