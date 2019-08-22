@@ -69,7 +69,7 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''Clear the log storage.'''
 
     @abstractmethod
-    def verify_event_log(self, run_id):
+    def verify_event_log_exists(self, run_id):
         '''Perform basic checks that event logs for a run_id are available'''
 
 
@@ -95,7 +95,7 @@ class InMemoryEventLogStorage(EventLogStorage):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
 
-    def verify_event_log(self, run_id):
+    def verify_event_log_exists(self, run_id):
         check.invariant(
             self._logs.get('run_id'),
             'No entry for run {run_id} in event log dict'.format(run_id=run_id),
@@ -114,7 +114,7 @@ class FilesystemEventLogStorage(EventLogStorage):
     def filepath_for_run_id(self, run_id):
         return os.path.join(self._base_dir, '{run_id}.log'.format(run_id=run_id))
 
-    def verify_event_log(self, run_id):
+    def verify_event_log_exists(self, run_id):
         check.invariant(
             os.path.isfile(self.filepath_for_run_id(run_id)),
             'Event log file for run id {run_id} is not a file'.format(run_id=run_id),
