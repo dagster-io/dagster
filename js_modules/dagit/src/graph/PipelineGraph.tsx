@@ -136,7 +136,7 @@ class PipelineGraphContents extends React.PureComponent<
             highlightedEdges={
               isSolidHighlighted(this.state.highlighted, solid.name)
                 ? this.state.highlighted
-                : []
+                : EmptyHighlightedArray
             }
             dim={
               highlightedSolids.length > 0 &&
@@ -148,6 +148,10 @@ class PipelineGraphContents extends React.PureComponent<
     );
   }
 }
+
+// This is a specific empty array so that SolidNode can use shallow equality comparisons
+// in shouldComponentUpdate, which are faster.
+const EmptyHighlightedArray: never[] = [];
 
 export default class PipelineGraph extends React.Component<
   IPipelineGraphProps

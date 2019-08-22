@@ -1,6 +1,5 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import { isEqual, omitBy } from "lodash";
 import PipelineColorScale from "./PipelineColorScale";
 import { IFullSolidLayout } from "./getFullSolidLayout";
 import { SolidNodeFragment } from "./types/SolidNodeFragment";
@@ -116,10 +115,11 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   };
 
   shouldComponentUpdate(prevProps: ISolidNodeProps) {
-    return !isEqual(
-      omitBy(prevProps, v => typeof v === "function"),
-      omitBy(this.props, v => typeof v === "function")
-    );
+    if (prevProps.dim !== this.props.dim) return true;
+    if (prevProps.selected !== this.props.selected) return true;
+    if (prevProps.minified !== this.props.minified) return true;
+    if (prevProps.highlightedEdges !== this.props.highlightedEdges) return true;
+    return false;
   }
 
   handleClick = (e: React.MouseEvent) => {
