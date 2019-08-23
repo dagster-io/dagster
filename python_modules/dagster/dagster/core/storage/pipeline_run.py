@@ -138,3 +138,23 @@ class PipelineRun(object):
     def observable_after_cursor(self, observable_cls=None, cursor=None):
         check.type_param(observable_cls, 'observable_cls')
         return Observable.create(observable_cls(self, cursor))  # pylint: disable=E1101
+
+    @staticmethod
+    def from_json(json_data, run_storage):
+        from dagster.core.execution.api import ExecutionSelector
+        from .runs import RunStorage
+
+        check.dict_param(json_data, 'json_data')
+        check.inst_param(run_storage, 'run_storage', RunStorage)
+
+        selector = ExecutionSelector(
+            name=json_data['pipeline_name'], solid_subset=json_data.get('pipeline_solid_subset')
+        )
+        return PipelineRun(
+            run_storage=run_storage,
+            pipeline_name=json_data['pipeline_name'],
+            run_id=json_data['run_id'],
+            selector=selector,
+            env_config=json_data['config'],
+            mode=json_data['mode'],
+        )

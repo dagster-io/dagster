@@ -107,7 +107,9 @@ def ui(host, port, sync, log, log_dir, schedule_dir, no_watch=False, **kwargs):
 def host_dagit_ui(log, log_dir, schedule_dir, handle, use_sync, host, port):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
 
-    pipeline_run_storage = FilesystemRunStorage(base_dir=log_dir) if log else InMemoryRunStorage()
+    pipeline_run_storage = (
+        FilesystemRunStorage(base_dir=log_dir, watch=True) if log else InMemoryRunStorage()
+    )
 
     if Features.SCHEDULER.is_enabled:
         scheduler = SystemCronScheduler(schedule_dir)
