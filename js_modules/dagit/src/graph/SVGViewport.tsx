@@ -174,6 +174,7 @@ export default class SVGViewport extends React.Component<
         });
       },
       done: () => {
+        this.setState(to);
         this._animation = null;
       }
     });

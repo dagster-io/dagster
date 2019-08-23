@@ -62,8 +62,13 @@ class LoaderEntrypoint(namedtuple('_LoaderEntrypoint', 'module module_name fn_na
 
     @staticmethod
     def from_file_target(python_file, fn_name, from_handle=None):
+        file_directory = os.path.dirname(python_file)
+        if file_directory not in sys.path:
+            sys.path.append(file_directory)
+
         module_name = os.path.splitext(os.path.basename(python_file))[0]
         module = imp.load_source(module_name, python_file)
+
         return LoaderEntrypoint(module, module_name, fn_name, from_handle)
 
     @staticmethod

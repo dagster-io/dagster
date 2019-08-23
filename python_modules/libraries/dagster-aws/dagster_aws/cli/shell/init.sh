@@ -32,6 +32,10 @@ sudo -u ubuntu /bin/bash -c 'source /opt/dagster/venv/bin/activate && make dev_i
 mkdir -p $INSTALL_PATH/app
 chown -R ubuntu:ubuntu $INSTALL_PATH/app
 
+# Setup default $DAGSTER_HOME
+mkdir -p $INSTALL_PATH/dagster_home
+chown -R ubuntu:ubuntu $INSTALL_PATH/dagster_home
+
 # Install systemd service
 cat <<EOT > /lib/systemd/system/dagit.service
 [Unit]
@@ -41,7 +45,7 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-ExecStart=/bin/bash -c 'export PYTHONPATH=$PYTHONPATH:/opt/dagster/app && export LC_ALL=C.UTF-8 && export LANG=C.UTF-8 && source /opt/dagster/venv/bin/activate && /opt/dagster/venv/bin/dagit --no-watch -h 0.0.0.0 -p 3000 -y /opt/dagster/app/repository.yaml'
+ExecStart=/bin/bash -c 'export DAGSTER_HOME=/opt/dagster/dagster_home && export PYTHONPATH=$PYTHONPATH:/opt/dagster/app && export LC_ALL=C.UTF-8 && export LANG=C.UTF-8 && source /opt/dagster/venv/bin/activate && /opt/dagster/venv/bin/dagit --no-watch -h 0.0.0.0 -p 3000 -y /opt/dagster/app/repository.yaml'
 Restart=always
 
 [Install]

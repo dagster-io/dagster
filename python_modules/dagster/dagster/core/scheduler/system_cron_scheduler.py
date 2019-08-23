@@ -107,13 +107,16 @@ class SystemCronScheduler(Scheduler):
         script_file = self._get_bash_script_file_path(schedule)
         log_file = self._get_logs_file_path(schedule)
 
-        dagster_graphql_path = schedule.python_path.replace("/bin/python", "/bin/dagster-graphql")
+        dagster_graphql_path = os.path.join(
+            os.path.dirname(schedule.python_path), 'dagster-graphql'
+        )
         dagster_home = dagster_home_dir()
 
         script_contents = '''
             #!/bin/bash
             export DAGSTER_HOME={dagster_home}
             export LANG=en_US.UTF-8
+            {env_vars}
 
             {dagster_graphql_path} -p startPipelineExecution -v '{variables}' --log -y "{repo_path}" >> {log_file} 2>&1
         '''.format(
@@ -124,6 +127,12 @@ class SystemCronScheduler(Scheduler):
             ),
             log_file=log_file,
             dagster_home=dagster_home,
+            env_vars="\n".join(
+                [
+                    "export {key}={value}".format(key=key, value=value)
+                    for key, value in schedule.schedule_definition.environment_vars.items()
+                ]
+            ),
         )
 
         with io.open(script_file, 'w', encoding='utf-8') as f:

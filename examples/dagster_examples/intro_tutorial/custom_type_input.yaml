@@ -1,0 +1,4 @@
+solids:
+  inspect_sauce:
+    inputs:
+      sauce: "./recipe.txt"

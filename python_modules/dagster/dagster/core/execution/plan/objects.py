@@ -200,7 +200,7 @@ class ExecutionStep(
                 },
                 check.opt_dict_param(logging_tags, 'logging_tags'),
             ),
-            metadata=check.opt_dict_param(metadata, 'metadata', key_type=str, value_type=str),
+            metadata=check.opt_dict_param(metadata, 'metadata', key_type=str),
         )
 
     @property

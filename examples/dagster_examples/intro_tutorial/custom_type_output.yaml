@@ -1,0 +1,7 @@
+solids:
+  inspect_sauce:
+    outputs:
+      - result: "recent/recipe.txt"
+
+    outputs:
+      - result: "favorites/recipe.txt"

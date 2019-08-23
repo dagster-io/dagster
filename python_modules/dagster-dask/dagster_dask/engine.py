@@ -14,6 +14,10 @@ from dagster_graphql.client.mutations import execute_start_pipeline_execution_qu
 from .config import DaskConfig
 
 
+# Dask resource requirements are specified under this key
+DASK_RESOURCE_REQUIREMENTS_KEY = 'dagster-dask/resource_requirements'
+
+
 def query_on_dask_worker(handle, variables, dependencies):  # pylint: disable=unused-argument
     '''Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
@@ -103,6 +107,7 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
                         variables,
                         dependencies,
                         key=dask_task_name,
+                        resources=step.metadata.get(DASK_RESOURCE_REQUIREMENTS_KEY, {}),
                     )
 
                     execution_futures.append(future)
