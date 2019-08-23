@@ -107,7 +107,9 @@ class SystemCronScheduler(Scheduler):
         script_file = self._get_bash_script_file_path(schedule)
         log_file = self._get_logs_file_path(schedule)
 
-        dagster_graphql_path = schedule.python_path.replace("/bin/python", "/bin/dagster-graphql")
+        dagster_graphql_path = os.path.join(
+            os.path.dirname(schedule.python_path), 'dagster-graphql'
+        )
         dagster_home = dagster_home_dir()
 
         script_contents = '''
