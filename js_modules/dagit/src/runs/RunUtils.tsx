@@ -19,7 +19,7 @@ export function handleStartExecutionResult(
   opts: { openInNewWindow: boolean }
 ) {
   if (!result || !result.data) {
-    showCustomAlert({ message: `No data was returned. Did Dagit crash?` });
+    showCustomAlert({ body: `No data was returned. Did Dagit crash?` });
     return;
   }
 
@@ -41,7 +41,7 @@ export function handleStartExecutionResult(
         .join("\n\n")}`;
     }
 
-    showCustomAlert({ message });
+    showCustomAlert({ body: message });
   }
 }
 

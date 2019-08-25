@@ -76,7 +76,10 @@ export class CellTruncationProvider extends React.Component<
     const message =
       this.contentContainerRef.current &&
       this.contentContainerRef.current.textContent;
-    message && showCustomAlert({ message, pre: true });
+    message &&
+      showCustomAlert({
+        body: <div style={{ whiteSpace: "pre-wrap" }}>{message}</div>
+      });
   }
 
   onView = () => {
