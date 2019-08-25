@@ -1,5 +1,6 @@
 import getpass
 import os
+from io import StringIO
 
 import paramiko
 from paramiko.config import SSH_PORT
@@ -25,6 +26,7 @@ class SSHResource:
         username=None,
         password=None,
         key_file=None,
+        key_string=None,
         timeout=10,
         keepalive_interval=30,
         compress=True,
@@ -47,6 +49,10 @@ class SSHResource:
         self.log = logger
 
         self.host_proxy = None
+
+        # Create RSAKey object from private key string
+        with StringIO(check.opt_str_param(key_string, 'key_string')) as key_file:
+            self.key_obj = paramiko.RSAKey.from_private_key(key_file)
 
         # Auto detecting username values from system
         if not self.username:
@@ -94,6 +100,7 @@ class SSHResource:
                 username=self.username,
                 password=self.password,
                 key_filename=self.key_file,
+                pkey=self.key_obj,
                 timeout=self.timeout,
                 compress=self.compress,
                 port=self.remote_port,
@@ -105,6 +112,7 @@ class SSHResource:
                 hostname=self.remote_host,
                 username=self.username,
                 key_filename=self.key_file,
+                pkey=self.key_obj,
                 timeout=self.timeout,
                 compress=self.compress,
                 port=self.remote_port,
@@ -173,6 +181,9 @@ class SSHResource:
         ),
         'key_file': Field(
             str, description='key file to use to connect to the remote_host.', is_optional=True
+        ),
+        'key_string': Field(
+            str, description='key string to use to connect to remote_host', is_optional=True
         ),
         'timeout': Field(
             int,
