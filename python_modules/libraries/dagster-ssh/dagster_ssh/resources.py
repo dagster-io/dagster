@@ -3,9 +3,21 @@ import os
 
 import paramiko
 from paramiko.config import SSH_PORT
+from six import StringIO
 from sshtunnel import SSHTunnelForwarder
 
 from dagster import Field, check, resource
+
+
+def key_from_str(key_str):
+    '''Creates a paramiko SSH key from a string.'''
+    check.str_param(key_str, 'key_str')
+
+    # py2 StringIO doesn't support with
+    key_file = StringIO(key_str)
+    result = paramiko.RSAKey.from_private_key(key_file)
+    key_file.close()
+    return result
 
 
 class SSHResource:
@@ -25,6 +37,7 @@ class SSHResource:
         username=None,
         password=None,
         key_file=None,
+        key_string=None,
         timeout=10,
         keepalive_interval=30,
         compress=True,
@@ -47,6 +60,9 @@ class SSHResource:
         self.log = logger
 
         self.host_proxy = None
+
+        # Create RSAKey object from private key string
+        self.key_obj = key_from_str(key_string) if key_string is not None else None
 
         # Auto detecting username values from system
         if not self.username:
@@ -94,6 +110,7 @@ class SSHResource:
                 username=self.username,
                 password=self.password,
                 key_filename=self.key_file,
+                pkey=self.key_obj,
                 timeout=self.timeout,
                 compress=self.compress,
                 port=self.remote_port,
@@ -105,6 +122,7 @@ class SSHResource:
                 hostname=self.remote_host,
                 username=self.username,
                 key_filename=self.key_file,
+                pkey=self.key_obj,
                 timeout=self.timeout,
                 compress=self.compress,
                 port=self.remote_port,
@@ -126,13 +144,16 @@ class SSHResource:
         else:
             local_bind_address = ('localhost',)
 
+        # Will prefer key string if specified, otherwise use the key file
+        pkey = self.key_obj if self.key_obj else self.key_file
+
         if self.password and self.password.strip():
             client = SSHTunnelForwarder(
                 self.remote_host,
                 ssh_port=self.remote_port,
                 ssh_username=self.username,
                 ssh_password=self.password,
-                ssh_pkey=self.key_file,
+                ssh_pkey=pkey,
                 ssh_proxy=self.host_proxy,
                 local_bind_address=local_bind_address,
                 remote_bind_address=(remote_host, remote_port),
@@ -143,7 +164,7 @@ class SSHResource:
                 self.remote_host,
                 ssh_port=self.remote_port,
                 ssh_username=self.username,
-                ssh_pkey=self.key_file,
+                ssh_pkey=pkey,
                 ssh_proxy=self.host_proxy,
                 local_bind_address=local_bind_address,
                 remote_bind_address=(remote_host, remote_port),
@@ -173,6 +194,9 @@ class SSHResource:
         ),
         'key_file': Field(
             str, description='key file to use to connect to the remote_host.', is_optional=True
+        ),
+        'key_string': Field(
+            str, description='key string to use to connect to remote_host', is_optional=True
         ),
         'timeout': Field(
             int,

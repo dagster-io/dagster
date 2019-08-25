@@ -38,7 +38,7 @@ def _do_setup(name='dagster-ssh'):
         ],
         packages=find_packages(exclude=['test']),
         install_requires=['dagster', 'sshtunnel==0.1.5', 'paramiko==2.4.*'],
-        tests_require=['mock==2.0.*', 'pytest-sftpserver==1.2.*'],
+        tests_require=['mock==2.0.*', 'pytest-sftpserver==1.2.*', 'cryptography==2.6.*'],
         zip_safe=False,
     )
 
