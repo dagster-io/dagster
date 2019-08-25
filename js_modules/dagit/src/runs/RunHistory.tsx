@@ -15,6 +15,7 @@ import {
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 
+import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
 import { titleForRun, RunStatus, IRunStatus } from "./RunUtils";
 import { showCustomAlert } from "../CustomAlertProvider";
@@ -356,9 +357,12 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
                 onClick={() =>
                   showCustomAlert({
                     title: "Config",
-                    message: run.environmentConfigYaml,
-                    messageLang: ["yaml"],
-                    pre: true
+                    body: (
+                      <HighlightedCodeBlock
+                        value={run.environmentConfigYaml}
+                        languages={["yaml"]}
+                      />
+                    )
                   })
                 }
               />

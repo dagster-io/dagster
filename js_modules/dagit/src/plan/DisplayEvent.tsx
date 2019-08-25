@@ -40,7 +40,10 @@ const DisplayEventItem: React.FunctionComponent<
       <DisplayEventLink
         title="Show full value"
         onClick={() =>
-          showCustomAlert({ message: actionValue, pre: true, title: "Value" })
+          showCustomAlert({
+            body: <div style={{ whiteSpace: "pre-wrap" }}>{actionValue}</div>,
+            title: "Value"
+          })
         }
       >
         {actionText}
