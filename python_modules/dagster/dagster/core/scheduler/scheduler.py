@@ -3,7 +3,8 @@ from collections import namedtuple
 
 import six
 
-from dagster import ScheduleDefinition, check
+from dagster import check
+from dagster.core.definitions.schedule import ScheduleDefinition
 
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):

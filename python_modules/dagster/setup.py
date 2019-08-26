@@ -70,7 +70,6 @@ def _do_setup(name='dagster'):
             'rx==1.6.1',
             'six>=1.11.0',
             'toposort>=1.0',
-            "python-crontab>=2.3.8",
             'watchdog>=0.8.3',
         ],
         tests_require=['mock'],

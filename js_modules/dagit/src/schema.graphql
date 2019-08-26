@@ -802,7 +802,6 @@ type ScheduleDefinition {
 }
 
 type Scheduler {
-  schedulerType: String!
   schedules: [RunningSchedule!]!
 }
 

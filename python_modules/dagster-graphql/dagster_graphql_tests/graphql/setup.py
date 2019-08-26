@@ -2,6 +2,7 @@
 
 import csv
 import logging
+import uuid
 from collections import OrderedDict
 from copy import deepcopy
 
@@ -11,6 +12,7 @@ from dagster_graphql.implementation.pipeline_execution_manager import Synchronou
 from dagster import (
     Any,
     Bool,
+    DagsterInvariantViolationError,
     Dict,
     Enum,
     EnumValue,
@@ -43,7 +45,7 @@ from dagster import (
     solid,
 )
 from dagster.core.log_manager import coerce_valid_log_level
-from dagster.core.scheduler import SystemCronScheduler
+from dagster.core.scheduler import RunningSchedule, Scheduler
 from dagster.core.storage.runs import FilesystemRunStorage, InMemoryRunStorage
 from dagster.utils import script_relative_path
 
@@ -77,23 +79,57 @@ PoorMansDataFrame = as_dagster_type(
 )
 
 
-class TestSystemCronScheduler(SystemCronScheduler):
-    '''Overwrite _start_cron_job and _end_crob_job to prevent polluting
-    the user's crontab during tests
-    '''
+class TestScheduler(Scheduler):
+    def __init__(self):
+        self._schedules = OrderedDict()
 
-    def _start_cron_job(self, script_file, schedule):
-        pass
+    def all_schedules(self):
+        return [s for s in self._schedules.values()]
 
-    def _end_cron_job(self, schedule):
-        pass
+    def all_schedules_for_pipeline(self, pipeline_name):
+        return [
+            s
+            for s in self.all_schedules()
+            if s.execution_params['selector']['name'] == pipeline_name
+        ]
+
+    def get_schedule_by_name(self, name):
+        return self._schedules.get(name)
+
+    def start_schedule(self, schedule_definition, python_path, repository_path):
+        if schedule_definition.name in self._schedules:
+            raise DagsterInvariantViolationError(
+                'You have attempted to start schedule {name}, but it is already running.'.format(
+                    name=schedule_definition.name
+                )
+            )
+
+        schedule_id = str(uuid.uuid4())
+        schedule = RunningSchedule(schedule_id, schedule_definition, python_path, repository_path)
+
+        self._schedules[schedule_definition.name] = schedule
+        return schedule
+
+    def end_schedule(self, schedule_definition):
+        if schedule_definition.name not in self._schedules:
+            raise DagsterInvariantViolationError(
+                ('You have attempted to end schedule {name}, but it is not running.').format(
+                    name=schedule_definition.name
+                )
+            )
+
+        schedule = self.get_schedule_by_name(schedule_definition.name)
+
+        self._schedules.pop(schedule_definition.name)
+
+        return schedule
 
 
-def define_context(raise_on_error=True, log_dir=None, schedule_dir=None):
+def define_context(raise_on_error=True, log_dir=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
         pipeline_runs=FilesystemRunStorage(base_dir=log_dir) if log_dir else InMemoryRunStorage(),
-        scheduler=TestSystemCronScheduler(schedule_dir) if schedule_dir else None,
+        scheduler=TestScheduler(),
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,
     )
@@ -166,7 +202,10 @@ def define_repository():
             scalar_output_pipeline,
             secret_pipeline,
         ],
-        experimental={'schedule_defs': [no_config_pipeline_hourly_schedule]},
+        experimental={
+            'schedule_defs': [no_config_pipeline_hourly_schedule],
+            'scheduler': TestScheduler,
+        },
     )
 
 

@@ -3,29 +3,20 @@ import sys
 
 from dagster_graphql import dauphin
 
-from dagster import ScheduleDefinition, check
-from dagster.core.scheduler import RunningSchedule, SystemCronScheduler
+from dagster import check
+from dagster.core.definitions import ScheduleDefinition
+from dagster.core.scheduler import RunningSchedule
 
 
 def get_scheduler(graphene_info):
     scheduler = graphene_info.context.scheduler
-
-    if isinstance(scheduler, SystemCronScheduler):
-        scheduler_type = SchedulerType.SystemCronScheduler
-    else:
-        raise Exception(
-            'Unknown Scheduler type {typ}. Add this Scheduler type to the SchedulerType '
-            'GraphQL Enum'.format(typ=type(scheduler))
-        )
 
     schedules = [
         graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=s)
         for s in scheduler.all_schedules()
     ]
 
-    return graphene_info.schema.type_named('Scheduler')(
-        scheduler_type=scheduler_type, schedules=schedules
-    )
+    return graphene_info.schema.type_named('Scheduler')(schedules=schedules)
 
 
 class DauphinScheduleDefinition(dauphin.ObjectType):
@@ -68,15 +59,10 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         )
 
 
-class SchedulerType(dauphin.Enum):
-    SystemCronScheduler = "SystemCronScheduler"
-
-
 class DauphinScheduler(dauphin.ObjectType):
     class Meta:
         name = 'Scheduler'
 
-    scheduler_type = dauphin.NonNull(dauphin.String)
     schedules = dauphin.non_null_list('RunningSchedule')
 
 

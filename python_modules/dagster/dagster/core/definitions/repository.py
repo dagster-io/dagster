@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.scheduler import Scheduler
 
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
@@ -30,7 +31,10 @@ class RepositoryDefinition(object):
         pipeline_defs = check.opt_list_param(pipeline_defs, 'pipeline_defs', PipelineDefinition)
 
         # Experimental arguments
+        # TODO: Extract scheduler and scheduler_defs from RepositoryDefinition
+        # https://github.com/dagster-io/dagster/issues/1693
         experimental = check.opt_dict_param(experimental, 'experimental')
+        scheduler = check.opt_type_param(experimental.get('scheduler'), 'scheduler', Scheduler)
         schedule_defs = check.opt_list_param(
             experimental.get('schedule_defs'), 'schedule_defs', ScheduleDefinition
         )
@@ -50,6 +54,7 @@ class RepositoryDefinition(object):
             self._pipeline_names.add(defn.name)
             self._pipeline_cache[defn.name] = defn
 
+        self._scheduler_type = scheduler
         self._schedules = {}
         for defn in schedule_defs:
             check.invariant(
@@ -135,6 +140,9 @@ class RepositoryDefinition(object):
         # This does uniqueness check
         self.get_all_solid_defs()
         return self._all_pipelines
+
+    def get_scheduler_type(self):
+        return self._scheduler_type
 
     def get_schedule(self, name):
         check.str_param(name, 'name')

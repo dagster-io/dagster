@@ -9,7 +9,6 @@ from geventwebsocket.handler import WebSocketHandler
 from dagster import ExecutionTargetHandle, check
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
-from dagster.core.scheduler import SystemCronScheduler
 from dagster.core.storage.runs import FilesystemRunStorage, InMemoryRunStorage
 from dagster.utils import (
     DEFAULT_REPOSITORY_YAML_FILENAME,
@@ -112,7 +111,9 @@ def host_dagit_ui(log, log_dir, schedule_dir, handle, use_sync, host, port):
     )
 
     if Features.SCHEDULER.is_enabled:
-        scheduler = SystemCronScheduler(schedule_dir)
+        repository = handle.build_repository_definition()
+        scheduler_type = repository.get_scheduler_type()
+        scheduler = scheduler_type(schedule_dir=schedule_dir)
         app = create_app(
             handle, pipeline_run_storage, scheduler, use_synchronous_execution_manager=use_sync
         )

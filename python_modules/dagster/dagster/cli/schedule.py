@@ -7,7 +7,6 @@ import six
 
 from dagster import DagsterInvariantViolationError, check
 from dagster.cli.load_handle import handle_for_repo_cli_args
-from dagster.core.scheduler import SystemCronScheduler
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, dagster_schedule_dir_for_handle
 
 
@@ -67,7 +66,8 @@ def execute_list_command(schedule_dir, running_filter, verbose, cli_args, print_
     if not schedule_dir:
         schedule_dir = dagster_schedule_dir_for_handle(handle)
 
-    scheduler = SystemCronScheduler(schedule_dir)
+    scheduler_type = repository.get_scheduler_type()
+    scheduler = scheduler_type(schedule_dir)
 
     title = 'Repository {name}'.format(name=repository.name)
     print_fn(title)
@@ -132,8 +132,9 @@ def execute_start_command(schedule_name, schedule_dir, cli_args, print_fn):
     python_path = sys.executable
     repository_path = handle.data.repository_yaml
 
+    scheduler_type = repository.get_scheduler_type()
+    scheduler = scheduler_type(schedule_dir)
     schedule_definition = repository.get_schedule(schedule_name)
-    scheduler = SystemCronScheduler(schedule_dir)
 
     try:
         schedule = scheduler.start_schedule(schedule_definition, python_path, repository_path)
@@ -163,8 +164,9 @@ def execute_end_command(schedule_name, schedule_dir, cli_args, print_fn):
     if not schedule_dir:
         schedule_dir = dagster_schedule_dir_for_handle(handle)
 
+    scheduler_type = repository.get_scheduler_type()
+    scheduler = scheduler_type(schedule_dir)
     schedule_definition = repository.get_schedule(schedule_name)
-    scheduler = SystemCronScheduler(schedule_dir)
 
     try:
         schedule = scheduler.end_schedule(schedule_definition)

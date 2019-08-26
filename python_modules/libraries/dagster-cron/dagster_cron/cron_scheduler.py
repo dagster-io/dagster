@@ -9,9 +9,8 @@ import six
 from crontab import CronTab
 
 from dagster import DagsterInvariantViolationError, ScheduleDefinition, check, seven, utils
+from dagster.core.scheduler import RunningSchedule, Scheduler
 from dagster.utils import dagster_home_dir
-
-from .scheduler import RunningSchedule, Scheduler
 
 
 class SystemCronScheduler(Scheduler):

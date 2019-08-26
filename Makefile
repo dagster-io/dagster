@@ -49,6 +49,7 @@ install_dev_python_modules:
 	-pip install -e python_modules/dagster-dask
 	pip install -e python_modules/libraries/dagster-aws
 	pip install -e python_modules/libraries/dagster-bash
+	pip install -e python_modules/libraries/dagster-cron
 	pip install -e python_modules/libraries/dagster-datadog
 	pip install -e python_modules/libraries/dagster-dbt
 	pip install -e python_modules/libraries/dagster-gcp

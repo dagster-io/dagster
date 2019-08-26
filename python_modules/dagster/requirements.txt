@@ -11,4 +11,3 @@ graphviz>=0.8.4
 pyyaml==4.2b1
 six>=1.11.0
 toposort>=1.0
-python-crontab>=2.3.8
