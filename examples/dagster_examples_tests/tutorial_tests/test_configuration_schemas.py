@@ -1,15 +1,15 @@
 import pytest
-
-from dagster import execute_pipeline, DagsterInvalidConfigError
-from dagster_examples.intro_tutorial.configuration_schemas_basic import (
-    configuration_schema_pipeline,
-)
 from dagster_examples.intro_tutorial.configuration_schemas import (
     configuration_schema_pipeline as typed_configuration_schema_pipeline,
 )
+from dagster_examples.intro_tutorial.configuration_schemas_basic import (
+    configuration_schema_pipeline,
+)
+
+from dagster import DagsterInvalidConfigError, execute_pipeline
+from dagster.core.errors import DagsterExecutionStepExecutionError
 from dagster.utils import script_relative_path
 from dagster.utils.yaml_utils import load_yaml_from_path
-from dagster.core.errors import DagsterExecutionStepExecutionError
 
 
 def intro_tutorial_path(path):

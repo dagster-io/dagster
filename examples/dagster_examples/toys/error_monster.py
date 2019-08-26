@@ -1,7 +1,6 @@
 # pylint: disable=no-value-for-parameter
 
 from dagster import (
-    pipeline,
     Bool,
     Dict,
     Field,
@@ -14,6 +13,7 @@ from dagster import (
     String,
     execute_pipeline,
     file_relative_path,
+    pipeline,
     solid,
 )
 

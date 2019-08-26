@@ -1,7 +1,7 @@
-from abc import ABCMeta, abstractmethod
 import glob
 import os
 import pickle
+from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 
 import gevent.lock
@@ -9,8 +9,8 @@ import pyrsistent
 import six
 
 from dagster import check
-from dagster.utils import mkdir_p
 from dagster.core.events.log import EventRecord
+from dagster.utils import mkdir_p
 
 from .config import base_runs_directory
 from .pipeline_run import PipelineRun

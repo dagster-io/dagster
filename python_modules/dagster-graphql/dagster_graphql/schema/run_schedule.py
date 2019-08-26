@@ -1,9 +1,9 @@
 import json
 import sys
 
-from dagster import check, ScheduleDefinition
 from dagster_graphql import dauphin
 
+from dagster import ScheduleDefinition, check
 from dagster.core.scheduler import RunningSchedule, SystemCronScheduler
 
 

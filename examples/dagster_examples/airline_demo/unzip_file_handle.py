@@ -1,6 +1,6 @@
 import zipfile
 
-from dagster import solid, FileHandle, String
+from dagster import FileHandle, String, solid
 
 
 @solid(

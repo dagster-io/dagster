@@ -1,6 +1,6 @@
 # pylint: disable=no-value-for-parameter
 
-from dagster import composite_solid, pipeline, solid, Field, Int, String
+from dagster import Field, Int, String, composite_solid, pipeline, solid
 
 
 @solid(config={'foo': Field(String)})

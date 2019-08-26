@@ -3,18 +3,18 @@
 import re
 from operator import add
 
+from dagster_pyspark import SparkRDD, spark_session_resource
+
 from dagster import (
-    pipeline,
-    solid,
     Field,
     InputDefinition,
     Int,
     ModeDefinition,
     OutputDefinition,
     Path,
+    pipeline,
+    solid,
 )
-
-from dagster_pyspark import spark_session_resource, SparkRDD
 
 
 def parseNeighbors(urls):

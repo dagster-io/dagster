@@ -6,14 +6,14 @@ doing things. However we've been asked a number of times if this is possible
 and this should serve as a reasonable template to build upon. 
 '''
 from dagster import (
-    SolidInvocation,
-    PipelineDefinition,
     DependencyDefinition,
-    lambda_solid,
-    file_relative_path,
-    check,
     InputDefinition,
     OutputDefinition,
+    PipelineDefinition,
+    SolidInvocation,
+    check,
+    file_relative_path,
+    lambda_solid,
 )
 from dagster.utils import load_yaml_from_path
 

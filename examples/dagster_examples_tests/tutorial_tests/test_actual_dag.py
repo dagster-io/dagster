@@ -1,6 +1,7 @@
+from dagster_examples.intro_tutorial.actual_dag import actual_dag_pipeline
+
 from dagster import execute_pipeline
 from dagster.utils import check_cli_execute_file_pipeline, script_relative_path
-from dagster_examples.intro_tutorial.actual_dag import actual_dag_pipeline
 
 
 def test_intro_tutorial_actual_dag():

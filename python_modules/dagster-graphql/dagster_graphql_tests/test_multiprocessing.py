@@ -3,6 +3,10 @@ import os
 from collections import OrderedDict
 from copy import deepcopy
 
+from dagster_graphql.implementation.pipeline_execution_manager import (
+    MultiprocessingExecutionManager,
+)
+
 from dagster import (
     ExecutionTargetHandle,
     Field,
@@ -26,10 +30,6 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.utils import make_new_run_id
 from dagster.utils import script_relative_path
-
-from dagster_graphql.implementation.pipeline_execution_manager import (
-    MultiprocessingExecutionManager,
-)
 
 
 class PoorMansDataFrame_(list):

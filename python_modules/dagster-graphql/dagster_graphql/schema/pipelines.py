@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from dagster_graphql import dauphin
+
 from dagster import (
     LoggerDefinition,
     ModeDefinition,
@@ -9,8 +11,6 @@ from dagster import (
     check,
 )
 from dagster.core.definitions import create_environment_schema, create_environment_type
-
-from dagster_graphql import dauphin
 
 from .config_types import to_dauphin_config_type
 from .runtime_types import to_dauphin_runtime_type

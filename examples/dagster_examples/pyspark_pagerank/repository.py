@@ -1,11 +1,11 @@
 from dagster import RepositoryDefinition
 
 from .pyspark_pagerank_pipeline import pyspark_pagerank
-from .steps.step_one import pyspark_pagerank_step_one
-from .steps.step_two import pyspark_pagerank_step_two
-from .steps.step_three import pyspark_pagerank_step_three
-from .steps.step_four import pyspark_pagerank_step_four
 from .steps.step_five import pyspark_pagerank_step_five
+from .steps.step_four import pyspark_pagerank_step_four
+from .steps.step_one import pyspark_pagerank_step_one
+from .steps.step_three import pyspark_pagerank_step_three
+from .steps.step_two import pyspark_pagerank_step_two
 
 
 def define_repository():

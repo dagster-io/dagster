@@ -1,12 +1,12 @@
 import os
 
-from dagster import solid, ModeDefinition
-from dagster.core.storage.file_cache import FSFileCache
-from dagster_aws import S3Coordinate, S3Resource, S3FakeSession
-from dagster.utils.test import execute_solid
-from dagster.utils.temp_file import get_temp_file_name, get_temp_dir
+from dagster_aws import S3Coordinate, S3FakeSession, S3Resource
 
+from dagster import ModeDefinition, solid
+from dagster.core.storage.file_cache import FSFileCache
 from dagster.seven import mock
+from dagster.utils.temp_file import get_temp_dir, get_temp_file_name
+from dagster.utils.test import execute_solid
 
 
 @solid

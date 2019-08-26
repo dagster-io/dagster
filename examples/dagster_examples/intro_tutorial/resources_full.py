@@ -1,5 +1,7 @@
 # pylint: disable=no-value-for-parameter
 
+from dagster_slack import slack_resource
+
 from dagster import (
     Field,
     ModeDefinition,
@@ -10,8 +12,6 @@ from dagster import (
     resource,
     solid,
 )
-
-from dagster_slack import slack_resource
 
 HELLO_MESSAGE = '"Hello, World" from Dagster!'
 

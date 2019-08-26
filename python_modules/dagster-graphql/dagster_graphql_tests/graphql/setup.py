@@ -5,6 +5,9 @@ import logging
 from collections import OrderedDict
 from copy import deepcopy
 
+from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
+
 from dagster import (
     Any,
     Bool,
@@ -40,11 +43,9 @@ from dagster import (
     solid,
 )
 from dagster.core.log_manager import coerce_valid_log_level
+from dagster.core.scheduler import SystemCronScheduler
 from dagster.core.storage.runs import FilesystemRunStorage, InMemoryRunStorage
 from dagster.utils import script_relative_path
-from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster.core.scheduler import SystemCronScheduler
 
 
 class PoorMansDataFrame_(list):

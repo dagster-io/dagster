@@ -22,10 +22,10 @@ from dagster import (
     seven,
 )
 from dagster.core.errors import user_code_error_boundary
+from dagster.core.events import SqliteEventSink
 from dagster.core.execution.context.compute import ComputeExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
-from dagster.core.events import SqliteEventSink
 from dagster.utils import mkdir_p, safe_tempfile_path
 
 from .engine import DagstermillNBConvertEngine

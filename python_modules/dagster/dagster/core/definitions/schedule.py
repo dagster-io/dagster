@@ -1,5 +1,6 @@
-from dagster import check
 from collections import namedtuple
+
+from dagster import check
 
 
 class ScheduleDefinition(namedtuple('ScheduleDefinition', 'name cron_schedule execution_params')):

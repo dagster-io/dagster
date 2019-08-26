@@ -1,9 +1,9 @@
 import os
+
 import yaml
+from dagster_aws.cli.config import HOST_CONFIG_FILE, HostConfig
 
 from dagster import seven
-
-from dagster_aws.cli.config import HOST_CONFIG_FILE, HostConfig
 
 
 def test_host_config():

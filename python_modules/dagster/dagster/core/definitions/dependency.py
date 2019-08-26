@@ -5,12 +5,12 @@ import six
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.serdes import whitelist_for_serdes
 from dagster.utils import camelcase
 
 from .input import InputDefinition
 from .output import OutputDefinition
 from .utils import DEFAULT_OUTPUT, struct_to_string
-from dagster.core.serdes import whitelist_for_serdes
 
 
 class SolidInvocation(namedtuple('Solid', 'name alias resource_mapper_fn')):

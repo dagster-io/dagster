@@ -9,10 +9,10 @@ from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.utils import frozendict, frozenlist
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
+from .dependency import SolidHandle
 from .input import InputDefinition, InputMapping
 from .output import OutputDefinition, OutputMapping
 from .utils import check_valid_name
-from .dependency import SolidHandle
 
 
 class ISolidDefinition(six.with_metaclass(ABCMeta)):

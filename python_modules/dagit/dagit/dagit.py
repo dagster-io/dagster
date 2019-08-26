@@ -7,6 +7,7 @@ import time
 from watchdog.observers import Observer
 from watchdog.tricks import AutoRestartTrick
 
+
 # Use watchdog's python API to auto-restart the dagit-cli process when
 # python files in the current directory change. This is a slightly modified
 # version of the code in watchdog's `watchmedo` CLI. We've modified the

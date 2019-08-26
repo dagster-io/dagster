@@ -1,11 +1,11 @@
 from airflow.contrib.kubernetes import kube_client, pod_generator, pod_launcher
 from airflow.exceptions import AirflowException
 from airflow.utils.state import State
+from dagster_airflow.vendor.kubernetes_pod_operator import KubernetesPodOperator
+from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 
 from dagster import __version__ as dagster_version
 from dagster import check, seven
-from dagster_airflow.vendor.kubernetes_pod_operator import KubernetesPodOperator
-from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 
 from .util import construct_variables, get_aws_environment, parse_raw_res, skip_self_if_necessary
 

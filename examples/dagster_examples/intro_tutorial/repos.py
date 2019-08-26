@@ -1,4 +1,4 @@
-from dagster import lambda_solid, pipeline, RepositoryDefinition
+from dagster import RepositoryDefinition, lambda_solid, pipeline
 
 
 @lambda_solid

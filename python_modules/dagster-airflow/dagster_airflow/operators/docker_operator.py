@@ -1,19 +1,16 @@
 import ast
 import json
-
 from contextlib import contextmanager
 
 from airflow.exceptions import AirflowException
 from airflow.utils.file import TemporaryDirectory
-
+from dagster_airflow.vendor.docker_operator import DockerOperator
+from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 from docker import APIClient, from_env
 
 from dagster import check, seven
-from dagster_airflow.vendor.docker_operator import DockerOperator
-from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
 
 from .util import construct_variables, get_aws_environment, parse_raw_res, skip_self_if_necessary
-
 
 DOCKER_TEMPDIR = '/tmp'
 

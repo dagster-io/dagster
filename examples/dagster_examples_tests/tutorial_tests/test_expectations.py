@@ -1,5 +1,6 @@
-from dagster import execute_pipeline
 from dagster_examples.intro_tutorial.expectations import expectations_tutorial_pipeline
+
+from dagster import execute_pipeline
 
 
 def test_intro_tutorial_expectations_step_one():

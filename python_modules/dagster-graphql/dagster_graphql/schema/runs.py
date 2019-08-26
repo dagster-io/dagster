@@ -4,6 +4,8 @@ import json
 import logging
 
 import yaml
+from dagster_graphql import dauphin
+from dagster_graphql.implementation.fetch_pipelines import get_pipeline_or_raise
 
 from dagster import RunConfig, check
 from dagster.core.definitions.events import (
@@ -17,12 +19,9 @@ from dagster.core.definitions.events import (
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
-
-from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_pipelines import get_pipeline_or_raise
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
 

@@ -3,19 +3,18 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.events import DagsterEvent
-
 from dagster.core.log_manager import coerce_valid_log_level
+from dagster.core.serdes import (
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+    whitelist_for_serdes,
+)
 from dagster.utils.error import SerializableErrorInfo
 from dagster.utils.log import (
     JsonEventLoggerHandler,
     StructuredLoggerHandler,
     StructuredLoggerMessage,
     construct_single_handler_logger,
-)
-from dagster.core.serdes import (
-    whitelist_for_serdes,
-    serialize_dagster_namedtuple,
-    deserialize_json_to_dagster_namedtuple,
 )
 
 

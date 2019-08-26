@@ -1,7 +1,6 @@
 import subprocess
 
 from click.testing import CliRunner
-
 from dagit.cli import ui
 
 

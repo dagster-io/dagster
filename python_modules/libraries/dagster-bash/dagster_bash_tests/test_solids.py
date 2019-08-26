@@ -1,10 +1,9 @@
 import os
 
 import pytest
+from dagster_bash import bash_command_solid, bash_script_solid
 
 from dagster import DagsterExecutionStepExecutionError, execute_solid
-
-from dagster_bash import bash_command_solid, bash_script_solid
 
 
 def test_bash_command_solid():

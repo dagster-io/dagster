@@ -33,6 +33,3 @@ clean:
 	find . -name \*.pyc -delete
 	rm -rf ./dagster/htmlcov/
 	rm -rf ./dagster/build/
-
-isort:
-	isort -rc .

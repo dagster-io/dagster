@@ -1,5 +1,6 @@
 import sys
 
+import dagstermill
 import pandas as pd
 import pytest
 
@@ -15,8 +16,6 @@ from dagster import (
 )
 from dagster.core.utility_solids import define_stub_solid
 from dagster.utils import script_relative_path
-
-import dagstermill
 
 from ..data_frame import DataFrame
 from .pandas_hello_world.pipeline import pandas_hello_world

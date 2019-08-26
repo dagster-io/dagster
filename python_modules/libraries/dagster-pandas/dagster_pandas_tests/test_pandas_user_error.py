@@ -1,5 +1,6 @@
 # pylint: disable=W0613
 
+import dagster_pandas as dagster_pd
 import pandas as pd
 import pytest
 
@@ -12,8 +13,6 @@ from dagster import (
     pipeline,
 )
 from dagster.core.utility_solids import define_stub_solid
-
-import dagster_pandas as dagster_pd
 
 
 def test_wrong_output_value():

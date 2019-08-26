@@ -22,8 +22,7 @@ from .aws_util import (
     select_vpc,
 )
 from .config import HostConfig
-from .term import run_remote_cmd, Term
-
+from .term import Term, run_remote_cmd
 
 # Client code will be deposited here on the remote EC2 instance
 SERVER_CLIENT_CODE_HOME = '/opt/dagster/app/'

@@ -3,15 +3,15 @@
 from time import sleep
 
 from dagster import (
-    lambda_solid,
-    pipeline,
-    solid,
     Field,
     InputDefinition,
     Int,
     List,
-    OutputDefinition,
     Output,
+    OutputDefinition,
+    lambda_solid,
+    pipeline,
+    solid,
 )
 
 

@@ -1,12 +1,11 @@
 import uuid
 
+from dagster_graphql.test.utils import execute_dagster_graphql
 from graphql import parse
 
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.utils import merge_dicts, script_relative_path
 from dagster.utils.test import get_temp_file_name
-
-from dagster_graphql.test.utils import execute_dagster_graphql
 
 from .execution_queries import (
     PIPELINE_REEXECUTION_INFO_QUERY,

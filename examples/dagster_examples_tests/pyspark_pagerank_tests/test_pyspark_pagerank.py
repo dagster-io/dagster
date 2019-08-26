@@ -1,7 +1,7 @@
+from dagster_examples.pyspark_pagerank.repository import define_repository
+
 from dagster import execute_pipeline
 from dagster.utils import script_relative_path
-
-from dagster_examples.pyspark_pagerank.repository import define_repository
 
 from .util import checks_for_helper_functions
 

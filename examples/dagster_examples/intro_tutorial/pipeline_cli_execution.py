@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 
-from dagster import pipeline, Field, Int, RepositoryDefinition, lambda_solid, solid
+from dagster import Field, Int, RepositoryDefinition, lambda_solid, pipeline, solid
 
 
 @solid(config={'factor': Field(Int)})

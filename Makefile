@@ -80,4 +80,4 @@ graphql_tests:
 	pytest examples/dagster_examples_tests/graphql_tests/ python_modules/dagster-graphql/dagster_graphql_tests/graphql/ -s -vv
 
 isort:
-	cd python_modules && isort -rc .
+	isort -rc .

@@ -2,9 +2,7 @@
 import time
 
 import click
-
 from click.testing import CliRunner
-
 from dagster_aws.cli.term import Spinner, Term
 
 

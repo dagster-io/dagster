@@ -1,19 +1,18 @@
 import datetime
 import os
 
+from dagster_gcp import bigquery_resource, dataproc_resource
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 
 from dagster import (
-    file_relative_path,
-    pipeline,
-    solid,
     InputDefinition,
     ModeDefinition,
     Nothing,
     PresetDefinition,
+    file_relative_path,
+    pipeline,
+    solid,
 )
-from dagster_gcp import bigquery_resource, dataproc_resource
-
 
 PROJECT_ID = os.getenv('GCP_PROJECT_ID')
 DEPLOY_BUCKET_PREFIX = os.getenv('GCP_DEPLOY_BUCKET_PREFIX')

@@ -1,11 +1,11 @@
 import os
 
 from dagster import check
+from dagster.core.events import SqliteEventSink
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.config import MultiprocessExecutorConfig, RunConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.events import SqliteEventSink
 from dagster.utils import safe_tempfile_path
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command

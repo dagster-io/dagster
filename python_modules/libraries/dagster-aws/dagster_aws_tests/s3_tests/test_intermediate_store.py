@@ -2,6 +2,9 @@ import os
 import uuid
 
 import pytest
+from dagster_aws.s3.intermediate_store import S3IntermediateStore
+from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 from dagster import (
     Bool,
@@ -25,9 +28,6 @@ from dagster.core.types.runtime import RuntimeType
 from dagster.core.types.runtime import String as RuntimeString
 from dagster.core.types.runtime import resolve_to_runtime_type
 from dagster.utils.test import yield_empty_pipeline_context
-from dagster_aws.s3.intermediate_store import S3IntermediateStore
-from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init

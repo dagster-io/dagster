@@ -1,14 +1,13 @@
 import os
 
+from dagster_pyspark import spark_session_from_config, spark_session_resource
+from lakehouse import Lakehouse, construct_lakehouse_pipeline, input_table, pyspark_table
+from lakehouse.util import invoke_compute
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import Row
 
 from dagster import Materialization, check, execute_pipeline
 from dagster.utils.temp_file import get_temp_dir
-
-from dagster_pyspark import spark_session_from_config, spark_session_resource
-from lakehouse import Lakehouse, construct_lakehouse_pipeline, input_table, pyspark_table
-from lakehouse.util import invoke_compute
 
 FEATURE_AREA = 'feature_area'
 

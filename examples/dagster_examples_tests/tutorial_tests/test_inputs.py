@@ -1,11 +1,11 @@
 import pytest
+from dagster_examples.intro_tutorial.inputs import (
+    execute_with_another_world,
+    hello_typed_inputs_pipeline,
+)
 
 from dagster import DagsterInvalidConfigError, execute_pipeline
 from dagster.utils import check_cli_execute_file_pipeline, script_relative_path
-from dagster_examples.intro_tutorial.inputs import (
-    hello_typed_inputs_pipeline,
-    execute_with_another_world,
-)
 
 
 def test_hello_inputs_parameterized_pipeline():

@@ -1,11 +1,12 @@
 import os
 import sys
 
+from defines import SupportedPythons
+
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(SCRIPT_PATH)
 
-from defines import SupportedPythons
 
 TIMEOUT_IN_MIN = 20
 

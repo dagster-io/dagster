@@ -3,8 +3,8 @@ import sys
 
 import click
 
-from ..version import __version__
 from ..utils import Features
+from ..version import __version__
 from .pipeline import create_pipeline_cli_group
 from .run import create_run_cli_group
 from .schedule import create_schedule_cli_group

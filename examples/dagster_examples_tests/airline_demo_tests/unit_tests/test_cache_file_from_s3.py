@@ -1,22 +1,20 @@
 import os
 
 import pytest
+from dagster_aws.s3.resources import S3Resource
+from dagster_examples.airline_demo.cache_file_from_s3 import cache_file_from_s3
 
 from dagster import (
-    pipeline,
     DagsterInvalidDefinitionError,
     ModeDefinition,
     ResourceDefinition,
-    execute_solid,
     execute_pipeline,
+    execute_solid,
+    pipeline,
 )
-from dagster_aws.s3.resources import S3Resource
-from dagster.core.storage.file_cache import fs_file_cache, LocalFileHandle
+from dagster.core.storage.file_cache import LocalFileHandle, fs_file_cache
 from dagster.seven import mock
-
 from dagster.utils.temp_file import get_temp_dir
-
-from dagster_examples.airline_demo.cache_file_from_s3 import cache_file_from_s3
 
 
 def execute_solid_with_resources(solid_def, resource_defs, environment_dict):

@@ -1,8 +1,7 @@
 import pytest
+from dagster_airflow.format import format_dict_for_graphql
 
 from dagster import check
-
-from dagster_airflow.format import format_dict_for_graphql
 
 
 def test_format_dict():

@@ -1,13 +1,4 @@
 import pytest
-
-from dagster import (
-    DagsterInvariantViolationError,
-    DagsterResourceFunctionError,
-    DagsterTypeCheckError,
-    execute_pipeline,
-    RunConfig,
-)
-
 from dagster_examples.toys.config_mapping import config_mapping_pipeline
 from dagster_examples.toys.error_monster import error_monster
 from dagster_examples.toys.hammer import hammer_pipeline
@@ -16,6 +7,14 @@ from dagster_examples.toys.many_events import many_events
 from dagster_examples.toys.resources import resource_pipeline
 from dagster_examples.toys.resources_error import resource_error_pipeline
 from dagster_examples.toys.sleepy import sleepy_pipeline
+
+from dagster import (
+    DagsterInvariantViolationError,
+    DagsterResourceFunctionError,
+    DagsterTypeCheckError,
+    RunConfig,
+    execute_pipeline,
+)
 
 
 def test_define_repo():

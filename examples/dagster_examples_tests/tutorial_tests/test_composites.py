@@ -1,10 +1,11 @@
 from dagster_examples.intro_tutorial.composition import (
-    compute_two,
-    compute_three,
-    multiple_outputs,
     complex_pipeline,
     composed_pipeline,
+    compute_three,
+    compute_two,
+    multiple_outputs,
 )
+
 from dagster import execute_pipeline
 
 

@@ -12,17 +12,17 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.events import ObjectStoreOperationType
 from dagster.core.execution.context.system import (
-    SystemStepExecutionContext,
     SystemPipelineExecutionContext,
+    SystemStepExecutionContext,
 )
 from dagster.core.execution.plan.objects import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
+from dagster.core.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 from dagster.utils.timing import format_duration
 
 from .event_sink import CallbackEventSink, EventSink, InMemoryEventSink
 from .sqlite_event_sink import SqliteEventSink
-from dagster.core.serdes import whitelist_for_serdes
 
 
 class DagsterEventType(Enum):

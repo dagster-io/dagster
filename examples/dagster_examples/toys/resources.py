@@ -1,14 +1,14 @@
 # pylint: disable=no-value-for-parameter
 
 from dagster import (
-    execute_pipeline,
     ExecutionTargetHandle,
     Field,
     Int,
+    ModeDefinition,
+    execute_pipeline,
     pipeline,
     resource,
     solid,
-    ModeDefinition,
 )
 
 

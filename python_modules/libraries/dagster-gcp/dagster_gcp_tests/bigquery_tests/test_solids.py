@@ -6,6 +6,15 @@ import uuid
 
 import pandas as pd
 import pytest
+from dagster_gcp import (
+    bigquery_resource,
+    bq_create_dataset,
+    bq_delete_dataset,
+    bq_solid_for_queries,
+    import_df_to_bq,
+    import_gcs_paths_to_bq,
+)
+from dagster_pandas import DataFrame
 from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
 
@@ -24,16 +33,6 @@ from dagster import (
 from dagster.core.definitions import create_environment_type
 from dagster.core.types.evaluator import evaluate_config
 from dagster.seven import mock
-
-from dagster_gcp import (
-    bigquery_resource,
-    bq_create_dataset,
-    bq_delete_dataset,
-    bq_solid_for_queries,
-    import_df_to_bq,
-    import_gcs_paths_to_bq,
-)
-from dagster_pandas import DataFrame
 
 
 def dataset_exists(name):

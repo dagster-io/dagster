@@ -1,9 +1,10 @@
 import os
 import sys
 
+from dagster_graphql.test.utils import execute_dagster_graphql
+
 from dagster import check
 from dagster.core.scheduler import RunningSchedule
-from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster.seven import mock
 
 from .utils import define_context

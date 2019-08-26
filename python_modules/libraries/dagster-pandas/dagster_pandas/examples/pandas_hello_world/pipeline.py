@@ -1,3 +1,5 @@
+import dagster_pandas as dagster_pd
+
 from dagster import (
     InputDefinition,
     OutputDefinition,
@@ -6,8 +8,6 @@ from dagster import (
     lambda_solid,
     pipeline,
 )
-
-import dagster_pandas as dagster_pd
 
 
 @lambda_solid(

@@ -2,12 +2,6 @@ import os
 import sys
 from datetime import datetime
 
-from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql import Row
-from pyspark.sql import types as spark_types
-
-from dagster import file_relative_path, resource
-
 from dagster_pyspark import spark_session_resource
 from lakehouse import (
     InMemTableHandle,
@@ -16,6 +10,11 @@ from lakehouse import (
     input_table,
     pyspark_table,
 )
+from pyspark.sql import DataFrame as SparkDF
+from pyspark.sql import Row
+from pyspark.sql import types as spark_types
+
+from dagster import file_relative_path, resource
 
 # This is needed to common when loading from dagit
 sys.path.insert(0, os.path.abspath(file_relative_path(__file__, '.')))

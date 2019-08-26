@@ -1,8 +1,9 @@
 import os
 import pickle
-import six
 import uuid
 from contextlib import contextmanager
+
+import six
 
 from dagster import (
     ExpectationResult,
@@ -17,10 +18,10 @@ from dagster import (
 )
 from dagster.cli import load_handle
 from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.events import SqliteEventSink
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import ResourcesStack
 from dagster.loggers import colored_console_logger
-from dagster.core.events import SqliteEventSink
 
 from .context import DagstermillExecutionContext
 from .errors import DagstermillError

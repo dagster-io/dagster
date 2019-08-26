@@ -1,12 +1,11 @@
 import pytest
+from dagit.app import create_app
+from dagit.cli import host_dagit_ui
 
 from dagster import ExecutionTargetHandle
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.seven import mock
 from dagster.utils import script_relative_path
-
-from dagit.app import create_app
-from dagit.cli import host_dagit_ui
 
 
 def test_create_app():

@@ -1,9 +1,8 @@
 import dagstermill as dm
+from dagster_examples.util import download_file
 
 from dagster import DependencyDefinition, InputDefinition, Path, PipelineDefinition
 from dagster.utils import script_relative_path
-from dagster_examples.util import download_file
-
 
 k_means_iris_solid = dm.define_dagstermill_solid(
     'k_means_iris',

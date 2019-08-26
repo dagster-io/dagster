@@ -1,6 +1,8 @@
 import logging
 from collections import defaultdict
 
+from dagster_examples.toys.many_events import many_events
+
 from dagster import (
     ExecutionTargetHandle,
     ModeDefinition,
@@ -13,8 +15,6 @@ from dagster import (
 from dagster.core.events import DagsterEventType, EventSink
 from dagster.core.events.log import EventRecord, construct_event_logger
 from dagster.loggers import colored_console_logger
-
-from dagster_examples.toys.many_events import many_events
 
 
 def mode_def(event_callback):

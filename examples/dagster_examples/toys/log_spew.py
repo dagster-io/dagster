@@ -1,6 +1,6 @@
 import time
 
-from dagster import InputDefinition, Output, OutputDefinition, solid, pipeline
+from dagster import InputDefinition, Output, OutputDefinition, pipeline, solid
 
 
 def nonce_solid(name, n_inputs, n_outputs):

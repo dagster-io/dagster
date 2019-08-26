@@ -1,12 +1,11 @@
+# pylint: disable=unused-import
+
 import pytest
+from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
+from dagster_examples.event_pipeline_demo.pipelines import event_ingest_pipeline
 
 from dagster import ExecutionTargetHandle
 from dagster.utils import script_relative_path
-
-# pylint: disable=unused-import
-from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
-
-from dagster_examples.event_pipeline_demo.pipelines import event_ingest_pipeline
 
 
 @pytest.mark.skip

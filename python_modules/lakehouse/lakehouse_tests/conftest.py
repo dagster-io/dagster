@@ -1,11 +1,10 @@
 import os
 
 import pytest
-
-from dagster import Materialization, check, execute_pipeline
-
 from dagster_pyspark import spark_session_resource
 from lakehouse import Lakehouse, construct_lakehouse_pipeline
+
+from dagster import Materialization, check, execute_pipeline
 
 
 class LocalOnDiskSparkCsvLakehouse(Lakehouse):

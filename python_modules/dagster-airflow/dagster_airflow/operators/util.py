@@ -4,7 +4,7 @@ import os
 import dateutil.parser
 from airflow.exceptions import AirflowSkipException
 
-from dagster import check, DagsterEventType
+from dagster import DagsterEventType, check
 from dagster.core.events import DagsterEvent
 from dagster.seven.json import JSONDecodeError
 

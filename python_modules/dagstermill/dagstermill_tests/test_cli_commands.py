@@ -6,10 +6,9 @@ import os
 import sys
 
 from click.testing import CliRunner
+from dagstermill.cli import create_notebook, retroactively_scaffold_notebook
 
 from dagster.utils import pushd, script_relative_path
-
-from dagstermill.cli import create_notebook, retroactively_scaffold_notebook
 
 EXPECTED_OUTPUT = '''
     {

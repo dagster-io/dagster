@@ -1,13 +1,13 @@
 import os
+
 import boto3
-
-from dagster import solid, ModeDefinition
-from dagster.core.storage.file_cache import fs_file_cache, FSFileCache
 from dagster_aws import S3Coordinate
-from dagster.utils.test import execute_solid
-from dagster.utils.temp_file import get_temp_file_name, get_temp_dir
 
+from dagster import ModeDefinition, pipeline, solid
+from dagster.core.storage.file_cache import FSFileCache, fs_file_cache
 from dagster.seven import mock
+from dagster.utils.temp_file import get_temp_dir, get_temp_file_name
+from dagster.utils.test import execute_solid
 
 
 @solid
@@ -64,9 +64,6 @@ def test_cache_file_from_s3_step_two_use_config():
         assert boto_s3.download_file.call_count == 1
 
         assert os.path.exists(os.path.join(temp_dir, 'some-key'))
-
-
-from dagster import pipeline
 
 
 @pipeline(mode_defs=[ModeDefinition(name='local', resource_defs={'file_cache': fs_file_cache})])

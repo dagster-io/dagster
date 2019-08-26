@@ -1,5 +1,6 @@
-from dagster import execute_pipeline
 from dagster_examples.dep_dsl.pipeline import define_dep_dsl_pipeline
+
+from dagster import execute_pipeline
 
 
 def test_basic_dep_dsl():

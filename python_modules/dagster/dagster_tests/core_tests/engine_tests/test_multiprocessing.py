@@ -4,12 +4,12 @@ from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
     ExecutionTargetHandle,
+    InMemoryEventSink,
     InputDefinition,
     PipelineDefinition,
+    RunConfig,
     execute_pipeline,
     lambda_solid,
-    RunConfig,
-    InMemoryEventSink,
 )
 
 
