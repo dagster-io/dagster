@@ -57,6 +57,32 @@ def exit_gracefully(_signum, _frame):
     sys.exit(1)
 
 
+def rsync_to_remote(key_file_path, local_path, remote_host, remote_path):
+    remote_user = 'ubuntu'
+
+    rsync_command = [
+        'rsync',
+        '-avL',
+        '--progress',
+        # Exclude a few common paths
+        '--exclude',
+        '\'.pytest_cache\'',
+        '--exclude',
+        '\'.git\'',
+        '--exclude',
+        '\'__pycache__\'',
+        '--exclude',
+        '\'*.pyc\'',
+        '-e',
+        '"ssh -i %s"' % key_file_path,
+        local_path,
+        '%s@%s:%s' % (remote_user, remote_host, remote_path),
+    ]
+    Term.info('rsyncing local path %s to %s:%s' % (local_path, remote_host, remote_path))
+    click.echo('\n' + ' '.join(rsync_command) + '\n')
+    subprocess.call(' '.join(rsync_command), shell=True)
+
+
 @click.group()
 def main():
     signal.signal(signal.SIGINT, exit_gracefully)
@@ -94,7 +120,7 @@ def init():
 
     ami_id = get_validated_ami_id(client)
 
-    if prev_config and os.path.exists(prev_config.key_file_path):
+    if prev_config and prev_config.key_file_path and os.path.exists(prev_config.key_file_path):
         Term.success(
             'Found existing key pair %s, continuing with %s'
             % (prev_config.key_pair_name, prev_config.key_file_path)
@@ -140,12 +166,18 @@ def shell():
     dagster_home = get_dagster_home()
     cfg = HostConfig.load(dagster_home)
 
-    # Lands us directly in SERVER_CLIENT_CODE_HOME
-    run_remote_cmd(cfg.key_file_path, cfg.public_dns_name, 'cd %s; bash' % SERVER_CLIENT_CODE_HOME)
+    # Lands us directly in /opt/dagster (app dir may not exist yet)
+    run_remote_cmd(cfg.key_file_path, cfg.remote_host, 'cd /opt/dagster; bash')
 
 
 @main.command()
-def up():
+@click.option(
+    '-p',
+    '--post-up-script',
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    help='Specify a path to a script with post-init actions',
+)
+def up(post_up_script):
     '''🌱 Sync your Dagster project to the remote server'''
     dagster_home = get_dagster_home()
     cfg = HostConfig.load(dagster_home)
@@ -159,32 +191,33 @@ def up():
     if not os.path.exists(os.path.join(cfg.local_path, 'repository.yaml')):
         Term.fatal('No repository.yaml found in %s, create before continuing.' % cfg.local_path)
 
-    rsync_command = [
-        'rsync',
-        '-avL',
-        '--progress',
-        # Exclude a few common paths
-        '--exclude',
-        '\'.pytest_cache\'',
-        '--exclude',
-        '\'.git\'',
-        '--exclude',
-        '\'__pycache__\'',
-        '--exclude',
-        '\'*.pyc\'',
-        '-e',
-        '"ssh -i %s"' % cfg.key_file_path,
-        '%s/*' % cfg.local_path,
-        'ubuntu@%s:%s' % (cfg.public_dns_name, SERVER_CLIENT_CODE_HOME),
-    ]
-    Term.info('rsyncing local path %s to %s' % (cfg.local_path, cfg.public_dns_name))
-    click.echo('\n' + ' '.join(rsync_command) + '\n')
-    subprocess.call(' '.join(rsync_command), shell=True)
+    rsync_to_remote(
+        cfg.key_file_path,
+        cfg.local_path + '/*',  # sync all files/directories in local_path
+        cfg.remote_host,
+        SERVER_CLIENT_CODE_HOME,
+    )
+
+    if post_up_script is not None:
+        post_up_script = os.path.expanduser(post_up_script)
+
+        Term.waiting('Copying user post-up script...')
+        rsync_to_remote(cfg.key_file_path, post_up_script, cfg.remote_host, '/opt/dagster/')
+
+        Term.waiting('Running user post-up script...')
+        retval = run_remote_cmd(
+            cfg.key_file_path,
+            cfg.remote_host,
+            'export PYTHONPATH=$PYTHONPATH:/opt/dagster/app && '
+            'source /opt/dagster/venv/bin/activate && '
+            'cd /opt/dagster/ && '
+            'bash /opt/dagster/%s' % os.path.basename(post_up_script),
+        )
 
     Term.waiting('Testing that pipeline loads correctly on remote host...')
     retval = run_remote_cmd(
         cfg.key_file_path,
-        cfg.public_dns_name,
+        cfg.remote_host,
         'export PYTHONPATH=$PYTHONPATH:/opt/dagster/app && '
         'source /opt/dagster/venv/bin/activate && '
         'cd /opt/dagster/app/ && '
@@ -197,13 +230,13 @@ def up():
         Term.fatal('Errors in pipeline; fix before proceeding')
 
     Term.waiting('Restarting dagit systemd service...')
-    retval = run_remote_cmd(cfg.key_file_path, cfg.public_dns_name, 'sudo systemctl restart dagit')
+    retval = run_remote_cmd(cfg.key_file_path, cfg.remote_host, 'sudo systemctl restart dagit')
     Term.success('Synchronization succeeded. Opening in browser...')
 
     # Open dagit in browser, but sleep for a few seconds first to give the service time to finish
     # restarting
     time.sleep(2)
-    webbrowser.open_new_tab('http://%s:3000' % cfg.public_dns_name)
+    webbrowser.open_new_tab('http://%s:3000' % cfg.remote_host)
 
 
 @main.command()
@@ -216,7 +249,7 @@ def update_dagster():
         'Running a git pull and make rebuild_dagit on the remote dagster, this may take a while...'
     )
     retval = run_remote_cmd(
-        cfg.key_file_path, cfg.public_dns_name, 'cd /opt/dagster/dagster && git pull'
+        cfg.key_file_path, cfg.remote_host, 'cd /opt/dagster/dagster && git pull'
     )
     if retval == 0:
         Term.info('Dagster git refresh completed! Rebuilding dagit...')
@@ -225,7 +258,7 @@ def update_dagster():
 
     retval = run_remote_cmd(
         cfg.key_file_path,
-        cfg.public_dns_name,
+        cfg.remote_host,
         'source /opt/dagster/venv/bin/activate && '
         'cd /opt/dagster/dagster/ && '
         'make rebuild_dagit',
@@ -267,7 +300,7 @@ def nuke():
     instances.terminate()
 
     # Wipe all instance-related configs
-    cfg = cfg._replace(public_dns_name=None, instance_id=None, ami_id=None, local_path=None)
+    cfg = cfg._replace(remote_host=None, instance_id=None, ami_id=None, local_path=None)
 
     # Prompt user to remove key pair
     should_delete_key_pair = click.confirm(
