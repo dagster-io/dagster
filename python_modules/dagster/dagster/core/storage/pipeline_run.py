@@ -103,6 +103,12 @@ class PipelineRun(object):
     def all_logs(self):
         return self._run_storage.event_log_storage.get_logs_for_run(self.run_id)
 
+    def logs_ready(self):
+        return self._run_storage.event_log_storage.logs_ready(self.run_id)
+
+    def watch_event_logs(self, cursor, cb):
+        return self._run_storage.event_log_storage.watch(self.run_id, cursor, cb)
+
     @property
     def selector(self):
         return self._selector
@@ -132,6 +138,8 @@ class PipelineRun(object):
         for subscriber in self.__subscribers:
             subscriber.handle_new_event(new_event)
 
+        return self._status
+
     def subscribe(self, subscriber):
         self.__subscribers.append(subscriber)
 
@@ -150,7 +158,7 @@ class PipelineRun(object):
         selector = ExecutionSelector(
             name=json_data['pipeline_name'], solid_subset=json_data.get('pipeline_solid_subset')
         )
-        return PipelineRun(
+        run = PipelineRun(
             run_storage=run_storage,
             pipeline_name=json_data['pipeline_name'],
             run_id=json_data['run_id'],
@@ -158,3 +166,16 @@ class PipelineRun(object):
             env_config=json_data['config'],
             mode=json_data['mode'],
         )
+
+        if not run.logs_ready():
+            run.watch_event_logs(0, run.handle_new_event)
+            return run
+
+        init_logs = run.all_logs()
+        for log in init_logs:
+            run.handle_new_event(log)
+
+        if run.status != PipelineRunStatus.SUCCESS:
+            run.watch_event_logs(len(init_logs), run.handle_new_event)
+
+        return run

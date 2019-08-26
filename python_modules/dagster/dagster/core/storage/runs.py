@@ -16,7 +16,7 @@ from dagster import check, seven
 from dagster.utils import mkdir_p
 
 from .config import base_runs_directory
-from .event_log import EventLogStorage, FilesystemEventLogStorage, InMemoryEventLogStorage
+from .event_log import FilesystemEventLogStorage, InMemoryEventLogStorage
 from .pipeline_run import PipelineRun
 
 
@@ -79,13 +79,8 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 
 class InMemoryRunStorage(RunStorage):
-    def __init__(self, event_log_storage=None):
-        self.event_log_storage = check.opt_inst_param(
-            event_log_storage,
-            'event_log_storage',
-            EventLogStorage,
-            default=InMemoryEventLogStorage(),
-        )
+    def __init__(self):
+        self.event_log_storage = InMemoryEventLogStorage()
         self._runs = OrderedDict()
 
     def add_run(self, pipeline_run):
@@ -124,7 +119,7 @@ class InMemoryRunStorage(RunStorage):
 
 
 class FilesystemRunStorage(RunStorage):
-    def __init__(self, event_log_storage=None, base_dir=None, watch=False):
+    def __init__(self, base_dir=None, watch=False):
         self._base_dir = check.opt_str_param(base_dir, 'base_dir', base_runs_directory())
         mkdir_p(self._base_dir)
 
@@ -132,12 +127,7 @@ class FilesystemRunStorage(RunStorage):
 
         self._file_lock = defaultdict(gevent.lock.Semaphore)
 
-        self.event_log_storage = check.opt_inst_param(
-            event_log_storage,
-            'event_log_storage',
-            EventLogStorage,
-            default=FilesystemEventLogStorage(base_dir=self._base_dir),
-        )
+        self.event_log_storage = FilesystemEventLogStorage(base_dir=self._base_dir)
 
         self._load_runs()
 

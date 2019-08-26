@@ -1,5 +1,5 @@
 import json
-import os
+import time
 
 from click.testing import CliRunner
 from dagster_graphql.cli import ui
@@ -14,8 +14,15 @@ from dagster import (
     lambda_solid,
     seven,
 )
-from dagster.seven import mock
+from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.runs import FilesystemRunStorage
 from dagster.utils import script_relative_path
+
+try:
+    # Python 2 tempfile doesn't have tempfile.TemporaryDirectory
+    import backports.tempfile as tempfile
+except ImportError:
+    import tempfile
 
 
 @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
@@ -79,7 +86,7 @@ def test_basic_variables():
     assert result.exit_code == 0
 
     result_data = json.loads(result.output)
-    assert result_data['data']
+    assert result_data['data']['pipeline']['name'] == 'math'
 
 
 START_PIPELINE_EXECUTION_QUERY = '''
@@ -129,7 +136,7 @@ def test_start_execution_text():
         }
     )
 
-    repo_path = script_relative_path('./repository.yaml')
+    repo_path = script_relative_path('./cli_test_repository.yaml')
 
     runner = CliRunner()
     result = runner.invoke(
@@ -140,7 +147,10 @@ def test_start_execution_text():
 
     try:
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])
-        assert result_data['data']
+        assert (
+            result_data['data']['startPipelineExecution']['__typename']
+            == 'StartPipelineExecutionSuccess'
+        )
     except Exception as e:
         raise Exception('Failed with {} Exception: {}'.format(result.output, e))
 
@@ -158,19 +168,18 @@ def test_start_execution_file():
         }
     )
 
-    repo_path = script_relative_path('./repository.yaml')
+    repo_path = script_relative_path('./cli_test_repository.yaml')
     runner = CliRunner()
     result = runner.invoke(
         ui, ['-y', repo_path, '-v', variables, '--file', script_relative_path('./execute.graphql')]
     )
 
     assert result.exit_code == 0
-
-    try:
-        result_data = json.loads(result.output.strip('\n').split('\n')[-1])
-        assert result_data['data']
-    except Exception as e:
-        raise Exception('Failed with {} Exception: {}'.format(result.output, e))
+    result_data = json.loads(result.output.strip('\n').split('\n')[-1])
+    assert (
+        result_data['data']['startPipelineExecution']['__typename']
+        == 'StartPipelineExecutionSuccess'
+    )
 
 
 def test_start_execution_predefined():
@@ -186,22 +195,20 @@ def test_start_execution_predefined():
         }
     )
 
-    repo_path = script_relative_path('./repository.yaml')
+    repo_path = script_relative_path('./cli_test_repository.yaml')
 
     runner = CliRunner()
     result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution'])
-
     assert result.exit_code == 0
+    result_data = json.loads(result.output.strip('\n').split('\n')[-1])
+    assert (
+        result_data['data']['startPipelineExecution']['__typename']
+        == 'StartPipelineExecutionSuccess'
+    )
 
-    try:
-        result_data = json.loads(result.output.strip('\n').split('\n')[-1])
-        assert result_data['data']
-    except Exception as e:
-        raise Exception('Failed with {} Exception: {}'.format(result.output, e))
 
-
-@mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
 def test_start_execution_predefined_with_logs():
+
     variables = seven.json.dumps(
         {
             'executionParams': {
@@ -214,11 +221,37 @@ def test_start_execution_predefined_with_logs():
         }
     )
 
-    repo_path = script_relative_path('./repository.yaml')
+    repo_path = script_relative_path('./cli_test_repository.yaml')
+    with tempfile.TemporaryDirectory() as temp_dir:
 
-    runner = CliRunner()
-    result = runner.invoke(
-        ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution', '--log']
-    )
+        run_storage = FilesystemRunStorage(base_dir=temp_dir, watch=True)
 
-    assert result.exit_code == 0
+        runner = CliRunner()
+        result = runner.invoke(
+            ui,
+            [
+                '-y',
+                repo_path,
+                '-v',
+                variables,
+                '-p',
+                'startPipelineExecution',
+                '--log',
+                '--log-dir',
+                temp_dir,
+            ],
+        )
+        assert result.exit_code == 0
+        result_data = json.loads(result.output.strip('\n').split('\n')[-1])
+        assert (
+            result_data['data']['startPipelineExecution']['__typename']
+            == 'StartPipelineExecutionSuccess'
+        )
+
+        # allow FS events to flush
+        time.sleep(0.500)
+
+        # assert that the watching run storage captured the run correctly from the other process
+        run_id = result_data['data']['startPipelineExecution']['run']['runId']
+        run = run_storage.get_run_by_id(run_id)
+        assert run.status == PipelineRunStatus.SUCCESS
