@@ -1,14 +1,12 @@
 import os
-import yaml
-
 from collections import namedtuple
 
 import six
+import yaml
 
 from dagster import check
 
 from .term import Term
-
 
 HOST_CONFIG_FILE = '.dagit-aws-config'
 

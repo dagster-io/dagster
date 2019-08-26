@@ -1,6 +1,9 @@
 # pylint: disable=no-value-for-parameter, no-member
 from collections import defaultdict
 
+from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+
 from dagster import (
     Field,
     InputDefinition,
@@ -14,9 +17,6 @@ from dagster import (
     pipeline,
     solid,
 )
-
-from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 
 @solid(input_defs=[InputDefinition('word', String)], config={'factor': Field(Int)})

@@ -1,12 +1,11 @@
 import great_expectations as ge
-
-from dagster import execute_pipeline, file_relative_path, pipeline, solid
-
 from dagster_ge import (
     create_expectation_result,
     expectation_result_list_from_validation,
     expectation_results_from_validation,
 )
+
+from dagster import execute_pipeline, file_relative_path, pipeline, solid
 
 
 def test_dummy_ge():

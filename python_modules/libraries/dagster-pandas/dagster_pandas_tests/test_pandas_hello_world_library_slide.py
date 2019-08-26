@@ -1,8 +1,8 @@
+from dagster_pandas import DataFrame
+
 from dagster import InputDefinition, OutputDefinition, execute_solid, lambda_solid
 from dagster.core.test_utils import single_output_solid
 from dagster.utils import script_relative_path
-
-from dagster_pandas import DataFrame
 
 
 def create_num_csv_environment():

@@ -1,8 +1,8 @@
+from dagster_graphql import dauphin
+
 from dagster import check
 from dagster.core.types.config import ConfigType
 from dagster.core.types.field_utils import FieldImpl
-
-from dagster_graphql import dauphin
 
 
 def to_dauphin_config_type(config_type):

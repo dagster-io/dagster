@@ -1,11 +1,11 @@
 import uuid
 
+from dagster_graphql.test.utils import execute_dagster_graphql
+
 from dagster import check
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.utils import merge_dicts, script_relative_path
 from dagster.utils.test import get_temp_file_name
-
-from dagster_graphql.test.utils import execute_dagster_graphql
 
 from .setup import (
     PoorMansDataFrame,

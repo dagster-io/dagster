@@ -1,23 +1,22 @@
 import random
 import time
 
+from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+
 from dagster import (
-    pipeline,
     Dict,
     Field,
     InputDefinition,
     Int,
     ModeDefinition,
-    OutputDefinition,
     Output,
+    OutputDefinition,
     lambda_solid,
+    pipeline,
     solid,
 )
-
 from dagster.core.definitions.executor import default_executors
-
-from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 
 def get_executor_defs():

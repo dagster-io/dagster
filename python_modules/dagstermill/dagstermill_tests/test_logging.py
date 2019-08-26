@@ -2,6 +2,8 @@ import json
 import logging
 import os
 
+from dagstermill.examples.repository import define_hello_logging_solid
+
 from dagster import (
     Dict,
     Field,
@@ -14,7 +16,6 @@ from dagster import (
 )
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.utils import safe_tempfile_path, script_relative_path
-from dagstermill.examples.repository import define_hello_logging_solid
 
 
 class LogTestFileHandler(logging.Handler):

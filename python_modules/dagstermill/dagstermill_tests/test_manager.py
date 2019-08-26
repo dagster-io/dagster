@@ -7,7 +7,10 @@ import threading
 import uuid
 from collections import OrderedDict
 
+import dagstermill
 import pytest
+from dagstermill import DagstermillError
+from dagstermill.manager import Manager
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -17,10 +20,6 @@ from dagster import (
 )
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.utils import safe_tempfile_path
-
-import dagstermill
-from dagstermill import DagstermillError
-from dagstermill.manager import Manager
 
 
 @contextlib.contextmanager

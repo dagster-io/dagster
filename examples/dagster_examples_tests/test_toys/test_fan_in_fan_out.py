@@ -1,5 +1,6 @@
+from dagster_examples.toys.fan_in_fan_out import construct_level_pipeline, fan_in_fan_out_pipeline
+
 from dagster import execute_pipeline
-from dagster_examples.toys.fan_in_fan_out import fan_in_fan_out_pipeline, construct_level_pipeline
 
 
 def test_fan_in_fan_out_execute():

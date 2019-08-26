@@ -2,6 +2,7 @@ import json
 import os
 
 from click.testing import CliRunner
+from dagster_graphql.cli import ui
 
 from dagster import (
     DependencyDefinition,
@@ -13,9 +14,8 @@ from dagster import (
     lambda_solid,
     seven,
 )
-from dagster.utils import script_relative_path
 from dagster.seven import mock
-from dagster_graphql.cli import ui
+from dagster.utils import script_relative_path
 
 
 @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))

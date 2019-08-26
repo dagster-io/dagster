@@ -1,7 +1,3 @@
-from dagster import check
-from dagster.core.execution.api import ExecutionSelector
-from dagster.utils import get_enabled_features
-
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.environment_schema import (
     resolve_config_type_or_error,
@@ -29,10 +25,14 @@ from dagster_graphql.implementation.fetch_runs import (
 )
 from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
 
+from dagster import check
+from dagster.core.execution.api import ExecutionSelector
+from dagster.utils import get_enabled_features
+
 from .config_types import to_dauphin_config_type
 from .run_schedule import (
-    DauphinStartScheduleMutation,
     DauphinEndRunningScheduleMutation,
+    DauphinStartScheduleMutation,
     get_scheduler,
 )
 

@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import pandas as pd
 import pytest
+from dagster_pandas import DataFrame
 
 from dagster import (
     DagsterInvalidConfigError,
@@ -13,8 +14,6 @@ from dagster import (
 )
 from dagster.utils import script_relative_path
 from dagster.utils.test import get_temp_file_name
-
-from dagster_pandas import DataFrame
 
 
 def check_parquet_support():

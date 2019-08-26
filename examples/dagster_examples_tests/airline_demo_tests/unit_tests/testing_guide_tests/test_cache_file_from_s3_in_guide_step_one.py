@@ -1,13 +1,13 @@
 import os
 import shutil
+
 import boto3
-
-from dagster import solid, pipeline, execute_pipeline
 from dagster_aws import S3Coordinate
-from dagster.utils.test import execute_solid
-from dagster.utils.temp_file import get_temp_file_name, get_temp_dir
 
+from dagster import execute_pipeline, pipeline, solid
 from dagster.seven import mock
+from dagster.utils.temp_file import get_temp_dir, get_temp_file_name
+from dagster.utils.test import execute_solid
 
 
 def file_cache_folder():

@@ -2,7 +2,9 @@ import os
 import pickle
 import uuid
 
+import dagstermill
 import pandas as pd
+from dagster_pandas import DataFrame
 
 from dagster import (
     DependencyDefinition,
@@ -25,9 +27,6 @@ from dagster import (
     resource,
     solid,
 )
-
-import dagstermill
-from dagster_pandas import DataFrame
 
 
 def nb_test_path(name):

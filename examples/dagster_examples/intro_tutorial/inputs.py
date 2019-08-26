@@ -1,5 +1,5 @@
 # pylint: disable=no-value-for-parameter
-from dagster import execute_pipeline, lambda_solid, pipeline, String
+from dagster import String, execute_pipeline, lambda_solid, pipeline
 
 
 @lambda_solid

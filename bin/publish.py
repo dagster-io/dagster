@@ -22,7 +22,6 @@ import click
 import packaging.version
 import slackclient
 import virtualenv
-
 from git_tag import get_git_tag, get_most_recent_git_tag, set_git_tag
 from pypirc import ConfigFileError, RCParser
 

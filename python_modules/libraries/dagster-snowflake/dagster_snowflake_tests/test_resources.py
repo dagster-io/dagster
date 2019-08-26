@@ -1,8 +1,8 @@
 import sys
 
-from dagster import ModeDefinition, execute_solid, solid
-
 from dagster_snowflake import snowflake_resource
+
+from dagster import ModeDefinition, execute_solid, solid
 
 if sys.version_info.major >= 3:
     import unittest.mock as mock

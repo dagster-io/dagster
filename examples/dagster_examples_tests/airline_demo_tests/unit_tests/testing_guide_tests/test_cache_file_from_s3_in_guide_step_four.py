@@ -1,7 +1,8 @@
-from dagster import solid, ModeDefinition, FileHandle
-from dagster_aws import S3Coordinate, S3Resource, S3FakeSession, S3FileCache
-from dagster.utils.test import execute_solid
+from dagster_aws import S3Coordinate, S3FakeSession, S3FileCache, S3Resource
+
+from dagster import FileHandle, ModeDefinition, solid
 from dagster.utils.temp_file import get_temp_file_name
+from dagster.utils.test import execute_solid
 
 
 @solid

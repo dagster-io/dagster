@@ -1,5 +1,10 @@
 import sys
 
+from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
+from dagster_graphql.schema.errors import DauphinPythonError
+from dagster_graphql.test.utils import execute_dagster_graphql
+
 from dagster import (
     ExecutionTargetHandle,
     Field,
@@ -10,10 +15,6 @@ from dagster import (
 )
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_graphql.schema.errors import DauphinPythonError
-from dagster_graphql.test.utils import execute_dagster_graphql
 
 
 def test_python_error():

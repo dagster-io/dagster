@@ -1,13 +1,14 @@
 from __future__ import print_function
 
-import click
-import six
 import sys
 
-from dagster import check, DagsterInvariantViolationError
+import click
+import six
+
+from dagster import DagsterInvariantViolationError, check
 from dagster.cli.load_handle import handle_for_repo_cli_args
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, dagster_schedule_dir_for_handle
 from dagster.core.scheduler import SystemCronScheduler
+from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, dagster_schedule_dir_for_handle
 
 
 def create_schedule_cli_group():

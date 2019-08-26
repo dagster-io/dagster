@@ -1,9 +1,9 @@
+from dagster_graphql.schema.config_types import to_dauphin_config_type
+from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
+
 from dagster import check
 from dagster.core.definitions import create_environment_schema
 from dagster.core.execution.api import ExecutionSelector
-
-from dagster_graphql.schema.config_types import to_dauphin_config_type
-from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
 
 from .fetch_pipelines import get_dagster_pipeline_from_selector
 from .utils import UserFacingGraphQLError, capture_dauphin_error

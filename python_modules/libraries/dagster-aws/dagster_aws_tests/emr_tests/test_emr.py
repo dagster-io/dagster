@@ -1,8 +1,8 @@
 import pytest
+from dagster_aws.emr.solids import EmrRunJobFlowSolidDefinition
 from moto import mock_emr
 
 from dagster import execute_pipeline, pipeline
-from dagster_aws.emr.solids import EmrRunJobFlowSolidDefinition
 
 
 @pytest.mark.skip

@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
 import os
-import sys
 import subprocess
+import sys
 
 from google.cloud import storage
-
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 

@@ -1,12 +1,11 @@
 # pylint: disable=W0622,W0614,W0401
 import pytest
-
-
-from dagster import DagsterInvariantViolationError, execute_pipeline
-from dagster_examples.intro_tutorial.multiple_outputs_yield import multiple_outputs_yield_pipeline
 from dagster_examples.intro_tutorial.multiple_outputs_conditional import (
     multiple_outputs_conditional_pipeline,
 )
+from dagster_examples.intro_tutorial.multiple_outputs_yield import multiple_outputs_yield_pipeline
+
+from dagster import DagsterInvariantViolationError, execute_pipeline
 
 
 def test_intro_tutorial_multiple_outputs_yield():

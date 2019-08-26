@@ -1,9 +1,9 @@
-import six
 import abc
-
 from collections import namedtuple
-from dagster import check
-from dagster import ScheduleDefinition
+
+import six
+
+from dagster import ScheduleDefinition, check
 
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):

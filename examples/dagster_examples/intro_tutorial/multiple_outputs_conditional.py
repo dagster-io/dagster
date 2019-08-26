@@ -1,5 +1,5 @@
 # pylint: disable=no-value-for-parameter
-from dagster import Field, Int, OutputDefinition, Output, String, pipeline, solid
+from dagster import Field, Int, Output, OutputDefinition, String, pipeline, solid
 
 
 @solid(

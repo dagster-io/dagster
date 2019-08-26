@@ -5,13 +5,13 @@ from contextlib import contextmanager
 
 import nbformat
 import pytest
+from dagstermill import DagstermillError, DagstermillExecutionError
 from nbconvert.preprocessors import ExecutePreprocessor
 
 from dagster import RunConfig, execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.definitions.events import PathMetadataEntryData
 from dagster.utils import safe_tempfile_path
-from dagstermill import DagstermillError, DagstermillExecutionError
 
 
 def get_path(materialization_event):

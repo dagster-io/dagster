@@ -2,7 +2,6 @@ import os
 import sys
 
 import yaml
-
 from defines import SupportedPython, SupportedPython3s, SupportedPythons
 from step_builder import StepBuilder
 
@@ -362,9 +361,8 @@ if __name__ == "__main__":
         .on_medium_instance()
         .build(),
         StepBuilder("isort")
-        .run("pip install isort>=4.3.21", "make isort")
-        .on_integration_image(SupportedPython.V3_7)
-        .on_medium_instance()
+        .run("pip install isort>=4.3.21", "make isort", "git diff --exit-code")
+        .on_python_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("black")
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting

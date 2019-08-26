@@ -3,6 +3,12 @@ from __future__ import absolute_import
 import os
 
 import nbformat
+from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.pipeline_execution_manager import (
+    MultiprocessingExecutionManager,
+    SynchronousExecutionManager,
+)
+from dagster_graphql.schema import create_schema
 from flask import Flask, request, send_file, send_from_directory
 from flask_cors import CORS
 from flask_graphql import GraphQLView
@@ -13,18 +19,11 @@ from nbconvert import HTMLExporter
 from six import text_type
 
 from dagster import ExecutionTargetHandle, check, seven
+from dagster.core.scheduler import Scheduler
 from dagster.core.storage.runs import RunStorage
 from dagster.utils import Features
 from dagster.utils.log import get_stack_trace_array
 
-from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_execution_manager import (
-    MultiprocessingExecutionManager,
-    SynchronousExecutionManager,
-)
-from dagster_graphql.schema import create_schema
-
-from dagster.core.scheduler import Scheduler
 from .subscription_server import DagsterSubscriptionServer
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 from .version import __version__

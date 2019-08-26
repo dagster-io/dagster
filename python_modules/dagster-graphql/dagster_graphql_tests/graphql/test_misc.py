@@ -1,6 +1,11 @@
 import csv
 from collections import OrderedDict
 
+from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
+from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql_tests.graphql.setup import define_context, define_repository
+
 from dagster import (
     DependencyDefinition,
     ExecutionTargetHandle,
@@ -16,10 +21,6 @@ from dagster import (
     output_materialization_config,
 )
 from dagster.core.storage.runs import InMemoryRunStorage
-from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_graphql.test.utils import execute_dagster_graphql
-from dagster_graphql_tests.graphql.setup import define_context, define_repository
 
 
 class PoorMansDataFrame_(list):

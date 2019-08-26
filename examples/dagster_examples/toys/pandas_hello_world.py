@@ -1,7 +1,8 @@
 # pylint: disable=no-value-for-parameter
 import pandas as pd
-from dagster import pipeline, lambda_solid, PresetDefinition, file_relative_path, Path
 from dagster_pandas import DataFrame
+
+from dagster import Path, PresetDefinition, file_relative_path, lambda_solid, pipeline
 
 
 @lambda_solid

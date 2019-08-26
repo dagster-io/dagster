@@ -5,7 +5,7 @@ from operator import add
 
 from pyspark.sql import SparkSession
 
-from dagster import solid, pipeline, InputDefinition, Path
+from dagster import InputDefinition, Path, pipeline, solid
 
 
 def computeContribs(urls, rank):

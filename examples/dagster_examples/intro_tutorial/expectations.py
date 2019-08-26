@@ -1,4 +1,4 @@
-from dagster import solid, pipeline, ExpectationResult, Output
+from dagster import ExpectationResult, Output, pipeline, solid
 
 
 @solid

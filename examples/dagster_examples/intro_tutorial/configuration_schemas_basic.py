@@ -2,7 +2,7 @@
 
 import collections
 
-from dagster import Any, Field, lambda_solid, solid, pipeline, as_dagster_type
+from dagster import Any, Field, as_dagster_type, lambda_solid, pipeline, solid
 
 Counter = as_dagster_type(collections.Counter)
 

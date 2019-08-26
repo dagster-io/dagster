@@ -1,8 +1,8 @@
 '''
 '''
-from dagster import file_relative_path, pipeline
-
 from dagster_dbt import create_dbt_solid, create_dbt_test_solid
+
+from dagster import file_relative_path, pipeline
 
 PROJECT_DIR = file_relative_path(__file__, 'jaffle_shop')
 PROFILES_DIR = file_relative_path(__file__, 'profiles')

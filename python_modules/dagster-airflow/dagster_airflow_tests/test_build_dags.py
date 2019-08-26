@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 
 from click.testing import CliRunner
-
 from dagster_airflow.cli import scaffold
 
 

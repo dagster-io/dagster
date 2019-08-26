@@ -3,24 +3,24 @@
 import datetime
 import os
 
+from dagster_gcp import (
+    bigquery_resource,
+    bq_solid_for_queries,
+    dataproc_resource,
+    dataproc_solid,
+    import_gcs_paths_to_bq,
+)
+
 from dagster import (
-    composite_solid,
-    file_relative_path,
-    pipeline,
-    solid,
     Field,
     List,
     ModeDefinition,
     PresetDefinition,
     String,
-)
-
-from dagster_gcp import (
-    bigquery_resource,
-    import_gcs_paths_to_bq,
-    bq_solid_for_queries,
-    dataproc_resource,
-    dataproc_solid,
+    composite_solid,
+    file_relative_path,
+    pipeline,
+    solid,
 )
 
 PROJECT_ID = os.getenv('GCP_PROJECT_ID')

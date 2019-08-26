@@ -1,4 +1,4 @@
-from dagster import pipeline, execute_pipeline, lambda_solid
+from dagster import execute_pipeline, lambda_solid, pipeline
 
 
 @lambda_solid

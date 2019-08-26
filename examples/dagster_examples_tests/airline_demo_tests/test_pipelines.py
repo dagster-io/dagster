@@ -3,11 +3,9 @@ import os
 # pylint: disable=unused-argument
 import pytest
 
-from dagster import execute_pipeline, RunConfig, file_relative_path
-
+from dagster import RunConfig, execute_pipeline, file_relative_path
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.utils import load_yaml_from_globs
-
 
 ingest_pipeline_handle = handle_for_pipeline_cli_args(
     {

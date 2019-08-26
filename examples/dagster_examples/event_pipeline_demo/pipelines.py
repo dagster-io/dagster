@@ -5,6 +5,10 @@ import os
 import shutil
 
 import six
+from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3.utils import S3Logger
+from dagster_snowflake import snowflake_resource
+from dagster_spark import SparkSolidDefinition
 
 from dagster import (
     Bool,
@@ -25,12 +29,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.utils import safe_isfile, mkdir_p
-
-from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.utils import S3Logger
-from dagster_snowflake import snowflake_resource
-from dagster_spark import SparkSolidDefinition
+from dagster.utils import mkdir_p, safe_isfile
 
 
 class FileExistsAtPath(RuntimeType):

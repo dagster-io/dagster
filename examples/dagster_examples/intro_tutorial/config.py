@@ -1,7 +1,7 @@
 # pylint: disable=no-value-for-parameter
 # encoding: utf-8
 
-from dagster import execute_pipeline, solid, Field, pipeline
+from dagster import Field, execute_pipeline, pipeline, solid
 
 
 @solid(config={'language': Field(str, is_optional=True, default_value='en-us')})

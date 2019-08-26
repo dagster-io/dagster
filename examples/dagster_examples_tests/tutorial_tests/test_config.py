@@ -1,8 +1,9 @@
 # encoding: utf-8
 
+from dagster_examples.intro_tutorial.config import hello_with_config_pipeline, run
+
 from dagster import execute_pipeline
 from dagster.utils import check_cli_execute_file_pipeline, check_script, script_relative_path
-from dagster_examples.intro_tutorial.config import hello_with_config_pipeline, run
 
 
 def test_tutorial_part_four():

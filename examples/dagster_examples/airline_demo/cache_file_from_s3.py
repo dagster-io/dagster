@@ -1,7 +1,7 @@
+from dagster_aws import S3Coordinate
+
 from dagster import EventMetadataEntry, ExpectationResult, Field, FileHandle, Output, solid
 from dagster.utils.temp_file import get_temp_file_name
-
-from dagster_aws import S3Coordinate
 
 
 @solid(

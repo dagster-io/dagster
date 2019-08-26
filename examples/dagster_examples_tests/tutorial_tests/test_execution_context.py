@@ -1,7 +1,8 @@
 import subprocess
 
-from dagster import execute_pipeline
 from dagster_examples.intro_tutorial.execution_context import execution_context_pipeline
+
+from dagster import execute_pipeline
 from dagster.utils import script_relative_path
 
 

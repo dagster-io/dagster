@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from dagster_graphql import dauphin
+
 from dagster import check
 from dagster.core.types.evaluator.errors import (
     EvaluationError,
@@ -15,8 +17,6 @@ from dagster.core.types.evaluator.stack import (
     EvaluationStackPathEntry,
 )
 from dagster.utils.error import SerializableErrorInfo
-
-from dagster_graphql import dauphin
 
 from .config_types import to_dauphin_config_type
 from .runs import DauphinStepEvent

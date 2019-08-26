@@ -2,6 +2,7 @@ import itertools
 
 import dask
 import dask.distributed
+from dagster_graphql.client.mutations import execute_start_pipeline_execution_query
 
 from dagster import check
 from dagster.core.engine.engine_base import IEngine
@@ -9,10 +10,7 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 
-from dagster_graphql.client.mutations import execute_start_pipeline_execution_query
-
 from .config import DaskConfig
-
 
 # Dask resource requirements are specified under this key
 DASK_RESOURCE_REQUIREMENTS_KEY = 'dagster-dask/resource_requirements'

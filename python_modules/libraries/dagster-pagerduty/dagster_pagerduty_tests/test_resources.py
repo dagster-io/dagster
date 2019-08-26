@@ -1,8 +1,7 @@
 import responses
+from dagster_pagerduty import pagerduty_resource
 
 from dagster import ModeDefinition, execute_solid, solid
-
-from dagster_pagerduty import pagerduty_resource
 
 
 @responses.activate

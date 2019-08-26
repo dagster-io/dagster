@@ -1,13 +1,12 @@
 import os
 
+from dagster_pyspark import spark_session_from_config
+from lakehouse import PySparkMemLakehouse, input_table, pyspark_table
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import Row
 
 from dagster import InputDefinition
 from dagster.utils.temp_file import get_temp_dir
-
-from dagster_pyspark import spark_session_from_config
-from lakehouse import PySparkMemLakehouse, input_table, pyspark_table
 
 # Note typehints in lakehouse purely optional and behave as vanilla typehints
 

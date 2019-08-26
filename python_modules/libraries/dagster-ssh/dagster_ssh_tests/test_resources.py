@@ -1,8 +1,8 @@
 import logging
 
-from dagster.seven import mock
-
 from dagster_ssh.resources import SSHResource
+
+from dagster.seven import mock
 
 
 @mock.patch('paramiko.SSHClient')

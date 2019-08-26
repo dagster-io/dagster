@@ -1,4 +1,4 @@
-from dagster import check, ExecutionTargetHandle
+from dagster import ExecutionTargetHandle, check
 from dagster.core.scheduler import Scheduler
 from dagster.core.storage.runs import RunStorage
 

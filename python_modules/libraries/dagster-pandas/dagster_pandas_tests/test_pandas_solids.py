@@ -1,6 +1,7 @@
 import datetime
 
 import pandas as pd
+from dagster_pandas import DataFrame
 
 from dagster import (
     DependencyDefinition,
@@ -13,8 +14,6 @@ from dagster import (
     lambda_solid,
 )
 from dagster.core.test_utils import single_output_solid
-
-from dagster_pandas import DataFrame
 
 
 def _dataframe_solid(name, input_defs, compute_fn):

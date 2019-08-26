@@ -3,8 +3,9 @@ import runpy
 import sys
 import warnings
 
-from dagster import execute_pipeline, RunConfig
-from dagster_examples.intro_tutorial.resources_full import resources_pipeline, HELLO_MESSAGE
+from dagster_examples.intro_tutorial.resources_full import HELLO_MESSAGE, resources_pipeline
+
+from dagster import RunConfig, execute_pipeline
 
 
 def has_message(events, message):

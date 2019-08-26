@@ -1,16 +1,14 @@
 # pylint: disable=no-value-for-parameter
 """Pipeline definitions for the airline_demo."""
-from dagster import ModeDefinition, PresetDefinition, composite_solid, file_relative_path, pipeline
-
-from dagster.core.storage.file_cache import fs_file_cache
-from dagster.core.storage.temp_file_manager import tempfile_resource
-
-from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.file_cache import s3_file_cache
 from dagster_aws.s3.file_manager import S3FileHandle
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.solids import file_handle_to_s3
+from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
+from dagster import ModeDefinition, PresetDefinition, composite_solid, file_relative_path, pipeline
+from dagster.core.storage.file_cache import fs_file_cache
+from dagster.core.storage.temp_file_manager import tempfile_resource
 
 from .cache_file_from_s3 import cache_file_from_s3
 from .resources import postgres_db_info_resource, redshift_db_info_resource, spark_session_local
@@ -21,17 +19,16 @@ from .solids import (
     delays_vs_fares_nb,
     eastbound_delays,
     ingest_csv_file_handle_to_spark,
-    load_data_to_database_from_spark,
     join_q2_data,
+    load_data_to_database_from_spark,
     process_sfo_weather_data,
     q2_sfo_outbound_flights,
+    s3_to_df,
+    s3_to_dw_table,
     sfo_delays_by_destination,
     tickets_with_destination,
     westbound_delays,
-    s3_to_dw_table,
-    s3_to_df,
 )
-
 
 test_mode = ModeDefinition(
     name='test',

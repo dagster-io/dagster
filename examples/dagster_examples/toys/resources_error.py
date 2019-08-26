@@ -1,6 +1,6 @@
 # pylint: disable=no-value-for-parameter
 
-from dagster import execute_pipeline, Field, Int, ModeDefinition, pipeline, resource, solid
+from dagster import Field, Int, ModeDefinition, execute_pipeline, pipeline, resource, solid
 
 
 @resource(config_field=Field(Int, is_optional=True))

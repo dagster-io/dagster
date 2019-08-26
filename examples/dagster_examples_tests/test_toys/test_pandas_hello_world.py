@@ -1,8 +1,9 @@
-from dagster import file_relative_path, execute_pipeline
 from dagster_examples.toys.pandas_hello_world import (
     pandas_hello_world_pipeline,
     pandas_hello_world_pipeline_no_config,
 )
+
+from dagster import execute_pipeline, file_relative_path
 
 
 def test_execute_pandas_hello_world_pipeline():

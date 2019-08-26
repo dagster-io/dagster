@@ -1,6 +1,6 @@
-from dagster.core.errors import DagsterError
-
 from dagster_graphql.cli import execute_query
+
+from dagster.core.errors import DagsterError
 
 from .query import START_PIPELINE_EXECUTION_QUERY
 from .util import HANDLED_EVENTS, dagster_event_from_dict

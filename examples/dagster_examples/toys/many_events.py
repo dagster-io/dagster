@@ -1,16 +1,16 @@
 # pylint: disable=no-value-for-parameter
 
 from dagster import (
+    EventMetadataEntry,
+    ExpectationResult,
+    InputDefinition,
+    Materialization,
+    Nothing,
+    Output,
+    OutputDefinition,
     file_relative_path,
     pipeline,
     solid,
-    ExpectationResult,
-    Materialization,
-    Output,
-    Nothing,
-    OutputDefinition,
-    InputDefinition,
-    EventMetadataEntry,
 )
 
 MARKDOWN_EXAMPLE = 'markdown_example.md'

@@ -1,7 +1,8 @@
-from dagster import ExecutionTargetHandle
-from dagster.core.storage.runs import InMemoryRunStorage
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
+
+from dagster import ExecutionTargetHandle
+from dagster.core.storage.runs import InMemoryRunStorage
 
 
 def define_examples_context(raise_on_error=True):

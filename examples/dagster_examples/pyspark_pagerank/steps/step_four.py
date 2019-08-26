@@ -3,8 +3,9 @@
 import re
 from operator import add
 
-from dagster import pipeline, solid, InputDefinition, OutputDefinition, Path, ModeDefinition
-from dagster_pyspark import spark_session_resource, SparkRDD
+from dagster_pyspark import SparkRDD, spark_session_resource
+
+from dagster import InputDefinition, ModeDefinition, OutputDefinition, Path, pipeline, solid
 
 
 def computeContribs(urls, rank):

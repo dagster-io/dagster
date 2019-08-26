@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession
 
-from dagster import resource, Field
+from dagster import Field, resource
+
 from .types import DbInfo
 from .utils import (
     create_postgres_db_url,

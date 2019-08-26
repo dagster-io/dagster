@@ -1,15 +1,12 @@
 import os
 import uuid
 
-try:
-    # Python 2 tempfile doesn't have tempfile.TemporaryDirectory
-    import backports.tempfile as tempfile
-except ImportError:
-    import tempfile
-
 import botocore
 import pyspark
-from pyspark.sql import SparkSession, Row
+from dagster_aws.s3.intermediate_store import S3IntermediateStore
+from dagster_examples.airline_demo.solids import ingest_csv_file_handle_to_spark
+from dagster_pyspark import DataFrame
+from pyspark.sql import Row, SparkSession
 
 from dagster import (
     InputDefinition,
@@ -22,15 +19,15 @@ from dagster import (
     pipeline,
     solid,
 )
-
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 
-from dagster_aws.s3.intermediate_store import S3IntermediateStore
-
-from dagster_examples.airline_demo.solids import ingest_csv_file_handle_to_spark
-from dagster_pyspark import DataFrame
-
 from .test_solids import spark_mode
+
+try:
+    # Python 2 tempfile doesn't have tempfile.TemporaryDirectory
+    import backports.tempfile as tempfile
+except ImportError:
+    import tempfile
 
 
 def test_spark_data_frame_serialization_file_system_file_handle():

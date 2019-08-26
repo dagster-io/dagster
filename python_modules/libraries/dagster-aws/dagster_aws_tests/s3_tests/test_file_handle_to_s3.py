@@ -1,8 +1,8 @@
-from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, solid
-from dagster.utils.test import get_temp_file_handle_with_data
-
 from dagster_aws.s3.s3_fake_resource import create_s3_fake_resource
 from dagster_aws.s3.solids import file_handle_to_s3
+
+from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, solid
+from dagster.utils.test import get_temp_file_handle_with_data
 
 
 def create_file_handle_pipeline(temp_file_handle, s3_resource):

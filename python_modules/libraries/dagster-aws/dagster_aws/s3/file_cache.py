@@ -1,10 +1,9 @@
 from botocore.exceptions import ClientError
+from dagster_aws.s3.file_manager import S3FileHandle
+from dagster_aws.s3.utils import create_s3_session
 
 from dagster import Field, check, resource
 from dagster.core.storage.file_cache import FileCache
-
-from dagster_aws.s3.file_manager import S3FileHandle
-from dagster_aws.s3.utils import create_s3_session
 
 
 class S3FileCache(FileCache):

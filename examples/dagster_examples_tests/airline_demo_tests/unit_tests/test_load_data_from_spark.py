@@ -1,9 +1,9 @@
+from dagster_examples.airline_demo.solids import load_data_to_database_from_spark
+from dagster_examples.airline_demo.types import DbInfo
 from pyspark.sql import DataFrame
 
 from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, lambda_solid, pipeline
 from dagster.seven import mock
-from dagster_examples.airline_demo.solids import load_data_to_database_from_spark
-from dagster_examples.airline_demo.types import DbInfo
 
 
 def test_airline_demo_load_df():

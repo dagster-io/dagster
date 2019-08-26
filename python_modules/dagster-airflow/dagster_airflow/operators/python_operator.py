@@ -2,11 +2,11 @@
 import logging
 
 from airflow.exceptions import AirflowException
-
-from dagster import check, seven
 from dagster_airflow.vendor.python_operator import PythonOperator
 from dagster_graphql.client.mutations import execute_start_pipeline_execution_query
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
+
+from dagster import check, seven
 
 from .util import construct_variables, skip_self_if_necessary
 

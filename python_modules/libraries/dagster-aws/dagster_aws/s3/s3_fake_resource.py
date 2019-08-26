@@ -2,10 +2,9 @@ import io
 from collections import defaultdict
 
 from botocore.exceptions import ClientError
+from dagster_aws.s3.resources import S3Resource
 
 from dagster.seven import mock
-
-from dagster_aws.s3.resources import S3Resource
 
 
 def create_s3_fake_resource():

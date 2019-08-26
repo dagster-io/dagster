@@ -1,3 +1,6 @@
+import dagster_pandas as dagster_pd
+from dagster_dask import dask_executor
+
 from dagster import (
     ExecutionTargetHandle,
     InputDefinition,
@@ -9,9 +12,6 @@ from dagster import (
 )
 from dagster.core.definitions.executor import default_executors
 from dagster.core.test_utils import nesting_composite_pipeline
-
-import dagster_pandas as dagster_pd
-from dagster_dask import dask_executor
 
 
 @solid

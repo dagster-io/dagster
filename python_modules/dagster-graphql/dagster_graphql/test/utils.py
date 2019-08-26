@@ -1,6 +1,5 @@
-from graphql import graphql
-
 from dagster_graphql.schema import create_schema
+from graphql import graphql
 
 
 def execute_dagster_graphql(context, query, variables=None):

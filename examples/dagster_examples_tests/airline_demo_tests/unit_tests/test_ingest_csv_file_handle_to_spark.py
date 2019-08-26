@@ -1,9 +1,9 @@
-from dagster import pipeline, solid, execute_pipeline, LocalFileHandle, ModeDefinition
-from dagster_examples.airline_demo.solids import ingest_csv_file_handle_to_spark
 from dagster_examples.airline_demo.resources import spark_session_local
-from dagster.utils import file_relative_path
-
+from dagster_examples.airline_demo.solids import ingest_csv_file_handle_to_spark
 from pyspark.sql import Row
+
+from dagster import LocalFileHandle, ModeDefinition, execute_pipeline, pipeline, solid
+from dagster.utils import file_relative_path
 
 # for dep graphs
 # pylint: disable=no-value-for-parameter

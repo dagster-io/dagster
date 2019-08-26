@@ -6,10 +6,10 @@ To use, run
 """
 from __future__ import absolute_import
 
-import click
 import os
 import shutil
 
+import click
 from git_tag import get_most_recent_git_tag
 
 

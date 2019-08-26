@@ -3,10 +3,6 @@ from __future__ import unicode_literals
 import uuid
 
 from airflow.exceptions import AirflowSkipException
-
-from dagster import ExecutionTargetHandle
-from dagster.utils import script_relative_path
-
 from dagster_airflow.factory import AIRFLOW_MAX_DAG_NAME_LEN, _rename_for_airflow
 from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
     dagster_airflow_docker_operator_pipeline,
@@ -14,6 +10,9 @@ from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
 )
 from dagster_airflow_tests.conftest import IMAGE
 from dagster_airflow_tests.marks import nettest
+
+from dagster import ExecutionTargetHandle
+from dagster.utils import script_relative_path
 
 AIRFLOW_DEMO_EVENTS = {
     ('STEP_START', 'multiply_the_word.compute'),

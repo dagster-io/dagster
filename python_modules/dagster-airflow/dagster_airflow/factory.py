@@ -8,9 +8,8 @@ from dagster import ExecutionTargetHandle, RunConfig, check
 from dagster.core.execution.api import create_execution_plan
 
 from .compile import coalesce_execution_steps
-from .operators.python_operator import DagsterPythonOperator
 from .operators.docker_operator import DagsterDockerOperator
-
+from .operators.python_operator import DagsterPythonOperator
 
 DEFAULT_ARGS = {
     'depends_on_past': False,

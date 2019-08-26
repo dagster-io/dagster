@@ -1,20 +1,20 @@
-from collections import namedtuple
 import io
 import os
 import re
 import shlex
 import subprocess
+from collections import namedtuple
 
 from dagster import (
-    check,
-    ExpectationResult,
     EventMetadataEntry,
+    ExpectationResult,
     Failure,
     InputDefinition,
     Materialization,
     Nothing,
     Output,
     OutputDefinition,
+    check,
     solid,
 )
 
