@@ -23,6 +23,14 @@ type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   outputMappings: [OutputMapping!]!
 }
 
+type ComputeLogs {
+  runId: String!
+  stepKey: String!
+  stdout: String!
+  stderr: String!
+  cursor: Cursor
+}
+
 interface ConfigType {
   key: String!
   name: String
@@ -635,6 +643,7 @@ type PipelineRun {
   status: PipelineRunStatus!
   pipeline: Pipeline!
   logs: LogMessageConnection!
+  computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan!
   stepKeysToExecute: [String]
   environmentConfigYaml: String!
@@ -879,6 +888,7 @@ input StepOutputHandle {
 
 type Subscription {
   pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
+  computeLogs(runId: ID!, stepKey: String!, cursor: Cursor): ComputeLogs!
 }
 
 type TypeCheck implements DisplayableEvent {

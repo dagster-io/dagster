@@ -8,6 +8,7 @@ from dagster_graphql.implementation.execution import (
     ExecutionMetadata,
     ExecutionParams,
     do_execute_plan,
+    get_compute_log_observable,
     get_pipeline_run_observable,
     start_pipeline_execution,
 )
@@ -301,8 +302,18 @@ class DauphinSubscription(dauphin.ObjectType):
         after=dauphin.Argument('Cursor'),
     )
 
+    computeLogs = dauphin.Field(
+        dauphin.NonNull('ComputeLogs'),
+        runId=dauphin.Argument(dauphin.NonNull(dauphin.ID)),
+        stepKey=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        cursor=dauphin.Argument('Cursor'),
+    )
+
     def resolve_pipelineRunLogs(self, graphene_info, runId, after=None):
         return get_pipeline_run_observable(graphene_info, runId, after)
+
+    def resolve_computeLogs(self, graphene_info, runId, stepKey, cursor=None):
+        return get_compute_log_observable(graphene_info, runId, stepKey, cursor)
 
 
 class DauphinEnvironmentConfigData(dauphin.GenericScalar, dauphin.Scalar):

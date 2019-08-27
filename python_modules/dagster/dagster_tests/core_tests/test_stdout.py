@@ -1,7 +1,7 @@
 import os
 
 from dagster import DagsterEventType, execute_pipeline, lambda_solid, pipeline
-from dagster.core.execution.logs import fetch_run_step_logs
+from dagster.core.execution.logs import fetch_compute_logs
 from dagster.seven import mock
 
 
@@ -35,7 +35,5 @@ def test_stdout(tmpdir):
         ]
         assert len(compute_steps) == 1
         step_key = compute_steps[0]
-        logs = fetch_run_step_logs(result.run_id, step_key)
-        stdout = logs[0]
-        assert len(stdout) == 1
-        assert stdout[0] == HELLO_WORLD + SEPARATOR
+        logs = fetch_compute_logs(result.run_id, step_key)
+        assert logs.stdout == HELLO_WORLD + SEPARATOR

@@ -1,4 +1,5 @@
 from dagster import ExecutionTargetHandle, check
+from dagster.core.execution.logs import ComputeLogManager
 from dagster.core.scheduler import Scheduler
 from dagster.core.storage.runs import RunStorage
 
@@ -24,6 +25,7 @@ class DagsterGraphQLContext(object):
         self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
         self.version = version
         self.repository_definition = self.get_handle().build_repository_definition()
+        self.compute_log_manager = ComputeLogManager()
 
     def get_handle(self):
         return self._handle

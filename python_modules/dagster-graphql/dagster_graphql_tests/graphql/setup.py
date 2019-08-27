@@ -201,6 +201,7 @@ def define_repository():
             required_resource_pipeline,
             scalar_output_pipeline,
             secret_pipeline,
+            spew_pipeline,
         ],
         experimental={
             'schedule_defs': [no_config_pipeline_hourly_schedule],
@@ -583,3 +584,12 @@ def materialization_pipeline():
         yield Output(None)
 
     materialize()  # pylint: disable=no-value-for-parameter
+
+
+@pipeline
+def spew_pipeline():
+    @solid
+    def spew(_):
+        print('HELLO WORLD')
+
+    spew()
