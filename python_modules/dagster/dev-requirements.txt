@@ -13,3 +13,4 @@ snapshottest==0.5.0
 twine==1.11.0
 pre-commit==1.10.1
 tox==3.6.1
+mock==2.0.0

@@ -17,6 +17,7 @@ from dagster.core.execution.context.system import (
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
+from dagster.core.execution.logs import redirect_io_to_fs
 from dagster.core.execution.plan.objects import (
     StepFailureData,
     StepInputData,
@@ -562,8 +563,10 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
         solid_def_name=step_context.solid_def.name,
         solid_name=step_context.solid.name,
     ):
-        gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
 
-        if gen is not None:
-            for event in gen:
-                yield event
+        with redirect_io_to_fs(step_context):
+            gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
+
+            if gen is not None:
+                for event in gen:
+                    yield event

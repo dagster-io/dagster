@@ -262,6 +262,10 @@ def dagster_logs_dir():
     return os.path.join(dagster_home_dir(), "logs", "experimental")
 
 
+def dagster_compute_logs_dir():
+    return os.path.join(dagster_home_dir(), "logs", "compute")
+
+
 def dagster_logs_dir_for_handle(handle):
     from dagster.core.definitions.handle import ExecutionTargetHandle
 
@@ -302,6 +306,7 @@ class Features(Enum):
 
     # Add new feature flags here
     SCHEDULER = FeatureFlag("scheduler")
+    DAGIT_STDOUT = FeatureFlag('dagit_stdout')
 
     @property
     def is_enabled(self):
@@ -342,6 +347,8 @@ def ensure_gen(thing_or_gen):
 
 
 def ensure_dir(file_path):
-    directory = os.path.dirname(file_path)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    try:
+        os.makedirs(file_path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise

@@ -131,8 +131,9 @@ class FilesystemEventLogStorage(EventLogStorage):
     def logs_ready(self, run_id):
         return os.path.exists(self.filepath_for_run_id(run_id))
 
-    def get_logs_for_run(self, run_id, cursor=0):
+    def get_logs_for_run(self, run_id, cursor=-1):
         events = []
+        cursor = int(cursor) + 1
         with self.file_lock[run_id]:
             with open(self.filepath_for_run_id(run_id), 'rb') as fd:
                 # There might be a path to make this more performant, at the expense of interop,

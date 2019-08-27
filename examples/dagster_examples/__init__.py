@@ -5,6 +5,7 @@ def define_demo_repo():
     from dagster_examples.toys.error_monster import error_monster
     from dagster_examples.toys.sleepy import sleepy_pipeline
     from dagster_examples.toys.log_spew import log_spew
+    from dagster_examples.toys.stdout_spew import stdout_spew_pipeline
     from dagster_examples.toys.many_events import many_events
     from dagster_examples.toys.composition import composition
     from dagster_examples.toys.pandas_hello_world import (
@@ -36,5 +37,6 @@ def define_demo_repo():
             pyspark_pagerank,
             papermill_pandas_hello_world_pipeline,
             jaffle_pipeline,
+            stdout_spew_pipeline,
         ],
     )
