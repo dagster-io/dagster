@@ -68,7 +68,7 @@ def execute_list_command(schedule_dir, running_filter, name_filter, verbose, cli
         schedule_dir = dagster_schedule_dir_for_handle(handle)
 
     scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
-    if not scheduler:
+    if not scheduler and not name_filter:
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
