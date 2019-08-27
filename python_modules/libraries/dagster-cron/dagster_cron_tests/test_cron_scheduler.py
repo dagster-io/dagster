@@ -64,8 +64,8 @@ def test_start_and_end_schedule():
         # Start schedule
         schedule_def = repository.get_schedule("no_config_pipeline_hourly_schedule")
 
-        scheduler_type = repository.get_scheduler_type()
-        scheduler = scheduler_type(schedule_dir)
+        scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
+        assert scheduler
 
         schedule = scheduler.start_schedule(schedule_def, sys.executable, "")
 

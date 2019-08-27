@@ -112,8 +112,7 @@ def host_dagit_ui(log, log_dir, schedule_dir, handle, use_sync, host, port):
 
     if Features.SCHEDULER.is_enabled:
         repository = handle.build_repository_definition()
-        scheduler_type = repository.get_scheduler_type()
-        scheduler = scheduler_type(schedule_dir=schedule_dir)
+        scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
         app = create_app(
             handle, pipeline_run_storage, scheduler, use_synchronous_execution_manager=use_sync
         )

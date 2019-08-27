@@ -67,8 +67,10 @@ def execute_list_command(schedule_dir, running_filter, name_filter, verbose, cli
     if not schedule_dir:
         schedule_dir = dagster_schedule_dir_for_handle(handle)
 
-    scheduler_type = repository.get_scheduler_type()
-    scheduler = scheduler_type(schedule_dir)
+    scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
+    if not scheduler:
+        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
+        return
 
     if not name_filter:
         title = 'Repository {name}'.format(name=repository.name)
@@ -140,8 +142,10 @@ def execute_start_command(schedule_name, schedule_dir, cli_args, print_fn):
     python_path = sys.executable
     repository_path = handle.data.repository_yaml
 
-    scheduler_type = repository.get_scheduler_type()
-    scheduler = scheduler_type(schedule_dir)
+    scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
+    if not scheduler:
+        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
+        return
     schedule_definition = repository.get_schedule(schedule_name)
 
     try:
@@ -172,8 +176,10 @@ def execute_end_command(schedule_name, schedule_dir, cli_args, print_fn):
     if not schedule_dir:
         schedule_dir = dagster_schedule_dir_for_handle(handle)
 
-    scheduler_type = repository.get_scheduler_type()
-    scheduler = scheduler_type(schedule_dir)
+    scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
+    if not scheduler:
+        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
+        return
     schedule_definition = repository.get_schedule(schedule_name)
 
     try:

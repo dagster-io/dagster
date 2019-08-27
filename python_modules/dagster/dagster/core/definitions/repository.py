@@ -34,7 +34,7 @@ class RepositoryDefinition(object):
         # TODO: Extract scheduler and scheduler_defs from RepositoryDefinition
         # https://github.com/dagster-io/dagster/issues/1693
         experimental = check.opt_dict_param(experimental, 'experimental')
-        scheduler = check.opt_type_param(experimental.get('scheduler'), 'scheduler', Scheduler)
+        scheduler = check.opt_subclass_param(experimental.get('scheduler'), 'scheduler', Scheduler)
         schedule_defs = check.opt_list_param(
             experimental.get('schedule_defs'), 'schedule_defs', ScheduleDefinition
         )
@@ -141,8 +141,8 @@ class RepositoryDefinition(object):
         self.get_all_solid_defs()
         return self._all_pipelines
 
-    def get_scheduler_type(self):
-        return self._scheduler_type
+    def build_scheduler(self, schedule_dir):
+        return self._scheduler_type(schedule_dir=schedule_dir) if self._scheduler_type else None
 
     def get_schedule(self, name):
         check.str_param(name, 'name')
