@@ -20,18 +20,13 @@ import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
 import { titleForRun, RunStatus, IRunStatus } from "./RunUtils";
 import { showCustomAlert } from "../CustomAlertProvider";
 import * as querystring from "query-string";
+import { formatElapsedTime, formatStepKey } from "../Util";
 
 function dateString(timestamp: number) {
   if (timestamp === 0) {
     return null;
   }
   return new Date(timestamp).toLocaleString();
-}
-
-function elapsedTimeString(start: number, end?: number) {
-  if (start === 0) return ``;
-  const s = ((end || Date.now()) - start) / 1000;
-  return `${Math.ceil(s)} seconds`;
 }
 
 function getStartTime(run: RunHistoryRunFragment) {
@@ -378,9 +373,7 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
                   mode: run.mode,
                   config: run.environmentConfigYaml,
                   solidSubset: run.stepKeysToExecute
-                    ? run.stepKeysToExecute.map(key =>
-                        (key || "").replace(".compute", "")
-                      )
+                    ? run.stepKeysToExecute.map(formatStepKey)
                     : undefined
                 })}`}
               />
@@ -407,7 +400,7 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
           </div>
         )}
         <div>
-          <Icon icon="time" /> {elapsedTimeString(start, end)}
+          <Icon icon="time" /> {start ? formatElapsedTime(end - start) : ""}
         </div>
       </RunRowColumn>
     </RunRowContainer>
