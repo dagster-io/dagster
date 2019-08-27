@@ -5,6 +5,10 @@
       "pylint.config": ".pylintrc",
       "include": "(\\.py$)"
     },
+    "isort": {
+      "type": "isort",
+      "include": "(\\.py$)"
+    },
     "eslint": {
       "type": "eslint",
       "include": "(\\.(ts|tsx)$)",
