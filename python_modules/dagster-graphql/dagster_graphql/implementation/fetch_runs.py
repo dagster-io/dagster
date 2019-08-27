@@ -53,7 +53,7 @@ def get_runs(graphene_info):
     pipeline_run_storage = graphene_info.context.pipeline_runs
     return [
         graphene_info.schema.type_named('PipelineRun')(run)
-        for run in pipeline_run_storage.all_runs()
+        for run in pipeline_run_storage.all_runs
     ]
 
 
