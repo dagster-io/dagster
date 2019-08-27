@@ -1,24 +1,27 @@
-import abc
 import glob
 import io
 import json
 import os
 import sqlite3
-from collections import defaultdict, OrderedDict
+import warnings
+from abc import ABCMeta, abstractmethod
+from collections import OrderedDict, defaultdict
 
 import gevent.lock
 import six
+from watchdog.events import PatternMatchingEventHandler
+from watchdog.observers import Observer
 
 from dagster import check, seven
 from dagster.utils import mkdir_p
 
 from .config import base_runs_directory
-from .event_log import EventLogStorage, InMemoryEventLogStorage, FilesystemEventLogStorage
+from .event_log import EventLogStorage, FilesystemEventLogStorage, InMemoryEventLogStorage
 from .pipeline_run import PipelineRun
 
 
-class RunStorage(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-init
-    @abc.abstractmethod
+class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    @abstractmethod
     def add_run(self, pipeline_run):
         '''Add a run to storage.
 
@@ -26,7 +29,7 @@ class RunStorage(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-init
             pipeline_run (PipelineRun): The run to add. If this is not a PipelineRun,
         '''
 
-    @abc.abstractmethod
+    @abstractmethod
     def create_run(self, **kwargs):
         '''Create a new run in storage.
 
@@ -34,7 +37,7 @@ class RunStorage(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-init
             (PipelineRun) The new pipeline run.
         '''
 
-    @abc.abstractmethod
+    @abstractmethod
     def all_runs(self):
         '''Return all the runs present in the storage.
 
@@ -42,7 +45,7 @@ class RunStorage(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-init
             Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
         '''
 
-    @abc.abstractmethod
+    @abstractmethod
     def all_runs_for_pipeline(self, pipeline_name):
         '''Return all the runs present in the storage for a given pipeline.
 
@@ -53,7 +56,7 @@ class RunStorage(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-init
             Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
         '''
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_run_by_id(self, run_id):
         '''Get a run by its id.
 
@@ -64,12 +67,12 @@ class RunStorage(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-init
             Optional[PipelineRun]
         '''
 
-    @abc.abstractmethod
+    @abstractmethod
     def wipe(self):
         '''Clears the run storage.'''
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def is_persistent(self):
         '''(bool) Whether the run storage persists after the process that
         created it dies.'''
@@ -121,7 +124,7 @@ class InMemoryRunStorage(RunStorage):
 
 
 class FilesystemRunStorage(RunStorage):
-    def __init__(self, event_log_storage=None, base_dir=None):
+    def __init__(self, event_log_storage=None, base_dir=None, watch=False):
         self._base_dir = check.opt_str_param(base_dir, 'base_dir', base_runs_directory())
         mkdir_p(self._base_dir)
 
@@ -138,6 +141,12 @@ class FilesystemRunStorage(RunStorage):
 
         self._load_runs()
 
+        if watch:
+            event_handler = FilesystemRunStorageWatchdog(self)
+            observer = Observer()
+            observer.schedule(event_handler, self._base_dir)
+            observer.start()
+
     def filepath_for_run_id(self, run_id):
         return os.path.join(self._base_dir, '{run_id}.json'.format(run_id=run_id))
 
@@ -146,30 +155,19 @@ class FilesystemRunStorage(RunStorage):
         self._runs[pipeline_run.run_id] = pipeline_run
 
     @property
+    def runs(self):
+        return self._runs
+
+    @property
     def all_runs(self):
         return self._runs.values()
-
-    def _load_run(self, json_data):
-        from dagster.core.execution.api import ExecutionSelector
-
-        selector = ExecutionSelector(
-            name=json_data['pipeline_name'], solid_subset=json_data.get('pipeline_solid_subset')
-        )
-        run = self.create_run(
-            pipeline_name=json_data['pipeline_name'],
-            run_id=json_data['run_id'],
-            selector=selector,
-            env_config=json_data['config'],
-            mode=json_data['mode'],
-        )
-        return run
 
     def _load_runs(self):
         for filename in glob.glob(os.path.join(self._base_dir, '*.json')):
             with open(filename, 'r') as fd:
                 try:
-                    run = self._load_run(json.load(fd))
-                    self.event_log_storage.verify_event_log_exists(run.run_id)
+                    pipeline_run = PipelineRun.from_json(json.load(fd), self)
+                    self.add_run(pipeline_run)
                 except Exception as ex:  # pylint: disable=broad-except
                     print(
                         'Could not load pipeline run from {filename}, continuing.\n  Original '
@@ -226,6 +224,30 @@ class FilesystemRunStorage(RunStorage):
 
             json_str = seven.json.dumps(metadata)
             f.write(six.text_type(json_str))
+
+
+class FilesystemRunStorageWatchdog(PatternMatchingEventHandler):
+    def __init__(self, run_storage, **kwargs):
+        check.inst_param(run_storage, 'run_storage', FilesystemRunStorage)
+        self._run_storage = run_storage
+        super(FilesystemRunStorageWatchdog, self).__init__(patterns=['*.json'], **kwargs)
+
+    def on_created(self, event):
+        run_id, _extension = os.path.basename(event.src_path).split('.')
+        if run_id in self._run_storage.runs:
+            return
+
+        with open(event.src_path, 'r') as fd:
+            try:
+                pipeline_run = PipelineRun.from_json(json.load(fd), self._run_storage)
+            except Exception as ex:  # pylint: disable=broad-except
+                warnings.warn(
+                    'Error trying to load .json metadata file in filesystem run '
+                    'storage: {ex}: {msg}'.format(ex=type(ex).__name__, msg=ex)
+                )
+                return
+
+        self._run_storage.add_run(pipeline_run)
 
 
 CREATE_RUNS_TABLE_STATEMENT = '''
