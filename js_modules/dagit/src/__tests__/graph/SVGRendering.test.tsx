@@ -21,9 +21,12 @@ const PipelineNames = [
   "fan_in_fan_out_pipeline"
 ];
 
+const dataDir = `${__dirname}/__data__`;
+const snapshotsDir = `${__dirname}/__snapshots__`;
+
 // Write out a file that can be used to re-create the mock data
 fs.writeFileSync(
-  `${__dirname}/data/refetch.sh`,
+  `${dataDir}/refetch.sh`,
   `#!/bin/bash\n\n` +
     PipelineNames.map(
       name =>
@@ -40,7 +43,7 @@ fs.writeFileSync(
 
 function pipelineNamed(name: string) {
   const result = JSON.parse(
-    fs.readFileSync(`${__dirname}/data/${name}.json`).toString()
+    fs.readFileSync(`${dataDir}/${name}.json`).toString()
   );
   return result.data
     .pipelineOrError as PipelineExplorerRootQuery_pipelineOrError_Pipeline;
@@ -90,8 +93,8 @@ PipelineNames.forEach(name => {
       .solidHandles.filter(h => !h.parent)
       .map(h => h.solid);
 
-    const expectedPath = `${__dirname}/svg-snapshots/${name}.svg`;
-    const actualPath = `${__dirname}/svg-snapshots/${name}.actual.svg`;
+    const expectedPath = `${snapshotsDir}/${name}.svg`;
+    const actualPath = `${snapshotsDir}/${name}.actual.svg`;
     const actual = svgForPipeline(name, solids);
 
     // write out the actual result for easy visual comparison and compare to existing
@@ -113,8 +116,8 @@ it(`renders the expected SVG when viewing a composite`, () => {
     .filter(h => h.parent && h.parent.handleID === parentId)
     .map(h => h.solid);
 
-  const expectedPath = `${__dirname}/svg-snapshots/airline-composite.svg`;
-  const actualPath = `${__dirname}/svg-snapshots/airline-composite.actual.svg`;
+  const expectedPath = `${snapshotsDir}/airline-composite.svg`;
+  const actualPath = `${snapshotsDir}/airline-composite.actual.svg`;
   const actual = svgForPipeline(name, solids, parent);
 
   // write out the actual result for easy visual comparison and compare to existing

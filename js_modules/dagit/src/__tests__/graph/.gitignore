@@ -1,2 +1,2 @@
-svg-snapshots/*.actual.svg
-data/refetch.sh
+__snapshots__/*.actual.svg
+__data__/refetch.sh
