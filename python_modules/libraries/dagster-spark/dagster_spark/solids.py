@@ -1,11 +1,12 @@
 import functools
 import os
+import subprocess
 
 from dagster import InputDefinition, List, Output, OutputDefinition, Path, SolidDefinition, check
 
 from .configs import define_spark_config
 from .types import SparkSolidError
-from .utils import parse_spark_config, run_spark_subprocess
+from .utils import parse_spark_config
 
 
 def create_spark_shell_cmd(solid_config, main_class):
@@ -90,7 +91,7 @@ class SparkSolidDefinition(SolidDefinition):
             spark_shell_cmd = create_spark_shell_cmd(context.solid_config, main_class)
 
             context.log.info("Running spark-submit: " + ' '.join(spark_shell_cmd))
-            retcode = run_spark_subprocess(spark_shell_cmd, context.log)
+            retcode = subprocess.call(' '.join(spark_shell_cmd), shell=True)
 
             if retcode != 0:
                 raise SparkSolidError('Spark job failed. Please consult your logs.')
