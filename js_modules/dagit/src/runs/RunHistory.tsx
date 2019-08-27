@@ -454,6 +454,7 @@ const RunDetails = styled.div`
 class RunTime extends React.Component<{ start: number; end: number }> {
   _interval?: NodeJS.Timer;
   _timeout?: NodeJS.Timer;
+
   componentDidMount() {
     if (this.props.end !== 0) return;
 
