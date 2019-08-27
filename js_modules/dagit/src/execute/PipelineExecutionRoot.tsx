@@ -40,13 +40,17 @@ export default class PipelineExecutionRoot extends React.Component<
           const qs = querystring.parse(window.location.search);
           if (qs.config || qs.mode || qs.solidSubset) {
             const newSession: Partial<IExecutionSession> = {};
-            if (typeof qs.config === "string")
+            if (typeof qs.config === "string") {
               newSession.environmentConfigYaml = qs.config;
-            if (typeof qs.mode === "string") newSession.mode = qs.mode;
-            if (qs.solidSubset instanceof Array)
+            }
+            if (typeof qs.mode === "string") {
+              newSession.mode = qs.mode;
+            }
+            if (qs.solidSubset instanceof Array) {
               newSession.solidSubset = qs.solidSubset;
-            if (typeof qs.solidSubset === "string")
+            } else if (typeof qs.solidSubset === "string") {
               newSession.solidSubset = [qs.solidSubset];
+            }
 
             onSave(applyCreateSession(data, newSession));
             return <Redirect to={`/${pipelineName}/execute`} />;

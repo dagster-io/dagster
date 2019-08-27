@@ -65,11 +65,15 @@ function getDetailedStats(run: RunHistoryRunFragment) {
     expectationsFailed: 0
   };
   for (const log of run.logs.nodes) {
-    if (log.__typename === "ExecutionStepFailureEvent") stats.stepsFailed += 1;
-    if (log.__typename === "ExecutionStepSuccessEvent")
+    if (log.__typename === "ExecutionStepFailureEvent") {
+      stats.stepsFailed += 1;
+    }
+    if (log.__typename === "ExecutionStepSuccessEvent") {
       stats.stepsSucceeded += 1;
-    if (log.__typename === "StepMaterializationEvent")
+    }
+    if (log.__typename === "StepMaterializationEvent") {
       stats.materializations += 1;
+    }
     if (log.__typename === "StepExpectationResultEvent") {
       if (log.expectationResult.success) {
         stats.expectationsSucceeded += 1;

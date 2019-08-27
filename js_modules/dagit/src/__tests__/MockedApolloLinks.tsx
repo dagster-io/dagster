@@ -44,10 +44,11 @@ export class MockLink extends ApolloLink {
   ) {
     super();
     this.addTypename = addTypename;
-    if (mockedResponses)
+    if (mockedResponses) {
       mockedResponses.forEach(mockedResponse => {
         this.addMockedResponse(mockedResponse);
       });
+    }
   }
 
   public addMockedResponse(mockedResponse: MockedResponse) {
