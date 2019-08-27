@@ -80,7 +80,7 @@ export function formatElapsedTime(msec: number) {
     text = `${Math.ceil(msec)} msec`;
   } else {
     // < 1 hour, show "42:12"
-    const sec = Math.floor(msec / 1000) % 60;
+    const sec = Math.round(msec / 1000) % 60;
     const min = Math.floor(msec / 1000 / 60) % 60;
     const hours = Math.floor(msec / 1000 / 60 / 60);
 
