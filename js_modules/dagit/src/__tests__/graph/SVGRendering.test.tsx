@@ -4,6 +4,7 @@ import { StyleSheetManager } from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import { print } from "graphql/language/printer";
 import pretty from "pretty";
+import path from "path";
 import fs from "fs";
 
 import { PipelineGraphContents } from "../../graph/PipelineGraph";
@@ -21,12 +22,12 @@ const PipelineNames = [
   "fan_in_fan_out_pipeline"
 ];
 
-const dataDir = `${__dirname}/__data__`;
-const snapshotsDir = `${__dirname}/__snapshots__`;
+const dataDir = path.join(__dirname, "__data__");
+const snapshotsDir = path.join(__dirname, "__snapshots__");
 
 // Write out a file that can be used to re-create the mock data
 fs.writeFileSync(
-  `${dataDir}/refetch.sh`,
+  path.join(dataDir, "refetch.sh"),
   `#!/bin/bash\n\n` +
     PipelineNames.map(
       name =>
@@ -43,7 +44,7 @@ fs.writeFileSync(
 
 function pipelineNamed(name: string) {
   const result = JSON.parse(
-    fs.readFileSync(`${dataDir}/${name}.json`).toString()
+    fs.readFileSync(path.join(dataDir, `${name}.json`)).toString()
   );
   return result.data
     .pipelineOrError as PipelineExplorerRootQuery_pipelineOrError_Pipeline;
@@ -93,8 +94,8 @@ PipelineNames.forEach(name => {
       .solidHandles.filter(h => !h.parent)
       .map(h => h.solid);
 
-    const expectedPath = `${snapshotsDir}/${name}.svg`;
-    const actualPath = `${snapshotsDir}/${name}.actual.svg`;
+    const expectedPath = path.join(snapshotsDir, `${name}.svg`);
+    const actualPath = path.join(snapshotsDir, `${name}.actual.svg`);
     const actual = svgForPipeline(name, solids);
 
     // write out the actual result for easy visual comparison and compare to existing
@@ -116,8 +117,8 @@ it(`renders the expected SVG when viewing a composite`, () => {
     .filter(h => h.parent && h.parent.handleID === parentId)
     .map(h => h.solid);
 
-  const expectedPath = `${snapshotsDir}/airline-composite.svg`;
-  const actualPath = `${snapshotsDir}/airline-composite.actual.svg`;
+  const expectedPath = path.join(snapshotsDir, `airline-composite.svg`);
+  const actualPath = path.join(snapshotsDir, `airline-composite.actual.svg`);
   const actual = svgForPipeline(name, solids, parent);
 
   // write out the actual result for easy visual comparison and compare to existing
