@@ -8,30 +8,35 @@ import { Button, Dialog, Classes, Colors, Icon } from "@blueprintjs/core";
 import ReactMarkdown from "react-markdown";
 
 export const MetadataEntries: React.FunctionComponent<{
-  entries: MetadataEntryFragment[];
-}> = props => (
-  <span>
-    <MetadataEntriesTable cellPadding="0" cellSpacing="0">
-      <tbody>
-        {props.entries.map((item, idx) => (
-          <tr key={idx} style={{ display: "flex" }}>
-            <td
-              style={{
-                flex: 1,
-                maxWidth: "max-content"
-              }}
-            >
-              {item.label}
-            </td>
-            <td style={{ flex: 1 }}>
-              <MetadataEntry entry={item} />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </MetadataEntriesTable>
-  </span>
-);
+  entries?: MetadataEntryFragment[];
+}> = ({ entries }) => {
+  if (!entries || !entries.length) {
+    return null;
+  }
+  return (
+    <div>
+      <MetadataEntriesTable cellPadding="0" cellSpacing="0">
+        <tbody>
+          {entries.map((item, idx) => (
+            <tr key={idx} style={{ display: "flex" }}>
+              <td
+                style={{
+                  flex: 1,
+                  maxWidth: "max-content"
+                }}
+              >
+                {item.label}
+              </td>
+              <td style={{ flex: 1 }}>
+                <MetadataEntry entry={item} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </MetadataEntriesTable>
+    </div>
+  );
+};
 
 export class MetadataEntry extends React.Component<{
   entry: MetadataEntryFragment;

@@ -12,7 +12,7 @@ class FlaggedFeature extends React.Component {
           if (!data || !data.enabledFeatures) return null;
 
           const hasFeature = data.enabledFeatures.some(
-            feature => feature === name
+            feature => feature.toLowerCase() === name.toLowerCase()
           );
 
           return hasFeature ? children : null;

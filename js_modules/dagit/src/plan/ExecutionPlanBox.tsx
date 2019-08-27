@@ -9,6 +9,9 @@ import {
 import { DisplayEvents } from "./DisplayEvents";
 import { formatElapsedTime } from "../Util";
 import { ReexecuteButton } from "./ReexecuteButton";
+import ComputeLogModal from "./ComputeLogModal";
+import FlaggedFeature from "../FlaggedFeature";
+import { ExecutionStateDot } from "./ExecutionStateDot";
 
 export interface IExecutionPlanBoxProps {
   state: IStepState;
@@ -27,6 +30,7 @@ export interface IExecutionPlanBoxProps {
 export interface IExecutionPlanBoxState {
   expanded: boolean;
   v: number;
+  logsOpen: boolean;
 }
 
 export class ExecutionPlanBox extends React.Component<
@@ -35,7 +39,8 @@ export class ExecutionPlanBox extends React.Component<
 > {
   state = {
     expanded: false,
-    v: 0
+    v: 0,
+    logsOpen: false
   };
 
   timer?: NodeJS.Timer;
@@ -49,7 +54,8 @@ export class ExecutionPlanBox extends React.Component<
       nextProps.stepKey !== this.props.stepKey ||
       nextProps.elapsed !== this.props.elapsed ||
       nextState.expanded !== this.state.expanded ||
-      nextState.v !== this.state.v
+      nextState.v !== this.state.v ||
+      nextState.logsOpen !== this.state.logsOpen
     );
   }
 
@@ -89,6 +95,15 @@ export class ExecutionPlanBox extends React.Component<
     this.setState({ v: this.state.v + 1 });
   };
 
+  openLogs = (e: React.SyntheticEvent) => {
+    this.setState({ logsOpen: true });
+    e.stopPropagation();
+  };
+
+  closeLogs = () => {
+    this.setState({ logsOpen: false });
+  };
+
   render() {
     const {
       state,
@@ -103,12 +118,15 @@ export class ExecutionPlanBox extends React.Component<
       executionArtifactsPersisted
     } = this.props;
 
-    const { expanded } = this.state;
+    const { expanded, logsOpen } = this.state;
 
     let elapsed = this.props.elapsed;
     if (state === IStepState.RUNNING && start) {
       elapsed = Math.floor((Date.now() - start) / 1000) * 1000;
     }
+
+    const hasLogs =
+      state !== IStepState.WAITING && state !== IStepState.SKIPPED;
 
     return (
       <>
@@ -155,6 +173,17 @@ export class ExecutionPlanBox extends React.Component<
               <ExecutionPlanBoxName title={stepKey}>
                 {stepKey}
               </ExecutionPlanBoxName>
+              {hasLogs && (
+                <FlaggedFeature name="dagit_stdout">
+                  <ExecutionLogs onClick={this.openLogs}>Logs</ExecutionLogs>
+                  <ComputeLogModal
+                    isOpen={logsOpen}
+                    runState={state}
+                    stepKey={stepKey}
+                    onRequestClose={this.closeLogs}
+                  />
+                </FlaggedFeature>
+              )}
               {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
             </div>
             {expanded && (
@@ -193,32 +222,6 @@ export const DisclosureTriangle = styled.div<{ expanded: boolean }>`
     expanded ? "rotate(0deg)" : "rotate(-90deg)"};
 `;
 
-const ExecutionStateDot = styled.div<{ state: IStepState }>`
-  display: inline-block;
-  width: 11px;
-  height: 11px;
-  border-radius: 5.5px;
-  transition: background 200ms linear;
-  background: ${({ state }) =>
-    ({
-      [IStepState.WAITING]: Colors.GRAY1,
-      [IStepState.RUNNING]: Colors.GRAY3,
-      [IStepState.SUCCEEDED]: Colors.GREEN2,
-      [IStepState.SKIPPED]: Colors.GOLD3,
-      [IStepState.FAILED]: Colors.RED3
-    }[state])};
-  &:hover {
-    background: ${({ state }) =>
-      ({
-        [IStepState.WAITING]: Colors.GRAY1,
-        [IStepState.RUNNING]: Colors.GRAY3,
-        [IStepState.SUCCEEDED]: Colors.GREEN2,
-        [IStepState.SKIPPED]: Colors.GOLD3,
-        [IStepState.FAILED]: Colors.RED5
-      }[state])};
-  }
-`;
-
 const ExecutionTime = ({ elapsed }: { elapsed: number }) => {
   let text = formatElapsedTime(elapsed);
   // Note: Adding a min-width prevents the size of the execution plan box from
@@ -240,6 +243,10 @@ const ExecutionPlanBoxName = styled.div`
   font-weight: 500;
   text-overflow: ellipsis;
   overflow: hidden;
+`;
+
+const ExecutionLogs = styled.a`
+  margin-left: 10px;
 `;
 
 const ExecutionFinishedFlash = styled.div<{ success: boolean }>`

@@ -17,6 +17,7 @@
     "@vx/shape": "^0.0.190",
     "ajv": "^6.10.2",
     "amator": "^1.1.0",
+    "ansi-to-react": "^5.0.0",
     "apollo-boost": "^0.4.3",
     "apollo-cache": "^1.3.2",
     "apollo-client": "^2.6.4",

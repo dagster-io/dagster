@@ -42,8 +42,9 @@ export const LogsRowStructuredContent: React.FunctionComponent<
           message={node.message}
           eventType="Input"
           eventIntent={node.typeCheck.success ? "success" : "warning"}
-          metadataEntries={node.typeCheck.metadataEntries}
-        />
+        >
+          <MetadataEntries entries={node.typeCheck.metadataEntries} />
+        </DefaultContent>
       );
     case "ExecutionStepOutputEvent":
       return (
@@ -51,8 +52,9 @@ export const LogsRowStructuredContent: React.FunctionComponent<
           message={node.message}
           eventType="Output"
           eventIntent={node.typeCheck.success ? "success" : "warning"}
-          metadataEntries={node.typeCheck.metadataEntries}
-        />
+        >
+          <MetadataEntries entries={node.typeCheck.metadataEntries} />
+        </DefaultContent>
       );
     case "StepExpectationResultEvent":
       return (
@@ -60,16 +62,15 @@ export const LogsRowStructuredContent: React.FunctionComponent<
           message={node.message}
           eventType="Expectation"
           eventIntent={node.expectationResult.success ? "success" : "warning"}
-          metadataEntries={node.expectationResult.metadataEntries}
-        />
+        >
+          <MetadataEntries entries={node.expectationResult.metadataEntries} />
+        </DefaultContent>
       );
     case "StepMaterializationEvent":
       return (
-        <DefaultContent
-          message={node.message}
-          eventType="Materialization"
-          metadataEntries={node.materialization.metadataEntries}
-        />
+        <DefaultContent message={node.message} eventType="Materialization">
+          <MetadataEntries entries={node.materialization.metadataEntries} />
+        </DefaultContent>
       );
     case "ObjectStoreOperationEvent":
       return (
@@ -82,8 +83,9 @@ export const LogsRowStructuredContent: React.FunctionComponent<
               ? "Retrieve"
               : ""
           }
-          metadataEntries={node.operationResult.metadataEntries}
-        />
+        >
+          <MetadataEntries entries={node.operationResult.metadataEntries} />
+        </DefaultContent>
       );
     case "PipelineFailureEvent":
     case "PipelineSuccessEvent":
@@ -105,7 +107,8 @@ const DefaultContent: React.FunctionComponent<{
   eventType?: string;
   eventIntent?: "success" | "danger" | "warning";
   metadataEntries?: MetadataEntryFragment[];
-}> = ({ message, eventType, eventIntent, metadataEntries }) => {
+  children?: React.ReactElement;
+}> = ({ message, eventType, eventIntent, children }) => {
   return (
     <>
       <EventTypeColumn>
@@ -121,12 +124,7 @@ const DefaultContent: React.FunctionComponent<{
       </EventTypeColumn>
       <span style={{ flex: 1 }}>
         {message}
-        {metadataEntries && metadataEntries.length > 0 && (
-          <>
-            <br />
-            <MetadataEntries entries={metadataEntries} />
-          </>
-        )}
+        {children}
       </span>
     </>
   );

@@ -14,6 +14,9 @@ import {
   IStepDisplayIconType,
   IStepDisplayActionType
 } from "../RunMetadataProvider";
+import { RunContext } from "../runs/RunContext";
+import { MOCKS } from "./AppMocks";
+import { MockedProvider } from "./MockedProvider";
 
 it("renders given materializations and passing expectations", () => {
   const tables = [
@@ -60,12 +63,18 @@ it("renders given materializations and passing expectations", () => {
 
   const executionPlanBoxStateExpanded: IExecutionPlanBoxState = {
     expanded: true,
-    v: 0
+    v: 0,
+    logsOpen: false
   };
 
+  const run = undefined;
   const component = TestRenderer.create(
     <BrowserRouter>
-      <ExecutionPlanBox {...executionPlanBoxProps} />
+      <MockedProvider mocks={MOCKS} addTypename={false}>
+        <RunContext.Provider value={run}>
+          <ExecutionPlanBox {...executionPlanBoxProps} />
+        </RunContext.Provider>
+      </MockedProvider>
     </BrowserRouter>
   );
   expect(component.toJSON()).toMatchSnapshot();
