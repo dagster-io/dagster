@@ -399,9 +399,7 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
             <Icon icon="calendar" /> Starting...
           </div>
         )}
-        <div>
-          <Icon icon="time" /> {start ? formatElapsedTime(end - start) : ""}
-        </div>
+        <RunTime start={start} end={end} />
       </RunRowColumn>
     </RunRowContainer>
   );
@@ -452,3 +450,36 @@ const RunDetails = styled.div`
   font-size: 0.8rem;
   margin-top: 4px;
 `;
+
+class RunTime extends React.Component<{ start: number; end: number }> {
+  _interval?: NodeJS.Timer;
+  _timeout?: NodeJS.Timer;
+  componentDidMount() {
+    if (this.props.end !== 0) return;
+
+    // align to the next second and then update every second so the elapsed
+    // time "ticks" up. Our render method uses Date.now(), so all we need to
+    // do is force another React render. We could clone the time into React
+    // state but that is a bit messier.
+    setTimeout(() => {
+      this.forceUpdate();
+      this._interval = setInterval(() => this.forceUpdate(), 1000);
+    }, Date.now() % 1000);
+  }
+
+  componentWillUnmount() {
+    if (this._timeout) clearInterval(this._timeout);
+    if (this._interval) clearInterval(this._interval);
+  }
+
+  render() {
+    const start = this.props.start;
+    const end = this.props.end || Date.now();
+
+    return (
+      <div>
+        <Icon icon="time" /> {start ? formatElapsedTime(end - start) : ""}
+      </div>
+    );
+  }
+}

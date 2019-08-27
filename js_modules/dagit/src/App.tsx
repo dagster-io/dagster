@@ -7,7 +7,7 @@ import { TopNav } from "./TopNav";
 import PythonErrorInfo from "./PythonErrorInfo";
 import CustomAlertProvider from "./CustomAlertProvider";
 import { RootPipelinesQuery } from "./types/RootPipelinesQuery";
-import PipelineExecutionRoot from "./execute/PipelineExecutionRoot";
+import { PipelineExecutionRoot } from "./execute/PipelineExecutionRoot";
 import RunRoot from "./runs/RunRoot";
 import RunsRoot from "./runs/RunsRoot";
 import PipelineExplorerRoot from "./PipelineExplorerRoot";
