@@ -54,12 +54,13 @@ def repository_target_argument(f):
 @repository_target_argument
 @click.option('--schedule-dir', help="Directory the running schedules are stored in", default=None)
 @click.option('--running', help="Filter for running schedules", is_flag=True, default=False)
+@click.option('--name', help="Only display schedule schedule names", is_flag=True, default=False)
 @click.option('--verbose', is_flag=True)
-def schedule_list_command(schedule_dir, running, verbose, **kwargs):
-    return execute_list_command(schedule_dir, running, verbose, kwargs, click.echo)
+def schedule_list_command(schedule_dir, running, name, verbose, **kwargs):
+    return execute_list_command(schedule_dir, running, name, verbose, kwargs, click.echo)
 
 
-def execute_list_command(schedule_dir, running_filter, verbose, cli_args, print_fn):
+def execute_list_command(schedule_dir, running_filter, name_filter, verbose, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
 
@@ -69,9 +70,11 @@ def execute_list_command(schedule_dir, running_filter, verbose, cli_args, print_
     scheduler_type = repository.get_scheduler_type()
     scheduler = scheduler_type(schedule_dir)
 
-    title = 'Repository {name}'.format(name=repository.name)
-    print_fn(title)
-    print_fn('*' * len(title))
+    if not name_filter:
+        title = 'Repository {name}'.format(name=repository.name)
+        print_fn(title)
+        print_fn('*' * len(title))
+
     first = True
     for schedule in repository.get_all_schedules():
         is_running = scheduler.get_schedule_by_name(schedule.name)
@@ -79,6 +82,11 @@ def execute_list_command(schedule_dir, running_filter, verbose, cli_args, print_
         # If --running flag is present and the schedule is not running,
         # do not print
         if running_filter and not is_running:
+            continue
+
+        # If --name filter is present, only print the schedule name
+        if name_filter:
+            print_fn(schedule.name)
             continue
 
         running_flag = "[Running]" if is_running else ""
