@@ -57,7 +57,7 @@ const websocketClient = new SubscriptionClient(
 );
 
 const errorLink = onError(({ graphQLErrors, networkError }) => {
-  if (graphQLErrors)
+  if (graphQLErrors) {
     graphQLErrors.map(error => {
       ErrorToaster.show({
         message: `[GraphQL error] ${error.message}`,
@@ -66,7 +66,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
       console.error("[GraphQL error]", error);
       return null;
     });
-
+  }
   if (networkError) {
     ErrorToaster.show({
       message: `[Network error] ${networkError}`,
