@@ -79,6 +79,39 @@ Since Dask will invoke your pipeline code on the cluster workers, you must ensur
 version of your Python code is available to all of the Dask workers—ideally packaged as a Python
 module `your.python.module` that is importable on `PYTHONPATH`.
 
+## Dask Resources
+Dask has [basic support](https://distributed.dask.org/en/latest/resources.html) for resource
+management. In Dask you can specify that a particular worker node has, say, 3 GPUs, and then tasks
+which are specified with GPU requirements will be scheduled to respect that constraint on available
+resources.
+
+In Dask, you'd set this up by launching your workers with resource specifications:
+
+```bash
+dask-worker scheduler:8786 --resources "GPU=2"
+```
+
+and then when submitting tasks to the Dask cluster, specifying resource requirements:
+
+```
+client.submit(task, resources={'GPU': 1})
+```
+
+Dagster has simple support for Dask resource specification at the solid level for solids that will
+be executed on Dask clusters. In your solid definition, just add a `step_metadata_fn` as follows:
+
+```python
+@solid(
+    ...
+    step_metadata_fn=lambda _: {'dagster-dask/resource_requirements': {'GPU': 1}},
+)
+def my_task(context):
+    pass
+```
+
+And these requirements will be passed along to Dask when executed on a Dask cluster. Note that in
+non-Dask contexts, this key will be ignored.
+
 
 ## Limitations
 * For distributed execution, you must use S3 for intermediates and run storage, as shown above.
