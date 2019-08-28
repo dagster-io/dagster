@@ -9,18 +9,9 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 // GraphQL fragment: RunHistoryRunFragment
 // ====================================================
 
-export interface RunHistoryRunFragment_pipeline_presets {
-  __typename: "PipelinePreset";
-  name: string;
-  mode: string;
-  solidSubset: string[] | null;
-  environmentConfigYaml: string;
-}
-
 export interface RunHistoryRunFragment_pipeline {
   __typename: "Pipeline";
   name: string;
-  presets: RunHistoryRunFragment_pipeline_presets[];
 }
 
 export interface RunHistoryRunFragment_logs_nodes_ExecutionStepFailureEvent {
