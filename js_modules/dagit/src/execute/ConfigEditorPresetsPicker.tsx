@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Button, Menu } from "@blueprintjs/core";
 import { Select } from "@blueprintjs/select";
-import { Query, QueryResult } from "react-apollo";
+import { useQuery } from "react-apollo";
 import {
   ConfigPresetsQuery,
   ConfigPresetsQuery_pipeline_presets
@@ -50,45 +50,41 @@ export default class ConfigEditorPresetsPicker extends React.Component<
 
   render() {
     const { pipelineName } = this.props;
+    const { data, client } = useQuery<ConfigPresetsQuery>(
+      CONFIG_PRESETS_QUERY,
+      {
+        fetchPolicy: "network-only",
+        variables: { pipelineName }
+      }
+    );
+    const presets = (
+      (data && data.pipeline && data.pipeline.presets) ||
+      []
+    ).sort((a, b) => a.name.localeCompare(b.name));
 
     return (
-      <Query
-        query={CONFIG_PRESETS_QUERY}
-        fetchPolicy="network-only"
-        variables={{ pipelineName }}
-      >
-        {({ data, client }: QueryResult<ConfigPresetsQuery, any>) => {
-          const presets = (
-            (data && data.pipeline && data.pipeline.presets) ||
-            []
-          ).sort((a, b) => a.name.localeCompare(b.name));
-
-          return (
-            <div>
-              <PresetSelect
-                items={presets}
-                itemPredicate={(query, preset) =>
-                  query.length === 0 || preset.name.includes(query)
-                }
-                itemRenderer={(preset, props) => (
-                  <Menu.Item
-                    active={props.modifiers.active}
-                    onClick={props.handleClick}
-                    key={preset.name}
-                    text={preset.name}
-                  />
-                )}
-                noResults={<Menu.Item disabled={true} text="No presets." />}
-                onItemSelect={preset =>
-                  this.onPresetSelect(preset, pipelineName, client)
-                }
-              >
-                <Button text={""} icon="insert" rightIcon="caret-down" />
-              </PresetSelect>
-            </div>
-          );
-        }}
-      </Query>
+      <div>
+        <PresetSelect
+          items={presets}
+          itemPredicate={(query, preset) =>
+            query.length === 0 || preset.name.includes(query)
+          }
+          itemRenderer={(preset, props) => (
+            <Menu.Item
+              active={props.modifiers.active}
+              onClick={props.handleClick}
+              key={preset.name}
+              text={preset.name}
+            />
+          )}
+          noResults={<Menu.Item disabled={true} text="No presets." />}
+          onItemSelect={preset =>
+            this.onPresetSelect(preset, pipelineName, client)
+          }
+        >
+          <Button text={""} icon="insert" rightIcon="caret-down" />
+        </PresetSelect>
+      </div>
     );
   }
 }
