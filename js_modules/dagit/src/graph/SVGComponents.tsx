@@ -199,7 +199,7 @@ export class SVGFlowLayoutRect extends React.Component<
     // until we've created enough space.
     if (layout.width > finalWidth) {
       const grouped: {
-        [priority: string]: [SVGFlowLayoutChildLayout];
+        [priority: string]: SVGFlowLayoutChildLayout[];
       } = {};
 
       // Group child layouts by compression priority

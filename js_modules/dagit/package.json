@@ -94,7 +94,8 @@
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix",
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
     "ts": "tsc -p .",
-    "download-schema": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/DownloadSchema.ts",
+    "download-mocks": "jest -i --collectCoverage=false --testRegex='src/scripts/DownloadMocks.ts'",
+    "download-schema": "jest -i --collectCoverage=false --testRegex='src/scripts/DownloadSchema.ts'",
     "generate-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql --globalTypesFile ./src/types/globalTypes.ts && python append_generated.py",
     "watch-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql  --globalTypesFile ./src/types/globalTypes.ts --watch"
   },

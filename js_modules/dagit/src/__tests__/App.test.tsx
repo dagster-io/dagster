@@ -3,7 +3,7 @@ import * as TestRenderer from "react-test-renderer";
 import App from "../App";
 import AppCache from "../AppCache";
 import { MockedProvider } from "./MockedProvider";
-import MOCKS from "./mockData";
+import { MOCKS } from "./AppMocks";
 
 function createNodeMock(element: any) {
   if (element.type === "div") {

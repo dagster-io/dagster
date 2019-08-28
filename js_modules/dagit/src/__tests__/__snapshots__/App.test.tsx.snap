@@ -63,7 +63,7 @@ Array [
                 <span
                   className="bp3-button-text"
                 >
-                  pandas_hello_world
+                  Select a Pipeline...
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
@@ -335,7 +335,7 @@ Array [
                 <span
                   className="bp3-button-text"
                 >
-                  pandas_hello_world
+                  Select a Pipeline...
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
@@ -485,7 +485,7 @@ Array [
                 <span
                   className="bp3-button-text"
                 >
-                  pandas_hello_world
+                  Select a Pipeline...
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
@@ -635,7 +635,7 @@ Array [
                 <span
                   className="bp3-button-text"
                 >
-                  pandas_hello_world
+                  Select a Pipeline...
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
