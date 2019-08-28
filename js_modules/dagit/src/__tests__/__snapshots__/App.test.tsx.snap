@@ -96,14 +96,14 @@ Array [
         >
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/pandas_hello_world/explore"
+            href="/explore/load_num_csv"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/pandas_hello_world/execute"
+            href="/execute/load_num_csv"
             onClick={[Function]}
           >
             Execute
@@ -373,27 +373,6 @@ Array [
             </div>
           </span>
         </span>
-        <div
-          className="bp3-navbar-divider"
-        />
-        <div
-          className="sc-htpNat dMCWdO"
-        >
-          <a
-            className="sc-bxivhb iHwkSZ"
-            href="/pandas_hello_world/explore"
-            onClick={[Function]}
-          >
-            Explore
-          </a>
-          <a
-            className="sc-bxivhb iHwkSZ"
-            href="/pandas_hello_world/execute"
-            onClick={[Function]}
-          >
-            Execute
-          </a>
-        </div>
       </div>
     </div>
     <div
@@ -534,14 +513,14 @@ Array [
         >
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/pandas_hello_world/explore"
+            href="/explore/load_num_csv"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/pandas_hello_world/execute"
+            href="/execute/load_num_csv"
             onClick={[Function]}
           >
             Execute
@@ -687,14 +666,14 @@ Array [
         >
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/pandas_hello_world/explore"
+            href="/explore/load_num_csv"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/pandas_hello_world/execute"
+            href="/execute/load_num_csv"
             onClick={[Function]}
           >
             Execute
