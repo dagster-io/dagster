@@ -19,14 +19,14 @@ export function handleStartExecutionResult(
   opts: { openInNewWindow: boolean }
 ) {
   if (!result || !result.data) {
-    showCustomAlert({ message: `No data was returned. Did Dagit crash?` });
+    showCustomAlert({ body: `No data was returned. Did Dagit crash?` });
     return;
   }
 
   const obj = result.data.startPipelineExecution;
 
   if (obj.__typename === "StartPipelineExecutionSuccess") {
-    const url = `/${pipelineName}/runs/${obj.run.runId}`;
+    const url = `/runs/${obj.run.runId}`;
     if (opts.openInNewWindow) {
       window.open(url, "_blank");
     } else {
@@ -41,7 +41,7 @@ export function handleStartExecutionResult(
         .join("\n\n")}`;
     }
 
-    showCustomAlert({ message });
+    showCustomAlert({ body: message });
   }
 }
 

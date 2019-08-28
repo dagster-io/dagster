@@ -6,9 +6,8 @@ import { copyValue } from "./Util";
 const SHOW_ALERT_EVENT = "show-alert";
 
 interface ICustomAlert {
-  message: string;
+  body: React.ReactNode | string;
   title: string;
-  pre: boolean;
 }
 
 export const showCustomAlert = (opts: Partial<ICustomAlert>) => {
@@ -27,6 +26,8 @@ export default class CustomAlertProvider extends React.Component<
 > {
   state: Partial<ICustomAlert> = {};
 
+  bodyRef = React.createRef<HTMLDivElement>();
+
   componentDidMount() {
     document.addEventListener(SHOW_ALERT_EVENT, (e: CustomEvent) => {
       this.setState(JSON.parse(e.detail));
@@ -34,27 +35,24 @@ export default class CustomAlertProvider extends React.Component<
   }
 
   render() {
-    const { title, message, pre } = this.state;
+    const { title, body } = this.state;
+
     return (
       <Dialog
         icon={title ? "info-sign" : undefined}
         usePortal={true}
-        onClose={() => this.setState({ message: undefined })}
+        onClose={() => this.setState({ body: undefined })}
         style={{ width: "auto", maxWidth: "80vw" }}
         title={title}
-        isOpen={!!message}
+        isOpen={!!body}
       >
-        <Body>
-          <div style={{ whiteSpace: pre ? "pre-wrap" : "initial" }}>
-            {message}
-          </div>
-        </Body>
+        <Body ref={this.bodyRef}>{body}</Body>
         <div className={Classes.DIALOG_FOOTER}>
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button
               autoFocus={false}
               onClick={(e: React.MouseEvent<any, MouseEvent>) =>
-                copyValue(e, message || "")
+                copyValue(e, this.bodyRef.current!.textContent || "")
               }
             >
               Copy
@@ -62,7 +60,7 @@ export default class CustomAlertProvider extends React.Component<
             <Button
               intent="primary"
               autoFocus={true}
-              onClick={() => this.setState({ message: undefined })}
+              onClick={() => this.setState({ body: undefined })}
             >
               OK
             </Button>

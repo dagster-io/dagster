@@ -66,19 +66,23 @@ function twoDigit(v: number) {
   return `${v < 10 ? "0" : ""}${v}`;
 }
 
-export function formatElapsedTime(elapsed: number) {
+export function formatStepKey(stepKey: string | null | false) {
+  return (stepKey || "").replace(/\.compute$/, "");
+}
+
+export function formatElapsedTime(msec: number) {
   let text = "";
 
-  if (elapsed < 0) {
+  if (msec < 0) {
     text = `0 msec`;
-  } else if (elapsed < 1000) {
+  } else if (msec < 1000) {
     // < 1 second, show "X msec"
-    text = `${Math.ceil(elapsed)} msec`;
+    text = `${Math.ceil(msec)} msec`;
   } else {
     // < 1 hour, show "42:12"
-    const sec = Math.floor(elapsed / 1000) % 60;
-    const min = Math.floor(elapsed / 1000 / 60) % 60;
-    const hours = Math.floor(elapsed / 1000 / 60 / 60);
+    const sec = Math.round(msec / 1000) % 60;
+    const min = Math.floor(msec / 1000 / 60) % 60;
+    const hours = Math.floor(msec / 1000 / 60 / 60);
 
     if (hours > 0) {
       text = `${hours}:${twoDigit(min)}:${twoDigit(sec)}`;

@@ -88,8 +88,11 @@ export class MetadataEntry extends React.Component<{
             title="Show full value"
             onClick={() =>
               showCustomAlert({
-                message: JSON.stringify(JSON.parse(entry.jsonString), null, 2),
-                pre: true,
+                body: (
+                  <div style={{ whiteSpace: "pre-wrap" }}>
+                    {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
+                  </div>
+                ),
                 title: "Value"
               })
             }

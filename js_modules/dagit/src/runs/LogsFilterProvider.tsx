@@ -1,5 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import * as querystring from "query-string";
 import { LogsFilterProviderMessageFragment } from "./types/LogsFilterProviderMessageFragment";
 
 export enum LogLevel {
@@ -11,13 +12,20 @@ export enum LogLevel {
   EVENT = "EVENT" // structured events
 }
 
-export const DefaultLogFilter = {
-  levels: Object.assign(
-    Object.keys(LogLevel).reduce((dict, key) => ({ ...dict, [key]: true }), {}),
-    { [LogLevel.DEBUG]: false }
-  ),
-  text: "",
-  since: 0
+export const GetDefaultLogFilter = () => {
+  const { q } = querystring.parse(window.location.search);
+
+  return {
+    levels: Object.assign(
+      Object.keys(LogLevel).reduce(
+        (dict, key) => ({ ...dict, [key]: true }),
+        {}
+      ),
+      { [LogLevel.DEBUG]: false }
+    ),
+    text: typeof q === "string" ? q : "",
+    since: 0
+  };
 };
 
 export interface ILogFilter {

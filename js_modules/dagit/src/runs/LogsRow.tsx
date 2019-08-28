@@ -203,7 +203,11 @@ export class Unstructured extends React.Component<{
   };
 
   onExpand = () => {
-    showCustomAlert({ message: this.props.node.message, pre: true });
+    showCustomAlert({
+      body: (
+        <div style={{ whiteSpace: "pre-wrap" }}>{this.props.node.message}</div>
+      )
+    });
   };
 
   render() {

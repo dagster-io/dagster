@@ -6,7 +6,7 @@ import { History } from "history";
 import { Icon, Colors } from "@blueprintjs/core";
 import { Route } from "react-router";
 import { Link } from "react-router-dom";
-import { parse as parseQueryString } from "query-string";
+import * as querystring from "query-string";
 
 import { PipelineExplorerFragment } from "./types/PipelineExplorerFragment";
 import PipelineGraph from "./graph/PipelineGraph";
@@ -82,7 +82,7 @@ export default class PipelineExplorer extends React.Component<
         "handleAdjustPath function is expected to mutate the array"
       );
     }
-    history.push(`/${pipeline.name}/explore/${next.join("/")}`);
+    history.push(`/explore/${pipeline.name}/${next.join("/")}`);
   };
 
   // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
@@ -174,7 +174,7 @@ export default class PipelineExplorer extends React.Component<
       <PipelinesContainer>
         <PipelinePanel key="graph" style={{ width: `${graphVW}vw` }}>
           <PathOverlay style={{ background: backgroundTranslucent }}>
-            <Link style={{ padding: 3 }} to={`/${pipeline.name}/explore/`}>
+            <Link style={{ padding: 3 }} to={`/explore/${pipeline.name}/`}>
               <Icon icon="diagram-tree" />
             </Link>
             <Icon icon="chevron-right" />
@@ -182,7 +182,7 @@ export default class PipelineExplorer extends React.Component<
               <React.Fragment key={idx}>
                 <Link
                   style={{ padding: 3 }}
-                  to={`/${pipeline.name}/explore/${path
+                  to={`/explore/${pipeline.name}/${path
                     .slice(0, idx + 1)
                     .join("/")}`}
                 >
@@ -240,7 +240,7 @@ export default class PipelineExplorer extends React.Component<
                 parentSolid={parentHandle && parentHandle.solid}
                 onEnterCompositeSolid={this.handleEnterCompositeSolid}
                 onClickSolid={this.handleClickSolid}
-                {...parseQueryString(location.search || "")}
+                {...querystring.parse(location.search || "")}
               />
             )}
           />

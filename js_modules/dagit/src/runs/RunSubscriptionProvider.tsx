@@ -7,7 +7,7 @@ import { PipelineRunStatus } from "../types/globalTypes";
 import {
   PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
   PIPELINE_RUN_LOGS_SUBSCRIPTION
-} from "./PipelineRun";
+} from "./Run";
 import { PipelineRunLogsSubscription } from "./types/PipelineRunLogsSubscription";
 import { PipelineRunLogsUpdateFragment } from "./types/PipelineRunLogsUpdateFragment";
 import { RunSubscriptionPipelineRunFragment } from "./types/RunSubscriptionPipelineRunFragment";

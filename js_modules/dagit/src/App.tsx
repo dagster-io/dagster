@@ -7,9 +7,10 @@ import { TopNav } from "./TopNav";
 import PythonErrorInfo from "./PythonErrorInfo";
 import CustomAlertProvider from "./CustomAlertProvider";
 import { RootPipelinesQuery } from "./types/RootPipelinesQuery";
-import PipelineExecutionRoot from "./execute/PipelineExecutionRoot";
-import PipelineRunRoot from "./runs/PipelineRunRoot";
-import PipelineRunsRoot from "./runs/PipelineRunsRoot";
+import { PipelineExecutionRoot } from "./execute/PipelineExecutionRoot";
+import { PipelineExecutionSetupRoot } from "./execute/PipelineExecutionSetupRoot";
+import RunRoot from "./runs/RunRoot";
+import RunsRoot from "./runs/RunsRoot";
 import PipelineExplorerRoot from "./PipelineExplorerRoot";
 import { NonIdealState } from "@blueprintjs/core";
 
@@ -26,15 +27,15 @@ function extractData(result?: RootPipelinesQuery) {
 
 const AppRoutes = () => (
   <Switch>
-    <Route path="/:pipelineName/execute" component={PipelineExecutionRoot} />
-    <Route path="/:pipelineName/runs/:runId" component={PipelineRunRoot} />
+    <Route path="/runs/:runId" component={RunRoot} />
+    <Route path="/runs" component={RunsRoot} exact={true} />
     <Route
-      exact={true}
-      path="/:pipelineName/runs"
-      component={PipelineRunsRoot}
+      path="/execute/:pipelineName/setup"
+      component={PipelineExecutionSetupRoot}
     />
+    <Route path="/execute/:pipelineName" component={PipelineExecutionRoot} />
     <Route
-      path="/:pipelineName/explore/:rest?"
+      path="/explore/:pipelineName/:rest?"
       component={PipelineExplorerRoot}
     />
     <Route

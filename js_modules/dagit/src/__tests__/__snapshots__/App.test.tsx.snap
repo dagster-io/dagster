@@ -95,25 +95,18 @@ Array [
           className="sc-htpNat dMCWdO"
         >
           <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/explore"
+            className="active sc-bxivhb iHwkSZ"
+            href="/explore/pandas_hello_world"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/execute"
+            className="sc-bxivhb iHwkSZ"
+            href="/execute/pandas_hello_world"
             onClick={[Function]}
           >
             Execute
-          </a>
-          <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/runs"
-            onClick={[Function]}
-          >
-            Runs
           </a>
         </div>
       </div>
@@ -121,6 +114,16 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
       <div
         className="sc-bdVaJa cgCJAY"
         style={
@@ -136,15 +139,43 @@ Array [
     </div>
   </div>,
   <div
-    className="bp3-non-ideal-state"
+    className="sc-fAjcbJ hpEfgU"
   >
-    <h4
-      className="bp3-heading"
+    <div
+      className="sc-caSCKo evXfhJ"
     >
-      No pipeline selected
-    </h4>
-    <div>
-      Select a pipeline in the navbar
+      <div
+        className="bp3-non-ideal-state"
+      >
+        <div
+          className="bp3-non-ideal-state-visual"
+        >
+          <span
+            className="bp3-icon bp3-icon-error"
+            icon="error"
+          >
+            <svg
+              data-icon="error"
+              height={60}
+              viewBox="0 0 20 20"
+              width={60}
+            >
+              <desc>
+                error
+              </desc>
+              <path
+                d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 16H9v-2h2v2zm0-3H9V4h2v9z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
+        </div>
+        <h4
+          className="bp3-heading"
+        >
+          GraphQL Error - see console for details
+        </h4>
+      </div>
     </div>
   </div>,
 ]
@@ -243,6 +274,16 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
       <div
         className="sc-bdVaJa cgCJAY"
         style={
@@ -367,25 +408,18 @@ Array [
           className="sc-htpNat dMCWdO"
         >
           <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/explore"
+            className="active sc-bxivhb iHwkSZ"
+            href="/explore/pandas_hello_world"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/execute"
+            className="sc-bxivhb iHwkSZ"
+            href="/execute/pandas_hello_world"
             onClick={[Function]}
           >
             Execute
-          </a>
-          <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/runs"
-            onClick={[Function]}
-          >
-            Runs
           </a>
         </div>
       </div>
@@ -393,6 +427,16 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
       <div
         className="sc-bdVaJa cgCJAY"
         style={
@@ -408,15 +452,43 @@ Array [
     </div>
   </div>,
   <div
-    className="bp3-non-ideal-state"
+    className="sc-fAjcbJ hpEfgU"
   >
-    <h4
-      className="bp3-heading"
+    <div
+      className="sc-caSCKo evXfhJ"
     >
-      No pipeline selected
-    </h4>
-    <div>
-      Select a pipeline in the navbar
+      <div
+        className="bp3-non-ideal-state"
+      >
+        <div
+          className="bp3-non-ideal-state-visual"
+        >
+          <span
+            className="bp3-icon bp3-icon-error"
+            icon="error"
+          >
+            <svg
+              data-icon="error"
+              height={60}
+              viewBox="0 0 20 20"
+              width={60}
+            >
+              <desc>
+                error
+              </desc>
+              <path
+                d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 16H9v-2h2v2zm0-3H9V4h2v9z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
+        </div>
+        <h4
+          className="bp3-heading"
+        >
+          GraphQL Error - see console for details
+        </h4>
+      </div>
     </div>
   </div>,
 ]
@@ -517,25 +589,18 @@ Array [
           className="sc-htpNat dMCWdO"
         >
           <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/explore"
+            className="active sc-bxivhb iHwkSZ"
+            href="/explore/pandas_hello_world"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/execute"
+            className="sc-bxivhb iHwkSZ"
+            href="/execute/pandas_hello_world"
             onClick={[Function]}
           >
             Execute
-          </a>
-          <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/runs"
-            onClick={[Function]}
-          >
-            Runs
           </a>
         </div>
       </div>
@@ -543,6 +608,16 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
       <div
         className="sc-bdVaJa cgCJAY"
         style={
@@ -558,15 +633,43 @@ Array [
     </div>
   </div>,
   <div
-    className="bp3-non-ideal-state"
+    className="sc-fAjcbJ hpEfgU"
   >
-    <h4
-      className="bp3-heading"
+    <div
+      className="sc-caSCKo evXfhJ"
     >
-      No pipeline selected
-    </h4>
-    <div>
-      Select a pipeline in the navbar
+      <div
+        className="bp3-non-ideal-state"
+      >
+        <div
+          className="bp3-non-ideal-state-visual"
+        >
+          <span
+            className="bp3-icon bp3-icon-error"
+            icon="error"
+          >
+            <svg
+              data-icon="error"
+              height={60}
+              viewBox="0 0 20 20"
+              width={60}
+            >
+              <desc>
+                error
+              </desc>
+              <path
+                d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 16H9v-2h2v2zm0-3H9V4h2v9z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
+        </div>
+        <h4
+          className="bp3-heading"
+        >
+          GraphQL Error - see console for details
+        </h4>
+      </div>
     </div>
   </div>,
 ]
@@ -667,25 +770,18 @@ Array [
           className="sc-htpNat dMCWdO"
         >
           <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/explore"
+            className="active sc-bxivhb iHwkSZ"
+            href="/explore/pandas_hello_world"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/execute"
+            className="sc-bxivhb iHwkSZ"
+            href="/execute/pandas_hello_world"
             onClick={[Function]}
           >
             Execute
-          </a>
-          <a
-            className="sc-bxivhb cpwKZw"
-            href="/pandas_hello_world/runs"
-            onClick={[Function]}
-          >
-            Runs
           </a>
         </div>
       </div>
@@ -693,6 +789,16 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
       <div
         className="sc-bdVaJa cgCJAY"
         style={
@@ -708,15 +814,43 @@ Array [
     </div>
   </div>,
   <div
-    className="bp3-non-ideal-state"
+    className="sc-fAjcbJ hpEfgU"
   >
-    <h4
-      className="bp3-heading"
+    <div
+      className="sc-caSCKo evXfhJ"
     >
-      No pipeline selected
-    </h4>
-    <div>
-      Select a pipeline in the navbar
+      <div
+        className="bp3-non-ideal-state"
+      >
+        <div
+          className="bp3-non-ideal-state-visual"
+        >
+          <span
+            className="bp3-icon bp3-icon-error"
+            icon="error"
+          >
+            <svg
+              data-icon="error"
+              height={60}
+              viewBox="0 0 20 20"
+              width={60}
+            >
+              <desc>
+                error
+              </desc>
+              <path
+                d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 16H9v-2h2v2zm0-3H9V4h2v9z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
+        </div>
+        <h4
+          className="bp3-heading"
+        >
+          GraphQL Error - see console for details
+        </h4>
+      </div>
     </div>
   </div>,
 ]
@@ -815,6 +949,16 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
       <div
         className="sc-bdVaJa cgCJAY"
         style={

@@ -3,83 +3,79 @@ import { Route } from "react-router";
 import styled from "styled-components";
 import { Colors, Alignment, Navbar } from "@blueprintjs/core";
 import { Link } from "react-router-dom";
+import gql from "graphql-tag";
 
 import navBarImage from "./images/nav-logo.png";
 import WebsocketStatus from "./WebsocketStatus";
 import VersionLabel from "./VersionLabel";
+import FlaggedFeature from "./FlaggedFeature";
 import { PipelineJumpBar } from "./PipelineJumpComponents";
 import { TopNavPipelinesFragment } from "./types/TopNavPipelinesFragment";
-import gql from "graphql-tag";
-import FlaggedFeature from "./FlaggedFeature";
 
 export const TopNav = ({
   pipelines
 }: {
   pipelines: TopNavPipelinesFragment[];
 }) => (
-  <Navbar>
-    <Navbar.Group align={Alignment.LEFT}>
-      <Route
-        render={({ history }) => (
+  <Route
+    path="/:tab?/:pipeline?"
+    render={({ match: { params }, history }) => (
+      <Navbar>
+        <Navbar.Group align={Alignment.LEFT}>
           <Navbar.Heading onClick={() => history.push("/")}>
             <img src={navBarImage} style={{ height: 34 }} alt="logo" />
           </Navbar.Heading>
-        )}
-      />
-      <Navbar.Divider />
-      <Route
-        path="/:pipeline?/:tab?"
-        render={({ match: { params }, history }) => (
+          <Navbar.Divider />
           <div style={{ display: "flex", alignItems: "center" }}>
             <PipelineJumpBar
               pipelines={pipelines}
               selectedPipeline={pipelines.find(p => p.name === params.pipeline)}
               onItemSelect={pipeline => {
-                history.push(`/${pipeline.name}/${params.tab || "explore"}`);
+                const target = params.tab === "execute" ? "execute" : "explore";
+                history.push(`/${target}/${pipeline.name}`);
               }}
             />
             {params.pipeline && <Navbar.Divider />}
             {params.pipeline && (
               <Tabs>
                 <Tab
-                  to={`/${params.pipeline}/explore`}
+                  to={`/explore/${params.pipeline}`}
                   className={params.tab === "explore" ? "active" : ""}
                 >
                   Explore
                 </Tab>
 
                 <Tab
-                  to={`/${params.pipeline}/execute`}
+                  to={`/execute/${params.pipeline}`}
                   className={params.tab === "execute" ? "active" : ""}
                 >
                   Execute
                 </Tab>
-
-                <Tab
-                  to={`/${params.pipeline}/runs`}
-                  className={params.tab === "runs" ? "active" : ""}
-                >
-                  Runs
-                </Tab>
-                <FlaggedFeature name="experimentalScheduler">
-                  <Tab
-                    to={`/${params.pipeline}/schedule`}
-                    className={params.tab === "schedule" ? "active" : ""}
-                  >
-                    Schedule
-                  </Tab>
-                </FlaggedFeature>
               </Tabs>
             )}
           </div>
-        )}
-      />
-    </Navbar.Group>
-    <Navbar.Group align={Alignment.RIGHT}>
-      <WebsocketStatus />
-      <VersionLabel />
-    </Navbar.Group>
-  </Navbar>
+        </Navbar.Group>
+        <Navbar.Group align={Alignment.RIGHT}>
+          <Tab to={`/runs`} className={params.tab === "runs" ? "active" : ""}>
+            Runs
+          </Tab>
+          <FlaggedFeature name="experimentalScheduler">
+            <Tab
+              to={`/schedule`}
+              className={params.tab === "schedule" ? "active" : ""}
+            >
+              Schedule
+            </Tab>
+          </FlaggedFeature>
+
+          <Navbar.Divider />
+
+          <WebsocketStatus />
+          <VersionLabel />
+        </Navbar.Group>
+      </Navbar>
+    )}
+  />
 );
 
 TopNav.fragments = {
@@ -104,7 +100,6 @@ const Tab = styled(Link)`
   border-bottom: 3px solid transparent;
   text-decoration: none;
   white-space: nowrap;
-  min-width: 40px;
   padding: 0 10px;
   display: flex;
   height: 50px;

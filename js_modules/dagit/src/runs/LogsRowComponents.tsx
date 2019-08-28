@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import { LogLevel } from "./LogsFilterProvider";
 import { ColumnWidthsContext } from "./LogsScrollingTableHeader";
+import { formatStepKey } from "../Util";
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({
@@ -65,7 +66,7 @@ export const StructuredContent = styled.div`
 //
 export const SolidColumn = (props: { stepKey: string | false | null }) => {
   const widths = React.useContext(ColumnWidthsContext);
-  const parts = (props.stepKey || "").replace(/\.compute$/, "").split(".");
+  const parts = formatStepKey(props.stepKey).split(".");
   return (
     <SolidColumnContainer style={{ width: widths.solid }}>
       {props.stepKey

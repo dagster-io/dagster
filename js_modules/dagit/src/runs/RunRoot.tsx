@@ -4,33 +4,30 @@ import gql from "graphql-tag";
 import { QueryResult, Query, ApolloConsumer } from "react-apollo";
 import { NonIdealState } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { PipelineRunRootQuery } from "./types/PipelineRunRootQuery";
-import { PipelineRun } from "./PipelineRun";
+import { RunRootQuery } from "./types/RunRootQuery";
+import { Run } from "./Run";
 
-interface IPipelineRunRootProps {
-  match: match<{ pipelineName: string; runId: string }>;
+interface IRunRootProps {
+  match: match<{ runId: string }>;
 }
 
-export default class PipelineRunRoot extends React.Component<
-  IPipelineRunRootProps
-> {
+export default class RunRoot extends React.Component<IRunRootProps> {
   render() {
     const { runId } = this.props.match.params;
-
     return (
       <ApolloConsumer>
         {client => (
           <Query
-            query={PIPELINE_RUN_ROOT_QUERY}
+            query={RUN_ROOT_QUERY}
             fetchPolicy="cache-and-network"
             partialRefetch={true}
             variables={{ runId }}
           >
-            {({ data }: QueryResult<PipelineRunRootQuery, any>) =>
+            {({ data }: QueryResult<RunRootQuery, any>) =>
               !data || !data.pipelineRunOrError ? (
-                <PipelineRun client={client} run={undefined} />
+                <Run client={client} run={undefined} />
               ) : data.pipelineRunOrError.__typename === "PipelineRun" ? (
-                <PipelineRun client={client} run={data.pipelineRunOrError} />
+                <Run client={client} run={data.pipelineRunOrError} />
               ) : (
                 <NonIdealState
                   icon={IconNames.SEND_TO_GRAPH}
@@ -48,15 +45,15 @@ export default class PipelineRunRoot extends React.Component<
   }
 }
 
-export const PIPELINE_RUN_ROOT_QUERY = gql`
-  query PipelineRunRootQuery($runId: ID!) {
+export const RUN_ROOT_QUERY = gql`
+  query RunRootQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       __typename
       ... on PipelineRun {
-        ...PipelineRunFragment
+        ...RunFragment
       }
     }
   }
 
-  ${PipelineRun.fragments.PipelineRunFragment}
+  ${Run.fragments.RunFragment}
 `;

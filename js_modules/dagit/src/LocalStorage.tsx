@@ -96,62 +96,48 @@ export function applyCreateSession(
 
 // StorageProvider component that vends `IStorageData` via a render prop
 
-interface IStorageProviderRenderProps {
-  data: IStorageData;
-  onSave: (data: IStorageData) => void;
-}
+export type StorageHook = [
+  IStorageData,
+  React.Dispatch<React.SetStateAction<IStorageData>>
+];
 
-export interface IStorageProviderProps {
-  namespace: string;
-  children: (props: IStorageProviderRenderProps) => React.ReactChild;
-}
-
-interface IStorageProviderState extends IStorageData {}
-
-export class StorageProvider extends React.Component<
-  IStorageProviderProps,
-  IStorageProviderState
-> {
-  public state: IStorageProviderState = {
+function getStorageDataForNamespace(namespace: string) {
+  let data: IStorageData = {
     sessions: {},
     current: ""
   };
-
-  constructor(props: IStorageProviderProps) {
-    super(props);
-
-    try {
-      const jsonString = window.localStorage.getItem(
-        `dagit.${props.namespace}`
-      );
-      if (jsonString) {
-        this.state = Object.assign(this.state, JSON.parse(jsonString));
-      }
-    } catch (err) {
-      // noop
+  try {
+    const jsonString = window.localStorage.getItem(`dagit.${namespace}`);
+    if (jsonString) {
+      data = Object.assign(data, JSON.parse(jsonString));
     }
-
-    // Ensure the data is consistent and that there is always a "current" session
-    // if loading has
-    if (Object.keys(this.state.sessions).length === 0) {
-      this.state = applyCreateSession(this.state);
-    }
-    if (!this.state.sessions[this.state.current]) {
-      this.state.current = Object.keys(this.state.sessions)[0];
-    }
+  } catch (err) {
+    // noop
   }
-
-  componentDidUpdate() {
-    window.localStorage.setItem(
-      `dagit.${this.props.namespace}`,
-      JSON.stringify(this.state)
-    );
+  if (Object.keys(data.sessions).length === 0) {
+    data = applyCreateSession(data);
   }
-
-  render() {
-    return this.props.children({
-      data: this.state,
-      onSave: data => this.setState(data)
-    });
+  if (!data.sessions[data.current]) {
+    data.current = Object.keys(data.sessions)[0];
   }
+  return data;
+}
+
+export function useStorage({ namespace }: { namespace: string }): StorageHook {
+  const [data, setData] = React.useState<IStorageData>(() =>
+    getStorageDataForNamespace(namespace)
+  );
+
+  React.useEffect(() => {
+    // When the namespace changes, re-initialize the data by reading from LocalStorage
+    // and running a few consistency checks to ensure a valid state.
+    setData(getStorageDataForNamespace(namespace));
+  }, [namespace]);
+
+  const onSave = (newData: IStorageData) => {
+    setData(newData);
+    window.localStorage.setItem(`dagit.${namespace}`, JSON.stringify(newData));
+  };
+
+  return [data, onSave];
 }
