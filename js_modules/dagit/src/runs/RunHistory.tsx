@@ -19,7 +19,7 @@ import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
 import { titleForRun, RunStatus, IRunStatus } from "./RunUtils";
 import { showCustomAlert } from "../CustomAlertProvider";
-import * as querystring from "query-string";
+import * as qs from "query-string";
 import { formatElapsedTime, formatStepKey } from "../Util";
 
 function dateString(timestamp: number) {
@@ -369,7 +369,7 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
                 text="Open in Execute View..."
                 icon="edit"
                 target="_blank"
-                href={`/${run.pipeline.name}/execute?${querystring.stringify({
+                href={`/execute/${run.pipeline.name}/setup?${qs.stringify({
                   mode: run.mode,
                   config: run.environmentConfigYaml,
                   solidSubset: run.stepKeysToExecute
