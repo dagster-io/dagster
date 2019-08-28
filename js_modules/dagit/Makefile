@@ -4,6 +4,9 @@ dev_webapp:
 download-schema:
 	REACT_APP_GRAPHQL_URI="http://localhost:3333/graphql" yarn run download-schema
 
+download-mocks:
+	yarn run download-mocks
+
 generate-types: download-schema
 	yarn run generate-types
 
@@ -21,6 +24,3 @@ update-snapshots:
 
 jest:
 	yarn run jest
-
-render-mocks:
-	REACT_APP_RENDER_API_RESULTS=true REACT_APP_GRAPHQL_URI="ws://localhost:3333/graphql" yarn start

@@ -2,7 +2,6 @@ import * as React from "react";
 import * as ReactDOM from "react-dom/server";
 import { StyleSheetManager } from "styled-components";
 import { Colors } from "@blueprintjs/core";
-import { print } from "graphql/language/printer";
 import pretty from "pretty";
 import path from "path";
 import fs from "fs";
@@ -10,44 +9,14 @@ import fs from "fs";
 import { PipelineGraphContents } from "../../graph/PipelineGraph";
 import { getDagrePipelineLayout } from "../../graph/getFullSolidLayout";
 import { PipelineExplorerRootQuery_pipelineOrError_Pipeline } from "../../types/PipelineExplorerRootQuery";
-import { PIPELINE_EXPLORER_ROOT_QUERY } from "../../PipelineExplorerRoot";
 import { PipelineGraphSolidFragment } from "../../graph/types/PipelineGraphSolidFragment";
+import { MOCKS } from "./SVGMocks";
 
-const PipelineNames = [
-  "airline_demo_ingest_pipeline",
-  "airline_demo_warehouse_pipeline",
-  "composition",
-  "log_spew",
-  "many_events",
-  "fan_in_fan_out_pipeline"
-];
-
-const dataDir = path.join(__dirname, "__data__");
 const snapshotsDir = path.join(__dirname, "__snapshots__");
 
-// Write out a file that can be used to re-create the mock data
-fs.writeFileSync(
-  path.join(dataDir, "refetch.sh"),
-  `#!/bin/bash\n\n` +
-    PipelineNames.map(
-      name =>
-        `curl -X POST -H "Content-Type: application/json" --data '${JSON.stringify(
-          {
-            variables: { name },
-            query: print(PIPELINE_EXPLORER_ROOT_QUERY)
-              .replace(/[\n\r]/g, "")
-              .replace(/[ ][ ]+/g, " ")
-          }
-        )}' http://localhost:3333/graphql > ${name}.json`
-    ).join("\n\n")
-);
-
-function pipelineNamed(name: string) {
-  const result = JSON.parse(
-    fs.readFileSync(path.join(dataDir, `${name}.json`)).toString()
-  );
-  return result.data
-    .pipelineOrError as PipelineExplorerRootQuery_pipelineOrError_Pipeline;
+function readMock(mock: { filepath: string }) {
+  const { data } = JSON.parse(fs.readFileSync(mock.filepath).toString());
+  return data.pipelineOrError as PipelineExplorerRootQuery_pipelineOrError_Pipeline;
 }
 
 function svgForPipeline(
@@ -87,16 +56,16 @@ function svgForPipeline(
   );
 }
 
-PipelineNames.forEach(name => {
-  it(`${name}: renders the expected SVG`, () => {
+MOCKS.forEach(mock => {
+  it(`${mock.name}: renders the expected SVG`, () => {
     // load the GraphQL response and pull out the first layer of solids
-    const solids = pipelineNamed(name)
+    const solids = readMock(mock)
       .solidHandles.filter(h => !h.parent)
       .map(h => h.solid);
 
-    const expectedPath = path.join(snapshotsDir, `${name}.svg`);
-    const actualPath = path.join(snapshotsDir, `${name}.actual.svg`);
-    const actual = svgForPipeline(name, solids);
+    const expectedPath = path.join(snapshotsDir, `${mock.name}.svg`);
+    const actualPath = path.join(snapshotsDir, `${mock.name}.actual.svg`);
+    const actual = svgForPipeline(mock.name, solids);
 
     // write out the actual result for easy visual comparison and compare to existing
     fs.writeFileSync(actualPath, actual);
@@ -108,7 +77,7 @@ PipelineNames.forEach(name => {
 
 it(`renders the expected SVG when viewing a composite`, () => {
   // load the GraphQL response and pull out the first layer of solids
-  const pipeline = pipelineNamed("airline_demo_ingest_pipeline");
+  const pipeline = readMock(MOCKS[0]);
   const parentId = "master_cord_s3_to_df";
   const parent = pipeline.solidHandles.find(h => h.handleID === parentId)!
     .solid;

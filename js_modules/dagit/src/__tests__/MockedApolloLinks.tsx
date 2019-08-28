@@ -4,12 +4,17 @@ import {
   ApolloLink,
   FetchResult,
   Observable
-  // Observer,
 } from "apollo-link";
 
 import { print } from "graphql/language/printer";
 import { addTypenameToDocument } from "apollo-utilities";
 import { isEqual } from "lodash";
+
+export interface CachedGraphQLRequest extends GraphQLRequest {
+  name: string;
+  filepath: string;
+  repo?: string;
+}
 
 export interface MockedResponse {
   request: GraphQLRequest;
