@@ -32,8 +32,8 @@ interface Point {
   y: number;
 }
 
-const DETAIL_ZOOM = 1;
-const MAX_OVERVIEW_ZOOM = 0.39;
+export const DETAIL_ZOOM = 0.75;
+export const MAX_OVERVIEW_ZOOM = 0.39;
 
 const PanAndZoomInteractor: SVGViewportInteractor = {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>) {

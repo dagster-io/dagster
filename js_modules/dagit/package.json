@@ -56,6 +56,7 @@
     "@types/jest": "^24.0.15",
     "@types/lodash": "^4.14.136",
     "@types/node": "^12.6.8",
+    "@types/pretty": "^2.0.0",
     "@types/prop-types": "^15.7.1",
     "@types/react": "^16.8.23",
     "@types/react-dom": "^16.8.4",
@@ -75,6 +76,7 @@
     "eslint-config-prettier": "^6.0.0",
     "eslint-plugin-prettier": "^3.1.0",
     "prettier": "^1.18.2",
+    "pretty": "^2.0.0",
     "react-scripts": "^3.0.1",
     "react-test-renderer": "^16.8.6",
     "ts-node": "^8.3.0",
@@ -92,6 +94,7 @@
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix",
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
     "ts": "tsc -p .",
+    "download-mocks": "jest -i --collectCoverage=false --testRegex='src/scripts/DownloadMocks.ts'",
     "download-schema": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/DownloadSchema.ts",
     "generate-types": "rm src/types/* && apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql --globalTypesFile ./src/types/globalTypes.ts && python append_generated.py",
     "watch-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql  --globalTypesFile ./src/types/globalTypes.ts --watch"

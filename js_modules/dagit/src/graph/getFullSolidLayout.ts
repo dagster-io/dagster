@@ -89,6 +89,7 @@ export interface IPoint {
   y: number;
 }
 
+const MAX_PER_ROW = 25;
 const SOLID_WIDTH = 350;
 const SOLID_BASE_HEIGHT = 60;
 const IO_HEIGHT = 36;
@@ -122,8 +123,9 @@ function getDagrePipelineLayoutHeavy(
   // parent solid AROUND it. We pass this padding in to dagre, and then we have enough
   // room to add our parent layout around the result.
   let parentIOPadding = 0;
-  let marginy = 100;
-  let marginx = 100;
+  const marginBase = 100;
+  let marginy = marginBase;
+  let marginx = marginBase;
   if (parentSolid) {
     parentIOPadding =
       Math.max(parentSolid.inputs.length, parentSolid.outputs.length) *
@@ -176,22 +178,102 @@ function getDagrePipelineLayoutHeavy(
     [solidName: string]: IFullSolidLayout;
   } = {};
 
+  let nodesBySolid: { [solidName: string]: dagre.Node } = {};
+  let nodesInRows: { [key: string]: dagre.Node[] } = {};
+  g.nodes().forEach(function(solidName) {
+    const node = g.node(solidName);
+    nodesBySolid[solidName] = node;
+    nodesInRows[`${node.y}`] = nodesInRows[`${node.y}`] || [];
+    nodesInRows[`${node.y}`].push(node);
+  });
+
+  // OK! We're going to split the nodes in long (>MAX_PER_ROW) rows into
+  // multiple rows, shift all the subsequent rows down. Note we do this
+  // repeatedly until each row has less than MAX_PER_ROW nodes. There are
+  // a few caveats to this:
+  // - We may end up making the lines betwee nodes and their children
+  //   less direct.
+  // - We may "compact" two groups of solids separated by horizontal
+  //   whitespace on the same row into the same block.
+
+  let rows = Object.keys(nodesInRows)
+    .map(a => Number(a))
+    .sort((a, b) => a - b);
+
+  let firstRow = nodesInRows[`${rows[0]}`];
+  let firstRowCenterX =
+    firstRow.reduce((s, n) => s + n.x + n.width / 2, 0) / firstRow.length;
+
+  for (let ii = 0; ii < rows.length; ii++) {
+    const rowKey = `${rows[ii]}`;
+    const rowNodes = nodesInRows[rowKey];
+
+    const desiredCount = Math.ceil(rowNodes.length / MAX_PER_ROW);
+    if (desiredCount === 1) continue;
+
+    for (let r = 0; r < desiredCount; r++) {
+      const newRowNodes = rowNodes.slice(
+        r * MAX_PER_ROW,
+        (r + 1) * MAX_PER_ROW
+      );
+      const maxHeight =
+        Math.max(...newRowNodes.map(n => n.height)) + SOLID_BASE_HEIGHT;
+      const totalWidth = newRowNodes.reduce(
+        (sum, n) => sum + n.width + SOLID_BASE_HEIGHT,
+        0
+      );
+
+      let x = firstRowCenterX - totalWidth / 2;
+
+      // shift the nodes before the split point so they're centered nicely
+      newRowNodes.forEach(n => {
+        n.x = x;
+        x += n.width + SOLID_BASE_HEIGHT;
+      });
+
+      // shift the nodes after the split point downwards
+      const shifted = rowNodes.slice((r + 1) * MAX_PER_ROW);
+      shifted.forEach(n => (n.y += maxHeight));
+
+      // shift all nodes in the graph beneath this row down by
+      // the height of the newly inserted row.
+      const shiftedMaxHeight =
+        Math.max(0, ...shifted.map(n => n.height)) + SOLID_BASE_HEIGHT;
+
+      for (let jj = ii + 1; jj < rows.length; jj++) {
+        nodesInRows[`${rows[jj]}`].forEach(n => (n.y += shiftedMaxHeight));
+      }
+    }
+  }
+  let minX = Number.MAX_SAFE_INTEGER;
+  Object.keys(nodesBySolid).forEach(solidName => {
+    const node = nodesBySolid[solidName];
+    minX = Math.min(minX, node.x - node.width / 2 - marginx);
+  });
+  Object.keys(nodesBySolid).forEach(solidName => {
+    const node = nodesBySolid[solidName];
+    node.x -= minX;
+  });
+
   // Due to a bug in Dagre when run without an "align" value, we need to calculate
-  // the total width of the graph coordinate space ourselves.
+  // the total width of the graph coordinate space ourselves. We need the height
+  // because we've shifted long single rows into multiple rows.
   let maxWidth = 0;
+  let maxHeight = 0;
 
   // Read the Dagre layout and map "nodes" back to our solids, but with
   // X,Y coordinates this time.
-  g.nodes().forEach(function(solidName) {
-    const node = g.node(solidName);
+  Object.keys(nodesBySolid).forEach(solidName => {
+    const node = nodesBySolid[solidName];
     const solid = pipelineSolids.find(({ name }) => name === solidName);
-    if (solid) {
-      solids[solidName] = layoutSolid(solid, {
-        x: node.x - node.width / 2, // Dagre's x/y is the center, we want top left
-        y: node.y - node.height / 2
-      });
-      maxWidth = Math.max(maxWidth, node.x + node.width);
-    }
+    if (!solid) return;
+
+    solids[solidName] = layoutSolid(solid, {
+      x: node.x - node.width / 2, // Dagre's x/y is the center, we want top left
+      y: node.y - node.height / 2
+    });
+    maxWidth = Math.max(maxWidth, node.x + node.width);
+    maxHeight = Math.max(maxHeight, node.y + node.height);
   });
 
   // Read the Dagre layout and map "edges" back to our data model. We don't
@@ -211,7 +293,7 @@ function getDagrePipelineLayoutHeavy(
     solids,
     connections,
     width: maxWidth,
-    height: g.graph().height as number,
+    height: maxHeight + marginBase,
     parent: null
   };
 

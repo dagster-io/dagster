@@ -1,6 +1,6 @@
+import { writeFileSync } from "fs";
 import { execSync } from "child_process";
 import { getIntrospectionQuery, buildClientSchema, printSchema } from "graphql";
-import { writeFileSync } from "fs";
 
 const pyVer = execSync("python --version").toString();
 const verMatch = pyVer.match(/Python ([\d.]*)/);

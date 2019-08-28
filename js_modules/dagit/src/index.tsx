@@ -9,7 +9,6 @@ import { SubscriptionClient } from "subscriptions-transport-ws";
 import { WebSocketLink } from "apollo-link-ws";
 import { WebsocketStatusProvider } from "./WebsocketStatus";
 import App from "./App";
-import ApiResultRenderer from "./ApiResultRenderer";
 import AppCache from "./AppCache";
 import { Toaster, Position, Intent } from "@blueprintjs/core";
 
@@ -81,22 +80,12 @@ const client = new ApolloClient({
   link: ApolloLink.from([errorLink, new WebSocketLink(websocketClient)])
 });
 
-if (process.env.REACT_APP_RENDER_API_RESULTS) {
-  ReactDOM.render(
+ReactDOM.render(
+  <WebsocketStatusProvider websocket={websocketClient}>
+    <GlobalStyle />
     <ApolloProvider client={client}>
-      <GlobalStyle />
-      <ApiResultRenderer />
-    </ApolloProvider>,
-    document.getElementById("root") as HTMLElement
-  );
-} else {
-  ReactDOM.render(
-    <WebsocketStatusProvider websocket={websocketClient}>
-      <GlobalStyle />
-      <ApolloProvider client={client}>
-        <App />
-      </ApolloProvider>
-    </WebsocketStatusProvider>,
-    document.getElementById("root") as HTMLElement
-  );
-}
+      <App />
+    </ApolloProvider>
+  </WebsocketStatusProvider>,
+  document.getElementById("root") as HTMLElement
+);

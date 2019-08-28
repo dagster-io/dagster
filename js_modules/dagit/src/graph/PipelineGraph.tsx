@@ -2,7 +2,7 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
-import SVGViewport, { SVGViewportInteractor } from "./SVGViewport";
+import SVGViewport, { DETAIL_ZOOM, SVGViewportInteractor } from "./SVGViewport";
 import { SolidNameOrPath } from "../PipelineExplorer";
 import SolidNode from "./SolidNode";
 import { IFullPipelineLayout, IFullSolidLayout } from "./getFullSolidLayout";
@@ -40,7 +40,7 @@ interface IPipelineContentsState {
   highlighted: Edge[];
 }
 
-class PipelineGraphContents extends React.PureComponent<
+export class PipelineGraphContents extends React.PureComponent<
   IPipelineContentsProps,
   IPipelineContentsState
 > {
@@ -181,7 +181,7 @@ export default class PipelineGraph extends React.Component<
     const cx = solidLayout.boundingBox.x + solidLayout.boundingBox.width / 2;
     const cy = solidLayout.boundingBox.y + solidLayout.boundingBox.height / 2;
 
-    this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, 1);
+    this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, DETAIL_ZOOM);
   };
 
   closestSolidInDirection = (dir: string): string | undefined => {
@@ -288,7 +288,7 @@ export default class PipelineGraph extends React.Component<
           >
             <PipelineGraphContents
               layout={layout}
-              minified={scale < 0.99}
+              minified={scale < DETAIL_ZOOM - 0.01}
               onDoubleClickSolid={onDoubleClickSolid || this.focusOnSolid}
               {...this.props}
             />
