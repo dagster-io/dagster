@@ -4,7 +4,7 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { IconNames } from "@blueprintjs/icons";
 import { Colors } from "@blueprintjs/core";
-import { Mutation, MutationFn } from "react-apollo";
+import { Mutation, MutationFunction } from "react-apollo";
 import ApolloClient from "apollo-client";
 
 import LogsFilterProvider, {
@@ -138,7 +138,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
   };
 
   onReexecute = async (
-    mutation: MutationFn<Reexecute, ReexecuteVariables>,
+    mutation: MutationFunction<Reexecute, ReexecuteVariables>,
     stepKey?: string
   ) => {
     const { run } = this.props;

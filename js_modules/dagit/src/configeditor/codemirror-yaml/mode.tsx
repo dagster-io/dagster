@@ -654,7 +654,7 @@ function findRangeInDocumentFromPath(
     node = node.key;
   }
 
-  if (node.range) {
+  if (node && node.range) {
     return {
       start: node.range[0],
       end: node.range[1]

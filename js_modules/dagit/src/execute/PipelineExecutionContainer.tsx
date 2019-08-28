@@ -4,7 +4,7 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { Button, Colors, Spinner } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { ApolloConsumer, Mutation, MutationFn } from "react-apollo";
+import { ApolloConsumer, Mutation, MutationFunction } from "react-apollo";
 
 import TabBar from "./TabBar";
 import ExecutionStartButton from "./ExecutionStartButton";
@@ -158,7 +158,7 @@ export default class PipelineExecutionContainer extends React.Component<
   };
 
   onExecute = async (
-    startPipelineExecution: MutationFn<
+    startPipelineExecution: MutationFunction<
       StartPipelineExecution,
       StartPipelineExecutionVariables
     >
