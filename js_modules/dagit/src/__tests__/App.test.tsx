@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as TestRenderer from "react-test-renderer";
-import App from "../App";
+import { App } from "../App";
 import AppCache from "../AppCache";
 import { MOCKS } from "./AppMocks";
 import { MockedProvider } from "./MockedProvider";

@@ -14,7 +14,9 @@ interface IStructuredContentProps {
   node: LogsRowStructuredFragment;
 }
 
-export default ({ node }: IStructuredContentProps) => {
+export const LogsRowStructuredContent: React.FunctionComponent<
+  IStructuredContentProps
+> = ({ node }) => {
   switch (node.__typename) {
     // Errors
     case "ExecutionStepFailureEvent":

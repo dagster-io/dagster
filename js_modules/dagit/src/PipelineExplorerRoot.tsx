@@ -2,7 +2,7 @@ import * as React from "react";
 import { match } from "react-router";
 import gql from "graphql-tag";
 import { History } from "history";
-import { QueryResult, Query } from "react-apollo";
+import { useQuery } from "react-apollo";
 import { NonIdealState } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 
@@ -22,6 +22,14 @@ interface IPipelineExplorerRootProps {
 const PipelineExplorerRoot: React.FunctionComponent<
   IPipelineExplorerRootProps
 > = props => {
+  const queryResult = useQuery<PipelineExplorerRootQuery>(
+    PIPELINE_EXPLORER_ROOT_QUERY,
+    {
+      fetchPolicy: "cache-and-network",
+      partialRefetch: true,
+      variables: { name: props.match.params.pipelineName }
+    }
+  );
   const pathSolids = props.location.pathname
     .split(new RegExp(`${props.match.params.pipelineName}/?`))
     .pop()!
@@ -30,86 +38,72 @@ const PipelineExplorerRoot: React.FunctionComponent<
   const selectedName = pathSolids[pathSolids.length - 1];
 
   return (
-    <Query
-      query={PIPELINE_EXPLORER_ROOT_QUERY}
-      fetchPolicy="cache-and-network"
-      partialRefetch={true}
-      variables={{ name: props.match.params.pipelineName }}
-    >
-      {(queryResult: QueryResult<PipelineExplorerRootQuery, any>) => (
-        <Loading queryResult={queryResult}>
-          {result => {
-            const pipelineOrError = result.pipelineOrError;
+    <Loading queryResult={queryResult}>
+      {result => {
+        const pipelineOrError = result.pipelineOrError;
 
-            switch (pipelineOrError.__typename) {
-              case "PipelineNotFoundError":
-                return (
-                  <NonIdealState
-                    icon={IconNames.FLOW_BRANCH}
-                    title="Pipeline Not Found"
-                    description={pipelineOrError.message}
-                  />
-                );
-              case "Pipeline":
-                const pipeline = pipelineOrError;
-                let displayedHandles = pipeline.solidHandles.filter(
-                  h => !h.parent
-                );
-                let parent:
-                  | PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
-                  | undefined;
+        switch (pipelineOrError.__typename) {
+          case "PipelineNotFoundError":
+            return (
+              <NonIdealState
+                icon={IconNames.FLOW_BRANCH}
+                title="Pipeline Not Found"
+                description={pipelineOrError.message}
+              />
+            );
+          case "Pipeline":
+            const pipeline = pipelineOrError;
+            let displayedHandles = pipeline.solidHandles.filter(h => !h.parent);
+            let parent:
+              | PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
+              | undefined;
 
-                const nameMatch = (parentName: string) => (
-                  h: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
-                ) => h.solid.name === parentName;
+            const nameMatch = (parentName: string) => (
+              h: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
+            ) => h.solid.name === parentName;
 
-                const filterHandle = (
-                  parent:
-                    | PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
-                    | undefined
-                ) => (
-                  h: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
-                ) =>
-                  h.parent && parent && h.parent.handleID === parent.handleID;
+            const filterHandle = (
+              parent:
+                | PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
+                | undefined
+            ) => (
+              h: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
+            ) => h.parent && parent && h.parent.handleID === parent.handleID;
 
-                for (const parentName of parentNames) {
-                  parent = displayedHandles.find(nameMatch(parentName));
-                  displayedHandles = pipeline.solidHandles.filter(
-                    filterHandle(parent)
-                  );
-                }
-                const selectedHandle = displayedHandles.find(
-                  h => h.solid.name === selectedName
-                );
-                const selectedDefinitionInvocations =
-                  selectedHandle &&
-                  pipeline.solidHandles.filter(
-                    s =>
-                      s.solid.definition.name ===
-                      selectedHandle.solid.definition.name
-                  );
-
-                return (
-                  <PipelineExplorer
-                    history={props.history}
-                    path={pathSolids}
-                    pipeline={pipeline}
-                    handles={displayedHandles}
-                    parentHandle={parent}
-                    selectedDefinitionInvocations={
-                      selectedDefinitionInvocations
-                    }
-                    selectedHandle={selectedHandle}
-                  />
-                );
-
-              default:
-                return null;
+            for (const parentName of parentNames) {
+              parent = displayedHandles.find(nameMatch(parentName));
+              displayedHandles = pipeline.solidHandles.filter(
+                filterHandle(parent)
+              );
             }
-          }}
-        </Loading>
-      )}
-    </Query>
+            const selectedHandle = displayedHandles.find(
+              h => h.solid.name === selectedName
+            );
+            const selectedDefinitionInvocations =
+              selectedHandle &&
+              pipeline.solidHandles.filter(
+                s =>
+                  s.solid.definition.name ===
+                  selectedHandle.solid.definition.name
+              );
+
+            return (
+              <PipelineExplorer
+                history={props.history}
+                path={pathSolids}
+                pipeline={pipeline}
+                handles={displayedHandles}
+                parentHandle={parent}
+                selectedDefinitionInvocations={selectedDefinitionInvocations}
+                selectedHandle={selectedHandle}
+              />
+            );
+
+          default:
+            return null;
+        }
+      }}
+    </Loading>
   );
 };
 

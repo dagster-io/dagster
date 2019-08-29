@@ -15,7 +15,7 @@ import {
 import { MetadataEntry } from "./MetadataEntry";
 import { CellTruncationProvider } from "./CellTruncationProvider";
 import { showCustomAlert } from "../CustomAlertProvider";
-import LogsRowStructuredContent from "./LogsRowStructuredContent";
+import { LogsRowStructuredContent } from "./LogsRowStructuredContent";
 import InfoModal from "../InfoModal";
 import PythonErrorInfo from "../PythonErrorInfo";
 

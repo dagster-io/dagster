@@ -2,7 +2,7 @@ import { Colors, Button, Classes, Dialog, Intent } from "@blueprintjs/core";
 import * as React from "react";
 import gql from "graphql-tag";
 import PipelineGraph from "../graph/PipelineGraph";
-import { QueryResult, Query } from "react-apollo";
+import { useQuery } from "react-apollo";
 import {
   SolidSelectorQuery,
   SolidSelectorQuery_pipeline,
@@ -279,12 +279,13 @@ export const SOLID_SELECTOR_QUERY = gql`
   ${PipelineGraph.fragments.PipelineGraphSolidFragment}
 `;
 
-export default (props: ISolidSelectorProps) => (
-  <Query query={SOLID_SELECTOR_QUERY} variables={{ name: props.pipelineName }}>
-    {(queryResult: QueryResult<SolidSelectorQuery, any>) => (
-      <Loading queryResult={queryResult}>
-        {result => <SolidSelector {...props} pipeline={result.pipeline} />}
-      </Loading>
-    )}
-  </Query>
-);
+export default (props: ISolidSelectorProps) => {
+  const queryResult = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
+    variables: { name: props.pipelineName }
+  });
+  return (
+    <Loading queryResult={queryResult}>
+      {result => <SolidSelector {...props} pipeline={result.pipeline} />}
+    </Loading>
+  );
+};
