@@ -18,7 +18,7 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
 
     .. code-block:: python
 
-        execute_pipeline(**pipeline_def.get_preset('example'))
+        execute_pipeline_with_preset(pipeline_def, 'example')
 
 
     Args:

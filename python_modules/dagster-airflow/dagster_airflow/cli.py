@@ -10,9 +10,9 @@ from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
 
-def construct_environment_yaml(preset, env, pipeline_name, module_name):
+def construct_environment_yaml(preset_name, env, pipeline_name, module_name):
     # Load environment dict from either a preset or yaml file globs
-    if preset:
+    if preset_name:
         if env:
             raise click.UsageError('Can not use --preset with --env.')
 
@@ -22,7 +22,7 @@ def construct_environment_yaml(preset, env, pipeline_name, module_name):
             'module_name': module_name,
         }
         pipeline = handle_for_pipeline_cli_args(cli_args).build_pipeline_definition()
-        environment_dict = pipeline.get_preset(preset)['environment_dict']
+        environment_dict = pipeline.get_preset(preset_name).environment_dict
 
     else:
         env = list(env)

@@ -6,7 +6,13 @@ import textwrap
 import click
 import yaml
 
-from dagster import PipelineDefinition, RunConfig, check, execute_pipeline
+from dagster import (
+    PipelineDefinition,
+    RunConfig,
+    check,
+    execute_pipeline,
+    execute_pipeline_with_preset,
+)
 from dagster.cli.load_handle import (
     CliUsageError,
     handle_for_pipeline_cli_args,
@@ -294,12 +300,11 @@ def execute_execute_command(env, cli_args, mode=None):
     return do_execute_command(pipeline, env, mode)
 
 
-def execute_execute_command_with_preset(preset, cli_args, _mode):
+def execute_execute_command_with_preset(preset_name, cli_args, _mode):
     pipeline = handle_for_pipeline_cli_args(cli_args).build_pipeline_definition()
     cli_args.pop('pipeline_name')
 
-    kwargs = pipeline.get_preset(preset)
-    return execute_pipeline(**kwargs)
+    return execute_pipeline_with_preset(pipeline, preset_name)
 
 
 def do_execute_command(pipeline, env_file_list, mode=None):

@@ -1,6 +1,5 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.execution.config import RunConfig
 from dagster.core.types.runtime import construct_runtime_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
@@ -336,17 +335,7 @@ class PipelineDefinition(IContainSolids, object):
                 )
             )
 
-        preset = self._preset_dict[name]
-
-        pipeline = self
-        if preset.solid_subset is not None:
-            pipeline = pipeline.build_sub_pipeline(preset.solid_subset)
-
-        return {
-            'pipeline': pipeline,
-            'environment_dict': preset.environment_dict,
-            'run_config': RunConfig(mode=preset.mode),
-        }
+        return self._preset_dict[name]
 
     def new_with(self, name=None, mode_defs=None, preset_defs=None):
         return PipelineDefinition(

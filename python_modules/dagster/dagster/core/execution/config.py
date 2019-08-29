@@ -70,6 +70,9 @@ class RunConfig(
     def with_event_sink(self, sink):
         return RunConfig(**merge_dicts(self._asdict(), {'event_sink': sink}))
 
+    def with_mode(self, mode):
+        return RunConfig(**merge_dicts(self._asdict(), {'mode': mode}))
+
 
 class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     _raise_on_error = True
