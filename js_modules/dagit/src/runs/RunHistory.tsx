@@ -213,10 +213,10 @@ export default class RunHistory extends React.Component<
 
 const MostRecentRun: React.FunctionComponent<{
   run: RunHistoryRunFragment;
-}> = props => (
+}> = ({ run }) => (
   <div>
     <Header style={{ marginTop: 0 }}>Most Recent Run</Header>
-    <RunRow run={Object.assign({}, props.run, { status: "FAILURE" })} />
+    <RunRow run={run} />
   </div>
 );
 
