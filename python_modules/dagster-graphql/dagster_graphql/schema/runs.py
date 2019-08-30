@@ -55,7 +55,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         pipeline = self.resolve_pipeline(graphene_info)
         execution_plan = create_execution_plan(
             pipeline.get_dagster_pipeline(),
-            self._pipeline_run.config,
+            self._pipeline_run.environment_dict,
             RunConfig(mode=self._pipeline_run.mode),
         )
         return graphene_info.schema.type_named('ExecutionPlan')(pipeline, execution_plan)
@@ -64,7 +64,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return self._pipeline_run.step_keys_to_execute
 
     def resolve_environmentConfigYaml(self, _graphene_info):
-        return yaml.dump(self._pipeline_run.config, default_flow_style=False)
+        return yaml.dump(self._pipeline_run.environment_dict, default_flow_style=False)
 
     @property
     def run_id(self):
@@ -142,7 +142,7 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
 
         execution_plan = create_execution_plan(
             pipeline.get_dagster_pipeline(),
-            self._pipeline_run.config,
+            self._pipeline_run.environment_dict,
             RunConfig(mode=self._pipeline_run.mode),
         )
         return [

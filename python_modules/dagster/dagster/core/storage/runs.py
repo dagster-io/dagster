@@ -204,7 +204,7 @@ class FilesystemRunStorage(RunStorage):
                 'run_id': pipeline_run.run_id,
                 'pipeline_name': pipeline_run.pipeline_name,
                 'pipeline_solid_subset': pipeline_run.selector.solid_subset,
-                'config': pipeline_run.config,
+                'environment_dict': pipeline_run.environment_dict,
                 'mode': pipeline_run.mode,
             }
             if isinstance(self.event_log_storage, FilesystemEventLogStorage):

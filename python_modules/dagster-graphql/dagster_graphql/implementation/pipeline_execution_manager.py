@@ -135,7 +135,7 @@ class SynchronousExecutionManager(PipelineExecutionManager):
         try:
             event_list = []
             for event in execute_pipeline_iterator(
-                pipeline, pipeline_run.config, run_config=run_config
+                pipeline, pipeline_run.environment_dict, run_config=run_config
             ):
                 event_list.append(event)
             return PipelineExecutionResult(pipeline, run_config.run_id, event_list, lambda: None)
@@ -267,7 +267,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                 handle,
                 pipeline_run.selector.name,
                 pipeline_run.selector.solid_subset,
-                pipeline_run.config,
+                pipeline_run.environment_dict,
             ),
             kwargs={
                 'run_id': pipeline_run.run_id,

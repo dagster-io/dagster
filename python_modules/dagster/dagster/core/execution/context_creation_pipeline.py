@@ -249,7 +249,7 @@ def create_system_storage_data(
     system_storage_data.run_storage.create_run(
         pipeline_name=pipeline_def.name,
         run_id=run_config.run_id,
-        env_config=environment_config.original_config_dict,
+        environment_dict=environment_config.original_config_dict,
         mode=context_creation_data.mode_def.name,
     )
 

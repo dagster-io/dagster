@@ -19,7 +19,7 @@ class PipelineRun(object):
         '_run_storage',
         '_pipeline_name',
         '_run_id',
-        '_env_config',
+        '_environment_dict',
         '_mode',
         '_selector',
         '_reexecution_config',
@@ -33,7 +33,7 @@ class PipelineRun(object):
         run_storage=None,
         pipeline_name=None,
         run_id=None,
-        env_config=None,
+        environment_dict=None,
         mode=None,
         selector=None,
         reexecution_config=None,
@@ -45,7 +45,9 @@ class PipelineRun(object):
 
         self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
         self._run_id = check.str_param(run_id, 'run_id')
-        self._env_config = check.opt_dict_param(env_config, 'environment_config', key_type=str)
+        self._environment_dict = check.opt_dict_param(
+            environment_dict, 'environment_dict', key_type=str
+        )
         self._mode = check.opt_str_param(mode, 'mode')
         self._selector = check.opt_inst_param(
             selector,
@@ -94,8 +96,8 @@ class PipelineRun(object):
         return self._pipeline_name
 
     @property
-    def config(self):
-        return self._env_config
+    def environment_dict(self):
+        return self._environment_dict
 
     def logs_after(self, cursor):
         return self._run_storage.event_log_storage.get_logs_for_run(self.run_id, cursor=cursor)
@@ -163,7 +165,7 @@ class PipelineRun(object):
             pipeline_name=json_data['pipeline_name'],
             run_id=json_data['run_id'],
             selector=selector,
-            env_config=json_data['config'],
+            environment_dict=json_data['environment_dict'],
             mode=json_data['mode'],
         )
 
