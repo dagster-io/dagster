@@ -13,6 +13,7 @@ from dagster_graphql.implementation.execution import (
     start_pipeline_execution,
 )
 from dagster_graphql.implementation.fetch_pipelines import (
+    get_dauphin_pipeline_from_selector,
     get_pipeline_or_error,
     get_pipeline_or_raise,
     get_pipelines_or_error,
@@ -25,6 +26,7 @@ from dagster_graphql.implementation.fetch_runs import (
     validate_pipeline_config,
 )
 from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
+from dagster_graphql.implementation.utils import UserFacingGraphQLError
 
 from dagster import check
 from dagster.core.execution.api import ExecutionSelector
@@ -208,7 +210,7 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
     def mutate(self, graphene_info, **kwargs):
         return start_pipeline_execution(
             graphene_info,
-            execution_params=create_execution_params(kwargs['executionParams']),
+            execution_params=create_execution_params(graphene_info, kwargs['executionParams']),
             reexecution_config=kwargs['reexecutionConfig'].to_reexecution_config()
             if 'reexecutionConfig' in kwargs
             else None,
@@ -256,11 +258,48 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
     tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
 
 
-def create_execution_params(graphql_execution_params):
+def create_execution_params(graphene_info, graphql_execution_params):
+
+    preset_name = graphql_execution_params.get('preset')
+    if preset_name:
+        check.invariant(
+            not graphql_execution_params.get('environmentConfigData'),
+            "Invalid ExecutionParams. Cannot define environment_dict when using preset",
+        )
+        check.invariant(
+            not graphql_execution_params.get('mode'),
+            "Invalid ExecutionParams. Cannot define mode when using preset",
+        )
+
+        selector = graphql_execution_params['selector'].to_selector()
+        check.invariant(
+            not selector.solid_subset,
+            "Invalid ExecutionParams. Cannot define selector.solid_subset when using preset",
+        )
+        dauphin_pipeline = get_dauphin_pipeline_from_selector(graphene_info, selector)
+        pipeline = dauphin_pipeline.get_dagster_pipeline()
+
+        if not pipeline.has_preset(preset_name):
+            raise UserFacingGraphQLError(
+                graphene_info.schema.type_named('PresetNotFoundError')(
+                    preset=preset_name, selector=selector
+                )
+            )
+
+        preset = pipeline.get_preset(preset_name)
+
+        return ExecutionParams(
+            selector=ExecutionSelector(selector.name, preset.solid_subset),
+            environment_dict=preset.environment_dict,
+            mode=preset.mode,
+            execution_metadata=ExecutionMetadata(run_id=None, tags={}),
+            step_keys=graphql_execution_params.get('stepKeys'),
+        )
+
     return ExecutionParams(
         selector=graphql_execution_params['selector'].to_selector(),
         environment_dict=graphql_execution_params.get('environmentConfigData'),
-        mode=graphql_execution_params['mode'],
+        mode=graphql_execution_params.get('mode'),
         execution_metadata=create_execution_metadata(
             graphql_execution_params.get('executionMetadata')
         ),
@@ -289,7 +328,9 @@ class DauphinExecutePlan(dauphin.Mutation):
     Output = dauphin.NonNull('ExecutePlanResult')
 
     def mutate(self, graphene_info, **kwargs):
-        return do_execute_plan(graphene_info, create_execution_params(kwargs['executionParams']))
+        return do_execute_plan(
+            graphene_info, create_execution_params(graphene_info, kwargs['executionParams'])
+        )
 
 
 class DauphinMutation(dauphin.ObjectType):
@@ -340,9 +381,10 @@ class DauphinExecutionParams(dauphin.InputObjectType):
 
     selector = dauphin.NonNull('ExecutionSelector')
     environmentConfigData = dauphin.Field('EnvironmentConfigData')
-    mode = dauphin.NonNull(dauphin.String)
+    mode = dauphin.Field(dauphin.String)
     executionMetadata = dauphin.Field('ExecutionMetadata')
     stepKeys = dauphin.Field(dauphin.List(dauphin.NonNull(dauphin.String)))
+    preset = dauphin.Field(dauphin.String)
 
 
 class DauphinExecutionSelector(dauphin.InputObjectType):

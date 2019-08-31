@@ -1,3 +1,5 @@
+import re
+
 from dagster_graphql.test.preset_query import execute_preset_query
 
 from .setup import define_context
@@ -14,6 +16,13 @@ def test_basic_preset_query_with_presets(snapshot):
     assert [preset_data['name'] for preset_data in result.data['pipeline']['presets']] == [
         'prod',
         'test',
+        'test_inline',
     ]
 
+    # Remove local filepath from snapshot
+    result.data['pipeline']['presets'][2]['environmentConfigYaml'] = re.sub(
+        r'num: .*/data/num.csv',
+        'num: /data/num.csv',
+        result.data['pipeline']['presets'][2]['environmentConfigYaml'],
+    )
     snapshot.assert_match(result.data)

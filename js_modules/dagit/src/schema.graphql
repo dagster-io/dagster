@@ -192,9 +192,10 @@ input ExecutionMetadata {
 input ExecutionParams {
   selector: ExecutionSelector!
   environmentConfigData: EnvironmentConfigData
-  mode: String!
+  mode: String
   executionMetadata: ExecutionMetadata
   stepKeys: [String!]
+  preset: String
 }
 
 type ExecutionPlan {
@@ -717,6 +718,12 @@ type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   step: ExecutionStep
   pipeline: Pipeline!
+}
+
+type PresetNotFoundError implements Error {
+  message: String!
+  stack: [String!]!
+  preset: String!
 }
 
 type PythonError implements Error {

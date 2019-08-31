@@ -265,6 +265,14 @@ def more_complicated_nested_config():
             name='test',
             environment_files=[script_relative_path('../environments/csv_hello_world_test.yaml')],
         ),
+        PresetDefinition(
+            name='test_inline',
+            environment_dict={
+                'solids': {
+                    'sum_solid': {'inputs': {'num': script_relative_path("../data/num.csv")}}
+                }
+            },
+        ),
     ]
 )
 def csv_hello_world():

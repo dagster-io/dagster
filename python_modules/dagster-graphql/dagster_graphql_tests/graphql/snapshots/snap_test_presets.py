@@ -31,6 +31,17 @@ snapshots['test_basic_preset_query_with_presets 1'] = {
                 'mode': 'default',
                 'name': 'test',
                 'solidSubset': None
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'environmentConfigYaml': '''solids:
+  sum_solid:
+    inputs:
+      num: /data/num.csv
+''',
+                'mode': 'default',
+                'name': 'test_inline',
+                'solidSubset': None
             }
         ]
     }

@@ -50,9 +50,10 @@ export interface ExecutionMetadata {
 export interface ExecutionParams {
   selector: ExecutionSelector;
   environmentConfigData?: any | null;
-  mode: string;
+  mode?: string | null;
   executionMetadata?: ExecutionMetadata | null;
   stepKeys?: string[] | null;
+  preset?: string | null;
 }
 
 export interface ExecutionSelector {

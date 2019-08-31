@@ -91,6 +91,20 @@ class DauphinInvalidSubsetError(dauphin.ObjectType):
         self.pipeline = pipeline
 
 
+class DauphinPresetNotFoundError(dauphin.ObjectType):
+    class Meta:
+        name = 'PresetNotFoundError'
+        interfaces = (DauphinError,)
+
+    preset = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, preset, selector):
+        self.preset = check.str_param(preset, 'preset')
+        self.message = 'Preset {preset} not found in pipeline {pipeline}.'.format(
+            preset=preset, pipeline=selector.name
+        )
+
+
 class DauphinModeNotFoundError(dauphin.ObjectType):
     class Meta:
         name = 'ModeNotFoundError'

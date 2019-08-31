@@ -323,6 +323,10 @@ class PipelineDefinition(IContainSolids, object):
     def get_presets(self):
         return list(self._preset_dict.values())
 
+    def has_preset(self, name):
+        check.str_param(name, 'name')
+        return name in self._preset_dict
+
     def get_preset(self, name):
         check.str_param(name, 'name')
         if name not in self._preset_dict:
