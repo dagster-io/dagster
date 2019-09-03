@@ -187,6 +187,8 @@ def test_create_delete_dataset():
     assert not dataset_exists(dataset)
 
 
+# See: https://github.com/dagster-io/dagster/issues/1711
+@pytest.mark.skip
 def test_pd_df_load():
     dataset = get_dataset()
     table = '%s.%s' % (dataset, 'df')
@@ -243,6 +245,8 @@ def test_pd_df_load():
     assert not dataset_exists(dataset)
 
 
+# See: https://github.com/dagster-io/dagster/issues/1711
+@pytest.mark.skip
 def test_gcs_load():
     dataset = get_dataset()
     table = '%s.%s' % (dataset, 'df')
