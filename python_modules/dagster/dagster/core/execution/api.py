@@ -10,6 +10,8 @@ core compute function, and exercise all logging and metrics tracking (outside of
 will not invoke *any* outputs (and their APIs don't allow the user to).
 '''
 
+from collections import namedtuple
+
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, SystemStorageData
 from dagster.core.errors import (
@@ -364,10 +366,12 @@ def step_output_event_filter(pipe_iterator):
             yield step_event
 
 
-class ExecutionSelector(object):
-    def __init__(self, name, solid_subset=None):
-        self.name = check.str_param(name, 'name')
-        if solid_subset is None:
-            self.solid_subset = None
-        else:
-            self.solid_subset = check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
+    def __new__(cls, name, solid_subset=None):
+        return super(ExecutionSelector, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            solid_subset=None
+            if solid_subset is None
+            else check.list_param(solid_subset, 'solid_subset', of_type=str),
+        )
