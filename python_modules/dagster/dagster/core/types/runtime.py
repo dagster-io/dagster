@@ -11,6 +11,7 @@ from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
 from .config_schema import InputHydrationConfig, OutputMaterializationConfig
 from .dagster_type import check_dagster_type_param
+from .field_utils import Dict
 from .marshal import PickleSerializationStrategy, SerializationStrategy
 from .wrapping import WrappingListType, WrappingNullableType
 
@@ -534,6 +535,7 @@ def resolve_to_runtime_type(dagster_type):
     # circular dep
     from .decorator import is_runtime_type_decorated_klass, get_runtime_type_on_decorated_klass
     from .mapping import remap_python_type
+    from .python_dict import PythonDict
 
     dagster_type = remap_python_type(dagster_type)
 
@@ -541,6 +543,8 @@ def resolve_to_runtime_type(dagster_type):
 
     if dagster_type is None:
         return Any.inst()
+    if dagster_type is Dict:
+        return PythonDict.inst()
     if BuiltinEnum.contains(dagster_type):
         return RuntimeType.from_builtin_enum(dagster_type)
     if isinstance(dagster_type, WrappingListType):

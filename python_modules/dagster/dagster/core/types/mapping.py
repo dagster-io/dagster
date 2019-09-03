@@ -1,4 +1,4 @@
-from dagster.core.types import Bool, Float, Int, String
+from dagster.core.types import Bool, Float, Int, PythonDict, String
 
 from .wrapping import (
     is_python_list_typehint,
@@ -18,6 +18,8 @@ def remap_python_type(type_annotation):
         return Bool
     if type_annotation == str:
         return String
+    if type_annotation == dict:
+        return PythonDict
 
     if is_python_list_typehint(type_annotation):
         return remap_to_dagster_list_type(type_annotation)

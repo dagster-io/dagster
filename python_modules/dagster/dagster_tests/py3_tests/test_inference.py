@@ -4,10 +4,12 @@ import pytest
 
 from dagster import (
     DagsterInvalidDefinitionError,
+    Dict,
     InputDefinition,
     Int,
     composite_solid,
     dagster_type,
+    execute_solid,
     lambda_solid,
     solid,
 )
@@ -182,3 +184,41 @@ def test_composites():
         return add(a, emit_one())
 
     assert add_one.input_mappings
+
+
+def test_emit_dict():
+    @lambda_solid
+    def emit_dict() -> dict:
+        return {'foo': 'bar'}
+
+    solid_result = execute_solid(emit_dict)
+
+    assert solid_result.output_value() == {'foo': 'bar'}
+
+
+def test_dict_input():
+    @lambda_solid
+    def intake_dict(inp: dict) -> str:
+        return inp['foo']
+
+    solid_result = execute_solid(intake_dict, input_values={'inp': {'foo': 'bar'}})
+    assert solid_result.output_value() == 'bar'
+
+
+def test_emit_dagster_dict():
+    @lambda_solid
+    def emit_dagster_dict() -> Dict:
+        return {'foo': 'bar'}
+
+    solid_result = execute_solid(emit_dagster_dict)
+
+    assert solid_result.output_value() == {'foo': 'bar'}
+
+
+def test_dict_dagster_input():
+    @lambda_solid
+    def intake_dagster_dict(inp: Dict) -> str:
+        return inp['foo']
+
+    solid_result = execute_solid(intake_dagster_dict, input_values={'inp': {'foo': 'bar'}})
+    assert solid_result.output_value() == 'bar'
