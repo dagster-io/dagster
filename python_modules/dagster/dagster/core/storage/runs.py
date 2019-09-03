@@ -17,7 +17,7 @@ from dagster.utils import mkdir_p
 
 from .config import base_runs_directory
 from .event_log import FilesystemEventLogStorage, InMemoryEventLogStorage
-from .pipeline_run import PipelineRun
+from .pipeline_run import PipelineRun, PipelineRunData
 
 
 class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
@@ -30,7 +30,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''
 
     @abstractmethod
-    def create_run(self, **kwargs):
+    def create_run(self, pipeline_run_data):
         '''Create a new run in storage.
 
         Returns:
@@ -110,9 +110,9 @@ class InMemoryRunStorage(RunStorage):
     def wipe(self):
         self._runs = OrderedDict()
 
-    def create_run(self, **kwargs):
-        kwargs['run_storage'] = self
-        pipeline_run = PipelineRun(**kwargs)
+    def create_run(self, pipeline_run_data):
+        check.inst_param(pipeline_run_data, 'pipeline_run_data', PipelineRunData)
+        pipeline_run = PipelineRun(run_storage=self, pipeline_run_data=pipeline_run_data)
         self.add_run(pipeline_run)
         pipeline_run.subscribe(self.event_log_storage.event_handler(pipeline_run))
         return pipeline_run
@@ -184,9 +184,9 @@ class FilesystemRunStorage(RunStorage):
     def __contains__(self, run_id):
         return run_id in self._runs
 
-    def create_run(self, **kwargs):
-        kwargs['run_storage'] = self
-        pipeline_run = PipelineRun(**kwargs)
+    def create_run(self, pipeline_run_data):
+        check.inst_param(pipeline_run_data, 'pipeline_run_data', PipelineRunData)
+        pipeline_run = PipelineRun(run_storage=self, pipeline_run_data=pipeline_run_data)
         self.add_run(pipeline_run)
         self._write_metadata_to_file(pipeline_run)
         pipeline_run.subscribe(self.event_log_storage.event_handler(pipeline_run))
@@ -266,16 +266,21 @@ class SqliteRunStorage(RunStorage):
     def add_run(self, pipeline_run):
         self.conn.execute(INSERT_RUN_STATEMENT, (pipeline_run.run_id, pipeline_run.pipeline_name))
 
-    def create_run(self, **kwargs):
-        kwargs['run_storage'] = self
-        run = PipelineRun(**kwargs)
+    def create_run(self, pipeline_run_data):
+        run = PipelineRun(run_storage=self, pipeline_run_data=pipeline_run_data)
         self.add_run(run)
         return run
 
     @property
     def all_runs(self):
         raw_runs = self.conn.cursor().execute('SELECT run_id, pipeline_name FROM runs').fetchall()
-        return list(map(lambda x: PipelineRun(run_id=x[0], pipeline_name=x[1]), raw_runs))
+        return list(map(self._from_sql_row, raw_runs))
+
+    def _from_sql_row(self, row):
+        return PipelineRun(
+            run_storage=self,
+            pipeline_run_data=PipelineRunData.create_empty_run(run_id=row[0], pipeline_name=row[1]),
+        )
 
     def all_runs_for_pipeline(self, pipeline_name):
         raw_runs = (
@@ -285,14 +290,11 @@ class SqliteRunStorage(RunStorage):
             )
             .fetchall()
         )
-        return list(map(lambda x: PipelineRun(run_id=x[0], pipeline_name=x[1]), raw_runs))
+        return list(map(self._from_sql_row, raw_runs))
 
     def get_run_by_id(self, run_id):
         sql = 'SELECT run_id, pipeline_name FROM runs WHERE run_id = ?'
-
-        return (lambda x: PipelineRun(run_id=x[0], pipeline_name=x[1]))(
-            self.conn.cursor().execute(sql, (run_id,)).fetchone()
-        )
+        return self._from_sql_row(self.conn.cursor().execute(sql, (run_id,)).fetchone())
 
     def wipe(self):
         self.conn.execute('DELETE FROM runs')

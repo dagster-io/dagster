@@ -26,7 +26,7 @@ from dagster import (
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import ExecutionSelector
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunData, PipelineRunStatus
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.utils import make_new_run_id
 from dagster.utils import script_relative_path
@@ -72,19 +72,22 @@ def get_events_of_type(events, event_type):
 def test_running():
     run_id = make_new_run_id()
     handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'passing_pipeline')
-    env_config = {
+    environment_dict = {
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
     selector = ExecutionSelector('csv_hello_world')
     run_storage = InMemoryRunStorage()
     pipeline_run = run_storage.create_run(
-        pipeline_name=passing_pipeline.name,
-        run_id=run_id,
-        selector=selector,
-        environment_dict=env_config,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
+        PipelineRunData(
+            pipeline_name=passing_pipeline.name,
+            run_id=run_id,
+            selector=selector,
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(handle, passing_pipeline, pipeline_run, raise_on_error=False)
@@ -103,20 +106,22 @@ def test_running():
 def test_failing():
     run_id = make_new_run_id()
     handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'failing_pipeline')
-    env_config = {
+    environment_dict = {
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
     selector = ExecutionSelector('csv_hello_world')
     run_storage = InMemoryRunStorage()
     pipeline_run = run_storage.create_run(
-        run_storage=run_storage,
-        pipeline_name=failing_pipeline.name,
-        run_id=run_id,
-        selector=selector,
-        environment_dict=env_config,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
+        PipelineRunData(
+            pipeline_name=failing_pipeline.name,
+            run_id=run_id,
+            selector=selector,
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(handle, failing_pipeline, pipeline_run, raise_on_error=False)
@@ -128,20 +133,22 @@ def test_failing():
 def test_execution_crash():
     run_id = make_new_run_id()
     handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'crashy_pipeline')
-    env_config = {
+    environment_dict = {
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
     selector = ExecutionSelector('csv_hello_world')
     run_storage = InMemoryRunStorage()
     pipeline_run = run_storage.create_run(
-        run_storage=run_storage,
-        pipeline_name=crashy_pipeline.name,
-        run_id=run_id,
-        selector=selector,
-        environment_dict=env_config,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
+        PipelineRunData(
+            pipeline_name=crashy_pipeline.name,
+            run_id=run_id,
+            selector=selector,
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(handle, crashy_pipeline, pipeline_run, raise_on_error=False)
@@ -247,14 +254,16 @@ def test_multiprocessing_execution_for_composite_solid():
     handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'composite_pipeline')
     run_storage = InMemoryRunStorage()
     pipeline_run = run_storage.create_run(
-        run_storage=run_storage,
-        pipeline_name=composite_pipeline.name,
-        run_id=run_id,
-        selector=ExecutionSelector('nonce'),
-        environment_dict=environment_dict,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
+        PipelineRunData(
+            pipeline_name=composite_pipeline.name,
+            run_id=run_id,
+            selector=ExecutionSelector('nonce'),
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -275,14 +284,16 @@ def test_multiprocessing_execution_for_composite_solid():
 
     run_id = make_new_run_id()
     pipeline_run = run_storage.create_run(
-        run_storage=run_storage,
-        pipeline_name=composite_pipeline.name,
-        run_id=run_id,
-        selector=ExecutionSelector('nonce'),
-        environment_dict=environment_dict,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
+        PipelineRunData(
+            pipeline_name=composite_pipeline.name,
+            run_id=run_id,
+            selector=ExecutionSelector('nonce'),
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -306,14 +317,16 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     )
     run_storage = InMemoryRunStorage()
     pipeline_run = run_storage.create_run(
-        run_storage=run_storage,
-        pipeline_name=composite_pipeline_with_config_mapping.name,
-        run_id=run_id,
-        selector=ExecutionSelector('nonce'),
-        environment_dict=environment_dict,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
+        PipelineRunData(
+            pipeline_name=composite_pipeline_with_config_mapping.name,
+            run_id=run_id,
+            selector=ExecutionSelector('nonce'),
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -334,14 +347,16 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
 
     run_id = make_new_run_id()
     pipeline_run = run_storage.create_run(
-        run_storage=run_storage,
-        pipeline_name=composite_pipeline.name,
-        run_id=run_id,
-        selector=ExecutionSelector('nonce'),
-        environment_dict=environment_dict,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
+        PipelineRunData(
+            pipeline_name=composite_pipeline.name,
+            run_id=run_id,
+            selector=ExecutionSelector('nonce'),
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(

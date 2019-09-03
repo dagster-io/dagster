@@ -6,7 +6,12 @@ from contextlib import contextmanager
 
 from dagster import PipelineDefinition, execute_pipeline, solid
 from dagster.core.storage.config import base_runs_directory
-from dagster.core.storage.runs import FilesystemRunStorage, InMemoryRunStorage, SqliteRunStorage
+from dagster.core.storage.runs import (
+    FilesystemRunStorage,
+    InMemoryRunStorage,
+    PipelineRunData,
+    SqliteRunStorage,
+)
 
 
 @contextmanager
@@ -71,14 +76,14 @@ def assert_timestamp(expected, actual):
 
 def do_test_single_write_read(run_storage):
     run_id = 'some_run_id'
-    # current_time = time.time()
     pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
-    run_storage.create_run(run_id=run_id, pipeline_name=pipeline_def.name)
+    run_storage.create_run(
+        PipelineRunData.create_empty_run(run_id=run_id, pipeline_name=pipeline_def.name)
+    )
 
     run = run_storage.get_run_by_id(run_id)
 
     assert run.run_id == run_id
-    # assert run.timestamp == current_time
     assert run.pipeline_name == 'some_pipeline'
 
     assert list(run_storage.all_runs) == [run]
@@ -95,7 +100,9 @@ def test_sqlite_mem_storage():
 
     run_id = str(uuid.uuid4())
 
-    storage.create_run(run_id=run_id, pipeline_name='some_pipeline')
+    storage.create_run(
+        PipelineRunData.create_empty_run(run_id=run_id, pipeline_name='some_pipeline')
+    )
 
     assert len(storage.all_runs) == 1
 
@@ -115,7 +122,9 @@ def test_nuke():
     assert storage
     run_id = str(uuid.uuid4())
 
-    storage.create_run(run_id=run_id, pipeline_name='some_pipeline')
+    storage.create_run(
+        PipelineRunData.create_empty_run(run_id=run_id, pipeline_name='some_pipeline')
+    )
 
     assert len(storage.all_runs) == 1
 

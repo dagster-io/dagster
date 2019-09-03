@@ -22,6 +22,7 @@ from dagster.core.events import DagsterEvent, PipelineInitFailureData
 from dagster.core.execution.config import ExecutorConfig
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitSystemStorageContext
+from dagster.core.storage.pipeline_run import PipelineRunData, PipelineRunStatus
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import evaluate_config
@@ -246,11 +247,22 @@ def create_system_storage_data(
         )
     )
 
+    from .api import ExecutionSelector
+
     system_storage_data.run_storage.create_run(
-        pipeline_name=pipeline_def.name,
-        run_id=run_config.run_id,
-        environment_dict=environment_config.original_config_dict,
-        mode=context_creation_data.mode_def.name,
+        PipelineRunData(
+            pipeline_name=pipeline_def.name,
+            run_id=run_config.run_id,
+            environment_dict=environment_config.original_config_dict,
+            mode=context_creation_data.mode_def.name,
+            # https://github.com/dagster-io/dagster/issues/1709
+            # ExecutionSelector should be threaded all the way
+            # down from the top
+            selector=ExecutionSelector(pipeline_def.name),
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
 
     return system_storage_data
