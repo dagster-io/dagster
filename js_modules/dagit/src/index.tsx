@@ -8,7 +8,7 @@ import { ApolloProvider } from "react-apollo";
 import { SubscriptionClient } from "subscriptions-transport-ws";
 import { WebSocketLink } from "apollo-link-ws";
 import { WebsocketStatusProvider } from "./WebsocketStatus";
-import App from "./App";
+import { App } from "./App";
 import AppCache from "./AppCache";
 import { Toaster, Position, Intent } from "@blueprintjs/core";
 

@@ -2,7 +2,7 @@ import gql from "graphql-tag";
 import * as React from "react";
 import styled from "styled-components";
 import Loading from "../Loading";
-import { Query, QueryResult } from "react-apollo";
+import { useQuery } from "react-apollo";
 import TypeList from "./TypeList";
 import { TypeListContainerQuery } from "./types/TypeListContainerQuery";
 
@@ -10,45 +10,35 @@ interface ITypeListContainerProps {
   pipelineName: string;
 }
 
-export default class TypeListContainer extends React.Component<
-  ITypeListContainerProps,
-  {}
-> {
-  render() {
-    return (
-      <Query
-        query={TYPE_LIST_CONTAINER_QUERY}
-        fetchPolicy="cache-and-network"
-        variables={{
-          pipelineName: this.props.pipelineName
-        }}
-      >
-        {(
-          queryResult: QueryResult<
-            TypeListContainerQuery,
-            { pipelineName: string }
-          >
-        ) => {
+export const TypeListContainer: React.FunctionComponent<
+  ITypeListContainerProps
+> = ({ pipelineName }) => {
+  const queryResult = useQuery<TypeListContainerQuery>(
+    TYPE_LIST_CONTAINER_QUERY,
+    {
+      fetchPolicy: "cache-and-network",
+      variables: {
+        pipelineName: pipelineName
+      }
+    }
+  );
+
+  return (
+    <Loading queryResult={queryResult}>
+      {data => {
+        if (data.pipelineOrError.__typename === "Pipeline") {
           return (
-            <Loading queryResult={queryResult}>
-              {data => {
-                if (data.pipelineOrError.__typename === "Pipeline") {
-                  return (
-                    <TypeListWrapper>
-                      <TypeList types={data.pipelineOrError.runtimeTypes} />
-                    </TypeListWrapper>
-                  );
-                } else {
-                  return null;
-                }
-              }}
-            </Loading>
+            <TypeListWrapper>
+              <TypeList types={data.pipelineOrError.runtimeTypes} />
+            </TypeListWrapper>
           );
-        }}
-      </Query>
-    );
-  }
-}
+        } else {
+          return null;
+        }
+      }}
+    </Loading>
+  );
+};
 
 export const TYPE_LIST_CONTAINER_QUERY = gql`
   query TypeListContainerQuery($pipelineName: String!) {

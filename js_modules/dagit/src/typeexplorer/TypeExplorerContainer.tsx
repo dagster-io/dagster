@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import Loading from "../Loading";
-import { Query, QueryResult } from "react-apollo";
+import { useQuery } from "react-apollo";
 import TypeExplorer from "./TypeExplorer";
 import {
   TypeExplorerContainerQuery,
@@ -13,44 +13,34 @@ interface ITypeExplorerContainerProps {
   typeName: string;
 }
 
-export default class TypeExplorerContainer extends React.Component<
+export const TypeExplorerContainer: React.FunctionComponent<
   ITypeExplorerContainerProps
-> {
-  render() {
-    return (
-      <Query
-        query={TYPE_EXPLORER_CONTAINER_QUERY}
-        fetchPolicy="cache-and-network"
-        variables={{
-          pipelineName: this.props.pipelineName,
-          runtimeTypeName: this.props.typeName
-        }}
-      >
-        {(
-          queryResult: QueryResult<
-            TypeExplorerContainerQuery,
-            TypeExplorerContainerQueryVariables
-          >
-        ) => {
-          return (
-            <Loading queryResult={queryResult}>
-              {data => {
-                if (
-                  data.runtimeTypeOrError &&
-                  data.runtimeTypeOrError.__typename === "RegularRuntimeType"
-                ) {
-                  return <TypeExplorer type={data.runtimeTypeOrError} />;
-                } else {
-                  return <div>Type Not Found</div>;
-                }
-              }}
-            </Loading>
-          );
-        }}
-      </Query>
-    );
-  }
-}
+> = ({ pipelineName, typeName }) => {
+  const queryResult = useQuery<
+    TypeExplorerContainerQuery,
+    TypeExplorerContainerQueryVariables
+  >(TYPE_EXPLORER_CONTAINER_QUERY, {
+    fetchPolicy: "cache-and-network",
+    variables: {
+      pipelineName: pipelineName,
+      runtimeTypeName: typeName
+    }
+  });
+  return (
+    <Loading queryResult={queryResult}>
+      {data => {
+        if (
+          data.runtimeTypeOrError &&
+          data.runtimeTypeOrError.__typename === "RegularRuntimeType"
+        ) {
+          return <TypeExplorer type={data.runtimeTypeOrError} />;
+        } else {
+          return <div>Type Not Found</div>;
+        }
+      }}
+    </Loading>
+  );
+};
 
 export const TYPE_EXPLORER_CONTAINER_QUERY = gql`
   query TypeExplorerContainerQuery(

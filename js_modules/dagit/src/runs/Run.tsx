@@ -4,7 +4,7 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { IconNames } from "@blueprintjs/icons";
 import { Colors } from "@blueprintjs/core";
-import { Mutation, MutationFn } from "react-apollo";
+import { MutationFunction, useMutation } from "react-apollo";
 import ApolloClient from "apollo-client";
 
 import LogsFilterProvider, {
@@ -138,7 +138,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
   };
 
   onReexecute = async (
-    mutation: MutationFn<Reexecute, ReexecuteVariables>,
+    mutation: MutationFunction<Reexecute, ReexecuteVariables>,
     stepKey?: string
   ) => {
     const { run } = this.props;
@@ -189,6 +189,10 @@ export class Run extends React.Component<IRunProps, IRunState> {
     const { client, run } = this.props;
     const { logsFilter, logsVW, highlightedError } = this.state;
 
+    const [reexecuteMutation] = useMutation<Reexecute, ReexecuteVariables>(
+      REEXECUTE_MUTATION
+    );
+
     const logs = run ? run.logs.nodes : undefined;
     const stepKeysToExecute: (string | null)[] | null = run
       ? run.stepKeysToExecute
@@ -199,71 +203,65 @@ export class Run extends React.Component<IRunProps, IRunState> {
       : { __typename: "ExecutionPlan", steps: [], artifactsPersisted: false };
 
     return (
-      <Mutation<Reexecute, ReexecuteVariables> mutation={REEXECUTE_MUTATION}>
-        {reexecuteMutation => (
-          <RunWrapper>
-            {run && <RunSubscriptionProvider client={client} run={run} />}
-            {run && <RunStatusToPageAttributes run={run} />}
-            <LogsContainer style={{ width: `${logsVW}vw`, minWidth: 680 }}>
-              <LogsFilterProvider filter={logsFilter} nodes={logs}>
-                {({ filteredNodes, busy }) => (
-                  <>
-                    <LogsToolbar
-                      showSpinner={busy}
-                      filter={logsFilter}
-                      onSetFilter={filter =>
-                        this.setState({ logsFilter: filter })
-                      }
-                    >
-                      <ExecutionStartButton
-                        title="Re-execute"
-                        icon={IconNames.REPEAT}
-                        small={true}
-                        onClick={() => this.onReexecute(reexecuteMutation)}
-                      />
-                    </LogsToolbar>
-                    <LogsScrollingTable nodes={filteredNodes} />
-                  </>
-                )}
-              </LogsFilterProvider>
-            </LogsContainer>
-            <PanelDivider
-              onMove={(vw: number) => this.setState({ logsVW: vw })}
-              axis="horizontal"
-            />
-            <RunMetadataProvider logs={logs || []}>
-              {metadata => (
-                <ExecutionPlan
-                  runMetadata={metadata}
-                  executionPlan={executionPlan}
-                  stepKeysToExecute={stepKeysToExecute}
-                  onShowStateDetails={this.onShowStateDetails}
-                  onReexecuteStep={stepKey =>
-                    this.onReexecute(reexecuteMutation, stepKey)
-                  }
-                  onApplyStepFilter={stepKey =>
-                    this.setState({
-                      logsFilter: {
-                        ...this.state.logsFilter,
-                        text: `step:${stepKey}`
-                      }
-                    })
-                  }
-                />
-              )}
-            </RunMetadataProvider>
-            {highlightedError && (
-              <InfoModal
-                onRequestClose={() =>
-                  this.setState({ highlightedError: undefined })
-                }
-              >
-                <PythonErrorInfo error={highlightedError} />
-              </InfoModal>
+      <RunWrapper>
+        {run && <RunSubscriptionProvider client={client} run={run} />}
+        {run && <RunStatusToPageAttributes run={run} />}
+        <LogsContainer style={{ width: `${logsVW}vw`, minWidth: 680 }}>
+          <LogsFilterProvider filter={logsFilter} nodes={logs}>
+            {({ filteredNodes, busy }) => (
+              <>
+                <LogsToolbar
+                  showSpinner={busy}
+                  filter={logsFilter}
+                  onSetFilter={filter => this.setState({ logsFilter: filter })}
+                >
+                  <ExecutionStartButton
+                    title="Re-execute"
+                    icon={IconNames.REPEAT}
+                    small={true}
+                    onClick={() => this.onReexecute(reexecuteMutation)}
+                  />
+                </LogsToolbar>
+                <LogsScrollingTable nodes={filteredNodes} />
+              </>
             )}
-          </RunWrapper>
+          </LogsFilterProvider>
+        </LogsContainer>
+        <PanelDivider
+          onMove={(vw: number) => this.setState({ logsVW: vw })}
+          axis="horizontal"
+        />
+        <RunMetadataProvider logs={logs || []}>
+          {metadata => (
+            <ExecutionPlan
+              runMetadata={metadata}
+              executionPlan={executionPlan}
+              stepKeysToExecute={stepKeysToExecute}
+              onShowStateDetails={this.onShowStateDetails}
+              onReexecuteStep={stepKey =>
+                this.onReexecute(reexecuteMutation, stepKey)
+              }
+              onApplyStepFilter={stepKey =>
+                this.setState({
+                  logsFilter: {
+                    ...this.state.logsFilter,
+                    text: `step:${stepKey}`
+                  }
+                })
+              }
+            />
+          )}
+        </RunMetadataProvider>
+        {highlightedError && (
+          <InfoModal
+            onRequestClose={() =>
+              this.setState({ highlightedError: undefined })
+            }
+          >
+            <PythonErrorInfo error={highlightedError} />
+          </InfoModal>
         )}
-      </Mutation>
+      </RunWrapper>
     );
   }
 }
