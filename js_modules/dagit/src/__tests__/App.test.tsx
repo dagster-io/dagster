@@ -51,7 +51,7 @@ it("renders without error", async () => {
 
 it("renders pipeline page", async () => {
   beforeEach(() => {
-    window.history.pushState({}, "", "/explore/pandas_hello_world");
+    window.history.pushState({}, "", "/p/pandas_hello_world/explore");
   });
   await testApp();
 });
@@ -61,7 +61,7 @@ it("renders pipeline solid page", async () => {
     window.history.pushState(
       {},
       "",
-      "/explore/pandas_hello_world/load_num_csv"
+      "/p/pandas_hello_world/explore/load_num_csv"
     );
   });
   await testApp();
@@ -72,7 +72,7 @@ it("renders type page", async () => {
     window.history.pushState(
       {},
       "",
-      "/explore/pandas_hello_world/load_num_csv?types=true"
+      "/p/pandas_hello_world/explore/load_num_csv?types=true"
     );
   });
   await testApp();
@@ -83,7 +83,7 @@ it("renders type page", async () => {
     window.history.pushState(
       {},
       "",
-      "/explore/pandas_hello_world/load_num_csv?typeExplorer=PandasDataFrame"
+      "/p/pandas_hello_world/explore/load_num_csv?typeExplorer=PandasDataFrame"
     );
   });
   await testApp();
@@ -91,7 +91,7 @@ it("renders type page", async () => {
 
 it("renders execution", async () => {
   beforeEach(() => {
-    window.history.pushState({}, "", "/execute/pandas_hello_world");
+    window.history.pushState({}, "", "/p/pandas_hello_world/execute");
   });
   await testApp();
 });

@@ -8,7 +8,10 @@ import { ApolloConsumer, Mutation, MutationFunction } from "react-apollo";
 
 import TabBar from "./TabBar";
 import ExecutionStartButton from "./ExecutionStartButton";
-import { handleStartExecutionResult } from "../runs/RunUtils";
+import {
+  handleStartExecutionResult,
+  HANDLE_START_EXECUTION_FRAGMENT
+} from "../runs/RunUtils";
 import { RunPreview } from "./RunPreview";
 import { PanelDivider } from "../PanelDivider";
 import SolidSelector from "./SolidSelector";
@@ -373,8 +376,11 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
           message
         }
       }
+      ...HandleStartExecutionFragment
     }
   }
+
+  ${HANDLE_START_EXECUTION_FRAGMENT}
 `;
 
 const PREVIEW_CONFIG_QUERY = gql`

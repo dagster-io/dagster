@@ -309,24 +309,30 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
         <RunStatus status={start && end ? run.status : "STARTED"} />
       </RunRowColumn>
       <RunRowColumn style={{ flex: 2.4 }}>
-        <Link style={{ display: "block" }} to={`/runs/${run.runId}`}>
+        <Link
+          style={{ display: "block" }}
+          to={`/p/${run.pipeline.name}/runs/${run.runId}`}
+        >
           {titleForRun(run)}
         </Link>
         <RunDetails>
           {`${stats.stepsSucceeded}/${stats.stepsSucceeded +
             stats.stepsFailed} steps succeeded, `}
           <Link
-            to={`/runs/${run.runId}?q=type:materialization`}
+            to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:materialization`}
           >{`${stats.materializations} materializations`}</Link>
           ,{" "}
-          <Link to={`/runs/${run.runId}?q=type:expectation`}>{`${
-            stats.expectationsSucceeded
-          }/${stats.expectationsSucceeded +
+          <Link
+            to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:expectation`}
+          >{`${stats.expectationsSucceeded}/${stats.expectationsSucceeded +
             stats.expectationsFailed} expectations passed`}</Link>
         </RunDetails>
       </RunRowColumn>
       <RunRowColumn>
-        <Link style={{ display: "block" }} to={`/explore/${run.pipeline.name}`}>
+        <Link
+          style={{ display: "block" }}
+          to={`/p/${run.pipeline.name}/explore/`}
+        >
           <Icon icon="diagram-tree" /> {run.pipeline.name}
         </Link>
       </RunRowColumn>
@@ -369,7 +375,7 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
                 text="Open in Execute View..."
                 icon="edit"
                 target="_blank"
-                href={`/execute/${run.pipeline.name}/setup?${qs.stringify({
+                href={`/p/${run.pipeline.name}/execute/setup?${qs.stringify({
                   mode: run.mode,
                   config: run.environmentConfigYaml,
                   solidSubset: run.stepKeysToExecute

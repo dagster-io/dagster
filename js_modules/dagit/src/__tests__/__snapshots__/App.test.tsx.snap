@@ -96,14 +96,14 @@ Array [
         >
           <a
             className="active sc-bxivhb iHwkSZ"
-            href="/explore/pandas_hello_world"
+            href="/p/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/execute/pandas_hello_world"
+            href="/p/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute
@@ -409,14 +409,14 @@ Array [
         >
           <a
             className="active sc-bxivhb iHwkSZ"
-            href="/explore/pandas_hello_world"
+            href="/p/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/execute/pandas_hello_world"
+            href="/p/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute
@@ -590,14 +590,14 @@ Array [
         >
           <a
             className="active sc-bxivhb iHwkSZ"
-            href="/explore/pandas_hello_world"
+            href="/p/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/execute/pandas_hello_world"
+            href="/p/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute
@@ -771,14 +771,14 @@ Array [
         >
           <a
             className="active sc-bxivhb iHwkSZ"
-            href="/explore/pandas_hello_world"
+            href="/p/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/execute/pandas_hello_world"
+            href="/p/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute

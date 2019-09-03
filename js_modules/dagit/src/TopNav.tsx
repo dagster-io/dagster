@@ -16,67 +16,84 @@ export const TopNav = ({
   pipelines
 }: {
   pipelines: TopNavPipelinesFragment[];
-}) => (
-  <Route
-    path="/:tab?/:pipeline?"
-    render={({ match: { params }, history }) => (
-      <Navbar>
-        <Navbar.Group align={Alignment.LEFT}>
-          <Navbar.Heading onClick={() => history.push("/")}>
-            <img src={navBarImage} style={{ height: 34 }} alt="logo" />
-          </Navbar.Heading>
-          <Navbar.Divider />
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <PipelineJumpBar
-              pipelines={pipelines}
-              selectedPipeline={pipelines.find(p => p.name === params.pipeline)}
-              onItemSelect={pipeline => {
-                const target = params.tab === "execute" ? "execute" : "explore";
-                history.push(`/${target}/${pipeline.name}`);
-              }}
-            />
-            {params.pipeline && <Navbar.Divider />}
-            {params.pipeline && (
-              <Tabs>
+}) => {
+  return (
+    <Route
+      path="/:scope?/:scopeArg?/:tab?"
+      render={({ match: { params }, history }) => {
+        const { scope, scopeArg, tab } = params;
+
+        const selectedTab = scope === "p" ? tab : scope;
+        const selectedPipelineName = scope === "p" ? scopeArg : null;
+
+        return (
+          <Navbar>
+            <Navbar.Group align={Alignment.LEFT}>
+              <Navbar.Heading onClick={() => history.push("/")}>
+                <img src={navBarImage} style={{ height: 34 }} alt="logo" />
+              </Navbar.Heading>
+              <Navbar.Divider />
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <PipelineJumpBar
+                  pipelines={pipelines}
+                  selectedPipeline={pipelines.find(
+                    p => p.name === selectedPipelineName
+                  )}
+                  onItemSelect={pipeline => {
+                    const target =
+                      selectedTab === "execute" ? "execute" : "explore";
+                    history.push(`/p/${pipeline.name}/${target}`);
+                  }}
+                />
+                {selectedPipelineName && (
+                  <>
+                    <Navbar.Divider />
+                    <Tabs>
+                      <Tab
+                        to={`/p/${selectedPipelineName}/explore`}
+                        className={selectedTab === "explore" ? "active" : ""}
+                      >
+                        Explore
+                      </Tab>
+
+                      <Tab
+                        to={`/p/${selectedPipelineName}/execute`}
+                        className={selectedTab === "execute" ? "active" : ""}
+                      >
+                        Execute
+                      </Tab>
+                    </Tabs>
+                  </>
+                )}
+              </div>
+            </Navbar.Group>
+            <Navbar.Group align={Alignment.RIGHT}>
+              <Tab
+                to={`/runs`}
+                className={selectedTab === "runs" ? "active" : ""}
+              >
+                Runs
+              </Tab>
+              <FlaggedFeature name="experimentalScheduler">
                 <Tab
-                  to={`/explore/${params.pipeline}`}
-                  className={params.tab === "explore" ? "active" : ""}
+                  to={`/schedule`}
+                  className={selectedTab === "schedule" ? "active" : ""}
                 >
-                  Explore
+                  Schedule
                 </Tab>
+              </FlaggedFeature>
 
-                <Tab
-                  to={`/execute/${params.pipeline}`}
-                  className={params.tab === "execute" ? "active" : ""}
-                >
-                  Execute
-                </Tab>
-              </Tabs>
-            )}
-          </div>
-        </Navbar.Group>
-        <Navbar.Group align={Alignment.RIGHT}>
-          <Tab to={`/runs`} className={params.tab === "runs" ? "active" : ""}>
-            Runs
-          </Tab>
-          <FlaggedFeature name="experimentalScheduler">
-            <Tab
-              to={`/schedule`}
-              className={params.tab === "schedule" ? "active" : ""}
-            >
-              Schedule
-            </Tab>
-          </FlaggedFeature>
+              <Navbar.Divider />
 
-          <Navbar.Divider />
-
-          <WebsocketStatus />
-          <VersionLabel />
-        </Navbar.Group>
-      </Navbar>
-    )}
-  />
-);
+              <WebsocketStatus />
+              <VersionLabel />
+            </Navbar.Group>
+          </Navbar>
+        );
+      }}
+    />
+  );
+};
 
 TopNav.fragments = {
   TopNavPipelinesFragment: gql`

@@ -11,9 +11,15 @@ export interface HandleStartExecutionFragment_InvalidStepError {
   __typename: "InvalidStepError" | "InvalidOutputError";
 }
 
+export interface HandleStartExecutionFragment_StartPipelineExecutionSuccess_run_pipeline {
+  __typename: "Pipeline";
+  name: string;
+}
+
 export interface HandleStartExecutionFragment_StartPipelineExecutionSuccess_run {
   __typename: "PipelineRun";
   runId: string;
+  pipeline: HandleStartExecutionFragment_StartPipelineExecutionSuccess_run_pipeline;
 }
 
 export interface HandleStartExecutionFragment_StartPipelineExecutionSuccess {

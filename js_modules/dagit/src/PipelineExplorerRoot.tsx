@@ -33,7 +33,8 @@ const PipelineExplorerRoot: React.FunctionComponent<
   const pathSolids = props.location.pathname
     .split(new RegExp(`${props.match.params.pipelineName}/?`))
     .pop()!
-    .split("/");
+    .split("/")
+    .filter(x => x);
   const parentNames = pathSolids.slice(0, pathSolids.length - 1);
   const selectedName = pathSolids[pathSolids.length - 1];
 

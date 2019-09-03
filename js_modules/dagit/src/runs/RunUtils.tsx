@@ -26,7 +26,7 @@ export function handleStartExecutionResult(
   const obj = result.data.startPipelineExecution;
 
   if (obj.__typename === "StartPipelineExecutionSuccess") {
-    const url = `/runs/${obj.run.runId}`;
+    const url = `/${obj.run.pipeline.name}/runs/${obj.run.runId}`;
     if (opts.openInNewWindow) {
       window.open(url, "_blank");
     } else {
@@ -85,6 +85,9 @@ export const HANDLE_START_EXECUTION_FRAGMENT = gql`
     ... on StartPipelineExecutionSuccess {
       run {
         runId
+        pipeline {
+          name
+        }
       }
     }
     ... on PipelineNotFoundError {

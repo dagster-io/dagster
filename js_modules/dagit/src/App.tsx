@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
-import { BrowserRouter, Switch, Route } from "react-router-dom";
+import { BrowserRouter, Switch, Redirect, Route } from "react-router-dom";
 
 import { TopNav } from "./TopNav";
 import PythonErrorInfo from "./PythonErrorInfo";
@@ -29,13 +29,20 @@ const AppRoutes = () => (
   <Switch>
     <Route path="/runs/:runId" component={RunRoot} />
     <Route path="/runs" component={RunsRoot} exact={true} />
+    <Redirect
+      from="/p/:pipelineName"
+      exact={true}
+      to="/p/:pipelineName/explore"
+    />
+    <Route path="/p/:pipelineName/runs/:runId" component={RunRoot} />
+
     <Route
-      path="/execute/:pipelineName/setup"
+      path="/p/:pipelineName/execute/setup"
       component={PipelineExecutionSetupRoot}
     />
-    <Route path="/execute/:pipelineName" component={PipelineExecutionRoot} />
+    <Route path="/p/:pipelineName/execute" component={PipelineExecutionRoot} />
     <Route
-      path="/explore/:pipelineName/:rest?"
+      path="/p/:pipelineName/explore/:rest?"
       component={PipelineExplorerRoot}
     />
     <Route

@@ -82,7 +82,7 @@ export default class PipelineExplorer extends React.Component<
         "handleAdjustPath function is expected to mutate the array"
       );
     }
-    history.push(`/explore/${pipeline.name}/${next.join("/")}`);
+    history.push(`/p/${pipeline.name}/explore/${next.join("/")}`);
   };
 
   // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
@@ -174,7 +174,7 @@ export default class PipelineExplorer extends React.Component<
       <PipelinesContainer>
         <PipelinePanel key="graph" style={{ width: `${graphVW}vw` }}>
           <PathOverlay style={{ background: backgroundTranslucent }}>
-            <Link style={{ padding: 3 }} to={`/explore/${pipeline.name}/`}>
+            <Link style={{ padding: 3 }} to={`/p/${pipeline.name}/explore`}>
               <Icon icon="diagram-tree" />
             </Link>
             <Icon icon="chevron-right" />
@@ -182,7 +182,7 @@ export default class PipelineExplorer extends React.Component<
               <React.Fragment key={idx}>
                 <Link
                   style={{ padding: 3 }}
-                  to={`/explore/${pipeline.name}/${path
+                  to={`/p/${pipeline.name}/explore/${path
                     .slice(0, idx + 1)
                     .join("/")}`}
                 >
