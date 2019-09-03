@@ -13,7 +13,7 @@ import { RunPreview } from "./RunPreview";
 import { PanelDivider } from "../PanelDivider";
 import SolidSelector from "./SolidSelector";
 import ConfigEditor from "../configeditor/ConfigEditor";
-import ConfigEditorPresetsPicker from "./ConfigEditorPresetsPicker";
+import { ConfigEditorPresetsPicker } from "./ConfigEditorPresetsPicker";
 import ConfigEditorModePicker from "./ConfigEditorModePicker";
 import {
   applyChangesToSession,

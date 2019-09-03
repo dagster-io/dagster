@@ -9,7 +9,7 @@ import CustomAlertProvider from "./CustomAlertProvider";
 import { RootPipelinesQuery } from "./types/RootPipelinesQuery";
 import { PipelineExecutionRoot } from "./execute/PipelineExecutionRoot";
 import { PipelineExecutionSetupRoot } from "./execute/PipelineExecutionSetupRoot";
-import RunRoot from "./runs/RunRoot";
+import { RunRoot } from "./runs/RunRoot";
 import { RunsRoot } from "./runs/RunsRoot";
 import PipelineExplorerRoot from "./PipelineExplorerRoot";
 import { NonIdealState } from "@blueprintjs/core";

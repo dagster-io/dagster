@@ -20,10 +20,12 @@ interface ConfigEditorPresetsPickerProps {
   onCreateSession: (initial: Partial<IExecutionSession>) => void;
 }
 
-export default class ConfigEditorPresetsPicker extends React.Component<
+export const ConfigEditorPresetsPicker: React.FunctionComponent<
   ConfigEditorPresetsPickerProps
-> {
-  onPresetSelect = async (
+> = props => {
+  const { pipelineName, onCreateSession } = props;
+
+  const onPresetSelect = async (
     preset: ConfigPresetsQuery_pipeline_presets,
     pipelineName: string,
     client: ApolloClient<any>
@@ -40,7 +42,7 @@ export default class ConfigEditorPresetsPicker extends React.Component<
         break;
       }
     }
-    this.props.onCreateSession({
+    onCreateSession({
       name: updatedPreset.name,
       environmentConfigYaml: updatedPreset.environmentConfigYaml || "",
       solidSubset: updatedPreset.solidSubset,
@@ -48,46 +50,37 @@ export default class ConfigEditorPresetsPicker extends React.Component<
     });
   };
 
-  render() {
-    const { pipelineName } = this.props;
-    const { data, client } = useQuery<ConfigPresetsQuery>(
-      CONFIG_PRESETS_QUERY,
-      {
-        fetchPolicy: "network-only",
-        variables: { pipelineName }
-      }
-    );
-    const presets = (
-      (data && data.pipeline && data.pipeline.presets) ||
-      []
-    ).sort((a, b) => a.name.localeCompare(b.name));
+  const { data, client } = useQuery<ConfigPresetsQuery>(CONFIG_PRESETS_QUERY, {
+    fetchPolicy: "network-only",
+    variables: { pipelineName }
+  });
+  const presets = ((data && data.pipeline && data.pipeline.presets) || []).sort(
+    (a, b) => a.name.localeCompare(b.name)
+  );
 
-    return (
-      <div>
-        <PresetSelect
-          items={presets}
-          itemPredicate={(query, preset) =>
-            query.length === 0 || preset.name.includes(query)
-          }
-          itemRenderer={(preset, props) => (
-            <Menu.Item
-              active={props.modifiers.active}
-              onClick={props.handleClick}
-              key={preset.name}
-              text={preset.name}
-            />
-          )}
-          noResults={<Menu.Item disabled={true} text="No presets." />}
-          onItemSelect={preset =>
-            this.onPresetSelect(preset, pipelineName, client)
-          }
-        >
-          <Button text={""} icon="insert" rightIcon="caret-down" />
-        </PresetSelect>
-      </div>
-    );
-  }
-}
+  return (
+    <div>
+      <PresetSelect
+        items={presets}
+        itemPredicate={(query, preset) =>
+          query.length === 0 || preset.name.includes(query)
+        }
+        itemRenderer={(preset, props) => (
+          <Menu.Item
+            active={props.modifiers.active}
+            onClick={props.handleClick}
+            key={preset.name}
+            text={preset.name}
+          />
+        )}
+        noResults={<Menu.Item disabled={true} text="No presets." />}
+        onItemSelect={preset => onPresetSelect(preset, pipelineName, client)}
+      >
+        <Button text={""} icon="insert" rightIcon="caret-down" />
+      </PresetSelect>
+    </div>
+  );
+};
 
 export const CONFIG_PRESETS_QUERY = gql`
   query ConfigPresetsQuery($pipelineName: String!) {

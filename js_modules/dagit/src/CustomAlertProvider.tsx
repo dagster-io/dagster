@@ -1,52 +1,53 @@
 import * as React from "react";
-import { Button, Dialog, Classes, Colors } from "@blueprintjs/core";
 import styled from "styled-components";
+import { Button, Dialog, Classes, Colors } from "@blueprintjs/core";
 import { copyValue } from "./Util";
 
-const SHOW_ALERT_EVENT = "show-alert";
+const CURRENT_ALERT_CHANGED = "alert-changed";
 
 interface ICustomAlert {
   body: React.ReactNode | string;
   title: string;
 }
 
+let CurrentAlert: ICustomAlert | null = null;
+
+export const setCustomAlert = (alert: ICustomAlert | null) => {
+  CurrentAlert = alert;
+  document.dispatchEvent(new CustomEvent(CURRENT_ALERT_CHANGED));
+};
+
 export const showCustomAlert = (opts: Partial<ICustomAlert>) => {
-  document.dispatchEvent(
-    new CustomEvent(SHOW_ALERT_EVENT, {
-      detail: JSON.stringify(
-        Object.assign({ message: "", title: "Error", pre: false }, opts)
-      )
-    })
-  );
+  setCustomAlert(Object.assign({ body: "", title: "Error" }, opts));
 };
 
 export default class CustomAlertProvider extends React.Component<
   {},
-  Partial<ICustomAlert>
+  { alert: ICustomAlert | null }
 > {
-  state: Partial<ICustomAlert> = {};
+  state = { alert: CurrentAlert };
 
   bodyRef = React.createRef<HTMLDivElement>();
 
   componentDidMount() {
-    document.addEventListener(SHOW_ALERT_EVENT, (e: CustomEvent) => {
-      this.setState(JSON.parse(e.detail));
-    });
+    document.addEventListener(CURRENT_ALERT_CHANGED, () =>
+      this.setState({ alert: CurrentAlert })
+    );
   }
 
   render() {
-    const { title, body } = this.state;
+    const alert = this.state.alert;
 
     return (
       <Dialog
-        icon={title ? "info-sign" : undefined}
+        icon={alert ? "info-sign" : undefined}
         usePortal={true}
-        onClose={() => this.setState({ body: undefined })}
+        onClose={() => setCustomAlert(null)}
         style={{ width: "auto", maxWidth: "80vw" }}
-        title={title}
-        isOpen={!!body}
+        title={alert ? alert.title : ""}
+        isOpen={!!alert}
       >
-        <Body ref={this.bodyRef}>{body}</Body>
+        <Body ref={this.bodyRef}>{alert ? alert.body : undefined}</Body>
         <div className={Classes.DIALOG_FOOTER}>
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button
@@ -60,7 +61,7 @@ export default class CustomAlertProvider extends React.Component<
             <Button
               intent="primary"
               autoFocus={true}
-              onClick={() => this.setState({ body: undefined })}
+              onClick={() => setCustomAlert(null)}
             >
               OK
             </Button>
