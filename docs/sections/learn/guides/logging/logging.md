@@ -36,7 +36,7 @@ colored messages in the console:
       log_message_id = "49854579-e4d1-4289-8453-b3e177b20056"
        log_timestamp = "2019-05-31T22:11:48.376372"
               run_id = "4542c167-1b8c-40c7-b9b6-434b882ba734"
-            pipeline = "hello_logs"
+            pipeline = "hello_logs_pipeline"
             step_key = "hello_logs.compute"
                solid = "hello_logs"
     solid_definition = "hello_logs"
@@ -69,16 +69,17 @@ and back to Dagit.
 
 <pre>
 <span style="color:green">2019-05-31 15:26:31</span> - <span style="color:blue">dagster</span> - <span style="color:grey">ERROR</span> -
-<span style="color:red">        orig_message = "DagsterEventType.STEP_FAILURE for step hello_error.compute"
-      log_message_id = "1bfcf6fe-be7d-4063-a9ef-e4330b6f1b01"
-       log_timestamp = "2019-05-31T22:26:31.738403"
-              run_id = "04b35dce-795e-4e7c-9be7-2ea8d77611f5"
-            pipeline = "hello_error"
+<span style="color:red">        orig_message = "Execution of step \"hello_error.compute\" failed."
+      log_message_id = "7eb6836b-f91e-4cdc-a82b-906dbf2fd0a5"
+       log_timestamp = "2019-09-04T03:15:48.695104"
+              run_id = "9f38a6dc-fab7-408d-8692-5126c89b4fc0"
+            pipeline = "hello_error_pipeline"
+execution_epoch_time = 1567566948.6136389
             step_key = "hello_error.compute"
                solid = "hello_error"
     solid_definition = "hello_error"
-       dagster_event = {"event_specific_data": [["Exception: Somebody set up us the bomb\n", ["  File \"/Users/max/dev/dagster/python_modules/dagster/dagster/core/errors.py\", line 181, in user_code_error_boundary\n    yield\n", "  File \"/Users/max/dev/dagster/python_modules/dagster/dagster/core/engine/engine_inprocess.py\", line 393, in _iterate_step_outputs_within_boundary\n    for step_output in gen:\n", "  File \"/Users/max/dev/dagster/python_modules/dagster/dagster/core/execution/plan/compute.py\", line 90, in _execute_core_transform\n    for step_output in _yield_transform_results(compute_context, inputs, compute_fn):\n", "  File \"/Users/max/dev/dagster/python_modules/dagster/dagster/core/execution/plan/compute.py\", line 52, in _yield_transform_results\n    for result in gen:\n", "  File \"/Users/max/dev/dagster/python_modules/dagster/dagster/core/definitions/decorators.py\", line 335, in transform\n    result = fn(context, **kwargs)\n", "  File \"/Users/max/dev/dagster/examples/dagster_examples/toys/log_demo.py\", line 11, in hello_error\n    raise Exception('Somebody set up us the bomb')\n"], "Exception"]], "event_type_value": "STEP_FAILURE", "logging_tags": {"pipeline": "hello_error", "solid": "hello_error", "solid_definition": "hello_error", "step_key": "hello_error.compute"}, "pipeline_name": "hello_error", "solid_handle": ["hello_error", "hello_error", null], "step_key": "hello_error.compute", "step_kind_value": "COMPUTE"}
-       pipeline_name = "hello_error"
+       dagster_event = {"event_specific_data": [["Exception: Somebody set up us the bomb\n", ["  File \"/Users/sashankthupukari/projects/dagster/python_modules/dagster/dagster/core/errors.py\", line 104, in user_code_error_boundary\n    yield\n", "  File \"/Users/sashankthupukari/projects/dagster/python_modules/dagster/dagster/core/engine/engine_inprocess.py\", line 571, in _user_event_sequence_for_step_compute_fn\n    for event in gen:\n", "  File \"/Users/sashankthupukari/projects/dagster/python_modules/dagster/dagster/core/execution/plan/compute.py\", line 75, in _execute_core_compute\n    for step_output in _yield_compute_results(compute_context, inputs, compute_fn):\n", "  File \"/Users/sashankthupukari/projects/dagster/python_modules/dagster/dagster/core/execution/plan/compute.py\", line 52, in _yield_compute_results\n    for event in user_event_sequence:\n", "  File \"/Users/sashankthupukari/projects/dagster/python_modules/dagster/dagster/core/definitions/decorators.py\", line 340, in compute\n    result = fn(context, **kwargs)\n", "  File \"/Users/sashankthupukari/projects/dagster-playground/hello_dag.py\", line 6, in hello_error\n    raise Exception('Somebody set up us the bomb')\n"], "Exception"], null], "event_type_value": "STEP_FAILURE", "logging_tags": {"execution_epoch_time": 1567566948.6136389, "pipeline": "hello_error_pipeline", "solid": "hello_error", "solid_definition": "hello_error", "step_key": "hello_error.compute"}, "message": "Execution of step \"hello_error.compute\" failed.", "pipeline_name": "hello_error_pipeline", "solid_handle": ["hello_error", "hello_error", null], "step_key": "hello_error.compute", "step_kind_value": "COMPUTE"}
+       pipeline_name = "hello_error_pipeline"
 </span>
 </pre>
 
