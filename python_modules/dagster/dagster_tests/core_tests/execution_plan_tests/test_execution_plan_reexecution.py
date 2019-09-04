@@ -21,6 +21,7 @@ from dagster.core.errors import (
 from dagster.core.events import get_step_output_event
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.config import ReexecutionConfig
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.core.storage.intermediates_manager import StepOutputHandle
 from dagster.utils import merge_dicts
@@ -56,16 +57,19 @@ def define_addy_pipeline():
 
 def test_execution_plan_reexecution():
     pipeline_def = define_addy_pipeline()
-
+    instance = DagsterInstance.ephemeral()
     old_run_id = str(uuid.uuid4())
     environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
-        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
+        pipeline_def,
+        environment_dict=environment_dict,
+        run_config=RunConfig(run_id=old_run_id),
+        instance=instance,
     )
 
     assert result.success
 
-    store = FileSystemIntermediateStore(result.run_id)
+    store = FileSystemIntermediateStore.for_instance(instance, result.run_id)
     assert store.get_intermediate(None, 'add_one.compute', Int).obj == 4
     assert store.get_intermediate(None, 'add_two.compute', Int).obj == 6
 
@@ -89,9 +93,10 @@ def test_execution_plan_reexecution():
         environment_dict=environment_dict,
         run_config=run_config,
         step_keys_to_execute=['add_two.compute'],
+        instance=instance,
     )
 
-    store = FileSystemIntermediateStore(new_run_id)
+    store = FileSystemIntermediateStore.for_instance(instance, new_run_id)
     assert store.get_intermediate(None, 'add_one.compute', Int).obj == 4
     assert store.get_intermediate(None, 'add_two.compute', Int).obj == 6
 
@@ -116,22 +121,30 @@ def test_execution_plan_wrong_run_id():
     )
 
     with pytest.raises(DagsterRunNotFoundError) as exc_info:
-        execute_plan(execution_plan, environment_dict=environment_dict, run_config=run_config)
+        execute_plan(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=run_config,
+            instance=DagsterInstance.ephemeral(),
+        )
 
     assert str(
         exc_info.value
-    ) == 'Run id {} set as previous run id was not found in run storage'.format(unrun_id)
+    ) == 'Run id {} set as previous run id was not found in instance'.format(unrun_id)
 
     assert exc_info.value.invalid_run_id == unrun_id
 
 
 def test_execution_plan_wrong_invalid_step_key():
     pipeline_def = define_addy_pipeline()
-
+    instance = DagsterInstance.ephemeral()
     old_run_id = str(uuid.uuid4())
     environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
-        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
+        pipeline_def,
+        environment_dict=environment_dict,
+        run_config=RunConfig(run_id=old_run_id),
+        instance=instance,
     )
 
     new_run_id = str(uuid.uuid4())
@@ -154,6 +167,7 @@ def test_execution_plan_wrong_invalid_step_key():
             environment_dict=environment_dict,
             run_config=run_config,
             step_keys_to_execute=['add_two.compute'],
+            instance=instance,
         )
 
     assert str(exc_info.value) == (
@@ -163,11 +177,14 @@ def test_execution_plan_wrong_invalid_step_key():
 
 def test_execution_plan_wrong_invalid_output_name():
     pipeline_def = define_addy_pipeline()
-
+    instance = DagsterInstance.ephemeral()
     old_run_id = str(uuid.uuid4())
     environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
-        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
+        pipeline_def,
+        environment_dict=environment_dict,
+        run_config=RunConfig(run_id=old_run_id),
+        instance=instance,
     )
 
     new_run_id = str(uuid.uuid4())
@@ -190,6 +207,7 @@ def test_execution_plan_wrong_invalid_output_name():
             environment_dict=environment_dict,
             run_config=run_config,
             step_keys_to_execute=['add_two.compute'],
+            instance=instance,
         )
 
     assert str(exc_info.value) == (
@@ -203,11 +221,14 @@ def test_execution_plan_wrong_invalid_output_name():
 
 def test_execution_plan_reexecution_with_in_memory():
     pipeline_def = define_addy_pipeline()
-
+    instance = DagsterInstance.ephemeral()
     old_run_id = str(uuid.uuid4())
     environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
     result = execute_pipeline(
-        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
+        pipeline_def,
+        environment_dict=environment_dict,
+        run_config=RunConfig(run_id=old_run_id),
+        instance=instance,
     )
 
     assert result.success
@@ -233,21 +254,25 @@ def test_execution_plan_reexecution_with_in_memory():
             environment_dict=environment_dict,
             run_config=in_memory_run_config,
             step_keys_to_execute=['add_two.compute'],
+            instance=instance,
         )
 
 
 def test_pipeline_step_key_subset_execution():
     pipeline_def = define_addy_pipeline()
-
+    instance = DagsterInstance.ephemeral()
     old_run_id = str(uuid.uuid4())
     environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
-        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
+        pipeline_def,
+        environment_dict=environment_dict,
+        run_config=RunConfig(run_id=old_run_id),
+        instance=instance,
     )
 
     assert result.success
 
-    store = FileSystemIntermediateStore(result.run_id)
+    store = FileSystemIntermediateStore.for_instance(instance, result.run_id)
     assert store.get_intermediate(None, 'add_one.compute', Int).obj == 4
     assert store.get_intermediate(None, 'add_two.compute', Int).obj == 6
 
@@ -266,6 +291,7 @@ def test_pipeline_step_key_subset_execution():
             ),
             step_keys_to_execute=['add_two.compute'],
         ),
+        instance=instance,
     )
 
     assert pipeline_reexecution_result.success
@@ -273,7 +299,7 @@ def test_pipeline_step_key_subset_execution():
     step_events = pipeline_reexecution_result.step_event_list
     assert step_events
 
-    store = FileSystemIntermediateStore(new_run_id)
+    store = FileSystemIntermediateStore.for_instance(instance, new_run_id)
     assert store.get_intermediate(None, 'add_one.compute', Int).obj == 4
     assert store.get_intermediate(None, 'add_two.compute', Int).obj == 6
 
@@ -311,8 +337,12 @@ def test_pipeline_step_key_subset_execution_wrong_step_key_in_step_output_handle
     pipeline_def = define_addy_pipeline()
     old_run_id = str(uuid.uuid4())
     environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
+    instance = DagsterInstance.ephemeral()
     result = execute_pipeline(
-        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
+        pipeline_def,
+        environment_dict=environment_dict,
+        run_config=RunConfig(run_id=old_run_id),
+        instance=instance,
     )
     assert result.success
     assert result.run_id == old_run_id
@@ -331,17 +361,20 @@ def test_pipeline_step_key_subset_execution_wrong_step_key_in_step_output_handle
                 ),
                 step_keys_to_execute=['add_two.compute'],
             ),
+            instance=instance,
         )
 
 
 def test_pipeline_step_key_subset_execution_wrong_output_name_in_step_output_handles():
     pipeline_def = define_addy_pipeline()
     old_run_id = str(uuid.uuid4())
+    instance = DagsterInstance.ephemeral()
     environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
     result = execute_pipeline(
         pipeline_def,
         environment_dict=env_with_fs(environment_dict),
         run_config=RunConfig(run_id=old_run_id),
+        instance=instance,
     )
     assert result.success
     assert result.run_id == old_run_id
@@ -360,4 +393,5 @@ def test_pipeline_step_key_subset_execution_wrong_output_name_in_step_output_han
                 ),
                 step_keys_to_execute=['add_two.compute'],
             ),
+            instance=instance,
         )

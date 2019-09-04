@@ -14,8 +14,7 @@ from dagster import check
 from dagster.core.events.log import EventRecord
 from dagster.utils import mkdir_p
 
-from .config import base_runs_directory
-from .pipeline_run import PipelineRun, PipelineRunStatus
+from .pipeline_run import PipelineRunStatus
 
 
 class EventLogSequence(pyrsistent.CheckedPVector):
@@ -34,7 +33,7 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''
 
     @abstractmethod
-    def store_event(self, run_id, event):
+    def store_event(self, event):
         '''Store an event corresponding to a pipeline run.
 
         Args:
@@ -47,24 +46,6 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     def is_persistent(self):
         '''(bool) Whether the log storage persists after the process that
         created it dies.'''
-
-    @property
-    def event_handler(self):
-        def _make_handler_class(event_log_storage):
-            class _LogStorageEventHandler(object):
-                def __init__(self, pipeline_run):
-                    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-                    self._run_id = pipeline_run.run_id
-                    self._log_storage = event_log_storage
-
-                def handle_new_event(self, event):
-                    check.inst_param(event, 'new_event', EventRecord)
-
-                    return self._log_storage.store_event(self._run_id, event)
-
-            return _LogStorageEventHandler
-
-        return _make_handler_class(self)
 
     @abstractmethod
     def wipe(self):
@@ -85,7 +66,8 @@ class InMemoryEventLogStorage(EventLogStorage):
     def is_persistent(self):
         return False
 
-    def store_event(self, run_id, event):
+    def store_event(self, event):
+        run_id = event.run_id
         with self._lock[run_id]:
             self._logs[run_id] = self._logs[run_id].append(event)
 
@@ -95,8 +77,8 @@ class InMemoryEventLogStorage(EventLogStorage):
 
 
 class FilesystemEventLogStorage(EventLogStorage):
-    def __init__(self, base_dir=None):
-        self._base_dir = check.opt_str_param(base_dir, 'base_dir', base_runs_directory())
+    def __init__(self, base_dir):
+        self._base_dir = check.str_param(base_dir, 'base_dir')
         mkdir_p(self._base_dir)
         self.file_cursors = defaultdict(lambda: (0, 0))
         # Swap these out to use lockfiles
@@ -108,7 +90,9 @@ class FilesystemEventLogStorage(EventLogStorage):
     def filepath_for_run_id(self, run_id):
         return os.path.join(self._base_dir, '{run_id}.log'.format(run_id=run_id))
 
-    def store_event(self, run_id, event):
+    def store_event(self, event):
+        run_id = event.run_id
+
         with self.file_lock[run_id]:
             # Going to do the less error-prone, simpler, but slower strategy:
             # open, append, close for every log message for now.

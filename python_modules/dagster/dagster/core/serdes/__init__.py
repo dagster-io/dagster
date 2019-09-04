@@ -14,14 +14,21 @@ Why not pickle?
   (in memory, not human readble, etc) just handle the json case effectively.
 '''
 import json
+from enum import Enum
 
 from dagster import check, seven
 
 _WHITELISTED_TUPLE_MAP = {}
+_WHITELISTED_ENUM_MAP = {}
 
 
 def whitelist_for_serdes(klass):
-    _WHITELISTED_TUPLE_MAP[klass.__name__] = klass
+    if issubclass(klass, Enum):
+        _WHITELISTED_ENUM_MAP[klass.__name__] = klass
+    elif issubclass(klass, tuple):
+        _WHITELISTED_TUPLE_MAP[klass.__name__] = klass
+    else:
+        check.failed('Can not whitelist class {klass} for serdes'.format(klass=klass))
     return klass
 
 
@@ -37,6 +44,13 @@ def pack_value(val):
         base_dict = {key: pack_value(value) for key, value in val._asdict().items()}
         base_dict['__class__'] = klass_name
         return base_dict
+    if isinstance(val, Enum):
+        klass_name = val.__class__.__name__
+        check.invariant(
+            klass_name in _WHITELISTED_ENUM_MAP,
+            'Can only serialize whitelisted Enums, recieved {}'.format(klass_name),
+        )
+        return {'__enum__': str(val)}
     if isinstance(val, dict):
         return {key: pack_value(value) for key, value in val.items()}
 
@@ -56,6 +70,9 @@ def unpack_value(val):
         val = {key: unpack_value(value) for key, value in val.items()}
 
         return klass(**val)
+    if isinstance(val, dict) and val.get('__enum__'):
+        name, member = val['__enum__'].split('.')
+        return getattr(_WHITELISTED_ENUM_MAP[name], member)
     if isinstance(val, dict):
         return {key: unpack_value(value) for key, value in val.items()}
 

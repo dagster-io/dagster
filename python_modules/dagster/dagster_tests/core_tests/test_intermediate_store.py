@@ -1,11 +1,10 @@
 import os
-import shutil
-import tempfile
 import uuid
 
 import pytest
 
-from dagster import Bool, List, Optional, String, check, seven
+from dagster import Bool, List, Optional, String, check
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.marshal import SerializationStrategy
@@ -54,145 +53,80 @@ class FancyStringFilesystemTypeStoragePlugin(TypeStoragePlugin):  # pylint:disab
 
 def test_file_system_intermediate_store():
     run_id = str(uuid.uuid4())
+    instance = DagsterInstance.ephemeral()
+    intermediate_store = FileSystemIntermediateStore.for_instance(instance, run_id=run_id)
 
-    intermediate_store = FileSystemIntermediateStore(run_id=run_id)
-    assert intermediate_store.root == os.path.join(
-        seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
-    )
-
-    with yield_empty_pipeline_context(run_id=run_id) as context:
-        try:
-            intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
-            assert intermediate_store.has_object(context, ['true'])
-            assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']).obj is True
-            assert intermediate_store.uri_for_paths(['true']).startswith('file:///')
-            assert intermediate_store.rm_object(context, ['true']) is None
-            assert intermediate_store.rm_object(context, ['true']) is None
-            assert intermediate_store.rm_object(context, ['dslkfhjsdflkjfs']) is None
-        finally:
-            try:
-                shutil.rmtree(intermediate_store.root)
-            except seven.FileNotFoundError:
-                pass
-
-
-def test_file_system_intermediate_store_with_base_dir():
-    run_id = str(uuid.uuid4())
-
-    try:
-        tempdir = tempfile.mkdtemp()
-
-        intermediate_store = FileSystemIntermediateStore(run_id=run_id, base_dir=tempdir)
-        assert intermediate_store.root == os.path.join(tempdir, 'dagster', 'runs', run_id, 'files')
-
-        with yield_empty_pipeline_context(run_id=run_id) as context:
-            try:
-                intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
-                assert intermediate_store.has_object(context, ['true'])
-                assert (
-                    intermediate_store.get_object(context, RuntimeBool.inst(), ['true']).obj is True
-                )
-
-            finally:
-                try:
-                    shutil.rmtree(intermediate_store.root)
-                except seven.FileNotFoundError:
-                    pass
-    finally:
-        try:
-            shutil.rmtree(tempdir)
-        except seven.FileNotFoundError:
-            pass
+    with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
+        intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
+        assert intermediate_store.has_object(context, ['true'])
+        assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']).obj is True
+        assert intermediate_store.uri_for_paths(['true']).startswith('file:///')
+        assert intermediate_store.rm_object(context, ['true']) is None
+        assert intermediate_store.rm_object(context, ['true']) is None
+        assert intermediate_store.rm_object(context, ['dslkfhjsdflkjfs']) is None
 
 
 def test_file_system_intermediate_store_composite_types():
     run_id = str(uuid.uuid4())
+    instance = DagsterInstance.ephemeral()
 
-    intermediate_store = FileSystemIntermediateStore(run_id=run_id)
-    assert intermediate_store.root == os.path.join(
-        seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
-    )
+    intermediate_store = FileSystemIntermediateStore.for_instance(instance=instance, run_id=run_id)
 
-    with yield_empty_pipeline_context(run_id=run_id) as context:
-        try:
-            intermediate_store.set_object(
-                [True, False], context, resolve_to_runtime_type(List[Bool]).inst(), ['bool']
-            )
-            assert intermediate_store.has_object(context, ['bool'])
-            assert intermediate_store.get_object(
-                context, resolve_to_runtime_type(List[Bool]).inst(), ['bool']
-            ).obj == [True, False]
-
-        finally:
-            try:
-                shutil.rmtree(intermediate_store.root)
-            except seven.FileNotFoundError:
-                pass
+    with yield_empty_pipeline_context(instance=instance, run_id=run_id) as context:
+        intermediate_store.set_object(
+            [True, False], context, resolve_to_runtime_type(List[Bool]).inst(), ['bool']
+        )
+        assert intermediate_store.has_object(context, ['bool'])
+        assert intermediate_store.get_object(
+            context, resolve_to_runtime_type(List[Bool]).inst(), ['bool']
+        ).obj == [True, False]
 
 
 def test_file_system_intermediate_store_with_custom_serializer():
     run_id = str(uuid.uuid4())
+    instance = DagsterInstance.ephemeral()
+    intermediate_store = FileSystemIntermediateStore.for_instance(instance, run_id=run_id)
 
-    intermediate_store = FileSystemIntermediateStore(run_id=run_id)
+    with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
 
-    with yield_empty_pipeline_context(run_id=run_id) as context:
-        try:
-            intermediate_store.set_object('foo', context, LowercaseString.inst(), ['foo'])
+        intermediate_store.set_object('foo', context, LowercaseString.inst(), ['foo'])
 
-            with open(os.path.join(intermediate_store.root, 'foo'), 'rb') as fd:
-                assert fd.read().decode('utf-8') == 'FOO'
+        with open(os.path.join(intermediate_store.root, 'foo'), 'rb') as fd:
+            assert fd.read().decode('utf-8') == 'FOO'
 
-            assert intermediate_store.has_object(context, ['foo'])
-            assert (
-                intermediate_store.get_object(context, LowercaseString.inst(), ['foo']).obj == 'foo'
-            )
-        finally:
-            try:
-                shutil.rmtree(intermediate_store.root)
-            except seven.FileNotFoundError:
-                pass
+        assert intermediate_store.has_object(context, ['foo'])
+        assert intermediate_store.get_object(context, LowercaseString.inst(), ['foo']).obj == 'foo'
 
 
 def test_file_system_intermediate_store_composite_types_with_custom_serializer_for_inner_type():
     run_id = str(uuid.uuid4())
+    instance = DagsterInstance.ephemeral()
+    intermediate_store = FileSystemIntermediateStore.for_instance(instance, run_id=run_id)
 
-    intermediate_store = FileSystemIntermediateStore(run_id=run_id)
-    assert intermediate_store.root == os.path.join(
-        seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
-    )
+    with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
 
-    with yield_empty_pipeline_context(run_id=run_id) as context:
-        try:
-            intermediate_store.set_object(
-                ['foo', 'bar'],
-                context,
-                resolve_to_runtime_type(List[LowercaseString]).inst(),
-                ['list'],
-            )
-            assert intermediate_store.has_object(context, ['list'])
-            assert intermediate_store.get_object(
-                context, resolve_to_runtime_type(List[Bool]).inst(), ['list']
-            ).obj == ['foo', 'bar']
-
-        finally:
-            try:
-                shutil.rmtree(intermediate_store.root)
-            except seven.FileNotFoundError:
-                pass
+        intermediate_store.set_object(
+            ['foo', 'bar'], context, resolve_to_runtime_type(List[LowercaseString]).inst(), ['list']
+        )
+        assert intermediate_store.has_object(context, ['list'])
+        assert intermediate_store.get_object(
+            context, resolve_to_runtime_type(List[Bool]).inst(), ['list']
+        ).obj == ['foo', 'bar']
 
 
 def test_file_system_intermediate_store_with_type_storage_plugin():
     run_id = str(uuid.uuid4())
-
+    instance = DagsterInstance.ephemeral()
     # FIXME need a dedicated test bucket
-    intermediate_store = FileSystemIntermediateStore(
+    intermediate_store = FileSystemIntermediateStore.for_instance(
+        instance,
         run_id=run_id,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
             {RuntimeString.inst(): FancyStringFilesystemTypeStoragePlugin}
         ),
     )
 
-    with yield_empty_pipeline_context(run_id=run_id) as context:
+    with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
         try:
             intermediate_store.set_value('hello', context, RuntimeString.inst(), ['obj_name'])
 
@@ -209,7 +143,8 @@ def test_file_system_intermediate_store_with_composite_type_storage_plugin():
     run_id = str(uuid.uuid4())
 
     # FIXME need a dedicated test bucket
-    intermediate_store = FileSystemIntermediateStore(
+    intermediate_store = FileSystemIntermediateStore.for_instance(
+        DagsterInstance.ephemeral(),
         run_id=run_id,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
             {RuntimeString.inst(): FancyStringFilesystemTypeStoragePlugin}

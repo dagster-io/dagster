@@ -60,7 +60,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return graphene_info.schema.type_named('LogMessageConnection')(self._pipeline_run)
 
     def resolve_computeLogs(self, graphene_info, stepKey):
-        update = fetch_compute_logs(self.run_id, stepKey)
+        update = fetch_compute_logs(graphene_info.context.instance, self.run_id, stepKey)
         return graphene_info.schema.type_named('ComputeLogs')(
             runId=self.run_id,
             stepKey=stepKey,
@@ -173,7 +173,6 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
 
     def __init__(self, pipeline_run):
         self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        self._logs = self._pipeline_run.all_logs()
 
     def resolve_nodes(self, graphene_info):
         pipeline = get_pipeline_or_raise(graphene_info, self._pipeline_run.selector)
@@ -184,11 +183,12 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
             RunConfig(mode=self._pipeline_run.mode),
         )
         return [
-            from_event_record(graphene_info, log, pipeline, execution_plan) for log in self._logs
+            from_event_record(graphene_info, log, pipeline, execution_plan)
+            for log in graphene_info.context.instance.all_logs(self._pipeline_run.run_id)
         ]
 
     def resolve_pageInfo(self, graphene_info):
-        count = len(self._logs)
+        count = len(graphene_info.context.instance.all_logs(self._pipeline_run.run_id))
         lastCursor = None
         if count > 0:
             lastCursor = str(count - 1)

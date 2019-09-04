@@ -20,9 +20,10 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
 from dagster.core.execution.config import ExecutorConfig
+from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitSystemStorageContext
-from dagster.core.storage.pipeline_run import PipelineRunData, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import evaluate_config
@@ -119,11 +120,11 @@ def check_persistent_storage_requirement(pipeline_def, system_storage_def, execu
 ContextCreationData = namedtuple(
     'ContextCreationData',
     'pipeline_def environment_config run_config mode_def system_storage_def '
-    'execution_target_handle executor_def',
+    'execution_target_handle executor_def instance',
 )
 
 
-def create_context_creation_data(pipeline_def, environment_dict, run_config):
+def create_context_creation_data(pipeline_def, environment_dict, run_config, instance):
     environment_config = create_environment_config(pipeline_def, environment_dict, run_config)
 
     mode_def = pipeline_def.get_mode_definition(run_config.mode)
@@ -139,6 +140,7 @@ def create_context_creation_data(pipeline_def, environment_dict, run_config):
         system_storage_def=system_storage_def,
         execution_target_handle=execution_target_handle,
         executor_def=executor_def,
+        instance=instance,
     )
 
 
@@ -147,15 +149,19 @@ def scoped_pipeline_context(
     pipeline_def,
     environment_dict,
     run_config,
+    instance,
     system_storage_data=None,
     scoped_resources_builder_cm=create_resource_builder,
 ):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
     check.inst_param(run_config, 'run_config', RunConfig)
+    check.inst_param(instance, 'instance', DagsterInstance)
     check.opt_inst_param(system_storage_data, 'system_storage_data', SystemStorageData)
 
-    context_creation_data = create_context_creation_data(pipeline_def, environment_dict, run_config)
+    context_creation_data = create_context_creation_data(
+        pipeline_def, environment_dict, run_config, instance
+    )
 
     executor_config = create_executor_config(context_creation_data)
 
@@ -166,6 +172,21 @@ def scoped_pipeline_context(
     # After this try block, a Dagster exception thrown will result in a pipeline init failure event.
     try:
         log_manager = create_log_manager(context_creation_data)
+        from .api import ExecutionSelector
+
+        instance.create_run(
+            pipeline_name=pipeline_def.name,
+            run_id=run_config.run_id,
+            environment_dict=environment_dict,
+            mode=context_creation_data.mode_def.name,
+            # https://github.com/dagster-io/dagster/issues/1709
+            # ExecutionSelector should be threaded all the way
+            # down from the top
+            selector=ExecutionSelector(pipeline_def.name),
+            reexecution_config=run_config.reexecution_config,
+            step_keys_to_execute=run_config.step_keys_to_execute,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
 
         if run_config.event_sink:
             run_config.event_sink.on_pipeline_init()
@@ -234,6 +255,7 @@ def create_system_storage_data(
                 system_storage_def=system_storage_def,
                 system_storage_config=environment_config.storage.system_storage_config,
                 run_config=run_config,
+                instance=context_creation_data.instance,
                 environment_config=environment_config,
                 type_storage_plugin_registry=construct_type_storage_plugin_registry(
                     pipeline_def, system_storage_def
@@ -246,25 +268,6 @@ def create_system_storage_data(
             )
         )
     )
-
-    from .api import ExecutionSelector
-
-    system_storage_data.run_storage.create_run(
-        PipelineRunData(
-            pipeline_name=pipeline_def.name,
-            run_id=run_config.run_id,
-            environment_dict=environment_config.original_config_dict,
-            mode=context_creation_data.mode_def.name,
-            # https://github.com/dagster-io/dagster/issues/1709
-            # ExecutionSelector should be threaded all the way
-            # down from the top
-            selector=ExecutionSelector(pipeline_def.name),
-            reexecution_config=None,
-            step_keys_to_execute=None,
-            status=PipelineRunStatus.NOT_STARTED,
-        )
-    )
-
     return system_storage_data
 
 
@@ -315,7 +318,7 @@ def construct_pipeline_execution_context(
             run_config=context_creation_data.run_config,
             scoped_resources_builder=scoped_resources_builder,
             environment_config=context_creation_data.environment_config,
-            run_storage=system_storage_data.run_storage,
+            instance=context_creation_data.instance,
             intermediates_manager=system_storage_data.intermediates_manager,
             file_manager=system_storage_data.file_manager,
             execution_target_handle=context_creation_data.execution_target_handle,

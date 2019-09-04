@@ -9,14 +9,8 @@ from geventwebsocket.handler import WebSocketHandler
 from dagster import ExecutionTargetHandle, check
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
-from dagster.core.storage.runs import FilesystemRunStorage, InMemoryRunStorage
-from dagster.utils import (
-    DEFAULT_REPOSITORY_YAML_FILENAME,
-    Features,
-    dagster_logs_dir_for_handle,
-    dagster_schedule_dir_for_handle,
-    is_dagster_home_set,
-)
+from dagster.core.instance import DagsterInstance
+from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 
 from .app import create_app
 from .version import __version__
@@ -55,66 +49,36 @@ REPO_TARGET_WARNING = (
 @click.option('--host', '-h', type=click.STRING, default='127.0.0.1', help="Host to run server on")
 @click.option('--port', '-p', type=click.INT, default=3000, help="Port to run server on")
 @click.option(
-    '--log',
-    is_flag=True,
-    help=(
-        'Record logs of pipeline runs. Use --log-dir to specify the directory to record logs to. '
-        'By default, logs will be stored under $DAGSTER_HOME.'
-    ),
+    '--storage-fallback',
+    help="Base directory for dagster storage if $DAGSTER_HOME is not set",
+    default=None,
 )
-@click.option('--log-dir', help="Directory to record logs to", default=None)
-@click.option('--schedule-dir', help="Directory to record logs to", default=None)
 @click.option(
     '--no-watch',
     is_flag=True,
     help='Disable autoreloading when there are changes to the repo/pipeline being served',
 )
 @click.version_option(version=__version__, prog_name='dagit')
-def ui(host, port, log, log_dir, schedule_dir, no_watch=False, **kwargs):
+def ui(host, port, storage_fallback, no_watch=False, **kwargs):
     handle = handle_for_repo_cli_args(kwargs)
 
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
-
-    if log and not log_dir:
-        if not is_dagster_home_set():
-            raise click.UsageError(
-                '$DAGSTER_HOME is not set and log-dir is not provided. '
-                'Set the home directory for dagster by exporting DAGSTER_HOME in your '
-                '.bashrc or .bash_profile, or pass in a default directory using the --log-dir flag '
-                '\nExamples:'
-                '\n  1. export DAGSTER_HOME="~/dagster"'
-                '\n  2. --log --log-dir="/dagster_logs"'
-            )
-
-        log_dir = dagster_logs_dir_for_handle(handle)
-
-    if Features.SCHEDULER.is_enabled:
-        # Don't error if $DAGSTER_HOME is not set
-        if not schedule_dir and is_dagster_home_set():
-            schedule_dir = dagster_schedule_dir_for_handle(handle)
 
     check.invariant(
         not no_watch,
         'Do not set no_watch when calling the Dagit Python CLI directly -- this flag is a no-op '
         'at this level and should be set only when invoking dagit/bin/dagit.',
     )
-    host_dagit_ui(log, log_dir, schedule_dir, handle, host, port)
+    host_dagit_ui(handle, host, port, storage_fallback)
 
 
-def host_dagit_ui(log, log_dir, schedule_dir, handle, host, port):
+def host_dagit_ui(handle, host, port, storage_fallback=None):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
 
-    pipeline_run_storage = (
-        FilesystemRunStorage(base_dir=log_dir, watch=True) if log else InMemoryRunStorage()
-    )
+    instance = DagsterInstance.get(storage_fallback)
 
-    if Features.SCHEDULER.is_enabled:
-        repository = handle.build_repository_definition()
-        scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
-        app = create_app(handle, pipeline_run_storage, scheduler)
-    else:
-        app = create_app(handle, pipeline_run_storage)
+    app = create_app(handle, instance)
 
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
     print('Serving on http://{host}:{port}'.format(host=host, port=port))

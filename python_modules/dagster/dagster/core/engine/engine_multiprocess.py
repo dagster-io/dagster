@@ -6,6 +6,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan_itera
 from dagster.core.execution.config import MultiprocessExecutorConfig, RunConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.instance import DagsterInstance
 from dagster.utils import safe_tempfile_path
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
@@ -13,11 +14,12 @@ from .engine_base import IEngine
 
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
-    def __init__(self, environment_dict, run_config, executor_config, step_key):
+    def __init__(self, environment_dict, run_config, instance, executor_config, step_key):
         self.environment_dict = environment_dict
         self.executor_config = executor_config
         self.run_config = run_config
         self.step_key = step_key
+        self.instance_dir = instance.root_directory()
 
     def execute(self):
         check.inst(self.executor_config, MultiprocessExecutorConfig)
@@ -33,8 +35,14 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         )
         execution_plan = create_execution_plan(pipeline_def, environment_dict, run_config)
 
+        instance = DagsterInstance.ephemeral(self.instance_dir)
+
         for step_event in execute_plan_iterator(
-            execution_plan, environment_dict, run_config, step_keys_to_execute=[self.step_key]
+            execution_plan,
+            environment_dict,
+            run_config,
+            step_keys_to_execute=[self.step_key],
+            instance=instance,
         ):
             yield step_event
 
@@ -53,7 +61,11 @@ def execute_step_out_of_process(step_context, step):
         )
 
         command = InProcessExecutorChildProcessCommand(
-            step_context.environment_dict, child_run_config, step_context.executor_config, step.key
+            step_context.environment_dict,
+            child_run_config,
+            step_context.instance,
+            step_context.executor_config,
+            step.key,
         )
 
         with event_sink.log_forwarding(step_context.log):

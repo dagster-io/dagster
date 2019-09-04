@@ -16,17 +16,13 @@ from dagster import (
     execute_pipeline,
     file_relative_path,
     pipeline,
+    seven,
     solid,
 )
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 
 from .test_solids import spark_mode
-
-try:
-    # Python 2 tempfile doesn't have tempfile.TemporaryDirectory
-    import backports.tempfile as tempfile
-except ImportError:
-    import tempfile
 
 
 def test_spark_data_frame_serialization_file_system_file_handle():
@@ -40,13 +36,14 @@ def test_spark_data_frame_serialization_file_system_file_handle():
         ingest_csv_file_handle_to_spark(nonce())
 
     run_id = str(uuid.uuid4())
-
-    intermediate_store = FileSystemIntermediateStore(run_id=run_id)
+    instance = DagsterInstance.ephemeral()
+    intermediate_store = FileSystemIntermediateStore.for_instance(instance, run_id=run_id)
 
     result = execute_pipeline(
         spark_df_test_pipeline,
         run_config=RunConfig(run_id=run_id, mode='spark'),
         environment_dict={'storage': {'filesystem': {}}},
+        instance=instance,
     )
 
     assert result.success
@@ -128,7 +125,7 @@ def test_spark_dataframe_output_csv():
     def passthrough():
         passthrough_df(emit())  # pylint: disable=no-value-for-parameter
 
-    with tempfile.TemporaryDirectory() as tempdir:
+    with seven.TemporaryDirectory() as tempdir:
         file_name = os.path.join(tempdir, 'output.csv')
         result = execute_pipeline(
             passthrough,

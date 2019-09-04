@@ -44,9 +44,9 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.scheduler import RunningSchedule, Scheduler
-from dagster.core.storage.runs import FilesystemRunStorage, InMemoryRunStorage
 from dagster.utils import script_relative_path
 
 
@@ -80,8 +80,9 @@ PoorMansDataFrame = as_dagster_type(
 
 
 class TestScheduler(Scheduler):
-    def __init__(self):
+    def __init__(self, schedule_dir):
         self._schedules = OrderedDict()
+        self._schedule_dir = schedule_dir
 
     def all_schedules(self):
         return [s for s in self._schedules.values()]
@@ -125,11 +126,10 @@ class TestScheduler(Scheduler):
         return schedule
 
 
-def define_context(raise_on_error=True, log_dir=None):
+def define_context(raise_on_error=True, instance=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
-        pipeline_runs=FilesystemRunStorage(base_dir=log_dir) if log_dir else InMemoryRunStorage(),
-        scheduler=TestScheduler(),
+        instance=instance or DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,
     )

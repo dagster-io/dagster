@@ -7,7 +7,8 @@ import six
 
 from dagster import DagsterInvariantViolationError, check
 from dagster.cli.load_handle import handle_for_repo_cli_args
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, dagster_schedule_dir_for_handle
+from dagster.core.instance import DagsterInstance
+from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 
 
 def create_schedule_cli_group():
@@ -52,7 +53,6 @@ def repository_target_argument(f):
     ),
 )
 @repository_target_argument
-@click.option('--schedule-dir', help="Directory the running schedules are stored in", default=None)
 @click.option('--running', help="Filter for running schedules", is_flag=True, default=False)
 @click.option('--name', help="Only display schedule schedule names", is_flag=True, default=False)
 @click.option('--verbose', is_flag=True)
@@ -63,9 +63,7 @@ def schedule_list_command(schedule_dir, running, name, verbose, **kwargs):
 def execute_list_command(schedule_dir, running_filter, name_filter, verbose, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
-
-    if not schedule_dir:
-        schedule_dir = dagster_schedule_dir_for_handle(handle)
+    schedule_dir = DagsterInstance.get().schedules_directory()
 
     scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
     if not scheduler and not name_filter:
@@ -135,9 +133,7 @@ def schedule_start_command(schedule_name, schedule_dir, **kwargs):
 def execute_start_command(schedule_name, schedule_dir, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
-
-    if not schedule_dir:
-        schedule_dir = dagster_schedule_dir_for_handle(handle)
+    schedule_dir = DagsterInstance.get().schedules_directory()
 
     python_path = sys.executable
     repository_path = handle.data.repository_yaml
@@ -172,9 +168,7 @@ def schedule_end_command(schedule_name, schedule_dir, **kwargs):
 def execute_end_command(schedule_name, schedule_dir, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
-
-    if not schedule_dir:
-        schedule_dir = dagster_schedule_dir_for_handle(handle)
+    schedule_dir = DagsterInstance.get().schedules_directory()
 
     scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
     if not scheduler:

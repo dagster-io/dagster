@@ -2,14 +2,9 @@ import copy
 
 from dagster_graphql.test.utils import execute_dagster_graphql
 
+from dagster.core.instance import DagsterInstance
+
 from .utils import define_context, sync_execute_get_run_log_data
-
-try:
-    # Python 2 tempfile doesn't have tempfile.TemporaryDirectory
-    import backports.tempfile as tempfile
-except ImportError:
-    import tempfile
-
 
 RUNS_QUERY = '''
 query PipelineRunsRootQuery($name: String!) {
@@ -105,45 +100,46 @@ def test_get_runs_over_graphql(snapshot):
 
 
 def test_persisted_runs_over_graphql():
-    with tempfile.TemporaryDirectory() as log_dir:
-        write_context = define_context(log_dir=log_dir)
-        payload_one = sync_execute_get_run_log_data(
-            {
-                'executionParams': {
-                    'selector': {'name': 'multi_mode_with_resources'},
-                    'mode': 'add_mode',
-                    'environmentConfigData': {'resources': {'op': {'config': 2}}},
-                }
-            },
-            context=write_context,
-        )
-        run_id_one = payload_one['runId']
+    instance = DagsterInstance.ephemeral()
 
-        payload_two = sync_execute_get_run_log_data(
-            {
-                'executionParams': {
-                    'selector': {'name': 'multi_mode_with_resources'},
-                    'mode': 'add_mode',
-                    'environmentConfigData': {'resources': {'op': {'config': 3}}},
-                }
-            },
-            context=write_context,
-        )
+    write_context = define_context(instance=instance)
+    payload_one = sync_execute_get_run_log_data(
+        {
+            'executionParams': {
+                'selector': {'name': 'multi_mode_with_resources'},
+                'mode': 'add_mode',
+                'environmentConfigData': {'resources': {'op': {'config': 2}}},
+            }
+        },
+        context=write_context,
+    )
+    run_id_one = payload_one['runId']
 
-        run_id_two = payload_two['runId']
+    payload_two = sync_execute_get_run_log_data(
+        {
+            'executionParams': {
+                'selector': {'name': 'multi_mode_with_resources'},
+                'mode': 'add_mode',
+                'environmentConfigData': {'resources': {'op': {'config': 3}}},
+            }
+        },
+        context=write_context,
+    )
 
-        read_context = define_context(log_dir=log_dir)
+    run_id_two = payload_two['runId']
 
-        result = execute_dagster_graphql(
-            read_context, RUNS_QUERY, variables={'name': 'multi_mode_with_resources'}
-        )
+    read_context = define_context(instance=instance)
 
-        run_one_data = _get_runs_data(result, run_id_one)
-        assert [log['__typename'] for log in run_one_data['logs']['nodes']] == [
-            msg['__typename'] for msg in payload_one['messages']
-        ]
+    result = execute_dagster_graphql(
+        read_context, RUNS_QUERY, variables={'name': 'multi_mode_with_resources'}
+    )
 
-        run_two_data = _get_runs_data(result, run_id_two)
-        assert [log['__typename'] for log in run_two_data['logs']['nodes']] == [
-            msg['__typename'] for msg in payload_two['messages']
-        ]
+    run_one_data = _get_runs_data(result, run_id_one)
+    assert [log['__typename'] for log in run_one_data['logs']['nodes']] == [
+        msg['__typename'] for msg in payload_one['messages']
+    ]
+
+    run_two_data = _get_runs_data(result, run_id_two)
+    assert [log['__typename'] for log in run_two_data['logs']['nodes']] == [
+        msg['__typename'] for msg in payload_two['messages']
+    ]

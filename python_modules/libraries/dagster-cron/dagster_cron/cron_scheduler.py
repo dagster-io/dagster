@@ -10,7 +10,6 @@ from crontab import CronTab
 
 from dagster import DagsterInvariantViolationError, ScheduleDefinition, check, seven, utils
 from dagster.core.scheduler import RunningSchedule, Scheduler
-from dagster.utils import dagster_home_dir
 
 
 class SystemCronScheduler(Scheduler):
@@ -107,7 +106,7 @@ class SystemCronScheduler(Scheduler):
         dagster_graphql_path = os.path.join(
             os.path.dirname(schedule.python_path), 'dagster-graphql'
         )
-        dagster_home = dagster_home_dir()
+        dagster_home = os.getenv('DAGSTER_HOME')
 
         script_contents = '''
             #!/bin/bash

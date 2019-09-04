@@ -73,7 +73,11 @@ def _do_setup(name='dagster'):
             'watchdog>=0.8.3',
         ],
         tests_require=['mock'],
-        extras_require={':python_version>"3"': ['reloader>=0.6'], 'aws': ['boto3>=1.9.117']},
+        extras_require={
+            'aws': ['boto3>=1.9.117'],
+            ':python_version>"3"': ['reloader>=0.6'],
+            ':python_version<"3"': ['backports.tempfile'],
+        },
         entry_points={'console_scripts': ['dagster = dagster.cli:main']},
     )
 

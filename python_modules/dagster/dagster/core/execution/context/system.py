@@ -23,7 +23,7 @@ class SystemPipelineExecutionContextData(
         '_SystemPipelineExecutionContextData',
         (
             'run_config scoped_resources_builder environment_config pipeline_def '
-            'mode_def system_storage_def run_storage intermediates_manager file_manager '
+            'mode_def system_storage_def instance intermediates_manager file_manager '
             'execution_target_handle executor_config'
         ),
     )
@@ -41,7 +41,7 @@ class SystemPipelineExecutionContextData(
         pipeline_def,
         mode_def,
         system_storage_def,
-        run_storage,
+        instance,
         intermediates_manager,
         file_manager,
         execution_target_handle,
@@ -51,7 +51,7 @@ class SystemPipelineExecutionContextData(
         from dagster.core.definitions.system_storage import SystemStorageDefinition
         from dagster.core.execution.config import ExecutorConfig
         from dagster.core.storage.intermediates_manager import IntermediatesManager
-        from dagster.core.storage.runs import RunStorage
+        from dagster.core.instance import DagsterInstance
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
             cls,
@@ -67,7 +67,7 @@ class SystemPipelineExecutionContextData(
             system_storage_def=check.inst_param(
                 system_storage_def, 'system_storage_def', SystemStorageDefinition
             ),
-            run_storage=check.inst_param(run_storage, 'run_storage', RunStorage),
+            instance=check.inst_param(instance, 'instance', DagsterInstance),
             intermediates_manager=check.inst_param(
                 intermediates_manager, 'intermediates_manager', IntermediatesManager
             ),
@@ -162,8 +162,8 @@ class SystemPipelineExecutionContext(object):
         return self._log_manager
 
     @property
-    def run_storage(self):
-        return self._pipeline_context_data.run_storage
+    def instance(self):
+        return self._pipeline_context_data.instance
 
     @property
     def intermediates_manager(self):

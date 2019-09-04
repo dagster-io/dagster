@@ -11,14 +11,8 @@ from watchdog.observers.polling import PollingObserver
 
 from dagster import check
 from dagster.core.execution.context.system import SystemStepExecutionContext
-from dagster.utils import (
-    Features,
-    dagster_compute_logs_dir,
-    ensure_dir,
-    ensure_file,
-    is_dagster_home_set,
-    touch_file,
-)
+from dagster.core.instance import DagsterFeatures
+from dagster.utils import ensure_dir, ensure_file, touch_file
 
 IO_TYPE_STDOUT = 'out'
 IO_TYPE_STDERR = 'err'
@@ -27,7 +21,8 @@ POLLING_TIMEOUT = 2
 
 
 class ComputeLogManager(object):
-    def __init__(self):
+    def __init__(self, instance):
+        self._instance = instance
         self._subscriptions = defaultdict(list)
         self._watchers = {}
         self._observer = PollingObserver(POLLING_TIMEOUT)
@@ -39,8 +34,8 @@ class ComputeLogManager(object):
             return
 
         self._watchers[key] = self._observer.schedule(
-            ComputeLogEventHandler(self, run_id, step_key),
-            os.path.dirname(_filepath(run_id, step_key, IO_TYPE_STDOUT)),
+            ComputeLogEventHandler(self, run_id, step_key, self._instance),
+            os.path.dirname(_filepath(_filebase(self._instance, run_id, step_key), IO_TYPE_STDOUT)),
         )
 
     def unwatch(self, run_id, step_key, handler):
@@ -65,7 +60,7 @@ class ComputeLogManager(object):
             subscription.fetch()
 
     def get_observable(self, run_id, step_key, cursor):
-        subscription = ComputeLogSubscription(run_id, step_key, cursor)
+        subscription = ComputeLogSubscription(self._instance, run_id, step_key, cursor)
         self.on_subscribe(subscription, run_id, step_key)
         return Observable.create(subscription)  # pylint: disable=E1101
 
@@ -79,32 +74,34 @@ def _from_run_key(key):
 
 
 class ComputeLogEventHandler(PatternMatchingEventHandler):
-    def __init__(self, manager, run_id, step_key):
+    def __init__(self, manager, run_id, step_key, instance):
         self.manager = manager
         self.run_id = run_id
         self.step_key = step_key
+        self._base = _filebase(instance, run_id, step_key)
         patterns = [
-            _filepath(self.run_id, self.step_key, IO_TYPE_COMPLETE),
-            _filepath(self.run_id, self.step_key, IO_TYPE_STDOUT),
-            _filepath(self.run_id, self.step_key, IO_TYPE_STDERR),
+            _filepath(self._base, IO_TYPE_COMPLETE),
+            _filepath(self._base, IO_TYPE_STDOUT),
+            _filepath(self._base, IO_TYPE_STDERR),
         ]
         super(ComputeLogEventHandler, self).__init__(patterns=patterns)
 
     def on_created(self, event):
-        if event.src_path == _filepath(self.run_id, self.step_key, IO_TYPE_COMPLETE):
+        if event.src_path == _filepath(self._base, IO_TYPE_COMPLETE):
             self.manager.on_compute_end(self.run_id, self.step_key)
             self.manager.unwatch(self.run_id, self.step_key, self)
 
     def on_modified(self, event):
         if event.src_path in (
-            _filepath(self.run_id, self.step_key, IO_TYPE_STDOUT),
-            _filepath(self.run_id, self.step_key, IO_TYPE_STDERR),
+            _filepath(self._base, IO_TYPE_STDOUT),
+            _filepath(self._base, IO_TYPE_STDERR),
         ):
             self.manager.on_update(self.run_id, self.step_key)
 
 
 class ComputeLogSubscription(object):
-    def __init__(self, run_id, step_key, cursor):
+    def __init__(self, instance, run_id, step_key, cursor):
+        self.instance = instance
         self.run_id = run_id
         self.step_key = step_key
         self.cursor = cursor
@@ -117,7 +114,9 @@ class ComputeLogSubscription(object):
 
     def fetch(self):
         if self.observer:
-            self.observer.on_next(fetch_compute_logs(self.run_id, self.step_key, self.cursor))
+            self.observer.on_next(
+                fetch_compute_logs(self.instance, self.run_id, self.step_key, self.cursor)
+            )
 
     def on_compute_end(self):
         self.fetch()
@@ -137,21 +136,25 @@ class ComputeLogUpdate(object):
         self.cursor = cursor
 
 
-def fetch_compute_logs(run_id, step_key, cursor=None):
+def fetch_compute_logs(instance, run_id, step_key, cursor=None):
     out_offset, err_offset = _decode_cursor(cursor)
-    stdout, _new_out_offset = _fetch_compute_data(run_id, step_key, IO_TYPE_STDOUT, out_offset)
-    stderr, _new_err_offset = _fetch_compute_data(run_id, step_key, IO_TYPE_STDERR, err_offset)
+    stdout, _new_out_offset = _fetch_compute_data(
+        instance, run_id, step_key, IO_TYPE_STDOUT, out_offset
+    )
+    stderr, _new_err_offset = _fetch_compute_data(
+        instance, run_id, step_key, IO_TYPE_STDERR, err_offset
+    )
     cursor = _encode_cursor(_new_out_offset, _new_err_offset)
     return ComputeLogUpdate(stdout, stderr, cursor)
 
 
-def should_capture_stdout():
+def should_capture_stdout(instance):
     # for ease of mocking
-    return Features.DAGIT_STDOUT.is_enabled
+    return instance.is_feature_enabled(DagsterFeatures.DAGIT_STDOUT)
 
 
-def _fetch_compute_data(run_id, step_key, io_type, after=0):
-    outfile = _filepath(run_id, step_key, io_type)
+def _fetch_compute_data(instance, run_id, step_key, io_type, after=0):
+    outfile = _filepath(_filebase(instance, run_id, step_key), io_type)
     data = ''
     cursor = 0
     if os.path.exists(outfile) and os.path.isfile(outfile):
@@ -165,18 +168,15 @@ def _fetch_compute_data(run_id, step_key, io_type, after=0):
 @contextmanager
 def mirror_step_io(step_context):
     # https://github.com/dagster-io/dagster/issues/1698
-    if not should_capture_stdout():
+    if not should_capture_stdout(step_context.instance):
         yield
         return
 
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-
-    run_id = step_context.run_id
-    step_key = step_context.step.key
-
-    outpath = _filepath(run_id, step_key, IO_TYPE_STDOUT)
-    errpath = _filepath(run_id, step_key, IO_TYPE_STDERR)
-    touchpath = _filepath(run_id, step_key, IO_TYPE_COMPLETE)
+    filebase = _filebase(step_context.instance, step_context.run_id, step_context.step.key)
+    outpath = _filepath(filebase, IO_TYPE_STDOUT)
+    errpath = _filepath(filebase, IO_TYPE_STDERR)
+    touchpath = _filepath(filebase, IO_TYPE_COMPLETE)
 
     ensure_dir(os.path.dirname(outpath))
     ensure_dir(os.path.dirname(errpath))
@@ -229,13 +229,11 @@ def tailf(path):
         p.terminate()
 
 
-def _filebase(run_id, step_key):
-    assert is_dagster_home_set()
-    return os.path.join(dagster_compute_logs_dir(), run_id, step_key)
+def _filebase(instance, run_id, step_key):
+    return os.path.join(instance.compute_logs_directory(run_id), step_key)
 
 
-def _filepath(run_id, step_key, io_type):
-    assert is_dagster_home_set()
+def _filepath(base, io_type):
     assert io_type in (IO_TYPE_COMPLETE, IO_TYPE_STDERR, IO_TYPE_STDOUT)
     if io_type == IO_TYPE_STDERR:
         extension = 'err'
@@ -243,7 +241,7 @@ def _filepath(run_id, step_key, io_type):
         extension = 'out'
     if io_type == IO_TYPE_COMPLETE:
         extension = 'complete'
-    return "{}.{}".format(_filebase(run_id, step_key), extension)
+    return "{}.{}".format(base, extension)
 
 
 def _decode_cursor(cursor):

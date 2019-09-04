@@ -21,7 +21,7 @@ from dagster import (
 )
 from dagster.core.events import STEP_EVENTS, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.instance import DagsterInstance
 
 
 def test_can_handle_all_step_events():
@@ -131,14 +131,9 @@ def test_all_step_events():  # pylint: disable=too-many-locals
                     'stepKeys': [step.key],
                 }
             }
-
-            pipeline_run_storage = InMemoryRunStorage()
-
+            instance = DagsterInstance.ephemeral()
             res = execute_query(
-                handle,
-                START_PIPELINE_EXECUTION_QUERY,
-                variables,
-                pipeline_run_storage=pipeline_run_storage,
+                handle, START_PIPELINE_EXECUTION_QUERY, variables, instance=instance
             )
 
             # go through the same dict, decrement all the event records we've seen from the GraphQL
@@ -160,7 +155,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
                 raise Exception(res['errors'])
 
             # build up a dict, incrementing all the event records we've produced in the run storage
-            logs = pipeline_run_storage.get_run_by_id(run_config.run_id).all_logs()
+            logs = instance.all_logs(run_config.run_id)
             for log in logs:
                 if not log.dagster_event or (
                     DagsterEventType(log.dagster_event.event_type_value) not in STEP_EVENTS

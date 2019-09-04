@@ -41,8 +41,8 @@ def get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode
 
 
 def get_run(graphene_info, runId):
-    pipeline_run_storage = graphene_info.context.pipeline_runs
-    run = pipeline_run_storage.get_run_by_id(runId)
+    instance = graphene_info.context.instance
+    run = instance.get_run(runId)
     if not run:
         return graphene_info.schema.type_named('PipelineRunNotFoundError')(runId)
     else:
@@ -50,10 +50,8 @@ def get_run(graphene_info, runId):
 
 
 def get_runs(graphene_info):
-    pipeline_run_storage = graphene_info.context.pipeline_runs
-    return [
-        graphene_info.schema.type_named('PipelineRun')(run) for run in pipeline_run_storage.all_runs
-    ]
+    instance = graphene_info.context.instance
+    return [graphene_info.schema.type_named('PipelineRun')(run) for run in instance.all_runs]
 
 
 @capture_dauphin_error

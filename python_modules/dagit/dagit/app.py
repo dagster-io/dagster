@@ -18,9 +18,7 @@ from nbconvert import HTMLExporter
 from six import text_type
 
 from dagster import ExecutionTargetHandle, check, seven
-from dagster.core.scheduler import Scheduler
-from dagster.core.storage.runs import RunStorage
-from dagster.utils import Features
+from dagster.core.instance import DagsterInstance
 from dagster.utils.log import get_stack_trace_array
 
 from .subscription_server import DagsterSubscriptionServer
@@ -119,10 +117,9 @@ def notebook_view(request_args):
         return '<style>' + resources['inlining']['css'][0] + '</style>' + body, 200
 
 
-def create_app(handle, pipeline_run_storage, scheduler=None):
+def create_app(handle, instance):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
-    check.inst_param(pipeline_run_storage, 'pipeline_run_storage', RunStorage)
-    check.opt_inst_param(scheduler, 'scheduler', Scheduler)
+    check.inst_param(instance, 'instance', DagsterInstance)
 
     app = Flask('dagster-ui')
     sockets = Sockets(app)
@@ -135,21 +132,9 @@ def create_app(handle, pipeline_run_storage, scheduler=None):
 
     print('Loading repository...')
 
-    if Features.SCHEDULER.is_enabled:
-        context = DagsterGraphQLContext(
-            handle=handle,
-            execution_manager=execution_manager,
-            pipeline_runs=pipeline_run_storage,
-            scheduler=scheduler,  # Add schedule argument
-            version=__version__,
-        )
-    else:
-        context = DagsterGraphQLContext(
-            handle=handle,
-            execution_manager=execution_manager,
-            pipeline_runs=pipeline_run_storage,
-            version=__version__,
-        )
+    context = DagsterGraphQLContext(
+        handle=handle, instance=instance, execution_manager=execution_manager, version=__version__
+    )
 
     app.add_url_rule(
         '/graphql',

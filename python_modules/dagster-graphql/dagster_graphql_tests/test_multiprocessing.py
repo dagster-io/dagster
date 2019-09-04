@@ -26,8 +26,8 @@ from dagster import (
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import ExecutionSelector
-from dagster.core.storage.pipeline_run import PipelineRunData, PipelineRunStatus
-from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.utils import script_relative_path
 
@@ -76,24 +76,26 @@ def test_running():
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
     selector = ExecutionSelector('csv_hello_world')
-    run_storage = InMemoryRunStorage()
-    pipeline_run = run_storage.create_run(
-        PipelineRunData(
-            pipeline_name=passing_pipeline.name,
-            run_id=run_id,
-            selector=selector,
-            environment_dict=environment_dict,
-            mode='default',
-            reexecution_config=None,
-            step_keys_to_execute=None,
-            status=PipelineRunStatus.NOT_STARTED,
-        )
+
+    instance = DagsterInstance.ephemeral()
+    pipeline_run = instance.create_run(
+        pipeline_name=passing_pipeline.name,
+        run_id=run_id,
+        selector=selector,
+        environment_dict=environment_dict,
+        mode='default',
+        reexecution_config=None,
+        step_keys_to_execute=None,
+        status=PipelineRunStatus.NOT_STARTED,
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(handle, passing_pipeline, pipeline_run, raise_on_error=False)
+    execution_manager.execute_pipeline(
+        handle, passing_pipeline, pipeline_run, instance, raise_on_error=False
+    )
     execution_manager.join()
-    assert pipeline_run.status == PipelineRunStatus.SUCCESS
-    events = pipeline_run.all_logs()
+
+    assert instance.get_run(run_id).status == PipelineRunStatus.SUCCESS
+    events = instance.all_logs(run_id)
     assert events
 
     process_start_events = get_events_of_type(events, DagsterEventType.PIPELINE_PROCESS_START)
@@ -110,24 +112,25 @@ def test_failing():
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
     selector = ExecutionSelector('csv_hello_world')
-    run_storage = InMemoryRunStorage()
-    pipeline_run = run_storage.create_run(
-        PipelineRunData(
-            pipeline_name=failing_pipeline.name,
-            run_id=run_id,
-            selector=selector,
-            environment_dict=environment_dict,
-            mode='default',
-            reexecution_config=None,
-            step_keys_to_execute=None,
-            status=PipelineRunStatus.NOT_STARTED,
-        )
+
+    instance = DagsterInstance.ephemeral()
+    pipeline_run = instance.create_run(
+        pipeline_name=failing_pipeline.name,
+        run_id=run_id,
+        selector=selector,
+        environment_dict=environment_dict,
+        mode='default',
+        reexecution_config=None,
+        step_keys_to_execute=None,
+        status=PipelineRunStatus.NOT_STARTED,
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(handle, failing_pipeline, pipeline_run, raise_on_error=False)
+    execution_manager.execute_pipeline(
+        handle, failing_pipeline, pipeline_run, instance, raise_on_error=False
+    )
     execution_manager.join()
-    assert pipeline_run.status == PipelineRunStatus.FAILURE
-    assert pipeline_run.all_logs()
+    assert instance.get_run(run_id).status == PipelineRunStatus.FAILURE
+    assert instance.all_logs(run_id)
 
 
 def test_execution_crash():
@@ -137,25 +140,26 @@ def test_execution_crash():
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
     selector = ExecutionSelector('csv_hello_world')
-    run_storage = InMemoryRunStorage()
-    pipeline_run = run_storage.create_run(
-        PipelineRunData(
-            pipeline_name=crashy_pipeline.name,
-            run_id=run_id,
-            selector=selector,
-            environment_dict=environment_dict,
-            mode='default',
-            reexecution_config=None,
-            step_keys_to_execute=None,
-            status=PipelineRunStatus.NOT_STARTED,
-        )
+
+    instance = DagsterInstance.ephemeral()
+    pipeline_run = instance.create_run(
+        pipeline_name=crashy_pipeline.name,
+        run_id=run_id,
+        selector=selector,
+        environment_dict=environment_dict,
+        mode='default',
+        reexecution_config=None,
+        step_keys_to_execute=None,
+        status=PipelineRunStatus.NOT_STARTED,
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(handle, crashy_pipeline, pipeline_run, raise_on_error=False)
+    execution_manager.execute_pipeline(
+        handle, crashy_pipeline, pipeline_run, instance, raise_on_error=False
+    )
     execution_manager.join()
-    assert pipeline_run.status == PipelineRunStatus.FAILURE
-    last_log = pipeline_run.all_logs()[-1]
-    print(last_log.message)
+    assert instance.get_run(run_id).status == PipelineRunStatus.FAILURE
+    last_log = instance.all_logs(run_id)[-1]
+
     assert last_log.message.startswith(
         'Exception: Pipeline execution process for {run_id} unexpectedly exited\n'.format(
             run_id=run_id
@@ -252,25 +256,24 @@ def test_multiprocessing_execution_for_composite_solid():
 
     run_id = make_new_run_id()
     handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'composite_pipeline')
-    run_storage = InMemoryRunStorage()
-    pipeline_run = run_storage.create_run(
-        PipelineRunData(
-            pipeline_name=composite_pipeline.name,
-            run_id=run_id,
-            selector=ExecutionSelector('nonce'),
-            environment_dict=environment_dict,
-            mode='default',
-            reexecution_config=None,
-            step_keys_to_execute=None,
-            status=PipelineRunStatus.NOT_STARTED,
-        )
+
+    instance = DagsterInstance.ephemeral()
+    pipeline_run = instance.create_run(
+        pipeline_name=composite_pipeline.name,
+        run_id=run_id,
+        selector=ExecutionSelector('nonce'),
+        environment_dict=environment_dict,
+        mode='default',
+        reexecution_config=None,
+        step_keys_to_execute=None,
+        status=PipelineRunStatus.NOT_STARTED,
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        handle, composite_pipeline, pipeline_run, raise_on_error=False
+        handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
     )
     execution_manager.join()
-    assert pipeline_run.status == PipelineRunStatus.SUCCESS
+    assert instance.get_run(run_id).status == PipelineRunStatus.SUCCESS
 
     environment_dict = {
         'solids': {
@@ -283,21 +286,20 @@ def test_multiprocessing_execution_for_composite_solid():
     }
 
     run_id = make_new_run_id()
-    pipeline_run = run_storage.create_run(
-        PipelineRunData(
-            pipeline_name=composite_pipeline.name,
-            run_id=run_id,
-            selector=ExecutionSelector('nonce'),
-            environment_dict=environment_dict,
-            mode='default',
-            reexecution_config=None,
-            step_keys_to_execute=None,
-            status=PipelineRunStatus.NOT_STARTED,
-        )
+
+    pipeline_run = instance.create_run(
+        pipeline_name=composite_pipeline.name,
+        run_id=run_id,
+        selector=ExecutionSelector('nonce'),
+        environment_dict=environment_dict,
+        mode='default',
+        reexecution_config=None,
+        step_keys_to_execute=None,
+        status=PipelineRunStatus.NOT_STARTED,
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        handle, composite_pipeline, pipeline_run, raise_on_error=False
+        handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
     )
     execution_manager.join()
 
@@ -315,25 +317,24 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     handle = ExecutionTargetHandle.for_pipeline_python_file(
         __file__, 'composite_pipeline_with_config_mapping'
     )
-    run_storage = InMemoryRunStorage()
-    pipeline_run = run_storage.create_run(
-        PipelineRunData(
-            pipeline_name=composite_pipeline_with_config_mapping.name,
-            run_id=run_id,
-            selector=ExecutionSelector('nonce'),
-            environment_dict=environment_dict,
-            mode='default',
-            reexecution_config=None,
-            step_keys_to_execute=None,
-            status=PipelineRunStatus.NOT_STARTED,
-        )
+
+    instance = DagsterInstance.ephemeral()
+    pipeline_run = instance.create_run(
+        pipeline_name=composite_pipeline_with_config_mapping.name,
+        run_id=run_id,
+        selector=ExecutionSelector('nonce'),
+        environment_dict=environment_dict,
+        mode='default',
+        reexecution_config=None,
+        step_keys_to_execute=None,
+        status=PipelineRunStatus.NOT_STARTED,
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        handle, composite_pipeline_with_config_mapping, pipeline_run, raise_on_error=False
+        handle, composite_pipeline_with_config_mapping, pipeline_run, instance, raise_on_error=False
     )
     execution_manager.join()
-    assert pipeline_run.status == PipelineRunStatus.SUCCESS
+    assert instance.get_run(run_id).status == PipelineRunStatus.SUCCESS
 
     environment_dict = {
         'solids': {
@@ -346,22 +347,21 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     }
 
     run_id = make_new_run_id()
-    pipeline_run = run_storage.create_run(
-        PipelineRunData(
-            pipeline_name=composite_pipeline.name,
-            run_id=run_id,
-            selector=ExecutionSelector('nonce'),
-            environment_dict=environment_dict,
-            mode='default',
-            reexecution_config=None,
-            step_keys_to_execute=None,
-            status=PipelineRunStatus.NOT_STARTED,
-        )
+
+    pipeline_run = instance.create_run(
+        pipeline_name=composite_pipeline.name,
+        run_id=run_id,
+        selector=ExecutionSelector('nonce'),
+        environment_dict=environment_dict,
+        mode='default',
+        reexecution_config=None,
+        step_keys_to_execute=None,
+        status=PipelineRunStatus.NOT_STARTED,
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        handle, composite_pipeline, pipeline_run, raise_on_error=False
+        handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
     )
 
     execution_manager.join()
-    assert pipeline_run.status == PipelineRunStatus.SUCCESS
+    assert instance.get_run(run_id).status == PipelineRunStatus.SUCCESS

@@ -9,6 +9,7 @@ from dagster import (
     solid,
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.instance import DagsterInstance
 
 
 def define_string_resource():
@@ -447,6 +448,7 @@ def test_resource_init_failure():
         execution_plan,
         environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
         step_keys_to_execute=[step.key for step in execution_plan.topological_steps()],
+        instance=DagsterInstance.ephemeral(),
     )
 
     assert step_events[0].event_type_value == 'PIPELINE_INIT_FAILURE'

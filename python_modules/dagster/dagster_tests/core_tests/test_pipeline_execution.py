@@ -29,6 +29,7 @@ from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.execution.api import step_output_event_filter
 from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.execution.results import SolidExecutionResult
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediates_manager import StepOutputHandle
 from dagster.core.utility_solids import (
     create_root_solid,
@@ -574,9 +575,9 @@ def test_reexecution():
         solid_defs=[return_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
-
+    instance = DagsterInstance.ephemeral()
     pipeline_result = execute_pipeline(
-        pipeline_def, environment_dict={'storage': {'filesystem': {}}}
+        pipeline_def, environment_dict={'storage': {'filesystem': {}}}, instance=instance
     )
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').output_value() == 2
@@ -591,6 +592,7 @@ def test_reexecution():
         pipeline_def,
         environment_dict={'storage': {'filesystem': {}}},
         run_config=reexecution_run_config,
+        instance=instance,
     )
 
     assert reexecution_result.success

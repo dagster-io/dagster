@@ -68,7 +68,7 @@ class DauphinPipeline(dauphin.ObjectType):
     def resolve_runs(self, graphene_info):
         return [
             graphene_info.schema.type_named('PipelineRun')(r)
-            for r in graphene_info.context.pipeline_runs.all_runs_for_pipeline(self._pipeline.name)
+            for r in graphene_info.context.instance.all_runs_for_pipeline(self._pipeline.name)
         ]
 
     def get_dagster_pipeline(self):

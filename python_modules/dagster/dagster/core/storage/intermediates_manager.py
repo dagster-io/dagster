@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 import six
 
@@ -25,6 +25,10 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
 
     @abstractmethod
     def copy_intermediate_from_prev_run(self, context, previous_run_id, step_output_handle):
+        pass
+
+    @abstractproperty
+    def is_persistent(self):
         pass
 
     def all_inputs_covered(self, context, step):
@@ -74,6 +78,10 @@ class InMemoryIntermediatesManager(IntermediatesManager):
     def copy_intermediate_from_prev_run(self, context, previous_run_id, step_output_handle):
         check.failed('not implemented in in memory')
 
+    @property
+    def is_persistent(self):
+        return False
+
 
 class IntermediateStoreIntermediatesManager(IntermediatesManager):
     def __init__(self, intermediate_store):
@@ -122,3 +130,7 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
         return self._intermediate_store.copy_object_from_prev_run(
             context, previous_run_id, self._get_paths(step_output_handle)
         )
+
+    @property
+    def is_persistent(self):
+        return True

@@ -5,7 +5,9 @@ import sys
 import time
 
 from .json import JSONDecodeError, dump, dumps
-from .temp_dir import get_system_temp_directory
+from .temp_dir import get_system_temp_directory, tempfile
+
+TemporaryDirectory = tempfile.TemporaryDirectory
 
 try:
     FileNotFoundError = FileNotFoundError  # pylint:disable=redefined-builtin

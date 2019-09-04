@@ -3,15 +3,14 @@ from dagit.app import create_app
 from dagit.cli import host_dagit_ui
 
 from dagster import ExecutionTargetHandle
-from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.instance import DagsterInstance
 from dagster.seven import mock
 from dagster.utils import script_relative_path
 
 
 def test_create_app():
     handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
-    pipeline_run_storage = InMemoryRunStorage()
-    assert create_app(handle, pipeline_run_storage)
+    assert create_app(handle, DagsterInstance.ephemeral())
 
 
 def test_notebook_view():
@@ -19,7 +18,7 @@ def test_notebook_view():
 
     with create_app(
         ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml')),
-        InMemoryRunStorage(),
+        DagsterInstance.ephemeral(),
     ).test_client() as client:
         res = client.get('/dagit/notebook?path={}'.format(notebook_path))
 
@@ -31,7 +30,7 @@ def test_notebook_view():
 def test_index_view():
     with create_app(
         ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml')),
-        InMemoryRunStorage(),
+        DagsterInstance.ephemeral(),
     ).test_client() as client:
         res = client.get('/')
 
@@ -42,9 +41,7 @@ def test_index_view():
 def test_successful_host_dagit_ui():
     with mock.patch('gevent.pywsgi.WSGIServer'):
         handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
-        host_dagit_ui(
-            log=False, log_dir=None, schedule_dir=None, handle=handle, host=None, port=2343
-        )
+        host_dagit_ui(handle=handle, host=None, port=2343)
 
 
 def _define_mock_server(fn):
@@ -68,9 +65,7 @@ def test_unknown_error():
     with mock.patch('gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_custom_error)):
         handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
         with pytest.raises(AnException):
-            host_dagit_ui(
-                log=False, log_dir=None, schedule_dir=None, handle=handle, host=None, port=2343
-            )
+            host_dagit_ui(handle=handle, host=None, port=2343)
 
 
 def test_port_collision():
@@ -80,8 +75,6 @@ def test_port_collision():
     with mock.patch('gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_os_error)):
         handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
         with pytest.raises(Exception) as exc_info:
-            host_dagit_ui(
-                log=False, log_dir=None, schedule_dir=None, handle=handle, host=None, port=2343
-            )
+            host_dagit_ui(handle=handle, host=None, port=2343)
 
         assert 'Another process ' in str(exc_info.value)

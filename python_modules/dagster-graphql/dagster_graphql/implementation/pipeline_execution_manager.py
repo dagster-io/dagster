@@ -28,14 +28,13 @@ from dagster.core.events import (
     PipelineProcessStartedData,
 )
 from dagster.core.events.log import DagsterEventRecord
-from dagster.core.storage.runs import PipelineRun
 from dagster.utils import get_multiprocessing_context
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
 class PipelineExecutionManager(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
-    def execute_pipeline(self, handle, pipeline, pipeline_run, raise_on_error):
+    def execute_pipeline(self, handle, pipeline, pipeline_run, instance, raise_on_error):
         '''Subclasses must implement this method.'''
 
 
@@ -119,13 +118,13 @@ def build_process_started_event(run_id, pipeline_name, process_id):
 
 
 class SynchronousExecutionManager(PipelineExecutionManager):
-    def execute_pipeline(self, _, pipeline, pipeline_run, raise_on_error):
+    def execute_pipeline(self, _, pipeline, pipeline_run, instance, raise_on_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
         run_config = RunConfig(
             pipeline_run.run_id,
             mode=pipeline_run.mode,
-            event_sink=CallbackEventSink(pipeline_run.handle_new_event),
+            event_sink=CallbackEventSink(instance.handle_new_event),
             reexecution_config=pipeline_run.reexecution_config,
             step_keys_to_execute=pipeline_run.step_keys_to_execute,
         )
@@ -135,7 +134,7 @@ class SynchronousExecutionManager(PipelineExecutionManager):
         try:
             event_list = []
             for event in execute_pipeline_iterator(
-                pipeline, pipeline_run.environment_dict, run_config=run_config
+                pipeline, pipeline_run.environment_dict, run_config, instance
             ):
                 event_list.append(event)
             return PipelineExecutionResult(pipeline, run_config.run_id, event_list, lambda: None)
@@ -143,7 +142,7 @@ class SynchronousExecutionManager(PipelineExecutionManager):
             if raise_on_error:
                 six.reraise(*sys.exc_info())
 
-            pipeline_run.handle_new_event(
+            instance.handle_new_event(
                 build_synthetic_pipeline_error_record(
                     pipeline_run.run_id,
                     serializable_error_info_from_exc_info(sys.exc_info()),
@@ -204,15 +203,15 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                         done = True
                         raise Exception(
                             'Pipeline execution process for {run_id} unexpectedly exited'.format(
-                                run_id=process.pipeline_run.run_id
+                                run_id=process.run_id
                             )
                         )
                     except Exception:  # pylint: disable=broad-except
-                        process.pipeline_run.handle_new_event(
+                        process.instance.handle_new_event(
                             build_synthetic_pipeline_error_record(
-                                process.pipeline_run.run_id,
+                                process.run_id,
                                 serializable_error_info_from_exc_info(sys.exc_info()),
-                                process.pipeline_run.pipeline_name,
+                                process.pipeline_name,
                             )
                         )
 
@@ -227,23 +226,19 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
             if isinstance(message, MultiprocessingDone):
                 return True
             elif isinstance(message, MultiprocessingError):
-                process.pipeline_run.handle_new_event(
+                process.instance.handle_new_event(
                     build_synthetic_pipeline_error_record(
-                        process.pipeline_run.run_id,
-                        message.error_info,
-                        process.pipeline_run.pipeline_name,
+                        process.run_id, message.error_info, process.pipeline_name
                     )
                 )
             elif isinstance(message, ProcessStartedSentinel):
-                process.pipeline_run.handle_new_event(
+                process.instance.handle_new_event(
                     build_process_started_event(
-                        process.pipeline_run.run_id,
-                        process.pipeline_run.pipeline_name,
-                        message.process_id,
+                        process.run_id, process.pipeline_name, message.process_id
                     )
                 )
             else:
-                process.pipeline_run.handle_new_event(message)
+                process.instance.handle_new_event(message)
         return False
 
     def join(self):
@@ -254,7 +249,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                     return True
             gevent.sleep(0.1)
 
-    def execute_pipeline(self, handle, pipeline, pipeline_run, raise_on_error):
+    def execute_pipeline(self, handle, pipeline, pipeline_run, instance, raise_on_error):
         check.inst_param(handle, 'handle', ExecutionTargetHandle)
         check.invariant(
             raise_on_error is False, 'Multiprocessing execute_pipeline does not rethrow user error'
@@ -278,18 +273,22 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
             },
         )
 
-        pipeline_run.handle_new_event(build_process_start_event(pipeline_run.run_id, pipeline.name))
+        instance.handle_new_event(build_process_start_event(pipeline_run.run_id, pipeline.name))
 
         p.start()
         with self._processes_lock:
-            process = RunProcessWrapper(pipeline_run, p, message_queue)
+            process = RunProcessWrapper(
+                p, message_queue, instance, pipeline_run.run_id, pipeline.name
+            )
             self._processes.append(process)
 
 
-class RunProcessWrapper(namedtuple('RunProcessWrapper', 'pipeline_run process message_queue')):
-    def __new__(cls, pipeline_run, process, message_queue):
+class RunProcessWrapper(
+    namedtuple('RunProcessWrapper', 'process message_queue instance run_id pipeline_name')
+):
+    def __new__(cls, process, message_queue, instance, run_id, pipeline_name):
         return super(RunProcessWrapper, cls).__new__(
-            cls, check.inst_param(pipeline_run, 'pipeline_run', PipelineRun), process, message_queue
+            cls, process, message_queue, instance, run_id, pipeline_name
         )
 
 

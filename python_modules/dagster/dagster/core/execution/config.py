@@ -6,6 +6,7 @@ from collections import namedtuple
 import six
 
 from dagster import check
+from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
 
@@ -135,7 +136,6 @@ class MultiprocessExecutorConfig(ExecutorConfig):
         return MultiprocessEngine
 
 
-class ReexecutionConfig:
-    def __init__(self, previous_run_id, step_output_handles):
-        self.previous_run_id = previous_run_id
-        self.step_output_handles = step_output_handles
+@whitelist_for_serdes
+class ReexecutionConfig(namedtuple('_ReexecutionConfig', 'previous_run_id step_output_handles')):
+    pass

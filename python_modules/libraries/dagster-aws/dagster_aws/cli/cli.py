@@ -10,9 +10,6 @@ import webbrowser
 import boto3
 import click
 
-from dagster import DagsterInvariantViolationError
-from dagster.utils import dagster_home_dir
-
 from .aws_util import (
     create_ec2_instance,
     create_key_pair,
@@ -31,9 +28,9 @@ SERVER_CLIENT_CODE_HOME = '/opt/dagster/app/'
 def get_dagster_home():
     '''Ensures that the user has set a valid DAGSTER_HOME in environment and that it exists
     '''
-    try:
-        dagster_home = dagster_home_dir()
-    except DagsterInvariantViolationError:
+
+    dagster_home = os.getenv('DAGSTER_HOME')
+    if dagster_home is None:
         Term.fatal(
             '''DAGSTER_HOME is not set! Before continuing, set with e.g.:
 

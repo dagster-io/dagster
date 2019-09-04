@@ -7,6 +7,8 @@ import time
 from watchdog.observers import Observer
 from watchdog.tricks import AutoRestartTrick
 
+from dagster import seven
+
 
 # Use watchdog's python API to auto-restart the dagit-cli process when
 # python files in the current directory change. This is a slightly modified
@@ -38,6 +40,7 @@ def handle_sigterm(_signum, _frame):
 def main():
     # Build the dagit-cli command, omitting the --no-watch arg if present
     watch = True
+    fallback_set = False
     command = ['dagit-cli']
     for arg in sys.argv[1:]:
         if arg == '--no-watch':
@@ -48,8 +51,17 @@ def main():
         elif arg == '--version':
             watch = False
             command.append(arg)
+        elif arg == '--storage-fallback':
+            fallback_set = True
+            command.append(arg)
         else:
             command.append(arg)
+
+    host_tempdir = None
+    if not fallback_set:
+        host_tempdir = seven.TemporaryDirectory()
+        command.append('--storage-fallback')
+        command.append(host_tempdir.name)
 
     # If not using watch mode, just call the command
     if not watch:

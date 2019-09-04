@@ -20,7 +20,7 @@ from dagster import (
     input_hydration_config,
     output_materialization_config,
 )
-from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.instance import DagsterInstance
 
 
 class PoorMansDataFrame_(list):
@@ -187,7 +187,7 @@ def test_pipelines_or_error_invalid():
 
     context = DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_test_repository),
-        pipeline_runs=InMemoryRunStorage(),
+        instance=DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),
     )
 

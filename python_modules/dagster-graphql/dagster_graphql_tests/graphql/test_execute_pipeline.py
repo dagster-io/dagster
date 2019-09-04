@@ -3,6 +3,7 @@ import uuid
 from dagster_graphql.test.utils import execute_dagster_graphql
 from graphql import parse
 
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
 from dagster.utils import merge_dicts, script_relative_path
 from dagster.utils.test import get_temp_file_name
@@ -289,8 +290,9 @@ def test_successful_pipeline_reexecution(snapshot):
         return result_data
 
     run_id = str(uuid.uuid4())
+    instance = DagsterInstance.ephemeral()
     result_one = execute_dagster_graphql(
-        define_context(),
+        define_context(instance=instance),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'executionParams': {
@@ -314,7 +316,7 @@ def test_successful_pipeline_reexecution(snapshot):
         '''('sum_sq', 49)])]'''
     )
 
-    store = FileSystemIntermediateStore(run_id)
+    store = FileSystemIntermediateStore.for_instance(instance, run_id)
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
     assert (
@@ -325,7 +327,7 @@ def test_successful_pipeline_reexecution(snapshot):
     new_run_id = str(uuid.uuid4())
 
     result_two = execute_dagster_graphql(
-        define_context(),
+        define_context(instance=instance),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'executionParams': {
@@ -356,7 +358,7 @@ def test_successful_pipeline_reexecution(snapshot):
 
     snapshot.assert_match(sanitize_result_data(result_two.data))
 
-    store = FileSystemIntermediateStore(new_run_id)
+    store = FileSystemIntermediateStore.for_instance(instance, new_run_id)
     assert not store.has_intermediate(None, 'sum_solid.inputs.num.read', 'input_thunk_output')
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
@@ -415,6 +417,7 @@ def test_pipeline_reexecution_info_query(snapshot):
     query_result_two = result_two.data['pipelineRunOrError']
     assert query_result_two['__typename'] == 'PipelineRun'
     stepKeysToExecute = query_result_two['stepKeysToExecute']
+    print(query_result_two)
     assert stepKeysToExecute is not None
     snapshot.assert_match(stepKeysToExecute)
 

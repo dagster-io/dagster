@@ -3,6 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.definitions import ModeDefinition, PipelineDefinition, SystemStorageDefinition
 from dagster.core.execution.config import RunConfig
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.type_storage import TypeStoragePluginRegistry
 from dagster.core.system_config.objects import EnvironmentConfig
 
@@ -11,7 +12,7 @@ class InitSystemStorageContext(
     namedtuple(
         'InitSystemStorageContext',
         (
-            'pipeline_def mode_def system_storage_def run_config environment_config '
+            'pipeline_def mode_def system_storage_def run_config instance environment_config '
             'type_storage_plugin_registry resources system_storage_config'
         ),
     )
@@ -22,6 +23,7 @@ class InitSystemStorageContext(
         mode_def,
         system_storage_def,
         run_config,
+        instance,
         environment_config,
         type_storage_plugin_registry,
         resources,
@@ -35,6 +37,7 @@ class InitSystemStorageContext(
                 system_storage_def, 'system_storage_def', SystemStorageDefinition
             ),
             run_config=check.inst_param(run_config, 'run_config', RunConfig),
+            instance=check.inst_param(instance, 'instance', DagsterInstance),
             environment_config=check.inst_param(
                 environment_config, 'environment_config', EnvironmentConfig
             ),

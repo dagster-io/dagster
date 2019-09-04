@@ -3,8 +3,9 @@ from abc import ABCMeta, abstractmethod
 
 import six
 
-from dagster import check, seven
+from dagster import check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.instance import DagsterInstance
 from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
 
 from .object_store import FileSystemObjectStore, ObjectStore
@@ -65,7 +66,7 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def copy_object_from_prev_run(self, context, previous_run_id, paths):
         '''Copy an object from a previous run into storage for the current run.
-        
+
         Return the result from the underlying object store.'''
 
     def set_value(self, obj, context, runtime_type, paths):
@@ -114,8 +115,7 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
 
 
 class FileSystemIntermediateStore(IntermediateStore):
-    def __init__(self, run_id, type_storage_plugin_registry=None, base_dir=None):
-        self.run_id = check.str_param(run_id, 'run_id')
+    def __init__(self, root, type_storage_plugin_registry=None):
         type_storage_plugin_registry = check.inst_param(
             type_storage_plugin_registry
             if type_storage_plugin_registry
@@ -124,30 +124,18 @@ class FileSystemIntermediateStore(IntermediateStore):
             TypeStoragePluginRegistry,
         )
 
-        self._base_dir = os.path.abspath(
-            os.path.expanduser(
-                check.opt_nonempty_str_param(
-                    base_dir, 'base_dir', seven.get_system_temp_directory()
-                )
-            )
-        )
-        check.invariant(
-            os.path.isdir(self._base_dir),
-            'Could not find a directory at the base_dir supplied to FileSystemIntermediateStore: '
-            '{base_dir}'.format(base_dir=self._base_dir),
-        )
-
         object_store = FileSystemObjectStore()
-
-        root = object_store.key_for_paths([self.base_dir, 'dagster', 'runs', run_id, 'files'])
 
         super(FileSystemIntermediateStore, self).__init__(
             object_store, root=root, type_storage_plugin_registry=type_storage_plugin_registry
         )
 
-    @property
-    def base_dir(self):
-        return self._base_dir
+    @staticmethod
+    def for_instance(instance, run_id, type_storage_plugin_registry=None):
+        check.inst_param(instance, 'instance', DagsterInstance)
+        run_id = check.str_param(run_id, 'run_id')
+        root = instance.intermediates_directory(run_id)
+        return FileSystemIntermediateStore(root, type_storage_plugin_registry)
 
     def copy_object_from_prev_run(
         self, context, previous_run_id, paths
@@ -156,9 +144,7 @@ class FileSystemIntermediateStore(IntermediateStore):
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
 
-        prev_run_files_dir = self.object_store.key_for_paths(
-            [self.base_dir, 'dagster', 'runs', previous_run_id, 'files']
-        )
+        prev_run_files_dir = context.instance.intermediates_directory(previous_run_id)
 
         check.invariant(os.path.isdir(prev_run_files_dir))
 

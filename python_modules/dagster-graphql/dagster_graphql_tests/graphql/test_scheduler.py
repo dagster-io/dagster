@@ -1,9 +1,10 @@
 import os
 import sys
 
+import mock
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from dagster.seven import mock
+from dagster.core.instance import DagsterInstance
 
 from .utils import define_context
 
@@ -35,7 +36,8 @@ def get_schedule_definition_from_context(context):
 
 @mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
 def test_get_all_schedules():
-    context = define_context()
+    instance = DagsterInstance.local_temp(features={'scheduler'})
+    context = define_context(instance=instance)
 
     # Start schedule
     schedule_def = get_schedule_definition_from_context(context)

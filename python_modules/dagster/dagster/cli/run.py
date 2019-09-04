@@ -1,6 +1,6 @@
 import click
 
-from dagster.core.storage.runs import FilesystemRunStorage
+from dagster.core.instance import DagsterInstance
 
 
 def create_run_cli_group():
@@ -12,14 +12,14 @@ def create_run_cli_group():
 
 @click.command(name='list', help='List the runs in this dagster installation.')
 def run_list_command():
-    storage = FilesystemRunStorage()
-    for run in storage.all_runs:
+    instance = DagsterInstance.get()
+    for run in instance.all_runs:
         click.echo('Run: {}'.format(run.run_id))
         click.echo('     Pipeline: {}'.format(run.pipeline_name))
 
 
 @click.command(name='wipe', help='Eliminate all run history. Warning: Cannot be undone')
 def run_wipe_command():
-    storage = FilesystemRunStorage()
-    storage.wipe()
+    instance = DagsterInstance.get()
+    instance.wipe()
     click.echo('Deleted all run history')

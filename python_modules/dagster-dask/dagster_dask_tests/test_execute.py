@@ -8,6 +8,7 @@ from dagster import (
     execute_pipeline,
     file_relative_path,
     pipeline,
+    seven,
     solid,
 )
 from dagster.core.definitions.executor import default_executors
@@ -25,16 +26,17 @@ def dask_engine_pipeline():
 
 
 def test_execute_on_dask():
-    result = execute_pipeline(
-        ExecutionTargetHandle.for_pipeline_python_file(
-            __file__, 'dask_engine_pipeline'
-        ).build_pipeline_definition(),
-        environment_dict={
-            'storage': {'filesystem': {}},
-            'execution': {'dask': {'config': {'timeout': 30}}},
-        },
-    )
-    assert result.result_for_solid('simple').output_value() == 1
+    with seven.TemporaryDirectory() as tempdir:
+        result = execute_pipeline(
+            ExecutionTargetHandle.for_pipeline_python_file(
+                __file__, 'dask_engine_pipeline'
+            ).build_pipeline_definition(),
+            environment_dict={
+                'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
+                'execution': {'dask': {'config': {'timeout': 30}}},
+            },
+        )
+        assert result.result_for_solid('simple').output_value() == 1
 
 
 def dask_composite_pipeline():

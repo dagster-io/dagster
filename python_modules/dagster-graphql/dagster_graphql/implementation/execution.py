@@ -11,7 +11,8 @@ from dagster.core.events import DagsterEventType, InMemoryEventSink
 from dagster.core.execution.api import ExecutionSelector, create_execution_plan, execute_plan
 from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.execution.logs import ComputeLogUpdate
-from dagster.core.storage.pipeline_run import PipelineRunData, PipelineRunStatus
+from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 
 from .fetch_pipelines import get_dauphin_pipeline_from_selector
@@ -26,7 +27,7 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
     check.opt_inst_param(reexecution_config, 'reexecution_config', ReexecutionConfig)
 
-    pipeline_run_storage = graphene_info.context.pipeline_runs
+    instance = graphene_info.context.instance
 
     dauphin_pipeline = get_dauphin_pipeline_from_selector(graphene_info, execution_params.selector)
 
@@ -47,19 +48,17 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
         graphene_info, execution_params, execution_plan, reexecution_config
     )
 
-    run = pipeline_run_storage.create_run(
-        PipelineRunData(
-            pipeline_name=dauphin_pipeline.get_dagster_pipeline().name,
-            run_id=execution_params.execution_metadata.run_id
-            if execution_params.execution_metadata.run_id
-            else make_new_run_id(),
-            selector=execution_params.selector,
-            environment_dict=execution_params.environment_dict,
-            mode=execution_params.mode,
-            reexecution_config=reexecution_config,
-            step_keys_to_execute=execution_params.step_keys,
-            status=PipelineRunStatus.NOT_STARTED,
-        )
+    run = instance.create_run(
+        pipeline_name=dauphin_pipeline.get_dagster_pipeline().name,
+        run_id=execution_params.execution_metadata.run_id
+        if execution_params.execution_metadata.run_id
+        else make_new_run_id(),
+        selector=execution_params.selector,
+        environment_dict=execution_params.environment_dict,
+        mode=execution_params.mode,
+        reexecution_config=reexecution_config,
+        step_keys_to_execute=execution_params.step_keys,
+        status=PipelineRunStatus.NOT_STARTED,
     )
 
     graphene_info.context.execution_manager.execute_pipeline(
@@ -67,6 +66,7 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
         dauphin_pipeline.get_dagster_pipeline(),
         run,
         raise_on_error=graphene_info.context.raise_on_error,
+        instance=instance,
     )
 
     return graphene_info.schema.type_named('StartPipelineExecutionSuccess')(
@@ -108,8 +108,8 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(run_id, 'run_id')
     check.opt_str_param(after, 'after')
-    pipeline_run_storage = graphene_info.context.pipeline_runs
-    run = pipeline_run_storage.get_run_by_id(run_id)
+    instance = graphene_info.context.instance
+    run = instance.get_run(run_id)
 
     if not run:
 
@@ -122,21 +122,20 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
-    def get_observable(pipeline):
-        execution_plan = create_execution_plan(
-            pipeline.get_dagster_pipeline(), run.environment_dict, RunConfig(mode=run.mode)
-        )
-        return run.observable_after_cursor(PipelineRunObservableSubscribe, after).map(
-            lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
-                runId=run_id,
-                messages=[
-                    from_event_record(graphene_info, event, pipeline, execution_plan)
-                    for event in events
-                ],
-            )
-        )
+    pipeline = get_dauphin_pipeline_from_selector(graphene_info, run.selector)
+    execution_plan = create_execution_plan(
+        pipeline.get_dagster_pipeline(), run.environment_dict, RunConfig(mode=run.mode)
+    )
 
-    return get_observable(get_dauphin_pipeline_from_selector(graphene_info, run.selector))
+    return instance.observable_after_cursor(PipelineRunObservableSubscribe, run_id, after).map(
+        lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
+            runId=run_id,
+            messages=[
+                from_event_record(graphene_info, event, pipeline, execution_plan)
+                for event in events
+            ],
+        )
+    )
 
 
 def get_compute_log_observable(graphene_info, run_id, step_key, cursor=None):
@@ -240,6 +239,7 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
         environment_dict=execution_params.environment_dict,
         run_config=run_config,
         step_keys_to_execute=execution_params.step_keys,
+        instance=DagsterInstance.ephemeral(),
     )
 
     def to_graphql_event(event_record):

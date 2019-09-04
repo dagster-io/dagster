@@ -1,31 +1,27 @@
 from dagster import ExecutionTargetHandle, check
 from dagster.core.execution.logs import ComputeLogManager
-from dagster.core.scheduler import Scheduler
-from dagster.core.storage.runs import RunStorage
+from dagster.core.instance import DagsterFeatures, DagsterInstance
 
 from .pipeline_execution_manager import PipelineExecutionManager
 
 
 class DagsterGraphQLContext(object):
-    def __init__(
-        self,
-        handle,
-        execution_manager,
-        pipeline_runs,
-        scheduler=None,
-        raise_on_error=False,
-        version=None,
-    ):
+    def __init__(self, handle, execution_manager, instance, raise_on_error=False, version=None):
         self._handle = check.inst_param(handle, 'handle', ExecutionTargetHandle)
-        self.pipeline_runs = check.inst_param(pipeline_runs, 'pipeline_runs', RunStorage)
-        self.scheduler = check.opt_inst_param(scheduler, 'scheduler', Scheduler)
+        self.instance = check.inst_param(instance, 'instance', DagsterInstance)
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
         )
         self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
         self.version = version
         self.repository_definition = self.get_handle().build_repository_definition()
-        self.compute_log_manager = ComputeLogManager()
+        self.compute_log_manager = ComputeLogManager(instance)
+
+        self.scheduler = None
+        if self.instance.is_feature_enabled(DagsterFeatures.SCHEDULER):
+            self.scheduler = self.repository_definition.build_scheduler(
+                self.instance.schedules_directory()
+            )
 
     def get_handle(self):
         return self._handle

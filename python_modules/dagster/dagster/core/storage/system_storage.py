@@ -7,14 +7,14 @@ from .intermediates_manager import (
     InMemoryIntermediatesManager,
     IntermediateStoreIntermediatesManager,
 )
-from .runs import FilesystemRunStorage, InMemoryRunStorage
 
 
 def create_mem_system_storage_data(init_context):
     return SystemStorageData(
-        run_storage=InMemoryRunStorage(),
         intermediates_manager=InMemoryIntermediatesManager(),
-        file_manager=LocalFileManager.for_run_id(init_context.run_config.run_id),
+        file_manager=LocalFileManager.for_instance(
+            init_context.instance, init_context.run_config.run_id
+        ),
     )
 
 
@@ -27,17 +27,25 @@ def mem_system_storage(init_context):
     name='filesystem', is_persistent=True, config={'base_dir': Field(String, is_optional=True)}
 )
 def fs_system_storage(init_context):
-    base_dir = init_context.system_storage_config.get('base_dir')
+    override_dir = init_context.system_storage_config.get('base_dir')
+    if override_dir:
+        file_manager = LocalFileManager(override_dir)
+        intermediate_store = FileSystemIntermediateStore(
+            override_dir, init_context.type_storage_plugin_registry
+        )
+    else:
+        file_manager = LocalFileManager.for_instance(
+            init_context.instance, init_context.run_config.run_id
+        )
+        intermediate_store = FileSystemIntermediateStore.for_instance(
+            init_context.instance,
+            run_id=init_context.run_config.run_id,
+            type_storage_plugin_registry=init_context.type_storage_plugin_registry,
+        )
+
     return SystemStorageData(
-        file_manager=LocalFileManager.for_run_id(init_context.run_config.run_id),
-        run_storage=FilesystemRunStorage(base_dir=base_dir),
-        intermediates_manager=IntermediateStoreIntermediatesManager(
-            FileSystemIntermediateStore(
-                run_id=init_context.run_config.run_id,
-                type_storage_plugin_registry=init_context.type_storage_plugin_registry,
-                base_dir=base_dir,
-            )
-        ),
+        file_manager=file_manager,
+        intermediates_manager=IntermediateStoreIntermediatesManager(intermediate_store),
     )
 
 

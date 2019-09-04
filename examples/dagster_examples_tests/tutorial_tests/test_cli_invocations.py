@@ -8,7 +8,7 @@ from dagit.app import create_app
 from dagster import DagsterInvalidConfigError
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import pipeline_execute_command
-from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.instance import DagsterInstance
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, script_relative_path
 
 PIPELINES_OR_ERROR_QUERY = '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } }'
@@ -20,9 +20,8 @@ def path_to_tutorial_file(path):
 
 def load_dagit_for_repo_cli_args(n_pipelines=1, **kwargs):
     handle = handle_for_repo_cli_args(kwargs)
-    pipeline_run_storage = InMemoryRunStorage()
 
-    app = create_app(handle, pipeline_run_storage)
+    app = create_app(handle, DagsterInstance.ephemeral())
 
     client = app.test_client()
 

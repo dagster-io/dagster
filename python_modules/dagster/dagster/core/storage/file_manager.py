@@ -8,10 +8,10 @@ from contextlib import contextmanager
 import six
 
 from dagster import check
+from dagster.core.instance import DagsterInstance
 from dagster.core.types.decorator import dagster_type
 from dagster.utils import mkdir_p
 
-from .config import base_directory_for_run
 from .temp_file_manager import TempfileManager
 
 
@@ -116,10 +116,10 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 
 @contextmanager
-def local_file_manager(base_dir=None):
+def local_file_manager(instance, run_id):
     manager = None
     try:
-        manager = LocalFileManager(base_dir)
+        manager = LocalFileManager.for_instance(instance, run_id)
         yield manager
     finally:
         if manager:
@@ -132,14 +132,14 @@ def check_file_like_obj(obj):
 
 class LocalFileManager(FileManager):
     def __init__(self, base_dir):
-        self.base_dir = check.str_param(base_dir, 'base_dir')
+        self.base_dir = base_dir
         self._base_dir_ensured = False
         self._temp_file_manager = TempfileManager()
 
     @staticmethod
-    def for_run_id(run_id):
-        check.str_param(run_id, 'run_id')
-        return LocalFileManager(LocalFileManager.default_base_dir(run_id))
+    def for_instance(instance, run_id):
+        check.inst_param(instance, 'instance', DagsterInstance)
+        return LocalFileManager(instance.file_manager_directory(run_id))
 
     def ensure_base_dir_exists(self):
         if self._base_dir_ensured:
@@ -157,11 +157,6 @@ class LocalFileManager(FileManager):
             temp_name = temp_file_obj.name
             temp_file_obj.close()
             return temp_name
-
-    @staticmethod
-    def default_base_dir(run_id):
-        check.str_param(run_id, 'run_id')
-        return os.path.join(base_directory_for_run(run_id), 'files')
 
     @contextmanager
     def read(self, file_handle, mode='rb'):

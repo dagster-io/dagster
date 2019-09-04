@@ -5,16 +5,15 @@ import json
 from dagit import app
 
 from dagster import ExecutionTargetHandle
-from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.instance import DagsterInstance
 
 
 def test_smoke_app():
-    pipeline_run_storage = InMemoryRunStorage()
     flask_app = app.create_app(
         ExecutionTargetHandle.for_repo_module(
             module_name='dagster_examples.intro_tutorial.repos', fn_name='define_repo'
         ),
-        pipeline_run_storage,
+        DagsterInstance.ephemeral(),
     )
     client = flask_app.test_client()
 

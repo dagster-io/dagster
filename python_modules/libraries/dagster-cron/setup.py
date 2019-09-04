@@ -38,7 +38,6 @@ def _do_setup(name='dagster-cron'):
         ],
         packages=find_packages(exclude=['test']),
         install_requires=['dagster', "python-crontab>=2.3.8"],
-        extras_require={':python_version<"3"': ['backports.tempfile']},
         tests_require=['mock==2.0.*'],
         zip_safe=False,
     )

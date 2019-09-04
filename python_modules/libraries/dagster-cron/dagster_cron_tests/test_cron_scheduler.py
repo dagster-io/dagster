@@ -5,13 +5,7 @@ from dagster_cron import SystemCronScheduler
 
 from dagster import RepositoryDefinition, ScheduleDefinition, check, lambda_solid, pipeline
 from dagster.core.scheduler import RunningSchedule
-from dagster.seven import mock
-
-try:
-    # Python 2 tempfile doesn't have tempfile.TemporaryDirectory
-    import backports.tempfile as tempfile
-except ImportError:
-    import tempfile
+from dagster.seven import TemporaryDirectory, mock
 
 
 class TestSystemCronScheduler(SystemCronScheduler):
@@ -57,7 +51,7 @@ def create_repository():
 
 @mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
 def test_start_and_end_schedule():
-    with tempfile.TemporaryDirectory() as schedule_dir:
+    with TemporaryDirectory() as schedule_dir:
 
         repository = create_repository()
 

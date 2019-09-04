@@ -1,6 +1,7 @@
 from dagster_graphql.cli import execute_query
 
 from dagster.core.errors import DagsterError
+from dagster.core.instance import DagsterInstance
 
 from .query import START_PIPELINE_EXECUTION_QUERY
 from .util import HANDLED_EVENTS, dagster_event_from_dict
@@ -18,6 +19,7 @@ def execute_start_pipeline_execution_query(handle, variables):
         variables,
         raise_on_error=True,
         use_sync_executor=True,
+        instance=DagsterInstance.ephemeral(),
     )
     handle_start_pipeline_execution_errors(res)
     return handle_start_pipeline_execution_result(res)

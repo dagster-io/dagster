@@ -1,7 +1,6 @@
 from dagster import check
 from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.intermediates_manager import IntermediatesManager
-from dagster.core.storage.runs import RunStorage
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
 
 from .config import resolve_config_field
@@ -61,8 +60,7 @@ class SystemStorageDefinition:
 
 
 class SystemStorageData:
-    def __init__(self, run_storage, intermediates_manager, file_manager):
-        self.run_storage = check.inst_param(run_storage, 'run_storage', RunStorage)
+    def __init__(self, intermediates_manager, file_manager):
         self.intermediates_manager = check.inst_param(
             intermediates_manager, 'intermediates_manager', IntermediatesManager
         )

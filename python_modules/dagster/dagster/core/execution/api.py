@@ -23,6 +23,8 @@ from dagster.core.errors import (
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.instance import DagsterInstance
+from dagster.core.serdes import whitelist_for_serdes
 from dagster.utils import ensure_gen
 
 from .config import RunConfig
@@ -102,7 +104,7 @@ def _execute_pipeline_iterator(pipeline_context, execution_plan, run_config, ste
             yield DagsterEvent.pipeline_failure(pipeline_context)
 
 
-def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
+def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None, instance=None):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
 
@@ -119,13 +121,18 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
+    instance = check.opt_inst_param(
+        instance, 'instance', DagsterInstance, DagsterInstance.ephemeral()
+    )
     run_config = check_run_config_param(run_config, pipeline)
 
     execution_plan = create_execution_plan(
         pipeline, environment_dict=environment_dict, run_config=run_config
     )
 
-    with scoped_pipeline_context(pipeline, environment_dict, run_config) as pipeline_context:
+    with scoped_pipeline_context(
+        pipeline, environment_dict, run_config, instance
+    ) as pipeline_context:
 
         for event in _execute_pipeline_iterator(
             pipeline_context,
@@ -136,7 +143,7 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
             yield event
 
 
-def execute_pipeline(pipeline, environment_dict=None, run_config=None):
+def execute_pipeline(pipeline, environment_dict=None, run_config=None, instance=None):
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
 
@@ -144,9 +151,13 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
     point, see execute_plan() below.
 
     Parameters:
-      pipeline (PipelineDefinition): Pipeline to run
-      environment_dict (dict): The enviroment configuration that parameterizes this run
-      run_config (RunConfig): Configuration for how this pipeline will be executed
+        pipeline (PipelineDefinition): Pipeline to run
+        environment_dict (dict):
+            The enviroment configuration that parameterizes this run
+        run_config (RunConfig):
+            Configuration for how this pipeline will be executed
+        instance (DagsterInstance):
+            The instance to execute against, defaults to ephemeral (no artifacts persisted)
 
     Returns:
       :py:class:`PipelineExecutionResult`
@@ -156,9 +167,14 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config, pipeline)
 
+    check.opt_inst_param(instance, 'instance', DagsterInstance)
+    instance = instance or DagsterInstance.ephemeral()
+
     execution_plan = create_execution_plan(pipeline, environment_dict, run_config)
 
-    with scoped_pipeline_context(pipeline, environment_dict, run_config) as pipeline_context:
+    with scoped_pipeline_context(
+        pipeline, environment_dict, run_config, instance
+    ) as pipeline_context:
         event_list = list(
             _execute_pipeline_iterator(
                 pipeline_context,
@@ -176,8 +192,8 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
                 pipeline,
                 environment_dict,
                 run_config,
+                instance,
                 system_storage_data=SystemStorageData(
-                    run_storage=pipeline_context.run_storage,
                     intermediates_manager=pipeline_context.intermediates_manager,
                     file_manager=pipeline_context.file_manager,
                 ),
@@ -226,18 +242,16 @@ def _invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_exec
 
 
 def _check_reexecution_config(pipeline_context, execution_plan, run_config):
-    check.invariant(pipeline_context.run_storage)
-
-    if not pipeline_context.run_storage.is_persistent:
+    if not pipeline_context.intermediates_manager.is_persistent:
         raise DagsterInvariantViolationError(
-            'Cannot perform reexecution with non persistent run storage.'
+            'Cannot perform reexecution with non persistent intermediates manager.'
         )
 
     previous_run_id = run_config.reexecution_config.previous_run_id
 
-    if previous_run_id not in pipeline_context.run_storage:
+    if not pipeline_context.instance.has_run(previous_run_id):
         raise DagsterRunNotFoundError(
-            'Run id {} set as previous run id was not found in run storage'.format(previous_run_id),
+            'Run id {} set as previous run id was not found in instance'.format(previous_run_id),
             invalid_run_id=previous_run_id,
         )
 
@@ -309,15 +323,18 @@ def _execute_plan_iterator(pipeline_context, execution_plan, run_config, step_ke
 
 
 def execute_plan_iterator(
-    execution_plan, environment_dict=None, run_config=None, step_keys_to_execute=None
+    execution_plan, environment_dict=None, run_config=None, step_keys_to_execute=None, instance=None
 ):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config, execution_plan.pipeline_def)
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+    instance = check.opt_inst_param(
+        instance, 'instance', DagsterInstance, DagsterInstance.ephemeral()
+    )
 
     with scoped_pipeline_context(
-        execution_plan.pipeline_def, environment_dict, run_config
+        execution_plan.pipeline_def, environment_dict, run_config, instance
     ) as pipeline_context:
 
         return _execute_plan_iterator(
@@ -328,11 +345,14 @@ def execute_plan_iterator(
         )
 
 
-def execute_plan(execution_plan, environment_dict=None, run_config=None, step_keys_to_execute=None):
+def execute_plan(
+    execution_plan, instance, environment_dict=None, run_config=None, step_keys_to_execute=None
+):
     '''This is the entry point of dagster-graphql executions. For the dagster CLI entry point, see
     execute_pipeline() above.
     '''
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(instance, 'instance', DagsterInstance)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config, execution_plan.pipeline_def)
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
@@ -346,6 +366,7 @@ def execute_plan(execution_plan, environment_dict=None, run_config=None, step_ke
             environment_dict=environment_dict,
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
+            instance=instance,
         )
     )
 
@@ -366,6 +387,7 @@ def step_output_event_filter(pipe_iterator):
             yield step_event
 
 
+@whitelist_for_serdes
 class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
     def __new__(cls, name, solid_subset=None):
         return super(ExecutionSelector, cls).__new__(

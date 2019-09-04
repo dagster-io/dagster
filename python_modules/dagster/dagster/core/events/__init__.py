@@ -65,6 +65,12 @@ FAILURE_EVENTS = {
     DagsterEventType.STEP_FAILURE,
 }
 
+PIPELINE_EVENTS = {
+    DagsterEventType.PIPELINE_START,
+    DagsterEventType.PIPELINE_SUCCESS,
+    DagsterEventType.PIPELINE_FAILURE,
+}
+
 
 def _assert_type(method, expected_type, actual_type):
     check.invariant(
@@ -232,6 +238,10 @@ class DagsterEvent(
     @property
     def is_failure(self):
         return self.event_type in FAILURE_EVENTS
+
+    @property
+    def is_pipeline_event(self):
+        return self.event_type in PIPELINE_EVENTS
 
     @property
     def step_output_data(self):

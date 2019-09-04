@@ -14,15 +14,9 @@ from dagster import (
     lambda_solid,
     seven,
 )
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.runs import FilesystemRunStorage
 from dagster.utils import script_relative_path
-
-try:
-    # Python 2 tempfile doesn't have tempfile.TemporaryDirectory
-    import backports.tempfile as tempfile
-except ImportError:
-    import tempfile
 
 
 @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
@@ -52,7 +46,7 @@ def test_basic_introspection():
 
     repo_path = script_relative_path('./cli_test_repository.yaml')
 
-    runner = CliRunner()
+    runner = CliRunner(env={'DAGSTER_HOME': None})
     result = runner.invoke(ui, ['-y', repo_path, '-t', query])
 
     assert result.exit_code == 0
@@ -66,7 +60,7 @@ def test_basic_pipelines():
 
     repo_path = script_relative_path('./cli_test_repository.yaml')
 
-    runner = CliRunner()
+    runner = CliRunner(env={'DAGSTER_HOME': None})
     result = runner.invoke(ui, ['-y', repo_path, '-t', query])
 
     assert result.exit_code == 0
@@ -80,7 +74,7 @@ def test_basic_variables():
     variables = '{"pipelineName": "math"}'
     repo_path = script_relative_path('./cli_test_repository.yaml')
 
-    runner = CliRunner()
+    runner = CliRunner(env={'DAGSTER_HOME': None})
     result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-t', query])
 
     assert result.exit_code == 0
@@ -138,7 +132,7 @@ def test_start_execution_text():
 
     repo_path = script_relative_path('./cli_test_repository.yaml')
 
-    runner = CliRunner()
+    runner = CliRunner(env={'DAGSTER_HOME': None})
     result = runner.invoke(
         ui, ['-y', repo_path, '-v', variables, '-t', START_PIPELINE_EXECUTION_QUERY]
     )
@@ -169,7 +163,7 @@ def test_start_execution_file():
     )
 
     repo_path = script_relative_path('./cli_test_repository.yaml')
-    runner = CliRunner()
+    runner = CliRunner(env={'DAGSTER_HOME': None})
     result = runner.invoke(
         ui, ['-y', repo_path, '-v', variables, '--file', script_relative_path('./execute.graphql')]
     )
@@ -197,7 +191,7 @@ def test_start_execution_predefined():
 
     repo_path = script_relative_path('./cli_test_repository.yaml')
 
-    runner = CliRunner()
+    runner = CliRunner(env={'DAGSTER_HOME': None})
     result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution'])
     assert result.exit_code == 0
     result_data = json.loads(result.output.strip('\n').split('\n')[-1])
@@ -208,7 +202,6 @@ def test_start_execution_predefined():
 
 
 def test_start_execution_predefined_with_logs():
-
     variables = seven.json.dumps(
         {
             'executionParams': {
@@ -222,24 +215,12 @@ def test_start_execution_predefined_with_logs():
     )
 
     repo_path = script_relative_path('./cli_test_repository.yaml')
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance.local_temp(temp_dir)
 
-        run_storage = FilesystemRunStorage(base_dir=temp_dir, watch=True)
-
-        runner = CliRunner()
+        runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
         result = runner.invoke(
-            ui,
-            [
-                '-y',
-                repo_path,
-                '-v',
-                variables,
-                '-p',
-                'startPipelineExecution',
-                '--log',
-                '--log-dir',
-                temp_dir,
-            ],
+            ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution']
         )
         assert result.exit_code == 0
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])
@@ -249,9 +230,10 @@ def test_start_execution_predefined_with_logs():
         )
 
         # allow FS events to flush
-        time.sleep(0.500)
+        time.sleep(0.50)
 
         # assert that the watching run storage captured the run correctly from the other process
         run_id = result_data['data']['startPipelineExecution']['run']['runId']
-        run = run_storage.get_run_by_id(run_id)
+        run = instance.get_run(run_id)
+
         assert run.status == PipelineRunStatus.SUCCESS

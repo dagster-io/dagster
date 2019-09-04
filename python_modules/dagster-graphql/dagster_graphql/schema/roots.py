@@ -28,7 +28,7 @@ from dagster_graphql.implementation.fetch_types import get_config_type, get_runt
 
 from dagster import check
 from dagster.core.execution.api import ExecutionSelector
-from dagster.utils import get_enabled_features
+from dagster.core.instance import DagsterFeatures
 
 from .config_types import to_dauphin_config_type
 from .run_schedule import (
@@ -156,8 +156,12 @@ class DauphinQuery(dauphin.ObjectType):
             graphene_info, kwargs['selector'].to_selector(), kwargs['mode']
         )
 
-    def resolve_enabledFeatures(self, _):
-        return get_enabled_features()
+    def resolve_enabledFeatures(self, graphene_info):
+        return [
+            entry.name
+            for entry in DagsterFeatures
+            if graphene_info.context.instance.is_feature_enabled(entry)
+        ]
 
 
 class DauphinStepOutputHandle(dauphin.InputObjectType):

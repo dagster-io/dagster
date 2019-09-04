@@ -21,6 +21,7 @@ from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.events import SqliteEventSink
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import ResourcesStack
+from dagster.core.instance import DagsterInstance
 from dagster.loggers import colored_console_logger
 
 from .context import DagstermillExecutionContext
@@ -118,6 +119,8 @@ class Manager:
             self.pipeline_def,
             environment_dict,
             run_config,
+            # @nocommit is this legit?
+            instance=DagsterInstance.get(),
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
             self.context = DagstermillExecutionContext(pipeline_context)
@@ -169,6 +172,7 @@ class Manager:
             self.pipeline_def,
             environment_dict,
             run_config,
+            instance=DagsterInstance.get(),
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
             self.context = DagstermillExecutionContext(pipeline_context, solid_config)

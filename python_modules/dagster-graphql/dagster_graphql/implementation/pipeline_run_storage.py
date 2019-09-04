@@ -7,9 +7,10 @@ from dagster.core.storage.event_log import EventLogSequence
 
 
 class PipelineRunObservableSubscribe(object):
-    def __init__(self, pipeline_run, after_cursor=None):
+    def __init__(self, instance, run_id, after_cursor=None):
         self.event_log_sequence = EventLogSequence()
-        self.pipeline_run = pipeline_run
+        self.instance = instance
+        self.run_id = run_id
         self.observer = None
         self.after_cursor = after_cursor or -1
         self.lock = gevent.lock.Semaphore()
@@ -19,10 +20,11 @@ class PipelineRunObservableSubscribe(object):
 
     def __call__(self, observer):
         self.observer = observer
-        events = self.pipeline_run.logs_after(self.after_cursor)
+
+        events = self.instance.logs_after(self.run_id, self.after_cursor)
         if events:
             self.observer.on_next(events)
-        self.pipeline_run.subscribe(self)
+        self.instance.subscribe(self.run_id, self)
 
     def handle_new_event(self, new_event):
         with self.lock:

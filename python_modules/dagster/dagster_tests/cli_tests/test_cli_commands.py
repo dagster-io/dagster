@@ -1,7 +1,5 @@
 from __future__ import print_function
 
-import os
-
 import pytest
 from click.testing import CliRunner
 
@@ -19,7 +17,6 @@ from dagster.cli.pipeline import (
     pipeline_scaffold_command,
 )
 from dagster.cli.run import run_list_command, run_wipe_command
-from dagster.core.storage.config import base_runs_directory
 from dagster.utils import script_relative_path
 
 
@@ -499,10 +496,6 @@ def test_default_memory_run_storage():
     result = execute_execute_command(env=None, cli_args=cli_args)
     assert result.success
 
-    run_dir = os.path.join(base_runs_directory(), result.run_id)
-
-    assert not os.path.isdir(run_dir)
-
 
 def test_override_with_in_memory_storage():
     cli_args = {
@@ -517,10 +510,6 @@ def test_override_with_in_memory_storage():
     )
     assert result.success
 
-    run_dir = os.path.join(base_runs_directory(), result.run_id)
-
-    assert not os.path.exists(run_dir)
-
 
 def test_override_with_filesystem_storage():
     cli_args = {
@@ -534,10 +523,6 @@ def test_override_with_filesystem_storage():
         env=[script_relative_path('filesystem_env.yaml')], cli_args=cli_args
     )
     assert result.success
-
-    run_dir = os.path.join(base_runs_directory(), result.run_id)
-
-    assert os.path.exists(run_dir)
 
 
 def test_run_list():

@@ -39,7 +39,6 @@ def _do_setup(name='dagster-graphql'):
         packages=find_packages(exclude=['test']),
         install_requires=['graphene>=2.1.3', 'gevent-websocket==0.10.1', 'gevent==1.3.7'],
         entry_points={'console_scripts': ['dagster-graphql = dagster_graphql.cli:main']},
-        extras_require={':python_version<"3"': ['backports.tempfile']},
     )
 
 

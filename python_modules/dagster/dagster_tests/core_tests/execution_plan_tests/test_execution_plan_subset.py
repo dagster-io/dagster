@@ -11,6 +11,7 @@ from dagster import (
     solid,
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.instance import DagsterInstance
 
 
 def define_two_int_pipeline():
@@ -39,7 +40,7 @@ def test_execution_plan_simple_two_steps():
     assert execution_plan.get_step_by_key('return_one.compute')
     assert execution_plan.get_step_by_key('add_one.compute')
 
-    step_events = execute_plan(execution_plan)
+    step_events = execute_plan(execution_plan, instance=DagsterInstance.ephemeral())
     # start, out, success, start, input, out, success
     assert len(step_events) == 7
 
@@ -64,7 +65,7 @@ def test_execution_plan_two_outputs():
 
     execution_plan = create_execution_plan(pipeline_def)
 
-    step_events = execute_plan(execution_plan)
+    step_events = execute_plan(execution_plan, instance=DagsterInstance.ephemeral())
 
     assert step_events[1].step_key == 'return_one_two.compute'
     assert step_events[1].step_output_data.output_name == 'num_one'
@@ -84,7 +85,11 @@ def test_reentrant_execute_plan():
     pipeline_def = PipelineDefinition(name='has_tag_pipeline', solid_defs=[has_tag])
     execution_plan = create_execution_plan(pipeline_def)
 
-    step_events = execute_plan(execution_plan, run_config=RunConfig(tags={'foo': 'bar'}))
+    step_events = execute_plan(
+        execution_plan,
+        run_config=RunConfig(tags={'foo': 'bar'}),
+        instance=DagsterInstance.ephemeral(),
+    )
 
     assert called['yup']
     assert len(step_events) == 3
