@@ -1,6 +1,7 @@
-# Dask Deployment Guide
+# Deploying on Dask
 
 ## Introduction
+
 As noted above, Dagster is designed to target a variety of execution substrates, and natively
 supports Dask for pipeline execution.
 
@@ -15,12 +16,13 @@ futures are generated and then awaited by the parent Dagster process.
 Data is passed between step executions via intermediate storage. As a consequence, a persistent
 shared storage must be used in a distributed execution context.
 
-
 ### Requirements
+
 To use `dagster-dask`, you'll need to install
 [Dask / Dask.Distributed](https://distributed.readthedocs.io/en/latest/install.html).
 
 ## Local Execution
+
 It is relatively straightforward to set up and run a Dagster pipeline on Dask.
 
 First, run `pip install dagster dagster-dask`.
@@ -55,8 +57,8 @@ execute_pipeline(
 Running `python dask_hello_world.py` will spin up local Dask execution, run the Dagster pipeline,
 and exit.
 
-
 ## Distributed Cluster Execution
+
 If you want to use a Dask cluster for distributed execution, you will first need to
 [set up a Dask cluster](https://distributed.readthedocs.io/en/latest/quickstart.html#setup-dask-distributed-the-hard-way).
 Note that the machine running the Dagster parent process must have access to the host/port on which
@@ -80,6 +82,7 @@ version of your Python code is available to all of the Dask workers—ideally pa
 module `your.python.module` that is importable on `PYTHONPATH`.
 
 ## Dask Resources
+
 Dask has [basic support](https://distributed.dask.org/en/latest/resources.html) for resource
 management. In Dask you can specify that a particular worker node has, say, 3 GPUs, and then tasks
 which are specified with GPU requirements will be scheduled to respect that constraint on available
@@ -112,10 +115,10 @@ def my_task(context):
 And these requirements will be passed along to Dask when executed on a Dask cluster. Note that in
 non-Dask contexts, this key will be ignored.
 
-
 ## Limitations
-* For distributed execution, you must use S3 for intermediates and run storage, as shown above.
-* Dagster logs are not yet retrieved from Dask workers; this will be addressed in follow-up work.
+
+- For distributed execution, you must use S3 for intermediates and run storage, as shown above.
+- Dagster logs are not yet retrieved from Dask workers; this will be addressed in follow-up work.
 
 While this library is still nascent, we're working to improve it, and we are happy to accept
 contributions!

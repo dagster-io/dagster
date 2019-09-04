@@ -1,35 +1,39 @@
-# Airflow Deployment Guide
+# Deploying on Airflow
 
 ## Introduction
+
 Dagster is designed for incremental adoption, and to work with all of your existing Airflow infrastructure.
 
 You can use all of Dagster's features and abstractions—the programming model, type systems, etc.
 while scheduling, executing, and monitoring your Dagster pipelines with Airflow, right alongside all
 of your existing Airflow DAGs.
 
-This integration is fairly simple. As with vanilla Dagster pipeline execution, Dagster compiles your pipeline and 
-configuration together into an execution plan. In the case of Airflow, these execution plans are then mapped to a 
+This integration is fairly simple. As with vanilla Dagster pipeline execution, Dagster compiles your pipeline and
+configuration together into an execution plan. In the case of Airflow, these execution plans are then mapped to a
 DAG, with a bijection between solids and Airflow operators.
 
 ### Requirements
+
 - The `dagster-airflow` library requires an Airflow install.
 
 ### Overview
+
 We support two modes of execution:
 
 1. **Uncontainerized**, (default) where tasks are invoked directly on the Airflow executors.
 2. **Containerized**, where tasks are executed in Docker containers.
 
 ## Running Uncontainerized
+
 We use a `DagsterPythonOperator` to wrap Dagster solids and define an Airflow DAG that corresponds
 to a Dagster pipeline and can run in your Airflow environment uncontainerized.
 
 You will need to make sure that all of the Python and system requirements that your Dagster pipeline
-requires are available in your Airflow environment; if you're running Airflow on multiple nodes with 
+requires are available in your Airflow environment; if you're running Airflow on multiple nodes with
 the Celery executor, this will be true for the Airflow master and all workers.
 
 To define an Airflow DAG corresponding to a Dagster pipeline, you'll put a new Python file defining your DAG
-in the directory in which Airflow looks for DAGs -- this is typically `$AIRFLOW_HOME/dags`. 
+in the directory in which Airflow looks for DAGs -- this is typically `$AIRFLOW_HOME/dags`.
 
 You can automatically scaffold this file from your Python code with the `dagster-airflow` CLI tool. For example, if you've checked out Dagster to `$DAGSTER_ROOT`:
 
@@ -96,9 +100,10 @@ pipeline (and intermediate values will be automatically materialized in either `
 storage), but you **must** set it when converting a pipeline to an Airflow DAG.
 
 ## Running Containerized
+
 We use a `DagsterDockerOperator`, based on the ordinary Airflow `DockerOperator`, to wrap Dagster pipelines.
 In order to run containerized Dagster pipelines, you must have Docker running in your Airflow
-environment (the same as for the ordinary Airflow `DockerOperator`). 
+environment (the same as for the ordinary Airflow `DockerOperator`).
 
 During execution, Dagster caches and transfers intermediate state between execution steps. This feature enables quick re-execution of execution steps from the Dagit UI.
 
@@ -223,7 +228,6 @@ required to access the S3 bucket for dagster-airflow.
 You can configure S3 storage as follows:
 
     {'storage': {'s3': {'s3_bucket': 'my-cool-bucket'}}}
-
 
 ### Compatibility
 
