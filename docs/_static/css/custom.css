@@ -336,3 +336,11 @@ div.section > dl.attribute {
 div.section > dl.attribute > dt {
   background: rgb(240, 240, 240);
 }
+
+#searchlabel {
+  margin-bottom: 0px;
+}
+
+div.sphinxsidebar input {
+  font-family: "Source Sans Pro", sans-serif;
+}

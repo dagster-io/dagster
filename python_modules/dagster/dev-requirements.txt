@@ -10,6 +10,7 @@ pytest-runner==5.1
 recommonmark==0.4.0
 rope==0.11
 snapshottest==0.5.0
+sphinx-autobuild==0.7.1
 twine==1.11.0
 pre-commit==1.10.1
 tox==3.6.1
