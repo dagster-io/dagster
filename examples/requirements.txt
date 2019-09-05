@@ -9,7 +9,7 @@ matplotlib==2.2.4; python_version < '3.5'
 # pyproj is required by geopandas, but something is wrong with the
 # wheel for 2.0.2
 pyproj==2.0.1
-pyspark==2.4.0
+pyspark==2.4.4
 # See setup.py for comment on this
 psycopg2==2.7.6.1
 sqlalchemy-redshift>=0.7.2

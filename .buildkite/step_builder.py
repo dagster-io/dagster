@@ -14,6 +14,9 @@ DOCKER_PLUGIN = "docker#v3.2.0"
 
 PY_IMAGE_MAP = {ver: "python:{}-stretch".format(ver) for ver in SupportedPythons}
 
+# Update this when releasing a new version of our integration image
+INTEGRATION_IMAGE_VERSION = "v4"
+
 
 class StepBuilder:
     def __init__(self, label):
@@ -54,7 +57,10 @@ class StepBuilder:
         settings = self._base_docker_settings()
 
         # version like dagster/buildkite-integration:py3.7.3-v3
-        settings["image"] = "dagster/buildkite-integration:py" + ver + '-v4'
+        settings["image"] = "dagster/buildkite-integration:py%s-%s" % (
+            ver,
+            INTEGRATION_IMAGE_VERSION,
+        )
 
         # map the docker socket to enable docker to be run from inside docker
         settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock"]

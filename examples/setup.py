@@ -33,7 +33,7 @@ setup(
             # pyproj is required by geopandas, but something is wrong with the
             # wheel for 2.0.2
             'pyproj==2.0.1',
-            'pyspark==2.4.0',
+            'pyspark==2.4.4',
             # You can dig into why this is is necessary by digging into some of
             # insanity in this github issue. https://github.com/psycopg/psycopg2/issues/674
             # Essentially we are ensuring here that a version of psycopg is installed
