@@ -15,7 +15,7 @@ DOCKER_PLUGIN = "docker#v3.2.0"
 PY_IMAGE_MAP = {ver: "python:{}-stretch".format(ver) for ver in SupportedPythons}
 
 # Update this when releasing a new version of our integration image
-INTEGRATION_IMAGE_VERSION = "v4"
+INTEGRATION_IMAGE_VERSION = "v5"
 
 
 class StepBuilder:

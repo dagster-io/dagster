@@ -82,7 +82,7 @@ If you are running on AWS ECS, Kubernetes, or some other container-based orchest
 A minimal skeleton Dockerfile that will run Dagit is shown below:
 
 ```Dockerfile
-FROM python:3.7-slim-stretch
+FROM dagster:dagster/py3.7.4
 
 RUN set -ex \
     && pip install -U pip setuptools wheel \
@@ -98,3 +98,6 @@ EXPOSE 3000
 
 ENTRYPOINT [ "dagit", "--no-watch", "-h", "0.0.0.0", "-p", "3000" ]
 ```
+
+This is based on the [public Docker images](https://cloud.docker.com/u/dagster/repository/docker/dagster/dagster).
+We publish versions for Python 2.7, 3.5, 3.6, and 3.7.

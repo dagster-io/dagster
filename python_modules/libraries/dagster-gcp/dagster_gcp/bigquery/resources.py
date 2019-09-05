@@ -46,6 +46,7 @@ class BigQueryClient(bigquery.Client):
         location=None,
         project=None,
         job_config=None,
+        parquet_compression="snappy",
     ):
         try:
             return super(BigQueryClient, self).load_table_from_dataframe(
@@ -57,6 +58,7 @@ class BigQueryClient(bigquery.Client):
                 location,
                 project,
                 job_config,
+                parquet_compression,
             )
         except ImportError as e:
             six.raise_from(

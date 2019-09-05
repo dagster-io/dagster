@@ -34,6 +34,7 @@ This is to guard against any issues that might be introduced by local build arti
 It's also prudent to release from a fresh virtualenv.
 
 ## Before releasing
+
 - You must have PyPI credentials available to twine (see below), and you must be permissioned as a
   maintainer on the projects.
 - You must be permissioned as a maintainer on ReadTheDocs.
@@ -85,6 +86,12 @@ It's also prudent to release from a fresh virtualenv.
     button.
 
 9.  Check that the ReadTheDocs and PyPI versions are as you expect.
+
+10. Refresh the dagster/dagster images on Docker Hub by running:
+
+        cd .buildkite/images/docker
+        make build-public
+        make push-public
 
 ### PyPI credentials
 
