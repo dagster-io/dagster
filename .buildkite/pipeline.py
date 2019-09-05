@@ -361,7 +361,7 @@ if __name__ == "__main__":
         .on_medium_instance()
         .build(),
         StepBuilder("isort")
-        .run("pip install isort>=4.3.21", "make isort", "git diff --exit-code")
+        .run("pip install isort>=4.3.21", "isort -rc examples python_modules", "git diff --exit-code")
         .on_python_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("black")
