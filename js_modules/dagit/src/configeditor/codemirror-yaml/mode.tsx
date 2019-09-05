@@ -351,6 +351,10 @@ CodeMirror.registerHelper(
       start
     );
 
+    if (!context) {
+      return { list: [] };
+    }
+
     // Since writing meaningful tests for this functionality is difficult given a) no jsdom
     // support for APIs that codemirror uses (and so no way to use snapshot tests) and b) no
     // appetite (yet) for writing Selenium tests, we record here the manual tests used to verify
@@ -442,7 +446,7 @@ CodeMirror.registerHelper(
     });
 
     // Completion of composite field keys
-    if (context && context.availableFields.length) {
+    if (context.availableFields.length) {
       return {
         list: context.availableFields
           .filter(field => field.name.startsWith(searchString))
@@ -457,7 +461,7 @@ CodeMirror.registerHelper(
     }
 
     // Completion of enum field values
-    if (context && context.type.__typename === "EnumConfigType") {
+    if (context.type.__typename === "EnumConfigType") {
       if (searchString.startsWith('"')) {
         searchString = searchString.substr(1);
       }
@@ -465,6 +469,18 @@ CodeMirror.registerHelper(
         list: context.type.values
           .filter(val => val.value.startsWith(searchString))
           .map(val => buildSuggestion(val.value, `"${val.value}"`, null))
+      };
+    }
+
+    // Completion of boolean field values
+    if (
+      context.type.__typename === "RegularConfigType" &&
+      context.type.name === "Bool"
+    ) {
+      return {
+        list: ["True", "False"]
+          .filter(val => val.startsWith(searchString))
+          .map(val => buildSuggestion(val, val, null))
       };
     }
 
