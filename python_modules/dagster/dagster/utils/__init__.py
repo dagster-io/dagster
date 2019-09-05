@@ -352,3 +352,15 @@ def ensure_dir(file_path):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+
+
+def ensure_file(path):
+    ensure_dir(os.path.dirname(path))
+    if not os.path.exists(path):
+        touch_file(path)
+
+
+def touch_file(path):
+    ensure_dir(os.path.dirname(path))
+    with open(path, 'a'):
+        os.utime(path, None)

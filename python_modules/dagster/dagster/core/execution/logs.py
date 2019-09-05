@@ -1,5 +1,6 @@
 import atexit
 import os
+import subprocess
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
@@ -10,7 +11,14 @@ from watchdog.observers.polling import PollingObserver
 
 from dagster import check
 from dagster.core.execution.context.system import SystemStepExecutionContext
-from dagster.utils import Features, dagster_compute_logs_dir, ensure_dir, is_dagster_home_set
+from dagster.utils import (
+    Features,
+    dagster_compute_logs_dir,
+    ensure_dir,
+    ensure_file,
+    is_dagster_home_set,
+    touch_file,
+)
 
 IO_TYPE_STDOUT = 'out'
 IO_TYPE_STDERR = 'err'
@@ -155,7 +163,7 @@ def _fetch_compute_data(run_id, step_key, io_type, after=0):
 
 
 @contextmanager
-def redirect_io_to_fs(step_context):
+def mirror_step_io(step_context):
     # https://github.com/dagster-io/dagster/issues/1698
     if not should_capture_stdout():
         yield
@@ -163,21 +171,62 @@ def redirect_io_to_fs(step_context):
 
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
 
-    outpath = _filepath(step_context.run_id, step_context.step.key, IO_TYPE_STDOUT)
-    errpath = _filepath(step_context.run_id, step_context.step.key, IO_TYPE_STDERR)
-    touchpath = _filepath(step_context.run_id, step_context.step.key, IO_TYPE_COMPLETE)
+    run_id = step_context.run_id
+    step_key = step_context.step.key
+
+    outpath = _filepath(run_id, step_key, IO_TYPE_STDOUT)
+    errpath = _filepath(run_id, step_key, IO_TYPE_STDERR)
+    touchpath = _filepath(run_id, step_key, IO_TYPE_COMPLETE)
 
     ensure_dir(os.path.dirname(outpath))
     ensure_dir(os.path.dirname(errpath))
 
-    with open(outpath, 'w') as out:
-        with open(errpath, 'w') as err:
-            with _redirect_stream(to_stream=out, from_stream=sys.stdout):
-                with _redirect_stream(to_stream=err, from_stream=sys.stderr):
-                    yield
-    with open(touchpath, 'a'):
-        # touch the file to signify that compute is complete
-        os.utime(touchpath, None)
+    with mirror_stream(sys.stdout, outpath), mirror_stream(sys.stderr, errpath):
+        yield
+
+    # touch the file to signify that compute is complete
+    touch_file(touchpath)
+
+
+@contextmanager
+def mirror_stream(stream, path, buffering=1):
+    ensure_file(path)
+    with tailf(path):
+        with open(path, 'a', buffering=buffering) as to_stream:
+            with redirect_stream(to_stream=to_stream, from_stream=stream):
+                yield
+
+
+@contextmanager
+def redirect_stream(to_stream=os.devnull, from_stream=sys.stdout):
+    # swap the file descriptors to capture system-level output in the process
+    # From https://stackoverflow.com/questions/4675728/redirect-stdout-to-a-file-in-python/22434262#22434262
+    from_fd = _fileno(from_stream)
+    with os.fdopen(os.dup(from_fd), 'wb') as copied:
+        from_stream.flush()
+        try:
+            os.dup2(_fileno(to_stream), from_fd)
+        except ValueError:
+            with open(to_stream, 'wb') as to_file:
+                os.dup2(to_file.fileno(), from_fd)
+        try:
+            yield from_stream
+        finally:
+            from_stream.flush()
+            to_stream.flush()
+            os.dup2(copied.fileno(), from_fd)
+
+
+@contextmanager
+def tailf(path):
+    if sys.platform == 'win32':
+        # no tail, bail
+        yield
+    else:
+        cmd = 'tail -F -n 1 {}'.format(path).split(' ')
+        p = subprocess.Popen(cmd)
+        yield
+        p.terminate()
 
 
 def _filebase(run_id, step_key):
@@ -214,29 +263,8 @@ def _encode_cursor(out_offset, err_offset):
     return '{}:{}'.format(out_offset, err_offset)
 
 
-#
-# From https://stackoverflow.com/questions/4675728/redirect-stdout-to-a-file-in-python/22434262#22434262
-#
 def _fileno(file_or_fd):
     fd = getattr(file_or_fd, 'fileno', lambda: file_or_fd)()
     if not isinstance(fd, int):
         raise ValueError("Expected a file (`.fileno()`) or a file descriptor")
     return fd
-
-
-@contextmanager
-def _redirect_stream(to_stream=os.devnull, from_stream=sys.stdout):
-    # https://github.com/dagster-io/dagster/issues/1699
-    fd = _fileno(from_stream)
-    with os.fdopen(os.dup(fd), 'wb') as copied:
-        from_stream.flush()
-        try:
-            os.dup2(_fileno(to_stream), fd)
-        except ValueError:
-            with open(to_stream, 'wb') as to_file:
-                os.dup2(to_file.fileno(), fd)
-        try:
-            yield from_stream
-        finally:
-            from_stream.flush()
-            os.dup2(copied.fileno(), fd)

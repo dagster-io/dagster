@@ -17,7 +17,7 @@ from dagster.core.execution.context.system import (
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
-from dagster.core.execution.logs import redirect_io_to_fs
+from dagster.core.execution.logs import mirror_step_io
 from dagster.core.execution.plan.objects import (
     StepFailureData,
     StepInputData,
@@ -564,7 +564,7 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
         solid_name=step_context.solid.name,
     ):
 
-        with redirect_io_to_fs(step_context):
+        with mirror_step_io(step_context):
             gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
 
             if gen is not None:
