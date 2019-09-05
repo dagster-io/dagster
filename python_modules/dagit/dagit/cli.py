@@ -54,7 +54,6 @@ REPO_TARGET_WARNING = (
 @repository_target_argument
 @click.option('--host', '-h', type=click.STRING, default='127.0.0.1', help="Host to run server on")
 @click.option('--port', '-p', type=click.INT, default=3000, help="Port to run server on")
-@click.option('--sync', is_flag=True, help='Use the synchronous execution manager')
 @click.option(
     '--log',
     is_flag=True,
@@ -71,7 +70,7 @@ REPO_TARGET_WARNING = (
     help='Disable autoreloading when there are changes to the repo/pipeline being served',
 )
 @click.version_option(version=__version__, prog_name='dagit')
-def ui(host, port, sync, log, log_dir, schedule_dir, no_watch=False, **kwargs):
+def ui(host, port, log, log_dir, schedule_dir, no_watch=False, **kwargs):
     handle = handle_for_repo_cli_args(kwargs)
 
     # add the path for the cwd so imports in dynamically loaded code work correctly
@@ -100,10 +99,10 @@ def ui(host, port, sync, log, log_dir, schedule_dir, no_watch=False, **kwargs):
         'Do not set no_watch when calling the Dagit Python CLI directly -- this flag is a no-op '
         'at this level and should be set only when invoking dagit/bin/dagit.',
     )
-    host_dagit_ui(log, log_dir, schedule_dir, handle, sync, host, port)
+    host_dagit_ui(log, log_dir, schedule_dir, handle, host, port)
 
 
-def host_dagit_ui(log, log_dir, schedule_dir, handle, use_sync, host, port):
+def host_dagit_ui(log, log_dir, schedule_dir, handle, host, port):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
 
     pipeline_run_storage = (
@@ -113,11 +112,9 @@ def host_dagit_ui(log, log_dir, schedule_dir, handle, use_sync, host, port):
     if Features.SCHEDULER.is_enabled:
         repository = handle.build_repository_definition()
         scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
-        app = create_app(
-            handle, pipeline_run_storage, scheduler, use_synchronous_execution_manager=use_sync
-        )
+        app = create_app(handle, pipeline_run_storage, scheduler)
     else:
-        app = create_app(handle, pipeline_run_storage, use_synchronous_execution_manager=use_sync)
+        app = create_app(handle, pipeline_run_storage)
 
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
     print('Serving on http://{host}:{port}'.format(host=host, port=port))

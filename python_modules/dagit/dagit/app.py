@@ -6,7 +6,6 @@ import nbformat
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import (
     MultiprocessingExecutionManager,
-    SynchronousExecutionManager,
 )
 from dagster_graphql.schema import create_schema
 from flask import Flask, request, send_file, send_from_directory
@@ -120,13 +119,10 @@ def notebook_view(request_args):
         return '<style>' + resources['inlining']['css'][0] + '</style>' + body, 200
 
 
-def create_app(
-    handle, pipeline_run_storage, scheduler=None, use_synchronous_execution_manager=False
-):
+def create_app(handle, pipeline_run_storage, scheduler=None):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.inst_param(pipeline_run_storage, 'pipeline_run_storage', RunStorage)
     check.opt_inst_param(scheduler, 'scheduler', Scheduler)
-    check.bool_param(use_synchronous_execution_manager, 'use_synchronous_execution_manager')
 
     app = Flask('dagster-ui')
     sockets = Sockets(app)
@@ -135,10 +131,7 @@ def create_app(
     schema = create_schema()
     subscription_server = DagsterSubscriptionServer(schema=schema)
 
-    if use_synchronous_execution_manager:
-        execution_manager = SynchronousExecutionManager()
-    else:
-        execution_manager = MultiprocessingExecutionManager()
+    execution_manager = MultiprocessingExecutionManager()
 
     print('Loading repository...')
 
