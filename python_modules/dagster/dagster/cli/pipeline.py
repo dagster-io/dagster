@@ -277,7 +277,7 @@ def pipeline_graphviz_command(only_solids, **kwargs):
     help='Specify a preset to use for this pipeline. Presets are defined on pipelines under '
     'preset_defs.',
 )
-@click.option('-d', '--mode', type=click.STRING)
+@click.option('-d', '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.')
 def pipeline_execute_command(env, preset, mode, **kwargs):
     check.invariant(isinstance(env, tuple))
 
