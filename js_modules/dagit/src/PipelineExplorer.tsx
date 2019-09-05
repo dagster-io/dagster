@@ -46,6 +46,7 @@ export default class PipelineExplorer extends React.Component<
   static fragments = {
     PipelineExplorerFragment: gql`
       fragment PipelineExplorerFragment on Pipeline {
+        __typename
         name
         description
         ...SidebarTabbedContainerPipelineFragment

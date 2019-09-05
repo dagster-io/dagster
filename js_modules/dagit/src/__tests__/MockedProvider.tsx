@@ -1,4 +1,3 @@
-import fs from "fs";
 import * as React from "react";
 import ApolloClient from "apollo-client";
 import { ApolloCache } from "apollo-cache";
@@ -39,7 +38,7 @@ export class MockedProvider extends React.Component<
 
     const responses: ReadonlyArray<MockedResponse> = mocks.map(mock => ({
       request: mock,
-      response: JSON.parse(fs.readFileSync(mock.filepath).toString())
+      result: require(mock.filepath)
     }));
 
     const client = new ApolloClient({

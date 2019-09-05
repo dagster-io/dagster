@@ -355,7 +355,7 @@ export default class PipelineExecutionContainer extends React.Component<
   }
 }
 
-const START_PIPELINE_EXECUTION_MUTATION = gql`
+export const START_PIPELINE_EXECUTION_MUTATION = gql`
   mutation StartPipelineExecution($executionParams: ExecutionParams!) {
     startPipelineExecution(executionParams: $executionParams) {
       __typename

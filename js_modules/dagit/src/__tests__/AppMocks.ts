@@ -4,6 +4,10 @@ import { TYPE_EXPLORER_CONTAINER_QUERY } from "../typeexplorer/TypeExplorerConta
 import { TYPE_LIST_CONTAINER_QUERY } from "../typeexplorer/TypeListContainer";
 import { PIPELINE_EXPLORER_ROOT_QUERY } from "../PipelineExplorerRoot";
 import { CachedGraphQLRequest } from "./MockedApolloLinks";
+import { RUNS_ROOT_QUERY } from "../runs/RunsRoot";
+import { PIPELINE_EXECUTION_ROOT_QUERY } from "../execute/PipelineExecutionRoot";
+import { ENABLED_FEATURES_ROOT_QUERY } from "../FlaggedFeature";
+import { VERSION_QUERY } from "../VersionLabel";
 
 export const MOCKS: CachedGraphQLRequest[] = [
   {
@@ -19,7 +23,17 @@ export const MOCKS: CachedGraphQLRequest[] = [
     filepath: path.join(
       __dirname,
       "__data__",
-      "PIPELINE_EXPLORER_ROOT_QUERY.json"
+      "PIPELINE_EXPLORER_ROOT_QUERY_airline.json"
+    )
+  },
+  {
+    name: "PIPELINE_EXPLORER_ROOT_QUERY",
+    query: PIPELINE_EXPLORER_ROOT_QUERY,
+    variables: { name: "pandas_hello_world_pipeline" },
+    filepath: path.join(
+      __dirname,
+      "__data__",
+      "PIPELINE_EXPLORER_ROOT_QUERY_pandas.json"
     )
   },
   {
@@ -42,5 +56,41 @@ export const MOCKS: CachedGraphQLRequest[] = [
       pipelineName: "airline_demo_ingest_pipeline"
     },
     filepath: path.join(__dirname, "__data__", "TYPE_LIST_CONTAINER_QUERY.json")
+  },
+  {
+    name: "PIPELINE_EXECUTION_ROOT_QUERY",
+    query: PIPELINE_EXECUTION_ROOT_QUERY,
+    variables: {
+      name: "pandas_hello_world_pipeline",
+      solidSubset: ["sum_solid", "sum_sq_solid"],
+      mode: "default"
+    },
+    filepath: path.join(
+      __dirname,
+      "__data__",
+      "PIPELINE_EXECUTION_ROOT_QUERY.json"
+    )
+  },
+  {
+    name: "RUNS_ROOT_QUERY",
+    query: RUNS_ROOT_QUERY,
+    variables: undefined,
+    filepath: path.join(__dirname, "__data__", "RUNS_ROOT_QUERY.json")
+  },
+  {
+    name: "ENABLED_FEATURES_ROOT_QUERY",
+    query: ENABLED_FEATURES_ROOT_QUERY,
+    variables: undefined,
+    filepath: path.join(
+      __dirname,
+      "__data__",
+      "ENABLED_FEATURES_ROOT_QUERY.json"
+    )
+  },
+  {
+    name: "VERSION_QUERY",
+    query: VERSION_QUERY,
+    variables: undefined,
+    filepath: path.join(__dirname, "__data__", "VERSION_QUERY.json")
   }
 ];

@@ -41,7 +41,7 @@ async function testApp() {
 
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  const tree = component.toJSON();
+  const tree = component!.toJSON();
   expect(tree).toMatchSnapshot();
 }
 
@@ -49,49 +49,56 @@ it("renders without error", async () => {
   await testApp();
 });
 
-it("renders pipeline page", async () => {
+it("renders explore", async () => {
   beforeEach(() => {
-    window.history.pushState({}, "", "/explore/pandas_hello_world");
+    window.history.pushState({}, "", "/explore/pandas_hello_world_pipeline");
   });
   await testApp();
 });
 
-it("renders pipeline solid page", async () => {
+it("renders explore with a selected solid", async () => {
   beforeEach(() => {
     window.history.pushState(
       {},
       "",
-      "/explore/pandas_hello_world/load_num_csv"
+      "/explore/pandas_hello_world_pipeline/load_num_csv"
     );
   });
   await testApp();
 });
 
-it("renders type page", async () => {
+it("renders explore with the type list open", async () => {
   beforeEach(() => {
     window.history.pushState(
       {},
       "",
-      "/explore/pandas_hello_world/load_num_csv?types=true"
+      "/explore/pandas_hello_world_pipeline/load_num_csv?types=true"
     );
   });
   await testApp();
 });
 
-it("renders type page", async () => {
+it("renders explore with the type explorer open", async () => {
   beforeEach(() => {
     window.history.pushState(
       {},
       "",
-      "/explore/pandas_hello_world/load_num_csv?typeExplorer=PandasDataFrame"
+      "/explore/pandas_hello_world_pipeline/load_num_csv?typeExplorer=PandasDataFrame"
     );
   });
   await testApp();
 });
 
-it("renders execution", async () => {
+it("renders execute", async () => {
   beforeEach(() => {
-    window.history.pushState({}, "", "/execute/pandas_hello_world");
+    window.history.pushState({}, "", "/execute/pandas_hello_world_pipeline");
+  });
+  await testApp();
+});
+
+it("renders the runs list", async () => {
+  beforeEach(() => {
+    window.history.pushState({}, "", "/runs");
   });
   await testApp();
 });

@@ -13,21 +13,42 @@ leveraging Jest is easiest.
 // collect mocks from various tests in the codebase
 import { MOCKS as SVGMocks } from "../__tests__/graph/SVGMocks";
 import { MOCKS as AppMocks } from "../__tests__/AppMocks";
+import { START_PIPELINE_EXECUTION_MUTATION } from "../execute/PipelineExecutionContainer";
+import { DocumentNode } from "graphql";
 
 const dagsterRoot = path.resolve(path.join(__dirname, "..", "..", "..", ".."));
 
+function buildArgs(input: {
+  repo?: string;
+  query: DocumentNode;
+  variables?: { [key: string]: any };
+}) {
+  const query = print(input.query)
+    .replace(/[\n\r]/g, "")
+    .replace(/[ ][ ]+/g, " ");
+  const vars = input.variables ? `-v '${JSON.stringify(input.variables)}'` : "";
+  const repo = `${dagsterRoot}/${input.repo || "examples"}/repository.yaml`;
+
+  return `--log --log-dir="/tmp/dagster" -y ${repo} -t '${query}' ${vars}`;
+}
+
 it(`builds mocks`, () => {
+  // Run a pipeline to generate data that will be returned in the runs queries
+  execSync(
+    `dagster-graphql ${buildArgs({
+      query: START_PIPELINE_EXECUTION_MUTATION,
+      variables: {
+        executionParams: {
+          environmentConfigData: {},
+          selector: { name: "log_spew", solidSubset: null },
+          mode: "default"
+        }
+      }
+    })}`
+  );
+
   for (const mock of [...SVGMocks, ...AppMocks]) {
-    const query = print(mock.query)
-      .replace(/[\n\r]/g, "")
-      .replace(/[ ][ ]+/g, " ");
-    const vars = mock.variables ? `-v '${JSON.stringify(mock.variables)}'` : "";
-    const repo = `${dagsterRoot}/${mock.repo || "examples"}/repository.yaml`;
-
-    execSync(
-      `dagster-graphql -y ${repo} -t '${query}' ${vars} > ${mock.filepath}`
-    );
-
+    execSync(`dagster-graphql ${buildArgs(mock)} > ${mock.filepath}`);
     console.log(`Saved ${mock.filepath}`);
   }
 

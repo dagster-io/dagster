@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`renders execution 1`] = `
+exports[`renders execute 1`] = `
 Array [
   <div
     className="bp3-navbar"
@@ -96,14 +96,14 @@ Array [
         >
           <a
             className="active sc-bxivhb iHwkSZ"
-            href="/explore/pandas_hello_world"
+            href="/explore/pandas_hello_world_pipeline"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/execute/pandas_hello_world"
+            href="/execute/pandas_hello_world_pipeline"
             onClick={[Function]}
           >
             Execute
@@ -135,7 +135,9 @@ Array [
       />
       <span
         className="sc-bwzfXH bRRDrI"
-      />
+      >
+        0.5.7
+      </span>
     </div>
   </div>,
   <div
@@ -181,7 +183,7 @@ Array [
 ]
 `;
 
-exports[`renders pipeline page 1`] = `
+exports[`renders explore 1`] = `
 Array [
   <div
     className="bp3-navbar"
@@ -295,7 +297,9 @@ Array [
       />
       <span
         className="sc-bwzfXH bRRDrI"
-      />
+      >
+        0.5.7
+      </span>
     </div>
   </div>,
   <div
@@ -313,7 +317,7 @@ Array [
 ]
 `;
 
-exports[`renders pipeline solid page 1`] = `
+exports[`renders explore with a selected solid 1`] = `
 Array [
   <div
     className="bp3-navbar"
@@ -409,14 +413,14 @@ Array [
         >
           <a
             className="active sc-bxivhb iHwkSZ"
-            href="/explore/pandas_hello_world"
+            href="/explore/pandas_hello_world_pipeline"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/execute/pandas_hello_world"
+            href="/execute/pandas_hello_world_pipeline"
             onClick={[Function]}
           >
             Execute
@@ -448,7 +452,9 @@ Array [
       />
       <span
         className="sc-bwzfXH bRRDrI"
-      />
+      >
+        0.5.7
+      </span>
     </div>
   </div>,
   <div
@@ -494,7 +500,7 @@ Array [
 ]
 `;
 
-exports[`renders type page 1`] = `
+exports[`renders explore with the type explorer open 1`] = `
 Array [
   <div
     className="bp3-navbar"
@@ -590,14 +596,14 @@ Array [
         >
           <a
             className="active sc-bxivhb iHwkSZ"
-            href="/explore/pandas_hello_world"
+            href="/explore/pandas_hello_world_pipeline"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/execute/pandas_hello_world"
+            href="/execute/pandas_hello_world_pipeline"
             onClick={[Function]}
           >
             Execute
@@ -629,7 +635,9 @@ Array [
       />
       <span
         className="sc-bwzfXH bRRDrI"
-      />
+      >
+        0.5.7
+      </span>
     </div>
   </div>,
   <div
@@ -675,7 +683,7 @@ Array [
 ]
 `;
 
-exports[`renders type page 2`] = `
+exports[`renders explore with the type list open 1`] = `
 Array [
   <div
     className="bp3-navbar"
@@ -771,14 +779,14 @@ Array [
         >
           <a
             className="active sc-bxivhb iHwkSZ"
-            href="/explore/pandas_hello_world"
+            href="/explore/pandas_hello_world_pipeline"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
             className="sc-bxivhb iHwkSZ"
-            href="/execute/pandas_hello_world"
+            href="/execute/pandas_hello_world_pipeline"
             onClick={[Function]}
           >
             Execute
@@ -810,7 +818,9 @@ Array [
       />
       <span
         className="sc-bwzfXH bRRDrI"
-      />
+      >
+        0.5.7
+      </span>
     </div>
   </div>,
   <div
@@ -851,6 +861,184 @@ Array [
           GraphQL Error - see console for details
         </h4>
       </div>
+    </div>
+  </div>,
+]
+`;
+
+exports[`renders the runs list 1`] = `
+Array [
+  <div
+    className="bp3-navbar"
+  >
+    <div
+      className="bp3-navbar-group bp3-align-left"
+    >
+      <div
+        className="bp3-navbar-heading"
+        onClick={[Function]}
+      >
+        <img
+          alt="logo"
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
+          style={
+            Object {
+              "height": 34,
+            }
+          }
+        />
+      </div>
+      <div
+        className="bp3-navbar-divider"
+      />
+      <div
+        style={
+          Object {
+            "alignItems": "center",
+            "display": "flex",
+          }
+        }
+      >
+        <span
+          className="bp3-popover-wrapper"
+        >
+          <span
+            className="bp3-popover-target"
+            onClick={[Function]}
+          >
+            <div
+              className=""
+              onKeyDown={[Function]}
+            >
+              <button
+                className="bp3-button"
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                style={
+                  Object {
+                    "justifyContent": "space-between",
+                    "minWidth": 230,
+                  }
+                }
+                type="button"
+              >
+                <span
+                  className="bp3-button-text"
+                >
+                  Select a Pipeline...
+                </span>
+                <span
+                  className="bp3-icon bp3-icon-double-caret-vertical"
+                  icon="double-caret-vertical"
+                >
+                  <svg
+                    data-icon="double-caret-vertical"
+                    height={16}
+                    viewBox="0 0 16 16"
+                    width={16}
+                  >
+                    <desc>
+                      double-caret-vertical
+                    </desc>
+                    <path
+                      d="M5 7h6a1.003 1.003 0 0 0 .71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 0 0 5 7zm6 2H5a1.003 1.003 0 0 0-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0 0 11 9z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </div>
+          </span>
+        </span>
+        <div
+          className="bp3-navbar-divider"
+        />
+        <div
+          className="sc-htpNat dMCWdO"
+        >
+          <a
+            className="sc-bxivhb iHwkSZ"
+            href="/explore/pandas_hello_world_pipeline"
+            onClick={[Function]}
+          >
+            Explore
+          </a>
+          <a
+            className="active sc-bxivhb iHwkSZ"
+            href="/execute/pandas_hello_world_pipeline"
+            onClick={[Function]}
+          >
+            Execute
+          </a>
+        </div>
+      </div>
+    </div>
+    <div
+      className="bp3-navbar-group bp3-align-right"
+    >
+      <a
+        className="sc-bxivhb iHwkSZ"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
+      <div
+        className="sc-bdVaJa cgCJAY"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
+      <span
+        className="sc-bwzfXH bRRDrI"
+      >
+        0.5.7
+      </span>
+    </div>
+  </div>,
+  <div
+    className="bp3-non-ideal-state"
+  >
+    <div
+      className="bp3-non-ideal-state-visual"
+    >
+      <span
+        className="bp3-icon bp3-icon-flow-branch"
+        icon="flow-branch"
+      >
+        <svg
+          data-icon="flow-branch"
+          height={60}
+          viewBox="0 0 20 20"
+          width={60}
+        >
+          <desc>
+            flow-branch
+          </desc>
+          <path
+            d="M14.425 7.953a3.98 3.98 0 0 1 .562 2.045 3.98 3.98 0 0 1-.583 2.08L18 15.671V12.98c0-.248.097-.496.29-.689.379-.379 1.047-.38 1.426 0a.94.94 0 0 1 .283.696l-.001 5.049a.957.957 0 0 1-.276.69.955.955 0 0 1-.69.273h-5.059a.971.971 0 0 1-.689-.289 1.026 1.026 0 0 1 0-1.417.972.972 0 0 1 .69-.29h2.702l-3.634-3.573a3.998 3.998 0 0 1-5.924-2.431H1a1 1 0 0 1 0-2h6.12a3.998 3.998 0 0 1 5.96-2.409L16.665 3l-2.694-.001a.972.972 0 0 1-.689-.29 1.035 1.035 0 0 1 0-1.425.94.94 0 0 1 .696-.283l5.05.001c.248 0 .497.083.69.276a.954.954 0 0 1 .272.69l.001 5.052a.971.971 0 0 1-.29.689 1.028 1.028 0 0 1-1.419 0 .972.972 0 0 1-.29-.69V4.323l-3.567 3.63z"
+            fillRule="evenodd"
+          />
+        </svg>
+      </span>
+    </div>
+    <h4
+      className="bp3-heading"
+    >
+      Pipeline Not Found
+    </h4>
+    <div>
+      No data returned from GraphQL
     </div>
   </div>,
 ]
@@ -970,7 +1158,9 @@ Array [
       />
       <span
         className="sc-bwzfXH bRRDrI"
-      />
+      >
+        0.5.7
+      </span>
     </div>
   </div>,
   <div

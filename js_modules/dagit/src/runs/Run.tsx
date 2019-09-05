@@ -50,6 +50,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
         ...RunStatusPipelineRunFragment
         ...RunSubscriptionPipelineRunFragment
 
+        __typename
         environmentConfigYaml
         runId
         mode
@@ -61,6 +62,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
         }
         logs {
           nodes {
+            __typename
             ...LogsFilterProviderMessageFragment
             ...LogsScrollingTableMessageFragment
             ...RunMetadataProviderMessageFragment
