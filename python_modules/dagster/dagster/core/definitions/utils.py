@@ -27,16 +27,22 @@ DISALLOWED_NAMES = set(
     + keyword.kwlist  # just disallow all python keywords
 )
 
+VALID_NAME_REGEX_STR = r'^[A-Za-z0-9_]+$'
+VALID_NAME_REGEX = re.compile(VALID_NAME_REGEX_STR)
+
+
+def has_valid_name_chars(name):
+    return bool(VALID_NAME_REGEX.match(name))
+
 
 def check_valid_name(name):
     check.str_param(name, 'name')
     if name in DISALLOWED_NAMES:
         raise DagsterInvalidDefinitionError('{name} is not allowed.'.format(name=name))
 
-    regex = r'^[A-Za-z0-9_]+$'
-    if not re.match(regex, name):
+    if not has_valid_name_chars(name):
         raise DagsterInvalidDefinitionError(
-            '{name} must be in regex {regex}'.format(name=name, regex=regex)
+            '{name} must be in regex {regex}'.format(name=name, regex=VALID_NAME_REGEX_STR)
         )
     return name
 
