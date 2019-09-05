@@ -192,7 +192,7 @@ def ui(log, log_dir, text, file, predefined, variables, **kwargs):
                 '.bashrc or .bash_profile, or pass in a default directory using the --log-dir flag '
                 '\nExamples:'
                 '\n  1. export DAGSTER_HOME="~/dagster"'
-                '\n  2. --log --logdir="/dagster_logs"'
+                '\n  2. --log --log-dir="/dagster_logs"'
             )
         log_dir = dagster_logs_dir_for_handle(handle)
 
