@@ -2,25 +2,41 @@
 
 ## Upcoming (0.6.0)
 
-- A "Reload" button in the top right in dagit restarts the web-server process and updates
-  the UI to reflect repo changes, including DAG structure, solid names, type names, etc.
+- **New**
+
+  - `DagsterInstance` introduced as centralized system to control run, event, compute log,
+    and local intermediates storage.
+  - A `Scheduler` abstraction has been introduced along side an initial implementation of
+    `SystemCronScheduler` in `dagster-cron`.
+  - `dagster-aws` has been extended with a CLI for deploying dagster to AWS.
+  - stdout and stderr from individual execution steps are now made available as "compute logs".
+    These are surfaced in dagit and persisted based on the `DagsterInstance`.
+  - A "Reload" button in the top right in dagit restarts the web-server process and updates
+    the UI to reflect repo changes, including DAG structure, solid names, type names, etc.
+
+- **BREAKING CHANGES**
+  - `--log` and `--log-dir` no longer supported as CLI args. Existing runs and events stored
+    via these flags are no longer compatible with current storage.
 
 ## 0.5.9
 
 - Fixes an issue using custom types for fan-in dependencies with intermediate storage.
 
 ## 0.5.8
+
 - Fixes an issue running some Dagstermill notebooks on Windows.
 - Fixes a transitive dependency issue with Airflow.
 - Bugfixes, performance improvements, and better documentation.
 
 ## 0.5.7
+
 - Fixed an issue with specifying composite output mappings (#1674)
 - Added support for specifying
   [Dask worker resources](https://distributed.dask.org/en/latest/resources.html) (#1679)
 - Fixed an issue with launching Dagit on Windows
 
 ## 0.5.6
+
 - Execution details are now configurable. The new top-level `ExecutorDefinition` and `@executor`
   APIs are used to define in-process, multiprocess, and Dask executors, and may be used by users to
   define new executors. Like loggers and storage, executors may be added to a `ModeDefinition` and
@@ -46,6 +62,7 @@
 - Bug fixes, documentation improvements, and improvements to error display.
 
 ## 0.5.5
+
 - Dagit now accepts parameters via environment variables prefixed with `DAGIT_`, e.g. `DAGIT_PORT`.
 - Fixes an issue with reexecuting Dagstermill notebooks from Dagit.
 - Bug fixes and display improvments in Dagit.
