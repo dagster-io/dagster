@@ -15,7 +15,7 @@ import {
 
 interface IPipelineExplorerRootProps {
   location: { pathname: string };
-  match: match<{ pipelineName: string; solidName: string }>;
+  match: match<{ pipelineName: string; 0: string }>;
   history: History<any>;
 }
 
@@ -30,11 +30,8 @@ const PipelineExplorerRoot: React.FunctionComponent<
       variables: { name: props.match.params.pipelineName }
     }
   );
-  const pathSolids = props.location.pathname
-    .split(new RegExp(`${props.match.params.pipelineName}/?`))
-    .pop()!
-    .split("/")
-    .filter(x => x);
+  const solidPath = props.match.params["0"]; // from the React Router regex
+  const pathSolids = solidPath.split("/").filter(x => x);
   const parentNames = pathSolids.slice(0, pathSolids.length - 1);
   const selectedName = pathSolids[pathSolids.length - 1];
 

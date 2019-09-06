@@ -29,22 +29,34 @@ const AppRoutes = () => (
   <Switch>
     <Route path="/runs/:runId" component={RunRoot} />
     <Route path="/runs" component={RunsRoot} exact={true} />
+    <Route path="/p/:pipelineName/runs/:runId" component={RunRoot} />
     <Redirect
       from="/p/:pipelineName"
       exact={true}
       to="/p/:pipelineName/explore"
     />
-    <Route path="/p/:pipelineName/runs/:runId" component={RunRoot} />
 
     <Route
       path="/p/:pipelineName/execute/setup"
       component={PipelineExecutionSetupRoot}
     />
     <Route path="/p/:pipelineName/execute" component={PipelineExecutionRoot} />
+    {/* Capture solid subpath in a regex match */}
     <Route
-      path="/p/:pipelineName/explore/:rest?"
+      path="/p/:pipelineName/explore(/?.*)"
       component={PipelineExplorerRoot}
     />
+    {/* Legacy redirects */}
+    <Redirect
+      from="/execute/:pipelineName/setup"
+      to="/p/:pipelineName/execute/setup"
+    />
+    <Redirect from="/execute/:pipelineName" to="/p/:pipelineName/execute" />
+    <Redirect
+      from="/explore/:pipelineName/:rest?"
+      to="/p/:pipelineName/explore/:rest?"
+    />
+    {/* Index default */}
     <Route
       render={() => (
         <NonIdealState
