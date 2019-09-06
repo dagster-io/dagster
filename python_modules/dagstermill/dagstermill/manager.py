@@ -119,7 +119,6 @@ class Manager:
             self.pipeline_def,
             environment_dict,
             run_config,
-            # @nocommit is this legit?
             instance=DagsterInstance.get(),
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
@@ -172,7 +171,7 @@ class Manager:
             self.pipeline_def,
             environment_dict,
             run_config,
-            instance=DagsterInstance.get(),
+            instance=DagsterInstance.ephemeral(),
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
             self.context = DagstermillExecutionContext(pipeline_context, solid_config)
