@@ -28,6 +28,13 @@ def _dagster_config(base_dir):
     return config
 
 
+def _dagster_feature_set(base_dir):
+    config = _dagster_config(base_dir)
+    if config.has_section('FEATURES'):
+        return {k for k, _ in config.items('FEATURES')}
+    return None
+
+
 def _dagster_home_dir():
     dagster_home_path = os.getenv('DAGSTER_HOME')
 
@@ -86,11 +93,14 @@ class DagsterInstance:
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
 
+        feature_set = _dagster_feature_set(tempdir)
+
         return DagsterInstance(
             InstanceType.EPHEMERAL,
             root_storage_dir=tempdir,
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
+            feature_set=feature_set,
         )
 
     @staticmethod
@@ -127,11 +137,7 @@ class DagsterInstance:
             from dagster.core.storage.event_log import FilesystemEventLogStorage
             from dagster.core.storage.runs import FilesystemRunStorage
 
-            config = _dagster_config(instance_ref.home_dir)
-
-            feature_set = fallback_feature_set
-            if config.has_section('FEATURES'):
-                feature_set = {k for k, _ in config.items('FEATURES')}
+            feature_set = _dagster_feature_set(instance_ref.home_dir) or fallback_feature_set
 
             return DagsterInstance(
                 instance_type=InstanceType.LOCAL,
