@@ -57,6 +57,11 @@ def _do_setup(name='dagster-airflow'):
             # aws
             'boto3==1.9.*',
             'python-dateutil>=2.8.0',
+            # transitive dependency issue
+            # https://issues.apache.org/jira/browse/AIRFLOW-5430
+            # https://github.com/dpgaspar/Flask-AppBuilder/pull/1111
+            # https://github.com/marshmallow-code/marshmallow-sqlalchemy/issues/241
+            'marshmallow-sqlalchemy>=0.16.1, <0.19.0',
         ],
         extras_require={'kubernetes': kubernetes},
         entry_points={'console_scripts': ['dagster-airflow = dagster_airflow.cli:main']},
