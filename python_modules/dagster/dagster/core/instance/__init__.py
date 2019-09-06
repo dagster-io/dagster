@@ -205,7 +205,8 @@ class DagsterInstance:
         return self._run_storage.all_runs_for_pipeline(pipeline)
 
     def wipe(self):
-        return self._run_storage.wipe()
+        self._run_storage.wipe()
+        self._event_storage.wipe()
 
     # event storage
 
