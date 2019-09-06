@@ -18,17 +18,17 @@ def docker_compose_db():
 
     with pushd(script_relative_path('../')):
         try:
-            subprocess.check_output(['docker-compose', 'stop', 'airline-demo-db'])
-            subprocess.check_output(['docker-compose', 'rm', '-f', 'airline-demo-db'])
+            subprocess.check_output(['docker-compose', 'stop', 'test-postgres-db'])
+            subprocess.check_output(['docker-compose', 'rm', '-f', 'test-postgres-db'])
         except Exception:  # pylint: disable=broad-except
             pass
-        subprocess.check_output(['docker-compose', 'up', '-d', 'airline-demo-db'])
+        subprocess.check_output(['docker-compose', 'up', '-d', 'test-postgres-db'])
 
     yield
 
     with pushd(script_relative_path('../')):
-        subprocess.check_output(['docker-compose', 'stop', 'airline-demo-db'])
-        subprocess.check_output(['docker-compose', 'rm', '-f', 'airline-demo-db'])
+        subprocess.check_output(['docker-compose', 'stop', 'test-postgres-db'])
+        subprocess.check_output(['docker-compose', 'rm', '-f', 'test-postgres-db'])
 
     return
 

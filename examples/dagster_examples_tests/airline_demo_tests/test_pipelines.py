@@ -25,9 +25,9 @@ warehouse_pipeline_def = warehouse_pipeline_handle.build_pipeline_definition()
 
 
 def enviroment_overrides(config):
-    if os.environ.get('DAGSTER_AIRLINE_DEMO_DB_HOST'):
+    if os.environ.get('POSTGRES_TEST_DB_HOST'):
         config['resources']['db_info']['config']['postgres_hostname'] = os.environ.get(
-            'DAGSTER_AIRLINE_DEMO_DB_HOST'
+            'POSTGRES_TEST_DB_HOST'
         )
     return config
 

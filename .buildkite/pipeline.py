@@ -65,13 +65,15 @@ def airline_demo_tests():
                 # so this will be a sibling container.
                 "docker-compose stop",
                 "docker-compose rm -f",
-                "docker-compose up -d",
+                "docker-compose up -d --remove-orphans",
                 # Can't use host networking on buildkite and communicate via localhost
                 # between these sibling containers, so pass along the ip.
-                "export DAGSTER_AIRLINE_DEMO_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' airline-demo-db`",
+                "export POSTGRES_TEST_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' test-postgres-db`",
                 "tox -vv -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
+                "docker-compose stop",
+                "docker-compose rm -f",
             )
             .build()
         )
@@ -125,6 +127,35 @@ def airflow_tests():
             )
             .on_integration_image(version, ['AIRFLOW_HOME'])
             .on_medium_instance()
+            .build()
+        )
+    return tests
+
+
+def dagster_postgres_tests():
+    tests = []
+    for version in SupportedPythons:
+        coverage = ".coverage.dagster-postgres.{version}.$BUILDKITE_BUILD_ID".format(
+            version=version
+        )
+        tests.append(
+            StepBuilder("dagster-postgres tests ({ver})".format(ver=TOX_MAP[version]))
+            .run(
+                "cd python_modules/libraries/dagster-postgres/dagster_postgres_tests/",
+                "docker-compose stop",
+                "docker-compose rm -f",
+                "docker-compose up -d --remove-orphans",
+                "export POSTGRES_TEST_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' test-postgres-db`",
+                "pushd ../",
+                "pip install tox",
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+                "popd",
+                "docker-compose stop",
+                "docker-compose rm -f",
+            )
+            .on_integration_image(version, ['BUILDKITE'])
             .build()
         )
     return tests
@@ -245,6 +276,8 @@ def library_tests():
             continue  # no tests :'(
         elif library == 'dagster-gcp':
             tests += gcp_tests()
+        elif library == 'dagster-postgres':
+            tests += dagster_postgres_tests()
         else:
             tests += python_modules_tox_tests("libraries/{library}".format(library=library))
 

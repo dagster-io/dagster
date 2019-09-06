@@ -56,6 +56,7 @@ install_dev_python_modules:
 	pip install -e python_modules/libraries/dagster-ge
 	pip install -e python_modules/libraries/dagster-pagerduty
 	pip install -e python_modules/libraries/dagster-papertrail
+	pip install -e python_modules/libraries/dagster-postgres
 	pip install -e python_modules/libraries/dagster-pyspark
 	pip install -e python_modules/libraries/dagster-slack
 	pip install -e python_modules/libraries/dagster-snowflake

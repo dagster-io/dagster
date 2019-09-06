@@ -2,7 +2,7 @@
 envlist = py36,py35
 
 [testenv]
-passenv = CI_* COVERALLS_REPO_TOKEN TOXENV SLUGIFY_USES_TEXT_UNIDECODE AWS_SECRET_ACCESS_KEY AWS_ACCESS_KEY_ID AIRFLOW_HOME JAVA_HOME DAGSTER_AIRLINE_DEMO_DB_HOST
+passenv = CI_* COVERALLS_REPO_TOKEN TOXENV SLUGIFY_USES_TEXT_UNIDECODE AWS_SECRET_ACCESS_KEY AWS_ACCESS_KEY_ID AIRFLOW_HOME JAVA_HOME POSTGRES_TEST_DB_HOST
 commands =
   coverage erase
   pip install --no-deps -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark -e ../python_modules/dagster-airflow -e .[full,airflow]
