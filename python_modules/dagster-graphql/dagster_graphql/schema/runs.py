@@ -4,13 +4,18 @@ import json
 import logging
 
 import yaml
+from dagster_graphql import dauphin
+from dagster_graphql.implementation.fetch_pipelines import get_pipeline_or_raise
+
 from dagster import RunConfig, check
-from dagster.core.definitions.events import (EventMetadataEntry,
-                                             JsonMetadataEntryData,
-                                             MarkdownMetadataEntryData,
-                                             PathMetadataEntryData,
-                                             TextMetadataEntryData,
-                                             UrlMetadataEntryData)
+from dagster.core.definitions.events import (
+    EventMetadataEntry,
+    JsonMetadataEntryData,
+    MarkdownMetadataEntryData,
+    PathMetadataEntryData,
+    TextMetadataEntryData,
+    UrlMetadataEntryData,
+)
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import create_execution_plan
@@ -18,10 +23,6 @@ from dagster.core.execution.logs import fetch_compute_logs
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-
-from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_pipelines import \
-    get_pipeline_or_raise
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
 
@@ -39,7 +40,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         stepKey=dauphin.Argument(dauphin.NonNull(dauphin.String)),
         description='''
         Compute logs are the stdout/stderr logs for a given solid step computation
-        '''
+        ''',
     )
     executionPlan = dauphin.NonNull('ExecutionPlan')
     stepKeysToExecute = dauphin.List(dauphin.String)
@@ -123,15 +124,15 @@ class DauphinComputeLogs(dauphin.ObjectType):
     stepKey = dauphin.NonNull(dauphin.String)
     stdout = dauphin.NonNull(
         dauphin.String,
-        description='The full stdout string captured from the step computation at query time'
+        description='The full stdout string captured from the step computation at query time',
     )
     stderr = dauphin.NonNull(
         dauphin.String,
-        description='The full stderr string captured from the step computation at query time'
+        description='The full stderr string captured from the step computation at query time',
     )
     cursor = dauphin.Field(
         'Cursor',
-         description='cursor representing the state of the stdout/stderr logs being returned, at query time'
+        description='cursor representing the state of the stdout/stderr logs being returned, at query time',
     )
 
 
