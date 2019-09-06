@@ -28,6 +28,7 @@ from dagster.core.events import (
     PipelineProcessStartedData,
 )
 from dagster.core.events.log import DagsterEventRecord
+from dagster.core.instance import DagsterInstance
 from dagster.utils import get_multiprocessing_context
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
@@ -270,6 +271,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                 'message_queue': message_queue,
                 'reexecution_config': pipeline_run.reexecution_config,
                 'step_keys_to_execute': pipeline_run.step_keys_to_execute,
+                'instance_dir': instance.root_directory(),
             },
         )
 
@@ -302,6 +304,7 @@ def execute_pipeline_through_queue(
     message_queue,
     reexecution_config,
     step_keys_to_execute,
+    instance_dir,
 ):
     """
     Execute pipeline using message queue as a transport
@@ -333,7 +336,10 @@ def execute_pipeline_through_queue(
     try:
         event_list = []
         for event in execute_pipeline_iterator(
-            pipeline_def.build_sub_pipeline(solid_subset), environment_dict, run_config=run_config
+            pipeline_def.build_sub_pipeline(solid_subset),
+            environment_dict,
+            run_config=run_config,
+            instance=DagsterInstance.ephemeral(instance_dir),
         ):
             # message_queue.put(event)
             event_list.append(event)
