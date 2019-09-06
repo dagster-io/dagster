@@ -198,6 +198,19 @@ def up(post_up_script):
         SERVER_CLIENT_CODE_HOME,
     )
 
+    # If user has supplied a requirements.txt, install after syncing
+    if os.path.exists(os.path.join(cfg.local_path, 'requirements.txt')):
+        Term.waiting(
+            'Found a requirements.txt, ensuring dependencies are installed on remote host...'
+        )
+        retval = run_remote_cmd(
+            cfg.key_file_path,
+            cfg.remote_host,
+            'export PYTHONPATH=$PYTHONPATH:/opt/dagster/app && '
+            'source /opt/dagster/venv/bin/activate && '
+            'cd %s && pip install -r requirements.txt' % SERVER_CLIENT_CODE_HOME,
+        )
+
     if post_up_script is not None:
         post_up_script = os.path.expanduser(post_up_script)
 
