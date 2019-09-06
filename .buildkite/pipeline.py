@@ -108,7 +108,10 @@ def events_demo_tests():
 
 def airflow_tests():
     tests = []
-    for version in SupportedPythons:
+    # Temporarily disable Airflow tests on 3.5 and 2.7 pending resolution of upstream dependency
+    # issue    
+    # for version in SupportedPythons:
+    for version in [SupportedPython.V3_7, SupportedPython.V3_6]:
         coverage = ".coverage.dagster-airflow.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder("dagster-airflow tests ({ver})".format(ver=TOX_MAP[version]))
