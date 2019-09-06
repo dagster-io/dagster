@@ -56,11 +56,11 @@ def repository_target_argument(f):
 @click.option('--running', help="Filter for running schedules", is_flag=True, default=False)
 @click.option('--name', help="Only display schedule schedule names", is_flag=True, default=False)
 @click.option('--verbose', is_flag=True)
-def schedule_list_command(schedule_dir, running, name, verbose, **kwargs):
-    return execute_list_command(schedule_dir, running, name, verbose, kwargs, click.echo)
+def schedule_list_command(running, name, verbose, **kwargs):
+    return execute_list_command(running, name, verbose, kwargs, click.echo)
 
 
-def execute_list_command(schedule_dir, running_filter, name_filter, verbose, cli_args, print_fn):
+def execute_list_command(running_filter, name_filter, verbose, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
     schedule_dir = DagsterInstance.get().schedules_directory()
@@ -123,14 +123,13 @@ def extract_schedule_name(schedule_name):
 
 @click.command(name='start', help="[Experimental] Start a schedule")
 @click.argument('schedule_name', nargs=-1)
-@click.option('--schedule-dir', help="Directory to store the running schedule to", default=None)
 @repository_target_argument
-def schedule_start_command(schedule_name, schedule_dir, **kwargs):
+def schedule_start_command(schedule_name, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
-    return execute_start_command(schedule_name, schedule_dir, kwargs, click.echo)
+    return execute_start_command(schedule_name, kwargs, click.echo)
 
 
-def execute_start_command(schedule_name, schedule_dir, cli_args, print_fn):
+def execute_start_command(schedule_name, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
     schedule_dir = DagsterInstance.get().schedules_directory()
@@ -158,14 +157,13 @@ def execute_start_command(schedule_name, schedule_dir, cli_args, print_fn):
 
 @click.command(name='end', help="[Experimental] End a schedule")
 @click.argument('schedule_name', nargs=-1)
-@click.option('--schedule-dir', help="Directory to store the running schedule to", default=None)
 @repository_target_argument
-def schedule_end_command(schedule_name, schedule_dir, **kwargs):
+def schedule_end_command(schedule_name, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
-    return execute_end_command(schedule_name, schedule_dir, kwargs, click.echo)
+    return execute_end_command(schedule_name, kwargs, click.echo)
 
 
-def execute_end_command(schedule_name, schedule_dir, cli_args, print_fn):
+def execute_end_command(schedule_name, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
     schedule_dir = DagsterInstance.get().schedules_directory()

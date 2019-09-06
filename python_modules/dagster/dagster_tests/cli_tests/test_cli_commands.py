@@ -2,8 +2,15 @@ from __future__ import print_function
 
 import pytest
 from click.testing import CliRunner
+from dagster_tests.utils import TestScheduler
 
-from dagster import DagsterInvariantViolationError, RepositoryDefinition, lambda_solid, pipeline
+from dagster import (
+    DagsterInvariantViolationError,
+    RepositoryDefinition,
+    ScheduleDefinition,
+    lambda_solid,
+    pipeline,
+)
 from dagster.check import CheckError
 from dagster.cli.load_handle import CliUsageError
 from dagster.cli.pipeline import (
@@ -17,6 +24,7 @@ from dagster.cli.pipeline import (
     pipeline_scaffold_command,
 )
 from dagster.cli.run import run_list_command, run_wipe_command
+from dagster.cli.schedule import schedule_list_command
 from dagster.utils import script_relative_path
 
 
@@ -49,7 +57,16 @@ def baz_pipeline():
 
 
 def define_bar_repo():
-    return RepositoryDefinition('bar', {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline})
+    return RepositoryDefinition(
+        'bar',
+        {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
+        experimental={
+            'scheduler': TestScheduler,
+            'schedule_defs': [
+                ScheduleDefinition("foo_schedule", cron_schedule="* * * * *", execution_params={})
+            ],
+        },
+    )
 
 
 def test_list_command():
@@ -535,3 +552,29 @@ def test_run_wipe():
     runner = CliRunner()
     result = runner.invoke(run_wipe_command)
     assert result.exit_code == 0
+
+
+def test_schedules_list():
+    runner = CliRunner()
+
+    execute_list_command(
+        {
+            'repository_yaml': None,
+            'python_file': script_relative_path('test_cli_commands.py'),
+            'module_name': None,
+            'fn_name': 'define_bar_repo',
+        },
+        no_print,
+    )
+
+    result = runner.invoke(
+        schedule_list_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
+
+    assert result.exit_code == 0
+    assert result.output == (
+        'Repository bar\n'
+        '**************\n'
+        'Schedule: foo_schedule \n'
+        'Cron Schedule: * * * * *\n'
+    )
