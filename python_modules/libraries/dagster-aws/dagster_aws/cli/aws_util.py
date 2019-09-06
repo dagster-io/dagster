@@ -17,8 +17,8 @@ DEFAULT_INSTANCE_TYPE = 't3.medium'
 # We'll create this security group if it doesn't exist
 DEFAULT_SECURITY_GROUP = 'dagit-sg'
 
-# Ubuntu LTS
-DEFAULT_AMI = 'ami-09eb5e8a83c7aa890'
+# Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
+DEFAULT_AMI = 'ami-08fd8ae3806f09a08'
 
 
 def get_all_regions():
@@ -233,6 +233,15 @@ def create_ec2_instance(ec2, security_group_id, ami_id, key_pair_name):
         show_default=False,
     )
 
+    use_master = click.confirm(
+        '\nDo you want to install Dagster / Dagit from Github? (default: use stable from PyPI) '
+        + click.style('[y/N]', fg='green'),
+        default=False,
+        show_default=False,
+    )
+
+    init_script_name = 'init.sh' if use_master else 'init-stable.sh'
+
     Term.waiting('Creating dagit EC2 instance...')
     click.echo(
         '  '
@@ -243,13 +252,14 @@ def create_ec2_instance(ec2, security_group_id, ami_id, key_pair_name):
                 'Instance Type: %s' % instance_type,
                 'Security Group: %s' % security_group_id,
                 'Key Pair: %s' % key_pair_name,
+                'Install from Github master? %s' % use_master,
             ]
         )
     )
 
     # Here we actually create the EC2 instance
     with Spinner():
-        with open(os.path.join(os.path.dirname(__file__), 'shell', 'init.sh'), 'rb') as f:
+        with open(os.path.join(os.path.dirname(__file__), 'shell', init_script_name), 'rb') as f:
             init_script = six.ensure_str(f.read())
 
         instances = ec2.create_instances(
