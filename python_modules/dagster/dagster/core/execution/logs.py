@@ -181,8 +181,9 @@ def mirror_step_io(step_context):
     ensure_dir(os.path.dirname(outpath))
     ensure_dir(os.path.dirname(errpath))
 
-    with mirror_stream(sys.stdout, outpath), mirror_stream(sys.stderr, errpath):
-        yield
+    with mirror_stream(sys.stderr, errpath):
+        with mirror_stream(sys.stdout, outpath):
+            yield
 
     # touch the file to signify that compute is complete
     touch_file(touchpath)
