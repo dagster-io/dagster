@@ -42,7 +42,7 @@ To run Dagit, you can run something like the following:
 
 ```bash
 export DAGSTER_HOME=/some/path/to/dagster_home
-dagit --no-watch -h 0.0.0.0 -p 3000 --log
+dagit --no-watch -h 0.0.0.0 -p 3000
 ```
 
 In this configuration, Dagit will write execution logs to `$DAGSTER_HOME/logs` and listen on port 3000. To run Dagit as a long-lived service on this host, you can install a systemd service similar to the AWS quick start, with something like:
@@ -65,8 +65,7 @@ ExecStart=/bin/bash -c '\
         --no-watch \
         -h 0.0.0.0 \
         -p 3000 \
-        -y /opt/dagster/app/repository.yaml \
-        --log'
+        -y /opt/dagster/app/repository.yaml
 Restart=always
 
 [Install]
