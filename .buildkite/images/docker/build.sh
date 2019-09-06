@@ -13,8 +13,13 @@ if [ "$#" -ne 2 ]; then
     exit 1
 fi
 
+# e.g. 3.7.4
 PYTHON_VERSION=$1
+# e.g. 3
 PYTHON_MAJOR_VERSION="${PYTHON_VERSION:0:1}"
+# e.g. 37
+PYTHON_MAJMIN=`echo "${PYTHON_VERSION:0:3}" | sed 's/\.//'`
+
 IMAGE_TYPE=$2
 
 function cleanup {
@@ -37,7 +42,6 @@ else
     # Build the public image
     docker build . \
         --build-arg PYTHON_VERSION=$PYTHON_VERSION \
-        --build-arg PYTHON_MAJOR_VERSION=$PYTHON_MAJOR_VERSION \
         --target dagster-public-image \
-        -t "dagster/dagster:py${PYTHON_VERSION}"
+        -t "dagster/dagster-py${PYTHON_MAJMIN}"
 fi

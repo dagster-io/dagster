@@ -86,6 +86,20 @@ RUN pip --no-cache-dir install pyspark==$PYSPARK_VERSION
 
 ####################################################################################################
 #
+# DAGSTER PUBLIC IMAGE
+#
+####################################################################################################
+FROM dagster-base-build-image AS dagster-public-image
+
+RUN pip install -U pip setuptools wheel && \
+    git clone https://github.com/dagster-io/dagster.git
+
+WORKDIR /dagster/
+RUN make dev_install
+
+
+####################################################################################################
+#
 # DAGSTER BUILDKITE INTEGRATION IMAGE
 #
 ####################################################################################################
@@ -136,12 +150,3 @@ RUN curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-c
 # Pre-load jars for scala_modules by running a compile
 ADD scala_modules scala_modules
 RUN cd scala_modules && make compile
-
-####################################################################################################
-#
-# DAGSTER PUBLIC IMAGE
-#
-####################################################################################################
-FROM dagster-base-build-image AS dagster-public-image
-RUN pip install -U pip setuptools wheel \
-    && pip install dagster dagit

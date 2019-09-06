@@ -1,5 +1,6 @@
 import os
 import sys
+from enum import Enum
 
 from defines import SupportedPythons
 
@@ -16,6 +17,16 @@ PY_IMAGE_MAP = {ver: "python:{}-stretch".format(ver) for ver in SupportedPythons
 
 # Update this when releasing a new version of our integration image
 INTEGRATION_IMAGE_VERSION = "v5"
+
+
+class BuildkiteQueue(Enum):
+    DEFAULT = "default"
+    MEDIUM = "medium"
+    DOCKER = "docker-p"
+
+    @classmethod
+    def contains(cls, value):
+        return isinstance(value, cls)
 
 
 class StepBuilder:
@@ -79,8 +90,10 @@ class StepBuilder:
         self._step["retry"] = {'automatic': {'limit': num_retries}}
         return self
 
-    def on_medium_instance(self):
-        self._step["agents"] = {'queue': 'medium'}
+    def on_queue(self, queue_name):
+        assert BuildkiteQueue.contains(queue_name)
+
+        self._step["agents"] = {'queue': queue_name.value}
         return self
 
     def build(self):

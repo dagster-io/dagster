@@ -3,7 +3,7 @@ import sys
 
 import yaml
 from defines import SupportedPython, SupportedPython3s, SupportedPythons
-from step_builder import StepBuilder
+from step_builder import BuildkiteQueue, StepBuilder
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -55,7 +55,7 @@ def airline_demo_tests():
         tests.append(
             StepBuilder('airline-demo tests ({version})'.format(version=TOX_MAP[version]))
             .on_integration_image(version, ['BUILDKITE'])
-            .on_medium_instance()
+            .on_queue(BuildkiteQueue.MEDIUM)
             .run(
                 "cd examples",
                 # Build the image we use for airflow in the demo tests
@@ -90,7 +90,7 @@ def events_demo_tests():
             .on_integration_image(
                 version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
             )
-            .on_medium_instance()
+            .on_queue(BuildkiteQueue.MEDIUM)
             .run(
                 "mkdir -p /tmp/dagster/events",
                 "pushd scala_modules",
@@ -126,7 +126,7 @@ def airflow_tests():
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(version, ['AIRFLOW_HOME'])
-            .on_medium_instance()
+            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
     return tests
@@ -175,7 +175,7 @@ def examples_tests():
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(version)
-            .on_medium_instance()
+            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
     return tests
@@ -260,7 +260,7 @@ def dask_tests():
             .on_integration_image(
                 version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
             )
-            .on_medium_instance()
+            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
     return tests
@@ -303,7 +303,7 @@ def dagit_tests():
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(version)
-            .on_medium_instance()
+            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
 
@@ -324,7 +324,7 @@ def lakehouse_tests():
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(version)
-            .on_medium_instance()
+            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
 
@@ -344,7 +344,7 @@ def pipenv_smoke_tests():
                 "pipenv install -e /workdir/python_modules/dagit",
             )
             .on_integration_image(version)
-            .on_medium_instance()
+            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
 
@@ -391,7 +391,7 @@ if __name__ == "__main__":
         StepBuilder("pylint")
         .run("make install_dev_python_modules", "make pylint")
         .on_integration_image(SupportedPython.V3_7)
-        .on_medium_instance()
+        .on_queue(BuildkiteQueue.MEDIUM)
         .build(),
         StepBuilder("isort")
         .run(
@@ -438,7 +438,7 @@ if __name__ == "__main__":
             "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
         )
         .on_integration_image(SupportedPython.V3_7)
-        .on_medium_instance()
+        .on_queue(BuildkiteQueue.MEDIUM)
         .build(),
     ]
     steps += airline_demo_tests()

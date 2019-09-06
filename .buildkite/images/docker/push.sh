@@ -13,12 +13,23 @@ if [ "$#" -ne 2 ]; then
     exit 1
 fi
 
+# e.g. 3.7.4
 PYTHON_VERSION=$1
+# e.g. 3
 PYTHON_MAJOR_VERSION="${PYTHON_VERSION:0:1}"
+# e.g. 37
+PYTHON_MAJMIN=`echo "${PYTHON_VERSION:0:3}" | sed 's/\.//'`
+
 IMAGE_TYPE=$2
+
+TAG=`date '+%Y-%m-%d'`
 
 if [ $IMAGE_TYPE == "integration" ]; then
     docker push "dagster/buildkite-integration:py${PYTHON_VERSION}-${IMAGE_VERSION}"
 else
-    docker push "dagster/dagster:py${PYTHON_VERSION}"
+    docker tag "dagster/dagster-py${PYTHON_MAJMIN}" "dagster/dagster-py${PYTHON_MAJMIN}:${TAG}"
+    docker tag "dagster/dagster-py${PYTHON_MAJMIN}" "dagster/dagster-py${PYTHON_MAJMIN}:latest"
+
+    docker push "dagster/dagster-py${PYTHON_MAJMIN}:${TAG}"
+    docker push "dagster/dagster-py${PYTHON_MAJMIN}:latest"
 fi

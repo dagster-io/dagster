@@ -3,12 +3,11 @@ import sys
 
 import yaml
 from defines import SupportedPython
-from step_builder import StepBuilder
+from step_builder import BuildkiteQueue, StepBuilder
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(SCRIPT_PATH)
-
 
 
 def deploy_scala():
@@ -38,7 +37,7 @@ def deploy_scala():
                 'GCP_DEPLOY_BUCKET',
             ],
         )
-        .on_medium_instance()
+        .on_queue(BuildkiteQueue.MEDIUM)
         .build()
     )
 
