@@ -250,7 +250,7 @@ class DagsterInstance:
         return os.path.join(self._root_storage_dir, 'storage', run_id, 'files')
 
     def intermediates_directory(self, run_id):
-        return os.path.join(self._root_storage_dir, 'storage', run_id, 'intermediates')
+        return os.path.join(self._root_storage_dir, 'storage', run_id, '')
 
     def compute_logs_directory(self, run_id):
         return os.path.join(self._root_storage_dir, 'storage', run_id, 'compute_logs')
