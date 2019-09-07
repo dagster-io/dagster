@@ -80,7 +80,7 @@ def replace_parameters(context, nb, parameters):
         after = nb.cells[1:]
 
     nb.cells = before + [newcell] + after
-    nb.metadata.papermill['parameters'] = parameters
+    nb.metadata.papermill['parameters'] = seven.json.dumps(parameters)
 
     return nb
 
@@ -134,11 +134,11 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
         )
         parameters[input_name] = parameter_value
 
-    parameters['__dm_context'] = seven.json.dumps(dm_context_dict)
-    parameters['__dm_handle_kwargs'] = seven.json.dumps(dm_handle_kwargs)
-    parameters['__dm_run_config_kwargs'] = seven.json.dumps(dm_run_config_kwargs)
-    parameters['__dm_solid_handle_kwargs'] = seven.json.dumps(dm_solid_handle_kwargs)
-    parameters['__dm_solid_subset'] = seven.json.dumps(solid_subset)
+    parameters['__dm_context'] = dm_context_dict
+    parameters['__dm_handle_kwargs'] = dm_handle_kwargs
+    parameters['__dm_run_config_kwargs'] = dm_run_config_kwargs
+    parameters['__dm_solid_handle_kwargs'] = dm_solid_handle_kwargs
+    parameters['__dm_solid_subset'] = solid_subset
 
     return parameters
 

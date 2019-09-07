@@ -1,5 +1,3 @@
-import json
-
 import papermill
 
 from dagster import seven
@@ -31,12 +29,12 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
         assert '__dm_solid_handle_kwargs' in parameters
         assert '__dm_solid_subset' in parameters
 
-        context_args = json.loads(parameters['__dm_context'])
+        context_args = parameters['__dm_context']
         pipeline_context_args = dict(
-            handle_kwargs=json.loads(parameters['__dm_handle_kwargs']),
-            run_config_kwargs=json.loads(parameters['__dm_run_config_kwargs']),
-            solid_handle_kwargs=json.loads(parameters['__dm_solid_handle_kwargs']),
-            solid_subset=json.loads(parameters['__dm_solid_subset']),
+            handle_kwargs=parameters['__dm_handle_kwargs'],
+            run_config_kwargs=parameters['__dm_run_config_kwargs'],
+            solid_handle_kwargs=parameters['__dm_solid_handle_kwargs'],
+            solid_subset=parameters['__dm_solid_subset'],
             **context_args
         )
 

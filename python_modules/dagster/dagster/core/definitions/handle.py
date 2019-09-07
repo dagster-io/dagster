@@ -13,6 +13,12 @@ from dagster.core.definitions.repository import RepositoryDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils import load_yaml_from_path
 
+if sys.version_info > (3,):
+    from pathlib import Path  # pylint: disable=import-error
+else:
+    from pathlib2 import Path  # pylint: disable=import-error
+
+
 EPHEMERAL_NAME = '<<unnamed>>'
 
 
@@ -456,3 +462,12 @@ class _ExecutionTargetHandleData(
                 module_name=self.module_name, fn_name=self.fn_name, python_file=self.python_file
             )
         )
+
+    def _asdict(self):
+        ddict = super(_ExecutionTargetHandleData, self)._asdict()
+
+        # Normalize to Posix paths
+        for key in ['repository_yaml', 'python_file']:
+            if ddict[key]:
+                ddict[key] = Path(ddict[key]).as_posix()
+        return ddict
