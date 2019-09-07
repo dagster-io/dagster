@@ -5,6 +5,7 @@ import multiprocessing
 import os
 import re
 import subprocess
+import sys
 import tempfile
 from collections import namedtuple
 from enum import Enum
@@ -17,6 +18,12 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.seven.abc import Mapping
 
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
+
+if sys.version_info > (3,):
+    from pathlib import Path  # pylint: disable=import-error
+else:
+    from pathlib2 import Path  # pylint: disable=import-error
+
 
 PICKLE_PROTOCOL = 2
 
@@ -241,7 +248,7 @@ def safe_tempfile_path():
         path = fd.name
 
     try:
-        yield path
+        yield Path(path).as_posix()
 
     finally:
         if os.path.exists(path):
