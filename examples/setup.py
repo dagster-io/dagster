@@ -23,6 +23,7 @@ setup(
         'full': [
             'dagstermill',
             'dagster-aws',
+            'dagster-postgres',
             'dagster-slack',
             'dbt-postgres',
             'descartes==1.1.0',

@@ -22,6 +22,7 @@ RUN pip install --no-deps \
 	-e dagster-aws \
 	-e dagster-spark \
 	-e dagster-pyspark \
+	-e dagster-postgres \
 	-e .
 
 # Then install all dependencies at once so that
@@ -36,6 +37,7 @@ RUN pip install \
 	-e dagster-aws \
 	-e dagster-spark \
 	-e dagster-pyspark \
+	-e dagster-postgres \
 	-e . \
 	-r dagster/requirements.txt \
 	-r dagster-graphql/dev-requirements.txt \
