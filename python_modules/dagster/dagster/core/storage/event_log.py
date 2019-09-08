@@ -52,6 +52,16 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''Clear the log storage.'''
 
 
+class WatchableEventLogStorage(EventLogStorage):
+    @abstractmethod
+    def watch(self, run_id, start_cursor, callback):
+        pass
+
+    @abstractmethod
+    def end_watch(self, run_id, handler):
+        pass
+
+
 class InMemoryEventLogStorage(EventLogStorage):
     def __init__(self):
         self._logs = defaultdict(EventLogSequence)
@@ -76,7 +86,7 @@ class InMemoryEventLogStorage(EventLogStorage):
         self._lock = defaultdict(gevent.lock.Semaphore)
 
 
-class FilesystemEventLogStorage(EventLogStorage):
+class FilesystemEventLogStorage(WatchableEventLogStorage):
     def __init__(self, base_dir):
         self._base_dir = check.str_param(base_dir, 'base_dir')
         mkdir_p(self._base_dir)
@@ -149,9 +159,11 @@ class FilesystemEventLogStorage(EventLogStorage):
 
 class EventLogStorageWatchdog(PatternMatchingEventHandler):
     def __init__(self, event_log_storage, run_id, callback, start_cursor, **kwargs):
-        self._event_log_storage = event_log_storage
-        self._run_id = run_id
-        self._cb = callback
+        self._event_log_storage = check.inst_param(
+            event_log_storage, 'event_log_storage', WatchableEventLogStorage
+        )
+        self._run_id = check.str_param(run_id, 'run_id')
+        self._cb = check.callable_param(callback, 'callback')
         self._log_path = event_log_storage.filepath_for_run_id(run_id)
         self._cursor = start_cursor
         super(EventLogStorageWatchdog, self).__init__(patterns=[self._log_path], **kwargs)
