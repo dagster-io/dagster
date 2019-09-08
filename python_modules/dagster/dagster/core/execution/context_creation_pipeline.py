@@ -23,7 +23,7 @@ from dagster.core.execution.config import ExecutorConfig
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitSystemStorageContext
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import evaluate_config
@@ -175,17 +175,19 @@ def scoped_pipeline_context(
         from .api import ExecutionSelector
 
         instance.create_run(
-            pipeline_name=pipeline_def.name,
-            run_id=run_config.run_id,
-            environment_dict=environment_dict,
-            mode=context_creation_data.mode_def.name,
-            # https://github.com/dagster-io/dagster/issues/1709
-            # ExecutionSelector should be threaded all the way
-            # down from the top
-            selector=ExecutionSelector(pipeline_def.name),
-            reexecution_config=run_config.reexecution_config,
-            step_keys_to_execute=run_config.step_keys_to_execute,
-            status=PipelineRunStatus.NOT_STARTED,
+            PipelineRun(
+                pipeline_name=pipeline_def.name,
+                run_id=run_config.run_id,
+                environment_dict=environment_dict,
+                mode=context_creation_data.mode_def.name,
+                # https://github.com/dagster-io/dagster/issues/1709
+                # ExecutionSelector should be threaded all the way
+                # down from the top
+                selector=ExecutionSelector(pipeline_def.name),
+                reexecution_config=run_config.reexecution_config,
+                step_keys_to_execute=run_config.step_keys_to_execute,
+                status=PipelineRunStatus.NOT_STARTED,
+            )
         )
 
         if run_config.event_sink:

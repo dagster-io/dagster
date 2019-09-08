@@ -12,7 +12,7 @@ from dagster.core.execution.api import ExecutionSelector, create_execution_plan,
 from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.execution.logs import ComputeLogUpdate
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 
 from .fetch_pipelines import get_dauphin_pipeline_from_selector
@@ -49,16 +49,18 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
     )
 
     run = instance.create_run(
-        pipeline_name=dauphin_pipeline.get_dagster_pipeline().name,
-        run_id=execution_params.execution_metadata.run_id
-        if execution_params.execution_metadata.run_id
-        else make_new_run_id(),
-        selector=execution_params.selector,
-        environment_dict=execution_params.environment_dict,
-        mode=execution_params.mode,
-        reexecution_config=reexecution_config,
-        step_keys_to_execute=execution_params.step_keys,
-        status=PipelineRunStatus.NOT_STARTED,
+        PipelineRun(
+            pipeline_name=dauphin_pipeline.get_dagster_pipeline().name,
+            run_id=execution_params.execution_metadata.run_id
+            if execution_params.execution_metadata.run_id
+            else make_new_run_id(),
+            selector=execution_params.selector,
+            environment_dict=execution_params.environment_dict,
+            mode=execution_params.mode,
+            reexecution_config=reexecution_config,
+            step_keys_to_execute=execution_params.step_keys,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
 
     graphene_info.context.execution_manager.execute_pipeline(

@@ -27,7 +27,7 @@ from dagster import (
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import ExecutionSelector
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.utils import script_relative_path
 
@@ -79,14 +79,16 @@ def test_running():
 
     instance = DagsterInstance.ephemeral()
     pipeline_run = instance.create_run(
-        pipeline_name=passing_pipeline.name,
-        run_id=run_id,
-        selector=selector,
-        environment_dict=environment_dict,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
-        status=PipelineRunStatus.NOT_STARTED,
+        PipelineRun(
+            pipeline_name=passing_pipeline.name,
+            run_id=run_id,
+            selector=selector,
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -115,14 +117,16 @@ def test_failing():
 
     instance = DagsterInstance.ephemeral()
     pipeline_run = instance.create_run(
-        pipeline_name=failing_pipeline.name,
-        run_id=run_id,
-        selector=selector,
-        environment_dict=environment_dict,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
-        status=PipelineRunStatus.NOT_STARTED,
+        PipelineRun(
+            pipeline_name=failing_pipeline.name,
+            run_id=run_id,
+            selector=selector,
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -143,14 +147,16 @@ def test_execution_crash():
 
     instance = DagsterInstance.ephemeral()
     pipeline_run = instance.create_run(
-        pipeline_name=crashy_pipeline.name,
-        run_id=run_id,
-        selector=selector,
-        environment_dict=environment_dict,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
-        status=PipelineRunStatus.NOT_STARTED,
+        PipelineRun(
+            pipeline_name=crashy_pipeline.name,
+            run_id=run_id,
+            selector=selector,
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -259,14 +265,16 @@ def test_multiprocessing_execution_for_composite_solid():
 
     instance = DagsterInstance.ephemeral()
     pipeline_run = instance.create_run(
-        pipeline_name=composite_pipeline.name,
-        run_id=run_id,
-        selector=ExecutionSelector('nonce'),
-        environment_dict=environment_dict,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
-        status=PipelineRunStatus.NOT_STARTED,
+        PipelineRun(
+            pipeline_name=composite_pipeline.name,
+            run_id=run_id,
+            selector=ExecutionSelector('nonce'),
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -288,14 +296,16 @@ def test_multiprocessing_execution_for_composite_solid():
     run_id = make_new_run_id()
 
     pipeline_run = instance.create_run(
-        pipeline_name=composite_pipeline.name,
-        run_id=run_id,
-        selector=ExecutionSelector('nonce'),
-        environment_dict=environment_dict,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
-        status=PipelineRunStatus.NOT_STARTED,
+        PipelineRun(
+            pipeline_name=composite_pipeline.name,
+            run_id=run_id,
+            selector=ExecutionSelector('nonce'),
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -320,14 +330,16 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
 
     instance = DagsterInstance.ephemeral()
     pipeline_run = instance.create_run(
-        pipeline_name=composite_pipeline_with_config_mapping.name,
-        run_id=run_id,
-        selector=ExecutionSelector('nonce'),
-        environment_dict=environment_dict,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
-        status=PipelineRunStatus.NOT_STARTED,
+        PipelineRun(
+            pipeline_name=composite_pipeline_with_config_mapping.name,
+            run_id=run_id,
+            selector=ExecutionSelector('nonce'),
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -349,14 +361,16 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     run_id = make_new_run_id()
 
     pipeline_run = instance.create_run(
-        pipeline_name=composite_pipeline.name,
-        run_id=run_id,
-        selector=ExecutionSelector('nonce'),
-        environment_dict=environment_dict,
-        mode='default',
-        reexecution_config=None,
-        step_keys_to_execute=None,
-        status=PipelineRunStatus.NOT_STARTED,
+        PipelineRun(
+            pipeline_name=composite_pipeline.name,
+            run_id=run_id,
+            selector=ExecutionSelector('nonce'),
+            environment_dict=environment_dict,
+            mode='default',
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(

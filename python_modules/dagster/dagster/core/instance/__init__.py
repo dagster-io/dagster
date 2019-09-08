@@ -182,8 +182,9 @@ class DagsterInstance:
         pipeline_run = PipelineRun.create_empty_run(pipeline_name, run_id)
         return self._run_storage.add_run(pipeline_run)
 
-    def create_run(self, run_id, **kwargs):
-        pipeline_run = PipelineRun(run_id=run_id, **kwargs)
+    def create_run(self, pipeline_run):
+        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        run_id = pipeline_run.run_id
         if self._run_storage.has_run(run_id):
             existing_run = self._run_storage.get_run_by_id(run_id)
             check.invariant(
