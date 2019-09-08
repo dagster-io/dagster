@@ -127,7 +127,8 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         pipeline.get_dagster_pipeline(), run.environment_dict, RunConfig(mode=run.mode)
     )
 
-    return instance.observable_after_cursor(PipelineRunObservableSubscribe, run_id, after).map(
+    # pylint: disable=E1101
+    return Observable.create(PipelineRunObservableSubscribe(instance, run_id)).map(
         lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
             runId=run_id,
             messages=[

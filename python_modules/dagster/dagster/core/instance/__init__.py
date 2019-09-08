@@ -236,11 +236,6 @@ class DagsterInstance:
     def subscribe(self, run_id, subscriber):
         self._subscribers[run_id].append(subscriber)
 
-    def observable_after_cursor(self, observable_cls, run_id, cursor=None):
-        check.type_param(observable_cls, 'observable_cls')
-        check.str_param(run_id, 'run_id')
-        return Observable.create(observable_cls(self, run_id, cursor))  # pylint: disable=E1101
-
     # directories
 
     def file_manager_directory(self, run_id):
