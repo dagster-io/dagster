@@ -69,12 +69,13 @@ class DagsterInstance:
     def __init__(
         self, instance_type, root_storage_dir, run_storage, event_storage, feature_set=None
     ):
-        self._instance_type = instance_type
+        from dagster.core.storage.event_log import EventLogStorage
+        from dagster.core.storage.runs import RunStorage
 
-        self._root_storage_dir = root_storage_dir
-        self._event_storage = event_storage
-        self._run_storage = run_storage
-
+        self._instance_type = check.inst_param(instance_type, 'instance_type', InstanceType)
+        self._root_storage_dir = check.str_param(root_storage_dir, 'root_storage_dir')
+        self._event_storage = check.inst_param(event_storage, 'event_storage', EventLogStorage)
+        self._run_storage = check.inst_param(run_storage, 'run_storage', RunStorage)
         self._feature_set = check.opt_set_param(feature_set, 'feature_set', of_type=str)
 
         self._subscribers = defaultdict(list)
