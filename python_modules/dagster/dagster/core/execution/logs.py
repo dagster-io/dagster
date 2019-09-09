@@ -158,11 +158,12 @@ def _fetch_compute_data(instance, run_id, step_key, io_type, after=0):
     data = ''
     cursor = 0
     if os.path.exists(outfile) and os.path.isfile(outfile):
-        with open(outfile, 'r') as f:
+        # See: https://docs.python.org/2/library/stdtypes.html#file.tell for Windows behavior
+        with open(outfile, 'rb') as f:
             f.seek(after, os.SEEK_SET)
             data = f.read()
             cursor = f.tell()
-    return data, cursor
+    return data.decode('utf-8'), cursor
 
 
 @contextmanager

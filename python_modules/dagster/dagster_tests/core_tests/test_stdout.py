@@ -18,7 +18,7 @@ def spew_pipeline():
 
 
 HELLO_WORLD = 'Hello World'
-SEPARATOR = "\n"
+SEPARATOR = '\n'
 
 
 def test_stdout(tmpdir):
