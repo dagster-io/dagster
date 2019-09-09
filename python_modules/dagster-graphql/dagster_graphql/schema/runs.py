@@ -43,7 +43,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         ''',
     )
     executionPlan = dauphin.NonNull('ExecutionPlan')
-    stepKeysToExecute = dauphin.List(dauphin.String)
+    stepKeysToExecute = dauphin.List(dauphin.NonNull(dauphin.String))
     environmentConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
 
