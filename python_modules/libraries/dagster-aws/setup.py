@@ -39,7 +39,6 @@ def _do_setup(name='dagster-aws'):
         packages=find_packages(exclude=['test']),
         install_requires=['boto3==1.9.*', 'dagster'],
         tests_require=['moto==1.3.*'],
-        extras_require={':python_version<"3"': ['backports.tempfile']},
         entry_points={'console_scripts': ['dagster-aws = dagster_aws.cli.cli:main']},
         zip_safe=False,
     )
