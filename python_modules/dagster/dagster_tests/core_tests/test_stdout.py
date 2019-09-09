@@ -1,4 +1,5 @@
 import os
+import sys
 
 from dagster import DagsterEventType, execute_pipeline, lambda_solid, pipeline
 from dagster.core.execution.logs import fetch_compute_logs
@@ -18,7 +19,7 @@ def spew_pipeline():
 
 
 HELLO_WORLD = 'Hello World'
-SEPARATOR = "\n"
+SEPARATOR = os.linesep if (os.name == 'nt' and sys.version_info < (3,)) else '\n'
 
 
 def test_stdout(tmpdir):

@@ -138,13 +138,13 @@ class ComputeLogUpdate(object):
 
 def fetch_compute_logs(instance, run_id, step_key, cursor=None):
     out_offset, err_offset = _decode_cursor(cursor)
-    stdout, _new_out_offset = _fetch_compute_data(
+    stdout, new_out_offset = _fetch_compute_data(
         instance, run_id, step_key, IO_TYPE_STDOUT, out_offset
     )
-    stderr, _new_err_offset = _fetch_compute_data(
+    stderr, new_err_offset = _fetch_compute_data(
         instance, run_id, step_key, IO_TYPE_STDERR, err_offset
     )
-    cursor = _encode_cursor(_new_out_offset, _new_err_offset)
+    cursor = _encode_cursor(new_out_offset, new_err_offset)
     return ComputeLogUpdate(stdout, stderr, cursor)
 
 
@@ -158,11 +158,12 @@ def _fetch_compute_data(instance, run_id, step_key, io_type, after=0):
     data = ''
     cursor = 0
     if os.path.exists(outfile) and os.path.isfile(outfile):
-        with open(outfile, 'r') as f:
+        # See: https://docs.python.org/2/library/stdtypes.html#file.tell for Windows behavior
+        with open(outfile, 'rb') as f:
             f.seek(after, os.SEEK_SET)
             data = f.read()
             cursor = f.tell()
-    return data, cursor
+    return data.decode('utf-8'), cursor
 
 
 @contextmanager

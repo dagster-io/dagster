@@ -1,10 +1,5 @@
 import sys
-
-try:
-    # Python 2 tempfile doesn't have tempfile.TemporaryDirectory
-    import backports.tempfile as tempfile
-except ImportError:
-    import tempfile
+import tempfile
 
 
 def get_system_temp_directory():

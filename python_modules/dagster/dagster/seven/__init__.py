@@ -5,7 +5,14 @@ import sys
 import time
 
 from .json import JSONDecodeError, dump, dumps
-from .temp_dir import get_system_temp_directory, tempfile
+from .temp_dir import get_system_temp_directory
+
+try:
+    # Python 2 tempfile doesn't have tempfile.TemporaryDirectory
+    import backports.tempfile as tempfile
+except ImportError:
+    import tempfile
+
 
 TemporaryDirectory = tempfile.TemporaryDirectory
 
