@@ -20,27 +20,15 @@ export interface RunsRootQuery_pipelineRuns_pipeline {
   solids: RunsRootQuery_pipelineRuns_pipeline_solids[];
 }
 
-export interface RunsRootQuery_pipelineRuns_logs_nodes_ExecutionStepFailureEvent {
-  __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineProcessExitedEvent" | "PipelineProcessStartedEvent" | "PipelineProcessStartEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "ObjectStoreOperationEvent" | "StepMaterializationEvent" | "EngineEvent";
-  timestamp: string;
-}
-
-export interface RunsRootQuery_pipelineRuns_logs_nodes_StepExpectationResultEvent_expectationResult {
-  __typename: "ExpectationResult";
-  success: boolean;
-}
-
-export interface RunsRootQuery_pipelineRuns_logs_nodes_StepExpectationResultEvent {
-  __typename: "StepExpectationResultEvent";
-  timestamp: string;
-  expectationResult: RunsRootQuery_pipelineRuns_logs_nodes_StepExpectationResultEvent_expectationResult;
-}
-
-export type RunsRootQuery_pipelineRuns_logs_nodes = RunsRootQuery_pipelineRuns_logs_nodes_ExecutionStepFailureEvent | RunsRootQuery_pipelineRuns_logs_nodes_StepExpectationResultEvent;
-
-export interface RunsRootQuery_pipelineRuns_logs {
-  __typename: "LogMessageConnection";
-  nodes: RunsRootQuery_pipelineRuns_logs_nodes[];
+export interface RunsRootQuery_pipelineRuns_stats {
+  __typename: "PipelineRunStats";
+  stepsSucceeded: number;
+  stepsFailed: number;
+  startTime: number | null;
+  endTime: number | null;
+  expectationsFailed: number;
+  expectationsSucceeded: number;
+  materializations: number;
 }
 
 export interface RunsRootQuery_pipelineRuns_executionPlan_steps {
@@ -61,7 +49,7 @@ export interface RunsRootQuery_pipelineRuns {
   mode: string;
   environmentConfigYaml: string;
   pipeline: RunsRootQuery_pipelineRuns_pipeline;
-  logs: RunsRootQuery_pipelineRuns_logs;
+  stats: RunsRootQuery_pipelineRuns_stats;
   executionPlan: RunsRootQuery_pipelineRuns_executionPlan;
 }
 
