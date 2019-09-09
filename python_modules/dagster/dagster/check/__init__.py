@@ -1,7 +1,7 @@
 import inspect
 
 from future.utils import raise_with_traceback
-from six import string_types
+from six import integer_types, string_types
 
 
 class CheckError(Exception):
@@ -189,13 +189,13 @@ def opt_callable_param(obj, param_name, default=None):
 
 
 def int_param(obj, param_name):
-    if not isinstance(obj, int):
+    if not isinstance(obj, integer_types):
         raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
     return obj
 
 
 def int_value_param(obj, value, param_name):
-    if not isinstance(obj, int):
+    if not isinstance(obj, integer_types):
         raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
     if obj != value:
         raise_with_traceback(
@@ -205,7 +205,7 @@ def int_value_param(obj, value, param_name):
 
 
 def opt_int_param(obj, param_name):
-    if obj is not None and not isinstance(obj, int):
+    if obj is not None and not isinstance(obj, integer_types):
         raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
     return obj
 
