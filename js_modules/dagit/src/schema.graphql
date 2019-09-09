@@ -683,11 +683,12 @@ type PipelineRun {
 
 union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineProcessExitedEvent | PipelineProcessStartedEvent | PipelineProcessStartEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent
 
-type PipelineRunLogsSubscriptionMissingRunIdFailure {
-  missingRunId: String!
+type PipelineRunLogsSubscriptionFailure {
+  message: String!
+  missingRunId: String
 }
 
-union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscriptionMissingRunIdFailure
+union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscriptionFailure
 
 type PipelineRunLogsSubscriptionSuccess {
   runId: String!

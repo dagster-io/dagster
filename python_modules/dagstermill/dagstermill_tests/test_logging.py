@@ -15,6 +15,7 @@ from dagster import (
     seven,
 )
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
+from dagster.core.instance import DagsterInstance
 from dagster.utils import safe_tempfile_path, script_relative_path
 
 
@@ -90,6 +91,7 @@ def test_logging():
                         },
                     }
                 },
+                instance=DagsterInstance.local_temp(),
             )
 
             with open(test_file_path, 'r') as test_file:

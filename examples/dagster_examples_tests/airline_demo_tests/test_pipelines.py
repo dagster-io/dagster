@@ -5,6 +5,7 @@ import pytest
 
 from dagster import RunConfig, execute_pipeline, file_relative_path
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
+from dagster.core.instance import DagsterInstance
 from dagster.utils import load_yaml_from_globs
 
 ingest_pipeline_handle = handle_for_pipeline_cli_args(
@@ -48,7 +49,10 @@ def test_ingest_pipeline_fast(docker_compose_db):
     )
     ingest_config_dict = enviroment_overrides(ingest_config_dict)
     result_ingest = execute_pipeline(
-        ingest_pipeline_def, ingest_config_dict, run_config=RunConfig(mode='local')
+        ingest_pipeline_def,
+        ingest_config_dict,
+        run_config=RunConfig(mode='local'),
+        instance=DagsterInstance.local_temp(),
     )
 
     assert result_ingest.success
@@ -66,7 +70,10 @@ def test_ingest_pipeline_fast_filesystem_storage(docker_compose_db):
     )
     ingest_config_dict = enviroment_overrides(ingest_config_dict)
     result_ingest = execute_pipeline(
-        ingest_pipeline_def, ingest_config_dict, run_config=RunConfig(mode='local')
+        ingest_pipeline_def,
+        ingest_config_dict,
+        run_config=RunConfig(mode='local'),
+        instance=DagsterInstance.local_temp(),
     )
 
     assert result_ingest.success
@@ -82,7 +89,10 @@ def test_airline_pipeline_1_warehouse(docker_compose_db):
     )
     warehouse_config_object = enviroment_overrides(warehouse_config_object)
     result_warehouse = execute_pipeline(
-        warehouse_pipeline_def, warehouse_config_object, run_config=RunConfig(mode='local')
+        warehouse_pipeline_def,
+        warehouse_config_object,
+        run_config=RunConfig(mode='local'),
+        instance=DagsterInstance.local_temp(),
     )
     assert result_warehouse.success
 
@@ -98,7 +108,9 @@ def test_airline_pipeline_s3_0_ingest(docker_compose_db):
         config_path('local_fast_ingest.yaml'),
     )
 
-    result_ingest = execute_pipeline(ingest_pipeline_def, ingest_config_dict)
+    result_ingest = execute_pipeline(
+        ingest_pipeline_def, ingest_config_dict, instance=DagsterInstance.local_temp()
+    )
 
     assert result_ingest.success
 
@@ -111,7 +123,9 @@ def test_airline_pipeline_s3_1_warehouse(docker_compose_db):
         config_path('local_warehouse.yaml'),
     )
 
-    result_warehouse = execute_pipeline(warehouse_pipeline_def, warehouse_config_object)
+    result_warehouse = execute_pipeline(
+        warehouse_pipeline_def, warehouse_config_object, instance=DagsterInstance.local_temp()
+    )
     assert result_warehouse.success
 
 

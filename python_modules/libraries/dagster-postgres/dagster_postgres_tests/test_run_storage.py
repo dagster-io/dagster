@@ -5,7 +5,6 @@ from dagster_postgres.run_storage import PostgresRunStorage
 from dagster_postgres.test import get_test_conn_string, implement_postgres_fixture
 
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.execution.api import ExecutionSelector
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.utils import script_relative_path
 
@@ -21,19 +20,7 @@ def test_add_get_postgres_run_storage(pg_db):
     run_storage = PostgresRunStorage.create_nuked_storage(get_test_conn_string())
 
     run_id = str(uuid.uuid4())
-    run_to_add = PipelineRun(
-        pipeline_name='pipeline_name',
-        run_id=run_id,
-        environment_dict={},
-        mode='some_mode',
-        # https://github.com/dagster-io/dagster/issues/1709
-        # ExecutionSelector should be threaded all the way
-        # down from the top
-        selector=ExecutionSelector('pipeline_name'),
-        reexecution_config=None,
-        step_keys_to_execute=None,
-        status=PipelineRunStatus.NOT_STARTED,
-    )
+    run_to_add = PipelineRun.create_empty_run(pipeline_name='pipeline_name', run_id=run_id)
     run_storage.add_run(run_to_add)
 
     fetched_run = run_storage.get_run_by_id(run_id)
@@ -56,19 +43,7 @@ def test_handle_run_event_pipeline_success_test():
     run_storage = PostgresRunStorage.create_nuked_storage(get_test_conn_string())
 
     run_id = str(uuid.uuid4())
-    run_to_add = PipelineRun(
-        pipeline_name='pipeline_name',
-        run_id=run_id,
-        environment_dict={},
-        mode='some_mode',
-        # https://github.com/dagster-io/dagster/issues/1709
-        # ExecutionSelector should be threaded all the way
-        # down from the top
-        selector=ExecutionSelector('pipeline_name'),
-        reexecution_config=None,
-        step_keys_to_execute=None,
-        status=PipelineRunStatus.NOT_STARTED,
-    )
+    run_to_add = PipelineRun.create_empty_run(pipeline_name='pipeline_name', run_id=run_id)
     run_storage.add_run(run_to_add)
 
     dagster_pipeline_start_event = DagsterEvent(

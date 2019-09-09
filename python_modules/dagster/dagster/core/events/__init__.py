@@ -21,9 +21,6 @@ from dagster.core.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 from dagster.utils.timing import format_duration
 
-from .event_sink import CallbackEventSink, EventSink, InMemoryEventSink
-from .sqlite_event_sink import SqliteEventSink
-
 
 class DagsterEventType(Enum):
     STEP_OUTPUT = 'STEP_OUTPUT'

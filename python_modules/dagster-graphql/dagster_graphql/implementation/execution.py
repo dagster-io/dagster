@@ -11,9 +11,9 @@ from graphql.execution.base import ResolveInfo
 from rx import Observable
 
 from dagster import RunConfig, check
-from dagster.core.events import DagsterEventType, InMemoryEventSink
-from dagster.core.events.log import DagsterEventRecord
-from dagster.core.execution.api import ExecutionSelector, create_execution_plan, execute_plan
+from dagster.core.definitions.pipeline import ExecutionSelector
+from dagster.core.events import DagsterEventType
+from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.serdes import serialize_dagster_namedtuple
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -63,6 +63,7 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
             mode=execution_params.mode,
             reexecution_config=reexecution_config,
             step_keys_to_execute=execution_params.step_keys,
+            tags=execution_params.execution_metadata.tags,
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
@@ -121,8 +122,19 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
         def _get_error_observable(observer):
             observer.on_next(
-                graphene_info.schema.type_named('PipelineRunLogsSubscriptionMissingRunIdFailure')(
-                    missingRunId=run_id
+                graphene_info.schema.type_named('PipelineRunLogsSubscriptionFailure')(
+                    missingRunId=run_id, message='Could not load run with id {}'.format(run_id)
+                )
+            )
+
+        return Observable.create(_get_error_observable)  # pylint: disable=E1101
+
+    if not instance.can_watch_events:
+
+        def _get_error_observable(observer):
+            observer.on_next(
+                graphene_info.schema.type_named('PipelineRunLogsSubscriptionFailure')(
+                    message='Event log storage on current DagsterInstance is not watchable.'
                 )
             )
 
@@ -211,13 +223,9 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
-    event_sink = InMemoryEventSink()
-
+    run_id = execution_params.execution_metadata.run_id
     run_config = RunConfig(
-        run_id=execution_params.execution_metadata.run_id,
-        mode=execution_params.mode,
-        tags=execution_params.execution_metadata.tags,
-        event_sink=event_sink,
+        run_id=run_id, mode=execution_params.mode, tags=execution_params.execution_metadata.tags
     )
 
     execution_plan = create_execution_plan(
@@ -233,6 +241,14 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
                     graphene_info.schema.type_named('InvalidStepError')(invalid_step_key=step_key)
                 )
 
+    event_logs = []
+
+    def _on_event_record(record):
+        if record.is_dagster_event:
+            event_logs.append(record)
+
+    graphene_info.context.instance.add_event_listener(run_id, _on_event_record)
+
     execute_plan(
         execution_plan=execution_plan,
         environment_dict=execution_params.environment_dict,
@@ -246,28 +262,13 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
             graphene_info, event_record, dauphin_pipeline, execution_plan
         )
 
-    raw_event_records = [
-        DagsterEventRecord(
-            event_record.error_info,
-            event_record.message,
-            event_record.level,
-            event_record.user_message,
-            event_record.run_id,
-            event_record.timestamp,
-            event_record.step_key,
-            event_record.pipeline_name,
-            event_record.dagster_event,
-        )
-        for event_record in event_sink.dagster_event_records
-    ]
-
     return graphene_info.schema.type_named('ExecutePlanSuccess')(
         pipeline=dauphin_pipeline,
         has_failures=any(
             er
-            for er in event_sink.dagster_event_records
+            for er in event_logs
             if er.is_dagster_event and er.dagster_event.event_type == DagsterEventType.STEP_FAILURE
         ),
-        step_events=list(map(to_graphql_event, event_sink.dagster_event_records)),
-        raw_event_records=list(map(serialize_dagster_namedtuple, raw_event_records)),
+        step_events=list(map(to_graphql_event, event_logs)),
+        raw_event_records=list(map(serialize_dagster_namedtuple, event_logs)),
     )

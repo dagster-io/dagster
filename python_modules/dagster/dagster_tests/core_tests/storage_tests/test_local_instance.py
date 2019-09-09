@@ -1,5 +1,4 @@
 from dagster import DagsterEventType, RunConfig, execute_pipeline, lambda_solid, pipeline, seven
-from dagster.core.events import CallbackEventSink
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.storage.event_log import FilesystemEventLogStorage
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -25,7 +24,7 @@ def test_fs_stores():
             event_storage=event_store,
         )
 
-        run = RunConfig(event_sink=CallbackEventSink(instance.handle_new_event))
+        run = RunConfig()
         execute_pipeline(simple, run_config=run, instance=instance)
 
         assert run_store.has_run(run.run_id)

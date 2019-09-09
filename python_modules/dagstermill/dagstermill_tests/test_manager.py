@@ -19,6 +19,8 @@ from dagster import (
     ResourceDefinition,
 )
 from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.instance import DagsterInstance
+from dagster.core.serdes import pack_value
 from dagster.utils import safe_tempfile_path
 
 
@@ -32,7 +34,7 @@ def in_pipeline_manager(
     manager = Manager()
 
     run_id = str(uuid.uuid4())
-
+    instance = DagsterInstance.local_temp()
     marshal_dir = tempfile.mkdtemp()
 
     if not handle_kwargs:
@@ -51,6 +53,7 @@ def in_pipeline_manager(
                 'marshal_dir': marshal_dir,
                 'environment_dict': {},
                 'output_log_path': output_log_file_path,
+                'instance_ref_dict': pack_value(instance.get_ref()),
             }
 
             manager.reconstitute_pipeline_context(**dict(context_dict, **kwargs))

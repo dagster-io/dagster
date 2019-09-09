@@ -238,7 +238,7 @@ def test_subscribe_bad_run_id():
 
     assert (
         subscribe_result.data['pipelineRunLogs']['__typename']
-        == 'PipelineRunLogsSubscriptionMissingRunIdFailure'
+        == 'PipelineRunLogsSubscriptionFailure'
     )
     assert subscribe_result.data['pipelineRunLogs']['missingRunId'] == 'nope'
 

@@ -324,7 +324,7 @@ subscription subscribeTest($runId: ID!) {
                 }
             }
         }
-        ... on PipelineRunLogsSubscriptionMissingRunIdFailure {
+        ... on PipelineRunLogsSubscriptionFailure {
             missingRunId
         }
     }

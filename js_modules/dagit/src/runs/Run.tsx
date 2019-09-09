@@ -328,8 +328,9 @@ export const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
           ...RunPipelineRunEventFragment
         }
       }
-      ... on PipelineRunLogsSubscriptionMissingRunIdFailure {
+      ... on PipelineRunLogsSubscriptionFailure {
         missingRunId
+        message
       }
     }
   }

@@ -24,8 +24,8 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
@@ -77,7 +77,7 @@ def test_running():
     }
     selector = ExecutionSelector('csv_hello_world')
 
-    instance = DagsterInstance.ephemeral()
+    instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run(
         PipelineRun(
             pipeline_name=passing_pipeline.name,
@@ -87,6 +87,7 @@ def test_running():
             mode='default',
             reexecution_config=None,
             step_keys_to_execute=None,
+            tags=None,
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
@@ -95,7 +96,6 @@ def test_running():
         handle, passing_pipeline, pipeline_run, instance, raise_on_error=False
     )
     execution_manager.join()
-
     assert instance.get_run(run_id).status == PipelineRunStatus.SUCCESS
     events = instance.all_logs(run_id)
     assert events
@@ -118,7 +118,7 @@ def test_failing():
     }
     selector = ExecutionSelector('csv_hello_world')
 
-    instance = DagsterInstance.ephemeral()
+    instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run(
         PipelineRun(
             pipeline_name=failing_pipeline.name,
@@ -128,6 +128,7 @@ def test_failing():
             mode='default',
             reexecution_config=None,
             step_keys_to_execute=None,
+            tags=None,
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
@@ -148,7 +149,7 @@ def test_execution_crash():
     }
     selector = ExecutionSelector('csv_hello_world')
 
-    instance = DagsterInstance.ephemeral()
+    instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run(
         PipelineRun(
             pipeline_name=crashy_pipeline.name,
@@ -158,6 +159,7 @@ def test_execution_crash():
             mode='default',
             reexecution_config=None,
             step_keys_to_execute=None,
+            tags=None,
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
@@ -266,7 +268,7 @@ def test_multiprocessing_execution_for_composite_solid():
     run_id = make_new_run_id()
     handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'composite_pipeline')
 
-    instance = DagsterInstance.ephemeral()
+    instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run(
         PipelineRun(
             pipeline_name=composite_pipeline.name,
@@ -276,6 +278,7 @@ def test_multiprocessing_execution_for_composite_solid():
             mode='default',
             reexecution_config=None,
             step_keys_to_execute=None,
+            tags=None,
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
@@ -307,6 +310,7 @@ def test_multiprocessing_execution_for_composite_solid():
             mode='default',
             reexecution_config=None,
             step_keys_to_execute=None,
+            tags=None,
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
@@ -331,7 +335,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
         __file__, 'composite_pipeline_with_config_mapping'
     )
 
-    instance = DagsterInstance.ephemeral()
+    instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run(
         PipelineRun(
             pipeline_name=composite_pipeline_with_config_mapping.name,
@@ -341,6 +345,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
             mode='default',
             reexecution_config=None,
             step_keys_to_execute=None,
+            tags=None,
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
@@ -372,6 +377,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
             mode='default',
             reexecution_config=None,
             step_keys_to_execute=None,
+            tags=None,
             status=PipelineRunStatus.NOT_STARTED,
         )
     )

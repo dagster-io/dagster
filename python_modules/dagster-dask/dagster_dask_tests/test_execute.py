@@ -12,6 +12,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.executor import default_executors
+from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import nesting_composite_pipeline
 
 
@@ -35,6 +36,7 @@ def test_execute_on_dask():
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'dask': {'config': {'timeout': 30}}},
             },
+            instance=DagsterInstance.local_temp(),
         )
         assert result.result_for_solid('simple').output_value() == 1
 
@@ -54,6 +56,7 @@ def test_composite_execute():
             'storage': {'filesystem': {}},
             'execution': {'dask': {'config': {'timeout': 30}}},
         },
+        instance=DagsterInstance.local_temp(),
     )
     assert result.success
 
@@ -86,6 +89,7 @@ def test_pandas_dask():
             'execution': {'dask': {'config': {'timeout': 30}}},
             **environment_dict,
         },
+        instance=DagsterInstance.local_temp(),
     )
 
     assert result.success

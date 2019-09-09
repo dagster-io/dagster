@@ -228,12 +228,15 @@ def test_start_execution_predefined_with_logs():
             result_data['data']['startPipelineExecution']['__typename']
             == 'StartPipelineExecutionSuccess'
         )
+        run_id = result_data['data']['startPipelineExecution']['run']['runId']
 
         # allow FS events to flush
-        time.sleep(0.50)
+        retries = 5
+        while retries != 0 and not instance.has_run(run_id):
+            time.sleep(0.333)
+            retries -= 1
 
         # assert that the watching run storage captured the run correctly from the other process
-        run_id = result_data['data']['startPipelineExecution']['run']['runId']
         run = instance.get_run(run_id)
 
         assert run.status == PipelineRunStatus.SUCCESS

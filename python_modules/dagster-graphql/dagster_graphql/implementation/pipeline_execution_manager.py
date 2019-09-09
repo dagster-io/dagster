@@ -12,16 +12,8 @@ from collections import namedtuple
 import gevent
 import six
 
-from dagster import (
-    ExecutionTargetHandle,
-    PipelineDefinition,
-    PipelineExecutionResult,
-    RunConfig,
-    check,
-    execute_pipeline_iterator,
-)
+from dagster import ExecutionTargetHandle, PipelineDefinition, PipelineExecutionResult, check
 from dagster.core.events import (
-    CallbackEventSink,
     DagsterEvent,
     DagsterEventType,
     PipelineProcessExitedData,
@@ -29,6 +21,7 @@ from dagster.core.events import (
     PipelineProcessStartedData,
 )
 from dagster.core.events.log import DagsterEventRecord
+from dagster.core.execution.api import execute_run_iterator
 from dagster.core.instance import DagsterInstance
 from dagster.utils import get_multiprocessing_context
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -149,23 +142,11 @@ class SynchronousExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, _, pipeline, pipeline_run, instance, raise_on_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
-        run_config = RunConfig(
-            pipeline_run.run_id,
-            mode=pipeline_run.mode,
-            event_sink=CallbackEventSink(instance.handle_new_event),
-            reexecution_config=pipeline_run.reexecution_config,
-            step_keys_to_execute=pipeline_run.step_keys_to_execute,
-        )
-
-        # We do this instead of just using execute_pipeline to avoid spurious pipeline start and
-        # pipeline success or pipeline failure events.
         try:
             event_list = []
-            for event in execute_pipeline_iterator(
-                pipeline, pipeline_run.environment_dict, run_config, instance
-            ):
+            for event in execute_run_iterator(pipeline, pipeline_run, instance):
                 event_list.append(event)
-            return PipelineExecutionResult(pipeline, run_config.run_id, event_list, lambda: None)
+            return PipelineExecutionResult(pipeline, pipeline_run.run_id, event_list, lambda: None)
         except Exception:  # pylint: disable=broad-except
             if raise_on_error:
                 six.reraise(*sys.exc_info())
@@ -262,19 +243,11 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         message_queue = self._multiprocessing_context.Queue()
         p = self._multiprocessing_context.Process(
             target=execute_pipeline_through_queue,
-            args=(
-                handle,
-                pipeline_run.selector.name,
-                pipeline_run.selector.solid_subset,
-                pipeline_run.environment_dict,
-            ),
             kwargs={
-                'run_id': pipeline_run.run_id,
-                'mode': pipeline_run.mode,
+                'handle': handle,
+                'pipeline_run': pipeline_run,
+                'instance_ref': instance.get_ref(),
                 'message_queue': message_queue,
-                'reexecution_config': pipeline_run.reexecution_config,
-                'step_keys_to_execute': pipeline_run.step_keys_to_execute,
-                'instance_dir': instance.root_directory(),
             },
         )
 
@@ -297,36 +270,14 @@ class RunProcessWrapper(
         )
 
 
-def execute_pipeline_through_queue(
-    handle,
-    pipeline_name,
-    solid_subset,
-    environment_dict,
-    mode,
-    run_id,
-    message_queue,
-    reexecution_config,
-    step_keys_to_execute,
-    instance_dir,
-):
+def execute_pipeline_through_queue(handle, pipeline_run, message_queue, instance_ref):
     """
     Execute pipeline using message queue as a transport
     """
-
-    check.opt_str_param(mode, 'mode')
+    run_id = pipeline_run.run_id
+    pipeline_name = pipeline_run.pipeline_name
 
     message_queue.put(build_process_started_event(run_id, pipeline_name, os.getpid()))
-
-    run_config = RunConfig(
-        run_id,
-        mode=mode,
-        event_sink=CallbackEventSink(message_queue.put),
-        reexecution_config=reexecution_config,
-        step_keys_to_execute=step_keys_to_execute,
-    )
-
-    if 'execution' not in environment_dict or not environment_dict['execution']:
-        environment_dict['execution'] = {'in_process': {'config': {'raise_on_error': False}}}
 
     try:
         handle.build_repository_definition()
@@ -342,14 +293,13 @@ def execute_pipeline_through_queue(
 
     try:
         event_list = []
-        for event in execute_pipeline_iterator(
-            pipeline_def.build_sub_pipeline(solid_subset),
-            environment_dict,
-            run_config=run_config,
-            instance=DagsterInstance.ephemeral(instance_dir),
+        for event in execute_run_iterator(
+            pipeline_def.build_sub_pipeline(pipeline_run.selector.solid_subset),
+            pipeline_run,
+            DagsterInstance.from_ref(instance_ref),
         ):
             event_list.append(event)
-        return PipelineExecutionResult(pipeline_def, run_config.run_id, event_list, lambda: None)
+        return PipelineExecutionResult(pipeline_def, run_id, event_list, lambda: None)
     except Exception:  # pylint: disable=broad-except
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         message_queue.put(build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name))

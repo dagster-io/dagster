@@ -122,7 +122,8 @@ def get_named_thing(llist, name):
 
 def test_success_whole_execution_plan(snapshot):
     run_id = str(uuid.uuid4())
-    instance = DagsterInstance.ephemeral()
+    instance = DagsterInstance.local_temp()
+    instance.create_empty_run(run_id, 'csv_hello_world')
     result = execute_dagster_graphql(
         define_context(instance=instance),
         EXECUTE_PLAN_QUERY,
@@ -290,7 +291,8 @@ def test_successful_one_part_execute_plan(snapshot):
 
 def test_successful_two_part_execute_plan(snapshot):
     run_id = str(uuid.uuid4())
-    instance = DagsterInstance.ephemeral()
+    instance = DagsterInstance.local_temp()
+    instance.create_empty_run(run_id, 'csv_hello_world')
     result_one = execute_dagster_graphql(
         define_context(instance=instance),
         EXECUTE_PLAN_QUERY,

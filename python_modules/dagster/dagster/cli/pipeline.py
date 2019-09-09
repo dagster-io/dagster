@@ -19,6 +19,7 @@ from dagster.cli.load_handle import (
     handle_for_repo_cli_args,
 )
 from dagster.core.definitions import Solid, solids_in_topological_order
+from dagster.core.instance import DagsterInstance
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.visualize import build_graphviz_graph
@@ -307,7 +308,7 @@ def execute_execute_command_with_preset(preset_name, cli_args, _mode):
     pipeline = handle_for_pipeline_cli_args(cli_args).build_pipeline_definition()
     cli_args.pop('pipeline_name')
 
-    return execute_pipeline_with_preset(pipeline, preset_name)
+    return execute_pipeline_with_preset(pipeline, preset_name, instance=DagsterInstance.get())
 
 
 def do_execute_command(pipeline, env_file_list, mode=None):
@@ -317,7 +318,10 @@ def do_execute_command(pipeline, env_file_list, mode=None):
     environment_dict = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
     return execute_pipeline(
-        pipeline, environment_dict=environment_dict, run_config=RunConfig(mode=mode)
+        pipeline,
+        environment_dict=environment_dict,
+        run_config=RunConfig(mode=mode),
+        instance=DagsterInstance.get(),
     )
 
 

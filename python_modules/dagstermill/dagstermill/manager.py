@@ -18,10 +18,10 @@ from dagster import (
 )
 from dagster.cli import load_handle
 from dagster.core.definitions.dependency import SolidHandle
-from dagster.core.events import SqliteEventSink
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import ResourcesStack
 from dagster.core.instance import DagsterInstance
+from dagster.core.serdes import unpack_value
 from dagster.loggers import colored_console_logger
 
 from .context import DagstermillExecutionContext
@@ -62,6 +62,7 @@ class Manager:
         run_config_kwargs=None,
         solid_subset=None,
         solid_handle_kwargs=None,
+        instance_ref_dict=None,
     ):
         '''Reconstitutes a context for dagstermill-managed execution.
 
@@ -81,6 +82,7 @@ class Manager:
         check.dict_param(handle_kwargs, 'handle_kwargs')
         check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
         check.dict_param(solid_handle_kwargs, 'solid_handle_kwargs')
+        check.dict_param(instance_ref_dict, 'instance_ref_dict')
 
         try:
             handle = load_handle.handle_for_pipeline_cli_args(
@@ -97,6 +99,17 @@ class Manager:
                 err,
             )
 
+        try:
+            instance_ref = unpack_value(instance_ref_dict)
+            instance = DagsterInstance.from_ref(instance_ref)
+        except Exception:  # pylint: disable=broad-except
+            six.raise_from(
+                DagstermillError(
+                    'Error when attempting to resolve DagsterInstance from serialized InstanceRef'
+                ),
+                err,
+            )
+
         pipeline_def = check.inst_param(
             handle.build_pipeline_definition(),
             'pipeline_def (from handle {handle_dict})'.format(handle_dict=handle.data._asdict()),
@@ -107,8 +120,6 @@ class Manager:
         solid_def = pipeline_def.get_solid(solid_handle)
 
         run_config = RunConfig(**run_config_kwargs)
-        # since we are rehydrating the SqliteEventSink we will skip the db init
-        run_config = run_config.with_event_sink(SqliteEventSink(output_log_path, skip_db_init=True))
 
         self.marshal_dir = marshal_dir
         self.in_pipeline = True
@@ -119,7 +130,7 @@ class Manager:
             self.pipeline_def,
             environment_dict,
             run_config,
-            instance=DagsterInstance.get(),
+            instance=instance,
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
             self.context = DagstermillExecutionContext(pipeline_context)

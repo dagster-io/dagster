@@ -2,6 +2,7 @@ import pandas as pd
 
 from dagster import execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
+from dagster.core.instance import DagsterInstance
 from dagster.utils import script_relative_path
 
 
@@ -23,6 +24,7 @@ def test_papermill_pandas_hello_world_pipeline():
                 }
             }
         },
+        instance=DagsterInstance.local_temp(),
     )
     assert pipeline_result.success
     solid_result = pipeline_result.result_for_solid('papermill_pandas_hello_world')

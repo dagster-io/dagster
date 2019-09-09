@@ -97,7 +97,8 @@ def test_using_file_system_for_subplan():
 def test_using_file_system_for_subplan_multiprocessing():
 
     environment_dict = {'storage': {'filesystem': {}}}
-    instance = DagsterInstance.ephemeral()
+    instance = DagsterInstance.local_temp()
+
     execution_plan = create_execution_plan(
         ExecutionTargetHandle.for_pipeline_fn(define_inty_pipeline).build_pipeline_definition(),
         environment_dict=environment_dict,
@@ -108,6 +109,7 @@ def test_using_file_system_for_subplan_multiprocessing():
     step_keys = ['return_one.compute']
 
     run_id = str(uuid.uuid4())
+    instance.create_empty_run(run_id, execution_plan.pipeline_def.name)
 
     return_one_step_events = list(
         execute_plan(

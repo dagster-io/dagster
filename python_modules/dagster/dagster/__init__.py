@@ -48,7 +48,7 @@ from dagster.core.errors import (
     DagsterTypeCheckError,
     DagsterUserCodeExecutionError,
 )
-from dagster.core.events import DagsterEventType, InMemoryEventSink
+from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import (
     execute_pipeline,
     execute_pipeline_iterator,

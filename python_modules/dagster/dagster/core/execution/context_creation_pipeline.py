@@ -23,7 +23,6 @@ from dagster.core.execution.config import ExecutorConfig
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitSystemStorageContext
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import evaluate_config
@@ -172,26 +171,6 @@ def scoped_pipeline_context(
     # After this try block, a Dagster exception thrown will result in a pipeline init failure event.
     try:
         log_manager = create_log_manager(context_creation_data)
-        from .api import ExecutionSelector
-
-        instance.create_run(
-            PipelineRun(
-                pipeline_name=pipeline_def.name,
-                run_id=run_config.run_id,
-                environment_dict=environment_dict,
-                mode=context_creation_data.mode_def.name,
-                # https://github.com/dagster-io/dagster/issues/1709
-                # ExecutionSelector should be threaded all the way
-                # down from the top
-                selector=ExecutionSelector(pipeline_def.name),
-                reexecution_config=run_config.reexecution_config,
-                step_keys_to_execute=run_config.step_keys_to_execute,
-                status=PipelineRunStatus.NOT_STARTED,
-            )
-        )
-
-        if run_config.event_sink:
-            run_config.event_sink.on_pipeline_init()
 
         with scoped_resources_builder_cm(
             context_creation_data.pipeline_def,
@@ -228,11 +207,8 @@ def scoped_pipeline_context(
         yield DagsterEvent.pipeline_init_failure(
             pipeline_name=pipeline_def.name,
             failure_data=PipelineInitFailureData(error=error_info),
-            log_manager=_create_context_free_log_manager(run_config, pipeline_def),
+            log_manager=_create_context_free_log_manager(instance, run_config, pipeline_def),
         )
-    finally:
-        if run_config.event_sink:
-            run_config.event_sink.on_pipeline_teardown()
 
 
 def create_system_storage_data(
@@ -422,8 +398,8 @@ def create_log_manager(context_creation_data):
                 )
             )
 
-    if run_config.event_sink:
-        loggers.append(run_config.event_sink.get_logger())
+    # should this be first in loggers list?
+    loggers.append(context_creation_data.instance.get_event_listener())
 
     return DagsterLogManager(
         run_id=run_config.run_id,
@@ -434,17 +410,18 @@ def create_log_manager(context_creation_data):
     )
 
 
-def _create_context_free_log_manager(run_config, pipeline_def):
+def _create_context_free_log_manager(instance, run_config, pipeline_def):
     '''In the event of pipeline initialization failure, we want to be able to log the failure
     without a dependency on the ExecutionContext to initialize DagsterLogManager.
     Args:
         run_config (dagster.core.execution_context.RunConfig)
         pipeline_def (dagster.definitions.PipelineDefinition)
     '''
+    check.inst_param(instance, 'instance', DagsterInstance)
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
-    loggers = []
+    loggers = [instance.get_event_listener()]
     # Use the default logger
     for (logger_def, logger_config) in default_system_loggers():
         loggers += [
@@ -452,9 +429,6 @@ def _create_context_free_log_manager(run_config, pipeline_def):
                 InitLoggerContext(logger_config, pipeline_def, logger_def, run_config.run_id)
             )
         ]
-
-    if run_config.event_sink:
-        loggers.append(run_config.event_sink.get_logger())
 
     return DagsterLogManager(run_config.run_id, get_logging_tags(run_config, pipeline_def), loggers)
 

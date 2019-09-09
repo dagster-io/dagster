@@ -84,8 +84,7 @@ export default class RunSubscriptionProvider extends React.Component<
 
   handleNewMessages = (result: PipelineRunLogsSubscription) => {
     if (
-      result.pipelineRunLogs.__typename ===
-      "PipelineRunLogsSubscriptionMissingRunIdFailure"
+      result.pipelineRunLogs.__typename === "PipelineRunLogsSubscriptionFailure"
     ) {
       return;
     }

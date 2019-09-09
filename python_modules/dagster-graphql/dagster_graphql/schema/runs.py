@@ -210,11 +210,12 @@ class DauphinPipelineRunLogsSubscriptionSuccess(dauphin.ObjectType):
     messages = dauphin.non_null_list('PipelineRunEvent')
 
 
-class DauphinPipelineRunLogsSubscriptionMissingRunIdFailure(dauphin.ObjectType):
+class DauphinPipelineRunLogsSubscriptionFailure(dauphin.ObjectType):
     class Meta:
-        name = 'PipelineRunLogsSubscriptionMissingRunIdFailure'
+        name = 'PipelineRunLogsSubscriptionFailure'
 
-    missingRunId = dauphin.NonNull(dauphin.String)
+    message = dauphin.NonNull(dauphin.String)
+    missingRunId = dauphin.Field(dauphin.String)
 
 
 class DauphinPipelineRunLogsSubscriptionPayload(dauphin.Union):
@@ -222,7 +223,7 @@ class DauphinPipelineRunLogsSubscriptionPayload(dauphin.Union):
         name = 'PipelineRunLogsSubscriptionPayload'
         types = (
             DauphinPipelineRunLogsSubscriptionSuccess,
-            DauphinPipelineRunLogsSubscriptionMissingRunIdFailure,
+            DauphinPipelineRunLogsSubscriptionFailure,
         )
 
 

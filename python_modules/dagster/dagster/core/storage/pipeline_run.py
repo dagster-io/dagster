@@ -20,22 +20,23 @@ class PipelineRun(
         '_PipelineRun',
         (
             'pipeline_name run_id environment_dict mode selector reexecution_config '
-            'step_keys_to_execute status'
+            'step_keys_to_execute tags status'
         ),
     )
 ):
     @staticmethod
     def create_empty_run(pipeline_name, run_id):
-        from dagster.core.execution.api import ExecutionSelector
+        from dagster.core.definitions.pipeline import ExecutionSelector
 
         return PipelineRun(
             pipeline_name=pipeline_name,
             run_id=run_id,
             environment_dict=None,
-            mode=None,
+            mode='default',
             selector=ExecutionSelector(pipeline_name),
             reexecution_config=None,
             step_keys_to_execute=None,
+            tags=None,
             status=PipelineRunStatus.NOT_STARTED,
         )
 
@@ -48,9 +49,10 @@ class PipelineRun(
         selector,
         reexecution_config,
         step_keys_to_execute,
+        tags,
         status,
     ):
-        from dagster.core.execution.api import ExecutionSelector
+        from dagster.core.definitions.pipeline import ExecutionSelector
         from dagster.core.execution.config import ReexecutionConfig
 
         return super(PipelineRun, cls).__new__(
@@ -60,7 +62,7 @@ class PipelineRun(
             environment_dict=check.opt_dict_param(
                 environment_dict, 'environment_dict', key_type=str
             ),
-            mode=check.opt_str_param(mode, 'mode'),
+            mode=check.str_param(mode, 'mode'),
             selector=check.inst_param(selector, 'selector', ExecutionSelector),
             reexecution_config=check.opt_inst_param(
                 reexecution_config, 'reexecution_config', ReexecutionConfig
@@ -68,6 +70,7 @@ class PipelineRun(
             step_keys_to_execute=None
             if step_keys_to_execute is None
             else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
+            tags=check.opt_dict_param(tags, 'tags', key_type=str),
             status=status,
         )
 
@@ -80,6 +83,7 @@ class PipelineRun(
             selector=self.selector,
             reexecution_config=self.reexecution_config,
             step_keys_to_execute=self.step_keys_to_execute,
+            tags=self.tags,
             status=status,
         )
 

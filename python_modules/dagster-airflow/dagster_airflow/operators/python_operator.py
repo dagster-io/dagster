@@ -7,7 +7,7 @@ from dagster_graphql.client.mutations import execute_execute_plan_mutation
 from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
 
 from dagster import check, seven
-from dagster.core.execution.api import ExecutionSelector
+from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 
@@ -67,6 +67,7 @@ class DagsterPythonOperator(PythonOperator):
                         selector=ExecutionSelector(pipeline_name),
                         reexecution_config=None,
                         step_keys_to_execute=None,
+                        tags=None,
                         status=PipelineRunStatus.MANAGED,
                     )
                 )

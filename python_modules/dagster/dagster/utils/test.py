@@ -1,4 +1,3 @@
-import logging
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
@@ -41,7 +40,7 @@ from .temp_file import (
 
 
 def create_test_pipeline_execution_context(
-    logger_defs=None, scoped_resources_builder=None, event_sink=None, tags=None
+    logger_defs=None, scoped_resources_builder=None, tags=None
 ):
     run_id = str(uuid.uuid4())
     loggers = check.opt_dict_param(
@@ -51,8 +50,7 @@ def create_test_pipeline_execution_context(
     pipeline_def = PipelineDefinition(
         name='test_legacy_context', solid_defs=[], mode_defs=[mode_def]
     )
-    event_sink = check.opt_inst_param(event_sink, 'event_sink', logging.Logger)
-    run_config = RunConfig(run_id, tags=tags, event_sink=event_sink)
+    run_config = RunConfig(run_id, tags=tags)
     environment_dict = {'loggers': {key: {} for key in loggers}}
     instance = DagsterInstance.ephemeral()
     creation_data = create_context_creation_data(

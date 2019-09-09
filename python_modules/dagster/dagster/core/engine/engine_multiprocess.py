@@ -1,13 +1,12 @@
 import os
 
 from dagster import check
-from dagster.core.events import DagsterEvent, EngineEventData, SqliteEventSink
+from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.config import MultiprocessExecutorConfig, RunConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
-from dagster.utils import safe_tempfile_path
 from dagster.utils.timing import format_duration, time_execution_scope
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
@@ -15,14 +14,15 @@ from .engine_base import IEngine
 
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
-    def __init__(self, environment_dict, run_config, instance, executor_config, step_key):
+    def __init__(self, environment_dict, run_config, executor_config, step_key, instance_ref):
         self.environment_dict = environment_dict
         self.executor_config = executor_config
         self.run_config = run_config
         self.step_key = step_key
-        self.instance_dir = instance.root_directory()
+        self.instance_ref = instance_ref
 
     def execute(self):
+
         check.inst(self.executor_config, MultiprocessExecutorConfig)
         pipeline_def = self.executor_config.handle.build_pipeline_definition()
 
@@ -36,42 +36,35 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         )
         execution_plan = create_execution_plan(pipeline_def, environment_dict, run_config)
 
-        instance = DagsterInstance.ephemeral(self.instance_dir)
-
         for step_event in execute_plan_iterator(
             execution_plan,
             environment_dict,
             run_config,
             step_keys_to_execute=[self.step_key],
-            instance=instance,
+            instance=DagsterInstance.from_ref(self.instance_ref),
         ):
             yield step_event
 
 
 def execute_step_out_of_process(step_context, step):
+    child_run_id = step_context.run_config.run_id
 
-    with safe_tempfile_path() as sqlite_file:
-        event_sink = SqliteEventSink(sqlite_file, raise_on_error=True)
+    child_run_config = RunConfig(
+        run_id=child_run_id,
+        tags=step_context.run_config.tags,
+        step_keys_to_execute=step_context.run_config.step_keys_to_execute,
+        mode=step_context.run_config.mode,
+    )
+    command = InProcessExecutorChildProcessCommand(
+        step_context.environment_dict,
+        child_run_config,
+        step_context.executor_config,
+        step.key,
+        step_context.instance.get_ref(),
+    )
 
-        child_run_config = RunConfig(
-            run_id=step_context.run_config.run_id,
-            tags=step_context.run_config.tags,
-            event_sink=event_sink,
-            step_keys_to_execute=step_context.run_config.step_keys_to_execute,
-            mode=step_context.run_config.mode,
-        )
-
-        command = InProcessExecutorChildProcessCommand(
-            step_context.environment_dict,
-            child_run_config,
-            step_context.instance,
-            step_context.executor_config,
-            step.key,
-        )
-
-        with event_sink.log_forwarding(step_context.log):
-            for event_or_none in execute_child_process_command(command):
-                yield event_or_none
+    for event_or_none in execute_child_process_command(command):
+        yield event_or_none
 
 
 def bounded_parallel_executor(step_contexts, limit):

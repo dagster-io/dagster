@@ -22,9 +22,9 @@ from dagster import (
     seven,
 )
 from dagster.core.errors import user_code_error_boundary
-from dagster.core.events import SqliteEventSink
 from dagster.core.execution.context.compute import ComputeExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
+from dagster.core.serdes import pack_value
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.utils import mkdir_p, safe_tempfile_path
 
@@ -139,6 +139,7 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
     parameters['__dm_run_config_kwargs'] = dm_run_config_kwargs
     parameters['__dm_solid_handle_kwargs'] = dm_solid_handle_kwargs
     parameters['__dm_solid_subset'] = solid_subset
+    parameters['__dm_instance_ref_dict'] = pack_value(compute_context.instance.get_ref())
 
     return parameters
 
@@ -166,8 +167,6 @@ def _dm_solid_compute(name, notebook_path):
         )
 
         with safe_tempfile_path() as output_log_path:
-            event_sink = SqliteEventSink(output_log_path)
-
             # Scaffold the registration here
             nb = load_notebook_node(notebook_path)
             nb_no_parameters = replace_parameters(
@@ -189,19 +188,18 @@ def _dm_solid_compute(name, notebook_path):
                     )
                 ),
             ):
-                with event_sink.log_forwarding(system_compute_context.log):
-                    try:
-                        papermill_engines.register('dagstermill', DagstermillNBConvertEngine)
-                        papermill.execute_notebook(
-                            intermediate_path, temp_path, engine_name='dagstermill', log_output=True
-                        )
-                    except Exception as exc:
-                        yield Materialization(
-                            label='output_notebook',
-                            description='Location of output notebook on the filesystem',
-                            metadata_entries=[EventMetadataEntry.fspath(temp_path)],
-                        )
-                        raise exc
+                try:
+                    papermill_engines.register('dagstermill', DagstermillNBConvertEngine)
+                    papermill.execute_notebook(
+                        intermediate_path, temp_path, engine_name='dagstermill', log_output=True
+                    )
+                except Exception as exc:
+                    yield Materialization(
+                        label='output_notebook',
+                        description='Location of output notebook on the filesystem',
+                        metadata_entries=[EventMetadataEntry.fspath(temp_path)],
+                    )
+                    raise exc
 
             # deferred import for perf
             import scrapbook

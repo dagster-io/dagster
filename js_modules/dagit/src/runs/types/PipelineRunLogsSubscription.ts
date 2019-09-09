@@ -453,12 +453,13 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   messages: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages[];
 }
 
-export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionMissingRunIdFailure {
-  __typename: "PipelineRunLogsSubscriptionMissingRunIdFailure";
-  missingRunId: string;
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionFailure {
+  __typename: "PipelineRunLogsSubscriptionFailure";
+  missingRunId: string | null;
+  message: string;
 }
 
-export type PipelineRunLogsSubscription_pipelineRunLogs = PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionMissingRunIdFailure;
+export type PipelineRunLogsSubscription_pipelineRunLogs = PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionFailure;
 
 export interface PipelineRunLogsSubscription {
   pipelineRunLogs: PipelineRunLogsSubscription_pipelineRunLogs;

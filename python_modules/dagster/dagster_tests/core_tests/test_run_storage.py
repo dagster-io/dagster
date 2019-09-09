@@ -1,18 +1,14 @@
 import uuid
 
-from dagster import PipelineDefinition
+from dagster import PipelineDefinition, seven
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.runs import SqliteRunStorage
 
 
-def test_empty_storage():
-    instance = DagsterInstance.local_temp()
-    assert list(instance.all_runs) == []
-
-
 def test_filesystem_persist_one_run():
-    do_test_single_write_read(DagsterInstance.local_temp())
+    with seven.TemporaryDirectory() as temp_dir:
+        do_test_single_write_read(DagsterInstance.local_temp(temp_dir))
 
 
 def test_in_memory_persist_one_run():

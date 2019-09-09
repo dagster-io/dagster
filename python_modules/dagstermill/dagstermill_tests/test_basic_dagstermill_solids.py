@@ -11,6 +11,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 from dagster import RunConfig, execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.definitions.events import PathMetadataEntryData
+from dagster.core.instance import DagsterInstance
 from dagster.utils import safe_tempfile_path
 
 
@@ -45,7 +46,7 @@ def exec_for_test(fn_name, env=None, **kwargs):
     pipeline = handle.build_pipeline_definition()
 
     try:
-        result = execute_pipeline(pipeline, env, **kwargs)
+        result = execute_pipeline(pipeline, env, instance=DagsterInstance.local_temp(), **kwargs)
         yield result
     finally:
         if result:
@@ -179,7 +180,9 @@ def test_hello_world_reexecution():
             pipeline = handle.build_pipeline_definition()
 
             try:
-                reexecution_result = execute_pipeline(pipeline)
+                reexecution_result = execute_pipeline(
+                    pipeline, instance=DagsterInstance.local_temp()
+                )
                 assert reexecution_result.success
             finally:
                 if reexecution_result:

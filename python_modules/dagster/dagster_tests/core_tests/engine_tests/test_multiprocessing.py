@@ -4,13 +4,12 @@ from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
     ExecutionTargetHandle,
-    InMemoryEventSink,
     InputDefinition,
     PipelineDefinition,
-    RunConfig,
     execute_pipeline,
     lambda_solid,
 )
+from dagster.core.instance import DagsterInstance
 
 
 def test_diamond_simple_execution():
@@ -30,6 +29,7 @@ def test_diamond_multi_execution():
     result = execute_pipeline(
         pipeline,
         environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        instance=DagsterInstance.local_temp(),
     )
     assert result.success
 
@@ -95,6 +95,7 @@ def test_error_pipeline_multiprocess():
     result = execute_pipeline(
         ExecutionTargetHandle.for_pipeline_fn(define_error_pipeline).build_pipeline_definition(),
         environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        instance=DagsterInstance.local_temp(),
     )
     assert not result.success
 
@@ -117,20 +118,3 @@ def test_mem_storage_error_pipeline_multiprocess():
         'configure your pipeline in the storage config section to use '
         'persistent system storage such as the filesystem.'
     ) in str(exc_info.value)
-
-
-def test_multiproc_event_sink():
-    pipeline = ExecutionTargetHandle.for_pipeline_python_file(
-        __file__, 'define_diamond_pipeline'
-    ).build_pipeline_definition()
-
-    sink = InMemoryEventSink()
-
-    result = execute_pipeline(
-        pipeline,
-        run_config=RunConfig(event_sink=sink),
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
-    )
-
-    assert result.success
-    assert len(result.event_list) == len(sink.dagster_event_records)

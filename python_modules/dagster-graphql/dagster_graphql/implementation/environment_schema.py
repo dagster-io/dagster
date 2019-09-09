@@ -2,8 +2,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.definitions.environment_schema import EnvironmentSchema, create_environment_schema
-from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.execution.api import ExecutionSelector
+from dagster.core.definitions.pipeline import ExecutionSelector, PipelineDefinition
 from dagster.core.types.evaluator import evaluate_config
 
 from .fetch_pipelines import get_dagster_pipeline_from_selector

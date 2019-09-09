@@ -1,4 +1,5 @@
 import configparser
+import logging
 import os
 from abc import ABCMeta
 from collections import defaultdict, namedtuple
@@ -9,6 +10,7 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
 
 from .features import DagsterFeatures
@@ -46,16 +48,44 @@ def _dagster_home_dir():
     return os.path.expanduser(dagster_home_path)
 
 
+class _EventListenerLogHandler(logging.Handler):
+    def __init__(self, instance):
+        self._instance = instance
+        super(_EventListenerLogHandler, self).__init__()
+
+    def emit(self, record):
+        from dagster.core.events.log import construct_event_record, StructuredLoggerMessage
+
+        try:
+            event = construct_event_record(
+                StructuredLoggerMessage(
+                    name=record.name,
+                    message=record.msg,
+                    level=record.levelno,
+                    meta=record.dagster_meta,
+                    record=record,
+                )
+            )
+
+            self._instance.handle_new_event(event)
+
+        except Exception as e:  # pylint: disable=W0703
+            logging.critical('Error during instance event listen')
+            logging.exception(str(e))
+            raise
+
+
 class InstanceType(Enum):
     LOCAL = 'LOCAL'
     EPHEMERAL = 'EPHEMERAL'
-    # REMOTE = 'REMOTE'
+    REMOTE = 'REMOTE'
 
 
 class InstanceRef(six.with_metaclass(ABCMeta)):
     pass
 
 
+@whitelist_for_serdes
 class LocalInstanceRef(namedtuple('_InstanceRef', 'home_dir'), InstanceRef):
     def __new__(self, home_dir):
         return super(self, LocalInstanceRef).__new__(
@@ -160,17 +190,22 @@ class DagsterInstance:
             check.failed('Unhandled instance type {}'.format(type(instance_ref)))
 
     @property
-    def can_have_ref(self):
+    def is_remote(self):
+        return self._instance_type == InstanceType.REMOTE
+
+    @property
+    def is_local(self):
         return self._instance_type == InstanceType.LOCAL
 
+    @property
+    def is_ephemeral(self):
+        return self._instance_type == InstanceType.EPHEMERAL
+
     def get_ref(self):
-        if not self.can_have_ref:
-            check.failed(
-                'Can not produce an instance reference for {t}'.format(t=self._instance_type)
-            )
         if self._instance_type == InstanceType.LOCAL:
             return LocalInstanceRef(self._root_storage_dir)
-        check.failed('Shouldn\'t be here')
+
+        check.failed('Can not produce an instance reference for {t}'.format(t=self._instance_type))
 
     @staticmethod
     def temp_storage():
@@ -193,15 +228,14 @@ class DagsterInstance:
         return self._run_storage.get_run_by_id(run_id)
 
     def create_empty_run(self, run_id, pipeline_name):
-        pipeline_run = PipelineRun.create_empty_run(pipeline_name, run_id)
-        return self._run_storage.add_run(pipeline_run)
+        return self.create_run(PipelineRun.create_empty_run(pipeline_name, run_id))
 
     def create_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        run_id = pipeline_run.run_id
-        if self._run_storage.has_run(run_id):
-            existing_run = self._run_storage.get_run_by_id(run_id)
-            return existing_run
+        check.invariant(
+            not self._run_storage.has_run(pipeline_run.run_id),
+            'Attempting to create a different pipeline run for an existing run id',
+        )
 
         run = self._run_storage.add_run(pipeline_run)
         self._event_storage.new_run(run.run_id)
@@ -252,17 +286,33 @@ class DagsterInstance:
 
     # event subscriptions
 
+    def get_event_listener(self):
+        logger = logging.Logger('__event_listener')
+        logger.addHandler(_EventListenerLogHandler(self))
+        logger.setLevel(10)
+        return logger
+
     def handle_new_event(self, event):
-        self._event_storage.store_event(event)
         run_id = event.run_id
+
+        if self._instance_type != InstanceType.EPHEMERAL:
+            check.invariant(
+                self._run_storage.has_run(run_id),
+                'Can not handle events for unknown run with id {run_id} on non-ephemeral instance type'.format(
+                    run_id=run_id
+                ),
+            )
+
+        self._event_storage.store_event(event)
+
         if event.is_dagster_event and event.dagster_event.is_pipeline_event:
             self._run_storage.handle_run_event(run_id, event.dagster_event)
 
         for sub in self._subscribers[run_id]:
-            sub.handle_new_event(event)
+            sub(event)
 
-    def subscribe(self, run_id, subscriber):
-        self._subscribers[run_id].append(subscriber)
+    def add_event_listener(self, run_id, cb):
+        self._subscribers[run_id].append(cb)
 
     # directories
 

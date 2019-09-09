@@ -11,7 +11,7 @@ from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
 from docker import APIClient, from_env
 
 from dagster import check, seven
-from dagster.core.execution.api import ExecutionSelector
+from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -319,6 +319,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
                         selector=ExecutionSelector(self.pipeline_name),
                         reexecution_config=None,
                         step_keys_to_execute=None,
+                        tags=None,
                         status=PipelineRunStatus.MANAGED,
                     )
                 )

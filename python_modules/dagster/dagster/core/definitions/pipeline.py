@@ -1,5 +1,8 @@
+from collections import namedtuple
+
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.types.runtime import construct_runtime_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
@@ -78,6 +81,7 @@ class PipelineDefinition(IContainSolids, object):
         dependencies=None,
         mode_defs=None,
         preset_defs=None,
+        selector=None,
     ):
         self._name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self._description = check.opt_str_param(description, 'description')
@@ -144,6 +148,10 @@ class PipelineDefinition(IContainSolids, object):
         for current_level_solid_def in self._current_level_solid_defs:
             for solid_def in current_level_solid_def.iterate_solid_defs():
                 self._all_solid_defs[solid_def.name] = solid_def
+
+        self._selector = check.opt_inst_param(
+            selector, 'selector', ExecutionSelector, ExecutionSelector(self._name)
+        )
 
     @property
     def name(self):
@@ -288,6 +296,10 @@ class PipelineDefinition(IContainSolids, object):
     def dependency_structure(self):
         return self._dependency_structure
 
+    @property
+    def selector(self):
+        return self._selector
+
     def has_runtime_type(self, name):
         check.str_param(name, 'name')
         return name in self._runtime_type_dict
@@ -392,10 +404,11 @@ def _build_sub_pipeline(pipeline_def, solid_names):
                 )
 
     sub_pipeline_def = PipelineDefinition(
-        name=pipeline_def.name,
+        name=pipeline_def.name,  # should we change the name for subsetted pipeline?
         solid_defs=list({solid.definition for solid in solids}),
         mode_defs=pipeline_def.mode_definitions,
         dependencies=deps,
+        selector=ExecutionSelector(pipeline_def.name, solid_names),
     )
     handle, _ = ExecutionTargetHandle.get_handle(pipeline_def)
     if handle:
@@ -461,3 +474,15 @@ def _validate_inputs(dependency_structure, solid_dict):
                             runtime_type=handle.input_def.runtime_type.name,
                         )
                     )
+
+
+@whitelist_for_serdes
+class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
+    def __new__(cls, name, solid_subset=None):
+        return super(ExecutionSelector, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            solid_subset=None
+            if solid_subset is None
+            else check.list_param(solid_subset, 'solid_subset', of_type=str),
+        )

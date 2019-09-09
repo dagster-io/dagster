@@ -29,7 +29,7 @@ from dagster_graphql.implementation.fetch_types import get_config_type, get_runt
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 
 from dagster import check
-from dagster.core.execution.api import ExecutionSelector
+from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterFeatures
 
 from .config_types import to_dauphin_config_type
