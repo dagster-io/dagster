@@ -22,9 +22,31 @@ from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.logs import ComputeLogFile, ComputeLogUpdate, fetch_compute_logs
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStats, PipelineRunStatus
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
+
+class DauphinPipelineRunStats(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineRunStats'
+
+    runId = dauphin.NonNull(dauphin.String)
+    stepsSucceeded = dauphin.NonNull(dauphin.Int)
+    stepsFailed = dauphin.NonNull(dauphin.Int)
+    materializations = dauphin.NonNull(dauphin.Int)
+    expectationsSucceeded = dauphin.NonNull(dauphin.Int)
+    expectationsFailed = dauphin.NonNull(dauphin.Int)
+    startTime = dauphin.Field(dauphin.Float)
+    endTime = dauphin.Field(dauphin.Float)
+
+    def __init__(self, stats):
+        super(DauphinPipelineRunStats, self).__init__(
+            runId=stats.run_id, stepsSucceeded=stats.steps_succeeded, stepsFailed=stats.steps_failed,
+            materializations=stats.materializations, expectationsSucceeded=stats.expectations_succeeded,
+            expectationsFailed=stats.expectations_failed, startTime=stats.start_time,
+            endTime=stats.end_time,
+        )
+        self._stats = check.inst_param(stats, 'stats', PipelineRunStats)
 
 
 class DauphinPipelineRun(dauphin.ObjectType):
@@ -33,6 +55,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     runId = dauphin.NonNull(dauphin.String)
     status = dauphin.NonNull('PipelineRunStatus')
+    stats = dauphin.NonNull('PipelineRunStats')
     pipeline = dauphin.NonNull('Pipeline')
     logs = dauphin.NonNull('LogMessageConnection')
     computeLogs = dauphin.Field(
@@ -58,6 +81,10 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_logs(self, graphene_info):
         return graphene_info.schema.type_named('LogMessageConnection')(self._pipeline_run)
+
+    def resolve_stats(self, graphene_info):
+        stats = graphene_info.context.instance.get_run_stats(self.run_id)
+        return graphene_info.schema.type_named('PipelineRunStats')(stats)
 
     def resolve_computeLogs(self, graphene_info, stepKey):
         update = fetch_compute_logs(graphene_info.context.instance, self.run_id, stepKey)

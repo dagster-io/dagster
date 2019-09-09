@@ -15,6 +15,19 @@ class PipelineRunStatus(Enum):
 
 
 @whitelist_for_serdes
+class PipelineRunStats(
+    namedtuple(
+        '_PipelineRunStats',
+        (
+            'run_id steps_succeeded steps_failed materializations expectations_succeeded '
+            'expectations_failed start_time end_time'
+        ),
+    )
+):
+    pass
+
+
+@whitelist_for_serdes
 class PipelineRun(
     namedtuple(
         '_PipelineRun',
@@ -67,9 +80,8 @@ class PipelineRun(
             reexecution_config=check.opt_inst_param(
                 reexecution_config, 'reexecution_config', ReexecutionConfig
             ),
-            step_keys_to_execute=None
-            if step_keys_to_execute is None
-            else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
+            step_keys_to_execute=None if step_keys_to_execute is None else
+            check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
             tags=check.opt_dict_param(tags, 'tags', key_type=str),
             status=status,
         )

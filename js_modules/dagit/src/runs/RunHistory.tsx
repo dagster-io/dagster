@@ -37,62 +37,11 @@ import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components";
 
-function dateString(timestamp: number) {
-  if (timestamp === 0) {
+function unixToString(unix: number | null) {
+  if (!unix) {
     return null;
   }
-  return new Date(timestamp).toLocaleString();
-}
-
-function getStartTime(run: RunHistoryRunFragment) {
-  for (const log of run.logs.nodes) {
-    if (log.__typename === "PipelineStartEvent") {
-      return Number(log.timestamp);
-    }
-  }
-  return 0;
-}
-
-function getEndTime(run: RunHistoryRunFragment) {
-  for (const log of run.logs.nodes) {
-    if (
-      log.__typename === "PipelineSuccessEvent" ||
-      log.__typename === "PipelineFailureEvent"
-    ) {
-      return Number(log.timestamp);
-    }
-  }
-  return 0;
-}
-
-function getDetailedStats(run: RunHistoryRunFragment) {
-  // 18 steps succeeded, 3 steps failed, 4 materializations 10 expectations, etc.
-  const stats = {
-    stepsSucceeded: 0,
-    stepsFailed: 0,
-    materializations: 0,
-    expectationsSucceeded: 0,
-    expectationsFailed: 0
-  };
-  for (const log of run.logs.nodes) {
-    if (log.__typename === "ExecutionStepFailureEvent") {
-      stats.stepsFailed += 1;
-    }
-    if (log.__typename === "ExecutionStepSuccessEvent") {
-      stats.stepsSucceeded += 1;
-    }
-    if (log.__typename === "StepMaterializationEvent") {
-      stats.materializations += 1;
-    }
-    if (log.__typename === "StepExpectationResultEvent") {
-      if (log.expectationResult.success) {
-        stats.expectationsSucceeded += 1;
-      } else {
-        stats.expectationsFailed += 1;
-      }
-    }
-  }
-  return stats;
+  return new Date(unix * 1000).toLocaleString();
 }
 
 enum RunSort {
@@ -205,18 +154,14 @@ export default class RunHistory extends React.Component<
         pipeline {
           name
         }
-        logs {
-          nodes {
-            __typename
-            ... on MessageEvent {
-              timestamp
-            }
-            ... on StepExpectationResultEvent {
-              expectationResult {
-                success
-              }
-            }
-          }
+        stats {
+          stepsSucceeded
+          stepsFailed
+          startTime
+          endTime
+          expectationsFailed
+          expectationsSucceeded
+          materializations
         }
         executionPlan {
           steps {
@@ -246,18 +191,21 @@ export default class RunHistory extends React.Component<
     if (sortType === null) {
       return runs;
     }
-
     return runs.sort((a, b) => {
+      const aStart = a.stats.startTime || Date.now();
+      const bStart = b.stats.startTime || Date.now();
+      const aEnd = a.stats.endTime || Date.now();
+      const bEnd = b.stats.endTime || Date.now();
       switch (sortType) {
         case RunSort.START_TIME_ASC:
-          return getStartTime(a) - getStartTime(b);
+          return aStart - bStart;
         case RunSort.START_TIME_DSC:
-          return getStartTime(b) - getStartTime(a);
+          return bStart - aStart;
         case RunSort.END_TIME_ASC:
-          return getEndTime(a) - getEndTime(b);
+          return aEnd - bEnd;
         case RunSort.END_TIME_DSC:
         default:
-          return getEndTime(b) - getEndTime(a);
+          return bEnd - aEnd;
       }
     });
   };
@@ -351,14 +299,14 @@ const RunTable: React.FunctionComponent<RunTableProps> = props => (
 const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
   run
 }) => {
-  const start = getStartTime(run);
-  const end = getEndTime(run);
-  const stats = getDetailedStats(run);
-
   return (
     <RowContainer key={run.runId}>
       <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
-        <RunStatus status={start && end ? run.status : "STARTED"} />
+        <RunStatus
+          status={
+            run.stats.startTime && run.stats.endTime ? run.status : "STARTED"
+          }
+        />
       </RowColumn>
       <RowColumn style={{ flex: 2.4 }}>
         <Link
@@ -368,16 +316,17 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
           {titleForRun(run)}
         </Link>
         <Details>
-          {`${stats.stepsSucceeded}/${stats.stepsSucceeded +
-            stats.stepsFailed} steps succeeded, `}
+          {`${run.stats.stepsSucceeded}/${run.stats.stepsSucceeded +
+            run.stats.stepsFailed} steps succeeded, `}
           <Link
             to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:materialization`}
-          >{`${stats.materializations} materializations`}</Link>
+          >{`${run.stats.materializations} materializations`}</Link>
           ,{" "}
           <Link
             to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:expectation`}
-          >{`${stats.expectationsSucceeded}/${stats.expectationsSucceeded +
-            stats.expectationsFailed} expectations passed`}</Link>
+          >{`${run.stats.expectationsSucceeded}/${run.stats
+            .expectationsSucceeded +
+            run.stats.expectationsFailed} expectations passed`}</Link>
         </Details>
       </RowColumn>
       <RowColumn>
@@ -447,32 +396,35 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
         </Popover>
       </RowColumn>
       <RowColumn style={{ flex: 1.6 }}>
-        {start ? (
+        {run.stats.startTime ? (
           <div style={{ marginBottom: 4 }}>
-            <Icon icon="calendar" /> {dateString(start)}
+            <Icon icon="calendar" /> {unixToString(run.stats.startTime)}
             <Icon
               icon="arrow-right"
               style={{ marginLeft: 10, marginRight: 10 }}
             />
-            {dateString(end)}
+            {unixToString(run.stats.endTime)}
           </div>
         ) : (
           <div style={{ marginBottom: 4 }}>
             <Icon icon="calendar" /> Starting...
           </div>
         )}
-        <RunTime start={start} end={end} />
+        <RunTime startUnix={run.stats.startTime} endUnix={run.stats.endTime} />
       </RowColumn>
     </RowContainer>
   );
 };
 
-class RunTime extends React.Component<{ start: number; end: number }> {
+class RunTime extends React.Component<{
+  startUnix: number | null;
+  endUnix: number | null;
+}> {
   _interval?: NodeJS.Timer;
   _timeout?: NodeJS.Timer;
 
   componentDidMount() {
-    if (this.props.end !== 0) return;
+    if (this.props.endUnix) return;
 
     // align to the next second and then update every second so the elapsed
     // time "ticks" up. Our render method uses Date.now(), so all we need to
@@ -490,8 +442,8 @@ class RunTime extends React.Component<{ start: number; end: number }> {
   }
 
   render() {
-    const start = this.props.start;
-    const end = this.props.end || Date.now();
+    const start = this.props.startUnix ? this.props.startUnix * 1000 : 0;
+    const end = this.props.endUnix ? this.props.endUnix * 1000 : Date.now();
 
     return (
       <div>
