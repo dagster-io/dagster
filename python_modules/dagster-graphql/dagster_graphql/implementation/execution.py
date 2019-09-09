@@ -130,7 +130,9 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     )
 
     # pylint: disable=E1101
-    return Observable.create(PipelineRunObservableSubscribe(instance, run_id)).map(
+    return Observable.create(
+        PipelineRunObservableSubscribe(instance, run_id, after_cursor=after)
+    ).map(
         lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
             runId=run_id,
             messages=[

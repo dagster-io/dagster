@@ -31,7 +31,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepSkippedEv
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineProcessExitedEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;

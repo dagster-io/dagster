@@ -238,7 +238,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         while not process.message_queue.empty():
             message = process.message_queue.get(False)
             process.instance.handle_new_event(message)
-            if (
+            if isinstance(message, DagsterEventRecord) and (
                 message.dagster_event.event_type_value
                 == DagsterEventType.PIPELINE_PROCESS_EXITED.value
             ):
