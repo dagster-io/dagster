@@ -6,13 +6,7 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_presets_on_examples 1'] = {
-    'pipeline': {
-        'name': 'sleepy',
-        'presets': [
-        ]
-    }
-}
+snapshots['test_presets_on_examples 1'] = {'pipeline': {'name': 'sleepy', 'presets': []}}
 
 snapshots['test_presets_on_examples 2'] = {
     'pipeline': {
@@ -42,35 +36,17 @@ solids:
 ''',
                 'mode': 'errorable_mode',
                 'name': 'passing',
-                'solidSubset': None
+                'solidSubset': None,
             }
-        ]
+        ],
     }
 }
 
-snapshots['test_presets_on_examples 3'] = {
-    'pipeline': {
-        'name': 'log_spew',
-        'presets': [
-        ]
-    }
-}
+snapshots['test_presets_on_examples 3'] = {'pipeline': {'name': 'log_spew', 'presets': []}}
 
-snapshots['test_presets_on_examples 4'] = {
-    'pipeline': {
-        'name': 'many_events',
-        'presets': [
-        ]
-    }
-}
+snapshots['test_presets_on_examples 4'] = {'pipeline': {'name': 'many_events', 'presets': []}}
 
-snapshots['test_presets_on_examples 5'] = {
-    'pipeline': {
-        'name': 'composition',
-        'presets': [
-        ]
-    }
-}
+snapshots['test_presets_on_examples 5'] = {'pipeline': {'name': 'composition', 'presets': []}}
 
 snapshots['test_presets_on_examples 6'] = {
     'pipeline': {
@@ -190,7 +166,7 @@ solids:
 ''',
                 'mode': 'local',
                 'name': 'local_fast',
-                'solidSubset': None
+                'solidSubset': None,
             },
             {
                 '__typename': 'PipelinePreset',
@@ -306,9 +282,9 @@ solids:
 ''',
                 'mode': 'local',
                 'name': 'local_full',
-                'solidSubset': None
-            }
-        ]
+                'solidSubset': None,
+            },
+        ],
     }
 }
 
@@ -328,40 +304,30 @@ snapshots['test_presets_on_examples 7'] = {
 solids:
   upload_delays_by_geography_pdf_plots:
     config:
-      Bucket: dagster-scratch
+      Bucket: dagster-scratch-80542c2
       Key: airline_outputs/delays_by_geography.pdf
   upload_delays_vs_fares_pdf_plots:
     config:
-        Bucket: dagster-scratch
+        Bucket: dagster-scratch-80542c2
         Key: airline_outputs/delays_vs_fares.pdf
   upload_outbound_avg_delay_pdf_plots:
     config:
-      Bucket: dagster-scratch
+      Bucket: dagster-scratch-80542c2
       Key: airline_outputs/sfo_outbound_avg_delay_plots.pdf
 ''',
                 'mode': 'local',
                 'name': 'local',
-                'solidSubset': None
+                'solidSubset': None,
             }
-        ]
+        ],
     }
 }
 
 snapshots['test_presets_on_examples 8'] = {
-    'pipeline': {
-        'name': 'event_ingest_pipeline',
-        'presets': [
-        ]
-    }
+    'pipeline': {'name': 'event_ingest_pipeline', 'presets': []}
 }
 
-snapshots['test_presets_on_examples 9'] = {
-    'pipeline': {
-        'name': 'pyspark_pagerank',
-        'presets': [
-        ]
-    }
-}
+snapshots['test_presets_on_examples 9'] = {'pipeline': {'name': 'pyspark_pagerank', 'presets': []}}
 
 snapshots['test_presets_on_examples 10'] = {
     'pipeline': {
@@ -378,7 +344,7 @@ snapshots['test_presets_on_examples 10'] = {
 ''',
                 'mode': 'default',
                 'name': 'prod',
-                'solidSubset': None
+                'solidSubset': None,
             },
             {
                 '__typename': 'PipelinePreset',
@@ -391,9 +357,9 @@ snapshots['test_presets_on_examples 10'] = {
 ''',
                 'mode': 'default',
                 'name': 'test',
-                'solidSubset': None
-            }
-        ]
+                'solidSubset': None,
+            },
+        ],
     }
 }
 
@@ -412,7 +378,7 @@ snapshots['test_presets_on_examples 11'] = {
 ''',
                 'mode': 'default',
                 'name': 'prod',
-                'solidSubset': None
+                'solidSubset': None,
             },
             {
                 '__typename': 'PipelinePreset',
@@ -425,8 +391,8 @@ snapshots['test_presets_on_examples 11'] = {
 ''',
                 'mode': 'default',
                 'name': 'test',
-                'solidSubset': None
-            }
-        ]
+                'solidSubset': None,
+            },
+        ],
     }
 }
