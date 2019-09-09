@@ -92,17 +92,17 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-eilVRo iEncGI"
+          className="sc-emmjRN epDJYT"
         >
           <a
-            className="active sc-eerKOB icCBPh"
+            className="active sc-cpmLhU dTkfMH"
             href="/p/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-eerKOB icCBPh"
+            className="sc-cpmLhU dTkfMH"
             href="/p/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -115,7 +115,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-eerKOB icCBPh"
+        className="sc-cpmLhU dTkfMH"
         href="/runs"
         onClick={[Function]}
       >
@@ -134,7 +134,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-gHboQg lioQZZ"
+        className="sc-eerKOB bGkEdI"
       />
     </div>
   </div>,
@@ -275,7 +275,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-eerKOB icCBPh"
+        className="sc-cpmLhU dTkfMH"
         href="/runs"
         onClick={[Function]}
       >
@@ -294,7 +294,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-gHboQg lioQZZ"
+        className="sc-eerKOB bGkEdI"
       />
     </div>
   </div>,
@@ -405,17 +405,17 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-eilVRo iEncGI"
+          className="sc-emmjRN epDJYT"
         >
           <a
-            className="active sc-eerKOB icCBPh"
+            className="active sc-cpmLhU dTkfMH"
             href="/p/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-eerKOB icCBPh"
+            className="sc-cpmLhU dTkfMH"
             href="/p/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -428,7 +428,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-eerKOB icCBPh"
+        className="sc-cpmLhU dTkfMH"
         href="/runs"
         onClick={[Function]}
       >
@@ -447,7 +447,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-gHboQg lioQZZ"
+        className="sc-eerKOB bGkEdI"
       />
     </div>
   </div>,
@@ -586,17 +586,17 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-eilVRo iEncGI"
+          className="sc-emmjRN epDJYT"
         >
           <a
-            className="active sc-eerKOB icCBPh"
+            className="active sc-cpmLhU dTkfMH"
             href="/p/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-eerKOB icCBPh"
+            className="sc-cpmLhU dTkfMH"
             href="/p/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -609,7 +609,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-eerKOB icCBPh"
+        className="sc-cpmLhU dTkfMH"
         href="/runs"
         onClick={[Function]}
       >
@@ -628,7 +628,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-gHboQg lioQZZ"
+        className="sc-eerKOB bGkEdI"
       />
     </div>
   </div>,
@@ -767,17 +767,17 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-eilVRo iEncGI"
+          className="sc-emmjRN epDJYT"
         >
           <a
-            className="active sc-eerKOB icCBPh"
+            className="active sc-cpmLhU dTkfMH"
             href="/p/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-eerKOB icCBPh"
+            className="sc-cpmLhU dTkfMH"
             href="/p/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -790,7 +790,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-eerKOB icCBPh"
+        className="sc-cpmLhU dTkfMH"
         href="/runs"
         onClick={[Function]}
       >
@@ -809,7 +809,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-gHboQg lioQZZ"
+        className="sc-eerKOB bGkEdI"
       />
     </div>
   </div>,
@@ -950,7 +950,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-eerKOB icCBPh"
+        className="sc-cpmLhU dTkfMH"
         href="/runs"
         onClick={[Function]}
       >
@@ -969,7 +969,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-gHboQg lioQZZ"
+        className="sc-eerKOB bGkEdI"
       />
     </div>
   </div>,
