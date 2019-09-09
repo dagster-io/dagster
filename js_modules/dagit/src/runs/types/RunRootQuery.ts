@@ -508,7 +508,7 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun {
   environmentConfigYaml: string;
   mode: string;
   executionPlan: RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan;
-  stepKeysToExecute: (string | null)[] | null;
+  stepKeysToExecute: string[] | null;
 }
 
 export type RunRootQuery_pipelineRunOrError = RunRootQuery_pipelineRunOrError_PipelineRunNotFoundError | RunRootQuery_pipelineRunOrError_PipelineRun;

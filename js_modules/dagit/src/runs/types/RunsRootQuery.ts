@@ -51,7 +51,7 @@ export interface RunsRootQuery_pipelineRuns {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
-  stepKeysToExecute: (string | null)[] | null;
+  stepKeysToExecute: string[] | null;
   mode: string;
   environmentConfigYaml: string;
   pipeline: RunsRootQuery_pipelineRuns_pipeline;

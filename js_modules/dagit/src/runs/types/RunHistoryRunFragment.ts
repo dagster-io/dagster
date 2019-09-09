@@ -51,7 +51,7 @@ export interface RunHistoryRunFragment {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
-  stepKeysToExecute: (string | null)[] | null;
+  stepKeysToExecute: string[] | null;
   mode: string;
   environmentConfigYaml: string;
   pipeline: RunHistoryRunFragment_pipeline;

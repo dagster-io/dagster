@@ -504,5 +504,5 @@ export interface RunFragment {
   environmentConfigYaml: string;
   mode: string;
   executionPlan: RunFragment_executionPlan;
-  stepKeysToExecute: (string | null)[] | null;
+  stepKeysToExecute: string[] | null;
 }

@@ -10,7 +10,9 @@ import {
   NonIdealState,
   Popover,
   Position,
-  Spinner
+  Spinner,
+  Colors,
+  InputGroup
 } from "@blueprintjs/core";
 import {
   Details,
@@ -29,6 +31,8 @@ import { Link } from "react-router-dom";
 import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
+import { IconNames } from "@blueprintjs/icons";
+import styled from "styled-components";
 
 function dateString(timestamp: number) {
   if (timestamp === 0) {
@@ -115,18 +119,20 @@ function sortLabel(sort: RunSort) {
   }
 }
 
-interface IRunHistoryProps {
+interface RunHistoryProps {
   runs: RunHistoryRunFragment[];
+  initialSearch: string;
 }
 
-interface IRunHistoryState {
+interface RunHistoryState {
   sort: RunSort;
+  search: string;
   statuses: IRunStatus[];
 }
 
 export default class RunHistory extends React.Component<
-  IRunHistoryProps,
-  IRunHistoryState
+  RunHistoryProps,
+  RunHistoryState
 > {
   static fragments = {
     RunHistoryRunFragment: gql`
@@ -161,7 +167,14 @@ export default class RunHistory extends React.Component<
     `
   };
 
-  state = { sort: RunSort.START_TIME_DSC, statuses: AllRunStatuses };
+  constructor(props: RunHistoryProps) {
+    super(props);
+    this.state = {
+      sort: RunSort.START_TIME_DSC,
+      search: props.initialSearch,
+      statuses: AllRunStatuses
+    };
+  }
 
   sortRuns = (runs: RunHistoryRunFragment[]) => {
     const sortType = this.state.sort;
@@ -186,11 +199,20 @@ export default class RunHistory extends React.Component<
 
   render() {
     const { runs } = this.props;
+    const { statuses, search, sort } = this.state;
+
+    const searchKeywords = search.split(" ");
+    const matchesAnyKeyword = (str: string) =>
+      searchKeywords.length ? searchKeywords.some(k => str.includes(k)) : true;
 
     const mostRecentRun = runs[runs.length - 1];
-    const sortedRuns = this.sortRuns(runs.slice(0, runs.length - 1)).filter(r =>
-      this.state.statuses.includes(r.status)
-    );
+    const sortedRuns = this.sortRuns(runs.slice(0, runs.length - 1))
+      .filter(r => statuses.includes(r.status))
+      .filter(r =>
+        [r.runId, r.mode, r.pipeline.name, ...(r.stepKeysToExecute || [])].some(
+          matchesAnyKeyword
+        )
+      );
 
     return (
       <ScrollContainer>
@@ -207,10 +229,12 @@ export default class RunHistory extends React.Component<
             <MostRecentRun run={mostRecentRun} />
             <RunTable
               runs={sortedRuns}
-              sort={this.state.sort}
-              statuses={this.state.statuses}
+              sort={sort}
+              search={search}
+              statuses={statuses}
               onSetSort={sort => this.setState({ sort })}
               onSetStatuses={statuses => this.setState({ statuses })}
+              onSetSearch={search => this.setState({ search })}
             />
           </>
         )}
@@ -231,15 +255,24 @@ const MostRecentRun: React.FunctionComponent<{
 interface RunTableProps {
   runs: RunHistoryRunFragment[];
   sort: RunSort;
+  search: string;
   statuses: IRunStatus[];
   onSetStatuses: (statuses: IRunStatus[]) => void;
   onSetSort: (sort: RunSort) => void;
+  onSetSearch: (filter: string) => void;
 }
 
 const RunTable: React.FunctionComponent<RunTableProps> = props => (
   <div>
-    <Header>
-      <div style={{ float: "right" }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "baseline",
+        justifyContent: "space-between"
+      }}
+    >
+      <Header>{`Previous Runs (${props.runs.length})`}</Header>
+      <Filters>
         <ButtonGroup style={{ marginRight: 15 }}>
           {AllRunStatuses.map(s => (
             <Button
@@ -261,6 +294,29 @@ const RunTable: React.FunctionComponent<RunTableProps> = props => (
             </Button>
           ))}
         </ButtonGroup>
+
+        <FilterInputGroup
+          leftIcon="filter"
+          placeholder="Filter runs..."
+          value={props.search}
+          spellCheck={false}
+          rightElement={
+            props.search.length ? (
+              <Icon
+                color={Colors.GRAY1}
+                icon={IconNames.SMALL_CROSS}
+                style={{ padding: 7 }}
+                onClick={() => props.onSetSearch("")}
+              />
+            ) : (
+              undefined
+            )
+          }
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            props.onSetSearch(e.target.value)
+          }
+        />
+
         <Popover
           position={Position.BOTTOM_RIGHT}
           content={
@@ -286,9 +342,8 @@ const RunTable: React.FunctionComponent<RunTableProps> = props => (
             text={sortLabel(props.sort)}
           />
         </Popover>
-      </div>
-      {`Previous Runs (${props.runs.length})`}
-    </Header>
+      </Filters>
+    </div>
     <Legend>
       <LegendColumn style={{ maxWidth: 40 }}></LegendColumn>
       <LegendColumn style={{ flex: 2.3 }}>Run</LegendColumn>
@@ -348,7 +403,11 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
           alignItems: "flex-start"
         }}
       >
-        <div style={{ flex: 1 }}>
+        <div
+          style={{
+            flex: 1
+          }}
+        >
           <div>{`Mode: ${run.mode}`}</div>
 
           {run.stepKeysToExecute && (
@@ -450,3 +509,15 @@ class RunTime extends React.Component<{ start: number; end: number }> {
     );
   }
 }
+
+const FilterInputGroup = styled(InputGroup)`
+  width: 220px;
+  margin-right: 10px;
+`;
+
+const Filters = styled.div`
+  float: right;
+  display: flex;
+  align-items: center;
+  margin-bottom: 14px;
+`;
