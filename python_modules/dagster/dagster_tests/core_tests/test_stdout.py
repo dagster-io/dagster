@@ -1,4 +1,5 @@
 import os
+import sys
 
 from dagster import DagsterEventType, execute_pipeline, lambda_solid, pipeline
 from dagster.core.execution.logs import fetch_compute_logs
