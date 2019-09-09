@@ -52,6 +52,7 @@ REPO_TARGET_WARNING = (
     '--storage-fallback',
     help="Base directory for dagster storage if $DAGSTER_HOME is not set",
     default=None,
+    type=click.Path(),
 )
 @click.option(
     '--no-watch',

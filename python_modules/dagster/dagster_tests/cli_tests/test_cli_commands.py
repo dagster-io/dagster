@@ -159,8 +159,7 @@ def test_list_command():
         pipeline_list_command,
         ['-f', 'foo.py', '-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo'],
     )
-    assert result.exit_code == 1
-    assert isinstance(result.exception, CliUsageError)
+    assert result.exit_code == 2
 
     with pytest.raises(CliUsageError):
         execute_list_command(

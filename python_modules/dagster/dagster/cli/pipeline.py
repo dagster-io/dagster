@@ -53,7 +53,7 @@ def repository_target_argument(f):
         click.option(
             '--repository-yaml',
             '-y',
-            type=click.STRING,
+            type=click.Path(exists=True),
             help=(
                 'Path to config file. Defaults to ./{default_filename} if --python-file '
                 'and --module-name are not specified'
@@ -62,6 +62,7 @@ def repository_target_argument(f):
         click.option(
             '--python-file',
             '-f',
+            type=click.Path(exists=True),
             help='Specify python file where repository or pipeline function lives.',
         ),
         click.option(
@@ -81,14 +82,14 @@ def pipeline_target_command(f):
         click.option(
             '--repository-yaml',
             '-y',
-            type=click.STRING,
+            type=click.Path(exists=True),
             help=(
                 'Path to config file. Defaults to ./{default_filename} if --python-file '
                 'and --module-name are not specified'
             ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
         ),
         click.argument('pipeline_name', nargs=-1),
-        click.option('--python-file', '-f'),
+        click.option('--python-file', '-f', type=click.Path(exists=True)),
         click.option('--module-name', '-m'),
         click.option('--fn-name', '-n'),
     )
@@ -254,7 +255,7 @@ def pipeline_graphviz_command(only_solids, **kwargs):
 @click.option(
     '-e',
     '--env',
-    type=click.STRING,
+    type=click.Path(exists=True),
     multiple=True,
     help=(
         'Specify one or more environment files. These can also be file patterns. '

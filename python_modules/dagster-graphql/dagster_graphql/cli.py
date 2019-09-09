@@ -125,7 +125,9 @@ PREDEFINED_QUERIES = {'startPipelineExecution': START_PIPELINE_EXECUTION_QUERY}
 @click.option(
     '--text', '-t', type=click.STRING, help='GraphQL document to execute passed as a string'
 )
-@click.option('--file', type=click.STRING, help='GraphQL document to execute passed as a file')
+@click.option(
+    '--file', '-f', type=click.File(), help='GraphQL document to execute passed as a file'
+)
 @click.option(
     '--predefined',
     '-p',
@@ -145,8 +147,7 @@ def ui(text, file, predefined, variables, **kwargs):
     if text is not None and file is None and predefined is None:
         query = text.strip('\'" \n\t')
     elif file is not None and text is None and predefined is None:
-        with open(file) as ff:
-            query = ff.read()
+        query = file.read()
     elif predefined is not None and text is None and file is None:
         query = PREDEFINED_QUERIES[predefined]
     else:

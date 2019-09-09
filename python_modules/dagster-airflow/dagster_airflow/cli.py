@@ -102,7 +102,7 @@ def main():
 @click.option(
     '--output-path',
     '-o',
-    type=click.STRING,
+    type=click.Path(),
     help='Optional. If unset, $AIRFLOW_HOME will be used.',
     default=os.getenv('AIRFLOW_HOME'),
 )

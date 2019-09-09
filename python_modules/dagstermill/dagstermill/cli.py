@@ -47,7 +47,7 @@ def get_notebook_scaffolding():
 
 
 @click.command(name='register-notebook', help=('Registers repository in existing notebook'))
-@click.option('--notebook', '-note', type=click.STRING, help='Path to notebook')
+@click.option('--notebook', '-note', type=click.Path(exists=True), help='Path to notebook')
 def retroactively_scaffold_notebook(notebook):
     execute_retroactive_scaffold(notebook)
 
@@ -68,7 +68,7 @@ def execute_retroactive_scaffold(notebook_path):
 
 
 @click.command(name='create-notebook', help=('Creates new dagstermill notebook.'))
-@click.option('--notebook', '-note', type=click.STRING, help="Name of notebook")
+@click.option('--notebook', '-note', type=click.Path(), help="Name of notebook")
 @click.option(
     '--force-overwrite',
     is_flag=True,

@@ -266,7 +266,9 @@ def serialize(result):
 
 
 @click.command()
-@click.option('--output-file', help='Base path to write config file to', required=True)
+@click.option(
+    '--output-file', help='Base path to write config file to', required=True, type=click.Path()
+)
 def run(output_file):
     r = requests.get(
         'https://raw.githubusercontent.com/apache/spark/{}/docs/configuration.md'.format(

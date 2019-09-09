@@ -38,7 +38,7 @@ def repository_target_argument(f):
         click.option(
             '--repository-yaml',
             '-y',
-            type=click.STRING,
+            type=click.Path(exists=True),
             help=('Path to config file. Defaults to ./{default_filename} not specified').format(
                 default_filename=DEFAULT_REPOSITORY_YAML_FILENAME
             ),
