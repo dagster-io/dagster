@@ -18,6 +18,7 @@ def spew_pipeline():
 
 
 HELLO_WORLD = 'Hello World'
+SEPARATOR = os.linesep if (os.name == 'nt' and sys.version_info < (3,)) else '\n'
 
 
 def test_stdout(tmpdir):
@@ -36,4 +37,4 @@ def test_stdout(tmpdir):
         assert len(compute_steps) == 1
         step_key = compute_steps[0]
         logs = fetch_compute_logs(instance, result.run_id, step_key)
-        assert logs.stdout == HELLO_WORLD + os.linesep
+        assert logs.stdout == HELLO_WORLD + SEPARATOR
