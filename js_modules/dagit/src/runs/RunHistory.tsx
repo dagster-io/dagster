@@ -109,16 +109,19 @@ export default class RunHistory extends React.Component<
       return runs;
     }
     return runs.sort((a, b) => {
+      const aStart = a.stats.startTime || Date.now();
+      const bStart = b.stats.startTime || Date.now();
+      const aEnd = a.stats.endTime || Date.now();
+      const bEnd = b.stats.endTime || Date.now();
       switch (sortType) {
         case RunSort.START_TIME_ASC:
-          return (a.stats.startTime || 0) - (b.stats.startTime || 0);
+          return aStart - bStart;
         case RunSort.START_TIME_DSC:
-          return (b.stats.startTime || 0) - (a.stats.startTime || 0);
+          return bStart - aStart;
         case RunSort.END_TIME_ASC:
-          return (a.stats.endTime || 0) - (b.stats.endTime || 0);
+          return aEnd - bEnd;
         case RunSort.END_TIME_DSC:
         default:
-          return (b.stats.endTime || 0) - (a.stats.endTime || 0);
       }
     });
   };
