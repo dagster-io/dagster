@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 
 import click
 import six
@@ -40,6 +41,8 @@ def construct_environment_yaml(preset_name, env, pipeline_name, module_name):
 
 
 def construct_scaffolded_file_contents(module_name, pipeline_name, environment_dict):
+    yesterday = datetime.now() - timedelta(1)
+
     printer = IndentingStringIoPrinter(indent_level=4)
     printer.line('\'\'\'')
     printer.line(
@@ -58,17 +61,31 @@ def construct_scaffolded_file_contents(module_name, pipeline_name, environment_d
     printer.line('from dagster_airflow.factory import make_airflow_dag')
     printer.blank_line()
     printer.blank_line()
+    printer.line('#' * 80)
+    printer.comment('#')
+    printer.comment('# This environment is auto-generated from your configs and/or presets')
+    printer.comment('#')
+    printer.line('#' * 80)
     printer.line('ENVIRONMENT = \'\'\'')
     printer.line(yaml.dump(environment_dict, default_flow_style=False))
     printer.line('\'\'\'')
     printer.blank_line()
     printer.blank_line()
-    printer.comment('NOTE: these arguments should be edited for your environment')
+    printer.line('#' * 80)
+    printer.comment('#')
+    printer.comment('# NOTE: these arguments should be edited for your environment')
+    printer.comment('#')
+    printer.line('#' * 80)
     printer.line('DEFAULT_ARGS = {')
     with printer.with_indent():
         printer.line("'owner': 'airflow',")
         printer.line("'depends_on_past': False,")
-        printer.line("'start_date': datetime.datetime(2019, 5, 7),")
+
+        # start date -> yesterday
+        printer.line(
+            "'start_date': datetime.datetime(%s, %d, %d),"
+            % (yesterday.year, yesterday.month, yesterday.day)
+        )
         printer.line("'email': ['airflow@example.com'],")
         printer.line("'email_on_failure': False,")
         printer.line("'email_on_retry': False,")
@@ -77,9 +94,9 @@ def construct_scaffolded_file_contents(module_name, pipeline_name, environment_d
     printer.line('dag, tasks = make_airflow_dag(')
     with printer.with_indent():
         printer.comment(
-            'NOTE: you must ensure that {module_name} is installed or available on sys.path, '
-            'otherwise, this import will fail.'.format(module_name=module_name)
+            'NOTE: you must ensure that {module_name} is '.format(module_name=module_name)
         )
+        printer.comment('installed or available on sys.path, otherwise, this import will fail.')
         printer.line('module_name=\'{module_name}\','.format(module_name=module_name))
         printer.line('pipeline_name=\'{pipeline_name}\','.format(pipeline_name=pipeline_name))
         printer.line("environment_dict=yaml.load(ENVIRONMENT),")
