@@ -106,6 +106,9 @@ def test_running():
     process_started_events = get_events_of_type(events, DagsterEventType.PIPELINE_PROCESS_STARTED)
     assert len(process_started_events) == 1
 
+    process_exited_events = get_events_of_type(events, DagsterEventType.PIPELINE_PROCESS_EXITED)
+    assert len(process_exited_events) == 1
+
 
 def test_failing():
     run_id = make_new_run_id()

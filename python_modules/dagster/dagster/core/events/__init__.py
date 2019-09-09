@@ -43,6 +43,7 @@ class DagsterEventType(Enum):
 
     PIPELINE_PROCESS_START = 'PIPELINE_PROCESS_START'
     PIPELINE_PROCESS_STARTED = 'PIPELINE_PROCESS_STARTED'
+    PIPELINE_PROCESS_EXITED = 'PIPELINE_PROCESS_EXITED'
 
     OBJECT_STORE_OPERATION = 'OBJECT_STORE_OPERATION'
 
@@ -94,6 +95,8 @@ def _validate_event_specific_data(event_type, event_specific_data):
         check.inst_param(event_specific_data, 'event_specific_data', StepMaterializationData)
     elif event_type == DagsterEventType.PIPELINE_PROCESS_STARTED:
         check.inst_param(event_specific_data, 'event_specific_data', PipelineProcessStartedData)
+    elif event_type == DagsterEventType.PIPELINE_PROCESS_EXITED:
+        check.inst_param(event_specific_data, 'event_specific_data', PipelineProcessExitedData)
     elif event_type == DagsterEventType.STEP_INPUT:
         check.inst_param(event_specific_data, 'event_specific_data', StepInputData)
 
@@ -555,6 +558,13 @@ class ObjectStoreOperationResultData(
 @whitelist_for_serdes
 class PipelineProcessStartedData(
     namedtuple('_PipelineProcessStartedData', 'process_id pipeline_name run_id')
+):
+    pass
+
+
+@whitelist_for_serdes
+class PipelineProcessExitedData(
+    namedtuple('_PipelineProcessExitedData', 'process_id pipeline_name run_id')
 ):
     pass
 

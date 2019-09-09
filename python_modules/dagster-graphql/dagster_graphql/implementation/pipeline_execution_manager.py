@@ -24,6 +24,7 @@ from dagster.core.events import (
     CallbackEventSink,
     DagsterEvent,
     DagsterEventType,
+    PipelineProcessExitedData,
     PipelineProcessStartData,
     PipelineProcessStartedData,
 )
@@ -118,6 +119,32 @@ def build_process_started_event(run_id, pipeline_name, process_id):
     )
 
 
+def build_process_exited_event(run_id, pipeline_name, process_id):
+    message = 'Process for pipeline exited (pid: {process_id}).'.format(process_id=process_id)
+
+    return DagsterEventRecord(
+        message=message,
+        user_message=message,
+        level=logging.INFO,
+        run_id=run_id,
+        timestamp=time.time(),
+        error_info=None,
+        pipeline_name=pipeline_name,
+        dagster_event=DagsterEvent(
+            message=message,
+            event_type_value=DagsterEventType.PIPELINE_PROCESS_EXITED.value,
+            pipeline_name=pipeline_name,
+            step_key=None,
+            solid_handle=None,
+            step_kind_value=None,
+            logging_tags=None,
+            event_specific_data=PipelineProcessExitedData(
+                pipeline_name=pipeline_name, run_id=run_id, process_id=process_id
+            ),
+        ),
+    )
+
+
 class SynchronousExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, _, pipeline, pipeline_run, instance, raise_on_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -150,20 +177,6 @@ class SynchronousExecutionManager(PipelineExecutionManager):
                     pipeline.name,
                 )
             )
-
-
-class MultiprocessingDone(object):
-    pass
-
-
-class MultiprocessingError(object):
-    def __init__(self, error_info):
-        self.error_info = check.inst_param(error_info, 'error_info', SerializableErrorInfo)
-
-
-class ProcessStartedSentinel(object):
-    def __init__(self, process_id):
-        self.process_id = check.int_param(process_id, 'process_id')
 
 
 class MultiprocessingExecutionManager(PipelineExecutionManager):
@@ -224,22 +237,12 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
     def _consume_process_queue(self, process):
         while not process.message_queue.empty():
             message = process.message_queue.get(False)
-            if isinstance(message, MultiprocessingDone):
+            process.instance.handle_new_event(message)
+            if (
+                message.dagster_event.event_type_value
+                == DagsterEventType.PIPELINE_PROCESS_EXITED.value
+            ):
                 return True
-            elif isinstance(message, MultiprocessingError):
-                process.instance.handle_new_event(
-                    build_synthetic_pipeline_error_record(
-                        process.run_id, message.error_info, process.pipeline_name
-                    )
-                )
-            elif isinstance(message, ProcessStartedSentinel):
-                process.instance.handle_new_event(
-                    build_process_started_event(
-                        process.run_id, process.pipeline_name, message.process_id
-                    )
-                )
-            else:
-                process.instance.handle_new_event(message)
         return False
 
     def join(self):
@@ -312,7 +315,7 @@ def execute_pipeline_through_queue(
 
     check.opt_str_param(mode, 'mode')
 
-    message_queue.put(ProcessStartedSentinel(os.getpid()))
+    message_queue.put(build_process_started_event(run_id, pipeline_name, os.getpid()))
 
     run_config = RunConfig(
         run_id,
@@ -330,7 +333,11 @@ def execute_pipeline_through_queue(
         pipeline_def = handle.with_pipeline_name(pipeline_name).build_pipeline_definition()
     except Exception:  # pylint: disable=broad-except
         repo_error = sys.exc_info()
-        message_queue.put(MultiprocessingError(serializable_error_info_from_exc_info(repo_error)))
+        message_queue.put(
+            build_synthetic_pipeline_error_record(
+                run_id, serializable_error_info_from_exc_info(repo_error), pipeline_name
+            )
+        )
         return
 
     try:
@@ -341,12 +348,11 @@ def execute_pipeline_through_queue(
             run_config=run_config,
             instance=DagsterInstance.ephemeral(instance_dir),
         ):
-            # message_queue.put(event)
             event_list.append(event)
         return PipelineExecutionResult(pipeline_def, run_config.run_id, event_list, lambda: None)
     except Exception:  # pylint: disable=broad-except
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        message_queue.put(MultiprocessingError(error_info))
+        message_queue.put(build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name))
     finally:
-        message_queue.put(MultiprocessingDone())
+        message_queue.put(build_process_exited_event(run_id, pipeline_name, os.getpid()))
         message_queue.close()
