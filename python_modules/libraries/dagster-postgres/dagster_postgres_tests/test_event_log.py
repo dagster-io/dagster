@@ -1,8 +1,15 @@
-from dagster_postgres.event_log import PostgresEventLogStorage
+import uuid
+
+from dagster_postgres.event_log import (
+    EventWatcherEvent,
+    EventWatcherStart,
+    PostgresEventLogStorage,
+    create_event_watcher,
+)
 from dagster_postgres.test import get_test_conn_string
 from dagster_postgres.utils import get_conn
 
-from dagster import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster import ModeDefinition, RunConfig, execute_pipeline, pipeline, solid
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import construct_event_logger
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
@@ -18,7 +25,8 @@ def mode_def(event_callback):
     )
 
 
-def gather_events(solids_fn):
+# This just exists to gather synthetic events to test the store
+def gather_events(solids_fn, run_config=None):
     events = []
 
     def _append_event(event):
@@ -28,7 +36,9 @@ def gather_events(solids_fn):
     def a_pipe():
         solids_fn()
 
-    result = execute_pipeline(a_pipe, {'loggers': {'callback': {}, 'console': {}}})
+    result = execute_pipeline(
+        a_pipe, {'loggers': {'callback': {}, 'console': {}}}, run_config=run_config
+    )
 
     assert result.success
 
@@ -268,3 +278,117 @@ def test_basic_get_logs_for_run_multiple_runs_cursors():
     ]
 
     assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
+
+
+def test_listen_notify_single_run_event():
+    event_log_storage = PostgresEventLogStorage.create_nuked_storage(get_test_conn_string())
+
+    @solid
+    def return_one(_):
+        return 1
+
+    def _solids():
+        return_one()  # pylint: disable=no-value-for-parameter
+
+    event_watcher = create_event_watcher(get_test_conn_string())
+
+    run_id = str(uuid.uuid4())
+
+    event_watcher.watch_run(run_id)
+
+    try:
+        events, result = gather_events(_solids, run_config=RunConfig(run_id=run_id))
+        for event in events:
+            event_log_storage.store_event(event)
+
+        event = event_watcher.queue.get(block=True)
+
+        assert isinstance(event, EventWatcherStart)
+
+        for _ in range(0, 5):
+            watcher_event = event_watcher.queue.get(block=True)
+            assert isinstance(watcher_event, EventWatcherEvent)
+            assert watcher_event.payload.run_id == result.run_id
+
+    finally:
+        event_watcher.close()
+
+
+def test_listen_notify_filter_two_runs_event():
+    event_log_storage = PostgresEventLogStorage.create_nuked_storage(get_test_conn_string())
+
+    @solid
+    def return_one(_):
+        return 1
+
+    def _solids():
+        return_one()  # pylint: disable=no-value-for-parameter
+
+    event_watcher = create_event_watcher(get_test_conn_string())
+
+    run_id_one = str(uuid.uuid4())
+    run_id_two = str(uuid.uuid4())
+
+    event_watcher.watch_run(run_id_one)
+    event_watcher.watch_run(run_id_two)
+
+    try:
+        events_one, result_one = gather_events(_solids, run_config=RunConfig(run_id=run_id_one))
+        for event in events_one:
+            event_log_storage.store_event(event)
+
+        events_two, result_two = gather_events(_solids, run_config=RunConfig(run_id=run_id_two))
+        for event in events_two:
+            event_log_storage.store_event(event)
+
+        event = event_watcher.queue.get(block=True)
+
+        assert isinstance(event, EventWatcherStart)
+
+        for _ in range(0, 10):
+            watcher_event = event_watcher.queue.get(block=True)
+            assert isinstance(watcher_event, EventWatcherEvent)
+            assert watcher_event.payload.run_id in {result_one.run_id, result_two.run_id}
+
+    finally:
+        event_watcher.close()
+
+
+def test_listen_notify_filter_run_event():
+    event_log_storage = PostgresEventLogStorage.create_nuked_storage(get_test_conn_string())
+
+    @solid
+    def return_one(_):
+        return 1
+
+    def _solids():
+        return_one()  # pylint: disable=no-value-for-parameter
+
+    event_watcher = create_event_watcher(get_test_conn_string())
+
+    run_id_one = str(uuid.uuid4())
+    run_id_two = str(uuid.uuid4())
+
+    # only watch one of the runs
+    event_watcher.watch_run(run_id_two)
+
+    try:
+        events_one, _result_one = gather_events(_solids, run_config=RunConfig(run_id=run_id_one))
+        for event in events_one:
+            event_log_storage.store_event(event)
+
+        events_two, result_two = gather_events(_solids, run_config=RunConfig(run_id=run_id_two))
+        for event in events_two:
+            event_log_storage.store_event(event)
+
+        event = event_watcher.queue.get(block=True)
+
+        assert isinstance(event, EventWatcherStart)
+
+        for _ in range(0, 5):
+            watcher_event = event_watcher.queue.get(block=True)
+            assert isinstance(watcher_event, EventWatcherEvent)
+            assert watcher_event.payload.run_id == result_two.run_id
+
+    finally:
+        event_watcher.close()

@@ -1,9 +1,14 @@
+import multiprocessing
+from collections import namedtuple
+
 from dagster_postgres.utils import get_conn
 
 from dagster import check
 from dagster.core.events.log import EventRecord
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.core.storage.event_log import WatchableEventLogStorage
+
+from .pynotify import await_pg_notifications
 
 CREATE_EVENT_LOG_SQL = '''
 CREATE TABLE IF NOT EXISTS event_log (
@@ -16,6 +21,8 @@ CREATE TABLE IF NOT EXISTS event_log (
 DELETE_EVENT_LOG_SQL = '''DELETE FROM event_log '''
 
 DROP_EVENT_LOG_SQL = 'DROP TABLE IF EXISTS event_log'
+
+CHANNEL_NAME = 'run_events'
 
 
 class PostgresEventLogStorage(WatchableEventLogStorage):
@@ -61,9 +68,13 @@ class PostgresEventLogStorage(WatchableEventLogStorage):
         check.inst_param(event, 'event', EventRecord)
 
         with get_conn(self.conn_string).cursor() as curs:
+            event_body = serialize_dagster_namedtuple(event)
             curs.execute(
-                'INSERT INTO event_log (run_id, event_body) VALUES (%s, %s)',
-                (event.run_id, serialize_dagster_namedtuple(event)),
+                '''INSERT INTO event_log (run_id, event_body) VALUES (%s, %s);
+                NOTIFY {channel}, %s; '''.format(
+                    channel=CHANNEL_NAME
+                ),
+                (event.run_id, event_body, event_body),
             )
 
     @property
@@ -81,3 +92,77 @@ class PostgresEventLogStorage(WatchableEventLogStorage):
 
     def end_watch(self, run_id, handler):
         raise NotImplementedError()
+
+
+EventWatcherProcessStartedEvent = namedtuple('EventWatcherProcessStartedEvent', '')
+EventWatcherStart = namedtuple('EventWatcherStart', '')
+EventWatcherEvent = namedtuple('EventWatcherEvent', 'payload')
+EventWatchFailed = namedtuple('EventWatchFailed', 'message')
+EventWatcherEnd = namedtuple('EventWatcherEnd', '')
+
+
+POLLING_CADENCE = 0.25
+
+
+def _postgres_event_watcher_event_loop(conn_string, queue, run_id_dict):
+    init_called = False
+    queue.put(EventWatcherProcessStartedEvent())
+    try:
+        for notif in await_pg_notifications(
+            conn_string, channels=[CHANNEL_NAME], timeout=POLLING_CADENCE, yield_on_timeout=True
+        ):
+            if not init_called:
+                init_called = True
+                queue.put(EventWatcherStart())
+
+            if notif is not None:
+                event_record = deserialize_json_to_dagster_namedtuple(notif.payload)
+                if event_record.run_id in run_id_dict:
+                    queue.put(EventWatcherEvent(event_record))
+            else:
+                # The polling window has timed out
+                pass
+
+    except Exception as e:  # pylint: disable=broad-except
+        queue.put(EventWatchFailed(message=str(e)))
+    finally:
+        queue.put(EventWatcherEnd())
+
+
+def create_event_watcher(conn_string):
+    check.str_param(conn_string, 'conn_string')
+
+    queue = multiprocessing.Queue()
+    m_dict = multiprocessing.Manager().dict()
+    process = multiprocessing.Process(
+        target=_postgres_event_watcher_event_loop, args=(conn_string, queue, m_dict)
+    )
+
+    process.start()
+
+    # block and ensure that the process has actually started. This was required
+    # to get processes to start in linux in buildkite.
+    check.inst(queue.get(block=True), EventWatcherProcessStartedEvent)
+
+    return PostgresEventWatcher(process, queue, m_dict)
+
+
+class PostgresEventWatcher:
+    def __init__(self, process, queue, run_id_dict):
+        self.process = check.inst_param(process, 'process', multiprocessing.Process)
+        self.run_id_dict = check.inst_param(
+            run_id_dict, 'run_id_dict', multiprocessing.managers.DictProxy
+        )
+        self.queue = check.inst_param(queue, 'queue', multiprocessing.queues.Queue)
+
+    def has_run_id(self, run_id):
+        return run_id in self.run_id_dict
+
+    def watch_run(self, run_id):
+        self.run_id_dict[run_id] = True
+
+    def unwatch_run(self, run_id):
+        del self.run_id_dict[run_id]
+
+    def close(self):
+        self.process.terminate()
