@@ -212,7 +212,7 @@ def gcp_tests():
             StepBuilder("libraries-dagster-gcp tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
                 "pip install awscli",
-                "aws s3 cp s3://${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
+                r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
                 + creds_local_file,
                 "export GOOGLE_APPLICATION_CREDENTIALS=" + creds_local_file,
                 "pip install tox;",

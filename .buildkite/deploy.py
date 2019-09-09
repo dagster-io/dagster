@@ -20,7 +20,7 @@ def deploy_scala():
         .run(
             "pip install awscli",
             "pip install --upgrade google-cloud-storage",
-            "aws s3 cp s3://${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
+            r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
             + creds_local_file,
             "export GOOGLE_APPLICATION_CREDENTIALS=" + creds_local_file,
             "pushd scala_modules",

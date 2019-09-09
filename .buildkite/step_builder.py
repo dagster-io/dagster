@@ -20,9 +20,13 @@ INTEGRATION_IMAGE_VERSION = "v5"
 
 
 class BuildkiteQueue(Enum):
-    DEFAULT = "default"
-    MEDIUM = "medium"
+    '''These are the Buildkite CloudFormation queues that we use. All queues with "-p" suffix are
+    provisioned by Pulumi.
+    '''
+
     DOCKER = "docker-p"
+    MICRO = "micro-p"
+    MEDIUM = "medium-p"
 
     @classmethod
     def contains(cls, value):
@@ -32,6 +36,8 @@ class BuildkiteQueue(Enum):
 class StepBuilder:
     def __init__(self, label):
         self._step = {
+            # use Pulumi-managed micro queue by default
+            "agents": {"queue": BuildkiteQueue.MICRO.value},
             "label": label,
             "timeout_in_minutes": TIMEOUT_IN_MIN,
             "retry": {
@@ -93,7 +99,7 @@ class StepBuilder:
     def on_queue(self, queue_name):
         assert BuildkiteQueue.contains(queue_name)
 
-        self._step["agents"] = {'queue': queue_name.value}
+        self._step["agents"]["queue"] = BuildkiteQueue.MEDIUM.value
         return self
 
     def build(self):
