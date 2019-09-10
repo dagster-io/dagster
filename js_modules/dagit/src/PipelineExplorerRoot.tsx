@@ -30,8 +30,11 @@ const PipelineExplorerRoot: React.FunctionComponent<
       variables: { name: props.match.params.pipelineName }
     }
   );
-  const solidPath = props.match.params["0"]; // from the React Router regex
-  const pathSolids = solidPath.split("/").filter(x => x);
+  const urlPathParts = props.match.params["0"];
+  const solidPath = urlPathParts.startsWith("/")
+    ? urlPathParts.slice(1)
+    : urlPathParts; // from the React Router regex
+  const pathSolids = solidPath.split("/");
   const parentNames = pathSolids.slice(0, pathSolids.length - 1);
   const selectedName = pathSolids[pathSolids.length - 1];
 
