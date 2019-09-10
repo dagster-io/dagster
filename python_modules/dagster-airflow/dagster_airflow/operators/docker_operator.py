@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from airflow.exceptions import AirflowException
 from airflow.utils.file import TemporaryDirectory
 from dagster_airflow.vendor.docker_operator import DockerOperator
-from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
+from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
 from docker import APIClient, from_env
 
 from dagster import check, seven
@@ -197,7 +197,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             self.mode, 'REDACTED', self.pipeline_name, self.run_id, self.airflow_ts, self.step_keys
         )
         self.log.info(
-            'Executing GraphQL query: {query}\n'.format(query=START_PIPELINE_EXECUTION_QUERY)
+            'Executing GraphQL query: {query}\n'.format(query=EXECUTE_PLAN_MUTATION)
             + 'with variables:\n'
             + seven.json.dumps(redacted, indent=2)
         )
@@ -212,7 +212,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         )
 
         return '-v \'{variables}\' -t \'{query}\''.format(
-            variables=seven.json.dumps(variables), query=START_PIPELINE_EXECUTION_QUERY
+            variables=seven.json.dumps(variables), query=EXECUTE_PLAN_MUTATION
         )
 
     def get_command(self):
@@ -237,8 +237,8 @@ class DagsterDockerOperator(ModifiedDockerOperator):
     def execute(self, context):
         try:
             from dagster_graphql.client.mutations import (
-                handle_start_pipeline_execution_errors,
-                handle_start_pipeline_execution_result,
+                handle_execution_errors,
+                handle_execute_plan_result,
             )
 
         except ImportError:
@@ -257,8 +257,8 @@ class DagsterDockerOperator(ModifiedDockerOperator):
 
             res = parse_raw_res(raw_res)
 
-            handle_start_pipeline_execution_errors(res)
-            events = handle_start_pipeline_execution_result(res)
+            handle_execution_errors(res, 'executePlan')
+            events = handle_execute_plan_result(res)
 
             skip_self_if_necessary(events)
 

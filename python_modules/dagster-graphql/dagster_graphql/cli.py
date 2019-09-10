@@ -12,7 +12,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 from dagster.utils.log import get_stack_trace_array
 
-from .client.query import START_PIPELINE_EXECUTION_QUERY
+from .client.query import EXECUTE_PLAN_MUTATION, START_PIPELINE_EXECUTION_MUTATION
 from .implementation.context import DagsterGraphQLContext
 from .implementation.pipeline_execution_manager import SynchronousExecutionManager
 from .schema import create_schema
@@ -101,7 +101,10 @@ def execute_query_from_cli(handle, query, variables=None, log=False, log_dir=Non
     return str_res
 
 
-PREDEFINED_QUERIES = {'startPipelineExecution': START_PIPELINE_EXECUTION_QUERY}
+PREDEFINED_QUERIES = {
+    'startPipelineExecution': START_PIPELINE_EXECUTION_MUTATION,
+    'executePlan': EXECUTE_PLAN_MUTATION,
+}
 
 
 @repository_target_argument

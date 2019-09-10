@@ -3,8 +3,8 @@ import logging
 
 from airflow.exceptions import AirflowException
 from dagster_airflow.vendor.python_operator import PythonOperator
-from dagster_graphql.client.mutations import execute_start_pipeline_execution_query
-from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
+from dagster_graphql.client.mutations import execute_execute_plan_mutation
+from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
 
 from dagster import check, seven
 
@@ -48,11 +48,11 @@ class DagsterPythonOperator(PythonOperator):
             # TODO: https://github.com/dagster-io/dagster/issues/1342
             redacted = construct_variables(mode, 'REDACTED', pipeline_name, run_id, ts, step_keys)
             logging.info(
-                'Executing GraphQL query: {query}\n'.format(query=START_PIPELINE_EXECUTION_QUERY)
+                'Executing GraphQL query: {query}\n'.format(query=EXECUTE_PLAN_MUTATION)
                 + 'with variables:\n'
                 + seven.json.dumps(redacted, indent=2)
             )
-            events = execute_start_pipeline_execution_query(
+            events = execute_execute_plan_mutation(
                 handle,
                 construct_variables(mode, environment_dict, pipeline_name, run_id, ts, step_keys),
             )

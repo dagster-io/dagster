@@ -1,8 +1,6 @@
-import itertools
-
 import dask
 import dask.distributed
-from dagster_graphql.client.mutations import execute_start_pipeline_execution_query
+from dagster_graphql.client.mutations import execute_execute_plan_mutation
 
 from dagster import check
 from dagster.core.engine.engine_base import IEngine
@@ -24,7 +22,7 @@ def query_on_dask_worker(handle, variables, dependencies):  # pylint: disable=un
     little information is propagated to the dask master from the workers about the state of
     execution; we should at least inform the user of exceptions.
     '''
-    return execute_start_pipeline_execution_query(handle, variables)
+    return execute_execute_plan_mutation(handle, variables)
 
 
 class DaskEngine(IEngine):  # pylint: disable=no-init
@@ -112,11 +110,8 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
                     execution_futures_dict[step.key] = future
 
             # This tells Dask to awaits the step executions and retrieve their results to the master
-            execution_step_events = client.gather(execution_futures)
+            for future in dask.distributed.as_completed(execution_futures):
+                for step_event in future.result():
+                    check.inst(step_event, DagsterEvent)
 
-            # execution_step_events is now a list of lists, the inner lists contain the dagster
-            # events emitted by each step execution
-            for step_event in itertools.chain.from_iterable(execution_step_events):
-                check.inst(step_event, DagsterEvent)
-
-                yield step_event
+                    yield step_event

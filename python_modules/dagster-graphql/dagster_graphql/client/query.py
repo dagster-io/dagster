@@ -1,62 +1,4 @@
-START_PIPELINE_EXECUTION_QUERY = '''
-mutation(
-  $executionParams: ExecutionParams!
-) {
-  startPipelineExecution(
-    executionParams: $executionParams,
-  ) {
-    __typename
-    ... on InvalidStepError {
-      invalidStepKey
-    }
-    ... on InvalidOutputError {
-      stepKey
-      invalidOutputName
-    }
-    ... on PipelineConfigValidationInvalid {
-      pipeline {
-        name
-      }
-      errors {
-        __typename
-        message
-        path
-        reason
-      }
-    }
-    ... on PipelineNotFoundError {
-        message
-        pipelineName
-    }
-    ... on StartPipelineExecutionSuccess {
-      run {
-        runId
-        status
-        pipeline {
-          name
-        }
-        logs {
-          nodes {
-            __typename
-            ...stepEventFragment
-            ...logMessageEventFragment
-          }
-          pageInfo {
-            lastCursor
-            hasNextPage
-            hasPreviousPage
-            count
-            totalCount
-          }
-        }
-        environmentConfigYaml
-        mode
-      }
-    }
-  }
-}
-
-
+STEP_EVENT_FRAGMENTS = '''
 fragment eventMetadataEntryFragment on EventMetadataEntry {
   __typename
   label
@@ -166,7 +108,9 @@ fragment stepEventFragment on StepEvent {
     }
   }
 }
+'''
 
+LOG_MESSAGE_EVENT_FRAGMENT = '''
 fragment logMessageEventFragment on LogMessageEvent {
   runId
   message
@@ -198,3 +142,109 @@ fragment logMessageEventFragment on LogMessageEvent {
   }
 }
 '''
+
+START_PIPELINE_EXECUTION_MUTATION = (
+    '''
+mutation(
+  $executionParams: ExecutionParams!
+) {
+  startPipelineExecution(
+    executionParams: $executionParams,
+  ) {
+    __typename
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
+    }
+    ... on PipelineConfigValidationInvalid {
+      pipeline {
+        name
+      }
+      errors {
+        __typename
+        message
+        path
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+        message
+        pipelineName
+    }
+    ... on StartPipelineExecutionSuccess {
+      run {
+        runId
+        status
+        pipeline {
+          name
+        }
+        logs {
+          nodes {
+            __typename
+            ...stepEventFragment
+            ...logMessageEventFragment
+          }
+          pageInfo {
+            lastCursor
+            hasNextPage
+            hasPreviousPage
+            count
+            totalCount
+          }
+        }
+        environmentConfigYaml
+        mode
+      }
+    }
+  }
+}
+'''
+    + STEP_EVENT_FRAGMENTS
+    + LOG_MESSAGE_EVENT_FRAGMENT
+)
+
+EXECUTE_PLAN_MUTATION = (
+    '''
+mutation(
+  $executionParams: ExecutionParams!
+) {
+  executePlan(
+    executionParams: $executionParams,
+  ) {
+    __typename
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on PipelineConfigValidationInvalid {
+      pipeline {
+        name
+      }
+      errors {
+        __typename
+        message
+        path
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+        message
+        pipelineName
+    }
+    ... on ExecutePlanSuccess {
+      pipeline {
+        name
+      }
+      hasFailures
+      stepEvents {
+        __typename
+        ...stepEventFragment
+      }
+    }
+  }
+}
+'''
+    + STEP_EVENT_FRAGMENTS
+)

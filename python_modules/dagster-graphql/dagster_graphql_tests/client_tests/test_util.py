@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from dagster_graphql.cli import execute_query
-from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
+from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.client.util import HANDLED_EVENTS, dagster_event_from_dict
 
 from dagster import (
@@ -134,7 +134,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
             }
             instance = DagsterInstance.ephemeral()
             res = execute_query(
-                handle, START_PIPELINE_EXECUTION_QUERY, variables, instance=instance
+                handle, START_PIPELINE_EXECUTION_MUTATION, variables, instance=instance
             )
 
             # go through the same dict, decrement all the event records we've seen from the GraphQL

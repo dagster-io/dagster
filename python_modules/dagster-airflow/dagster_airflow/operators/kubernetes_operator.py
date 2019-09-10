@@ -2,7 +2,7 @@ from airflow.contrib.kubernetes import kube_client, pod_generator, pod_launcher
 from airflow.exceptions import AirflowException
 from airflow.utils.state import State
 from dagster_airflow.vendor.kubernetes_pod_operator import KubernetesPodOperator
-from dagster_graphql.client.query import START_PIPELINE_EXECUTION_QUERY
+from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
 
 from dagster import __version__ as dagster_version
 from dagster import check, seven
@@ -92,7 +92,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             self.mode, 'REDACTED', self.pipeline_name, self.run_id, self.airflow_ts, self.step_keys
         )
         self.log.info(
-            'Executing GraphQL query: {query}\n'.format(query=START_PIPELINE_EXECUTION_QUERY)
+            'Executing GraphQL query: {query}\n'.format(query=EXECUTE_PLAN_MUTATION)
             + 'with variables:\n'
             + seven.json.dumps(redacted, indent=2)
         )
@@ -106,11 +106,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             self.step_keys,
         )
 
-        return [
-            '-v',
-            '{}'.format(seven.json.dumps(variables)),
-            '{}'.format(START_PIPELINE_EXECUTION_QUERY),
-        ]
+        return ['-v', '{}'.format(seven.json.dumps(variables)), '{}'.format(EXECUTE_PLAN_MUTATION)]
 
     def execute(self, context):
         try:
