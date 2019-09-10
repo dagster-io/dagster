@@ -16,7 +16,7 @@ from dagster import (
 )
 from dagster.core.execution.api import DagsterEventType, create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
+from dagster.core.storage.intermediate_store import FilesystemIntermediateStore
 
 
 def define_inty_pipeline():
@@ -74,7 +74,7 @@ def test_using_file_system_for_subplan():
         )
     )
 
-    store = FileSystemIntermediateStore.for_instance(instance, run_id)
+    store = FilesystemIntermediateStore.for_instance(instance, run_id)
     assert get_step_output(return_one_step_events, 'return_one.compute')
     assert store.has_intermediate(None, 'return_one.compute')
     assert store.get_intermediate(None, 'return_one.compute', Int).obj == 1
@@ -119,7 +119,7 @@ def test_using_file_system_for_subplan_multiprocessing():
         )
     )
 
-    store = FileSystemIntermediateStore.for_instance(instance, run_id)
+    store = FilesystemIntermediateStore.for_instance(instance, run_id)
 
     assert get_step_output(return_one_step_events, 'return_one.compute')
     assert store.has_intermediate(None, 'return_one.compute')

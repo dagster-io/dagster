@@ -71,9 +71,9 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
 DEFAULT_SERIALIZATION_STRATEGY = PickleSerializationStrategy()
 
 
-class FileSystemObjectStore(ObjectStore):  # pylint: disable=no-init
+class FilesystemObjectStore(ObjectStore):  # pylint: disable=no-init
     def __init__(self):
-        super(FileSystemObjectStore, self).__init__(name='filesystem', sep=os.sep)
+        super(FilesystemObjectStore, self).__init__(name='filesystem', sep=os.sep)
 
     def set_object(self, key, obj, serialization_strategy=DEFAULT_SERIALIZATION_STRATEGY):
         check.str_param(key, 'key')

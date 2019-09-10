@@ -4,7 +4,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from graphql import parse
 
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediate_store import FileSystemIntermediateStore
+from dagster.core.storage.intermediate_store import FilesystemIntermediateStore
 from dagster.utils import merge_dicts, script_relative_path
 from dagster.utils.test import get_temp_file_name
 
@@ -316,7 +316,7 @@ def test_successful_pipeline_reexecution(snapshot):
         '''('sum_sq', 49)])]'''
     )
 
-    store = FileSystemIntermediateStore.for_instance(instance, run_id)
+    store = FilesystemIntermediateStore.for_instance(instance, run_id)
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
     assert (
@@ -358,7 +358,7 @@ def test_successful_pipeline_reexecution(snapshot):
 
     snapshot.assert_match(sanitize_result_data(result_two.data))
 
-    store = FileSystemIntermediateStore.for_instance(instance, new_run_id)
+    store = FilesystemIntermediateStore.for_instance(instance, new_run_id)
     assert not store.has_intermediate(None, 'sum_solid.inputs.num.read', 'input_thunk_output')
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
