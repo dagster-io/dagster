@@ -140,6 +140,9 @@ class PostgresRunStorage(RunStorage):
             rows = curs.fetchall()
             return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
 
+    def all_runs_for_tag(self, key, value):
+        raise NotImplementedError()
+
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')
         return bool(self.get_run_by_id(run_id))

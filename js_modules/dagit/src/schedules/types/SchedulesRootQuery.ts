@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { PipelineRunStatus } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: SchedulesRootQuery
 // ====================================================
@@ -19,9 +21,28 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_schedul
   name: string;
 }
 
+export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_pipeline {
+  __typename: "Pipeline" | "UnknownPipeline";
+  name: string;
+}
+
+export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_stats {
+  __typename: "PipelineRunStatsSnapshot";
+  startTime: number | null;
+}
+
+export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs {
+  __typename: "PipelineRun";
+  runId: string;
+  pipeline: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_pipeline;
+  status: PipelineRunStatus;
+  stats: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_stats;
+}
+
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules {
   __typename: "RunningSchedule";
   scheduleDefinition: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition;
+  runs: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs[];
 }
 
 export interface SchedulesRootQuery_scheduler_Scheduler {

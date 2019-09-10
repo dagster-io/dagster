@@ -31,7 +31,8 @@ import {
   RunStatus,
   titleForRun,
   REEXECUTE_MUTATION,
-  handleStartExecutionResult
+  handleStartExecutionResult,
+  unixTimestampToString
 } from "./RunUtils";
 import { formatElapsedTime } from "../Util";
 import {
@@ -46,13 +47,6 @@ import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components";
 import { useMutation } from "react-apollo";
-
-function unixTimestampToString(unix: number | null) {
-  if (!unix) {
-    return null;
-  }
-  return new Date(unix * 1000).toLocaleString();
-}
 
 enum RunSort {
   START_TIME_ASC,
