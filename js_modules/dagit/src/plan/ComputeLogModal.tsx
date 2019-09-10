@@ -8,6 +8,7 @@ import { useQuery } from "react-apollo";
 import Ansi from "ansi-to-react";
 import { IStepState } from "../RunMetadataProvider";
 import { ExecutionStateDot } from "./ExecutionStateDot";
+import { ROOT_SERVER_URI } from "../Util";
 
 export const COMPUTE_LOGS_QUERY = gql`
   query ComputeLogsQuery($runId: ID!, $stepKey: String!) {
@@ -15,8 +16,16 @@ export const COMPUTE_LOGS_QUERY = gql`
       ... on PipelineRun {
         runId
         computeLogs(stepKey: $stepKey) {
-          stdout
-          stderr
+          stdout {
+            path
+            data
+            downloadUrl
+          }
+          stderr {
+            path
+            data
+            downloadUrl
+          }
           cursor
         }
       }
@@ -31,8 +40,12 @@ const COMPUTE_LOGS_SUBSCRIPTION = gql`
     $cursor: Cursor
   ) {
     computeLogs(runId: $runId, stepKey: $stepKey, cursor: $cursor) {
-      stdout
-      stderr
+      stdout {
+        data
+      }
+      stderr {
+        data
+      }
       cursor
     }
   }
@@ -43,6 +56,15 @@ interface ComputeLogModalProps {
   isOpen: boolean;
   onRequestClose: () => void;
   runState: IStepState;
+}
+
+interface IComputeLogFile {
+  path: string;
+  data: string;
+  downloadUrl: string;
+}
+interface IComputeLogFileUpdate {
+  data: string;
 }
 
 export default ({
@@ -64,6 +86,42 @@ export default ({
     return null;
   }
 
+  const updateData = (prev: IComputeLogFile, update: IComputeLogFileUpdate) => {
+    if (!prev && update) {
+      return update;
+    }
+    if (prev && !update) {
+      return prev;
+    }
+    return {
+      ...prev,
+      ...update,
+      data: prev.data + update.data
+    };
+  };
+
+  const subscribe = () => {
+    return subscribeToMore({
+      document: COMPUTE_LOGS_SUBSCRIPTION,
+      variables: { runId, stepKey, cursor: computeLogs.cursor },
+      updateQuery: (prev, { subscriptionData: { data } }) => {
+        if (!data) return prev;
+        return {
+          ...prev,
+          pipelineRunOrError: {
+            ...prev.pipelineRunOrError,
+            computeLogs: {
+              ...computeLogs,
+              ...data.computeLogs,
+              stdout: updateData(computeLogs.stdout, data.computeLogs.stdout),
+              stderr: updateData(computeLogs.stderr, data.computeLogs.stderr)
+            }
+          }
+        };
+      }
+    });
+  };
+
   return (
     <Dialog
       onClose={onRequestClose}
@@ -81,30 +139,8 @@ export default ({
       {error}
       {computeLogs && (
         <ComputeLogContent
-          subscribe={() =>
-            subscribeToMore({
-              document: COMPUTE_LOGS_SUBSCRIPTION,
-              variables: { runId, stepKey, cursor: computeLogs.cursor },
-              updateQuery: (prev, { subscriptionData: { data } }) => {
-                if (!data) return prev;
-                return {
-                  ...prev,
-                  pipelineRunOrError: {
-                    ...prev.pipelineRunOrError,
-                    computeLogs: {
-                      ...computeLogs,
-                      stdout: computeLogs.stdout + data.computeLogs.stdout,
-                      stderr: computeLogs.stderr + data.computeLogs.stderr,
-                      cursor: data.computeLogs.cursor
-                    }
-                  }
-                };
-              }
-            })
-          }
-          runId={runId}
+          subscribe={subscribe}
           runState={runState}
-          stepKey={stepKey}
           onRequestClose={onRequestClose}
           computeLogs={computeLogs}
         />
@@ -114,14 +150,12 @@ export default ({
 };
 
 interface IComputeLogContentProps {
-  runId: string;
   runState: IStepState;
   subscribe: () => void;
-  stepKey: string;
   onRequestClose: () => void;
   computeLogs: {
-    stdout: string;
-    stderr: string;
+    stdout: IComputeLogFile;
+    stderr: IComputeLogFile;
     cursor: string;
   };
 }
@@ -138,21 +172,15 @@ export class ComputeLogContent extends React.Component<
     this.props.subscribe();
   }
 
-  closeStdout = (e: React.SyntheticEvent) => {
+  close = (e: React.SyntheticEvent, type: string) => {
     e.stopPropagation();
-    const { stderrVisible } = this.state;
-    if (stderrVisible) {
-      this.setState({ stdoutVisible: false });
-    } else {
-      this.props.onRequestClose();
-    }
-  };
-
-  closeStderr = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-    const { stdoutVisible } = this.state;
-    if (stdoutVisible) {
-      this.setState({ stderrVisible: false });
+    const { stderrVisible, stdoutVisible } = this.state;
+    const keepModalOpen = type === "stdout" ? stderrVisible : stdoutVisible;
+    if (keepModalOpen) {
+      this.setState({
+        stderrVisible: type !== "stderr",
+        stdoutVisible: type !== "stdout"
+      });
     } else {
       this.props.onRequestClose();
     }
@@ -171,45 +199,56 @@ export class ComputeLogContent extends React.Component<
     );
   }
 
-  render() {
-    const { runId, computeLogs, stepKey } = this.props;
+  renderFile(type: string) {
+    const { computeLogs } = this.props;
     const { stdoutVisible, stderrVisible } = this.state;
-    const stdoutUrl = `$DAGSTER_HOME/logs/compute/${runId}/${stepKey}.out`;
-    const stderrUrl = `$DAGSTER_HOME/logs/compute/${runId}/${stepKey}.err`;
+    const visible = type === "stdout" ? stdoutVisible : stderrVisible;
+    if (!visible) {
+      return null;
+    }
+
+    const content = computeLogs[type] ? computeLogs[type].data : "";
+    const path = computeLogs[type] ? computeLogs[type].path : null;
+    const isRelativeUrl = (x?: string) => x && x.startsWith("/");
+    const downloadUrl = computeLogs[type]
+      ? isRelativeUrl(computeLogs[type].downloadUrl)
+        ? ROOT_SERVER_URI + computeLogs[type].downloadUrl
+        : computeLogs[type].downloadUrl
+      : null;
+
+    return (
+      <FileContainer>
+        <FileHeader>
+          <Row>
+            {this.renderStatus()}
+            <Title>{type}</Title>
+          </Row>
+          <Row>
+            <Link
+              aria-label="Download link"
+              className="bp3-button bp3-minimal bp3-icon-download"
+              href={downloadUrl}
+              download
+            >
+              <LinkText>Download {type}</LinkText>
+            </Link>
+            <button
+              onClick={e => this.close(e, type)}
+              className="bp3-dialog-close-button bp3-button bp3-minimal bp3-icon-cross"
+            ></button>
+          </Row>
+        </FileHeader>
+        <FileContent content={content} />
+        <FileFooter>{path}</FileFooter>
+      </FileContainer>
+    );
+  }
+
+  render() {
     return (
       <Container>
-        {stdoutVisible && (
-          <FileContainer>
-            <FileHeader>
-              <Row>
-                {this.renderStatus()}
-                <Title>stdout</Title>
-              </Row>
-              <button
-                onClick={this.closeStdout}
-                className="bp3-dialog-close-button bp3-button bp3-minimal bp3-icon-cross"
-              ></button>
-            </FileHeader>
-            <FileContent content={computeLogs.stdout} />
-            <FileFooter>{stdoutUrl}</FileFooter>
-          </FileContainer>
-        )}
-        {stderrVisible && (
-          <FileContainer>
-            <FileHeader color="#dc322f">
-              <Row>
-                {this.renderStatus()}
-                <Title>stderr</Title>
-              </Row>
-              <button
-                onClick={this.closeStderr}
-                className="bp3-dialog-close-button bp3-button bp3-minimal bp3-icon-cross"
-              ></button>
-            </FileHeader>
-            <FileContent content={computeLogs.stderr} />
-            <FileFooter>{stderrUrl}</FileFooter>
-          </FileContainer>
-        )}
+        {this.renderFile("stdout")}
+        {this.renderFile("stderr")}
       </Container>
     );
   }
@@ -253,6 +292,19 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
 
   render() {
     const { content, className } = this.props;
+
+    if (!content) {
+      return (
+        <div className={className} ref={this.container}>
+          <ContentContainer
+            style={{ justifyContent: "center", alignItems: "center" }}
+          >
+            No output
+          </ContentContainer>
+        </div>
+      );
+    }
+
     return (
       <div className={className} ref={this.container}>
         <ContentContainer>
@@ -294,6 +346,18 @@ const Row = styled.div`
   flex-direction: row;
   margin-left: 5px;
   align-items: center;
+`;
+const LinkText = styled.span`
+  height: 1px;
+  width: 1px;
+  position: absolute;
+  overflow: hidden;
+  top: -10px;
+`;
+const Link = styled.a`
+  ::before {
+    margin: 0 !important;
+  }
 `;
 const Container = styled.div`
   background-color: #333333;

@@ -11,10 +11,24 @@ export interface ComputeLogsQuery_pipelineRunOrError_PipelineRunNotFoundError {
   __typename: "PipelineRunNotFoundError";
 }
 
+export interface ComputeLogsQuery_pipelineRunOrError_PipelineRun_computeLogs_stdout {
+  __typename: "ComputeLogFile";
+  path: string;
+  data: string;
+  downloadUrl: string;
+}
+
+export interface ComputeLogsQuery_pipelineRunOrError_PipelineRun_computeLogs_stderr {
+  __typename: "ComputeLogFile";
+  path: string;
+  data: string;
+  downloadUrl: string;
+}
+
 export interface ComputeLogsQuery_pipelineRunOrError_PipelineRun_computeLogs {
   __typename: "ComputeLogs";
-  stdout: string;
-  stderr: string;
+  stdout: ComputeLogsQuery_pipelineRunOrError_PipelineRun_computeLogs_stdout | null;
+  stderr: ComputeLogsQuery_pipelineRunOrError_PipelineRun_computeLogs_stderr | null;
   cursor: any | null;
 }
 

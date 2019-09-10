@@ -12,7 +12,9 @@ COMPUTE_LOGS_QUERY = '''
       ... on PipelineRun {
         runId
         computeLogs(stepKey: $stepKey) {
-          stdout
+          stdout {
+            data
+          }
         }
       }
     }

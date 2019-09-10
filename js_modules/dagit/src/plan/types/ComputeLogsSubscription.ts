@@ -7,10 +7,20 @@
 // GraphQL subscription operation: ComputeLogsSubscription
 // ====================================================
 
+export interface ComputeLogsSubscription_computeLogs_stdout {
+  __typename: "ComputeLogFile";
+  data: string;
+}
+
+export interface ComputeLogsSubscription_computeLogs_stderr {
+  __typename: "ComputeLogFile";
+  data: string;
+}
+
 export interface ComputeLogsSubscription_computeLogs {
   __typename: "ComputeLogs";
-  stdout: string;
-  stderr: string;
+  stdout: ComputeLogsSubscription_computeLogs_stdout | null;
+  stderr: ComputeLogsSubscription_computeLogs_stderr | null;
   cursor: any | null;
 }
 

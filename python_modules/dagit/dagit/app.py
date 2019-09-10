@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 
+import io
 import os
+import uuid
 
 import nbformat
 from dagster_graphql.implementation.context import DagsterGraphQLContext
@@ -18,6 +20,7 @@ from nbconvert import HTMLExporter
 from six import text_type
 
 from dagster import ExecutionTargetHandle, check, seven
+from dagster.core.execution.logs import compute_is_complete, get_compute_log_filepath
 from dagster.core.instance import DagsterInstance
 from dagster.utils.log import get_stack_trace_array
 
@@ -117,6 +120,24 @@ def notebook_view(request_args):
         return '<style>' + resources['inlining']['css'][0] + '</style>' + body, 200
 
 
+def download_view(context):
+    context = check.inst_param(context, 'context', DagsterGraphQLContext)
+
+    def view(run_id, step_key, file_type):
+        run_id = str(uuid.UUID(run_id))  # raises if not valid run_id
+        step_key = step_key.split('/')[-1]  # make sure we're not diving deep into
+        out_name = '{}_{}.{}'.format(run_id, step_key, file_type)
+        result = get_compute_log_filepath(context.instance, run_id, step_key, file_type)
+        timeout = None if compute_is_complete(context.instance, run_id, step_key) else 0
+        if not result:
+            result = io.BytesIO()
+        return send_file(
+            result, as_attachment=True, attachment_filename=out_name, cache_timeout=timeout
+        )
+
+    return view
+
+
 def create_app(handle, instance):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.inst_param(instance, 'instance', DagsterInstance)
@@ -151,6 +172,13 @@ def create_app(handle, instance):
     )
     sockets.add_url_rule(
         '/graphql', 'graphql', dagster_graphql_subscription_view(subscription_server, context)
+    )
+
+    app.add_url_rule(
+        # should match the `build_local_download_url`
+        '/download/<string:run_id>/<string:step_key>/<string:file_type>',
+        'download_view',
+        download_view(context),
     )
 
     # these routes are specifically for the Dagit UI and are not part of the graphql

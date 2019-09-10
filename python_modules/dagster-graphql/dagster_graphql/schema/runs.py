@@ -19,7 +19,7 @@ from dagster.core.definitions.events import (
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.logs import fetch_compute_logs
+from dagster.core.execution.logs import ComputeLogFile, ComputeLogUpdate, fetch_compute_logs
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -61,13 +61,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_computeLogs(self, graphene_info, stepKey):
         update = fetch_compute_logs(graphene_info.context.instance, self.run_id, stepKey)
-        return graphene_info.schema.type_named('ComputeLogs')(
-            runId=self.run_id,
-            stepKey=stepKey,
-            stdout=update.stdout,
-            stderr=update.stderr,
-            cursor=update.cursor,
-        )
+        return from_compute_log_update(graphene_info, self.run_id, stepKey, update)
 
     def resolve_executionPlan(self, graphene_info):
         pipeline = self.resolve_pipeline(graphene_info)
@@ -122,18 +116,25 @@ class DauphinComputeLogs(dauphin.ObjectType):
 
     runId = dauphin.NonNull(dauphin.String)
     stepKey = dauphin.NonNull(dauphin.String)
-    stdout = dauphin.NonNull(
-        dauphin.String,
-        description='The full stdout string captured from the step computation at query time',
-    )
-    stderr = dauphin.NonNull(
-        dauphin.String,
-        description='The full stderr string captured from the step computation at query time',
-    )
+    stdout = dauphin.Field('ComputeLogFile')
+    stderr = dauphin.Field('ComputeLogFile')
     cursor = dauphin.Field(
         'Cursor',
         description='cursor representing the state of the stdout/stderr logs being returned, at query time',
     )
+
+
+class DauphinComputeLogFile(dauphin.ObjectType):
+    class Meta:
+        name = 'ComputeLogFile'
+
+    path = dauphin.NonNull(dauphin.String)
+    data = dauphin.NonNull(
+        dauphin.String, description="The data output captured from step computation at query time"
+    )
+    cursor = dauphin.Field('Cursor')
+    size = dauphin.NonNull(dauphin.Int)
+    download_url = dauphin.NonNull(dauphin.String)
 
 
 class DauphinMessageEvent(dauphin.Interface):
@@ -662,6 +663,32 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
                 inner_type=dagster_event.event_type
             )
         )
+
+
+def from_compute_log_update(graphene_info, run_id, step_key, update):
+    check.str_param(run_id, 'run_id')
+    check.str_param(step_key, 'step_key')
+    check.inst_param(update, 'update', ComputeLogUpdate)
+    return graphene_info.schema.type_named('ComputeLogs')(
+        runId=run_id,
+        stepKey=step_key,
+        stdout=from_compute_log_file(graphene_info, update.stdout),
+        stderr=from_compute_log_file(graphene_info, update.stderr),
+        cursor=update.cursor,
+    )
+
+
+def from_compute_log_file(graphene_info, file):
+    check.opt_inst_param(file, 'file', ComputeLogFile)
+    if not file:
+        return None
+    return graphene_info.schema.type_named('ComputeLogFile')(
+        path=file.path,
+        data=file.data,
+        cursor=file.cursor,
+        size=file.size,
+        download_url=file.download_url,
+    )
 
 
 def from_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan):

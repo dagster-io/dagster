@@ -38,4 +38,4 @@ def test_stdout(tmpdir):
         assert len(compute_steps) == 1
         step_key = compute_steps[0]
         logs = fetch_compute_logs(instance, result.run_id, step_key)
-        assert logs.stdout == HELLO_WORLD + SEPARATOR
+        assert logs.stdout.data == HELLO_WORLD + SEPARATOR

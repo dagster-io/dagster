@@ -4,6 +4,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
+from enum import Enum
 
 from rx import Observable
 from watchdog.events import PatternMatchingEventHandler
@@ -14,10 +15,19 @@ from dagster.core.execution.context.system import SystemStepExecutionContext
 from dagster.core.instance import DagsterFeatures
 from dagster.utils import ensure_dir, ensure_file, touch_file
 
-IO_TYPE_STDOUT = 'out'
-IO_TYPE_STDERR = 'err'
-IO_TYPE_COMPLETE = 'complete'
+
+class ComputeIOType(Enum):
+    STDOUT = 'stdout'
+    STDERR = 'stderr'
+    COMPLETE = 'complete'
+
+
 POLLING_TIMEOUT = 2
+
+
+def build_local_download_url(run_id, step_key, io_type):
+    # should match the app url rule in dagit, for the local case
+    return "/download/{}/{}/{}".format(run_id, step_key, io_type.value)
 
 
 class ComputeLogManager(object):
@@ -35,7 +45,9 @@ class ComputeLogManager(object):
 
         self._watchers[key] = self._observer.schedule(
             ComputeLogEventHandler(self, run_id, step_key, self._instance),
-            os.path.dirname(_filepath(_filebase(self._instance, run_id, step_key), IO_TYPE_STDOUT)),
+            os.path.dirname(
+                _filepath(_filebase(self._instance, run_id, step_key), ComputeIOType.STDOUT)
+            ),
         )
 
     def unwatch(self, run_id, step_key, handler):
@@ -80,21 +92,21 @@ class ComputeLogEventHandler(PatternMatchingEventHandler):
         self.step_key = step_key
         self._base = _filebase(instance, run_id, step_key)
         patterns = [
-            _filepath(self._base, IO_TYPE_COMPLETE),
-            _filepath(self._base, IO_TYPE_STDOUT),
-            _filepath(self._base, IO_TYPE_STDERR),
+            _filepath(self._base, ComputeIOType.COMPLETE),
+            _filepath(self._base, ComputeIOType.STDOUT),
+            _filepath(self._base, ComputeIOType.STDERR),
         ]
         super(ComputeLogEventHandler, self).__init__(patterns=patterns)
 
     def on_created(self, event):
-        if event.src_path == _filepath(self._base, IO_TYPE_COMPLETE):
+        if event.src_path == _filepath(self._base, ComputeIOType.COMPLETE):
             self.manager.on_compute_end(self.run_id, self.step_key)
             self.manager.unwatch(self.run_id, self.step_key, self)
 
     def on_modified(self, event):
         if event.src_path in (
-            _filepath(self._base, IO_TYPE_STDOUT),
-            _filepath(self._base, IO_TYPE_STDERR),
+            _filepath(self._base, ComputeIOType.STDOUT),
+            _filepath(self._base, ComputeIOType.STDERR),
         ):
             self.manager.on_update(self.run_id, self.step_key)
 
@@ -136,15 +148,20 @@ class ComputeLogUpdate(object):
         self.cursor = cursor
 
 
+class ComputeLogFile(object):
+    def __init__(self, path, data, cursor, size, download_url):
+        self.path = path
+        self.data = data
+        self.cursor = cursor
+        self.size = size
+        self.download_url = download_url
+
+
 def fetch_compute_logs(instance, run_id, step_key, cursor=None):
     out_offset, err_offset = _decode_cursor(cursor)
-    stdout, new_out_offset = _fetch_compute_data(
-        instance, run_id, step_key, IO_TYPE_STDOUT, out_offset
-    )
-    stderr, new_err_offset = _fetch_compute_data(
-        instance, run_id, step_key, IO_TYPE_STDERR, err_offset
-    )
-    cursor = _encode_cursor(new_out_offset, new_err_offset)
+    stdout = _fetch_compute_data(instance, run_id, step_key, ComputeIOType.STDOUT, out_offset)
+    stderr = _fetch_compute_data(instance, run_id, step_key, ComputeIOType.STDERR, err_offset)
+    cursor = _encode_cursor(stdout.cursor if stdout else 0, stderr.cursor if stderr else 0)
     return ComputeLogUpdate(stdout, stderr, cursor)
 
 
@@ -153,17 +170,21 @@ def should_capture_stdout(instance):
     return instance.is_feature_enabled(DagsterFeatures.DAGIT_STDOUT)
 
 
-def _fetch_compute_data(instance, run_id, step_key, io_type, after=0):
-    outfile = _filepath(_filebase(instance, run_id, step_key), io_type)
-    data = ''
-    cursor = 0
-    if os.path.exists(outfile) and os.path.isfile(outfile):
-        # See: https://docs.python.org/2/library/stdtypes.html#file.tell for Windows behavior
-        with open(outfile, 'rb') as f:
-            f.seek(after, os.SEEK_SET)
-            data = f.read()
-            cursor = f.tell()
-    return data.decode('utf-8'), cursor
+def _fetch_compute_data(instance, run_id, step_key, io_type, after):
+    path = _filepath(_filebase(instance, run_id, step_key), io_type)
+    if not os.path.exists(path) or not os.path.isfile(path):
+        return None
+
+    # See: https://docs.python.org/2/library/stdtypes.html#file.tell for Windows behavior
+    with open(path, 'rb') as f:
+        f.seek(after, os.SEEK_SET)
+        data = f.read()
+        cursor = f.tell()
+        stats = os.fstat(f.fileno())
+
+    # local download path
+    download_url = build_local_download_url(run_id, step_key, io_type)
+    return ComputeLogFile(path, data.decode('utf-8'), cursor, stats.st_size, download_url)
 
 
 @contextmanager
@@ -175,9 +196,9 @@ def mirror_step_io(step_context):
 
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     filebase = _filebase(step_context.instance, step_context.run_id, step_context.step.key)
-    outpath = _filepath(filebase, IO_TYPE_STDOUT)
-    errpath = _filepath(filebase, IO_TYPE_STDERR)
-    touchpath = _filepath(filebase, IO_TYPE_COMPLETE)
+    outpath = _filepath(filebase, ComputeIOType.STDOUT)
+    errpath = _filepath(filebase, ComputeIOType.STDERR)
+    touchpath = _filepath(filebase, ComputeIOType.COMPLETE)
 
     ensure_dir(os.path.dirname(outpath))
     ensure_dir(os.path.dirname(errpath))
@@ -231,17 +252,35 @@ def tailf(path):
         p.terminate()
 
 
+def get_compute_log_filepath(instance, run_id, step_key, io_type):
+    if not isinstance(io_type, ComputeIOType):
+        try:
+            io_type = ComputeIOType(io_type)
+        except ValueError:
+            return None
+
+    base = _filebase(instance, run_id, step_key)
+    path = _filepath(base, io_type)
+    if os.path.exists(path):
+        return path
+    return None
+
+
+def compute_is_complete(instance, run_id, step_key):
+    return get_compute_log_filepath(instance, run_id, step_key, ComputeIOType.COMPLETE)
+
+
 def _filebase(instance, run_id, step_key):
     return os.path.join(instance.compute_logs_directory(run_id), step_key)
 
 
 def _filepath(base, io_type):
-    assert io_type in (IO_TYPE_COMPLETE, IO_TYPE_STDERR, IO_TYPE_STDOUT)
-    if io_type == IO_TYPE_STDERR:
+    check.inst_param(io_type, 'io_type', ComputeIOType)
+    if io_type == ComputeIOType.STDERR:
         extension = 'err'
-    if io_type == IO_TYPE_STDOUT:
+    if io_type == ComputeIOType.STDOUT:
         extension = 'out'
-    if io_type == IO_TYPE_COMPLETE:
+    if io_type == ComputeIOType.COMPLETE:
         extension = 'complete'
     return "{}.{}".format(base, extension)
 

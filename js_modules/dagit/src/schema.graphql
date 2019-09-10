@@ -23,11 +23,19 @@ type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   outputMappings: [OutputMapping!]!
 }
 
+type ComputeLogFile {
+  path: String!
+  data: String!
+  cursor: Cursor
+  size: Int!
+  downloadUrl: String!
+}
+
 type ComputeLogs {
   runId: String!
   stepKey: String!
-  stdout: String!
-  stderr: String!
+  stdout: ComputeLogFile
+  stderr: ComputeLogFile
   cursor: Cursor
 }
 

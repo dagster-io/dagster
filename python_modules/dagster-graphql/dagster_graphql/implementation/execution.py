@@ -2,7 +2,11 @@ from __future__ import absolute_import
 
 from collections import namedtuple
 
-from dagster_graphql.schema.runs import from_dagster_event_record, from_event_record
+from dagster_graphql.schema.runs import (
+    from_compute_log_update,
+    from_dagster_event_record,
+    from_event_record,
+)
 from graphql.execution.base import ResolveInfo
 from rx import Observable
 
@@ -11,7 +15,6 @@ from dagster.core.events import DagsterEventType, InMemoryEventSink
 from dagster.core.events.log import DagsterEventRecord
 from dagster.core.execution.api import ExecutionSelector, create_execution_plan, execute_plan
 from dagster.core.execution.config import ReexecutionConfig
-from dagster.core.execution.logs import ComputeLogUpdate
 from dagster.core.serdes import serialize_dagster_namedtuple
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
@@ -150,18 +153,8 @@ def get_compute_log_observable(graphene_info, run_id, step_key, cursor=None):
     check.str_param(step_key, 'step_key')
     check.opt_str_param(cursor, 'cursor')
 
-    def from_log_update(update):
-        check.inst_param(update, 'update', ComputeLogUpdate)
-        return graphene_info.schema.type_named('ComputeLogs')(
-            runId=run_id,
-            stepKey=step_key,
-            stdout=update.stdout,
-            stderr=update.stderr,
-            cursor=update.cursor,
-        )
-
     return graphene_info.context.compute_log_manager.get_observable(run_id, step_key, cursor).map(
-        from_log_update
+        lambda update: from_compute_log_update(graphene_info, run_id, step_key, update)
     )
 
 
