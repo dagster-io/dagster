@@ -13,7 +13,9 @@ import fnmatch
 import inspect
 import os
 import subprocess
+import sys
 import tempfile
+from collections import defaultdict
 # https://github.com/PyCQA/pylint/issues/73
 from distutils import spawn  # pylint: disable=no-name-in-module
 from itertools import groupby
@@ -41,6 +43,16 @@ PYPIRC_EXCEPTION_MESSAGE = '''You must have credentials available to PyPI in the
     username: <username>
     password: <password>
 '''
+
+
+def check_output(cmd, dry_run=True):
+    if dry_run:
+        click.echo(
+            click.style('Dry run; not running.', fg='red') + ' Would run: %s' % ' '.join(cmd)
+        )
+        return None
+    else:
+        return subprocess.check_output(cmd, stderr=subprocess.STDOUT)
 
 
 def script_relative_path(file_path):
@@ -89,6 +101,7 @@ MODULE_NAMES = [
 LIBRARY_MODULES = [
     'dagster-aws',
     'dagster-bash',
+    'dagster-cron',
     'dagster-datadog',
     'dagster-dbt',
     'dagster-gcp',
@@ -96,6 +109,7 @@ LIBRARY_MODULES = [
     'dagster-pagerduty',
     'dagster-papertrail',
     'dagster-pandas',
+    'dagster-postgres',
     'dagster-pyspark',
     'dagster-slack',
     'dagster-snowflake',
@@ -138,41 +152,56 @@ def pushd_module(module_name, library=False):
         os.chdir(old_cwd)
 
 
-def publish_module(module, nightly=False, library=False, additional_steps=''):
+def publish_module(module, nightly=False, library=False, additional_steps='', dry_run=True):
     with pushd_module(module, library) as cwd:
         for command in construct_publish_comands(
             additional_steps=additional_steps, nightly=nightly
         ):
-            print('About to run command: {}'.format(command))
-            process = subprocess.Popen(
-                command, stderr=subprocess.PIPE, cwd=cwd, shell=True, stdout=subprocess.PIPE
-            )
-            for line in iter(process.stdout.readline, b''):
-                print(line.decode('utf-8'))
+            if dry_run:
+                click.echo(
+                    click.style('Dry run; not running.', fg='red')
+                    + ' Would run: {}'.format(command)
+                )
+            else:
+                click.echo('About to run command: {}'.format(command))
+                process = subprocess.Popen(
+                    command, stderr=subprocess.PIPE, cwd=cwd, shell=True, stdout=subprocess.PIPE
+                )
+                for line in iter(process.stdout.readline, b''):
+                    click.echo(line.decode('utf-8'))
 
 
-def publish_all(nightly):
+def publish_all(nightly, dry_run=True):
     for module in MODULE_NAMES:
         if module == 'dagit':
-            publish_module(module, nightly, additional_steps=DAGIT_ADDITIONAL_STEPS)
+            publish_module(
+                module, nightly, additional_steps=DAGIT_ADDITIONAL_STEPS, dry_run=dry_run
+            )
         else:
-            publish_module(module, nightly)
+            publish_module(module, nightly, dry_run=dry_run)
 
     for module in LIBRARY_MODULES:
-        publish_module(module, nightly, library=True)
+        publish_module(module, nightly, library=True, dry_run=dry_run)
 
 
 def format_module_versions(module_versions):
-    return '\n'.join(
-        [
-            '    {module_name}: {version} {nightly}'.format(
-                module_name=module_name,
-                version=module_version['__version__'],
-                nightly=module_version['__nightly__'],
-            )
-            for module_name, module_version in module_versions.items()
-        ]
-    )
+    nightlies = defaultdict(list)
+    versions = defaultdict(list)
+
+    for module_name, module_version in module_versions.items():
+        nightlies[module_version['__nightly__']].append(module_name)
+        versions[module_version['__version__']].append(module_name)
+
+    res = '\n'
+    for key, libraries in nightlies.items():
+        res += '%s:\n\t%s\n\n' % (key, '\n\t'.join(libraries))
+
+    res += '\n'
+
+    for key, libraries in versions.items():
+        res += '%s:\n\t%s\n' % (key, '\n\t'.join(libraries))
+
+    return res
 
 
 def get_module_versions(module_name, library=False):
@@ -206,11 +235,14 @@ def check_versions_equal(nightly=False):
 
     source = '__nightly__' if nightly else '__version__'
 
-    assert all_equal(
-        [module_version[source] for module_version in module_versions.values()]
-    ), 'Module versions must be in lockstep to release. Found:\n{versions}'.format(
-        versions=format_module_versions(module_versions)
-    )
+    if not all_equal([module_version[source] for module_version in module_versions.values()]):
+        click.echo(
+            'Module versions must be in lockstep to release. Found:\n{versions}'.format(
+                versions=format_module_versions(module_versions)
+            )
+        )
+        sys.exit(1)
+
     return module_versions[MODULE_NAMES[0]]
 
 
@@ -227,79 +259,90 @@ def check_versions(nightly=False):
     return module_version
 
 
-def set_version(module_name, new_version, nightly, library=False):
+def set_version(module_name, new_version, nightly, library=False, dry_run=True):
     with pushd_module(module_name, library):
-        with open(
-            os.path.abspath(
-                '{module_name}/version.py'.format(module_name=normalize_module_name(module_name))
-            ),
-            'w',
-        ) as fd:
-            fd.write(
-                '__version__ = \'{new_version}\'\n'
-                '\n'
-                '__nightly__ = \'{nightly}\'\n'.format(new_version=new_version, nightly=nightly)
+        output = (
+            '__version__ = \'{new_version}\'\n'
+            '\n'
+            '__nightly__ = \'{nightly}\'\n'.format(new_version=new_version, nightly=nightly)
+        )
+
+        filename = os.path.abspath(
+            '{module_name}/version.py'.format(module_name=normalize_module_name(module_name))
+        )
+
+        if dry_run:
+            click.echo(
+                click.style('Dry run; not running.', fg='red')
+                + ' Would write: %s to %s' % (output, filename)
             )
+        else:
+            with open(filename, 'w') as fd:
+                fd.write(output)
 
 
 def get_nightly_version():
     return 'nightly-' + datetime.datetime.utcnow().strftime('%Y.%m.%d')
 
 
-def increment_nightly_version(module_name, module_version, library=False):
+def increment_nightly_version(module_name, module_version, library=False, dry_run=True):
     new_nightly = get_nightly_version()
-    set_version(module_name, module_version['__version__'], new_nightly, library)
+    set_version(module_name, module_version['__version__'], new_nightly, library, dry_run=dry_run)
     return {'__version__': module_version['__version__'], '__nightly__': new_nightly}
 
 
-def increment_nightly_versions():
+def increment_nightly_versions(dry_run=True):
     versions = get_versions()
     for module_name in MODULE_NAMES:
-        new_version = increment_nightly_version(module_name, versions[module_name])
+        new_version = increment_nightly_version(module_name, versions[module_name], dry_run=dry_run)
     for library_module in LIBRARY_MODULES:
-        new_version = increment_nightly_version(library_module, versions[module_name], library=True)
+        new_version = increment_nightly_version(
+            library_module, versions[module_name], library=True, dry_run=dry_run
+        )
     return new_version
 
 
-def set_new_version(new_version):
+def set_new_version(new_version, dry_run=True):
     for module_name in MODULE_NAMES:
-        set_version(module_name, new_version, get_nightly_version())
+        set_version(module_name, new_version, get_nightly_version(), dry_run=dry_run)
     for library_module in LIBRARY_MODULES:
-        set_version(library_module, new_version, get_nightly_version(), library=True)
+        set_version(
+            library_module, new_version, get_nightly_version(), library=True, dry_run=dry_run
+        )
 
 
-def commit_new_version(new_version):
+def commit_new_version(new_version, dry_run=True):
     try:
         for module_name in MODULE_NAMES:
-            subprocess.check_output(
-                [
-                    'git',
-                    'add',
-                    os.path.join(
-                        path_to_module(module_name),
-                        normalize_module_name(module_name),
-                        'version.py',
-                    ),
-                ],
-                stderr=subprocess.STDOUT,
-            )
+            cmd = [
+                'git',
+                'add',
+                os.path.join(
+                    path_to_module(module_name), normalize_module_name(module_name), 'version.py'
+                ),
+            ]
+            check_output(cmd, dry_run=dry_run)
         for library_module in LIBRARY_MODULES:
-            subprocess.check_output(
-                [
-                    'git',
-                    'add',
-                    os.path.join(
-                        path_to_module(library_module, library=True),
-                        normalize_module_name(library_module),
-                        'version.py',
-                    ),
-                ],
-                stderr=subprocess.STDOUT,
-            )
-        subprocess.check_output(
-            ['git', 'commit', '--no-verify', '-m', '{new_version}'.format(new_version=new_version)],
-            stderr=subprocess.STDOUT,
-        )
+            cmd = [
+                'git',
+                'add',
+                os.path.join(
+                    path_to_module(library_module, library=True),
+                    normalize_module_name(library_module),
+                    'version.py',
+                ),
+            ]
+            check_output(cmd, dry_run=dry_run)
+
+        cmd = [
+            'git',
+            'commit',
+            '--no-verify',
+            '-m',
+            '{new_version}'.format(new_version=new_version),
+        ]
+        check_output(cmd, dry_run=dry_run)
+
     except subprocess.CalledProcessError as exc_info:
         raise Exception(exc_info.output)
 
@@ -307,7 +350,7 @@ def commit_new_version(new_version):
 def check_existing_version():
     module_versions = get_versions()
     if not all_equal(module_versions.values()):
-        print(
+        click.echo(
             'Warning! Found repository in a bad state. Existing package versions were not '
             'equal:\n{versions}'.format(versions=format_module_versions(module_versions))
         )
@@ -513,12 +556,12 @@ def check_directory_structure():
         )
 
 
-def git_push(tag=None):
+def git_push(tag=None, dry_run=True):
     github_token = os.getenv('GITHUB_TOKEN')
     github_username = os.getenv('GITHUB_USERNAME')
     if github_token and github_username:
         if tag:
-            subprocess.check_output(
+            check_output(
                 [
                     'git',
                     'push',
@@ -526,21 +569,23 @@ def git_push(tag=None):
                         github_username=github_username, github_token=github_token
                     ),
                     tag,
-                ]
+                ],
+                dry_run=dry_run,
             )
-        subprocess.check_output(
+        check_output(
             [
                 'git',
                 'push',
                 'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
                     github_username=github_username, github_token=github_token
                 ),
-            ]
+            ],
+            dry_run=dry_run,
         )
     else:
         if tag:
-            subprocess.check_output(['git', 'push', 'origin', tag])
-        subprocess.check_output(['git', 'push'])
+            check_output(['git', 'push', 'origin', tag], dry_run=dry_run)
+        check_output(['git', 'push'], dry_run=dry_run)
 
 
 CLI_HELP = '''Tools to help tag and publish releases of the Dagster projects.
@@ -562,7 +607,8 @@ def cli():
 @cli.command()
 @click.option('--nightly', is_flag=True)
 @click.option('--autoclean', is_flag=True)
-def publish(nightly, autoclean):
+@click.option('--dry-run', is_flag=True)
+def publish(nightly, autoclean, dry_run):
     """Publishes (uploads) all submodules to PyPI.
 
     Appropriate credentials must be available to twine, e.g. in a ~/.pypirc file, and users must
@@ -582,7 +628,7 @@ def publish(nightly, autoclean):
     )
 
     assert which_('twine'), (
-        'You must have twin installed in order to upload packages to PyPI -- run '
+        'You must have twine installed in order to upload packages to PyPI -- run '
         '`pip install twine`.'
     )
 
@@ -591,31 +637,33 @@ def publish(nightly, autoclean):
         'https://yarnpkg.com/lang/en/docs/install/'
     )
 
-    print('Checking that module versions are in lockstep')
+    click.echo('Checking that module versions are in lockstep')
     checked_version = check_versions(nightly=nightly)
     if not nightly:
-        print('... and match git tag on most recent commit...')
+        click.echo('... and match git tag on most recent commit...')
         check_git_status()
-    print('... and that there is no cruft present...')
+    click.echo('... and that there is no cruft present...')
     check_for_cruft(autoclean)
-    print('... and that the directories look like we expect')
+    click.echo('... and that the directories look like we expect')
     check_directory_structure()
 
-    print('Publishing packages to PyPI...')
+    click.echo('Publishing packages to PyPI...')
 
     if nightly:
-        new_version = increment_nightly_versions()
-        commit_new_version('nightly: {nightly}'.format(nightly=new_version['__nightly__']))
-        tag = set_git_tag('{nightly}'.format(nightly=new_version['__nightly__']))
-        git_push()
-        git_push(tag)
-    publish_all(nightly)
+        new_version = increment_nightly_versions(dry_run)
+        commit_new_version(
+            'nightly: {nightly}'.format(nightly=new_version['__nightly__']), dry_run=dry_run
+        )
+        tag = set_git_tag('{nightly}'.format(nightly=new_version['__nightly__']), dry_run=dry_run)
+        git_push(dry_run=dry_run)
+        git_push(tag, dry_run=dry_run)
+    publish_all(nightly, dry_run=dry_run)
     git_user = (
         subprocess.check_output(['git', 'config', '--get', 'user.name']).decode('utf-8').strip()
     )
     if not nightly:
         parsed_version = packaging.version.parse(checked_version['__version__'])
-        if not parsed_version.is_prerelease:
+        if not parsed_version.is_prerelease and not dry_run:
             slack_client.api_call(
                 'chat.postMessage',
                 channel='#general',
@@ -627,7 +675,8 @@ def publish(nightly, autoclean):
 
 @cli.command()
 @click.argument('ver')
-def release(ver):
+@click.option('--dry-run', is_flag=True)
+def release(ver, dry_run):
     """Tags all submodules for a new release.
 
     Ensures that git tags, as well as the version.py files in each submodule, agree and that the
@@ -635,10 +684,10 @@ def release(ver):
     is not an increment (following PEP 440). Creates a new git tag and commit.
     """
     check_new_version(ver)
-    set_new_version(ver)
-    commit_new_version(ver)
-    set_git_tag(ver)
-    print(
+    set_new_version(ver, dry_run=dry_run)
+    commit_new_version(ver, dry_run=dry_run)
+    set_git_tag(ver, dry_run=dry_run)
+    click.echo(
         'Successfully set new version and created git tag {version}. You may continue with the '
         'release checklist.'.format(version=ver)
     )
@@ -655,14 +704,14 @@ def version():
         if packaging.version.parse(module_version['__version__']) > parsed_version:
             errors[module_name] = module_version['__version__']
     if errors:
-        print(
+        click.echo(
             'Warning: Found modules with existing versions that did not match the most recent '
             'tagged version {git_tag}:\n{versions}'.format(
                 git_tag=git_tag, versions=format_module_versions(module_versions)
             )
         )
     else:
-        print(
+        click.echo(
             'All modules in lockstep with most recent tagged version: {git_tag}'.format(
                 git_tag=git_tag
             )
@@ -701,7 +750,7 @@ def after_install(options, home_dir):
 
             args = ['python', bootstrap_script_file.name, venv_dir]
 
-            print(subprocess.check_output(args).decode('utf-8'))
+            click.echo(subprocess.check_output(args).decode('utf-8'))
 
 
 cli = click.CommandCollection(sources=[cli], help=CLI_HELP)

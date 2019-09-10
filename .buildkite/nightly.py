@@ -3,7 +3,7 @@ import sys
 
 import yaml
 from defines import SupportedPython, SupportedPythons
-from step_builder import StepBuilder
+from step_builder import BuildkiteQueue, StepBuilder
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(SCRIPT_PATH)
@@ -24,7 +24,7 @@ def publish_docker_images():
             "make push-public-{version}".format(version=version),
         )
         .on_integration_image(SupportedPython.V3_7)
-        .on_queue('docker-p')
+        .on_queue(BuildkiteQueue.DOCKER)
         .with_timeout(30)
         .build()
         for version in python_versions

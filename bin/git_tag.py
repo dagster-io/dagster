@@ -34,12 +34,19 @@ def get_most_recent_git_tag():
     return git_tag
 
 
-def set_git_tag(tag, signed=False):
+def set_git_tag(tag, signed=False, dry_run=True):
     try:
         if signed:
-            subprocess.check_output(['git', 'tag', '-s', '-m', tag, tag], stderr=subprocess.STDOUT)
+            if not dry_run:
+                subprocess.check_output(
+                    ['git', 'tag', '-s', '-m', tag, tag], stderr=subprocess.STDOUT
+                )
         else:
-            subprocess.check_output(['git', 'tag', '-a', '-m', tag, tag], stderr=subprocess.STDOUT)
+            if not dry_run:
+                subprocess.check_output(
+                    ['git', 'tag', '-a', '-m', tag, tag], stderr=subprocess.STDOUT
+                )
+
     except subprocess.CalledProcessError as exc_info:
         match = re.search('error: gpg failed to sign the data', str(exc_info.output))
         if match:
