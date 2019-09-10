@@ -28,6 +28,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
             pipeline_run (PipelineRun): The run to add. If this is not a PipelineRun,
         '''
 
+    @abstractmethod
     def handle_run_event(self, run_id, event):
         '''Update run storage in accordance to a pipeline run related DagsterEvent
 
@@ -284,6 +285,9 @@ class SqliteRunStorage(RunStorage):
 
     def _from_sql_row(self, row):
         return PipelineRun.create_empty_run(run_id=row[0], pipeline_name=row[1])
+
+    def handle_run_event(self, run_id, event):
+        raise NotImplementedError()
 
     def all_runs_for_pipeline(self, pipeline_name):
         raw_runs = (
