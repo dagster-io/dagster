@@ -111,10 +111,16 @@ export default ({
           pipelineRunOrError: {
             ...prev.pipelineRunOrError,
             computeLogs: {
-              ...computeLogs,
+              ...prev.pipelineRunOrError.computeLogs,
               ...data.computeLogs,
-              stdout: updateData(computeLogs.stdout, data.computeLogs.stdout),
-              stderr: updateData(computeLogs.stderr, data.computeLogs.stderr)
+              stdout: updateData(
+                prev.pipelineRunOrError.computeLogs.stdout,
+                data.computeLogs.stdout
+              ),
+              stderr: updateData(
+                prev.pipelineRunOrError.computeLogs.stderr,
+                data.computeLogs.stderr
+              )
             }
           }
         };

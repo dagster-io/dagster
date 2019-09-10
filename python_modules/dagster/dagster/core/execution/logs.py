@@ -22,7 +22,9 @@ class ComputeIOType(Enum):
     COMPLETE = 'complete'
 
 
-POLLING_TIMEOUT = 2
+POLLING_TIMEOUT = 2.5
+MAX_BYTES_FILE_READ = 33554432  # 32 MB
+MAX_BYTES_CHUNK_READ = 4194304  # 4 MB
 
 
 def build_local_download_url(run_id, step_key, io_type):
@@ -126,9 +128,25 @@ class ComputeLogSubscription(object):
 
     def fetch(self):
         if self.observer:
-            self.observer.on_next(
-                fetch_compute_logs(self.instance, self.run_id, self.step_key, self.cursor)
-            )
+            should_fetch = True
+            while should_fetch:
+                update = fetch_compute_logs(
+                    self.instance,
+                    self.run_id,
+                    self.step_key,
+                    self.cursor,
+                    max_bytes=MAX_BYTES_CHUNK_READ,
+                )
+                if update.cursor != self.cursor:
+                    self.observer.on_next(update)
+                    self.cursor = update.cursor
+                should_fetch = (
+                    update.stdout
+                    and len(update.stdout.data.encode('utf-8')) >= MAX_BYTES_CHUNK_READ
+                ) or (
+                    update.stderr
+                    and len(update.stderr.data.encode('utf-8')) >= MAX_BYTES_CHUNK_READ
+                )
 
     def on_compute_end(self):
         self.fetch()
@@ -157,10 +175,14 @@ class ComputeLogFile(object):
         self.download_url = download_url
 
 
-def fetch_compute_logs(instance, run_id, step_key, cursor=None):
+def fetch_compute_logs(instance, run_id, step_key, cursor=None, max_bytes=MAX_BYTES_FILE_READ):
     out_offset, err_offset = _decode_cursor(cursor)
-    stdout = _fetch_compute_data(instance, run_id, step_key, ComputeIOType.STDOUT, out_offset)
-    stderr = _fetch_compute_data(instance, run_id, step_key, ComputeIOType.STDERR, err_offset)
+    stdout = _fetch_compute_data(
+        instance, run_id, step_key, ComputeIOType.STDOUT, out_offset, max_bytes
+    )
+    stderr = _fetch_compute_data(
+        instance, run_id, step_key, ComputeIOType.STDERR, err_offset, max_bytes
+    )
     cursor = _encode_cursor(stdout.cursor if stdout else 0, stderr.cursor if stderr else 0)
     return ComputeLogUpdate(stdout, stderr, cursor)
 
@@ -170,7 +192,7 @@ def should_capture_stdout(instance):
     return instance.is_feature_enabled(DagsterFeatures.DAGIT_STDOUT)
 
 
-def _fetch_compute_data(instance, run_id, step_key, io_type, after):
+def _fetch_compute_data(instance, run_id, step_key, io_type, after, max_bytes):
     path = _filepath(_filebase(instance, run_id, step_key), io_type)
     if not os.path.exists(path) or not os.path.isfile(path):
         return None
@@ -178,7 +200,7 @@ def _fetch_compute_data(instance, run_id, step_key, io_type, after):
     # See: https://docs.python.org/2/library/stdtypes.html#file.tell for Windows behavior
     with open(path, 'rb') as f:
         f.seek(after, os.SEEK_SET)
-        data = f.read()
+        data = f.read(max_bytes)
         cursor = f.tell()
         stats = os.fstat(f.fileno())
 
