@@ -1,7 +1,7 @@
 solids:
   inspect_sauce:
     outputs:
-      - result: "recent/recipe.txt"
+      - result: "/tmp/recent_recipe.txt"
 
     outputs:
-      - result: "favorites/recipe.txt"
+      - result: "/tmp/favorite_recipe.txt"

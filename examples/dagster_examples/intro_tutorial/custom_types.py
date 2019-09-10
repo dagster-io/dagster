@@ -1,5 +1,6 @@
 from dagster import (
     EventMetadataEntry,
+    Materialization,
     PresetDefinition,
     String,
     TypeCheck,
@@ -29,6 +30,7 @@ def read_sauce(_context, path):
 def write_sauce(_context, path, sauce):
     with open(path, 'w+') as fd:
         fd.write(sauce.flavor)
+    return Materialization.file(path)
 
 
 @dagster_type(
@@ -65,7 +67,16 @@ def inspect_sauce(context, sauce: Sauce) -> Sauce:
 
 @pipeline(
     preset_defs=[
-        PresetDefinition.from_files('test', [script_relative_path('./custom_type_input.yaml')])
+        PresetDefinition.from_files(
+            'test_input', [script_relative_path('./custom_type_input.yaml')]
+        ),
+        PresetDefinition.from_files(
+            'test_output',
+            [
+                script_relative_path('./custom_type_output.yaml'),
+                script_relative_path('./custom_type_input.yaml'),
+            ],
+        ),
     ]
 )
 def burger_time():

@@ -12,7 +12,7 @@ Basic Typing
 ^^^^^^^^^^^^
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types.py
-   :lines: 17,45-47
+   :lines: 18,47-49
    :linenos:
 
 What this code doing is annotating/registering our new ``Sauce`` class as a dagster type. Now
@@ -22,7 +22,7 @@ typecheck to ensure that the object is of type ``Sauce``.
 Now one can use it to define a solid:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types.py
-   :lines: 60-63
+   :lines: 62-65
    :linenos:
 
 
@@ -42,13 +42,13 @@ system to do so.
 Let us now add the input hydration config:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types.py
-   :lines: 22-25
+   :lines: 23-26
    :linenos:
 
 Then insert this into the original declaration:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types.py
-   :lines: 34-35,44-47
+   :lines: 36-37,46-49
    :emphasize-lines: 2
    :linenos:
 
@@ -69,7 +69,7 @@ whereas inputs *must* be provided for a computation to proceed. You will likely 
 a pipeline to be useful it should produce some materialization that outlives the computation.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types.py
-   :lines: 28-31
+   :lines: 29-32
    :linenos:
 
 This has a similar aesthetic to an input hydration config but performs a different function. Notice that
@@ -80,7 +80,7 @@ how to materialize the value.
 One connects the output materialization config to the type as follows:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types.py
-   :lines: 34-36,44-47
+   :lines: 36-38,46-49
    :emphasize-lines: 3
    :linenos:
 
@@ -101,6 +101,6 @@ object containing metadata entries about an instance of the type when it success
 We will use this to emit some summary statistics about our DataFrame type:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types.py
-   :lines: 34-47
+   :lines: 36-49
    :emphasize-lines: 4-10
    :linenos:
