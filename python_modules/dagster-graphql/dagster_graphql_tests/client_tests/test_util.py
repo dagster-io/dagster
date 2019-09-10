@@ -30,7 +30,8 @@ def test_can_handle_all_step_events():
     correctly.
     '''
     handled = set(HANDLED_EVENTS.values())
-    assert handled == STEP_EVENTS
+    # The distinction between "step events" and "pipeline events" needs to be reexamined
+    assert handled == STEP_EVENTS.union(set([DagsterEventType.ENGINE_EVENT]))
 
 
 def define_test_events_pipeline():
@@ -148,7 +149,10 @@ def test_all_step_events():  # pylint: disable=too-many-locals
                 ]
 
                 for event in events:
-                    key = event.step_key + '.' + event.event_type_value
+                    if event.step_key:
+                        key = event.step_key + '.' + event.event_type_value
+                    else:
+                        key = event.event_type_value
                     event_counts[key] -= 1
                 unhandled_events -= {DagsterEventType(e.event_type_value) for e in events}
             else:
@@ -158,10 +162,14 @@ def test_all_step_events():  # pylint: disable=too-many-locals
             logs = instance.all_logs(run_config.run_id)
             for log in logs:
                 if not log.dagster_event or (
-                    DagsterEventType(log.dagster_event.event_type_value) not in STEP_EVENTS
+                    DagsterEventType(log.dagster_event.event_type_value)
+                    not in STEP_EVENTS.union(set([DagsterEventType.ENGINE_EVENT]))
                 ):
                     continue
-                key = log.dagster_event.step_key + '.' + log.dagster_event.event_type_value
+                if log.dagster_event.step_key:
+                    key = log.dagster_event.step_key + '.' + log.dagster_event.event_type_value
+                else:
+                    key = log.dagster_event.event_type_value
                 event_counts[key] += 1
 
     # Ensure we've processed all the events that were generated in the run storage

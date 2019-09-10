@@ -5,6 +5,7 @@ from dagster.core.definitions import ExpectationResult, Materialization, SolidHa
 from dagster.core.events import (
     DagsterEvent,
     DagsterEventType,
+    EngineEventData,
     StepExpectationResultData,
     StepMaterializationData,
 )
@@ -29,6 +30,7 @@ HANDLED_EVENTS = {
     'StepMaterializationEvent': DagsterEventType.STEP_MATERIALIZATION,
     'StepExpectationResultEvent': DagsterEventType.STEP_EXPECTATION_RESULT,
     'ObjectStoreOperationEvent': DagsterEventType.OBJECT_STORE_OPERATION,
+    'EngineEvent': DagsterEventType.ENGINE_EVENT,
 }
 
 
@@ -152,19 +154,29 @@ def dagster_event_from_dict(event_dict, pipeline_name):
             else None,
         )
 
+    elif event_type == DagsterEventType.ENGINE_EVENT:
+        event_specific_data = EngineEventData(
+            metadata_entries=list(event_metadata_entries(event_dict.get('metadataEntries')))
+        )
+
     # We should update the GraphQL response so that clients don't need to do this handle parsing.
     # See: https://github.com/dagster-io/dagster/issues/1559
-    keys = event_dict['step']['solidHandleID'].split('.')
     handle = None
-    while keys:
-        handle = SolidHandle(keys.pop(0), definition_name=None, parent=handle)
+    step_key = None
+    step_kind_value = None
+    if 'step' in event_dict and event_dict['step']:
+        step_key = event_dict['step']['key']
+        step_kind_value = event_dict['step']['kind']
+        keys = event_dict['step']['solidHandleID'].split('.')
+        while keys:
+            handle = SolidHandle(keys.pop(0), definition_name=None, parent=handle)
 
     return DagsterEvent(
         event_type_value=event_type.value,
         pipeline_name=pipeline_name,
-        step_key=event_dict['step']['key'],
+        step_key=step_key,
         solid_handle=handle,
-        step_kind_value=event_dict['step']['kind'],
+        step_kind_value=step_kind_value,
         logging_tags=None,
         event_specific_data=event_specific_data,
     )

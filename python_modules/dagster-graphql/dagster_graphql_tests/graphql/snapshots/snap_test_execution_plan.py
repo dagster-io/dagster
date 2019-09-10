@@ -15,6 +15,10 @@ snapshots['test_success_whole_execution_plan 1'] = {
         },
         'stepEvents': [
             {
+                '__typename': 'EngineEvent',
+                'step': None
+            },
+            {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
                     'key': 'sum_solid.compute',
@@ -103,6 +107,10 @@ snapshots['test_success_whole_execution_plan 1'] = {
                     'metadata': [
                     ]
                 }
+            },
+            {
+                '__typename': 'EngineEvent',
+                'step': None
             }
         ]
     }
@@ -117,6 +125,10 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
         },
         'stepEvents': [
             {
+                '__typename': 'EngineEvent',
+                'step': None
+            },
+            {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
                     'key': 'sum_solid.compute',
@@ -205,6 +217,10 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
                     'metadata': [
                     ]
                 }
+            },
+            {
+                '__typename': 'EngineEvent',
+                'step': None
             }
         ]
     }
@@ -219,6 +235,10 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
         },
         'stepEvents': [
             {
+                '__typename': 'EngineEvent',
+                'step': None
+            },
+            {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
                     'key': 'sum_solid.compute',
@@ -283,6 +303,10 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
                     'metadata': [
                     ]
                 }
+            },
+            {
+                '__typename': 'EngineEvent',
+                'step': None
             }
         ]
     }
@@ -297,6 +321,10 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
         },
         'stepEvents': [
             {
+                '__typename': 'EngineEvent',
+                'step': None
+            },
+            {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
                     'key': 'sum_solid.compute',
@@ -336,6 +364,10 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
                     'metadata': [
                     ]
                 }
+            },
+            {
+                '__typename': 'EngineEvent',
+                'step': None
             }
         ]
     }
@@ -350,6 +382,10 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
         },
         'stepEvents': [
             {
+                '__typename': 'EngineEvent',
+                'step': None
+            },
+            {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
                     'key': 'sum_solid.compute',
@@ -389,6 +425,10 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
                     'metadata': [
                     ]
                 }
+            },
+            {
+                '__typename': 'EngineEvent',
+                'step': None
             }
         ]
     }
@@ -403,6 +443,10 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
         },
         'stepEvents': [
             {
+                '__typename': 'EngineEvent',
+                'step': None
+            },
+            {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
                     'key': 'sum_sq_solid.compute',
@@ -450,6 +494,10 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
                     'metadata': [
                     ]
                 }
+            },
+            {
+                '__typename': 'EngineEvent',
+                'step': None
             }
         ]
     }

@@ -17,6 +17,10 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         'level': 'DEBUG'
                     },
                     {
+                        '__typename': 'EngineEvent',
+                        'level': 'DEBUG'
+                    },
+                    {
                         '__typename': 'ExecutionStepStartEvent',
                         'level': 'DEBUG',
                         'step': {
@@ -150,6 +154,10 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         'level': 'DEBUG'
                     },
                     {
+                        '__typename': 'EngineEvent',
+                        'level': 'DEBUG'
+                    },
+                    {
                         '__typename': 'PipelineSuccessEvent',
                         'level': 'DEBUG'
                     }
@@ -170,6 +178,10 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                 'nodes': [
                     {
                         '__typename': 'PipelineStartEvent',
+                        'level': 'DEBUG'
+                    },
+                    {
+                        '__typename': 'EngineEvent',
                         'level': 'DEBUG'
                     },
                     {
@@ -245,6 +257,10 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                     },
                     {
                         '__typename': 'ExecutionStepSuccessEvent',
+                        'level': 'DEBUG'
+                    },
+                    {
+                        '__typename': 'EngineEvent',
                         'level': 'DEBUG'
                     },
                     {

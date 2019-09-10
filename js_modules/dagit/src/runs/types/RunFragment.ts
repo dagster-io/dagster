@@ -401,7 +401,58 @@ export interface RunFragment_logs_nodes_ObjectStoreOperationEvent {
   operationResult: RunFragment_logs_nodes_ObjectStoreOperationEvent_operationResult;
 }
 
-export type RunFragment_logs_nodes = RunFragment_logs_nodes_ExecutionStepSkippedEvent | RunFragment_logs_nodes_PipelineProcessStartedEvent | RunFragment_logs_nodes_PipelineProcessStartEvent | RunFragment_logs_nodes_StepMaterializationEvent | RunFragment_logs_nodes_PipelineInitFailureEvent | RunFragment_logs_nodes_ExecutionStepFailureEvent | RunFragment_logs_nodes_ExecutionStepInputEvent | RunFragment_logs_nodes_ExecutionStepOutputEvent | RunFragment_logs_nodes_StepExpectationResultEvent | RunFragment_logs_nodes_ObjectStoreOperationEvent;
+export interface RunFragment_logs_nodes_EngineEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface RunFragment_logs_nodes_EngineEvent_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface RunFragment_logs_nodes_EngineEvent_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface RunFragment_logs_nodes_EngineEvent_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface RunFragment_logs_nodes_EngineEvent_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface RunFragment_logs_nodes_EngineEvent_metadataEntries_EventMarkdownMetadataEntry {
+  __typename: "EventMarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdString: string;
+}
+
+export type RunFragment_logs_nodes_EngineEvent_metadataEntries = RunFragment_logs_nodes_EngineEvent_metadataEntries_EventPathMetadataEntry | RunFragment_logs_nodes_EngineEvent_metadataEntries_EventJsonMetadataEntry | RunFragment_logs_nodes_EngineEvent_metadataEntries_EventUrlMetadataEntry | RunFragment_logs_nodes_EngineEvent_metadataEntries_EventTextMetadataEntry | RunFragment_logs_nodes_EngineEvent_metadataEntries_EventMarkdownMetadataEntry;
+
+export interface RunFragment_logs_nodes_EngineEvent {
+  __typename: "EngineEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: RunFragment_logs_nodes_EngineEvent_step | null;
+  metadataEntries: RunFragment_logs_nodes_EngineEvent_metadataEntries[];
+}
+
+export type RunFragment_logs_nodes = RunFragment_logs_nodes_ExecutionStepSkippedEvent | RunFragment_logs_nodes_PipelineProcessStartedEvent | RunFragment_logs_nodes_PipelineProcessStartEvent | RunFragment_logs_nodes_StepMaterializationEvent | RunFragment_logs_nodes_PipelineInitFailureEvent | RunFragment_logs_nodes_ExecutionStepFailureEvent | RunFragment_logs_nodes_ExecutionStepInputEvent | RunFragment_logs_nodes_ExecutionStepOutputEvent | RunFragment_logs_nodes_StepExpectationResultEvent | RunFragment_logs_nodes_ObjectStoreOperationEvent | RunFragment_logs_nodes_EngineEvent;
 
 export interface RunFragment_logs {
   __typename: "LogMessageConnection";

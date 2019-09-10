@@ -143,7 +143,9 @@ def test_success_whole_execution_plan(snapshot):
     assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False
     step_events = {
-        step_event['step']['key']: step_event for step_event in query_result['stepEvents']
+        step_event['step']['key']: step_event
+        for step_event in query_result['stepEvents']
+        if step_event['step']
     }
     assert 'sum_solid.compute' in step_events
     assert 'sum_sq_solid.compute' in step_events
@@ -179,7 +181,9 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
     assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False
     step_events = {
-        step_event['step']['key']: step_event for step_event in query_result['stepEvents']
+        step_event['step']['key']: step_event
+        for step_event in query_result['stepEvents']
+        if step_event['step']
     }
     assert 'sum_solid.compute' in step_events
     assert 'sum_sq_solid.compute' in step_events
@@ -215,7 +219,9 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
     assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False
     step_events = {
-        step_event['step']['key']: step_event for step_event in query_result['stepEvents']
+        step_event['step']['key']: step_event
+        for step_event in query_result['stepEvents']
+        if step_event['step']
     }
     assert 'sum_solid.compute' in step_events
     assert 'sum_sq_solid.compute' in step_events
@@ -251,24 +257,26 @@ def test_successful_one_part_execute_plan(snapshot):
 
     step_events = query_result['stepEvents']
 
-    assert step_events[0]['step']['key'] == 'sum_solid.compute'
-    assert step_events[0]['__typename'] == 'ExecutionStepStartEvent'
+    assert [se['__typename'] for se in step_events] == [
+        'EngineEvent',
+        'ExecutionStepStartEvent',
+        'ExecutionStepInputEvent',
+        'ExecutionStepOutputEvent',
+        'ObjectStoreOperationEvent',
+        'ExecutionStepSuccessEvent',
+        'EngineEvent',
+    ]
 
-    assert step_events[1]['__typename'] == 'ExecutionStepInputEvent'
-
-    assert step_events[2]['__typename'] == 'ExecutionStepOutputEvent'
-    assert step_events[2]['outputName'] == 'result'
+    assert step_events[1]['step']['key'] == 'sum_solid.compute'
+    assert step_events[3]['outputName'] == 'result'
 
     expected_value_repr = (
         '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), '''
         '''OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]'''
     )
 
-    assert step_events[3]['step']['key'] == 'sum_solid.compute'
-    assert step_events[3]['__typename'] == 'ObjectStoreOperationEvent'
-
     assert step_events[4]['step']['key'] == 'sum_solid.compute'
-    assert step_events[4]['__typename'] == 'ExecutionStepSuccessEvent'
+    assert step_events[5]['step']['key'] == 'sum_solid.compute'
 
     snapshot.assert_match(result.data)
 
@@ -320,17 +328,21 @@ def test_successful_two_part_execute_plan(snapshot):
     assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False
     step_events = query_result['stepEvents']
-    assert step_events[0]['__typename'] == 'ExecutionStepStartEvent'
-    assert step_events[0]['step']['key'] == 'sum_sq_solid.compute'
-    assert step_events[1]['__typename'] == 'ObjectStoreOperationEvent'
+    assert [se['__typename'] for se in step_events] == [
+        'EngineEvent',
+        'ExecutionStepStartEvent',
+        'ObjectStoreOperationEvent',
+        'ExecutionStepInputEvent',
+        'ExecutionStepOutputEvent',
+        'ObjectStoreOperationEvent',
+        'ExecutionStepSuccessEvent',
+        'EngineEvent',
+    ]
     assert step_events[1]['step']['key'] == 'sum_sq_solid.compute'
-    assert step_events[2]['__typename'] == 'ExecutionStepInputEvent'
     assert step_events[2]['step']['key'] == 'sum_sq_solid.compute'
-    assert step_events[3]['__typename'] == 'ExecutionStepOutputEvent'
-    assert step_events[3]['outputName'] == 'result'
-    assert step_events[4]['__typename'] == 'ObjectStoreOperationEvent'
-    assert step_events[4]['step']['key'] == 'sum_sq_solid.compute'
-    assert step_events[5]['__typename'] == 'ExecutionStepSuccessEvent'
+    assert step_events[3]['step']['key'] == 'sum_sq_solid.compute'
+    assert step_events[4]['outputName'] == 'result'
+    assert step_events[5]['step']['key'] == 'sum_sq_solid.compute'
 
     snapshot.assert_match(result_two.data)
 

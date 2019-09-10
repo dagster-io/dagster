@@ -1,5 +1,4 @@
 from dagster import (
-    DagsterEventType,
     DependencyDefinition,
     InputDefinition,
     Int,
@@ -40,19 +39,27 @@ def test_execution_plan_simple_two_steps():
     assert execution_plan.get_step_by_key('return_one.compute')
     assert execution_plan.get_step_by_key('add_one.compute')
 
-    step_events = execute_plan(execution_plan, instance=DagsterInstance.ephemeral())
+    events = execute_plan(execution_plan, instance=DagsterInstance.ephemeral())
     # start, out, success, start, input, out, success
-    assert len(step_events) == 7
+    assert [e.event_type_value for e in events] == [
+        'ENGINE_EVENT',
+        'STEP_START',
+        'STEP_OUTPUT',
+        'STEP_SUCCESS',
+        'STEP_START',
+        'STEP_INPUT',
+        'STEP_OUTPUT',
+        'STEP_SUCCESS',
+        'ENGINE_EVENT',
+    ]
 
-    assert step_events[1].step_key == 'return_one.compute'
-    assert step_events[1].is_successful_output
+    output_events = [e for e in events if e.event_type_value == 'STEP_OUTPUT']
 
-    assert step_events[2].event_type == DagsterEventType.STEP_SUCCESS
-    assert step_events[3].event_type == DagsterEventType.STEP_START
-    assert step_events[4].event_type == DagsterEventType.STEP_INPUT
+    assert output_events[0].step_key == 'return_one.compute'
+    assert output_events[0].is_successful_output
 
-    assert step_events[5].step_key == 'add_one.compute'
-    assert step_events[5].is_successful_output
+    assert output_events[1].step_key == 'add_one.compute'
+    assert output_events[1].is_successful_output
 
 
 def test_execution_plan_two_outputs():
@@ -67,10 +74,10 @@ def test_execution_plan_two_outputs():
 
     step_events = execute_plan(execution_plan, instance=DagsterInstance.ephemeral())
 
-    assert step_events[1].step_key == 'return_one_two.compute'
-    assert step_events[1].step_output_data.output_name == 'num_one'
     assert step_events[2].step_key == 'return_one_two.compute'
-    assert step_events[2].step_output_data.output_name == 'num_two'
+    assert step_events[2].step_output_data.output_name == 'num_one'
+    assert step_events[3].step_key == 'return_one_two.compute'
+    assert step_events[3].step_output_data.output_name == 'num_two'
 
 
 def test_reentrant_execute_plan():
@@ -92,6 +99,6 @@ def test_reentrant_execute_plan():
     )
 
     assert called['yup']
-    assert len(step_events) == 3
+    assert len(step_events) == 5
 
-    assert step_events[0].logging_tags['foo'] == 'bar'
+    assert step_events[1].logging_tags['foo'] == 'bar'

@@ -118,6 +118,11 @@ export class Structured extends React.Component<
             }
           }
         }
+        ... on EngineEvent {
+          metadataEntries {
+            ...MetadataEntryFragment
+          }
+        }
       }
       ${MetadataEntry.fragments.MetadataEntryFragment}
     `

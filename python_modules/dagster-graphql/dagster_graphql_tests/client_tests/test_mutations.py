@@ -3,6 +3,7 @@ from dagster_graphql.client.mutations import execute_start_pipeline_execution_qu
 from dagster import ExecutionTargetHandle
 
 EXPECTED_EVENTS = {
+    ('ENGINE_EVENT', None),
     ('STEP_INPUT', 'sleeper_1.compute'),
     ('STEP_INPUT', 'sleeper_2.compute'),
     ('STEP_INPUT', 'sleeper_3.compute'),

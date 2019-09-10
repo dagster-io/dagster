@@ -78,14 +78,6 @@ def handle_start_pipeline_execution_result(res):
     if res_type == 'StartPipelineExecutionSuccess':
         pipeline_name = res_data['run']['pipeline']['name']
 
-        skip_events = {
-            'LogMessageEvent',
-            'PipelineStartEvent',
-            'PipelineSuccessEvent',
-            'PipelineInitFailureEvent',
-            'PipelineFailureEvent',
-        }
-
         return [
             dagster_event_from_dict(e, pipeline_name)
             for e in res_data['run']['logs']['nodes']

@@ -63,9 +63,11 @@ def test_basic_event_store():
 
     assert list(map(lambda e: e.dagster_event.event_type, out_events)) == [
         DagsterEventType.PIPELINE_START,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
         DagsterEventType.STEP_SUCCESS,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
     ]
 
@@ -93,9 +95,11 @@ def test_basic_get_logs_for_run():
 
     assert event_types(out_events) == [
         DagsterEventType.PIPELINE_START,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
         DagsterEventType.STEP_SUCCESS,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
     ]
 
@@ -119,9 +123,11 @@ def test_wipe_postgres_event_log():
 
     assert event_types(out_events) == [
         DagsterEventType.PIPELINE_START,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
         DagsterEventType.STEP_SUCCESS,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
     ]
 
@@ -147,17 +153,21 @@ def test_basic_get_logs_for_run_cursor():
 
     assert event_types(event_log_storage.get_logs_for_run(result.run_id, cursor=0)) == [
         # DagsterEventType.PIPELINE_START,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
         DagsterEventType.STEP_SUCCESS,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
     ]
 
     assert event_types(event_log_storage.get_logs_for_run(result.run_id, cursor=1)) == [
         # DagsterEventType.PIPELINE_START,
-        # DagsterEventType.STEP_START,
+        # DagsterEventType.ENGINE_EVENT,
+        DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
         DagsterEventType.STEP_SUCCESS,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
     ]
 
@@ -181,26 +191,30 @@ def test_basic_get_logs_for_run_multiple_runs():
         event_log_storage.store_event(event)
 
     out_events_one = event_log_storage.get_logs_for_run(result_one.run_id)
-    assert len(out_events_one) == 5
+    assert len(out_events_one) == 7
 
     assert event_types(out_events_one) == [
         DagsterEventType.PIPELINE_START,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
         DagsterEventType.STEP_SUCCESS,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
     ]
 
     assert set(map(lambda e: e.run_id, out_events_one)) == {result_one.run_id}
 
     out_events_two = event_log_storage.get_logs_for_run(result_two.run_id)
-    assert len(out_events_two) == 5
+    assert len(out_events_two) == 7
 
     assert event_types(out_events_two) == [
-        DagsterEventType.PIPELINE_START,
-        DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
+        DagsterEventType.PIPELINE_START,
+        DagsterEventType.ENGINE_EVENT,
+        DagsterEventType.STEP_START,
         DagsterEventType.STEP_SUCCESS,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
     ]
 
@@ -226,26 +240,30 @@ def test_basic_get_logs_for_run_multiple_runs_cursors():
         event_log_storage.store_event(event)
 
     out_events_one = event_log_storage.get_logs_for_run(result_one.run_id, cursor=1)
-    assert len(out_events_one) == 3
+    assert len(out_events_one) == 5
 
     assert event_types(out_events_one) == [
         # DagsterEventType.PIPELINE_START,
-        # DagsterEventType.STEP_START,
+        # DagsterEventType.ENGINE_EVENT,
+        DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
         DagsterEventType.STEP_SUCCESS,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
     ]
 
     assert set(map(lambda e: e.run_id, out_events_one)) == {result_one.run_id}
 
     out_events_two = event_log_storage.get_logs_for_run(result_two.run_id, cursor=2)
-    assert len(out_events_two) == 2
+    assert len(out_events_two) == 4
 
     assert event_types(out_events_two) == [
         # DagsterEventType.PIPELINE_START,
-        # DagsterEventType.STEP_START,
+        # DagsterEventType.ENGINE_EVENT,
         # DagsterEventType.STEP_OUTPUT,
+        DagsterEventType.STEP_START,
         DagsterEventType.STEP_SUCCESS,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
     ]
 

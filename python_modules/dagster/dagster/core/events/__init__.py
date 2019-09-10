@@ -47,6 +47,8 @@ class DagsterEventType(Enum):
 
     OBJECT_STORE_OPERATION = 'OBJECT_STORE_OPERATION'
 
+    ENGINE_EVENT = 'ENGINE_EVENT'
+
 
 STEP_EVENTS = {
     DagsterEventType.STEP_INPUT,
@@ -99,6 +101,8 @@ def _validate_event_specific_data(event_type, event_specific_data):
         check.inst_param(event_specific_data, 'event_specific_data', PipelineProcessExitedData)
     elif event_type == DagsterEventType.STEP_INPUT:
         check.inst_param(event_specific_data, 'event_specific_data', StepInputData)
+    elif event_type == DagsterEventType.ENGINE_EVENT:
+        check.inst_param(event_specific_data, 'event_specific_data', EngineEventData)
 
     return event_specific_data
 
@@ -166,7 +170,7 @@ class DagsterEvent(
         return event
 
     @staticmethod
-    def from_pipeline(event_type, pipeline_context, message=None):
+    def from_pipeline(event_type, pipeline_context, message=None, event_specific_data=None):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
 
         pipeline_name = pipeline_context.pipeline_def.name
@@ -175,6 +179,7 @@ class DagsterEvent(
             check.inst_param(event_type, 'event_type', DagsterEventType).value,
             check.str_param(pipeline_name, 'pipeline_name'),
             message=check.opt_str_param(message, 'message'),
+            event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
         )
 
         log_pipeline_event(pipeline_context, event)
@@ -294,6 +299,11 @@ class DagsterEvent(
         _assert_type(
             'pipeline_init_failure_data', DagsterEventType.PIPELINE_INIT_FAILURE, self.event_type
         )
+        return self.event_specific_data
+
+    @property
+    def engine_event_data(self):
+        _assert_type('engine_event_data', DagsterEventType.ENGINE_EVENT, self.event_type)
         return self.event_specific_data
 
     @staticmethod
@@ -474,6 +484,15 @@ class DagsterEvent(
         return event
 
     @staticmethod
+    def engine_event(pipeline_context, message, event_specific_data=None):
+        return DagsterEvent.from_pipeline(
+            DagsterEventType.ENGINE_EVENT,
+            pipeline_context,
+            message,
+            event_specific_data=event_specific_data,
+        )
+
+    @staticmethod
     def object_store_operation(step_context, object_store_operation_result):
         object_store_name = (
             '{object_store_name} '.format(
@@ -560,6 +579,37 @@ class ObjectStoreOperationResultData(
     namedtuple('_ObjectStoreOperationResultData', 'op metadata_entries')
 ):
     pass
+
+
+@whitelist_for_serdes
+class EngineEventData(namedtuple('_EngineEventData', 'metadata_entries')):
+    @staticmethod
+    def in_process(pid, step_keys_to_execute=None):
+        check.int_param(pid, 'pid')
+        check.opt_set_param(step_keys_to_execute, 'step_keys_to_execute')
+        return EngineEventData(
+            metadata_entries=[EventMetadataEntry.text(str(pid), 'pid')]
+            + (
+                [EventMetadataEntry.text(str(step_keys_to_execute), 'step_keys')]
+                if step_keys_to_execute
+                else []
+            )
+        )
+
+    @staticmethod
+    def multiprocess(pid, parent_pid=None, step_keys_to_execute=None):
+        check.int_param(pid, 'pid')
+        check.opt_int_param(parent_pid, 'parent_pid')
+        check.opt_set_param(step_keys_to_execute, 'step_keys_to_execute')
+        return EngineEventData(
+            metadata_entries=[EventMetadataEntry.text(str(pid), 'pid')]
+            + ([EventMetadataEntry.text(str(parent_pid), 'parent_pid')] if parent_pid else [])
+            + (
+                [EventMetadataEntry.text(str(step_keys_to_execute), 'step_keys')]
+                if step_keys_to_execute
+                else []
+            )
+        )
 
 
 @whitelist_for_serdes

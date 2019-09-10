@@ -509,6 +509,12 @@ class DauphinObjectStoreOperationEvent(dauphin.ObjectType):
     operation_result = dauphin.NonNull(DauphinObjectStoreOperationResult)
 
 
+class DauphinEngineEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'EngineEvent'
+        interfaces = (DauphinMessageEvent, DauphinDisplayableEvent, DauphinStepEvent)
+
+
 class DauphinStepExpectationResultEvent(dauphin.ObjectType):
     class Meta:
         name = 'StepExpectationResultEvent'
@@ -539,6 +545,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinObjectStoreOperationEvent,
             DauphinStepExpectationResultEvent,
             DauphinStepMaterializationEvent,
+            DauphinEngineEvent,
         )
 
 
@@ -641,6 +648,13 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
         operation_result = dagster_event.event_specific_data
         return graphene_info.schema.type_named('ObjectStoreOperationEvent')(
             operation_result=operation_result, **basic_params
+        )
+    elif dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
+        return graphene_info.schema.type_named('EngineEvent')(
+            metadataEntries=_to_dauphin_metadata_entries(
+                dagster_event.event_specific_data.metadata_entries
+            ),
+            **basic_params
         )
     else:
         raise Exception(

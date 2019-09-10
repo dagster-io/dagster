@@ -51,7 +51,17 @@ def test_execution_plan_for_composite_solid():
     for evt in execute_plan_iterator(execution_plan, environment_dict=environment_dict):
         events.append(evt)
 
-    assert events[-1].event_type.value == 'STEP_SUCCESS'
+    assert [e.event_type_value for e in events] == [
+        'ENGINE_EVENT',
+        'STEP_START',
+        'STEP_OUTPUT',
+        'STEP_SUCCESS',
+        'STEP_START',
+        'STEP_INPUT',
+        'STEP_OUTPUT',
+        'STEP_SUCCESS',
+        'ENGINE_EVENT',
+    ]
 
 
 def test_execution_plan_for_composite_solid_with_config_mapping():
@@ -70,4 +80,14 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
     for evt in execute_plan_iterator(execution_plan, environment_dict=environment_dict):
         events.append(evt)
 
-    assert events[-1].event_type.value == 'STEP_SUCCESS'
+    assert [e.event_type_value for e in events] == [
+        'ENGINE_EVENT',
+        'STEP_START',
+        'STEP_OUTPUT',
+        'STEP_SUCCESS',
+        'STEP_START',
+        'STEP_INPUT',
+        'STEP_OUTPUT',
+        'STEP_SUCCESS',
+        'ENGINE_EVENT',
+    ]

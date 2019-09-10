@@ -401,7 +401,58 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_ObjectStoreOperationEv
   operationResult: PipelineRunLogsUpdateFragment_logs_nodes_ObjectStoreOperationEvent_operationResult;
 }
 
-export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepSkippedEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent | PipelineRunLogsUpdateFragment_logs_nodes_ObjectStoreOperationEvent;
+export interface PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_metadataEntries_EventMarkdownMetadataEntry {
+  __typename: "EventMarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdString: string;
+}
+
+export type PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_metadataEntries = PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_metadataEntries_EventPathMetadataEntry | PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_metadataEntries_EventJsonMetadataEntry | PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_metadataEntries_EventUrlMetadataEntry | PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_metadataEntries_EventTextMetadataEntry | PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_metadataEntries_EventMarkdownMetadataEntry;
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent {
+  __typename: "EngineEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_step | null;
+  metadataEntries: PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent_metadataEntries[];
+}
+
+export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepSkippedEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepInputEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepOutputEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepExpectationResultEvent | PipelineRunLogsUpdateFragment_logs_nodes_ObjectStoreOperationEvent | PipelineRunLogsUpdateFragment_logs_nodes_EngineEvent;
 
 export interface PipelineRunLogsUpdateFragment_logs {
   __typename: "LogMessageConnection";

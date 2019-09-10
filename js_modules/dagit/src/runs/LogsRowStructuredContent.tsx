@@ -94,6 +94,12 @@ export const LogsRowStructuredContent: React.FunctionComponent<
     case "LogMessageEvent":
     case "PipelineStartEvent":
       return <DefaultContent message={node.message} />;
+    case "EngineEvent":
+      return (
+        <DefaultContent message={node.message}>
+          <MetadataEntries entries={node.metadataEntries} />
+        </DefaultContent>
+      );
 
     default:
       // This allows us to check that the switch is exhaustive because the union type should

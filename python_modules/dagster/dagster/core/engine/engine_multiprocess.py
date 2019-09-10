@@ -1,13 +1,14 @@
 import os
 
 from dagster import check
-from dagster.core.events import SqliteEventSink
+from dagster.core.events import DagsterEvent, EngineEventData, SqliteEventSink
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.config import MultiprocessExecutorConfig, RunConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.utils import safe_tempfile_path
+from dagster.utils.timing import format_duration, time_execution_scope
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
 from .engine_base import IEngine
@@ -112,29 +113,49 @@ class MultiprocessEngine(IEngine):  # pylint: disable=no-init
 
         step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
 
+        yield DagsterEvent.engine_event(
+            pipeline_context,
+            'Executing steps using multiprocess engine: parent process (pid: {pid})'.format(
+                pid=os.getpid()
+            ),
+            event_specific_data=EngineEventData.multiprocess(
+                os.getpid(), step_keys_to_execute=step_key_set
+            ),
+        )
+
         # It would be good to implement a reference tracking algorithm here so we could
         # garbage collection results that are no longer needed by any steps
         # https://github.com/dagster-io/dagster/issues/811
+        with time_execution_scope() as timer_result:
+            for step_level in step_levels:
+                step_contexts_to_execute = []
+                for step in step_level:
+                    if step_key_set and step.key not in step_key_set:
+                        continue
 
-        for step_level in step_levels:
-            step_contexts_to_execute = []
-            for step in step_level:
-                if step_key_set and step.key not in step_key_set:
-                    continue
+                    step_context = pipeline_context.for_step(step)
 
-                step_context = pipeline_context.for_step(step)
+                    if not intermediates_manager.all_inputs_covered(step_context, step):
+                        uncovered_inputs = intermediates_manager.uncovered_inputs(
+                            step_context, step
+                        )
+                        step_context.log.error(
+                            (
+                                'Not all inputs covered for {step}. Not executing.'
+                                'Output missing for inputs: {uncovered_inputs}'
+                            ).format(uncovered_inputs=uncovered_inputs, step=step.key)
+                        )
+                        continue
 
-                if not intermediates_manager.all_inputs_covered(step_context, step):
-                    uncovered_inputs = intermediates_manager.uncovered_inputs(step_context, step)
-                    step_context.log.error(
-                        (
-                            'Not all inputs covered for {step}. Not executing.'
-                            'Output missing for inputs: {uncovered_inputs}'
-                        ).format(uncovered_inputs=uncovered_inputs, step=step.key)
-                    )
-                    continue
+                    step_contexts_to_execute.append(step_context)
 
-                step_contexts_to_execute.append(step_context)
+                for step_event in bounded_parallel_executor(step_contexts_to_execute, limit):
+                    yield step_event
 
-            for step_event in bounded_parallel_executor(step_contexts_to_execute, limit):
-                yield step_event
+        yield DagsterEvent.engine_event(
+            pipeline_context,
+            'Multiprocess engine: parent process exiting after {duration} (pid: {pid})'.format(
+                duration=format_duration(timer_result.millis), pid=os.getpid()
+            ),
+            event_specific_data=EngineEventData.multiprocess(os.getpid()),
+        )

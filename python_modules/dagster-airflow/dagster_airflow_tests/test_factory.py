@@ -15,6 +15,7 @@ from dagster import ExecutionTargetHandle
 from dagster.utils import script_relative_path
 
 AIRFLOW_DEMO_EVENTS = {
+    ('ENGINE_EVENT', None),
     ('STEP_START', 'multiply_the_word.compute'),
     ('STEP_INPUT', 'multiply_the_word.compute'),
     ('STEP_OUTPUT', 'multiply_the_word.compute'),

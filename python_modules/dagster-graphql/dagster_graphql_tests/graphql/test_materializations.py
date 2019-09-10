@@ -1,13 +1,29 @@
 import re
+from copy import deepcopy
 
 from .utils import sync_execute_get_events
 
 
+def sanitize(logs):
+    res = deepcopy(logs)
+    for log in res:
+        if 'message' in log:
+            log['message'] = re.sub('(pid: [0-9]*)', '(pid: *****)', log['message'])
+            log['message'] = re.sub('in [0-9.]*ms', 'in ***.**ms', log['message'])
+
+    return res
+
+
 def test_materializations(snapshot):
-    logs = sync_execute_get_events(
-        variables={
-            'executionParams': {'selector': {'name': 'materialization_pipeline'}, 'mode': 'default'}
-        }
+    logs = sanitize(
+        sync_execute_get_events(
+            variables={
+                'executionParams': {
+                    'selector': {'name': 'materialization_pipeline'},
+                    'mode': 'default',
+                }
+            }
+        )
     )
 
     # Remove execution durations from ExecutionStepSuccessEvent messages
