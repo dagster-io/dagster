@@ -17,6 +17,9 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
         return super(DagsterSubscriptionServer, self).execute(request_context, params)
 
     def send_execution_result(self, connection_context, op_id, execution_result):
+        if op_id not in connection_context.operations.keys():
+            return
+
         if execution_result == GQL_COMPLETE:
             return self.send_message(connection_context, op_id, GQL_COMPLETE, {})
         else:
@@ -29,17 +32,41 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
             if not isinstance(execution_result, Observable):
                 # pylint cannot find of method
                 observable = Observable.of(execution_result, GQL_COMPLETE)  # pylint: disable=E1101
+                # Register the operation using None even though we are not implementing async
+                # iterators. This is useful for bookkeeping purpose, allowing us to ignore generated
+                # events for closed operations and avoid sending an unnecessary web socket messages.
+                # Requires that `unsubscribe` is overridden to handle the None case.
+                connection_context.register_operation(op_id, None)
             else:
                 observable = execution_result
+                connection_context.register_operation(op_id, observable)
+
+            def on_complete(conn_context):
+                # unsubscribe from the completed operation
+                self.on_stop(conn_context, op_id)
+
             observable.subscribe(
                 SubscriptionObserver(
                     connection_context,
                     op_id,
                     self.send_execution_result,
                     self.send_error,
-                    self.on_close,
+                    on_complete,
                 )
             )
+
         # appropriate to catch all errors here
         except Exception as e:  # pylint: disable=W0703
             self.send_error(connection_context, op_id, str(e))
+
+    def unsubscribe(self, connection_context, op_id):
+        if connection_context.has_operation(op_id):
+            operation = connection_context.get_operation(op_id)
+            if not operation:
+                # there is no operation, we are just using the connection context for bookkeeping
+                pass
+            elif callable(getattr(operation, 'dispose', None)):
+                # handle the generic async iterator case
+                operation.dispose()
+            connection_context.remove_operation(op_id)
+        self.on_operation_complete(connection_context, op_id)
