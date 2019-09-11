@@ -1,7 +1,6 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster.core.instance import DagsterInstance
-from dagster.seven import mock
 
 from .utils import define_context, sync_execute_get_run_log_data
 
@@ -21,8 +20,7 @@ COMPUTE_LOGS_QUERY = '''
 '''
 
 
-@mock.patch('dagster.core.execution.logs.should_capture_stdout', return_value=True)
-def test_get_compute_logs_over_graphql(_mock, snapshot):
+def test_get_compute_logs_over_graphql(snapshot):
     payload = sync_execute_get_run_log_data(
         {'executionParams': {'selector': {'name': 'spew_pipeline'}, 'mode': 'default'}}
     )

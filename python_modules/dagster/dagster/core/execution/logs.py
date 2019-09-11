@@ -1,4 +1,5 @@
 import atexit
+import io
 import os
 import subprocess
 import sys
@@ -12,7 +13,6 @@ from watchdog.observers.polling import PollingObserver
 
 from dagster import check
 from dagster.core.execution.context.system import SystemStepExecutionContext
-from dagster.core.instance import DagsterFeatures
 from dagster.utils import ensure_dir, ensure_file, touch_file
 
 
@@ -187,11 +187,6 @@ def fetch_compute_logs(instance, run_id, step_key, cursor=None, max_bytes=MAX_BY
     return ComputeLogUpdate(stdout, stderr, cursor)
 
 
-def should_capture_stdout(instance):
-    # for ease of mocking
-    return instance.is_feature_enabled(DagsterFeatures.DAGIT_STDOUT)
-
-
 def _fetch_compute_data(instance, run_id, step_key, io_type, after, max_bytes):
     path = _filepath(_filebase(instance, run_id, step_key), io_type)
     if not os.path.exists(path) or not os.path.isfile(path):
@@ -211,11 +206,6 @@ def _fetch_compute_data(instance, run_id, step_key, io_type, after, max_bytes):
 
 @contextmanager
 def mirror_step_io(step_context):
-    # https://github.com/dagster-io/dagster/issues/1698
-    if not should_capture_stdout(step_context.instance):
-        yield
-        return
-
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     filebase = _filebase(step_context.instance, step_context.run_id, step_context.step.key)
     outpath = _filepath(filebase, ComputeIOType.STDOUT)
@@ -237,7 +227,7 @@ def mirror_step_io(step_context):
 def mirror_stream(stream, path, buffering=1):
     ensure_file(path)
     with tailf(path):
-        with open(path, 'a', buffering=buffering) as to_stream:
+        with open(path, 'a+', buffering=buffering) as to_stream:
             with redirect_stream(to_stream=to_stream, from_stream=stream):
                 yield
 
@@ -247,6 +237,12 @@ def redirect_stream(to_stream=os.devnull, from_stream=sys.stdout):
     # swap the file descriptors to capture system-level output in the process
     # From https://stackoverflow.com/questions/4675728/redirect-stdout-to-a-file-in-python/22434262#22434262
     from_fd = _fileno(from_stream)
+    to_fd = _fileno(to_stream)
+
+    if not from_fd or not to_fd:
+        yield
+        return
+
     with os.fdopen(os.dup(from_fd), 'wb') as copied:
         from_stream.flush()
         try:
@@ -324,8 +320,16 @@ def _encode_cursor(out_offset, err_offset):
     return '{}:{}'.format(out_offset, err_offset)
 
 
-def _fileno(file_or_fd):
-    fd = getattr(file_or_fd, 'fileno', lambda: file_or_fd)()
-    if not isinstance(fd, int):
-        raise ValueError("Expected a file (`.fileno()`) or a file descriptor")
-    return fd
+def _fileno(stream):
+    try:
+        fd = getattr(stream, 'fileno', lambda: stream)()
+    except io.UnsupportedOperation:
+        # Test CLI runners will stub out stdout to a non-file stream, which will raise an
+        # UnsupportedOperation if `fileno` is accessed.  We need to make sure we do not error out,
+        # or tests will fail
+        return None
+
+    if isinstance(fd, int):
+        return fd
+
+    return None

@@ -9,7 +9,6 @@ import Ansi from "ansi-to-react";
 import { IStepState } from "../RunMetadataProvider";
 import { ExecutionStateDot } from "./ExecutionStateDot";
 import { ROOT_SERVER_URI } from "../Util";
-import FlaggedFeature from "../FlaggedFeature";
 
 interface IComputeLogLink {
   children: React.ReactNode;
@@ -36,7 +35,7 @@ export const ComputeLogLink = ({
 
   const close = () => setOpen(false);
   return (
-    <FlaggedFeature name="dagit_stdout">
+    <>
       <LogLink onClick={() => setOpen(true)}>{children}</LogLink>
       <Dialog
         onClose={close}
@@ -63,7 +62,7 @@ export const ComputeLogLink = ({
           </LoadingContainer>
         )}
       </Dialog>
-    </FlaggedFeature>
+    </>
   );
 };
 
