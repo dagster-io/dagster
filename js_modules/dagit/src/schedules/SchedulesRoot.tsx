@@ -44,7 +44,7 @@ export default class SchedulesRoot extends React.Component {
           <Loading queryResult={queryResult}>
             {result => {
               let runningSchedules: SchedulesRootQuery_scheduler_Scheduler_runningSchedules[] = [];
-              if (result.scheduler.__typename == "Scheduler") {
+              if (result.scheduler.__typename === "Scheduler") {
                 runningSchedules = result.scheduler.runningSchedules;
               }
 
