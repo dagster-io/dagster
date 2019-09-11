@@ -20,7 +20,7 @@ def define_repo():
 
     log_spew_hourly = ScheduleDefinition(
         name="log_spew_hourly",
-        cron_schedule="0 0 * * *",
+        cron_schedule="0 * * * *",
         execution_params={
             "environmentConfigData": {"storage": {"filesystem": {}}},
             "selector": {"name": "log_spew", "solidSubset": None},
@@ -30,7 +30,7 @@ def define_repo():
 
     pandas_hello_world_hourly = ScheduleDefinition(
         name="pandas_hello_world_hourly",
-        cron_schedule="* * * * *",
+        cron_schedule="0 * * * *",
         execution_params={
             "environmentConfigData": {
                 "solids": {

@@ -128,6 +128,14 @@ const ScheduleRow: React.FunctionComponent<{
   const pipelineName = executionParams.selector.name;
   const mode = executionParams.mode;
 
+  const getNaturalLanguageCronString = (cronSchedule: string) => {
+    try {
+      return cronstrue.toString(cronSchedule);
+    } catch {
+      return "Invalid cron string";
+    }
+  };
+
   return (
     <RowContainer key={name}>
       <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
@@ -149,9 +157,9 @@ const ScheduleRow: React.FunctionComponent<{
         <Tooltip
           className={Classes.TOOLTIP_INDICATOR}
           position={"top"}
-          content={cronstrue.toString(cronSchedule)}
+          content={cronSchedule}
         >
-          <CronScheduleString>{cronSchedule}</CronScheduleString>
+          {getNaturalLanguageCronString(cronSchedule)}
         </Tooltip>
       </RowColumn>
       <RowColumn
@@ -190,12 +198,6 @@ const ScheduleRow: React.FunctionComponent<{
 
 const ScheduleName = styled.pre`
   margin: 0;
-`;
-const CronScheduleString = styled.code`
-  padding: 1px 10px;
-  border-radius: 5px
-  background-color: ${Colors.DARK_GRAY4};
-  color: ${Colors.LIGHT_GRAY1};
 `;
 export const SCHEDULES_ROOT_QUERY = gql`
   query SchedulesRootQuery {
