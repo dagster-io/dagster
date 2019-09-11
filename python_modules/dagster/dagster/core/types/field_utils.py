@@ -329,7 +329,15 @@ def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRI
     return _NamedDict
 
 
-def Dict(fields):
+class DictTypeApi:
+    def __call__(self, fields):
+        return build_config_dict(fields)
+
+
+Dict = DictTypeApi()
+
+
+def build_config_dict(fields):
     '''
     Schema for configuration data with string keys and typed values via :py:class:`Field` .
 
