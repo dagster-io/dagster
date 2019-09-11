@@ -14,7 +14,7 @@ def create_dagster_cli():
     commands = {'pipeline': create_pipeline_cli_group(), 'run': create_run_cli_group()}
 
     if DagsterInstance.get().is_feature_enabled(DagsterFeatures.SCHEDULER):
-        commands['schedules'] = create_schedule_cli_group()
+        commands['schedule'] = create_schedule_cli_group()
 
     @click.group(commands=commands)
     @click.version_option(version=__version__)
