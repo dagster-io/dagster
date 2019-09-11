@@ -9,6 +9,63 @@ import Ansi from "ansi-to-react";
 import { IStepState } from "../RunMetadataProvider";
 import { ExecutionStateDot } from "./ExecutionStateDot";
 import { ROOT_SERVER_URI } from "../Util";
+import FlaggedFeature from "../FlaggedFeature";
+
+interface IComputeLogLink {
+  children: React.ReactNode;
+  runState: IStepState;
+  stepKey: string;
+}
+
+export const ComputeLogLink = ({
+  runState,
+  stepKey,
+  children
+}: IComputeLogLink) => {
+  const [isOpen, setOpen] = React.useState(false);
+  const run = React.useContext(RunContext);
+
+  if (
+    !run ||
+    !run.runId ||
+    runState === IStepState.WAITING ||
+    runState === IStepState.SKIPPED
+  ) {
+    return null;
+  }
+
+  const close = () => setOpen(false);
+  return (
+    <FlaggedFeature name="dagit_stdout">
+      <LogLink onClick={() => setOpen(true)}>{children}</LogLink>
+      <Dialog
+        onClose={close}
+        style={{
+          width: "100vw",
+          height: "100vh",
+          margin: 0,
+          padding: 0,
+          borderRadius: 0
+        }}
+        usePortal={true}
+        isOpen={isOpen}
+      >
+        {isOpen ? (
+          <ComputeLogModal
+            runId={run.runId}
+            runState={runState}
+            stepKey={stepKey}
+            onRequestClose={close}
+          />
+        ) : (
+          <LoadingContainer>
+            <Spinner intent={Intent.NONE} size={32} />
+          </LoadingContainer>
+        )}
+      </Dialog>
+    </FlaggedFeature>
+  );
+};
 
 export const COMPUTE_LOGS_QUERY = gql`
   query ComputeLogsQuery($runId: ID!, $stepKey: String!) {
@@ -52,10 +109,10 @@ const COMPUTE_LOGS_SUBSCRIPTION = gql`
 `;
 
 interface ComputeLogModalProps {
+  runId: string;
   stepKey: string;
-  isOpen: boolean;
-  onRequestClose: () => void;
   runState: IStepState;
+  onRequestClose: () => void;
 }
 
 interface IComputeLogFile {
@@ -67,23 +124,34 @@ interface IComputeLogFileUpdate {
   data: string;
 }
 
-export default ({
-  isOpen,
+export const ComputeLogModal = ({
+  runId,
   onRequestClose,
   stepKey,
   runState
 }: ComputeLogModalProps) => {
-  const run = React.useContext(RunContext);
-  const runId = run ? run.runId : "";
   const { loading, data, error, subscribeToMore } = useQuery(
     COMPUTE_LOGS_QUERY,
     { variables: { runId, stepKey } }
   );
+
   const computeLogs =
     data && data.pipelineRunOrError && data.pipelineRunOrError.computeLogs;
 
-  if (!run || !computeLogs) {
+  if (!runId || !computeLogs) {
     return null;
+  }
+
+  if (loading) {
+    return (
+      <LoadingContainer>
+        <Spinner intent={Intent.NONE} size={32} />
+      </LoadingContainer>
+    );
+  }
+
+  if (error) {
+    return <div>{error}</div>;
   }
 
   const updateData = (prev: IComputeLogFile, update: IComputeLogFileUpdate) => {
@@ -100,8 +168,8 @@ export default ({
     };
   };
 
-  const subscribe = () => {
-    return subscribeToMore({
+  const subscribe = () =>
+    subscribeToMore({
       document: COMPUTE_LOGS_SUBSCRIPTION,
       variables: { runId, stepKey, cursor: computeLogs.cursor },
       updateQuery: (prev, { subscriptionData: { data } }) => {
@@ -126,32 +194,14 @@ export default ({
         };
       }
     });
-  };
 
   return (
-    <Dialog
-      onClose={onRequestClose}
-      style={{
-        width: "100vw",
-        height: "100vh",
-        margin: 0,
-        padding: 0,
-        borderRadius: 0
-      }}
-      usePortal={true}
-      isOpen={isOpen}
-    >
-      {loading && "Loading"}
-      {error}
-      {computeLogs && (
-        <ComputeLogContent
-          subscribe={subscribe}
-          runState={runState}
-          onRequestClose={onRequestClose}
-          computeLogs={computeLogs}
-        />
-      )}
-    </Dialog>
+    <ComputeLogContent
+      subscribe={subscribe}
+      runState={runState}
+      onRequestClose={onRequestClose}
+      computeLogs={computeLogs}
+    />
   );
 };
 
@@ -344,6 +394,15 @@ const LineNumbers = (props: IScrollContainerProps) => {
   );
 };
 
+const LoadingContainer = styled.div`
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+const LogLink = styled.a`
+  margin-left: 10px;
+`;
 const Title = styled.div`
   margin-left: 10px;
 `;

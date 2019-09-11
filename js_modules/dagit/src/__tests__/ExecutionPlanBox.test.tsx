@@ -63,8 +63,7 @@ it("renders given materializations and passing expectations", () => {
 
   const executionPlanBoxStateExpanded: IExecutionPlanBoxState = {
     expanded: true,
-    v: 0,
-    logsOpen: false
+    v: 0
   };
 
   const run = undefined;

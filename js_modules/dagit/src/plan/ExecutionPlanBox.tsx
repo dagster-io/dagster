@@ -9,8 +9,7 @@ import {
 import { DisplayEvents } from "./DisplayEvents";
 import { formatElapsedTime } from "../Util";
 import { ReexecuteButton } from "./ReexecuteButton";
-import ComputeLogModal from "./ComputeLogModal";
-import FlaggedFeature from "../FlaggedFeature";
+import { ComputeLogLink } from "./ComputeLogModal";
 import { ExecutionStateDot } from "./ExecutionStateDot";
 
 export interface IExecutionPlanBoxProps {
@@ -30,7 +29,6 @@ export interface IExecutionPlanBoxProps {
 export interface IExecutionPlanBoxState {
   expanded: boolean;
   v: number;
-  logsOpen: boolean;
 }
 
 export class ExecutionPlanBox extends React.Component<
@@ -39,8 +37,7 @@ export class ExecutionPlanBox extends React.Component<
 > {
   state = {
     expanded: false,
-    v: 0,
-    logsOpen: false
+    v: 0
   };
 
   timer?: NodeJS.Timer;
@@ -54,8 +51,7 @@ export class ExecutionPlanBox extends React.Component<
       nextProps.stepKey !== this.props.stepKey ||
       nextProps.elapsed !== this.props.elapsed ||
       nextState.expanded !== this.state.expanded ||
-      nextState.v !== this.state.v ||
-      nextState.logsOpen !== this.state.logsOpen
+      nextState.v !== this.state.v
     );
   }
 
@@ -95,15 +91,6 @@ export class ExecutionPlanBox extends React.Component<
     this.setState({ v: this.state.v + 1 });
   };
 
-  openLogs = (e: React.SyntheticEvent) => {
-    this.setState({ logsOpen: true });
-    e.stopPropagation();
-  };
-
-  closeLogs = () => {
-    this.setState({ logsOpen: false });
-  };
-
   render() {
     const {
       state,
@@ -118,15 +105,12 @@ export class ExecutionPlanBox extends React.Component<
       executionArtifactsPersisted
     } = this.props;
 
-    const { expanded, logsOpen } = this.state;
+    const { expanded } = this.state;
 
     let elapsed = this.props.elapsed;
     if (state === IStepState.RUNNING && start) {
       elapsed = Math.floor((Date.now() - start) / 1000) * 1000;
     }
-
-    const hasLogs =
-      state !== IStepState.WAITING && state !== IStepState.SKIPPED;
 
     return (
       <>
@@ -173,17 +157,9 @@ export class ExecutionPlanBox extends React.Component<
               <ExecutionPlanBoxName title={stepKey}>
                 {stepKey}
               </ExecutionPlanBoxName>
-              {hasLogs && (
-                <FlaggedFeature name="dagit_stdout">
-                  <ExecutionLogs onClick={this.openLogs}>Logs</ExecutionLogs>
-                  <ComputeLogModal
-                    isOpen={logsOpen}
-                    runState={state}
-                    stepKey={stepKey}
-                    onRequestClose={this.closeLogs}
-                  />
-                </FlaggedFeature>
-              )}
+              <ComputeLogLink runState={state} stepKey={stepKey}>
+                Logs
+              </ComputeLogLink>
               {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
             </div>
             {expanded && (
@@ -243,10 +219,6 @@ const ExecutionPlanBoxName = styled.div`
   font-weight: 500;
   text-overflow: ellipsis;
   overflow: hidden;
-`;
-
-const ExecutionLogs = styled.a`
-  margin-left: 10px;
 `;
 
 const ExecutionFinishedFlash = styled.div<{ success: boolean }>`
