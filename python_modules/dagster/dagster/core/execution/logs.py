@@ -22,6 +22,12 @@ class ComputeIOType(Enum):
     COMPLETE = 'complete'
 
 
+IO_TYPE_EXTENSION = {
+    ComputeIOType.STDOUT: 'out',
+    ComputeIOType.STDERR: 'err',
+    ComputeIOType.COMPLETE: 'complete',
+}
+
 POLLING_TIMEOUT = 2.5
 MAX_BYTES_FILE_READ = 33554432  # 32 MB
 MAX_BYTES_CHUNK_READ = 4194304  # 4 MB
@@ -33,12 +39,50 @@ def build_local_download_url(run_id, step_key, io_type):
 
 
 class ComputeLogManager(object):
-    def __init__(self, instance):
-        self._instance = instance
+    def __init__(self, base_dir, logging_enabled=True):
+        self._base_dir = base_dir
+        self._logging_enabled = logging_enabled
         self._subscriptions = defaultdict(list)
         self._watchers = {}
         self._observer = PollingObserver(POLLING_TIMEOUT)
         self._observer.start()
+
+    def enabled(self, _step_context):
+        return self._logging_enabled
+
+    def run_directory(self, run_id):
+        return os.path.join(self._base_dir, run_id, 'compute_logs')
+
+    def filepath(self, run_id, step_key, io_type):
+        check.inst_param(io_type, 'io_type', ComputeIOType)
+        extension = IO_TYPE_EXTENSION[io_type]
+        return os.path.join(self.run_directory(run_id), "{}.{}".format(step_key, extension))
+
+    def compute_completed(self, run_id, step_key):
+        return os.path.exists(self.filepath(run_id, step_key, ComputeIOType.COMPLETE))
+
+    def fetch_log_data(self, run_id, step_key, cursor=None, max_bytes=MAX_BYTES_FILE_READ):
+        out_offset, err_offset = _decode_cursor(cursor)
+        stdout = self.fetch_file_data(run_id, step_key, ComputeIOType.STDOUT, out_offset, max_bytes)
+        stderr = self.fetch_file_data(run_id, step_key, ComputeIOType.STDERR, err_offset, max_bytes)
+        cursor = _encode_cursor(stdout.cursor if stdout else 0, stderr.cursor if stderr else 0)
+        return ComputeLogData(stdout, stderr, cursor)
+
+    def fetch_file_data(self, run_id, step_key, io_type, offset, max_bytes):
+        path = self.filepath(run_id, step_key, io_type)
+        if not os.path.exists(path) or not os.path.isfile(path):
+            return None
+
+        # See: https://docs.python.org/2/library/stdtypes.html#file.tell for Windows behavior
+        with open(path, 'rb') as f:
+            f.seek(offset, os.SEEK_SET)
+            data = f.read(max_bytes)
+            cursor = f.tell()
+            stats = os.fstat(f.fileno())
+
+        # local download path
+        download_url = build_local_download_url(run_id, step_key, io_type)
+        return ComputeLogFileData(path, data.decode('utf-8'), cursor, stats.st_size, download_url)
 
     def watch(self, run_id, step_key):
         key = _run_key(run_id, step_key)
@@ -46,10 +90,7 @@ class ComputeLogManager(object):
             return
 
         self._watchers[key] = self._observer.schedule(
-            ComputeLogEventHandler(self, run_id, step_key, self._instance),
-            os.path.dirname(
-                _filepath(_filebase(self._instance, run_id, step_key), ComputeIOType.STDOUT)
-            ),
+            ComputeLogEventHandler(self, run_id, step_key), self.run_directory(run_id)
         )
 
     def unwatch(self, run_id, step_key, handler):
@@ -74,7 +115,7 @@ class ComputeLogManager(object):
             subscription.fetch()
 
     def get_observable(self, run_id, step_key, cursor):
-        subscription = ComputeLogSubscription(self._instance, run_id, step_key, cursor)
+        subscription = ComputeLogSubscription(self, run_id, step_key, cursor)
         self.on_subscribe(subscription, run_id, step_key)
         return Observable.create(subscription)  # pylint: disable=E1101
 
@@ -88,34 +129,37 @@ def _from_run_key(key):
 
 
 class ComputeLogEventHandler(PatternMatchingEventHandler):
-    def __init__(self, manager, run_id, step_key, instance):
+    def __init__(self, manager, run_id, step_key):
         self.manager = manager
         self.run_id = run_id
         self.step_key = step_key
-        self._base = _filebase(instance, run_id, step_key)
-        patterns = [
-            _filepath(self._base, ComputeIOType.COMPLETE),
-            _filepath(self._base, ComputeIOType.STDOUT),
-            _filepath(self._base, ComputeIOType.STDERR),
-        ]
-        super(ComputeLogEventHandler, self).__init__(patterns=patterns)
+        super(ComputeLogEventHandler, self).__init__(
+            patterns=[
+                manager.filepath(run_id, step_key, ComputeIOType.COMPLETE),
+                manager.filepath(run_id, step_key, ComputeIOType.STDOUT),
+                manager.filepath(run_id, step_key, ComputeIOType.STDERR),
+            ]
+        )
+
+    def filepath(self, io_type):
+        return self.manager.filepath(self.run_id, self.step_key, io_type)
 
     def on_created(self, event):
-        if event.src_path == _filepath(self._base, ComputeIOType.COMPLETE):
+        if event.src_path == self.filepath(ComputeIOType.COMPLETE):
             self.manager.on_compute_end(self.run_id, self.step_key)
             self.manager.unwatch(self.run_id, self.step_key, self)
 
     def on_modified(self, event):
         if event.src_path in (
-            _filepath(self._base, ComputeIOType.STDOUT),
-            _filepath(self._base, ComputeIOType.STDERR),
+            self.filepath(ComputeIOType.STDOUT),
+            self.filepath(ComputeIOType.STDERR),
         ):
             self.manager.on_update(self.run_id, self.step_key)
 
 
 class ComputeLogSubscription(object):
-    def __init__(self, instance, run_id, step_key, cursor):
-        self.instance = instance
+    def __init__(self, manager, run_id, step_key, cursor):
+        self.manager = manager
         self.run_id = run_id
         self.step_key = step_key
         self.cursor = cursor
@@ -130,12 +174,8 @@ class ComputeLogSubscription(object):
         if self.observer:
             should_fetch = True
             while should_fetch:
-                update = fetch_compute_logs(
-                    self.instance,
-                    self.run_id,
-                    self.step_key,
-                    self.cursor,
-                    max_bytes=MAX_BYTES_CHUNK_READ,
+                update = self.manager.fetch_log_data(
+                    self.run_id, self.step_key, self.cursor, max_bytes=MAX_BYTES_CHUNK_READ
                 )
                 if update.cursor != self.cursor:
                     self.observer.on_next(update)
@@ -159,14 +199,14 @@ class ComputeLogSubscription(object):
         self.observer = None
 
 
-class ComputeLogUpdate(object):
+class ComputeLogData(object):
     def __init__(self, stdout, stderr, cursor):
         self.stdout = stdout
         self.stderr = stderr
         self.cursor = cursor
 
 
-class ComputeLogFile(object):
+class ComputeLogFileData(object):
     def __init__(self, path, data, cursor, size, download_url):
         self.path = path
         self.data = data
@@ -175,45 +215,20 @@ class ComputeLogFile(object):
         self.download_url = download_url
 
 
-def fetch_compute_logs(instance, run_id, step_key, cursor=None, max_bytes=MAX_BYTES_FILE_READ):
-    out_offset, err_offset = _decode_cursor(cursor)
-    stdout = _fetch_compute_data(
-        instance, run_id, step_key, ComputeIOType.STDOUT, out_offset, max_bytes
-    )
-    stderr = _fetch_compute_data(
-        instance, run_id, step_key, ComputeIOType.STDERR, err_offset, max_bytes
-    )
-    cursor = _encode_cursor(stdout.cursor if stdout else 0, stderr.cursor if stderr else 0)
-    return ComputeLogUpdate(stdout, stderr, cursor)
-
-
-def _fetch_compute_data(instance, run_id, step_key, io_type, after, max_bytes):
-    path = _filepath(_filebase(instance, run_id, step_key), io_type)
-    if not os.path.exists(path) or not os.path.isfile(path):
-        return None
-
-    # See: https://docs.python.org/2/library/stdtypes.html#file.tell for Windows behavior
-    with open(path, 'rb') as f:
-        f.seek(after, os.SEEK_SET)
-        data = f.read(max_bytes)
-        cursor = f.tell()
-        stats = os.fstat(f.fileno())
-
-    # local download path
-    download_url = build_local_download_url(run_id, step_key, io_type)
-    return ComputeLogFile(path, data.decode('utf-8'), cursor, stats.st_size, download_url)
-
-
 @contextmanager
 def mirror_step_io(step_context):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    filebase = _filebase(step_context.instance, step_context.run_id, step_context.step.key)
-    outpath = _filepath(filebase, ComputeIOType.STDOUT)
-    errpath = _filepath(filebase, ComputeIOType.STDERR)
-    touchpath = _filepath(filebase, ComputeIOType.COMPLETE)
+    manager = step_context.instance.compute_log_manager
+    outpath = manager.filepath(step_context.run_id, step_context.step.key, ComputeIOType.STDOUT)
+    errpath = manager.filepath(step_context.run_id, step_context.step.key, ComputeIOType.STDERR)
+    touchpath = manager.filepath(step_context.run_id, step_context.step.key, ComputeIOType.COMPLETE)
 
     ensure_dir(os.path.dirname(outpath))
     ensure_dir(os.path.dirname(errpath))
+
+    if not manager.enabled(step_context):
+        yield
+        return
 
     with mirror_stream(sys.stderr, errpath):
         with mirror_stream(sys.stdout, outpath):
@@ -268,39 +283,6 @@ def tailf(path):
         p = subprocess.Popen(cmd)
         yield
         p.terminate()
-
-
-def get_compute_log_filepath(instance, run_id, step_key, io_type):
-    if not isinstance(io_type, ComputeIOType):
-        try:
-            io_type = ComputeIOType(io_type)
-        except ValueError:
-            return None
-
-    base = _filebase(instance, run_id, step_key)
-    path = _filepath(base, io_type)
-    if os.path.exists(path):
-        return path
-    return None
-
-
-def compute_is_complete(instance, run_id, step_key):
-    return get_compute_log_filepath(instance, run_id, step_key, ComputeIOType.COMPLETE)
-
-
-def _filebase(instance, run_id, step_key):
-    return os.path.join(instance.compute_logs_directory(run_id), step_key)
-
-
-def _filepath(base, io_type):
-    check.inst_param(io_type, 'io_type', ComputeIOType)
-    if io_type == ComputeIOType.STDERR:
-        extension = 'err'
-    if io_type == ComputeIOType.STDOUT:
-        extension = 'out'
-    if io_type == ComputeIOType.COMPLETE:
-        extension = 'complete'
-    return "{}.{}".format(base, extension)
 
 
 def _decode_cursor(cursor):

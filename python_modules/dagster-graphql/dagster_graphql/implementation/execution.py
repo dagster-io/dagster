@@ -165,9 +165,9 @@ def get_compute_log_observable(graphene_info, run_id, step_key, cursor=None):
     check.str_param(step_key, 'step_key')
     check.opt_str_param(cursor, 'cursor')
 
-    return graphene_info.context.compute_log_manager.get_observable(run_id, step_key, cursor).map(
-        lambda update: from_compute_log_update(graphene_info, run_id, step_key, update)
-    )
+    return graphene_info.context.instance.compute_log_manager.get_observable(
+        run_id, step_key, cursor
+    ).map(lambda update: from_compute_log_update(graphene_info, run_id, step_key, update))
 
 
 class ExecutionParams(

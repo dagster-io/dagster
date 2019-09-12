@@ -19,7 +19,7 @@ from dagster.core.definitions.events import (
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.logs import ComputeLogFile, ComputeLogUpdate, fetch_compute_logs
+from dagster.core.execution.logs import ComputeLogData, ComputeLogFileData
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -61,7 +61,8 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return graphene_info.schema.type_named('LogMessageConnection')(self._pipeline_run)
 
     def resolve_computeLogs(self, graphene_info, stepKey):
-        update = fetch_compute_logs(graphene_info.context.instance, self.run_id, stepKey)
+        manager = graphene_info.context.instance.compute_log_manager
+        update = manager.fetch_log_data(self.run_id, stepKey)
         return from_compute_log_update(graphene_info, self.run_id, stepKey, update)
 
     def resolve_executionPlan(self, graphene_info):
@@ -687,7 +688,7 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
 def from_compute_log_update(graphene_info, run_id, step_key, update):
     check.str_param(run_id, 'run_id')
     check.str_param(step_key, 'step_key')
-    check.inst_param(update, 'update', ComputeLogUpdate)
+    check.inst_param(update, 'update', ComputeLogData)
     return graphene_info.schema.type_named('ComputeLogs')(
         runId=run_id,
         stepKey=step_key,
@@ -698,7 +699,7 @@ def from_compute_log_update(graphene_info, run_id, step_key, update):
 
 
 def from_compute_log_file(graphene_info, file):
-    check.opt_inst_param(file, 'file', ComputeLogFile)
+    check.opt_inst_param(file, 'file', ComputeLogFileData)
     if not file:
         return None
     return graphene_info.schema.type_named('ComputeLogFile')(
