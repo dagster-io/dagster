@@ -105,32 +105,38 @@ class DagsterInstance:
         )
 
     @staticmethod
-    def get(fallback_storage=None):
+    def get(fallback_storage=None, watch_external_runs=False):
         # 1. Use $DAGSTER_HOME to determine instance if set.
         if _is_dagster_home_set():
             # in the future we can read from config and create RemoteInstanceRef when needed
-            return DagsterInstance.from_ref(LocalInstanceRef(_dagster_home_dir()))
+            return DagsterInstance.from_ref(
+                LocalInstanceRef(_dagster_home_dir()), watch_external_runs=watch_external_runs
+            )
 
         # 2. If that is not set use the fallback storage directory if provided.
         # This allows us to have a nice out of the box dagit experience where runs are persisted
         # across restarts in a tempdir that gets cleaned up when the dagit watchdog process exits.
         elif fallback_storage is not None:
-            return DagsterInstance.from_ref(LocalInstanceRef(fallback_storage))
+            return DagsterInstance.from_ref(
+                LocalInstanceRef(fallback_storage), watch_external_runs=watch_external_runs
+            )
 
         # 3. If all else fails create an ephemeral in memory instance.
         else:
             return DagsterInstance.ephemeral(fallback_storage)
 
     @staticmethod
-    def local_temp(tempdir=None, features=None):
+    def local_temp(tempdir=None, features=None, watch_external_runs=False):
         features = check.opt_set_param(features, 'features', str)
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
 
-        return DagsterInstance.from_ref(LocalInstanceRef(tempdir), features)
+        return DagsterInstance.from_ref(
+            LocalInstanceRef(tempdir), features, watch_external_runs=watch_external_runs
+        )
 
     @staticmethod
-    def from_ref(instance_ref, fallback_feature_set=None):
+    def from_ref(instance_ref, fallback_feature_set=None, watch_external_runs=False):
         check.inst_param(instance_ref, 'instance_ref', InstanceRef)
         check.opt_set_param(fallback_feature_set, 'fallback_feature_set', str)
 
@@ -143,7 +149,9 @@ class DagsterInstance:
             return DagsterInstance(
                 instance_type=InstanceType.LOCAL,
                 root_storage_dir=instance_ref.home_dir,
-                run_storage=FilesystemRunStorage(_runs_directory(instance_ref.home_dir)),
+                run_storage=FilesystemRunStorage(
+                    _runs_directory(instance_ref.home_dir), watch_external_runs=watch_external_runs
+                ),
                 event_storage=FilesystemEventLogStorage(_runs_directory(instance_ref.home_dir)),
                 feature_set=feature_set,
             )
@@ -151,13 +159,18 @@ class DagsterInstance:
         else:
             check.failed('Unhandled instance type {}'.format(type(instance_ref)))
 
+    @property
+    def can_have_ref(self):
+        return self._instance_type == InstanceType.LOCAL
+
     def get_ref(self):
+        if not self.can_have_ref:
+            check.failed(
+                'Can not produce an instance reference for {t}'.format(t=self._instance_type)
+            )
         if self._instance_type == InstanceType.LOCAL:
             return LocalInstanceRef(self._root_storage_dir)
-        else:
-            check.failed(
-                'Can not take produce an instance reference for {t}'.format(t=self._instance_type)
-            )
+        check.failed('Shouldn\'t be here')
 
     @staticmethod
     def temp_storage():
@@ -188,10 +201,6 @@ class DagsterInstance:
         run_id = pipeline_run.run_id
         if self._run_storage.has_run(run_id):
             existing_run = self._run_storage.get_run_by_id(run_id)
-            check.invariant(
-                existing_run == pipeline_run,
-                'Attempting to create a different pipeline run for an existing run id',
-            )
             return existing_run
 
         return self._run_storage.add_run(pipeline_run)

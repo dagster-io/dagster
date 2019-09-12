@@ -2,11 +2,12 @@ import dask
 import dask.distributed
 from dagster_graphql.client.mutations import execute_execute_plan_mutation
 
-from dagster import check
+from dagster import check, seven
 from dagster.core.engine.engine_base import IEngine
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.instance import DagsterInstance
 
 from .config import DaskConfig
 
@@ -14,7 +15,9 @@ from .config import DaskConfig
 DASK_RESOURCE_REQUIREMENTS_KEY = 'dagster-dask/resource_requirements'
 
 
-def query_on_dask_worker(handle, variables, dependencies):  # pylint: disable=unused-argument
+def query_on_dask_worker(
+    handle, variables, dependencies, instance_ref=None
+):  # pylint: disable=unused-argument
     '''Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
 
@@ -22,7 +25,7 @@ def query_on_dask_worker(handle, variables, dependencies):  # pylint: disable=un
     little information is propagated to the dask master from the workers about the state of
     execution; we should at least inform the user of exceptions.
     '''
-    return execute_execute_plan_mutation(handle, variables)
+    return execute_execute_plan_mutation(handle, variables, instance_ref=instance_ref)
 
 
 class DaskEngine(IEngine):  # pylint: disable=no-init
@@ -65,53 +68,62 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
 
         pipeline_name = pipeline_context.pipeline_def.name
 
-        with dask.distributed.Client(**dask_config.build_dict(pipeline_name)) as client:
-            execution_futures = []
-            execution_futures_dict = {}
+        with seven.TemporaryDirectory() as tmpdir:
+            instance = (
+                pipeline_context.instance
+                if pipeline_context.instance.can_have_ref
+                else DagsterInstance.get(fallback_storage=tmpdir)
+            )
 
-            for step_level in step_levels:
-                for step in step_level:
-                    if step_key_set and step.key not in step_key_set:
-                        continue
+            with dask.distributed.Client(**dask_config.build_dict(pipeline_name)) as client:
+                execution_futures = []
+                execution_futures_dict = {}
 
-                    # We ensure correctness in sequencing by letting Dask schedule futures and
-                    # awaiting dependencies within each step.
-                    dependencies = []
-                    for step_input in step.step_inputs:
-                        for key in step_input.dependency_keys:
-                            dependencies.append(execution_futures_dict[key])
+                for step_level in step_levels:
+                    for step in step_level:
+                        if step_key_set and step.key not in step_key_set:
+                            continue
 
-                    environment_dict = dict(
-                        pipeline_context.environment_dict,
-                        execution={'in_process': {'config': {'raise_on_error': False}}},
-                    )
-                    variables = {
-                        'executionParams': {
-                            'selector': {'name': pipeline_name},
-                            'environmentConfigData': environment_dict,
-                            'mode': pipeline_context.mode_def.name,
-                            'executionMetadata': {'runId': pipeline_context.run_config.run_id},
-                            'stepKeys': [step.key],
+                        # We ensure correctness in sequencing by letting Dask schedule futures and
+                        # awaiting dependencies within each step.
+                        dependencies = []
+                        for step_input in step.step_inputs:
+                            for key in step_input.dependency_keys:
+                                dependencies.append(execution_futures_dict[key])
+
+                        environment_dict = dict(
+                            pipeline_context.environment_dict,
+                            execution={'in_process': {'config': {'raise_on_error': False}}},
+                        )
+                        variables = {
+                            'executionParams': {
+                                'selector': {'name': pipeline_name},
+                                'environmentConfigData': environment_dict,
+                                'mode': pipeline_context.mode_def.name,
+                                'executionMetadata': {'runId': pipeline_context.run_config.run_id},
+                                'stepKeys': [step.key],
+                            }
                         }
-                    }
 
-                    dask_task_name = '%s.%s' % (pipeline_name, step.key)
+                        dask_task_name = '%s.%s' % (pipeline_name, step.key)
 
-                    future = client.submit(
-                        query_on_dask_worker,
-                        pipeline_context.execution_target_handle,
-                        variables,
-                        dependencies,
-                        key=dask_task_name,
-                        resources=step.metadata.get(DASK_RESOURCE_REQUIREMENTS_KEY, {}),
-                    )
+                        future = client.submit(
+                            query_on_dask_worker,
+                            pipeline_context.execution_target_handle,
+                            variables,
+                            dependencies,
+                            instance.get_ref(),
+                            key=dask_task_name,
+                            resources=step.metadata.get(DASK_RESOURCE_REQUIREMENTS_KEY, {}),
+                        )
 
-                    execution_futures.append(future)
-                    execution_futures_dict[step.key] = future
+                        execution_futures.append(future)
+                        execution_futures_dict[step.key] = future
 
-            # This tells Dask to awaits the step executions and retrieve their results to the master
-            for future in dask.distributed.as_completed(execution_futures):
-                for step_event in future.result():
-                    check.inst(step_event, DagsterEvent)
+                # This tells Dask to awaits the step executions and retrieve their results to the
+                # master
+                for future in dask.distributed.as_completed(execution_futures):
+                    for step_event in future.result():
+                        check.inst(step_event, DagsterEvent)
 
-                    yield step_event
+                        yield step_event

@@ -8,6 +8,7 @@ from dagster.core.serdes import whitelist_for_serdes
 @whitelist_for_serdes
 class PipelineRunStatus(Enum):
     NOT_STARTED = 'NOT_STARTED'
+    MANAGED = 'MANAGED'
     STARTED = 'STARTED'
     SUCCESS = 'SUCCESS'
     FAILURE = 'FAILURE'

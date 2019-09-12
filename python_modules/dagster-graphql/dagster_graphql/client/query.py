@@ -248,3 +248,49 @@ mutation(
 '''
     + STEP_EVENT_FRAGMENTS
 )
+
+SUBSCRIPTION_QUERY = (
+    STEP_EVENT_FRAGMENTS
+    + '''
+subscription subscribeTest($runId: ID!) {
+    pipelineRunLogs(runId: $runId) {
+        __typename
+        ... on PipelineRunLogsSubscriptionSuccess {
+            runId,
+            messages {
+                __typename
+                ...stepEventFragment
+
+                ... on MessageEvent {
+                    message
+                    step { key solidHandleID }
+                    level
+                }
+
+                # only include here because unstable between runs
+                ... on StepMaterializationEvent {
+                    materialization {
+                        label
+                        description
+                        metadataEntries {
+                            __typename
+                            ...eventMetadataEntryFragment
+                        }
+                    }
+                }
+                ... on ExecutionStepFailureEvent {
+                    step { key kind }
+                    error {
+                        message
+                        stack
+                    }
+                }
+            }
+        }
+        ... on PipelineRunLogsSubscriptionMissingRunIdFailure {
+            missingRunId
+        }
+    }
+}
+'''
+)

@@ -165,3 +165,7 @@ class FilesystemObjectStore(ObjectStore):  # pylint: disable=no-init
         check.str_param(key, 'key')
         protocol = check.opt_str_param(protocol, 'protocol', default='file://')
         return protocol + '/' + key
+
+    def key_for_paths(self, path_fragments):
+        '''Joins path fragments into a key using the object-store specific path separator.'''
+        return os.path.join(*path_fragments)

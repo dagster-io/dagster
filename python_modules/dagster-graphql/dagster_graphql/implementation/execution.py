@@ -11,7 +11,6 @@ from dagster.core.events import DagsterEventType, InMemoryEventSink
 from dagster.core.execution.api import ExecutionSelector, create_execution_plan, execute_plan
 from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.execution.logs import ComputeLogUpdate
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 
@@ -244,7 +243,7 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
         environment_dict=execution_params.environment_dict,
         run_config=run_config,
         step_keys_to_execute=execution_params.step_keys,
-        instance=DagsterInstance.ephemeral(),
+        instance=graphene_info.context.instance,
     )
 
     def to_graphql_event(event_record):

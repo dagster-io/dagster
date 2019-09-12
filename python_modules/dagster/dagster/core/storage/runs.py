@@ -127,7 +127,7 @@ class InMemoryRunStorage(RunStorage):
 
 
 class FilesystemRunStorage(RunStorage):
-    def __init__(self, base_dir):
+    def __init__(self, base_dir, watch_external_runs=True):
         self._base_dir = check.opt_str_param(base_dir, 'base_dir')
         mkdir_p(self._base_dir)
 
@@ -136,9 +136,10 @@ class FilesystemRunStorage(RunStorage):
 
         self._load_historic_runs()
 
-        observer = Observer()
-        observer.schedule(ExternalRunsWatchdog(self, self._lock), self._base_dir)
-        observer.start()
+        if watch_external_runs:
+            observer = Observer()
+            observer.schedule(ExternalRunsWatchdog(self, self._lock), self._base_dir)
+            observer.start()
 
     def filepath_for_run_id(self, run_id):
         return os.path.join(self._base_dir, '{run_id}.json'.format(run_id=run_id))

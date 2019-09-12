@@ -695,6 +695,7 @@ union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError
 
 enum PipelineRunStatus {
   NOT_STARTED
+  MANAGED
   STARTED
   SUCCESS
   FAILURE

@@ -216,7 +216,7 @@ def test_start_execution_predefined_with_logs():
 
     repo_path = script_relative_path('./cli_test_repository.yaml')
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+        instance = DagsterInstance.local_temp(temp_dir, watch_external_runs=True)
 
         runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
         result = runner.invoke(

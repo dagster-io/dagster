@@ -7,7 +7,12 @@ import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components";
 
-export type IRunStatus = "SUCCESS" | "NOT_STARTED" | "FAILURE" | "STARTED";
+export type IRunStatus =
+  | "SUCCESS"
+  | "NOT_STARTED"
+  | "FAILURE"
+  | "STARTED"
+  | "MANAGED";
 
 export function titleForRun(run: { runId: string }) {
   return run.runId.split("-").shift();
