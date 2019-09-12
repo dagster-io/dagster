@@ -87,6 +87,9 @@ class PostgresEventLogStorage(WatchableEventLogStorage):
         with get_conn(self.conn_string).cursor() as curs:
             curs.execute(DELETE_EVENT_LOG_SQL)
 
+    def new_run(self, run_id):
+        pass
+
     def watch(self, run_id, start_cursor, callback):
         raise NotImplementedError()
 

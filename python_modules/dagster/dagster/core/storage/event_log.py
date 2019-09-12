@@ -1,8 +1,9 @@
 import glob
 import os
-import pickle
+import sqlite3
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
+from contextlib import contextmanager
 
 import gevent.lock
 import pyrsistent
@@ -12,6 +13,7 @@ from watchdog.observers import Observer
 
 from dagster import check
 from dagster.core.events.log import EventRecord
+from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import mkdir_p
 
 from .pipeline_run import PipelineRunStatus
@@ -41,6 +43,14 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
             event (EventRecord): The event to store.
         '''
 
+    @abstractmethod
+    def new_run(self, run_id):
+        '''Prepare event storage for a new run.
+
+        Args:
+            run_id (str)
+        '''
+
     @property
     @abstractmethod
     def is_persistent(self):
@@ -67,6 +77,9 @@ class InMemoryEventLogStorage(EventLogStorage):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
 
+    def new_run(self, run_id):
+        pass
+
     def get_logs_for_run(self, run_id, cursor=-1):
         cursor = int(cursor) + 1
         with self._lock[run_id]:
@@ -86,67 +99,66 @@ class InMemoryEventLogStorage(EventLogStorage):
         self._lock = defaultdict(gevent.lock.Semaphore)
 
 
+CREATE_EVENT_LOG_SQL = '''
+CREATE TABLE IF NOT EXISTS event_logs (
+    row_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event TEXT
+)
+'''
+FETCH_EVENTS_SQL = '''
+SELECT event FROM event_logs WHERE row_id >= ? ORDER BY row_id ASC
+'''
+INSERT_EVENT_SQL = '''
+INSERT INTO event_logs (event) VALUES (?)
+'''
+
+
 class FilesystemEventLogStorage(WatchableEventLogStorage):
     def __init__(self, base_dir):
         self._base_dir = check.str_param(base_dir, 'base_dir')
         mkdir_p(self._base_dir)
-        self.file_cursors = defaultdict(lambda: (0, 0))
-        # Swap these out to use lockfiles
-        self.file_lock = defaultdict(gevent.lock.Semaphore)
+
         self._watchers = {}
         self._obs = Observer()
         self._obs.start()
 
+    @contextmanager
+    def _connect(self, run_id):
+        try:
+            with sqlite3.connect(self.filepath_for_run_id(run_id)) as conn:
+                yield conn
+        finally:
+            conn.close()
+
     def filepath_for_run_id(self, run_id):
-        return os.path.join(self._base_dir, '{run_id}.log'.format(run_id=run_id))
+        return os.path.join(self._base_dir, '{run_id}.db'.format(run_id=run_id))
+
+    def new_run(self, run_id):
+        with self._connect(run_id) as conn:
+            conn.cursor().execute(CREATE_EVENT_LOG_SQL)
 
     def store_event(self, event):
         run_id = event.run_id
+        with self._connect(run_id) as conn:
+            conn.cursor().execute(INSERT_EVENT_SQL, (serialize_dagster_namedtuple(event),))
 
-        with self.file_lock[run_id]:
-            # Going to do the less error-prone, simpler, but slower strategy:
-            # open, append, close for every log message for now.
-            # Open the file for binary content and create if it doesn't exist.
-            with open(self.filepath_for_run_id(run_id), 'ab') as file_handle:
-                file_handle.seek(0, os.SEEK_END)
-                pickle.dump(event, file_handle)
+    def get_logs_for_run(self, run_id, cursor=-1):
+        events = []
+        with self._connect(run_id) as conn:
+            results = conn.cursor().execute(FETCH_EVENTS_SQL, (str(cursor),)).fetchall()
+
+        for (json_str,) in results:
+            events.append(deserialize_json_to_dagster_namedtuple(json_str))
+
+        return events
 
     def wipe(self):
-        for filename in glob.glob(os.path.join(self._base_dir, '*.log')):
+        for filename in glob.glob(os.path.join(self._base_dir, '*.db')):
             os.unlink(filename)
-
-        self.file_lock = defaultdict(gevent.lock.Semaphore)
-        self.file_cursors = defaultdict(lambda: (0, 0))
 
     @property
     def is_persistent(self):
         return True
-
-    def logs_ready(self, run_id):
-        return os.path.exists(self.filepath_for_run_id(run_id))
-
-    def get_logs_for_run(self, run_id, cursor=-1):
-        events = []
-        cursor = int(cursor) + 1
-        with self.file_lock[run_id]:
-            with open(self.filepath_for_run_id(run_id), 'rb') as fd:
-                # There might be a path to make this more performant, at the expense of interop,
-                # by using a modified file format: https://stackoverflow.com/a/8936927/324449
-                # Alternatively, we could use .jsonl and linecache instead of pickle
-                if cursor == self.file_cursors[run_id][0]:
-                    fd.seek(self.file_cursors[run_id][1])
-                else:
-                    i = 0
-                    while i < cursor:
-                        pickle.load(fd)
-                        i += 1
-                    self.file_cursors[run_id] = (cursor, fd.tell())
-                try:
-                    while True:
-                        events.append(pickle.load(fd))
-                except EOFError:
-                    pass
-        return events
 
     def watch(self, run_id, start_cursor, callback):
         watchdog = EventLogStorageWatchdog(self, run_id, callback, start_cursor)

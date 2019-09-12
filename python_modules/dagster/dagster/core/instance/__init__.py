@@ -203,7 +203,9 @@ class DagsterInstance:
             existing_run = self._run_storage.get_run_by_id(run_id)
             return existing_run
 
-        return self._run_storage.add_run(pipeline_run)
+        run = self._run_storage.add_run(pipeline_run)
+        self._event_storage.new_run(run.run_id)
+        return run
 
     def get_or_create_run(self, pipeline_run):
         # This eventually needs transactional/locking semantics
@@ -234,8 +236,10 @@ class DagsterInstance:
     def all_logs(self, run_id):
         return self._event_storage.get_logs_for_run(run_id)
 
-    def logs_ready(self, run_id):
-        return self._event_storage.logs_ready(run_id)
+    def can_watch_events(self):
+        from dagster.core.storage.event_log import WatchableEventLogStorage
+
+        return isinstance(self._event_storage, WatchableEventLogStorage)
 
     def watch_event_logs(self, run_id, cursor, cb):
         from dagster.core.storage.event_log import WatchableEventLogStorage
