@@ -12,6 +12,7 @@ from dagster_airflow_tests.conftest import IMAGE
 from dagster_airflow_tests.marks import nettest
 
 from dagster import ExecutionTargetHandle
+from dagster.core.events.log import DagsterEventRecord
 from dagster.utils import script_relative_path
 
 AIRFLOW_DEMO_EVENTS = {
@@ -33,9 +34,28 @@ def validate_pipeline_execution(pipeline_exc_result):
     seen_events = set()
     for result in pipeline_exc_result.values():
         for event in result:
-            seen_events.add((event.event_type_value, event.step_key))
+            if isinstance(event, DagsterEventRecord):
+                seen_events.add((event.dagster_event.event_type_value, event.step_key))
+            else:
+                seen_events.add((event.event_type_value, event.step_key))
 
     assert seen_events == AIRFLOW_DEMO_EVENTS
+
+
+class TestExecuteDagPythonFilesystemStorageNoExplicitBaseDir(object):
+    pipeline_name = 'demo_pipeline'
+    handle = ExecutionTargetHandle.for_pipeline_module(
+        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
+    )
+    environment_yaml = [
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_filesystem_no_explicit_base_dir.yaml'),
+    ]
+    run_id = str(uuid.uuid4())
+
+    # pylint: disable=redefined-outer-name
+    def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
+        validate_pipeline_execution(dagster_airflow_python_operator_pipeline)
 
 
 class TestExecuteDagPythonFilesystemStorage(object):
@@ -68,6 +88,23 @@ class TestExecuteDagPythonS3Storage(object):
     # pylint: disable=redefined-outer-name
     def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
         validate_pipeline_execution(dagster_airflow_python_operator_pipeline)
+
+
+class TestExecuteDagContainerizedFilesystemStorageNoExplicitBaseDir(object):
+    pipeline_name = 'demo_pipeline'
+    handle = ExecutionTargetHandle.for_pipeline_module(
+        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
+    )
+    environment_yaml = [
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_filesystem_no_explicit_base_dir.yaml'),
+    ]
+    run_id = str(uuid.uuid4())
+    image = IMAGE
+
+    # pylint: disable=redefined-outer-name
+    def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
+        validate_pipeline_execution(dagster_airflow_docker_operator_pipeline)
 
 
 @nettest

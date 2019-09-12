@@ -428,6 +428,7 @@ class DauphinExecutePlanSuccess(dauphin.ObjectType):
     pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
     has_failures = dauphin.Field(dauphin.NonNull(dauphin.Boolean))
     step_events = dauphin.non_null_list(DauphinStepEvent)
+    raw_event_records = dauphin.non_null_list(dauphin.String)
 
 
 class DauphinExecutePlanResult(dauphin.Union):

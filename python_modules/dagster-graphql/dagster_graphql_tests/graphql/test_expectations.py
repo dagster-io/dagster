@@ -24,6 +24,23 @@ def get_expectation_result(logs, solid_name):
     return expt_results[0]
 
 
+def sanitize(res):
+    if isinstance(res, list):
+        for i in range(len(res)):
+            res[i] = sanitize(res[i])
+        return res
+
+    for k, v in res.items():
+        if k == 'timestamp':
+            res[k] = '*************'
+        if k == 'runId':
+            res[k] = '*******-****-****-****-************'
+        if isinstance(v, dict):
+            res[k] = sanitize(v)
+
+    return res
+
+
 def test_basic_expectations_within_compute_step_events(snapshot):
     logs = sync_execute_get_events(
         variables={
@@ -58,9 +75,11 @@ def test_basic_expectations_within_compute_step_events(snapshot):
     emit_no_metadata = get_expectation_result(logs, 'emit_successful_expectation_no_metadata')
     assert not emit_no_metadata['expectationResult']['metadataEntries']
 
-    snapshot.assert_match(get_expectation_results(logs, 'emit_failed_expectation'))
-    snapshot.assert_match(get_expectation_results(logs, 'emit_successful_expectation'))
-    snapshot.assert_match(get_expectation_results(logs, 'emit_successful_expectation_no_metadata'))
+    snapshot.assert_match(sanitize(get_expectation_results(logs, 'emit_failed_expectation')))
+    snapshot.assert_match(sanitize(get_expectation_results(logs, 'emit_successful_expectation')))
+    snapshot.assert_match(
+        sanitize(get_expectation_results(logs, 'emit_successful_expectation_no_metadata'))
+    )
 
 
 def test_basic_input_output_expectations(snapshot):
@@ -81,4 +100,4 @@ def test_basic_input_output_expectations(snapshot):
     expectation_results = get_expectation_results(logs, 'df_expectations_solid')
     assert len(expectation_results) == 2
 
-    snapshot.assert_match(expectation_results)
+    snapshot.assert_match(sanitize(expectation_results))

@@ -17,17 +17,33 @@ snapshots['test_materializations 1'] = [
         '__typename': 'EngineEvent',
         'level': 'DEBUG',
         'message': 'Executing steps in process ((pid: *****))',
-        'step': None
+        'runId': '*******-****-****-****-************',
+        'step': None,
+        'timestamp': '*************'
     },
     {
         '__typename': 'ExecutionStepStartEvent',
         'level': 'DEBUG',
         'message': 'Started execution of step "materialize.compute".',
+        'runId': '*******-****-****-****-************',
         'step': {
+            'inputs': [
+            ],
             'key': 'materialize.compute',
             'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+                {
+                    'name': 'result',
+                    'type': {
+                        'key': 'Any'
+                    }
+                }
+            ],
             'solidHandleID': 'materialize'
-        }
+        },
+        'timestamp': '*************'
     },
     {
         '__typename': 'StepMaterializationEvent',
@@ -63,42 +79,90 @@ snapshots['test_materializations 1'] = [
             ]
         },
         'message': 'a materialization with all metadata types',
+        'runId': '*******-****-****-****-************',
         'step': {
+            'inputs': [
+            ],
             'key': 'materialize.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+                {
+                    'name': 'result',
+                    'type': {
+                        'key': 'Any'
+                    }
+                }
+            ],
             'solidHandleID': 'materialize'
-        }
+        },
+        'timestamp': '*************'
     },
     {
         '__typename': 'ExecutionStepOutputEvent',
         'level': 'DEBUG',
         'message': 'Yielded output "result" of type "Any". (Type check passed).',
         'outputName': 'result',
+        'runId': '*******-****-****-****-************',
         'step': {
+            'inputs': [
+            ],
             'key': 'materialize.compute',
             'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+                {
+                    'name': 'result',
+                    'type': {
+                        'key': 'Any'
+                    }
+                }
+            ],
             'solidHandleID': 'materialize'
         },
+        'timestamp': '*************',
         'typeCheck': {
+            '__typename': 'TypeCheck',
             'description': None,
             'label': 'result',
             'metadataEntries': [
-            ]
+            ],
+            'success': True
         }
     },
     {
         '__typename': 'ExecutionStepSuccessEvent',
         'level': 'DEBUG',
         'message': 'Finished execution of step "materialize.compute" in',
+        'runId': '*******-****-****-****-************',
         'step': {
+            'inputs': [
+            ],
             'key': 'materialize.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+                {
+                    'name': 'result',
+                    'type': {
+                        'key': 'Any'
+                    }
+                }
+            ],
             'solidHandleID': 'materialize'
-        }
+        },
+        'timestamp': '*************'
     },
     {
         '__typename': 'EngineEvent',
         'level': 'DEBUG',
         'message': 'Finished steps in process ((pid: *****)) in ***.**ms',
-        'step': None
+        'runId': '*******-****-****-****-************',
+        'step': None,
+        'timestamp': '*************'
     },
     {
         '__typename': 'PipelineSuccessEvent',

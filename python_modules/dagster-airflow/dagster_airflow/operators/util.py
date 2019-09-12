@@ -6,17 +6,24 @@ from airflow.exceptions import AirflowSkipException
 
 from dagster import DagsterEventType, check
 from dagster.core.events import DagsterEvent
+from dagster.core.events.log import DagsterEventRecord
 from dagster.seven.json import JSONDecodeError
 
 
-def skip_self_if_necessary(events):
-    '''Using AirflowSkipException is a canonical way for tasks to skip themselves; see example
-    here: http://bit.ly/2YtigEm
-    '''
+# Using AirflowSkipException is a canonical way for tasks to skip themselves; see example
+# here: http://bit.ly/2YtigEm
+def check_events_for_skips(events):
     check.list_param(events, 'events', of_type=DagsterEvent)
-
     skipped = any([e.event_type_value == DagsterEventType.STEP_SKIPPED.value for e in events])
+    if skipped:
+        raise AirflowSkipException('Dagster emitted skip event, skipping execution in Airflow')
 
+
+def check_raw_events_for_skips(events):
+    check.list_param(events, 'events', of_type=DagsterEventRecord)
+    skipped = any(
+        [e.dagster_event.event_type_value == DagsterEventType.STEP_SKIPPED.value for e in events]
+    )
     if skipped:
         raise AirflowSkipException('Dagster emitted skip event, skipping execution in Airflow')
 
@@ -54,12 +61,30 @@ def construct_variables(mode, environment_dict, pipeline_name, run_id, ts, step_
 
 def parse_raw_res(raw_res):
     res = None
-    # FIXME
-    # Unfortunately, log lines don't necessarily come back in order...
-    # This is error-prone, if something else logs JSON
-    lines = list(filter(None, reversed(raw_res.split('\n'))))
+    # Look upon my works, ye mighty, and despair:
+    # - Log lines don't necessarily come back in order
+    # - Something else might log JSON
+    # - Docker appears to silently split very long log lines -- this is undocumented behavior
+    lines = []
+    coalesced = []
+    in_split_line = False
+    for line in raw_res:
+        if not in_split_line and line.startswith('{'):
+            if line.endswith('}'):
+                lines.append(line)
+                continue
+            else:
+                coalesced.append(line)
+                in_split_line = True
+                continue
+        if in_split_line:
+            coalesced.append(line)
+            if line.endswith('}'):
+                lines.append(''.join(coalesced))
+                coalesced = []
+                in_split_line = False
 
-    for line in lines:
+    for line in reversed(lines):
         try:
             res = json.loads(line)
             break

@@ -7,7 +7,7 @@ from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
 from dagster import __version__ as dagster_version
 from dagster import check, seven
 
-from .util import construct_variables, get_aws_environment, parse_raw_res, skip_self_if_necessary
+from .util import check_events_for_skips, construct_variables, get_aws_environment, parse_raw_res
 
 
 class DagsterKubernetesPodOperator(KubernetesPodOperator):
@@ -183,7 +183,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                 handle_start_pipeline_execution_errors(res)
                 events = handle_start_pipeline_execution_result(res)
 
-                skip_self_if_necessary(events)
+                check_events_for_skips(events)
 
                 return events
 

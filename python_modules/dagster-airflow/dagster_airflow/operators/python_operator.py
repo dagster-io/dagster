@@ -7,8 +7,11 @@ from dagster_graphql.client.mutations import execute_execute_plan_mutation
 from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
 
 from dagster import check, seven
+from dagster.core.execution.api import ExecutionSelector
+from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 
-from .util import construct_variables, skip_self_if_necessary
+from .util import check_events_for_skips, construct_variables
 
 
 class DagsterPythonOperator(PythonOperator):
@@ -21,6 +24,7 @@ class DagsterPythonOperator(PythonOperator):
         mode,
         step_keys,
         dag,
+        instance_ref,
         *args,
         **kwargs
     ):
@@ -52,12 +56,28 @@ class DagsterPythonOperator(PythonOperator):
                 + 'with variables:\n'
                 + seven.json.dumps(redacted, indent=2)
             )
+            instance = DagsterInstance.from_ref(instance_ref) if instance_ref else None
+            if instance:
+                instance.get_or_create_run(
+                    PipelineRun(
+                        pipeline_name=pipeline_name,
+                        run_id=run_id,
+                        environment_dict=environment_dict,
+                        mode=mode,
+                        selector=ExecutionSelector(pipeline_name),
+                        reexecution_config=None,
+                        step_keys_to_execute=None,
+                        status=PipelineRunStatus.MANAGED,
+                    )
+                )
+
             events = execute_execute_plan_mutation(
                 handle,
                 construct_variables(mode, environment_dict, pipeline_name, run_id, ts, step_keys),
+                instance_ref=instance_ref,
             )
 
-            skip_self_if_necessary(events)
+            check_events_for_skips(events)
 
             return events
 

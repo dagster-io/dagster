@@ -1,6 +1,7 @@
+from dagster_graphql.client.query import SUBSCRIPTION_QUERY
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .execution_queries import START_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUERY
+from .execution_queries import START_PIPELINE_EXECUTION_QUERY
 from .setup import define_context
 
 

@@ -1,6 +1,7 @@
 import re
 from copy import deepcopy
 
+from .test_expectations import sanitize as sanitize_gql
 from .utils import sync_execute_get_events
 
 
@@ -15,14 +16,16 @@ def sanitize(logs):
 
 
 def test_materializations(snapshot):
-    logs = sanitize(
-        sync_execute_get_events(
-            variables={
-                'executionParams': {
-                    'selector': {'name': 'materialization_pipeline'},
-                    'mode': 'default',
+    logs = sanitize_gql(
+        sanitize(
+            sync_execute_get_events(
+                variables={
+                    'executionParams': {
+                        'selector': {'name': 'materialization_pipeline'},
+                        'mode': 'default',
+                    }
                 }
-            }
+            )
         )
     )
 

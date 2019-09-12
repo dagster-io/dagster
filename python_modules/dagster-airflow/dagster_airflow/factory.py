@@ -4,8 +4,9 @@ import re
 from airflow import DAG
 from airflow.operators import BaseOperator
 
-from dagster import ExecutionTargetHandle, RunConfig, check
+from dagster import ExecutionTargetHandle, RunConfig, check, seven
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.instance import DagsterInstance
 
 from .compile import coalesce_execution_steps
 from .operators.docker_operator import DagsterDockerOperator
@@ -48,6 +49,7 @@ def _make_airflow_dag(
     pipeline_name,
     environment_dict=None,
     mode=None,
+    instance=None,
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
@@ -58,6 +60,13 @@ def _make_airflow_dag(
     check.str_param(pipeline_name, 'pipeline_name')
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     mode = check.opt_str_param(mode, 'mode')
+    # Default to use the (persistent) system temp directory rather than a seven.TemporaryDirectory,
+    # which would not be consistent between Airflow task invocations.
+    instance = (
+        check.inst_param(instance, 'instance', DagsterInstance)
+        if instance
+        else DagsterInstance.get(fallback_storage=seven.get_system_temp_directory())
+    )
 
     # Only used for Airflow; internally we continue to use pipeline.name
     dag_id = check.opt_str_param(dag_id, 'dag_id', _rename_for_airflow(pipeline_name))
@@ -113,6 +122,7 @@ def _make_airflow_dag(
                 task_id=solid_handle,
                 step_keys=step_keys,
                 dag=dag,
+                instance_ref=instance.get_ref(),
                 **op_kwargs
             )
         else:
@@ -123,6 +133,7 @@ def _make_airflow_dag(
                 task_id=solid_handle,
                 step_keys=step_keys,
                 dag=dag,
+                instance_ref=instance.get_ref(),
                 **op_kwargs
             )
         # fmt: on
@@ -144,6 +155,7 @@ def make_airflow_dag(
     pipeline_name,
     environment_dict=None,
     mode=None,
+    instance=None,
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
@@ -158,6 +170,7 @@ def make_airflow_dag(
         pipeline_name=pipeline_name,
         environment_dict=environment_dict,
         mode=mode,
+        instance=instance,
         dag_id=dag_id,
         dag_description=dag_description,
         dag_kwargs=dag_kwargs,

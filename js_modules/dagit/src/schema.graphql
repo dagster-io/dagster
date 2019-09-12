@@ -182,6 +182,7 @@ type ExecutePlanSuccess {
   pipeline: Pipeline!
   hasFailures: Boolean!
   stepEvents: [StepEvent!]!
+  rawEventRecords: [String!]!
 }
 
 input ExecutionMetadata {

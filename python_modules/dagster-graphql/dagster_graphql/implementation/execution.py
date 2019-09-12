@@ -8,9 +8,11 @@ from rx import Observable
 
 from dagster import RunConfig, check
 from dagster.core.events import DagsterEventType, InMemoryEventSink
+from dagster.core.events.log import DagsterEventRecord
 from dagster.core.execution.api import ExecutionSelector, create_execution_plan, execute_plan
 from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.execution.logs import ComputeLogUpdate
+from dagster.core.serdes import serialize_dagster_namedtuple
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 
@@ -251,6 +253,21 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
             graphene_info, event_record, dauphin_pipeline, execution_plan
         )
 
+    raw_event_records = [
+        DagsterEventRecord(
+            event_record.error_info,
+            event_record.message,
+            event_record.level,
+            event_record.user_message,
+            event_record.run_id,
+            event_record.timestamp,
+            event_record.step_key,
+            event_record.pipeline_name,
+            event_record.dagster_event,
+        )
+        for event_record in event_sink.dagster_event_records
+    ]
+
     return graphene_info.schema.type_named('ExecutePlanSuccess')(
         pipeline=dauphin_pipeline,
         has_failures=any(
@@ -259,4 +276,5 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
             if er.is_dagster_event and er.dagster_event.event_type == DagsterEventType.STEP_FAILURE
         ),
         step_events=list(map(to_graphql_event, event_sink.dagster_event_records)),
+        raw_event_records=list(map(serialize_dagster_namedtuple, raw_event_records)),
     )

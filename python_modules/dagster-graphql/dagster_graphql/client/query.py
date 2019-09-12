@@ -249,6 +249,43 @@ mutation(
     + STEP_EVENT_FRAGMENTS
 )
 
+RAW_EXECUTE_PLAN_MUTATION = '''
+mutation(
+  $executionParams: ExecutionParams!
+) {
+  executePlan(
+    executionParams: $executionParams,
+  ) {
+    __typename
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on PipelineConfigValidationInvalid {
+      pipeline {
+        name
+      }
+      errors {
+        __typename
+        message
+        path
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+        message
+        pipelineName
+    }
+    ... on ExecutePlanSuccess {
+      pipeline {
+        name
+      }
+      hasFailures
+      rawEventRecords
+    }
+  }
+}
+'''
+
 SUBSCRIPTION_QUERY = (
     STEP_EVENT_FRAGMENTS
     + '''

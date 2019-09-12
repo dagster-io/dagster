@@ -205,6 +205,13 @@ class DagsterInstance:
 
         return self._run_storage.add_run(pipeline_run)
 
+    def get_or_create_run(self, pipeline_run):
+        # This eventually needs transactional/locking semantics
+        if self.has_run(pipeline_run.run_id):
+            return self.get_run(pipeline_run.run_id)
+        else:
+            return self.create_run(pipeline_run)
+
     def has_run(self, run_id):
         return self._run_storage.has_run(run_id)
 

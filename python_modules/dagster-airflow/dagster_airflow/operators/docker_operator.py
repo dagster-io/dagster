@@ -1,16 +1,27 @@
 import ast
 import json
+import sys
+import warnings
 from contextlib import contextmanager
 
 from airflow.exceptions import AirflowException
 from airflow.utils.file import TemporaryDirectory
 from dagster_airflow.vendor.docker_operator import DockerOperator
-from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
+from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
 from docker import APIClient, from_env
 
 from dagster import check, seven
+from dagster.core.execution.api import ExecutionSelector
+from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .util import construct_variables, get_aws_environment, parse_raw_res, skip_self_if_necessary
+from .util import (
+    check_raw_events_for_skips,
+    construct_variables,
+    get_aws_environment,
+    parse_raw_res,
+)
 
 DOCKER_TEMPDIR = '/tmp'
 
@@ -92,7 +103,7 @@ class ModifiedDockerOperator(DockerOperator):
 
             if self.xcom_push_flag:
                 # Try to avoid any kind of race condition?
-                return '\n'.join(res) + '\n' if self.xcom_all else str(line)
+                return res if self.xcom_all else str(line)
 
     # This is a class-private name on DockerOperator for no good reason --
     # all that the status quo does is inhibit extension of the class.
@@ -123,33 +134,71 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         mode=None,
         step_keys=None,
         dag=None,
+        instance_ref=None,
         *args,
         **kwargs
     ):
         check.str_param(pipeline_name, 'pipeline_name')
         step_keys = check.opt_list_param(step_keys, 'step_keys', of_type=str)
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
+        check.opt_inst_param(instance_ref, 'instance_ref', InstanceRef)
 
         tmp_dir = kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
         host_tmp_dir = kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
 
-        if 'storage' not in environment_dict:
+        if 'storage' not in environment_dict or (
+            's3' not in environment_dict['storage']
+            and 'filesystem' not in environment_dict['storage']
+        ):
             raise AirflowException(
                 'No storage config found -- must configure either filesystem or s3 storage for '
                 'the DagsterDockerOperator. Ex.: \n'
                 'storage:\n'
                 '  filesystem:\n'
-                '    base_dir: \'/some/shared/volume/mount/special_place\''
+                '    config:'
+                '      base_dir: \'/some/shared/volume/mount/special_place\''
                 '\n\n --or--\n\n'
                 'storage:\n'
                 '  s3:\n'
                 '    s3_bucket: \'my-s3-bucket\'\n'
             )
 
-        check.invariant(
-            'in_memory' not in environment_dict.get('storage', {}),
-            'Cannot use in-memory storage with Airflow, must use S3',
-        )
+        if 'filesystem' in environment_dict['storage']:
+            if (
+                'config' in (environment_dict['storage'].get('filesystem', {}) or {})
+                and 'base_dir'
+                in (
+                    (environment_dict['storage'].get('filesystem', {}) or {}).get('config', {})
+                    or {}
+                )
+                and environment_dict['storage']['filesystem']['config']['base_dir'] != tmp_dir
+            ):
+                warnings.warn(
+                    'Found base_dir \'{base_dir}\' set in filesystem storage config, which was not '
+                    'the tmp_dir we expected (\'{tmp_dir}\', mounting host_tmp_dir '
+                    '\'{host_tmp_dir}\' from the host). We assume you know what you are doing, but '
+                    'if you are having trouble executing containerized workloads, this may be the '
+                    'issue'.format(
+                        base_dir=environment_dict['storage']['filesystem']['config']['base_dir'],
+                        tmp_dir=tmp_dir,
+                        host_tmp_dir=host_tmp_dir,
+                    )
+                )
+            else:
+                environment_dict['storage']['filesystem'] = dict(
+                    environment_dict['storage']['filesystem'] or {},
+                    **{
+                        'config': dict(
+                            (
+                                (environment_dict['storage'].get('filesystem', {}) or {}).get(
+                                    'config', {}
+                                )
+                                or {}
+                            ),
+                            **{'base_dir': tmp_dir}
+                        )
+                    }
+                )
 
         self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
         self.environment_dict = environment_dict
@@ -157,6 +206,9 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         self.mode = mode
         self.step_keys = step_keys
         self._run_id = None
+        # self.instance might be None in, for instance, a unit test setting where the operator
+        # was being directly instantiated without passing through make_airflow_dag
+        self.instance = DagsterInstance.from_ref(instance_ref) if instance_ref else None
 
         # These shenanigans are so we can override DockerOperator.get_hook in order to configure
         # a docker client using docker.from_env, rather than messing with the logic of
@@ -197,7 +249,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             self.mode, 'REDACTED', self.pipeline_name, self.run_id, self.airflow_ts, self.step_keys
         )
         self.log.info(
-            'Executing GraphQL query: {query}\n'.format(query=EXECUTE_PLAN_MUTATION)
+            'Executing GraphQL query: {query}\n'.format(query=RAW_EXECUTE_PLAN_MUTATION)
             + 'with variables:\n'
             + seven.json.dumps(redacted, indent=2)
         )
@@ -212,7 +264,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         )
 
         return '-v \'{variables}\' -t \'{query}\''.format(
-            variables=seven.json.dumps(variables), query=EXECUTE_PLAN_MUTATION
+            variables=seven.json.dumps(variables), query=RAW_EXECUTE_PLAN_MUTATION
         )
 
     def get_command(self):
@@ -236,9 +288,13 @@ class DagsterDockerOperator(ModifiedDockerOperator):
 
     def execute(self, context):
         try:
+            from dagster_graphql.implementation.pipeline_execution_manager import (
+                build_synthetic_pipeline_error_record,
+            )
             from dagster_graphql.client.mutations import (
+                DagsterGraphQLClientError,
                 handle_execution_errors,
-                handle_execute_plan_result,
+                handle_execute_plan_result_raw,
             )
 
         except ImportError:
@@ -246,21 +302,52 @@ class DagsterDockerOperator(ModifiedDockerOperator):
                 'To use the DagsterDockerOperator, dagster and dagster_graphql must be installed '
                 'in your Airflow environment.'
             )
+
         if 'run_id' in self.params:
             self._run_id = self.params['run_id']
         elif 'dag_run' in context and context['dag_run'] is not None:
             self._run_id = context['dag_run'].run_id
 
         try:
+            if self.instance:
+                self.instance.get_or_create_run(
+                    PipelineRun(
+                        pipeline_name=self.pipeline_name,
+                        run_id=self.run_id,
+                        environment_dict=self.environment_dict,
+                        mode=self.mode,
+                        selector=ExecutionSelector(self.pipeline_name),
+                        reexecution_config=None,
+                        step_keys_to_execute=None,
+                        status=PipelineRunStatus.MANAGED,
+                    )
+                )
+
             raw_res = super(DagsterDockerOperator, self).execute(context)
             self.log.info('Finished executing container.')
 
             res = parse_raw_res(raw_res)
 
-            handle_execution_errors(res, 'executePlan')
-            events = handle_execute_plan_result(res)
+            try:
+                handle_execution_errors(res, 'executePlan')
+            except DagsterGraphQLClientError:
+                if self.instance:
+                    self.instance.handle_new_event(
+                        build_synthetic_pipeline_error_record(
+                            self.run_id,
+                            serializable_error_info_from_exc_info(sys.exc_info()),
+                            self.pipeline_name,
+                        )
+                    )
+                raise
 
-            skip_self_if_necessary(events)
+            events = handle_execute_plan_result_raw(res)
+
+            if self.instance:
+                for event in events:
+                    self.instance.handle_new_event(event)
+
+            check_raw_events_for_skips(events)
 
             return events
 
