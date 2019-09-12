@@ -5,7 +5,6 @@ from copy import deepcopy
 
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_tests.utils import TestScheduler
 
 from dagster import (
     Any,
@@ -28,7 +27,6 @@ from dagster import (
     Path,
     PresetDefinition,
     RepositoryDefinition,
-    ScheduleDefinition,
     SolidDefinition,
     String,
     as_dagster_type,
@@ -75,11 +73,12 @@ PoorMansDataFrame = as_dagster_type(
 )
 
 
-def define_context(raise_on_error=True, instance=None):
+def define_context(raise_on_error=True, instance=None, scheduler=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
         instance=instance or DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),
+        scheduler=scheduler,
         raise_on_error=raise_on_error,
     )
 
@@ -152,10 +151,6 @@ def define_repository():
             secret_pipeline,
             spew_pipeline,
         ],
-        experimental={
-            'schedule_defs': [no_config_pipeline_hourly_schedule],
-            'scheduler': TestScheduler,
-        },
     )
 
 
@@ -302,17 +297,6 @@ def pipeline_with_list():
 @pipeline
 def csv_hello_world_df_input():
     return sum_sq_solid(sum_solid())
-
-
-no_config_pipeline_hourly_schedule = ScheduleDefinition(
-    name="no_config_pipeline_hourly_schedule",
-    cron_schedule="0 0 * * *",
-    execution_params={
-        "environmentConfigData": {"storage": {"filesystem": None}},
-        "selector": {"name": "no_config_pipeline", "solidSubset": None},
-        "mode": "default",
-    },
-)
 
 
 @pipeline

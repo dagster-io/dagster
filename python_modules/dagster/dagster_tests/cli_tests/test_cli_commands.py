@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import pytest
 from click.testing import CliRunner
-from dagster_tests.utils import TestScheduler
+from dagster_tests.utils import MockScheduler
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -58,16 +58,7 @@ def baz_pipeline():
 
 
 def define_bar_repo():
-    return RepositoryDefinition(
-        'bar',
-        {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
-        experimental={
-            'scheduler': TestScheduler,
-            'schedule_defs': [
-                ScheduleDefinition("foo_schedule", cron_schedule="* * * * *", execution_params={})
-            ],
-        },
-    )
+    return RepositoryDefinition('bar', {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline})
 
 
 def test_list_command():
@@ -550,6 +541,15 @@ def test_run_wipe():
     runner = CliRunner()
     result = runner.invoke(run_wipe_command)
     assert result.exit_code == 0
+
+
+def define_bar_scheduler(artifacts_dir):
+    return MockScheduler(
+        schedule_defs=[
+            ScheduleDefinition("foo_schedule", cron_schedule="* * * * *", execution_params={})
+        ],
+        artifacts_dir=artifacts_dir,
+    )
 
 
 def test_schedules_list():

@@ -1,14 +1,43 @@
 import uuid
 from collections import OrderedDict
 
-from dagster import DagsterInvariantViolationError
+from dagster import DagsterInvariantViolationError, check
 from dagster.core.scheduler import RunningSchedule, Scheduler
 
 
-class TestScheduler(Scheduler):
-    def __init__(self, schedule_dir):
+class MockScheduler(Scheduler):
+    def __init__(self, schedule_defs, artifacts_dir):
+        self._artifacts_dir = artifacts_dir
+        self._schedule_defs = {}
+        for defn in schedule_defs:
+            check.invariant(
+                defn.name not in self._schedule_defs,
+                'Duplicate schedules named {name}'.format(name=defn.name),
+            )
+            self._schedule_defs[defn.name] = defn
+
         self._schedules = OrderedDict()
-        self._schedule_dir = schedule_dir
+
+    def get_all_schedule_defs(self):
+        return [self._schedule_defs[name] for name in sorted(self._schedule_defs.keys())]
+
+    def get_schedule_def(self, name):
+        check.str_param(name, 'name')
+
+        if name in self._schedule_defs:
+            return self._schedule_defs[name]
+        else:
+            raise DagsterInvariantViolationError(
+                'Could not find schedule "{name}". Found: {schedule_names}.'.format(
+                    name=name,
+                    schedule_names=', '.join(
+                        [
+                            '"{schedule_name}"'.format(schedule_name=schedule_name)
+                            for schedule_name in self._schedule_defs.keys()
+                        ]
+                    ),
+                )
+            )
 
     def all_schedules(self):
         return [s for s in self._schedules.values()]

@@ -5,7 +5,15 @@ from .pipeline_execution_manager import PipelineExecutionManager
 
 
 class DagsterGraphQLContext(object):
-    def __init__(self, handle, execution_manager, instance, raise_on_error=False, version=None):
+    def __init__(
+        self,
+        handle,
+        execution_manager,
+        instance,
+        scheduler=None,
+        raise_on_error=False,
+        version=None,
+    ):
         self._handle = check.inst_param(handle, 'handle', ExecutionTargetHandle)
         self.instance = check.inst_param(instance, 'instance', DagsterInstance)
         self.execution_manager = check.inst_param(
@@ -15,11 +23,9 @@ class DagsterGraphQLContext(object):
         self.version = version
         self.repository_definition = self.get_handle().build_repository_definition()
 
-        self.scheduler = None
-        if self.instance.is_feature_enabled(DagsterFeatures.SCHEDULER):
-            self.scheduler = self.repository_definition.build_scheduler(
-                self.instance.schedules_directory()
-            )
+        self.scheduler = scheduler
+        if not scheduler and self.instance.is_feature_enabled(DagsterFeatures.SCHEDULER):
+            self.scheduler = self.get_handle().build_scheduler(self.instance.schedules_directory())
 
     def get_handle(self):
         return self._handle

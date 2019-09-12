@@ -1,9 +1,7 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.scheduler import Scheduler
 
 from .pipeline import PipelineDefinition
-from .schedule import ScheduleDefinition
 
 
 class RepositoryDefinition(object):
@@ -24,20 +22,11 @@ class RepositoryDefinition(object):
             A list of instantiated pipeline definitions.
     '''
 
-    def __init__(self, name, pipeline_dict=None, pipeline_defs=None, experimental=None):
+    def __init__(self, name, pipeline_dict=None, pipeline_defs=None):
         self._name = check.str_param(name, 'name')
 
         pipeline_dict = check.opt_dict_param(pipeline_dict, 'pipeline_dict', key_type=str)
         pipeline_defs = check.opt_list_param(pipeline_defs, 'pipeline_defs', PipelineDefinition)
-
-        # Experimental arguments
-        # TODO: Extract scheduler and scheduler_defs from RepositoryDefinition
-        # https://github.com/dagster-io/dagster/issues/1693
-        experimental = check.opt_dict_param(experimental, 'experimental')
-        scheduler = check.opt_subclass_param(experimental.get('scheduler'), 'scheduler', Scheduler)
-        schedule_defs = check.opt_list_param(
-            experimental.get('schedule_defs'), 'schedule_defs', ScheduleDefinition
-        )
 
         for val in pipeline_dict.values():
             check.is_callable(val, 'Value in pipeline_dict must be function')
@@ -53,15 +42,6 @@ class RepositoryDefinition(object):
             )
             self._pipeline_names.add(defn.name)
             self._pipeline_cache[defn.name] = defn
-
-        self._scheduler_type = scheduler
-        self._schedules = {}
-        for defn in schedule_defs:
-            check.invariant(
-                defn.name not in self._schedules,
-                'Duplicate schedules named {name}'.format(name=defn.name),
-            )
-            self._schedules[defn.name] = defn
 
         self._all_pipelines = None
         self._solid_defs = None
@@ -140,30 +120,6 @@ class RepositoryDefinition(object):
         # This does uniqueness check
         self.get_all_solid_defs()
         return self._all_pipelines
-
-    def build_scheduler(self, schedule_dir):
-        return self._scheduler_type(schedule_dir=schedule_dir) if self._scheduler_type else None
-
-    def get_schedule(self, name):
-        check.str_param(name, 'name')
-
-        if name in self._schedules:
-            return self._schedules[name]
-        else:
-            raise DagsterInvariantViolationError(
-                'Could not find schedule "{name}". Found: {schedule_names}.'.format(
-                    name=name,
-                    schedule_names=', '.join(
-                        [
-                            '"{schedule_name}"'.format(schedule_name=schedule_name)
-                            for schedule_name in self._schedules.keys()
-                        ]
-                    ),
-                )
-            )
-
-    def get_all_schedules(self):
-        return [self._schedules[name] for name in sorted(self._schedules.keys())]
 
     def get_all_solid_defs(self):
         if self._solid_defs is not None:

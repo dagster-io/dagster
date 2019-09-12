@@ -3,7 +3,9 @@ import sys
 
 import mock
 from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_tests.utils import MockScheduler
 
+from dagster import ScheduleDefinition
 from dagster.core.instance import DagsterInstance
 
 from .utils import define_context
@@ -34,21 +36,29 @@ def default_execution_params():
     }
 
 
-def get_schedule_definition_from_context(context):
-    repository = context.get_handle().build_repository_definition()
-    schedule_def = repository.get_schedule("no_config_pipeline_hourly_schedule")
-
-    return schedule_def
+def define_scheduler(artifacts_dir):
+    no_config_pipeline_hourly_schedule = ScheduleDefinition(
+        name="no_config_pipeline_hourly_schedule",
+        cron_schedule="0 0 * * *",
+        execution_params={
+            "environmentConfigData": {"storage": {"filesystem": None}},
+            "selector": {"name": "no_config_pipeline", "solidSubset": None},
+            "mode": "default",
+        },
+    )
+    return MockScheduler(
+        schedule_defs=[no_config_pipeline_hourly_schedule], artifacts_dir=artifacts_dir
+    )
 
 
 @mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
 def test_get_all_schedules():
     instance = DagsterInstance.local_temp(features={'scheduler'})
-    context = define_context(instance=instance)
+    scheduler = define_scheduler(instance.schedules_directory())
+    context = define_context(instance=instance, scheduler=scheduler)
 
     # Start schedule
-    schedule_def = get_schedule_definition_from_context(context)
-    scheduler = context.scheduler
+    schedule_def = scheduler.get_schedule_def("no_config_pipeline_hourly_schedule")
     schedule = scheduler.start_schedule(schedule_def, sys.executable, "")
 
     # Query Scheduler + all Schedules

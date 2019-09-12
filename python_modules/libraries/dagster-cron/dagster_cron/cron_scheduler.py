@@ -13,11 +13,42 @@ from dagster.core.scheduler import RunningSchedule, Scheduler
 
 
 class SystemCronScheduler(Scheduler):
-    def __init__(self, schedule_dir):
-        self._schedule_dir = check.str_param(schedule_dir, 'schedule_dir')
-        self._schedules = OrderedDict()
+    def __init__(self, schedule_defs, artifacts_dir):
+        schedule_defs = check.opt_list_param(schedule_defs, 'schedule_defs', ScheduleDefinition)
+        artifacts_dir = check.str_param(artifacts_dir, 'artifacts_dir')
 
+        self._artifacts_dir = artifacts_dir
+        self._schedule_defs = {}
+        for defn in schedule_defs:
+            check.invariant(
+                defn.name not in self._schedule_defs,
+                'Duplicate schedules named {name}'.format(name=defn.name),
+            )
+            self._schedule_defs[defn.name] = defn
+
+        self._schedules = OrderedDict()
         self._load_schedules()
+
+    def get_all_schedule_defs(self):
+        return [self._schedule_defs[name] for name in sorted(self._schedule_defs.keys())]
+
+    def get_schedule_def(self, name):
+        check.str_param(name, 'name')
+
+        if name in self._schedule_defs:
+            return self._schedule_defs[name]
+        else:
+            raise DagsterInvariantViolationError(
+                'Could not find schedule "{name}". Found: {schedule_names}.'.format(
+                    name=name,
+                    schedule_names=', '.join(
+                        [
+                            '"{schedule_name}"'.format(schedule_name=schedule_name)
+                            for schedule_name in self._schedule_defs.keys()
+                        ]
+                    ),
+                )
+            )
 
     def all_schedules(self):
         return [s for s in self._schedules.values()]
@@ -83,7 +114,7 @@ class SystemCronScheduler(Scheduler):
 
     def _get_file_prefix(self, schedule):
         return os.path.join(
-            self._schedule_dir,
+            self._artifacts_dir,
             '{}_{}'.format(schedule.schedule_definition.name, schedule.schedule_id),
         )
 
@@ -168,12 +199,12 @@ class SystemCronScheduler(Scheduler):
         return metadata_file
 
     def _load_schedules(self):
-        utils.mkdir_p(self._schedule_dir)
+        utils.mkdir_p(self._artifacts_dir)
 
-        for file in os.listdir(self._schedule_dir):
+        for file in os.listdir(self._artifacts_dir):
             if not file.endswith('.json'):
                 continue
-            file_path = os.path.join(self._schedule_dir, file)
+            file_path = os.path.join(self._artifacts_dir, file)
             with open(file_path) as data:
                 try:
                     data = json.load(data)
@@ -194,7 +225,7 @@ class SystemCronScheduler(Scheduler):
                         Exception(
                             'Could not parse dagit schedule from {file_name} in {dir_name}. {ex}: {msg}'.format(
                                 file_name=file,
-                                dir_name=self._schedule_dir,
+                                dir_name=self._artifacts_dir,
                                 ex=type(ex).__name__,
                                 msg=ex,
                             )

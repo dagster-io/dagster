@@ -11,10 +11,10 @@ from dagster.core.scheduler import RunningSchedule
 
 
 def get_schedules(graphene_info):
-    repository = graphene_info.context.get_handle().build_repository_definition()
+    scheduler = graphene_info.context.scheduler
     return [
         graphene_info.schema.type_named('ScheduleDefinition')(schedule_def=schedule_def)
-        for schedule_def in repository.get_all_schedules()
+        for schedule_def in scheduler.get_all_schedule_defs()
     ]
 
 

@@ -63,9 +63,9 @@ def schedule_list_command(running, name, verbose, **kwargs):
 def execute_list_command(running_filter, name_filter, verbose, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
-    schedule_dir = DagsterInstance.get().schedules_directory()
 
-    scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
+    instance = DagsterInstance.get()
+    scheduler = handle.build_scheduler(artifacts_dir=instance.schedules_directory())
     if not scheduler and not name_filter:
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
@@ -76,7 +76,7 @@ def execute_list_command(running_filter, name_filter, verbose, cli_args, print_f
         print_fn('*' * len(title))
 
     first = True
-    for schedule in repository.get_all_schedules():
+    for schedule in scheduler.get_all_schedule_defs():
         is_running = scheduler.get_schedule_by_name(schedule.name)
 
         # If --running flag is present and the schedule is not running,
@@ -132,16 +132,16 @@ def schedule_start_command(schedule_name, **kwargs):
 def execute_start_command(schedule_name, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
-    schedule_dir = DagsterInstance.get().schedules_directory()
 
     python_path = sys.executable
     repository_path = handle.data.repository_yaml
 
-    scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
+    instance = DagsterInstance.get()
+    scheduler = handle.build_scheduler(artifacts_dir=instance.schedules_directory())
     if not scheduler:
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
-    schedule_definition = repository.get_schedule(schedule_name)
+    schedule_definition = scheduler.get_schedule_def(schedule_name)
 
     try:
         schedule = scheduler.start_schedule(schedule_definition, python_path, repository_path)
@@ -166,13 +166,14 @@ def schedule_end_command(schedule_name, **kwargs):
 def execute_end_command(schedule_name, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
-    schedule_dir = DagsterInstance.get().schedules_directory()
 
-    scheduler = repository.build_scheduler(schedule_dir=schedule_dir)
+    instance = DagsterInstance.get()
+    scheduler = handle.build_scheduler(artifacts_dir=instance.schedules_directory())
+
     if not scheduler:
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
-    schedule_definition = repository.get_schedule(schedule_name)
+    schedule_definition = scheduler.get_schedule_def(schedule_name)
 
     try:
         schedule = scheduler.end_schedule(schedule_definition)
