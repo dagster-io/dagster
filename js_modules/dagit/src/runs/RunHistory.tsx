@@ -1,6 +1,8 @@
 import * as React from "react";
 import * as qs from "query-string";
 
+import { uniq } from "lodash";
+import gql from "graphql-tag";
 import {
   Button,
   ButtonGroup,
@@ -10,9 +12,7 @@ import {
   NonIdealState,
   Popover,
   Position,
-  Spinner,
-  Colors,
-  InputGroup
+  Spinner
 } from "@blueprintjs/core";
 import {
   Details,
@@ -25,13 +25,16 @@ import {
 } from "../ListComponents";
 import { IRunStatus, RunStatus, titleForRun } from "./RunUtils";
 import { formatElapsedTime, formatStepKey } from "../Util";
-
+import {
+  TokenizingField,
+  TokenizingFieldValue,
+  SuggestionProvider,
+  tokenizedValueFromString
+} from "../TokenizingField";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { Link } from "react-router-dom";
 import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
-import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
-import { IconNames } from "@blueprintjs/icons";
 import styled from "styled-components";
 
 function dateString(timestamp: number) {
@@ -119,6 +122,63 @@ function sortLabel(sort: RunSort) {
   }
 }
 
+function searchSuggestionsForRuns(
+  runs: RunHistoryRunFragment[]
+): SuggestionProvider[] {
+  return [
+    {
+      token: "id",
+      values: () => runs.map(r => r.runId)
+    },
+    {
+      token: "pipeline",
+      values: () => uniq(runs.map(r => r.pipeline.name))
+    },
+    {
+      token: "mode",
+      values: () => uniq(runs.map(r => r.mode))
+    },
+    {
+      token: "stepKey",
+      values: () =>
+        uniq(
+          runs.reduce<string[]>(
+            (r, c) => r.concat(c.stepKeysToExecute || []),
+            []
+          )
+        )
+    }
+  ];
+}
+
+function runMatchesSearch(
+  { pipeline, mode, runId, stepKeysToExecute }: RunHistoryRunFragment,
+  search: TokenizingFieldValue[]
+) {
+  if (search.length === 0) {
+    return true;
+  }
+  return search.some(({ token, value }) => {
+    if ((!token || token === "pipeline") && pipeline.name.includes(value)) {
+      return true;
+    }
+    if ((!token || token === "mode") && mode.includes(value)) {
+      return true;
+    }
+    if ((!token || token === "id") && runId.includes(value)) {
+      return true;
+    }
+    if (
+      (!token || token === "stepKey") &&
+      stepKeysToExecute &&
+      stepKeysToExecute.some(sk => sk.includes(value))
+    ) {
+      return true;
+    }
+    return false;
+  });
+}
+
 interface RunHistoryProps {
   runs: RunHistoryRunFragment[];
   initialSearch: string;
@@ -126,7 +186,7 @@ interface RunHistoryProps {
 
 interface RunHistoryState {
   sort: RunSort;
-  search: string;
+  search: TokenizingFieldValue[];
   statuses: IRunStatus[];
 }
 
@@ -169,9 +229,14 @@ export default class RunHistory extends React.Component<
 
   constructor(props: RunHistoryProps) {
     super(props);
+
+    const suggestions = searchSuggestionsForRuns([]);
+
     this.state = {
       sort: RunSort.START_TIME_DSC,
-      search: props.initialSearch,
+      search: props.initialSearch
+        ? [tokenizedValueFromString(props.initialSearch, suggestions)]
+        : [],
       statuses: AllRunStatuses
     };
   }
@@ -201,18 +266,10 @@ export default class RunHistory extends React.Component<
     const { runs } = this.props;
     const { statuses, search, sort } = this.state;
 
-    const searchKeywords = search.split(" ");
-    const matchesAnyKeyword = (str: string) =>
-      searchKeywords.length ? searchKeywords.some(k => str.includes(k)) : true;
-
     const mostRecentRun = runs[runs.length - 1];
     const sortedRuns = this.sortRuns(runs.slice(0, runs.length - 1))
       .filter(r => statuses.includes(r.status))
-      .filter(r =>
-        [r.runId, r.mode, r.pipeline.name, ...(r.stepKeysToExecute || [])].some(
-          matchesAnyKeyword
-        )
-      );
+      .filter(r => runMatchesSearch(r, search));
 
     return (
       <ScrollContainer>
@@ -227,15 +284,35 @@ export default class RunHistory extends React.Component<
         ) : (
           <>
             <MostRecentRun run={mostRecentRun} />
-            <RunTable
-              runs={sortedRuns}
-              sort={sort}
-              search={search}
-              statuses={statuses}
-              onSetSort={sort => this.setState({ sort })}
-              onSetStatuses={statuses => this.setState({ statuses })}
-              onSetSearch={search => this.setState({ search })}
-            />
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between"
+              }}
+            >
+              <Header>{`Previous Runs (${sortedRuns.length})`}</Header>
+              <Filters>
+                <RunStatusToggles
+                  value={statuses}
+                  onChange={statuses => this.setState({ statuses })}
+                />
+                <div style={{ width: 15 }} />
+                <TokenizingField
+                  values={search}
+                  onChange={search => this.setState({ search })}
+                  suggestionProviders={searchSuggestionsForRuns(runs)}
+                />
+                <div style={{ width: 15 }} />
+                <SortDropdown
+                  value={sort}
+                  onChange={sort => this.setState({ sort })}
+                />
+              </Filters>
+            </div>
+
+            <RunTable runs={sortedRuns} />
           </>
         )}
       </ScrollContainer>
@@ -254,96 +331,10 @@ const MostRecentRun: React.FunctionComponent<{
 
 interface RunTableProps {
   runs: RunHistoryRunFragment[];
-  sort: RunSort;
-  search: string;
-  statuses: IRunStatus[];
-  onSetStatuses: (statuses: IRunStatus[]) => void;
-  onSetSort: (sort: RunSort) => void;
-  onSetSearch: (filter: string) => void;
 }
 
 const RunTable: React.FunctionComponent<RunTableProps> = props => (
   <div>
-    <div
-      style={{
-        display: "flex",
-        alignItems: "baseline",
-        justifyContent: "space-between"
-      }}
-    >
-      <Header>{`Previous Runs (${props.runs.length})`}</Header>
-      <Filters>
-        <ButtonGroup style={{ marginRight: 15 }}>
-          {AllRunStatuses.map(s => (
-            <Button
-              key={s}
-              active={props.statuses.includes(s)}
-              onClick={() =>
-                props.onSetStatuses(
-                  props.statuses.includes(s)
-                    ? props.statuses.filter(a => a !== s)
-                    : props.statuses.concat([s])
-                )
-              }
-            >
-              {s === "STARTED" ? (
-                <Spinner size={11} value={0.4} />
-              ) : (
-                <RunStatus status={s} />
-              )}
-            </Button>
-          ))}
-        </ButtonGroup>
-
-        <FilterInputGroup
-          leftIcon="filter"
-          placeholder="Filter runs..."
-          value={props.search}
-          spellCheck={false}
-          rightElement={
-            props.search.length ? (
-              <Icon
-                color={Colors.GRAY1}
-                icon={IconNames.SMALL_CROSS}
-                style={{ padding: 7 }}
-                onClick={() => props.onSetSearch("")}
-              />
-            ) : (
-              undefined
-            )
-          }
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            props.onSetSearch(e.target.value)
-          }
-        />
-
-        <Popover
-          position={Position.BOTTOM_RIGHT}
-          content={
-            <Menu>
-              {[
-                RunSort.START_TIME_ASC,
-                RunSort.START_TIME_DSC,
-                RunSort.END_TIME_ASC,
-                RunSort.END_TIME_DSC
-              ].map((v, idx) => (
-                <MenuItem
-                  key={idx}
-                  text={sortLabel(v)}
-                  onClick={() => props.onSetSort(v)}
-                />
-              ))}
-            </Menu>
-          }
-        >
-          <Button
-            icon={"sort"}
-            rightIcon={"caret-down"}
-            text={sortLabel(props.sort)}
-          />
-        </Popover>
-      </Filters>
-    </div>
     <Legend>
       <LegendColumn style={{ maxWidth: 40 }}></LegendColumn>
       <LegendColumn style={{ flex: 2.3 }}>Run</LegendColumn>
@@ -510,10 +501,53 @@ class RunTime extends React.Component<{ start: number; end: number }> {
   }
 }
 
-const FilterInputGroup = styled(InputGroup)`
-  width: 220px;
-  margin-right: 10px;
-`;
+const SortDropdown: React.FunctionComponent<{
+  onChange: (v: RunSort) => void;
+  value: RunSort;
+}> = ({ value, onChange }) => (
+  <Popover
+    position={Position.BOTTOM_RIGHT}
+    content={
+      <Menu>
+        {[
+          RunSort.START_TIME_ASC,
+          RunSort.START_TIME_DSC,
+          RunSort.END_TIME_ASC,
+          RunSort.END_TIME_DSC
+        ].map((v, idx) => (
+          <MenuItem key={idx} text={sortLabel(v)} onClick={() => onChange(v)} />
+        ))}
+      </Menu>
+    }
+  >
+    <Button icon={"sort"} rightIcon={"caret-down"} text={sortLabel(value)} />
+  </Popover>
+);
+
+const RunStatusToggles: React.FunctionComponent<{
+  value: IRunStatus[];
+  onChange: (value: IRunStatus[]) => void;
+}> = ({ value, onChange }) => (
+  <ButtonGroup>
+    {AllRunStatuses.map(s => (
+      <Button
+        key={s}
+        active={value.includes(s)}
+        onClick={() =>
+          onChange(
+            value.includes(s) ? value.filter(a => a !== s) : value.concat([s])
+          )
+        }
+      >
+        {s === "STARTED" ? (
+          <Spinner size={11} value={0.4} />
+        ) : (
+          <RunStatus status={s} />
+        )}
+      </Button>
+    ))}
+  </ButtonGroup>
+);
 
 const Filters = styled.div`
   float: right;
