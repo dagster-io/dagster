@@ -1,3 +1,4 @@
+import typing
 from functools import partial
 
 import six
@@ -13,6 +14,7 @@ from .config_schema import InputHydrationConfig, OutputMaterializationConfig
 from .dagster_type import check_dagster_type_param
 from .field_utils import Dict
 from .marshal import PickleSerializationStrategy, SerializationStrategy
+from .typing_api import is_closed_python_dict_type
 from .wrapping import WrappingListType, WrappingNullableType
 
 
@@ -535,15 +537,19 @@ def resolve_to_runtime_type(dagster_type):
     # circular dep
     from .decorator import is_runtime_type_decorated_klass, get_runtime_type_on_decorated_klass
     from .mapping import remap_python_type
-    from .python_dict import PythonDict
+    from .python_dict import PythonDict, create_typed_runtime_dict
 
     dagster_type = remap_python_type(dagster_type)
+
+    # do not do in remap because this is runtime system only.
+    if is_closed_python_dict_type(dagster_type):
+        return create_typed_runtime_dict(dagster_type.__args__[0], dagster_type.__args__[1]).inst()
 
     check_dagster_type_param(dagster_type, 'dagster_type', RuntimeType)
 
     if dagster_type is None:
         return Any.inst()
-    if dagster_type is Dict:
+    if dagster_type is Dict or dagster_type is typing.Dict:
         return PythonDict.inst()
     if BuiltinEnum.contains(dagster_type):
         return RuntimeType.from_builtin_enum(dagster_type)

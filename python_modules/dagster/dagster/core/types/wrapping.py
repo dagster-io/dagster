@@ -3,11 +3,7 @@ import sys
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
-from .typing_api import (
-    get_optional_inner_type,
-    is_closed_python_optional_typehint,
-    is_python_list_typehint,
-)
+from .typing_api import get_optional_inner_type, is_closed_python_optional_type, is_python_list_type
 
 
 class WrappingType(object):
@@ -31,25 +27,24 @@ class WrappingNullableType(WrappingType):
     pass
 
 
+def remap_to_dagster_list_type(ttype):
+    check.invariant(is_python_list_type(ttype), 'type must pass is_python_list_type check')
+    return WrappingListType(ttype.__args__[0])
+
+
+def remap_to_dagster_optional_type(ttype):
+    check.invariant(
+        is_closed_python_optional_type(ttype), 'type must pass is_closed_python_optional_type check'
+    )
+    return WrappingNullableType(get_optional_inner_type(ttype))
+
+
 if sys.version_info.major >= 3:
     import typing
 
     List = typing.List
 
-    def remap_to_dagster_list_type(type_annotation):
-        check.invariant(
-            is_python_list_typehint(type_annotation), 'type must pass is_python_list_typehint check'
-        )
-        return WrappingListType(type_annotation.__args__[0])
-
     Optional = typing.Optional
-
-    def remap_to_dagster_optional_type(type_annotation):
-        check.invariant(
-            is_closed_python_optional_typehint(type_annotation),
-            'type must pass is_closed_python_optional_typehint check',
-        )
-        return WrappingNullableType(get_optional_inner_type(type_annotation))
 
 
 else:
@@ -60,14 +55,8 @@ else:
 
     List = ListStub()
 
-    def remap_to_dagster_list_type(_):
-        check.failed('Not valid to call in python 2')
-
     class OptionalStub:
         def __getitem__(self, inner_type):
             return WrappingNullableType(inner_type)
 
     Optional = OptionalStub()
-
-    def remap_to_dagster_optional_type(_):
-        check.failed('Not valid to call in python 2')

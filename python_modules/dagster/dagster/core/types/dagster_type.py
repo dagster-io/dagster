@@ -1,8 +1,11 @@
+import typing
+
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .builtin_enum import BuiltinEnum
 from .field_utils import Dict
+from .typing_api import is_closed_python_dict_type
 from .wrapping import WrappingType
 
 MAGIC_RUNTIME_TYPE_NAME = '__runtime_type'
@@ -18,7 +21,9 @@ def check_dagster_type_param(dagster_type, param_name, base_type):
     # Cannot check base_type because of circular references and no fwd declarations
     if dagster_type is None:
         return dagster_type
-    if dagster_type is dict or dagster_type is Dict:
+    if dagster_type is dict or dagster_type is Dict or dagster_type is typing.Dict:
+        return dagster_type
+    if is_closed_python_dict_type(dagster_type):
         return dagster_type
     if BuiltinEnum.contains(dagster_type):
         return dagster_type

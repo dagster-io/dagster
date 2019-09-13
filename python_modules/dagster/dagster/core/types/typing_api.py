@@ -1,7 +1,6 @@
 '''This file contains the typing api that should exist in python in
 order to do metaprogramming and reflection on the built-in typing module'''
 
-import sys
 import typing
 
 from dagster import check
@@ -58,30 +57,9 @@ def is_closed_python_dict_type(ttype):
     )
 
 
-if sys.version_info.major >= 3:
+def get_optional_inner_type(ttype):
+    check.invariant(
+        is_closed_python_optional_type(ttype), 'type must pass is_closed_python_optional_type check'
+    )
 
-    def is_python_list_typehint(type_annotation):
-        return is_python_list_type(type_annotation)
-
-    def is_closed_python_optional_typehint(type_annotation):
-        return is_closed_python_optional_type(type_annotation)
-
-    def get_optional_inner_type(type_annotation):
-        check.invariant(
-            is_closed_python_optional_typehint(type_annotation),
-            'type must pass is_closed_python_optional_typehint check',
-        )
-
-        return type_annotation.__args__[0]
-
-
-else:
-
-    def is_python_list_typehint(_):
-        raise NotImplementedError('Typehints are not used in Python 2')
-
-    def is_closed_python_optional_typehint(_):
-        raise NotImplementedError('Typehints are not used in Python 2')
-
-    def get_optional_inner_type(_type_annotation):
-        raise NotImplementedError('Typehints are not used in Python 2')
+    return ttype.__args__[0]

@@ -1,32 +1,25 @@
-import sys
-
 from dagster.core.types import Bool, Float, Int, PythonDict, String
 
-from .wrapping import (
-    is_closed_python_optional_typehint,
-    is_python_list_typehint,
-    remap_to_dagster_list_type,
-    remap_to_dagster_optional_type,
-)
+from .typing_api import is_closed_python_optional_type, is_python_list_type
+from .wrapping import remap_to_dagster_list_type, remap_to_dagster_optional_type
 
 
-def remap_python_type(type_annotation):
+def remap_python_type(ttype):
 
-    if type_annotation == int:
+    if ttype == int:
         return Int
-    if type_annotation == float:
+    if ttype == float:
         return Float
-    if type_annotation == bool:
+    if ttype == bool:
         return Bool
-    if type_annotation == str:
+    if ttype == str:
         return String
-    if type_annotation == dict:
+    if ttype == dict:
         return PythonDict
 
-    if sys.version_info.major >= 3:
-        if is_python_list_typehint(type_annotation):
-            return remap_to_dagster_list_type(type_annotation)
-        if is_closed_python_optional_typehint(type_annotation):
-            return remap_to_dagster_optional_type(type_annotation)
+    if is_python_list_type(ttype):
+        return remap_to_dagster_list_type(ttype)
+    if is_closed_python_optional_type(ttype):
+        return remap_to_dagster_optional_type(ttype)
 
-    return type_annotation
+    return ttype

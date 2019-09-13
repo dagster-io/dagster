@@ -27,6 +27,8 @@ def create_typed_runtime_dict(key_dagster_type, value_dagster_type):
                 name=None,
                 is_builtin=True,
             )
+            self.key_type = key_type
+            self.value_type = value_type
 
         def type_check(self, value):
             from dagster.core.definitions.events import Failure

@@ -1,16 +1,11 @@
-import sys
 import typing
-
-import pytest
 
 from dagster.core.types.typing_api import (
     get_optional_inner_type,
     is_closed_python_dict_type,
-    is_closed_python_optional_typehint,
-    is_python_list_typehint,
+    is_closed_python_optional_type,
+    is_python_list_type,
 )
-
-REASON_STRING = 'typing_api only valid for python 3'
 
 
 def test_closed_python_dict():
@@ -25,41 +20,23 @@ def test_closed_python_dict():
     assert is_closed_python_dict_type(typing.List) is False
 
 
-@pytest.mark.skipif(sys.version_info.major < 3, reason=REASON_STRING)
-def test_is_typing_list_py_3():
-    assert is_python_list_typehint(typing.List[int])
-    assert is_python_list_typehint(typing.List)
-    assert is_python_list_typehint(list)
-    assert not is_python_list_typehint(None)
-    assert not is_python_list_typehint(int)
-    assert not is_python_list_typehint('foobar')
+def test_is_typing_list():
+    assert is_python_list_type(typing.List[int])
+    assert is_python_list_type(typing.List)
+    assert is_python_list_type(list)
+    assert not is_python_list_type(None)
+    assert not is_python_list_type(int)
+    assert not is_python_list_type('foobar')
 
 
-@pytest.mark.skipif(sys.version_info.major < 3, reason=REASON_STRING)
 def test_is_typing_optional_py_3():
-    assert is_closed_python_optional_typehint(typing.Optional[int])
-    assert not is_closed_python_optional_typehint(typing.Optional)
-    assert not is_closed_python_optional_typehint(None)
-    assert not is_closed_python_optional_typehint(int)
-    assert not is_closed_python_optional_typehint(list)
-    assert not is_closed_python_optional_typehint('foobar')
+    assert is_closed_python_optional_type(typing.Optional[int])
+    assert not is_closed_python_optional_type(typing.Optional)
+    assert not is_closed_python_optional_type(None)
+    assert not is_closed_python_optional_type(int)
+    assert not is_closed_python_optional_type(list)
+    assert not is_closed_python_optional_type('foobar')
 
 
-@pytest.mark.skipif(sys.version_info.major < 3, reason=REASON_STRING)
 def test_get_inner_optional_py_3():
     assert get_optional_inner_type(typing.Optional[int]) is int
-
-
-PY_2_REASON_STRING = 'Only checking python 2 implementations'
-
-
-@pytest.mark.skipif(sys.version_info.major >= 3, reason=PY_2_REASON_STRING)
-def test_is_typing_list_py_2():
-    with pytest.raises(NotImplementedError):
-        is_python_list_typehint(typing.List[int])
-
-
-@pytest.mark.skipif(sys.version_info.major >= 3, reason=PY_2_REASON_STRING)
-def test_is_typing_optional_py_2():
-    with pytest.raises(NotImplementedError):
-        is_closed_python_optional_typehint(typing.Optional[int])
