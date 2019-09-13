@@ -3,6 +3,12 @@ import sys
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
+from .typing_api import (
+    get_optional_inner_type,
+    is_closed_python_optional_typehint,
+    is_python_list_typehint,
+)
+
 
 class WrappingType(object):
     def __init__(self, inner_type):
@@ -30,10 +36,6 @@ if sys.version_info.major >= 3:
 
     List = typing.List
 
-    def is_python_list_typehint(type_annotation):
-        origin = getattr(type_annotation, '__origin__', None)
-        return origin == typing.List or origin == list
-
     def remap_to_dagster_list_type(type_annotation):
         check.invariant(
             is_python_list_typehint(type_annotation), 'type must pass is_python_list_typehint check'
@@ -42,21 +44,12 @@ if sys.version_info.major >= 3:
 
     Optional = typing.Optional
 
-    def is_python_optional_typehint(type_annotation):
-        # Optional[X] is Union[X, NoneType] which is what we match against here
-        origin = getattr(type_annotation, '__origin__', None)
-        return (
-            origin == typing.Union
-            and len(type_annotation.__args__) == 2
-            and type_annotation.__args__[1] == type(None)
-        )
-
     def remap_to_dagster_optional_type(type_annotation):
         check.invariant(
-            is_python_optional_typehint(type_annotation),
-            'type must pass is_python_optional_typehint check',
+            is_closed_python_optional_typehint(type_annotation),
+            'type must pass is_closed_python_optional_typehint check',
         )
-        return WrappingNullableType(type_annotation.__args__[0])
+        return WrappingNullableType(get_optional_inner_type(type_annotation))
 
 
 else:
@@ -67,9 +60,6 @@ else:
 
     List = ListStub()
 
-    def is_python_list_typehint(_):
-        return False
-
     def remap_to_dagster_list_type(_):
         check.failed('Not valid to call in python 2')
 
@@ -78,9 +68,6 @@ else:
             return WrappingNullableType(inner_type)
 
     Optional = OptionalStub()
-
-    def is_python_optional_typehint(_):
-        return False
 
     def remap_to_dagster_optional_type(_):
         check.failed('Not valid to call in python 2')
