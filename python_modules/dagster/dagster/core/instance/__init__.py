@@ -102,7 +102,7 @@ class DagsterInstance:
     ):
         from dagster.core.storage.event_log import EventLogStorage
         from dagster.core.storage.runs import RunStorage
-        from dagster.core.execution.logs import ComputeLogManager
+        from dagster.core.storage.compute_log_manager import ComputeLogManager
 
         self._instance_type = check.inst_param(instance_type, 'instance_type', InstanceType)
         self._root_storage_dir = check.str_param(root_storage_dir, 'root_storage_dir')
@@ -125,7 +125,7 @@ class DagsterInstance:
     def ephemeral(tempdir=None):
         from dagster.core.storage.event_log import InMemoryEventLogStorage
         from dagster.core.storage.runs import InMemoryRunStorage
-        from dagster.core.execution.logs import ComputeLogManager
+        from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
@@ -137,9 +137,7 @@ class DagsterInstance:
             root_storage_dir=tempdir,
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=ComputeLogManager(
-                _compute_logs_base_directory(tempdir), logging_enabled=False
-            ),
+            compute_log_manager=NoOpComputeLogManager(_compute_logs_base_directory(tempdir)),
             feature_set=feature_set,
         )
 
@@ -182,7 +180,7 @@ class DagsterInstance:
         if isinstance(instance_ref, LocalInstanceRef):
             from dagster.core.storage.event_log import FilesystemEventLogStorage
             from dagster.core.storage.runs import FilesystemRunStorage
-            from dagster.core.execution.logs import ComputeLogManager
+            from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 
             feature_set = _dagster_feature_set(instance_ref.home_dir) or fallback_feature_set
 
@@ -193,7 +191,7 @@ class DagsterInstance:
                     _runs_directory(instance_ref.home_dir), watch_external_runs=watch_external_runs
                 ),
                 event_storage=FilesystemEventLogStorage(_runs_directory(instance_ref.home_dir)),
-                compute_log_manager=ComputeLogManager(
+                compute_log_manager=LocalComputeLogManager(
                     _compute_logs_base_directory(instance_ref.home_dir)
                 ),
                 feature_set=feature_set,

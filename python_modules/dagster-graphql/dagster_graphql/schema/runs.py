@@ -19,9 +19,9 @@ from dagster.core.definitions.events import (
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.logs import ComputeLogData, ComputeLogFileData
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.storage.compute_log_manager import ComputeLogData, ComputeLogFileData
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
@@ -61,8 +61,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return graphene_info.schema.type_named('LogMessageConnection')(self._pipeline_run)
 
     def resolve_computeLogs(self, graphene_info, stepKey):
-        manager = graphene_info.context.instance.compute_log_manager
-        update = manager.fetch_log_data(self.run_id, stepKey)
+        update = graphene_info.context.instance.compute_log_manager.read_logs(self.run_id, stepKey)
         return from_compute_log_update(graphene_info, self.run_id, stepKey, update)
 
     def resolve_executionPlan(self, graphene_info):

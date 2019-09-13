@@ -31,5 +31,5 @@ def test_stdout():
     ]
     assert len(compute_steps) == 1
     step_key = compute_steps[0]
-    logs = instance.compute_log_manager.fetch_log_data(result.run_id, step_key)
+    logs = instance.compute_log_manager.read_logs(result.run_id, step_key)
     assert logs.stdout.data == HELLO_WORLD + SEPARATOR

@@ -20,8 +20,8 @@ from nbconvert import HTMLExporter
 from six import text_type
 
 from dagster import ExecutionTargetHandle, check, seven
-from dagster.core.execution.logs import ComputeIOType
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.utils.log import get_stack_trace_array
 
 from .subscription_server import DagsterSubscriptionServer
@@ -131,10 +131,10 @@ def download_view(context):
         manager = context.instance.compute_log_manager
         try:
             io_type = ComputeIOType(file_type)
-            result = manager.filepath(run_id, step_key, io_type)
+            result = manager.get_local_path(run_id, step_key, io_type)
             if not os.path.exists(result):
                 result = io.BytesIO()
-            timeout = None if manager.compute_completed(run_id, step_key) else 0
+            timeout = None if manager.is_compute_completed(run_id, step_key) else 0
         except ValueError:
             result = io.BytesIO()
             timeout = 0
