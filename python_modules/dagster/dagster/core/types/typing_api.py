@@ -36,10 +36,10 @@ if sys.version_info.major >= 3:
 else:
 
     def is_python_list_typehint(_):
-        return False
+        raise NotImplementedError('Typehints are not used in Python 2')
 
     def is_closed_python_optional_typehint(_):
-        return False
+        raise NotImplementedError('Typehints are not used in Python 2')
 
     def get_optional_inner_type(_type_annotation):
-        check.failed('Invalid in python 2')
+        raise NotImplementedError('Typehints are not used in Python 2')
