@@ -13,16 +13,23 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRunNotFoundError {
   __typename: "PipelineRunNotFoundError";
 }
 
-export interface RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids {
+export interface RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_UnknownPipeline {
+  __typename: "UnknownPipeline";
+  name: string;
+}
+
+export interface RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_Pipeline_solids {
   __typename: "Solid";
   name: string;
 }
 
-export interface RunRootQuery_pipelineRunOrError_PipelineRun_pipeline {
+export interface RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_Pipeline {
   __typename: "Pipeline";
   name: string;
-  solids: RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids[];
+  solids: RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_Pipeline_solids[];
 }
+
+export type RunRootQuery_pipelineRunOrError_PipelineRun_pipeline = RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_UnknownPipeline | RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_Pipeline;
 
 export interface RunRootQuery_pipelineRunOrError_PipelineRun_logs_pageInfo {
   __typename: "PageInfo";
@@ -507,7 +514,7 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun {
   logs: RunRootQuery_pipelineRunOrError_PipelineRun_logs;
   environmentConfigYaml: string;
   mode: string;
-  executionPlan: RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan;
+  executionPlan: RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan | null;
   stepKeysToExecute: string[] | null;
 }
 

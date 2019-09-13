@@ -53,52 +53,55 @@ MODE_QUERY = '''
 query ModesQuery($pipelineName: String!, $mode: String!)
 {
   pipeline(params: { name: $pipelineName }) {
-    configTypes(mode: $mode) {
-      name
-    }
-    environmentType(mode: $mode){
-      name
-      ... on CompositeConfigType {
-        fields {
-          configType {
-            name
+    __typename
+    ... on Pipeline {
+      configTypes(mode: $mode) {
+        name
+      }
+      environmentType(mode: $mode){
+        name
+        ... on CompositeConfigType {
+          fields {
+            configType {
+              name
+            }
           }
         }
       }
-    }
-    presets {
-      name
-      mode
-    }
-    modes {
-      name
-      description
-      resources {
+      presets {
         name
-        configField {
-          configType {
-            name
-            ... on CompositeConfigType {
-              fields {
-                name
-                configType {
+        mode
+      }
+      modes {
+        name
+        description
+        resources {
+          name
+          configField {
+            configType {
+              name
+              ... on CompositeConfigType {
+                fields {
                   name
+                  configType {
+                    name
+                  }
                 }
               }
             }
           }
         }
-      }
-      loggers {
-        name
-        configField {
-          configType {
-            name
-            ... on CompositeConfigType {
-              fields {
-                name
-                configType {
+        loggers {
+          name
+          configField {
+            configType {
+              name
+              ... on CompositeConfigType {
+                fields {
                   name
+                  configType {
+                    name
+                  }
                 }
               }
             }

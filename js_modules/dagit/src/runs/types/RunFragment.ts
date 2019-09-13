@@ -9,16 +9,23 @@ import { PipelineRunStatus, LogLevel, ObjectStoreOperationType, StepKind } from 
 // GraphQL fragment: RunFragment
 // ====================================================
 
-export interface RunFragment_pipeline_solids {
+export interface RunFragment_pipeline_UnknownPipeline {
+  __typename: "UnknownPipeline";
+  name: string;
+}
+
+export interface RunFragment_pipeline_Pipeline_solids {
   __typename: "Solid";
   name: string;
 }
 
-export interface RunFragment_pipeline {
+export interface RunFragment_pipeline_Pipeline {
   __typename: "Pipeline";
   name: string;
-  solids: RunFragment_pipeline_solids[];
+  solids: RunFragment_pipeline_Pipeline_solids[];
 }
+
+export type RunFragment_pipeline = RunFragment_pipeline_UnknownPipeline | RunFragment_pipeline_Pipeline;
 
 export interface RunFragment_logs_pageInfo {
   __typename: "PageInfo";
@@ -503,6 +510,6 @@ export interface RunFragment {
   logs: RunFragment_logs;
   environmentConfigYaml: string;
   mode: string;
-  executionPlan: RunFragment_executionPlan;
+  executionPlan: RunFragment_executionPlan | null;
   stepKeysToExecute: string[] | null;
 }

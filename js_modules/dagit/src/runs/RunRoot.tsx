@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { Redirect, match } from "react-router";
+import { match } from "react-router";
 import { useApolloClient, useQuery } from "react-apollo";
 
 import { IconNames } from "@blueprintjs/icons";
@@ -14,7 +14,7 @@ interface IRunRootProps {
 }
 
 export const RunRoot: React.FunctionComponent<IRunRootProps> = props => {
-  const { pipelineName, runId } = props.match.params;
+  const { runId } = props.match.params;
   const client = useApolloClient();
   const { data } = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {
     fetchPolicy: "cache-and-network",
@@ -38,17 +38,6 @@ export const RunRoot: React.FunctionComponent<IRunRootProps> = props => {
     );
   }
 
-  if (!pipelineName || pipelineName !== data.pipelineRunOrError.pipeline.name) {
-    // legacy support for the /runs/:runId endpoint
-    return (
-      <Redirect
-        to={{
-          pathname: `/p/${data.pipelineRunOrError.pipeline.name}/runs/${runId}`
-        }}
-      />
-    );
-  }
-
   return <Run client={client} run={data.pipelineRunOrError} />;
 };
 
@@ -58,7 +47,10 @@ export const RUN_ROOT_QUERY = gql`
       __typename
       ... on PipelineRun {
         pipeline {
-          name
+          __typename
+          ... on PipelineReference {
+            name
+          }
         }
         ...RunFragment
       }

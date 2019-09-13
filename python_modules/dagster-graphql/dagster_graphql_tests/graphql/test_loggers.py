@@ -5,19 +5,22 @@ from .setup import define_context
 LOGGER_QUERY = '''
 {
   pipeline(params: { name: "multi_mode_with_loggers" }) {
-    modes {
-      name
-      loggers {
+    __typename
+    ... on Pipeline {
+      modes {
         name
-        description
-        configField {
-          configType {
-            name
-            ... on CompositeConfigType {
-              fields {
-                name
-                configType {
+        loggers {
+          name
+          description
+          configField {
+            configType {
+              name
+              ... on CompositeConfigType {
+                fields {
                   name
+                  configType {
+                    name
+                  }
                 }
               }
             }

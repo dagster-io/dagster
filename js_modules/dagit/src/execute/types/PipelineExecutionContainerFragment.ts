@@ -7,8 +7,8 @@
 // GraphQL fragment: PipelineExecutionContainerFragment
 // ====================================================
 
-export interface PipelineExecutionContainerFragment_PythonError {
-  __typename: "PythonError" | "PipelineNotFoundError";
+export interface PipelineExecutionContainerFragment_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError" | "PythonError";
 }
 
 export interface PipelineExecutionContainerFragment_Pipeline_modes {
@@ -440,8 +440,8 @@ export type PipelineExecutionContainerFragment_Pipeline_configTypes = PipelineEx
 
 export interface PipelineExecutionContainerFragment_Pipeline {
   __typename: "Pipeline";
-  name: string;
   modes: PipelineExecutionContainerFragment_Pipeline_modes[];
+  name: string;
   environmentType: PipelineExecutionContainerFragment_Pipeline_environmentType;
   configTypes: PipelineExecutionContainerFragment_Pipeline_configTypes[];
 }
@@ -887,4 +887,4 @@ export interface PipelineExecutionContainerFragment_InvalidSubsetError {
   pipeline: PipelineExecutionContainerFragment_InvalidSubsetError_pipeline;
 }
 
-export type PipelineExecutionContainerFragment = PipelineExecutionContainerFragment_PythonError | PipelineExecutionContainerFragment_Pipeline | PipelineExecutionContainerFragment_InvalidSubsetError;
+export type PipelineExecutionContainerFragment = PipelineExecutionContainerFragment_PipelineNotFoundError | PipelineExecutionContainerFragment_Pipeline | PipelineExecutionContainerFragment_InvalidSubsetError;

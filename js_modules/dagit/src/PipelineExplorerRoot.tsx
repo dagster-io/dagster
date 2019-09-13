@@ -111,8 +111,10 @@ const PipelineExplorerRoot: React.FunctionComponent<
 export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   query PipelineExplorerRootQuery($name: String!) {
     pipelineOrError(params: { name: $name }) {
-      ... on Pipeline {
+      ... on PipelineReference {
         name
+      }
+      ... on Pipeline {
         ...PipelineExplorerFragment
         solids {
           name

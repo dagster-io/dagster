@@ -37,6 +37,7 @@ export const TopNav = ({
               <div style={{ display: "flex", alignItems: "center" }}>
                 <PipelineJumpBar
                   pipelines={pipelines}
+                  selectedPipelineName={selectedPipelineName}
                   selectedPipeline={pipelines.find(
                     p => p.name === selectedPipelineName
                   )}

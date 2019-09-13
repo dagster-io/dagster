@@ -8,6 +8,7 @@ snapshots = Snapshot()
 
 snapshots['test_mode_fetch_loggers 1'] = {
     'pipeline': {
+        '__typename': 'Pipeline',
         'modes': [
             {
                 'loggers': [

@@ -446,8 +446,8 @@ export type PipelineExecutionRootQuery_pipelineOrError_Pipeline_configTypes = Pi
 
 export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
-  name: string;
   modes: PipelineExecutionRootQuery_pipelineOrError_Pipeline_modes[];
+  name: string;
   environmentType: PipelineExecutionRootQuery_pipelineOrError_Pipeline_environmentType;
   configTypes: PipelineExecutionRootQuery_pipelineOrError_Pipeline_configTypes[];
 }

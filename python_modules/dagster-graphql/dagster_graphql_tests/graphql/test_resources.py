@@ -5,19 +5,22 @@ from .setup import define_context
 RESOURCE_QUERY = '''
 {
   pipeline(params: { name: "multi_mode_with_resources" }) {
-    modes {
-      name
-      resources {
+    __typename
+    ... on Pipeline {
+      modes {
         name
-        description
-        configField {
-          configType {
-            name
-            ... on CompositeConfigType {
-              fields {
-                name
-                configType {
+        resources {
+          name
+          description
+          configField {
+            configType {
+              name
+              ... on CompositeConfigType {
+                fields {
                   name
+                  configType {
+                    name
+                  }
                 }
               }
             }
@@ -34,9 +37,9 @@ REQUIRED_RESOURCE_QUERY = '''{
     name
     solids {
       definition {
-         requiredResources {
-           resourceKey
-         }
+          requiredResources {
+            resourceKey
+          }
       }
     }
   }

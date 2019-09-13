@@ -1,8 +1,11 @@
 import csv
 from collections import OrderedDict
 
+import pytest
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
+from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.schema.errors import DauphinPipelineNotFoundError
 from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster_graphql_tests.graphql.setup import define_context, define_repository
 
@@ -55,15 +58,18 @@ PoorMansDataFrame = as_dagster_type(
 def test_enum_query():
     ENUM_QUERY = '''{
   pipeline(params: { name:"pipeline_with_enum_config" }){
-    name
-    configTypes {
-      __typename
+    __typename
+    ... on Pipeline {
       name
-      ... on EnumConfigType {
-        values
-        {
-          value
-          description
+      configTypes {
+        __typename
+        name
+        ... on EnumConfigType {
+          values
+          {
+            value
+            description
+          }
         }
       }
     }
@@ -113,16 +119,19 @@ fragment innerInfo on ConfigType {
 
 {
   pipeline(params: { name: "more_complicated_nested_config" }) {
-    name
-    solids {
+    __typename
+    ... on Pipeline {
       name
-      definition {
-        ... on SolidDefinition {
-          configDefinition {
-            configType {
-              ...innerInfo
-              innerTypes {
+      solids {
+        name
+        definition {
+          ... on SolidDefinition {
+            configDefinition {
+              configType {
                 ...innerInfo
+                innerTypes {
+                  ...innerInfo
+                }
               }
             }
           }
@@ -214,6 +223,21 @@ def test_pipeline_by_name():
     assert result.data['pipeline']['name'] == 'csv_hello_world_two'
 
 
+def test_pipeline_by_name_not_found():
+    with pytest.raises(UserFacingGraphQLError) as exc:
+        execute_dagster_graphql(
+            define_context(),
+            '''
+        {
+            pipeline(params: {name: "gkjhds"}) {
+              name
+            }
+        }''',
+        )
+
+    assert isinstance(exc.value.dauphin_error, DauphinPipelineNotFoundError)
+
+
 def test_pipeline_or_error_by_name():
     result = execute_dagster_graphql(
         define_context(),
@@ -230,6 +254,25 @@ def test_pipeline_or_error_by_name():
     assert not result.errors
     assert result.data
     assert result.data['pipelineOrError']['name'] == 'csv_hello_world_two'
+
+
+def test_pipeline_or_error_by_name_not_found():
+    result = execute_dagster_graphql(
+        define_context(),
+        '''
+    {
+        pipelineOrError(params: { name: "foobar" }) {
+          __typename
+          ... on Pipeline {
+             name
+           }
+        }
+    }''',
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['pipelineOrError']['__typename'] == 'PipelineNotFoundError'
 
 
 def test_production_query(production_query):

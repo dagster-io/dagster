@@ -9,16 +9,23 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 // GraphQL query operation: RunsRootQuery
 // ====================================================
 
-export interface RunsRootQuery_pipelineRuns_pipeline_solids {
+export interface RunsRootQuery_pipelineRuns_pipeline_UnknownPipeline {
+  __typename: "UnknownPipeline";
+  name: string;
+}
+
+export interface RunsRootQuery_pipelineRuns_pipeline_Pipeline_solids {
   __typename: "Solid";
   name: string;
 }
 
-export interface RunsRootQuery_pipelineRuns_pipeline {
+export interface RunsRootQuery_pipelineRuns_pipeline_Pipeline {
   __typename: "Pipeline";
   name: string;
-  solids: RunsRootQuery_pipelineRuns_pipeline_solids[];
+  solids: RunsRootQuery_pipelineRuns_pipeline_Pipeline_solids[];
 }
+
+export type RunsRootQuery_pipelineRuns_pipeline = RunsRootQuery_pipelineRuns_pipeline_UnknownPipeline | RunsRootQuery_pipelineRuns_pipeline_Pipeline;
 
 export interface RunsRootQuery_pipelineRuns_logs_nodes_ExecutionStepFailureEvent {
   __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineProcessExitedEvent" | "PipelineProcessStartedEvent" | "PipelineProcessStartEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "ObjectStoreOperationEvent" | "StepMaterializationEvent" | "EngineEvent";
@@ -62,7 +69,7 @@ export interface RunsRootQuery_pipelineRuns {
   environmentConfigYaml: string;
   pipeline: RunsRootQuery_pipelineRuns_pipeline;
   logs: RunsRootQuery_pipelineRuns_logs;
-  executionPlan: RunsRootQuery_pipelineRuns_executionPlan;
+  executionPlan: RunsRootQuery_pipelineRuns_executionPlan | null;
 }
 
 export interface RunsRootQuery {

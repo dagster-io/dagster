@@ -209,7 +209,7 @@ input ExecutionParams {
 
 type ExecutionPlan {
   steps: [ExecutionStep!]!
-  pipeline: Pipeline!
+  pipeline: PipelineReference!
   artifactsPersisted: Boolean!
 }
 
@@ -566,7 +566,7 @@ type PageInfo {
   totalCount: Int!
 }
 
-type Pipeline implements SolidContainer {
+type Pipeline implements SolidContainer & PipelineReference {
   solids: [Solid!]!
   name: String!
   description: String
@@ -630,7 +630,7 @@ type PipelineNotFoundError implements Error {
   pipelineName: String!
 }
 
-union PipelineOrError = Pipeline | PythonError | InvalidSubsetError | PipelineNotFoundError
+union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | PythonError
 
 type PipelinePreset {
   name: String!
@@ -669,13 +669,17 @@ type PipelineProcessStartEvent implements MessageEvent & PipelineEvent {
   pipelineName: String!
 }
 
+interface PipelineReference {
+  name: String!
+}
+
 type PipelineRun {
   runId: String!
   status: PipelineRunStatus!
-  pipeline: Pipeline!
+  pipeline: PipelineReference!
   logs: LogMessageConnection!
   computeLogs(stepKey: String!): ComputeLogs!
-  executionPlan: ExecutionPlan!
+  executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
   environmentConfigYaml: String!
   mode: String!
@@ -950,6 +954,10 @@ type TypeCheck implements DisplayableEvent {
   description: String
   metadataEntries: [EventMetadataEntry!]!
   success: Boolean!
+}
+
+type UnknownPipeline implements PipelineReference {
+  name: String!
 }
 
 interface WrappingConfigType {

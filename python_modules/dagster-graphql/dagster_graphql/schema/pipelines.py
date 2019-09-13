@@ -17,10 +17,30 @@ from .runtime_types import to_dauphin_runtime_type
 from .solids import DauphinSolidContainer, build_dauphin_solid_handles, build_dauphin_solids
 
 
+class DauphinPipelineReference(dauphin.Interface):
+    '''This interface supports the case where we can look up a pipeline successfully in the
+    repository available to the DagsterInstance/graphql context, as well as the case where we know
+    that a pipeline exists/existed thanks to materialized data such as logs and run metadata, but
+    where we can't look the concrete pipeline up.'''
+
+    class Meta:
+        name = 'PipelineReference'
+
+    name = dauphin.NonNull(dauphin.String)
+
+
+class DauphinUnknownPipeline(dauphin.ObjectType):
+    class Meta:
+        name = 'UnknownPipeline'
+        interfaces = (DauphinPipelineReference,)
+
+    name = dauphin.NonNull(dauphin.String)
+
+
 class DauphinPipeline(dauphin.ObjectType):
     class Meta:
         name = 'Pipeline'
-        interfaces = [DauphinSolidContainer]
+        interfaces = (DauphinSolidContainer, DauphinPipelineReference)
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()

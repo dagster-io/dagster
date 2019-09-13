@@ -5,11 +5,14 @@ from .setup import define_context
 COMPOSITES_QUERY = '''
 query CompositesQuery {
   pipeline(params: { name: "composites_pipeline" }) {
-    name
-    solidHandles {
-      handleID
-      solid {
-        ...SolidInfo
+    __typename
+    ... on Pipeline {
+      name
+      solidHandles {
+        handleID
+        solid {
+          ...SolidInfo
+        }
       }
     }
   }

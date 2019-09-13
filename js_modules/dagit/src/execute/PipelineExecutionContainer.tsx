@@ -84,13 +84,13 @@ export default class PipelineExecutionContainer extends React.Component<
         ... on InvalidSubsetError {
           message
           pipeline {
+            name
             ...PipelineDetailsFragment
           }
         }
       }
 
       fragment PipelineDetailsFragment on Pipeline {
-        name
         modes {
           name
           description
@@ -381,6 +381,9 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
       ... on StartPipelineExecutionSuccess {
         run {
           runId
+          pipeline {
+            name
+          }
         }
       }
       ... on PipelineNotFoundError {

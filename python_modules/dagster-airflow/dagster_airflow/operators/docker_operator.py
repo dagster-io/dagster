@@ -332,14 +332,13 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             try:
                 handle_execution_errors(res, 'executePlan')
             except DagsterGraphQLClientError:
+                event = build_synthetic_pipeline_error_record(
+                    self.run_id,
+                    serializable_error_info_from_exc_info(sys.exc_info()),
+                    self.pipeline_name,
+                )
                 if self.instance:
-                    self.instance.handle_new_event(
-                        build_synthetic_pipeline_error_record(
-                            self.run_id,
-                            serializable_error_info_from_exc_info(sys.exc_info()),
-                            self.pipeline_name,
-                        )
-                    )
+                    self.instance.handle_new_event(event)
                 raise
 
             events = handle_execute_plan_result_raw(res)

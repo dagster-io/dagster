@@ -13,7 +13,7 @@ from dagster_graphql.implementation.execution import (
     start_pipeline_execution,
 )
 from dagster_graphql.implementation.fetch_pipelines import (
-    get_dauphin_pipeline_from_selector,
+    get_dauphin_pipeline_reference_from_selector,
     get_pipeline_or_error,
     get_pipeline_or_raise,
     get_pipelines_or_error,
@@ -276,7 +276,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
             not selector.solid_subset,
             "Invalid ExecutionParams. Cannot define selector.solid_subset when using preset",
         )
-        dauphin_pipeline = get_dauphin_pipeline_from_selector(graphene_info, selector)
+        dauphin_pipeline = get_dauphin_pipeline_reference_from_selector(graphene_info, selector)
         pipeline = dauphin_pipeline.get_dagster_pipeline()
 
         if not pipeline.has_preset(preset_name):

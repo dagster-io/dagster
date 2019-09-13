@@ -55,9 +55,13 @@ export const ConfigEditorPresetsPicker: React.FunctionComponent<
     fetchPolicy: "network-only",
     variables: { pipelineName }
   });
-  const presets = ((data && data.pipeline && data.pipeline.presets) || []).sort(
-    (a, b) => a.name.localeCompare(b.name)
-  );
+  const presets = (
+    (data &&
+      data.pipeline &&
+      data.pipeline.__typename === "Pipeline" &&
+      data.pipeline.presets) ||
+    []
+  ).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div>
@@ -88,6 +92,7 @@ export const CONFIG_PRESETS_QUERY = gql`
     pipeline(params: { name: $pipelineName }) {
       name
       presets {
+        __typename
         name
         solidSubset
         environmentConfigYaml

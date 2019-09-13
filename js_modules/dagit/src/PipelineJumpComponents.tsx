@@ -8,6 +8,7 @@ import { SolidJumpBarFragment_solids } from "./types/SolidJumpBarFragment";
 
 interface IPipelineJumpBarProps {
   pipelines: Array<PipelineJumpBarFragment>;
+  selectedPipelineName: string | undefined;
   selectedPipeline: PipelineJumpBarFragment | undefined;
   onItemSelect: (pipeline: PipelineJumpBarFragment) => void;
 }
@@ -113,7 +114,12 @@ export class PipelineJumpBar extends React.Component<IPipelineJumpBarProps> {
   };
 
   render() {
-    const { pipelines, selectedPipeline, onItemSelect } = this.props;
+    const {
+      onItemSelect,
+      pipelines,
+      selectedPipeline,
+      selectedPipelineName
+    } = this.props;
 
     return (
       <GlobalKeyHandler onGlobalKeydown={this.onGlobalKeydown}>
@@ -128,8 +134,13 @@ export class PipelineJumpBar extends React.Component<IPipelineJumpBarProps> {
           <Button
             style={{ minWidth: 230, justifyContent: "space-between" }}
             text={
-              selectedPipeline ? selectedPipeline.name : "Select a Pipeline..."
+              selectedPipeline
+                ? selectedPipeline.name
+                : selectedPipelineName
+                ? selectedPipelineName
+                : "Select a pipeline..."
             }
+            disabled={!selectedPipeline && !!selectedPipelineName}
             rightIcon="double-caret-vertical"
           />
         </PipelineSelect>

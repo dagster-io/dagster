@@ -14,7 +14,7 @@ export interface StartPipelineExecution_startPipelineExecution_InvalidStepError 
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_pipeline {
-  __typename: "Pipeline";
+  __typename: "Pipeline" | "UnknownPipeline";
   name: string;
 }
 

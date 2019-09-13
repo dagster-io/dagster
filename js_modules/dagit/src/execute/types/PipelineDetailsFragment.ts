@@ -436,8 +436,8 @@ export type PipelineDetailsFragment_configTypes = PipelineDetailsFragment_config
 
 export interface PipelineDetailsFragment {
   __typename: "Pipeline";
-  name: string;
   modes: PipelineDetailsFragment_modes[];
+  name: string;
   environmentType: PipelineDetailsFragment_environmentType;
   configTypes: PipelineDetailsFragment_configTypes[];
 }

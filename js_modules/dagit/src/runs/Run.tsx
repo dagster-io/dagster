@@ -52,9 +52,14 @@ export class Run extends React.Component<IRunProps, IRunState> {
         runId
         mode
         pipeline {
-          name
-          solids {
+          __typename
+          ... on PipelineReference {
             name
+          }
+          ... on Pipeline {
+            solids {
+              name
+            }
           }
         }
         logs {
@@ -140,7 +145,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
     stepKey?: string
   ) => {
     const { run } = this.props;
-    if (!run) return;
+    if (!run || run.pipeline.__typename === "UnknownPipeline") return;
 
     const variables: ReexecuteVariables = {
       executionParams: {
@@ -153,7 +158,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
       }
     };
 
-    if (stepKey) {
+    if (stepKey && run.executionPlan) {
       const step = run.executionPlan.steps.find(s => s.key === stepKey);
       if (!step) return;
 
@@ -192,9 +197,10 @@ export class Run extends React.Component<IRunProps, IRunState> {
       ? run.stepKeysToExecute
       : null;
 
-    const executionPlan: RunFragment_executionPlan = run
-      ? run.executionPlan
-      : { __typename: "ExecutionPlan", steps: [], artifactsPersisted: false };
+    const executionPlan: RunFragment_executionPlan =
+      run && run.executionPlan
+        ? run.executionPlan
+        : { __typename: "ExecutionPlan", steps: [], artifactsPersisted: false };
 
     return (
       <Mutation<Reexecute, ReexecuteVariables> mutation={REEXECUTE_MUTATION}>
@@ -233,6 +239,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
               <RunMetadataProvider logs={logs || []}>
                 {metadata => (
                   <ExecutionPlan
+                    run={run}
                     runMetadata={metadata}
                     executionPlan={executionPlan}
                     stepKeysToExecute={stepKeysToExecute}

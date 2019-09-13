@@ -12,7 +12,7 @@ export interface HandleStartExecutionFragment_InvalidStepError {
 }
 
 export interface HandleStartExecutionFragment_StartPipelineExecutionSuccess_run_pipeline {
-  __typename: "Pipeline";
+  __typename: "Pipeline" | "UnknownPipeline";
   name: string;
 }
 

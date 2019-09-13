@@ -19,7 +19,10 @@ from dagster.core.serdes import serialize_dagster_namedtuple
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 
-from .fetch_pipelines import get_dauphin_pipeline_from_selector
+from .fetch_pipelines import (
+    get_dauphin_pipeline_from_selector_or_raise,
+    get_dauphin_pipeline_reference_from_selector,
+)
 from .fetch_runs import get_validated_config, validate_config
 from .pipeline_run_storage import PipelineRunObservableSubscribe
 from .utils import UserFacingGraphQLError, capture_dauphin_error
@@ -33,7 +36,9 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
 
     instance = graphene_info.context.instance
 
-    dauphin_pipeline = get_dauphin_pipeline_from_selector(graphene_info, execution_params.selector)
+    dauphin_pipeline = get_dauphin_pipeline_from_selector_or_raise(
+        graphene_info, execution_params.selector
+    )
 
     get_validated_config(
         graphene_info,
@@ -140,7 +145,13 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
-    pipeline = get_dauphin_pipeline_from_selector(graphene_info, run.selector)
+    pipeline = get_dauphin_pipeline_reference_from_selector(graphene_info, run.selector)
+
+    from ..schema.pipelines import DauphinPipeline
+
+    if not isinstance(pipeline, DauphinPipeline):
+        return Observable.empty()  # pylint: disable=no-member
+
     execution_plan = create_execution_plan(
         pipeline.get_dagster_pipeline(), run.environment_dict, RunConfig(mode=run.mode)
     )
@@ -206,7 +217,7 @@ def do_execute_plan(graphene_info, execution_params):
     return _execute_plan_resolve_config(
         graphene_info,
         execution_params,
-        get_dauphin_pipeline_from_selector(graphene_info, execution_params.selector),
+        get_dauphin_pipeline_from_selector_or_raise(graphene_info, execution_params.selector),
     )
 
 
