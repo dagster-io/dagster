@@ -1,5 +1,4 @@
 # pylint: disable=no-value-for-parameter
-
 import dagster.check as check
 from dagster import (
     DependencyDefinition,

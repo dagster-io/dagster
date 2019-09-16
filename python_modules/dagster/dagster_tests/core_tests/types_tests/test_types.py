@@ -3,6 +3,7 @@ import pytest
 from dagster import (
     DagsterInvariantViolationError,
     DagsterTypeCheckError,
+    EventMetadataEntry,
     Failure,
     InputDefinition,
     OutputDefinition,
@@ -11,6 +12,7 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     pipeline,
+    solid,
 )
 from dagster.core.types import Int, List, Optional, PythonObjectType
 from dagster.core.types.runtime import resolve_to_runtime_type
@@ -362,3 +364,58 @@ def test_output_type_throw_arbitrary_exception():
 
     step_failure_event = solid_result.compute_step_failure_event
     assert step_failure_event.event_specific_data.error.cls_name == 'Exception'
+
+
+def define_custom_dict(name, permitted_key_names):
+    class _CustomDict(RuntimeType):
+        def __init__(self):
+            super(_CustomDict, self).__init__(name=name, key=name)
+
+        def type_check(self, value):
+            if not isinstance(value, dict):
+                raise Failure(
+                    'Value {value} should be of type {type_name}.'.format(
+                        value=value, type_name=self.name
+                    )
+                )
+            for key in value:
+                if not key in permitted_key_names:
+                    raise Failure(
+                        'Key {name} is not a permitted value, values can only be of: {name_list}'.format(
+                            name=value.name, name_list=permitted_key_names
+                        )
+                    )
+            return TypeCheck(
+                metadata_entries=[
+                    EventMetadataEntry.text(label='row_count', text=str(len(value))),
+                    EventMetadataEntry.text(label='series_names', text=', '.join(value.keys())),
+                ]
+            )
+
+    return _CustomDict
+
+
+def test_fan_in_custom_types_with_storage():
+    CustomDict = define_custom_dict('CustomDict', ['foo', 'bar'])
+
+    @solid(output_defs=[OutputDefinition(CustomDict)])
+    def return_dict_1(_context):
+        return {'foo': 3}
+
+    @solid(output_defs=[OutputDefinition(CustomDict)])
+    def return_dict_2(_context):
+        return {'bar': 'zip'}
+
+    @solid(input_defs=[InputDefinition('dicts', List[CustomDict])])
+    def get_foo(_context, dicts):
+        return dicts[0]['foo']
+
+    @pipeline
+    def dict_pipeline():
+        # Fan-in
+        get_foo([return_dict_1(), return_dict_2()])  # pylint: disable=no-value-for-parameter
+
+    pipeline_result = execute_pipeline(
+        dict_pipeline, environment_dict={'storage': {'filesystem': {}}}
+    )
+    assert pipeline_result.success

@@ -141,6 +141,10 @@ def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):
         )
 
 
+class MultipleStepOutputsListWrapper(list):
+    pass
+
+
 def _input_values_from_intermediates_manager(step_context):
     step = step_context.step
 
@@ -150,12 +154,23 @@ def _input_values_from_intermediates_manager(step_context):
             continue
 
         if step_input.is_from_multiple_outputs:
-            input_value = [
+            if hasattr(step_input.runtime_type, 'inner_type'):
+                runtime_type = step_input.runtime_type.inner_type
+            else:  # This is the case where the fan-in is typed Any
+                runtime_type = step_input.runtime_type
+            _input_value = [
                 step_context.intermediates_manager.get_intermediate(
-                    step_context, step_input.runtime_type, source_handle
+                    step_context, runtime_type, source_handle
                 )
                 for source_handle in step_input.source_handles
             ]
+            # When we're using an object store-backed intermediate store, we wrap the
+            # ObjectStoreOperation[] representing the fan-in values in a MultipleStepOutputsListWrapper
+            # so we can yield the relevant object store events and unpack the values in the caller
+            if all((isinstance(x, ObjectStoreOperation) for x in _input_value)):
+                input_value = MultipleStepOutputsListWrapper(_input_value)
+            else:
+                input_value = _input_value
 
         elif step_input.is_from_single_output:
             input_value = step_context.intermediates_manager.get_intermediate(
@@ -460,6 +475,12 @@ def _core_dagster_event_sequence_for_step(step_context):
                 step_context, ObjectStoreOperation.serializable(input_value, value_name=input_name)
             )
             inputs[input_name] = input_value.obj
+        elif isinstance(input_value, MultipleStepOutputsListWrapper):
+            for op in input_value:
+                yield DagsterEvent.object_store_operation(
+                    step_context, ObjectStoreOperation.serializable(op, value_name=input_name)
+                )
+            inputs[input_name] = [op.obj for op in input_value]
         else:
             inputs[input_name] = input_value
 
