@@ -20,7 +20,7 @@ class PipelineRun(
         '_PipelineRun',
         (
             'pipeline_name run_id environment_dict mode selector reexecution_config '
-            'step_keys_to_execute tags status'
+            'step_keys_to_execute status tags'
         ),
     )
 ):
@@ -49,8 +49,8 @@ class PipelineRun(
         selector,
         reexecution_config,
         step_keys_to_execute,
-        tags,
         status,
+        tags=None,
     ):
         from dagster.core.definitions.pipeline import ExecutionSelector
         from dagster.core.execution.config import ReexecutionConfig
@@ -70,8 +70,8 @@ class PipelineRun(
             step_keys_to_execute=None
             if step_keys_to_execute is None
             else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
-            tags=check.opt_dict_param(tags, 'tags', key_type=str),
             status=status,
+            tags=check.opt_dict_param(tags, 'tags', key_type=str),
         )
 
     def run_with_status(self, status):
