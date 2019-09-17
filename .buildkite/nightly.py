@@ -11,7 +11,7 @@ sys.path.append(SCRIPT_PATH)
 
 def publish_docker_images():
     # e.g. 27, 35, 36, 37
-    python_versions = [''.join(py_version[0].split('.')[:2]) for py_version in SupportedPythons]
+    python_versions = [''.join(py_version.split('.')[:2]) for py_version in SupportedPythons]
 
     return [
         StepBuilder("docker image %s" % version)
@@ -23,7 +23,7 @@ def publish_docker_images():
             "make build-public-{version}".format(version=version),
             "make push-public-{version}".format(version=version),
         )
-        .on_integration_image(SupportedPython.V3_7)
+        .on_integration_image(SupportedPython.V3_7, ['BUILDKITE_SECRETS_BUCKET'])
         .on_queue(BuildkiteQueue.DOCKER)
         .with_timeout(30)
         .build()
