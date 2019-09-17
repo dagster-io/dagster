@@ -20,12 +20,6 @@ from dagster.utils import mkdir_p
 from .pipeline_run import PipelineRunStatus
 
 
-class EventLogNotFoundForRun(DagsterError):
-    def __init__(self, *args, **kwargs):
-        self.run_id = check.str_param(kwargs.pop('run_id'), 'run_id')
-        super(EventLogNotFoundForRun, self).__init__(*args, **kwargs)
-
-
 class EventLogInvalidForRun(DagsterError):
     def __init__(self, *args, **kwargs):
         self.run_id = check.str_param(kwargs.pop('run_id'), 'run_id')
@@ -56,25 +50,6 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
             event (EventRecord): The event to store.
         '''
 
-    @abstractmethod
-    def new_run(self, run_id):
-        '''Prepare event storage for a new run.
-
-        Args:
-            run_id (str)
-        '''
-
-    @abstractmethod
-    def has_run(self, run_id):
-        '''Check if a run is known to this storage.
-
-        Args:
-            run_id (str)
-        
-        Returns:
-            bool
-        '''
-
     @property
     @abstractmethod
     def is_persistent(self):
@@ -100,15 +75,6 @@ class InMemoryEventLogStorage(EventLogStorage):
     def __init__(self):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
-        self._run_ids = set([])
-
-    def new_run(self, run_id):
-        check.str_param(run_id, 'run_id')
-        self._run_ids.add(run_id)
-
-    def has_run(self, run_id):
-        check.str_param(run_id, 'run_id')
-        return run_id in self._run_ids
 
     def get_logs_for_run(self, run_id, cursor=-1):
         check.str_param(run_id, 'run_id')
@@ -118,8 +84,6 @@ class InMemoryEventLogStorage(EventLogStorage):
             'Don\'t know what to do with negative cursor {cursor}'.format(cursor=cursor),
         )
 
-        if not self.has_run(run_id):
-            raise EventLogNotFoundForRun(run_id=run_id)
         cursor = cursor + 1
         with self._lock[run_id]:
             return self._logs[run_id][cursor:]
@@ -137,7 +101,6 @@ class InMemoryEventLogStorage(EventLogStorage):
     def wipe(self):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
-        self._run_ids = set([])
 
 
 CREATE_EVENT_LOG_SQL = '''
@@ -146,9 +109,11 @@ CREATE TABLE IF NOT EXISTS event_logs (
     event TEXT
 )
 '''
+
 FETCH_EVENTS_SQL = '''
 SELECT event FROM event_logs WHERE row_id >= ? ORDER BY row_id ASC
 '''
+
 INSERT_EVENT_SQL = '''
 INSERT INTO event_logs (event) VALUES (?)
 '''
@@ -159,6 +124,7 @@ class FilesystemEventLogStorage(WatchableEventLogStorage):
         self._base_dir = check.str_param(base_dir, 'base_dir')
         mkdir_p(self._base_dir)
 
+        self._known_run_ids = set([])
         self._watchers = {}
         self._obs = Observer()
         self._obs.start()
@@ -175,18 +141,13 @@ class FilesystemEventLogStorage(WatchableEventLogStorage):
         check.str_param(run_id, 'run_id')
         return os.path.join(self._base_dir, '{run_id}.db'.format(run_id=run_id))
 
-    def new_run(self, run_id):
-        check.str_param(run_id, 'run_id')
-        with self._connect(run_id) as conn:
-            conn.cursor().execute(CREATE_EVENT_LOG_SQL)
-
-    def has_run(self, run_id):
-        check.str_param(run_id, 'run_id')
-        return os.path.exists(self.filepath_for_run_id(run_id))
-
     def store_event(self, event):
         check.inst_param(event, 'event', EventRecord)
         run_id = event.run_id
+        if not run_id in self._known_run_ids:
+            with self._connect(run_id) as conn:
+                conn.cursor().execute(CREATE_EVENT_LOG_SQL)
+                self._known_run_ids.add(run_id)
         with self._connect(run_id) as conn:
             conn.cursor().execute(INSERT_EVENT_SQL, (serialize_dagster_namedtuple(event),))
 
@@ -198,10 +159,10 @@ class FilesystemEventLogStorage(WatchableEventLogStorage):
             'Don\'t know what to do with negative cursor {cursor}'.format(cursor=cursor),
         )
 
-        if not self.has_run(run_id):
-            raise EventLogNotFoundForRun(run_id=run_id)
-
         events = []
+        if not os.path.exists(self.filepath_for_run_id(run_id)):
+            return events
+
         try:
             with self._connect(run_id) as conn:
                 results = conn.cursor().execute(FETCH_EVENTS_SQL, (str(cursor),)).fetchall()

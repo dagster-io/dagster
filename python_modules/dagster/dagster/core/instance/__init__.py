@@ -238,7 +238,6 @@ class DagsterInstance:
         )
 
         run = self._run_storage.add_run(pipeline_run)
-        self._event_storage.new_run(run.run_id)
         return run
 
     def get_or_create_run(self, pipeline_run):
