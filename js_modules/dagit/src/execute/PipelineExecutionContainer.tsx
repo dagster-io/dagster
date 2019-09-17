@@ -17,7 +17,8 @@ import { PanelDivider } from "../PanelDivider";
 import SolidSelector from "./SolidSelector";
 import {
   ConfigEditor,
-  ConfigEditorHelpContext
+  ConfigEditorHelpContext,
+  isHelpContextEqual
 } from "../configeditor/ConfigEditor";
 import { ConfigEditorPresetsPicker } from "./ConfigEditorPresetsPicker";
 import ConfigEditorModePicker from "./ConfigEditorModePicker";
@@ -221,7 +222,7 @@ export default class PipelineExecutionContainer extends React.Component<
 
   render() {
     const { currentSession, pipelineName } = this.props;
-    const { preview } = this.state;
+    const { preview, editorHelpContext } = this.state;
     const pipeline = this.getPipeline();
     const subsetError = this.getSubsetError();
 
@@ -266,7 +267,7 @@ export default class PipelineExecutionContainer extends React.Component<
                   />
                 )}
               </ConfigEditorPresetInsertionContainer>
-              <ConfigEditorHelp context={this.state.editorHelpContext} />
+              <ConfigEditorHelp context={editorHelpContext} />
               <ApolloConsumer>
                 {client => (
                   <ConfigEditor
@@ -274,9 +275,11 @@ export default class PipelineExecutionContainer extends React.Component<
                     pipeline={pipeline}
                     configCode={currentSession.environmentConfigYaml}
                     onConfigChange={this.onConfigChange}
-                    onHelpContextChange={editorHelpContext =>
-                      this.setState({ editorHelpContext })
-                    }
+                    onHelpContextChange={next => {
+                      if (!isHelpContextEqual(editorHelpContext, next)) {
+                        this.setState({ editorHelpContext: next });
+                      }
+                    }}
                     showWhitespace={this.state.showWhitespace}
                     checkConfig={async environmentConfigData => {
                       if (!pipeline) return { isValid: true };

@@ -2,7 +2,10 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
-import { ConfigEditorHelpContext } from "../configeditor/ConfigEditor";
+import {
+  ConfigEditorHelpContext,
+  isHelpContextEqual
+} from "../configeditor/ConfigEditor";
 import ConfigTypeSchema from "../ConfigTypeSchema";
 
 interface ConfigEditorHelpProps {
@@ -22,9 +25,7 @@ export const ConfigEditorHelp: React.FunctionComponent<
       </Container>
     );
   },
-  (prev, next) =>
-    (prev.context ? prev.context.type.key : "") ===
-    (next.context ? next.context.type.key : "")
+  (prev, next) => isHelpContextEqual(prev.context, next.context)
 );
 
 export const ConfigEditorHelpConfigTypeFragment = gql`

@@ -29,6 +29,13 @@ import {
 } from "./codemirror-yaml/mode";
 import { debounce } from "../Util";
 
+export function isHelpContextEqual(
+  prev: ConfigEditorHelpContext | null,
+  next: ConfigEditorHelpContext | null
+) {
+  return (prev && prev.type.key) === (next && next.type.key);
+}
+
 interface ConfigEditorProps {
   checkConfig: YamlModeLintJson;
   configCode: string;
