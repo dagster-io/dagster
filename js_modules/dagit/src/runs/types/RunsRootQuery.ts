@@ -9,9 +9,15 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 // GraphQL query operation: RunsRootQuery
 // ====================================================
 
+export interface RunsRootQuery_pipelineRuns_pipeline_solids {
+  __typename: "Solid";
+  name: string;
+}
+
 export interface RunsRootQuery_pipelineRuns_pipeline {
   __typename: "Pipeline";
   name: string;
+  solids: RunsRootQuery_pipelineRuns_pipeline_solids[];
 }
 
 export interface RunsRootQuery_pipelineRuns_logs_nodes_ExecutionStepFailureEvent {
