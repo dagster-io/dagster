@@ -1,6 +1,7 @@
 import gql from "graphql-tag";
 import { ValidationResult } from "./codemirror-yaml/mode";
 import { ConfigEditorValidationFragment } from "./types/ConfigEditorValidationFragment";
+import { ConfigEditorHelpConfigTypeFragment } from "../execute/ConfigEditorHelp";
 
 export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
   fragment ConfigEditorPipelineFragment on Pipeline {
@@ -30,6 +31,7 @@ export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
             name
             isList
             isNullable
+            ...ConfigEditorHelpConfigTypeFragment
             ... on ListConfigType {
               innerTypes {
                 __typename
@@ -49,8 +51,10 @@ export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
           }
         }
       }
+      ...ConfigEditorHelpConfigTypeFragment
     }
   }
+  ${ConfigEditorHelpConfigTypeFragment}
 `;
 
 export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`

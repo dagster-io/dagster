@@ -2,8 +2,9 @@ import * as React from "react";
 import styled from "styled-components";
 import { Icon, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
+import { IExecutionSessionChanges, IExecutionSession } from "../LocalStorage";
 
-interface IExecutationTabProps {
+interface ExecutationTabProps {
   title: string;
   active?: boolean;
   unsaved?: boolean;
@@ -12,13 +13,13 @@ interface IExecutationTabProps {
   onClick: () => void;
 }
 
-interface IExecutationTabState {
+interface ExecutationTabState {
   editing: boolean;
 }
 
-export class ExecutionTab extends React.Component<
-  IExecutationTabProps,
-  IExecutationTabState
+class ExecutionTab extends React.Component<
+  ExecutationTabProps,
+  ExecutationTabState
 > {
   input = React.createRef<HTMLInputElement>();
 
@@ -74,7 +75,67 @@ export class ExecutionTab extends React.Component<
   }
 }
 
-export const ExecutionTabs = styled.div`
+interface ExecutionTabsProps {
+  currentSession: IExecutionSession;
+  sessions: { [name: string]: IExecutionSession };
+  onCreateSession: (initial?: IExecutionSessionChanges) => void;
+  onSelectSession: (session: string) => void;
+  onRemoveSession: (session: string) => void;
+  onSaveSession: (session: string, changes: IExecutionSessionChanges) => void;
+}
+
+export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
+  shouldComponentUpdate(prevProps: ExecutionTabsProps) {
+    const prevSessions = Object.values(prevProps.sessions)
+      .map(s => s.name + s.key)
+      .join(",");
+    const nextSessions = Object.values(this.props.sessions)
+      .map(s => s.name + s.key)
+      .join(",");
+    return (
+      prevSessions !== nextSessions ||
+      prevProps.currentSession.key !== this.props.currentSession.key
+    );
+  }
+
+  render() {
+    const {
+      sessions,
+      currentSession,
+      onSelectSession,
+      onSaveSession,
+      onRemoveSession,
+      onCreateSession
+    } = this.props;
+
+    return (
+      <ExecutionTabsContainer>
+        {Object.keys(sessions).map(key => (
+          <ExecutionTab
+            key={key}
+            active={key === currentSession.key}
+            title={sessions[key].name}
+            onClick={() => onSelectSession(key)}
+            onChange={name => onSaveSession(key, { name })}
+            onRemove={
+              Object.keys(sessions).length > 1
+                ? () => onRemoveSession(key)
+                : undefined
+            }
+          />
+        ))}
+        <ExecutionTab
+          title={"Add..."}
+          onClick={() => {
+            onCreateSession();
+          }}
+        />
+      </ExecutionTabsContainer>
+    );
+  }
+}
+
+export const ExecutionTabsContainer = styled.div`
   display; flex;
   z-index: 1;
   flex-direction: row;
