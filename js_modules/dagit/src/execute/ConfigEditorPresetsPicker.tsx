@@ -9,6 +9,7 @@ import {
 import gql from "graphql-tag";
 import { IExecutionSession } from "../LocalStorage";
 import ApolloClient from "apollo-client";
+import { isEqual } from "apollo-utilities";
 
 type Preset = ConfigPresetsQuery_pipeline_presets;
 
@@ -22,7 +23,7 @@ interface ConfigEditorPresetsPickerProps {
 
 export const ConfigEditorPresetsPicker: React.FunctionComponent<
   ConfigEditorPresetsPickerProps
-> = props => {
+> = React.memo(props => {
   const { pipelineName, onCreateSession } = props;
 
   const onPresetSelect = async (
@@ -80,7 +81,7 @@ export const ConfigEditorPresetsPicker: React.FunctionComponent<
       </PresetSelect>
     </div>
   );
-};
+}, isEqual);
 
 export const CONFIG_PRESETS_QUERY = gql`
   query ConfigPresetsQuery($pipelineName: String!) {
