@@ -21,7 +21,8 @@ from dagster.utils.log import (
 class EventRecord(
     namedtuple(
         '_EventRecord',
-        'error_info message level user_message run_id timestamp step_key pipeline_name dagster_event',
+        'error_info message level user_message run_id timestamp step_key pipeline_name '
+        'dagster_event',
     )
 ):
     def __new__(

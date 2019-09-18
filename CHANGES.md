@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.9
+- Fixes an issue using custom types for fan-in dependencies with intermediate storage.
+
+## 0.5.8
+- Fixes an issue running some Dagstermill notebooks on Windows.
+- Fixes a transitive dependency issue with Airflow.
+- Bugfixes, performance improvements, and better documentation.
+
 ## 0.5.7
 - Fixed an issue with specifying composite output mappings (#1674)
 - Added support for specifying

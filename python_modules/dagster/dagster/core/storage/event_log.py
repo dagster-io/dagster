@@ -11,12 +11,25 @@ import six
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from dagster import check
+from dagster import check, seven
+from dagster.core.errors import DagsterError
 from dagster.core.events.log import EventRecord
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import mkdir_p
 
 from .pipeline_run import PipelineRunStatus
+
+
+class EventLogNotFoundForRun(DagsterError):
+    def __init__(self, *args, **kwargs):
+        self.run_id = check.str_param(kwargs.pop('run_id'), 'run_id')
+        super(EventLogNotFoundForRun, self).__init__(*args, **kwargs)
+
+
+class EventLogInvalidForRun(DagsterError):
+    def __init__(self, *args, **kwargs):
+        self.run_id = check.str_param(kwargs.pop('run_id'), 'run_id')
+        super(EventLogInvalidForRun, self).__init__(*args, **kwargs)
 
 
 class EventLogSequence(pyrsistent.CheckedPVector):
@@ -51,6 +64,17 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
             run_id (str)
         '''
 
+    @abstractmethod
+    def has_run(self, run_id):
+        '''Check if a run is known to this storage.
+
+        Args:
+            run_id (str)
+        
+        Returns:
+            bool
+        '''
+
     @property
     @abstractmethod
     def is_persistent(self):
@@ -65,23 +89,38 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 class WatchableEventLogStorage(EventLogStorage):
     @abstractmethod
     def watch(self, run_id, start_cursor, callback):
-        pass
+        '''Call this method to start watching.'''
 
     @abstractmethod
     def end_watch(self, run_id, handler):
-        pass
+        '''Call this method to stop watching.'''
 
 
 class InMemoryEventLogStorage(EventLogStorage):
     def __init__(self):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
+        self._run_ids = set([])
 
     def new_run(self, run_id):
-        pass
+        check.str_param(run_id, 'run_id')
+        self._run_ids.add(run_id)
+
+    def has_run(self, run_id):
+        check.str_param(run_id, 'run_id')
+        return run_id in self._run_ids
 
     def get_logs_for_run(self, run_id, cursor=-1):
-        cursor = int(cursor) + 1
+        check.str_param(run_id, 'run_id')
+        check.int_param(cursor, 'cursor')
+        check.invariant(
+            cursor >= -1,
+            'Don\'t know what to do with negative cursor {cursor}'.format(cursor=cursor),
+        )
+
+        if not self.has_run(run_id):
+            raise EventLogNotFoundForRun(run_id=run_id)
+        cursor = cursor + 1
         with self._lock[run_id]:
             return self._logs[run_id][cursor:]
 
@@ -90,6 +129,7 @@ class InMemoryEventLogStorage(EventLogStorage):
         return False
 
     def store_event(self, event):
+        check.inst_param(event, 'event', EventRecord)
         run_id = event.run_id
         with self._lock[run_id]:
             self._logs[run_id] = self._logs[run_id].append(event)
@@ -97,6 +137,7 @@ class InMemoryEventLogStorage(EventLogStorage):
     def wipe(self):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
+        self._run_ids = set([])
 
 
 CREATE_EVENT_LOG_SQL = '''
@@ -131,24 +172,51 @@ class FilesystemEventLogStorage(WatchableEventLogStorage):
             conn.close()
 
     def filepath_for_run_id(self, run_id):
+        check.str_param(run_id, 'run_id')
         return os.path.join(self._base_dir, '{run_id}.db'.format(run_id=run_id))
 
     def new_run(self, run_id):
+        check.str_param(run_id, 'run_id')
         with self._connect(run_id) as conn:
             conn.cursor().execute(CREATE_EVENT_LOG_SQL)
 
+    def has_run(self, run_id):
+        check.str_param(run_id, 'run_id')
+        return os.path.exists(self.filepath_for_run_id(run_id))
+
     def store_event(self, event):
+        check.inst_param(event, 'event', EventRecord)
         run_id = event.run_id
         with self._connect(run_id) as conn:
             conn.cursor().execute(INSERT_EVENT_SQL, (serialize_dagster_namedtuple(event),))
 
     def get_logs_for_run(self, run_id, cursor=-1):
-        events = []
-        with self._connect(run_id) as conn:
-            results = conn.cursor().execute(FETCH_EVENTS_SQL, (str(cursor),)).fetchall()
+        check.str_param(run_id, 'run_id')
+        check.int_param(cursor, 'cursor')
+        check.invariant(
+            cursor >= -1,
+            'Don\'t know what to do with negative cursor {cursor}'.format(cursor=cursor),
+        )
 
-        for (json_str,) in results:
-            events.append(deserialize_json_to_dagster_namedtuple(json_str))
+        if not self.has_run(run_id):
+            raise EventLogNotFoundForRun(run_id=run_id)
+
+        events = []
+        try:
+            with self._connect(run_id) as conn:
+                results = conn.cursor().execute(FETCH_EVENTS_SQL, (str(cursor),)).fetchall()
+        except sqlite3.Error as err:
+            six.raise_from(EventLogInvalidForRun(run_id=run_id), err)
+
+        try:
+            for (json_str,) in results:
+                events.append(
+                    check.inst_param(
+                        deserialize_json_to_dagster_namedtuple(json_str), 'event', EventRecord
+                    )
+                )
+        except (seven.JSONDecodeError, check.CheckError) as err:
+            six.raise_from(EventLogInvalidForRun(run_id=run_id), err)
 
         return events
 

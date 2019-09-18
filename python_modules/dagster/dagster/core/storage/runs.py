@@ -247,7 +247,9 @@ class ExternalRunsWatchdog(PatternMatchingEventHandler):
                 except Exception as ex:  # pylint: disable=broad-except
                     warnings.warn(
                         'Error trying to load .json metadata file in filesystem run '
-                        'storage: {ex}: {msg}'.format(ex=type(ex).__name__, msg=ex)
+                        'storage at path "{path}": {ex}: {msg}'.format(
+                            path=event.src_path, ex=type(ex).__name__, msg=ex
+                        )
                     )
                     return
 

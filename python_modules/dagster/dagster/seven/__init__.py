@@ -1,5 +1,6 @@
 '''Internal py2/3 compatibility library. A little more than six.'''
 
+import inspect
 import os
 import sys
 import time
@@ -84,3 +85,21 @@ except ImportError:
         import mock
     except ImportError:
         pass
+
+
+def get_args(callble):
+    if sys.version_info.major >= 3:
+        return [
+            parameter.name
+            for parameter in inspect.signature(callble).parameters.values()
+            if parameter.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+        ]
+    else:
+        try:
+            if inspect.isclass(callble):
+                return inspect.getargspec(callble.__init__)  # pylint: disable=deprecated-method
+            return inspect.getargspec(callble)  # pylint: disable=deprecated-method
+        except TypeError:
+            # This will happen when we try to get the argspec for a slot wrapper, e.g.:
+            # TypeError: <slot wrapper '__init__' of 'object' objects> is not a Python function
+            return None

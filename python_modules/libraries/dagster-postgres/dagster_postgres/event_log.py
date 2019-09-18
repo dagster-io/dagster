@@ -38,6 +38,12 @@ class PostgresEventLogStorage(WatchableEventLogStorage):
         conn.cursor().execute(CREATE_EVENT_LOG_SQL)
         return PostgresEventLogStorage(conn_string)
 
+    def has_run(self, run_id):
+        check.str_param(run_id, 'run_id')
+        with get_conn(self.conn_string).cursor() as curs:
+            HAS_RUN_SQL = 'SELECT EXISTS(SELECT 1 FROM event_log WHERE run_id = %s);'
+            return curs.execute(HAS_RUN_SQL, (run_id,)) is not None
+
     def get_logs_for_run(self, run_id, cursor=-1):
         '''Get all of the logs corresponding to a run.
 
