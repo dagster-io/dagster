@@ -24,7 +24,30 @@ class PipelineRunStats(
         ),
     )
 ):
-    pass
+    def __new__(
+        cls,
+        run_id,
+        steps_succeeded,
+        steps_failed,
+        materializations,
+        expectations_succeeded,
+        expectations_failed,
+        start_time,
+        end_time,
+    ):
+        return super(PipelineRunStats, cls).__new__(
+            cls,
+            run_id=check.str_param(run_id, 'run_id'),
+            steps_succeeded=check.int_param(steps_succeeded, 'steps_succeeded'),
+            steps_failed=check.int_param(steps_failed, 'steps_failed'),
+            materializations=check.int_param(materializations, 'materializations'),
+            expectations_succeeded=check.int_param(
+                expectations_succeeded, 'expectations_succeeded'
+            ),
+            expectations_failed=check.int_param(expectations_failed, 'expectations_failed'),
+            start_time=check.opt_float_param(start_time, 'start_time'),
+            end_time=check.opt_float_param(end_time, 'end_time'),
+        )
 
 
 @whitelist_for_serdes
