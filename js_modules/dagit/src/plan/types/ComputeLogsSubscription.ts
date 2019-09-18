@@ -21,7 +21,7 @@ export interface ComputeLogsSubscription_computeLogs {
   __typename: "ComputeLogs";
   stdout: ComputeLogsSubscription_computeLogs_stdout | null;
   stderr: ComputeLogsSubscription_computeLogs_stderr | null;
-  cursor: any | null;
+  cursor: string;
 }
 
 export interface ComputeLogsSubscription {
@@ -31,5 +31,5 @@ export interface ComputeLogsSubscription {
 export interface ComputeLogsSubscriptionVariables {
   runId: string;
   stepKey: string;
-  cursor?: any | null;
+  cursor: string;
 }

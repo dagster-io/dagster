@@ -29,7 +29,7 @@ export interface ComputeLogsQuery_pipelineRunOrError_PipelineRun_computeLogs {
   __typename: "ComputeLogs";
   stdout: ComputeLogsQuery_pipelineRunOrError_PipelineRun_computeLogs_stdout | null;
   stderr: ComputeLogsQuery_pipelineRunOrError_PipelineRun_computeLogs_stderr | null;
-  cursor: any | null;
+  cursor: string;
 }
 
 export interface ComputeLogsQuery_pipelineRunOrError_PipelineRun {

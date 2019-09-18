@@ -125,10 +125,7 @@ class DauphinComputeLogs(dauphin.ObjectType):
     stepKey = dauphin.NonNull(dauphin.String)
     stdout = dauphin.Field('ComputeLogFile')
     stderr = dauphin.Field('ComputeLogFile')
-    cursor = dauphin.Field(
-        'Cursor',
-        description='cursor representing the state of the stdout/stderr logs being returned, at query time',
-    )
+    cursor = dauphin.NonNull(dauphin.String)
 
 
 class DauphinComputeLogFile(dauphin.ObjectType):
@@ -139,7 +136,7 @@ class DauphinComputeLogFile(dauphin.ObjectType):
     data = dauphin.NonNull(
         dauphin.String, description="The data output captured from step computation at query time"
     )
-    cursor = dauphin.Field('Cursor')
+    cursor = dauphin.NonNull(dauphin.Int)
     size = dauphin.NonNull(dauphin.Int)
     download_url = dauphin.NonNull(dauphin.String)
 
