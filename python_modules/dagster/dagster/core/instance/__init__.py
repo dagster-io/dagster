@@ -1,4 +1,3 @@
-import configparser
 import logging
 import os
 from abc import ABCMeta
@@ -6,12 +5,14 @@ from collections import defaultdict, namedtuple
 from enum import Enum
 
 import six
+import yaml
 from rx import Observable
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.utils.yaml_utils import load_yaml_from_globs
 
 from .features import DagsterFeatures
 
@@ -21,19 +22,13 @@ def _is_dagster_home_set():
 
 
 def _dagster_config(base_dir):
-    config = configparser.ConfigParser(allow_no_value=True)
-
-    config_path = os.path.join(base_dir, "dagster.cfg")
-    if os.path.exists(config_path):
-        config.read(config_path)
-
-    return config
+    return load_yaml_from_globs(os.path.join(base_dir, "dagster.yaml"))
 
 
 def _dagster_feature_set(base_dir):
     config = _dagster_config(base_dir)
-    if config.has_section('FEATURES'):
-        return {k for k, _ in config.items('FEATURES')}
+    if 'features' in config:
+        return {k for k, _ in config['features']}
     return None
 
 
