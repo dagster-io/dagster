@@ -192,10 +192,14 @@ export default class RunHistory extends React.Component<
       return runs;
     }
     return runs.sort((a, b) => {
-      const aStart = a.stats.startTime || Date.now();
-      const bStart = b.stats.startTime || Date.now();
-      const aEnd = a.stats.endTime || Date.now();
-      const bEnd = b.stats.endTime || Date.now();
+      // start / end time are null if the run is still starting / has not finished.
+      // To ensure that unstarted / unfinished runs are sorted correctly (above
+      // recently finished runs in DESC order, etc.), we assign them a sort value
+      // higher than all unix timestamps.
+      const aStart = a.stats.startTime || Number.MAX_SAFE_INTEGER;
+      const bStart = b.stats.startTime || Number.MAX_SAFE_INTEGER;
+      const aEnd = a.stats.endTime || Number.MAX_SAFE_INTEGER;
+      const bEnd = b.stats.endTime || Number.MAX_SAFE_INTEGER;
       switch (sortType) {
         case RunSort.START_TIME_ASC:
           return aStart - bStart;
