@@ -468,11 +468,6 @@ const RunActionsMenu: React.FunctionComponent<{
             }
           />
           <MenuDivider />
-          {/* <MenuItem
-            text="Cancel"
-            icon="disable"
-            disabled={run.status !== "STARTED"}
-          /> */}
           <MenuItem
             text="Open in Execute Tab..."
             icon="edit"
