@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as qs from "query-string";
-
+import * as yaml from "yaml";
 import { uniq } from "lodash";
 import gql from "graphql-tag";
 import {
@@ -12,7 +12,8 @@ import {
   NonIdealState,
   Popover,
   Position,
-  Spinner
+  Spinner,
+  MenuDivider
 } from "@blueprintjs/core";
 import {
   Details,
@@ -23,8 +24,14 @@ import {
   RowContainer,
   ScrollContainer
 } from "../ListComponents";
-import { IRunStatus, RunStatus, titleForRun } from "./RunUtils";
-import { formatElapsedTime, formatStepKey } from "../Util";
+import {
+  IRunStatus,
+  RunStatus,
+  titleForRun,
+  REEXECUTE_MUTATION,
+  handleStartExecutionResult
+} from "./RunUtils";
+import { formatElapsedTime } from "../Util";
 import {
   TokenizingField,
   TokenizingFieldValue,
@@ -36,6 +43,7 @@ import { Link } from "react-router-dom";
 import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components";
+import { useMutation } from "react-apollo";
 
 function dateString(timestamp: number) {
   if (timestamp === 0) {
@@ -204,6 +212,9 @@ export default class RunHistory extends React.Component<
         environmentConfigYaml
         pipeline {
           name
+          solids {
+            name
+          }
         }
         logs {
           nodes {
@@ -356,7 +367,7 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
   const stats = getDetailedStats(run);
 
   return (
-    <RowContainer key={run.runId}>
+    <RowContainer key={run.runId} style={{ paddingRight: 3 }}>
       <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
         <RunStatus status={start && end ? run.status : "STARTED"} />
       </RowColumn>
@@ -409,44 +420,8 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
             </div>
           )}
         </div>
-        <Popover
-          content={
-            <Menu>
-              <MenuItem
-                text="View Configuration..."
-                icon="share"
-                onClick={() =>
-                  showCustomAlert({
-                    title: "Config",
-                    body: (
-                      <HighlightedCodeBlock
-                        value={run.environmentConfigYaml}
-                        languages={["yaml"]}
-                      />
-                    )
-                  })
-                }
-              />
-              <MenuItem
-                text="Open in Execute View..."
-                icon="edit"
-                target="_blank"
-                href={`/p/${run.pipeline.name}/execute/setup?${qs.stringify({
-                  mode: run.mode,
-                  config: run.environmentConfigYaml,
-                  solidSubset: run.stepKeysToExecute
-                    ? run.stepKeysToExecute.map(formatStepKey)
-                    : undefined
-                })}`}
-              />
-            </Menu>
-          }
-          position={"bottom"}
-        >
-          <Button minimal={true} icon="chevron-down" />
-        </Popover>
       </RowColumn>
-      <RowColumn style={{ flex: 1.6 }}>
+      <RowColumn style={{ flex: 1.8, borderRight: 0 }}>
         {start ? (
           <div style={{ marginBottom: 4 }}>
             <Icon icon="calendar" /> {dateString(start)}
@@ -463,7 +438,75 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
         )}
         <RunTime start={start} end={end} />
       </RowColumn>
+      <RunActionsMenu run={run} />
     </RowContainer>
+  );
+};
+
+const RunActionsMenu: React.FunctionComponent<{
+  run: RunHistoryRunFragment;
+}> = ({ run }) => {
+  const [reexecute] = useMutation(REEXECUTE_MUTATION);
+
+  return (
+    <Popover
+      content={
+        <Menu>
+          <MenuItem
+            text="View Configuration..."
+            icon="share"
+            onClick={() =>
+              showCustomAlert({
+                title: "Config",
+                body: (
+                  <HighlightedCodeBlock
+                    value={run.environmentConfigYaml}
+                    languages={["yaml"]}
+                  />
+                )
+              })
+            }
+          />
+          <MenuDivider />
+          <MenuItem
+            text="Open in Execute Tab..."
+            icon="edit"
+            target="_blank"
+            href={`/p/${run.pipeline.name}/execute/setup?${qs.stringify({
+              mode: run.mode,
+              config: run.environmentConfigYaml,
+              solidSubset: run.pipeline.solids.map(s => s.name)
+            })}`}
+          />
+          <MenuItem
+            text="Re-execute"
+            icon="repeat"
+            onClick={async () => {
+              const result = await reexecute({
+                variables: {
+                  executionParams: {
+                    mode: run.mode,
+                    environmentConfigData: yaml.parse(
+                      run.environmentConfigYaml
+                    ),
+                    selector: {
+                      name: run.pipeline.name,
+                      solidSubset: run.pipeline.solids.map(s => s.name)
+                    }
+                  }
+                }
+              });
+              handleStartExecutionResult(run.pipeline.name, result, {
+                openInNewWindow: false
+              });
+            }}
+          />
+        </Menu>
+      }
+      position={"bottom"}
+    >
+      <Button minimal={true} icon="more" />
+    </Popover>
   );
 };
 

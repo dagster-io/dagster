@@ -21,10 +21,7 @@ import { PanelDivider } from "../PanelDivider";
 import { ExecutionPlan } from "../plan/ExecutionPlan";
 import RunMetadataProvider from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
-import {
-  HANDLE_START_EXECUTION_FRAGMENT,
-  handleStartExecutionResult
-} from "./RunUtils";
+import { handleStartExecutionResult, REEXECUTE_MUTATION } from "./RunUtils";
 import { Reexecute, ReexecuteVariables } from "./types/Reexecute";
 import RunSubscriptionProvider from "./RunSubscriptionProvider";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
@@ -282,22 +279,6 @@ const LogsContainer = styled.div`
   display: flex;
   flex-direction: column;
   background: ${Colors.LIGHT_GRAY5};
-`;
-
-const REEXECUTE_MUTATION = gql`
-  mutation Reexecute(
-    $executionParams: ExecutionParams!
-    $reexecutionConfig: ReexecutionConfig
-  ) {
-    startPipelineExecution(
-      executionParams: $executionParams
-      reexecutionConfig: $reexecutionConfig
-    ) {
-      ...HandleStartExecutionFragment
-    }
-  }
-
-  ${HANDLE_START_EXECUTION_FRAGMENT}
 `;
 
 export const PIPELINE_RUN_LOGS_UPDATE_FRAGMENT = gql`

@@ -9,9 +9,15 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 // GraphQL fragment: RunHistoryRunFragment
 // ====================================================
 
+export interface RunHistoryRunFragment_pipeline_solids {
+  __typename: "Solid";
+  name: string;
+}
+
 export interface RunHistoryRunFragment_pipeline {
   __typename: "Pipeline";
   name: string;
+  solids: RunHistoryRunFragment_pipeline_solids[];
 }
 
 export interface RunHistoryRunFragment_logs_nodes_ExecutionStepFailureEvent {
