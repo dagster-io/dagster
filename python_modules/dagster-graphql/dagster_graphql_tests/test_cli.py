@@ -5,13 +5,12 @@ from click.testing import CliRunner
 from dagster_graphql.cli import ui
 
 from dagster import (
-    DependencyDefinition,
     InputDefinition,
     Int,
     OutputDefinition,
-    PipelineDefinition,
     RepositoryDefinition,
     lambda_solid,
+    pipeline,
     seven,
 )
 from dagster.core.instance import DagsterInstance
@@ -29,16 +28,13 @@ def mult_two(num):
     return num * 2
 
 
-def define_csv_hello_world():
-    return PipelineDefinition(
-        name='math',
-        solid_defs=[add_one, mult_two],
-        dependencies={'add_one': {}, 'mult_two': {'num': DependencyDefinition(add_one.name)}},
-    )
+@pipeline
+def math():
+    mult_two(add_one())  # pylint: disable=no-value-for-parameter
 
 
 def define_repository():
-    return RepositoryDefinition(name='test', pipeline_dict={'math': define_csv_hello_world})
+    return RepositoryDefinition(name='test', pipeline_defs=[math])
 
 
 def test_basic_introspection():

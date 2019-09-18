@@ -10,6 +10,7 @@ from dagster import (
     ScheduleDefinition,
     lambda_solid,
     pipeline,
+    seven,
 )
 from dagster.check import CheckError
 from dagster.cli.load_handle import CliUsageError
@@ -353,9 +354,7 @@ def test_execute_preset_command():
         ],
     )
 
-    # Once https://github.com/dagster-io/dagster/issues/1578 is fixed
-    # we should check stdout for a log message
-    assert add_result.stdout or add_result.stdout == ''
+    assert 'PIPELINE_SUCCESS' in add_result.output
 
     # Can't use -p with --env
     bad_res = runner.invoke(
@@ -577,3 +576,36 @@ def test_schedules_list():
         'Schedule: foo_schedule \n'
         'Cron Schedule: * * * * *\n'
     )
+
+
+def test_multiproc():
+    with seven.TemporaryDirectory() as temp:
+        runner = CliRunner(env={'DAGSTER_HOME': temp})
+        add_result = runner_pipeline_execute(
+            runner,
+            [
+                '-y',
+                script_relative_path('../repository.yaml'),
+                '-p',
+                'multiproc',
+                'multi_mode_with_resources',  # pipeline name
+            ],
+        )
+        assert 'PIPELINE_SUCCESS' in add_result.output
+
+
+def test_multiproc_invalid():
+    # force ephemeral instance by removing out DAGSTER_HOME
+    runner = CliRunner(env={'DAGSTER_HOME': None})
+    add_result = runner_pipeline_execute(
+        runner,
+        [
+            '-y',
+            script_relative_path('../repository.yaml'),
+            '-p',
+            'multiproc',
+            'multi_mode_with_resources',  # pipeline name
+        ],
+    )
+    # which is invalid for multiproc
+    assert 'DagsterUnmetExecutorRequirementsError' in add_result.output

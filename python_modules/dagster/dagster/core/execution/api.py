@@ -102,7 +102,6 @@ def _pipeline_execution_iterator(
             if event.is_step_failure:
                 pipeline_success = False
             yield event
-
     finally:
         if pipeline_success:
             yield DagsterEvent.pipeline_success(pipeline_context)

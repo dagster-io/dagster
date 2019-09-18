@@ -13,7 +13,6 @@ from dagster.core.engine.init import InitExecutorContext
 from dagster.core.errors import (
     DagsterError,
     DagsterInvalidConfigError,
-    DagsterInvariantViolationError,
     DagsterResourceFunctionError,
     DagsterUserCodeExecutionError,
     user_code_error_boundary,
@@ -96,20 +95,6 @@ def executor_def_from_config(mode_definition, environment_config):
     )
 
 
-def check_persistent_storage_requirement(pipeline_def, system_storage_def, executor_config):
-    if executor_config.requires_persistent_storage and not system_storage_def.is_persistent:
-        raise DagsterInvariantViolationError(
-            (
-                'While invoking pipeline {pipeline_name}. You have attempted '
-                'to use the multiprocessing executor while using system '
-                'storage {storage_name} which does not persist intermediates. '
-                'This means there would be no way to move data between different '
-                'processes. Please configure your pipeline in the storage config '
-                'section to use persistent system storage such as the filesystem.'
-            ).format(pipeline_name=pipeline_def.name, storage_name=system_storage_def.name)
-        )
-
-
 # This represents all the data that is passed *into* context creation process.
 # The remainder of the objects generated (e.g. loggers, resources) are created
 # using user-defined code that may fail at runtime and result in the emission
@@ -164,12 +149,10 @@ def scoped_pipeline_context(
 
     executor_config = create_executor_config(context_creation_data)
 
-    check_persistent_storage_requirement(
-        pipeline_def, context_creation_data.system_storage_def, executor_config
-    )
-
     # After this try block, a Dagster exception thrown will result in a pipeline init failure event.
     try:
+        executor_config.check_requirements(instance, context_creation_data.system_storage_def)
+
         log_manager = create_log_manager(context_creation_data)
 
         with scoped_resources_builder_cm(

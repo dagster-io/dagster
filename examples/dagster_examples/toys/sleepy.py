@@ -2,7 +2,17 @@
 
 from time import sleep
 
-from dagster import Field, InputDefinition, Int, List, Output, OutputDefinition, pipeline, solid
+from dagster import (
+    Field,
+    InputDefinition,
+    Int,
+    List,
+    Output,
+    OutputDefinition,
+    PresetDefinition,
+    pipeline,
+    solid,
+)
 
 
 @solid(
@@ -52,7 +62,18 @@ def total(_, in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4
 
 
-@pipeline
+@pipeline(
+    preset_defs=[
+        PresetDefinition(
+            'multi',
+            {
+                'storage': {'filesystem': {}},
+                'execution': {'multiprocess': {}},
+                'solids': {'giver': {'config': [2, 2, 2, 2]}},
+            },
+        )
+    ]
+)
 def sleepy_pipeline():
     giver_res = giver()
 

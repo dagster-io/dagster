@@ -208,3 +208,9 @@ class DagsterInvalidConfigError(DagsterError):
         self.error_messages = error_messages
 
         super(DagsterInvalidConfigError, self).__init__(error_msg, *args, **kwargs)
+
+
+class DagsterUnmetExecutorRequirementsError(DagsterError):
+    '''Indicates the resolved executor is incompatible with the state of other systems
+    such as the DagsterInstance or system storage configuration.
+    '''
