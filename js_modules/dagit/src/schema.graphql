@@ -679,6 +679,7 @@ type PipelineRun {
   stepKeysToExecute: [String!]
   environmentConfigYaml: String!
   mode: String!
+  tags: [PipelineTag!]
 }
 
 union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineProcessExitedEvent | PipelineProcessStartedEvent | PipelineProcessStartEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent
@@ -729,6 +730,11 @@ type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   step: ExecutionStep
   pipeline: Pipeline!
+}
+
+type PipelineTag {
+  key: String!
+  value: String!
 }
 
 type PresetNotFoundError implements Error {

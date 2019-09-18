@@ -104,6 +104,10 @@ mutation (
                         ...stepEventFragment
                     }
                 }
+                tags {
+                    key
+                    value
+                }
             }
         }
         ... on PipelineConfigValidationInvalid {
@@ -142,6 +146,10 @@ mutation (
                         }
                         ...stepEventFragment
                     }
+                }
+                tags {
+                    key
+                    value
                 }
             }
         }

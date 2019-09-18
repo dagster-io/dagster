@@ -165,7 +165,9 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
             },
             'pipeline': {
                 'name': 'csv_hello_world'
-            }
+            },
+            'tags': [
+            ]
         }
     }
 }
@@ -271,7 +273,9 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
             },
             'pipeline': {
                 'name': 'csv_hello_world'
-            }
+            },
+            'tags': [
+            ]
         }
     }
 }

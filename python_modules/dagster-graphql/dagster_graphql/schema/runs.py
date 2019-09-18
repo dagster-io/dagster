@@ -46,6 +46,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     stepKeysToExecute = dauphin.List(dauphin.NonNull(dauphin.String))
     environmentConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
+    tags = dauphin.List(dauphin.NonNull('PipelineTag'))
 
     def __init__(self, pipeline_run):
         super(DauphinPipelineRun, self).__init__(
@@ -77,6 +78,12 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_environmentConfigYaml(self, _graphene_info):
         return yaml.dump(self._pipeline_run.environment_dict, default_flow_style=False)
+
+    def resolve_tags(self, graphene_info):
+        return [
+            graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
+            for key, value in self._pipeline_run.tags.items()
+        ]
 
     @property
     def run_id(self):
@@ -549,6 +556,17 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinStepMaterializationEvent,
             DauphinEngineEvent,
         )
+
+
+class DauphinPipelineTag(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineTag'
+
+    key = dauphin.NonNull(dauphin.String)
+    value = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, key, value):
+        super(DauphinPipelineTag, self).__init__(key=key, value=value)
 
 
 def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan):

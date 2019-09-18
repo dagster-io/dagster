@@ -108,6 +108,18 @@ class SystemCronScheduler(Scheduler):
         )
         dagster_home = os.getenv('DAGSTER_HOME')
 
+        # Add dagster/schedule_id tag to executionMetadata
+        execution_params = schedule.schedule_definition.execution_params
+        if "executionMetadata" not in execution_params:
+            execution_params["executionMetadata"] = {}
+
+        if "tags" not in execution_params["executionMetadata"]:
+            execution_params["executionMetadata"]["tags"] = []
+
+        execution_params["executionMetadata"]["tags"].append(
+            {"key": "dagster/schedule_id", "value": schedule.schedule_id}
+        )
+
         script_contents = '''
             #!/bin/bash
             export DAGSTER_HOME={dagster_home}
@@ -118,9 +130,7 @@ class SystemCronScheduler(Scheduler):
         '''.format(
             dagster_graphql_path=dagster_graphql_path,
             repo_path=schedule.repository_path,
-            variables=json.dumps(
-                {"executionParams": schedule.schedule_definition.execution_params}
-            ),
+            variables=json.dumps({"executionParams": execution_params}),
             log_file=log_file,
             dagster_home=dagster_home,
             env_vars="\n".join(
