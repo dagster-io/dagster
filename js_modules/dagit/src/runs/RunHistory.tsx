@@ -331,8 +331,7 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
           {titleForRun(run)}
         </Link>
         <Details>
-          {`${run.stats.stepsSucceeded}/${run.stats.stepsSucceeded +
-            run.stats.stepsFailed} steps succeeded, `}
+          {`${run.stats.stepsSucceeded}/${run.executionPlan.steps.length} steps succeeded, `}
           <Link
             to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:materialization`}
           >{`${run.stats.materializations} materializations`}</Link>
