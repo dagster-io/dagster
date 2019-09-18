@@ -114,7 +114,7 @@ def _check_start_pipeline_execution_errors(
 def get_pipeline_run_observable(graphene_info, run_id, after=None):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(run_id, 'run_id')
-    check.opt_str_param(after, 'after')
+    check.opt_int_param(after, 'after')
     instance = graphene_info.context.instance
     run = instance.get_run(run_id)
 
