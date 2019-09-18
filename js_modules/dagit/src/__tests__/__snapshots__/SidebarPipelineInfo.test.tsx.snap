@@ -484,7 +484,7 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                   >
                       
                     <span
-                      className="sc-jTzLTM eSIHQs"
+                      className="sc-jTzLTM jGSHHo"
                     >
                       log_level
                     </span>
@@ -508,7 +508,7 @@ exports[`renders given a pipeline with resources and loggers 1`] = `
                   >
                       
                     <span
-                      className="sc-jTzLTM eSIHQs"
+                      className="sc-jTzLTM jGSHHo"
                     >
                       name
                     </span>
