@@ -2,7 +2,7 @@ import * as React from "react";
 import * as TestRenderer from "react-test-renderer";
 import { BrowserRouter } from "react-router-dom";
 
-import ConfigEditor from "../../configeditor/ConfigEditor";
+import { ConfigEditor } from "../../configeditor/ConfigEditor";
 
 it("renders a codemirror", () => {
   // This test does very little, unfortunately, because JSDOM doesn't really support the APIs that
@@ -27,6 +27,7 @@ it("renders a codemirror", () => {
           isValid: true
         })}
         onConfigChange={() => null}
+        onHelpContextChange={() => null}
         readOnly={true}
         configCode={
           "solids:\n  foo:\n    config:\n      baz:\n        ['s3://foo', 'bar']\n"
