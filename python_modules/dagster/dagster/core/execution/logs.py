@@ -281,8 +281,10 @@ def tailf(path):
     else:
         cmd = 'tail -F -n 1 {}'.format(path).split(' ')
         p = subprocess.Popen(cmd)
-        yield
-        p.terminate()
+        try:
+            yield
+        finally:
+            p.terminate()
 
 
 def _decode_cursor(cursor):
