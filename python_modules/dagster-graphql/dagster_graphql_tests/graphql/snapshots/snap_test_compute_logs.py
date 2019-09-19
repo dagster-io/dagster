@@ -12,3 +12,14 @@ snapshots['test_get_compute_logs_over_graphql 1'] = {
 '''
     }
 }
+
+snapshots['test_compute_logs_subscription_graphql 1'] = [
+    {
+        'computeLogs': {
+            'stdout': {
+                'data': '''HELLO WORLD
+'''
+            }
+        }
+    }
+]
