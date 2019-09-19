@@ -677,6 +677,7 @@ type PipelineRun {
   runId: String!
   status: PipelineRunStatus!
   pipeline: PipelineReference!
+  stats: PipelineRunStatsSnapshot!
   logs: LogMessageConnection!
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
@@ -707,6 +708,16 @@ type PipelineRunNotFoundError implements Error {
 }
 
 union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError
+
+type PipelineRunStatsSnapshot {
+  runId: String!
+  stepsSucceeded: Int!
+  stepsFailed: Int!
+  materializations: Int!
+  expectations: Int!
+  startTime: Float
+  endTime: Float
+}
 
 enum PipelineRunStatus {
   NOT_STARTED

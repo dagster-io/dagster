@@ -11,14 +11,14 @@ import {
   IStepState,
   IStepMetadata
 } from "../RunMetadataProvider";
-import { RunHistoryRunFragment } from "../runs/types/RunHistoryRunFragment";
+import { RunFragment } from "../runs/types/RunFragment";
 import { formatElapsedTime } from "../Util";
 
 export interface IExecutionPlanProps {
   executionPlan: ExecutionPlanFragment;
   stepKeysToExecute?: (string | null)[] | null;
   runMetadata?: IRunMetadataDict;
-  run?: RunHistoryRunFragment;
+  run?: RunFragment;
   onApplyStepFilter?: (step: string) => void;
   onShowStateDetails?: (step: string) => void;
   onReexecuteStep?: (step: string) => void;
