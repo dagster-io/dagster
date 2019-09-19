@@ -93,7 +93,7 @@ const COMPUTE_LOGS_SUBSCRIPTION = gql`
   subscription ComputeLogsSubscription(
     $runId: ID!
     $stepKey: String!
-    $cursor: Cursor
+    $cursor: String!
   ) {
     computeLogs(runId: $runId, stepKey: $stepKey, cursor: $cursor) {
       stdout {

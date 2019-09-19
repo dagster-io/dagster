@@ -114,7 +114,7 @@ def _check_start_pipeline_execution_errors(
 def get_pipeline_run_observable(graphene_info, run_id, after=None):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(run_id, 'run_id')
-    check.opt_str_param(after, 'after')
+    check.opt_int_param(after, 'after')
     instance = graphene_info.context.instance
     run = instance.get_run(run_id)
 
@@ -165,9 +165,9 @@ def get_compute_log_observable(graphene_info, run_id, step_key, cursor=None):
     check.str_param(step_key, 'step_key')
     check.opt_str_param(cursor, 'cursor')
 
-    return graphene_info.context.compute_log_manager.get_observable(run_id, step_key, cursor).map(
-        lambda update: from_compute_log_update(graphene_info, run_id, step_key, update)
-    )
+    return graphene_info.context.instance.compute_log_manager.observable(
+        run_id, step_key, cursor
+    ).map(lambda update: from_compute_log_update(graphene_info, run_id, step_key, update))
 
 
 class ExecutionParams(

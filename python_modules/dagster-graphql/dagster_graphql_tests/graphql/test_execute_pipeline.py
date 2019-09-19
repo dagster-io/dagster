@@ -585,6 +585,33 @@ def test_pipeline_reexecution_invalid_step_in_step_output_handle():
     assert query_result['invalidStepKey'] == 'invalid_in_step_output_handle'
 
 
+def test_basic_start_pipeline_execution_with_tags():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_PIPELINE_EXECUTION_QUERY,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config(),
+                'executionMetadata': {'tags': [{'key': 'dagster/test_key', 'value': 'test_value'}]},
+                'mode': 'default',
+            }
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+
+    assert len(result.data['startPipelineExecution']['run']['tags']) > 0
+    assert any(
+        [
+            x['key'] == 'dagster/test_key' and x['value'] == 'test_value'
+            for x in result.data['startPipelineExecution']['run']['tags']
+        ]
+    )
+
+
 def test_pipeline_reexecution_invalid_output_in_step_output_handle():
     run_id = str(uuid.uuid4())
     execute_dagster_graphql(

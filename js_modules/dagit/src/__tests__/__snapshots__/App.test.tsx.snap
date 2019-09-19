@@ -92,17 +92,17 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-dymIpo jGLUXo"
+          className="sc-bnXvFD jBtYaL"
         >
           <a
-            className="active sc-bnXvFD bmguhd"
+            className="active sc-gFaPwZ bOxoed"
             href="/p/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-bnXvFD bmguhd"
+            className="sc-gFaPwZ bOxoed"
             href="/p/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -115,7 +115,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-bnXvFD bmguhd"
+        className="sc-gFaPwZ bOxoed"
         href="/runs"
         onClick={[Function]}
       >
@@ -125,7 +125,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-EHOje gjAXsX"
+        className="sc-bwzfXH iUsTio"
         style={
           Object {
             "background": "#3DCC91",
@@ -134,15 +134,15 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-cpmLhU hYXDLE"
+        className="sc-dymIpo isidbo"
       />
     </div>
   </div>,
   <div
-    className="sc-cJSrbW jkLHXg"
+    className="sc-kgAjT bYZimL"
   >
     <div
-      className="sc-ksYbfQ hxuxkJ"
+      className="sc-cJSrbW cPcMLY"
     >
       <div
         className="bp3-non-ideal-state"
@@ -275,7 +275,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-bnXvFD bmguhd"
+        className="sc-gFaPwZ bOxoed"
         href="/runs"
         onClick={[Function]}
       >
@@ -285,7 +285,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-EHOje gjAXsX"
+        className="sc-bwzfXH iUsTio"
         style={
           Object {
             "background": "#3DCC91",
@@ -294,7 +294,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-cpmLhU hYXDLE"
+        className="sc-dymIpo isidbo"
       />
     </div>
   </div>,
@@ -405,17 +405,17 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-dymIpo jGLUXo"
+          className="sc-bnXvFD jBtYaL"
         >
           <a
-            className="active sc-bnXvFD bmguhd"
+            className="active sc-gFaPwZ bOxoed"
             href="/p/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-bnXvFD bmguhd"
+            className="sc-gFaPwZ bOxoed"
             href="/p/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -428,7 +428,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-bnXvFD bmguhd"
+        className="sc-gFaPwZ bOxoed"
         href="/runs"
         onClick={[Function]}
       >
@@ -438,7 +438,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-EHOje gjAXsX"
+        className="sc-bwzfXH iUsTio"
         style={
           Object {
             "background": "#3DCC91",
@@ -447,15 +447,15 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-cpmLhU hYXDLE"
+        className="sc-dymIpo isidbo"
       />
     </div>
   </div>,
   <div
-    className="sc-cJSrbW jkLHXg"
+    className="sc-kgAjT bYZimL"
   >
     <div
-      className="sc-ksYbfQ hxuxkJ"
+      className="sc-cJSrbW cPcMLY"
     >
       <div
         className="bp3-non-ideal-state"
@@ -586,17 +586,17 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-dymIpo jGLUXo"
+          className="sc-bnXvFD jBtYaL"
         >
           <a
-            className="active sc-bnXvFD bmguhd"
+            className="active sc-gFaPwZ bOxoed"
             href="/p/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-bnXvFD bmguhd"
+            className="sc-gFaPwZ bOxoed"
             href="/p/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -609,7 +609,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-bnXvFD bmguhd"
+        className="sc-gFaPwZ bOxoed"
         href="/runs"
         onClick={[Function]}
       >
@@ -619,7 +619,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-EHOje gjAXsX"
+        className="sc-bwzfXH iUsTio"
         style={
           Object {
             "background": "#3DCC91",
@@ -628,15 +628,15 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-cpmLhU hYXDLE"
+        className="sc-dymIpo isidbo"
       />
     </div>
   </div>,
   <div
-    className="sc-cJSrbW jkLHXg"
+    className="sc-kgAjT bYZimL"
   >
     <div
-      className="sc-ksYbfQ hxuxkJ"
+      className="sc-cJSrbW cPcMLY"
     >
       <div
         className="bp3-non-ideal-state"
@@ -767,17 +767,17 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-dymIpo jGLUXo"
+          className="sc-bnXvFD jBtYaL"
         >
           <a
-            className="active sc-bnXvFD bmguhd"
+            className="active sc-gFaPwZ bOxoed"
             href="/p/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-bnXvFD bmguhd"
+            className="sc-gFaPwZ bOxoed"
             href="/p/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -790,7 +790,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-bnXvFD bmguhd"
+        className="sc-gFaPwZ bOxoed"
         href="/runs"
         onClick={[Function]}
       >
@@ -800,7 +800,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-EHOje gjAXsX"
+        className="sc-bwzfXH iUsTio"
         style={
           Object {
             "background": "#3DCC91",
@@ -809,15 +809,15 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-cpmLhU hYXDLE"
+        className="sc-dymIpo isidbo"
       />
     </div>
   </div>,
   <div
-    className="sc-cJSrbW jkLHXg"
+    className="sc-kgAjT bYZimL"
   >
     <div
-      className="sc-ksYbfQ hxuxkJ"
+      className="sc-cJSrbW cPcMLY"
     >
       <div
         className="bp3-non-ideal-state"
@@ -950,7 +950,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-bnXvFD bmguhd"
+        className="sc-gFaPwZ bOxoed"
         href="/runs"
         onClick={[Function]}
       >
@@ -960,7 +960,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-EHOje gjAXsX"
+        className="sc-bwzfXH iUsTio"
         style={
           Object {
             "background": "#3DCC91",
@@ -969,7 +969,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-cpmLhU hYXDLE"
+        className="sc-dymIpo isidbo"
       />
     </div>
   </div>,

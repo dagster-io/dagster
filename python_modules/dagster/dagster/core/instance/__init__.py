@@ -1,4 +1,3 @@
-import configparser
 import logging
 import os
 from abc import ABCMeta
@@ -6,12 +5,14 @@ from collections import defaultdict, namedtuple
 from enum import Enum
 
 import six
+import yaml
 from rx import Observable
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.utils.yaml_utils import load_yaml_from_globs
 
 from .features import DagsterFeatures
 
@@ -21,19 +22,13 @@ def _is_dagster_home_set():
 
 
 def _dagster_config(base_dir):
-    config = configparser.ConfigParser(allow_no_value=True)
-
-    config_path = os.path.join(base_dir, "dagster.cfg")
-    if os.path.exists(config_path):
-        config.read(config_path)
-
-    return config
+    return load_yaml_from_globs(os.path.join(base_dir, "dagster.yaml"))
 
 
 def _dagster_feature_set(base_dir):
     config = _dagster_config(base_dir)
-    if config.has_section('FEATURES'):
-        return {k for k, _ in config.items('FEATURES')}
+    if 'features' in config:
+        return {k for k, _ in config['features']}
     return None
 
 
@@ -97,15 +92,25 @@ class DagsterInstance:
     _PROCESS_TEMPDIR = None
 
     def __init__(
-        self, instance_type, root_storage_dir, run_storage, event_storage, feature_set=None
+        self,
+        instance_type,
+        root_storage_dir,
+        run_storage,
+        event_storage,
+        compute_log_manager,
+        feature_set=None,
     ):
         from dagster.core.storage.event_log import EventLogStorage
         from dagster.core.storage.runs import RunStorage
+        from dagster.core.storage.compute_log_manager import ComputeLogManager
 
         self._instance_type = check.inst_param(instance_type, 'instance_type', InstanceType)
         self._root_storage_dir = check.str_param(root_storage_dir, 'root_storage_dir')
         self._event_storage = check.inst_param(event_storage, 'event_storage', EventLogStorage)
         self._run_storage = check.inst_param(run_storage, 'run_storage', RunStorage)
+        self._compute_log_manager = check.inst_param(
+            compute_log_manager, 'compute_log_manager', ComputeLogManager
+        )
         self._feature_set = check.opt_set_param(feature_set, 'feature_set', of_type=str)
 
         self._subscribers = defaultdict(list)
@@ -120,6 +125,7 @@ class DagsterInstance:
     def ephemeral(tempdir=None):
         from dagster.core.storage.event_log import InMemoryEventLogStorage
         from dagster.core.storage.runs import InMemoryRunStorage
+        from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
@@ -131,6 +137,7 @@ class DagsterInstance:
             root_storage_dir=tempdir,
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
+            compute_log_manager=NoOpComputeLogManager(_compute_logs_base_directory(tempdir)),
             feature_set=feature_set,
         )
 
@@ -173,6 +180,7 @@ class DagsterInstance:
         if isinstance(instance_ref, LocalInstanceRef):
             from dagster.core.storage.event_log import FilesystemEventLogStorage
             from dagster.core.storage.runs import FilesystemRunStorage
+            from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 
             feature_set = _dagster_feature_set(instance_ref.home_dir) or fallback_feature_set
 
@@ -183,6 +191,9 @@ class DagsterInstance:
                     _runs_directory(instance_ref.home_dir), watch_external_runs=watch_external_runs
                 ),
                 event_storage=FilesystemEventLogStorage(_runs_directory(instance_ref.home_dir)),
+                compute_log_manager=LocalComputeLogManager(
+                    _compute_logs_base_directory(instance_ref.home_dir)
+                ),
                 feature_set=feature_set,
             )
 
@@ -222,6 +233,12 @@ class DagsterInstance:
         check.inst_param(feature, 'feature', DagsterFeatures)
         return feature.value in self._feature_set
 
+    # compute logs
+
+    @property
+    def compute_log_manager(self):
+        return self._compute_log_manager
+
     # run storage
 
     def get_run(self, run_id):
@@ -238,7 +255,6 @@ class DagsterInstance:
         )
 
         run = self._run_storage.add_run(pipeline_run)
-        self._event_storage.new_run(run.run_id)
         return run
 
     def get_or_create_run(self, pipeline_run):
@@ -322,11 +338,12 @@ class DagsterInstance:
     def intermediates_directory(self, run_id):
         return os.path.join(self._root_storage_dir, 'storage', run_id, '')
 
-    def compute_logs_directory(self, run_id):
-        return os.path.join(self._root_storage_dir, 'storage', run_id, 'compute_logs')
-
     def schedules_directory(self):
         return os.path.join(self._root_storage_dir, 'schedules')
+
+
+def _compute_logs_base_directory(base):
+    return os.path.join(base, 'storage')
 
 
 def _runs_directory(base):

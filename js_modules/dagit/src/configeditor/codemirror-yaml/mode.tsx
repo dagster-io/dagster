@@ -325,32 +325,14 @@ CodeMirror.registerHelper(
   ): { list: Array<CodemirrorHint> } => {
     if (!options.pipeline) return { list: [] };
 
-    const cur = editor.getCursor();
-    const token: CodemirrorToken = editor.getTokenAt(cur);
-    const prevToken: CodemirrorToken = editor.getTokenAt({
-      line: cur.line,
-      ch: token.start
-    });
-
-    let searchString: string;
-    let start: number;
-    if (token.type === "whitespace" || token.string.startsWith(":")) {
-      searchString = "";
-      start = token.end;
-    } else {
-      searchString = token.string;
-      start = token.start;
-    }
-
-    // Takes the pipeline and the YAML tokenizer state and returns the
-    // pipeline type in scope and available (yet-to-be-used) fields
-    // if it is a composite type.
-    const context = findAutocompletionContext(
-      options.pipeline,
-      token.state.parents,
-      start
-    );
-
+    const {
+      cursor,
+      context,
+      token,
+      start,
+      searchString,
+      prevToken
+    } = expandAutocompletionContextAtCursor(editor);
     if (!context) {
       return { list: [] };
     }
@@ -441,8 +423,8 @@ CodeMirror.registerHelper(
         }
         el.appendChild(div);
       },
-      from: { line: cur.line, ch: start },
-      to: { line: cur.line, ch: token.end }
+      from: { line: cursor.line, ch: start },
+      to: { line: cursor.line, ch: token.end }
     });
 
     // Completion of composite field keys
@@ -462,12 +444,12 @@ CodeMirror.registerHelper(
 
     // Completion of enum field values
     if (context.type.__typename === "EnumConfigType") {
-      if (searchString.startsWith('"')) {
-        searchString = searchString.substr(1);
-      }
+      const searchWithoutQuotes = searchString.startsWith('"')
+        ? searchString.substr(1)
+        : searchString;
       return {
         list: context.type.values
-          .filter(val => val.value.startsWith(searchString))
+          .filter(val => val.value.startsWith(searchWithoutQuotes))
           .map(val => buildSuggestion(val.value, `"${val.value}"`, null))
       };
     }
@@ -488,6 +470,10 @@ CodeMirror.registerHelper(
   }
 );
 
+/** Takes the pipeline and the YAML tokenizer state and returns the
+ * pipeline type in scope and available (yet-to-be-used) fields
+ * if it is a composite type.
+ */
 function findAutocompletionContext(
   pipeline: ConfigEditorPipelineFragment,
   parents: IParseStateParent[],
@@ -509,6 +495,7 @@ function findAutocompletionContext(
   }
 
   let available = type.fields;
+  let closestCompositeType = type;
 
   if (available && parents.length > 0) {
     for (const parent of parents) {
@@ -533,17 +520,55 @@ function findAutocompletionContext(
 
       if (type.__typename !== "CompositeConfigType") {
         available = [];
-      } else if (parent === immediateParent && childEntriesUnique) {
-        available = type.fields.filter(
-          item => immediateParent.childKeys.indexOf(item.name) === -1
-        );
       } else {
+        closestCompositeType = type;
         available = type.fields;
+
+        if (parent === immediateParent && childEntriesUnique) {
+          available = available.filter(
+            item => immediateParent.childKeys.indexOf(item.name) === -1
+          );
+        }
       }
     }
   }
 
-  return { type, availableFields: available };
+  return { type, closestCompositeType, availableFields: available };
+}
+
+// Find context for a fully- or partially- typed key or value in the YAML document
+export function expandAutocompletionContextAtCursor(editor: any) {
+  const pipeline: ConfigEditorPipelineFragment =
+    editor.options.hintOptions.pipeline;
+
+  const cursor = editor.getCursor();
+  const token: CodemirrorToken = editor.getTokenAt(cursor);
+  const prevToken: CodemirrorToken = editor.getTokenAt({
+    line: cursor.line,
+    ch: token.start
+  });
+
+  let searchString: string;
+  let start: number;
+  if (token.type === "whitespace" || token.string.startsWith(":")) {
+    searchString = "";
+    start = token.end;
+  } else {
+    searchString = token.string;
+    start = token.start;
+  }
+
+  // Takes the pipeline and the YAML tokenizer state and returns the
+  // pipeline type in scope and available (yet-to-be-used) fields
+  // if it is a composite type.
+  return {
+    start,
+    cursor,
+    searchString,
+    token,
+    prevToken,
+    context: findAutocompletionContext(pipeline, token.state.parents, start)
+  };
 }
 
 type CodemirrorLintError = {
@@ -572,23 +597,20 @@ type ValidationError = {
 };
 
 CodeMirror.registerHelper("dagster-docs", "yaml", (editor: any, pos: any) => {
-  const pipeline = editor.options.hintOptions
-    .pipeline as ConfigEditorPipelineFragment;
-  const token: CodemirrorToken = editor.getTokenAt(pos);
+  const token = editor.getTokenAt(pos);
+
+  const pipeline: ConfigEditorPipelineFragment =
+    editor.options.hintOptions.pipeline;
 
   if (token.type !== "atom") {
     return null;
   }
 
-  // Takes the pipeline and the YAML tokenizer state and returns the
-  // pipeline type in scope and available (yet-to-be-used) fields
-  // if it is a composite type.
   const context = findAutocompletionContext(
     pipeline,
     token.state.parents,
     token.start
   );
-
   const match =
     context &&
     context.type.__typename === "CompositeConfigType" &&

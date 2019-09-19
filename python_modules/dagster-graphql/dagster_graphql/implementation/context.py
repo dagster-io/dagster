@@ -1,5 +1,4 @@
 from dagster import ExecutionTargetHandle, check
-from dagster.core.execution.logs import ComputeLogManager
 from dagster.core.instance import DagsterFeatures, DagsterInstance
 
 from .pipeline_execution_manager import PipelineExecutionManager
@@ -15,7 +14,6 @@ class DagsterGraphQLContext(object):
         self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
         self.version = version
         self.repository_definition = self.get_handle().build_repository_definition()
-        self.compute_log_manager = ComputeLogManager(instance)
 
         self.scheduler = None
         if self.instance.is_feature_enabled(DagsterFeatures.SCHEDULER):

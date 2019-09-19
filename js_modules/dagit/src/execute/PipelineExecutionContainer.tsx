@@ -6,8 +6,8 @@ import { Button, Colors, Spinner } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { ApolloConsumer, Mutation, MutationFunction } from "react-apollo";
 
-import TabBar from "./TabBar";
 import ExecutionStartButton from "./ExecutionStartButton";
+import { ExecutionTabs } from "./ExecutionTabs";
 import {
   handleStartExecutionResult,
   HANDLE_START_EXECUTION_FRAGMENT
@@ -15,7 +15,11 @@ import {
 import { RunPreview } from "./RunPreview";
 import { PanelDivider } from "../PanelDivider";
 import SolidSelector from "./SolidSelector";
-import ConfigEditor from "../configeditor/ConfigEditor";
+import {
+  ConfigEditor,
+  ConfigEditorHelpContext,
+  isHelpContextEqual
+} from "../configeditor/ConfigEditor";
 import { ConfigEditorPresetsPicker } from "./ConfigEditorPresetsPicker";
 import ConfigEditorModePicker from "./ConfigEditorModePicker";
 import {
@@ -46,6 +50,7 @@ import {
   StartPipelineExecution,
   StartPipelineExecutionVariables
 } from "./types/StartPipelineExecution";
+import { ConfigEditorHelp } from "./ConfigEditorHelp";
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
@@ -59,6 +64,7 @@ interface IPipelineExecutionContainerProps {
 
 interface IPipelineExecutionContainerState {
   editorVW: number;
+  editorHelpContext: ConfigEditorHelpContext | null;
   preview: PreviewConfigQuery | null;
   showWhitespace: boolean;
 }
@@ -99,7 +105,8 @@ export default class PipelineExecutionContainer extends React.Component<
   state: IPipelineExecutionContainerState = {
     editorVW: 75,
     preview: null,
-    showWhitespace: true
+    showWhitespace: true,
+    editorHelpContext: null
   };
 
   mounted = false;
@@ -215,7 +222,7 @@ export default class PipelineExecutionContainer extends React.Component<
 
   render() {
     const { currentSession, pipelineName } = this.props;
-    const { preview } = this.state;
+    const { preview, editorHelpContext } = this.state;
     const pipeline = this.getPipeline();
     const subsetError = this.getSubsetError();
 
@@ -225,14 +232,16 @@ export default class PipelineExecutionContainer extends React.Component<
           mutation={START_PIPELINE_EXECUTION_MUTATION}
         >
           {startPipelineExecution => (
-            <TabBar
-              sessions={this.props.data.sessions}
-              currentSession={currentSession}
-              onSelectSession={this.onSelectSession}
-              onCreateSession={this.onCreateSession}
-              onRemoveSession={this.onRemoveSession}
-              onSaveSession={this.onSaveSession}
-            >
+            <TabBarContainer className="bp3-dark">
+              <ExecutionTabs
+                sessions={this.props.data.sessions}
+                currentSession={currentSession}
+                onSelectSession={this.onSelectSession}
+                onCreateSession={this.onCreateSession}
+                onRemoveSession={this.onRemoveSession}
+                onSaveSession={this.onSaveSession}
+              />
+              <div style={{ flex: 1 }} />
               {pipeline &&
                 (!this.state.preview ? (
                   <Spinner size={17} />
@@ -243,7 +252,7 @@ export default class PipelineExecutionContainer extends React.Component<
                     onClick={() => this.onExecute(startPipelineExecution)}
                   />
                 ))}
-            </TabBar>
+            </TabBarContainer>
           )}
         </Mutation>
         {currentSession ? (
@@ -258,6 +267,7 @@ export default class PipelineExecutionContainer extends React.Component<
                   />
                 )}
               </ConfigEditorPresetInsertionContainer>
+              <ConfigEditorHelp context={editorHelpContext} />
               <ApolloConsumer>
                 {client => (
                   <ConfigEditor
@@ -265,6 +275,11 @@ export default class PipelineExecutionContainer extends React.Component<
                     pipeline={pipeline}
                     configCode={currentSession.environmentConfigYaml}
                     onConfigChange={this.onConfigChange}
+                    onHelpContextChange={next => {
+                      if (!isHelpContextEqual(editorHelpContext, next)) {
+                        this.setState({ editorHelpContext: next });
+                      }
+                    }}
                     showWhitespace={this.state.showWhitespace}
                     checkConfig={async environmentConfigData => {
                       if (!pipeline) return { isValid: true };
@@ -308,7 +323,7 @@ export default class PipelineExecutionContainer extends React.Component<
                   />
                 )}
               </ApolloConsumer>
-              <SessionSettingsFooter className="bp3-dark">
+              <SessionSettingsBar className="bp3-dark">
                 <>
                   <SolidSelector
                     pipelineName={pipelineName}
@@ -333,7 +348,7 @@ export default class PipelineExecutionContainer extends React.Component<
                     }
                   />
                 </>
-              </SessionSettingsFooter>
+              </SessionSettingsBar>
             </Split>
             <PanelDivider
               axis="horizontal"
@@ -420,7 +435,7 @@ const PipelineExecutionWrapper = styled.div`
   padding-top: 100px;
 `;
 
-const SessionSettingsFooter = styled.div`
+const SessionSettingsBar = styled.div`
   color: white;
   display: flex;
   border-top: 1px solid ${Colors.DARK_GRAY5};
@@ -444,4 +459,15 @@ const ConfigEditorPresetInsertionContainer = styled.div`
   top: 10px;
   right: 10px;
   z-index: 10;
+`;
+
+const TabBarContainer = styled.div`
+  height: 50px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 1px solid ${Colors.DARK_GRAY5};
+  background: ${Colors.BLACK};
+  padding: 8px;
+  z-index: 3;
 `;

@@ -5,17 +5,25 @@ import { Colors } from "@blueprintjs/core";
 import { ConfigTypeSchemaFragment } from "./types/ConfigTypeSchemaFragment";
 import { ConfigTypeInfoFragment } from "./types/ConfigTypeInfoFragment";
 
-interface IConfigTypeSchemaProps {
+type ConfigTypeSchemaTheme = "dark" | "light";
+
+interface ConfigTypeSchemaProps {
   type: ConfigTypeSchemaFragment;
+  theme?: ConfigTypeSchemaTheme;
+  maxDepth?: number;
 }
 
 function renderTypeRecursive(
   type: ConfigTypeInfoFragment,
   typeLookup: { [typeName: string]: ConfigTypeInfoFragment },
-  indent: string = ""
+  depth: number,
+  props: ConfigTypeSchemaProps
 ): React.ReactElement<HTMLElement> {
+  if ("fields" in type && props.maxDepth && depth === props.maxDepth) {
+    return <span>...</span>;
+  }
   if ("fields" in type) {
-    const innerIndent = indent + "  ";
+    const innerIndent = "  ".repeat(depth + 1);
     return (
       <>
         {`{`}
@@ -32,31 +40,34 @@ function renderTypeRecursive(
               content={fieldData.description}
             />
             {innerIndent}
-            <DictKey>{fieldData.name}</DictKey>
+            <DictKey theme={props.theme}>{fieldData.name}</DictKey>
             {fieldData.isOptional && Optional}
             {`: `}
             {renderTypeRecursive(
               typeLookup[fieldData.configType.key],
               typeLookup,
-              innerIndent
+              depth + 1,
+              props
             )}
           </DictEntry>
         ))}
-        {`${indent}}`}
+        {"  ".repeat(depth) + "}"}
       </>
     );
   }
   if (type.isList) {
     const innerType = type.innerTypes[0].key;
     return (
-      <>[{renderTypeRecursive(typeLookup[innerType], typeLookup, indent)}]</>
+      <>
+        [{renderTypeRecursive(typeLookup[innerType], typeLookup, depth, props)}]
+      </>
     );
   }
   if (type.isNullable) {
     const innerType = type.innerTypes[0].key;
     return (
       <>
-        {renderTypeRecursive(typeLookup[innerType], typeLookup, indent)}
+        {renderTypeRecursive(typeLookup[innerType], typeLookup, depth, props)}
         {Optional}
       </>
     );
@@ -66,7 +77,7 @@ function renderTypeRecursive(
 }
 
 export default class ConfigTypeSchema extends React.Component<
-  IConfigTypeSchemaProps
+  ConfigTypeSchemaProps
 > {
   static fragments = {
     ConfigTypeSchemaFragment: gql`
@@ -112,7 +123,7 @@ export default class ConfigTypeSchema extends React.Component<
     return (
       <TypeSchemaContainer>
         <DictBlockComment content={type.description} indent="" />
-        {renderTypeRecursive(type, innerTypeLookup)}
+        {renderTypeRecursive(type, innerTypeLookup, 0, this.props)}
       </TypeSchemaContainer>
     );
   }
@@ -128,8 +139,8 @@ const TypeSchemaContainer = styled.code`
 
 const DictEntry = styled.div``;
 
-const DictKey = styled.span`
-  color: ${Colors.BLACK};
+const DictKey = styled.span<{ theme: ConfigTypeSchemaTheme }>`
+  color: ${({ theme }) => (theme === "light" ? Colors.BLACK : Colors.WHITE)};
 `;
 
 const DictComment = styled.div`

@@ -1,5 +1,6 @@
 from dagster import Field, Int, String, composite_solid, pipeline, solid
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
+from dagster.core.instance import DagsterInstance
 
 
 @solid(config={'foo': Field(String)})
@@ -48,7 +49,9 @@ def test_execution_plan_for_composite_solid():
     }
     execution_plan = create_execution_plan(composite_pipeline, environment_dict=environment_dict)
     events = []
-    for evt in execute_plan_iterator(execution_plan, environment_dict=environment_dict):
+    for evt in execute_plan_iterator(
+        execution_plan, environment_dict=environment_dict, instance=DagsterInstance.ephemeral()
+    ):
         events.append(evt)
 
     assert [e.event_type_value for e in events] == [
@@ -77,7 +80,9 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
     )
 
     events = []
-    for evt in execute_plan_iterator(execution_plan, environment_dict=environment_dict):
+    for evt in execute_plan_iterator(
+        execution_plan, environment_dict=environment_dict, instance=DagsterInstance.ephemeral()
+    ):
         events.append(evt)
 
     assert [e.event_type_value for e in events] == [

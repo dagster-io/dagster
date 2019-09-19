@@ -364,9 +364,7 @@ def execute_plan_iterator(
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config, execution_plan.pipeline_def)
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
-    instance = check.opt_inst_param(instance, 'instance', DagsterInstance)
-
-    instance = instance or DagsterInstance.ephemeral()
+    instance = check.inst_param(instance, 'instance', DagsterInstance)
 
     with scoped_pipeline_context(
         execution_plan.pipeline_def, environment_dict, run_config, instance

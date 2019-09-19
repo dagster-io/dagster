@@ -18,15 +18,29 @@ import "codemirror/addon/lint/lint.css";
 import "codemirror/keymap/sublime";
 import { Controlled as CodeMirrorReact } from "react-codemirror2";
 import { Editor } from "codemirror";
-import { ConfigEditorPipelineFragment } from "./types/ConfigEditorPipelineFragment";
+import {
+  ConfigEditorPipelineFragment,
+  ConfigEditorPipelineFragment_configTypes
+} from "./types/ConfigEditorPipelineFragment";
 import "./codemirror-yaml/mode";
-import { LintJson as YamlModeLintJson } from "./codemirror-yaml/mode";
+import {
+  LintJson as YamlModeLintJson,
+  expandAutocompletionContextAtCursor
+} from "./codemirror-yaml/mode";
 import { debounce } from "../Util";
 
-interface IConfigEditorProps {
+export function isHelpContextEqual(
+  prev: ConfigEditorHelpContext | null,
+  next: ConfigEditorHelpContext | null
+) {
+  return (prev && prev.type.key) === (next && next.type.key);
+}
+
+interface ConfigEditorProps {
   checkConfig: YamlModeLintJson;
   configCode: string;
   onConfigChange: (newValue: string) => void;
+  onHelpContextChange: (helpContext: ConfigEditorHelpContext | null) => void;
   pipeline?: ConfigEditorPipelineFragment;
   readOnly: boolean;
   showWhitespace: boolean;
@@ -67,10 +81,14 @@ const CodeMirrorWhitespaceStyle = createGlobalStyle`
 }
 `;
 
-export default class ConfigEditor extends React.Component<IConfigEditorProps> {
+export interface ConfigEditorHelpContext {
+  type: ConfigEditorPipelineFragment_configTypes;
+}
+
+export class ConfigEditor extends React.Component<ConfigEditorProps> {
   _editor?: Editor;
 
-  componentDidUpdate(prevProps: IConfigEditorProps) {
+  componentDidUpdate(prevProps: ConfigEditorProps) {
     if (!this._editor) return;
     if (prevProps.pipeline === this.props.pipeline) return;
     performLint(this._editor);
@@ -143,6 +161,16 @@ export default class ConfigEditor extends React.Component<IConfigEditorProps> {
           }}
           onBeforeChange={(editor, data, value) => {
             this.props.onConfigChange(value);
+          }}
+          onCursorActivity={(editor: any) => {
+            if (editor.getSelection().length) {
+              this.props.onHelpContextChange(null);
+            } else {
+              const { context } = expandAutocompletionContextAtCursor(editor);
+              this.props.onHelpContextChange(
+                context ? { type: context.closestCompositeType } : null
+              );
+            }
           }}
           onChange={(editor: any) => {
             performLint(editor);

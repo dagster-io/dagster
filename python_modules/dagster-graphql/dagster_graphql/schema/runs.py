@@ -19,9 +19,9 @@ from dagster.core.definitions.events import (
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.logs import ComputeLogFile, ComputeLogUpdate, fetch_compute_logs
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.storage.compute_log_manager import ComputeLogData, ComputeLogFileData
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
@@ -46,6 +46,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     stepKeysToExecute = dauphin.List(dauphin.NonNull(dauphin.String))
     environmentConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
+    tags = dauphin.List(dauphin.NonNull('PipelineTag'))
 
     def __init__(self, pipeline_run):
         super(DauphinPipelineRun, self).__init__(
@@ -60,7 +61,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return graphene_info.schema.type_named('LogMessageConnection')(self._pipeline_run)
 
     def resolve_computeLogs(self, graphene_info, stepKey):
-        update = fetch_compute_logs(graphene_info.context.instance, self.run_id, stepKey)
+        update = graphene_info.context.instance.compute_log_manager.read_logs(self.run_id, stepKey)
         return from_compute_log_update(graphene_info, self.run_id, stepKey, update)
 
     def resolve_executionPlan(self, graphene_info):
@@ -77,6 +78,12 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_environmentConfigYaml(self, _graphene_info):
         return yaml.dump(self._pipeline_run.environment_dict, default_flow_style=False)
+
+    def resolve_tags(self, graphene_info):
+        return [
+            graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
+            for key, value in self._pipeline_run.tags.items()
+        ]
 
     @property
     def run_id(self):
@@ -118,10 +125,7 @@ class DauphinComputeLogs(dauphin.ObjectType):
     stepKey = dauphin.NonNull(dauphin.String)
     stdout = dauphin.Field('ComputeLogFile')
     stderr = dauphin.Field('ComputeLogFile')
-    cursor = dauphin.Field(
-        'Cursor',
-        description='cursor representing the state of the stdout/stderr logs being returned, at query time',
-    )
+    cursor = dauphin.NonNull(dauphin.String)
 
 
 class DauphinComputeLogFile(dauphin.ObjectType):
@@ -132,7 +136,7 @@ class DauphinComputeLogFile(dauphin.ObjectType):
     data = dauphin.NonNull(
         dauphin.String, description="The data output captured from step computation at query time"
     )
-    cursor = dauphin.Field('Cursor')
+    cursor = dauphin.NonNull(dauphin.Int)
     size = dauphin.NonNull(dauphin.Int)
     download_url = dauphin.NonNull(dauphin.String)
 
@@ -551,6 +555,17 @@ class DauphinPipelineRunEvent(dauphin.Union):
         )
 
 
+class DauphinPipelineTag(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineTag'
+
+    key = dauphin.NonNull(dauphin.String)
+    value = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, key, value):
+        super(DauphinPipelineTag, self).__init__(key=key, value=value)
+
+
 def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan):
     # Lots of event types. Pylint thinks there are too many branches
     # pylint: disable=too-many-branches
@@ -669,7 +684,7 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
 def from_compute_log_update(graphene_info, run_id, step_key, update):
     check.str_param(run_id, 'run_id')
     check.str_param(step_key, 'step_key')
-    check.inst_param(update, 'update', ComputeLogUpdate)
+    check.inst_param(update, 'update', ComputeLogData)
     return graphene_info.schema.type_named('ComputeLogs')(
         runId=run_id,
         stepKey=step_key,
@@ -680,7 +695,7 @@ def from_compute_log_update(graphene_info, run_id, step_key, update):
 
 
 def from_compute_log_file(graphene_info, file):
-    check.opt_inst_param(file, 'file', ComputeLogFile)
+    check.opt_inst_param(file, 'file', ComputeLogFileData)
     if not file:
         return None
     return graphene_info.schema.type_named('ComputeLogFile')(

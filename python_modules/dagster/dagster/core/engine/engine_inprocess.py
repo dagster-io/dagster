@@ -13,12 +13,12 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent, EngineEventData
+from dagster.core.execution.compute_logs import mirror_step_io
 from dagster.core.execution.config import ExecutorConfig
 from dagster.core.execution.context.system import (
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
-from dagster.core.execution.logs import mirror_step_io
 from dagster.core.execution.plan.objects import (
     StepFailureData,
     StepInputData,
