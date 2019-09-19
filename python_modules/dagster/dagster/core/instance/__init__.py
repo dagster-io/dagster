@@ -300,11 +300,7 @@ class DagsterInstance:
         return self._run_storage.get_run_by_id(run_id)
 
     def get_run_stats(self, run_id):
-        from dagster.core.execution.stats import build_stats_for_run
-
-        run = self._run_storage.get_run_by_id(run_id)
-        logs = self._event_storage.get_logs_for_run(run_id)
-        return build_stats_for_run(run, logs)
+        return self._event_storage.get_stats_for_run(run_id)
 
     def create_empty_run(self, run_id, pipeline_name):
         return self.create_run(PipelineRun.create_empty_run(pipeline_name, run_id))

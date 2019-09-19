@@ -9,9 +9,9 @@ from dagster import (
     DagsterInvariantViolationError,
     RunConfig,
     execute_pipeline,
-    lambda_solid,
     pipeline,
     seven,
+    solid,
 )
 from dagster.core.instance import DagsterInstance, InstanceType, LocalInstanceRef
 from dagster.core.storage.event_log import FilesystemEventLogStorage
@@ -23,11 +23,12 @@ from dagster.core.storage.runs import FilesystemRunStorage
 def test_fs_stores():
     @pipeline
     def simple():
-        @lambda_solid
-        def easy():
+        @solid
+        def easy(context):
+            context.log.info('easy')
             return 'easy'
 
-        easy()
+        easy()  # pylint: disable=no-value-for-parameter
 
     with seven.TemporaryDirectory() as temp_dir:
         run_store = FilesystemRunStorage(temp_dir)
@@ -47,8 +48,12 @@ def test_fs_stores():
         assert run_store.has_run(run.run_id)
         assert run_store.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
         assert DagsterEventType.PIPELINE_SUCCESS in [
-            event.dagster_event.event_type for event in event_store.get_logs_for_run(run.run_id)
+            event.dagster_event.event_type
+            for event in event_store.get_logs_for_run(run.run_id)
+            if event.is_dagster_event
         ]
+        stats = event_store.get_stats_for_run(run.run_id)
+        assert stats.steps_succeeded == 1
 
 
 def test_init_compute_log_with_bad_config():

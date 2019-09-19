@@ -13,11 +13,13 @@ from watchdog.observers import Observer
 
 from dagster import check, seven
 from dagster.core.errors import DagsterError
+from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
+from dagster.core.execution.stats import build_stats_from_events
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import mkdir_p
 
-from .pipeline_run import PipelineRunStatus
+from .pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
 
 
 class EventLogInvalidForRun(DagsterError):
@@ -40,6 +42,11 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
             cursor (Optional[int]): Zero-indexed logs will be returned starting from cursor + 1,
                 i.e., if cursor is -1, all logs will be returned. (default: -1)
         '''
+
+    def get_stats_for_run(self, run_id):
+        '''Get a summary of events that have ocurred in a run.'''
+
+        return build_stats_from_events(run_id, self.get_logs_for_run(run_id))
 
     @abstractmethod
     def store_event(self, event):
@@ -106,16 +113,22 @@ class InMemoryEventLogStorage(EventLogStorage):
 CREATE_EVENT_LOG_SQL = '''
 CREATE TABLE IF NOT EXISTS event_logs (
     row_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    event TEXT
-);
+    event TEXT NOT NULL,
+    dagster_event_type TEXT,
+    timestamp TEXT
+)
 '''
 
 FETCH_EVENTS_SQL = '''
 SELECT event FROM event_logs WHERE row_id >= ? ORDER BY row_id ASC
 '''
 
+FETCH_STATS_SQL = '''
+SELECT dagster_event_type, COUNT(1), MAX(timestamp) FROM event_logs GROUP BY dagster_event_type
+'''
+
 INSERT_EVENT_SQL = '''
-INSERT INTO event_logs (event) VALUES (?)
+INSERT INTO event_logs (event, dagster_event_type, timestamp) VALUES (?, ?, ?)
 '''
 
 
@@ -150,7 +163,14 @@ class FilesystemEventLogStorage(WatchableEventLogStorage):
                 conn.cursor().execute('PRAGMA journal_mode=WAL;')
                 self._known_run_ids.add(run_id)
         with self._connect(run_id) as conn:
-            conn.cursor().execute(INSERT_EVENT_SQL, (serialize_dagster_namedtuple(event),))
+            dagster_event_type = None
+            if event.is_dagster_event:
+                dagster_event_type = event.dagster_event.event_type_value
+
+            conn.cursor().execute(
+                INSERT_EVENT_SQL,
+                (serialize_dagster_namedtuple(event), dagster_event_type, event.timestamp),
+            )
 
     def get_logs_for_run(self, run_id, cursor=-1):
         check.str_param(run_id, 'run_id')
@@ -181,6 +201,39 @@ class FilesystemEventLogStorage(WatchableEventLogStorage):
             six.raise_from(EventLogInvalidForRun(run_id=run_id), err)
 
         return events
+
+    def get_stats_for_run(self, run_id):
+        if not os.path.exists(self.filepath_for_run_id(run_id)):
+            return None
+
+        try:
+            with self._connect(run_id) as conn:
+                results = conn.cursor().execute(FETCH_STATS_SQL).fetchall()
+        except sqlite3.Error as err:
+            six.raise_from(EventLogInvalidForRun(run_id=run_id), err)
+
+        try:
+            counts = {}
+            times = {}
+            for result in results:
+                if result[0]:
+                    counts[result[0]] = result[1]
+                    times[result[0]] = result[2]
+
+            return PipelineRunStatsSnapshot(
+                run_id=run_id,
+                steps_succeeded=counts.get(DagsterEventType.STEP_SUCCESS.value, 0),
+                steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),
+                materializations=counts.get(DagsterEventType.STEP_MATERIALIZATION.value, 0),
+                expectations=counts.get(DagsterEventType.STEP_EXPECTATION_RESULT.value, 0),
+                start_time=times.get(DagsterEventType.PIPELINE_START, 0.0),
+                end_time=times.get(
+                    DagsterEventType.PIPELINE_SUCCESS,
+                    times.get(DagsterEventType.PIPELINE_FAILURE, 0.0),
+                ),
+            )
+        except (seven.JSONDecodeError, check.CheckError) as err:
+            six.raise_from(EventLogInvalidForRun(run_id=run_id), err)
 
     def wipe(self):
         for filename in glob.glob(os.path.join(self._base_dir, '*.db')):

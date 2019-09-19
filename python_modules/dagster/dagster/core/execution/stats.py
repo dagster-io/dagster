@@ -1,10 +1,12 @@
 from dagster import check
 from dagster.core.events import DagsterEventType
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatsSnapshot
+from dagster.core.events.log import EventRecord
+from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
 
 
-def build_stats_for_run(run, logs):
-    check.inst_param(run, 'run', PipelineRun)
+def build_stats_from_events(run_id, records):
+    check.list_param(records, 'records', of_type=EventRecord)
+
     steps_succeeded = 0
     steps_failed = 0
     materializations = 0
@@ -12,7 +14,7 @@ def build_stats_for_run(run, logs):
     start_time = None
     end_time = None
 
-    for event in logs:
+    for event in records:
         if not event.is_dagster_event:
             continue
         if event.dagster_event.event_type == DagsterEventType.PIPELINE_START:
@@ -32,11 +34,5 @@ def build_stats_for_run(run, logs):
             end_time = event.timestamp
 
     return PipelineRunStatsSnapshot(
-        run.run_id,
-        steps_succeeded,
-        steps_failed,
-        materializations,
-        expectations,
-        start_time,
-        end_time,
+        run_id, steps_succeeded, steps_failed, materializations, expectations, start_time, end_time
     )
