@@ -77,7 +77,7 @@ def _do_setup(name='dagster'):
         extras_require={
             'aws': ['boto3>=1.9.117'],
             ':python_version>"3"': ['reloader>=0.6'],
-            ':python_version<"3"': ['backports.tempfile'],
+            ':python_version<"3"': ['backports.tempfile', 'typing'],
         },
         entry_points={'console_scripts': ['dagster = dagster.cli:main']},
     )

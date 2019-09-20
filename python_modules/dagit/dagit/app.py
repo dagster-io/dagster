@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import io
 import os
 import uuid
+from typing import Any, Dict
 
 import nbformat
 from dagster_graphql.implementation.context import DagsterGraphQLContext
@@ -27,11 +28,6 @@ from dagster.utils.log import get_stack_trace_array
 from .subscription_server import DagsterSubscriptionServer
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 from .version import __version__
-
-try:
-    from typing import Any, Dict
-except ImportError:
-    pass
 
 
 # based on default_format_error copied and pasted from graphql_server 1.1.1
