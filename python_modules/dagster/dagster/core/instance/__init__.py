@@ -76,7 +76,7 @@ def _dagster_home_dir():
 def _dagster_compute_log_manager(base_dir):
     config = _dagster_config(base_dir)
     compute_log_base = os.path.join(base_dir, 'storage')
-    if config and config['compute_logs']:
+    if config and config.get('compute_logs'):
         if 'module' in config['compute_logs'] and 'class' in config['compute_logs']:
             from dagster.core.storage.compute_log_manager import ComputeLogManager
 
