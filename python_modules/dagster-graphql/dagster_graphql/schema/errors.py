@@ -49,7 +49,7 @@ class DauphinSchedulerNotDefinedError(dauphin.ObjectType):
 
     def __init__(self):
         super(DauphinSchedulerNotDefinedError, self).__init__()
-        self.message = 'Scheduler is not defined for this repository'
+        self.message = 'Scheduler is not defined for the currently loaded repository.'
 
 
 class DauphinPipelineNotFoundError(dauphin.ObjectType):
@@ -62,7 +62,9 @@ class DauphinPipelineNotFoundError(dauphin.ObjectType):
     def __init__(self, pipeline_name):
         super(DauphinPipelineNotFoundError, self).__init__()
         self.pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
-        self.message = 'Pipeline {pipeline_name} does not exist'.format(pipeline_name=pipeline_name)
+        self.message = (
+            'Pipeline {pipeline_name} is not present in the currently loaded repository.'
+        ).format(pipeline_name=pipeline_name)
 
 
 class DauphinPipelineRunNotFoundError(dauphin.ObjectType):
@@ -75,7 +77,7 @@ class DauphinPipelineRunNotFoundError(dauphin.ObjectType):
     def __init__(self, run_id):
         super(DauphinPipelineRunNotFoundError, self).__init__()
         self.run_id = check.str_param(run_id, 'run_id')
-        self.message = 'Pipeline run {run_id} does not exist'.format(run_id=run_id)
+        self.message = 'Pipeline run {run_id} could not be found.'.format(run_id=run_id)
 
 
 class DauphinInvalidSubsetError(dauphin.ObjectType):
@@ -356,17 +358,6 @@ class DauphinEvaluationStack(dauphin.ObjectType):
     def resolve_entries(self, graphene_info):
         return map(
             graphene_info.schema.type_named('EvaluationStackEntry').from_native_entry, self.entries
-        )
-
-
-class DauphinPipelineOrError(dauphin.Union):
-    class Meta:
-        name = 'PipelineOrError'
-        types = (
-            'Pipeline',
-            DauphinPythonError,
-            DauphinInvalidSubsetError,
-            DauphinPipelineNotFoundError,
         )
 
 

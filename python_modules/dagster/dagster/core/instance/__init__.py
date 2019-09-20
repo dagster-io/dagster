@@ -28,7 +28,7 @@ def _dagster_config(base_dir):
 def _dagster_feature_set(base_dir):
     config = _dagster_config(base_dir)
     if 'features' in config:
-        return {k for k, _ in config['features']}
+        return {k for k in config['features']}
     return None
 
 
@@ -41,6 +41,31 @@ def _dagster_home_dir():
         )
 
     return os.path.expanduser(dagster_home_path)
+
+
+def _dagster_compute_log_manager(base_dir):
+    config = _dagster_config(base_dir)
+    compute_log_base = os.path.join(base_dir, 'storage')
+    if config and config.get('compute_logs'):
+        if 'module' in config['compute_logs'] and 'class' in config['compute_logs']:
+            from dagster.core.storage.compute_log_manager import ComputeLogManager
+
+            try:
+                module = __import__(config['compute_logs']['module'])
+                klass = getattr(module, config['compute_logs']['class'])
+                check.subclass_param(klass, 'compute_log_manager', ComputeLogManager)
+                kwargs = config['compute_logs'].get('config', {})
+                compute_log_manager = klass(compute_log_base, **kwargs)
+                check.inst_param(compute_log_manager, 'compute_log_manager', ComputeLogManager)
+                return compute_log_manager
+            except Exception:
+                raise DagsterInvariantViolationError(
+                    'Invalid dagster config in `dagster.yaml`. Expecting `module`, `class`, and `config`, returning a valid instance of `ComputeLogManager`'
+                )
+
+    from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
+
+    return LocalComputeLogManager(compute_log_base)
 
 
 class _EventListenerLogHandler(logging.Handler):
@@ -180,9 +205,9 @@ class DagsterInstance:
         if isinstance(instance_ref, LocalInstanceRef):
             from dagster.core.storage.event_log import FilesystemEventLogStorage
             from dagster.core.storage.runs import FilesystemRunStorage
-            from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 
             feature_set = _dagster_feature_set(instance_ref.home_dir) or fallback_feature_set
+            compute_log_manager = _dagster_compute_log_manager(instance_ref.home_dir)
 
             return DagsterInstance(
                 instance_type=InstanceType.LOCAL,
@@ -191,9 +216,7 @@ class DagsterInstance:
                     _runs_directory(instance_ref.home_dir), watch_external_runs=watch_external_runs
                 ),
                 event_storage=FilesystemEventLogStorage(_runs_directory(instance_ref.home_dir)),
-                compute_log_manager=LocalComputeLogManager(
-                    _compute_logs_base_directory(instance_ref.home_dir)
-                ),
+                compute_log_manager=compute_log_manager,
                 feature_set=feature_set,
             )
 

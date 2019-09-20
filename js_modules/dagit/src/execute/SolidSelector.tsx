@@ -26,7 +26,7 @@ interface ISolidSelectorProps {
 }
 
 interface ISolidSelectorInnerProps extends ISolidSelectorProps {
-  pipeline: SolidSelectorQuery_pipeline;
+  pipeline: SolidSelectorQuery_pipeline | null;
 }
 
 interface ISolidSelectorState {
@@ -127,7 +127,9 @@ class SolidSelector extends React.PureComponent<
   };
 
   handleSelectSolidsInToolRect = (viewport: SVGViewport) => {
-    const layout = getDagrePipelineLayout(this.props.pipeline.solids);
+    const layout = getDagrePipelineLayout(
+      this.props.pipeline ? this.props.pipeline.solids : []
+    );
     const { toolRectEnd, toolRectStart } = this.state;
     if (!toolRectEnd || !toolRectStart) return;
 
@@ -168,7 +170,7 @@ class SolidSelector extends React.PureComponent<
   handleOpen = () => {
     const { value, pipeline } = this.props;
     const valid = (value || []).filter(
-      name => !!pipeline.solids.find(s => s.name === name)
+      name => pipeline && !!pipeline.solids.find(s => s.name === name)
     );
     this.setState({ open: true, highlighted: valid });
   };
@@ -186,7 +188,9 @@ class SolidSelector extends React.PureComponent<
     const valid = !subsetError;
 
     const allSolidsSelected =
-      !highlighted.length || highlighted.length === pipeline.solids.length;
+      !highlighted.length ||
+      !pipeline ||
+      highlighted.length === pipeline.solids.length;
 
     return (
       <div>
@@ -208,8 +212,8 @@ class SolidSelector extends React.PureComponent<
           >
             <PipelineGraph
               backgroundColor={Colors.LIGHT_GRAY5}
-              pipelineName={pipeline.name}
-              solids={pipeline.solids}
+              pipelineName={pipeline ? pipeline.name : ""}
+              solids={pipeline ? pipeline.solids : []}
               interactor={{
                 onMouseDown: this.handleSVGMouseDown,
                 onWheel: () => {},
@@ -230,10 +234,14 @@ class SolidSelector extends React.PureComponent<
                   );
                 }
               }}
-              layout={getDagrePipelineLayout(pipeline.solids)}
-              highlightedSolids={pipeline.solids.filter(
-                (s: any) => highlighted.indexOf(s.name) !== -1
-              )}
+              layout={getDagrePipelineLayout(pipeline ? pipeline.solids : [])}
+              highlightedSolids={
+                pipeline
+                  ? pipeline.solids.filter(
+                      (s: any) => highlighted.indexOf(s.name) !== -1
+                    )
+                  : []
+              }
             />
           </div>
           <div className={Classes.DIALOG_FOOTER}>
@@ -257,7 +265,7 @@ class SolidSelector extends React.PureComponent<
           intent={valid ? Intent.NONE : Intent.WARNING}
           onClick={this.handleOpen}
         >
-          {valid
+          {valid && this.props.pipeline
             ? subsetDescription(this.props.value, this.props.pipeline)
             : "Invalid Solid Selection"}
         </Button>
@@ -285,7 +293,14 @@ export default (props: ISolidSelectorProps) => {
   });
   return (
     <Loading queryResult={queryResult}>
-      {result => <SolidSelector {...props} pipeline={result.pipeline} />}
+      {result => (
+        <SolidSelector
+          {...props}
+          pipeline={
+            result.pipeline.__typename === "Pipeline" ? result.pipeline : null
+          }
+        />
+      )}
     </Loading>
   );
 };

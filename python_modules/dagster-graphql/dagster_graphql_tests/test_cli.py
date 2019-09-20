@@ -90,7 +90,7 @@ mutation ($executionParams: ExecutionParams!) {
         ... on StartPipelineExecutionSuccess {
             run {
                 runId
-                pipeline { name }
+                pipeline { ...on PipelineReference { name } }
                 logs {
                     nodes {
                         __typename

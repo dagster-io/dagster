@@ -16,7 +16,7 @@ query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
             isBuiltin
         }
         ... on PipelineNotFoundError {
-            pipelineName
+            pipelineName 
         }
         ... on RuntimeTypeNotFoundError {
             pipeline { name }

@@ -11,12 +11,14 @@ import {
   IStepState,
   IStepMetadata
 } from "../RunMetadataProvider";
+import { RunHistoryRunFragment } from "../runs/types/RunHistoryRunFragment";
 import { formatElapsedTime } from "../Util";
 
 export interface IExecutionPlanProps {
   executionPlan: ExecutionPlanFragment;
   stepKeysToExecute?: (string | null)[] | null;
   runMetadata?: IRunMetadataDict;
+  run?: RunHistoryRunFragment;
   onApplyStepFilter?: (step: string) => void;
   onShowStateDetails?: (step: string) => void;
   onReexecuteStep?: (step: string) => void;
@@ -64,7 +66,8 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
       onReexecuteStep,
       runMetadata = EMPTY_RUN_METADATA,
       executionPlan,
-      stepKeysToExecute
+      stepKeysToExecute,
+      run
     } = this.props;
 
     const stepsOrderedByTransitionTime = Object.keys(runMetadata.steps).sort(
@@ -114,6 +117,18 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
           </span>
         );
       }
+      if (
+        run &&
+        run.pipeline &&
+        run.pipeline.__typename === "UnknownPipeline"
+      ) {
+        startDone = true;
+        startText = (
+          <span>
+            Could not load execution plan for pipeline {run.pipeline.name}.
+          </span>
+        );
+      }
     }
 
     // Keep track of skipped steps that were not part of the current run
@@ -127,42 +142,47 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
           <ExecutionTimelineMessage>
             <ExecutionTimelineDot completed={startDone} /> {startText}
           </ExecutionTimelineMessage>
-          {executionPlan.steps.map(step => {
-            const delay = stepsOrderedByTransitionTime.indexOf(step.key) * 100;
-            const metadata = runMetadata.steps[step.key] || EMPTY_STEP_METADATA;
+          {executionPlan &&
+            executionPlan.steps.map(step => {
+              const delay =
+                stepsOrderedByTransitionTime.indexOf(step.key) * 100;
+              const metadata =
+                runMetadata.steps[step.key] || EMPTY_STEP_METADATA;
 
-            // If stepKeysToExecute is null, then all steps are being run
-            const isStepPartOfRun =
-              !stepKeysToExecute || stepKeysToExecute.indexOf(step.key) > -1;
+              // If stepKeysToExecute is null, then all steps are being run
+              const isStepPartOfRun =
+                !stepKeysToExecute || stepKeysToExecute.indexOf(step.key) > -1;
 
-            if (!isStepPartOfRun) {
-              stepsSkippedCount++;
-              return null;
-            } else {
-              prevSkippedCount = stepsSkippedCount;
-              stepsSkippedCount = 0;
-            }
+              if (!isStepPartOfRun) {
+                stepsSkippedCount++;
+                return null;
+              } else {
+                prevSkippedCount = stepsSkippedCount;
+                stepsSkippedCount = 0;
+              }
 
-            return (
-              <div key={step.key}>
-                {this.renderSkippedSteps(prevSkippedCount)}
-                <ExecutionPlanBox
-                  state={metadata.state}
-                  start={metadata.start}
-                  elapsed={metadata.elapsed}
-                  key={step.key}
-                  stepKey={step.key}
-                  expectationResults={metadata.expectationResults}
-                  materializations={metadata.materializations}
-                  onShowStateDetails={onShowStateDetails}
-                  onApplyStepFilter={onApplyStepFilter}
-                  onReexecuteStep={onReexecuteStep}
-                  executionArtifactsPersisted={executionPlan.artifactsPersisted}
-                  delay={delay}
-                />
-              </div>
-            );
-          })}
+              return (
+                <div key={step.key}>
+                  {this.renderSkippedSteps(prevSkippedCount)}
+                  <ExecutionPlanBox
+                    state={metadata.state}
+                    start={metadata.start}
+                    elapsed={metadata.elapsed}
+                    key={step.key}
+                    stepKey={step.key}
+                    expectationResults={metadata.expectationResults}
+                    materializations={metadata.materializations}
+                    onShowStateDetails={onShowStateDetails}
+                    onApplyStepFilter={onApplyStepFilter}
+                    onReexecuteStep={onReexecuteStep}
+                    executionArtifactsPersisted={
+                      executionPlan.artifactsPersisted
+                    }
+                    delay={delay}
+                  />
+                </div>
+              );
+            })}
           {this.renderSkippedSteps(stepsSkippedCount)}
           {runMetadata.exitedAt && runMetadata.startedProcessAt && (
             <ExecutionTimelineMessage>

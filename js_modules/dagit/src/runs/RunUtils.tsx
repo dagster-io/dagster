@@ -74,6 +74,7 @@ const RunStatusDot = styled.div<{ status: IRunStatus }>`
   background: ${({ status }) =>
     ({
       NOT_STARTED: Colors.GRAY1,
+      MANAGED: Colors.GRAY3,
       STARTED: Colors.GRAY3,
       SUCCESS: Colors.GREEN2,
       FAILURE: Colors.RED3

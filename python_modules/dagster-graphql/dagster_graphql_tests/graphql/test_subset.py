@@ -38,24 +38,27 @@ PIPELINE_SUBSET_QUERY = '''
 query PipelineQuery($name: String! $solidSubset: [String!])
 {
     pipeline(params: { name: $name, solidSubset: $solidSubset }) {
-        name
-        solids {
+        __typename
+        ... on Pipeline {
             name
-        }
-        configTypes {
-          __typename
-          name
-          ... on CompositeConfigType {
-            fields {
-              name
-              configType {
+            solids {
                 name
-                __typename
-              }
-              __typename
             }
-            __typename
-          }
+            configTypes {
+                __typename
+                name
+                ... on CompositeConfigType {
+                    __typename
+                    fields {
+                        __typename
+                        name
+                        configType {
+                            __typename
+                            name
+                        }
+                    }
+                }
+            }
         }
     }
 }

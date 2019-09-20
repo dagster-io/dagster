@@ -7,8 +7,8 @@
 // GraphQL query operation: PipelineExplorerRootQuery
 // ====================================================
 
-export interface PipelineExplorerRootQuery_pipelineOrError_PythonError {
-  __typename: "PythonError" | "InvalidSubsetError";
+export interface PipelineExplorerRootQuery_pipelineOrError_InvalidSubsetError {
+  __typename: "InvalidSubsetError" | "PythonError";
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
@@ -670,7 +670,7 @@ export interface PipelineExplorerRootQuery_pipelineOrError_PipelineNotFoundError
   message: string;
 }
 
-export type PipelineExplorerRootQuery_pipelineOrError = PipelineExplorerRootQuery_pipelineOrError_PythonError | PipelineExplorerRootQuery_pipelineOrError_Pipeline | PipelineExplorerRootQuery_pipelineOrError_PipelineNotFoundError;
+export type PipelineExplorerRootQuery_pipelineOrError = PipelineExplorerRootQuery_pipelineOrError_InvalidSubsetError | PipelineExplorerRootQuery_pipelineOrError_Pipeline | PipelineExplorerRootQuery_pipelineOrError_PipelineNotFoundError;
 
 export interface PipelineExplorerRootQuery {
   pipelineOrError: PipelineExplorerRootQuery_pipelineOrError;

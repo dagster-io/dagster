@@ -9,9 +9,11 @@ from .utils import define_context, sync_execute_get_run_log_data
 RUNS_QUERY = '''
 query PipelineRunsRootQuery($name: String!) {
   pipeline(params: { name: $name }) {
-    name
-    runs {
-      ...RunHistoryRunFragment
+    ...on PipelineReference { name }
+    ... on Pipeline {
+      runs {
+        ...RunHistoryRunFragment
+      }
     }
   }
 }
@@ -20,7 +22,7 @@ fragment RunHistoryRunFragment on PipelineRun {
   runId
   status
   pipeline {
-    name
+    ...on PipelineReference { name }
   }
   logs {
     nodes {

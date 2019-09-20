@@ -5,7 +5,7 @@ import logging
 
 import yaml
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_pipelines import get_pipeline_or_raise
+from dagster_graphql.implementation.fetch_pipelines import get_pipeline_reference_or_raise
 
 from dagster import RunConfig, check
 from dagster.core.definitions.events import (
@@ -24,7 +24,15 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.compute_log_manager import ComputeLogData, ComputeLogFileData
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 
+from .pipelines import DauphinPipeline
+
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
+
+
+class DauphinPipelineOrError(dauphin.Union):
+    class Meta:
+        name = 'PipelineOrError'
+        types = ('Pipeline', 'PipelineNotFoundError', 'InvalidSubsetError', 'PythonError')
 
 
 class DauphinPipelineRun(dauphin.ObjectType):
@@ -33,7 +41,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     runId = dauphin.NonNull(dauphin.String)
     status = dauphin.NonNull('PipelineRunStatus')
-    pipeline = dauphin.NonNull('Pipeline')
+    pipeline = dauphin.NonNull('PipelineReference')
     logs = dauphin.NonNull('LogMessageConnection')
     computeLogs = dauphin.Field(
         dauphin.NonNull('ComputeLogs'),
@@ -42,7 +50,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         Compute logs are the stdout/stderr logs for a given solid step computation
         ''',
     )
-    executionPlan = dauphin.NonNull('ExecutionPlan')
+    executionPlan = dauphin.Field('ExecutionPlan')
     stepKeysToExecute = dauphin.List(dauphin.NonNull(dauphin.String))
     environmentConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
@@ -55,7 +63,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
     def resolve_pipeline(self, graphene_info):
-        return get_pipeline_or_raise(graphene_info, self._pipeline_run.selector)
+        return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run.selector)
 
     def resolve_logs(self, graphene_info):
         return graphene_info.schema.type_named('LogMessageConnection')(self._pipeline_run)
@@ -66,12 +74,15 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_executionPlan(self, graphene_info):
         pipeline = self.resolve_pipeline(graphene_info)
-        execution_plan = create_execution_plan(
-            pipeline.get_dagster_pipeline(),
-            self._pipeline_run.environment_dict,
-            RunConfig(mode=self._pipeline_run.mode),
-        )
-        return graphene_info.schema.type_named('ExecutionPlan')(pipeline, execution_plan)
+        if isinstance(pipeline, DauphinPipeline):
+            execution_plan = create_execution_plan(
+                pipeline.get_dagster_pipeline(),
+                self._pipeline_run.environment_dict,
+                RunConfig(mode=self._pipeline_run.mode),
+            )
+            return graphene_info.schema.type_named('ExecutionPlan')(pipeline, execution_plan)
+        else:
+            return None
 
     def resolve_stepKeysToExecute(self, _):
         return self._pipeline_run.step_keys_to_execute
@@ -180,13 +191,18 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
         self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
     def resolve_nodes(self, graphene_info):
-        pipeline = get_pipeline_or_raise(graphene_info, self._pipeline_run.selector)
+        pipeline = get_pipeline_reference_or_raise(graphene_info, self._pipeline_run.selector)
 
-        execution_plan = create_execution_plan(
-            pipeline.get_dagster_pipeline(),
-            self._pipeline_run.environment_dict,
-            RunConfig(mode=self._pipeline_run.mode),
-        )
+        if isinstance(pipeline, DauphinPipeline):
+            execution_plan = create_execution_plan(
+                pipeline.get_dagster_pipeline(),
+                self._pipeline_run.environment_dict,
+                RunConfig(mode=self._pipeline_run.mode),
+            )
+        else:
+            pipeline = None
+            execution_plan = None
+
         return [
             from_event_record(graphene_info, log, pipeline, execution_plan)
             for log in graphene_info.context.instance.all_logs(self._pipeline_run.run_id)
@@ -571,10 +587,10 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
     # pylint: disable=too-many-branches
     check.inst_param(event_record, 'event_record', EventRecord)
     check.param_invariant(event_record.is_dagster_event, 'event_record')
-    check.inst_param(
+    check.opt_inst_param(
         dauphin_pipeline, 'dauphin_pipeline', graphene_info.schema.type_named('Pipeline')
     )
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     dagster_event = event_record.dagster_event
     basic_params = construct_basic_params(graphene_info, event_record, execution_plan)
@@ -709,10 +725,10 @@ def from_compute_log_file(graphene_info, file):
 
 def from_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan):
     check.inst_param(event_record, 'event_record', EventRecord)
-    check.inst_param(
+    check.opt_inst_param(
         dauphin_pipeline, 'dauphin_pipeline', graphene_info.schema.type_named('Pipeline')
     )
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     if event_record.is_dagster_event:
         return from_dagster_event_record(
@@ -738,12 +754,14 @@ def create_dauphin_step(graphene_info, event_record, execution_plan):
 
 def construct_basic_params(graphene_info, event_record, execution_plan):
     check.inst_param(event_record, 'event_record', EventRecord)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     return {
         'runId': event_record.run_id,
         'message': event_record.user_message
         or (event_record.dagster_event.message if event_record.dagster_event else None),
         'timestamp': int(event_record.timestamp * 1000),
         'level': DauphinLogLevel.from_level(event_record.level),
-        'step': create_dauphin_step(graphene_info, event_record, execution_plan),
+        'step': create_dauphin_step(graphene_info, event_record, execution_plan)
+        if execution_plan
+        else None,
     }

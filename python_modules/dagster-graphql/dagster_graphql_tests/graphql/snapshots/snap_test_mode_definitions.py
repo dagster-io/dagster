@@ -8,6 +8,7 @@ snapshots = Snapshot()
 
 snapshots['test_query_multi_mode 1'] = {
     'pipeline': {
+        '__typename': 'Pipeline',
         'configTypes': [
             {
                 'name': 'Any'

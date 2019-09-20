@@ -49,7 +49,8 @@ Array [
               onKeyDown={[Function]}
             >
               <button
-                className="bp3-button"
+                className="bp3-button bp3-disabled"
+                disabled={true}
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
                 style={
@@ -58,12 +59,13 @@ Array [
                     "minWidth": 230,
                   }
                 }
+                tabIndex={-1}
                 type="button"
               >
                 <span
                   className="bp3-button-text"
                 >
-                  Select a Pipeline...
+                  pandas_hello_world
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
@@ -244,7 +246,7 @@ Array [
                 <span
                   className="bp3-button-text"
                 >
-                  Select a Pipeline...
+                  Select a pipeline...
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
@@ -362,7 +364,8 @@ Array [
               onKeyDown={[Function]}
             >
               <button
-                className="bp3-button"
+                className="bp3-button bp3-disabled"
+                disabled={true}
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
                 style={
@@ -371,12 +374,13 @@ Array [
                     "minWidth": 230,
                   }
                 }
+                tabIndex={-1}
                 type="button"
               >
                 <span
                   className="bp3-button-text"
                 >
-                  Select a Pipeline...
+                  pandas_hello_world
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
@@ -543,7 +547,8 @@ Array [
               onKeyDown={[Function]}
             >
               <button
-                className="bp3-button"
+                className="bp3-button bp3-disabled"
+                disabled={true}
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
                 style={
@@ -552,12 +557,13 @@ Array [
                     "minWidth": 230,
                   }
                 }
+                tabIndex={-1}
                 type="button"
               >
                 <span
                   className="bp3-button-text"
                 >
-                  Select a Pipeline...
+                  pandas_hello_world
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
@@ -724,7 +730,8 @@ Array [
               onKeyDown={[Function]}
             >
               <button
-                className="bp3-button"
+                className="bp3-button bp3-disabled"
+                disabled={true}
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
                 style={
@@ -733,12 +740,13 @@ Array [
                     "minWidth": 230,
                   }
                 }
+                tabIndex={-1}
                 type="button"
               >
                 <span
                   className="bp3-button-text"
                 >
-                  Select a Pipeline...
+                  pandas_hello_world
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
@@ -919,7 +927,7 @@ Array [
                 <span
                   className="bp3-button-text"
                 >
-                  Select a Pipeline...
+                  Select a pipeline...
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"

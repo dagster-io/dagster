@@ -9,16 +9,23 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 // GraphQL fragment: RunHistoryRunFragment
 // ====================================================
 
-export interface RunHistoryRunFragment_pipeline_solids {
+export interface RunHistoryRunFragment_pipeline_UnknownPipeline {
+  __typename: "UnknownPipeline";
+  name: string;
+}
+
+export interface RunHistoryRunFragment_pipeline_Pipeline_solids {
   __typename: "Solid";
   name: string;
 }
 
-export interface RunHistoryRunFragment_pipeline {
+export interface RunHistoryRunFragment_pipeline_Pipeline {
   __typename: "Pipeline";
   name: string;
-  solids: RunHistoryRunFragment_pipeline_solids[];
+  solids: RunHistoryRunFragment_pipeline_Pipeline_solids[];
 }
+
+export type RunHistoryRunFragment_pipeline = RunHistoryRunFragment_pipeline_UnknownPipeline | RunHistoryRunFragment_pipeline_Pipeline;
 
 export interface RunHistoryRunFragment_logs_nodes_ExecutionStepFailureEvent {
   __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineProcessExitedEvent" | "PipelineProcessStartedEvent" | "PipelineProcessStartEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "ObjectStoreOperationEvent" | "StepMaterializationEvent" | "EngineEvent";
@@ -62,5 +69,5 @@ export interface RunHistoryRunFragment {
   environmentConfigYaml: string;
   pipeline: RunHistoryRunFragment_pipeline;
   logs: RunHistoryRunFragment_logs;
-  executionPlan: RunHistoryRunFragment_executionPlan;
+  executionPlan: RunHistoryRunFragment_executionPlan | null;
 }

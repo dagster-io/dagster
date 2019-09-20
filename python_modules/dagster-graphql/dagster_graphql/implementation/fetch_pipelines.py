@@ -12,11 +12,21 @@ from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 @capture_dauphin_error
 def get_pipeline_or_error(graphene_info, selector):
-    return get_dauphin_pipeline_from_selector(graphene_info, selector)
+    '''Returns a DauphinPipelineOrError.'''
+    return get_dauphin_pipeline_from_selector_or_raise(graphene_info, selector)
 
 
 def get_pipeline_or_raise(graphene_info, selector):
-    return get_dauphin_pipeline_from_selector(graphene_info, selector)
+    '''Returns a DauphinPipeline or raises a UserFacingGraphQLError if one cannot be retrieved
+    from the selector, e.g., the pipeline is not present in the loaded repository.'''
+    return get_dauphin_pipeline_from_selector_or_raise(graphene_info, selector)
+
+
+def get_pipeline_reference_or_raise(graphene_info, selector):
+    '''Returns a DauphinPipelineReference or raises a UserFacingGraphQLError if a pipeline
+    reference cannot be retrieved from the selector, e.g, a UserFacingGraphQLError that wraps an
+    InvalidSubsetError.'''
+    return get_dauphin_pipeline_reference_from_selector(graphene_info, selector)
 
 
 @capture_dauphin_error
@@ -88,9 +98,25 @@ def get_dagster_pipeline_from_selector(graphene_info, selector):
         )
 
 
-def get_dauphin_pipeline_from_selector(graphene_info, selector):
+def get_dauphin_pipeline_from_selector_or_raise(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
     return graphene_info.schema.type_named('Pipeline')(
         get_dagster_pipeline_from_selector(graphene_info, selector)
     )
+
+
+def get_dauphin_pipeline_reference_from_selector(graphene_info, selector):
+    from ..schema.errors import DauphinPipelineNotFoundError
+
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(selector, 'selector', ExecutionSelector)
+    try:
+        return graphene_info.schema.type_named('Pipeline')(
+            get_dagster_pipeline_from_selector(graphene_info, selector)
+        )
+
+    except UserFacingGraphQLError as exc:
+        if isinstance(exc.dauphin_error, DauphinPipelineNotFoundError):
+            return graphene_info.schema.type_named('UnknownPipeline')(selector.name)
+        raise

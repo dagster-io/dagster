@@ -6,7 +6,10 @@ from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.types.evaluator import evaluate_config
 
-from .fetch_pipelines import get_dauphin_pipeline_from_selector
+from .fetch_pipelines import (
+    get_dauphin_pipeline_from_selector_or_raise,
+    get_dauphin_pipeline_reference_from_selector,
+)
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
@@ -61,7 +64,7 @@ def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     check.inst_param(selector, 'selector', ExecutionSelector)
     check.opt_str_param(mode, 'mode')
 
-    dauphin_pipeline = get_dauphin_pipeline_from_selector(graphene_info, selector)
+    dauphin_pipeline = get_dauphin_pipeline_from_selector_or_raise(graphene_info, selector)
     get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode)
     return graphene_info.schema.type_named('PipelineConfigValidationValid')(dauphin_pipeline)
 
@@ -72,7 +75,7 @@ def get_execution_plan(graphene_info, selector, environment_dict, mode):
     check.inst_param(selector, 'selector', ExecutionSelector)
     check.opt_str_param(mode, 'mode')
 
-    dauphin_pipeline = get_dauphin_pipeline_from_selector(graphene_info, selector)
+    dauphin_pipeline = get_dauphin_pipeline_reference_from_selector(graphene_info, selector)
     get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode)
     return graphene_info.schema.type_named('ExecutionPlan')(
         dauphin_pipeline,

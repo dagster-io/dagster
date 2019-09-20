@@ -13,7 +13,7 @@ class DauphinExecutionPlan(dauphin.ObjectType):
         name = 'ExecutionPlan'
 
     steps = dauphin.non_null_list('ExecutionStep')
-    pipeline = dauphin.NonNull('Pipeline')
+    pipeline = dauphin.NonNull('PipelineReference')
     artifactsPersisted = dauphin.NonNull(dauphin.Boolean)
 
     def __init__(self, pipeline, execution_plan):

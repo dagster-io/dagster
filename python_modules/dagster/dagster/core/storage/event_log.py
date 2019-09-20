@@ -107,7 +107,7 @@ CREATE_EVENT_LOG_SQL = '''
 CREATE TABLE IF NOT EXISTS event_logs (
     row_id INTEGER PRIMARY KEY AUTOINCREMENT,
     event TEXT
-)
+);
 '''
 
 FETCH_EVENTS_SQL = '''
@@ -147,6 +147,7 @@ class FilesystemEventLogStorage(WatchableEventLogStorage):
         if not run_id in self._known_run_ids:
             with self._connect(run_id) as conn:
                 conn.cursor().execute(CREATE_EVENT_LOG_SQL)
+                conn.cursor().execute('PRAGMA journal_mode=WAL;')
                 self._known_run_ids.add(run_id)
         with self._connect(run_id) as conn:
             conn.cursor().execute(INSERT_EVENT_SQL, (serialize_dagster_namedtuple(event),))

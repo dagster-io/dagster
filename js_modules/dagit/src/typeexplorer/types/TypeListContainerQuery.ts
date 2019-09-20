@@ -7,8 +7,8 @@
 // GraphQL query operation: TypeListContainerQuery
 // ====================================================
 
-export interface TypeListContainerQuery_pipelineOrError_PythonError {
-  __typename: "PythonError" | "InvalidSubsetError" | "PipelineNotFoundError";
+export interface TypeListContainerQuery_pipelineOrError_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError" | "InvalidSubsetError" | "PythonError";
 }
 
 export interface TypeListContainerQuery_pipelineOrError_Pipeline_runtimeTypes {
@@ -25,7 +25,7 @@ export interface TypeListContainerQuery_pipelineOrError_Pipeline {
   runtimeTypes: TypeListContainerQuery_pipelineOrError_Pipeline_runtimeTypes[];
 }
 
-export type TypeListContainerQuery_pipelineOrError = TypeListContainerQuery_pipelineOrError_PythonError | TypeListContainerQuery_pipelineOrError_Pipeline;
+export type TypeListContainerQuery_pipelineOrError = TypeListContainerQuery_pipelineOrError_PipelineNotFoundError | TypeListContainerQuery_pipelineOrError_Pipeline;
 
 export interface TypeListContainerQuery {
   pipelineOrError: TypeListContainerQuery_pipelineOrError;

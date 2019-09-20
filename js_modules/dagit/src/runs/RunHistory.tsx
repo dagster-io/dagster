@@ -6,14 +6,16 @@ import gql from "graphql-tag";
 import {
   Button,
   ButtonGroup,
+  Colors,
   Icon,
   Menu,
   MenuItem,
   NonIdealState,
   Popover,
+  MenuDivider,
   Position,
   Spinner,
-  MenuDivider
+  Tooltip
 } from "@blueprintjs/core";
 import {
   Details,
@@ -211,9 +213,13 @@ export default class RunHistory extends React.Component<
         mode
         environmentConfigYaml
         pipeline {
-          name
-          solids {
+          ... on PipelineReference {
             name
+          }
+          ... on Pipeline {
+            solids {
+              name
+            }
           }
         }
         logs {
@@ -369,7 +375,15 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
   return (
     <RowContainer key={run.runId} style={{ paddingRight: 3 }}>
       <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
-        <RunStatus status={start && end ? run.status : "STARTED"} />
+        <RunStatus
+          status={
+            (start && end) ||
+            run.status === "MANAGED" ||
+            run.status === "FAILURE"
+              ? run.status
+              : "STARTED"
+          }
+        />
       </RowColumn>
       <RowColumn style={{ flex: 2.4 }}>
         <Link
@@ -392,12 +406,22 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
         </Details>
       </RowColumn>
       <RowColumn>
-        <Link
-          style={{ display: "block" }}
-          to={`/p/${run.pipeline.name}/explore/`}
-        >
-          <Icon icon="diagram-tree" /> {run.pipeline.name}
-        </Link>
+        {run.pipeline.__typename === "Pipeline" ? (
+          <Link
+            style={{ display: "block" }}
+            to={`/p/${run.pipeline.name}/explore/`}
+          >
+            <Icon icon="diagram-tree" /> {run.pipeline.name}
+          </Link>
+        ) : (
+          <>
+            <Icon icon="diagram-tree" color={Colors.GRAY3} />
+            &nbsp;
+            <Tooltip content="This pipeline is not present in the currently loaded repository, so dagit can't browse the pipeline solids, but you can still view the logs.">
+              {run.pipeline.name}
+            </Tooltip>
+          </>
+        )}
       </RowColumn>
       <RowColumn
         style={{
@@ -431,12 +455,14 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
             />
             {dateString(end)}
           </div>
+        ) : run.status === "FAILURE" ? (
+          <div style={{ marginBottom: 4 }}> Failed to start</div>
         ) : (
           <div style={{ marginBottom: 4 }}>
             <Icon icon="calendar" /> Starting...
           </div>
         )}
-        <RunTime start={start} end={end} />
+        {run.status !== "FAILURE" && <RunTime start={start} end={end} />}
       </RowColumn>
       <RunActionsMenu run={run} />
     </RowContainer>
@@ -475,7 +501,10 @@ const RunActionsMenu: React.FunctionComponent<{
             href={`/p/${run.pipeline.name}/execute/setup?${qs.stringify({
               mode: run.mode,
               config: run.environmentConfigYaml,
-              solidSubset: run.pipeline.solids.map(s => s.name)
+              solidSubset:
+                run.pipeline.__typename === "Pipeline"
+                  ? run.pipeline.solids.map(s => s.name)
+                  : []
             })}`}
           />
           <MenuItem
@@ -491,7 +520,10 @@ const RunActionsMenu: React.FunctionComponent<{
                     ),
                     selector: {
                       name: run.pipeline.name,
-                      solidSubset: run.pipeline.solids.map(s => s.name)
+                      solidSubset:
+                        run.pipeline.__typename === "Pipeline"
+                          ? run.pipeline.solids.map(s => s.name)
+                          : []
                     }
                   }
                 }

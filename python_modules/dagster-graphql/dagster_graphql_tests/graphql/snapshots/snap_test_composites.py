@@ -8,6 +8,7 @@ snapshots = Snapshot()
 
 snapshots['test_composites 1'] = {
     'pipeline': {
+        '__typename': 'Pipeline',
         'name': 'composites_pipeline',
         'solidHandles': [
             {
