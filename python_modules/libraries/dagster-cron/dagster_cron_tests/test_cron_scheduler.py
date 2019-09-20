@@ -54,7 +54,7 @@ def create_repository():
 def test_start_and_end_schedule():
     with TemporaryDirectory() as tempdir:
 
-        instance = DagsterInstance.local_temp(tempdir=tempdir, features={'scheduler'})
+        instance = DagsterInstance.local_temp(tempdir=tempdir, features=['scheduler'])
         scheduler = define_scheduler(instance.schedules_directory())
         assert scheduler
 

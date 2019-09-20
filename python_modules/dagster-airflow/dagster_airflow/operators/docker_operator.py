@@ -1,5 +1,4 @@
 import ast
-import json
 import sys
 import warnings
 from contextlib import contextmanager
@@ -61,7 +60,7 @@ class ModifiedDockerOperator(DockerOperator):
         if self.force_pull or len(self.cli.images(name=self.image)) == 0:
             self.log.info('Pulling docker image %s', self.image)
             for l in self.cli.pull(self.image, stream=True):
-                output = json.loads(l.decode('utf-8').strip())
+                output = seven.json.loads(l.decode('utf-8').strip())
                 if 'status' in output:
                     self.log.info("%s", output['status'])
 

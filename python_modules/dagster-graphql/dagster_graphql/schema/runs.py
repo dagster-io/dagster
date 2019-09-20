@@ -1,13 +1,12 @@
 from __future__ import absolute_import
 
-import json
 import logging
 
 import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_reference_or_raise
 
-from dagster import RunConfig, check
+from dagster import RunConfig, check, seven
 from dagster.core.definitions.events import (
     EventMetadataEntry,
     JsonMetadataEntryData,
@@ -424,7 +423,7 @@ def iterate_metadata_entries(metadata_entries):
             yield DauphinEventJsonMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
-                jsonString=json.dumps(metadata_entry.entry_data.data),
+                jsonString=seven.json.dumps(metadata_entry.entry_data.data),
             )
         elif isinstance(metadata_entry.entry_data, TextMetadataEntryData):
             yield DauphinEventTextMetadataEntry(

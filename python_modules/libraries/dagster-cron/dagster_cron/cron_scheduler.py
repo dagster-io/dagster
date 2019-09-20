@@ -1,5 +1,4 @@
 import io
-import json
 import os
 import stat
 import uuid
@@ -161,7 +160,7 @@ class SystemCronScheduler(Scheduler):
         '''.format(
             dagster_graphql_path=dagster_graphql_path,
             repo_path=schedule.repository_path,
-            variables=json.dumps({"executionParams": execution_params}),
+            variables=seven.json.dumps({"executionParams": execution_params}),
             log_file=log_file,
             dagster_home=dagster_home,
             env_vars="\n".join(
@@ -207,7 +206,7 @@ class SystemCronScheduler(Scheduler):
             file_path = os.path.join(self._artifacts_dir, file)
             with open(file_path) as data:
                 try:
-                    data = json.load(data)
+                    data = seven.json.load(data)
                     schedule = RunningSchedule(
                         data['schedule_id'],
                         ScheduleDefinition(

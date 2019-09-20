@@ -1,13 +1,11 @@
-import json
 import os
 
 import dateutil.parser
 from airflow.exceptions import AirflowSkipException
 
-from dagster import DagsterEventType, check
+from dagster import DagsterEventType, check, seven
 from dagster.core.events import DagsterEvent
 from dagster.core.events.log import DagsterEventRecord
-from dagster.seven.json import JSONDecodeError
 
 
 # Using AirflowSkipException is a canonical way for tasks to skip themselves; see example
@@ -86,10 +84,10 @@ def parse_raw_res(raw_res):
 
     for line in reversed(lines):
         try:
-            res = json.loads(line)
+            res = seven.json.loads(line)
             break
         # If we don't get a GraphQL response, check the next line
-        except JSONDecodeError:
+        except seven.JSONDecodeError:
             continue
 
     return res

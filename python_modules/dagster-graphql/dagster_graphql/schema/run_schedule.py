@@ -1,11 +1,10 @@
-import json
 import sys
 
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 from dagster_graphql.schema.errors import DauphinSchedulerNotDefinedError
 
-from dagster import check
+from dagster import check, seven
 from dagster.core.definitions import ScheduleDefinition
 from dagster.core.scheduler import RunningSchedule
 
@@ -52,7 +51,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
         super(DauphinScheduleDefinition, self).__init__(
             name=schedule_def.name,
             cron_schedule=schedule_def.cron_schedule,
-            execution_params_string=json.dumps(schedule_def.execution_params),
+            execution_params_string=seven.json.dumps(schedule_def.execution_params),
         )
 
 

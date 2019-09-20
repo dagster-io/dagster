@@ -53,7 +53,7 @@ def define_scheduler(artifacts_dir):
 
 @mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
 def test_get_all_schedules():
-    instance = DagsterInstance.local_temp(features={'scheduler'})
+    instance = DagsterInstance.local_temp(features=['scheduler'])
     scheduler = define_scheduler(instance.schedules_directory())
     context = define_context(instance=instance, scheduler=scheduler)
 

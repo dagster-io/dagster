@@ -1,5 +1,3 @@
-import json
-
 import click
 from graphql import graphql
 from graphql.execution.executors.gevent import GeventExecutor
@@ -90,7 +88,7 @@ def execute_query_from_cli(handle, query, variables=None, log=False, log_dir=Non
     query = query.strip('\'" \n\t')
 
     result_dict = execute_query(
-        handle, query, variables=json.loads(variables) if variables else None
+        handle, query, variables=seven.json.loads(variables) if variables else None
     )
     str_res = seven.json.dumps(result_dict)
 

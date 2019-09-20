@@ -17,6 +17,7 @@ from dagster.core.instance import DagsterInstance, InstanceType, LocalInstanceRe
 from dagster.core.storage.event_log import FilesystemEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.root import RootStorage
 from dagster.core.storage.runs import FilesystemRunStorage
 
 
@@ -36,7 +37,7 @@ def test_fs_stores():
         compute_log_manager = LocalComputeLogManager(temp_dir)
         instance = DagsterInstance(
             instance_type=InstanceType.LOCAL,
-            root_storage_dir=temp_dir,
+            root_storage=RootStorage(temp_dir),
             run_storage=run_store,
             event_storage=event_store,
             compute_log_manager=compute_log_manager,
@@ -59,17 +60,21 @@ def test_fs_stores():
 def test_init_compute_log_with_bad_config():
     with seven.TemporaryDirectory() as tmpdir_path:
         with open(os.path.join(tmpdir_path, 'dagster.yaml'), 'w') as fd:
-            yaml.dump({'compute_logs': {'garbage': 'flargh'}}, fd)
+            yaml.dump({'compute_logs': {'garbage': 'flargh'}}, fd, default_flow_style=False)
         with pytest.raises(DagsterInvalidConfigError, match='Undefined field "garbage"'):
-            DagsterInstance.from_ref(LocalInstanceRef(tmpdir_path))
+            DagsterInstance.from_ref(LocalInstanceRef.from_root_storage_dir(tmpdir_path))
 
 
-def test_init_compute_log_with_bad_config_mpdule():
+def test_init_compute_log_with_bad_config_module():
     with seven.TemporaryDirectory() as tmpdir_path:
         with open(os.path.join(tmpdir_path, 'dagster.yaml'), 'w') as fd:
-            yaml.dump({'compute_logs': {'module': 'flargh', 'class': 'Woble', 'config': {}}}, fd)
+            yaml.dump(
+                {'compute_logs': {'module': 'flargh', 'class': 'Woble', 'config': {}}},
+                fd,
+                default_flow_style=False,
+            )
         with pytest.raises(
             DagsterInvariantViolationError,
             match='returning a valid instance of `ComputeLogManager`',
         ):
-            DagsterInstance.from_ref(LocalInstanceRef(tmpdir_path))
+            DagsterInstance.from_ref(LocalInstanceRef.from_root_storage_dir(tmpdir_path))

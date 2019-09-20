@@ -12,11 +12,17 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from dagster import check, seven
+from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.errors import DagsterError
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.stats import build_stats_from_events
-from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.core.serdes import (
+    ConfigurableClass,
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
+from dagster.core.types import Field, String
 from dagster.utils import mkdir_p
 
 from .pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
@@ -132,8 +138,8 @@ INSERT INTO event_logs (event, dagster_event_type, timestamp) VALUES (?, ?, ?)
 '''
 
 
-class FilesystemEventLogStorage(WatchableEventLogStorage):
-    def __init__(self, base_dir):
+class FilesystemEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
+    def __init__(self, base_dir, inst_data=None):
         self._base_dir = check.str_param(base_dir, 'base_dir')
         mkdir_p(self._base_dir)
 
@@ -141,6 +147,16 @@ class FilesystemEventLogStorage(WatchableEventLogStorage):
         self._watchers = {}
         self._obs = Observer()
         self._obs.start()
+
+        super(FilesystemEventLogStorage, self).__init__(inst_data=inst_data)
+
+    @classmethod
+    def config_type(cls):
+        return SystemNamedDict('FilesystemEventLogStorageConfig', {'base_dir': Field(String)})
+
+    @staticmethod
+    def from_config_value(config_value, **kwargs):
+        return FilesystemEventLogStorage(**dict(config_value, **kwargs))
 
     @contextmanager
     def _connect(self, run_id):

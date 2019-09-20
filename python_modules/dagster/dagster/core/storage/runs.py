@@ -12,8 +12,14 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from dagster import check
+from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.events import DagsterEventType
-from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.core.serdes import (
+    ConfigurableClass,
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
+from dagster.core.types import Field, String
 from dagster.utils import mkdir_p
 
 from .pipeline_run import PipelineRun, PipelineRunStatus
@@ -141,8 +147,8 @@ class InMemoryRunStorage(RunStorage):
         self._runs = OrderedDict()
 
 
-class FilesystemRunStorage(RunStorage):
-    def __init__(self, base_dir, watch_external_runs=True):
+class FilesystemRunStorage(RunStorage, ConfigurableClass):
+    def __init__(self, base_dir, watch_external_runs=True, inst_data=None):
         self._base_dir = check.opt_str_param(base_dir, 'base_dir')
         mkdir_p(self._base_dir)
 
@@ -155,6 +161,16 @@ class FilesystemRunStorage(RunStorage):
             observer = Observer()
             observer.schedule(ExternalRunsWatchdog(self, self._lock), self._base_dir)
             observer.start()
+
+        super(FilesystemRunStorage, self).__init__(inst_data=inst_data)
+
+    @classmethod
+    def config_type(cls):
+        return SystemNamedDict('FilesystemRunStorageConfig', {'base_dir': Field(String)})
+
+    @staticmethod
+    def from_config_value(config_value, **kwargs):
+        return FilesystemRunStorage(**dict(config_value, **kwargs))
 
     def filepath_for_run_id(self, run_id):
         return os.path.join(self._base_dir, '{run_id}.json'.format(run_id=run_id))

@@ -15,9 +15,9 @@ RESERVED_INPUT_NAMES = [
 
 INJECTED_BOILERPLATE = '''
 # Injected parameters
-import json as __dm_json
+from dagster import seven as __dm_seven
 import dagstermill as __dm_dagstermill
-context = __dm_dagstermill._reconstitute_pipeline_context(**__dm_json.loads('{pipeline_context_args}'));
+context = __dm_dagstermill._reconstitute_pipeline_context(**__dm_seven.json.loads('{pipeline_context_args}'));
 '''
 
 
