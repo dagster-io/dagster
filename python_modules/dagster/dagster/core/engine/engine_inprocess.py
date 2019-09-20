@@ -260,7 +260,7 @@ def dagster_event_sequence_for_step(step_context):
             raise dagster_error
 
     # case (3) in top comment
-    except Exception as unexpected_exception:  # pylint: disable=broad-except
+    except (Exception, KeyboardInterrupt) as unexpected_exception:  # pylint: disable=broad-except
         yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
 
         raise unexpected_exception
