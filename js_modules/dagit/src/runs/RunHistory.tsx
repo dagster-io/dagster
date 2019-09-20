@@ -38,7 +38,7 @@ import {
   TokenizingField,
   TokenizingFieldValue,
   SuggestionProvider,
-  tokenizedValueFromString
+  tokenizedValuesListFromString
 } from "../TokenizingField";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { Link } from "react-router-dom";
@@ -196,7 +196,7 @@ export default class RunHistory extends React.Component<
     this.state = {
       sort: RunSort.START_TIME_DSC,
       search: props.initialSearch
-        ? [tokenizedValueFromString(props.initialSearch, suggestions)]
+        ? tokenizedValuesListFromString(props.initialSearch, suggestions)
         : [],
       statuses: AllRunStatuses
     };
