@@ -18,10 +18,16 @@ import {
   RowContainer,
   ScrollContainer
 } from "../ListComponents";
+import {
+  RunStatus,
+  titleForRun,
+  unixTimestampToString
+} from "../runs/RunUtils";
 import { Query, QueryResult } from "react-apollo";
 import {
   SchedulesRootQuery,
   SchedulesRootQuery_scheduler_Scheduler_runningSchedules,
+  SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs,
   SchedulesRootQuery_schedules
 } from "./types/SchedulesRootQuery";
 
@@ -38,6 +44,7 @@ export default class SchedulesRoot extends React.Component {
       <Query
         query={SCHEDULES_ROOT_QUERY}
         fetchPolicy="cache-and-network"
+        pollInterval={15 * 1000}
         partialRefetch={true}
       >
         {(queryResult: QueryResult<SchedulesRootQuery, any>) => (
@@ -82,19 +89,15 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
 
   return (
     <div>
-      <Header>{`Schedules  (${props.schedules.length})`}</Header>
+      <Header>{`Schedule Definitions (${props.schedules.length})`}</Header>
       {props.schedules.length > 0 && (
         <Legend>
           <LegendColumn style={{ maxWidth: 40 }}></LegendColumn>
-          <LegendColumn style={{ flex: 1.35 }}>Schedule Name</LegendColumn>
+          <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
           <LegendColumn>Pipeline</LegendColumn>
-          <LegendColumn
-            style={{
-              maxWidth: 150
-            }}
-          >
-            Schedule
-          </LegendColumn>
+          <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
+          <LegendColumn style={{ flex: 1 }}>Recent Runs</LegendColumn>
+          <LegendColumn style={{ flex: 1 }}>Last Run</LegendColumn>
           <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
         </Legend>
       )}
@@ -102,6 +105,10 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
         <ScheduleRow
           schedule={schedule}
           running={runningScheduleMap[schedule.name]}
+          runs={
+            runningScheduleMap[schedule.name] &&
+            runningScheduleMap[schedule.name].runs
+          }
           key={schedule.name}
         />
       ))}
@@ -122,7 +129,8 @@ const PipelineRunningDot = styled.div`
 const ScheduleRow: React.FunctionComponent<{
   schedule: SchedulesRootQuery_schedules;
   running: boolean;
-}> = ({ schedule, running }) => {
+  runs: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs[];
+}> = ({ schedule, running, runs }) => {
   const { name, cronSchedule, executionParamsString } = schedule;
   const executionParams = JSON.parse(executionParamsString);
   const pipelineName = executionParams.selector.name;
@@ -135,6 +143,22 @@ const ScheduleRow: React.FunctionComponent<{
       return "Invalid cron string";
     }
   };
+  const NUM_RUNS_TO_DISPLAY = 10;
+
+  const sortRuns = (
+    runs: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs[]
+  ) => {
+    if (!runs) return [];
+
+    return runs.sort((a, b) => {
+      const aStart = a.stats.startTime || Number.MAX_SAFE_INTEGER;
+      const bStart = b.stats.startTime || Number.MAX_SAFE_INTEGER;
+      return bStart - aStart;
+    });
+  };
+
+  const sortedRuns = sortRuns(runs);
+  const mostRecentRun = sortedRuns[0];
 
   return (
     <RowContainer key={name}>
@@ -161,6 +185,30 @@ const ScheduleRow: React.FunctionComponent<{
         >
           {getNaturalLanguageCronString(cronSchedule)}
         </Tooltip>
+      </RowColumn>
+      <RowColumn style={{ flex: 1 }}>
+        {runs && runs.length > 0
+          ? runs.slice(1, NUM_RUNS_TO_DISPLAY).map(run => (
+              <div
+                style={{ display: "inline", cursor: "pointer", marginRight: 5 }}
+                key={run.runId}
+              >
+                <Link to={`/p/${run.pipeline.name}/runs/${run.runId}`}>
+                  <Tooltip position={"top"} content={titleForRun(run)}>
+                    <RunStatus status={run.status} />
+                  </Tooltip>
+                </Link>
+              </div>
+            ))
+          : "-"}
+        {runs && runs.length > NUM_RUNS_TO_DISPLAY && (
+          <Link to={""}> +{runs.length - NUM_RUNS_TO_DISPLAY} more</Link>
+        )}
+      </RowColumn>
+      <RowColumn style={{ flex: 1 }}>
+        {mostRecentRun
+          ? unixTimestampToString(mostRecentRun.stats.startTime)
+          : "No previous runs"}
       </RowColumn>
       <RowColumn
         style={{
@@ -211,6 +259,16 @@ export const SCHEDULES_ROOT_QUERY = gql`
         runningSchedules {
           scheduleDefinition {
             name
+          }
+          runs {
+            runId
+            pipeline {
+              name
+            }
+            status
+            stats {
+              startTime
+            }
           }
         }
       }

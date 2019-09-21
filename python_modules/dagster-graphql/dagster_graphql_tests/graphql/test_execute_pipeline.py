@@ -586,8 +586,9 @@ def test_pipeline_reexecution_invalid_step_in_step_output_handle():
 
 
 def test_basic_start_pipeline_execution_with_tags():
+    instance = DagsterInstance.ephemeral()
     result = execute_dagster_graphql(
-        define_context(),
+        define_context(instance=instance),
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'executionParams': {
@@ -603,13 +604,15 @@ def test_basic_start_pipeline_execution_with_tags():
     assert result.data
     assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
 
-    assert len(result.data['startPipelineExecution']['run']['tags']) > 0
-    assert any(
-        [
-            x['key'] == 'dagster/test_key' and x['value'] == 'test_value'
-            for x in result.data['startPipelineExecution']['run']['tags']
-        ]
-    )
+    run = result.data['startPipelineExecution']['run']
+    run_id = run['runId']
+    assert len(run['tags']) > 0
+    assert any([x['key'] == 'dagster/test_key' and x['value'] == 'test_value' for x in run['tags']])
+
+    # Check run storage
+    runs_with_tag = instance.all_runs_for_tag('dagster/test_key', 'test_value')
+    assert len(runs_with_tag) == 1
+    assert runs_with_tag[0].run_id == run_id
 
 
 def test_pipeline_reexecution_invalid_output_in_step_output_handle():

@@ -98,14 +98,14 @@ def test_filesystem_event_log_storage_run_corrupted_bad_data():
         storage = FilesystemEventLogStorage(tmpdir_path)
         with storage._connect('foo') as conn:  # pylint: disable=protected-access
             conn.cursor().execute(CREATE_EVENT_LOG_SQL)
-            conn.cursor().execute(INSERT_EVENT_SQL, ('{bar}',))
+            conn.cursor().execute(INSERT_EVENT_SQL, ('{bar}', None, None))
         with pytest.raises(EventLogInvalidForRun) as exc:
             storage.get_logs_for_run('foo')
         assert exc.value.run_id == 'foo'
 
         with storage._connect('bar') as conn:  # pylint: disable=protected-access
             conn.cursor().execute(CREATE_EVENT_LOG_SQL)
-            conn.cursor().execute(INSERT_EVENT_SQL, ('3',))
+            conn.cursor().execute(INSERT_EVENT_SQL, ('3', None, None))
         with pytest.raises(EventLogInvalidForRun) as exc:
             storage.get_logs_for_run('bar')
         assert exc.value.run_id == 'bar'

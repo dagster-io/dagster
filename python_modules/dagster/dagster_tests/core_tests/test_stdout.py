@@ -33,3 +33,26 @@ def test_stdout():
     step_key = compute_steps[0]
     logs = instance.compute_log_manager.read_logs(result.run_id, step_key)
     assert logs.stdout.data == HELLO_WORLD + SEPARATOR
+    assert 'dagster - DEBUG - \n       dagster_event = {"event_specific_data":' in logs.stderr.data
+    logs = instance.compute_log_manager.read_logs(result.run_id, step_key, cursor='0:0')
+    assert logs.stdout.data == HELLO_WORLD + SEPARATOR
+    assert 'dagster - DEBUG - \n       dagster_event = {"event_specific_data":' in logs.stderr.data
+    assert instance.compute_log_manager.is_compute_completed(result.run_id, step_key)
+
+    bad_logs = instance.compute_log_manager.read_logs('not_a_run_id', step_key)
+    assert bad_logs.stdout.data is None
+    assert bad_logs.stderr.data is None
+    assert not instance.compute_log_manager.is_compute_completed('not_a_run_id', step_key)
+
+
+def test_stdout_subscriptions():
+    instance = DagsterInstance.local_temp()
+    step_key = 'spew.compute'
+    result = execute_pipeline(spew_pipeline, instance=instance)
+    observable = instance.compute_log_manager.observable(result.run_id, step_key)
+    logs = []
+    observable.subscribe(logs.append)
+    assert len(logs) == 1
+    stdout_cursor, stderr_cursor = map(int, logs[0].cursor.split(':'))
+    assert stdout_cursor == 12
+    assert stderr_cursor > 1000

@@ -81,8 +81,8 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     def resolve_runs(self, graphene_info):
         return [
             graphene_info.schema.type_named('PipelineRun')(r)
-            for r in graphene_info.context.pipeline_runs.all_runs_for_pipeline(
-                self._schedule.schedule_definition.execution_params['selector']['name']
+            for r in graphene_info.context.instance.all_runs_for_tag(
+                "dagster/schedule_id", self._schedule.schedule_id
             )
         ]
 

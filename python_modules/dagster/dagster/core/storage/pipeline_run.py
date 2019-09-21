@@ -15,6 +15,38 @@ class PipelineRunStatus(Enum):
 
 
 @whitelist_for_serdes
+class PipelineRunStatsSnapshot(
+    namedtuple(
+        '_PipelineRunStatsSnapshot',
+        (
+            'run_id steps_succeeded steps_failed materializations '
+            'expectations start_time end_time'
+        ),
+    )
+):
+    def __new__(
+        cls,
+        run_id,
+        steps_succeeded,
+        steps_failed,
+        materializations,
+        expectations,
+        start_time,
+        end_time,
+    ):
+        return super(PipelineRunStatsSnapshot, cls).__new__(
+            cls,
+            run_id=check.str_param(run_id, 'run_id'),
+            steps_succeeded=check.int_param(steps_succeeded, 'steps_succeeded'),
+            steps_failed=check.int_param(steps_failed, 'steps_failed'),
+            materializations=check.int_param(materializations, 'materializations'),
+            expectations=check.int_param(expectations, 'expectations'),
+            start_time=check.opt_float_param(start_time, 'start_time'),
+            end_time=check.opt_float_param(end_time, 'end_time'),
+        )
+
+
+@whitelist_for_serdes
 class PipelineRun(
     namedtuple(
         '_PipelineRun',

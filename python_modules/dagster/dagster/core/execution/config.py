@@ -1,11 +1,12 @@
 import multiprocessing
 import time
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 
 import six
 
 from dagster import check
+from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
@@ -71,9 +72,9 @@ class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         in DagsterEvents.'''
         return self._raise_on_error
 
-    @abstractproperty
-    def requires_persistent_storage(self):
-        '''(bool): Whether this executor config requires persistent storage to be configured.'''
+    @abstractmethod
+    def check_requirements(self, instance, system_storage_def):
+        '''(void): Whether this executor config is valid given the instance and system storage'''
 
     @abstractmethod
     def get_engine(self):
@@ -84,9 +85,8 @@ class InProcessExecutorConfig(ExecutorConfig):
     def __init__(self, raise_on_error=True):
         self._raise_on_error = check.opt_bool_param(raise_on_error, 'raise_on_error', default=True)
 
-    @property
-    def requires_persistent_storage(self):
-        return False
+    def check_requirements(self, _instance, _system_storage_def):
+        pass
 
     def get_engine(self):
         from dagster.core.engine.engine_inprocess import InProcessEngine
@@ -113,9 +113,9 @@ class MultiprocessExecutorConfig(ExecutorConfig):
         self.max_concurrent = check.int_param(max_concurrent, 'max_concurrent')
         self._raise_on_error = False
 
-    @property
-    def requires_persistent_storage(self):
-        return True
+    def check_requirements(self, instance, system_storage_def):
+        check_persistent_storage_requirement(system_storage_def)
+        check_non_ephemeral_instance(instance)
 
     def get_engine(self):
         from dagster.core.engine.engine_multiprocess import MultiprocessEngine
@@ -126,3 +126,26 @@ class MultiprocessExecutorConfig(ExecutorConfig):
 @whitelist_for_serdes
 class ReexecutionConfig(namedtuple('_ReexecutionConfig', 'previous_run_id step_output_handles')):
     pass
+
+
+def check_persistent_storage_requirement(system_storage_def):
+    if not system_storage_def.is_persistent:
+        raise DagsterUnmetExecutorRequirementsError(
+            (
+                'You have attempted use a multi process executor while using system '
+                'storage {storage_name} which does not persist intermediates. '
+                'This means there would be no way to move data between different '
+                'processes. Please configure your pipeline in the storage config '
+                'section to use persistent system storage such as the filesystem.'
+            ).format(storage_name=system_storage_def.name)
+        )
+
+
+def check_non_ephemeral_instance(instance):
+    if instance.is_ephemeral:
+        raise DagsterUnmetExecutorRequirementsError(
+            'You have attempted to use a multi process executor with an ephemeral DagsterInstance. '
+            'A non-ephermal instance is needed to coordinate execution between multiple processes. '
+            'You can configure your default instance via $DAGSTER_HOME or ensure a valid one is '
+            'passed when invoking the python APIs.'
+        )

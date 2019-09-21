@@ -92,6 +92,8 @@ def _validate_event_specific_data(event_type, event_specific_data):
         check.inst_param(event_specific_data, 'event_specific_data', StepSuccessData)
     elif event_type == DagsterEventType.STEP_MATERIALIZATION:
         check.inst_param(event_specific_data, 'event_specific_data', StepMaterializationData)
+    elif event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
+        check.inst_param(event_specific_data, 'event_specific_data', StepExpectationResultData)
     elif event_type == DagsterEventType.PIPELINE_PROCESS_STARTED:
         check.inst_param(event_specific_data, 'event_specific_data', PipelineProcessStartedData)
     elif event_type == DagsterEventType.PIPELINE_PROCESS_EXITED:
@@ -288,6 +290,15 @@ class DagsterEvent(
     def step_materialization_data(self):
         _assert_type(
             'step_materialization_data', DagsterEventType.STEP_MATERIALIZATION, self.event_type
+        )
+        return self.event_specific_data
+
+    @property
+    def step_expectation_result_data(self):
+        _assert_type(
+            'step_expectation_result_data',
+            DagsterEventType.STEP_EXPECTATION_RESULT,
+            self.event_type,
         )
         return self.event_specific_data
 

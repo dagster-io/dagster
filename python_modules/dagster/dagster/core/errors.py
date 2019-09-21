@@ -185,12 +185,15 @@ class DagsterInvalidConfigError(DagsterError):
         from dagster.core.definitions import PipelineDefinition
         from dagster.core.types.evaluator.errors import friendly_string_for_error, EvaluationError
 
-        self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        self.pipeline = check.opt_inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.errors = check.list_param(errors, 'errors', of_type=EvaluationError)
 
         self.config_value = config_value
 
-        error_msg = 'Pipeline "{pipeline}" config errors:'.format(pipeline=pipeline.name)
+        if pipeline is not None:
+            error_msg = 'Pipeline "{pipeline}" config errors:'.format(pipeline=pipeline.name)
+        else:
+            error_msg = 'Config errors:'
 
         error_messages = []
 
@@ -205,3 +208,9 @@ class DagsterInvalidConfigError(DagsterError):
         self.error_messages = error_messages
 
         super(DagsterInvalidConfigError, self).__init__(error_msg, *args, **kwargs)
+
+
+class DagsterUnmetExecutorRequirementsError(DagsterError):
+    '''Indicates the resolved executor is incompatible with the state of other systems
+    such as the DagsterInstance or system storage configuration.
+    '''

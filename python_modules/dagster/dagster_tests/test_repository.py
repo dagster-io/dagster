@@ -81,7 +81,16 @@ def define_multi_mode_with_resources_pipeline():
                 environment_files=[
                     script_relative_path('./environments/multi_mode_with_resources/add_mode.yaml')
                 ],
-            )
+            ),
+            PresetDefinition(
+                'multiproc',
+                mode='add_mode',
+                environment_dict={
+                    'resources': {'op': {'config': 2}},
+                    'execution': {'multiprocess': {}},
+                    'storage': {'filesystem': {}},
+                },
+            ),
         ],
     )
 

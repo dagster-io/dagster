@@ -57,11 +57,23 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''
 
     @abstractmethod
+    def all_runs_for_tag(self, key, value):
+        '''Return all the runs present in the storage that have a tag with key, value
+
+        Args:
+            key (str): The key to index on
+            value (str): The value to match
+
+        Returns:
+            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+        '''
+
+    @abstractmethod
     def get_run_by_id(self, run_id):
         '''Get a run by its id.
 
         Args:
-            run_id (str): THe id of the run
+            run_id (str): The id of the run
 
         Returns:
             Optional[PipelineRun]
@@ -114,6 +126,9 @@ class InMemoryRunStorage(RunStorage):
 
     def get_run_by_id(self, run_id):
         return self._runs.get(run_id)
+
+    def all_runs_for_tag(self, key, value):
+        return [r for r in self.all_runs if r.tags.get(key) == value]
 
     def has_run(self, run_id):
         return run_id in self._runs
@@ -197,6 +212,9 @@ class FilesystemRunStorage(RunStorage):
         path = self._known_runs[run_id]
         with open(path, 'r') as fd:
             return deserialize_json_to_dagster_namedtuple(fd.read())
+
+    def all_runs_for_tag(self, key, value):
+        return [r for r in self.all_runs if r.tags.get(key) == value]
 
     def handle_run_event(self, run_id, event):
         run = self.get_run_by_id(run_id)
@@ -305,6 +323,9 @@ class SqliteRunStorage(RunStorage):
     def get_run_by_id(self, run_id):
         sql = 'SELECT run_id, pipeline_name FROM runs WHERE run_id = ?'
         return self._from_sql_row(self.conn.cursor().execute(sql, (run_id,)).fetchone())
+
+    def all_runs_for_tag(self, key, value):
+        raise NotImplementedError()
 
     def has_run(self, run_id):
         sql = 'SELECT run_id FROM runs WHERE run_id = ?'

@@ -38,7 +38,7 @@ def _kv_message(all_items):
     sep = '\n'
     format_str = '{key:>20} = {value}'
     return sep + sep.join(
-        [format_str.format(key=key, value=_dump_value(value)) for key, value in all_items]
+        [format_str.format(key=key, value=_dump_value(value)) for key, value in sorted(all_items)]
     )
 
 

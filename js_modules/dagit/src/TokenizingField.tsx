@@ -33,6 +33,14 @@ function findProviderByToken(token: string, providers: SuggestionProvider[]) {
   return providers.find(p => p.token.toLowerCase() === token.toLowerCase());
 }
 
+export function tokenizedValuesListFromString(
+  str: string,
+  providers: SuggestionProvider[]
+) {
+  const tokens = str.split(",");
+  return tokens.map(token => tokenizedValueFromString(token, providers));
+}
+
 export function tokenizedValueFromString(
   str: string,
   providers: SuggestionProvider[]

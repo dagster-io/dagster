@@ -9,12 +9,37 @@ import yaml
 from rx import Observable
 
 from dagster import check, seven
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.definitions.environment_configs import SystemNamedDict
+from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
 from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.types import Field, PermissiveDict, String
+from dagster.core.types.evaluator import evaluate_config
 from dagster.utils.yaml_utils import load_yaml_from_globs
 
 from .features import DagsterFeatures
+
+DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
+
+
+def define_dagster_config_cls():
+    return SystemNamedDict(
+        'DagsterConfig',
+        {
+            'features': Field(PermissiveDict(), is_optional=True),
+            'compute_logs': Field(
+                SystemNamedDict(
+                    'DagsterConfigComputeLogs',
+                    {
+                        'module': Field(String),
+                        'class': Field(String),
+                        'config': Field(PermissiveDict()),
+                    },
+                ),
+                is_optional=True,
+            ),
+        },
+    )
 
 
 def _is_dagster_home_set():
@@ -22,7 +47,12 @@ def _is_dagster_home_set():
 
 
 def _dagster_config(base_dir):
-    return load_yaml_from_globs(os.path.join(base_dir, "dagster.yaml"))
+    dagster_config_dict = load_yaml_from_globs(os.path.join(base_dir, DAGSTER_CONFIG_YAML_FILENAME))
+    dagster_config_type = define_dagster_config_cls().inst()
+    dagster_config = evaluate_config(dagster_config_type, dagster_config_dict)
+    if not dagster_config.success:
+        raise DagsterInvalidConfigError(None, dagster_config.errors, dagster_config_dict)
+    return dagster_config.value
 
 
 def _dagster_feature_set(base_dir):
@@ -60,7 +90,9 @@ def _dagster_compute_log_manager(base_dir):
                 return compute_log_manager
             except Exception:
                 raise DagsterInvariantViolationError(
-                    'Invalid dagster config in `dagster.yaml`. Expecting `module`, `class`, and `config`, returning a valid instance of `ComputeLogManager`'
+                    'Invalid dagster config in `{config_yaml_filename}`. Expecting `module`, '
+                    '`class`, and `config`, returning a valid instance of '
+                    '`ComputeLogManager`'.format(config_yaml_filename=DAGSTER_CONFIG_YAML_FILENAME)
                 )
 
     from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
@@ -267,6 +299,9 @@ class DagsterInstance:
     def get_run(self, run_id):
         return self._run_storage.get_run_by_id(run_id)
 
+    def get_run_stats(self, run_id):
+        return self._event_storage.get_stats_for_run(run_id)
+
     def create_empty_run(self, run_id, pipeline_name):
         return self.create_run(PipelineRun.create_empty_run(pipeline_name, run_id))
 
@@ -296,6 +331,9 @@ class DagsterInstance:
 
     def all_runs_for_pipeline(self, pipeline):
         return self._run_storage.all_runs_for_pipeline(pipeline)
+
+    def all_runs_for_tag(self, key, value):
+        return self._run_storage.all_runs_for_tag(key, value)
 
     def wipe(self):
         self._run_storage.wipe()

@@ -20,7 +20,7 @@ def define_repo():
 
     log_spew_hourly = ScheduleDefinition(
         name="log_spew_hourly",
-        cron_schedule="0 * * * *",
+        cron_schedule="* * * * *",
         execution_params={
             "environmentConfigData": {"storage": {"filesystem": {}}},
             "selector": {"name": "log_spew", "solidSubset": None},

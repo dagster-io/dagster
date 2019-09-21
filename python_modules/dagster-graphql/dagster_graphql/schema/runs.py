@@ -22,7 +22,11 @@ from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.compute_log_manager import ComputeLogData, ComputeLogFileData
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import (
+    PipelineRun,
+    PipelineRunStatsSnapshot,
+    PipelineRunStatus,
+)
 
 from .pipelines import DauphinPipeline
 
@@ -35,6 +39,31 @@ class DauphinPipelineOrError(dauphin.Union):
         types = ('Pipeline', 'PipelineNotFoundError', 'InvalidSubsetError', 'PythonError')
 
 
+class DauphinPipelineRunStatsSnapshot(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineRunStatsSnapshot'
+
+    runId = dauphin.NonNull(dauphin.String)
+    stepsSucceeded = dauphin.NonNull(dauphin.Int)
+    stepsFailed = dauphin.NonNull(dauphin.Int)
+    materializations = dauphin.NonNull(dauphin.Int)
+    expectations = dauphin.NonNull(dauphin.Int)
+    startTime = dauphin.Field(dauphin.Float)
+    endTime = dauphin.Field(dauphin.Float)
+
+    def __init__(self, stats):
+        super(DauphinPipelineRunStatsSnapshot, self).__init__(
+            runId=stats.run_id,
+            stepsSucceeded=stats.steps_succeeded,
+            stepsFailed=stats.steps_failed,
+            materializations=stats.materializations,
+            expectations=stats.expectations,
+            startTime=stats.start_time,
+            endTime=stats.end_time,
+        )
+        self._stats = check.inst_param(stats, 'stats', PipelineRunStatsSnapshot)
+
+
 class DauphinPipelineRun(dauphin.ObjectType):
     class Meta:
         name = 'PipelineRun'
@@ -42,6 +71,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     runId = dauphin.NonNull(dauphin.String)
     status = dauphin.NonNull('PipelineRunStatus')
     pipeline = dauphin.NonNull('PipelineReference')
+    stats = dauphin.NonNull('PipelineRunStatsSnapshot')
     logs = dauphin.NonNull('LogMessageConnection')
     computeLogs = dauphin.Field(
         dauphin.NonNull('ComputeLogs'),
@@ -67,6 +97,10 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_logs(self, graphene_info):
         return graphene_info.schema.type_named('LogMessageConnection')(self._pipeline_run)
+
+    def resolve_stats(self, graphene_info):
+        stats = graphene_info.context.instance.get_run_stats(self.run_id)
+        return graphene_info.schema.type_named('PipelineRunStatsSnapshot')(stats)
 
     def resolve_computeLogs(self, graphene_info, stepKey):
         update = graphene_info.context.instance.compute_log_manager.read_logs(self.run_id, stepKey)

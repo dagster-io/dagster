@@ -34,6 +34,7 @@ class LocalComputeLogManager(ComputeLogManager):
         return os.path.join(self._base_dir, run_id, 'compute_logs')
 
     def _file_cursor(self, cursor, io_type):
+        check.inst_param(io_type, 'io_type', ComputeIOType)
         if not cursor:
             return 0
 
@@ -42,8 +43,8 @@ class LocalComputeLogManager(ComputeLogManager):
             return int(parts[0])
         elif io_type == ComputeIOType.STDERR:
             return int(parts[1])
-
-        return 0
+        else:
+            return 0
 
     def _build_cursor(self, out_offset, err_offset):
         check.int_param(out_offset, 'out_offset')
@@ -71,7 +72,7 @@ class LocalComputeLogManager(ComputeLogManager):
         path = self.get_local_path(run_id, step_key, io_type)
 
         if not os.path.exists(path) or not os.path.isfile(path):
-            return None
+            return ComputeLogFileData(path=path, data=None, cursor=0, size=0, download_url=None)
 
         # See: https://docs.python.org/2/library/stdtypes.html#file.tell for Windows behavior
         with open(path, 'rb') as f:

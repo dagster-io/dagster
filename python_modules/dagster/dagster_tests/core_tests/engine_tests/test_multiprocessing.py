@@ -1,7 +1,4 @@
-import pytest
-
 from dagster import (
-    DagsterInvariantViolationError,
     DependencyDefinition,
     ExecutionTargetHandle,
     InputDefinition,
@@ -101,20 +98,22 @@ def test_error_pipeline_multiprocess():
 
 
 def test_mem_storage_error_pipeline_multiprocess():
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        execute_pipeline(
-            ExecutionTargetHandle.for_pipeline_fn(
-                define_diamond_pipeline
-            ).build_pipeline_definition(),
-            environment_dict={'execution': {'multiprocess': {}}},
-        )
+    result = execute_pipeline(
+        ExecutionTargetHandle.for_pipeline_fn(define_diamond_pipeline).build_pipeline_definition(),
+        environment_dict={'execution': {'multiprocess': {}}},
+        instance=DagsterInstance.local_temp(),
+    )
+    assert not result.success
+    assert len(result.event_list) == 1
+    assert result.event_list[0].is_failure
 
-    assert (
-        'While invoking '
-        'pipeline diamond_execution. You have attempted to use the '
-        'multiprocessing executor while using system storage in_memory '
-        'which does not persist intermediates. This means there would '
-        'be no way to move data between different processes. Please '
-        'configure your pipeline in the storage config section to use '
-        'persistent system storage such as the filesystem.'
-    ) in str(exc_info.value)
+
+def test_invalid_instance():
+    result = execute_pipeline(
+        ExecutionTargetHandle.for_pipeline_fn(define_diamond_pipeline).build_pipeline_definition(),
+        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        instance=DagsterInstance.ephemeral(),
+    )
+    assert not result.success
+    assert len(result.event_list) == 1
+    assert result.event_list[0].is_failure

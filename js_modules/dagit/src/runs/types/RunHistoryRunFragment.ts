@@ -27,27 +27,14 @@ export interface RunHistoryRunFragment_pipeline_Pipeline {
 
 export type RunHistoryRunFragment_pipeline = RunHistoryRunFragment_pipeline_UnknownPipeline | RunHistoryRunFragment_pipeline_Pipeline;
 
-export interface RunHistoryRunFragment_logs_nodes_ExecutionStepFailureEvent {
-  __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineProcessExitedEvent" | "PipelineProcessStartedEvent" | "PipelineProcessStartEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "ObjectStoreOperationEvent" | "StepMaterializationEvent" | "EngineEvent";
-  timestamp: string;
-}
-
-export interface RunHistoryRunFragment_logs_nodes_StepExpectationResultEvent_expectationResult {
-  __typename: "ExpectationResult";
-  success: boolean;
-}
-
-export interface RunHistoryRunFragment_logs_nodes_StepExpectationResultEvent {
-  __typename: "StepExpectationResultEvent";
-  timestamp: string;
-  expectationResult: RunHistoryRunFragment_logs_nodes_StepExpectationResultEvent_expectationResult;
-}
-
-export type RunHistoryRunFragment_logs_nodes = RunHistoryRunFragment_logs_nodes_ExecutionStepFailureEvent | RunHistoryRunFragment_logs_nodes_StepExpectationResultEvent;
-
-export interface RunHistoryRunFragment_logs {
-  __typename: "LogMessageConnection";
-  nodes: RunHistoryRunFragment_logs_nodes[];
+export interface RunHistoryRunFragment_stats {
+  __typename: "PipelineRunStatsSnapshot";
+  stepsSucceeded: number;
+  stepsFailed: number;
+  startTime: number | null;
+  endTime: number | null;
+  expectations: number;
+  materializations: number;
 }
 
 export interface RunHistoryRunFragment_executionPlan_steps {
@@ -68,6 +55,6 @@ export interface RunHistoryRunFragment {
   mode: string;
   environmentConfigYaml: string;
   pipeline: RunHistoryRunFragment_pipeline;
-  logs: RunHistoryRunFragment_logs;
+  stats: RunHistoryRunFragment_stats;
   executionPlan: RunHistoryRunFragment_executionPlan | null;
 }
