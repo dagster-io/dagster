@@ -25,6 +25,15 @@ class PipelineExecutionResult(object):
         self.solid_result_dict = solid_result_dict
         self.solid_result_list = list(self.solid_result_dict.values())
 
+        self._events_by_step_key = self._construct_events_by_step_key(event_list)
+
+    def _construct_events_by_step_key(self, event_list):
+        events_by_step_key = defaultdict(list)
+        for event in event_list:
+            events_by_step_key[event.step_key].append(event)
+
+        return dict(events_by_step_key)
+
     def _context_solid_result_dict(self, event_list):
         solid_set = set()
         solid_order = []
@@ -57,6 +66,10 @@ class PipelineExecutionResult(object):
     def step_event_list(self):
         '''The full list of step events'''
         return [event for event in self.event_list if event.is_step_event]
+
+    @property
+    def events_by_step_key(self):
+        return self._events_by_step_key
 
     def result_for_solid(self, name):
         '''Get a :py:class:`SolidExecutionResult` for a given top level solid name.
