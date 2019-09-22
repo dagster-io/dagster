@@ -1,7 +1,7 @@
 import pytest
 
+from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.context_creation_pipeline import DagsterInvalidConfigError
 
 from ..engine_tests.test_multiprocessing import define_diamond_pipeline
 

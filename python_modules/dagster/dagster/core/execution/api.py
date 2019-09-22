@@ -22,10 +22,11 @@ from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.utils import ensure_gen
 
 from .config import RunConfig
-from .context_creation_pipeline import create_environment_config, scoped_pipeline_context
+from .context_creation_pipeline import scoped_pipeline_context
 from .results import PipelineExecutionResult
 
 
@@ -67,7 +68,7 @@ def create_execution_plan(pipeline, environment_dict=None, run_config=None):
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     run_config = check.opt_inst_param(run_config, 'run_config', RunConfig, RunConfig())
 
-    environment_config = create_environment_config(pipeline, environment_dict, run_config)
+    environment_config = EnvironmentConfig.build(pipeline, environment_dict, run_config)
 
     return ExecutionPlan.build(
         pipeline, environment_config, pipeline.get_mode_definition(run_config.mode)

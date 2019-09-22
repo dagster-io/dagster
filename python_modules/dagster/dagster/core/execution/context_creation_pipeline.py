@@ -5,14 +5,13 @@ from contextlib import contextmanager
 from contextlib2 import ExitStack
 
 from dagster import check
-from dagster.core.definitions import PipelineDefinition, create_environment_type
 from dagster.core.definitions.handle import ExecutionTargetHandle
+from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.system_storage import SystemStorageData
 from dagster.core.engine.init import InitExecutorContext
 from dagster.core.errors import (
     DagsterError,
-    DagsterInvalidConfigError,
     DagsterResourceFunctionError,
     DagsterUserCodeExecutionError,
     user_code_error_boundary,
@@ -24,7 +23,6 @@ from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitSystemStorageContext
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.core.types.evaluator import evaluate_config
 from dagster.loggers import default_loggers, default_system_loggers
 from dagster.utils import ensure_gen, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -33,22 +31,6 @@ from .config import RunConfig
 from .context.init import InitResourceContext
 from .context.logger import InitLoggerContext
 from .context.system import SystemPipelineExecutionContext, SystemPipelineExecutionContextData
-
-
-def create_environment_config(pipeline, environment_dict=None, run_config=None):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_dict_param(environment_dict, 'environment')
-    run_config = check.opt_inst_param(run_config, 'run_config', RunConfig, default=RunConfig())
-
-    mode = run_config.mode or pipeline.get_default_mode_name()
-    environment_type = create_environment_type(pipeline, mode)
-
-    result = evaluate_config(environment_type, environment_dict, pipeline, run_config)
-
-    if not result.success:
-        raise DagsterInvalidConfigError(pipeline, result.errors, environment_dict)
-
-    return EnvironmentConfig.from_config_value(result.value, original_config_dict=environment_dict)
 
 
 @contextmanager
@@ -109,7 +91,7 @@ ContextCreationData = namedtuple(
 
 
 def create_context_creation_data(pipeline_def, environment_dict, run_config, instance):
-    environment_config = create_environment_config(pipeline_def, environment_dict, run_config)
+    environment_config = EnvironmentConfig.build(pipeline_def, environment_dict, run_config)
 
     mode_def = pipeline_def.get_mode_definition(run_config.mode)
     system_storage_def = system_storage_def_from_config(mode_def, environment_config)
