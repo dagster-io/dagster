@@ -3,6 +3,7 @@ import logging
 from dagster_papertrail import papertrail_logger
 
 from dagster import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster.core.execution.config import RunConfig
 from dagster.loggers import colored_console_logger
 from dagster.seven import mock
 
@@ -41,6 +42,7 @@ def test_papertrail_logger():
                     },
                 }
             },
+            run_config=RunConfig(run_id='123'),
         )
 
     log_record = emit.call_args_list[0][0][0]
@@ -49,11 +51,10 @@ def test_papertrail_logger():
     assert log_record.name == 'hello_pipeline'
     assert log_record.levelname == 'INFO'
 
-    for msg in [
-        'orig_message = "Hello, world!"',
-        'pipeline = "hello_pipeline"',
-        'step_key = "hello_logs.compute"',
-        'solid = "hello_logs"',
-        'solid_definition = "hello_logs"',
-    ]:
-        assert msg in log_record.msg
+    assert (
+        log_record.msg
+        == '''system - 123 - Hello, world!
+               solid = "hello_logs"
+    solid_definition = "hello_logs"
+            step_key = "hello_logs.compute"'''
+    )

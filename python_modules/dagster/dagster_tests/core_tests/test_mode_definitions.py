@@ -325,18 +325,15 @@ def define_multi_mode_with_loggers_pipeline():
 
 
 def parse_captured_results(captured_results):
-    parsed_captured_results = [
-        [y.strip().split(' = ') for y in x[1].strip().split('\n')] for x in captured_results
-    ]
-    # the captured results are a list of lists of two-member lists [log_msg_key, log_msg_value]
-    # this double list comprehension grabs the log_msg_value where log_msg_key == 'orig_message'
-    original_messages = [
-        item[1]
-        for result in parsed_captured_results
-        for item in result
-        if item[0] == 'orig_message'
-    ]
-    return original_messages
+    # each result will be a tuple like:
+    # (10,
+    # 'multi_mode - 1cc8958b-5ce6-401a-9e2a-ddd653e59a7e - PIPELINE_START - Started execution of '
+    # 'pipeline "multi_mode".'
+    # )
+    # so, this will reconstruct the original message from the captured log line.
+
+    # Extract the text string and remove key = value tuples on later lines
+    return [x[1].split('\n')[0] for x in captured_results]
 
 
 def test_execute_multi_mode_loggers_with_single_logger():
@@ -353,8 +350,7 @@ def test_execute_multi_mode_loggers_with_single_logger():
     assert not bar_logger_captured_results
 
     original_messages = parse_captured_results(foo_logger_captured_results)
-
-    assert len(list(filter(lambda x: x == '"Here we are"', original_messages))) == 1
+    assert len([x for x in original_messages if 'Here we are' in x]) == 1
 
 
 def test_execute_multi_mode_loggers_with_single_logger_extra_config():
@@ -391,11 +387,11 @@ def test_execute_multi_mode_loggers_with_multiple_loggers():
 
     foo_original_messages = parse_captured_results(foo_logger_captured_results)
 
-    assert len(list(filter(lambda x: x == '"Here we are"', foo_original_messages))) == 1
+    assert len([x for x in foo_original_messages if 'Here we are' in x]) == 1
 
     bar_original_messages = parse_captured_results(bar_logger_captured_results)
 
-    assert len(list(filter(lambda x: x == '"Here we are"', bar_original_messages))) == 1
+    assert len([x for x in bar_original_messages if 'Here we are' in x]) == 1
 
 
 def test_execute_multi_mode_loggers_with_multiple_loggers_single_config():
@@ -411,6 +407,6 @@ def test_execute_multi_mode_loggers_with_multiple_loggers_single_config():
 
     foo_original_messages = parse_captured_results(foo_logger_captured_results)
 
-    assert len(list(filter(lambda x: x == '"Here we are"', foo_original_messages))) == 1
+    assert len([x for x in foo_original_messages if 'Here we are' in x]) == 1
 
     assert not bar_logger_captured_results

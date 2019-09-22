@@ -34,12 +34,61 @@ def _dump_value(value):
     return seven.json.dumps(value)
 
 
-def _kv_message(all_items):
-    sep = '\n'
+def construct_log_string(synth_props, logging_tags, message_props):
+    from dagster.core.execution.plan.objects import StepFailureData
+
     format_str = '{key:>20} = {value}'
-    return sep + sep.join(
-        [format_str.format(key=key, value=_dump_value(value)) for key, value in sorted(all_items)]
+
+    # reduce noise and key duplication
+    skip_keys = [
+        'dagster_event',  #         separately included
+        'event_type_value',  #      separately included
+        'execution_epoch_time',  #  noise
+        'logging_tags',  #          separately included
+        'message',  #               dupe
+        'pipeline_name',  #         separately included
+        'pipeline',  #              dupe
+        'solid_handle',  #          we have solid and solid_definition keys
+        'step_kind_value',  #       can be inferred from step_key
+    ]
+
+    # Handle this explicitly
+    dagster_event = (
+        message_props['dagster_event']._asdict() if 'dagster_event' in message_props else {}
     )
+
+    log_props = dict(
+        itertools.chain(logging_tags.items(), message_props.items(), dagster_event.items())
+    )
+
+    event_specific_data = log_props.get('event_specific_data')
+    stack = ''
+    if isinstance(event_specific_data, StepFailureData):
+        log_props['message'] = event_specific_data.error.message
+        log_props['cls_name'] = event_specific_data.error.cls_name
+        stack = '\n' + '\n' + ''.join(event_specific_data.error.stack)
+        log_props['user_failure_data'] = event_specific_data.user_failure_data
+        del log_props['event_specific_data']
+
+    log_props_list = [
+        format_str.format(key=key, value=_dump_value(value))
+        for key, value in sorted(log_props.items())
+        if key not in skip_keys and value != None
+    ]
+    log_props_str = '\n' + '\n'.join(log_props_list) if log_props_list else ''
+
+    prefix = ' - '.join(
+        filter(
+            None,
+            (
+                log_props.get('pipeline_name', 'system'),
+                synth_props.get('run_id'),
+                log_props.get('event_type_value'),
+                synth_props.get('orig_message'),
+            ),
+        )
+    )
+    return prefix + log_props_str + stack
 
 
 def coerce_valid_log_level(log_level):
@@ -136,7 +185,10 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
         # collisions with internal variables of the LogRecord class.
         # See __init__.py:363 (makeLogRecord) in the python 3.6 logging module source
         # for the gory details.
-        return (_kv_message(all_props.items()), {DAGSTER_META_KEY: all_props})
+        return (
+            construct_log_string(synth_props, self.logging_tags, message_props),
+            {DAGSTER_META_KEY: all_props},
+        )
 
     def _log(self, level, orig_message, message_props):
         '''Actually invoke the underlying loggers for a given log level.
@@ -240,7 +292,6 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
         Kwargs:
             Additional context values for only this log message.
         '''
-
         check.str_param(msg, 'msg')
         return self._log(logging.CRITICAL, msg, kwargs)
 

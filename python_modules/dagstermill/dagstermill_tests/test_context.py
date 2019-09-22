@@ -53,4 +53,4 @@ def test_solid():
 
 def test_log(capsys):
     BARE_OUT_OF_PIPELINE_CONTEXT.log.info('Ho ho!')
-    assert 'orig_message = "Ho ho!"\n' in capsys.readouterr().err
+    assert 'Ho ho!' in capsys.readouterr().err
