@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { PipelineJumpBar } from "./PipelineJumpComponents";
 import { Route } from "react-router";
 import { TopNavPipelinesFragment } from "./types/TopNavPipelinesFragment";
-import VersionLabel from "./VersionLabel";
+import ProcessStatus from "./ProcessStatus";
 import WebsocketStatus from "./WebsocketStatus";
 import gql from "graphql-tag";
 import navBarImage from "./images/nav-logo.png";
@@ -88,7 +88,7 @@ export const TopNav = ({
               <Navbar.Divider />
 
               <WebsocketStatus />
-              <VersionLabel />
+              <ProcessStatus />
             </Navbar.Group>
           </Navbar>
         );

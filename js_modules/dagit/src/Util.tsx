@@ -15,7 +15,10 @@ export const WEBSOCKET_URI =
     document.location.host
   }/graphql`;
 
-const SharedToaster = Toaster.create({ position: Position.TOP }, document.body);
+export const SharedToaster = Toaster.create(
+  { position: Position.TOP },
+  document.body
+);
 
 export async function copyValue(event: React.MouseEvent<any>, value: string) {
   event.preventDefault();
