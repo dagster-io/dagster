@@ -9,6 +9,7 @@ from typing import Any, Dict
 import nbformat
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
+from dagster_graphql.implementation.reloader import Reloader
 from dagster_graphql.schema import create_schema
 from flask import Flask, request, send_file, send_from_directory
 from flask_cors import CORS
@@ -144,9 +145,10 @@ def download_view(context):
     return view
 
 
-def create_app(handle, instance):
+def create_app(handle, instance, reloader=None):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.inst_param(instance, 'instance', DagsterInstance)
+    check.opt_inst_param(reloader, 'reloader', Reloader)
 
     app = Flask('dagster-ui')
     sockets = Sockets(app)
@@ -160,7 +162,11 @@ def create_app(handle, instance):
     print('Loading repository...')
 
     context = DagsterGraphQLContext(
-        handle=handle, instance=instance, execution_manager=execution_manager, version=__version__
+        handle=handle,
+        instance=instance,
+        execution_manager=execution_manager,
+        reloader=reloader,
+        version=__version__,
     )
 
     if context.instance.is_feature_enabled(DagsterFeatures.SCHEDULER):
