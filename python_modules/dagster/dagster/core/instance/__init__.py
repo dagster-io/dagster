@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from abc import ABCMeta
 from collections import defaultdict, namedtuple
 from enum import Enum
@@ -126,6 +127,7 @@ class DagsterInstance:
         self._feature_set = check.opt_list_param(feature_set, 'feature_set', of_type=str)
         self._ref = check.opt_inst_param(ref, 'ref', InstanceRef)
 
+        self._reload_trigger = None
         self._subscribers = defaultdict(list)
 
     @staticmethod
@@ -195,6 +197,30 @@ class DagsterInstance:
             feature_set=feature_set,
             ref=instance_ref,
         )
+
+    @property
+    def reload_trigger(self):
+        return self._reload_trigger
+
+    @reload_trigger.setter
+    def reload_trigger(self, t):
+        self._reload_trigger = t
+
+    @property
+    def is_reload_supported(self):
+        return self._reload_trigger != None
+
+    def reload(self):
+        if not self.is_reload_supported:
+            return False
+        f = open(self._reload_trigger, "w")
+        f.write(str(time.time()))
+        f.close()
+        return True
+
+    @property
+    def is_remote(self):
+        return self._instance_type == InstanceType.REMOTE
 
     @property
     def is_persistent(self):

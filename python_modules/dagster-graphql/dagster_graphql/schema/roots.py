@@ -46,6 +46,8 @@ class DauphinQuery(dauphin.ObjectType):
         name = 'Query'
 
     version = dauphin.NonNull(dauphin.String)
+    reloadSupported = dauphin.NonNull(dauphin.Boolean)
+
     pipelineOrError = dauphin.Field(
         dauphin.NonNull('PipelineOrError'), params=dauphin.NonNull('ExecutionSelector')
     )
@@ -118,6 +120,9 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_version(self, graphene_info):
         return graphene_info.context.version
+
+    def resolve_reloadSupported(self, graphene_info):
+        return graphene_info.context.instance.is_reload_supported
 
     def resolve_schedules(self, graphene_info):
         return get_schedules(graphene_info)
@@ -333,6 +338,16 @@ class DauphinExecutePlan(dauphin.Mutation):
         )
 
 
+class DauphinReloadDagit(dauphin.Mutation):
+    class Meta:
+        name = 'ReloadDagit'
+
+    Output = dauphin.NonNull(dauphin.Boolean)
+
+    def mutate(self, graphene_info):
+        return graphene_info.context.instance.reload()
+
+
 class DauphinMutation(dauphin.ObjectType):
     class Meta:
         name = 'Mutation'
@@ -341,6 +356,7 @@ class DauphinMutation(dauphin.ObjectType):
     execute_plan = DauphinExecutePlan.Field()
     start_schedule = DauphinStartScheduleMutation.Field()
     end_running_schedule = DauphinEndRunningScheduleMutation.Field()
+    reload_dagit = DauphinReloadDagit.Field()
 
 
 class DauphinSubscription(dauphin.ObjectType):

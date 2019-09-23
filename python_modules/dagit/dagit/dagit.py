@@ -37,19 +37,23 @@ def handle_sigterm(_signum, _frame):
     raise KeyboardInterrupt()
 
 
+# Note: This must be declared outside of `main` or it is cleaned up by
+# some weakref magic when the watchmedo restarts Dagit.
+host_tempdir = seven.TemporaryDirectory()
+watch_tempdir = seven.TemporaryDirectory()
+
+
 def main():
     # Build the dagit-cli command, omitting the --no-watch arg if present
-    watch = True
+    watch_for_reload = True
     fallback_set = False
     command = ['dagit-cli']
     for arg in sys.argv[1:]:
-        if arg == '--no-watch':
-            watch = False
-        elif arg == '--help':
-            watch = False
+        if arg == '--help':
+            watch_for_reload = False
             command.append(arg)
         elif arg == '--version':
-            watch = False
+            watch_for_reload = False
             command.append(arg)
         elif arg == '--storage-fallback':
             fallback_set = True
@@ -57,37 +61,33 @@ def main():
         else:
             command.append(arg)
 
-    host_tempdir = None
     if not fallback_set:
-        host_tempdir = seven.TemporaryDirectory()
         command.append('--storage-fallback')
         command.append(host_tempdir.name)
 
     # Watchdog autorestart doesn't work on Windows because it uses os.setsid
     # See: https://github.com/gorakhargosh/watchdog/issues/387
     if os.name == 'nt':
-        watch = False
+        watch_for_reload = False
 
     # If not using watch mode, just call the command.
-    if not watch:
+    if not watch_for_reload:
         os.execvp(command[0], command)
         return
 
     signal.signal(signal.SIGTERM, handle_sigterm)
 
-    handler = DagsterAutoRestartTrick(
-        command=command,
-        patterns=['*.py'],
-        ignore_patterns=[],
-        ignore_directories=[],
-        stop_signal=signal.SIGINT,
-        kill_after=0.5,
-    )
+    # Create a file we'll watch to let Dagit reload itself and pass
+    # it explicitly to Dagit to let it know the feature is enabled.
+    dagster_reload_trigger = os.path.join(watch_tempdir.name, 'stamp.txt')
+    command.append('--reload-trigger')
+    command.append(dagster_reload_trigger)
+
+    handler = DagsterAutoRestartTrick(command=command, stop_signal=signal.SIGINT, kill_after=0)
     handler.start()
 
-    print('Will be watching for file changes...')
     observer = Observer(timeout=1)
-    observer.schedule(handler, '.', True)
+    observer.schedule(handler, watch_tempdir.name)
     observer.start()
 
     try:
