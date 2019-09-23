@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from abc import ABCMeta
 from collections import defaultdict, namedtuple
 from enum import Enum
@@ -113,6 +114,7 @@ class DagsterInstance:
         )
         self._feature_set = check.opt_set_param(feature_set, 'feature_set', of_type=str)
 
+        self._reload_trigger = None
         self._subscribers = defaultdict(list)
 
     def _load_history(self):
@@ -199,6 +201,26 @@ class DagsterInstance:
 
         else:
             check.failed('Unhandled instance type {}'.format(type(instance_ref)))
+
+    @property
+    def reload_trigger(self):
+        return self._reload_trigger
+
+    @reload_trigger.setter
+    def reload_trigger(self, t):
+        self._reload_trigger = t
+
+    @property
+    def is_reload_supported(self):
+        return self._reload_trigger != None
+
+    def reload(self):
+        if not self.is_reload_supported:
+            return False
+        f = open(self._reload_trigger, "w")
+        f.write(str(time.time()))
+        f.close()
+        return True
 
     @property
     def is_remote(self):
@@ -314,9 +336,8 @@ class DagsterInstance:
         if self._instance_type != InstanceType.EPHEMERAL:
             check.invariant(
                 self._run_storage.has_run(run_id),
-                'Can not handle events for unknown run with id {run_id} on non-ephemeral instance type'.format(
-                    run_id=run_id
-                ),
+                'Can not handle events for unknown run with id {run_id} on non-ephemeral instance type'.
+                format(run_id=run_id),
             )
 
         self._event_storage.store_event(event)

@@ -487,6 +487,7 @@ type Mutation {
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
   startSchedule(scheduleId: String!): RunningScheduleResult!
   endRunningSchedule(scheduleId: String!): RunningScheduleResult!
+  reloadDagit: Boolean!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -750,6 +751,7 @@ type PythonError implements Error {
 
 type Query {
   version: String!
+  reloadSupported: Boolean!
   pipelineOrError(params: ExecutionSelector!): PipelineOrError!
   pipeline(params: ExecutionSelector!): Pipeline!
   pipelinesOrError: PipelinesOrError!

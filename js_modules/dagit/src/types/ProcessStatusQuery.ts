@@ -4,9 +4,10 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: VersionQuery
+// GraphQL query operation: ProcessStatusQuery
 // ====================================================
 
-export interface VersionQuery {
+export interface ProcessStatusQuery {
   version: string;
+  reloadSupported: boolean;
 }
