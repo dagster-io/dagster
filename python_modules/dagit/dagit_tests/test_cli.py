@@ -10,13 +10,6 @@ def test_invoke_ui():
     assert 'dagit, version' in result.output
 
 
-def test_invoke_ui_bad_no_watch():
-    runner = CliRunner()
-    result = runner.invoke(ui, ['--no-watch'])
-    assert result.exit_code == 1
-    assert 'Do not set no_watch when calling the Dagit Python CLI directly' in str(result.exception)
-
-
 def test_invoke_cli_wrapper_with_bad_option():
     process = subprocess.Popen(['dagit', '--fubar'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     _, stderr = process.communicate()

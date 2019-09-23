@@ -55,29 +55,27 @@ REPO_TARGET_WARNING = (
     type=click.Path(),
 )
 @click.option(
-    '--no-watch',
-    is_flag=True,
-    help='Disable autoreloading when there are changes to the repo/pipeline being served',
+    '--reload-trigger',
+    help="File path the parent process monitors to restart dagit-cli.",
+    default=None,
+    hidden=True,
+    type=click.Path(),
 )
 @click.version_option(version=__version__, prog_name='dagit')
-def ui(host, port, storage_fallback, no_watch=False, **kwargs):
+def ui(host, port, storage_fallback, reload_trigger, **kwargs):
     handle = handle_for_repo_cli_args(kwargs)
 
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
 
-    check.invariant(
-        not no_watch,
-        'Do not set no_watch when calling the Dagit Python CLI directly -- this flag is a no-op '
-        'at this level and should be set only when invoking dagit/bin/dagit.',
-    )
-    host_dagit_ui(handle, host, port, storage_fallback)
+    host_dagit_ui(handle, host, port, storage_fallback, reload_trigger)
 
 
-def host_dagit_ui(handle, host, port, storage_fallback=None):
+def host_dagit_ui(handle, host, port, storage_fallback=None, reload_trigger=None):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
 
     instance = DagsterInstance.get(storage_fallback, watch_external_runs=True)
+    instance.reload_trigger = reload_trigger
 
     app = create_app(handle, instance)
 

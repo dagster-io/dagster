@@ -9,7 +9,10 @@ export const ROOT_SERVER_URI = (process.env.REACT_APP_GRAPHQL_URI || "")
   .replace("ws://", "http://")
   .replace("/graphql", "");
 
-const SharedToaster = Toaster.create({ position: Position.TOP }, document.body);
+export const SharedToaster = Toaster.create(
+  { position: Position.TOP },
+  document.body
+);
 
 export async function copyValue(event: React.MouseEvent<any>, value: string) {
   event.preventDefault();
