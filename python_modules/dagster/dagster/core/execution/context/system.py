@@ -88,7 +88,7 @@ class SystemPipelineExecutionContextData(
 
 
 class SystemPipelineExecutionContext(object):
-    __slots__ = ['_pipeline_context_data', '_log_manager', '_legacy_context', '_events']
+    __slots__ = ['_pipeline_context_data', '_log_manager']
 
     def __init__(self, pipeline_context_data, log_manager):
         self._pipeline_context_data = check.inst_param(

@@ -61,7 +61,6 @@ from dagster.core.execution.plan.objects import StepKind
 from dagster.core.execution.results import PipelineExecutionResult, SolidExecutionResult
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
 from dagster.core.storage.init import InitSystemStorageContext
-from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types import (
     Any,
     Bool,

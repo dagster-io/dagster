@@ -4,7 +4,7 @@ from .system import SystemStepExecutionContext
 
 
 class StepExecutionContext(object):
-    __slots__ = ['_system_step_execution_context', '_legacy_context']
+    __slots__ = ['_system_step_execution_context']
 
     def __init__(self, system_step_execution_context):
         self._system_step_execution_context = check.inst_param(

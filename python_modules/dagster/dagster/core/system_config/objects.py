@@ -3,6 +3,11 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.environment_schema import create_environment_type
+from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.errors import DagsterInvalidConfigError
+from dagster.core.execution.config import RunConfig
+from dagster.core.types.evaluator import evaluate_config
 from dagster.utils import ensure_single_item
 
 
@@ -84,7 +89,6 @@ class EnvironmentConfig(
         original_config_dict = check.opt_dict_param(
             original_config_dict, 'original_config_dict', key_type=str
         )
-
         return EnvironmentConfig(
             solids=construct_solid_dictionary(config_value['solids']),
             execution=ExecutionConfig.from_dict(config_value.get('execution')),
@@ -94,6 +98,22 @@ class EnvironmentConfig(
             original_config_dict=original_config_dict,
             resources=config_value.get('resources'),
         )
+
+    @staticmethod
+    def build(pipeline, environment_dict=None, run_config=None):
+        check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        check.opt_dict_param(environment_dict, 'environment')
+        run_config = check.opt_inst_param(run_config, 'run_config', RunConfig, default=RunConfig())
+
+        mode = run_config.mode or pipeline.get_default_mode_name()
+        environment_type = create_environment_type(pipeline, mode)
+
+        result = evaluate_config(environment_type, environment_dict, pipeline, run_config)
+
+        if not result.success:
+            raise DagsterInvalidConfigError(pipeline, result.errors, environment_dict)
+
+        return EnvironmentConfig.from_config_value(result.value, environment_dict)
 
 
 class ExpectationsConfig(namedtuple('_ExpecationsConfig', 'evaluate')):

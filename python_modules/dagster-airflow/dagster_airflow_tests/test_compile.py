@@ -2,13 +2,13 @@ from dagster_airflow.compile import coalesce_execution_steps
 from dagster_examples.toys.composition import composition
 
 from dagster import RunConfig
-from dagster.core.execution.context_creation_pipeline import create_environment_config
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.system_config.objects import EnvironmentConfig
 
 
 def test_compile():
     run_config = RunConfig()
-    environment_config = create_environment_config(
+    environment_config = EnvironmentConfig.build(
         composition, {'solids': {'add_four': {'inputs': {'num': {'value': 1}}}}}, run_config=None
     )
 
