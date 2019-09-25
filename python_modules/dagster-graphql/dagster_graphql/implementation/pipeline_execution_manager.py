@@ -4,6 +4,7 @@ import abc
 import atexit
 import copy
 import logging
+import multiprocessing
 import os
 import sys
 import time
@@ -164,7 +165,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
     def __init__(self):
         self._multiprocessing_context = get_multiprocessing_context()
         self._processes_lock = self._multiprocessing_context.Lock()
-        self._processes = []
+        self._process_handles = []
         # This is actually a reverse semaphore. We keep track of number of
         # processes we have by releasing semaphore every time we start
         # processing, we acquire after processing is finished
@@ -184,34 +185,34 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
 
     def _poll(self):
         with self._processes_lock:
-            processes = copy.copy(self._processes)
-            self._processes = []
-            for _ in processes:
+            process_handles = copy.copy(self._process_handles)
+            self._process_handles = []
+            for _ in process_handles:
                 self._processing_semaphore.release()
 
-        for process in processes:
-            done = self._consume_process_queue(process)
-            if not done and not process.process.is_alive():
-                done = self._consume_process_queue(process)
+        for process_handle in process_handles:
+            done = self._consume_process_queue(process_handle)
+            if not done and not process_handle.process.is_alive():
+                done = self._consume_process_queue(process_handle)
                 if not done:
                     try:
                         done = True
                         raise Exception(
                             'Pipeline execution process for {run_id} unexpectedly exited'.format(
-                                run_id=process.run_id
+                                run_id=process_handle.run_id
                             )
                         )
                     except Exception:  # pylint: disable=broad-except
-                        process.instance.handle_new_event(
+                        process_handle.instance.handle_new_event(
                             build_synthetic_pipeline_error_record(
-                                process.run_id,
+                                process_handle.run_id,
                                 serializable_error_info_from_exc_info(sys.exc_info()),
-                                process.pipeline_name,
+                                process_handle.pipeline_name,
                             )
                         )
 
             if not done:
-                self._processes.append(process)
+                self._process_handles.append(process_handle)
 
             self._processing_semaphore.acquire()
 
@@ -230,7 +231,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         '''Waits until all there are no processes enqueued.'''
         while True:
             with self._processes_lock:
-                if not self._processes and self._processing_semaphore.locked():
+                if not self._process_handles and self._processing_semaphore.locked():
                     return True
             gevent.sleep(0.1)
 
@@ -241,7 +242,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         )
 
         message_queue = self._multiprocessing_context.Queue()
-        p = self._multiprocessing_context.Process(
+        mp_process = self._multiprocessing_context.Process(
             target=execute_pipeline_through_queue,
             kwargs={
                 'handle': handle,
@@ -253,20 +254,32 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
 
         instance.handle_new_event(build_process_start_event(pipeline_run.run_id, pipeline.name))
 
-        p.start()
+        mp_process.start()
         with self._processes_lock:
-            process = RunProcessWrapper(
-                p, message_queue, instance, pipeline_run.run_id, pipeline.name
+            process_handle = PipelineRunProcessHandle(
+                mp_process, message_queue, instance, pipeline_run.run_id, pipeline.name
             )
-            self._processes.append(process)
+            self._process_handles.append(process_handle)
 
 
-class RunProcessWrapper(
-    namedtuple('RunProcessWrapper', 'process message_queue instance run_id pipeline_name')
+MultiProcessingProcess = (
+    multiprocessing.process.Process  # pylint: disable=no-member
+    if sys.version_info.major < 3
+    else multiprocessing.context.SpawnProcess
+)
+
+
+class PipelineRunProcessHandle(
+    namedtuple('PipelineRunProcessHandle', 'process message_queue instance run_id pipeline_name')
 ):
     def __new__(cls, process, message_queue, instance, run_id, pipeline_name):
-        return super(RunProcessWrapper, cls).__new__(
-            cls, process, message_queue, instance, run_id, pipeline_name
+        return super(PipelineRunProcessHandle, cls).__new__(
+            cls,
+            check.inst_param(process, 'process', MultiProcessingProcess),
+            check.inst_param(message_queue, 'message_queue', multiprocessing.queues.Queue),
+            check.inst_param(instance, 'instance', DagsterInstance),
+            check.str_param(run_id, 'run_id'),
+            check.str_param(pipeline_name, 'pipeline_name'),
         )
 
 
