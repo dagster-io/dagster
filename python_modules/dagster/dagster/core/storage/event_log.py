@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS event_logs (
 '''
 
 FETCH_EVENTS_SQL = '''
-SELECT event FROM event_logs WHERE row_id >= ? ORDER BY row_id ASC
+SELECT event FROM event_logs WHERE row_id > ? ORDER BY row_id ASC
 '''
 
 FETCH_STATS_SQL = '''
@@ -200,6 +200,7 @@ class FilesystemEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
         if not os.path.exists(self.filepath_for_run_id(run_id)):
             return events
 
+        cursor += 1  # adjust from 0 based offset to 1
         try:
             with self._connect(run_id) as conn:
                 results = conn.cursor().execute(FETCH_EVENTS_SQL, (str(cursor),)).fetchall()
@@ -242,10 +243,12 @@ class FilesystemEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
                 steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),
                 materializations=counts.get(DagsterEventType.STEP_MATERIALIZATION.value, 0),
                 expectations=counts.get(DagsterEventType.STEP_EXPECTATION_RESULT.value, 0),
-                start_time=times.get(DagsterEventType.PIPELINE_START, 0.0),
-                end_time=times.get(
-                    DagsterEventType.PIPELINE_SUCCESS,
-                    times.get(DagsterEventType.PIPELINE_FAILURE, 0.0),
+                start_time=float(times.get(DagsterEventType.PIPELINE_START.value, 0.0)),
+                end_time=float(
+                    times.get(
+                        DagsterEventType.PIPELINE_SUCCESS.value,
+                        times.get(DagsterEventType.PIPELINE_FAILURE.value, 0.0),
+                    )
                 ),
             )
         except (seven.JSONDecodeError, check.CheckError) as err:

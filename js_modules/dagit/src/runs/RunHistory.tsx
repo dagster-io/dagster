@@ -315,11 +315,7 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
   return (
     <RowContainer key={run.runId} style={{ paddingRight: 3 }}>
       <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
-        <RunStatus
-          status={
-            run.stats.startTime && run.stats.endTime ? run.status : "STARTED"
-          }
-        />
+        <RunStatus status={run.status} />
       </RowColumn>
       <RowColumn style={{ flex: 2.4 }}>
         <Link
