@@ -8,7 +8,10 @@ import {
   PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
   PIPELINE_RUN_LOGS_SUBSCRIPTION
 } from "./Run";
-import { PipelineRunLogsSubscription } from "./types/PipelineRunLogsSubscription";
+import {
+  PipelineRunLogsSubscription,
+  PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages
+} from "./types/PipelineRunLogsSubscription";
 import { PipelineRunLogsUpdateFragment } from "./types/PipelineRunLogsUpdateFragment";
 import { RunSubscriptionPipelineRunFragment } from "./types/RunSubscriptionPipelineRunFragment";
 
@@ -36,6 +39,8 @@ export default class RunSubscriptionProvider extends React.Component<
   _subscriptionRunId: string | null = null;
   _subscription: ZenObservable.Subscription;
   _localData: PipelineRunLogsUpdateFragment | null;
+  _messageQueue: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages[] = [];
+  _timeoutID: number | null = null;
 
   componentDidMount() {
     this.subscribeToRun();
@@ -89,6 +94,17 @@ export default class RunSubscriptionProvider extends React.Component<
       return;
     }
     const messages = result.pipelineRunLogs.messages;
+    this._messageQueue.push(...messages);
+    if (this._timeoutID === null) {
+      this._timeoutID = setTimeout(this.processMessageQueue);
+    }
+  };
+
+  processMessageQueue = () => {
+    const messages = this._messageQueue.slice(0);
+    this._messageQueue = [];
+    this._timeoutID = null;
+
     const id = `PipelineRun.${messages[0].runId}`;
 
     this._localData =
