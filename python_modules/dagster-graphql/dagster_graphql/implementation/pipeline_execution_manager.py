@@ -161,7 +161,22 @@ class SynchronousExecutionManager(PipelineExecutionManager):
             )
 
 
-class MultiprocessingExecutionManager(PipelineExecutionManager):
+class SubprocessExecutionManager(PipelineExecutionManager):
+    '''
+    This execution manager launches a new process for every pipeline invocation.
+
+    It tries to spawn new processes with clean state whenever possible, 
+    in order to pick up the latest changes, to not inherit in-memory
+    state accumulated from the webserver, and to mimic standalone invocations
+    of the CLI as much as possible.
+
+    The exception here is unix variants before python 3.4. Before 3.4
+    multiprocessing could not configure process start methods, so it
+    falls back to system default. On unix variants that means it forks
+    the process. This could lead to subtle behavior changes between
+    python 2 and python 3.
+    '''
+
     def __init__(self):
         self._multiprocessing_context = get_multiprocessing_context()
         self._processes_lock = self._multiprocessing_context.Lock()

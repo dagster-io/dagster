@@ -7,9 +7,7 @@ from typing import Any, Dict
 
 import nbformat
 from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_execution_manager import (
-    MultiprocessingExecutionManager,
-)
+from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
 from dagster_graphql.schema import create_schema
 from flask import Flask, request, send_file, send_from_directory
 from flask_cors import CORS
@@ -156,7 +154,7 @@ def create_app(handle, instance):
     schema = create_schema()
     subscription_server = DagsterSubscriptionServer(schema=schema)
 
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
 
     print('Loading repository...')
 

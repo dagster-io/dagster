@@ -1,8 +1,6 @@
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
 from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_execution_manager import (
-    MultiprocessingExecutionManager,
-)
+from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
 from dagster_graphql.schema import create_schema
 from dagster_graphql.test.utils import execute_dagster_graphql
 from graphql import graphql
@@ -19,7 +17,7 @@ def test_execute_hammer_through_dagit():
     )
     instance = DagsterInstance.local_temp()
 
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
 
     context = DagsterGraphQLContext(
         handle=handle, execution_manager=execution_manager, instance=instance

@@ -3,9 +3,7 @@ import os
 from collections import OrderedDict
 from copy import deepcopy
 
-from dagster_graphql.implementation.pipeline_execution_manager import (
-    MultiprocessingExecutionManager,
-)
+from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
 
 from dagster import (
     ExecutionTargetHandle,
@@ -91,7 +89,7 @@ def test_running():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, passing_pipeline, pipeline_run, instance, raise_on_error=False
     )
@@ -132,7 +130,7 @@ def test_failing():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, failing_pipeline, pipeline_run, instance, raise_on_error=False
     )
@@ -163,7 +161,7 @@ def test_execution_crash():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, crashy_pipeline, pipeline_run, instance, raise_on_error=False
     )
@@ -282,7 +280,7 @@ def test_multiprocessing_execution_for_composite_solid():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
     )
@@ -314,7 +312,7 @@ def test_multiprocessing_execution_for_composite_solid():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
     )
@@ -349,7 +347,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, composite_pipeline_with_config_mapping, pipeline_run, instance, raise_on_error=False
     )
@@ -381,7 +379,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
     )
