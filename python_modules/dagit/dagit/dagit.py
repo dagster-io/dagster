@@ -63,9 +63,15 @@ def main():
         command.append('--storage-fallback')
         command.append(host_tempdir.name)
 
-    # If not using watch mode, just call the command
+    # Watchdog autorestart doesn't work on Windows because it uses os.setsid
+    # See: https://github.com/gorakhargosh/watchdog/issues/387
+    if os.name == 'nt':
+        watch = False
+
+    # If not using watch mode, just call the command.
     if not watch:
         os.execvp(command[0], command)
+        return
 
     signal.signal(signal.SIGTERM, handle_sigterm)
 
