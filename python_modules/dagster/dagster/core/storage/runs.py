@@ -37,7 +37,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
         '''
 
-    @abstractmethod
+    @abstractproperty
     def all_runs(self):
         '''Return all the runs present in the storage.
 

@@ -515,6 +515,7 @@ class Stringish(RuntimeType):
             **kwargs
         )
 
+    @property
     def is_scalar(self):
         return True
 

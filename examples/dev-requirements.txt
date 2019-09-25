@@ -1,6 +1,6 @@
 pyspark==2.4.4
 mock==2.0.0
 docker-compose==1.23.2
-pylint>=2.3.0
+pylint>=2.4.1
 pytest==4.6.3
 pytest-cov==2.7.1

@@ -30,12 +30,12 @@ def test_add_get_postgres_run_storage(pg_db):
     assert run_storage.has_run(run_id)
     assert not run_storage.has_run(str(uuid.uuid4()))
 
-    assert run_storage.all_runs() == [run_to_add]
+    assert run_storage.all_runs == [run_to_add]
     assert run_storage.all_runs_for_pipeline('pipeline_name') == [run_to_add]
     assert run_storage.all_runs_for_pipeline('nope') == []
 
     run_storage.wipe()
-    assert run_storage.all_runs() == []
+    assert run_storage.all_runs == []
 
 
 def test_handle_run_event_pipeline_success_test():

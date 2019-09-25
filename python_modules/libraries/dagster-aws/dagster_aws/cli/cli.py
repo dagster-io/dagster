@@ -294,7 +294,7 @@ def nuke():
     client = boto3.client('ec2', region_name=cfg.region)
     ec2 = boto3.resource('ec2', region_name=cfg.region)
 
-    instances = ec2.instances.filter(InstanceIds=[cfg.instance_id])
+    instances = ec2.instances.filter(InstanceIds=[cfg.instance_id])  # pylint: disable=no-member
 
     Term.warning('This will terminate the following: ')
     for instance in instances:

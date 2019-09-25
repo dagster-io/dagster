@@ -18,7 +18,8 @@ except ImportError:
 TemporaryDirectory = tempfile.TemporaryDirectory
 
 try:
-    FileNotFoundError = FileNotFoundError  # pylint:disable=redefined-builtin
+    # pylint:disable=redefined-builtin,self-assigning-variable
+    FileNotFoundError = FileNotFoundError
 except NameError:
     FileNotFoundError = IOError
 

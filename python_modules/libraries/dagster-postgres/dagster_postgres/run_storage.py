@@ -93,6 +93,7 @@ class PostgresRunStorage(RunStorage):
     def _rows_to_runs(self, rows):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
+    @property
     def all_runs(self):
         '''Return all the runs present in the storage.
 
@@ -153,5 +154,6 @@ class PostgresRunStorage(RunStorage):
         with conn.cursor() as curs:
             curs.execute(DELETE_FROM_SQL)
 
+    @property
     def is_persistent(self):
         return True
