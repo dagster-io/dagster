@@ -364,7 +364,7 @@ def create_log_manager(context_creation_data):
             )
 
     # should this be first in loggers list?
-    loggers.append(context_creation_data.instance.get_event_listener())
+    loggers.append(context_creation_data.instance.get_logger())
 
     return DagsterLogManager(
         run_id=run_config.run_id,
@@ -386,7 +386,7 @@ def _create_context_free_log_manager(instance, run_config, pipeline_def):
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
-    loggers = [instance.get_event_listener()]
+    loggers = [instance.get_logger()]
     # Use the default logger
     for (logger_def, logger_config) in default_system_loggers():
         loggers += [

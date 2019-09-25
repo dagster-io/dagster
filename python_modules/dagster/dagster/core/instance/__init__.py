@@ -172,12 +172,6 @@ class DagsterInstance:
 
         self._subscribers = defaultdict(list)
 
-    def _load_history(self):
-        historic_runs = self._run_storage.load_historic_runs()
-        for run in historic_runs:
-            if not run.is_finished:
-                self.watch_event_logs(run.run_id, 0, self.handle_new_event)
-
     @staticmethod
     def ephemeral(tempdir=None):
         from dagster.core.storage.event_log import InMemoryEventLogStorage
@@ -363,7 +357,7 @@ class DagsterInstance:
 
     # event subscriptions
 
-    def get_event_listener(self):
+    def get_logger(self):
         logger = logging.Logger('__event_listener')
         logger.addHandler(_EventListenerLogHandler(self))
         logger.setLevel(10)
