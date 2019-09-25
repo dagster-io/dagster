@@ -147,13 +147,12 @@ class DagsterInstance:
         )
 
     @staticmethod
-    def get(fallback_storage=None, watch_external_runs=False):
+    def get(fallback_storage=None):
         # 1. Use $DAGSTER_HOME to determine instance if set.
         if _is_dagster_home_set():
             # in the future we can read from config and create RemoteInstanceRef when needed
             return DagsterInstance.from_ref(
-                LocalInstanceRef.from_root_storage_dir(_dagster_root_storage_dir()),
-                watch_external_runs=watch_external_runs,
+                LocalInstanceRef.from_root_storage_dir(_dagster_root_storage_dir())
             )
 
         # 2. If that is not set use the fallback storage directory if provided.
@@ -161,8 +160,7 @@ class DagsterInstance:
         # across restarts in a tempdir that gets cleaned up when the dagit watchdog process exits.
         elif fallback_storage is not None:
             return DagsterInstance.from_ref(
-                LocalInstanceRef.from_root_storage_dir(fallback_storage),
-                watch_external_runs=watch_external_runs,
+                LocalInstanceRef.from_root_storage_dir(fallback_storage)
             )
 
         # 3. If all else fails create an ephemeral in memory instance.
@@ -170,26 +168,20 @@ class DagsterInstance:
             return DagsterInstance.ephemeral(fallback_storage)
 
     @staticmethod
-    def local_temp(tempdir=None, features=None, watch_external_runs=False):
+    def local_temp(tempdir=None, features=None):
         features = check.opt_list_param(features, 'features', str)
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
 
-        return DagsterInstance.from_ref(
-            LocalInstanceRef.from_root_storage_dir(tempdir),
-            features,
-            watch_external_runs=watch_external_runs,
-        )
+        return DagsterInstance.from_ref(LocalInstanceRef.from_root_storage_dir(tempdir), features)
 
     @staticmethod
-    def from_ref(instance_ref, fallback_feature_set=None, watch_external_runs=False):
+    def from_ref(instance_ref, fallback_feature_set=None):
         check.inst_param(instance_ref, 'instance_ref', InstanceRef)
         check.opt_list_param(fallback_feature_set, 'fallback_feature_set', of_type=str)
 
         root_storage = instance_ref.root_storage_data.rehydrate()
-        run_storage = instance_ref.run_storage_data.rehydrate(
-            watch_external_runs=watch_external_runs
-        )
+        run_storage = instance_ref.run_storage_data.rehydrate()
         event_storage = instance_ref.event_storage_data.rehydrate()
         feature_set = instance_ref.feature_set or fallback_feature_set
 
@@ -276,7 +268,7 @@ class DagsterInstance:
 
     @property
     def all_runs(self):
-        return self._run_storage.all_runs
+        return self._run_storage.all_runs()
 
     def all_runs_for_pipeline(self, pipeline):
         return self._run_storage.all_runs_for_pipeline(pipeline)

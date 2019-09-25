@@ -11,20 +11,33 @@ CREATE TABLE IF NOT EXISTS runs (
     run_id VARCHAR(255) NOT NULL,
     pipeline_name VARCHAR NOT NULL,
     status VARCHAR(63) NOT NULL,
-    run_body VARCHAR NOT NULL
+    run_body VARCHAR NOT NULL,
+    create_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 '''
-
 DROP_RUN_TABLE_SQL = '''
 DROP TABLE IF EXISTS runs
 '''
-
 INSERT_RUN_SQL = '''
 INSERT INTO runs (run_id, pipeline_name, status, run_body)
 VALUES (%s, %s, %s, %s)
 '''
+DELETE_RUNS_SQL = 'DELETE FROM runs'
 
-DELETE_FROM_SQL = 'DELETE FROM runs'
+CREATE_RUN_TAGS_TABLE_SQL = '''
+CREATE TABLE IF NOT EXISTS run_tags (
+    id SERIAL PRIMARY KEY,
+    run_id VARCHAR(255) NOT NULL,
+    key VARCHAR NOT NULL,
+    value VARCHAR NOT NULL
+)
+'''
+DROP_RUN_TAGS_TABLE_SQL = '''
+DROP TABLE IF EXISTS run_tags
+'''
+INSERT_RUN_TAGS_SQL = 'INSERT INTO run_tags (run_id, key, value) VALUES (%s, %s, %s)'
+DELETE_RUN_TAGS_SQL = 'DELETE FROM run_tags'
 
 
 class PostgresRunStorage(RunStorage):
@@ -38,6 +51,8 @@ class PostgresRunStorage(RunStorage):
         conn = get_conn(conn_string)
         conn.cursor().execute(DROP_RUN_TABLE_SQL)
         conn.cursor().execute(CREATE_RUN_TABLE_SQL)
+        conn.cursor().execute(DROP_RUN_TAGS_TABLE_SQL)
+        conn.cursor().execute(CREATE_RUN_TAGS_TABLE_SQL)
         return PostgresRunStorage(conn_string)
 
     def add_run(self, pipeline_run):
@@ -54,6 +69,12 @@ class PostgresRunStorage(RunStorage):
                     serialize_dagster_namedtuple(pipeline_run),
                 ),
             )
+            if pipeline_run.tags and len(pipeline_run.tags) > 0:
+                conn.cursor().executemany(
+                    INSERT_RUN_TAGS_SQL,
+                    [(pipeline_run.run_id, k, v) for k, v in pipeline_run.tags.items()],
+                )
+        return pipeline_run
 
     def handle_run_event(self, run_id, event):
         check.str_param(run_id, 'run_id')
@@ -93,7 +114,6 @@ class PostgresRunStorage(RunStorage):
     def _rows_to_runs(self, rows):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
-    @property
     def all_runs(self):
         '''Return all the runs present in the storage.
 
@@ -142,7 +162,20 @@ class PostgresRunStorage(RunStorage):
             return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
 
     def all_runs_for_tag(self, key, value):
-        raise NotImplementedError()
+        conn = get_conn(self.conn_string)
+        with conn.cursor() as curs:
+            curs.execute(
+                '''
+                SELECT run_body
+                FROM runs
+                INNER JOIN run_tags
+                ON runs.run_id = run_tags.run_id
+                WHERE run_tags.key = %s AND run_tags.value = %s
+                ''',
+                (key, value),
+            )
+            rows = curs.fetchall()
+            return self._rows_to_runs(rows)
 
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')
@@ -152,7 +185,8 @@ class PostgresRunStorage(RunStorage):
         '''Clears the run storage.'''
         conn = get_conn(self.conn_string)
         with conn.cursor() as curs:
-            curs.execute(DELETE_FROM_SQL)
+            curs.execute(DELETE_RUNS_SQL)
+            curs.execute(DELETE_RUN_TAGS_SQL)
 
     @property
     def is_persistent(self):

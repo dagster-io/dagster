@@ -78,7 +78,7 @@ def ui(host, port, storage_fallback, no_watch=False, **kwargs):
 def host_dagit_ui(handle, host, port, storage_fallback=None):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
 
-    instance = DagsterInstance.get(storage_fallback, watch_external_runs=True)
+    instance = DagsterInstance.get(storage_fallback)
 
     app = create_app(handle, instance)
 

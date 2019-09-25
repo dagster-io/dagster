@@ -1,19 +1,15 @@
-import glob
-import io
 import os
 import sqlite3
-import warnings
 from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import OrderedDict
+from contextlib import contextmanager
+from datetime import datetime
 
-import gevent.lock
 import six
-from watchdog.events import PatternMatchingEventHandler
-from watchdog.observers import Observer
 
 from dagster import check
 from dagster.core.definitions.environment_configs import SystemNamedDict
-from dagster.core.events import DagsterEventType
+from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.serdes import (
     ConfigurableClass,
     deserialize_json_to_dagster_namedtuple,
@@ -43,7 +39,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
         '''
 
-    @abstractproperty
+    @abstractmethod
     def all_runs(self):
         '''Return all the runs present in the storage.
 
@@ -123,18 +119,17 @@ class InMemoryRunStorage(RunStorage):
         elif event.event_type == DagsterEventType.PIPELINE_FAILURE:
             self._runs[run_id] = self._runs[run_id].run_with_status(PipelineRunStatus.FAILURE)
 
-    @property
     def all_runs(self):
         return self._runs.values()
 
     def all_runs_for_pipeline(self, pipeline_name):
-        return [r for r in self.all_runs if r.pipeline_name == pipeline_name]
+        return [r for r in self.all_runs() if r.pipeline_name == pipeline_name]
 
     def get_run_by_id(self, run_id):
         return self._runs.get(run_id)
 
     def all_runs_for_tag(self, key, value):
-        return [r for r in self.all_runs if r.tags.get(key) == value]
+        return [r for r in self.all_runs() if r.tags.get(key) == value]
 
     def has_run(self, run_id):
         return run_id in self._runs
@@ -147,212 +142,202 @@ class InMemoryRunStorage(RunStorage):
         self._runs = OrderedDict()
 
 
-class FilesystemRunStorage(RunStorage, ConfigurableClass):
-    def __init__(self, base_dir, watch_external_runs=True, inst_data=None):
-        self._base_dir = check.opt_str_param(base_dir, 'base_dir')
-        mkdir_p(self._base_dir)
+CREATE_RUNS_TABLE_SQL = '''
+CREATE TABLE IF NOT EXISTS runs (
+    run_id VARCHAR(255) NOT NULL,
+    pipeline_name VARCHAR NOT NULL,
+    status VARCHAR(63) NOT NULL,
+    run_body VARCHAR NOT NULL,
+    create_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+'''
+INSERT_RUN_SQL = 'INSERT INTO runs (run_id, pipeline_name, status, run_body) VALUES (?, ?, ?, ?)'
+DELETE_RUNS_SQL = 'DELETE FROM runs'
+CREATE_RUN_TAGS_TABLE_SQL = '''
+CREATE TABLE IF NOT EXISTS run_tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id VARCHAR(255) NOT NULL,
+    key VARCHAR NOT NULL,
+    value VARCHAR NOT NULL
+)
+'''
+INSERT_RUN_TAGS_SQL = 'INSERT INTO run_tags (run_id, key, value) VALUES (?, ?, ?)'
+DELETE_RUN_TAGS_SQL = 'DELETE FROM run_tags'
 
-        self._known_runs = OrderedDict()
-        self._lock = gevent.lock.Semaphore()
 
-        self._load_historic_runs()
-
-        if watch_external_runs:
-            observer = Observer()
-            observer.schedule(ExternalRunsWatchdog(self, self._lock), self._base_dir)
-            observer.start()
-
-        super(FilesystemRunStorage, self).__init__(inst_data=inst_data)
+class SqliteRunStorage(RunStorage, ConfigurableClass):
+    def __init__(self, conn_string, inst_data=None):
+        self.conn_string = conn_string
+        super(SqliteRunStorage, self).__init__(inst_data=inst_data)
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict('FilesystemRunStorageConfig', {'base_dir': Field(String)})
+        return SystemNamedDict('SqliteRunStorageConfig', {'base_dir': Field(String)})
 
     @staticmethod
     def from_config_value(config_value, **kwargs):
-        return FilesystemRunStorage(**dict(config_value, **kwargs))
+        return SqliteRunStorage.from_local(**dict(config_value, **kwargs))
 
-    def filepath_for_run_id(self, run_id):
-        return os.path.join(self._base_dir, '{run_id}.json'.format(run_id=run_id))
+    @staticmethod
+    def from_local(base_dir, inst_data=None):
+        mkdir_p(base_dir)
+        conn_string = os.path.join(base_dir, 'runs.db')
+        try:
+            with sqlite3.connect(conn_string) as conn:
+                conn.cursor().execute(CREATE_RUNS_TABLE_SQL)
+                conn.cursor().execute(CREATE_RUN_TAGS_TABLE_SQL)
+                conn.cursor().execute('PRAGMA journal_mode=WAL;')
+        finally:
+            conn.close()
+        return SqliteRunStorage(conn_string, inst_data)
+
+    @contextmanager
+    def _connect(self):
+        try:
+            with sqlite3.connect(self.conn_string) as conn:
+                yield conn
+        finally:
+            conn.close()
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        check.invariant(
-            not self._known_runs.get(pipeline_run.run_id),
-            'Can not add run for known run_id {run_id}'.format(run_id=pipeline_run.run_id),
-        )
 
-        # mark pipeline known before writing to prevent any race issues with the watcher
-        self._known_runs[pipeline_run.run_id] = self._write_metadata_to_file(pipeline_run)
+        with self._connect() as conn:
+            conn.cursor().execute(
+                INSERT_RUN_SQL,
+                (
+                    pipeline_run.run_id,
+                    pipeline_run.pipeline_name,
+                    str(pipeline_run.status),
+                    serialize_dagster_namedtuple(pipeline_run),
+                ),
+            )
+            if pipeline_run.tags and len(pipeline_run.tags) > 0:
+                conn.cursor().executemany(
+                    INSERT_RUN_TAGS_SQL,
+                    [(pipeline_run.run_id, k, v) for k, v in pipeline_run.tags.items()],
+                )
+
         return pipeline_run
-
-    def add_external_run(self, pipeline_run, path):
-        self._known_runs[pipeline_run.run_id] = path
-        return pipeline_run
-
-    @property
-    def runs(self):
-        return {run_id: self.get_run_by_id(run_id) for run_id in self._known_runs}
-
-    @property
-    def all_runs(self):
-        return [self.get_run_by_id(run_id) for run_id in self._known_runs]
-
-    def has_run(self, run_id):
-        return run_id in self._known_runs
-
-    def _load_historic_runs(self):
-        for filename in glob.glob(os.path.join(self._base_dir, '*.json')):
-            with open(filename, 'r') as fd:
-                try:
-                    pipeline_run = deserialize_json_to_dagster_namedtuple(fd.read())
-                    self.add_run(pipeline_run)
-                except Exception as ex:  # pylint: disable=broad-except
-                    print(
-                        'Could not load pipeline run from {filename}, continuing.\n  Original '
-                        'exception: {ex}: {msg}'.format(
-                            filename=filename, ex=type(ex).__name__, msg=ex
-                        )
-                    )
-                    continue
-
-    def wipe(self):
-        for filename in glob.glob(os.path.join(self._base_dir, '*.json')):
-            os.unlink(filename)
-        self._known_runs = OrderedDict()
-
-    def all_runs_for_pipeline(self, pipeline_name):
-        return [r for r in self.all_runs if r.pipeline_name == pipeline_name]
-
-    def get_run_by_id(self, run_id):
-        path = self._known_runs[run_id]
-        with open(path, 'r') as fd:
-            return deserialize_json_to_dagster_namedtuple(fd.read())
-
-    def all_runs_for_tag(self, key, value):
-        return [r for r in self.all_runs if r.tags.get(key) == value]
 
     def handle_run_event(self, run_id, event):
-        run = self.get_run_by_id(run_id)
+        check.str_param(run_id, 'run_id')
+        check.inst_param(event, 'event', DagsterEvent)
 
-        if event.event_type == DagsterEventType.PIPELINE_START:
-            updated_run = run.run_with_status(PipelineRunStatus.STARTED)
-        elif event.event_type == DagsterEventType.PIPELINE_SUCCESS:
-            updated_run = run.run_with_status(PipelineRunStatus.SUCCESS)
-        elif event.event_type == DagsterEventType.PIPELINE_FAILURE:
-            updated_run = run.run_with_status(PipelineRunStatus.FAILURE)
-        else:
+        lookup = {
+            DagsterEventType.PIPELINE_START: PipelineRunStatus.STARTED,
+            DagsterEventType.PIPELINE_SUCCESS: PipelineRunStatus.SUCCESS,
+            DagsterEventType.PIPELINE_FAILURE: PipelineRunStatus.FAILURE,
+        }
+
+        if event.event_type not in lookup:
             return
 
-        self._write_metadata_to_file(updated_run)
+        run = self.get_run_by_id(run_id)
+        if not run:
+            # TODO log?
+            return
 
-    @property
-    def is_persistent(self):
-        return True
+        SQL_UPDATE = '''
+        UPDATE runs
+        SET status = ?, run_body = ?, update_timestamp = ?
+        WHERE run_id = ?
+        '''
 
-    def _write_metadata_to_file(self, pipeline_run):
-        metadata_filepath = self.filepath_for_run_id(pipeline_run.run_id)
+        new_pipeline_status = lookup[event.event_type]
 
-        with self._lock:
-            with io.open(metadata_filepath, 'w', encoding='utf-8') as f:
-                f.write(six.text_type(serialize_dagster_namedtuple(pipeline_run)))
+        with self._connect() as conn:
+            conn.cursor().execute(
+                SQL_UPDATE,
+                (
+                    str(new_pipeline_status),
+                    serialize_dagster_namedtuple(run.run_with_status(new_pipeline_status)),
+                    datetime.now(),
+                    run_id,
+                ),
+            )
 
-            return metadata_filepath
+    def _rows_to_runs(self, rows):
+        return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
-
-class ExternalRunsWatchdog(PatternMatchingEventHandler):
-    def __init__(self, run_storage, lock, **kwargs):
-        check.inst_param(run_storage, 'run_storage', FilesystemRunStorage)
-        self._run_storage = run_storage
-        self._lock = lock
-        super(ExternalRunsWatchdog, self).__init__(patterns=['*.json'], **kwargs)
-
-    def on_created(self, event):
-        run_id, _extension = os.path.basename(event.src_path).split('.')
-        # if we already know about the run, we kicked it off
-        with self._lock:
-            if self._run_storage.has_run(run_id):
-                return
-
-            with open(event.src_path, 'r') as fd:
-                try:
-                    pipeline_run = deserialize_json_to_dagster_namedtuple(fd.read())
-                    self._run_storage.add_external_run(pipeline_run, event.src_path)
-                except Exception as ex:  # pylint: disable=broad-except
-                    warnings.warn(
-                        'Error trying to load .json metadata file in filesystem run '
-                        'storage at path "{path}": {ex}: {msg}'.format(
-                            path=event.src_path, ex=type(ex).__name__, msg=ex
-                        )
-                    )
-                    return
-
-
-CREATE_RUNS_TABLE_STATEMENT = '''
-    CREATE TABLE IF NOT EXISTS runs (
-        run_id varchar(255) NOT NULL,
-        pipeline_name varchar(1023) NOT NULL
-    )
-'''
-
-INSERT_RUN_STATEMENT = '''
-    INSERT INTO runs (run_id, pipeline_name) VALUES (?, ?)
-'''
-
-
-class SqliteRunStorage(RunStorage):
-    @staticmethod
-    def mem():
-        conn = sqlite3.connect(':memory:')
-        conn.execute(CREATE_RUNS_TABLE_STATEMENT)
-        conn.commit()
-        return SqliteRunStorage(conn)
-
-    def __init__(self, conn):
-        self.conn = conn
-
-    def add_run(self, pipeline_run):
-        self.conn.execute(INSERT_RUN_STATEMENT, (pipeline_run.run_id, pipeline_run.pipeline_name))
-        return pipeline_run
-
-    @property
     def all_runs(self):
-        raw_runs = self.conn.cursor().execute('SELECT run_id, pipeline_name FROM runs').fetchall()
-        return list(map(self._from_sql_row, raw_runs))
+        '''Return all the runs present in the storage.
 
-    def _from_sql_row(self, row):
-        return PipelineRun.create_empty_run(run_id=row[0], pipeline_name=row[1])
+        Returns:
+            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+        '''
 
-    def handle_run_event(self, run_id, event):
-        raise NotImplementedError()
+        with self._connect() as conn:
+            rows = conn.cursor().execute('SELECT run_body FROM runs').fetchall()
+            return self._rows_to_runs(rows)
 
     def all_runs_for_pipeline(self, pipeline_name):
-        raw_runs = (
-            self.conn.cursor()
-            .execute(
-                'SELECT run_id, pipeline_name FROM runs WHERE pipeline_name=?', (pipeline_name,)
+        '''Return all the runs present in the storage for a given pipeline.
+
+        Args:
+            pipeline_name (str): The pipeline to index on
+
+        Returns:
+            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+        '''
+        check.str_param(pipeline_name, 'pipeline_name')
+
+        with self._connect() as conn:
+            rows = (
+                conn.cursor()
+                .execute('SELECT run_body FROM runs WHERE pipeline_name = ?', (pipeline_name,))
+                .fetchall()
             )
-            .fetchall()
-        )
-        return list(map(self._from_sql_row, raw_runs))
+            return self._rows_to_runs(rows)
 
     def get_run_by_id(self, run_id):
-        sql = 'SELECT run_id, pipeline_name FROM runs WHERE run_id = ?'
-        return self._from_sql_row(self.conn.cursor().execute(sql, (run_id,)).fetchone())
+        '''Get a run by its id.
+
+        Args:
+            run_id (str): The id of the run
+
+        Returns:
+            Optional[PipelineRun]
+        '''
+        check.str_param(run_id, 'run_id')
+
+        with self._connect() as conn:
+            rows = (
+                conn.cursor()
+                .execute('SELECT run_body FROM runs WHERE run_id = ?', (run_id,))
+                .fetchall()
+            )
+            return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
 
     def all_runs_for_tag(self, key, value):
-        raise NotImplementedError()
+        with self._connect() as conn:
+            rows = (
+                conn.cursor()
+                .execute(
+                    '''
+                    SELECT run_body
+                    FROM runs
+                    INNER JOIN run_tags
+                    ON runs.run_id = run_tags.run_id
+                    WHERE run_tags.key = ? AND run_tags.value = ?
+                    ''',
+                    (key, value),
+                )
+                .fetchall()
+            )
+            return self._rows_to_runs(rows)
 
     def has_run(self, run_id):
-        sql = 'SELECT run_id FROM runs WHERE run_id = ?'
-        return bool(self.conn.cursor().execute(sql, (run_id,)).fetchone())
+        check.str_param(run_id, 'run_id')
+        return bool(self.get_run_by_id(run_id))
 
     def wipe(self):
-        self.conn.execute('DELETE FROM runs')
+        '''Clears the run storage.'''
+        with self._connect() as conn:
+            conn.cursor().execute(DELETE_RUNS_SQL)
+            conn.cursor().execute(DELETE_RUN_TAGS_SQL)
 
     @property
     def is_persistent(self):
         return True
-
-    def get_logs_for_run(self, run_id, cursor=0):
-        raise NotImplementedError()

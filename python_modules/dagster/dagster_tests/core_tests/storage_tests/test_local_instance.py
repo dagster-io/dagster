@@ -18,7 +18,7 @@ from dagster.core.storage.event_log import FilesystemEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root import RootStorage
-from dagster.core.storage.runs import FilesystemRunStorage
+from dagster.core.storage.runs import SqliteRunStorage
 
 
 def test_fs_stores():
@@ -32,7 +32,7 @@ def test_fs_stores():
         easy()
 
     with seven.TemporaryDirectory() as temp_dir:
-        run_store = FilesystemRunStorage(temp_dir)
+        run_store = SqliteRunStorage.from_local(temp_dir)
         event_store = FilesystemEventLogStorage(temp_dir)
         compute_log_manager = LocalComputeLogManager(temp_dir)
         instance = DagsterInstance(

@@ -12,6 +12,10 @@ from .config import dagster_feature_set
 
 
 def _runs_directory(base):
+    return os.path.join(base, 'history', '')
+
+
+def _event_logs_directory(base):
     return os.path.join(base, 'history', 'runs', '')
 
 
@@ -63,7 +67,7 @@ class LocalInstanceRef(
             ),
             run_storage_data=ConfigurableClassData(
                 'dagster.core.storage.runs',
-                'FilesystemRunStorage',
+                'SqliteRunStorage',
                 yaml.dump(
                     {'base_dir': _runs_directory(root_storage_dir)}, default_flow_style=False
                 ),
@@ -72,7 +76,7 @@ class LocalInstanceRef(
                 'dagster.core.storage.event_log',
                 'FilesystemEventLogStorage',
                 yaml.dump(
-                    {'base_dir': _runs_directory(root_storage_dir)}, default_flow_style=False
+                    {'base_dir': _event_logs_directory(root_storage_dir)}, default_flow_style=False
                 ),
             ),
         )

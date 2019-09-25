@@ -25,7 +25,7 @@ def execute_start_pipeline_execution_mutation(handle, variables, instance_ref=No
         variables,
         raise_on_error=True,
         use_sync_executor=True,
-        instance=DagsterInstance.from_ref(instance_ref, watch_external_runs=False)
+        instance=DagsterInstance.from_ref(instance_ref)
         if instance_ref
         else DagsterInstance.ephemeral(),
     )
@@ -35,9 +35,7 @@ def execute_start_pipeline_execution_mutation(handle, variables, instance_ref=No
 
 def execute_execute_plan_mutation(handle, variables, instance_ref=None):
     instance = (
-        DagsterInstance.from_ref(instance_ref, watch_external_runs=False)
-        if instance_ref
-        else DagsterInstance.ephemeral()
+        DagsterInstance.from_ref(instance_ref) if instance_ref else DagsterInstance.ephemeral()
     )
     res = execute_query(
         handle,
