@@ -66,11 +66,12 @@ def ui(host, port, storage_fallback, no_watch=False, **kwargs):
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
 
-    check.invariant(
-        not no_watch,
-        'Do not set no_watch when calling the Dagit Python CLI directly -- this flag is a no-op '
-        'at this level and should be set only when invoking dagit/bin/dagit.',
-    )
+    if no_watch:
+        raise click.UsageError(
+            'Do not set no_watch when calling the Dagit Python CLI directly -- this flag is a no-op '
+            'at this level and should be set only when invoking dagit/bin/dagit.'
+        )
+
     host_dagit_ui(handle, host, port, storage_fallback)
 
 

@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import pytest
+from click import UsageError
 from click.testing import CliRunner
 from dagster_tests.utils import MockScheduler
 
@@ -13,7 +14,6 @@ from dagster import (
     seven,
 )
 from dagster.check import CheckError
-from dagster.cli.load_handle import CliUsageError
 from dagster.cli.pipeline import (
     execute_execute_command,
     execute_list_command,
@@ -136,7 +136,7 @@ def test_list_command():
         '    hello_world\n'
     )
 
-    with pytest.raises(CliUsageError):
+    with pytest.raises(UsageError):
         execute_list_command(
             {
                 'repository_yaml': None,
@@ -153,7 +153,7 @@ def test_list_command():
     )
     assert result.exit_code == 2
 
-    with pytest.raises(CliUsageError):
+    with pytest.raises(UsageError):
         execute_list_command(
             {
                 'repository_yaml': None,
@@ -165,10 +165,9 @@ def test_list_command():
         )
 
     result = runner.invoke(pipeline_list_command, ['-m', 'dagster_examples.intro_tutorial.repos'])
-    assert result.exit_code == 1
-    assert isinstance(result.exception, CliUsageError)
+    assert result.exit_code == 2
 
-    with pytest.raises(CliUsageError):
+    with pytest.raises(UsageError):
         execute_list_command(
             {
                 'repository_yaml': None,
@@ -182,8 +181,7 @@ def test_list_command():
     result = runner.invoke(
         pipeline_list_command, ['-f', script_relative_path('test_cli_commands.py')]
     )
-    assert result.exit_code == 1
-    assert isinstance(result.exception, CliUsageError)
+    assert result.exit_code == 2
 
 
 def valid_execute_args():
@@ -375,8 +373,6 @@ def test_execute_command():
         )
 
     runner = CliRunner()
-
-    runner_pipeline_execute(runner, {})
 
     for cli_args in valid_cli_args():
         runner_pipeline_execute(runner, cli_args)

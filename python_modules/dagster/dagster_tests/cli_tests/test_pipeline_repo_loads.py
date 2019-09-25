@@ -3,7 +3,7 @@ import importlib
 
 import pytest
 
-from dagster.cli.load_handle import CliUsageError, handle_for_pipeline_cli_args
+from dagster.cli.load_handle import UsageError, handle_for_pipeline_cli_args
 from dagster.core.definitions import (
     ExecutionTargetHandle,
     LoaderEntrypoint,
@@ -27,7 +27,7 @@ def test_repository_python_file():
     assert handle.data.pipeline_name == 'foo'
     assert handle.entrypoint.from_handle == handle
 
-    with pytest.raises(CliUsageError):
+    with pytest.raises(UsageError):
         handle_for_pipeline_cli_args(
             {
                 'module_name': 'kdjfkd',
@@ -38,7 +38,7 @@ def test_repository_python_file():
             }
         )
 
-    with pytest.raises(CliUsageError):
+    with pytest.raises(UsageError):
         handle_for_pipeline_cli_args(
             {
                 'module_name': None,
@@ -132,13 +132,13 @@ def test_yaml_file():
 
     assert handle.data.pipeline_name == 'foobar'
 
-    with pytest.raises(CliUsageError):
+    with pytest.raises(UsageError):
         assert handle_for_pipeline_cli_args({'module_name': 'kdjfdk', 'pipeline_name': 'foobar'})
 
-    with pytest.raises(CliUsageError):
+    with pytest.raises(UsageError):
         assert handle_for_pipeline_cli_args({'fn_name': 'kjdfkd', 'pipeline_name': 'foobar'})
 
-    with pytest.raises(CliUsageError):
+    with pytest.raises(UsageError):
         assert handle_for_pipeline_cli_args({'pipeline_name': 'foobar', 'python_file': 'kjdfkdj'})
 
 
