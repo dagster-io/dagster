@@ -30,7 +30,7 @@ def mult_two(num):
 
 @pipeline
 def math():
-    mult_two(add_one())  # pylint: disable=no-value-for-parameter
+    mult_two(add_one())
 
 
 def define_repository():

@@ -29,7 +29,7 @@ def test_airline_demo_load_df():
         ]
     )
     def load_df_test():
-        load_data_to_database_from_spark(emit_mock())  # pylint: disable=no-value-for-parameter
+        load_data_to_database_from_spark(emit_mock())
 
     solid_result = execute_pipeline(
         load_df_test,

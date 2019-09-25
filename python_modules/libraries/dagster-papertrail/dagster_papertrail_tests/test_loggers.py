@@ -20,7 +20,7 @@ def hello_logs(context):
     ]
 )
 def hello_pipeline():
-    hello_logs()  # pylint: disable=no-value-for-parameter
+    hello_logs()
 
 
 def test_papertrail_logger():

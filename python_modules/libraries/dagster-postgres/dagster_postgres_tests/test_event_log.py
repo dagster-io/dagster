@@ -58,7 +58,7 @@ def test_basic_event_store():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     events, _result = gather_events(_solids)
 
@@ -92,7 +92,7 @@ def test_basic_get_logs_for_run():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     events, result = gather_events(_solids)
 
@@ -120,7 +120,7 @@ def test_wipe_postgres_event_log():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     events, result = gather_events(_solids)
 
@@ -154,7 +154,7 @@ def test_basic_get_logs_for_run_cursor():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     events, result = gather_events(_solids)
 
@@ -190,7 +190,7 @@ def test_basic_get_logs_for_run_multiple_runs():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     events_one, result_one = gather_events(_solids)
     for event in events_one:
@@ -239,7 +239,7 @@ def test_basic_get_logs_for_run_multiple_runs_cursors():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     events_one, result_one = gather_events(_solids)
     for event in events_one:
@@ -288,7 +288,7 @@ def test_listen_notify_single_run_event():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     event_watcher = create_event_watcher(get_test_conn_string())
 
@@ -322,7 +322,7 @@ def test_listen_notify_filter_two_runs_event():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     event_watcher = create_event_watcher(get_test_conn_string())
 
@@ -362,7 +362,7 @@ def test_listen_notify_filter_run_event():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     event_watcher = create_event_watcher(get_test_conn_string())
 

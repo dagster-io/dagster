@@ -27,7 +27,7 @@ def construct_fan_in_level(source, level, fanout):
 def construct_level_pipeline(name, levels, fanout):
     @pipeline(name=name)
     def _pipe():
-        # pylint: disable=no-value-for-parameter
+
         return_one_out = return_one()
         prev_level_out = return_one_out
         for level in range(0, levels):

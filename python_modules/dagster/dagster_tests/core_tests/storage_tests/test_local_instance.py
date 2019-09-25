@@ -28,7 +28,7 @@ def test_fs_stores():
             context.log.info('easy')
             return 'easy'
 
-        easy()  # pylint: disable=no-value-for-parameter
+        easy()
 
     with seven.TemporaryDirectory() as temp_dir:
         run_store = FilesystemRunStorage(temp_dir)

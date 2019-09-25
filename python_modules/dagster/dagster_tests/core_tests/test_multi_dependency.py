@@ -109,7 +109,7 @@ def test_interleaved_values():
 def test_dsl():
     @pipeline
     def input_test():
-        collect([emit_num(), emit_none(), emit_str()])  # pylint: disable=no-value-for-parameter
+        collect([emit_num(), emit_none(), emit_str()])
 
     result = execute_pipeline(input_test)
 
@@ -135,7 +135,7 @@ def test_bad_dsl():
         @composite_solid
         def _composed_collect(str_in, none_in):
             num = emit_num()
-            collect([num, str_in, none_in])  # pylint: disable=no-value-for-parameter
+            collect([num, str_in, none_in])
 
 
 def test_nothing_deps():

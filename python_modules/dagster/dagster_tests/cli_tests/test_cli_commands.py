@@ -54,7 +54,7 @@ def define_foo_pipeline():
 
 @pipeline(name='baz', description='Not much tbh')
 def baz_pipeline():
-    do_input()  # pylint: disable=no-value-for-parameter
+    do_input()
 
 
 def define_bar_repo():

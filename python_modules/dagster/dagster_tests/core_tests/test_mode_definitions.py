@@ -50,7 +50,7 @@ def test_mode_from_resources():
         name='takes a mode', mode_defs=[ModeDefinition.from_resources({'three': 3}, name='three')]
     )
     def pipeline_def():
-        return ret_three()  # pylint: disable=no-value-for-parameter
+        return ret_three()
 
     assert execute_pipeline(pipeline_def).result_for_solid('ret_three').output_value() == 3
 

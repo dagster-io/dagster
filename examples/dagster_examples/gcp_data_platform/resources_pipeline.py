@@ -124,11 +124,7 @@ def explore_visits_by_hour(context):
     ],
 )
 def gcp_data_platform():
-    dataproc_job = delete_dataproc_cluster(
-        data_proc_spark_operator(
-            create_dataproc_cluster()  # pylint: disable=no-value-for-parameter
-        )
-    )
+    dataproc_job = delete_dataproc_cluster(data_proc_spark_operator(create_dataproc_cluster()))
 
     events_in_bq = gcs_to_bigquery(dataproc_job)
     explore_visits_by_hour(events_in_bq)

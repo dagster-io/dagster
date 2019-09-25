@@ -1,4 +1,4 @@
-# pylint: disable=no-value-for-parameter, no-member
+# pylint:disable=no-member
 from collections import defaultdict
 
 from dagster_aws.s3.resources import s3_resource
@@ -45,7 +45,7 @@ def error_solid():
     ]
 )
 def demo_pipeline():
-    count_letters(multiply_the_word())  # pylint: disable=no-value-for-parameter
+    count_letters(multiply_the_word())
 
 
 @pipeline

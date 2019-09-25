@@ -18,7 +18,6 @@ from dagster import (
 from dagster.seven import mock
 
 # For deps
-# pylint: disable=no-value-for-parameter
 
 
 def test_s3_file_manager_write():

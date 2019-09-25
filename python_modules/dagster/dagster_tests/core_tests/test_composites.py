@@ -91,7 +91,7 @@ def test_composite_config():
 
     @composite_solid
     def inner():
-        configured()  # pylint: disable=no-value-for-parameter
+        configured()
 
     @composite_solid
     def outer():
@@ -119,7 +119,7 @@ def test_composite_config_input():
 
     @composite_solid
     def inner():
-        node_a()  # pylint: disable=no-value-for-parameter
+        node_a()
 
     @composite_solid
     def outer():
@@ -153,7 +153,7 @@ def test_mapped_composite_config_input():
 
     @composite_solid
     def inner(inner_one):
-        node_a(inner_one)  # pylint: disable=no-value-for-parameter
+        node_a(inner_one)
 
     outer = CompositeSolidDefinition(
         name='outer',
@@ -238,7 +238,7 @@ def test_types_descent():
 
     @composite_solid
     def middle_solid():
-        inner_solid()  # pylint: disable=no-value-for-parameter
+        inner_solid()
 
     @composite_solid
     def outer_solid():

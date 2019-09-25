@@ -1,4 +1,3 @@
-# pylint: disable=no-value-for-parameter
 from dagster import execute_pipeline, pipeline, solid
 
 

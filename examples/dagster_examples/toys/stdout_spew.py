@@ -1,5 +1,3 @@
-# pylint: disable=no-value-for-parameter
-
 import os
 import sys
 import time
@@ -38,6 +36,6 @@ def spew(_, name):
 
 @pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors)])
 def stdout_spew_pipeline():
-    out_1, out_2 = spawn()  # pylint: disable=no-value-for-parameter
+    out_1, out_2 = spawn()
     spew.alias('spew_1')(name=out_1)
     spew.alias('spew_2')(name=out_2)

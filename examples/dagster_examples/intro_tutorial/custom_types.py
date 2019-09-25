@@ -12,8 +12,6 @@ from dagster import (
 )
 from dagster.utils import script_relative_path
 
-# pylint: disable=no-value-for-parameter
-
 
 @dagster_type
 class Empty:

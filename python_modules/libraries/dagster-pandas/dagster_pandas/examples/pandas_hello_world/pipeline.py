@@ -40,9 +40,7 @@ def always_fails_solid(**_kwargs):
 
 @pipeline
 def pandas_hello_world_fails():
-    always_fails_solid(
-        sum_sq_solid=sum_sq_solid(sum_df=sum_solid())  # pylint: disable=no-value-for-parameter
-    )
+    always_fails_solid(sum_sq_solid=sum_sq_solid(sum_df=sum_solid()))
 
 
 @pipeline(
@@ -62,4 +60,4 @@ def pandas_hello_world_fails():
     ]
 )
 def pandas_hello_world():
-    sum_sq_solid(sum_solid())  # pylint: disable=no-value-for-parameter
+    sum_sq_solid(sum_solid())

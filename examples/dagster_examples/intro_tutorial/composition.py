@@ -1,4 +1,4 @@
-# pylint: disable=no-value-for-parameter,unused-variable,no-member
+# pylint:disable=unused-variable,no-member
 
 from dagster import Output, OutputDefinition, composite_solid, pipeline, solid
 

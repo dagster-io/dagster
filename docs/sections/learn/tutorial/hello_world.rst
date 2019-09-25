@@ -22,10 +22,7 @@ This example introduces the core **solid** and **pipeline** concepts:
 
 2.  A **pipeline** is a set of solids arranged into a DAG of computation that produces data assets.
     In this example, the function decorated call to :py:func:`@pipeline <dagster.pipeline>` defines
-    a pipeline with a single solid. The solid is not actually invoked during pipeline construction.
-    The invocation places that solid within the pipeline. Context arguments are only passed when the
-    solids are actually executed, and so we disable the pylint warning with the
-    ``# pylint: disable=no-value-for-parameter`` pylint directive within the comment. 
+    a pipeline with a single solid.
 
 Pipeline Execution
 ^^^^^^^^^^^^^^^^^^

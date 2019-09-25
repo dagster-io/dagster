@@ -1,5 +1,3 @@
-# pylint: disable=no-value-for-parameter
-
 import csv
 import logging
 from collections import OrderedDict
@@ -542,7 +540,7 @@ def materialization_pipeline():
         )
         yield Output(None)
 
-    materialize()  # pylint: disable=no-value-for-parameter
+    materialize()
 
 
 @pipeline

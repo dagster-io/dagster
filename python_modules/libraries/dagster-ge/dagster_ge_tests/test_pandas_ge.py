@@ -143,7 +143,7 @@ def invalid_data(_):
 
 @pipeline
 def ge_hello_world_pipeline():
-    # pylint: disable=no-value-for-parameter
+
     valid_data()
     invalid_data()
 

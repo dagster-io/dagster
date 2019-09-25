@@ -1,4 +1,4 @@
-# pylint: disable=no-value-for-parameter, no-member
+# pylint:disable=no-member
 
 from time import sleep
 

@@ -1,5 +1,3 @@
-# pylint: disable=no-value-for-parameter
-
 from operator import add
 
 from dagster_pyspark import SparkRDD, spark_session_resource

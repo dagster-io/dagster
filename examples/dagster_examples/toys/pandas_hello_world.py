@@ -1,4 +1,3 @@
-# pylint: disable=no-value-for-parameter
 import pandas as pd
 from dagster_pandas import DataFrame
 
