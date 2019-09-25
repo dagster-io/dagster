@@ -33,10 +33,16 @@ def test_stdout():
     step_key = compute_steps[0]
     logs = instance.compute_log_manager.read_logs(result.run_id, step_key)
     assert logs.stdout.data == HELLO_WORLD + SEPARATOR
-    assert 'dagster - DEBUG - \n       dagster_event = {"event_specific_data":' in logs.stderr.data
+    assert (
+        'dagster - DEBUG - \n       dagster_event = {"event_specific_data":'
+        in logs.stderr.data.replace('\r\n', '\n')
+    )
     logs = instance.compute_log_manager.read_logs(result.run_id, step_key, cursor='0:0')
     assert logs.stdout.data == HELLO_WORLD + SEPARATOR
-    assert 'dagster - DEBUG - \n       dagster_event = {"event_specific_data":' in logs.stderr.data
+    assert (
+        'dagster - DEBUG - \n       dagster_event = {"event_specific_data":'
+        in logs.stderr.data.replace('\r\n', '\n')
+    )
     assert instance.compute_log_manager.is_compute_completed(result.run_id, step_key)
 
     bad_logs = instance.compute_log_manager.read_logs('not_a_run_id', step_key)
@@ -54,5 +60,7 @@ def test_stdout_subscriptions():
     observable.subscribe(logs.append)
     assert len(logs) == 1
     stdout_cursor, stderr_cursor = map(int, logs[0].cursor.split(':'))
-    assert stdout_cursor == 12
+    assert stdout_cursor == len(logs[0].stdout.data)
+    assert stdout_cursor in [12, 13]
+    assert stderr_cursor == len(logs[0].stderr.data)
     assert stderr_cursor > 1000
