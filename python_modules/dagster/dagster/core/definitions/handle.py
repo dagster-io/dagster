@@ -11,7 +11,7 @@ from dagster import check
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.repository import RepositoryDefinition
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.scheduler import Scheduler
+from dagster.core.scheduler import SchedulerHandle
 from dagster.utils import load_yaml_from_path
 
 if sys.version_info > (3,):
@@ -33,6 +33,7 @@ class SchedulerLoaderEntrypoint(
 
     def perform_load(self, artifacts_dir):
         artifacts_dir = check.str_param(artifacts_dir, 'artifacts_dir')
+        repository_name = self.from_handle.build_repository_definition().name
 
         # in the decorator case the attribute will be the actual definition
         if not hasattr(self.module, self.fn_name):
@@ -43,11 +44,11 @@ class SchedulerLoaderEntrypoint(
         fn_scheduler = getattr(self.module, self.fn_name)
 
         if callable(fn_scheduler):
-            scheduler = fn_scheduler(artifacts_dir)
+            scheduler = fn_scheduler(artifacts_dir=artifacts_dir, repository_name=repository_name)
 
-            if not isinstance(scheduler, (Scheduler)):
+            if not isinstance(scheduler, SchedulerHandle):
                 raise DagsterInvariantViolationError(
-                    '{fn_name} is a function but must return a Scheduler.'.format(
+                    '{fn_name} is a function but must return a SchedulerHandle.'.format(
                         fn_name=self.fn_name
                     )
                 )
@@ -56,7 +57,7 @@ class SchedulerLoaderEntrypoint(
 
         else:
             raise DagsterInvariantViolationError(
-                '{fn_name} must be a function that returns a Scheduler.'.format(
+                '{fn_name} must be a function that returns a SchedulerHandle.'.format(
                     fn_name=self.fn_name
                 )
             )
@@ -370,13 +371,13 @@ class ExecutionTargetHandle:
             data, mode=_ExecutionTargetMode.PIPELINE, is_resolved_to_pipeline=True
         )
 
-    def build_scheduler(self, artifacts_dir):
-        entrypoint = self.schedule_entrypoint
+    def build_scheduler_handle(self, artifacts_dir):
+        entrypoint = self.scheduler_handle_entrypoint
         # entrypoint will be None if the repository yaml file does not define a scheduler entrypoint
         if not entrypoint:
             return None
 
-        return self.schedule_entrypoint.perform_load(artifacts_dir)
+        return self.scheduler_handle_entrypoint.perform_load(artifacts_dir)
 
     def build_repository_definition(self):
         '''Rehydrates a RepositoryDefinition from an ExecutionTargetHandle object.
@@ -431,7 +432,7 @@ class ExecutionTargetHandle:
             check.failed('Unhandled mode {mode}'.format(mode=self.mode))
 
     @property
-    def schedule_entrypoint(self):
+    def scheduler_handle_entrypoint(self):
         if self.mode == _ExecutionTargetMode.REPOSITORY:
             return self.data.get_scheduler_entrypoint(from_handle=self)
         else:

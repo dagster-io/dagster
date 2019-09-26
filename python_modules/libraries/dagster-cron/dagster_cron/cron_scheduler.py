@@ -1,106 +1,102 @@
 import io
 import os
 import stat
-import uuid
-from collections import OrderedDict
 
 import six
 from crontab import CronTab
 
-from dagster import DagsterInvariantViolationError, ScheduleDefinition, check, seven, utils
-from dagster.core.scheduler import RunningSchedule, Scheduler
+from dagster import DagsterInvariantViolationError, check, seven
+from dagster.core.scheduler import ScheduleStatus, Scheduler
+from dagster.core.scheduler.storage import ScheduleStorage
 
 
 class SystemCronScheduler(Scheduler):
-    def __init__(self, schedule_defs, artifacts_dir):
-        schedule_defs = check.opt_list_param(schedule_defs, 'schedule_defs', ScheduleDefinition)
-        artifacts_dir = check.str_param(artifacts_dir, 'artifacts_dir')
-
+    def __init__(self, artifacts_dir, schedule_storage):
+        check.inst_param(schedule_storage, 'schedule_storage', ScheduleStorage)
+        check.str_param(artifacts_dir, 'artifacts_dir')
+        self._storage = schedule_storage
         self._artifacts_dir = artifacts_dir
-        self._schedule_defs = {}
-        for defn in schedule_defs:
-            check.invariant(
-                defn.name not in self._schedule_defs,
-                'Duplicate schedules named {name}'.format(name=defn.name),
-            )
-            self._schedule_defs[defn.name] = defn
 
-        self._schedules = OrderedDict()
-        self._load_schedules()
-
-    def get_all_schedule_defs(self):
-        return [self._schedule_defs[name] for name in sorted(self._schedule_defs.keys())]
-
-    def get_schedule_def(self, name):
-        check.str_param(name, 'name')
-
-        if name in self._schedule_defs:
-            return self._schedule_defs[name]
-        else:
-            raise DagsterInvariantViolationError(
-                'Could not find schedule "{name}". Found: {schedule_names}.'.format(
-                    name=name,
-                    schedule_names=', '.join(
-                        [
-                            '"{schedule_name}"'.format(schedule_name=schedule_name)
-                            for schedule_name in self._schedule_defs.keys()
-                        ]
-                    ),
-                )
-            )
-
-    def all_schedules(self):
-        return [s for s in self._schedules.values()]
-
-    def all_schedules_for_pipeline(self, pipeline_name):
-        return [
-            s
-            for s in self.all_schedules()
-            if s.execution_params['selector']['name'] == pipeline_name
-        ]
+    def all_schedules(self, status=None):
+        return self._storage.all_schedules(status)
 
     def get_schedule_by_name(self, name):
-        return self._schedules.get(name)
+        return self._storage.get_schedule_by_name(name)
 
-    def start_schedule(self, schedule_definition, python_path, repository_path):
-        if schedule_definition.name in self._schedules:
+    def start_schedule(self, schedule_name):
+        schedule = self.get_schedule_by_name(schedule_name)
+        if not schedule:
             raise DagsterInvariantViolationError(
-                ('You have attempted to start schedule {name}, but it is already running.').format(
-                    name=schedule_definition.name
+                'You have attempted to start schedule {name}, but it does not exist.'.format(
+                    name=schedule_name
                 )
             )
 
-        schedule_id = str(uuid.uuid4())
+        if schedule.status == ScheduleStatus.RUNNING:
+            raise DagsterInvariantViolationError(
+                'You have attempted to start schedule {name}, but it is already running'.format(
+                    name=schedule_name
+                )
+            )
 
-        schedule = RunningSchedule(schedule_id, schedule_definition, python_path, repository_path)
-
-        self._schedules[schedule_definition.name] = schedule
-        self._write_schedule_to_file(schedule)
-
-        script_file = self._write_bash_script_to_file(schedule)
-        self._start_cron_job(script_file, schedule)
+        started_schedule = schedule.with_status(ScheduleStatus.RUNNING)
+        self._storage.update_schedule(started_schedule)
+        self._start_cron_job(started_schedule)
 
         return schedule
 
-    def end_schedule(self, schedule_definition):
-        if schedule_definition.name not in self._schedules:
+    def stop_schedule(self, schedule_name):
+        schedule = self.get_schedule_by_name(schedule_name)
+        if not schedule:
             raise DagsterInvariantViolationError(
-                ('You have attempted to end schedule {name}, but it is not running.').format(
-                    name=schedule_definition.name
+                'You have attempted to stop schedule {name}, but was never initialized.'
+                'Use `schedule init` to initialize schedules'.format(name=schedule_name)
+            )
+
+        if schedule.status == ScheduleStatus.STOPPED:
+            raise DagsterInvariantViolationError(
+                'You have attempted to stop schedule {name}, but it is already stopped'.format(
+                    name=schedule_name
                 )
             )
 
-        schedule = self.get_schedule_by_name(schedule_definition.name)
-
-        self._schedules.pop(schedule_definition.name)
+        stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
+        self._storage.update_schedule(stopped_schedule)
         self._end_cron_job(schedule)
 
-        os.remove(self._get_metadata_file_path(schedule))
-        os.remove(self._get_bash_script_file_path(schedule))
+        return stopped_schedule
+
+    def end_schedule(self, schedule_name):
+        schedule = self.get_schedule_by_name(schedule_name)
+        if not schedule:
+            raise DagsterInvariantViolationError(
+                'You have attempted to end schedule {name}, but it is not running.'.format(
+                    name=schedule_name
+                )
+            )
+
+        self._storage.delete_schedule(schedule)
+        self._end_cron_job(schedule)
 
         return schedule
 
-    def _start_cron_job(self, script_file, schedule):
+    def _get_file_prefix(self, schedule):
+        return os.path.join(
+            self._artifacts_dir,
+            '{}_{}'.format(schedule.schedule_definition.name, schedule.schedule_id),
+        )
+
+    def _get_bash_script_file_path(self, schedule):
+        file_prefix = self._get_file_prefix(schedule)
+        return '{}.sh'.format(file_prefix)
+
+    def _get_logs_file_path(self, schedule):
+        file_prefix = self._get_file_prefix(schedule)
+        return '{}.log'.format(file_prefix)
+
+    def _start_cron_job(self, schedule):
+        script_file = self._write_bash_script_to_file(schedule)
+
         my_cron = CronTab(user=True)
         job = my_cron.new(command=script_file, comment=schedule.schedule_id)
         job.setall(schedule.schedule_definition.cron_schedule)
@@ -111,23 +107,9 @@ class SystemCronScheduler(Scheduler):
         my_cron.remove_all(comment=schedule.schedule_id)
         my_cron.write()
 
-    def _get_file_prefix(self, schedule):
-        return os.path.join(
-            self._artifacts_dir,
-            '{}_{}'.format(schedule.schedule_definition.name, schedule.schedule_id),
-        )
-
-    def _get_metadata_file_path(self, schedule):
-        file_prefix = self._get_file_prefix(schedule)
-        return '{}.json'.format(file_prefix)
-
-    def _get_bash_script_file_path(self, schedule):
-        file_prefix = self._get_file_prefix(schedule)
-        return '{}.sh'.format(file_prefix)
-
-    def _get_logs_file_path(self, schedule):
-        file_prefix = self._get_file_prefix(schedule)
-        return '{}.log'.format(file_prefix)
+        script_file = self._get_bash_script_file_path(schedule)
+        if os.path.isfile(script_file):
+            os.remove(script_file)
 
     def _write_bash_script_to_file(self, schedule):
         script_file = self._get_bash_script_file_path(schedule)
@@ -178,56 +160,3 @@ class SystemCronScheduler(Scheduler):
         os.chmod(script_file, st.st_mode | stat.S_IEXEC)
 
         return script_file
-
-    def _write_schedule_to_file(self, schedule):
-        metadata_file = self._get_metadata_file_path(schedule)
-        schedule_definition = schedule.schedule_definition
-        with io.open(metadata_file, 'w', encoding='utf-8') as f:
-            json_str = seven.json.dumps(
-                {
-                    'schedule_id': schedule.schedule_id,
-                    'name': schedule_definition.name,
-                    'cron_schedule': schedule_definition.cron_schedule,
-                    'execution_params': schedule_definition.execution_params,
-                    'python_path': schedule.python_path,
-                    'repository_path': schedule.repository_path,
-                }
-            )
-            f.write(six.text_type(json_str))
-
-        return metadata_file
-
-    def _load_schedules(self):
-        utils.mkdir_p(self._artifacts_dir)
-
-        for file in os.listdir(self._artifacts_dir):
-            if not file.endswith('.json'):
-                continue
-            file_path = os.path.join(self._artifacts_dir, file)
-            with open(file_path) as data:
-                try:
-                    data = seven.json.load(data)
-                    schedule = RunningSchedule(
-                        data['schedule_id'],
-                        ScheduleDefinition(
-                            name=data['name'],
-                            cron_schedule=data['cron_schedule'],
-                            execution_params=data['execution_params'],
-                        ),
-                        python_path=data['python_path'],
-                        repository_path=data['repository_path'],
-                    )
-                    self._schedules[schedule.schedule_definition.name] = schedule
-
-                except Exception as ex:  # pylint: disable=broad-except
-                    six.raise_from(
-                        Exception(
-                            'Could not parse dagit schedule from {file_name} in {dir_name}. {ex}: {msg}'.format(
-                                file_name=file,
-                                dir_name=self._artifacts_dir,
-                                ex=type(ex).__name__,
-                                msg=ex,
-                            )
-                        ),
-                        ex,
-                    )

@@ -1,81 +1,68 @@
-import uuid
-from collections import OrderedDict
-
 from dagster import DagsterInvariantViolationError, check
-from dagster.core.scheduler import RunningSchedule, Scheduler
+from dagster.core.scheduler import ScheduleStatus, Scheduler
+from dagster.core.scheduler.storage import ScheduleStorage
 
 
-class MockScheduler(Scheduler):
-    def __init__(self, schedule_defs, artifacts_dir):
+class FilesytemTestScheduler(Scheduler):
+    def __init__(self, artifacts_dir, schedule_storage):
+        check.inst_param(schedule_storage, 'schedule_storage', ScheduleStorage)
+        check.str_param(artifacts_dir, 'artifacts_dir')
+        self._storage = schedule_storage
         self._artifacts_dir = artifacts_dir
-        self._schedule_defs = {}
-        for defn in schedule_defs:
-            check.invariant(
-                defn.name not in self._schedule_defs,
-                'Duplicate schedules named {name}'.format(name=defn.name),
-            )
-            self._schedule_defs[defn.name] = defn
 
-        self._schedules = OrderedDict()
-
-    def get_all_schedule_defs(self):
-        return [self._schedule_defs[name] for name in sorted(self._schedule_defs.keys())]
-
-    def get_schedule_def(self, name):
-        check.str_param(name, 'name')
-
-        if name in self._schedule_defs:
-            return self._schedule_defs[name]
-        else:
-            raise DagsterInvariantViolationError(
-                'Could not find schedule "{name}". Found: {schedule_names}.'.format(
-                    name=name,
-                    schedule_names=', '.join(
-                        [
-                            '"{schedule_name}"'.format(schedule_name=schedule_name)
-                            for schedule_name in self._schedule_defs.keys()
-                        ]
-                    ),
-                )
-            )
-
-    def all_schedules(self):
-        return [s for s in self._schedules.values()]
-
-    def all_schedules_for_pipeline(self, pipeline_name):
-        return [
-            s
-            for s in self.all_schedules()
-            if s.execution_params['selector']['name'] == pipeline_name
-        ]
+    def all_schedules(self, status=None):
+        return self._storage.all_schedules(status)
 
     def get_schedule_by_name(self, name):
-        return self._schedules.get(name)
+        return self._storage.get_schedule_by_name(name)
 
-    def start_schedule(self, schedule_definition, python_path, repository_path):
-        if schedule_definition.name in self._schedules:
+    def start_schedule(self, schedule_name):
+        schedule = self.get_schedule_by_name(schedule_name)
+        if not schedule:
             raise DagsterInvariantViolationError(
-                'You have attempted to start schedule {name}, but it is already running.'.format(
-                    name=schedule_definition.name
+                'You have attempted to start schedule {name}, but it does not exist.'.format(
+                    name=schedule_name
                 )
             )
 
-        schedule_id = str(uuid.uuid4())
-        schedule = RunningSchedule(schedule_id, schedule_definition, python_path, repository_path)
+        if schedule.status == ScheduleStatus.RUNNING:
+            raise DagsterInvariantViolationError(
+                'You have attempted to start schedule {name}, but it is already running'.format(
+                    name=schedule_name
+                )
+            )
 
-        self._schedules[schedule_definition.name] = schedule
+        started_schedule = schedule.with_status(ScheduleStatus.RUNNING)
+        self._storage.update_schedule(started_schedule)
         return schedule
 
-    def end_schedule(self, schedule_definition):
-        if schedule_definition.name not in self._schedules:
+    def stop_schedule(self, schedule_name):
+        schedule = self.get_schedule_by_name(schedule_name)
+        if not schedule:
             raise DagsterInvariantViolationError(
-                ('You have attempted to end schedule {name}, but it is not running.').format(
-                    name=schedule_definition.name
+                'You have attempted to stop schedule {name}, but was never initialized.'
+                'Use `schedule init` to initialize schedules'.format(name=schedule_name)
+            )
+
+        if schedule.status == ScheduleStatus.STOPPED:
+            raise DagsterInvariantViolationError(
+                'You have attempted to stop schedule {name}, but it is already stopped'.format(
+                    name=schedule_name
                 )
             )
 
-        schedule = self.get_schedule_by_name(schedule_definition.name)
+        stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
+        self._storage.update_schedule(stopped_schedule)
+        return stopped_schedule
 
-        self._schedules.pop(schedule_definition.name)
+    def end_schedule(self, schedule_name):
+        schedule = self.get_schedule_by_name(schedule_name)
+        if not schedule:
+            raise DagsterInvariantViolationError(
+                'You have attempted to end schedule {name}, but it is not running.'.format(
+                    name=schedule_name
+                )
+            )
 
+        self._storage.delete_schedule(schedule)
         return schedule

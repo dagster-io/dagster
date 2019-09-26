@@ -2,7 +2,7 @@
 # py27 compat
 
 import pytest
-from dagster_tests.utils import MockScheduler
+from dagster_tests.utils import FilesytemTestScheduler
 
 from dagster import (
     Any,
@@ -301,7 +301,7 @@ def test_solid_no_arg():
 
 
 def test_scheduler():
-    @schedules(scheduler=MockScheduler)
+    @schedules(scheduler=FilesytemTestScheduler)
     def define_scheduler():
         return [
             ScheduleDefinition(name="my_schedule", cron_schedule="* * * * *", execution_params={})

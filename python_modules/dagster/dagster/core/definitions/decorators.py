@@ -4,7 +4,7 @@ from functools import wraps
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from ..scheduler import Scheduler, SchedulerBuilder
+from ..scheduler import Scheduler, SchedulerHandle
 from .composition import (
     InputMappingNode,
     composite_mapping_from_output,
@@ -137,7 +137,7 @@ class _Solid(object):
         )
 
 
-class _SchedulerBuilder(object):
+class _SchedulerHandle(object):
     def __init__(self, scheduler_type):
         self.scheduler_type = check.subclass_param(scheduler_type, 'scheduler_type', Scheduler)
 
@@ -153,21 +153,19 @@ class _SchedulerBuilder(object):
                     )
                 )
 
-        def scheduler_builder_function(artifacts_dir):
-            artifacts_dir = check.str_param(artifacts_dir, 'artifacts_dir')
-            schedule_builder = SchedulerBuilder(
+        def handle_fn(artifacts_dir, repository_name):
+            return SchedulerHandle(
                 scheduler_type=self.scheduler_type,
                 schedule_defs=schedule_defs,
                 artifacts_dir=artifacts_dir,
+                repository_name=repository_name,
             )
 
-            return schedule_builder.scheduler
-
-        return scheduler_builder_function
+        return handle_fn
 
 
 def schedules(scheduler):
-    return _SchedulerBuilder(scheduler)
+    return _SchedulerHandle(scheduler)
 
 
 def lambda_solid(name=None, description=None, input_defs=None, output_def=None):

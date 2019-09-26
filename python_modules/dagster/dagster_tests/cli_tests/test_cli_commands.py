@@ -3,7 +3,7 @@ from __future__ import print_function
 import pytest
 from click import UsageError
 from click.testing import CliRunner
-from dagster_tests.utils import MockScheduler
+from dagster_tests.utils import FilesytemTestScheduler
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -11,6 +11,7 @@ from dagster import (
     ScheduleDefinition,
     lambda_solid,
     pipeline,
+    schedules,
     seven,
 )
 from dagster.check import CheckError
@@ -539,39 +540,20 @@ def test_run_wipe():
     assert result.exit_code == 0
 
 
-def define_bar_scheduler(artifacts_dir):
-    return MockScheduler(
-        schedule_defs=[
-            ScheduleDefinition("foo_schedule", cron_schedule="* * * * *", execution_params={})
-        ],
-        artifacts_dir=artifacts_dir,
-    )
+@schedules(scheduler=FilesytemTestScheduler)
+def define_bar_scheduler():
+    return [ScheduleDefinition("foo_schedule", cron_schedule="* * * * *", execution_params={})]
 
 
 def test_schedules_list():
     runner = CliRunner()
-
-    execute_list_command(
-        {
-            'repository_yaml': None,
-            'python_file': script_relative_path('test_cli_commands.py'),
-            'module_name': None,
-            'fn_name': 'define_bar_repo',
-        },
-        no_print,
-    )
 
     result = runner.invoke(
         schedule_list_command, ['-y', script_relative_path('repository_file.yaml')]
     )
 
     assert result.exit_code == 0
-    assert result.output == (
-        'Repository bar\n'
-        '**************\n'
-        'Schedule: foo_schedule \n'
-        'Cron Schedule: * * * * *\n'
-    )
+    assert result.output == ('Repository bar\n' '**************\n')
 
 
 def test_multiproc():

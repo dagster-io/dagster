@@ -6,20 +6,23 @@ from dagster_graphql.schema.errors import DauphinSchedulerNotDefinedError
 
 from dagster import check, seven
 from dagster.core.definitions import ScheduleDefinition
-from dagster.core.scheduler import RunningSchedule
+from dagster.core.scheduler import Schedule
 
 
 def get_schedules(graphene_info):
-    scheduler = graphene_info.context.scheduler
+    scheduler = graphene_info.context.scheduler_handle.get_scheduler()
+
     return [
-        graphene_info.schema.type_named('ScheduleDefinition')(schedule_def=schedule_def)
-        for schedule_def in scheduler.get_all_schedule_defs()
+        graphene_info.schema.type_named('ScheduleDefinition')(
+            schedule_def=schedule.schedule_definition
+        )
+        for schedule in scheduler.all_schedules()
     ]
 
 
 @capture_dauphin_error
 def get_scheduler_or_error(graphene_info):
-    scheduler = graphene_info.context.scheduler
+    scheduler = graphene_info.context.get_scheduler()
     if not scheduler:
         raise UserFacingGraphQLError(graphene_info.schema.type_named('SchedulerNotDefinedError')())
 
@@ -66,7 +69,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     runs = dauphin.non_null_list('PipelineRun')
 
     def __init__(self, graphene_info, schedule):
-        self._schedule = check.inst_param(schedule, 'schedule', RunningSchedule)
+        self._schedule = check.inst_param(schedule, 'schedule', Schedule)
 
         super(DauphinRunningSchedule, self).__init__(
             schedule_id=schedule.schedule_id,
@@ -126,7 +129,7 @@ class DauphinStartScheduleMutation(dauphin.Mutation):
     Output = dauphin.NonNull('RunningScheduleResult')
 
     def mutate(self, graphene_info, schedule_id):
-        scheduler = graphene_info.context.scheduler
+        scheduler = graphene_info.context.get_scheduler()
 
         python_path = sys.executable
         handle = graphene_info.context.get_handle()
@@ -149,7 +152,7 @@ class DauphinEndRunningScheduleMutation(dauphin.Mutation):
     Output = dauphin.NonNull('RunningScheduleResult')
 
     def mutate(self, graphene_info, schedule_id):
-        scheduler = graphene_info.context.scheduler
+        scheduler = graphene_info.context.get_scheduler()
 
         schedule = scheduler.end_schedule(schedule_id)
 

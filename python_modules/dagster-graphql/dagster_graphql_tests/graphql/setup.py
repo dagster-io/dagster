@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
+from dagster_tests.utils import FilesytemTestScheduler
 
 from dagster import (
     Any,
@@ -27,6 +28,7 @@ from dagster import (
     Path,
     PresetDefinition,
     RepositoryDefinition,
+    ScheduleDefinition,
     SolidDefinition,
     String,
     as_dagster_type,
@@ -37,6 +39,7 @@ from dagster import (
     output_materialization_config,
     pipeline,
     resource,
+    schedules,
     solid,
 )
 from dagster.core.instance import DagsterInstance
@@ -73,12 +76,20 @@ PoorMansDataFrame = as_dagster_type(
 )
 
 
-def define_context(raise_on_error=True, instance=None, scheduler=None):
+def define_context(raise_on_error=True, instance=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
         instance=instance or DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),
-        scheduler=scheduler,
+        raise_on_error=raise_on_error,
+    )
+
+
+def define_context_for_repository_yaml(raise_on_error=True, instance=None):
+    return DagsterGraphQLContext(
+        handle=ExecutionTargetHandle.for_repo_yaml(script_relative_path('../repository.yaml')),
+        instance=instance or DagsterInstance.ephemeral(),
+        execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,
     )
 
@@ -152,6 +163,21 @@ def define_repository():
             spew_pipeline,
         ],
     )
+
+
+@schedules(scheduler=FilesytemTestScheduler)
+def define_scheduler():
+    no_config_pipeline_hourly_schedule = ScheduleDefinition(
+        name="no_config_pipeline_hourly_schedule",
+        cron_schedule="0 0 * * *",
+        execution_params={
+            "environmentConfigData": {"storage": {"filesystem": None}},
+            "selector": {"name": "no_config_pipeline", "solidSubset": None},
+            "mode": "default",
+        },
+    )
+
+    return [no_config_pipeline_hourly_schedule]
 
 
 @pipeline

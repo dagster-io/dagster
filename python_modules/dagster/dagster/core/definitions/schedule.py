@@ -1,8 +1,10 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.serdes import whitelist_for_serdes
 
 
+@whitelist_for_serdes
 class ScheduleDefinition(
     namedtuple('ScheduleDefinition', 'name cron_schedule execution_params environment_vars')
 ):
