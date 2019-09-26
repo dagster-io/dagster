@@ -55,7 +55,7 @@ def get_run(graphene_info, runId):
 
 def get_runs(graphene_info):
     instance = graphene_info.context.instance
-    return [graphene_info.schema.type_named('PipelineRun')(run) for run in instance.all_runs]
+    return [graphene_info.schema.type_named('PipelineRun')(run) for run in instance.all_runs()]
 
 
 @capture_dauphin_error

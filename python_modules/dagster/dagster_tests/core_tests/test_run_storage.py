@@ -13,9 +13,9 @@ def do_test_single_write_read(instance):
     run = instance.get_run(run_id)
     assert run.run_id == run_id
     assert run.pipeline_name == 'some_pipeline'
-    assert list(instance.all_runs) == [run]
+    assert list(instance.all_runs()) == [run]
     instance.wipe()
-    assert list(instance.all_runs) == []
+    assert list(instance.all_runs()) == []
 
 
 def build_run(run_id, pipeline_name, mode='default', tags=None):
