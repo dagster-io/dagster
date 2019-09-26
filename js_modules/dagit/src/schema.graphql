@@ -71,10 +71,6 @@ union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigTy
 
 scalar Cursor
 
-type DeleteRunningScheduleResult {
-  deletedSchedule: RunningSchedule!
-}
-
 interface DisplayableEvent {
   label: String!
   description: String
@@ -485,8 +481,8 @@ type ModeNotFoundError implements Error {
 type Mutation {
   startPipelineExecution(executionParams: ExecutionParams!, reexecutionConfig: ReexecutionConfig): StartPipelineExecutionResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
-  startSchedule(scheduleId: String!): RunningScheduleResult!
-  endRunningSchedule(scheduleId: String!): RunningScheduleResult!
+  startSchedule(scheduleName: String!): RunningScheduleResult!
+  stopRunningSchedule(scheduleName: String!): RunningScheduleResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -771,7 +767,6 @@ type Query {
   pipelines: PipelineConnection!
   configTypeOrError(pipelineName: String!, configTypeName: String!, mode: String!): ConfigTypeOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
-  schedules: [ScheduleDefinition!]!
   scheduler: SchedulerOrError!
   pipelineRuns: [PipelineRun!]!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
@@ -827,6 +822,7 @@ type RunningSchedule {
   scheduleDefinition: ScheduleDefinition!
   pythonPath: String
   repositoryPath: String
+  status: ScheduleStatus!
   runs: [PipelineRun!]!
 }
 
@@ -882,6 +878,12 @@ type SchedulerNotDefinedError implements Error {
 }
 
 union SchedulerOrError = Scheduler | SchedulerNotDefinedError
+
+enum ScheduleStatus {
+  RUNNING
+  STOPPED
+  ENDED
+}
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
   message: String!

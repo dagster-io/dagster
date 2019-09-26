@@ -297,11 +297,12 @@ interface RunTableProps {
 const RunTable: React.FunctionComponent<RunTableProps> = props => (
   <div>
     <Legend>
-      <LegendColumn style={{ maxWidth: 40 }}></LegendColumn>
-      <LegendColumn style={{ flex: 2.3 }}>Run</LegendColumn>
+      <LegendColumn style={{ maxWidth: 30 }}></LegendColumn>
+      <LegendColumn style={{ flex: 2.4 }}>Run</LegendColumn>
       <LegendColumn>Pipeline</LegendColumn>
-      <LegendColumn>Execution Params</LegendColumn>
-      <LegendColumn style={{ flex: 1.6 }}>Timing</LegendColumn>
+      <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
+      <LegendColumn style={{ flex: 1.8 }}>Timing</LegendColumn>
+      <LegendColumn style={{ maxWidth: 50 }}></LegendColumn>
     </Legend>
     {props.runs.map(run => (
       <RunRow run={run} key={run.runId} />
@@ -360,17 +361,8 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
           </>
         )}
       </RowColumn>
-      <RowColumn
-        style={{
-          display: "flex",
-          alignItems: "flex-start"
-        }}
-      >
-        <div
-          style={{
-            flex: 1
-          }}
-        >
+      <RowColumn>
+        <div>
           <div>{`Mode: ${run.mode}`}</div>
 
           {run.stepKeysToExecute && (
@@ -402,7 +394,9 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
         )}
         <RunTime startUnix={run.stats.startTime} endUnix={run.stats.endTime} />
       </RowColumn>
-      <RunActionsMenu run={run} />
+      <RowColumn style={{ maxWidth: 50 }}>
+        <RunActionsMenu run={run} />
+      </RowColumn>
     </RowContainer>
   );
 };

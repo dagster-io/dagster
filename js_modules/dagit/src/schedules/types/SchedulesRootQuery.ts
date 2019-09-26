@@ -3,22 +3,17 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulesRootQuery
 // ====================================================
 
-export interface SchedulesRootQuery_schedules {
+export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition {
   __typename: "ScheduleDefinition";
   name: string;
   executionParamsString: string;
   cronSchedule: string;
-}
-
-export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition {
-  __typename: "ScheduleDefinition";
-  name: string;
 }
 
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_pipeline {
@@ -41,8 +36,10 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs {
 
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules {
   __typename: "RunningSchedule";
+  scheduleId: string;
   scheduleDefinition: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition;
   runs: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs[];
+  status: ScheduleStatus;
 }
 
 export interface SchedulesRootQuery_scheduler_Scheduler {
@@ -58,6 +55,5 @@ export interface SchedulesRootQuery_scheduler_SchedulerNotDefinedError {
 export type SchedulesRootQuery_scheduler = SchedulesRootQuery_scheduler_Scheduler | SchedulesRootQuery_scheduler_SchedulerNotDefinedError;
 
 export interface SchedulesRootQuery {
-  schedules: SchedulesRootQuery_schedules[];
   scheduler: SchedulesRootQuery_scheduler;
 }

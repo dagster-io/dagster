@@ -34,10 +34,9 @@ from dagster.core.instance import DagsterFeatures
 
 from .config_types import to_dauphin_config_type
 from .run_schedule import (
-    DauphinEndRunningScheduleMutation,
     DauphinStartScheduleMutation,
+    DauphinStopRunningScheduleMutation,
     get_scheduler_or_error,
-    get_schedules,
 )
 
 
@@ -67,8 +66,6 @@ class DauphinQuery(dauphin.ObjectType):
         pipelineName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
         runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
-
-    schedules = dauphin.non_null_list('ScheduleDefinition')
 
     scheduler = dauphin.Field(dauphin.NonNull('SchedulerOrError'))
 
@@ -118,9 +115,6 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_version(self, graphene_info):
         return graphene_info.context.version
-
-    def resolve_schedules(self, graphene_info):
-        return get_schedules(graphene_info)
 
     def resolve_scheduler(self, graphene_info):
         return get_scheduler_or_error(graphene_info)
@@ -340,7 +334,7 @@ class DauphinMutation(dauphin.ObjectType):
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
     execute_plan = DauphinExecutePlan.Field()
     start_schedule = DauphinStartScheduleMutation.Field()
-    end_running_schedule = DauphinEndRunningScheduleMutation.Field()
+    stop_running_schedule = DauphinStopRunningScheduleMutation.Field()
 
 
 class DauphinSubscription(dauphin.ObjectType):

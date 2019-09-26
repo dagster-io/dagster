@@ -7,17 +7,20 @@ export const Header = styled.div`
   line-height: 3rem;
   margin-top: 40px;
 `;
+
 export const Legend = styled.div`
   display: flex;
-  margin-bottom: 9px;
+  padding: 2px 10px;
+  text-decoration: none;
 `;
 export const LegendColumn = styled.div`
   flex: 1;
-  padding-left: 10px;
   color: #8a9ba8;
+  padding: 7px 10px;
   text-transform: uppercase;
   font-size: 11px;
 `;
+
 export const RowContainer = styled.div`
   display: flex;
   background: ${Colors.WHITE};

@@ -17,6 +17,7 @@ GET_SCHEDULES_QUERY = '''
           scheduleDefinition {
             name
           }
+          status
           pythonPath
           repositoryPath
         }

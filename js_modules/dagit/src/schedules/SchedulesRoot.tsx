@@ -1,9 +1,10 @@
 import * as React from "react";
+import { useMutation } from "@apollo/react-hooks";
 
 import {
   Button,
   Classes,
-  Colors,
+  Switch,
   Icon,
   Menu,
   MenuItem,
@@ -27,16 +28,16 @@ import { Query, QueryResult } from "react-apollo";
 import {
   SchedulesRootQuery,
   SchedulesRootQuery_scheduler_Scheduler_runningSchedules,
-  SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs,
-  SchedulesRootQuery_schedules
+  SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs
 } from "./types/SchedulesRootQuery";
-
+import { ScheduleStatus } from "../types/globalTypes";
 import { Link } from "react-router-dom";
 import Loading from "../Loading";
 import cronstrue from "cronstrue";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components";
+import { DataProxy } from "apollo-cache";
 
 export default class SchedulesRoot extends React.Component {
   render() {
@@ -54,14 +55,16 @@ export default class SchedulesRoot extends React.Component {
               if (result.scheduler.__typename === "Scheduler") {
                 runningSchedules = result.scheduler.runningSchedules;
               }
+              const sortedRunningSchedules = runningSchedules.sort((a, b) =>
+                a.scheduleDefinition.name.localeCompare(
+                  b.scheduleDefinition.name
+                )
+              );
 
               return (
                 <>
                   <ScrollContainer>
-                    <ScheduleTable
-                      schedules={result.schedules}
-                      runningSchedules={runningSchedules}
-                    />
+                    <ScheduleTable schedules={sortedRunningSchedules} />
                   </ScrollContainer>
                   );
                 </>
@@ -75,24 +78,18 @@ export default class SchedulesRoot extends React.Component {
 }
 
 interface ScheduleTableProps {
-  schedules: SchedulesRootQuery_schedules[];
-  runningSchedules: SchedulesRootQuery_scheduler_Scheduler_runningSchedules[];
+  schedules: SchedulesRootQuery_scheduler_Scheduler_runningSchedules[];
 }
 
 const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
-  const runningScheduleMap = {};
-  props.runningSchedules.forEach(runningSchedule => {
-    runningScheduleMap[
-      runningSchedule.scheduleDefinition.name
-    ] = runningSchedule;
-  });
-
   return (
     <div>
       <Header>{`Schedule Definitions (${props.schedules.length})`}</Header>
       {props.schedules.length > 0 && (
         <Legend>
-          <LegendColumn style={{ maxWidth: 40 }}></LegendColumn>
+          <LegendColumn
+            style={{ maxWidth: 60, paddingRight: 2 }}
+          ></LegendColumn>
           <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
           <LegendColumn>Pipeline</LegendColumn>
           <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
@@ -102,39 +99,23 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
         </Legend>
       )}
       {props.schedules.map(schedule => (
-        <ScheduleRow
-          schedule={schedule}
-          running={runningScheduleMap[schedule.name]}
-          runs={
-            runningScheduleMap[schedule.name] &&
-            runningScheduleMap[schedule.name].runs
-          }
-          key={schedule.name}
-        />
+        <ScheduleRow schedule={schedule} key={schedule.scheduleId} />
       ))}
     </div>
   );
 };
 
-const PipelineRunningDot = styled.div`
-  display: inline-block;
-  width: 11px;
-  height: 11px;
-  border-radius: 5.5px;
-  align-self: center;
-  transition: background 200ms linear;
-  background: ${Colors.GREEN1};
-`;
-
 const ScheduleRow: React.FunctionComponent<{
-  schedule: SchedulesRootQuery_schedules;
-  running: boolean;
-  runs: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs[];
-}> = ({ schedule, running, runs }) => {
-  const { name, cronSchedule, executionParamsString } = schedule;
+  schedule: SchedulesRootQuery_scheduler_Scheduler_runningSchedules;
+}> = ({ schedule }) => {
+  const { status, scheduleDefinition, runs } = schedule;
+  const { name, cronSchedule, executionParamsString } = scheduleDefinition;
   const executionParams = JSON.parse(executionParamsString);
   const pipelineName = executionParams.selector.name;
   const mode = executionParams.mode;
+
+  const [startSchedule] = useMutation(START_SCHEDULE_MUTATION);
+  const [stopSchedule] = useMutation(STOP_SCHEDULE_MUTATION);
 
   const getNaturalLanguageCronString = (cronSchedule: string) => {
     try {
@@ -160,10 +141,54 @@ const ScheduleRow: React.FunctionComponent<{
   const sortedRuns = sortRuns(runs);
   const mostRecentRun = sortedRuns[0];
 
+  const optimisticUpdateStore = (
+    store: DataProxy,
+    name: string,
+    status: ScheduleStatus
+  ) => {
+    const data: SchedulesRootQuery | null = store.readQuery({
+      query: SCHEDULES_ROOT_QUERY
+    });
+    if (data && data.scheduler.__typename === "Scheduler") {
+      data.scheduler.runningSchedules = data.scheduler.runningSchedules.map(
+        schedule => {
+          if (schedule.scheduleDefinition.name === name) {
+            schedule.status = status;
+          }
+          return schedule;
+        }
+      );
+      store.writeQuery({
+        query: SCHEDULES_ROOT_QUERY,
+        data: data
+      });
+    }
+  };
+
   return (
     <RowContainer key={name}>
-      <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
-        {running && <PipelineRunningDot />}
+      <RowColumn style={{ maxWidth: 60, paddingLeft: 0, textAlign: "center" }}>
+        <Switch
+          checked={status === ScheduleStatus.RUNNING}
+          large={true}
+          innerLabelChecked="on"
+          innerLabel="off"
+          onChange={() => {
+            if (status === ScheduleStatus.RUNNING) {
+              stopSchedule({
+                variables: { scheduleName: name },
+                update: store =>
+                  optimisticUpdateStore(store, name, ScheduleStatus.STOPPED)
+              });
+            } else {
+              startSchedule({
+                variables: { scheduleName: name },
+                update: store =>
+                  optimisticUpdateStore(store, name, ScheduleStatus.RUNNING)
+              });
+            }
+          }}
+        />
       </RowColumn>
       <RowColumn style={{ flex: 1.4 }}>
         <ScheduleName>{name}</ScheduleName>
@@ -247,18 +272,37 @@ const ScheduleRow: React.FunctionComponent<{
 const ScheduleName = styled.pre`
   margin: 0;
 `;
+
+const START_SCHEDULE_MUTATION = gql`
+  mutation StartSchedule($scheduleName: String!) {
+    startSchedule(scheduleName: $scheduleName) {
+      schedule {
+        status
+      }
+    }
+  }
+`;
+
+const STOP_SCHEDULE_MUTATION = gql`
+  mutation StopSchedule($scheduleName: String!) {
+    stopRunningSchedule(scheduleName: $scheduleName) {
+      schedule {
+        scheduleId
+        status
+      }
+    }
+  }
+`;
 export const SCHEDULES_ROOT_QUERY = gql`
   query SchedulesRootQuery {
-    schedules {
-      name
-      executionParamsString
-      cronSchedule
-    }
     scheduler {
       ... on Scheduler {
         runningSchedules {
+          scheduleId
           scheduleDefinition {
             name
+            executionParamsString
+            cronSchedule
           }
           runs {
             runId
@@ -270,6 +314,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
               startTime
             }
           }
+          status
         }
       }
       ... on SchedulerNotDefinedError {

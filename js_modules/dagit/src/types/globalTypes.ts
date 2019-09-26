@@ -39,6 +39,12 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
+export enum ScheduleStatus {
+  ENDED = "ENDED",
+  RUNNING = "RUNNING",
+  STOPPED = "STOPPED",
+}
+
 export enum StepKind {
   COMPUTE = "COMPUTE",
 }
