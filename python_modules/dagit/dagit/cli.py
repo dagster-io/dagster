@@ -54,7 +54,8 @@ REPO_TARGET_WARNING = (
 )
 @click.option(
     '--reload-trigger',
-    help="File path the parent process monitors to restart dagit-cli.",
+    help=
+    "Optional file path being monitored by a parent process that dagit-cli can touch to re-launch itself.",
     default=None,
     hidden=True,
     type=click.Path(),
