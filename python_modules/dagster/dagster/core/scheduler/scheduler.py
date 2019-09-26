@@ -9,6 +9,22 @@ from dagster.core.definitions.schedule import ScheduleDefinition
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
+    def get_all_schedule_defs(self):
+        '''Return all schedule definitions defined in the Scheduler
+
+        Returns:
+            Iterable[ScheduleDefinition]: List of schedule definitions
+        '''
+
+    @abc.abstractmethod
+    def get_schedule_def(self, name):
+        '''Return the schedule definition with the given name
+
+        Returns:
+            ScheduleDefinition
+        '''
+
+    @abc.abstractmethod
     def all_schedules(self):
         '''Return all the schedules present in the storage.
 

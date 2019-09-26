@@ -33,7 +33,7 @@ def datadog_solid(context):
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={'datadog': datadog_resource})])
 def dd_pipeline():
-    datadog_solid() # pylint: disable=no-value-for-parameter
+    datadog_solid()
 
 result = execute_pipeline(
     dd_pipeline,

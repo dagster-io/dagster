@@ -1,4 +1,3 @@
-# pylint: disable=no-value-for-parameter
 # encoding: utf-8
 
 from dagster import Field, execute_pipeline, pipeline, solid

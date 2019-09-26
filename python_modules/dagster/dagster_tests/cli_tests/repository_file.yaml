@@ -1,3 +1,6 @@
 repository:
   file: test_cli_commands.py
   fn: define_bar_repo
+scheduler:
+  file: test_cli_commands.py
+  fn: define_bar_scheduler

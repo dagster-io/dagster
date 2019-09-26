@@ -1,5 +1,3 @@
-# pylint: disable=no-value-for-parameter
-
 from collections import defaultdict
 
 from dagster import Field, Int, RepositoryDefinition, pipeline, solid

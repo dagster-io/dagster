@@ -1,7 +1,6 @@
-import json
 from collections import namedtuple
 
-from dagster import check
+from dagster import check, seven
 from dagster.core.events import DagsterEvent
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.serdes import (
@@ -78,7 +77,7 @@ def construct_error_info(logger_message):
 
     raw_error_info = logger_message.meta['error_info']
 
-    message, stack = json.loads(raw_error_info)
+    message, stack = seven.json.loads(raw_error_info)
 
     return SerializableErrorInfo(message, stack)
 

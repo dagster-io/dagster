@@ -58,7 +58,7 @@ def test_basic_event_store():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     events, _result = gather_events(_solids)
 
@@ -92,7 +92,7 @@ def test_basic_get_logs_for_run():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     events, result = gather_events(_solids)
 
@@ -120,7 +120,7 @@ def test_wipe_postgres_event_log():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     events, result = gather_events(_solids)
 
@@ -154,7 +154,7 @@ def test_basic_get_logs_for_run_cursor():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     events, result = gather_events(_solids)
 
@@ -190,7 +190,7 @@ def test_basic_get_logs_for_run_multiple_runs():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     events_one, result_one = gather_events(_solids)
     for event in events_one:
@@ -203,30 +203,34 @@ def test_basic_get_logs_for_run_multiple_runs():
     out_events_one = event_log_storage.get_logs_for_run(result_one.run_id)
     assert len(out_events_one) == 7
 
-    assert event_types(out_events_one) == [
-        DagsterEventType.PIPELINE_START,
-        DagsterEventType.ENGINE_EVENT,
-        DagsterEventType.STEP_START,
-        DagsterEventType.STEP_OUTPUT,
-        DagsterEventType.STEP_SUCCESS,
-        DagsterEventType.ENGINE_EVENT,
-        DagsterEventType.PIPELINE_SUCCESS,
-    ]
+    assert set(event_types(out_events_one)) == set(
+        [
+            DagsterEventType.PIPELINE_START,
+            DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.STEP_START,
+            DagsterEventType.STEP_OUTPUT,
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.PIPELINE_SUCCESS,
+        ]
+    )
 
     assert set(map(lambda e: e.run_id, out_events_one)) == {result_one.run_id}
 
     out_events_two = event_log_storage.get_logs_for_run(result_two.run_id)
     assert len(out_events_two) == 7
 
-    assert event_types(out_events_two) == [
-        DagsterEventType.STEP_OUTPUT,
-        DagsterEventType.PIPELINE_START,
-        DagsterEventType.ENGINE_EVENT,
-        DagsterEventType.STEP_START,
-        DagsterEventType.STEP_SUCCESS,
-        DagsterEventType.ENGINE_EVENT,
-        DagsterEventType.PIPELINE_SUCCESS,
-    ]
+    assert set(event_types(out_events_two)) == set(
+        [
+            DagsterEventType.STEP_OUTPUT,
+            DagsterEventType.PIPELINE_START,
+            DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.STEP_START,
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.PIPELINE_SUCCESS,
+        ]
+    )
 
     assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
 
@@ -239,7 +243,7 @@ def test_basic_get_logs_for_run_multiple_runs_cursors():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     events_one, result_one = gather_events(_solids)
     for event in events_one:
@@ -252,30 +256,33 @@ def test_basic_get_logs_for_run_multiple_runs_cursors():
     out_events_one = event_log_storage.get_logs_for_run(result_one.run_id, cursor=1)
     assert len(out_events_one) == 5
 
-    assert event_types(out_events_one) == [
-        # DagsterEventType.PIPELINE_START,
-        # DagsterEventType.ENGINE_EVENT,
-        DagsterEventType.STEP_START,
-        DagsterEventType.STEP_OUTPUT,
-        DagsterEventType.STEP_SUCCESS,
-        DagsterEventType.ENGINE_EVENT,
-        DagsterEventType.PIPELINE_SUCCESS,
-    ]
+    assert set(event_types(out_events_one)) == set(
+        [
+            # DagsterEventType.PIPELINE_START,
+            # DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.STEP_START,
+            DagsterEventType.STEP_OUTPUT,
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.PIPELINE_SUCCESS,
+        ]
+    )
 
     assert set(map(lambda e: e.run_id, out_events_one)) == {result_one.run_id}
 
     out_events_two = event_log_storage.get_logs_for_run(result_two.run_id, cursor=2)
     assert len(out_events_two) == 4
-
-    assert event_types(out_events_two) == [
-        # DagsterEventType.PIPELINE_START,
-        # DagsterEventType.ENGINE_EVENT,
-        # DagsterEventType.STEP_OUTPUT,
-        DagsterEventType.STEP_START,
-        DagsterEventType.STEP_SUCCESS,
-        DagsterEventType.ENGINE_EVENT,
-        DagsterEventType.PIPELINE_SUCCESS,
-    ]
+    assert set(event_types(out_events_two)) == set(
+        [
+            # DagsterEventType.PIPELINE_START,
+            # DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.STEP_OUTPUT,
+            # DagsterEventType.STEP_START,
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.PIPELINE_SUCCESS,
+        ]
+    )
 
     assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
 
@@ -288,7 +295,7 @@ def test_listen_notify_single_run_event():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     event_watcher = create_event_watcher(get_test_conn_string())
 
@@ -322,7 +329,7 @@ def test_listen_notify_filter_two_runs_event():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     event_watcher = create_event_watcher(get_test_conn_string())
 
@@ -362,7 +369,7 @@ def test_listen_notify_filter_run_event():
         return 1
 
     def _solids():
-        return_one()  # pylint: disable=no-value-for-parameter
+        return_one()
 
     event_watcher = create_event_watcher(get_test_conn_string())
 

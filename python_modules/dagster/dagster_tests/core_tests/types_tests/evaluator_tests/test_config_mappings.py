@@ -1,4 +1,3 @@
-# pylint: disable=no-value-for-parameter
 import time
 
 import pytest

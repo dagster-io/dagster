@@ -1,5 +1,3 @@
-# pylint: disable=no-value-for-parameter
-
 import re
 from operator import add
 

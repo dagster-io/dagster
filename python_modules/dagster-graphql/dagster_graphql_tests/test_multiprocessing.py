@@ -3,9 +3,7 @@ import os
 from collections import OrderedDict
 from copy import deepcopy
 
-from dagster_graphql.implementation.pipeline_execution_manager import (
-    MultiprocessingExecutionManager,
-)
+from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
 
 from dagster import (
     ExecutionTargetHandle,
@@ -91,7 +89,7 @@ def test_running():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, passing_pipeline, pipeline_run, instance, raise_on_error=False
     )
@@ -132,7 +130,7 @@ def test_failing():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, failing_pipeline, pipeline_run, instance, raise_on_error=False
     )
@@ -163,7 +161,7 @@ def test_execution_crash():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, crashy_pipeline, pipeline_run, instance, raise_on_error=False
     )
@@ -207,17 +205,17 @@ def crashy_solid(sum_df):  # pylint: disable=W0613
 
 @pipeline
 def passing_pipeline():
-    return sum_solid()  # pylint: disable=no-value-for-parameter
+    return sum_solid()
 
 
 @pipeline
 def failing_pipeline():
-    return error_solid(sum_solid())  # pylint: disable=no-value-for-parameter
+    return error_solid(sum_solid())
 
 
 @pipeline
 def crashy_pipeline():
-    crashy_solid(sum_solid())  # pylint: disable=no-value-for-parameter
+    crashy_solid(sum_solid())
 
 
 @solid(config={'foo': Field(String)})
@@ -232,7 +230,7 @@ def node_b(context, input_):
 
 @composite_solid
 def composite_with_nested_config_solid():
-    return node_b(node_a())  # pylint: disable=no-value-for-parameter
+    return node_b(node_a())
 
 
 @pipeline
@@ -248,7 +246,7 @@ def composite_pipeline():
     config={'foo': Field(String), 'bar': Field(Int)},
 )
 def composite_with_nested_config_solid_and_config_mapping():
-    return node_b(node_a())  # pylint: disable=no-value-for-parameter
+    return node_b(node_a())
 
 
 @pipeline
@@ -282,7 +280,7 @@ def test_multiprocessing_execution_for_composite_solid():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
     )
@@ -314,7 +312,7 @@ def test_multiprocessing_execution_for_composite_solid():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
     )
@@ -349,7 +347,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, composite_pipeline_with_config_mapping, pipeline_run, instance, raise_on_error=False
     )
@@ -381,7 +379,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
-    execution_manager = MultiprocessingExecutionManager()
+    execution_manager = SubprocessExecutionManager()
     execution_manager.execute_pipeline(
         handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
     )

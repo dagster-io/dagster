@@ -168,5 +168,4 @@ def event_ingest_pipeline():
             logger=context.log,
         )
 
-    # pylint: disable=no-value-for-parameter
     snowflake_load(event_ingest(spark_inputs=gunzipper(gzip_file=download_from_s3_to_file())))

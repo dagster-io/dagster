@@ -68,5 +68,5 @@ def test_cache_file_from_s3_step_two_use_config():
 
 @pipeline(mode_defs=[ModeDefinition(name='local', resource_defs={'file_cache': fs_file_cache})])
 def step_two_pipeline():
-    # pylint: disable=no-value-for-parameter
+
     cache_file_from_s3()

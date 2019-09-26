@@ -1,6 +1,4 @@
-import json
-
-from dagster import EventMetadataEntry, check
+from dagster import EventMetadataEntry, check, seven
 from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
 from dagster.core.events import (
     DagsterEvent,
@@ -67,7 +65,7 @@ def event_metadata_entries(metadata_entry_datas):
             yield EventMetadataEntry.json(
                 label=label,
                 description=description,
-                data=json.loads(metadata_entry_data.get('jsonString', '')),
+                data=seven.json.loads(metadata_entry_data.get('jsonString', '')),
             )
         elif typename == 'EventMarkdownMetadataEntry':
             yield EventMetadataEntry.md(

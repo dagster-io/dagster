@@ -88,7 +88,7 @@ class Manager:
             handle = load_handle.handle_for_pipeline_cli_args(
                 handle_kwargs, use_default_repository_yaml=False
             )
-        except (check.CheckError, load_handle.CliUsageError) as err:
+        except (check.CheckError, load_handle.UsageError) as err:
             six.raise_from(
                 DagstermillError(
                     'Cannot invoke a dagstermill solid from an in-memory pipeline that was not loaded '

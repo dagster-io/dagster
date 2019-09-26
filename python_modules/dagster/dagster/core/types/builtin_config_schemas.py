@@ -1,4 +1,3 @@
-import json
 import pickle
 
 from dagster import check, seven
@@ -27,7 +26,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
             return file_options
         elif file_type == 'json':
             with open(file_options['path'], 'r') as ff:
-                value_dict = json.load(ff)
+                value_dict = seven.json.load(ff)
                 return value_dict['value']
         elif file_type == 'pickle':
             with open(file_options['path'], 'rb') as ff:

@@ -89,7 +89,7 @@ def test_cache_file_from_s3_step_one_one():
 
         @pipeline
         def pipe():
-            # pylint: disable=no-value-for-parameter
+
             return cache_file_from_s3(emit_value())
 
         execute_pipeline(pipe)

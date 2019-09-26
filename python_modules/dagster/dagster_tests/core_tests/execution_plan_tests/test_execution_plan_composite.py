@@ -15,7 +15,7 @@ def node_b(context, input_):
 
 @composite_solid
 def composite_with_nested_config_solid():
-    return node_b(node_a())  # pylint: disable=no-value-for-parameter
+    return node_b(node_a())
 
 
 @pipeline
@@ -31,7 +31,7 @@ def composite_pipeline():
     config={'foo': Field(String), 'bar': Field(Int)},
 )
 def composite_with_nested_config_solid_and_config_mapping():
-    return node_b(node_a())  # pylint: disable=no-value-for-parameter
+    return node_b(node_a())
 
 
 @pipeline

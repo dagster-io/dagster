@@ -1,5 +1,5 @@
 '''
-Serialization & deserialization for Dagster event objects.
+Serialization & deserialization for Dagster objects.
 
 Why have custom serialization?
 
@@ -13,8 +13,13 @@ Why not pickle?
 * This isn't meant to replace pickle in the conditions that pickle is reasonable to use
   (in memory, not human readble, etc) just handle the json case effectively.
 '''
-import json
+import importlib
+from abc import ABCMeta, abstractmethod
+from collections import namedtuple
 from enum import Enum
+
+import six
+import yaml
 
 from dagster import check, seven
 
@@ -118,4 +123,64 @@ def deserialize_json_to_dagster_namedtuple(json_str):
 
 
 def _deserialize_json_to_dagster_namedtuple(json_str, enum_map, tuple_map):
-    return _unpack_value(json.loads(json_str), enum_map=enum_map, tuple_map=tuple_map)
+    return _unpack_value(seven.json.loads(json_str), enum_map=enum_map, tuple_map=tuple_map)
+
+
+@whitelist_for_serdes
+class ConfigurableClassData(
+    namedtuple('_ConfigurableClassData', 'module_name class_name config_yaml')
+):
+    '''Serializable tuple describing where to find a class and the config fragment that should
+    be used to instantiate it.
+    
+    Classes serialized in this way should implement dagster.serdes.ConfigurableClass.
+    '''
+
+    def __new__(cls, module_name, class_name, config_yaml):
+        return super(ConfigurableClassData, cls).__new__(
+            cls,
+            check.str_param(module_name, 'module_name'),
+            check.str_param(class_name, 'class_name'),
+            check.str_param(config_yaml, 'config_yaml'),
+        )
+
+    def rehydrate(self, **constructor_kwargs):
+        from dagster.core.errors import DagsterInvalidConfigError
+        from dagster.core.types.evaluator import evaluate_config
+
+        module = importlib.import_module(self.module_name)
+        klass = getattr(module, self.class_name)
+        check.subclass_param(
+            klass,
+            'class {class_name} in module {module_name}'.format(
+                class_name=self.class_name, module_name=self.module_name
+            ),
+            ConfigurableClass,
+        )
+
+        config_dict = yaml.load(self.config_yaml)
+        result = evaluate_config(klass.config_type().inst(), config_dict)
+        if not result.success:
+            raise DagsterInvalidConfigError(None, result.errors, config_dict)
+        constructor_kwargs['inst_data'] = self
+        return klass.from_config_value(result.value, **constructor_kwargs)
+
+
+class ConfigurableClass(six.with_metaclass(ABCMeta)):
+    def __init__(self, inst_data):
+        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+    @classmethod
+    @abstractmethod
+    def config_type(cls):
+        '''dagster.ConfigType: The config type against which to validate a config yaml fragment
+        serialized in an instance of ConfigurableClassData.'''
+
+    @staticmethod
+    @abstractmethod
+    def from_config_value(config_value, **kwargs):
+        '''New up an instance of the ConfigurableClass from validated config.'''

@@ -1,5 +1,3 @@
-# pylint: disable=no-value-for-parameter
-
 import datetime
 import sys
 import uuid
@@ -137,7 +135,7 @@ def test_bad_config():
 
     @pipeline(mode_defs=bq_modes())
     def test_config_pipeline():
-        bq_solid_for_queries(['SELECT 1']).alias('test')()  # pylint: disable=no-value-for-parameter
+        bq_solid_for_queries(['SELECT 1']).alias('test')()
 
     env_type = create_environment_type(test_config_pipeline)
     for config_fragment, error_message in configs_and_expected_errors:

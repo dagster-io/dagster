@@ -90,7 +90,7 @@ def events_dataproc_fn(context, cfg):
     },
 )
 def events_dataproc() -> List[String]:
-    return output_paths(dataproc_solid())  # pylint: disable=no-value-for-parameter
+    return output_paths(dataproc_solid())
 
 
 def bq_load_events_fn(context, cfg):
@@ -116,7 +116,7 @@ def bq_load_events_fn(context, cfg):
 
 @composite_solid(config_fn=bq_load_events_fn, config={'table': Field(String)})
 def bq_load_events(source_uris: List[String]):
-    return import_gcs_paths_to_bq(source_uris)  # pylint: disable=no-value-for-parameter
+    return import_gcs_paths_to_bq(source_uris)
 
 
 def explore_visits_by_hour_fn(_, cfg):

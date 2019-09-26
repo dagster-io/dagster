@@ -3,6 +3,8 @@ import subprocess
 from click.testing import CliRunner
 from dagit.cli import ui
 
+from dagster.utils import script_relative_path
+
 
 def test_invoke_ui():
     runner = CliRunner()
@@ -12,9 +14,9 @@ def test_invoke_ui():
 
 def test_invoke_ui_bad_no_watch():
     runner = CliRunner()
-    result = runner.invoke(ui, ['--no-watch'])
-    assert result.exit_code == 1
-    assert 'Do not set no_watch when calling the Dagit Python CLI directly' in str(result.exception)
+    result = runner.invoke(ui, ['--no-watch', '-y', script_relative_path('repository.yaml')])
+    assert result.exit_code == 2
+    assert 'Do not set no_watch when calling the Dagit Python CLI directly' in str(result.stdout)
 
 
 def test_invoke_cli_wrapper_with_bad_option():

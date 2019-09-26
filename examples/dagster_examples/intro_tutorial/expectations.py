@@ -10,4 +10,4 @@ def add_ints(_, num_one: int, num_two: int) -> int:
 
 @pipeline
 def expectations_tutorial_pipeline():
-    add_ints()  # pylint: disable=no-value-for-parameter
+    add_ints()

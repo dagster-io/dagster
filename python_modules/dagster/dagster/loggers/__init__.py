@@ -22,7 +22,13 @@ def colored_console_logger(init_context):
 
     klass = logging.getLoggerClass()
     logger_ = klass(name, level=level)
-    coloredlogs.install(logger=logger_, level=level, fmt=default_format_string())
+    coloredlogs.install(
+        logger=logger_,
+        level=level,
+        fmt=default_format_string(),
+        field_styles={'levelname': {'color': 'blue'}, 'asctime': {'color': 'green'}},
+        level_styles={'debug': {}, 'error': {'color': 'red'}},
+    )
     return logger_
 
 

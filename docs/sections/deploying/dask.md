@@ -45,7 +45,7 @@ def hello_world(_):
 
 @pipeline(mode_defs=ModeDefinition(executor_defs=default_executors + [dask_executor]))
 def dask_pipeline():
-    return hello_world()  # pylint: disable=no-value-for-parameter
+    return hello_world()
 
 
 execute_pipeline(

@@ -8,7 +8,7 @@ def hello_world(_):
 
 @pipeline
 def repo_demo_pipeline():
-    hello_world()  # pylint: disable=no-value-for-parameter
+    hello_world()
 
 
 def define_repo():

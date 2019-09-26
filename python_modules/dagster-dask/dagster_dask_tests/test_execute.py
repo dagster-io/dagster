@@ -23,7 +23,7 @@ def simple(_):
 
 @pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
 def dask_engine_pipeline():
-    return simple()  # pylint: disable=no-value-for-parameter
+    return simple()
 
 
 def test_execute_on_dask():
@@ -68,7 +68,7 @@ def pandas_solid(_, df):  # pylint: disable=unused-argument
 
 @pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
 def pandas_pipeline():
-    return pandas_solid()  # pylint: disable=no-value-for-parameter
+    return pandas_solid()
 
 
 def test_pandas_dask():

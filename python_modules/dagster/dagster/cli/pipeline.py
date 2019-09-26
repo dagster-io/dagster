@@ -13,11 +13,7 @@ from dagster import (
     execute_pipeline,
     execute_pipeline_with_preset,
 )
-from dagster.cli.load_handle import (
-    CliUsageError,
-    handle_for_pipeline_cli_args,
-    handle_for_repo_cli_args,
-)
+from dagster.cli.load_handle import handle_for_pipeline_cli_args, handle_for_repo_cli_args
 from dagster.core.definitions import Solid, solids_in_topological_order
 from dagster.core.instance import DagsterInstance
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list
@@ -291,12 +287,8 @@ def pipeline_execute_command(env, preset, mode, **kwargs):
         return execute_execute_command_with_preset(preset, kwargs, mode)
 
     env = list(env)
-    try:
-        execute_execute_command(env, kwargs, mode)
-    except CliUsageError:
-        ctx = click.get_current_context()
-        click.echo(ctx.get_help())
-        ctx.exit()
+
+    execute_execute_command(env, kwargs, mode)
 
 
 def execute_execute_command(env, cli_args, mode=None):

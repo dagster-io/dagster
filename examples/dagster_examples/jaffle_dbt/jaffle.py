@@ -13,4 +13,4 @@ jaffle_test_solid = create_dbt_test_solid(PROJECT_DIR, profiles_dir=PROFILES_DIR
 
 @pipeline
 def jaffle_pipeline():
-    jaffle_test_solid(jaffle_solid())  # pylint: disable=no-value-for-parameter
+    jaffle_test_solid(jaffle_solid())

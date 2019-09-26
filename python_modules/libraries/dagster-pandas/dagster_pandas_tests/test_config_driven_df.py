@@ -42,7 +42,7 @@ def test_dataframe_csv_from_inputs():
 
     @pipeline
     def test_pipeline():
-        return df_as_config()  # pylint: disable=no-value-for-parameter
+        return df_as_config()
 
     result = execute_pipeline(
         test_pipeline,
@@ -70,7 +70,7 @@ def test_dataframe_wrong_sep_from_inputs():
 
     @pipeline
     def test_pipeline():
-        return df_as_config()  # pylint: disable=no-value-for-parameter
+        return df_as_config()
 
     result = execute_pipeline(
         test_pipeline,
@@ -97,7 +97,7 @@ def test_dataframe_pipe_sep_csv_from_inputs():
 
     @pipeline
     def test_pipeline():
-        return df_as_config()  # pylint: disable=no-value-for-parameter
+        return df_as_config()
 
     result = execute_pipeline(
         test_pipeline,
@@ -125,7 +125,7 @@ def test_dataframe_csv_missing_inputs():
 
     @pipeline
     def missing_inputs():
-        return df_as_input()  # pylint: disable=no-value-for-parameter
+        return df_as_input()
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(missing_inputs)
@@ -155,7 +155,7 @@ def test_dataframe_csv_missing_input_collision():
 
     @pipeline
     def overlapping():
-        return df_as_input(df_as_output())  # pylint: disable=no-value-for-parameter
+        return df_as_input(df_as_output())
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(
@@ -188,7 +188,7 @@ def test_dataframe_parquet_from_inputs():
 
     @pipeline
     def test_pipeline():
-        df_as_config()  # pylint: disable=no-value-for-parameter
+        df_as_config()
 
     result = execute_pipeline(
         test_pipeline,
@@ -215,7 +215,7 @@ def test_dataframe_table_from_inputs():
 
     @pipeline
     def test_pipeline():
-        df_as_config()  # pylint: disable=no-value-for-parameter
+        df_as_config()
 
     result = execute_pipeline(
         test_pipeline,
@@ -239,7 +239,7 @@ def test_dataframe_csv_materialization():
 
     @pipeline
     def return_df_pipeline():
-        return_df()  # pylint: disable=no-value-for-parameter
+        return_df()
 
     with get_temp_file_name() as filename:
         result = execute_pipeline(
@@ -262,7 +262,7 @@ def test_dataframe_parquet_materialization():
 
     @pipeline
     def return_df_pipeline():
-        return_df()  # pylint: disable=no-value-for-parameter
+        return_df()
 
     with get_temp_file_name() as filename:
         result = execute_pipeline(
@@ -283,7 +283,7 @@ def test_dataframe_table_materialization():
 
     @pipeline
     def return_df_pipeline():
-        return_df()  # pylint: disable=no-value-for-parameter
+        return_df()
 
     with get_temp_file_name() as filename:
         filename = '/tmp/table_test.txt'

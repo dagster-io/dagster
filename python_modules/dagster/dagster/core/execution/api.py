@@ -247,7 +247,6 @@ def execute_pipeline_with_preset(pipeline, preset_name, run_config=None, instanc
 
     preset = pipeline.get_preset(preset_name)
 
-    pipeline = pipeline
     if preset.solid_subset is not None:
         pipeline = pipeline.build_sub_pipeline(preset.solid_subset)
 

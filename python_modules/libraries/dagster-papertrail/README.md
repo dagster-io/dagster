@@ -20,7 +20,7 @@ def hello_logs(context):
     mode_defs=[ModeDefinition(logger_defs={'papertrail': papertrail_logger})]
 )
 def hello_pipeline():
-    hello_logs()  # pylint: disable=no-value-for-parameter
+    hello_logs()
 
 ```
 

@@ -116,6 +116,7 @@ class ConfigList(ConfigType):
         self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
         super(ConfigList, self).__init__(*args, **kwargs)
 
+    @property
     def is_list(self):
         return True
 

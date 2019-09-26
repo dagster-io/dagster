@@ -244,7 +244,6 @@ Spark Dataframe. See documentation in constituent solids for
 more detail.'''
 )
 def s3_to_df(s3_coordinate: S3Coordinate, archive_member: String) -> DataFrame:
-    # pylint: disable=no-value-for-parameter
     return ingest_csv_file_handle_to_spark(
         unzip_file_handle(cache_file_from_s3(s3_coordinate), archive_member)
     )
@@ -263,7 +262,6 @@ load it into a data warehouse.
 ''',
 )
 def s3_to_dw_table(s3_coordinate: S3Coordinate, archive_member: String) -> String:
-    # pylint: disable=no-value-for-parameter
     return load_data_to_database_from_spark(
         canonicalize_column_names(subsample_spark_dataset(s3_to_df(s3_coordinate, archive_member)))
     )

@@ -1,17 +1,20 @@
+import os
+
 import six
+from click import UsageError
 
 from dagster import check
 from dagster.core.definitions import ExecutionTargetHandle
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, all_none
 
 
-class CliUsageError(Exception):
-    pass
-
-
-def _cli_load_invariant(condition):
+def _cli_load_invariant(condition, msg=None):
+    msg = (
+        msg
+        or 'Invalid set of CLI arguments for loading repository/pipeline. See --help for details.'
+    )
     if not condition:
-        raise CliUsageError()
+        raise UsageError(msg)
 
 
 def handle_for_pipeline_cli_args(kwargs, use_default_repository_yaml=True):
@@ -76,7 +79,7 @@ def handle_for_pipeline_cli_args(kwargs, use_default_repository_yaml=True):
             module_name=kwargs['module_name'], fn_name=kwargs['fn_name']
         )
     else:
-        raise CliUsageError()
+        _cli_load_invariant(False)
 
 
 def handle_for_repo_cli_args(kwargs):
@@ -91,9 +94,13 @@ def handle_for_repo_cli_args(kwargs):
         _cli_load_invariant(kwargs.get('module_name') is None)
         _cli_load_invariant(kwargs.get('python_file') is None)
         _cli_load_invariant(kwargs.get('fn_name') is None)
-        return ExecutionTargetHandle.for_repo_yaml(
-            repository_yaml=kwargs.get('repository_yaml') or DEFAULT_REPOSITORY_YAML_FILENAME
+        repo_yaml = kwargs.get('repository_yaml') or DEFAULT_REPOSITORY_YAML_FILENAME
+        _cli_load_invariant(
+            os.path.exists(repo_yaml),
+            'Expected to use file "{}" to load repository but it does not exist. '
+            'Verify your current working directory or CLI arguments.'.format(repo_yaml),
         )
+        return ExecutionTargetHandle.for_repo_yaml(repository_yaml=repo_yaml)
     elif kwargs.get('module_name') and kwargs.get('fn_name'):
         _cli_load_invariant(kwargs.get('repository_yaml') is None)
         _cli_load_invariant(kwargs.get('python_file') is None)
@@ -107,4 +114,4 @@ def handle_for_repo_cli_args(kwargs):
             python_file=kwargs['python_file'], fn_name=kwargs['fn_name']
         )
     else:
-        raise CliUsageError()
+        _cli_load_invariant(False)

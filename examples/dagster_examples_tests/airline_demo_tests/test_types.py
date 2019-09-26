@@ -32,7 +32,7 @@ def test_spark_data_frame_serialization_file_system_file_handle():
 
     @pipeline(mode_defs=[spark_mode])
     def spark_df_test_pipeline():
-        # pylint: disable=no-value-for-parameter
+
         ingest_csv_file_handle_to_spark(nonce())
 
     run_id = str(uuid.uuid4())
@@ -71,7 +71,7 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket):
 
     @pipeline(mode_defs=[spark_mode])
     def spark_df_test_pipeline():
-        # pylint: disable=no-value-for-parameter
+
         ingest_csv_file_handle_to_spark(nonce())
 
     run_id = str(uuid.uuid4())
@@ -123,7 +123,7 @@ def test_spark_dataframe_output_csv():
 
     @pipeline
     def passthrough():
-        passthrough_df(emit())  # pylint: disable=no-value-for-parameter
+        passthrough_df(emit())
 
     with seven.TemporaryDirectory() as tempdir:
         file_name = os.path.join(tempdir, 'output.csv')

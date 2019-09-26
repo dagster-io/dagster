@@ -1,5 +1,3 @@
-# pylint: disable=no-value-for-parameter
-
 from dagster import (
     EventMetadataEntry,
     ExpectationResult,

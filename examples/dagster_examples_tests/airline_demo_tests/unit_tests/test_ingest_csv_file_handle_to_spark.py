@@ -6,7 +6,6 @@ from dagster import LocalFileHandle, ModeDefinition, execute_pipeline, pipeline,
 from dagster.utils import file_relative_path
 
 # for dep graphs
-# pylint: disable=no-value-for-parameter
 
 
 def test_ingest_csv_file_handle_to_spark():

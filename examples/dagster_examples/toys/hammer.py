@@ -102,7 +102,7 @@ def reducer(_, in_1, in_2, in_3, in_4):
     ]
 )
 def hammer_pipeline():
-    # pylint: disable=no-value-for-parameter
+
     out_1, out_2, out_3, out_4 = chase_giver()
     return reducer(
         in_1=hammer.alias('hammer_1')(chase_duration=out_1),

@@ -6,8 +6,6 @@ from dagster.utils.test import get_temp_file_handle_with_data
 
 
 def create_file_handle_pipeline(temp_file_handle, s3_resource):
-    # pylint: disable=no-value-for-parameter
-
     @solid
     def emit_temp_handle(_):
         return temp_file_handle
