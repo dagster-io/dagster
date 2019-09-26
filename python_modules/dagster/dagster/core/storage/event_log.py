@@ -63,12 +63,6 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
             event (EventRecord): The event to store.
         '''
 
-    @property
-    @abstractmethod
-    def is_persistent(self):
-        '''(bool) Whether the log storage persists after the process that
-        created it dies.'''
-
     @abstractmethod
     def wipe(self):
         '''Clear the log storage.'''
@@ -100,10 +94,6 @@ class InMemoryEventLogStorage(EventLogStorage):
         cursor = cursor + 1
         with self._lock[run_id]:
             return self._logs[run_id][cursor:]
-
-    @property
-    def is_persistent(self):
-        return False
 
     def store_event(self, event):
         check.inst_param(event, 'event', EventRecord)
@@ -138,7 +128,7 @@ INSERT INTO event_logs (event, dagster_event_type, timestamp) VALUES (?, ?, ?)
 '''
 
 
-class FilesystemEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
+class SqliteEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
     def __init__(self, base_dir, inst_data=None):
         self._base_dir = check.str_param(base_dir, 'base_dir')
         mkdir_p(self._base_dir)
@@ -148,15 +138,15 @@ class FilesystemEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
         self._obs = Observer()
         self._obs.start()
 
-        super(FilesystemEventLogStorage, self).__init__(inst_data=inst_data)
+        super(SqliteEventLogStorage, self).__init__(inst_data=inst_data)
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict('FilesystemEventLogStorageConfig', {'base_dir': Field(String)})
+        return SystemNamedDict('SqliteEventLogStorageConfig', {'base_dir': Field(String)})
 
     @staticmethod
     def from_config_value(config_value, **kwargs):
-        return FilesystemEventLogStorage(**dict(config_value, **kwargs))
+        return SqliteEventLogStorage(**dict(config_value, **kwargs))
 
     @contextmanager
     def _connect(self, run_id):

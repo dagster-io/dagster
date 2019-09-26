@@ -77,10 +77,6 @@ class PostgresEventLogStorage(WatchableEventLogStorage):
                 (event.run_id, event_body, event_body),
             )
 
-    @property
-    def is_persistent(self):
-        return True
-
     def wipe(self):
         '''Clear the log storage.'''
 

@@ -187,7 +187,3 @@ class PostgresRunStorage(RunStorage):
         with conn.cursor() as curs:
             curs.execute(DELETE_RUNS_SQL)
             curs.execute(DELETE_RUN_TAGS_SQL)
-
-    @property
-    def is_persistent(self):
-        return True

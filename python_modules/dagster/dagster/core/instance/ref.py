@@ -74,7 +74,7 @@ class LocalInstanceRef(
             ),
             event_storage_data=ConfigurableClassData(
                 'dagster.core.storage.event_log',
-                'FilesystemEventLogStorage',
+                'SqliteEventLogStorage',
                 yaml.dump(
                     {'base_dir': _event_logs_directory(root_storage_dir)}, default_flow_style=False
                 ),
