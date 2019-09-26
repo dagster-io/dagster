@@ -12,11 +12,16 @@ sys.path.append(SCRIPT_PATH)
 TIMEOUT_IN_MIN = 20
 
 DOCKER_PLUGIN = "docker#v3.2.0"
+ECR_PLUGIN = "ecr#v2.0.0"
+
 
 PY_IMAGE_MAP = {ver: "python:{}-stretch".format(ver) for ver in SupportedPythons}
 
 # Update this when releasing a new version of our integration image
 INTEGRATION_IMAGE_VERSION = "v5"
+
+AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID')
+AWS_ECR_REGION = 'us-west-1'
 
 
 class BuildkiteQueue(Enum):
@@ -73,7 +78,8 @@ class StepBuilder:
         settings = self._base_docker_settings()
 
         # version like dagster/buildkite-integration:py3.7.3-v3
-        settings["image"] = "dagster/buildkite-integration:py%s-%s" % (
+        settings["image"] = "%s.dkr.ecr.us-west-1.amazonaws.com/buildkite-integration:py%s-%s" % (
+            AWS_ACCOUNT_ID,
             ver,
             INTEGRATION_IMAGE_VERSION,
         )
@@ -83,7 +89,13 @@ class StepBuilder:
 
         settings["environment"] = ["BUILDKITE"] + (env or [])
 
-        self._step["plugins"] = [{DOCKER_PLUGIN: settings}]
+        ecr_settings = {
+            'login': True,
+            'no-include-email': True,
+            'account-ids': AWS_ACCOUNT_ID,
+            'region': AWS_ECR_REGION,
+        }
+        self._step["plugins"] = [{ECR_PLUGIN: ecr_settings}, {DOCKER_PLUGIN: settings}]
         return self
 
     def with_timeout(self, num_minutes):
