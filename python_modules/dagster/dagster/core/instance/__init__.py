@@ -207,8 +207,9 @@ class DagsterInstance:
         return self._reload_trigger
 
     @reload_trigger.setter
-    def reload_trigger(self, t):
-        self._reload_trigger = t
+    def reload_trigger(self, trigger):
+        check.str_param(trigger, 'trigger')
+        self._reload_trigger = trigger
 
     @property
     def is_reload_supported(self):
@@ -217,9 +218,8 @@ class DagsterInstance:
     def reload(self):
         if not self.is_reload_supported:
             return False
-        f = open(self._reload_trigger, "w")
-        f.write(str(time.time()))
-        f.close()
+        with open(self._reload_trigger, "w") as f:
+            f.write(str(time.time()))
         return True
 
     @property
@@ -336,9 +336,8 @@ class DagsterInstance:
         if self._instance_type != InstanceType.EPHEMERAL:
             check.invariant(
                 self._run_storage.has_run(run_id),
-                'Can not handle events for unknown run with id {run_id} on non-ephemeral instance type'.format(
-                    run_id=run_id
-                ),
+                'Can not handle events for unknown run with id {run_id} on non-ephemeral instance type'.
+                format(run_id=run_id),
             )
 
         self._event_storage.store_event(event)

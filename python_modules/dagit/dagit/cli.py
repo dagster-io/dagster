@@ -28,10 +28,8 @@ REPO_TARGET_WARNING = (
 @click.command(
     name='ui',
     help=(
-        'Run dagit. Loads a repository or pipeline.\n\n{warning}'.format(
-            warning=REPO_TARGET_WARNING
-        )
-        + (
+        'Run dagit. Loads a repository or pipeline.\n\n{warning}'.
+        format(warning=REPO_TARGET_WARNING) + (
             '\n\n Examples:'
             '\n\n1. dagit'
             '\n\n2. dagit -y path/to/{default_filename}'
@@ -56,7 +54,8 @@ REPO_TARGET_WARNING = (
 )
 @click.option(
     '--reload-trigger',
-    help="File path the parent process monitors to restart dagit-cli.",
+    help=
+    "Optional file path being monitored by a parent process that dagit-cli can touch to re-launch itself.",
     default=None,
     hidden=True,
     type=click.Path(),
