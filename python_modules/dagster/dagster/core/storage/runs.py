@@ -1,22 +1,13 @@
-import os
-import sqlite3
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
-from contextlib import contextmanager
 from datetime import datetime
 
 import six
+import sqlalchemy as db
 
 from dagster import check
-from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.serdes import (
-    ConfigurableClass,
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-)
-from dagster.core.types import Field, String
-from dagster.utils import mkdir_p
+from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 from .pipeline_run import PipelineRun, PipelineRunStatus
 
@@ -40,7 +31,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''
 
     @abstractmethod
-    def all_runs(self):
+    def all_runs(self, cursor=None, limit=None):
         '''Return all the runs present in the storage.
 
         Returns:
@@ -48,7 +39,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''
 
     @abstractmethod
-    def all_runs_for_pipeline(self, pipeline_name):
+    def all_runs_for_pipeline(self, pipeline_name, cursor=None, limit=None):
         '''Return all the runs present in the storage for a given pipeline.
 
         Args:
@@ -59,7 +50,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''
 
     @abstractmethod
-    def all_runs_for_tag(self, key, value):
+    def all_runs_for_tag(self, key, value, cursor=None, limit=None):
         '''Return all the runs present in the storage that have a tag with key, value
 
         Args:
@@ -116,21 +107,40 @@ class InMemoryRunStorage(RunStorage):
         elif event.event_type == DagsterEventType.PIPELINE_FAILURE:
             self._runs[run_id] = self._runs[run_id].run_with_status(PipelineRunStatus.FAILURE)
 
-    def all_runs(self):
-        return list(self._runs.values())
+    def all_runs(self, cursor=None, limit=None):
+        return self._slice(list(self._runs.values())[::-1], cursor, limit)
 
-    def all_runs_for_pipeline(self, pipeline_name):
+    def all_runs_for_pipeline(self, pipeline_name, cursor=None, limit=None):
         check.str_param(pipeline_name, 'pipeline_name')
-        return [r for r in self.all_runs() if r.pipeline_name == pipeline_name]
+        return self._slice(
+            [r for r in self.all_runs() if r.pipeline_name == pipeline_name], cursor, limit
+        )
+
+    def all_runs_for_tag(self, key, value, cursor=None, limit=None):
+        check.str_param(key, 'key')
+        check.str_param(value, 'value')
+        return self._slice([r for r in self.all_runs() if r.tags.get(key) == value], cursor, limit)
+
+    def _slice(self, runs, cursor, limit):
+        if cursor:
+            try:
+                index = next(i for i, run in enumerate(runs) if run.run_id == cursor)
+            except StopIteration:
+                return []
+            start = index + 1
+        else:
+            start = 0
+
+        if limit:
+            end = start + limit
+        else:
+            end = None
+
+        return list(runs)[start:end]
 
     def get_run_by_id(self, run_id):
         check.str_param(run_id, 'run_id')
         return self._runs.get(run_id)
-
-    def all_runs_for_tag(self, key, value):
-        check.str_param(key, 'key')
-        check.str_param(value, 'value')
-        return [r for r in self.all_runs() if r.tags.get(key) == value]
 
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')
@@ -140,83 +150,54 @@ class InMemoryRunStorage(RunStorage):
         self._runs = OrderedDict()
 
 
-CREATE_RUNS_TABLE_SQL = '''
-CREATE TABLE IF NOT EXISTS runs (
-    run_id VARCHAR(255) NOT NULL,
-    pipeline_name VARCHAR NOT NULL,
-    status VARCHAR(63) NOT NULL,
-    run_body VARCHAR NOT NULL,
-    create_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+RunStorageSQLMetadata = db.MetaData()
+RunsTable = db.Table(
+    'runs',
+    RunStorageSQLMetadata,
+    db.Column('run_id', db.String(255), primary_key=True),
+    db.Column('pipeline_name', db.String),
+    db.Column('status', db.String(63)),
+    db.Column('run_body', db.String),
+    db.Column('create_timestamp', db.DateTime, server_default=db.text('CURRENT_TIMESTAMP')),
+    db.Column('update_timestamp', db.DateTime, server_default=db.text('CURRENT_TIMESTAMP')),
 )
-'''
-INSERT_RUN_SQL = 'INSERT INTO runs (run_id, pipeline_name, status, run_body) VALUES (?, ?, ?, ?)'
-DELETE_RUNS_SQL = 'DELETE FROM runs'
-CREATE_RUN_TAGS_TABLE_SQL = '''
-CREATE TABLE IF NOT EXISTS run_tags (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    run_id VARCHAR(255) NOT NULL,
-    key VARCHAR NOT NULL,
-    value VARCHAR NOT NULL
+
+RunTagsTable = db.Table(
+    'run_tags',
+    RunStorageSQLMetadata,
+    db.Column('id', db.Integer, primary_key=True, autoincrement=True),
+    db.Column('run_id', None, db.ForeignKey('runs.run_id')),
+    db.Column('key', db.String),
+    db.Column('value', db.String),
 )
-'''
-INSERT_RUN_TAGS_SQL = 'INSERT INTO run_tags (run_id, key, value) VALUES (?, ?, ?)'
-DELETE_RUN_TAGS_SQL = 'DELETE FROM run_tags'
+
+create_engine = db.create_engine  # exported
 
 
-class SqliteRunStorage(RunStorage, ConfigurableClass):
-    def __init__(self, conn_string, inst_data=None):
-        self.conn_string = check.str_param(conn_string, 'conn_string')
-        super(SqliteRunStorage, self).__init__(inst_data=inst_data)
-
-    @classmethod
-    def config_type(cls):
-        return SystemNamedDict('SqliteRunStorageConfig', {'base_dir': Field(String)})
-
-    @staticmethod
-    def from_config_value(config_value, **kwargs):
-        return SqliteRunStorage.from_local(**dict(config_value, **kwargs))
-
-    @staticmethod
-    def from_local(base_dir, inst_data=None):
-        check.str_param(base_dir, 'base_dir')
-        mkdir_p(base_dir)
-        conn_string = os.path.join(base_dir, 'runs.db')
-        try:
-            with sqlite3.connect(conn_string) as conn:
-                conn.cursor().execute(CREATE_RUNS_TABLE_SQL)
-                conn.cursor().execute(CREATE_RUN_TAGS_TABLE_SQL)
-                conn.cursor().execute('PRAGMA journal_mode=WAL;')
-        finally:
-            conn.close()
-        return SqliteRunStorage(conn_string, inst_data)
-
-    @contextmanager
-    def _connect(self):
-        try:
-            with sqlite3.connect(self.conn_string) as conn:
-                yield conn
-        finally:
-            conn.close()
+class SQLRunStorage(RunStorage):  # pylint: disable=no-init
+    @abstractmethod
+    def connect(self):
+        ''' context manager yielding a connection '''
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
-        with self._connect() as conn:
-            conn.cursor().execute(
-                INSERT_RUN_SQL,
-                (
-                    pipeline_run.run_id,
-                    pipeline_run.pipeline_name,
-                    str(pipeline_run.status),
-                    serialize_dagster_namedtuple(pipeline_run),
-                ),
+        conn = self.connect()
+        runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
+            run_id=pipeline_run.run_id,
+            pipeline_name=pipeline_run.pipeline_name,
+            status=str(pipeline_run.status),
+            run_body=serialize_dagster_namedtuple(pipeline_run),
+        )
+        conn.execute(runs_insert)
+        if pipeline_run.tags and len(pipeline_run.tags) > 0:
+            conn.execute(
+                RunTagsTable.insert(),  # pylint: disable=no-value-for-parameter
+                [
+                    dict(run_id=pipeline_run.run_id, key=k, value=v)
+                    for k, v in pipeline_run.tags.items()
+                ],
             )
-            if pipeline_run.tags and len(pipeline_run.tags) > 0:
-                conn.cursor().executemany(
-                    INSERT_RUN_TAGS_SQL,
-                    [(pipeline_run.run_id, k, v) for k, v in pipeline_run.tags.items()],
-                )
 
         return pipeline_run
 
@@ -238,40 +219,53 @@ class SqliteRunStorage(RunStorage, ConfigurableClass):
             # TODO log?
             return
 
-        SQL_UPDATE = '''
-        UPDATE runs
-        SET status = ?, run_body = ?, update_timestamp = ?
-        WHERE run_id = ?
-        '''
-
         new_pipeline_status = lookup[event.event_type]
 
-        with self._connect() as conn:
-            conn.cursor().execute(
-                SQL_UPDATE,
-                (
-                    str(new_pipeline_status),
-                    serialize_dagster_namedtuple(run.run_with_status(new_pipeline_status)),
-                    datetime.now(),
-                    run_id,
-                ),
+        self.connect().execute(
+            RunsTable.update()  # pylint: disable=no-value-for-parameter
+            .where(RunsTable.c.run_id == run_id)
+            .values(
+                status=str(new_pipeline_status),
+                run_body=serialize_dagster_namedtuple(run.run_with_status(new_pipeline_status)),
+                update_timestamp=datetime.now(),
             )
+        )
 
     def _rows_to_runs(self, rows):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
-    def all_runs(self):
+    def _build_query(self, query, cursor, limit):
+        ''' Helper function to deal with cursor/limit pagination args '''
+
+        if cursor:
+            cursor_query = db.select([RunsTable.c.create_timestamp]).where(
+                RunsTable.c.run_id == cursor
+            )
+            query = query.where(
+                db.or_(
+                    RunsTable.c.create_timestamp < cursor_query,
+                    db.and_(
+                        RunsTable.c.create_timestamp == cursor_query, RunsTable.c.run_id < cursor
+                    ),
+                )
+            )
+        if limit:
+            query = query.limit(limit)
+        query = query.order_by(RunsTable.c.create_timestamp.desc(), RunsTable.c.run_id.desc())
+        return query
+
+    def all_runs(self, cursor=None, limit=None):
         '''Return all the runs present in the storage.
 
         Returns:
             List[PipelineRun]: Tuples of run_id, pipeline_run.
         '''
 
-        with self._connect() as conn:
-            rows = conn.cursor().execute('SELECT run_body FROM runs').fetchall()
-            return self._rows_to_runs(rows)
+        query = self._build_query(db.select([RunsTable.c.run_body]), cursor, limit)
+        rows = self.connect().execute(query).fetchall()
+        return self._rows_to_runs(rows)
 
-    def all_runs_for_pipeline(self, pipeline_name):
+    def all_runs_for_pipeline(self, pipeline_name, cursor=None, limit=None):
         '''Return all the runs present in the storage for a given pipeline.
 
         Args:
@@ -282,13 +276,22 @@ class SqliteRunStorage(RunStorage, ConfigurableClass):
         '''
         check.str_param(pipeline_name, 'pipeline_name')
 
-        with self._connect() as conn:
-            rows = (
-                conn.cursor()
-                .execute('SELECT run_body FROM runs WHERE pipeline_name = ?', (pipeline_name,))
-                .fetchall()
-            )
-            return self._rows_to_runs(rows)
+        base_query = db.select([RunsTable.c.run_body]).where(
+            RunsTable.c.pipeline_name == pipeline_name
+        )
+        query = self._build_query(base_query, cursor, limit)
+        rows = self.connect().execute(query).fetchall()
+        return self._rows_to_runs(rows)
+
+    def all_runs_for_tag(self, key, value, cursor=None, limit=None):
+        base_query = (
+            db.select([RunsTable.c.run_body])
+            .select_from(RunsTable.join(RunTagsTable))
+            .where(db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value))
+        )
+        query = self._build_query(base_query, cursor, limit)
+        rows = self.connect().execute(query).fetchall()
+        return self._rows_to_runs(rows)
 
     def get_run_by_id(self, run_id):
         '''Get a run by its id.
@@ -301,31 +304,9 @@ class SqliteRunStorage(RunStorage, ConfigurableClass):
         '''
         check.str_param(run_id, 'run_id')
 
-        with self._connect() as conn:
-            rows = (
-                conn.cursor()
-                .execute('SELECT run_body FROM runs WHERE run_id = ?', (run_id,))
-                .fetchall()
-            )
-            return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
-
-    def all_runs_for_tag(self, key, value):
-        with self._connect() as conn:
-            rows = (
-                conn.cursor()
-                .execute(
-                    '''
-                    SELECT run_body
-                    FROM runs
-                    INNER JOIN run_tags
-                    ON runs.run_id = run_tags.run_id
-                    WHERE run_tags.key = ? AND run_tags.value = ?
-                    ''',
-                    (key, value),
-                )
-                .fetchall()
-            )
-            return self._rows_to_runs(rows)
+        query = db.select([RunsTable.c.run_body]).where(RunsTable.c.run_id == run_id)
+        rows = self.connect().execute(query).fetchall()
+        return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
 
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')
@@ -333,6 +314,6 @@ class SqliteRunStorage(RunStorage, ConfigurableClass):
 
     def wipe(self):
         '''Clears the run storage.'''
-        with self._connect() as conn:
-            conn.cursor().execute(DELETE_RUNS_SQL)
-            conn.cursor().execute(DELETE_RUN_TAGS_SQL)
+        conn = self.connect()
+        conn.execute(RunsTable.delete())  # pylint: disable=no-value-for-parameter
+        conn.execute(RunTagsTable.delete())  # pylint: disable=no-value-for-parameter

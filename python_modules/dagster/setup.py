@@ -70,6 +70,7 @@ def _do_setup(name='dagster'):
             'pyrsistent>=0.14.8',
             'rx==1.6.1',
             'six>=1.11.0',
+            'sqlalchemy<1.3.0,>=1.1.15',  # pinned for compatibility with existing Airflow installs
             'toposort>=1.0',
             'watchdog>=0.8.3',
         ],

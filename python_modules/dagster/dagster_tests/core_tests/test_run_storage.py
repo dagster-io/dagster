@@ -6,7 +6,8 @@ import pytest
 from dagster import PipelineDefinition, seven
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.storage.runs import InMemoryRunStorage, SqliteRunStorage
+from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.storage.sqlite_run_storage import SqliteRunStorage
 
 
 def do_test_single_write_read(instance):
@@ -122,3 +123,38 @@ def test_fetch_by_tag(run_storage_factory_cm_fn):
         some_runs = storage.all_runs_for_tag('mytag', 'hello')
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
+
+
+@run_storage_test
+def test_paginated_fetch(run_storage_factory_cm_fn):
+    storage = InMemoryRunStorage()
+    with run_storage_factory_cm_fn() as storage:
+        assert storage
+        one, two, three = sorted([str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())])
+        storage.add_run(
+            build_run(run_id=one, pipeline_name='some_pipeline', tags={'mytag': 'hello'})
+        )
+        storage.add_run(
+            build_run(run_id=two, pipeline_name='some_pipeline', tags={'mytag': 'hello'})
+        )
+        storage.add_run(
+            build_run(run_id=three, pipeline_name='some_pipeline', tags={'mytag': 'hello'})
+        )
+
+        all_runs = storage.all_runs()
+        assert len(all_runs) == 3
+        sliced_runs = storage.all_runs(cursor=three, limit=1)
+        assert len(sliced_runs) == 1
+        assert sliced_runs[0].run_id == two
+
+        all_runs = storage.all_runs_for_pipeline('some_pipeline')
+        assert len(all_runs) == 3
+        sliced_runs = storage.all_runs_for_pipeline('some_pipeline', cursor=three, limit=1)
+        assert len(sliced_runs) == 1
+        assert sliced_runs[0].run_id == two
+
+        all_runs = storage.all_runs_for_tag('mytag', 'hello')
+        assert len(all_runs) == 3
+        sliced_runs = storage.all_runs_for_tag('mytag', 'hello', cursor=three, limit=1)
+        assert len(sliced_runs) == 1
+        assert sliced_runs[0].run_id == two
