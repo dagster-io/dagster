@@ -33,6 +33,7 @@ from dagster.core.definitions import (
     logger,
     pipeline,
     resource,
+    schedules,
     solid,
     system_storage,
 )

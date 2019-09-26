@@ -1,10 +1,11 @@
 from dagster_cron import SystemCronScheduler
 
-from dagster import ScheduleDefinition
+from dagster import ScheduleDefinition, schedules
 from dagster.utils import file_relative_path
 
 
-def define_scheduler(artifacts_dir):
+@schedules(scheduler=SystemCronScheduler)
+def define_scheduler():
     many_events_every_minute = ScheduleDefinition(
         name="many_events_every_min",
         cron_schedule="* * * * *",
@@ -49,7 +50,4 @@ def define_scheduler(artifacts_dir):
         },
     )
 
-    return SystemCronScheduler(
-        schedule_defs=[many_events_every_minute, log_spew_hourly, pandas_hello_world_hourly],
-        artifacts_dir=artifacts_dir,
-    )
+    return [many_events_every_minute, log_spew_hourly, pandas_hello_world_hourly]

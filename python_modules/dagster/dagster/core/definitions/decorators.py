@@ -4,6 +4,7 @@ from functools import wraps
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
+from ..scheduler import Scheduler, SchedulerBuilder
 from .composition import (
     InputMappingNode,
     composite_mapping_from_output,
@@ -24,6 +25,7 @@ from .mode import ModeDefinition
 from .output import OutputDefinition
 from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
+from .schedule import ScheduleDefinition
 from .solid import CompositeSolidDefinition, SolidDefinition
 
 if hasattr(inspect, 'signature'):
@@ -133,6 +135,39 @@ class _Solid(object):
             metadata=self.metadata,
             step_metadata_fn=self.step_metadata_fn,
         )
+
+
+class _SchedulerBuilder(object):
+    def __init__(self, scheduler_type):
+        self.scheduler_type = check.subclass_param(scheduler_type, 'scheduler_type', Scheduler)
+
+    def __call__(self, fn):
+        check.callable_param(fn, 'fn')
+
+        schedule_defs = fn()
+        for schedule_def in schedule_defs:
+            if not isinstance(schedule_def, ScheduleDefinition):
+                raise DagsterInvariantViolationError(
+                    '{fn_name} must return a list of ScheduleDefinitions'.format(
+                        fn_name=fn.__name__
+                    )
+                )
+
+        def scheduler_builder_function(artifacts_dir):
+            artifacts_dir = check.str_param(artifacts_dir, 'artifacts_dir')
+            schedule_builder = SchedulerBuilder(
+                scheduler_type=self.scheduler_type,
+                schedule_defs=schedule_defs,
+                artifacts_dir=artifacts_dir,
+            )
+
+            return schedule_builder.scheduler
+
+        return scheduler_builder_function
+
+
+def schedules(scheduler):
+    return _SchedulerBuilder(scheduler)
 
 
 def lambda_solid(name=None, description=None, input_defs=None, output_def=None):

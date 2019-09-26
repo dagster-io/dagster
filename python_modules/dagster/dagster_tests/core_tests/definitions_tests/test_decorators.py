@@ -2,6 +2,7 @@
 # py27 compat
 
 import pytest
+from dagster_tests.utils import MockScheduler
 
 from dagster import (
     Any,
@@ -12,8 +13,10 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineDefinition,
+    ScheduleDefinition,
     execute_pipeline,
     lambda_solid,
+    schedules,
     solid,
 )
 from dagster.core.errors import DagsterInvariantViolationError
@@ -295,3 +298,11 @@ def test_solid_no_arg():
         @solid
         def noop():
             return
+
+
+def test_scheduler():
+    @schedules(scheduler=MockScheduler)
+    def define_scheduler():
+        return [
+            ScheduleDefinition(name="my_schedule", cron_schedule="* * * * *", execution_params={})
+        ]

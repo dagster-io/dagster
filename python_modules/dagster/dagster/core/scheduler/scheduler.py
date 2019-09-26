@@ -7,6 +7,15 @@ from dagster import check
 from dagster.core.definitions.schedule import ScheduleDefinition
 
 
+class SchedulerBuilder(object):
+    def __init__(self, scheduler_type, schedule_defs, artifacts_dir):
+        self._scheduler = scheduler_type(schedule_defs, artifacts_dir)
+
+    @property
+    def scheduler(self):
+        return self._scheduler
+
+
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def get_all_schedule_defs(self):

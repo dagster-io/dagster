@@ -1,6 +1,6 @@
 from .config import ConfigMapping
 from .container import IContainSolids, create_execution_structure, solids_in_topological_order
-from .decorators import composite_solid, lambda_solid, pipeline, solid
+from .decorators import composite_solid, lambda_solid, pipeline, schedules, solid
 from .dependency import (
     DependencyDefinition,
     MultiDependencyDefinition,
