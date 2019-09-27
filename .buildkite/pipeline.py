@@ -18,7 +18,7 @@ TOX_MAP = {
 }
 
 # https://github.com/dagster-io/dagster/issues/1662
-DO_COVERAGE = True
+DO_COVERAGE = False
 
 
 def wait_step():
