@@ -9,9 +9,17 @@ import { ProcessStatusQuery } from "./types/ProcessStatusQuery";
 export default () => {
   const socketState = React.useContext(WebsocketStatusContext);
   const [reload] = useMutation(RELOAD_DAGIT_MUTATION);
+  const [closing, setClosing] = React.useState<boolean>(false);
+
   const { data } = useQuery<ProcessStatusQuery>(PROCESS_STATUS_QUERY, {
     fetchPolicy: "cache-and-network"
   });
+
+  React.useEffect(() => {
+    if (socketState === WebSocket.CLOSED && closing) {
+      window.location.reload();
+    }
+  }, [socketState, closing]);
 
   if (!data) {
     return <span />;
@@ -39,7 +47,10 @@ export default () => {
             style={{ marginLeft: 8 }}
             icon={<Icon icon="refresh" iconSize={12} />}
             disabled={socketState !== WebSocket.OPEN}
-            onClick={() => reload()}
+            onClick={() => {
+              setClosing(true);
+              reload();
+            }}
           />
         </Tooltip>
       )}
