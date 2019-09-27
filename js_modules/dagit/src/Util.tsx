@@ -9,6 +9,12 @@ export const ROOT_SERVER_URI = (process.env.REACT_APP_GRAPHQL_URI || "")
   .replace("ws://", "http://")
   .replace("/graphql", "");
 
+export const WEBSOCKET_URI =
+  process.env.REACT_APP_GRAPHQL_URI ||
+  `${document.location.protocol === "https:" ? "wss" : "ws"}://${
+    document.location.host
+  }/graphql`;
+
 const SharedToaster = Toaster.create({ position: Position.TOP }, document.body);
 
 export async function copyValue(event: React.MouseEvent<any>, value: string) {

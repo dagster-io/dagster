@@ -15,7 +15,13 @@ import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMes
 import { Headers, ColumnWidthsProvider } from "./LogsScrollingTableHeader";
 
 interface ILogsScrollingTableProps {
-  nodes?: LogsScrollingTableMessageFragment[];
+  nodes?: (LogsScrollingTableMessageFragment & { clientsideKey: string })[];
+
+  // We use this string to know whether the changes to `nodes` require us to
+  // re-layout the entire table. Appending new rows can be done very fast, but
+  // removing some rows requires the whole list be "reflowed" again. Checking
+  // `nodes` for equality doesn't let us optimize for the append- case.
+  filterKey: string;
 }
 
 interface ILogsScrollingTableSizedProps extends ILogsScrollingTableProps {
@@ -80,7 +86,9 @@ class LogsScrollingTableSized extends React.Component<
 
   cache = new CellMeasurerCache({
     defaultHeight: 30,
-    fixedWidth: true
+    fixedWidth: true,
+    keyMapper: rowIndex =>
+      this.props.nodes ? this.props.nodes[rowIndex].clientsideKey : ""
   });
 
   isAtBottomOrZero: boolean = true;
@@ -93,11 +101,11 @@ class LogsScrollingTableSized extends React.Component<
   componentDidUpdate(prevProps: ILogsScrollingTableSizedProps) {
     if (!this.list.current) return;
 
-    if (
-      this.props.width !== prevProps.width ||
-      this.props.nodes !== prevProps.nodes
-    ) {
+    if (this.props.width !== prevProps.width) {
       this.didResize();
+    }
+    if (this.props.filterKey !== prevProps.filterKey) {
+      this.list.current.recomputeGridSize();
     }
   }
 
@@ -108,10 +116,7 @@ class LogsScrollingTableSized extends React.Component<
   }
 
   didResize() {
-    this.cache = new CellMeasurerCache({
-      defaultHeight: 30,
-      fixedWidth: true
-    });
+    this.cache.clearAll();
     this.forceUpdate();
   }
 
@@ -151,7 +156,7 @@ class LogsScrollingTableSized extends React.Component<
     (this.list.current as any)._onScroll(e.target as Element);
   };
 
-  rowRenderer = ({ parent, index, key, style }: ListRowProps) => {
+  rowRenderer = ({ parent, index, style }: ListRowProps) => {
     if (!this.props.nodes) return;
     const node = this.props.nodes[index];
     if (!node) return <span />;
@@ -159,9 +164,9 @@ class LogsScrollingTableSized extends React.Component<
     return (
       <CellMeasurer
         cache={this.cache}
-        rowIndex={index}
+        index={index}
         parent={parent}
-        key={key}
+        key={node.clientsideKey}
       >
         {node.__typename === "LogMessageEvent" ? (
           <LogsRow.Unstructured
