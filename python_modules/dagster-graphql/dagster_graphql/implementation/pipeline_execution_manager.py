@@ -271,6 +271,30 @@ class SubprocessExecutionManager(PipelineExecutionManager):
                 if run and not run.is_finished:
                     self._generate_synthetic_error_from_crash(run)
 
+    def _get_process(self, run_id):
+        with self._processes_lock:
+            return self._living_process_by_run_id.get(run_id)
+
+    def is_process_running(self, run_id):
+        check.str_param(run_id, 'run_id')
+        process = self._get_process(run_id)
+        return process.is_alive() if process else False
+
+    def terminate(self, run_id):
+        check.str_param(run_id, 'run_id')
+
+        process = self._get_process(run_id)
+
+        if not process:
+            return False
+
+        if not process.is_alive():
+            return False
+
+        process.terminate()
+        process.join()
+        return True
+
 
 def _in_mp_process(handle, pipeline_run, instance_ref):
     """
