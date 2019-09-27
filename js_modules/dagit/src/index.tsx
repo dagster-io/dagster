@@ -16,6 +16,7 @@ import "@blueprintjs/core/lib/css/blueprint.css";
 import "@blueprintjs/table/lib/css/table.css";
 import "@blueprintjs/icons/lib/css/blueprint-icons.css";
 import "@blueprintjs/select/lib/css/blueprint-select.css";
+import { WEBSOCKET_URI } from "./Util";
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -45,16 +46,10 @@ const GlobalStyle = createGlobalStyle`
 
 const ErrorToaster = Toaster.create({ position: Position.TOP_RIGHT });
 
-const websocketClient = new SubscriptionClient(
-  process.env.REACT_APP_GRAPHQL_URI ||
-    `${document.location.protocol === "https:" ? "wss" : "ws"}://${
-      document.location.host
-    }/graphql`,
-  {
-    reconnect: true,
-    lazy: true
-  }
-);
+const websocketClient = new SubscriptionClient(WEBSOCKET_URI, {
+  reconnect: true,
+  lazy: true
+});
 
 const errorLink = onError(({ graphQLErrors, networkError }) => {
   if (graphQLErrors) {

@@ -10,7 +10,7 @@ import {
   Icon
 } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { ILogFilter, LogLevel } from "./LogsFilterProvider";
+import { ILogFilter, LogLevel } from "./LogsProvider";
 
 interface ILogsToolbarProps {
   filter: ILogFilter;
