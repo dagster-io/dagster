@@ -1,25 +1,44 @@
 import * as React from "react";
-import { useQuery, useMutation } from "react-apollo";
+import { useQuery, useMutation, useApolloClient } from "react-apollo";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Colors, Button, Icon, Tooltip } from "@blueprintjs/core";
+import { Colors, Button, Icon, Tooltip, Intent } from "@blueprintjs/core";
 import { WebsocketStatusContext } from "./WebsocketStatus";
 import { ProcessStatusQuery } from "./types/ProcessStatusQuery";
+import { SharedToaster } from "./Util";
 
 export default () => {
+  const apollo = useApolloClient();
   const socketState = React.useContext(WebsocketStatusContext);
   const [reload] = useMutation(RELOAD_DAGIT_MUTATION);
-  const [closing, setClosing] = React.useState<boolean>(false);
+  const [reloadStatus, setReloadStatus] = React.useState<
+    "none" | "closing" | "waiting"
+  >("none");
 
   const { data } = useQuery<ProcessStatusQuery>(PROCESS_STATUS_QUERY, {
     fetchPolicy: "cache-and-network"
   });
 
   React.useEffect(() => {
-    if (socketState === WebSocket.CLOSED && closing) {
-      window.location.reload();
+    if (socketState === WebSocket.CLOSED && reloadStatus === "closing") {
+      setReloadStatus("waiting");
     }
-  }, [socketState, closing]);
+    if (socketState === WebSocket.OPEN && reloadStatus === "waiting") {
+      setReloadStatus("none");
+
+      // clears and re-fetches all the queries bound to the UI
+      apollo.resetStore();
+
+      // let the user know that something happened, since the refresh above is invisible
+      // unless the user changed something shown in the current view.
+      SharedToaster.show({
+        message: "Repository Metadata Reloaded",
+        timeout: 3000,
+        icon: "refresh",
+        intent: Intent.SUCCESS
+      });
+    }
+  }, [socketState, reloadStatus, apollo]);
 
   if (!data) {
     return <span />;
@@ -46,9 +65,9 @@ export default () => {
             text="Reload"
             style={{ marginLeft: 8 }}
             icon={<Icon icon="refresh" iconSize={12} />}
-            disabled={socketState !== WebSocket.OPEN}
+            disabled={reloadStatus !== "none"}
             onClick={() => {
-              setClosing(true);
+              setReloadStatus("closing");
               reload();
             }}
           />
