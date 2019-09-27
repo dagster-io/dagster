@@ -54,7 +54,7 @@ def airline_demo_tests():
         coverage = ".coverage.airline-demo.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder('airline-demo tests ({version})'.format(version=TOX_MAP[version]))
-            .on_integration_image(version, ['BUILDKITE'])
+            .on_integration_image(version)
             .on_queue(BuildkiteQueue.MEDIUM)
             .run(
                 "cd examples",
@@ -155,7 +155,7 @@ def dagster_postgres_tests():
                 "docker-compose stop",
                 "docker-compose rm -f",
             )
-            .on_integration_image(version, ['BUILDKITE'])
+            .on_integration_image(version)
             .build()
         )
     return tests

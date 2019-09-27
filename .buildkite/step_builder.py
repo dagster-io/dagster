@@ -58,8 +58,7 @@ class StepBuilder:
     def on_python_image(self, ver, env=None):
         settings = self._base_docker_settings()
         settings["image"] = PY_IMAGE_MAP[ver]
-        if env:
-            settings['environment'] = env
+        settings["environment"] = ["BUILDKITE"] + (env or [])
 
         self._step["plugins"] = [{DOCKER_PLUGIN: settings}]
 
@@ -82,8 +81,7 @@ class StepBuilder:
         # map the docker socket to enable docker to be run from inside docker
         settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock"]
 
-        if env:
-            settings['environment'] = env
+        settings["environment"] = ["BUILDKITE"] + (env or [])
 
         self._step["plugins"] = [{DOCKER_PLUGIN: settings}]
         return self
