@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.5.9
+
+- A "Reload" button in the top right in dagit restarts the web-server process and updates
+  the UI to reflect repo changes, including DAG structure, solid names, type names, etc.
 - Fixes an issue using custom types for fan-in dependencies with intermediate storage.
 
 ## 0.5.8
