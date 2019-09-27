@@ -7,10 +7,7 @@ import { Colors } from "@blueprintjs/core";
 import { MutationFunction, Mutation } from "react-apollo";
 import ApolloClient from "apollo-client";
 
-import LogsFilterProvider, {
-  ILogFilter,
-  GetDefaultLogFilter
-} from "./LogsFilterProvider";
+import { ILogFilter, LogsProvider, GetDefaultLogFilter } from "./LogsProvider";
 import LogsScrollingTable from "./LogsScrollingTable";
 import {
   RunFragment,
@@ -19,11 +16,10 @@ import {
 } from "./types/RunFragment";
 import { PanelDivider } from "../PanelDivider";
 import { ExecutionPlan } from "../plan/ExecutionPlan";
-import RunMetadataProvider from "../RunMetadataProvider";
+import { RunMetadataProvider } from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
 import { handleStartExecutionResult, REEXECUTE_MUTATION } from "./RunUtils";
 import { Reexecute, ReexecuteVariables } from "./types/Reexecute";
-import RunSubscriptionProvider from "./RunSubscriptionProvider";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
 import ExecutionStartButton from "../execute/ExecutionStartButton";
 import InfoModal from "../InfoModal";
@@ -46,7 +42,6 @@ export class Run extends React.Component<IRunProps, IRunState> {
     RunFragment: gql`
       fragment RunFragment on PipelineRun {
         ...RunStatusPipelineRunFragment
-        ...RunSubscriptionPipelineRunFragment
 
         environmentConfigYaml
         runId
@@ -59,22 +54,6 @@ export class Run extends React.Component<IRunProps, IRunState> {
           ... on Pipeline {
             solids {
               name
-            }
-          }
-        }
-        logs {
-          nodes {
-            ...LogsFilterProviderMessageFragment
-            ...LogsScrollingTableMessageFragment
-            ...RunMetadataProviderMessageFragment
-            ... on ExecutionStepFailureEvent {
-              step {
-                key
-              }
-              error {
-                stack
-                message
-              }
             }
           }
         }
@@ -99,21 +78,23 @@ export class Run extends React.Component<IRunProps, IRunState> {
       }
 
       ${ExecutionPlan.fragments.ExecutionPlanFragment}
-      ${LogsFilterProvider.fragments.LogsFilterProviderMessageFragment}
-      ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
       ${RunStatusToPageAttributes.fragments.RunStatusPipelineRunFragment}
-      ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
-      ${RunSubscriptionProvider.fragments.RunSubscriptionPipelineRunFragment}
     `,
     RunPipelineRunEventFragment: gql`
       fragment RunPipelineRunEventFragment on PipelineRunEvent {
+        ... on MessageEvent {
+          message
+          timestamp
+          level
+          step {
+            key
+          }
+        }
         ...LogsScrollingTableMessageFragment
-        ...LogsFilterProviderMessageFragment
         ...RunMetadataProviderMessageFragment
       }
 
       ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
-      ${LogsFilterProvider.fragments.LogsFilterProviderMessageFragment}
       ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
     `
   };
@@ -192,7 +173,6 @@ export class Run extends React.Component<IRunProps, IRunState> {
     const { client, run } = this.props;
     const { logsFilter, logsVW, highlightedError } = this.state;
 
-    const logs = run ? run.logs.nodes : undefined;
     const stepKeysToExecute: (string | null)[] | null = run
       ? run.stepKeysToExecute
       : null;
@@ -207,14 +187,19 @@ export class Run extends React.Component<IRunProps, IRunState> {
         {reexecuteMutation => (
           <RunWrapper>
             <RunContext.Provider value={run}>
-              {run && <RunSubscriptionProvider client={client} run={run} />}
               {run && <RunStatusToPageAttributes run={run} />}
-              <LogsContainer style={{ width: `${logsVW}vw`, minWidth: 680 }}>
-                <LogsFilterProvider filter={logsFilter} nodes={logs}>
-                  {({ filteredNodes, busy }) => (
-                    <>
+              <LogsProvider
+                client={client}
+                runId={run ? run.runId : ""}
+                filter={logsFilter}
+              >
+                {({ filteredNodes, allNodes }) => (
+                  <>
+                    <LogsContainer
+                      style={{ width: `${logsVW}vw`, minWidth: 680 }}
+                    >
                       <LogsToolbar
-                        showSpinner={busy}
+                        showSpinner={false}
                         filter={logsFilter}
                         onSetFilter={filter =>
                           this.setState({ logsFilter: filter })
@@ -227,46 +212,49 @@ export class Run extends React.Component<IRunProps, IRunState> {
                           onClick={() => this.onReexecute(reexecuteMutation)}
                         />
                       </LogsToolbar>
-                      <LogsScrollingTable nodes={filteredNodes} />
-                    </>
-                  )}
-                </LogsFilterProvider>
-              </LogsContainer>
-              <PanelDivider
-                onMove={(vw: number) => this.setState({ logsVW: vw })}
-                axis="horizontal"
-              />
-              <RunMetadataProvider logs={logs || []}>
-                {metadata => (
-                  <ExecutionPlan
-                    run={run}
-                    runMetadata={metadata}
-                    executionPlan={executionPlan}
-                    stepKeysToExecute={stepKeysToExecute}
-                    onShowStateDetails={this.onShowStateDetails}
-                    onReexecuteStep={stepKey =>
-                      this.onReexecute(reexecuteMutation, stepKey)
-                    }
-                    onApplyStepFilter={stepKey =>
-                      this.setState({
-                        logsFilter: {
-                          ...this.state.logsFilter,
-                          text: `step:${stepKey}`
+                      <LogsScrollingTable
+                        nodes={filteredNodes}
+                        filterKey={JSON.stringify(logsFilter)}
+                      />
+                    </LogsContainer>
+                    <PanelDivider
+                      onMove={(vw: number) => this.setState({ logsVW: vw })}
+                      axis="horizontal"
+                    />
+                    <RunMetadataProvider logs={allNodes}>
+                      {metadata => (
+                        <ExecutionPlan
+                          run={run}
+                          runMetadata={metadata}
+                          executionPlan={executionPlan}
+                          stepKeysToExecute={stepKeysToExecute}
+                          onShowStateDetails={this.onShowStateDetails}
+                          onReexecuteStep={stepKey =>
+                            this.onReexecute(reexecuteMutation, stepKey)
+                          }
+                          onApplyStepFilter={stepKey =>
+                            this.setState({
+                              logsFilter: {
+                                ...this.state.logsFilter,
+                                text: `step:${stepKey}`
+                              }
+                            })
+                          }
+                        />
+                      )}
+                    </RunMetadataProvider>
+                    {highlightedError && (
+                      <InfoModal
+                        onRequestClose={() =>
+                          this.setState({ highlightedError: undefined })
                         }
-                      })
-                    }
-                  />
+                      >
+                        <PythonErrorInfo error={highlightedError} />
+                      </InfoModal>
+                    )}
+                  </>
                 )}
-              </RunMetadataProvider>
-              {highlightedError && (
-                <InfoModal
-                  onRequestClose={() =>
-                    this.setState({ highlightedError: undefined })
-                  }
-                >
-                  <PythonErrorInfo error={highlightedError} />
-                </InfoModal>
-              )}
+              </LogsProvider>
             </RunContext.Provider>
           </RunWrapper>
         )}

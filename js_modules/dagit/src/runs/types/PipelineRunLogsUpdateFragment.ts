@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, LogLevel, ObjectStoreOperationType, StepKind } from "./../../types/globalTypes";
+import { PipelineRunStatus, StepKind, LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: PipelineRunLogsUpdateFragment
@@ -27,9 +27,39 @@ export interface PipelineRunLogsUpdateFragment_pipeline_Pipeline {
 
 export type PipelineRunLogsUpdateFragment_pipeline = PipelineRunLogsUpdateFragment_pipeline_UnknownPipeline | PipelineRunLogsUpdateFragment_pipeline_Pipeline;
 
-export interface PipelineRunLogsUpdateFragment_logs_pageInfo {
-  __typename: "PageInfo";
-  lastCursor: any | null;
+export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
+export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs {
+  __typename: "ExecutionStepOutput";
+  name: string;
+  type: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs_type;
+}
+
+export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn {
+  __typename: "ExecutionStep";
+  key: string;
+  outputs: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs[];
+}
+
+export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs {
+  __typename: "ExecutionStepInput";
+  dependsOn: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn[];
+}
+
+export interface PipelineRunLogsUpdateFragment_executionPlan_steps {
+  __typename: "ExecutionStep";
+  key: string;
+  kind: StepKind;
+  inputs: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs[];
+}
+
+export interface PipelineRunLogsUpdateFragment_executionPlan {
+  __typename: "ExecutionPlan";
+  steps: PipelineRunLogsUpdateFragment_executionPlan_steps[];
+  artifactsPersisted: boolean;
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepSkippedEvent_step {
@@ -463,43 +493,7 @@ export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFrag
 
 export interface PipelineRunLogsUpdateFragment_logs {
   __typename: "LogMessageConnection";
-  pageInfo: PipelineRunLogsUpdateFragment_logs_pageInfo;
   nodes: PipelineRunLogsUpdateFragment_logs_nodes[];
-}
-
-export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
-}
-
-export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs {
-  __typename: "ExecutionStepOutput";
-  name: string;
-  type: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs_type;
-}
-
-export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn {
-  __typename: "ExecutionStep";
-  key: string;
-  outputs: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs[];
-}
-
-export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs {
-  __typename: "ExecutionStepInput";
-  dependsOn: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn[];
-}
-
-export interface PipelineRunLogsUpdateFragment_executionPlan_steps {
-  __typename: "ExecutionStep";
-  key: string;
-  kind: StepKind;
-  inputs: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs[];
-}
-
-export interface PipelineRunLogsUpdateFragment_executionPlan {
-  __typename: "ExecutionPlan";
-  steps: PipelineRunLogsUpdateFragment_executionPlan_steps[];
-  artifactsPersisted: boolean;
 }
 
 export interface PipelineRunLogsUpdateFragment {
@@ -507,9 +501,9 @@ export interface PipelineRunLogsUpdateFragment {
   runId: string;
   status: PipelineRunStatus;
   pipeline: PipelineRunLogsUpdateFragment_pipeline;
-  logs: PipelineRunLogsUpdateFragment_logs;
   environmentConfigYaml: string;
   mode: string;
   executionPlan: PipelineRunLogsUpdateFragment_executionPlan | null;
   stepKeysToExecute: string[] | null;
+  logs: PipelineRunLogsUpdateFragment_logs;
 }

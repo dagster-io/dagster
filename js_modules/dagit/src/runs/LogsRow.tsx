@@ -18,15 +18,20 @@ import { showCustomAlert } from "../CustomAlertProvider";
 import { LogsRowStructuredContent } from "./LogsRowStructuredContent";
 import InfoModal from "../InfoModal";
 import PythonErrorInfo from "../PythonErrorInfo";
+import { isEqual } from "apollo-utilities";
+
+interface StructuredProps {
+  node: LogsRowStructuredFragment;
+  style: React.CSSProperties;
+}
+
+interface StructuredState {
+  expanded: boolean;
+}
 
 export class Structured extends React.Component<
-  {
-    node: LogsRowStructuredFragment;
-    style: React.CSSProperties;
-  },
-  {
-    expanded: boolean;
-  }
+  StructuredProps,
+  StructuredState
 > {
   static fragments = {
     LogsRowStructuredFragment: gql`
@@ -171,26 +176,36 @@ export class Structured extends React.Component<
   }
 
   render() {
-    const { node, style } = this.props;
     return (
-      <CellTruncationProvider style={style} onExpand={this.onExpand}>
-        <Row level={LogLevel.INFO}>
-          <SolidColumn stepKey={"step" in node && node.step && node.step.key} />
-          <StructuredContent>
-            <LogsRowStructuredContent node={node} />
-          </StructuredContent>
-          <TimestampColumn time={"timestamp" in node && node.timestamp} />
-        </Row>
+      <CellTruncationProvider style={this.props.style} onExpand={this.onExpand}>
+        <StructuredMemoizedContent node={this.props.node} />
         {this.renderExpanded()}
       </CellTruncationProvider>
     );
   }
 }
 
-export class Unstructured extends React.Component<{
+const StructuredMemoizedContent: React.FunctionComponent<{
+  node: LogsRowStructuredFragment;
+}> = React.memo(
+  ({ node }) => (
+    <Row level={LogLevel.INFO}>
+      <SolidColumn stepKey={"step" in node && node.step && node.step.key} />
+      <StructuredContent>
+        <LogsRowStructuredContent node={node} />
+      </StructuredContent>
+      <TimestampColumn time={"timestamp" in node && node.timestamp} />
+    </Row>
+  ),
+  isEqual
+);
+
+interface UnstructuredProps {
   node: LogsRowUnstructuredFragment;
   style: React.CSSProperties;
-}> {
+}
+
+export class Unstructured extends React.Component<UnstructuredProps> {
   static fragments = {
     LogsRowUnstructuredFragment: gql`
       fragment LogsRowUnstructuredFragment on PipelineRunEvent {
@@ -216,16 +231,24 @@ export class Unstructured extends React.Component<{
   };
 
   render() {
-    const { node, style } = this.props;
     return (
-      <CellTruncationProvider style={style} onExpand={this.onExpand}>
-        <Row level={node.level}>
-          <SolidColumn stepKey={node.step && node.step.key} />
-          <EventTypeColumn>{node.level}</EventTypeColumn>
-          <span style={{ flex: 1 }}>{node.message}</span>
-          <TimestampColumn time={node.timestamp} />
-        </Row>
+      <CellTruncationProvider style={this.props.style} onExpand={this.onExpand}>
+        <UnstructuredMemoizedContent node={this.props.node} />
       </CellTruncationProvider>
     );
   }
 }
+
+const UnstructuredMemoizedContent: React.FunctionComponent<{
+  node: LogsRowUnstructuredFragment;
+}> = React.memo(
+  ({ node }) => (
+    <Row level={node.level}>
+      <SolidColumn stepKey={node.step && node.step.key} />
+      <EventTypeColumn>{node.level}</EventTypeColumn>
+      <span style={{ flex: 1 }}>{node.message}</span>
+      <TimestampColumn time={node.timestamp} />
+    </Row>
+  ),
+  isEqual
+);

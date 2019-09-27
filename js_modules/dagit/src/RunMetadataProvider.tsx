@@ -253,7 +253,7 @@ interface IRunMetadataProviderProps {
   children: (metadata: IRunMetadataDict) => React.ReactElement<any>;
 }
 
-export default class RunMetadataProvider extends React.Component<
+export class RunMetadataProvider extends React.Component<
   IRunMetadataProviderProps
 > {
   static fragments = {
