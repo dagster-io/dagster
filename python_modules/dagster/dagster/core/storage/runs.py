@@ -44,7 +44,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''Return all the runs present in the storage.
 
         Returns:
-            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+            List[PipelineRun]: Tuples of run_id, pipeline_run.
         '''
 
     @abstractmethod
@@ -55,7 +55,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
             pipeline_name (str): The pipeline to index on
 
         Returns:
-            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+            List[PipelineRun]: Tuples of run_id, pipeline_run.
         '''
 
     @abstractmethod
@@ -67,7 +67,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
             value (str): The value to match
 
         Returns:
-            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+            List[PipelineRun]: Tuples of run_id, pipeline_run.
         '''
 
     @abstractmethod
@@ -105,6 +105,8 @@ class InMemoryRunStorage(RunStorage):
         return pipeline_run
 
     def handle_run_event(self, run_id, event):
+        check.str_param(run_id, 'run_id')
+        check.inst_param(event, 'event', DagsterEvent)
         run = self._runs[run_id]
 
         if event.event_type == DagsterEventType.PIPELINE_START:
@@ -118,15 +120,20 @@ class InMemoryRunStorage(RunStorage):
         return self._runs.values()
 
     def all_runs_for_pipeline(self, pipeline_name):
+        check.str_param(pipeline_name, 'pipeline_name')
         return [r for r in self.all_runs() if r.pipeline_name == pipeline_name]
 
     def get_run_by_id(self, run_id):
+        check.str_param(run_id, 'run_id')
         return self._runs.get(run_id)
 
     def all_runs_for_tag(self, key, value):
+        check.str_param(key, 'key')
+        check.str_param(value, 'value')
         return [r for r in self.all_runs() if r.tags.get(key) == value]
 
     def has_run(self, run_id):
+        check.str_param(run_id, 'run_id')
         return run_id in self._runs
 
     def wipe(self):
@@ -159,7 +166,7 @@ DELETE_RUN_TAGS_SQL = 'DELETE FROM run_tags'
 
 class SqliteRunStorage(RunStorage, ConfigurableClass):
     def __init__(self, conn_string, inst_data=None):
-        self.conn_string = conn_string
+        self.conn_string = check.str_param(conn_string, 'conn_string')
         super(SqliteRunStorage, self).__init__(inst_data=inst_data)
 
     @classmethod
@@ -172,6 +179,7 @@ class SqliteRunStorage(RunStorage, ConfigurableClass):
 
     @staticmethod
     def from_local(base_dir, inst_data=None):
+        check.str_param(base_dir, 'base_dir')
         mkdir_p(base_dir)
         conn_string = os.path.join(base_dir, 'runs.db')
         try:
@@ -256,7 +264,7 @@ class SqliteRunStorage(RunStorage, ConfigurableClass):
         '''Return all the runs present in the storage.
 
         Returns:
-            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+            List[PipelineRun]: Tuples of run_id, pipeline_run.
         '''
 
         with self._connect() as conn:
@@ -270,7 +278,7 @@ class SqliteRunStorage(RunStorage, ConfigurableClass):
             pipeline_name (str): The pipeline to index on
 
         Returns:
-            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+            List[PipelineRun]: Tuples of run_id, pipeline_run.
         '''
         check.str_param(pipeline_name, 'pipeline_name')
 

@@ -118,7 +118,7 @@ class PostgresRunStorage(RunStorage):
         '''Return all the runs present in the storage.
 
         Returns:
-            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+            List[PipelineRun]: Tuples of run_id, pipeline_run.
         '''
 
         conn = get_conn(self.conn_string)
@@ -134,7 +134,7 @@ class PostgresRunStorage(RunStorage):
             pipeline_name (str): The pipeline to index on
 
         Returns:
-            Iterable[(str, PipelineRun)]: Tuples of run_id, pipeline_run.
+            List[PipelineRun]: Tuples of run_id, pipeline_run.
         '''
         check.str_param(pipeline_name, 'pipeline_name')
 
