@@ -186,7 +186,7 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
         runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
             run_id=pipeline_run.run_id,
             pipeline_name=pipeline_run.pipeline_name,
-            status=str(pipeline_run.status),
+            status=pipeline_run.status.value,
             run_body=serialize_dagster_namedtuple(pipeline_run),
         )
         conn.execute(runs_insert)
