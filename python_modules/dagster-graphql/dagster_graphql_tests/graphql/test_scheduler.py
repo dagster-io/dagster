@@ -4,7 +4,9 @@ import sys
 import mock
 from dagster_graphql.test.utils import execute_dagster_graphql
 
+from dagster import ScheduleDefinition
 from dagster.core.instance import DagsterInstance
+from dagster.core.scheduler import Schedule, ScheduleStatus, get_schedule_change_set
 
 from .setup import define_context_for_repository_yaml
 
@@ -42,7 +44,7 @@ def test_get_all_schedules():
 
     # Initialize scheduler
     scheduler_handle = context.scheduler_handle
-    scheduler_handle.init(python_path=sys.executable, repository_path="")
+    scheduler_handle.up(python_path=sys.executable, repository_path="")
 
     # Get scheduler
     scheduler = scheduler_handle.get_scheduler()
@@ -63,4 +65,59 @@ def test_get_all_schedules():
     assert (
         scheduler_result.data['scheduler']['runningSchedules'][0]['scheduleId']
         == schedule.schedule_id
+    )
+
+
+def test_scheduler_change_set_adding_schedule():
+    schedule_1 = ScheduleDefinition('schedule_1', "*****", {})
+    schedule_2 = ScheduleDefinition('schedule_2', "*****", {})
+    schedule_3 = ScheduleDefinition('schedule_3', "*****", {})
+    schedule_4 = ScheduleDefinition('schedule_4', "*****", {})
+
+    modified_schedule_2 = ScheduleDefinition('schedule_2', "0****", {'new_key': "new_value"})
+    renamed_schedule_3 = ScheduleDefinition('renamed_schedule_3', "*****", {})
+
+    running_1 = Schedule("1", schedule_1, ScheduleStatus.RUNNING, "", "")
+    running_2 = Schedule("2", schedule_2, ScheduleStatus.RUNNING, "", "")
+    running_3 = Schedule("3", schedule_3, ScheduleStatus.RUNNING, "", "")
+    running_4 = Schedule("4", schedule_4, ScheduleStatus.RUNNING, "", "")
+
+    # Add initial schedules
+    change_set_1 = get_schedule_change_set([], [schedule_1, schedule_2])
+    assert sorted(change_set_1) == sorted([('add', 'schedule_2', []), ('add', 'schedule_1', [])])
+
+    # Add more schedules
+    change_set_2 = get_schedule_change_set(
+        [running_1, running_2], [schedule_1, schedule_2, schedule_3, schedule_4]
+    )
+    assert sorted(change_set_2) == sorted([('add', 'schedule_3', []), ('add', 'schedule_4', [])])
+
+    # Modify schedule_2
+    change_set_3 = get_schedule_change_set(
+        [running_1, running_2, running_3, running_4],
+        [schedule_1, modified_schedule_2, schedule_3, schedule_4],
+    )
+    assert change_set_3 == [
+        (
+            'change',
+            'schedule_2',
+            [('cron_schedule', ('*****', '0****')), ('execution_params', '[modified]')],
+        )
+    ]
+
+    # Delete schedules
+    change_set_3 = get_schedule_change_set(
+        [running_1, running_2, running_3, running_4], [schedule_3, schedule_4]
+    )
+    assert sorted(change_set_3) == sorted(
+        [('remove', 'schedule_1', []), ('remove', 'schedule_2', [])]
+    )
+
+    # Rename schedules
+    change_set_4 = get_schedule_change_set(
+        [running_1, running_2, running_3, running_4],
+        [schedule_1, schedule_2, renamed_schedule_3, schedule_4],
+    )
+    assert sorted(change_set_4) == sorted(
+        [('add', 'renamed_schedule_3', []), ('remove', 'schedule_3', [])]
     )

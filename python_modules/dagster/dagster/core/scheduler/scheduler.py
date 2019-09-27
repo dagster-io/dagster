@@ -17,6 +17,48 @@ class ScheduleStatus(Enum):
     ENDED = 'ENDED'
 
 
+def get_schedule_change_set(old_schedules, new_schedule_defs):
+    check.list_param(old_schedules, 'old_schedules', Schedule)
+    check.list_param(new_schedule_defs, 'new_schedule_defs', ScheduleDefinition)
+
+    new_schedules_defs_dict = {s.name: s for s in new_schedule_defs}
+    old_schedules_dict = {s.schedule_definition.name: s for s in old_schedules}
+
+    new_schedule_defs_names = set(new_schedules_defs_dict.keys())
+    old_schedules_names = set(old_schedules_dict.keys())
+
+    added_schedules = new_schedule_defs_names - old_schedules_names
+    changed_schedules = new_schedule_defs_names & old_schedules_names
+    removed_schedules = old_schedules_names - new_schedule_defs_names
+
+    changeset = []
+
+    for schedule_name in added_schedules:
+        changeset.append(("add", schedule_name, []))
+
+    for schedule_name in changed_schedules:
+        changes = []
+
+        old_schedule_def = old_schedules_dict[schedule_name].schedule_definition
+        new_schedule_def = new_schedules_defs_dict[schedule_name]
+
+        if old_schedule_def.cron_schedule != new_schedule_def.cron_schedule:
+            changes.append(
+                ("cron_schedule", (old_schedule_def.cron_schedule, new_schedule_def.cron_schedule))
+            )
+
+        if old_schedule_def.execution_params != new_schedule_def.execution_params:
+            changes.append(("execution_params", '[modified]'))
+
+        if len(changes) > 0:
+            changeset.append(("change", schedule_name, changes))
+
+    for schedule_name in removed_schedules:
+        changeset.append(("remove", schedule_name, []))
+
+    return changeset
+
+
 class SchedulerHandle(object):
     def __init__(self, scheduler_type, schedule_defs, artifacts_dir, repository_name):
         from .storage import FilesystemScheduleStorage
@@ -34,7 +76,23 @@ class SchedulerHandle(object):
             artifacts_dir, repository_name=repository_name
         )
 
-    def init(self, python_path, repository_path):
+    def up(self, python_path, repository_path):
+        '''SchedulerHandle stores a list of up-to-date ScheduleDefinitions and a reference to a
+        ScheduleStorage. When `up` is called, it reconciles the ScheduleDefinitions list and
+        ScheduleStorage to ensure there is a 1-1 correlation between ScheduleDefinitions and
+        Schedules, where the ScheduleDefinitions list is the source of truth.
+
+        If a new ScheduleDefinition is introduced, a new Schedule is added to storage with status
+        ScheduleStatus.STOPPED.
+
+        For every previously existing ScheduleDefinition (where schedule_name is the primary key),
+        any changes to the definition are persisted in the corresponding Schedule and the status is
+        left unchanged.
+
+        For every ScheduleDefinitions that is removed, the corresponding Schedule is removed from
+        the storage.
+        '''
+
         for schedule_def in self._schedule_defs:
             # If a schedule already exists for schedule_def, overwrite bash script and
             # metadata file
@@ -69,6 +127,14 @@ class SchedulerHandle(object):
         TempScheduler = self._Scheduler(self._artifacts_dir, self._schedule_storage)
         for schedule_name in schedule_names_to_delete:
             TempScheduler.end_schedule(schedule_name)
+
+    def get_change_set(self):
+        schedule_defs = self.all_schedule_defs()
+        schedules = self._schedule_storage.all_schedules()
+        return get_schedule_change_set(schedules, schedule_defs)
+
+    def all_schedule_defs(self):
+        return self._schedule_defs
 
     def get_scheduler(self):
         return self._Scheduler(self._artifacts_dir, self._schedule_storage)

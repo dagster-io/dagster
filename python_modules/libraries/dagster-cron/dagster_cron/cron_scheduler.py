@@ -50,7 +50,7 @@ class SystemCronScheduler(Scheduler):
         if not schedule:
             raise DagsterInvariantViolationError(
                 'You have attempted to stop schedule {name}, but was never initialized.'
-                'Use `schedule init` to initialize schedules'.format(name=schedule_name)
+                'Use `schedule up` to initialize schedules'.format(name=schedule_name)
             )
 
         if schedule.status == ScheduleStatus.STOPPED:

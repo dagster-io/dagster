@@ -15,7 +15,8 @@ from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 def create_schedule_cli_group():
     group = click.Group(name="schedule")
     group.add_command(schedule_list_command)
-    group.add_command(schedule_init_command)
+    group.add_command(schedule_up_command)
+    group.add_command(schedule_preview_command)
     group.add_command(schedule_start_command)
     group.add_command(schedule_stop_command)
     return group
@@ -48,13 +49,80 @@ def repository_target_argument(f):
     )
 
 
-@click.command(name='init', help="[Experimental] Initialize a scheduler")
+def print_changes(scheduler_handle, print_fn=print):
+    changeset = scheduler_handle.get_change_set()
+    if len(changeset) == 0:
+        print_fn(click.style('No changes to schedules.', fg='magenta', bold=True))
+        print_fn('{num} schedules unchanged'.format(num=len(scheduler_handle.all_schedule_defs())))
+        return
+
+    print_fn(click.style('Changes:', fg='magenta', bold=True))
+
+    for change in changeset:
+        change_type, schedule_name, changes = change
+
+        if change_type == "add":
+            print_fn(click.style('  + %s (add)' % schedule_name, fg='green'))
+
+        if change_type == "change":
+            print_fn(click.style('  ~ %s (update)' % schedule_name, fg='yellow'))
+            for change_name, diff in changes:
+                if len(diff) == 2:
+                    old, new = diff
+                    print_fn(
+                        click.style('\t %s: ' % change_name, fg='yellow')
+                        + click.style(old, fg='red')
+                        + " => "
+                        + click.style(new, fg='green')
+                    )
+                else:
+                    print_fn(
+                        click.style('\t %s: ' % change_name, fg='yellow')
+                        + click.style(diff, fg='green')
+                    )
+
+        if change_type == "remove":
+            print_fn(click.style('  - %s (delete)' % schedule_name, fg='red'))
+
+
+@click.command(
+    name='preview',
+    help='[Experimental] Preview changes that will be performed by `dagster schedule up',
+)
 @repository_target_argument
-def schedule_init_command(**kwargs):
-    return execute_init_command(kwargs, click.echo)
+def schedule_preview_command(**kwargs):
+    return execute_preview_command(kwargs, click.echo)
 
 
-def execute_init_command(cli_args, print_fn):
+def execute_preview_command(cli_args, print_fn):
+    handle = handle_for_repo_cli_args(cli_args)
+    repository = handle.build_repository_definition()
+
+    instance = DagsterInstance.get()
+    scheduler_handle = handle.build_scheduler_handle(artifacts_dir=instance.schedules_directory())
+    if not scheduler_handle:
+        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
+        return
+
+    print_changes(scheduler_handle, print_fn)
+
+
+@click.command(
+    name='up',
+    help='[Experimental] Updates the internal dagster representation of schedules to match the list '
+    'of ScheduleDefinitions defined in the repository. Use `dagster schedule up --preview` or '
+    '`dagster schedule preview` to preview what changes will be applied. New ScheduleDefinitions '
+    'will not start running by default when `up` is called. Use `dagster schedule start` and '
+    '`dagster schedule stop` to start and stop a schedule. If a ScheduleDefinition is deleted, the '
+    'corresponding running schedule will be stopped and deleted.',
+)
+@click.option('--preview', help="Preview changes", is_flag=True, default=False)
+@repository_target_argument
+def schedule_up_command(preview, **kwargs):
+    return execute_up_command(preview, kwargs, click.echo)
+
+
+def execute_up_command(preview, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
 
@@ -67,15 +135,19 @@ def execute_init_command(cli_args, print_fn):
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
+    if preview:
+        print_changes(scheduler_handle, print_fn)
+        return
+
     try:
-        scheduler_handle.init(python_path, repository_path)
+        scheduler_handle.up(python_path, repository_path)
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
 
 
 @click.command(
     name='list',
-    help="[Experimental] List the schedules in a repository. {warning}".format(
+    help="[Experimental] List all schedules that correspond to a repository. {warning}".format(
         warning=REPO_TARGET_WARNING
     ),
 )
@@ -153,7 +225,7 @@ def extract_schedule_name(schedule_name):
             )
 
 
-@click.command(name='start', help="[Experimental] Start a schedule")
+@click.command(name='start', help="[Experimental] Start an existing schedule")
 @click.argument('schedule_name', nargs=-1)
 @click.option('--start-all', help="start all schedules", is_flag=True, default=False)
 @repository_target_argument
@@ -195,7 +267,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
         )
 
 
-@click.command(name='stop', help="[Experimental] Stop a schedule")
+@click.command(name='stop', help="[Experimental] Stop an existing schedule")
 @click.argument('schedule_name', nargs=-1)
 @repository_target_argument
 def schedule_stop_command(schedule_name, **kwargs):
@@ -222,7 +294,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn):
         raise click.UsageError(ex)
 
     print_fn(
-        "Ended schedule {schedule_name} with ID {schedule_id}".format(
+        "Stopped schedule {schedule_name} with ID {schedule_id}".format(
             schedule_name=schedule_name, schedule_id=schedule.schedule_id
         )
     )

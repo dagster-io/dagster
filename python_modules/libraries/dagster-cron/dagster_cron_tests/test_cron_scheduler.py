@@ -59,7 +59,7 @@ def test_init():
         assert scheduler_handle
 
         # Initialize scheduler
-        scheduler_handle.init(python_path=sys.executable, repository_path="")
+        scheduler_handle.up(python_path=sys.executable, repository_path="")
         scheduler = scheduler_handle.get_scheduler()
 
         # Check schedules are saved to disk
@@ -84,7 +84,7 @@ def test_start_and_stop_schedule():
         assert scheduler_handle
 
         # Initialize scheduler
-        scheduler_handle.init(python_path=sys.executable, repository_path="")
+        scheduler_handle.up(python_path=sys.executable, repository_path="")
         scheduler = scheduler_handle.get_scheduler()
 
         # Start schedule
