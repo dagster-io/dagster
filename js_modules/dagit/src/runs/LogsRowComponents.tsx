@@ -1,7 +1,7 @@
 import * as React from "react";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
-import { LogLevel } from "./LogsFilterProvider";
+import { LogLevel } from "./LogsProvider";
 import { ColumnWidthsContext } from "./LogsScrollingTableHeader";
 import { formatStepKey } from "../Util";
 
