@@ -5,7 +5,7 @@ import "codemirror/addon/search/searchcursor";
 import "codemirror/addon/dialog/dialog";
 import "codemirror/addon/dialog/dialog.css";
 import * as yaml from "yaml";
-import { ConfigEditorPipelineFragment } from "../types/ConfigEditorPipelineFragment";
+import { ConfigEditorEnvironmentSchemaFragment } from "../types/ConfigEditorEnvironmentSchemaFragment";
 
 interface IParseStateParent {
   key: string;
@@ -321,9 +321,11 @@ CodeMirror.registerHelper(
   "yaml",
   (
     editor: any,
-    options: { pipeline?: ConfigEditorPipelineFragment }
+    options: {
+      schema?: ConfigEditorEnvironmentSchemaFragment;
+    }
   ): { list: Array<CodemirrorHint> } => {
-    if (!options.pipeline) return { list: [] };
+    if (!options.schema) return { list: [] };
 
     const {
       cursor,
@@ -470,25 +472,25 @@ CodeMirror.registerHelper(
   }
 );
 
-/** Takes the pipeline and the YAML tokenizer state and returns the
- * pipeline type in scope and available (yet-to-be-used) fields
+/** Takes the pipeline schema and the YAML tokenizer state and returns the
+ * type in scope and available (yet-to-be-used) fields
  * if it is a composite type.
  */
 function findAutocompletionContext(
-  pipeline: ConfigEditorPipelineFragment,
+  schema: ConfigEditorEnvironmentSchemaFragment,
   parents: IParseStateParent[],
   currentIndent: number
 ) {
   parents = parents.filter(({ indent }) => currentIndent > indent);
   const immediateParent = parents[parents.length - 1];
 
-  if (!pipeline) {
-    // Pipeline may still be loading
+  if (!schema) {
+    // Schema may still be loading
     return;
   }
 
-  let type = pipeline.configTypes.find(
-    t => t.key === pipeline.environmentType.key
+  let type = schema.allConfigTypes.find(
+    t => t.key === schema.rootEnvironmentType.key
   );
   if (!type || type.__typename !== "CompositeConfigType") {
     return null;
@@ -513,7 +515,7 @@ function findAutocompletionContext(
         childEntriesUnique = false;
       }
 
-      type = pipeline.configTypes.find(t => t.key === childTypeKey);
+      type = schema.allConfigTypes.find(t => t.key === childTypeKey);
       if (!type) {
         return null;
       }
@@ -538,8 +540,8 @@ function findAutocompletionContext(
 
 // Find context for a fully- or partially- typed key or value in the YAML document
 export function expandAutocompletionContextAtCursor(editor: any) {
-  const pipeline: ConfigEditorPipelineFragment =
-    editor.options.hintOptions.pipeline;
+  const schema: ConfigEditorEnvironmentSchemaFragment =
+    editor.options.hintOptions.schema;
 
   const cursor = editor.getCursor();
   const token: CodemirrorToken = editor.getTokenAt(cursor);
@@ -558,8 +560,8 @@ export function expandAutocompletionContextAtCursor(editor: any) {
     start = token.start;
   }
 
-  // Takes the pipeline and the YAML tokenizer state and returns the
-  // pipeline type in scope and available (yet-to-be-used) fields
+  // Takes the schema and the YAML tokenizer state and returns the
+  // type in scope and available (yet-to-be-used) fields
   // if it is a composite type.
   return {
     start,
@@ -567,7 +569,7 @@ export function expandAutocompletionContextAtCursor(editor: any) {
     searchString,
     token,
     prevToken,
-    context: findAutocompletionContext(pipeline, token.state.parents, start)
+    context: findAutocompletionContext(schema, token.state.parents, start)
   };
 }
 
@@ -599,15 +601,15 @@ type ValidationError = {
 CodeMirror.registerHelper("dagster-docs", "yaml", (editor: any, pos: any) => {
   const token = editor.getTokenAt(pos);
 
-  const pipeline: ConfigEditorPipelineFragment =
-    editor.options.hintOptions.pipeline;
+  const schema: ConfigEditorEnvironmentSchemaFragment =
+    editor.options.hintOptions.schema;
 
   if (token.type !== "atom") {
     return null;
   }
 
   const context = findAutocompletionContext(
-    pipeline,
+    schema,
     token.state.parents,
     token.start
   );

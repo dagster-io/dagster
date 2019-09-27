@@ -32,11 +32,12 @@ import {
   IExecutionSessionChanges
 } from "../LocalStorage";
 import {
-  CONFIG_EDITOR_PIPELINE_FRAGMENT,
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
+  CONFIG_EDITOR_ENVIRONMENT_SCHEMA_FRAGMENT,
   responseToValidationResult
 } from "../configeditor/ConfigEditorUtils";
 
+import { ConfigEditorEnvironmentSchemaFragment } from "../configeditor/types/ConfigEditorEnvironmentSchemaFragment";
 import {
   PreviewConfigQuery,
   PreviewConfigQueryVariables
@@ -45,6 +46,10 @@ import {
   PipelineExecutionContainerFragment,
   PipelineExecutionContainerFragment_InvalidSubsetError
 } from "./types/PipelineExecutionContainerFragment";
+import {
+  PipelineExecutionContainerEnvironmentSchemaFragment,
+  PipelineExecutionContainerEnvironmentSchemaFragment_ModeNotFoundError
+} from "./types/PipelineExecutionContainerEnvironmentSchemaFragment";
 import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
 import {
   StartPipelineExecution,
@@ -58,6 +63,7 @@ interface IPipelineExecutionContainerProps {
   data: IStorageData;
   onSave: (data: IStorageData) => void;
   pipelineOrError: PipelineExecutionContainerFragment;
+  environmentSchemaOrError: PipelineExecutionContainerEnvironmentSchemaFragment;
   pipelineName: string;
   currentSession: IExecutionSession;
 }
@@ -73,6 +79,10 @@ export type SubsetError =
   | PipelineExecutionContainerFragment_InvalidSubsetError
   | undefined;
 
+export type ModeNotFoundError =
+  | PipelineExecutionContainerEnvironmentSchemaFragment_ModeNotFoundError
+  | undefined;
+
 export default class PipelineExecutionContainer extends React.Component<
   IPipelineExecutionContainerProps,
   IPipelineExecutionContainerState
@@ -84,21 +94,30 @@ export default class PipelineExecutionContainer extends React.Component<
         ... on InvalidSubsetError {
           message
           pipeline {
-            name
             ...PipelineDetailsFragment
           }
         }
       }
 
       fragment PipelineDetailsFragment on Pipeline {
+        name
         modes {
           name
           description
         }
-        ...ConfigEditorPipelineFragment
       }
-
-      ${CONFIG_EDITOR_PIPELINE_FRAGMENT}
+    `,
+    EnvironmentSchemaOrErrorFragment: gql`
+      fragment PipelineExecutionContainerEnvironmentSchemaFragment on EnvironmentSchemaOrError {
+        __typename
+        ... on EnvironmentSchema {
+          ...ConfigEditorEnvironmentSchemaFragment
+        }
+        ... on ModeNotFoundError {
+          message
+        }
+      }
+      ${CONFIG_EDITOR_ENVIRONMENT_SCHEMA_FRAGMENT}
     `
   };
 
@@ -157,6 +176,26 @@ export default class PipelineExecutionContainer extends React.Component<
       return obj.pipeline;
     }
     throw new Error(`Recieved unexpected "${obj.__typename}"`);
+  };
+
+  getEnvironmentSchema = ():
+    | ConfigEditorEnvironmentSchemaFragment
+    | undefined => {
+    const obj = this.props.environmentSchemaOrError;
+    if (obj.__typename === "EnvironmentSchema") {
+      return obj;
+    } else {
+      return undefined;
+    }
+  };
+
+  getModeError = (): ModeNotFoundError => {
+    const obj = this.props.environmentSchemaOrError;
+    if (obj.__typename === "ModeNotFoundError") {
+      return obj;
+    } else {
+      return undefined;
+    }
   };
 
   getSubsetError = (): SubsetError => {
@@ -225,6 +264,8 @@ export default class PipelineExecutionContainer extends React.Component<
     const { preview, editorHelpContext } = this.state;
     const pipeline = this.getPipeline();
     const subsetError = this.getSubsetError();
+    const environmentSchema = this.getEnvironmentSchema();
+    const modeError = this.getModeError();
 
     return (
       <>
@@ -272,7 +313,7 @@ export default class PipelineExecutionContainer extends React.Component<
                 {client => (
                   <ConfigEditor
                     readOnly={false}
-                    pipeline={pipeline}
+                    environmentSchema={environmentSchema}
                     configCode={currentSession.environmentConfigYaml}
                     onConfigChange={this.onConfigChange}
                     onHelpContextChange={next => {
@@ -333,6 +374,7 @@ export default class PipelineExecutionContainer extends React.Component<
                   />
                   <ConfigEditorModePicker
                     pipeline={pipeline}
+                    modeError={modeError}
                     onModeChange={this.onModeChange}
                     modeName={currentSession.mode}
                   />

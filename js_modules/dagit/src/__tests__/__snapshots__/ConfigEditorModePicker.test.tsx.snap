@@ -1,5 +1,74 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`renders error mode 1`] = `
+<div>
+  <span
+    className="bp3-popover-wrapper"
+  >
+    <span
+      className="bp3-popover-target"
+      onClick={[Function]}
+    >
+      <div
+        className=""
+        onKeyDown={[Function]}
+      >
+        <button
+          className="bp3-button bp3-intent-warning"
+          onKeyDown={[Function]}
+          onKeyUp={[Function]}
+          type="button"
+        >
+          <span
+            className="bp3-icon bp3-icon-warning-sign"
+            icon="warning-sign"
+          >
+            <svg
+              data-icon="warning-sign"
+              height={16}
+              viewBox="0 0 16 16"
+              width={16}
+            >
+              <desc>
+                warning-sign
+              </desc>
+              <path
+                d="M15.84 13.5l.01-.01-7-12-.01.01c-.17-.3-.48-.5-.85-.5s-.67.2-.85.5l-.01-.01-7 12 .01.01c-.09.15-.15.31-.15.5 0 .55.45 1 1 1h14c.55 0 1-.45 1-1 0-.19-.06-.35-.15-.5zm-6.85-.51h-2v-2h2v2zm0-3h-2v-5h2v5z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
+          <span
+            className="bp3-button-text"
+          >
+            Invalid Mode Selection
+          </span>
+          <span
+            className="bp3-icon bp3-icon-caret-down"
+            icon="caret-down"
+          >
+            <svg
+              data-icon="caret-down"
+              height={16}
+              viewBox="0 0 16 16"
+              width={16}
+            >
+              <desc>
+                caret-down
+              </desc>
+              <path
+                d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 0 0-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
+        </button>
+      </div>
+    </span>
+  </span>
+</div>
+`;
+
 exports[`renders multi mode pipelines 1`] = `
 <div>
   <span

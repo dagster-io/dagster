@@ -35,20 +35,26 @@ export const PipelineExecutionRoot: React.FunctionComponent<
     >
       {(result: QueryResult<PipelineExecutionRootQuery, any>) => {
         const pipelineOrError = result.data && result.data.pipelineOrError;
+        const environmentSchemaOrError =
+          result.data && result.data.environmentSchemaOrError;
 
         if (
           !pipelineOrError ||
+          !environmentSchemaOrError ||
+          environmentSchemaOrError.__typename === "PipelineNotFoundError" ||
           pipelineOrError.__typename === "PipelineNotFoundError"
         ) {
+          const message =
+            pipelineOrError &&
+            pipelineOrError.__typename === "PipelineNotFoundError"
+              ? pipelineOrError.message
+              : "No data returned from GraphQL";
+
           return (
             <NonIdealState
               icon={IconNames.FLOW_BRANCH}
               title="Pipeline Not Found"
-              description={
-                pipelineOrError
-                  ? pipelineOrError.message
-                  : "No data returned from GraphQL"
-              }
+              description={message}
             />
           );
         }
@@ -68,6 +74,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<
             data={data}
             onSave={onSave}
             pipelineOrError={pipelineOrError}
+            environmentSchemaOrError={environmentSchemaOrError}
             pipelineName={params.pipelineName}
             currentSession={data.sessions[data.current]}
           />
@@ -92,7 +99,14 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       }
       ...PipelineExecutionContainerFragment
     }
+    environmentSchemaOrError(
+      selector: { name: $name, solidSubset: $solidSubset }
+      mode: $mode
+    ) {
+      ...PipelineExecutionContainerEnvironmentSchemaFragment
+    }
   }
 
   ${PipelineExecutionContainer.fragments.PipelineExecutionContainerFragment}
+  ${PipelineExecutionContainer.fragments.EnvironmentSchemaOrErrorFragment}
 `;

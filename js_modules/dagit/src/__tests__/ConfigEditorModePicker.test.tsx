@@ -4,15 +4,11 @@ import { BrowserRouter } from "react-router-dom";
 
 import ConfigEditorModePicker from "../execute/ConfigEditorModePicker";
 import { PipelineExecutionContainerFragment } from "../execute/types/PipelineExecutionContainerFragment";
+import { ModeNotFoundError } from "../execute/PipelineExecutionContainer";
 
 it("renders single mode pipelines", () => {
   const singleModePipelineData: PipelineExecutionContainerFragment = {
     __typename: "Pipeline",
-    configTypes: [],
-    environmentType: {
-      __typename: "CompositeConfigType",
-      key: "SingleModePipeline.Mode.Default.Environment"
-    },
     modes: [
       {
         __typename: "Mode",
@@ -24,22 +20,14 @@ it("renders single mode pipelines", () => {
   };
   const componentNullSelected = TestRenderer.create(
     <BrowserRouter>
-      <ConfigEditorModePicker
-        pipeline={singleModePipelineData}
-        modeName={null}
-        onModeChange={() => null}
-      />
+      <ConfigEditorModePicker pipeline={singleModePipelineData} />
     </BrowserRouter>
   );
   expect(componentNullSelected.toJSON()).toMatchSnapshot();
 
   const componentDefaultSelected = TestRenderer.create(
     <BrowserRouter>
-      <ConfigEditorModePicker
-        pipeline={singleModePipelineData}
-        modeName={"default"}
-        onModeChange={() => null}
-      />
+      <ConfigEditorModePicker pipeline={singleModePipelineData} />
     </BrowserRouter>
   );
   expect(componentDefaultSelected.toJSON()).toMatchSnapshot();
@@ -48,11 +36,6 @@ it("renders single mode pipelines", () => {
 it("renders multi mode pipelines", () => {
   const multiModePipelineData: PipelineExecutionContainerFragment = {
     __typename: "Pipeline",
-    configTypes: [],
-    environmentType: {
-      __typename: "CompositeConfigType",
-      key: "MultiModePipeline.Mode.Default.Environment"
-    },
     modes: [
       {
         __typename: "Mode",
@@ -69,11 +52,7 @@ it("renders multi mode pipelines", () => {
   };
   const componentNullSelected = TestRenderer.create(
     <BrowserRouter>
-      <ConfigEditorModePicker
-        pipeline={multiModePipelineData}
-        modeName={null}
-        onModeChange={() => null}
-      />
+      <ConfigEditorModePicker pipeline={multiModePipelineData} />
     </BrowserRouter>
   );
   expect(componentNullSelected.toJSON()).toMatchSnapshot();
@@ -82,10 +61,38 @@ it("renders multi mode pipelines", () => {
     <BrowserRouter>
       <ConfigEditorModePicker
         pipeline={multiModePipelineData}
-        modeName={"mode1"}
-        onModeChange={() => null}
+        modeName="mode1"
       />
     </BrowserRouter>
   );
   expect(componentMode1Selected.toJSON()).toMatchSnapshot();
+});
+
+it("renders error mode", () => {
+  const pipeline: PipelineExecutionContainerFragment = {
+    __typename: "Pipeline",
+    modes: [
+      {
+        __typename: "Mode",
+        description: "Mode 1",
+        name: "mode_1"
+      },
+      {
+        __typename: "Mode",
+        description: "Mode 2",
+        name: "mode_2"
+      }
+    ],
+    name: "multi_mode_pipeline"
+  };
+  const error: ModeNotFoundError = {
+    __typename: "ModeNotFoundError",
+    message: "Mode Not Found"
+  };
+  const componentNullSelected = TestRenderer.create(
+    <BrowserRouter>
+      <ConfigEditorModePicker pipeline={pipeline} modeError={error} />
+    </BrowserRouter>
+  );
+  expect(componentNullSelected.toJSON()).toMatchSnapshot();
 });

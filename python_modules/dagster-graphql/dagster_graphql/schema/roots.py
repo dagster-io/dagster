@@ -100,7 +100,7 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('EnvironmentSchemaOrError'),
         args={
             'selector': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
-            'mode': dauphin.Argument(dauphin.NonNull(dauphin.String)),
+            'mode': dauphin.Argument(dauphin.String),
         },
         description='''Fetch an environment schema given an execution selection and a mode.
         See the descripton on EnvironmentSchema for more information.''',

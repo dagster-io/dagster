@@ -3,13 +3,12 @@ import { ValidationResult } from "./codemirror-yaml/mode";
 import { ConfigEditorValidationFragment } from "./types/ConfigEditorValidationFragment";
 import { ConfigEditorHelpConfigTypeFragment } from "../execute/ConfigEditorHelp";
 
-export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
-  fragment ConfigEditorPipelineFragment on Pipeline {
-    name
-    environmentType(mode: $mode) {
+export const CONFIG_EDITOR_ENVIRONMENT_SCHEMA_FRAGMENT = gql`
+  fragment ConfigEditorEnvironmentSchemaFragment on EnvironmentSchema {
+    rootEnvironmentType {
       key
     }
-    configTypes(mode: $mode) {
+    allConfigTypes {
       __typename
       key
       name

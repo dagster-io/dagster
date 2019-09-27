@@ -13,8 +13,12 @@ from .utils import UserFacingGraphQLError, capture_dauphin_error
 def resolve_environment_schema_or_error(graphene_info, selector, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
+    check.opt_str_param(mode, 'mode')
 
     dagster_pipeline = get_dagster_pipeline_from_selector(graphene_info, selector)
+
+    if mode is None:
+        mode = dagster_pipeline.get_default_mode_name()
 
     if not dagster_pipeline.has_mode_definition(mode):
         raise UserFacingGraphQLError(

@@ -19,9 +19,9 @@ import "codemirror/keymap/sublime";
 import { Controlled as CodeMirrorReact } from "react-codemirror2";
 import { Editor } from "codemirror";
 import {
-  ConfigEditorPipelineFragment,
-  ConfigEditorPipelineFragment_configTypes
-} from "./types/ConfigEditorPipelineFragment";
+  ConfigEditorEnvironmentSchemaFragment,
+  ConfigEditorEnvironmentSchemaFragment_allConfigTypes
+} from "./types/ConfigEditorEnvironmentSchemaFragment";
 import "./codemirror-yaml/mode";
 import {
   LintJson as YamlModeLintJson,
@@ -41,7 +41,7 @@ interface ConfigEditorProps {
   configCode: string;
   onConfigChange: (newValue: string) => void;
   onHelpContextChange: (helpContext: ConfigEditorHelpContext | null) => void;
-  pipeline?: ConfigEditorPipelineFragment;
+  environmentSchema?: ConfigEditorEnvironmentSchemaFragment;
   readOnly: boolean;
   showWhitespace: boolean;
 }
@@ -82,7 +82,7 @@ const CodeMirrorWhitespaceStyle = createGlobalStyle`
 `;
 
 export interface ConfigEditorHelpContext {
-  type: ConfigEditorPipelineFragment_configTypes;
+  type: ConfigEditorEnvironmentSchemaFragment_allConfigTypes;
 }
 
 export class ConfigEditor extends React.Component<ConfigEditorProps> {
@@ -90,7 +90,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
 
   componentDidUpdate(prevProps: ConfigEditorProps) {
     if (!this._editor) return;
-    if (prevProps.pipeline === this.props.pipeline) return;
+    if (prevProps.environmentSchema === this.props.environmentSchema) return;
     performLint(this._editor);
   }
 
@@ -119,7 +119,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
               hintOptions: {
                 completeSingle: false,
                 closeOnUnfocus: false,
-                pipeline: this.props.pipeline
+                schema: this.props.environmentSchema
               },
               keyMap: "sublime",
               extraKeys: {

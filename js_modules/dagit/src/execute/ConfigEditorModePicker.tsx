@@ -1,12 +1,15 @@
 import * as React from "react";
-import { Button, Menu } from "@blueprintjs/core";
+import { Button, Intent, Menu } from "@blueprintjs/core";
+import { IconNames } from "@blueprintjs/icons";
 import { Select } from "@blueprintjs/select";
 import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
+import { ModeNotFoundError } from "./PipelineExecutionContainer";
 
 interface IConfigEditorModePickerProps {
   pipeline: PipelineDetailsFragment;
-  modeName: string | null;
-  onModeChange: (mode: string) => void;
+  modeError?: ModeNotFoundError;
+  modeName?: string | null;
+  onModeChange?: (mode: string) => void;
 }
 
 interface Mode {
@@ -31,7 +34,7 @@ export default class ConfigEditorModePicker extends React.PureComponent<
   componentDidMount() {
     const currentMode = this.getCurrentMode();
     if (currentMode) {
-      this.props.onModeChange(currentMode.name);
+      this.props.onModeChange && this.props.onModeChange(currentMode.name);
     }
   }
 
@@ -40,13 +43,14 @@ export default class ConfigEditorModePicker extends React.PureComponent<
     const prevMode = this.getModeFromProps(prevProps);
 
     if (currentMode && currentMode !== prevMode) {
-      this.props.onModeChange(currentMode.name);
+      this.props.onModeChange && this.props.onModeChange(currentMode.name);
     }
   }
 
   render() {
     const singleMode = this.props.pipeline.modes.length === 1;
     const currentMode = this.getCurrentMode();
+    const valid = !this.props.modeError;
 
     return (
       <div>
@@ -69,9 +73,16 @@ export default class ConfigEditorModePicker extends React.PureComponent<
           onItemSelect={this.onItemSelect}
         >
           <Button
-            text={currentMode ? "Mode: " + currentMode.name : "Select Mode"}
+            icon={valid ? "insert" : IconNames.WARNING_SIGN}
+            intent={valid ? Intent.NONE : Intent.WARNING}
+            text={
+              valid
+                ? currentMode
+                  ? `Mode: ${currentMode.name}`
+                  : "Select Mode"
+                : "Invalid Mode Selection"
+            }
             disabled={singleMode}
-            icon="insert"
             rightIcon="caret-down"
           />
         </ModeSelect>
@@ -80,6 +91,6 @@ export default class ConfigEditorModePicker extends React.PureComponent<
   }
 
   private onItemSelect = (mode: Mode) => {
-    this.props.onModeChange(mode.name);
+    this.props.onModeChange && this.props.onModeChange(mode.name);
   };
 }

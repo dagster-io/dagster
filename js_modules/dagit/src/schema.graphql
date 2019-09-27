@@ -777,7 +777,7 @@ type Query {
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
-  environmentSchemaOrError(selector: ExecutionSelector!, mode: String!): EnvironmentSchemaOrError!
+  environmentSchemaOrError(selector: ExecutionSelector!, mode: String): EnvironmentSchemaOrError!
   enabledFeatures: [String!]!
 }
 
