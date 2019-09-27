@@ -266,7 +266,6 @@ class DagsterInstance:
     def has_run(self, run_id):
         return self._run_storage.has_run(run_id)
 
-    @property
     def all_runs(self):
         return self._run_storage.all_runs()
 

@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
@@ -89,11 +89,6 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     def wipe(self):
         '''Clears the run storage.'''
 
-    @abstractproperty
-    def is_persistent(self):
-        '''(bool) Whether the run storage persists after the process that
-        created it dies.'''
-
 
 class InMemoryRunStorage(RunStorage):
     def __init__(self):
@@ -133,10 +128,6 @@ class InMemoryRunStorage(RunStorage):
 
     def has_run(self, run_id):
         return run_id in self._runs
-
-    @property
-    def is_persistent(self):
-        return False
 
     def wipe(self):
         self._runs = OrderedDict()
@@ -337,7 +328,3 @@ class SqliteRunStorage(RunStorage, ConfigurableClass):
         with self._connect() as conn:
             conn.cursor().execute(DELETE_RUNS_SQL)
             conn.cursor().execute(DELETE_RUN_TAGS_SQL)
-
-    @property
-    def is_persistent(self):
-        return True

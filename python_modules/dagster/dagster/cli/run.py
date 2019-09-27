@@ -13,7 +13,7 @@ def create_run_cli_group():
 @click.command(name='list', help='List the runs in this dagster installation.')
 def run_list_command():
     instance = DagsterInstance.get()
-    for run in instance.all_runs:
+    for run in instance.all_runs():
         click.echo('Run: {}'.format(run.run_id))
         click.echo('     Pipeline: {}'.format(run.pipeline_name))
 
