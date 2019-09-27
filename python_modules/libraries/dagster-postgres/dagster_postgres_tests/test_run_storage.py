@@ -17,7 +17,9 @@ def pg_db():
         yield
 
 
-def build_run(run_id, pipeline_name, mode='default', tags=None):
+def build_run(
+    run_id, pipeline_name, mode='default', tags=None, status=PipelineRunStatus.NOT_STARTED
+):
     return PipelineRun(
         pipeline_name=pipeline_name,
         run_id=run_id,
@@ -27,7 +29,7 @@ def build_run(run_id, pipeline_name, mode='default', tags=None):
         reexecution_config=None,
         step_keys_to_execute=None,
         tags=tags,
-        status=PipelineRunStatus.NOT_STARTED,
+        status=status,
     )
 
 
@@ -169,3 +171,75 @@ def test_slice():
     sliced_runs = storage.all_runs_for_tag('mytag', 'hello', cursor=three, limit=1)
     assert len(sliced_runs) == 1
     assert sliced_runs[0].run_id == two
+
+
+def test_fetch_by_status():
+    storage = PostgresRunStorage.create_nuked_storage(get_test_conn_string())
+    assert storage
+    one = str(uuid.uuid4())
+    two = str(uuid.uuid4())
+    three = str(uuid.uuid4())
+    four = str(uuid.uuid4())
+    storage.add_run(
+        build_run(run_id=one, pipeline_name='some_pipeline', status=PipelineRunStatus.NOT_STARTED)
+    )
+    storage.add_run(
+        build_run(run_id=two, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+    )
+    storage.add_run(
+        build_run(run_id=three, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+    )
+    storage.add_run(
+        build_run(run_id=four, pipeline_name='some_pipeline', status=PipelineRunStatus.FAILURE)
+    )
+
+    assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.NOT_STARTED)} == {
+        one
+    }
+
+    assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.STARTED)} == {
+        two,
+        three,
+    }
+
+    assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.FAILURE)} == {four}
+
+    assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.SUCCESS)} == set()
+
+
+def test_fetch_by_status_cursored():
+    storage = PostgresRunStorage.create_nuked_storage(get_test_conn_string())
+    assert storage
+    one = str(uuid.uuid4())
+    two = str(uuid.uuid4())
+    three = str(uuid.uuid4())
+    four = str(uuid.uuid4())
+    storage.add_run(
+        build_run(run_id=one, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+    )
+    storage.add_run(
+        build_run(run_id=two, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+    )
+    storage.add_run(
+        build_run(run_id=three, pipeline_name='some_pipeline', status=PipelineRunStatus.NOT_STARTED)
+    )
+    storage.add_run(
+        build_run(run_id=four, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+    )
+
+    cursor_four_runs = storage.get_runs_for_status(PipelineRunStatus.STARTED, cursor=four)
+    assert len(cursor_four_runs) == 2
+    assert {run.run_id for run in cursor_four_runs} == {one, two}
+
+    cursor_two_runs = storage.get_runs_for_status(PipelineRunStatus.STARTED, cursor=two)
+    assert len(cursor_two_runs) == 1
+    assert {run.run_id for run in cursor_two_runs} == {one}
+
+    cursor_one_runs = storage.get_runs_for_status(PipelineRunStatus.STARTED, cursor=one)
+    assert not cursor_one_runs
+
+    cursor_four_limit_one = storage.get_runs_for_status(
+        PipelineRunStatus.STARTED, cursor=four, limit=1
+    )
+    assert len(cursor_four_limit_one) == 1
+    assert cursor_four_limit_one[0].run_id == two

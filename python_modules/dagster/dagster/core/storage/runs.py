@@ -35,7 +35,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''Return all the runs present in the storage.
 
         Returns:
-            List[PipelineRun]: Tuples of run_id, pipeline_run.
+            List[PipelineRun]
         '''
 
     @abstractmethod
@@ -44,9 +44,10 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
         Args:
             pipeline_name (str): The pipeline to index on
-
+            cursor (Optional[str]): Starting cursor (run_id) of range of runs
+            limit (Optional[int]): Number of results to get. Defaults to infinite.
         Returns:
-            List[PipelineRun]: Tuples of run_id, pipeline_run.
+            List[PipelineRun]
         '''
 
     @abstractmethod
@@ -56,9 +57,24 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         Args:
             key (str): The key to index on
             value (str): The value to match
+            cursor (Optional[str]): Starting cursor (run_id) of range of runs
+            limit (Optional[int]): Number of results to get. Defaults to infinite.
 
         Returns:
-            List[PipelineRun]: Tuples of run_id, pipeline_run.
+            List[PipelineRun]
+        '''
+
+    @abstractmethod
+    def get_runs_for_status(self, run_status, cursor=None, limit=None):
+        '''Run all the runs matching a particular status
+
+        Args:
+            run_status (PipelineRunStatus)
+            cursor (Optional[str]): Starting cursor (run_id) of range of runs
+            limit (Optional[int]): Number of results to get. Defaults to infinite.
+
+        Returns:
+            List[PipelineRun]:
         '''
 
     @abstractmethod
@@ -141,6 +157,13 @@ class InMemoryRunStorage(RunStorage):
     def get_run_by_id(self, run_id):
         check.str_param(run_id, 'run_id')
         return self._runs.get(run_id)
+
+    def get_runs_for_status(self, run_status, cursor=None, limit=None):
+        check.inst_param(run_status, 'run_status', PipelineRunStatus)
+        matching_runs = list(
+            filter(lambda run: run.status == run_status, reversed(self._runs.values()))
+        )
+        return self._slice(matching_runs, cursor=cursor, limit=limit)
 
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')
@@ -225,7 +248,7 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
             RunsTable.update()  # pylint: disable=no-value-for-parameter
             .where(RunsTable.c.run_id == run_id)
             .values(
-                status=str(new_pipeline_status),
+                status=new_pipeline_status.value,
                 run_body=serialize_dagster_namedtuple(run.run_with_status(new_pipeline_status)),
                 update_timestamp=datetime.now(),
             )
@@ -289,6 +312,14 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
             .select_from(RunsTable.join(RunTagsTable))
             .where(db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value))
         )
+        query = self._build_query(base_query, cursor, limit)
+        rows = self.connect().execute(query).fetchall()
+        return self._rows_to_runs(rows)
+
+    def get_runs_for_status(self, run_status, cursor=None, limit=None):
+        check.inst_param(run_status, 'run_status', PipelineRunStatus)
+
+        base_query = db.select([RunsTable.c.run_body]).where(RunsTable.c.status == run_status.value)
         query = self._build_query(base_query, cursor, limit)
         rows = self.connect().execute(query).fetchall()
         return self._rows_to_runs(rows)

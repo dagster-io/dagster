@@ -1,3 +1,4 @@
+import time
 import uuid
 from contextlib import contextmanager
 
@@ -22,7 +23,9 @@ def do_test_single_write_read(instance):
     assert list(instance.all_runs()) == []
 
 
-def build_run(run_id, pipeline_name, mode='default', tags=None):
+def build_run(
+    run_id, pipeline_name, mode='default', tags=None, status=PipelineRunStatus.NOT_STARTED
+):
     from dagster.core.definitions.pipeline import ExecutionSelector
 
     return PipelineRun(
@@ -34,7 +37,7 @@ def build_run(run_id, pipeline_name, mode='default', tags=None):
         reexecution_config=None,
         step_keys_to_execute=None,
         tags=tags,
-        status=PipelineRunStatus.NOT_STARTED,
+        status=status,
     )
 
 
@@ -158,3 +161,92 @@ def test_paginated_fetch(run_storage_factory_cm_fn):
         sliced_runs = storage.all_runs_for_tag('mytag', 'hello', cursor=three, limit=1)
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
+
+
+@run_storage_test
+def test_fetch_by_status(run_storage_factory_cm_fn):
+    with run_storage_factory_cm_fn() as storage:
+        assert storage
+        one = str(uuid.uuid4())
+        two = str(uuid.uuid4())
+        three = str(uuid.uuid4())
+        four = str(uuid.uuid4())
+        storage.add_run(
+            build_run(
+                run_id=one, pipeline_name='some_pipeline', status=PipelineRunStatus.NOT_STARTED
+            )
+        )
+        storage.add_run(
+            build_run(run_id=two, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+        )
+        storage.add_run(
+            build_run(run_id=three, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+        )
+        storage.add_run(
+            build_run(run_id=four, pipeline_name='some_pipeline', status=PipelineRunStatus.FAILURE)
+        )
+
+        assert {
+            run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.NOT_STARTED)
+        } == {one}
+
+        assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.STARTED)} == {
+            two,
+            three,
+        }
+
+        assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.FAILURE)} == {
+            four
+        }
+
+        assert {
+            run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.SUCCESS)
+        } == set()
+
+
+@run_storage_test
+def test_fetch_by_status_cursored(run_storage_factory_cm_fn):
+    # Sketch as hell. We require a sleep in between inserts to guarantee insertion order
+    # https://github.com/dagster-io/dagster/issues/1768
+    PAUSE_TIME = 1.1
+    with run_storage_factory_cm_fn() as storage:
+        assert storage
+        one = str(uuid.uuid4())
+        two = str(uuid.uuid4())
+        three = str(uuid.uuid4())
+        four = str(uuid.uuid4())
+        time.sleep(PAUSE_TIME)
+        storage.add_run(
+            build_run(run_id=one, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+        )
+        time.sleep(PAUSE_TIME)
+        storage.add_run(
+            build_run(run_id=two, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+        )
+        time.sleep(PAUSE_TIME)
+        storage.add_run(
+            build_run(
+                run_id=three, pipeline_name='some_pipeline', status=PipelineRunStatus.NOT_STARTED
+            )
+        )
+        time.sleep(PAUSE_TIME)
+        storage.add_run(
+            build_run(run_id=four, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+        )
+
+        cursor_four_runs = storage.get_runs_for_status(PipelineRunStatus.STARTED, cursor=four)
+        assert len(cursor_four_runs) == 2
+        assert {run.run_id for run in cursor_four_runs} == {one, two}
+
+        cursor_two_runs = storage.get_runs_for_status(PipelineRunStatus.STARTED, cursor=two)
+        assert len(cursor_two_runs) == 1
+        assert {run.run_id for run in cursor_two_runs} == {one}
+
+        cursor_one_runs = storage.get_runs_for_status(PipelineRunStatus.STARTED, cursor=one)
+        assert not cursor_one_runs
+
+        cursor_four_limit_one = storage.get_runs_for_status(
+            PipelineRunStatus.STARTED, cursor=four, limit=1
+        )
+        assert len(cursor_four_limit_one) == 1
+        assert cursor_four_limit_one[0].run_id == two
