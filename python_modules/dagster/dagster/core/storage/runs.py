@@ -117,7 +117,7 @@ class InMemoryRunStorage(RunStorage):
             self._runs[run_id] = self._runs[run_id].run_with_status(PipelineRunStatus.FAILURE)
 
     def all_runs(self):
-        return self._runs.values()
+        return list(self._runs.values())
 
     def all_runs_for_pipeline(self, pipeline_name):
         check.str_param(pipeline_name, 'pipeline_name')
