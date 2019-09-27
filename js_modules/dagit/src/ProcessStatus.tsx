@@ -1,28 +1,17 @@
 import * as React from "react";
-import { useQuery, useMutation, useApolloClient } from "react-apollo";
+import { useQuery, useMutation } from "react-apollo";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Colors, Button, Spinner, Icon } from "@blueprintjs/core";
+import { Colors, Button, Icon, Tooltip } from "@blueprintjs/core";
 import { WebsocketStatusContext } from "./WebsocketStatus";
 import { ProcessStatusQuery } from "./types/ProcessStatusQuery";
 
 export default () => {
-  const apollo = useApolloClient();
   const socketState = React.useContext(WebsocketStatusContext);
   const [reload] = useMutation(RELOAD_DAGIT_MUTATION);
-  const [reloading, setReloading] = React.useState<boolean>(false);
   const { data } = useQuery<ProcessStatusQuery>(PROCESS_STATUS_QUERY, {
     fetchPolicy: "cache-and-network"
   });
-
-  React.useEffect(() => {
-    if (socketState === WebSocket.OPEN && reloading) {
-      setReloading(false);
-      apollo.resetStore();
-    } else if (socketState !== WebSocket.OPEN && !reloading) {
-      setReloading(true);
-    }
-  }, [socketState, reloading, apollo]);
 
   if (!data) {
     return <span />;
@@ -32,20 +21,27 @@ export default () => {
     <Label>
       {data.version}
       {data.reloadSupported && (
-        <Button
-          small={true}
-          text="Reload"
-          style={{ marginLeft: 8 }}
-          icon={
-            reloading ? (
-              <Spinner size={12} />
-            ) : (
-              <Icon icon="refresh" iconSize={12} />
-            )
+        <Tooltip
+          hoverOpenDelay={500}
+          content={
+            <div style={{ maxWidth: 300 }}>
+              Re-launch the web process and reload the UI to reflect the latest
+              metadata, including DAG structure, solid names, type names, etc.
+              <br />
+              <br />
+              Executing a pipeline run always uses the latest code on disk.
+            </div>
           }
-          disabled={reloading || socketState !== WebSocket.OPEN}
-          onClick={() => reload()}
-        />
+        >
+          <Button
+            small={true}
+            text="Reload"
+            style={{ marginLeft: 8 }}
+            icon={<Icon icon="refresh" iconSize={12} />}
+            disabled={socketState !== WebSocket.OPEN}
+            onClick={() => reload()}
+          />
+        </Tooltip>
       )}
     </Label>
   );
