@@ -1,5 +1,6 @@
 from dagster import ExecutionTargetHandle, check
 from dagster.core.instance import DagsterFeatures, DagsterInstance
+from dagster.core.reloader import DagsterReloader
 
 from .pipeline_execution_manager import PipelineExecutionManager
 
@@ -9,6 +10,7 @@ class DagsterGraphQLContext(object):
         self,
         handle,
         execution_manager,
+        reloader,
         instance,
         scheduler=None,
         raise_on_error=False,
@@ -16,6 +18,7 @@ class DagsterGraphQLContext(object):
     ):
         self._handle = check.inst_param(handle, 'handle', ExecutionTargetHandle)
         self.instance = check.inst_param(instance, 'instance', DagsterInstance)
+        self.reloader = check.inst_param(reloader, 'reloader', DagsterReloader)
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
         )

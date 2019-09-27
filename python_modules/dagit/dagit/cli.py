@@ -10,6 +10,7 @@ from dagster import ExecutionTargetHandle, check
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
 from dagster.core.instance import DagsterInstance
+from dagster.core.reloader import DagsterReloader
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 
 from .app import create_app
@@ -28,8 +29,10 @@ REPO_TARGET_WARNING = (
 @click.command(
     name='ui',
     help=(
-        'Run dagit. Loads a repository or pipeline.\n\n{warning}'.
-        format(warning=REPO_TARGET_WARNING) + (
+        'Run dagit. Loads a repository or pipeline.\n\n{warning}'.format(
+            warning=REPO_TARGET_WARNING
+        )
+        + (
             '\n\n Examples:'
             '\n\n1. dagit'
             '\n\n2. dagit -y path/to/{default_filename}'
@@ -54,8 +57,7 @@ REPO_TARGET_WARNING = (
 )
 @click.option(
     '--reload-trigger',
-    help=
-    "Optional file path being monitored by a parent process that dagit-cli can touch to re-launch itself.",
+    help="Optional file path being monitored by a parent process that dagit-cli can touch to re-launch itself.",
     default=None,
     hidden=True,
     type=click.Path(),
@@ -73,10 +75,10 @@ def ui(host, port, storage_fallback, reload_trigger, **kwargs):
 def host_dagit_ui(handle, host, port, storage_fallback=None, reload_trigger=None):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
 
-    instance = DagsterInstance.get(storage_fallback, watch_external_runs=True)
-    instance.reload_trigger = reload_trigger
+    instance = DagsterInstance.get(storage_fallback)
+    reloader = DagsterReloader(reload_trigger=reload_trigger)
 
-    app = create_app(handle, instance)
+    app = create_app(handle, instance, reloader)
 
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
     print('Serving on http://{host}:{port}'.format(host=host, port=port))
