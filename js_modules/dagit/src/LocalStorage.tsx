@@ -101,7 +101,14 @@ export type StorageHook = [
   React.Dispatch<React.SetStateAction<IStorageData>>
 ];
 
+let _open: IStorageData | null = null;
+let _openNamespace = "";
+
 function getStorageDataForNamespace(namespace: string) {
+  if (_open && _openNamespace === namespace) {
+    return _open;
+  }
+
   let data: IStorageData = {
     sessions: {},
     current: ""
@@ -120,24 +127,33 @@ function getStorageDataForNamespace(namespace: string) {
   if (!data.sessions[data.current]) {
     data.current = Object.keys(data.sessions)[0];
   }
+
+  _open = data;
+  _openNamespace = namespace;
+
   return data;
 }
 
-export function useStorage({ namespace }: { namespace: string }): StorageHook {
-  const [data, setData] = React.useState<IStorageData>(() =>
-    getStorageDataForNamespace(namespace)
-  );
+function writeStorageDataForNamespace(namespace: string, data: IStorageData) {
+  _open = data;
+  _openNamespace = namespace;
+  window.localStorage.setItem(`dagit.${namespace}`, JSON.stringify(data));
+}
 
-  React.useEffect(() => {
-    // When the namespace changes, re-initialize the data by reading from LocalStorage
-    // and running a few consistency checks to ensure a valid state.
-    setData(getStorageDataForNamespace(namespace));
-  }, [namespace]);
+/* React hook that provides local storage to the caller. A previous version of this
+loaded data into React state, but changing namespaces caused the data to be out-of-sync
+for one render (until a useEffect could update the data in state). Now we keep the
+current localStorage namespace in memory (in _open above) and React keeps a simple
+version flag it can use to trigger a re-render after changes are saved, so changing
+namespaces changes the returned data immediately.
+*/
+export function useStorage({ namespace }: { namespace: string }): StorageHook {
+  const [version, setVersion] = React.useState<number>(0);
 
   const onSave = (newData: IStorageData) => {
-    setData(newData);
-    window.localStorage.setItem(`dagit.${namespace}`, JSON.stringify(newData));
+    writeStorageDataForNamespace(namespace, newData);
+    setVersion(version + 1); // trigger a React render
   };
 
-  return [data, onSave];
+  return [getStorageDataForNamespace(namespace), onSave];
 }
