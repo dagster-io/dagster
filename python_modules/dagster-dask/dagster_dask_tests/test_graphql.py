@@ -17,7 +17,7 @@ def test_execute_hammer_through_dagit():
     )
     instance = DagsterInstance.local_temp()
 
-    execution_manager = SubprocessExecutionManager()
+    execution_manager = SubprocessExecutionManager(instance)
 
     context = DagsterGraphQLContext(
         handle=handle, execution_manager=execution_manager, instance=instance

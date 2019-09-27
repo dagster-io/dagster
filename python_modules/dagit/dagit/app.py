@@ -154,7 +154,7 @@ def create_app(handle, instance):
     schema = create_schema()
     subscription_server = DagsterSubscriptionServer(schema=schema)
 
-    execution_manager = SubprocessExecutionManager()
+    execution_manager = SubprocessExecutionManager(instance)
 
     print('Loading repository...')
 
