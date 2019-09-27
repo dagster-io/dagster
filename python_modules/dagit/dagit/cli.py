@@ -10,6 +10,7 @@ from dagster import ExecutionTargetHandle, check
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
 from dagster.core.instance import DagsterInstance
+from dagster.core.reloader import DagsterReloader
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 
 from .app import create_app
@@ -74,9 +75,9 @@ def host_dagit_ui(handle, host, port, storage_fallback=None, reload_trigger=None
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
 
     instance = DagsterInstance.get(storage_fallback, watch_external_runs=True)
-    instance.reload_trigger = reload_trigger
+    reloader = DagsterReloader(reload_trigger=reload_trigger)
 
-    app = create_app(handle, instance)
+    app = create_app(handle, instance, reloader)
 
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
     print('Serving on http://{host}:{port}'.format(host=host, port=port))

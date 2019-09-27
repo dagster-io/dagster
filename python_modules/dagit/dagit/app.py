@@ -21,6 +21,7 @@ from six import text_type
 
 from dagster import ExecutionTargetHandle, check, seven
 from dagster.core.instance import DagsterInstance
+from dagster.core.reloader import DagsterReloader
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.utils.log import get_stack_trace_array
 
@@ -43,7 +44,10 @@ def format_error_with_stack_trace(error):
     if isinstance(error, GraphQLError):
         if error.locations is not None:
             formatted_error['locations'] = [
-                {'line': loc.line, 'column': loc.column} for loc in error.locations
+                {
+                    'line': loc.line,
+                    'column': loc.column
+                } for loc in error.locations
             ]
         if error.path is not None:
             formatted_error['path'] = error.path
@@ -149,9 +153,10 @@ def download_view(context):
     return view
 
 
-def create_app(handle, instance):
+def create_app(handle, instance, reloader):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.inst_param(instance, 'instance', DagsterInstance)
+    check.inst_param(reloader, 'reloader', DagsterReloader)
 
     app = Flask('dagster-ui')
     sockets = Sockets(app)
@@ -165,7 +170,11 @@ def create_app(handle, instance):
     print('Loading repository...')
 
     context = DagsterGraphQLContext(
-        handle=handle, instance=instance, execution_manager=execution_manager, version=__version__
+        handle=handle,
+        instance=instance,
+        execution_manager=execution_manager,
+        reloader=reloader,
+        version=__version__
     )
 
     app.add_url_rule(
