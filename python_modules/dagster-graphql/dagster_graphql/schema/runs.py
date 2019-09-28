@@ -84,6 +84,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     environmentConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
     tags = dauphin.List(dauphin.NonNull('PipelineTag'))
+    canCancel = dauphin.NonNull(dauphin.Boolean)
 
     def __init__(self, pipeline_run):
         super(DauphinPipelineRun, self).__init__(
@@ -132,6 +133,9 @@ class DauphinPipelineRun(dauphin.ObjectType):
     @property
     def run_id(self):
         return self.runId
+
+    def resolve_canCancel(self, _graphene_info):
+        return self._pipeline_run.can_cancel
 
 
 class DauphinLogLevel(dauphin.Enum):

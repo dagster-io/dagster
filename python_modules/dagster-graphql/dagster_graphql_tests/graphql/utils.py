@@ -7,8 +7,12 @@ from .execution_queries import START_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUER
 from .setup import define_context
 
 
-def sync_execute_get_payload(variables, raise_on_error=True):
-    context = define_context(raise_on_error, instance=DagsterInstance.local_temp())
+def sync_execute_get_payload(variables, raise_on_error=True, context=None):
+    context = (
+        context
+        if context is not None
+        else define_context(raise_on_error, instance=DagsterInstance.local_temp())
+    )
 
     result = execute_dagster_graphql(context, START_PIPELINE_EXECUTION_QUERY, variables=variables)
 

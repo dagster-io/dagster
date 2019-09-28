@@ -1,10 +1,14 @@
 import csv
 import logging
+import time
 from collections import OrderedDict
 from copy import deepcopy
 
 from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
+from dagster_graphql.implementation.pipeline_execution_manager import (
+    SubprocessExecutionManager,
+    SynchronousExecutionManager,
+)
 from dagster_tests.utils import FilesytemTestScheduler
 
 from dagster import (
@@ -76,6 +80,15 @@ PoorMansDataFrame = as_dagster_type(
 )
 
 
+def define_subprocess_context(instance):
+    return DagsterGraphQLContext(
+        handle=ExecutionTargetHandle.for_repo_fn(define_repository),
+        instance=instance,
+        execution_manager=SubprocessExecutionManager(instance),
+        raise_on_error=False,
+    )
+
+
 def define_context(raise_on_error=True, instance=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
@@ -137,6 +150,30 @@ def csv_hello_world_solids_config_fs_storage():
     }
 
 
+@solid(config={'file': Field(Path)})
+def loop(context):
+    with open(context.solid_config['file'], 'w') as ff:
+        ff.write('yup')
+
+    while True:
+        time.sleep(0.1)
+
+
+@pipeline
+def infinite_loop_pipeline():
+    loop()
+
+
+@solid
+def noop_solid(_):
+    pass
+
+
+@pipeline
+def noop_pipeline():
+    noop_solid()
+
+
 def define_repository():
     return RepositoryDefinition(
         name='test',
@@ -146,6 +183,7 @@ def define_repository():
             csv_hello_world_df_input,
             csv_hello_world_two,
             csv_hello_world_with_expectations,
+            infinite_loop_pipeline,
             materialization_pipeline,
             more_complicated_config,
             more_complicated_nested_config,
@@ -161,6 +199,7 @@ def define_repository():
             scalar_output_pipeline,
             secret_pipeline,
             spew_pipeline,
+            noop_pipeline,
         ],
     )
 

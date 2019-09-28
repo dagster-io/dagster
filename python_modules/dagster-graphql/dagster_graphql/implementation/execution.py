@@ -29,6 +29,35 @@ from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error
+def cancel_pipeline_execution(graphene_info, run_id):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.str_param(run_id, 'run_id')
+
+    instance = graphene_info.context.instance
+    run = instance.get_run_by_id(run_id)
+
+    if not run:
+        return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
+
+    dauphin_run = graphene_info.schema.type_named('PipelineRun')(run)
+
+    if run.status != PipelineRunStatus.STARTED:
+        return graphene_info.schema.type_named('CancelPipelineExecutionFailure')(
+            run=dauphin_run,
+            message='Run {run_id} is not in a started state. Current status is {status}'.format(
+                run_id=run.run_id, status=run.status.value
+            ),
+        )
+
+    if not graphene_info.context.execution_manager.terminate(run_id):
+        return graphene_info.schema.type_named('CancelPipelineExecutionFailure')(
+            run=dauphin_run, message='Unable to terminate run {run_id}'.format(run_id=run.run_id)
+        )
+
+    return graphene_info.schema.type_named('CancelPipelineExecutionSuccess')(dauphin_run)
+
+
+@capture_dauphin_error
 def start_pipeline_execution(graphene_info, execution_params, reexecution_config):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)

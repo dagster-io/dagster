@@ -1,3 +1,14 @@
+type CancelPipelineExecutionFailure {
+  run: PipelineRun!
+  message: String!
+}
+
+union CancelPipelineExecutionResult = CancelPipelineExecutionSuccess | CancelPipelineExecutionFailure | PipelineRunNotFoundError
+
+type CancelPipelineExecutionSuccess {
+  run: PipelineRun!
+}
+
 type CompositeConfigType implements ConfigType {
   key: String!
   name: String
@@ -484,6 +495,7 @@ type Mutation {
   startSchedule(scheduleName: String!): RunningScheduleResult!
   stopRunningSchedule(scheduleName: String!): RunningScheduleResult!
   reloadDagit: Boolean!
+  cancelPipelineExecution(runId: String!): CancelPipelineExecutionResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -682,6 +694,7 @@ type PipelineRun {
   environmentConfigYaml: String!
   mode: String!
   tags: [PipelineTag!]
+  canCancel: Boolean!
 }
 
 union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineProcessExitedEvent | PipelineProcessStartedEvent | PipelineProcessStartEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent

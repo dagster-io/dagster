@@ -7,6 +7,7 @@ from dagster_graphql.implementation.environment_schema import (
 from dagster_graphql.implementation.execution import (
     ExecutionMetadata,
     ExecutionParams,
+    cancel_pipeline_execution,
     do_execute_plan,
     get_compute_log_observable,
     get_pipeline_run_observable,
@@ -196,6 +197,31 @@ class DauphinReexecutionConfig(dauphin.InputObjectType):
         )
 
 
+class DauphinCancelPipelineExecutionSuccess(dauphin.ObjectType):
+    class Meta:
+        name = 'CancelPipelineExecutionSuccess'
+
+    run = dauphin.Field(dauphin.NonNull('PipelineRun'))
+
+
+class DauphinCancelPipelineExecutionFailure(dauphin.ObjectType):
+    class Meta:
+        name = 'CancelPipelineExecutionFailure'
+
+    run = dauphin.NonNull('PipelineRun')
+    message = dauphin.NonNull(dauphin.String)
+
+
+class DauphinCancelPipelineExecutionResult(dauphin.Union):
+    class Meta:
+        name = 'CancelPipelineExecutionResult'
+        types = (
+            'CancelPipelineExecutionSuccess',
+            'CancelPipelineExecutionFailure',
+            'PipelineRunNotFoundError',
+        )
+
+
 class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
     class Meta:
         name = 'StartPipelineExecutionMutation'
@@ -214,6 +240,19 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
             if 'reexecutionConfig' in kwargs
             else None,
         )
+
+
+class DauphinCancelPipelineExecutionMutation(dauphin.Mutation):
+    class Meta:
+        name = 'CancelPipelineExecutionMutation'
+
+    class Arguments:
+        runId = dauphin.NonNull(dauphin.String)
+
+    Output = dauphin.NonNull('CancelPipelineExecutionResult')
+
+    def mutate(self, graphene_info, **kwargs):
+        return cancel_pipeline_execution(graphene_info, kwargs['runId'])
 
 
 class DauphinExecutionTag(dauphin.InputObjectType):
@@ -263,17 +302,17 @@ def create_execution_params(graphene_info, graphql_execution_params):
     if preset_name:
         check.invariant(
             not graphql_execution_params.get('environmentConfigData'),
-            "Invalid ExecutionParams. Cannot define environment_dict when using preset",
+            'Invalid ExecutionParams. Cannot define environment_dict when using preset',
         )
         check.invariant(
             not graphql_execution_params.get('mode'),
-            "Invalid ExecutionParams. Cannot define mode when using preset",
+            'Invalid ExecutionParams. Cannot define mode when using preset',
         )
 
         selector = graphql_execution_params['selector'].to_selector()
         check.invariant(
             not selector.solid_subset,
-            "Invalid ExecutionParams. Cannot define selector.solid_subset when using preset",
+            'Invalid ExecutionParams. Cannot define selector.solid_subset when using preset',
         )
         dauphin_pipeline = get_dauphin_pipeline_reference_from_selector(graphene_info, selector)
         pipeline = dauphin_pipeline.get_dagster_pipeline()
@@ -351,6 +390,7 @@ class DauphinMutation(dauphin.ObjectType):
     start_schedule = DauphinStartScheduleMutation.Field()
     stop_running_schedule = DauphinStopRunningScheduleMutation.Field()
     reload_dagit = DauphinReloadDagit.Field()
+    cancel_pipeline_execution = DauphinCancelPipelineExecutionMutation.Field()
 
 
 class DauphinSubscription(dauphin.ObjectType):

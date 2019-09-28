@@ -39,6 +39,7 @@ fragment RunHistoryRunFragment on PipelineRun {
   }
   environmentConfigYaml
   mode
+  canCancel
 }
 '''
 

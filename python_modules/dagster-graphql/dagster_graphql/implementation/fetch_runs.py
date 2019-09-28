@@ -44,11 +44,11 @@ def get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode
     return validated_config
 
 
-def get_run(graphene_info, runId):
+def get_run(graphene_info, run_id):
     instance = graphene_info.context.instance
-    run = instance.get_run_by_id(runId)
+    run = instance.get_run_by_id(run_id)
     if not run:
-        return graphene_info.schema.type_named('PipelineRunNotFoundError')(runId)
+        return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
     else:
         return graphene_info.schema.type_named('PipelineRun')(run)
 

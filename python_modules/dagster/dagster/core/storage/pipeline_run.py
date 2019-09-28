@@ -122,3 +122,7 @@ class PipelineRun(
     @property
     def is_finished(self):
         return self.status == PipelineRunStatus.SUCCESS or self.status == PipelineRunStatus.FAILURE
+
+    @property
+    def can_cancel(self):
+        return self.status == PipelineRunStatus.STARTED
