@@ -3,7 +3,7 @@ class PipelineRunObservableSubscribe(object):
         self.instance = instance
         self.run_id = run_id
         self.observer = None
-        self.after_cursor = after_cursor or -1
+        self.after_cursor = after_cursor if after_cursor is not None else -1
 
     def __call__(self, observer):
         self.observer = observer

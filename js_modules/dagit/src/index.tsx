@@ -51,7 +51,8 @@ const websocketClient = new SubscriptionClient(
       document.location.host
     }/graphql`,
   {
-    reconnect: true
+    reconnect: true,
+    lazy: true
   }
 );
 

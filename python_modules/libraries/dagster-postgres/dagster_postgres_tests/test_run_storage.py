@@ -17,7 +17,9 @@ def pg_db():
         yield
 
 
-def create_empty_run(run_id, pipeline_name, mode='default', tags=None):
+def build_run(
+    run_id, pipeline_name, mode='default', tags=None, status=PipelineRunStatus.NOT_STARTED
+):
     return PipelineRun(
         pipeline_name=pipeline_name,
         run_id=run_id,
@@ -27,7 +29,7 @@ def create_empty_run(run_id, pipeline_name, mode='default', tags=None):
         reexecution_config=None,
         step_keys_to_execute=None,
         tags=tags,
-        status=PipelineRunStatus.NOT_STARTED,
+        status=status,
     )
 
 
@@ -35,7 +37,7 @@ def test_add_get_postgres_run_storage(pg_db):
     run_storage = PostgresRunStorage.create_nuked_storage(get_test_conn_string())
 
     run_id = str(uuid.uuid4())
-    run_to_add = create_empty_run(pipeline_name='pipeline_name', run_id=run_id)
+    run_to_add = build_run(pipeline_name='pipeline_name', run_id=run_id)
     added = run_storage.add_run(run_to_add)
     assert added
 
@@ -59,7 +61,7 @@ def test_handle_run_event_pipeline_success_test():
     run_storage = PostgresRunStorage.create_nuked_storage(get_test_conn_string())
 
     run_id = str(uuid.uuid4())
-    run_to_add = create_empty_run(pipeline_name='pipeline_name', run_id=run_id)
+    run_to_add = build_run(pipeline_name='pipeline_name', run_id=run_id)
     run_storage.add_run(run_to_add)
 
     dagster_pipeline_start_event = DagsterEvent(
@@ -111,7 +113,7 @@ def test_nuke():
     storage = PostgresRunStorage.create_nuked_storage(get_test_conn_string())
     assert storage
     run_id = str(uuid.uuid4())
-    storage.add_run(create_empty_run(run_id=run_id, pipeline_name='some_pipeline'))
+    storage.add_run(build_run(run_id=run_id, pipeline_name='some_pipeline'))
     assert len(storage.all_runs()) == 1
     storage.wipe()
     assert list(storage.all_runs()) == []
@@ -122,8 +124,8 @@ def test_fetch_by_pipeline():
     assert storage
     one = str(uuid.uuid4())
     two = str(uuid.uuid4())
-    storage.add_run(create_empty_run(run_id=one, pipeline_name='some_pipeline'))
-    storage.add_run(create_empty_run(run_id=two, pipeline_name='some_other_pipeline'))
+    storage.add_run(build_run(run_id=one, pipeline_name='some_pipeline'))
+    storage.add_run(build_run(run_id=two, pipeline_name='some_other_pipeline'))
     assert len(storage.all_runs()) == 2
     some_runs = storage.all_runs_for_pipeline('some_pipeline')
     assert len(some_runs) == 1
@@ -136,14 +138,108 @@ def test_fetch_by_tag():
     one = str(uuid.uuid4())
     two = str(uuid.uuid4())
     three = str(uuid.uuid4())
-    storage.add_run(
-        create_empty_run(run_id=one, pipeline_name='some_pipeline', tags={'mytag': 'hello'})
-    )
-    storage.add_run(
-        create_empty_run(run_id=two, pipeline_name='some_pipeline', tags={'mytag': 'goodbye'})
-    )
-    storage.add_run(create_empty_run(run_id=three, pipeline_name='some_pipeline'))
+    storage.add_run(build_run(run_id=one, pipeline_name='some_pipeline', tags={'mytag': 'hello'}))
+    storage.add_run(build_run(run_id=two, pipeline_name='some_pipeline', tags={'mytag': 'goodbye'}))
+    storage.add_run(build_run(run_id=three, pipeline_name='some_pipeline'))
     assert len(storage.all_runs()) == 3
     some_runs = storage.all_runs_for_tag('mytag', 'hello')
     assert len(some_runs) == 1
     assert some_runs[0].run_id == one
+
+
+def test_slice():
+    storage = PostgresRunStorage.create_nuked_storage(get_test_conn_string())
+    one, two, three = sorted([str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())])
+    storage.add_run(build_run(run_id=one, pipeline_name='some_pipeline', tags={'mytag': 'hello'}))
+    storage.add_run(build_run(run_id=two, pipeline_name='some_pipeline', tags={'mytag': 'hello'}))
+    storage.add_run(build_run(run_id=three, pipeline_name='some_pipeline', tags={'mytag': 'hello'}))
+
+    all_runs = storage.all_runs()
+    assert len(all_runs) == 3
+    sliced_runs = storage.all_runs(cursor=three, limit=1)
+    assert len(sliced_runs) == 1
+    assert sliced_runs[0].run_id == two
+
+    all_runs = storage.all_runs_for_pipeline('some_pipeline')
+    assert len(all_runs) == 3
+    sliced_runs = storage.all_runs_for_pipeline('some_pipeline', cursor=three, limit=1)
+    assert len(sliced_runs) == 1
+    assert sliced_runs[0].run_id == two
+
+    all_runs = storage.all_runs_for_tag('mytag', 'hello')
+    assert len(all_runs) == 3
+    sliced_runs = storage.all_runs_for_tag('mytag', 'hello', cursor=three, limit=1)
+    assert len(sliced_runs) == 1
+    assert sliced_runs[0].run_id == two
+
+
+def test_fetch_by_status():
+    storage = PostgresRunStorage.create_nuked_storage(get_test_conn_string())
+    assert storage
+    one = str(uuid.uuid4())
+    two = str(uuid.uuid4())
+    three = str(uuid.uuid4())
+    four = str(uuid.uuid4())
+    storage.add_run(
+        build_run(run_id=one, pipeline_name='some_pipeline', status=PipelineRunStatus.NOT_STARTED)
+    )
+    storage.add_run(
+        build_run(run_id=two, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+    )
+    storage.add_run(
+        build_run(run_id=three, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+    )
+    storage.add_run(
+        build_run(run_id=four, pipeline_name='some_pipeline', status=PipelineRunStatus.FAILURE)
+    )
+
+    assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.NOT_STARTED)} == {
+        one
+    }
+
+    assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.STARTED)} == {
+        two,
+        three,
+    }
+
+    assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.FAILURE)} == {four}
+
+    assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.SUCCESS)} == set()
+
+
+def test_fetch_by_status_cursored():
+    storage = PostgresRunStorage.create_nuked_storage(get_test_conn_string())
+    assert storage
+    one = str(uuid.uuid4())
+    two = str(uuid.uuid4())
+    three = str(uuid.uuid4())
+    four = str(uuid.uuid4())
+    storage.add_run(
+        build_run(run_id=one, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+    )
+    storage.add_run(
+        build_run(run_id=two, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+    )
+    storage.add_run(
+        build_run(run_id=three, pipeline_name='some_pipeline', status=PipelineRunStatus.NOT_STARTED)
+    )
+    storage.add_run(
+        build_run(run_id=four, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
+    )
+
+    cursor_four_runs = storage.get_runs_for_status(PipelineRunStatus.STARTED, cursor=four)
+    assert len(cursor_four_runs) == 2
+    assert {run.run_id for run in cursor_four_runs} == {one, two}
+
+    cursor_two_runs = storage.get_runs_for_status(PipelineRunStatus.STARTED, cursor=two)
+    assert len(cursor_two_runs) == 1
+    assert {run.run_id for run in cursor_two_runs} == {one}
+
+    cursor_one_runs = storage.get_runs_for_status(PipelineRunStatus.STARTED, cursor=one)
+    assert not cursor_one_runs
+
+    cursor_four_limit_one = storage.get_runs_for_status(
+        PipelineRunStatus.STARTED, cursor=four, limit=1
+    )
+    assert len(cursor_four_limit_one) == 1
+    assert cursor_four_limit_one[0].run_id == two

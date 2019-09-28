@@ -518,6 +518,8 @@ class DagsterEvent(
             else ''
         )
 
+        value_name = object_store_operation_result.value_name
+
         if (
             ObjectStoreOperationType(object_store_operation_result.op)
             == ObjectStoreOperationType.SET_OBJECT
@@ -526,7 +528,7 @@ class DagsterEvent(
                 'Stored intermediate object for output {value_name} in '
                 '{object_store_name}object store{serialization_strategy_modifier}.'
             ).format(
-                value_name=object_store_operation_result.value_name,
+                value_name=value_name,
                 object_store_name=object_store_name,
                 serialization_strategy_modifier=serialization_strategy_modifier,
             )
@@ -538,7 +540,7 @@ class DagsterEvent(
                 'Retrieved intermediate object for input {value_name} in '
                 '{object_store_name}object store{serialization_strategy_modifier}.'
             ).format(
-                value_name=object_store_operation_result.value_name,
+                value_name=value_name,
                 object_store_name=object_store_name,
                 serialization_strategy_modifier=serialization_strategy_modifier,
             )
@@ -550,6 +552,7 @@ class DagsterEvent(
             step_context,
             event_specific_data=ObjectStoreOperationResultData(
                 op=object_store_operation_result.op,
+                value_name=value_name,
                 metadata_entries=[
                     EventMetadataEntry.path(object_store_operation_result.key, label='key')
                 ],
@@ -584,7 +587,7 @@ class StepExpectationResultData(namedtuple('_StepExpectationResultData', 'expect
 
 @whitelist_for_serdes
 class ObjectStoreOperationResultData(
-    namedtuple('_ObjectStoreOperationResultData', 'op metadata_entries')
+    namedtuple('_ObjectStoreOperationResultData', 'op value_name metadata_entries')
 ):
     pass
 

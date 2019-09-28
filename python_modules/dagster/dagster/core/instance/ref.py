@@ -66,7 +66,7 @@ class LocalInstanceRef(
                 yaml.dump({'root_storage_dir': root_storage_dir}, default_flow_style=False),
             ),
             run_storage_data=ConfigurableClassData(
-                'dagster.core.storage.runs',
+                'dagster.core.storage.sqlite_run_storage',
                 'SqliteRunStorage',
                 yaml.dump(
                     {'base_dir': _runs_directory(root_storage_dir)}, default_flow_style=False

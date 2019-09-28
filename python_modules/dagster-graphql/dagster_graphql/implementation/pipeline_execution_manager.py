@@ -1,14 +1,10 @@
 from __future__ import absolute_import
 
 import abc
-import atexit
-import copy
 import logging
-import multiprocessing
 import os
 import sys
 import time
-from collections import namedtuple
 
 import gevent
 import six
@@ -161,10 +157,12 @@ class SynchronousExecutionManager(PipelineExecutionManager):
             )
 
 
+SUBPROCESS_TICK = 0.5
+
+
 class SubprocessExecutionManager(PipelineExecutionManager):
     '''
     This execution manager launches a new process for every pipeline invocation.
-
     It tries to spawn new processes with clean state whenever possible, 
     in order to pick up the latest changes, to not inherit in-memory
     state accumulated from the webserver, and to mimic standalone invocations
@@ -177,142 +175,119 @@ class SubprocessExecutionManager(PipelineExecutionManager):
     python 2 and python 3.
     '''
 
-    def __init__(self):
+    def __init__(self, instance):
         self._multiprocessing_context = get_multiprocessing_context()
+        self._instance = instance
+        self._living_process_by_run_id = {}
         self._processes_lock = self._multiprocessing_context.Lock()
-        self._process_handles = []
-        # This is actually a reverse semaphore. We keep track of number of
-        # processes we have by releasing semaphore every time we start
-        # processing, we acquire after processing is finished
-        self._processing_semaphore = gevent.lock.Semaphore(0)
 
-        gevent.spawn(self._start_polling)
-        atexit.register(self._cleanup)
+        gevent.spawn(self._check_for_zombies)
 
-    def _start_polling(self):
-        while True:
-            self._poll()
-            gevent.sleep(0.1)
+    def _generate_synthetic_error_from_crash(self, run):
+        try:
+            raise Exception(
+                'Pipeline execution process for {run_id} unexpectedly exited'.format(
+                    run_id=run.run_id
+                )
+            )
+        except Exception:  # pylint: disable=broad-except
+            self._instance.handle_new_event(
+                build_synthetic_pipeline_error_record(
+                    run.run_id,
+                    serializable_error_info_from_exc_info(sys.exc_info()),
+                    run.pipeline_name,
+                )
+            )
 
-    def _cleanup(self):
-        # Wait for child processes to finish and communicate on exit
-        self.join()
-
-    def _poll(self):
+    def _living_process_snapshot(self):
         with self._processes_lock:
-            process_handles = copy.copy(self._process_handles)
-            self._process_handles = []
-            for _ in process_handles:
-                self._processing_semaphore.release()
+            return {run_id: process for run_id, process in self._living_process_by_run_id.items()}
 
-        for process_handle in process_handles:
-            done = self._consume_process_queue(process_handle)
-            if not done and not process_handle.process.is_alive():
-                done = self._consume_process_queue(process_handle)
-                if not done:
-                    try:
-                        done = True
-                        raise Exception(
-                            'Pipeline execution process for {run_id} unexpectedly exited'.format(
-                                run_id=process_handle.run_id
-                            )
-                        )
-                    except Exception:  # pylint: disable=broad-except
-                        process_handle.instance.handle_new_event(
-                            build_synthetic_pipeline_error_record(
-                                process_handle.run_id,
-                                serializable_error_info_from_exc_info(sys.exc_info()),
-                                process_handle.pipeline_name,
-                            )
-                        )
-
-            if not done:
-                self._process_handles.append(process_handle)
-
-            self._processing_semaphore.acquire()
-
-    def _consume_process_queue(self, process):
-        while not process.message_queue.empty():
-            message = process.message_queue.get(False)
-            process.instance.handle_new_event(message)
-            if isinstance(message, DagsterEventRecord) and (
-                message.dagster_event.event_type_value
-                == DagsterEventType.PIPELINE_PROCESS_EXITED.value
-            ):
-                return True
-        return False
-
-    def join(self):
-        '''Waits until all there are no processes enqueued.'''
+    def _check_for_zombies(self):
+        '''
+        This function polls the instance to synchronize it with the state of processes managed
+        by this manager instance. On every tick (every 0.5 seconds currently) it gets the current
+        index of run_id => process and sees if any of them are dead. If they are, then it queries
+        the instance to see if the runs are in a proper terminal state (success or failure). If
+        not, then we can assume that the underlying process died unexpected and clean everything.
+        In either case, the dead process is removed from the run_id => process index.
+        '''
         while True:
+            runs_to_clear = []
+
+            living_process_snapshot = self._living_process_snapshot()
+
+            for run_id, process in living_process_snapshot.items():
+                if not process.is_alive():
+                    run = self._instance.get_run(run_id)
+                    if not run:  # defensive
+                        continue
+
+                    runs_to_clear.append(run_id)
+
+                    # expected terminal state. it's fine for process to be dead
+                    if run.is_finished:
+                        continue
+
+                    # the process died in an unexpected manner. inform the system
+                    self._generate_synthetic_error_from_crash(run)
+
             with self._processes_lock:
-                if not self._process_handles and self._processing_semaphore.locked():
-                    return True
-            gevent.sleep(0.1)
+                for run_to_clear_id in runs_to_clear:
+                    del self._living_process_by_run_id[run_to_clear_id]
+
+            gevent.sleep(SUBPROCESS_TICK)
 
     def execute_pipeline(self, handle, pipeline, pipeline_run, instance, raise_on_error):
+        '''Subclasses must implement this method.'''
         check.inst_param(handle, 'handle', ExecutionTargetHandle)
         check.invariant(
             raise_on_error is False, 'Multiprocessing execute_pipeline does not rethrow user error'
         )
 
-        message_queue = self._multiprocessing_context.Queue()
         mp_process = self._multiprocessing_context.Process(
-            target=execute_pipeline_through_queue,
+            target=_in_mp_process,
             kwargs={
                 'handle': handle,
                 'pipeline_run': pipeline_run,
                 'instance_ref': instance.get_ref(),
-                'message_queue': message_queue,
             },
         )
 
         instance.handle_new_event(build_process_start_event(pipeline_run.run_id, pipeline.name))
-
         mp_process.start()
+
         with self._processes_lock:
-            process_handle = PipelineRunProcessHandle(
-                mp_process, message_queue, instance, pipeline_run.run_id, pipeline.name
-            )
-            self._process_handles.append(process_handle)
+            self._living_process_by_run_id[pipeline_run.run_id] = mp_process
+
+    def join(self):
+        with self._processes_lock:
+            for run_id, process in self._living_process_by_run_id.items():
+                if process.is_alive():
+                    process.join()
+
+                run = self._instance.get_run(run_id)
+
+                if run and not run.is_finished:
+                    self._generate_synthetic_error_from_crash(run)
 
 
-MultiProcessingProcess = (
-    multiprocessing.process.Process  # pylint: disable=no-member
-    if sys.version_info.major < 3
-    else multiprocessing.context.SpawnProcess
-)
-
-
-class PipelineRunProcessHandle(
-    namedtuple('PipelineRunProcessHandle', 'process message_queue instance run_id pipeline_name')
-):
-    def __new__(cls, process, message_queue, instance, run_id, pipeline_name):
-        return super(PipelineRunProcessHandle, cls).__new__(
-            cls,
-            check.inst_param(process, 'process', MultiProcessingProcess),
-            check.inst_param(message_queue, 'message_queue', multiprocessing.queues.Queue),
-            check.inst_param(instance, 'instance', DagsterInstance),
-            check.str_param(run_id, 'run_id'),
-            check.str_param(pipeline_name, 'pipeline_name'),
-        )
-
-
-def execute_pipeline_through_queue(handle, pipeline_run, message_queue, instance_ref):
+def _in_mp_process(handle, pipeline_run, instance_ref):
     """
     Execute pipeline using message queue as a transport
     """
     run_id = pipeline_run.run_id
     pipeline_name = pipeline_run.pipeline_name
 
-    message_queue.put(build_process_started_event(run_id, pipeline_name, os.getpid()))
+    instance = DagsterInstance.from_ref(instance_ref)
+    instance.handle_new_event(build_process_started_event(run_id, pipeline_name, os.getpid()))
 
     try:
         handle.build_repository_definition()
         pipeline_def = handle.with_pipeline_name(pipeline_name).build_pipeline_definition()
     except Exception:  # pylint: disable=broad-except
         repo_error = sys.exc_info()
-        message_queue.put(
+        instance.handle_new_event(
             build_synthetic_pipeline_error_record(
                 run_id, serializable_error_info_from_exc_info(repo_error), pipeline_name
             )
@@ -324,13 +299,14 @@ def execute_pipeline_through_queue(handle, pipeline_run, message_queue, instance
         for event in execute_run_iterator(
             pipeline_def.build_sub_pipeline(pipeline_run.selector.solid_subset),
             pipeline_run,
-            DagsterInstance.from_ref(instance_ref),
+            instance,
         ):
             event_list.append(event)
         return PipelineExecutionResult(pipeline_def, run_id, event_list, lambda: None)
     except Exception:  # pylint: disable=broad-except
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        message_queue.put(build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name))
+        instance.handle_new_event(
+            build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name)
+        )
     finally:
-        message_queue.put(build_process_exited_event(run_id, pipeline_name, os.getpid()))
-        message_queue.close()
+        instance.handle_new_event(build_process_exited_event(run_id, pipeline_name, os.getpid()))
