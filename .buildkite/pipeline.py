@@ -41,7 +41,9 @@ def python_modules_tox_tests(directory):
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
-            .on_python_image(version, ['AWS_DEFAULT_REGION'])
+            .on_python_image(
+                version, ['AWS_DEFAULT_REGION', 'TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN']
+            )
             .build()
         )
 

@@ -58,6 +58,7 @@ install_dev_python_modules:
 	pip install -e python_modules/libraries/dagster-snowflake -qqq
 	pip install -e python_modules/libraries/dagster-spark -qqq
 	pip install -e python_modules/libraries/dagster-ssh -qqq
+	pip install -e python_modules/libraries/dagster-twilio -qqq
 	pip install -e python_modules/automation -qqq
 	pip install -e examples[full] -qqq
 	pip install -r python_modules/dagster/dev-requirements.txt -qqq

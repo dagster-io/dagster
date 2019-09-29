@@ -115,6 +115,7 @@ LIBRARY_MODULES = [
     'dagster-snowflake',
     'dagster-spark',
     'dagster-ssh',
+    'dagster-twilio',
 ]
 
 EXPECTED_PYTHON_MODULES = ['automation', 'lakehouse', 'libraries'] + MODULE_NAMES
