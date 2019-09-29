@@ -57,13 +57,13 @@ class PipelineRun(
     )
 ):
     @staticmethod
-    def create_empty_run(pipeline_name, run_id):
+    def create_empty_run(pipeline_name, run_id, environment_dict=None):
         from dagster.core.definitions.pipeline import ExecutionSelector
 
         return PipelineRun(
             pipeline_name=pipeline_name,
             run_id=run_id,
-            environment_dict=None,
+            environment_dict=environment_dict,
             mode='default',
             selector=ExecutionSelector(pipeline_name),
             reexecution_config=None,

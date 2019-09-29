@@ -386,13 +386,45 @@ def deploy_trigger_step():
     return {'label': 'Deploy Trigger', 'trigger': 'deploy', 'branches': 'master', 'async': True}
 
 
-if __name__ == "__main__":
-    steps = [
-        StepBuilder("pylint")
-        .run("make install_dev_python_modules", "make pylint")
+def pylint_steps():
+    res = []
+
+    base_paths = ['.buildkite', 'bin', 'docs', 'examples']
+    base_paths_ext = ['"%s/*.py"' % p for p in base_paths]
+
+    res.append(
+        StepBuilder("pylint misc")
+        .run(
+            "make install_dev_python_modules",
+            "pylint -j 0 `git ls-files %s` --rcfile=.pylintrc" % ' '.join(base_paths_ext),
+        )
         .on_integration_image(SupportedPython.V3_7)
         .on_queue(BuildkiteQueue.MEDIUM)
-        .build(),
+        .build()
+    )
+
+    python_modules = [
+        'python_modules/%s' % path
+        for path in os.listdir('python_modules/')
+        if os.path.isdir('python_modules/%s' % path)
+    ]
+
+    for path in python_modules:
+        res.append(
+            StepBuilder("pylint %s" % path)
+            .run(
+                "make install_dev_python_modules",
+                "pylint -j 0 `git ls-files '%s/*.py'` --rcfile=.pylintrc" % path,
+            )
+            .on_integration_image(SupportedPython.V3_7)
+            .on_queue(BuildkiteQueue.MEDIUM)
+            .build()
+        )
+    return res
+
+
+if __name__ == "__main__":
+    steps = pylint_steps() + [
         StepBuilder("isort")
         .run(
             "pip install isort>=4.3.21", "isort -rc examples python_modules", "git diff --exit-code"

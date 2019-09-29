@@ -32,6 +32,7 @@ class BuildkiteQueue(Enum):
     DOCKER = "docker-p"
     MICRO = "micro-p"
     MEDIUM = "medium-p"
+    C4_2XLARGE = "c4-2xlarge-p"
 
     @classmethod
     def contains(cls, value):
@@ -106,10 +107,10 @@ class StepBuilder:
         self._step["retry"] = {'automatic': {'limit': num_retries}}
         return self
 
-    def on_queue(self, queue_name):
-        assert BuildkiteQueue.contains(queue_name)
+    def on_queue(self, queue):
+        assert BuildkiteQueue.contains(queue)
 
-        self._step["agents"]["queue"] = BuildkiteQueue.MEDIUM.value
+        self._step["agents"]["queue"] = queue.value
         return self
 
     def build(self):

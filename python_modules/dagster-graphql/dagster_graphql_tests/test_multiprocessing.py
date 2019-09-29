@@ -1,6 +1,8 @@
 import csv
 import os
+import time
 from collections import OrderedDict
+from contextlib import contextmanager
 from copy import deepcopy
 
 from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
@@ -28,6 +30,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.utils import script_relative_path
+from dagster.utils.test import get_temp_file_name, get_temp_file_names
 
 
 class PoorMansDataFrame_(list):
@@ -386,3 +389,118 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
 
     execution_manager.join()
     assert instance.get_run(run_id).status == PipelineRunStatus.SUCCESS
+
+
+@solid(config={'file': Field(Path)})
+def loop(context):
+    with open(context.solid_config['file'], 'w') as ff:
+        ff.write('yup')
+
+    while True:
+        time.sleep(0.1)
+
+
+@pipeline
+def infinite_loop_pipeline():
+    loop()
+
+
+@contextmanager
+def get_temp_file_location():
+    with get_temp_file_name() as path:
+        os.unlink(path)
+        yield path
+
+
+@contextmanager
+def get_temp_file_locations(num):
+    with get_temp_file_names(num) as paths:
+        for path in paths:
+            os.unlink(path)
+
+        yield paths
+
+
+def test_has_run_query_and_terminate():
+    run_id_one = make_new_run_id()
+    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'infinite_loop_pipeline')
+
+    instance = DagsterInstance.local_temp()
+
+    with get_temp_file_location() as path:
+        pipeline_run = instance.create_run(
+            PipelineRun.create_empty_run(
+                pipeline_name=infinite_loop_pipeline.name,
+                run_id=run_id_one,
+                environment_dict={'solids': {'loop': {'config': {'file': path}}}},
+            )
+        )
+        execution_manager = SubprocessExecutionManager(instance)
+        execution_manager.execute_pipeline(
+            handle, infinite_loop_pipeline, pipeline_run, instance, raise_on_error=False
+        )
+
+        while not os.path.exists(path):
+            time.sleep(0.1)
+
+        assert os.path.exists(path)
+
+        assert execution_manager.is_process_running(run_id_one)
+        assert execution_manager.terminate(run_id_one)
+        assert not execution_manager.is_process_running(run_id_one)
+        assert not execution_manager.terminate(run_id_one)
+
+    assert not os.path.exists(path)
+
+
+def test_two_runs_running():
+    run_id_one = make_new_run_id()
+    run_id_two = make_new_run_id()
+    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'infinite_loop_pipeline')
+
+    with get_temp_file_locations(2) as files:
+        file_one, file_two = files  # pylint: disable=unbalanced-tuple-unpacking
+
+        instance = DagsterInstance.local_temp()
+
+        execution_manager = SubprocessExecutionManager(instance)
+
+        pipeline_run_one = instance.create_run(
+            PipelineRun.create_empty_run(
+                pipeline_name=infinite_loop_pipeline.name,
+                run_id=run_id_one,
+                environment_dict={'solids': {'loop': {'config': {'file': file_one}}}},
+            )
+        )
+        execution_manager.execute_pipeline(
+            handle, infinite_loop_pipeline, pipeline_run_one, instance, raise_on_error=False
+        )
+
+        pipeline_run_two = instance.create_run(
+            PipelineRun.create_empty_run(
+                pipeline_name=infinite_loop_pipeline.name,
+                run_id=run_id_two,
+                environment_dict={'solids': {'loop': {'config': {'file': file_two}}}},
+            )
+        )
+
+        execution_manager.execute_pipeline(
+            handle, infinite_loop_pipeline, pipeline_run_two, instance, raise_on_error=False
+        )
+
+        # ensure both runs have begun execution
+        while not os.path.exists(file_one) and not os.path.exists(file_two):
+            time.sleep(0.1)
+
+        assert execution_manager.is_process_running(run_id_one)
+        assert execution_manager.is_process_running(run_id_two)
+
+        assert execution_manager.terminate(run_id_one)
+
+        assert not execution_manager.is_process_running(run_id_one)
+        assert execution_manager.is_process_running(run_id_two)
+
+        assert execution_manager.terminate(run_id_two)
+
+        assert not execution_manager.is_process_running(run_id_one)
+        assert not execution_manager.is_process_running(run_id_two)
