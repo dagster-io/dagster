@@ -6,7 +6,6 @@ from dagster_postgres.event_log import (
     PostgresEventLogStorage,
     create_event_watcher,
 )
-from dagster_postgres.test import get_test_conn_string
 from dagster_postgres.utils import get_conn
 
 from dagster import ModeDefinition, RunConfig, execute_pipeline, pipeline, solid
@@ -52,7 +51,7 @@ def fetch_all_events(conn_string):
         return curs.fetchall()
 
 
-def test_basic_event_store():
+def test_basic_event_store(conn_string):
     @solid
     def return_one(_):
         return 1
@@ -62,12 +61,12 @@ def test_basic_event_store():
 
     events, _result = gather_events(_solids)
 
-    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
     for event in events:
         event_log_storage.store_event(event)
 
-    rows = fetch_all_events(get_test_conn_string())
+    rows = fetch_all_events(conn_string)
 
     out_events = list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
@@ -86,7 +85,7 @@ def event_types(out_events):
     return list(map(lambda e: e.dagster_event.event_type, out_events))
 
 
-def test_basic_get_logs_for_run():
+def test_basic_get_logs_for_run(conn_string):
     @solid
     def return_one(_):
         return 1
@@ -96,7 +95,7 @@ def test_basic_get_logs_for_run():
 
     events, result = gather_events(_solids)
 
-    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
     for event in events:
         event_log_storage.store_event(event)
@@ -114,7 +113,7 @@ def test_basic_get_logs_for_run():
     ]
 
 
-def test_wipe_postgres_event_log():
+def test_wipe_postgres_event_log(conn_string):
     @solid
     def return_one(_):
         return 1
@@ -124,7 +123,7 @@ def test_wipe_postgres_event_log():
 
     events, result = gather_events(_solids)
 
-    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
     for event in events:
         event_log_storage.store_event(event)
@@ -146,8 +145,8 @@ def test_wipe_postgres_event_log():
     assert event_log_storage.get_logs_for_run(result.run_id) == []
 
 
-def test_basic_get_logs_for_run_cursor():
-    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
+def test_basic_get_logs_for_run_cursor(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
     @solid
     def return_one(_):
@@ -182,8 +181,8 @@ def test_basic_get_logs_for_run_cursor():
     ]
 
 
-def test_basic_get_logs_for_run_multiple_runs():
-    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
+def test_basic_get_logs_for_run_multiple_runs(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
     @solid
     def return_one(_):
@@ -235,8 +234,8 @@ def test_basic_get_logs_for_run_multiple_runs():
     assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
 
 
-def test_basic_get_logs_for_run_multiple_runs_cursors():
-    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
+def test_basic_get_logs_for_run_multiple_runs_cursors(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
     @solid
     def return_one(_):
@@ -287,8 +286,8 @@ def test_basic_get_logs_for_run_multiple_runs_cursors():
     assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
 
 
-def test_listen_notify_single_run_event():
-    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
+def test_listen_notify_single_run_event(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
     @solid
     def return_one(_):
@@ -297,7 +296,7 @@ def test_listen_notify_single_run_event():
     def _solids():
         return_one()
 
-    event_watcher = create_event_watcher(get_test_conn_string())
+    event_watcher = create_event_watcher(conn_string)
 
     run_id = str(uuid.uuid4())
 
@@ -321,8 +320,8 @@ def test_listen_notify_single_run_event():
         event_watcher.close()
 
 
-def test_listen_notify_filter_two_runs_event():
-    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
+def test_listen_notify_filter_two_runs_event(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
     @solid
     def return_one(_):
@@ -331,7 +330,7 @@ def test_listen_notify_filter_two_runs_event():
     def _solids():
         return_one()
 
-    event_watcher = create_event_watcher(get_test_conn_string())
+    event_watcher = create_event_watcher(conn_string)
 
     run_id_one = str(uuid.uuid4())
     run_id_two = str(uuid.uuid4())
@@ -361,8 +360,8 @@ def test_listen_notify_filter_two_runs_event():
         event_watcher.close()
 
 
-def test_listen_notify_filter_run_event():
-    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
+def test_listen_notify_filter_run_event(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
     @solid
     def return_one(_):
@@ -371,7 +370,7 @@ def test_listen_notify_filter_run_event():
     def _solids():
         return_one()
 
-    event_watcher = create_event_watcher(get_test_conn_string())
+    event_watcher = create_event_watcher(conn_string)
 
     run_id_one = str(uuid.uuid4())
     run_id_two = str(uuid.uuid4())

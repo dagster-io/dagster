@@ -43,7 +43,7 @@ def config_path(relative_path):
 @pytest.mark.nettest
 @pytest.mark.py3
 @pytest.mark.spark
-def test_ingest_pipeline_fast(docker_compose_db):
+def test_ingest_pipeline_fast(postgres):
     ingest_config_dict = load_yaml_from_globs(
         config_path('local_base.yaml'), config_path('local_fast_ingest.yaml')
     )
@@ -62,7 +62,7 @@ def test_ingest_pipeline_fast(docker_compose_db):
 @pytest.mark.nettest
 @pytest.mark.py3
 @pytest.mark.spark
-def test_ingest_pipeline_fast_filesystem_storage(docker_compose_db):
+def test_ingest_pipeline_fast_filesystem_storage(postgres):
     ingest_config_dict = load_yaml_from_globs(
         config_path('local_base.yaml'),
         config_path('local_fast_ingest.yaml'),
@@ -83,7 +83,7 @@ def test_ingest_pipeline_fast_filesystem_storage(docker_compose_db):
 @pytest.mark.nettest
 @pytest.mark.py3
 @pytest.mark.spark
-def test_airline_pipeline_1_warehouse(docker_compose_db):
+def test_airline_pipeline_1_warehouse(postgres):
     warehouse_config_object = load_yaml_from_globs(
         config_path('local_base.yaml'), config_path('local_warehouse.yaml')
     )
@@ -101,7 +101,7 @@ def test_airline_pipeline_1_warehouse(docker_compose_db):
 # These tests are provided to help distinguish issues using the S3 object store from issues using
 # Airflow, but add too much overhead (~30m) to run on each push
 @pytest.mark.skip
-def test_airline_pipeline_s3_0_ingest(docker_compose_db):
+def test_airline_pipeline_s3_0_ingest(postgres):
     ingest_config_dict = load_yaml_from_globs(
         config_path('local_base.yaml'),
         config_path('local_airflow.yaml'),
@@ -116,7 +116,7 @@ def test_airline_pipeline_s3_0_ingest(docker_compose_db):
 
 
 @pytest.mark.skip
-def test_airline_pipeline_s3_1_warehouse(docker_compose_db):
+def test_airline_pipeline_s3_1_warehouse(postgres):
     warehouse_config_object = load_yaml_from_globs(
         config_path('local_base.yaml'),
         config_path('local_airflow.yaml'),

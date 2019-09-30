@@ -1,20 +1,8 @@
 import uuid
 
-import pytest
-from dagster_postgres.run_storage import PostgresRunStorage
-from dagster_postgres.test import get_test_conn_string, implement_postgres_fixture
-
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.utils import script_relative_path
-
-
-# pylint: disable=redefined-outer-name,unused-argument
-@pytest.fixture(scope='session')
-def pg_db():
-    with implement_postgres_fixture(script_relative_path('.')):
-        yield
 
 
 def build_run(
@@ -33,9 +21,8 @@ def build_run(
     )
 
 
-def test_add_get_postgres_run_storage(pg_db):
-    run_storage = PostgresRunStorage.create_clean_storage(get_test_conn_string())
-
+def test_add_get_postgres_run_storage(clean_storage):
+    run_storage = clean_storage
     run_id = str(uuid.uuid4())
     run_to_add = build_run(pipeline_name='pipeline_name', run_id=run_id)
     added = run_storage.add_run(run_to_add)
@@ -56,9 +43,8 @@ def test_add_get_postgres_run_storage(pg_db):
     assert run_storage.all_runs() == []
 
 
-def test_handle_run_event_pipeline_success_test():
-
-    run_storage = PostgresRunStorage.create_clean_storage(get_test_conn_string())
+def test_handle_run_event_pipeline_success_test(clean_storage):
+    run_storage = clean_storage
 
     run_id = str(uuid.uuid4())
     run_to_add = build_run(pipeline_name='pipeline_name', run_id=run_id)
@@ -109,9 +95,8 @@ def test_handle_run_event_pipeline_success_test():
     assert run_storage.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
 
 
-def test_clear():
-    storage = PostgresRunStorage.create_clean_storage(get_test_conn_string())
-    assert storage
+def test_clear(clean_storage):
+    storage = clean_storage
     run_id = str(uuid.uuid4())
     storage.add_run(build_run(run_id=run_id, pipeline_name='some_pipeline'))
     assert len(storage.all_runs()) == 1
@@ -119,9 +104,8 @@ def test_clear():
     assert list(storage.all_runs()) == []
 
 
-def test_fetch_by_pipeline():
-    storage = PostgresRunStorage.create_clean_storage(get_test_conn_string())
-    assert storage
+def test_fetch_by_pipeline(clean_storage):
+    storage = clean_storage
     one = str(uuid.uuid4())
     two = str(uuid.uuid4())
     storage.add_run(build_run(run_id=one, pipeline_name='some_pipeline'))
@@ -132,9 +116,8 @@ def test_fetch_by_pipeline():
     assert some_runs[0].run_id == one
 
 
-def test_fetch_by_tag():
-    storage = PostgresRunStorage.create_clean_storage(get_test_conn_string())
-    assert storage
+def test_fetch_by_tag(clean_storage):
+    storage = clean_storage
     one = str(uuid.uuid4())
     two = str(uuid.uuid4())
     three = str(uuid.uuid4())
@@ -147,8 +130,8 @@ def test_fetch_by_tag():
     assert some_runs[0].run_id == one
 
 
-def test_slice():
-    storage = PostgresRunStorage.create_clean_storage(get_test_conn_string())
+def test_slice(clean_storage):
+    storage = clean_storage
     one, two, three = sorted([str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())])
     storage.add_run(build_run(run_id=one, pipeline_name='some_pipeline', tags={'mytag': 'hello'}))
     storage.add_run(build_run(run_id=two, pipeline_name='some_pipeline', tags={'mytag': 'hello'}))
@@ -173,9 +156,8 @@ def test_slice():
     assert sliced_runs[0].run_id == two
 
 
-def test_fetch_by_status():
-    storage = PostgresRunStorage.create_clean_storage(get_test_conn_string())
-    assert storage
+def test_fetch_by_status(clean_storage):
+    storage = clean_storage
     one = str(uuid.uuid4())
     two = str(uuid.uuid4())
     three = str(uuid.uuid4())
@@ -207,9 +189,8 @@ def test_fetch_by_status():
     assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.SUCCESS)} == set()
 
 
-def test_fetch_by_status_cursored():
-    storage = PostgresRunStorage.create_clean_storage(get_test_conn_string())
-    assert storage
+def test_fetch_by_status_cursored(clean_storage):
+    storage = clean_storage
     one = str(uuid.uuid4())
     two = str(uuid.uuid4())
     three = str(uuid.uuid4())
