@@ -24,6 +24,61 @@ DO_COVERAGE = False
 def wait_step():
     return "wait"
 
+def network_buildkite_container(network_name):
+    return [
+        # hold onto your hats, this is docker networking at its best. First, we figure out
+        # the name of the currently running container...
+        "export CONTAINER_ID=`cut -c9- < /proc/1/cpuset`",
+        r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
+        # then, we dynamically bind this container into the dask user-defined bridge
+        # network to make the dask containers visible...
+        "docker network connect {network_name} \\${{CONTAINER_NAME}}".format(
+            network_name=network_name
+        )
+    ]
+
+def connect_sibling_docker_container(network_name, container_name, env_variable):
+    return [
+        # Now, we grab the IP address of the dask-scheduler container from within the dask
+        # bridge network and export it; this will let the tox tests talk to the scheduler.
+        (
+            "export {env_variable}=`docker inspect --format "
+            "'{{{{ .NetworkSettings.Networks.{network_name}.IPAddress }}}}' "
+            "{container_name}`".format(
+                network_name=network_name, container_name=container_name, env_variable=env_variable
+            )
+        ),
+    ]
+
+
+def wrap_with_docker_compose_steps(
+    steps_to_execute, filename=None, remove_orphans=True
+):  # pylint:disable=keyword-arg-before-vararg
+    if filename is not None:
+        filename_arg = '-f {filename} '.format(filename=filename)
+    else:
+        filename_arg = ''
+
+    if remove_orphans:
+        remove_orphans_arg = ' --remove-orphans'
+    else:
+        remove_orphans_arg = ''
+
+    return (
+        [
+            "docker-compose {filename_arg}stop".format(filename_arg=filename_arg),
+            "docker-compose {filename_arg}rm -f".format(filename_arg=filename_arg),
+            "docker-compose {filename_arg}up -d{remove_orphans_arg}".format(
+                filename_arg=filename_arg, remove_orphans_arg=remove_orphans_arg
+            ),
+        ]
+        + steps_to_execute
+        + [
+            "docker-compose {filename_arg}stop".format(filename_arg=filename_arg),
+            "docker-compose {filename_arg}rm -f".format(filename_arg=filename_arg),
+        ]
+    )
+
 
 def python_modules_tox_tests(directory):
     label = directory.replace("/", "-")
@@ -65,17 +120,19 @@ def airline_demo_tests():
                 "mkdir -p /home/circleci/airflow",
                 # Run the postgres db. We are in docker running docker
                 # so this will be a sibling container.
-                "docker-compose stop",
-                "docker-compose rm -f",
-                "docker-compose up -d --remove-orphans",
-                # Can't use host networking on buildkite and communicate via localhost
-                # between these sibling containers, so pass along the ip.
-                "export POSTGRES_TEST_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' test-postgres-db`",
-                "tox -vv -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-                "docker-compose stop",
-                "docker-compose rm -f",
+                *wrap_with_docker_compose_steps(
+                    # Can't use host networking on buildkite and communicate via localhost
+                    # between these sibling containers, so pass along the ip.
+                    network_buildkite_container('postgres') + 
+                    connect_sibling_docker_container(
+                        'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
+                    )
+                    + [
+                        "tox -vv -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
+                        "mv .coverage {file}".format(file=coverage),
+                        "buildkite-agent artifact upload {file}".format(file=coverage),
+                    ]
+                )
             )
             .build()
         )
@@ -141,21 +198,38 @@ def dagster_postgres_tests():
             version=version
         )
         tests.append(
-            StepBuilder("dagster-postgres tests ({ver})".format(ver=TOX_MAP[version]))
+            StepBuilder("libraries/dagster-postgres tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
                 "cd python_modules/libraries/dagster-postgres/dagster_postgres_tests/",
-                "docker-compose stop",
-                "docker-compose rm -f",
-                "docker-compose up -d --remove-orphans",
-                "export POSTGRES_TEST_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' test-postgres-db`",
-                "pushd ../",
-                "pip install tox",
-                "tox -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-                "popd",
-                "docker-compose stop",
-                "docker-compose rm -f",
+                *wrap_with_docker_compose_steps(
+                    wrap_with_docker_compose_steps(
+                        network_buildkite_container('postgres') +
+                        connect_sibling_docker_container(
+                            'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
+                        ) +
+                        network_buildkite_container('postgres_multi')
+                        + connect_sibling_docker_container(
+                            'postgres_multi',
+                            'test-run-storage-db',
+                            'POSTGRES_TEST_RUN_STORAGE_DB_HOST',
+                        )
+                        + connect_sibling_docker_container(
+                            'postgres_multi',
+                            'test-event-log-storage-db',
+                            'POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST',
+                        )
+                        + [
+                            "pushd ../",
+                            "pip install tox",
+                            "tox -e {ver}".format(ver=TOX_MAP[version]),
+                            "mv .coverage {file}".format(file=coverage),
+                            "buildkite-agent artifact upload {file}".format(file=coverage),
+                            "popd",
+                        ],
+                        filename='docker-compose-multi.yml',
+                        remove_orphans=False,
+                    )
+                )
             )
             .on_integration_image(version)
             .build()
@@ -240,24 +314,20 @@ def dask_tests():
                 "pushd python_modules/dagster-dask/dagster_dask_tests/dask-docker",
                 "./build.sh " + version,
                 # Run the docker-compose dask cluster
-                "export PYTHON_VERSION=\"{ver}\"".format(ver=version),
-                "docker-compose up -d --remove-orphans",
-                # hold onto your hats, this is docker networking at its best. First, we figure out
-                # the name of the currently running container...
-                "export CONTAINER_ID=`cut -c9- < /proc/1/cpuset`",
-                r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
-                # then, we dynamically bind this container into the dask user-defined bridge
-                # network to make the dask containers visible...
-                r"docker network connect dask \${CONTAINER_NAME}",
-                # Now, we grab the IP address of the dask-scheduler container from within the dask
-                # bridge network and export it; this will let the tox tests talk to the scheduler.
-                "export DASK_ADDRESS=`docker inspect --format '{{ .NetworkSettings.Networks.dask.IPAddress }}' dask-scheduler`",
-                "popd",
-                "pushd python_modules/dagster-dask/",
-                "pip install tox",
-                "tox -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
+                *wrap_with_docker_compose_steps(
+                    network_buildkite_container('dask') + 
+                    connect_sibling_docker_container('dask', 'dask-scheduler', 'DASK_ADDRESS')
+                    + [
+                        "popd",
+                        "pushd python_modules/dagster-dask/",
+                        "pip install tox",
+                        "tox -e {ver}".format(ver=TOX_MAP[version]),
+                        "mv .coverage {file}".format(file=coverage),
+                        "buildkite-agent artifact upload {file}".format(file=coverage),
+                        "popd",
+                        "pushd python_modules/dagster-dask/dagster_dask_tests/dask-docker",
+                    ]
+                )
             )
             .on_integration_image(
                 version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']

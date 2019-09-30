@@ -43,10 +43,8 @@ def postgres():
         yield
         return
 
-    script_path = script_relative_path('.')
-
     if not is_postgres_running():
-        with pushd(script_path):
+        with pushd(script_relative_path('.')):
             try:
                 subprocess.check_output(['docker-compose', 'stop', 'test-postgres-db'])
                 subprocess.check_output(['docker-compose', 'rm', '-f', 'test-postgres-db'])
@@ -59,16 +57,58 @@ def postgres():
     yield
 
 
-def get_hostname():
+@pytest.fixture(scope='module')
+def multi_postgres():  # pylint: disable=redefined-outer-name
+    if BUILDKITE:
+        yield
+        return
+        # It's not clear why none of this works -- we can debug after 0.6.0
+        # See, maybe, https://success.docker.com/article/multiple-docker-networks for
+        # further debug strategy
+        # https://github.com/dagster-io/dagster/issues/1791
+        # event_log_storage_conn_string = _conn_string(
+        #     hostname=get_hostname('POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST'), port='5433'
+        # )
+        # run_storage_conn_string = _conn_string(
+        #     hostname=get_hostname('POSTGRES_TEST_RUN_STORAGE_DB_HOST'), port='5434'
+        # )
+
+        # print(subprocess.check_output(['docker', 'ps']))
+        # wait_for_connection(event_log_storage_conn_string)
+        # wait_for_connection(run_storage_conn_string)
+
+        # yield (run_storage_conn_string, event_log_storage_conn_string)
+        # return
+
+    with pushd(script_relative_path('.')):
+        try:
+            subprocess.check_output(['docker-compose', '-f', 'docker-compose-multi.yml', 'stop'])
+            subprocess.check_output(['docker-compose', '-f', 'docker-compose-multi.yml', 'rm'])
+        except Exception:  # pylint: disable=broad-except
+            pass
+        subprocess.check_output(['docker-compose', '-f', 'docker-compose-multi.yml', 'up', '-d'])
+
+        event_log_storage_conn_string = _conn_string(port='5433')
+        run_storage_conn_string = _conn_string(port='5434')
+
+        wait_for_connection(event_log_storage_conn_string)
+        wait_for_connection(run_storage_conn_string)
+
+        yield (run_storage_conn_string, event_log_storage_conn_string)
+
+
+def get_hostname(env_name='POSTGRES_TEST_DB_HOST'):
     # In buildkite we get the ip address from this variable (see buildkite code for commentary)
     # Otherwise assume local development and assume localhost
-    env_name = 'POSTGRES_TEST_DB_HOST'
     return os.environ.get(env_name, 'localhost')
 
 
-def _conn_string():
+def _conn_string(**kwargs):
     return get_conn_string(
-        username='test', password='test', hostname=get_hostname(), db_name='test'
+        **dict(
+            dict(username='test', password='test', hostname=get_hostname(), db_name='test'),
+            **kwargs
+        )
     )
 
 

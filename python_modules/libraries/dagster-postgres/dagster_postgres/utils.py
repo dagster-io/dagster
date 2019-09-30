@@ -9,9 +9,9 @@ def get_conn(conn_string):
     return conn
 
 
-def get_conn_string(username, password, hostname, db_name):
-    return 'postgresql://{username}:{password}@{hostname}:5432/{db_name}'.format(
-        username=username, password=password, hostname=hostname, db_name=db_name
+def get_conn_string(username, password, hostname, db_name, port='5432'):
+    return 'postgresql://{username}:{password}@{hostname}:{port}/{db_name}'.format(
+        username=username, password=password, hostname=hostname, db_name=db_name, port=port
     )
 
 

@@ -46,5 +46,11 @@ def define_dagster_config_cls():
             'compute_logs': config_field_for_configurable_class(
                 'DagsterInstanceComputeLogsConfig', is_optional=True
             ),
+            'run_storage': config_field_for_configurable_class(
+                'DagsterInstanceRunStorageConfig', is_optional=True
+            ),
+            'event_log_storage': config_field_for_configurable_class(
+                'DagsterInstanceEventLogStorageConfig', is_optional=True
+            ),
         },
     )
