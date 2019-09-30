@@ -97,7 +97,7 @@ def test_running():
         handle, passing_pipeline, pipeline_run, instance, raise_on_error=False
     )
     execution_manager.join()
-    assert instance.get_run(run_id).status == PipelineRunStatus.SUCCESS
+    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
     events = instance.all_logs(run_id)
     assert events
 
@@ -138,7 +138,7 @@ def test_failing():
         handle, failing_pipeline, pipeline_run, instance, raise_on_error=False
     )
     execution_manager.join()
-    assert instance.get_run(run_id).status == PipelineRunStatus.FAILURE
+    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.FAILURE
     assert instance.all_logs(run_id)
 
 
@@ -169,7 +169,7 @@ def test_execution_crash():
         handle, crashy_pipeline, pipeline_run, instance, raise_on_error=False
     )
     execution_manager.join()
-    assert instance.get_run(run_id).status == PipelineRunStatus.FAILURE
+    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.FAILURE
     last_log = instance.all_logs(run_id)[-1]
 
     assert last_log.message.startswith(
@@ -288,7 +288,7 @@ def test_multiprocessing_execution_for_composite_solid():
         handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
     )
     execution_manager.join()
-    assert instance.get_run(run_id).status == PipelineRunStatus.SUCCESS
+    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
 
     environment_dict = {
         'solids': {
@@ -355,7 +355,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
         handle, composite_pipeline_with_config_mapping, pipeline_run, instance, raise_on_error=False
     )
     execution_manager.join()
-    assert instance.get_run(run_id).status == PipelineRunStatus.SUCCESS
+    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
 
     environment_dict = {
         'solids': {
@@ -388,7 +388,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     )
 
     execution_manager.join()
-    assert instance.get_run(run_id).status == PipelineRunStatus.SUCCESS
+    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
 
 
 @solid(config={'file': Field(Path)})

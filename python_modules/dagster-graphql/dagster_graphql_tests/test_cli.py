@@ -233,6 +233,6 @@ def test_start_execution_predefined_with_logs():
             retries -= 1
 
         # assert that the watching run storage captured the run correctly from the other process
-        run = instance.get_run(run_id)
+        run = instance.get_run_by_id(run_id)
 
         assert run.status == PipelineRunStatus.SUCCESS

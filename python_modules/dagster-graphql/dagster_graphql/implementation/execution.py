@@ -121,7 +121,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     check.str_param(run_id, 'run_id')
     check.opt_int_param(after, 'after')
     instance = graphene_info.context.instance
-    run = instance.get_run(run_id)
+    run = instance.get_run_by_id(run_id)
 
     if not run:
 

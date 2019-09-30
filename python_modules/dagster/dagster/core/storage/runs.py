@@ -1,8 +1,7 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections import OrderedDict
 from datetime import datetime
 
-import six
 import sqlalchemy as db
 
 from dagster import check
@@ -10,91 +9,7 @@ from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 from .pipeline_run import PipelineRun, PipelineRunStatus
-
-
-class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
-    @abstractmethod
-    def add_run(self, pipeline_run):
-        '''Add a run to storage.
-
-        Args:
-            pipeline_run (PipelineRun): The run to add. If this is not a PipelineRun,
-        '''
-
-    @abstractmethod
-    def handle_run_event(self, run_id, event):
-        '''Update run storage in accordance to a pipeline run related DagsterEvent
-
-        Args:
-            event (DagsterEvent)
-
-        '''
-
-    @abstractmethod
-    def all_runs(self, cursor=None, limit=None):
-        '''Return all the runs present in the storage.
-
-        Returns:
-            List[PipelineRun]
-        '''
-
-    @abstractmethod
-    def all_runs_for_pipeline(self, pipeline_name, cursor=None, limit=None):
-        '''Return all the runs present in the storage for a given pipeline.
-
-        Args:
-            pipeline_name (str): The pipeline to index on
-            cursor (Optional[str]): Starting cursor (run_id) of range of runs
-            limit (Optional[int]): Number of results to get. Defaults to infinite.
-        Returns:
-            List[PipelineRun]
-        '''
-
-    @abstractmethod
-    def all_runs_for_tag(self, key, value, cursor=None, limit=None):
-        '''Return all the runs present in the storage that have a tag with key, value
-
-        Args:
-            key (str): The key to index on
-            value (str): The value to match
-            cursor (Optional[str]): Starting cursor (run_id) of range of runs
-            limit (Optional[int]): Number of results to get. Defaults to infinite.
-
-        Returns:
-            List[PipelineRun]
-        '''
-
-    @abstractmethod
-    def get_runs_for_status(self, run_status, cursor=None, limit=None):
-        '''Run all the runs matching a particular status
-
-        Args:
-            run_status (PipelineRunStatus)
-            cursor (Optional[str]): Starting cursor (run_id) of range of runs
-            limit (Optional[int]): Number of results to get. Defaults to infinite.
-
-        Returns:
-            List[PipelineRun]:
-        '''
-
-    @abstractmethod
-    def get_run_by_id(self, run_id):
-        '''Get a run by its id.
-
-        Args:
-            run_id (str): The id of the run
-
-        Returns:
-            Optional[PipelineRun]
-        '''
-
-    @abstractmethod
-    def has_run(self, run_id):
-        pass
-
-    @abstractmethod
-    def wipe(self):
-        '''Clears the run storage.'''
+from .run_storage_abc import RunStorage
 
 
 class InMemoryRunStorage(RunStorage):
@@ -126,13 +41,13 @@ class InMemoryRunStorage(RunStorage):
     def all_runs(self, cursor=None, limit=None):
         return self._slice(list(self._runs.values())[::-1], cursor, limit)
 
-    def all_runs_for_pipeline(self, pipeline_name, cursor=None, limit=None):
+    def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
         check.str_param(pipeline_name, 'pipeline_name')
         return self._slice(
             [r for r in self.all_runs() if r.pipeline_name == pipeline_name], cursor, limit
         )
 
-    def all_runs_for_tag(self, key, value, cursor=None, limit=None):
+    def get_runs_with_matching_tag(self, key, value, cursor=None, limit=None):
         check.str_param(key, 'key')
         check.str_param(value, 'value')
         return self._slice([r for r in self.all_runs() if r.tags.get(key) == value], cursor, limit)
@@ -158,7 +73,7 @@ class InMemoryRunStorage(RunStorage):
         check.str_param(run_id, 'run_id')
         return self._runs.get(run_id)
 
-    def get_runs_for_status(self, run_status, cursor=None, limit=None):
+    def get_runs_with_status(self, run_status, cursor=None, limit=None):
         check.inst_param(run_status, 'run_status', PipelineRunStatus)
         matching_runs = list(
             filter(lambda run: run.status == run_status, reversed(self._runs.values()))
@@ -288,7 +203,7 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
         rows = self.connect().execute(query).fetchall()
         return self._rows_to_runs(rows)
 
-    def all_runs_for_pipeline(self, pipeline_name, cursor=None, limit=None):
+    def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
         '''Return all the runs present in the storage for a given pipeline.
 
         Args:
@@ -306,7 +221,7 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
         rows = self.connect().execute(query).fetchall()
         return self._rows_to_runs(rows)
 
-    def all_runs_for_tag(self, key, value, cursor=None, limit=None):
+    def get_runs_with_matching_tag(self, key, value, cursor=None, limit=None):
         base_query = (
             db.select([RunsTable.c.run_body])
             .select_from(RunsTable.join(RunTagsTable))
@@ -316,7 +231,7 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
         rows = self.connect().execute(query).fetchall()
         return self._rows_to_runs(rows)
 
-    def get_runs_for_status(self, run_status, cursor=None, limit=None):
+    def get_runs_with_status(self, run_status, cursor=None, limit=None):
         check.inst_param(run_status, 'run_status', PipelineRunStatus)
 
         base_query = db.select([RunsTable.c.run_body]).where(RunsTable.c.status == run_status.value)

@@ -15,7 +15,7 @@ def do_test_single_write_read(instance):
     run_id = 'some_run_id'
     pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
     instance.create_empty_run(run_id=run_id, pipeline_name=pipeline_def.name)
-    run = instance.get_run(run_id)
+    run = instance.get_run_by_id(run_id)
     assert run.run_id == run_id
     assert run.pipeline_name == 'some_pipeline'
     assert list(instance.all_runs()) == [run]
@@ -103,7 +103,7 @@ def test_fetch_by_pipeline(run_storage_factory_cm_fn):
         storage.add_run(build_run(run_id=one, pipeline_name='some_pipeline'))
         storage.add_run(build_run(run_id=two, pipeline_name='some_other_pipeline'))
         assert len(storage.all_runs()) == 2
-        some_runs = storage.all_runs_for_pipeline('some_pipeline')
+        some_runs = storage.get_runs_with_pipeline_name('some_pipeline')
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
 
@@ -123,7 +123,7 @@ def test_fetch_by_tag(run_storage_factory_cm_fn):
         )
         storage.add_run(build_run(run_id=three, pipeline_name='some_pipeline'))
         assert len(storage.all_runs()) == 3
-        some_runs = storage.all_runs_for_tag('mytag', 'hello')
+        some_runs = storage.get_runs_with_matching_tag('mytag', 'hello')
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
 
@@ -150,15 +150,15 @@ def test_paginated_fetch(run_storage_factory_cm_fn):
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
 
-        all_runs = storage.all_runs_for_pipeline('some_pipeline')
+        all_runs = storage.get_runs_with_pipeline_name('some_pipeline')
         assert len(all_runs) == 3
-        sliced_runs = storage.all_runs_for_pipeline('some_pipeline', cursor=three, limit=1)
+        sliced_runs = storage.get_runs_with_pipeline_name('some_pipeline', cursor=three, limit=1)
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
 
-        all_runs = storage.all_runs_for_tag('mytag', 'hello')
+        all_runs = storage.get_runs_with_matching_tag('mytag', 'hello')
         assert len(all_runs) == 3
-        sliced_runs = storage.all_runs_for_tag('mytag', 'hello', cursor=three, limit=1)
+        sliced_runs = storage.get_runs_with_matching_tag('mytag', 'hello', cursor=three, limit=1)
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
 
@@ -187,20 +187,20 @@ def test_fetch_by_status(run_storage_factory_cm_fn):
         )
 
         assert {
-            run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.NOT_STARTED)
+            run.run_id for run in storage.get_runs_with_status(PipelineRunStatus.NOT_STARTED)
         } == {one}
 
-        assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.STARTED)} == {
+        assert {run.run_id for run in storage.get_runs_with_status(PipelineRunStatus.STARTED)} == {
             two,
             three,
         }
 
-        assert {run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.FAILURE)} == {
+        assert {run.run_id for run in storage.get_runs_with_status(PipelineRunStatus.FAILURE)} == {
             four
         }
 
         assert {
-            run.run_id for run in storage.get_runs_for_status(PipelineRunStatus.SUCCESS)
+            run.run_id for run in storage.get_runs_with_status(PipelineRunStatus.SUCCESS)
         } == set()
 
 
@@ -234,18 +234,18 @@ def test_fetch_by_status_cursored(run_storage_factory_cm_fn):
             build_run(run_id=four, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
         )
 
-        cursor_four_runs = storage.get_runs_for_status(PipelineRunStatus.STARTED, cursor=four)
+        cursor_four_runs = storage.get_runs_with_status(PipelineRunStatus.STARTED, cursor=four)
         assert len(cursor_four_runs) == 2
         assert {run.run_id for run in cursor_four_runs} == {one, two}
 
-        cursor_two_runs = storage.get_runs_for_status(PipelineRunStatus.STARTED, cursor=two)
+        cursor_two_runs = storage.get_runs_with_status(PipelineRunStatus.STARTED, cursor=two)
         assert len(cursor_two_runs) == 1
         assert {run.run_id for run in cursor_two_runs} == {one}
 
-        cursor_one_runs = storage.get_runs_for_status(PipelineRunStatus.STARTED, cursor=one)
+        cursor_one_runs = storage.get_runs_with_status(PipelineRunStatus.STARTED, cursor=one)
         assert not cursor_one_runs
 
-        cursor_four_limit_one = storage.get_runs_for_status(
+        cursor_four_limit_one = storage.get_runs_with_status(
             PipelineRunStatus.STARTED, cursor=four, limit=1
         )
         assert len(cursor_four_limit_one) == 1

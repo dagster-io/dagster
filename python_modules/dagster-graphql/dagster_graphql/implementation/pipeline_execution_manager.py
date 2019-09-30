@@ -219,7 +219,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
 
             for run_id, process in living_process_snapshot.items():
                 if not process.is_alive():
-                    run = self._instance.get_run(run_id)
+                    run = self._instance.get_run_by_id(run_id)
                     if not run:  # defensive
                         continue
 
@@ -266,7 +266,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
                 if process.is_alive():
                     process.join()
 
-                run = self._instance.get_run(run_id)
+                run = self._instance.get_run_by_id(run_id)
 
                 if run and not run.is_finished:
                     self._generate_synthetic_error_from_crash(run)

@@ -13,6 +13,7 @@ from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
 from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.run_storage_abc import RunStorage
 from dagster.core.types import Field, PermissiveDict, String
 from dagster.core.types.evaluator import evaluate_config
 from dagster.utils.yaml_utils import load_yaml_from_globs
@@ -96,7 +97,7 @@ class InstanceType(Enum):
     EPHEMERAL = 'EPHEMERAL'
 
 
-class DagsterInstance:
+class DagsterInstance(RunStorage):
     _PROCESS_TEMPDIR = None
 
     def __init__(
@@ -111,7 +112,7 @@ class DagsterInstance:
     ):
         from dagster.core.storage.event_log import EventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
-        from dagster.core.storage.runs import RunStorage
+
         from dagster.core.storage.compute_log_manager import ComputeLogManager
 
         self._instance_type = check.inst_param(instance_type, 'instance_type', InstanceType)
@@ -233,7 +234,7 @@ class DagsterInstance:
 
     # run storage
 
-    def get_run(self, run_id):
+    def get_run_by_id(self, run_id):
         return self._run_storage.get_run_by_id(run_id)
 
     def get_run_stats(self, run_id):
@@ -255,21 +256,30 @@ class DagsterInstance:
     def get_or_create_run(self, pipeline_run):
         # This eventually needs transactional/locking semantics
         if self.has_run(pipeline_run.run_id):
-            return self.get_run(pipeline_run.run_id)
+            return self.get_run_by_id(pipeline_run.run_id)
         else:
             return self.create_run(pipeline_run)
+
+    def add_run(self, pipeline_run):
+        return self._run_storage.add_run(pipeline_run)
+
+    def handle_run_event(self, run_id, event):
+        return self._run_storage.handle_run_event(run_id, event)
 
     def has_run(self, run_id):
         return self._run_storage.has_run(run_id)
 
-    def all_runs(self):
+    def all_runs(self, cursor=None, limit=None):
         return self._run_storage.all_runs()
 
-    def all_runs_for_pipeline(self, pipeline):
-        return self._run_storage.all_runs_for_pipeline(pipeline)
+    def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
+        return self._run_storage.get_runs_with_pipeline_name(pipeline_name, cursor, limit)
 
-    def all_runs_for_tag(self, key, value):
-        return self._run_storage.all_runs_for_tag(key, value)
+    def get_runs_with_matching_tag(self, key, value, cursor=None, limit=None):
+        return self._run_storage.get_runs_with_matching_tag(key, value, cursor, limit)
+
+    def get_runs_with_status(self, run_status, cursor=None, limit=None):
+        return self._run_storage.all_runs_for_storage(run_status, cursor, limit)
 
     def wipe(self):
         self._run_storage.wipe()
