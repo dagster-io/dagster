@@ -13,7 +13,7 @@ from dagster import (
     seven,
     solid,
 )
-from dagster.core.instance import DagsterInstance, InstanceType, LocalInstanceRef
+from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -36,7 +36,7 @@ def test_fs_stores():
         event_store = SqliteEventLogStorage(temp_dir)
         compute_log_manager = LocalComputeLogManager(temp_dir)
         instance = DagsterInstance(
-            instance_type=InstanceType.LOCAL,
+            instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=LocalArtifactStorage(temp_dir),
             run_storage=run_store,
             event_storage=event_store,
@@ -63,7 +63,7 @@ def test_init_compute_log_with_bad_config():
         with open(os.path.join(tmpdir_path, 'dagster.yaml'), 'w') as fd:
             yaml.dump({'compute_logs': {'garbage': 'flargh'}}, fd, default_flow_style=False)
         with pytest.raises(DagsterInvalidConfigError, match='Undefined field "garbage"'):
-            DagsterInstance.from_ref(LocalInstanceRef.from_dir(tmpdir_path))
+            DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
 
 def test_init_compute_log_with_bad_config_module():
@@ -78,4 +78,4 @@ def test_init_compute_log_with_bad_config_module():
             DagsterInvariantViolationError,
             match='returning a valid instance of `ComputeLogManager`',
         ):
-            DagsterInstance.from_ref(LocalInstanceRef.from_dir(tmpdir_path))
+            DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))

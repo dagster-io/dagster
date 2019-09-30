@@ -51,9 +51,10 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
         check.invariant(storage.keys(), 'Must specify storage to use Dask execution')
 
         if dask_config.is_remote_execution:
+            # These checks are pretty tenuous
             check.invariant(
-                pipeline_context.instance.is_remote,
-                'Must use remote DagsterInstance for non-local Dask execution',
+                pipeline_context.instance.is_persistent,
+                'Must use persistent DagsterInstance for non-local Dask execution',
             )
             check.invariant(
                 storage.get('s3'),

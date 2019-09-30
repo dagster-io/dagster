@@ -1,8 +1,6 @@
 import os
-from abc import ABCMeta
 from collections import namedtuple
 
-import six
 import yaml
 
 from dagster import check
@@ -19,17 +17,12 @@ def _event_logs_directory(base):
     return os.path.join(base, 'history', 'runs', '')
 
 
-class InstanceRef(six.with_metaclass(ABCMeta)):
-    pass
-
-
 @whitelist_for_serdes
-class LocalInstanceRef(
+class InstanceRef(
     namedtuple(
-        '_LocalInstanceRef',
+        '_InstanceRef',
         'feature_set local_artifact_storage_data run_storage_data event_storage_data compute_logs_data',
-    ),
-    InstanceRef,
+    )
 ):
     def __new__(
         self,
@@ -39,7 +32,7 @@ class LocalInstanceRef(
         event_storage_data,
         compute_logs_data=None,
     ):
-        return super(self, LocalInstanceRef).__new__(
+        return super(self, InstanceRef).__new__(
             self,
             feature_set=check.opt_list_param(feature_set, 'feature_set'),
             local_artifact_storage_data=check.inst_param(
@@ -58,7 +51,7 @@ class LocalInstanceRef(
 
     @staticmethod
     def from_dir(base_dir):
-        return LocalInstanceRef(
+        return InstanceRef(
             feature_set=dagster_feature_set(base_dir),
             local_artifact_storage_data=ConfigurableClassData(
                 'dagster.core.storage.root',
@@ -88,24 +81,3 @@ class LocalInstanceRef(
     @property
     def event_storage(self):
         return self.event_storage_data.rehydrate()
-
-
-class RemoteInstanceRef(
-    namedtuple(
-        '_RemoteInstanceRef', 'local_artifact_storage_data event_storage_config run_storage_config'
-    ),
-    InstanceRef,
-):
-    def __new__(self, local_artifact_storage_data, event_storage_config, run_storage_config):
-        return super(self, RemoteInstanceRef).__new__(
-            self,
-            local_artifact_storage_data=check.inst_param(
-                local_artifact_storage_data, 'local_artifact_storage_data', ConfigurableClassData
-            ),
-            event_storage_data=check.inst_param(
-                event_storage_config, 'event_storage_data', ConfigurableClassData
-            ),
-            run_storage_data=check.inst_param(
-                run_storage_config, 'run_storage_data', ConfigurableClassData
-            ),
-        )

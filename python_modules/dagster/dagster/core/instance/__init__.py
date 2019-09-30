@@ -19,7 +19,7 @@ from dagster.utils.yaml_utils import load_yaml_from_globs
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_feature_set, dagster_instance_config
 from .features import DagsterFeatures
-from .ref import InstanceRef, LocalInstanceRef
+from .ref import InstanceRef
 
 
 def _is_dagster_home_set():
@@ -92,9 +92,8 @@ class _EventListenerLogHandler(logging.Handler):
 
 
 class InstanceType(Enum):
-    LOCAL = 'LOCAL'
+    PERSISTENT = 'PERSISTENT'
     EPHEMERAL = 'EPHEMERAL'
-    REMOTE = 'REMOTE'
 
 
 class DagsterInstance:
@@ -108,6 +107,7 @@ class DagsterInstance:
         event_storage,
         compute_log_manager,
         feature_set=None,
+        ref=None,
     ):
         from dagster.core.storage.event_log import EventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
@@ -124,6 +124,7 @@ class DagsterInstance:
             compute_log_manager, 'compute_log_manager', ComputeLogManager
         )
         self._feature_set = check.opt_list_param(feature_set, 'feature_set', of_type=str)
+        self._ref = check.opt_inst_param(ref, 'ref', InstanceRef)
 
         self._subscribers = defaultdict(list)
 
@@ -153,13 +154,13 @@ class DagsterInstance:
         # 1. Use $DAGSTER_HOME to determine instance if set.
         if _is_dagster_home_set():
             # in the future we can read from config and create RemoteInstanceRef when needed
-            return DagsterInstance.from_ref(LocalInstanceRef.from_dir(_dagster_home()))
+            return DagsterInstance.from_ref(InstanceRef.from_dir(_dagster_home()))
 
         # 2. If that is not set use the fallback storage directory if provided.
         # This allows us to have a nice out of the box dagit experience where runs are persisted
         # across restarts in a tempdir that gets cleaned up when the dagit watchdog process exits.
         elif fallback_storage is not None:
-            return DagsterInstance.from_ref(LocalInstanceRef.from_dir(fallback_storage))
+            return DagsterInstance.from_ref(InstanceRef.from_dir(fallback_storage))
 
         # 3. If all else fails create an ephemeral in memory instance.
         else:
@@ -171,7 +172,7 @@ class DagsterInstance:
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
 
-        return DagsterInstance.from_ref(LocalInstanceRef.from_dir(tempdir), features)
+        return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir), features)
 
     @staticmethod
     def from_ref(instance_ref, fallback_feature_set=None):
@@ -186,31 +187,28 @@ class DagsterInstance:
         compute_log_manager = _dagster_compute_log_manager(local_artifact_storage.base_dir)
 
         return DagsterInstance(
-            instance_type=InstanceType.LOCAL,
+            instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=local_artifact_storage,
             run_storage=run_storage,
             event_storage=event_storage,
             compute_log_manager=compute_log_manager,
             feature_set=feature_set,
+            ref=instance_ref,
         )
 
     @property
-    def is_remote(self):
-        return self._instance_type == InstanceType.REMOTE
-
-    @property
-    def is_local(self):
-        return self._instance_type == InstanceType.LOCAL
+    def is_persistent(self):
+        return self._instance_type == InstanceType.PERSISTENT
 
     @property
     def is_ephemeral(self):
         return self._instance_type == InstanceType.EPHEMERAL
 
     def get_ref(self):
-        if self._instance_type == InstanceType.LOCAL:
-            return LocalInstanceRef.from_dir(self._local_artifact_storage.base_dir)
+        if self._ref:
+            return self._ref
 
-        check.failed('Can not produce an instance reference for {t}'.format(t=self._instance_type))
+        check.failed('Can not produce an instance reference for {t}'.format(t=self))
 
     @staticmethod
     def temp_storage():
@@ -309,14 +307,6 @@ class DagsterInstance:
 
     def handle_new_event(self, event):
         run_id = event.run_id
-
-        if self._instance_type != InstanceType.EPHEMERAL:
-            check.invariant(
-                self._run_storage.has_run(run_id),
-                'Can not handle events for unknown run with id {run_id} on non-ephemeral instance type'.format(
-                    run_id=run_id
-                ),
-            )
 
         self._event_storage.store_event(event)
 
