@@ -18,7 +18,7 @@ class PostgresRunStorage(SQLRunStorage, ConfigurableClass):
         return PostgresRunStorage.from_url(**dict(config_value, **kwargs))
 
     @staticmethod
-    def create_nuked_storage(postgres_url):
+    def create_clean_storage(postgres_url):
         engine = create_engine(postgres_url)
         RunStorageSQLMetadata.drop_all(engine)
         return PostgresRunStorage.from_url(postgres_url)

@@ -30,7 +30,7 @@ class PostgresEventLogStorage(WatchableEventLogStorage):
         self.conn_string = check.str_param(conn_string, 'conn_string')
 
     @staticmethod
-    def create_nuked_storage(conn_string):
+    def create_clean_storage(conn_string):
         check.str_param(conn_string, 'conn_string')
 
         conn = get_conn(conn_string)

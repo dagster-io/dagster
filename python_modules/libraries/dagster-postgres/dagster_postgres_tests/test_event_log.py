@@ -62,7 +62,7 @@ def test_basic_event_store():
 
     events, _result = gather_events(_solids)
 
-    event_log_storage = PostgresEventLogStorage.create_nuked_storage(get_test_conn_string())
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
 
     for event in events:
         event_log_storage.store_event(event)
@@ -96,7 +96,7 @@ def test_basic_get_logs_for_run():
 
     events, result = gather_events(_solids)
 
-    event_log_storage = PostgresEventLogStorage.create_nuked_storage(get_test_conn_string())
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
 
     for event in events:
         event_log_storage.store_event(event)
@@ -124,7 +124,7 @@ def test_wipe_postgres_event_log():
 
     events, result = gather_events(_solids)
 
-    event_log_storage = PostgresEventLogStorage.create_nuked_storage(get_test_conn_string())
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
 
     for event in events:
         event_log_storage.store_event(event)
@@ -147,7 +147,7 @@ def test_wipe_postgres_event_log():
 
 
 def test_basic_get_logs_for_run_cursor():
-    event_log_storage = PostgresEventLogStorage.create_nuked_storage(get_test_conn_string())
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
 
     @solid
     def return_one(_):
@@ -183,7 +183,7 @@ def test_basic_get_logs_for_run_cursor():
 
 
 def test_basic_get_logs_for_run_multiple_runs():
-    event_log_storage = PostgresEventLogStorage.create_nuked_storage(get_test_conn_string())
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
 
     @solid
     def return_one(_):
@@ -236,7 +236,7 @@ def test_basic_get_logs_for_run_multiple_runs():
 
 
 def test_basic_get_logs_for_run_multiple_runs_cursors():
-    event_log_storage = PostgresEventLogStorage.create_nuked_storage(get_test_conn_string())
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
 
     @solid
     def return_one(_):
@@ -288,7 +288,7 @@ def test_basic_get_logs_for_run_multiple_runs_cursors():
 
 
 def test_listen_notify_single_run_event():
-    event_log_storage = PostgresEventLogStorage.create_nuked_storage(get_test_conn_string())
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
 
     @solid
     def return_one(_):
@@ -322,7 +322,7 @@ def test_listen_notify_single_run_event():
 
 
 def test_listen_notify_filter_two_runs_event():
-    event_log_storage = PostgresEventLogStorage.create_nuked_storage(get_test_conn_string())
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
 
     @solid
     def return_one(_):
@@ -362,7 +362,7 @@ def test_listen_notify_filter_two_runs_event():
 
 
 def test_listen_notify_filter_run_event():
-    event_log_storage = PostgresEventLogStorage.create_nuked_storage(get_test_conn_string())
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(get_test_conn_string())
 
     @solid
     def return_one(_):

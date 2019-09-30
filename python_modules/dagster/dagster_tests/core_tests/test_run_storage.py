@@ -84,7 +84,7 @@ def test_basic_storage(run_storage_factory_cm_fn):
 
 
 @run_storage_test
-def test_nuke(run_storage_factory_cm_fn):
+def test_clear(run_storage_factory_cm_fn):
     with run_storage_factory_cm_fn() as storage:
         assert storage
         run_id = str(uuid.uuid4())

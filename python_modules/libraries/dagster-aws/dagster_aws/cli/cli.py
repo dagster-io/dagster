@@ -280,7 +280,7 @@ def update_dagster():
 
 
 @main.command()
-def nuke():
+def clear():
     '''💥 Terminate your EC2 instance'''
     dagster_home = get_dagster_home()
 
