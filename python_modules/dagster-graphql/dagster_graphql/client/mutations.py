@@ -185,8 +185,6 @@ def handle_execute_plan_result_raw(res):
     handle_error_states(res_type, res_data)
 
     if res_type == 'ExecutePlanSuccess':
-        pipeline_name = res_data['pipeline']['name']
-
         raw_event_records = [
             DagsterEventRecord(
                 event_record.error_info,

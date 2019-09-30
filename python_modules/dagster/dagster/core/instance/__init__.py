@@ -26,7 +26,7 @@ def _is_dagster_home_set():
     return bool(os.getenv('DAGSTER_HOME'))
 
 
-def _dagster_root_storage_dir():
+def _dagster_home():
     dagster_home_path = os.getenv('DAGSTER_HOME')
 
     if not dagster_home_path:
@@ -103,19 +103,21 @@ class DagsterInstance:
     def __init__(
         self,
         instance_type,
-        root_storage,
+        local_artifact_storage,
         run_storage,
         event_storage,
         compute_log_manager,
         feature_set=None,
     ):
         from dagster.core.storage.event_log import EventLogStorage
-        from dagster.core.storage.root import RootStorage
+        from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import RunStorage
         from dagster.core.storage.compute_log_manager import ComputeLogManager
 
         self._instance_type = check.inst_param(instance_type, 'instance_type', InstanceType)
-        self._root_storage = check.inst_param(root_storage, 'root_storage', RootStorage)
+        self._local_artifact_storage = check.inst_param(
+            local_artifact_storage, 'local_artifact_storage', LocalArtifactStorage
+        )
         self._event_storage = check.inst_param(event_storage, 'event_storage', EventLogStorage)
         self._run_storage = check.inst_param(run_storage, 'run_storage', RunStorage)
         self._compute_log_manager = check.inst_param(
@@ -128,7 +130,7 @@ class DagsterInstance:
     @staticmethod
     def ephemeral(tempdir=None):
         from dagster.core.storage.event_log import InMemoryEventLogStorage
-        from dagster.core.storage.root import RootStorage
+        from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import InMemoryRunStorage
         from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 
@@ -139,7 +141,7 @@ class DagsterInstance:
 
         return DagsterInstance(
             InstanceType.EPHEMERAL,
-            root_storage=RootStorage(tempdir),
+            local_artifact_storage=LocalArtifactStorage(tempdir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
             compute_log_manager=NoOpComputeLogManager(_compute_logs_base_directory(tempdir)),
@@ -151,17 +153,13 @@ class DagsterInstance:
         # 1. Use $DAGSTER_HOME to determine instance if set.
         if _is_dagster_home_set():
             # in the future we can read from config and create RemoteInstanceRef when needed
-            return DagsterInstance.from_ref(
-                LocalInstanceRef.from_root_storage_dir(_dagster_root_storage_dir())
-            )
+            return DagsterInstance.from_ref(LocalInstanceRef.from_dir(_dagster_home()))
 
         # 2. If that is not set use the fallback storage directory if provided.
         # This allows us to have a nice out of the box dagit experience where runs are persisted
         # across restarts in a tempdir that gets cleaned up when the dagit watchdog process exits.
         elif fallback_storage is not None:
-            return DagsterInstance.from_ref(
-                LocalInstanceRef.from_root_storage_dir(fallback_storage)
-            )
+            return DagsterInstance.from_ref(LocalInstanceRef.from_dir(fallback_storage))
 
         # 3. If all else fails create an ephemeral in memory instance.
         else:
@@ -173,23 +171,23 @@ class DagsterInstance:
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
 
-        return DagsterInstance.from_ref(LocalInstanceRef.from_root_storage_dir(tempdir), features)
+        return DagsterInstance.from_ref(LocalInstanceRef.from_dir(tempdir), features)
 
     @staticmethod
     def from_ref(instance_ref, fallback_feature_set=None):
         check.inst_param(instance_ref, 'instance_ref', InstanceRef)
         check.opt_list_param(fallback_feature_set, 'fallback_feature_set', of_type=str)
 
-        root_storage = instance_ref.root_storage_data.rehydrate()
+        local_artifact_storage = instance_ref.local_artifact_storage_data.rehydrate()
         run_storage = instance_ref.run_storage_data.rehydrate()
         event_storage = instance_ref.event_storage_data.rehydrate()
         feature_set = instance_ref.feature_set or fallback_feature_set
 
-        compute_log_manager = _dagster_compute_log_manager(root_storage.root_storage_dir)
+        compute_log_manager = _dagster_compute_log_manager(local_artifact_storage.base_dir)
 
         return DagsterInstance(
             instance_type=InstanceType.LOCAL,
-            root_storage=root_storage,
+            local_artifact_storage=local_artifact_storage,
             run_storage=run_storage,
             event_storage=event_storage,
             compute_log_manager=compute_log_manager,
@@ -210,7 +208,7 @@ class DagsterInstance:
 
     def get_ref(self):
         if self._instance_type == InstanceType.LOCAL:
-            return LocalInstanceRef.from_root_storage_dir(self._root_storage.root_storage_dir)
+            return LocalInstanceRef.from_dir(self._local_artifact_storage.base_dir)
 
         check.failed('Can not produce an instance reference for {t}'.format(t=self._instance_type))
 
@@ -221,7 +219,7 @@ class DagsterInstance:
         return DagsterInstance._PROCESS_TEMPDIR.name
 
     def root_directory(self):
-        return self._root_storage.root_storage_dir
+        return self._local_artifact_storage.base_dir
 
     # features
 
@@ -334,13 +332,13 @@ class DagsterInstance:
     # directories
 
     def file_manager_directory(self, run_id):
-        return self._root_storage.file_manager_dir(run_id)
+        return self._local_artifact_storage.file_manager_dir(run_id)
 
     def intermediates_directory(self, run_id):
-        return self._root_storage.intermediates_dir(run_id)
+        return self._local_artifact_storage.intermediates_dir(run_id)
 
     def schedules_directory(self):
-        return self._root_storage.schedules_dir
+        return self._local_artifact_storage.schedules_dir
 
 
 def _compute_logs_base_directory(base):

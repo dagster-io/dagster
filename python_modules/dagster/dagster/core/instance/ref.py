@@ -27,14 +27,14 @@ class InstanceRef(six.with_metaclass(ABCMeta)):
 class LocalInstanceRef(
     namedtuple(
         '_LocalInstanceRef',
-        'feature_set root_storage_data run_storage_data event_storage_data compute_logs_data',
+        'feature_set local_artifact_storage_data run_storage_data event_storage_data compute_logs_data',
     ),
     InstanceRef,
 ):
     def __new__(
         self,
         feature_set,
-        root_storage_data,
+        local_artifact_storage_data,
         run_storage_data,
         event_storage_data,
         compute_logs_data=None,
@@ -42,8 +42,8 @@ class LocalInstanceRef(
         return super(self, LocalInstanceRef).__new__(
             self,
             feature_set=check.opt_list_param(feature_set, 'feature_set'),
-            root_storage_data=check.inst_param(
-                root_storage_data, 'root_storage_data', ConfigurableClassData
+            local_artifact_storage_data=check.inst_param(
+                local_artifact_storage_data, 'local_artifact_storage_data', ConfigurableClassData
             ),
             run_storage_data=check.inst_param(
                 run_storage_data, 'run_storage_data', ConfigurableClassData
@@ -57,33 +57,29 @@ class LocalInstanceRef(
         )
 
     @staticmethod
-    def from_root_storage_dir(root_storage_dir):
+    def from_dir(base_dir):
         return LocalInstanceRef(
-            feature_set=dagster_feature_set(root_storage_dir),
-            root_storage_data=ConfigurableClassData(
+            feature_set=dagster_feature_set(base_dir),
+            local_artifact_storage_data=ConfigurableClassData(
                 'dagster.core.storage.root',
-                'RootStorage',
-                yaml.dump({'root_storage_dir': root_storage_dir}, default_flow_style=False),
+                'LocalArtifactStorage',
+                yaml.dump({'base_dir': base_dir}, default_flow_style=False),
             ),
             run_storage_data=ConfigurableClassData(
                 'dagster.core.storage.sqlite_run_storage',
                 'SqliteRunStorage',
-                yaml.dump(
-                    {'base_dir': _runs_directory(root_storage_dir)}, default_flow_style=False
-                ),
+                yaml.dump({'base_dir': _runs_directory(base_dir)}, default_flow_style=False),
             ),
             event_storage_data=ConfigurableClassData(
                 'dagster.core.storage.event_log',
                 'SqliteEventLogStorage',
-                yaml.dump(
-                    {'base_dir': _event_logs_directory(root_storage_dir)}, default_flow_style=False
-                ),
+                yaml.dump({'base_dir': _event_logs_directory(base_dir)}, default_flow_style=False),
             ),
         )
 
     @property
-    def root_storage(self):
-        return self.root_storage_data.rehydrate()
+    def local_artifact_storage(self):
+        return self.local_artifact_storage_data.rehydrate()
 
     @property
     def run_storage(self):
@@ -95,14 +91,16 @@ class LocalInstanceRef(
 
 
 class RemoteInstanceRef(
-    namedtuple('_RemoteInstanceRef', 'root_storage_data event_storage_config run_storage_config'),
+    namedtuple(
+        '_RemoteInstanceRef', 'local_artifact_storage_data event_storage_config run_storage_config'
+    ),
     InstanceRef,
 ):
-    def __new__(self, root_storage_data, event_storage_config, run_storage_config):
+    def __new__(self, local_artifact_storage_data, event_storage_config, run_storage_config):
         return super(self, RemoteInstanceRef).__new__(
             self,
-            root_storage_data=check.inst_param(
-                root_storage_data, 'root_storage_data', ConfigurableClassData
+            local_artifact_storage_data=check.inst_param(
+                local_artifact_storage_data, 'local_artifact_storage_data', ConfigurableClassData
             ),
             event_storage_data=check.inst_param(
                 event_storage_config, 'event_storage_data', ConfigurableClassData

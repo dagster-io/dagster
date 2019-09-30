@@ -40,8 +40,8 @@ def define_dagster_config_cls():
         'DagsterInstanceConfig',
         {
             'features': Field(PermissiveDict(), is_optional=True),
-            'root_storage': config_field_for_configurable_class(
-                'DagsterInstanceRootStorageConfig', is_optional=True
+            'local_artifact_storage': config_field_for_configurable_class(
+                'DagsterInstanceLocalArtifactStorageConfig', is_optional=True
             ),
             'compute_logs': config_field_for_configurable_class(
                 'DagsterInstanceComputeLogsConfig', is_optional=True
