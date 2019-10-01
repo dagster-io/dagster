@@ -550,6 +550,7 @@ def resolve_to_runtime_type(dagster_type):
 
     if dagster_type is None:
         return Any.inst()
+
     if dagster_type is Dict or dagster_type is typing.Dict:
         return PythonDict.inst()
     if BuiltinEnum.contains(dagster_type):

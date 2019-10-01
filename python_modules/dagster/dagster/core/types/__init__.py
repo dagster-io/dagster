@@ -8,6 +8,7 @@ from .config_schema import (
 from .field import Field
 from .field_utils import Dict, NamedDict, NamedSelector, PermissiveDict, Selector
 from .python_dict import PythonDict
+from .python_tuple import PythonTuple
 from .runtime import PythonObjectType, define_python_dagster_type
 from .wrapping import List, Optional
 

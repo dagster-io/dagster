@@ -222,3 +222,19 @@ def test_dict_dagster_input():
 
     solid_result = execute_solid(intake_dagster_dict, input_values={'inp': {'foo': 'bar'}})
     assert solid_result.output_value() == 'bar'
+
+
+def test_python_tuple_input():
+    @lambda_solid
+    def intake_tuple(inp: tuple) -> int:
+        return inp[1]
+
+    assert execute_solid(intake_tuple, input_values={'inp': (3, 4)}).output_value() == 4
+
+
+def test_python_tuple_output():
+    @lambda_solid
+    def emit_tuple() -> tuple:
+        return (4, 5)
+
+    assert execute_solid(emit_tuple).output_value() == (4, 5)
