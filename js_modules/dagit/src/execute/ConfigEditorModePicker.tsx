@@ -2,14 +2,14 @@ import * as React from "react";
 import { Button, Intent, Menu } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { Select } from "@blueprintjs/select";
-import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
+import { PipelineDetailsFragment_modes } from "./types/PipelineDetailsFragment";
 import { ModeNotFoundError } from "./PipelineExecutionContainer";
 
 interface IConfigEditorModePickerProps {
-  pipeline: PipelineDetailsFragment;
+  modes: PipelineDetailsFragment_modes[];
   modeError?: ModeNotFoundError;
-  modeName?: string | null;
-  onModeChange?: (mode: string) => void;
+  modeName: string | null;
+  onModeChange: (mode: string) => void;
 }
 
 interface Mode {
@@ -23,8 +23,8 @@ export default class ConfigEditorModePicker extends React.PureComponent<
 > {
   getModeFromProps = (props: IConfigEditorModePickerProps) => {
     return props.modeName
-      ? props.pipeline.modes.find(m => m.name === props.modeName)
-      : props.pipeline.modes[0];
+      ? props.modes.find(m => m.name === props.modeName)
+      : props.modes[0];
   };
 
   getCurrentMode = () => {
@@ -48,7 +48,7 @@ export default class ConfigEditorModePicker extends React.PureComponent<
   }
 
   render() {
-    const singleMode = this.props.pipeline.modes.length === 1;
+    const singleMode = this.props.modes.length === 1;
     const currentMode = this.getCurrentMode();
     const valid = !this.props.modeError;
 
@@ -58,7 +58,7 @@ export default class ConfigEditorModePicker extends React.PureComponent<
           activeItem={currentMode}
           filterable={true}
           disabled={singleMode}
-          items={this.props.pipeline.modes}
+          items={this.props.modes}
           itemPredicate={(query, mode) =>
             query.length === 0 || mode.name.includes(query)
           }
