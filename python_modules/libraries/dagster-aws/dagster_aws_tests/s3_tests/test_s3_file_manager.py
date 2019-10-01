@@ -115,7 +115,7 @@ def test_depends_on_s3_resource_intermediates():
 
 
 def create_s3_key(run_id, step_key, output_name):
-    return 'dagster/runs/{run_id}/files/intermediates/{step_key}/{output_name}'.format(
+    return 'dagster/storage/{run_id}/intermediates/{step_key}/{output_name}'.format(
         run_id=run_id, step_key=step_key, output_name=output_name
     )
 
@@ -166,8 +166,6 @@ def test_depends_on_s3_resource_file_manager():
     file_key = list(keys_in_bucket)[0]
     comps = file_key.split('/')
 
-    assert '/'.join(comps[:-1]) == 'dagster/runs/{run_id}/files/managed'.format(
-        run_id=result.run_id
-    )
+    assert '/'.join(comps[:-1]) == 'dagster/storage/{run_id}/files'.format(run_id=result.run_id)
 
     assert uuid.UUID(comps[-1])

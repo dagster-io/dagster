@@ -108,5 +108,5 @@ class S3ComputeLogManager(ComputeLogManager):
     def _bucket_key(self, run_id, step_key, io_type):
         check.inst_param(io_type, 'io_type', ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
-        paths = ['dagster', 'runs', run_id, 'compute_logs', '{}.{}'.format(step_key, extension)]
+        paths = ['dagster', 'storage', run_id, 'compute_logs', '{}.{}'.format(step_key, extension)]
         return '/'.join(paths)  # s3 path delimiter

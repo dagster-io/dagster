@@ -11,7 +11,7 @@ class S3IntermediateStore(IntermediateStore):
         check.str_param(run_id, 'run_id')
 
         object_store = S3ObjectStore(s3_bucket, s3_session=s3_session)
-        root = object_store.key_for_paths(['dagster', 'runs', run_id, 'files'])
+        root = object_store.key_for_paths(['dagster', 'storage', run_id])
 
         super(S3IntermediateStore, self).__init__(
             object_store,

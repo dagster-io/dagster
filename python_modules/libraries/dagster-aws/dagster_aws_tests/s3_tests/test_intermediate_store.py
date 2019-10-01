@@ -273,7 +273,7 @@ def test_s3_intermediate_store(s3_bucket):
 
     # FIXME need a dedicated test bucket
     intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
-    assert intermediate_store.root == '/'.join(['dagster', 'runs', run_id, 'files'])
+    assert intermediate_store.root == '/'.join(['dagster', 'storage', run_id])
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
