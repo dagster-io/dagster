@@ -1,7 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`renders error mode 1`] = `
-<div>
+<div
+  style={
+    Object {
+      "marginLeft": 5,
+    }
+  }
+>
   <span
     className="bp3-popover-wrapper"
   >
@@ -70,7 +76,13 @@ exports[`renders error mode 1`] = `
 `;
 
 exports[`renders multi mode pipelines 1`] = `
-<div>
+<div
+  style={
+    Object {
+      "marginLeft": 5,
+    }
+  }
+>
   <span
     className="bp3-popover-wrapper"
   >
@@ -139,7 +151,13 @@ exports[`renders multi mode pipelines 1`] = `
 `;
 
 exports[`renders multi mode pipelines 2`] = `
-<div>
+<div
+  style={
+    Object {
+      "marginLeft": 5,
+    }
+  }
+>
   <span
     className="bp3-popover-wrapper"
   >
@@ -208,7 +226,13 @@ exports[`renders multi mode pipelines 2`] = `
 `;
 
 exports[`renders single mode pipelines 1`] = `
-<div>
+<div
+  style={
+    Object {
+      "marginLeft": 5,
+    }
+  }
+>
   <span
     className="bp3-popover-wrapper"
   >
@@ -279,7 +303,13 @@ exports[`renders single mode pipelines 1`] = `
 `;
 
 exports[`renders single mode pipelines 2`] = `
-<div>
+<div
+  style={
+    Object {
+      "marginLeft": 5,
+    }
+  }
+>
   <span
     className="bp3-popover-wrapper"
   >

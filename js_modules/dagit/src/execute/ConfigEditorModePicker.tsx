@@ -53,11 +53,11 @@ export default class ConfigEditorModePicker extends React.PureComponent<
     const valid = !this.props.modeError;
 
     return (
-      <div>
+      <div style={{ marginLeft: 5 }}>
         <ModeSelect
           activeItem={currentMode}
           filterable={true}
-          disabled={singleMode}
+          disabled={singleMode && valid}
           items={this.props.modes}
           itemPredicate={(query, mode) =>
             query.length === 0 || mode.name.includes(query)
@@ -82,7 +82,7 @@ export default class ConfigEditorModePicker extends React.PureComponent<
                   : "Select Mode"
                 : "Invalid Mode Selection"
             }
-            disabled={singleMode}
+            disabled={singleMode && valid}
             rightIcon="caret-down"
           />
         </ModeSelect>

@@ -322,7 +322,7 @@ export default class PipelineExecutionContainer extends React.Component<
                     }}
                     showWhitespace={showWhitespace}
                     checkConfig={async environmentConfigData => {
-                      if (!currentSession.mode) {
+                      if (!currentSession.mode || modeError) {
                         return {
                           isValid: false,
                           errors: [

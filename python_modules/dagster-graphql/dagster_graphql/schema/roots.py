@@ -160,7 +160,7 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_environmentSchemaOrError(self, graphene_info, **kwargs):
         return resolve_environment_schema_or_error(
-            graphene_info, kwargs['selector'].to_selector(), kwargs['mode']
+            graphene_info, kwargs['selector'].to_selector(), kwargs.get('mode')
         )
 
     def resolve_enabledFeatures(self, graphene_info):
