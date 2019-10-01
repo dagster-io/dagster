@@ -47,5 +47,5 @@ const Container = styled.div`
   padding: 8px;
   z-index: 3;
   max-height: calc(100vh - 210px);
-  overflow: scroll;
+  overflow-y: auto;
 `;
