@@ -43,6 +43,20 @@ fragment RunHistoryRunFragment on PipelineRun {
 }
 '''
 
+DELETE_RUN_MUTATION = '''
+mutation DeleteRun($runId: String!) {
+  deletePipelineRun(runId: $runId) {
+    __typename
+    ... on DeletePipelineRunSuccess {
+      runId
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+'''
+
 
 def _get_runs_data(result, run_id):
     for run_data in result.data['pipeline']['runs']:
@@ -50,7 +64,7 @@ def _get_runs_data(result, run_id):
             # so caller can delete keys
             return copy.deepcopy(run_data)
 
-    raise Exception('nope')
+    return None
 
 
 def test_get_runs_over_graphql():
@@ -92,3 +106,33 @@ def test_get_runs_over_graphql():
     assert [log['__typename'] for log in run_two_data['logs']['nodes']] == [
         msg['__typename'] for msg in payload_two['messages']
     ]
+
+    # delete the second run
+    result = execute_dagster_graphql(
+        read_context, DELETE_RUN_MUTATION, variables={'runId': run_id_two}
+    )
+    assert result.data['deletePipelineRun']['__typename'] == 'DeletePipelineRunSuccess'
+    assert result.data['deletePipelineRun']['runId'] == run_id_two
+
+    # query it back out
+    result = execute_dagster_graphql(
+        read_context, RUNS_QUERY, variables={'name': 'multi_mode_with_resources'}
+    )
+
+    # first is the same
+    run_one_data = _get_runs_data(result, run_id_one)
+    assert [log['__typename'] for log in run_one_data['logs']['nodes']] == [
+        msg['__typename'] for msg in payload_one['messages']
+    ]
+
+    # second is gone
+    run_two_data = _get_runs_data(result, run_id_two)
+    assert run_two_data is None
+
+    # try to delete the second run again
+    execute_dagster_graphql(read_context, DELETE_RUN_MUTATION, variables={'runId': run_id_two})
+
+    result = execute_dagster_graphql(
+        read_context, DELETE_RUN_MUTATION, variables={'runId': run_id_two}
+    )
+    assert result.data['deletePipelineRun']['__typename'] == 'PipelineRunNotFoundError'

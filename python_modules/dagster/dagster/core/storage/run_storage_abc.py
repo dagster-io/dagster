@@ -86,3 +86,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
     def wipe(self):
         '''Clears the run storage.'''
+
+    @abstractmethod
+    def delete_run(self, run_id):
+        '''Remove a run from storage'''

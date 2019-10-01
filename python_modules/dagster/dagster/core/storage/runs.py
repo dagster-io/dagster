@@ -84,6 +84,10 @@ class InMemoryRunStorage(RunStorage):
         check.str_param(run_id, 'run_id')
         return run_id in self._runs
 
+    def delete_run(self, run_id):
+        check.str_param(run_id, 'run_id')
+        del self._runs[run_id]
+
     def wipe(self):
         self._runs = OrderedDict()
 
@@ -251,6 +255,11 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')
         return bool(self.get_run_by_id(run_id))
+
+    def delete_run(self, run_id):
+        check.str_param(run_id, 'run_id')
+        query = db.delete(RunsTable).where(RunsTable.c.run_id == run_id)
+        self.connect().execute(query)
 
     def wipe(self):
         '''Clears the run storage.'''

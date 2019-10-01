@@ -104,6 +104,15 @@ def test_clear(clean_storage):
     assert list(storage.all_runs()) == []
 
 
+def test_delete(clean_storage):
+    storage = clean_storage
+    run_id = str(uuid.uuid4())
+    storage.add_run(build_run(run_id=run_id, pipeline_name='some_pipeline'))
+    assert len(storage.all_runs()) == 1
+    storage.delete_run(run_id)
+    assert list(storage.all_runs()) == []
+
+
 def test_fetch_by_pipeline(clean_storage):
     storage = clean_storage
     one = str(uuid.uuid4())

@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS event_log (
 )
 '''
 
-DELETE_EVENT_LOG_SQL = '''DELETE FROM event_log '''
+WIPE_EVENT_LOG_SQL = 'DELETE FROM event_log'
+
+DELETE_EVENT_LOG_SQL = 'DELETE FROM event_log WHERE run_id = %s'
 
 DROP_EVENT_LOG_SQL = 'DROP TABLE IF EXISTS event_log'
 
@@ -81,7 +83,11 @@ class PostgresEventLogStorage(WatchableEventLogStorage):
         '''Clear the log storage.'''
 
         with get_conn(self.conn_string).cursor() as curs:
-            curs.execute(DELETE_EVENT_LOG_SQL)
+            curs.execute(WIPE_EVENT_LOG_SQL)
+
+    def delete_events(self, run_id):
+        with get_conn(self.conn_string).cursor() as curs:
+            curs.execute(DELETE_EVENT_LOG_SQL, (run_id,))
 
     def watch(self, run_id, start_cursor, callback):
         raise NotImplementedError()

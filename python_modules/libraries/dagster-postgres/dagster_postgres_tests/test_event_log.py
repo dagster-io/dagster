@@ -145,6 +145,38 @@ def test_wipe_postgres_event_log(conn_string):
     assert event_log_storage.get_logs_for_run(result.run_id) == []
 
 
+def test_delete_postgres_event_log(conn_string):
+    @solid
+    def return_one(_):
+        return 1
+
+    def _solids():
+        return_one()
+
+    events, result = gather_events(_solids)
+
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
+
+    for event in events:
+        event_log_storage.store_event(event)
+
+    out_events = event_log_storage.get_logs_for_run(result.run_id)
+
+    assert event_types(out_events) == [
+        DagsterEventType.PIPELINE_START,
+        DagsterEventType.ENGINE_EVENT,
+        DagsterEventType.STEP_START,
+        DagsterEventType.STEP_OUTPUT,
+        DagsterEventType.STEP_SUCCESS,
+        DagsterEventType.ENGINE_EVENT,
+        DagsterEventType.PIPELINE_SUCCESS,
+    ]
+
+    event_log_storage.delete_events(result.run_id)
+
+    assert event_log_storage.get_logs_for_run(result.run_id) == []
+
+
 def test_basic_get_logs_for_run_cursor(conn_string):
     event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 

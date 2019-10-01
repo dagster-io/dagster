@@ -8,6 +8,7 @@ from dagster_graphql.implementation.execution import (
     ExecutionMetadata,
     ExecutionParams,
     cancel_pipeline_execution,
+    delete_pipeline_run,
     do_execute_plan,
     get_compute_log_observable,
     get_pipeline_run_observable,
@@ -195,6 +196,33 @@ class DauphinReexecutionConfig(dauphin.InputObjectType):
             self.previousRunId,
             list(map(lambda g: StepOutputHandle(g.stepKey, g.outputName), self.stepOutputHandles)),
         )
+
+
+class DauphinDeletePipelineRunSuccess(dauphin.ObjectType):
+    class Meta:
+        name = 'DeletePipelineRunSuccess'
+
+    runId = dauphin.NonNull(dauphin.String)
+
+
+class DauphinDeletePipelineRunResult(dauphin.Union):
+    class Meta:
+        name = 'DeletePipelineRunResult'
+        types = ('DeletePipelineRunSuccess', 'PythonError', 'PipelineRunNotFoundError')
+
+
+class DauphinDeleteRunMutation(dauphin.Mutation):
+    class Meta:
+        name = 'DeletePipelineRun'
+
+    class Arguments:
+        runId = dauphin.NonNull(dauphin.String)
+
+    Output = dauphin.NonNull('DeletePipelineRunResult')
+
+    def mutate(self, graphene_info, **kwargs):
+        run_id = kwargs['runId']
+        return delete_pipeline_run(graphene_info, run_id)
 
 
 class DauphinCancelPipelineExecutionSuccess(dauphin.ObjectType):
@@ -391,6 +419,7 @@ class DauphinMutation(dauphin.ObjectType):
     stop_running_schedule = DauphinStopRunningScheduleMutation.Field()
     reload_dagit = DauphinReloadDagit.Field()
     cancel_pipeline_execution = DauphinCancelPipelineExecutionMutation.Field()
+    delete_pipeline_run = DauphinDeleteRunMutation.Field()
 
 
 class DauphinSubscription(dauphin.ObjectType):

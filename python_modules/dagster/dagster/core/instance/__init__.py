@@ -285,6 +285,10 @@ class DagsterInstance(RunStorage):
         self._run_storage.wipe()
         self._event_storage.wipe()
 
+    def delete_run(self, run_id):
+        self._run_storage.delete_run(run_id)
+        self._event_storage.delete_events(run_id)
+
     # event storage
 
     def logs_after(self, run_id, cursor):

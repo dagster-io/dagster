@@ -64,6 +64,10 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''
 
     @abstractmethod
+    def delete_events(self, run_id):
+        '''Remove events for a given run id'''
+
+    @abstractmethod
     def wipe(self):
         '''Clear the log storage.'''
 
@@ -100,6 +104,11 @@ class InMemoryEventLogStorage(EventLogStorage):
         run_id = event.run_id
         with self._lock[run_id]:
             self._logs[run_id] = self._logs[run_id].append(event)
+
+    def delete_events(self, run_id):
+        with self._lock[run_id]:
+            del self._logs[run_id]
+        del self._lock[run_id]
 
     def wipe(self):
         self._logs = defaultdict(EventLogSequence)
@@ -247,6 +256,11 @@ class SqliteEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
     def wipe(self):
         for filename in glob.glob(os.path.join(self._base_dir, '*.db')):
             os.unlink(filename)
+
+    def delete_events(self, run_id):
+        path = self.filepath_for_run_id(run_id)
+        if os.path.exists(path):
+            os.unlink(path)
 
     @property
     def is_persistent(self):

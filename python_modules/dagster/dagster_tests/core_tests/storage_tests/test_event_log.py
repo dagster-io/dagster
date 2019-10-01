@@ -72,6 +72,30 @@ def test_filesystem_event_log_storage_store_events_and_wipe():
         assert len(storage.get_logs_for_run('foo')) == 0
 
 
+def test_event_log_delete():
+    with seven.TemporaryDirectory() as tmpdir_path:
+        storage = SqliteEventLogStorage(tmpdir_path)
+        assert len(storage.get_logs_for_run('foo')) == 0
+        storage.store_event(
+            DagsterEventRecord(
+                None,
+                'Message2',
+                'debug',
+                '',
+                'foo',
+                time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ENGINE_EVENT.value,
+                    'nonce',
+                    event_specific_data=EngineEventData.in_process(999),
+                ),
+            )
+        )
+        assert len(storage.get_logs_for_run('foo')) == 1
+        storage.delete_events('foo')
+        assert len(storage.get_logs_for_run('foo')) == 0
+
+
 def test_filesystem_event_log_storage_run_corrupted():
     with seven.TemporaryDirectory() as tmpdir_path:
         storage = SqliteEventLogStorage(tmpdir_path)

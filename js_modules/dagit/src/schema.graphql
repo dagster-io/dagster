@@ -82,6 +82,12 @@ union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigTy
 
 scalar Cursor
 
+union DeletePipelineRunResult = DeletePipelineRunSuccess | PythonError | PipelineRunNotFoundError
+
+type DeletePipelineRunSuccess {
+  runId: String!
+}
+
 interface DisplayableEvent {
   label: String!
   description: String
@@ -496,6 +502,7 @@ type Mutation {
   stopRunningSchedule(scheduleName: String!): RunningScheduleResult!
   reloadDagit: Boolean!
   cancelPipelineExecution(runId: String!): CancelPipelineExecutionResult!
+  deletePipelineRun(runId: String!): DeletePipelineRunResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {

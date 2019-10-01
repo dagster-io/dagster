@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import sys
 from collections import namedtuple
 
 from dagster_graphql.schema.runs import (
@@ -18,6 +19,7 @@ from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.serdes import serialize_dagster_namedtuple
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .fetch_pipelines import (
     get_dauphin_pipeline_from_selector_or_raise,
@@ -55,6 +57,25 @@ def cancel_pipeline_execution(graphene_info, run_id):
         )
 
     return graphene_info.schema.type_named('CancelPipelineExecutionSuccess')(dauphin_run)
+
+
+@capture_dauphin_error
+def delete_pipeline_run(graphene_info, run_id):
+    instance = graphene_info.context.instance
+
+    if not instance.has_run(run_id):
+        return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
+
+    try:
+        instance.delete_run(run_id)
+    except Exception:
+        raise UserFacingGraphQLError(
+            graphene_info.schema.type_named('PythonError')(
+                serializable_error_info_from_exc_info(sys.exc_info())
+            )
+        )
+
+    return graphene_info.schema.type_named('DeletePipelineRunSuccess')(run_id)
 
 
 @capture_dauphin_error
