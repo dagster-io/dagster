@@ -16,12 +16,15 @@ def is_runtime_type_decorated_klass(klass):
     return hasattr(klass, MAGIC_RUNTIME_TYPE_NAME)
 
 
+OPEN_CONTAINER_TYPES = {dict, Dict, typing.Dict, tuple, typing.Tuple}
+
+
 def check_dagster_type_param(dagster_type, param_name, base_type):
 
     # Cannot check base_type because of circular references and no fwd declarations
     if dagster_type is None:
         return dagster_type
-    if dagster_type is dict or dagster_type is Dict or dagster_type is typing.Dict:
+    if dagster_type in OPEN_CONTAINER_TYPES:
         return dagster_type
     if is_closed_python_dict_type(dagster_type):
         return dagster_type
