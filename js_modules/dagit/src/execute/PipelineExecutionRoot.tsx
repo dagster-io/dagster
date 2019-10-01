@@ -39,8 +39,8 @@ export const PipelineExecutionRoot: React.FunctionComponent<
           result.data && result.data.environmentSchemaOrError;
 
         if (
-          !environmentSchemaOrError ||
-          environmentSchemaOrError.__typename === "PipelineNotFoundError" ||
+          (environmentSchemaOrError &&
+            environmentSchemaOrError.__typename === "PipelineNotFoundError") ||
           (pipelineOrError &&
             pipelineOrError.__typename === "PipelineNotFoundError")
         ) {

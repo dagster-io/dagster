@@ -3,56 +3,59 @@ import * as TestRenderer from "react-test-renderer";
 import { BrowserRouter } from "react-router-dom";
 
 import ConfigEditorModePicker from "../execute/ConfigEditorModePicker";
-import { PipelineExecutionContainerFragment } from "../execute/types/PipelineExecutionContainerFragment";
 import { ModeNotFoundError } from "../execute/PipelineExecutionContainer";
+import { PipelineExecutionContainerFragment_Pipeline_modes } from "../execute/types/PipelineExecutionContainerFragment";
+
+const defaultMode: PipelineExecutionContainerFragment_Pipeline_modes = {
+  __typename: "Mode",
+  description: null,
+  name: "default"
+};
+
+const mode1: PipelineExecutionContainerFragment_Pipeline_modes = {
+  __typename: "Mode",
+  description: "Mode 1",
+  name: "mode_1"
+};
+
+const mode2: PipelineExecutionContainerFragment_Pipeline_modes = {
+  __typename: "Mode",
+  description: "Mode 2",
+  name: "mode_2"
+};
 
 it("renders single mode pipelines", () => {
-  const singleModePipelineData: PipelineExecutionContainerFragment = {
-    __typename: "Pipeline",
-    modes: [
-      {
-        __typename: "Mode",
-        description: null,
-        name: "default"
-      }
-    ],
-    name: "single_mode_pipeline"
-  };
   const componentNullSelected = TestRenderer.create(
     <BrowserRouter>
-      <ConfigEditorModePicker pipeline={singleModePipelineData} />
+      <ConfigEditorModePicker
+        modes={[defaultMode]}
+        modeName={null}
+        onModeChange={() => null}
+      />
     </BrowserRouter>
   );
   expect(componentNullSelected.toJSON()).toMatchSnapshot();
 
   const componentDefaultSelected = TestRenderer.create(
     <BrowserRouter>
-      <ConfigEditorModePicker pipeline={singleModePipelineData} />
+      <ConfigEditorModePicker
+        modes={[defaultMode]}
+        modeName={"default"}
+        onModeChange={() => null}
+      />
     </BrowserRouter>
   );
   expect(componentDefaultSelected.toJSON()).toMatchSnapshot();
 });
 
 it("renders multi mode pipelines", () => {
-  const multiModePipelineData: PipelineExecutionContainerFragment = {
-    __typename: "Pipeline",
-    modes: [
-      {
-        __typename: "Mode",
-        description: "Mode 1",
-        name: "mode_1"
-      },
-      {
-        __typename: "Mode",
-        description: "Mode 2",
-        name: "mode_2"
-      }
-    ],
-    name: "multi_mode_pipeline"
-  };
   const componentNullSelected = TestRenderer.create(
     <BrowserRouter>
-      <ConfigEditorModePicker pipeline={multiModePipelineData} />
+      <ConfigEditorModePicker
+        modes={[mode1, mode2]}
+        modeName={null}
+        onModeChange={() => null}
+      />
     </BrowserRouter>
   );
   expect(componentNullSelected.toJSON()).toMatchSnapshot();
@@ -60,8 +63,9 @@ it("renders multi mode pipelines", () => {
   const componentMode1Selected = TestRenderer.create(
     <BrowserRouter>
       <ConfigEditorModePicker
-        pipeline={multiModePipelineData}
-        modeName="mode1"
+        modes={[mode1, mode2]}
+        modeName="mode_1"
+        onModeChange={() => null}
       />
     </BrowserRouter>
   );
@@ -69,29 +73,18 @@ it("renders multi mode pipelines", () => {
 });
 
 it("renders error mode", () => {
-  const pipeline: PipelineExecutionContainerFragment = {
-    __typename: "Pipeline",
-    modes: [
-      {
-        __typename: "Mode",
-        description: "Mode 1",
-        name: "mode_1"
-      },
-      {
-        __typename: "Mode",
-        description: "Mode 2",
-        name: "mode_2"
-      }
-    ],
-    name: "multi_mode_pipeline"
-  };
   const error: ModeNotFoundError = {
     __typename: "ModeNotFoundError",
     message: "Mode Not Found"
   };
   const componentNullSelected = TestRenderer.create(
     <BrowserRouter>
-      <ConfigEditorModePicker pipeline={pipeline} modeError={error} />
+      <ConfigEditorModePicker
+        modes={[mode1, mode2]}
+        modeError={error}
+        modeName="mode_1"
+        onModeChange={() => null}
+      />
     </BrowserRouter>
   );
   expect(componentNullSelected.toJSON()).toMatchSnapshot();
