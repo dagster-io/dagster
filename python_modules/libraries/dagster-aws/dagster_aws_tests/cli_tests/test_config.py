@@ -1,12 +1,16 @@
 import os
 
 import yaml
-from dagster_aws.cli.config import HOST_CONFIG_FILE, HostConfig
+from dagster_aws.cli.config import HOST_CONFIG_FILE, HostConfig, RDSConfig
 
 from dagster import seven
 
 
 def test_host_config():
+    rds_config = RDSConfig(
+        instance_name='foo', instance_uri='foo-bar.amazonaws.com', password='baz'
+    )
+
     cfg = HostConfig(
         remote_host='foo',
         region='us-west-1',
@@ -14,6 +18,7 @@ def test_host_config():
         key_pair_name='foobar',
         key_file_path='/some/path',
         ami_id='ami-12345',
+        rds_config=rds_config,
     )
 
     tmp_dir = seven.get_system_temp_directory()
@@ -22,10 +27,8 @@ def test_host_config():
     cfg.save(tmp_dir)
 
     with open(outfile) as f:
-        parsed = yaml.load(f)
+        configs = yaml.load(f)
 
-    assert 'dagit-aws-host' in parsed
-    configs = parsed['dagit-aws-host']
     assert configs['remote_host'] == 'foo'
     assert configs['region'] == 'us-west-1'
     assert configs['security_group_id'] == 'sg-12345'
@@ -35,3 +38,4 @@ def test_host_config():
 
     res = cfg.load(tmp_dir)
     assert res == HostConfig(**configs)
+    assert res.rds_config == rds_config

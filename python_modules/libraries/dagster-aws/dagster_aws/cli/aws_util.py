@@ -20,6 +20,9 @@ DEFAULT_SECURITY_GROUP = 'dagit-sg'
 # Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
 DEFAULT_AMI = 'ami-08fd8ae3806f09a08'
 
+# User can select an instance type for a PG RDS instance
+DEFAULT_RDS_INSTANCE_TYPE = 'db.t3.small'
+
 
 def get_all_regions():
     '''Retrieves all regions/endpoints that work with EC2
@@ -285,3 +288,86 @@ def create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name):
 
     Term.success('dagit EC2 instance %s launched!' % inst.id)
     return inst
+
+
+def create_rds_instance(region):
+    '''Creates an RDS PostgreSQL instance.
+
+    Returns:
+    RDSConfig object
+    '''
+    from .config import RDSConfig
+
+    rds = boto3.client('rds', region_name=region)
+
+    use_rds = click.confirm(
+        '\nDo you want to use RDS PostgreSQL for run storage? (default: use filesystem) '
+        + click.style('[y/N]', fg='green'),
+        default=False,
+        show_default=False,
+    )
+    if not use_rds:
+        return None
+
+    def generate_password(pass_len=16):
+        client = boto3.client('secretsmanager')
+        response = client.get_random_password(
+            PasswordLength=pass_len, ExcludePunctuation=True, IncludeSpace=False
+        )
+        return response['RandomPassword']
+
+    instance_type = click.prompt(
+        '\nChoose an RDS instance type - see https://aws.amazon.com/rds/instance-types/ '
+        + click.style('[default is %s]' % DEFAULT_RDS_INSTANCE_TYPE, fg='green'),
+        type=str,
+        default=DEFAULT_RDS_INSTANCE_TYPE,
+        show_default=False,
+    )
+
+    password = generate_password()
+
+    default_name = 'dagster-rds-%s' % getpass.getuser()
+    instance_name = click.prompt(
+        '\nChoose an RDS instance name '
+        + click.style('[default is %s]' % default_name, fg='green'),
+        type=str,
+        default=default_name,
+        show_default=False,
+    )
+
+    Term.waiting(
+        u'Creating Dagster RDS instance. This unfortunately takes quite a while, 5+ minutes, so '
+        u'grab some 🍿...'
+    )
+    with Spinner():
+        rds.create_db_instance(
+            AllocatedStorage=20,
+            DBInstanceClass=instance_type,
+            DBInstanceIdentifier=instance_name,
+            DBName='dagster',
+            Engine='postgres',
+            EngineVersion='11.5',
+            MasterUsername='dagster',
+            MasterUserPassword=password,
+        )
+        waiter_rds = rds.get_waiter('db_instance_available')
+        waiter_rds.wait(DBInstanceIdentifier=instance_name)
+        response = rds.describe_db_instances(DBInstanceIdentifier=instance_name)
+        instance_uri = response['DBInstances'][0]['Endpoint']['Address']
+
+        click.echo(
+            '  '
+            + '\n  '.join(
+                [
+                    'Name: %s' % instance_name,
+                    'Instance Type: %s' % instance_type,
+                    'DBName: dagster',
+                    'Engine: PostgreSQL 11.5',
+                    'MasterUsername: dagster',
+                    'MasterUserPassword: <not shown>',
+                    'Instance URI: %s' % instance_uri,
+                ]
+            )
+        )
+
+    return RDSConfig(instance_name, instance_uri, password)

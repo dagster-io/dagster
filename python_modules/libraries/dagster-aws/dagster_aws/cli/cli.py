@@ -13,6 +13,7 @@ import click
 from .aws_util import (
     create_ec2_instance,
     create_key_pair,
+    create_rds_instance,
     get_or_create_security_group,
     get_validated_ami_id,
     select_region,
@@ -128,15 +129,26 @@ def init():
 
     inst = create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name)
 
+    # Create an RDS instance
+    if prev_config and prev_config.rds_config:
+        Term.success(
+            'Found existing RDS database, continuing with %s'
+            % (prev_config.rds_config.instance_uri)
+        )
+        rds_config = prev_config.rds_config
+    else:
+        rds_config = create_rds_instance(region)
+
     # Save host configuration for future commands
     cfg = HostConfig(
-        inst.public_dns_name,
-        inst.id,
-        region,
-        security_group_id,
-        key_pair_name,
-        key_file_path,
-        ami_id,
+        remote_host=inst.public_dns_name,
+        instance_id=inst.id,
+        region=region,
+        security_group_id=security_group_id,
+        key_pair_name=key_pair_name,
+        key_file_path=key_file_path,
+        ami_id=ami_id,
+        rds_config=rds_config,
     )
     cfg.save(dagster_home)
 
@@ -327,6 +339,19 @@ def clear():
     if should_remove_security_group:
         client.delete_security_group(GroupId=cfg.security_group_id)
         cfg = cfg._replace(security_group_id=None)
+
+    # Prompt user to delete security group also
+    Term.warning('WARNING: A "yes" below will remove all RDS PostgreSQL data!!!')
+    should_remove_rds = click.confirm(
+        'Do you also want to remove the RDS instance %s?' % cfg.rds_config.instance_name
+    )
+    if should_remove_rds:
+        rds = boto3.client('rds', region_name=cfg.region)
+        rds.delete_db_instance(
+            DBInstanceIdentifier=cfg.rds_config.instance_name,
+            SkipFinalSnapshot=True,
+            DeleteAutomatedBackups=True,
+        )
 
     # Write out updated config
     cfg.save(dagster_home)
