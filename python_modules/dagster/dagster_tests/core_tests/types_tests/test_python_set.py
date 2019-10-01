@@ -4,11 +4,15 @@ import pytest
 
 from dagster import (
     DagsterTypeCheckError,
+    Failure,
     InputDefinition,
+    Optional,
     OutputDefinition,
     execute_solid,
     lambda_solid,
 )
+from dagster.core.types.python_set import create_typed_runtime_set
+from dagster.core.types.runtime import resolve_to_runtime_type
 
 
 def test_vanilla_set_output():
@@ -77,3 +81,33 @@ def test_open_typing_set_input_fail():
 
     with pytest.raises(DagsterTypeCheckError):
         execute_solid(take_set, input_values={'tt': 'fkjdf'})
+
+
+def test_runtime_set_of_int():
+    set_runtime_type = create_typed_runtime_set(int).inst()
+
+    set_runtime_type.type_check({1})
+    set_runtime_type.type_check(set())
+
+    with pytest.raises(Failure):
+        set_runtime_type.type_check(None)
+
+    with pytest.raises(Failure):
+        set_runtime_type.type_check('nope')
+
+    with pytest.raises(Failure):
+        set_runtime_type.type_check({'nope'})
+
+
+def test_runtime_optional_set():
+    set_runtime_type = resolve_to_runtime_type(Optional[create_typed_runtime_set(int)])
+
+    set_runtime_type.type_check({1})
+    set_runtime_type.type_check(set())
+    set_runtime_type.type_check(None)
+
+    with pytest.raises(Failure):
+        set_runtime_type.type_check('nope')
+
+    with pytest.raises(Failure):
+        set_runtime_type.type_check({'nope'})

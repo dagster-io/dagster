@@ -36,6 +36,15 @@ def is_python_dict_type(ttype):
 
 
 def is_closed_python_dict_type(ttype):
+    '''
+
+    A "closed" generic type has all of its type parameters parameterized
+    by other closed or concrete types.
+
+    e.g.
+
+    Returns true for typing.Dict[int, str] but not for typing.Dict
+    '''
     if not ttype:
         return False
     if ttype is typing.Dict:
@@ -58,6 +67,14 @@ def is_closed_python_dict_type(ttype):
 
 
 def is_closed_python_tuple_type(ttype):
+    '''
+    A "closed" generic type has all of its type parameters parameterized
+    by other closed or concrete types.
+
+    e.g.
+
+    Returns true for Tuple[int] or Tuple[str, int] but false for Tuple or tuple
+    '''
     if not ttype:
         return False
     if ttype is typing.Tuple:
@@ -72,6 +89,14 @@ def is_closed_python_tuple_type(ttype):
 
 
 def is_closed_python_set_type(ttype):
+    '''
+    A "closed" generic type has all of its type parameters parameterized
+    by other closed or concrete types.
+
+    e.g.
+
+    Returns true for Set[string] but false for Set or set
+    '''
     if not ttype:
         return False
     if ttype is typing.Set:
