@@ -12,7 +12,7 @@ PythonDict = define_python_dagster_type(
     dict,
     'PythonDict',
     input_hydration_config=_dict_input,
-    description='''Represents a python dictionary pass between solids''',
+    description='''Represents a python dictionary to pass between solids''',
 )
 
 

@@ -539,6 +539,7 @@ def resolve_to_runtime_type(dagster_type):
     from .decorator import is_runtime_type_decorated_klass, get_runtime_type_on_decorated_klass
     from .mapping import remap_python_type
     from .python_dict import PythonDict, create_typed_runtime_dict
+    from .python_set import PythonSet
     from .python_tuple import PythonTuple, create_typed_tuple
 
     dagster_type = remap_python_type(dagster_type)
@@ -559,6 +560,8 @@ def resolve_to_runtime_type(dagster_type):
         return PythonDict.inst()
     if dagster_type is typing.Tuple:
         return PythonTuple.inst()
+    if dagster_type is typing.Set:
+        return PythonSet.inst()
     if BuiltinEnum.contains(dagster_type):
         return RuntimeType.from_builtin_enum(dagster_type)
     if isinstance(dagster_type, WrappingListType):

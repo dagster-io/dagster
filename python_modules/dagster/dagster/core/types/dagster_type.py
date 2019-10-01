@@ -16,7 +16,7 @@ def is_runtime_type_decorated_klass(klass):
     return hasattr(klass, MAGIC_RUNTIME_TYPE_NAME)
 
 
-OPEN_CONTAINER_TYPES = {dict, Dict, typing.Dict, tuple, typing.Tuple}
+OPEN_CONTAINER_TYPES = {dict, Dict, typing.Dict, tuple, typing.Tuple, set, typing.Set}
 
 
 def check_dagster_type_param(dagster_type, param_name, base_type):
