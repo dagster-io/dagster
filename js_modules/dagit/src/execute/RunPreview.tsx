@@ -96,7 +96,7 @@ const NonIdealWrap = styled.div`
   flex-direction: column;
   padding: 20px;
   padding-top: 12vh;
-  overflow: scroll;
+  overflow: auto;
 `;
 const ErrorsWrap = styled.div`
   padding-top: 2vh;

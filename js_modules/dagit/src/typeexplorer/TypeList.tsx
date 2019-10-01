@@ -74,5 +74,5 @@ export default class TypeList extends React.Component<ITypeListProps, {}> {
 
 const TypeLI = styled.li`
   text-overflow: ellipsis;
-  overflow-x: hidden;
+  overflow: hidden;
 `;
