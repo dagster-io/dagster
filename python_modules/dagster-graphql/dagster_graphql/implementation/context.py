@@ -1,8 +1,8 @@
 from dagster import ExecutionTargetHandle, check
 from dagster.core.instance import DagsterFeatures, DagsterInstance
-from dagster.core.reloader import Reloader
 
 from .pipeline_execution_manager import PipelineExecutionManager
+from .reloader import Reloader
 
 
 class DagsterGraphQLContext(object):

@@ -8,6 +8,7 @@ from typing import Any, Dict
 import nbformat
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
+from dagster_graphql.implementation.reloader import Reloader
 from dagster_graphql.schema import create_schema
 from flask import Flask, request, send_file, send_from_directory
 from flask_cors import CORS
@@ -20,7 +21,6 @@ from six import text_type
 
 from dagster import ExecutionTargetHandle, check, seven
 from dagster.core.instance import DagsterInstance
-from dagster.core.reloader import Reloader
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.utils.log import get_stack_trace_array
 
@@ -144,10 +144,10 @@ def download_view(context):
     return view
 
 
-def create_app(handle, instance, reloader):
+def create_app(handle, instance, reloader=None):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.inst_param(instance, 'instance', DagsterInstance)
-    check.inst_param(reloader, 'reloader', Reloader)
+    check.opt_inst_param(reloader, 'reloader', Reloader)
 
     app = Flask('dagster-ui')
     sockets = Sockets(app)

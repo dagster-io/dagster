@@ -3,8 +3,6 @@ import subprocess
 from click.testing import CliRunner
 from dagit.cli import ui
 
-from dagster.utils import script_relative_path
-
 
 def test_invoke_ui():
     runner = CliRunner()

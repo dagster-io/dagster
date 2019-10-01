@@ -1,7 +1,8 @@
 import time
 
+from dagster_graphql.implementation.reloader import Reloader
+
 from dagster import check
-from dagster.core.reloader import Reloader
 
 
 class DagitReloader(Reloader):
