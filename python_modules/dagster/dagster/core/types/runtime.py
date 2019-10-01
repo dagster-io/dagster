@@ -14,7 +14,11 @@ from .config_schema import InputHydrationConfig, OutputMaterializationConfig
 from .dagster_type import check_dagster_type_param
 from .field_utils import Dict
 from .marshal import PickleSerializationStrategy, SerializationStrategy
-from .typing_api import is_closed_python_dict_type, is_closed_python_tuple_type
+from .typing_api import (
+    is_closed_python_dict_type,
+    is_closed_python_set_type,
+    is_closed_python_tuple_type,
+)
 from .wrapping import WrappingListType, WrappingNullableType
 
 
@@ -539,7 +543,7 @@ def resolve_to_runtime_type(dagster_type):
     from .decorator import is_runtime_type_decorated_klass, get_runtime_type_on_decorated_klass
     from .mapping import remap_python_type
     from .python_dict import PythonDict, create_typed_runtime_dict
-    from .python_set import PythonSet
+    from .python_set import PythonSet, create_typed_runtime_set
     from .python_tuple import PythonTuple, create_typed_tuple
 
     dagster_type = remap_python_type(dagster_type)
@@ -550,6 +554,9 @@ def resolve_to_runtime_type(dagster_type):
 
     if is_closed_python_tuple_type(dagster_type):
         return create_typed_tuple(*dagster_type.__args__).inst()
+
+    if is_closed_python_set_type(dagster_type):
+        return create_typed_runtime_set(dagster_type.__args__[0]).inst()
 
     check_dagster_type_param(dagster_type, 'dagster_type', RuntimeType)
 

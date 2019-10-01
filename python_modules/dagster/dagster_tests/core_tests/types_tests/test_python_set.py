@@ -111,3 +111,23 @@ def test_runtime_optional_set():
 
     with pytest.raises(Failure):
         set_runtime_type.type_check({'nope'})
+
+
+def test_closed_typing_set_input():
+    @lambda_solid(input_defs=[InputDefinition(name='tt', dagster_type=typing.Set[int])])
+    def take_set(tt):
+        return tt
+
+    assert execute_solid(take_set, input_values={'tt': {2, 3}}).output_value() == {2, 3}
+
+
+def test_closed_typing_set_input_fail():
+    @lambda_solid(input_defs=[InputDefinition(name='tt', dagster_type=typing.Set[int])])
+    def take_set(tt):
+        return tt
+
+    with pytest.raises(DagsterTypeCheckError):
+        execute_solid(take_set, input_values={'tt': 'fkjdf'})
+
+    with pytest.raises(DagsterTypeCheckError):
+        execute_solid(take_set, input_values={'tt': {'fkjdf'}})
