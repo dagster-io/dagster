@@ -57,6 +57,20 @@ def is_closed_python_dict_type(ttype):
     )
 
 
+def is_closed_python_tuple_type(ttype):
+    if not ttype:
+        return False
+    if ttype is typing.Tuple:
+        return False
+    if not hasattr(ttype, '__args__'):
+        return False
+    if ttype.__args__ is None:
+        return False
+
+    origin = _get_origin(ttype)
+    return origin == typing.Tuple or origin is tuple
+
+
 def get_optional_inner_type(ttype):
     check.invariant(
         is_closed_python_optional_type(ttype), 'type must pass is_closed_python_optional_type check'

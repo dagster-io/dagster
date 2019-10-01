@@ -4,6 +4,7 @@ from dagster.core.types.typing_api import (
     get_optional_inner_type,
     is_closed_python_dict_type,
     is_closed_python_optional_type,
+    is_closed_python_tuple_type,
     is_python_list_type,
 )
 
@@ -40,3 +41,14 @@ def test_is_typing_optional_py_3():
 
 def test_get_inner_optional_py_3():
     assert get_optional_inner_type(typing.Optional[int]) is int
+
+
+def test_closed_tuple_type():
+    assert is_closed_python_tuple_type(typing.Tuple[int, str]) is True
+
+    assert is_closed_python_tuple_type(tuple) is False
+    assert is_closed_python_tuple_type(typing.Tuple) is False
+    assert is_closed_python_tuple_type(1) is False
+    assert is_closed_python_tuple_type('foobar') is False
+    assert is_closed_python_tuple_type(typing.Optional) is False
+    assert is_closed_python_tuple_type(typing.List) is False

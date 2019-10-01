@@ -5,7 +5,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .builtin_enum import BuiltinEnum
 from .field_utils import Dict
-from .typing_api import is_closed_python_dict_type
+from .typing_api import is_closed_python_dict_type, is_closed_python_tuple_type
 from .wrapping import WrappingType
 
 MAGIC_RUNTIME_TYPE_NAME = '__runtime_type'
@@ -27,6 +27,8 @@ def check_dagster_type_param(dagster_type, param_name, base_type):
     if dagster_type in OPEN_CONTAINER_TYPES:
         return dagster_type
     if is_closed_python_dict_type(dagster_type):
+        return dagster_type
+    if is_closed_python_tuple_type(dagster_type):
         return dagster_type
     if BuiltinEnum.contains(dagster_type):
         return dagster_type
