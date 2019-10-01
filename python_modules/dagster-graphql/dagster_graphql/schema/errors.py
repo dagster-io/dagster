@@ -80,6 +80,16 @@ class DauphinPipelineRunNotFoundError(dauphin.ObjectType):
         self.message = 'Pipeline run {run_id} could not be found.'.format(run_id=run_id)
 
 
+class DauphinInvalidPipelineRunsSelectorError(dauphin.ObjectType):
+    class Meta:
+        name = 'InvalidPipelineRunsSelectorError'
+        interfaces = (DauphinError,)
+
+    def __init__(self, message):
+        super(DauphinInvalidPipelineRunsSelectorError, self).__init__()
+        self.message = check.str_param(message, 'message')
+
+
 class DauphinInvalidSubsetError(dauphin.ObjectType):
     class Meta:
         name = 'InvalidSubsetError'
@@ -478,3 +488,16 @@ class DauphinPipelineRunOrError(dauphin.Union):
     class Meta:
         name = 'PipelineRunOrError'
         types = ('PipelineRun', DauphinPipelineRunNotFoundError)
+
+
+class DauphinPipelineRuns(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineRuns'
+
+    results = dauphin.non_null_list('PipelineRun')
+
+
+class DauphinPipelineRunsOrError(dauphin.Union):
+    class Meta:
+        name = 'PipelineRunsOrError'
+        types = (DauphinPipelineRuns, DauphinInvalidPipelineRunsSelectorError)
