@@ -146,6 +146,8 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
 
   const onConfirmText = (str: string) => {
     if (str.endsWith(":")) return;
+    if (str === "") return;
+
     onChange([...values, tokenizedValueFromString(str, suggestionProviders)]);
     setInputValue("");
   };

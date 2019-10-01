@@ -39,10 +39,10 @@ export const PipelineExecutionRoot: React.FunctionComponent<
           result.data && result.data.environmentSchemaOrError;
 
         if (
-          !pipelineOrError ||
-          !environmentSchemaOrError ||
-          environmentSchemaOrError.__typename === "PipelineNotFoundError" ||
-          pipelineOrError.__typename === "PipelineNotFoundError"
+          (environmentSchemaOrError &&
+            environmentSchemaOrError.__typename === "PipelineNotFoundError") ||
+          (pipelineOrError &&
+            pipelineOrError.__typename === "PipelineNotFoundError")
         ) {
           const message =
             pipelineOrError &&
@@ -59,7 +59,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<
           );
         }
 
-        if (pipelineOrError.__typename === "PythonError") {
+        if (pipelineOrError && pipelineOrError.__typename === "PythonError") {
           return (
             <NonIdealState
               icon={IconNames.ERROR}

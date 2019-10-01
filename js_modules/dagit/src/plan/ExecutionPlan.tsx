@@ -202,7 +202,7 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
 
 const ExecutionPlanContainer = styled.div`
   flex: 1;
-  overflow-y: scroll;
+  overflow-y: auto;
   color: ${Colors.WHITE};
   background: #232b2f;
 `;

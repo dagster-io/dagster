@@ -179,7 +179,7 @@ exports[`renders multi mode pipelines 2`] = `
           <span
             className="bp3-button-text"
           >
-            Select Mode
+            Mode: mode_1
           </span>
           <span
             className="bp3-icon bp3-icon-caret-down"

@@ -42,7 +42,7 @@ export const RowColumn = styled.div`
 export const ScrollContainer = styled.div`
   background-color: rgb(245, 248, 250);
   padding: 20px;
-  overflow: scroll;
+  overflow: auto;
   min-height: calc(100vh - 50px);
 `;
 export const Details = styled.div`
