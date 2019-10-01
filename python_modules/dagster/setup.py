@@ -71,6 +71,7 @@ def _do_setup(name='dagster'):
             'rx==1.6.1',
             'six>=1.11.0',
             'sqlalchemy>=1.0',
+            'typing; python_version<"3"',
             'toposort>=1.0',
             'watchdog>=0.8.3',
         ],
@@ -78,7 +79,7 @@ def _do_setup(name='dagster'):
         extras_require={
             'aws': ['boto3>=1.9.117'],
             ':python_version>"3"': ['reloader>=0.6'],
-            ':python_version<"3"': ['backports.tempfile', 'typing'],
+            ':python_version<"3"': ['backports.tempfile'],
         },
         entry_points={'console_scripts': ['dagster = dagster.cli:main']},
     )

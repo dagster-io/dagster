@@ -1,4 +1,3 @@
-import sys
 import typing
 
 from dagster import check
@@ -42,22 +41,6 @@ def remap_to_dagster_optional_type(ttype):
     return WrappingNullableType(get_optional_inner_type(ttype))
 
 
-if sys.version_info.major >= 3:
-    List = typing.List
+List = typing.List
 
-    Optional = typing.Optional
-
-
-else:
-
-    class ListStub:
-        def __getitem__(self, inner_type):
-            return WrappingListType(inner_type)
-
-    List = ListStub()
-
-    class OptionalStub:
-        def __getitem__(self, inner_type):
-            return WrappingNullableType(inner_type)
-
-    Optional = OptionalStub()
+Optional = typing.Optional
