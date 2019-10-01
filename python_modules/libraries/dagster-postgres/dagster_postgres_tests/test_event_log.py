@@ -1,18 +1,16 @@
+import time
 import uuid
 
-from dagster_postgres.event_log import (
-    EventWatcherEvent,
-    EventWatcherStart,
-    PostgresEventLogStorage,
-    create_event_watcher,
-)
+from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_postgres.utils import get_conn
 
 from dagster import ModeDefinition, RunConfig, execute_pipeline, pipeline, solid
 from dagster.core.events import DagsterEventType
-from dagster.core.events.log import construct_event_logger
+from dagster.core.events.log import DagsterEventRecord, construct_event_logger
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.loggers import colored_console_logger
+
+TEST_TIMEOUT = 3
 
 
 def mode_def(event_callback):
@@ -328,28 +326,25 @@ def test_listen_notify_single_run_event(conn_string):
     def _solids():
         return_one()
 
-    event_watcher = create_event_watcher(conn_string)
+    event_list = []
 
     run_id = str(uuid.uuid4())
 
-    event_watcher.watch_run(run_id)
+    event_log_storage.event_watcher.watch_run(run_id, 0, event_list.append)
 
     try:
-        events, result = gather_events(_solids, run_config=RunConfig(run_id=run_id))
+        events, _ = gather_events(_solids, run_config=RunConfig(run_id=run_id))
         for event in events:
             event_log_storage.store_event(event)
 
-        event = event_watcher.queue.get(block=True)
+        start = time.time()
+        while len(event_list) < 7 and time.time() - start < TEST_TIMEOUT:
+            pass
 
-        assert isinstance(event, EventWatcherStart)
-
-        for _ in range(0, 5):
-            watcher_event = event_watcher.queue.get(block=True)
-            assert isinstance(watcher_event, EventWatcherEvent)
-            assert watcher_event.payload.run_id == result.run_id
-
+        assert len(event_list) == 7
+        assert all([isinstance(event, DagsterEventRecord) for event in event_list])
     finally:
-        event_watcher.close()
+        del event_log_storage
 
 
 def test_listen_notify_filter_two_runs_event(conn_string):
@@ -362,34 +357,37 @@ def test_listen_notify_filter_two_runs_event(conn_string):
     def _solids():
         return_one()
 
-    event_watcher = create_event_watcher(conn_string)
+    event_list_one = []
+    event_list_two = []
 
     run_id_one = str(uuid.uuid4())
     run_id_two = str(uuid.uuid4())
 
-    event_watcher.watch_run(run_id_one)
-    event_watcher.watch_run(run_id_two)
+    event_log_storage.event_watcher.watch_run(run_id_one, 0, event_list_one.append)
+    event_log_storage.event_watcher.watch_run(run_id_two, 0, event_list_two.append)
 
     try:
-        events_one, result_one = gather_events(_solids, run_config=RunConfig(run_id=run_id_one))
+        events_one, _result_one = gather_events(_solids, run_config=RunConfig(run_id=run_id_one))
         for event in events_one:
             event_log_storage.store_event(event)
 
-        events_two, result_two = gather_events(_solids, run_config=RunConfig(run_id=run_id_two))
+        events_two, _result_two = gather_events(_solids, run_config=RunConfig(run_id=run_id_two))
         for event in events_two:
             event_log_storage.store_event(event)
 
-        event = event_watcher.queue.get(block=True)
+        start = time.time()
+        while (
+            len(event_list_one) < 7 or len(event_list_two) < 7
+        ) and time.time() - start < TEST_TIMEOUT:
+            pass
 
-        assert isinstance(event, EventWatcherStart)
-
-        for _ in range(0, 10):
-            watcher_event = event_watcher.queue.get(block=True)
-            assert isinstance(watcher_event, EventWatcherEvent)
-            assert watcher_event.payload.run_id in {result_one.run_id, result_two.run_id}
+        assert len(event_list_one) == 7
+        assert len(event_list_two) == 7
+        assert all([isinstance(event, DagsterEventRecord) for event in event_list_one])
+        assert all([isinstance(event, DagsterEventRecord) for event in event_list_two])
 
     finally:
-        event_watcher.close()
+        del event_log_storage
 
 
 def test_listen_notify_filter_run_event(conn_string):
@@ -402,31 +400,28 @@ def test_listen_notify_filter_run_event(conn_string):
     def _solids():
         return_one()
 
-    event_watcher = create_event_watcher(conn_string)
-
     run_id_one = str(uuid.uuid4())
     run_id_two = str(uuid.uuid4())
 
     # only watch one of the runs
-    event_watcher.watch_run(run_id_two)
+    event_list = []
+    event_log_storage.event_watcher.watch_run(run_id_two, 0, event_list.append)
 
     try:
         events_one, _result_one = gather_events(_solids, run_config=RunConfig(run_id=run_id_one))
         for event in events_one:
             event_log_storage.store_event(event)
 
-        events_two, result_two = gather_events(_solids, run_config=RunConfig(run_id=run_id_two))
+        events_two, _result_two = gather_events(_solids, run_config=RunConfig(run_id=run_id_two))
         for event in events_two:
             event_log_storage.store_event(event)
 
-        event = event_watcher.queue.get(block=True)
+        start = time.time()
+        while len(event_list) < 7 and time.time() - start < TEST_TIMEOUT:
+            pass
 
-        assert isinstance(event, EventWatcherStart)
-
-        for _ in range(0, 5):
-            watcher_event = event_watcher.queue.get(block=True)
-            assert isinstance(watcher_event, EventWatcherEvent)
-            assert watcher_event.payload.run_id == result_two.run_id
+        assert len(event_list) == 7
+        assert all([isinstance(event, DagsterEventRecord) for event in event_list])
 
     finally:
-        event_watcher.close()
+        del event_log_storage

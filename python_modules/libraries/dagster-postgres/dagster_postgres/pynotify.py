@@ -9,9 +9,6 @@ import select
 import signal
 import sys
 
-from logx import log
-from psycopg2.extensions import Notify
-
 from dagster import check
 
 from .utils import get_conn
@@ -41,11 +38,6 @@ def start_listening(connection, channels):
 
     with connection.cursor() as curs:
         curs.execute(listens)
-
-
-def log_notification(notif):
-    check.inst_param(notif, 'notif', Notify)
-    log.debug('NOTIFY: {}, {}, {}'.format(notif.pid, notif.channel, notif.payload))
 
 
 def construct_signals(arg):
@@ -90,24 +82,14 @@ def await_pg_notifications(
         while True:
             try:
                 r, w, x = select.select(listen_on, [], [], max(0, timeout))
-                log.debug('select call awoken, returned: {}'.format((r, w, x)))
 
                 if (r, w, x) == ([], [], []):
-                    log.debug('idle timeout on select call, carrying on...')
                     if yield_on_timeout:
                         yield None
 
                 if wakeup is not None and wakeup in r:
                     signal_byte = os.read(wakeup, 1)
                     signal_int = int.from_bytes(signal_byte, sys.byteorder)
-                    sig = construct_signals(signal_int)
-                    signal_name = construct_signals(sig).name
-
-                    log.info(
-                        'woken from slumber by signal: {signal_name}'.format(
-                            signal_name=signal_name
-                        )
-                    )
                     yield signal_int
 
                 if conn in r:
@@ -118,20 +100,16 @@ def await_pg_notifications(
                         notify_list.append(conn.notifies.pop())
 
                     for notif in notify_list:
-                        log_notification(notif)
                         yield notif
 
             except select.error as e:
                 e_num, _e_message = e  # pylint: disable=unpacking-non-sequence
                 if e_num == errno.EINTR:
-                    log.debug('EINTR happened during select')
+                    pass
                 else:
                     raise
     finally:
         for s in signals_to_handle or []:
             if s in original_handlers:
                 signal_name = construct_signals(s).name
-                log.debug(
-                    'restoring original handler for: {signal_name}'.format(signal_name=signal_name)
-                )
                 signal.signal(s, original_handlers[s])

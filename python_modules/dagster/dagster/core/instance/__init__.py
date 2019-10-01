@@ -18,9 +18,9 @@ from dagster.core.types import Field, PermissiveDict, String
 from dagster.core.types.evaluator import evaluate_config
 from dagster.utils.yaml_utils import load_yaml_from_globs
 
-from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_feature_set, dagster_instance_config
+from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_feature_set
 from .features import DagsterFeatures
-from .ref import InstanceRef
+from .ref import InstanceRef, _compute_logs_directory
 
 
 def _is_dagster_home_set():
@@ -36,33 +36,6 @@ def _dagster_home():
         )
 
     return os.path.expanduser(dagster_home_path)
-
-
-def _dagster_compute_log_manager(base_dir):
-    config = dagster_instance_config(base_dir)
-    compute_log_base = os.path.join(base_dir, 'storage')
-    if config and config.get('compute_logs'):
-        if 'module' in config['compute_logs'] and 'class' in config['compute_logs']:
-            from dagster.core.storage.compute_log_manager import ComputeLogManager
-
-            try:
-                module = __import__(config['compute_logs']['module'])
-                klass = getattr(module, config['compute_logs']['class'])
-                check.subclass_param(klass, 'compute_log_manager', ComputeLogManager)
-                kwargs = config['compute_logs'].get('config', {})
-                compute_log_manager = klass(compute_log_base, **kwargs)
-                check.inst_param(compute_log_manager, 'compute_log_manager', ComputeLogManager)
-                return compute_log_manager
-            except Exception:
-                raise DagsterInvariantViolationError(
-                    'Invalid dagster config in `{config_yaml_filename}`. Expecting `module`, '
-                    '`class`, and `config`, returning a valid instance of '
-                    '`ComputeLogManager`'.format(config_yaml_filename=DAGSTER_CONFIG_YAML_FILENAME)
-                )
-
-    from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
-
-    return LocalComputeLogManager(compute_log_base)
 
 
 class _EventListenerLogHandler(logging.Handler):
@@ -146,7 +119,7 @@ class DagsterInstance(RunStorage):
             local_artifact_storage=LocalArtifactStorage(tempdir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(_compute_logs_base_directory(tempdir)),
+            compute_log_manager=NoOpComputeLogManager(_compute_logs_directory(tempdir)),
             feature_set=feature_set,
         )
 
@@ -154,14 +127,13 @@ class DagsterInstance(RunStorage):
     def get(fallback_storage=None):
         # 1. Use $DAGSTER_HOME to determine instance if set.
         if _is_dagster_home_set():
-            # in the future we can read from config and create RemoteInstanceRef when needed
-            return DagsterInstance.from_ref(InstanceRef.from_dir(_dagster_home()))
+            return DagsterInstance.from_config(_dagster_home())
 
         # 2. If that is not set use the fallback storage directory if provided.
         # This allows us to have a nice out of the box dagit experience where runs are persisted
         # across restarts in a tempdir that gets cleaned up when the dagit watchdog process exits.
         elif fallback_storage is not None:
-            return DagsterInstance.from_ref(InstanceRef.from_dir(fallback_storage))
+            return DagsterInstance.from_config(fallback_storage)
 
         # 3. If all else fails create an ephemeral in memory instance.
         else:
@@ -176,6 +148,11 @@ class DagsterInstance(RunStorage):
         return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir), features)
 
     @staticmethod
+    def from_config(config_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME):
+        instance_ref = InstanceRef.from_dir(config_dir, config_filename=config_filename)
+        return DagsterInstance.from_ref(instance_ref)
+
+    @staticmethod
     def from_ref(instance_ref, fallback_feature_set=None):
         check.inst_param(instance_ref, 'instance_ref', InstanceRef)
         check.opt_list_param(fallback_feature_set, 'fallback_feature_set', of_type=str)
@@ -183,9 +160,8 @@ class DagsterInstance(RunStorage):
         local_artifact_storage = instance_ref.local_artifact_storage_data.rehydrate()
         run_storage = instance_ref.run_storage_data.rehydrate()
         event_storage = instance_ref.event_storage_data.rehydrate()
+        compute_log_manager = instance_ref.compute_logs_data.rehydrate()
         feature_set = instance_ref.feature_set or fallback_feature_set
-
-        compute_log_manager = _dagster_compute_log_manager(local_artifact_storage.base_dir)
 
         return DagsterInstance(
             instance_type=InstanceType.PERSISTENT,
@@ -366,7 +342,3 @@ class DagsterInstance(RunStorage):
 
     def schedules_directory(self):
         return self._local_artifact_storage.schedules_dir
-
-
-def _compute_logs_base_directory(base):
-    return os.path.join(base, 'storage')

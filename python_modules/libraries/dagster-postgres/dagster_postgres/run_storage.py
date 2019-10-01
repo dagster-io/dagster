@@ -5,8 +5,8 @@ from dagster.core.types import Field, String
 
 
 class PostgresRunStorage(SQLRunStorage, ConfigurableClass):
-    def __init__(self, conn_string, inst_data=None):
-        self.engine = create_engine(conn_string)
+    def __init__(self, postgres_url, inst_data=None):
+        self.engine = create_engine(postgres_url)
         super(PostgresRunStorage, self).__init__(inst_data=inst_data)
 
     @classmethod

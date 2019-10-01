@@ -24,6 +24,13 @@ except NameError:
     FileNotFoundError = IOError
 
 
+try:
+    # pylint:disable=redefined-builtin,self-assigning-variable
+    ModuleNotFoundError = ModuleNotFoundError
+except NameError:
+    ModuleNotFoundError = ImportError
+
+
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
 
 # https://stackoverflow.com/a/67692/324449

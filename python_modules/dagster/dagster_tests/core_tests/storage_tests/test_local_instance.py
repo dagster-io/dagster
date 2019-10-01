@@ -6,8 +6,8 @@ import yaml
 from dagster import (
     DagsterEventType,
     DagsterInvalidConfigError,
-    DagsterInvariantViolationError,
     RunConfig,
+    check,
     execute_pipeline,
     pipeline,
     seven,
@@ -74,8 +74,5 @@ def test_init_compute_log_with_bad_config_module():
                 fd,
                 default_flow_style=False,
             )
-        with pytest.raises(
-            DagsterInvariantViolationError,
-            match='returning a valid instance of `ComputeLogManager`',
-        ):
+        with pytest.raises(check.CheckError, match='Couldn\'t import module'):
             DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))

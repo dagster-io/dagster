@@ -158,8 +158,28 @@ class ConfigurableClassData(
         from dagster.core.errors import DagsterInvalidConfigError
         from dagster.core.types.evaluator import evaluate_config
 
-        module = importlib.import_module(self.module_name)
-        klass = getattr(module, self.class_name)
+        try:
+            module = importlib.import_module(self.module_name)
+        except seven.ModuleNotFoundError:
+            check.invariant(
+                False,
+                'Couldn\'t import module {module_name} when attempting to rehydrate the '
+                'configurable class {configurable_class}'.format(
+                    module_name=self.module_name,
+                    configurable_class=self.module_name + '.' + self.class_name,
+                ),
+            )
+        try:
+            klass = getattr(module, self.class_name)
+        except AttributeError:
+            check.invariant(
+                False,
+                'Couldn\'t find class {class_name} in module when attempting to rehydrate the '
+                'configurable class {configurable_class}'.format(
+                    class_name=self.class_name,
+                    configurable_class=self.module_name + '.' + self.class_name,
+                ),
+            )
         check.subclass_param(
             klass,
             'class {class_name} in module {module_name}'.format(

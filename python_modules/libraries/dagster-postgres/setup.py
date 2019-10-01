@@ -50,7 +50,6 @@ def _do_setup(name='dagster-postgres'):
             # For now we are pinning to a version that we know works. This is probably
             # not flexible enough, but we will resolve that issue when we run into it.
             'psycopg2==2.7.6.1',
-            'logx',
         ],
         tests_require=[],
         zip_safe=False,
