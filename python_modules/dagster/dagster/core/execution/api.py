@@ -128,6 +128,7 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     execution_plan = create_execution_plan(
         pipeline, environment_dict=pipeline_run.environment_dict, run_config=run_config
     )
+    step_keys_to_execute = _resolve_step_keys(execution_plan, run_config.step_keys_to_execute)
 
     with scoped_pipeline_context(
         pipeline, pipeline_run.environment_dict, run_config, instance
@@ -137,7 +138,7 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
             pipeline_context,
             execution_plan,
             run_config=run_config,
-            step_keys_to_execute=run_config.step_keys_to_execute,
+            step_keys_to_execute=step_keys_to_execute,
         ):
             yield event
 
@@ -197,6 +198,7 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None, instance=
     instance = instance or DagsterInstance.ephemeral()
 
     execution_plan = create_execution_plan(pipeline, environment_dict, run_config)
+    step_keys_to_execute = _resolve_step_keys(execution_plan, run_config.step_keys_to_execute)
 
     # run should be used and threaded through here
     # https://github.com/dagster-io/dagster/issues/1745
@@ -210,7 +212,7 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None, instance=
                 pipeline_context,
                 execution_plan=execution_plan,
                 run_config=run_config,
-                step_keys_to_execute=run_config.step_keys_to_execute,
+                step_keys_to_execute=step_keys_to_execute,
             )
         )
 
@@ -256,20 +258,6 @@ def execute_pipeline_with_preset(pipeline, preset_name, run_config=None, instanc
         run_config = RunConfig(mode=preset.mode)
 
     return execute_pipeline(pipeline, preset.environment_dict, run_config, instance)
-
-
-def _invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute=None):
-    if step_keys_to_execute:
-        for step_key in step_keys_to_execute:
-            if not execution_plan.has_step(step_key):
-                raise DagsterExecutionStepNotFoundError(step_key=step_key)
-
-    # Engine execution returns a generator of yielded events, so returning here means this function
-    # also returns a generator
-
-    return pipeline_context.executor_config.get_engine().execute(
-        pipeline_context, execution_plan, step_keys_to_execute
-    )
 
 
 def _check_reexecution_config(pipeline_context, execution_plan, run_config):
@@ -324,7 +312,7 @@ def _steps_execution_iterator(pipeline_context, execution_plan, run_config, step
     )
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(run_config, 'run_config', RunConfig)
-    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+    check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
     if (
         isinstance(pipeline_context, DagsterEvent)
@@ -333,27 +321,14 @@ def _steps_execution_iterator(pipeline_context, execution_plan, run_config, step
     ):
         return ensure_gen(pipeline_context)
 
-    if not step_keys_to_execute:
-        step_keys_to_execute = [step.key for step in execution_plan.topological_steps()]
-
-    if not step_keys_to_execute:
-        pipeline_context.log.debug(
-            'Pipeline {pipeline} has no steps to execute and no execution will happen'.format(
-                pipeline=pipeline_context.pipeline_def.display_name
-            )
-        )
-        return ensure_gen(DagsterEvent.pipeline_success(pipeline_context))
-    else:
-        for step_key in step_keys_to_execute:
-            if not execution_plan.has_step(step_key):
-                raise DagsterExecutionStepNotFoundError(
-                    'Execution plan does not contain step \'{}\''.format(step_key),
-                    step_key=step_key,
-                )
-
     _setup_reexecution(run_config, pipeline_context, execution_plan)
 
-    return _invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute)
+    # Engine execution returns a generator of yielded events, so returning here means this function
+    # also returns a generator
+
+    return pipeline_context.executor_config.get_engine().execute(
+        pipeline_context, execution_plan, step_keys_to_execute
+    )
 
 
 def execute_plan_iterator(
@@ -364,6 +339,8 @@ def execute_plan_iterator(
     run_config = check_run_config_param(run_config, execution_plan.pipeline_def)
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
     instance = check.inst_param(instance, 'instance', DagsterInstance)
+
+    step_keys_to_execute = _resolve_step_keys(execution_plan, step_keys_to_execute)
 
     with scoped_pipeline_context(
         execution_plan.pipeline_def, environment_dict, run_config, instance
@@ -388,9 +365,6 @@ def execute_plan(
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config, execution_plan.pipeline_def)
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
-
-    if step_keys_to_execute is None:
-        step_keys_to_execute = [step.key for step in execution_plan.topological_steps()]
 
     return list(
         execute_plan_iterator(
@@ -433,3 +407,16 @@ def _create_run(instance, pipeline_def, run_config, environment_dict):
             status=PipelineRunStatus.NOT_STARTED,
         )
     )
+
+
+def _resolve_step_keys(execution_plan, step_keys_to_execute):
+    if step_keys_to_execute is None:
+        step_keys_to_execute = [step.key for step in execution_plan.topological_steps()]
+    else:
+        for step_key in step_keys_to_execute:
+            if not execution_plan.has_step(step_key):
+                raise DagsterExecutionStepNotFoundError(
+                    'Execution plan does not contain step \'{}\''.format(step_key),
+                    step_key=step_key,
+                )
+    return step_keys_to_execute

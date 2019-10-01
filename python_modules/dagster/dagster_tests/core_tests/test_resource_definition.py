@@ -1,10 +1,12 @@
 from dagster import (
+    DagsterResourceFunctionError,
     Field,
     ModeDefinition,
     PipelineDefinition,
     ResourceDefinition,
     String,
     execute_pipeline,
+    execute_pipeline_iterator,
     resource,
     solid,
 )
@@ -452,3 +454,17 @@ def test_resource_init_failure():
     )
 
     assert step_events[0].event_type_value == 'PIPELINE_INIT_FAILURE'
+
+    # Test the pipeline init failure event fires even if we are raising errors
+    events = []
+    try:
+        for event in execute_pipeline_iterator(
+            pipeline,
+            environment_dict={'execution': {'in_process': {'config': {'raise_on_error': True}}}},
+        ):
+            events.append(event)
+    except DagsterResourceFunctionError:
+        pass
+
+    assert len(events) == 1
+    assert events[0].event_type_value == 'PIPELINE_INIT_FAILURE'

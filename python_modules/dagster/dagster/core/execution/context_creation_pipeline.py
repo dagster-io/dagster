@@ -132,6 +132,7 @@ def scoped_pipeline_context(
     executor_config = create_executor_config(context_creation_data)
 
     # After this try block, a Dagster exception thrown will result in a pipeline init failure event.
+    pipeline_context = None
     try:
         executor_config.check_requirements(instance, context_creation_data.system_storage_def)
 
@@ -148,32 +149,35 @@ def scoped_pipeline_context(
                 context_creation_data, system_storage_data, scoped_resources_builder
             )
 
-            yield construct_pipeline_execution_context(
+            pipeline_context = construct_pipeline_execution_context(
                 context_creation_data=context_creation_data,
                 scoped_resources_builder=scoped_resources_builder,
                 system_storage_data=system_storage_data,
                 log_manager=log_manager,
                 executor_config=executor_config,
             )
+            yield pipeline_context
 
     except DagsterError as dagster_error:
-        user_facing_exc_info = (
-            # pylint does not know original_exc_info exists is is_user_code_error is true
-            # pylint: disable=no-member
-            dagster_error.original_exc_info
-            if dagster_error.is_user_code_error
-            else sys.exc_info()
-        )
+        # only yield an init failure event if we haven't already yielded context
+        if pipeline_context is None:
+            user_facing_exc_info = (
+                # pylint does not know original_exc_info exists is is_user_code_error is true
+                # pylint: disable=no-member
+                dagster_error.original_exc_info
+                if dagster_error.is_user_code_error
+                else sys.exc_info()
+            )
+
+            error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
+            yield DagsterEvent.pipeline_init_failure(
+                pipeline_name=pipeline_def.name,
+                failure_data=PipelineInitFailureData(error=error_info),
+                log_manager=_create_context_free_log_manager(instance, run_config, pipeline_def),
+            )
 
         if executor_config.raise_on_error:
             raise dagster_error
-
-        error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
-        yield DagsterEvent.pipeline_init_failure(
-            pipeline_name=pipeline_def.name,
-            failure_data=PipelineInitFailureData(error=error_info),
-            log_manager=_create_context_free_log_manager(instance, run_config, pipeline_def),
-        )
 
 
 def create_system_storage_data(
