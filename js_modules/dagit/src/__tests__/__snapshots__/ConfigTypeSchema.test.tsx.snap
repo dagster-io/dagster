@@ -25,7 +25,7 @@ exports[`renders given a complex type 1`] = `
   >
       
     <span
-      className="sc-htpNat kmOyGE"
+      className="sc-htpNat dJsUWn"
     >
       field_one
     </span>
@@ -39,7 +39,7 @@ exports[`renders given a complex type 1`] = `
   >
       
     <span
-      className="sc-htpNat kmOyGE"
+      className="sc-htpNat dJsUWn"
     >
       field_two
     </span>
@@ -53,7 +53,7 @@ exports[`renders given a complex type 1`] = `
   >
       
     <span
-      className="sc-htpNat kmOyGE"
+      className="sc-htpNat dJsUWn"
     >
       field_three
     </span>
@@ -67,7 +67,7 @@ exports[`renders given a complex type 1`] = `
   >
       
     <span
-      className="sc-htpNat kmOyGE"
+      className="sc-htpNat dJsUWn"
     >
       nested_field
     </span>

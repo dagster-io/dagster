@@ -3,29 +3,31 @@ import * as TestRenderer from "react-test-renderer";
 import { BrowserRouter } from "react-router-dom";
 
 import ConfigEditorModePicker from "../execute/ConfigEditorModePicker";
-import { PipelineExecutionContainerFragment } from "../execute/types/PipelineExecutionContainerFragment";
+import { PipelineExecutionContainerFragment_Pipeline_modes } from "../execute/types/PipelineExecutionContainerFragment";
+
+const defaultMode: PipelineExecutionContainerFragment_Pipeline_modes = {
+  __typename: "Mode",
+  description: null,
+  name: "default"
+};
+
+const mode1: PipelineExecutionContainerFragment_Pipeline_modes = {
+  __typename: "Mode",
+  description: "Mode 1",
+  name: "mode_1"
+};
+
+const mode2: PipelineExecutionContainerFragment_Pipeline_modes = {
+  __typename: "Mode",
+  description: "Mode 2",
+  name: "mode_2"
+};
 
 it("renders single mode pipelines", () => {
-  const singleModePipelineData: PipelineExecutionContainerFragment = {
-    __typename: "Pipeline",
-    configTypes: [],
-    environmentType: {
-      __typename: "CompositeConfigType",
-      key: "SingleModePipeline.Mode.Default.Environment"
-    },
-    modes: [
-      {
-        __typename: "Mode",
-        description: null,
-        name: "default"
-      }
-    ],
-    name: "single_mode_pipeline"
-  };
   const componentNullSelected = TestRenderer.create(
     <BrowserRouter>
       <ConfigEditorModePicker
-        pipeline={singleModePipelineData}
+        modes={[defaultMode]}
         modeName={null}
         onModeChange={() => null}
       />
@@ -36,7 +38,7 @@ it("renders single mode pipelines", () => {
   const componentDefaultSelected = TestRenderer.create(
     <BrowserRouter>
       <ConfigEditorModePicker
-        pipeline={singleModePipelineData}
+        modes={[defaultMode]}
         modeName={"default"}
         onModeChange={() => null}
       />
@@ -46,31 +48,10 @@ it("renders single mode pipelines", () => {
 });
 
 it("renders multi mode pipelines", () => {
-  const multiModePipelineData: PipelineExecutionContainerFragment = {
-    __typename: "Pipeline",
-    configTypes: [],
-    environmentType: {
-      __typename: "CompositeConfigType",
-      key: "MultiModePipeline.Mode.Default.Environment"
-    },
-    modes: [
-      {
-        __typename: "Mode",
-        description: "Mode 1",
-        name: "mode_1"
-      },
-      {
-        __typename: "Mode",
-        description: "Mode 2",
-        name: "mode_2"
-      }
-    ],
-    name: "multi_mode_pipeline"
-  };
   const componentNullSelected = TestRenderer.create(
     <BrowserRouter>
       <ConfigEditorModePicker
-        pipeline={multiModePipelineData}
+        modes={[mode1, mode2]}
         modeName={null}
         onModeChange={() => null}
       />
@@ -81,7 +62,7 @@ it("renders multi mode pipelines", () => {
   const componentMode1Selected = TestRenderer.create(
     <BrowserRouter>
       <ConfigEditorModePicker
-        pipeline={multiModePipelineData}
+        modes={[mode1, mode2]}
         modeName={"mode1"}
         onModeChange={() => null}
       />
