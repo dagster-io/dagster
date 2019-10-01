@@ -196,7 +196,6 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
         Returns:
             List[PipelineRun]: Tuples of run_id, pipeline_run.
         '''
-
         query = self._build_query(db.select([RunsTable.c.run_body]), cursor, limit)
         rows = self.connect().execute(query).fetchall()
         return self._rows_to_runs(rows)
