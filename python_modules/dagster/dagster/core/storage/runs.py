@@ -92,7 +92,8 @@ RunStorageSQLMetadata = db.MetaData()
 RunsTable = db.Table(
     'runs',
     RunStorageSQLMetadata,
-    db.Column('run_id', db.String(255), primary_key=True),
+    db.Column('id', db.Integer, primary_key=True, autoincrement=True),
+    db.Column('run_id', db.String(255), unique=True),
     db.Column('pipeline_name', db.String),
     db.Column('status', db.String(63)),
     db.Column('run_body', db.String),
@@ -176,20 +177,13 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
         ''' Helper function to deal with cursor/limit pagination args '''
 
         if cursor:
-            cursor_query = db.select([RunsTable.c.create_timestamp]).where(
-                RunsTable.c.run_id == cursor
-            )
-            query = query.where(
-                db.or_(
-                    RunsTable.c.create_timestamp < cursor_query,
-                    db.and_(
-                        RunsTable.c.create_timestamp == cursor_query, RunsTable.c.run_id < cursor
-                    ),
-                )
-            )
+            cursor_query = db.select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)
+            query = query.where(RunsTable.c.id < cursor_query)
+
         if limit:
             query = query.limit(limit)
-        query = query.order_by(RunsTable.c.create_timestamp.desc(), RunsTable.c.run_id.desc())
+
+        query = query.order_by(RunsTable.c.id.desc())
         return query
 
     def all_runs(self, cursor=None, limit=None):

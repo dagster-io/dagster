@@ -1,4 +1,3 @@
-import time
 import uuid
 from contextlib import contextmanager
 
@@ -133,7 +132,7 @@ def test_paginated_fetch(run_storage_factory_cm_fn):
     storage = InMemoryRunStorage()
     with run_storage_factory_cm_fn() as storage:
         assert storage
-        one, two, three = sorted([str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())])
+        one, two, three = [str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())]
         storage.add_run(
             build_run(run_id=one, pipeline_name='some_pipeline', tags={'mytag': 'hello'})
         )
@@ -206,30 +205,23 @@ def test_fetch_by_status(run_storage_factory_cm_fn):
 
 @run_storage_test
 def test_fetch_by_status_cursored(run_storage_factory_cm_fn):
-    # Sketch as hell. We require a sleep in between inserts to guarantee insertion order
-    # https://github.com/dagster-io/dagster/issues/1768
-    PAUSE_TIME = 1.1
     with run_storage_factory_cm_fn() as storage:
         assert storage
         one = str(uuid.uuid4())
         two = str(uuid.uuid4())
         three = str(uuid.uuid4())
         four = str(uuid.uuid4())
-        time.sleep(PAUSE_TIME)
         storage.add_run(
             build_run(run_id=one, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
         )
-        time.sleep(PAUSE_TIME)
         storage.add_run(
             build_run(run_id=two, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
         )
-        time.sleep(PAUSE_TIME)
         storage.add_run(
             build_run(
                 run_id=three, pipeline_name='some_pipeline', status=PipelineRunStatus.NOT_STARTED
             )
         )
-        time.sleep(PAUSE_TIME)
         storage.add_run(
             build_run(run_id=four, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED)
         )
