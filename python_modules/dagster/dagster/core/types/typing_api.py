@@ -71,6 +71,22 @@ def is_closed_python_tuple_type(ttype):
     return origin == typing.Tuple or origin is tuple
 
 
+def is_closed_python_set_type(ttype):
+    if not ttype:
+        return False
+    if ttype is typing.Set:
+        return False
+    if not hasattr(ttype, '__args__'):
+        return False
+    if ttype.__args__ is None or len(ttype.__args__) != 1:
+        return False
+
+    inner_type = ttype.__args__[0]
+    origin = _get_origin(ttype)
+
+    return (origin == typing.Set or origin is set) and not isinstance(inner_type, typing.TypeVar)
+
+
 def get_optional_inner_type(ttype):
     check.invariant(
         is_closed_python_optional_type(ttype), 'type must pass is_closed_python_optional_type check'
