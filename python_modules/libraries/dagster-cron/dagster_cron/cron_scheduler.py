@@ -80,6 +80,16 @@ class SystemCronScheduler(Scheduler):
 
         return schedule
 
+    def log_path_for_schedule(self, schedule_name):
+        schedule = self.get_schedule_by_name(schedule_name)
+        if not schedule:
+            raise DagsterInvariantViolationError(
+                'You have attempted to get the logs for schedule {name}, but it is not '
+                'running'.format(name=schedule_name)
+            )
+
+        return self._get_logs_file_path(schedule)
+
     def _get_file_prefix(self, schedule):
         return os.path.join(
             self._artifacts_dir,

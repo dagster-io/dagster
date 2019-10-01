@@ -64,6 +64,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     repository_path = dauphin.Field(dauphin.String)
     status = dauphin.NonNull('ScheduleStatus')
     runs = dauphin.non_null_list('PipelineRun')
+    logs_path = dauphin.NonNull(dauphin.String)
 
     def __init__(self, graphene_info, schedule):
         self._schedule = check.inst_param(schedule, 'schedule', Schedule)
@@ -77,6 +78,10 @@ class DauphinRunningSchedule(dauphin.ObjectType):
             python_path=schedule.python_path,
             repository_path=schedule.repository_path,
         )
+
+    def resolve_logs_path(self, graphene_info):
+        scheduler = graphene_info.context.get_scheduler()
+        return scheduler.log_path_for_schedule(self._schedule.schedule_definition.name)
 
     def resolve_runs(self, graphene_info):
         return [

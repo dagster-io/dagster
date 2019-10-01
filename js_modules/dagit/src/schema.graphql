@@ -839,6 +839,7 @@ type RunningSchedule {
   repositoryPath: String
   status: ScheduleStatus!
   runs: [PipelineRun!]!
+  logsPath: String!
 }
 
 type RunningScheduleResult {

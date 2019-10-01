@@ -38,6 +38,7 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules {
   __typename: "RunningSchedule";
   scheduleId: string;
   scheduleDefinition: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition;
+  logsPath: string;
   runs: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs[];
   status: ScheduleStatus;
 }

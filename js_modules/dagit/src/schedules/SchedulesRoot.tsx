@@ -39,6 +39,7 @@ import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components";
 import { DataProxy } from "apollo-cache";
+import { copyValue } from "../Util";
 
 export default class SchedulesRoot extends React.Component {
   render() {
@@ -109,7 +110,7 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
 const ScheduleRow: React.FunctionComponent<{
   schedule: SchedulesRootQuery_scheduler_Scheduler_runningSchedules;
 }> = ({ schedule }) => {
-  const { status, scheduleDefinition, runs } = schedule;
+  const { status, scheduleDefinition, runs, logsPath } = schedule;
   const { name, cronSchedule, executionParamsString } = scheduleDefinition;
   const executionParams = JSON.parse(executionParamsString);
   const pipelineName = executionParams.selector.name;
@@ -264,6 +265,11 @@ const ScheduleRow: React.FunctionComponent<{
                   })
                 }
               />
+              <MenuItem
+                text="Copy Path to Debug Logs"
+                icon="clipboard"
+                onClick={(e: React.MouseEvent<any>) => copyValue(e, logsPath)}
+              />
             </Menu>
           }
           position={"bottom"}
@@ -310,6 +316,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
             executionParamsString
             cronSchedule
           }
+          logsPath
           runs {
             runId
             pipeline {

@@ -154,7 +154,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         '''Get a schedule by its name.
 
         Args:
-            name (str): The id of the schedule
+            name (str): The name of the schedule
 
         Returns:
             Optional[RunningSchedule]
@@ -181,7 +181,15 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         '''Resume a pipeline schedule.
 
         Args:
-            schedule_name (string): The schedule to resume
+            schedule_name (string): The schedule to end and delete
+        '''
+
+    @abc.abstractmethod
+    def log_path_for_schedule(self, schedule_name):
+        '''Get the path to the log file for the given schedule
+
+        Args:
+            schedule_name (string): The schedule to get the log file for
         '''
 
 
