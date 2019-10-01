@@ -200,6 +200,7 @@ class Schedule(
     def __new__(
         cls, schedule_id, schedule_definition, status, python_path=None, repository_path=None
     ):
+
         return super(Schedule, cls).__new__(
             cls,
             check.str_param(schedule_id, 'schedule_id'),

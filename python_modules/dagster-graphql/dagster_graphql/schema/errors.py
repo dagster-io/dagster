@@ -52,6 +52,21 @@ class DauphinSchedulerNotDefinedError(dauphin.ObjectType):
         self.message = 'Scheduler is not defined for the currently loaded repository.'
 
 
+class DauphinScheduleNotFoundError(dauphin.ObjectType):
+    class Meta:
+        name = 'ScheduleNotFoundError'
+        interfaces = (DauphinError,)
+
+    schedule_name = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, schedule_name):
+        super(DauphinScheduleNotFoundError, self).__init__()
+        self.schedule_name = check.str_param(schedule_name, 'schedule_name')
+        self.message = (
+            'Schedule {schedule_name} is not present in the currently loaded repository.'
+        ).format(schedule_name=schedule_name)
+
+
 class DauphinPipelineNotFoundError(dauphin.ObjectType):
     class Meta:
         name = 'PipelineNotFoundError'
@@ -400,16 +415,28 @@ class DauphinInvalidOutputError(dauphin.ObjectType):
     invalid_output_name = dauphin.NonNull(dauphin.String)
 
 
+start_pipeline_execution_result_types = (
+    DauphinInvalidStepError,
+    DauphinInvalidOutputError,
+    DauphinPipelineConfigValidationInvalid,
+    DauphinPipelineNotFoundError,
+    DauphinStartPipelineExecutionSuccess,
+)
+
+
 class DauphinStartPipelineExecutionResult(dauphin.Union):
     class Meta:
         name = 'StartPipelineExecutionResult'
+        types = start_pipeline_execution_result_types
+
+
+class DauphinStartScheduledExecutionResult(dauphin.Union):
+    class Meta:
+        name = 'StartScheduledExecutionResult'
         types = (
-            DauphinInvalidStepError,
-            DauphinInvalidOutputError,
-            DauphinPipelineConfigValidationInvalid,
-            DauphinPipelineNotFoundError,
-            DauphinStartPipelineExecutionSuccess,
-        )
+            DauphinScheduleNotFoundError,
+            DauphinSchedulerNotDefinedError,
+        ) + start_pipeline_execution_result_types
 
 
 class DauphinExecutePlanSuccess(dauphin.ObjectType):

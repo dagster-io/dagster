@@ -497,6 +497,7 @@ type ModeNotFoundError implements Error {
 
 type Mutation {
   startPipelineExecution(executionParams: ExecutionParams!, reexecutionConfig: ReexecutionConfig): StartPipelineExecutionResult!
+  startScheduledExecution(scheduleName: String!): StartScheduledExecutionResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
   startSchedule(scheduleName: String!): RunningScheduleResult!
   stopRunningSchedule(scheduleName: String!): RunningScheduleResult!
@@ -891,6 +892,12 @@ type ScheduleDefinition {
   executionParamsString: String!
 }
 
+type ScheduleNotFoundError implements Error {
+  message: String!
+  stack: [String!]!
+  scheduleName: String!
+}
+
 type Scheduler {
   runningSchedules: [RunningSchedule!]!
 }
@@ -948,6 +955,8 @@ union StartPipelineExecutionResult = InvalidStepError | InvalidOutputError | Pip
 type StartPipelineExecutionSuccess {
   run: PipelineRun!
 }
+
+union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess
 
 interface StepEvent {
   step: ExecutionStep

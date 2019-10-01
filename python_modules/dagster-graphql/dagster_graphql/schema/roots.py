@@ -13,6 +13,7 @@ from dagster_graphql.implementation.execution import (
     get_compute_log_observable,
     get_pipeline_run_observable,
     start_pipeline_execution,
+    start_scheduled_execution,
 )
 from dagster_graphql.implementation.fetch_pipelines import (
     get_dauphin_pipeline_reference_from_selector,
@@ -250,6 +251,19 @@ class DauphinCancelPipelineExecutionResult(dauphin.Union):
         )
 
 
+class DauphinStartScheduledExecutionMutation(dauphin.Mutation):
+    class Meta:
+        name = 'StartScheduledExecutionMutation'
+
+    class Arguments:
+        scheduleName = dauphin.NonNull(dauphin.String)
+
+    Output = dauphin.NonNull('StartScheduledExecutionResult')
+
+    def mutate(self, graphene_info, scheduleName):
+        return start_scheduled_execution(graphene_info, schedule_name=scheduleName)
+
+
 class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
     class Meta:
         name = 'StartPipelineExecutionMutation'
@@ -414,6 +428,7 @@ class DauphinMutation(dauphin.ObjectType):
         name = 'Mutation'
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
+    start_scheduled_execution = DauphinStartScheduledExecutionMutation.Field()
     execute_plan = DauphinExecutePlan.Field()
     start_schedule = DauphinStartScheduleMutation.Field()
     stop_running_schedule = DauphinStopRunningScheduleMutation.Field()

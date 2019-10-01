@@ -96,9 +96,9 @@ def define_context(instance=None):
     )
 
 
-def define_context_for_repository_yaml(instance=None):
+def define_context_for_repository_yaml(path, instance=None):
     return DagsterGraphQLContext(
-        handle=ExecutionTargetHandle.for_repo_yaml(script_relative_path('../repository.yaml')),
+        handle=ExecutionTargetHandle.for_repo_yaml(path),
         instance=instance or DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),
     )
@@ -213,7 +213,21 @@ def define_scheduler():
         },
     )
 
-    return [no_config_pipeline_hourly_schedule]
+    no_config_pipeline_hourly_schedule_with_schedule_id_tag = ScheduleDefinition(
+        name="no_config_pipeline_hourly_schedule_with_schedule_id_tag",
+        cron_schedule="0 0 * * *",
+        execution_params={
+            "environmentConfigData": {"storage": {"filesystem": None}},
+            "selector": {"name": "no_config_pipeline", "solidSubset": None},
+            "executionMetadata": {"tags": [{"key": "dagster/schedule_id", "value": "1234"}]},
+            "mode": "default",
+        },
+    )
+
+    return [
+        no_config_pipeline_hourly_schedule,
+        no_config_pipeline_hourly_schedule_with_schedule_id_tag,
+    ]
 
 
 @pipeline

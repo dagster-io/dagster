@@ -1,16 +1,21 @@
 import json
+import sys
 import time
 
 from click.testing import CliRunner
 from dagster_graphql.cli import ui
+from dagster_graphql_tests.graphql.setup import define_context_for_repository_yaml
+from dagster_tests.utils import FilesytemTestScheduler
 
 from dagster import (
     InputDefinition,
     Int,
     OutputDefinition,
     RepositoryDefinition,
+    ScheduleDefinition,
     lambda_solid,
     pipeline,
+    schedules,
     seven,
 )
 from dagster.core.instance import DagsterInstance
@@ -35,6 +40,21 @@ def math():
 
 def define_repository():
     return RepositoryDefinition(name='test', pipeline_defs=[math])
+
+
+@schedules(scheduler=FilesytemTestScheduler)
+def define_schedules():
+    math_hourly_schedule = ScheduleDefinition(
+        name="math_hourly_schedule",
+        cron_schedule="0 0 * * *",
+        execution_params={
+            'selector': {'name': 'math', 'solidSubset': None},
+            'environmentConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
+            'mode': 'default',
+        },
+    )
+
+    return [math_hourly_schedule]
 
 
 def test_basic_introspection():
@@ -195,6 +215,35 @@ def test_start_execution_predefined():
         result_data['data']['startPipelineExecution']['__typename']
         == 'StartPipelineExecutionSuccess'
     )
+
+
+def test_start_scheduled_execution_predefined():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance.local_temp(temp_dir)
+        runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
+
+        repo_path = script_relative_path('./cli_test_repository.yaml')
+
+        # Initialize scheduler
+        context = define_context_for_repository_yaml(
+            path=script_relative_path('./cli_test_repository.yaml'), instance=instance
+        )
+        scheduler_handle = context.scheduler_handle
+        scheduler_handle.up(python_path=sys.executable, repository_path=script_relative_path('./'))
+
+        # Run command
+        variables = seven.json.dumps({'scheduleName': 'math_hourly_schedule'})
+        result = runner.invoke(
+            ui, ['-y', repo_path, '-v', variables, '-p', 'startScheduledExecution']
+        )
+
+        assert result.exit_code == 0
+        result_data = json.loads(result.output.strip('\n').split('\n')[-1])
+
+        assert (
+            result_data['data']['startScheduledExecution']['__typename']
+            == 'StartPipelineExecutionSuccess'
+        )
 
 
 def test_start_execution_predefined_with_logs():

@@ -7,6 +7,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster import ScheduleDefinition
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import Schedule, ScheduleStatus, get_schedule_change_set
+from dagster.utils import script_relative_path
 
 from .setup import define_context_for_repository_yaml
 
@@ -40,7 +41,9 @@ def default_execution_params():
 @mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
 def test_get_all_schedules():
     instance = DagsterInstance.local_temp()
-    context = define_context_for_repository_yaml(instance=instance)
+    context = define_context_for_repository_yaml(
+        path=script_relative_path('../repository.yaml'), instance=instance
+    )
 
     # Initialize scheduler
     scheduler_handle = context.scheduler_handle
@@ -60,7 +63,7 @@ def test_get_all_schedules():
     assert scheduler_result.data
     assert scheduler_result.data['scheduler']
     assert scheduler_result.data['scheduler']['runningSchedules']
-    assert len(scheduler_result.data['scheduler']['runningSchedules']) == 1
+    assert len(scheduler_result.data['scheduler']['runningSchedules']) == 2
 
     assert (
         scheduler_result.data['scheduler']['runningSchedules'][0]['scheduleId']

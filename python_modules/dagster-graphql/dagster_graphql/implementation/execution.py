@@ -19,6 +19,7 @@ from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.serdes import serialize_dagster_namedtuple
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
+from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .fetch_pipelines import (
@@ -26,6 +27,7 @@ from .fetch_pipelines import (
     get_dauphin_pipeline_reference_from_selector,
 )
 from .fetch_runs import get_validated_config, validate_config
+from .fetch_schedules import get_dagster_schedule
 from .pipeline_run_storage import PipelineRunObservableSubscribe
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
@@ -76,6 +78,45 @@ def delete_pipeline_run(graphene_info, run_id):
         )
 
     return graphene_info.schema.type_named('DeletePipelineRunSuccess')(run_id)
+
+
+@capture_dauphin_error
+def start_scheduled_execution(graphene_info, schedule_name):
+    from dagster_graphql.schema.roots import create_execution_metadata
+
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.str_param(schedule_name, 'schedule_name')
+
+    schedule = get_dagster_schedule(graphene_info, schedule_name)
+
+    # Add dagster/schedule_id tag to executionMetadata
+    execution_params = merge_dicts(
+        {'executionMetadata': {'tags': []}}, schedule.schedule_definition.execution_params
+    )
+
+    # Check that the dagster/schedule_id tag is not already set
+    check.invariant(
+        not any(
+            tag['key'] == 'dagster/schedule_id'
+            for tag in execution_params['executionMetadata']['tags']
+        ),
+        "Tag dagster/schedule_id tag is already defined in executionMetadata.tags",
+    )
+
+    execution_params['executionMetadata']['tags'].append(
+        {'key': 'dagster/schedule_id', 'value': schedule.schedule_id}
+    )
+
+    selector = execution_params['selector']
+    execution_params = ExecutionParams(
+        selector=ExecutionSelector(selector['name'], selector.get('solidSubset')),
+        environment_dict=execution_params.get('environmentConfigData'),
+        mode=execution_params.get('mode'),
+        execution_metadata=create_execution_metadata(execution_params.get('executionMetadata')),
+        step_keys=execution_params.get('stepKeys'),
+    )
+
+    return start_pipeline_execution(graphene_info, execution_params, reexecution_config=None)
 
 
 @capture_dauphin_error

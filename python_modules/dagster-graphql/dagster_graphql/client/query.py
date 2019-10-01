@@ -143,6 +143,63 @@ fragment logMessageEventFragment on LogMessageEvent {
 }
 '''
 
+START_PIPELINE_EXECUTION_RESULT_FRAGMENT = (
+    '''
+fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
+	__typename
+	... on InvalidStepError {
+		invalidStepKey
+	}
+	... on InvalidOutputError {
+		stepKey
+		invalidOutputName
+	}
+	... on PipelineConfigValidationInvalid {
+		pipeline {
+			name
+		}
+		errors {
+			__typename
+			message
+			path
+			reason
+		}
+	}
+	... on PipelineNotFoundError {
+		message
+		pipelineName
+	}
+	... on StartPipelineExecutionSuccess {
+		run {
+			runId
+			status
+			pipeline {
+				name
+			}
+			logs {
+				nodes {
+					__typename
+					...stepEventFragment
+					...logMessageEventFragment
+				}
+				pageInfo {
+					lastCursor
+					hasNextPage
+					hasPreviousPage
+					count
+					totalCount
+				}
+			}
+			environmentConfigYaml
+			mode
+		}
+	}
+}
+'''
+    + STEP_EVENT_FRAGMENTS
+    + LOG_MESSAGE_EVENT_FRAGMENT
+)
+
 START_PIPELINE_EXECUTION_MUTATION = (
     '''
 mutation(
@@ -151,59 +208,33 @@ mutation(
   startPipelineExecution(
     executionParams: $executionParams,
   ) {
-    __typename
-    ... on InvalidStepError {
-      invalidStepKey
-    }
-    ... on InvalidOutputError {
-      stepKey
-      invalidOutputName
-    }
-    ... on PipelineConfigValidationInvalid {
-      pipeline {
-        name
-      }
-      errors {
-        __typename
-        message
-        path
-        reason
-      }
-    }
-    ... on PipelineNotFoundError {
-        message
-        pipelineName
-    }
-    ... on StartPipelineExecutionSuccess {
-      run {
-        runId
-        status
-        pipeline {
-          name
-        }
-        logs {
-          nodes {
-            __typename
-            ...stepEventFragment
-            ...logMessageEventFragment
-          }
-          pageInfo {
-            lastCursor
-            hasNextPage
-            hasPreviousPage
-            count
-            totalCount
-          }
-        }
-        environmentConfigYaml
-        mode
-      }
-    }
+    ...startPipelineExecutionResultFragment
   }
 }
 '''
-    + STEP_EVENT_FRAGMENTS
-    + LOG_MESSAGE_EVENT_FRAGMENT
+    + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
+)
+
+START_SCHEDULED_EXECUTION_MUTATION = (
+    '''
+mutation(
+  $scheduleName: String!
+) {
+  startScheduledExecution(
+    scheduleName: $scheduleName,
+  ) {
+    ...on ScheduleNotFoundError {
+      message
+      scheduleName
+    }
+    ...on SchedulerNotDefinedError {
+      message
+    }
+    ...startPipelineExecutionResultFragment
+  }
+}
+'''
+    + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
 )
 
 EXECUTE_PLAN_MUTATION = (

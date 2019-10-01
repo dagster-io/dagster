@@ -75,20 +75,10 @@ fragment stepEventFragment on StepEvent {
         }
     }
 }
-
 '''
-START_PIPELINE_EXECUTION_QUERY = (
-    FRAGMENTS
-    + '''
 
-mutation (
-    $executionParams: ExecutionParams!
-    $reexecutionConfig: ReexecutionConfig
-) {
-    startPipelineExecution(
-        executionParams: $executionParams
-        reexecutionConfig: $reexecutionConfig
-    ) {
+START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
+    fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
         __typename
         ... on StartPipelineExecutionSuccess {
             run {
@@ -117,6 +107,47 @@ mutation (
         ... on PipelineNotFoundError {
             pipelineName
         }
+    }
+'''
+
+START_PIPELINE_EXECUTION_QUERY = (
+    FRAGMENTS
+    + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
+    + '''
+
+mutation (
+    $executionParams: ExecutionParams!
+    $reexecutionConfig: ReexecutionConfig
+) {
+    startPipelineExecution(
+        executionParams: $executionParams
+        reexecutionConfig: $reexecutionConfig
+    ) {
+        ...startPipelineExecutionResultFragment
+    }
+}
+'''
+)
+
+START_SCHEDULED_EXECUTION_QUERY = (
+    FRAGMENTS
+    + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
+    + '''
+
+mutation (
+    $scheduleName: String!
+) {
+    startScheduledExecution(
+        scheduleName: $scheduleName
+    ) {
+        ...on ScheduleNotFoundError {
+            message
+            scheduleName
+        }
+        ...on SchedulerNotDefinedError {
+            message
+        }
+        ...startPipelineExecutionResultFragment
     }
 }
 '''
