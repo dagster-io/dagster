@@ -139,8 +139,8 @@ const TypeSchemaContainer = styled.code`
 
 const DictEntry = styled.div``;
 
-const DictKey = styled.span<{ theme: ConfigTypeSchemaTheme }>`
-  color: ${({ theme }) => (theme === "light" ? Colors.BLACK : Colors.WHITE)};
+const DictKey = styled.span<{ theme: ConfigTypeSchemaTheme | undefined }>`
+  color: ${({ theme }) => (theme === "dark" ? Colors.WHITE : Colors.BLACK)};
 `;
 
 const DictComment = styled.div`
