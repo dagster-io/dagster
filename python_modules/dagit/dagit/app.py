@@ -144,10 +144,10 @@ def download_view(context):
     return view
 
 
-def create_app(handle, instance, reloader):
+def create_app(handle, instance, reloader=None):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.inst_param(instance, 'instance', DagsterInstance)
-    check.inst_param(reloader, 'reloader', Reloader)
+    check.opt_inst_param(reloader, 'reloader', Reloader)
 
     app = Flask('dagster-ui')
     sockets = Sockets(app)
