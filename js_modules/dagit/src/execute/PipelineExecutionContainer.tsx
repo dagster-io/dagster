@@ -57,7 +57,7 @@ const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fi
 interface IPipelineExecutionContainerProps {
   data: IStorageData;
   onSave: (data: IStorageData) => void;
-  pipelineOrError: PipelineExecutionContainerFragment;
+  pipelineOrError: PipelineExecutionContainerFragment | undefined;
   pipelineName: string;
   currentSession: IExecutionSession;
 }
@@ -149,9 +149,11 @@ export default class PipelineExecutionContainer extends React.Component<
     this.props.onSave(applyRemoveSession(this.props.data, session));
   };
 
-  getPipeline = (): PipelineDetailsFragment => {
+  getPipeline = (): PipelineDetailsFragment | undefined => {
     const obj = this.props.pipelineOrError;
-    if (obj.__typename === "Pipeline") {
+    if (obj === undefined) {
+      return undefined;
+    } else if (obj.__typename === "Pipeline") {
       return obj;
     } else if (obj.__typename === "InvalidSubsetError") {
       return obj.pipeline;
@@ -161,7 +163,7 @@ export default class PipelineExecutionContainer extends React.Component<
 
   getSubsetError = (): SubsetError => {
     const obj = this.props.pipelineOrError;
-    if (obj.__typename === "InvalidSubsetError") {
+    if (obj && obj.__typename === "InvalidSubsetError") {
       return obj;
     }
     return undefined;
@@ -176,7 +178,7 @@ export default class PipelineExecutionContainer extends React.Component<
     const { preview } = this.state;
     const pipeline = this.getPipeline();
 
-    if (!preview) {
+    if (!preview || !pipeline) {
       alert(
         "Dagit is still retrieving pipeline info. Please try again in a moment."
       );
@@ -195,7 +197,7 @@ export default class PipelineExecutionContainer extends React.Component<
   buildExecutionVariables = () => {
     const { currentSession } = this.props;
     const pipeline = this.getPipeline();
-    if (!currentSession || !currentSession.mode) return;
+    if (!pipeline || !currentSession || !currentSession.mode) return;
 
     let environmentConfigData = {};
     try {
@@ -222,7 +224,7 @@ export default class PipelineExecutionContainer extends React.Component<
 
   render() {
     const { currentSession, pipelineName } = this.props;
-    const { preview, editorHelpContext } = this.state;
+    const { preview, editorHelpContext, showWhitespace } = this.state;
     const pipeline = this.getPipeline();
     const subsetError = this.getSubsetError();
 
@@ -242,16 +244,15 @@ export default class PipelineExecutionContainer extends React.Component<
                 onSaveSession={this.onSaveSession}
               />
               <div style={{ flex: 1 }} />
-              {pipeline &&
-                (!this.state.preview ? (
-                  <Spinner size={17} />
-                ) : (
-                  <ExecutionStartButton
-                    title="Start Execution"
-                    icon={IconNames.PLAY}
-                    onClick={() => this.onExecute(startPipelineExecution)}
-                  />
-                ))}
+              {!pipeline || !this.state.preview ? (
+                <Spinner size={17} />
+              ) : (
+                <ExecutionStartButton
+                  title="Start Execution"
+                  icon={IconNames.PLAY}
+                  onClick={() => this.onExecute(startPipelineExecution)}
+                />
+              )}
             </TabBarContainer>
           )}
         </Mutation>
@@ -259,13 +260,11 @@ export default class PipelineExecutionContainer extends React.Component<
           <PipelineExecutionWrapper>
             <Split width={this.state.editorVW} style={{ flexShrink: 0 }}>
               <ConfigEditorPresetInsertionContainer className="bp3-dark">
-                {pipeline && (
-                  <ConfigEditorPresetsPicker
-                    pipelineName={pipeline.name}
-                    solidSubset={currentSession.solidSubset}
-                    onCreateSession={this.onCreateSession}
-                  />
-                )}
+                <ConfigEditorPresetsPicker
+                  pipelineName={pipelineName}
+                  solidSubset={currentSession.solidSubset}
+                  onCreateSession={this.onCreateSession}
+                />
               </ConfigEditorPresetInsertionContainer>
               <ConfigEditorHelp context={editorHelpContext} />
               <ApolloConsumer>
@@ -280,9 +279,8 @@ export default class PipelineExecutionContainer extends React.Component<
                         this.setState({ editorHelpContext: next });
                       }
                     }}
-                    showWhitespace={this.state.showWhitespace}
+                    showWhitespace={showWhitespace}
                     checkConfig={async environmentConfigData => {
-                      if (!pipeline) return { isValid: true };
                       if (!currentSession.mode) {
                         return {
                           isValid: false,
@@ -306,7 +304,7 @@ export default class PipelineExecutionContainer extends React.Component<
                         variables: {
                           environmentConfigData,
                           pipeline: {
-                            name: pipeline.name,
+                            name: pipelineName,
                             solidSubset: currentSession.solidSubset
                           },
                           mode: currentSession.mode || "default"
@@ -331,20 +329,20 @@ export default class PipelineExecutionContainer extends React.Component<
                     value={currentSession.solidSubset || null}
                     onChange={this.onSolidSubsetChange}
                   />
-                  <ConfigEditorModePicker
-                    pipeline={pipeline}
-                    onModeChange={this.onModeChange}
-                    modeName={currentSession.mode}
-                  />
+                  {pipeline && (
+                    <ConfigEditorModePicker
+                      modes={pipeline.modes}
+                      onModeChange={this.onModeChange}
+                      modeName={currentSession.mode}
+                    />
+                  )}
                   <Button
                     icon="paragraph"
                     small={true}
-                    active={this.state.showWhitespace}
+                    active={showWhitespace}
                     style={{ marginLeft: "auto" }}
                     onClick={() =>
-                      this.setState({
-                        showWhitespace: !this.state.showWhitespace
-                      })
+                      this.setState({ showWhitespace: !showWhitespace })
                     }
                   />
                 </>

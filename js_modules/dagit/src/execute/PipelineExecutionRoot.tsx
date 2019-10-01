@@ -37,7 +37,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<
         const pipelineOrError = result.data && result.data.pipelineOrError;
 
         if (
-          !pipelineOrError ||
+          pipelineOrError &&
           pipelineOrError.__typename === "PipelineNotFoundError"
         ) {
           return (
@@ -53,7 +53,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<
           );
         }
 
-        if (pipelineOrError.__typename === "PythonError") {
+        if (pipelineOrError && pipelineOrError.__typename === "PythonError") {
           return (
             <NonIdealState
               icon={IconNames.ERROR}
