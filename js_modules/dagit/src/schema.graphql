@@ -992,7 +992,7 @@ input StepOutputHandle {
 
 type Subscription {
   pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
-  computeLogs(runId: ID!, stepKey: String!, cursor: String!): ComputeLogs!
+  computeLogs(runId: ID!, stepKey: String!, cursor: String): ComputeLogs!
 }
 
 type TypeCheck implements DisplayableEvent {

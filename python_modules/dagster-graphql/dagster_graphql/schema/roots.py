@@ -451,7 +451,7 @@ class DauphinSubscription(dauphin.ObjectType):
         dauphin.NonNull('ComputeLogs'),
         runId=dauphin.Argument(dauphin.NonNull(dauphin.ID)),
         stepKey=dauphin.Argument(dauphin.NonNull(dauphin.String)),
-        cursor=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        cursor=dauphin.Argument(dauphin.String),
     )
 
     def resolve_pipelineRunLogs(self, graphene_info, runId, after=None):

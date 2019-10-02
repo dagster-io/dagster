@@ -3,7 +3,6 @@ import { ROOT_PIPELINES_QUERY } from "../App";
 import { TYPE_EXPLORER_CONTAINER_QUERY } from "../typeexplorer/TypeExplorerContainer";
 import { TYPE_LIST_CONTAINER_QUERY } from "../typeexplorer/TypeListContainer";
 import { PIPELINE_EXPLORER_ROOT_QUERY } from "../PipelineExplorerRoot";
-import { COMPUTE_LOGS_QUERY } from "../plan/ComputeLogModal";
 import { CachedGraphQLRequest } from "./MockedApolloLinks";
 
 export const MOCKS: CachedGraphQLRequest[] = [
@@ -43,14 +42,5 @@ export const MOCKS: CachedGraphQLRequest[] = [
       pipelineName: "airline_demo_ingest_pipeline"
     },
     filepath: path.join(__dirname, "__data__", "TYPE_LIST_CONTAINER_QUERY.json")
-  },
-  {
-    name: "COMPUTE_LOGS_QUERY",
-    query: COMPUTE_LOGS_QUERY,
-    variables: {
-      runId: "",
-      stepKey: "many_materializations_and_passing_expectations"
-    },
-    filepath: path.join(__dirname, "__data__", "COMPUTE_LOGS_QUERY.json")
   }
 ];

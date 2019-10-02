@@ -9,12 +9,16 @@
 
 export interface ComputeLogsSubscription_computeLogs_stdout {
   __typename: "ComputeLogFile";
+  path: string;
   data: string;
+  downloadUrl: string;
 }
 
 export interface ComputeLogsSubscription_computeLogs_stderr {
   __typename: "ComputeLogFile";
+  path: string;
   data: string;
+  downloadUrl: string;
 }
 
 export interface ComputeLogsSubscription_computeLogs {
@@ -31,5 +35,5 @@ export interface ComputeLogsSubscription {
 export interface ComputeLogsSubscriptionVariables {
   runId: string;
   stepKey: string;
-  cursor: string;
+  cursor?: string | null;
 }
