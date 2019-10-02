@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as qs from "query-string";
 import { useMutation } from "@apollo/react-hooks";
 
 import {
@@ -8,6 +9,7 @@ import {
   Icon,
   Menu,
   MenuItem,
+  MenuDivider,
   Popover,
   NonIdealState,
   Tooltip
@@ -137,7 +139,12 @@ const ScheduleRow: React.FunctionComponent<{
   schedule: SchedulesRootQuery_scheduler_Scheduler_runningSchedules;
 }> = ({ schedule }) => {
   const { status, scheduleDefinition, runs, logsPath } = schedule;
-  const { name, cronSchedule, executionParamsString } = scheduleDefinition;
+  const {
+    name,
+    cronSchedule,
+    executionParamsString,
+    environmentConfigYaml
+  } = scheduleDefinition;
   const executionParams = JSON.parse(executionParamsString);
   const pipelineName = executionParams.selector.name;
   const mode = executionParams.mode;
@@ -296,6 +303,19 @@ const ScheduleRow: React.FunctionComponent<{
                 icon="clipboard"
                 onClick={(e: React.MouseEvent<any>) => copyValue(e, logsPath)}
               />
+              <MenuDivider />
+              <MenuItem
+                text="Open in Execute Tab..."
+                icon="edit"
+                target="_blank"
+                href={`/p/${
+                  executionParams.selector.name
+                }/execute/setup?${qs.stringify({
+                  mode: executionParams.mode,
+                  config: environmentConfigYaml,
+                  solidSubset: executionParams.selector.solidSubset
+                })}`}
+              />
             </Menu>
           }
           position={"bottom"}
@@ -344,6 +364,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
           scheduleDefinition {
             name
             executionParamsString
+            environmentConfigYaml
             cronSchedule
           }
           logsPath

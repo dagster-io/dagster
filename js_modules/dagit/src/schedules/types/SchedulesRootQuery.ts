@@ -18,6 +18,7 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_schedul
   __typename: "ScheduleDefinition";
   name: string;
   executionParamsString: string;
+  environmentConfigYaml: string;
   cronSchedule: string;
 }
 

@@ -1,3 +1,4 @@
+import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 from dagster_graphql.schema.errors import DauphinSchedulerNotDefinedError
@@ -43,6 +44,12 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     cron_schedule = dauphin.NonNull(dauphin.String)
     execution_params_string = dauphin.NonNull(dauphin.String)
+    environment_config_yaml = dauphin.NonNull(dauphin.String)
+
+    def resolve_environment_config_yaml(self, _graphene_info):
+        environment_config = self._schedule_def.execution_params['environmentConfigData']
+        environment_config_yaml = yaml.dump(environment_config, default_flow_style=False)
+        return environment_config_yaml if environment_config_yaml else ''
 
     def __init__(self, schedule_def):
         self._schedule_def = check.inst_param(schedule_def, 'schedule_def', ScheduleDefinition)

@@ -890,6 +890,7 @@ type ScheduleDefinition {
   name: String!
   cronSchedule: String!
   executionParamsString: String!
+  environmentConfigYaml: String!
 }
 
 type ScheduleNotFoundError implements Error {
