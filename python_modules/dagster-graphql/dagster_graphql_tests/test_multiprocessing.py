@@ -2,7 +2,6 @@ import csv
 import os
 import time
 from collections import OrderedDict
-from contextlib import contextmanager
 from copy import deepcopy
 
 from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
@@ -29,8 +28,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
-from dagster.utils import script_relative_path
-from dagster.utils.test import get_temp_file_name, get_temp_file_names
+from dagster.utils import safe_tempfile_path, script_relative_path
 
 
 class PoorMansDataFrame_(list):
@@ -405,29 +403,13 @@ def infinite_loop_pipeline():
     loop()
 
 
-@contextmanager
-def get_temp_file_location():
-    with get_temp_file_name() as path:
-        os.unlink(path)
-        yield path
-
-
-@contextmanager
-def get_temp_file_locations(num):
-    with get_temp_file_names(num) as paths:
-        for path in paths:
-            os.unlink(path)
-
-        yield paths
-
-
 def test_has_run_query_and_terminate():
     run_id_one = make_new_run_id()
     handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'infinite_loop_pipeline')
 
     instance = DagsterInstance.local_temp()
 
-    with get_temp_file_location() as path:
+    with safe_tempfile_path() as path:
         pipeline_run = instance.create_run(
             PipelineRun.create_empty_run(
                 pipeline_name=infinite_loop_pipeline.name,
@@ -458,9 +440,7 @@ def test_two_runs_running():
     run_id_two = make_new_run_id()
     handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'infinite_loop_pipeline')
 
-    with get_temp_file_locations(2) as files:
-        file_one, file_two = files  # pylint: disable=unbalanced-tuple-unpacking
-
+    with safe_tempfile_path() as file_one, safe_tempfile_path() as file_two:
         instance = DagsterInstance.local_temp()
 
         execution_manager = SubprocessExecutionManager(instance)
