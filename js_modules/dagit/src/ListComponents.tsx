@@ -5,7 +5,6 @@ export const Header = styled.div`
   color: ${Colors.BLACK};
   font-size: 1.1rem;
   line-height: 3rem;
-  margin-top: 40px;
 `;
 
 export const Legend = styled.div`

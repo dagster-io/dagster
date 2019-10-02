@@ -53,27 +53,36 @@ def get_run(graphene_info, run_id):
         return graphene_info.schema.type_named('PipelineRun')(run)
 
 
-def get_runs(graphene_info, selector):
-    check.inst_param(selector, 'selector', PipelineRunsSelector)
+def get_run_tags(graphene_info):
     instance = graphene_info.context.instance
+    return [
+        graphene_info.schema.type_named('PipelineTagAndValues')(key=key, values=values)
+        for key, values in instance.get_run_tags()
+    ]
 
+
+def get_runs(graphene_info, selector, cursor=None, limit=None):
+    check.inst_param(selector, 'selector', PipelineRunsSelector)
+    check.opt_str_param(cursor, 'cursor')
+    check.opt_int_param(limit, 'limit')
+
+    instance = graphene_info.context.instance
     runs = []
-    page_opts = dict(cursor=selector.cursor, limit=selector.limit)
 
     if selector.run_id:
         run = instance.get_run_by_id(selector.run_id)
         if run:
             runs = [run]
     elif selector.pipeline:
-        runs = instance.get_runs_with_pipeline_name(selector.pipeline, **page_opts)
+        runs = instance.get_runs_with_pipeline_name(selector.pipeline, cursor=cursor, limit=limit)
     elif selector.tag_key:
         runs = instance.get_runs_with_matching_tag(
-            selector.tag_key, selector.tag_value, **page_opts
+            selector.tag_key, selector.tag_value, cursor=cursor, limit=limit
         )
     elif selector.status:
-        runs = instance.get_runs_with_status(selector.status, **page_opts)
+        runs = instance.get_runs_with_status(selector.status, cursor=cursor, limit=limit)
     else:
-        runs = instance.all_runs(**page_opts)
+        runs = instance.all_runs(cursor=cursor, limit=limit)
 
     return [graphene_info.schema.type_named('PipelineRun')(run) for run in runs]
 
