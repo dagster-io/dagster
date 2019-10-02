@@ -1,31 +1,35 @@
 Deploying
-=======================
+=========
 
-As is the case with all workflow orchestration, when deploying Dagster pipelines there are two
-primary concerns: **execution** and **scheduling**.
+As is the case with all workflow orchestration, when deploying Dagster pipelines you are faced with
+concerns around **execution**, **scheduling**, and **storage**.
 
-In the simplest case where you just want to schedule a simple pipeline or two and solid execution is
-relatively lightweight, you can readily schedule and invoke Dagster pipeline execution via cron on
-your local machine by adding a ``dagster pipeline execute...`` line to your crontab.
+* Execution
+  Dagster out of the box supports single and multi process executors. These executors work well for pipelines of moderate size
+  or if your pipelines leverage external systems or clusters for heavy compute tasks.
 
-In real-world systems, you'll likely need more sophisticated support for both scheduling and
-execution of Dagster pipelines. For this, Dagster provides support for several execution substrates:
+  `dagster-dask <https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-dask>`__
+  makes Dask available as another alternative for distributed execution. See the guide below for more details on using Dask.
 
-- Standalone: Dagit can run as a standalone service, running on a single VM or in a Docker
-  container. Dagster has out of the box support for multiprocessing execution.
-- `Dask <https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-dask>`__:
-  distributes execution on a Dask cluster, but relies on cron or a similar external scheduler for
-  initiating execution.
-- `Airflow <https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-airflow>`__:
-  Compiles Dagster pipelines into Airflow DAGs for execution; delegates both scheduling and
-  pipeline execution to Airflow.
+* Scheduling
+  Dagster offers a scheduler backed by system cron via the package
+  `dagster-cron <https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-cron>`__ .
+  These schedules are managed in code and deployed using Dagit or the Dagster CLI.
 
-In the following sections, we detail how to operationalize Dagster execution on each of these
-systems.
+  Scheduling can also be achieved by deploying to
+  `Airflow <https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-airflow>`__.
+  See the guide below for more details.
+
+* Storage
+  “Instance” is the concept we use to represent a particular installation or deployment of Dagster. An instance
+  represents the collection of systems that are used to control how Dagster persists the artifacts it generates.
+  See the guide below for details on how to configure your Dagster instance.
+
 
 .. toctree::
   :maxdepth: 1
 
+  instance
   dagit
   airflow
   dask

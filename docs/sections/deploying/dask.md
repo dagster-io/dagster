@@ -1,12 +1,12 @@
-# Deploying on Dask
+# Executing on Dask
 
 ## Introduction
 
-As noted above, Dagster is designed to target a variety of execution substrates, and natively
+Dagster is designed to target a variety of execution substrates, and natively
 supports Dask for pipeline execution.
 
 The Dagster / Dask integration lets you execute a Dagster pipeline on either local Dask or on a
-remote Dask cluster by specifying the `run_config` argument to `execute_pipeline`.
+remote Dask cluster by specifying `dask` in the `execution` block of the environment config.
 
 The integration works by taking the compiled execution plan, and converting each execution step
 into a [Dask Future](https://docs.dask.org/en/latest/futures.html) configured with the appropriate

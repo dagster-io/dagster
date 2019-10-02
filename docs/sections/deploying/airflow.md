@@ -1,4 +1,4 @@
-# Deploying on Airflow
+# Deploying to Airflow
 
 ## Introduction
 
