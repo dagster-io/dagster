@@ -526,6 +526,7 @@ if __name__ == "__main__":
             "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
             "pip install -e python_modules/dagster -qqq",
             "pip install -e python_modules/dagster-graphql -qqq",
+            "pip install -e python_modules/libraries/dagster-cron -qqq",
             "pip install -e python_modules/libraries/dagster-slack -qqq",
             "pip install -e python_modules/dagit -qqq",
             "pip install -r python_modules/dagit/dev-requirements.txt -qqq",

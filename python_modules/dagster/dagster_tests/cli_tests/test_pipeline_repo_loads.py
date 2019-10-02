@@ -119,7 +119,7 @@ def test_yaml_file():
             'pipeline_name': 'foobar',
             'python_file': None,
             'fn_name': None,
-            'repository_yaml': script_relative_path('repository.yaml'),
+            'repository_yaml': script_relative_path('repository_module.yaml'),
         }
     )
     assert handle.mode == _ExecutionTargetMode.PIPELINE
@@ -127,6 +127,7 @@ def test_yaml_file():
     expected = LoaderEntrypoint(module, 'dagster_examples.intro_tutorial.repos', 'define_repo')
     assert handle.entrypoint.module == expected.module
     assert handle.entrypoint.module_name == expected.module_name
+
     assert handle.entrypoint.fn_name == expected.fn_name
     assert handle.entrypoint.from_handle == handle
 

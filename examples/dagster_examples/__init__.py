@@ -1,3 +1,55 @@
+from dagster_cron import SystemCronScheduler
+
+from dagster import ScheduleDefinition, file_relative_path, schedules
+
+
+@schedules(scheduler=SystemCronScheduler)
+def define_scheduler():
+    return [
+        ScheduleDefinition(
+            name="many_events_every_min",
+            cron_schedule="* * * * *",
+            execution_params={
+                "environmentConfigData": {"storage": {"filesystem": {}}},
+                "selector": {"name": "many_events", "solidSubset": None},
+                "mode": "default",
+            },
+        ),
+        ScheduleDefinition(
+            name="log_spew_hourly",
+            cron_schedule="0 * * * *",
+            execution_params={
+                "environmentConfigData": {"storage": {"filesystem": {}}},
+                "selector": {"name": "log_spew", "solidSubset": None},
+                "mode": "default",
+            },
+        ),
+        ScheduleDefinition(
+            name="pandas_hello_world_hourly",
+            cron_schedule="0 * * * *",
+            execution_params={
+                "environmentConfigData": {
+                    "solids": {
+                        "sum_solid": {
+                            "inputs": {
+                                "num": {
+                                    "csv": {
+                                        "path": file_relative_path(
+                                            __file__, "pandas_hello_world/data/num.csv"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "selector": {"name": "pandas_hello_world", "solidSubset": None},
+                "mode": "default",
+            },
+        ),
+    ]
+
+
 def define_demo_repo():
     # Lazy import here to prevent deps issues
 

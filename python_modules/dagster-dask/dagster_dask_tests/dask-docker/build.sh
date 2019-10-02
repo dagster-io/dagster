@@ -16,6 +16,7 @@ function cleanup {
     rm -rf dagster-graphql
     rm -rf dagster-dask
     rm -rf dagster-aws
+    rm -rf dagster-cron
     rm -rf examples
 }
 # ensure cleanup happens on error or normal exit
@@ -25,6 +26,7 @@ cp -R ../../../dagster .
 cp -R ../../../dagster-graphql .
 rsync -av --progress ../../../dagster-dask . --exclude dagster_dask_tests
 cp -R ../../../libraries/dagster-aws .
+cp -R ../../../libraries/dagster-cron .
 cp -R ../../../../examples .
 
 
@@ -41,6 +43,10 @@ rm -rf \
   dagster-dask/.tox \
   dagster-dask/build \
   dagster-dask/dist \
+  dagster-cron/*.egg-info \
+  dagster-cron/.tox \
+  dagster-cron/build \
+  dagster-cron/dist \
   dagster-aws/*.egg-info \
   dagster-aws/.tox \
   dagster-aws/build \

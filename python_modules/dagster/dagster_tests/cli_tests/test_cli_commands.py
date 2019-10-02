@@ -119,7 +119,7 @@ def test_list_command():
 
     execute_list_command(
         {
-            'repository_yaml': script_relative_path('repository.yaml'),
+            'repository_yaml': script_relative_path('repository_module.yaml'),
             'python_file': None,
             'module_name': None,
             'fn_name': None,
@@ -127,7 +127,9 @@ def test_list_command():
         no_print,
     )
 
-    result = runner.invoke(pipeline_list_command, ['-y', script_relative_path('repository.yaml')])
+    result = runner.invoke(
+        pipeline_list_command, ['-y', script_relative_path('repository_module.yaml')]
+    )
     assert result.exit_code == 0
     assert result.output == (
         'Repository demo_repository\n'

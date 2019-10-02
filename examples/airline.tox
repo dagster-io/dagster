@@ -5,8 +5,8 @@ envlist = py36,py35
 passenv = CI_* COVERALLS_REPO_TOKEN TOXENV SLUGIFY_USES_TEXT_UNIDECODE AWS_SECRET_ACCESS_KEY AWS_ACCESS_KEY_ID AIRFLOW_HOME JAVA_HOME POSTGRES_TEST_DB_HOST
 commands =
   coverage erase
-  pip install --no-deps -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark -e ../python_modules/libraries/dagster-postgres -e ../python_modules/dagster-airflow -e .[full,airflow]
-  pip install -r ./dev-requirements.txt -r ../python_modules/dagster/dev-requirements.txt -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark -e ../python_modules/dagster-airflow -e .[full,airflow]
+  pip install --no-deps -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark -e ../python_modules/libraries/dagster-postgres -e ../python_modules/dagster-airflow -e ../python_modules/libraries/dagster-cron -e .[full,airflow]
+  pip install -r ./dev-requirements.txt -r ../python_modules/dagster/dev-requirements.txt -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark -e ../python_modules/dagster-airflow -e ../python_modules/libraries/dagster-cron -e .[full,airflow]
   ipython kernel install --name "dagster" --user
   pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov=../python_modules --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow"
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered
@@ -16,8 +16,8 @@ commands =
 [testenv:py37]
 commands =
   coverage erase
-  pip install --no-deps -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark ../python_modules/libraries/dagster-postgres .[full]
-  pip install -r ./dev-requirements.txt -r ../python_modules/dagster/dev-requirements.txt -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark -e .[full]
+  pip install --no-deps -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark -e ../python_modules/libraries/dagster-postgres -e ../python_modules/libraries/dagster-cron  -e .[full]
+  pip install -r ./dev-requirements.txt -r ../python_modules/dagster/dev-requirements.txt -e ../python_modules/dagster -e ../python_modules/dagstermill -e ../python_modules/libraries/dagster-aws -e ../python_modules/libraries/dagster-spark -e ../python_modules/libraries/dagster-pyspark -e ../python_modules/libraries/dagster-cron -e .[full]
   pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov=../python_modules --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow and not airflow"
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered
   coverage html --omit='.tox/*,**/test_*.py'

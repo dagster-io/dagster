@@ -10,6 +10,7 @@ function cleanup {
     rm -rf dagster
     rm -rf dagster-graphql
     rm -rf dagster-aws
+    rm -rf dagster-cron
 }
 # ensure cleanup happens on error or normal exit
 trap cleanup EXIT
@@ -17,6 +18,7 @@ trap cleanup EXIT
 cp -R ../../../dagster .
 cp -R ../../../dagster-graphql .
 cp -R ../../../libraries/dagster-aws .
+cp -R ../../../libraries/dagster-cron .
 
 rm -rf \
   dagster/*.egg-info \
@@ -27,6 +29,10 @@ rm -rf \
   dagster-graphql/.tox \
   dagster-graphql/build \
   dagster-graphql/dist \
+  dagster-cron/*.egg-info \
+  dagster-cron/.tox \
+  dagster-cron/build \
+  dagster-cron/dist \
   dagster-aws/*.egg-info \
   dagster-aws/.tox \
   dagster-aws/build \

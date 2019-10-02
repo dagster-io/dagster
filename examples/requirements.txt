@@ -2,6 +2,7 @@ boto3==1.9.47
 dagster
 dagstermill
 dagster-aws
+dagster-cron
 dagster-postgres
 descartes==1.1.0
 geopandas==0.4.0
