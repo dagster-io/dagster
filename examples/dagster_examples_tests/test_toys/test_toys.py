@@ -140,10 +140,8 @@ def test_config_mapping():
 def test_error_resource(snapshot):
     result = execute_pipeline(
         resource_error_pipeline,
-        environment_dict={
-            'storage': {'filesystem': {}},
-            'execution': {'in_process': {'config': {'raise_on_error': False}}},
-        },
+        environment_dict={'storage': {'filesystem': {}}},
+        raise_on_error=False,
     )
 
     assert not result.success

@@ -202,8 +202,7 @@ def test_subscription_query_error():
                 'selector': {'name': 'naughty_programmer_pipeline'},
                 'mode': 'default',
             }
-        },
-        raise_on_error=False,
+        }
     )
 
     assert run_logs['__typename'] == 'PipelineRunLogsSubscriptionSuccess'
@@ -224,7 +223,7 @@ def test_subscription_query_error():
 
 
 def test_subscribe_bad_run_id():
-    context = define_context(raise_on_error=False)
+    context = define_context()
     run_id = 'nope'
     subscription = execute_dagster_graphql(
         context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}

@@ -118,6 +118,7 @@ def scoped_pipeline_context(
     instance,
     system_storage_data=None,
     scoped_resources_builder_cm=create_resource_builder,
+    raise_on_error=False,
 ):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
@@ -155,6 +156,7 @@ def scoped_pipeline_context(
                 system_storage_data=system_storage_data,
                 log_manager=log_manager,
                 executor_config=executor_config,
+                raise_on_error=raise_on_error,
             )
             yield pipeline_context
 
@@ -176,7 +178,11 @@ def scoped_pipeline_context(
                 log_manager=_create_context_free_log_manager(instance, run_config, pipeline_def),
             )
 
-        if executor_config.raise_on_error:
+            if raise_on_error:
+                raise dagster_error
+
+        # if we've caught an error after context init we're in a problematic state and should just raise
+        else:
             raise dagster_error
 
 
@@ -246,6 +252,7 @@ def construct_pipeline_execution_context(
     system_storage_data,
     log_manager,
     executor_config,
+    raise_on_error,
 ):
     check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
     scoped_resources_builder = check.inst_param(
@@ -270,6 +277,7 @@ def construct_pipeline_execution_context(
             file_manager=system_storage_data.file_manager,
             execution_target_handle=context_creation_data.execution_target_handle,
             executor_config=executor_config,
+            raise_on_error=raise_on_error,
         ),
         log_manager=log_manager,
     )

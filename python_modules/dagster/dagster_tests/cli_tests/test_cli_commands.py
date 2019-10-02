@@ -417,7 +417,7 @@ not_a_repo_or_pipeline = 123
 def test_fn_is_wrong_thing():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         execute_execute_command(
-            env={'execution': {'in_process': {'config': {'raise_on_error': True}}}},
+            env={},
             cli_args={
                 'repository_yaml': None,
                 'pipeline_name': (),
@@ -437,7 +437,7 @@ def test_fn_is_wrong_thing():
 def test_fn_returns_wrong_thing():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         execute_execute_command(
-            env={'execution': {'in_process': {'config': {'raise_on_error': True}}}},
+            env={},
             cli_args={
                 'repository_yaml': None,
                 'pipeline_name': (),

@@ -218,12 +218,12 @@ def dagster_event_sequence_for_step(step_context):
         (3) An unexpected error occured. This is a framework error. Either there
         has been an internal error in the framewore OR we have forgtten to put a
         user code error boundary around invoked user-space code. These terminate
-        the computation immediately (by re-raising) even if raise_on_error is false.
+        the computation immediately (by re-raising).
 
-    If the raise_on_error option is set to True, these errors are reraised and surfaced
-    to the user. This is mostly to get sensible errors in test and ad-hoc contexts, rather
-    than forcing the user to wade through the PipelineExecutionResult API in order to find
-    the step that errored.
+    The "raised_dagster_errors" context manager can be used to force these errors to be
+    reraised and surfaced to the user. This is mostly to get sensible errors in test and
+    ad-hoc contexts, rather than forcing the user to wade through the
+    PipelineExecutionResult API in order to find the step that errored.
 
     For tools, however, this option should be false, and a sensible error message
     signaled to the user within that tool.
@@ -249,14 +249,14 @@ def dagster_event_sequence_for_step(step_context):
             else None,
         )
 
-        if step_context.executor_config.raise_on_error:
+        if step_context.raise_on_error:
             raise dagster_user_error
 
     # case (2) in top comment
     except DagsterError as dagster_error:
         yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
 
-        if step_context.executor_config.raise_on_error:
+        if step_context.raise_on_error:
             raise dagster_error
 
     # case (3) in top comment

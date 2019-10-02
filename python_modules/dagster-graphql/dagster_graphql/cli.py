@@ -26,16 +26,13 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query(
-    handle, query, variables=None, raise_on_error=False, use_sync_executor=False, instance=None
-):
+def execute_query(handle, query, variables=None, use_sync_executor=False, instance=None):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.str_param(query, 'query')
     check.opt_dict_param(variables, 'variables')
     # We allow external creation of the pipeline_run_storage to support testing contexts where we
     # need access to the underlying run storage
     instance = check.opt_inst_param(instance, 'instance', DagsterInstance, DagsterInstance.get())
-    check.bool_param(raise_on_error, 'raise_on_error')
     check.bool_param(use_sync_executor, 'use_sync_executor')
 
     query = query.strip('\'" \n\t')
@@ -43,11 +40,7 @@ def execute_query(
     execution_manager = SynchronousExecutionManager()
 
     context = DagsterGraphQLContext(
-        handle=handle,
-        instance=instance,
-        execution_manager=execution_manager,
-        raise_on_error=raise_on_error,
-        version=__version__,
+        handle=handle, instance=instance, execution_manager=execution_manager, version=__version__
     )
 
     executor = SyncExecutor() if use_sync_executor else GeventExecutor()

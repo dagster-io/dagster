@@ -73,6 +73,7 @@ def create_test_pipeline_execution_context(
         ),
         log_manager=log_manager,
         executor_config=executor_config,
+        raise_on_error=True,
     )
 
 

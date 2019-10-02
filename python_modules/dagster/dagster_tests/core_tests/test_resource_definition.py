@@ -437,10 +437,7 @@ def test_resource_init_failure():
         mode_defs=[ModeDefinition(resource_defs={'failing_resource': failing_resource})],
     )
 
-    res = execute_pipeline(
-        pipeline,
-        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
-    )
+    res = execute_pipeline(pipeline, raise_on_error=False)
 
     assert res.event_list[0].event_type_value == 'PIPELINE_INIT_FAILURE'
 
@@ -448,7 +445,6 @@ def test_resource_init_failure():
 
     step_events = execute_plan(
         execution_plan,
-        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
         step_keys_to_execute=[step.key for step in execution_plan.topological_steps()],
         instance=DagsterInstance.ephemeral(),
     )
@@ -458,10 +454,7 @@ def test_resource_init_failure():
     # Test the pipeline init failure event fires even if we are raising errors
     events = []
     try:
-        for event in execute_pipeline_iterator(
-            pipeline,
-            environment_dict={'execution': {'in_process': {'config': {'raise_on_error': True}}}},
-        ):
+        for event in execute_pipeline_iterator(pipeline):
             events.append(event)
     except DagsterResourceFunctionError:
         pass

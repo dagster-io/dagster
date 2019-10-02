@@ -106,13 +106,7 @@ def test_single_solid_pipeline_failure():
         name='single_solid_pipeline', solid_defs=[solid_one], mode_defs=[mode_def(_event_callback)]
     )
 
-    result = execute_pipeline(
-        pipeline_def,
-        {
-            'loggers': {'callback': {}},
-            'execution': {'in_process': {'config': {'raise_on_error': False}}},
-        },
-    )
+    result = execute_pipeline(pipeline_def, {'loggers': {'callback': {}}}, raise_on_error=False)
     assert not result.success
 
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)

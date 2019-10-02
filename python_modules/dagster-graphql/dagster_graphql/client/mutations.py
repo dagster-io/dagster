@@ -23,7 +23,6 @@ def execute_start_pipeline_execution_mutation(handle, variables, instance_ref=No
         handle,
         START_PIPELINE_EXECUTION_MUTATION,
         variables,
-        raise_on_error=True,
         use_sync_executor=True,
         instance=DagsterInstance.from_ref(instance_ref)
         if instance_ref
@@ -38,12 +37,7 @@ def execute_execute_plan_mutation(handle, variables, instance_ref=None):
         DagsterInstance.from_ref(instance_ref) if instance_ref else DagsterInstance.ephemeral()
     )
     res = execute_query(
-        handle,
-        EXECUTE_PLAN_MUTATION,
-        variables,
-        raise_on_error=True,
-        use_sync_executor=True,
-        instance=instance,
+        handle, EXECUTE_PLAN_MUTATION, variables, use_sync_executor=True, instance=instance
     )
     handle_execution_errors(res, 'executePlan')
     return handle_execute_plan_result(res)
@@ -70,14 +64,7 @@ def execute_execute_plan_mutation_raw(handle, variables, instance_ref=None):
     instance = (
         DagsterInstance.from_ref(instance_ref) if instance_ref else DagsterInstance.ephemeral()
     )
-    res = execute_query(
-        handle,
-        RAW_EXECUTE_PLAN_MUTATION,
-        variables,
-        raise_on_error=True,
-        use_sync_executor=True,
-        instance=instance,
-    )
+    res = execute_query(handle, RAW_EXECUTE_PLAN_MUTATION, variables, instance=instance)
     handle_execution_errors(res, 'executePlan')
     return handle_execute_plan_result_raw(res)
 

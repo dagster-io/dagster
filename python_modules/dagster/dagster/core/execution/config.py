@@ -64,14 +64,6 @@ class RunConfig(
 
 
 class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
-    _raise_on_error = True
-
-    @property
-    def raise_on_error(self):
-        '''(bool): Whether errors encountered during execution should be reraised, or encapsulated
-        in DagsterEvents.'''
-        return self._raise_on_error
-
     @abstractmethod
     def check_requirements(self, instance, system_storage_def):
         '''(void): Whether this executor config is valid given the instance and system storage'''
@@ -82,9 +74,6 @@ class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 
 class InProcessExecutorConfig(ExecutorConfig):
-    def __init__(self, raise_on_error=True):
-        self._raise_on_error = check.opt_bool_param(raise_on_error, 'raise_on_error', default=True)
-
     def check_requirements(self, _instance, _system_storage_def):
         pass
 
@@ -111,7 +100,6 @@ class MultiprocessExecutorConfig(ExecutorConfig):
 
         max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
         self.max_concurrent = check.int_param(max_concurrent, 'max_concurrent')
-        self._raise_on_error = False
 
     def check_requirements(self, instance, system_storage_def):
         check_persistent_storage_requirement(system_storage_def)

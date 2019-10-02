@@ -19,10 +19,6 @@ def query_on_dask_worker(
 ):  # pylint: disable=unused-argument
     '''Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
-
-    We also set 'raise_on_error' within pipeline execution, because otherwise (currently) very
-    little information is propagated to the dask master from the workers about the state of
-    execution; we should at least inform the user of exceptions.
     '''
     return execute_execute_plan_mutation(handle, variables, instance_ref=instance_ref)
 
@@ -95,8 +91,7 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
                             dependencies.append(execution_futures_dict[key])
 
                     environment_dict = dict(
-                        pipeline_context.environment_dict,
-                        execution={'in_process': {'config': {'raise_on_error': False}}},
+                        pipeline_context.environment_dict, execution={'in_process': {}}
                     )
                     variables = {
                         'executionParams': {

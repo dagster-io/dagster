@@ -170,7 +170,9 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None, 
     return execute_run_iterator(pipeline, run, instance)
 
 
-def execute_pipeline(pipeline, environment_dict=None, run_config=None, instance=None):
+def execute_pipeline(
+    pipeline, environment_dict=None, run_config=None, instance=None, raise_on_error=True
+):
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
 
@@ -185,6 +187,9 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None, instance=
             Configuration for how this pipeline will be executed
         instance (DagsterInstance):
             The instance to execute against, defaults to ephemeral (no artifacts persisted)
+        raise_on_error (Bool):
+            Whether or not to raise exceptions when they occur. Defaults to True
+            since this behavior is useful in tests which is the most common use of this API.
 
     Returns:
       :py:class:`PipelineExecutionResult`
@@ -205,7 +210,7 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None, instance=
     _run = _create_run(instance, pipeline, run_config, environment_dict)
 
     with scoped_pipeline_context(
-        pipeline, environment_dict, run_config, instance
+        pipeline, environment_dict, run_config, instance, raise_on_error=raise_on_error
     ) as pipeline_context:
         event_list = list(
             _pipeline_execution_iterator(
@@ -233,7 +238,9 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None, instance=
         )
 
 
-def execute_pipeline_with_preset(pipeline, preset_name, run_config=None, instance=None):
+def execute_pipeline_with_preset(
+    pipeline, preset_name, run_config=None, instance=None, raise_on_error=True
+):
     '''Runs :py:func:`execute_pipeline` with the given preset for the pipeline.
 
     The preset will optionally provide environment_dict and/or build a pipeline from
@@ -257,7 +264,9 @@ def execute_pipeline_with_preset(pipeline, preset_name, run_config=None, instanc
     else:
         run_config = RunConfig(mode=preset.mode)
 
-    return execute_pipeline(pipeline, preset.environment_dict, run_config, instance)
+    return execute_pipeline(
+        pipeline, preset.environment_dict, run_config, instance, raise_on_error=raise_on_error
+    )
 
 
 def _check_reexecution_config(pipeline_context, execution_plan, run_config):
@@ -352,6 +361,8 @@ def execute_plan_iterator(
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
         )
+
+    check.failed('Unexpected state, should be unreachable')
 
 
 def execute_plan(

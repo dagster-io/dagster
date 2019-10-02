@@ -91,9 +91,7 @@ def test_running():
         )
     )
     execution_manager = SubprocessExecutionManager(instance)
-    execution_manager.execute_pipeline(
-        handle, passing_pipeline, pipeline_run, instance, raise_on_error=False
-    )
+    execution_manager.execute_pipeline(handle, passing_pipeline, pipeline_run, instance)
     execution_manager.join()
     assert instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
     events = instance.all_logs(run_id)
@@ -132,9 +130,7 @@ def test_failing():
         )
     )
     execution_manager = SubprocessExecutionManager(instance)
-    execution_manager.execute_pipeline(
-        handle, failing_pipeline, pipeline_run, instance, raise_on_error=False
-    )
+    execution_manager.execute_pipeline(handle, failing_pipeline, pipeline_run, instance)
     execution_manager.join()
     assert instance.get_run_by_id(run_id).status == PipelineRunStatus.FAILURE
     assert instance.all_logs(run_id)
@@ -163,9 +159,7 @@ def test_execution_crash():
         )
     )
     execution_manager = SubprocessExecutionManager(instance)
-    execution_manager.execute_pipeline(
-        handle, crashy_pipeline, pipeline_run, instance, raise_on_error=False
-    )
+    execution_manager.execute_pipeline(handle, crashy_pipeline, pipeline_run, instance)
     execution_manager.join()
     assert instance.get_run_by_id(run_id).status == PipelineRunStatus.FAILURE
     last_log = instance.all_logs(run_id)[-1]
@@ -282,9 +276,7 @@ def test_multiprocessing_execution_for_composite_solid():
         )
     )
     execution_manager = SubprocessExecutionManager(instance)
-    execution_manager.execute_pipeline(
-        handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
-    )
+    execution_manager.execute_pipeline(handle, composite_pipeline, pipeline_run, instance)
     execution_manager.join()
     assert instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
 
@@ -314,9 +306,7 @@ def test_multiprocessing_execution_for_composite_solid():
         )
     )
     execution_manager = SubprocessExecutionManager(instance)
-    execution_manager.execute_pipeline(
-        handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
-    )
+    execution_manager.execute_pipeline(handle, composite_pipeline, pipeline_run, instance)
     execution_manager.join()
 
 
@@ -350,7 +340,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(
-        handle, composite_pipeline_with_config_mapping, pipeline_run, instance, raise_on_error=False
+        handle, composite_pipeline_with_config_mapping, pipeline_run, instance
     )
     execution_manager.join()
     assert instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
@@ -381,9 +371,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
         )
     )
     execution_manager = SubprocessExecutionManager(instance)
-    execution_manager.execute_pipeline(
-        handle, composite_pipeline, pipeline_run, instance, raise_on_error=False
-    )
+    execution_manager.execute_pipeline(handle, composite_pipeline, pipeline_run, instance)
 
     execution_manager.join()
     assert instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
@@ -418,9 +406,7 @@ def test_has_run_query_and_terminate():
             )
         )
         execution_manager = SubprocessExecutionManager(instance)
-        execution_manager.execute_pipeline(
-            handle, infinite_loop_pipeline, pipeline_run, instance, raise_on_error=False
-        )
+        execution_manager.execute_pipeline(handle, infinite_loop_pipeline, pipeline_run, instance)
 
         while not os.path.exists(path):
             time.sleep(0.1)
@@ -453,7 +439,7 @@ def test_two_runs_running():
             )
         )
         execution_manager.execute_pipeline(
-            handle, infinite_loop_pipeline, pipeline_run_one, instance, raise_on_error=False
+            handle, infinite_loop_pipeline, pipeline_run_one, instance
         )
 
         pipeline_run_two = instance.create_run(
@@ -465,7 +451,7 @@ def test_two_runs_running():
         )
 
         execution_manager.execute_pipeline(
-            handle, infinite_loop_pipeline, pipeline_run_two, instance, raise_on_error=False
+            handle, infinite_loop_pipeline, pipeline_run_two, instance
         )
 
         # ensure both runs have begun execution

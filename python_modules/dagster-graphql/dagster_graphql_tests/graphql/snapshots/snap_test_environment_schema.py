@@ -121,9 +121,6 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': None
             },
             {
-                'name': None
-            },
-            {
                 'name': 'Any'
             },
             {

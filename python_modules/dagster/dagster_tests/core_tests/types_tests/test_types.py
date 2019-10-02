@@ -107,10 +107,7 @@ def test_nullable_list_combos_coerciion():
 
 
 def execute_no_throw(pipeline_def):
-    return execute_pipeline(
-        pipeline_def,
-        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
-    )
+    return execute_pipeline(pipeline_def, raise_on_error=False)
 
 
 def _type_check_data_for_input(solid_result, input_name):

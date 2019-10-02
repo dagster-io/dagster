@@ -85,25 +85,22 @@ def define_subprocess_context(instance):
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
         instance=instance,
         execution_manager=SubprocessExecutionManager(instance),
-        raise_on_error=False,
     )
 
 
-def define_context(raise_on_error=True, instance=None):
+def define_context(instance=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_repository),
         instance=instance or DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),
-        raise_on_error=raise_on_error,
     )
 
 
-def define_context_for_repository_yaml(raise_on_error=True, instance=None):
+def define_context_for_repository_yaml(instance=None):
     return DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_yaml(script_relative_path('../repository.yaml')),
         instance=instance or DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),
-        raise_on_error=raise_on_error,
     )
 
 

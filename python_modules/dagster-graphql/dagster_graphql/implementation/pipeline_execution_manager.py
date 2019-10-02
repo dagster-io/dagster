@@ -26,7 +26,7 @@ from dagster.utils.error import SerializableErrorInfo, serializable_error_info_f
 
 class PipelineExecutionManager(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
-    def execute_pipeline(self, handle, pipeline, pipeline_run, instance, raise_on_error):
+    def execute_pipeline(self, handle, pipeline, pipeline_run, instance):
         '''Subclasses must implement this method.'''
 
 
@@ -136,25 +136,13 @@ def build_process_exited_event(run_id, pipeline_name, process_id):
 
 
 class SynchronousExecutionManager(PipelineExecutionManager):
-    def execute_pipeline(self, _, pipeline, pipeline_run, instance, raise_on_error):
+    def execute_pipeline(self, _, pipeline, pipeline_run, instance):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
-        try:
-            event_list = []
-            for event in execute_run_iterator(pipeline, pipeline_run, instance):
-                event_list.append(event)
-            return PipelineExecutionResult(pipeline, pipeline_run.run_id, event_list, lambda: None)
-        except Exception:  # pylint: disable=broad-except
-            if raise_on_error:
-                six.reraise(*sys.exc_info())
-
-            instance.handle_new_event(
-                build_synthetic_pipeline_error_record(
-                    pipeline_run.run_id,
-                    serializable_error_info_from_exc_info(sys.exc_info()),
-                    pipeline.name,
-                )
-            )
+        event_list = []
+        for event in execute_run_iterator(pipeline, pipeline_run, instance):
+            event_list.append(event)
+        return PipelineExecutionResult(pipeline, pipeline_run.run_id, event_list, lambda: None)
 
 
 SUBPROCESS_TICK = 0.5
@@ -163,7 +151,7 @@ SUBPROCESS_TICK = 0.5
 class SubprocessExecutionManager(PipelineExecutionManager):
     '''
     This execution manager launches a new process for every pipeline invocation.
-    It tries to spawn new processes with clean state whenever possible, 
+    It tries to spawn new processes with clean state whenever possible,
     in order to pick up the latest changes, to not inherit in-memory
     state accumulated from the webserver, and to mimic standalone invocations
     of the CLI as much as possible.
@@ -238,12 +226,9 @@ class SubprocessExecutionManager(PipelineExecutionManager):
 
             gevent.sleep(SUBPROCESS_TICK)
 
-    def execute_pipeline(self, handle, pipeline, pipeline_run, instance, raise_on_error):
+    def execute_pipeline(self, handle, pipeline, pipeline_run, instance):
         '''Subclasses must implement this method.'''
         check.inst_param(handle, 'handle', ExecutionTargetHandle)
-        check.invariant(
-            raise_on_error is False, 'Multiprocessing execute_pipeline does not rethrow user error'
-        )
 
         mp_process = self._multiprocessing_context.Process(
             target=_in_mp_process,

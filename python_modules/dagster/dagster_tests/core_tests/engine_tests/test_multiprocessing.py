@@ -81,10 +81,7 @@ def define_error_pipeline():
 
 def test_error_pipeline():
     pipeline = define_error_pipeline()
-    result = execute_pipeline(
-        pipeline,
-        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
-    )
+    result = execute_pipeline(pipeline, raise_on_error=False)
     assert not result.success
 
 
@@ -102,6 +99,7 @@ def test_mem_storage_error_pipeline_multiprocess():
         ExecutionTargetHandle.for_pipeline_fn(define_diamond_pipeline).build_pipeline_definition(),
         environment_dict={'execution': {'multiprocess': {}}},
         instance=DagsterInstance.local_temp(),
+        raise_on_error=False,
     )
     assert not result.success
     assert len(result.event_list) == 1
@@ -113,6 +111,7 @@ def test_invalid_instance():
         ExecutionTargetHandle.for_pipeline_fn(define_diamond_pipeline).build_pipeline_definition(),
         environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.ephemeral(),
+        raise_on_error=False,
     )
     assert not result.success
     assert len(result.event_list) == 1

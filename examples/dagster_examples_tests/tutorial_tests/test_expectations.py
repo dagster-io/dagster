@@ -19,7 +19,6 @@ def define_failing_environment_config():
     return {
         'loggers': {'console': {'config': {'log_level': 'DEBUG'}}},
         'solids': {'add_ints': {'inputs': {'num_one': {'value': -2}, 'num_two': {'value': 3}}}},
-        'execution': {'in_process': {'config': {'raise_on_error': False}}},
     }
 
 

@@ -547,10 +547,7 @@ def test_pipeline_init_failure():
         stub_solid()
 
     result = execute_pipeline(
-        failing_init_pipeline,
-        environment_dict=dict(
-            env_config, execution={'in_process': {'config': {'raise_on_error': False}}}
-        ),
+        failing_init_pipeline, environment_dict=dict(env_config), raise_on_error=False
     )
 
     assert result.success is False

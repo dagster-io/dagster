@@ -24,7 +24,7 @@ class SystemPipelineExecutionContextData(
         (
             'run_config scoped_resources_builder environment_config pipeline_def '
             'mode_def system_storage_def instance intermediates_manager file_manager '
-            'execution_target_handle executor_config'
+            'execution_target_handle executor_config raise_on_error'
         ),
     )
 ):
@@ -46,6 +46,7 @@ class SystemPipelineExecutionContextData(
         file_manager,
         execution_target_handle,
         executor_config,
+        raise_on_error,
     ):
         from dagster.core.definitions import PipelineDefinition
         from dagster.core.definitions.system_storage import SystemStorageDefinition
@@ -76,6 +77,7 @@ class SystemPipelineExecutionContextData(
                 execution_target_handle, 'execution_target_handle', ExecutionTargetHandle
             ),
             executor_config=check.inst_param(executor_config, 'executor_config', ExecutorConfig),
+            raise_on_error=check.bool_param(raise_on_error, 'raise_on_error'),
         )
 
     @property
@@ -176,6 +178,10 @@ class SystemPipelineExecutionContext(object):
     @property
     def execution_target_handle(self):
         return self._pipeline_context_data.execution_target_handle
+
+    @property
+    def raise_on_error(self):
+        return self._pipeline_context_data.raise_on_error
 
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):

@@ -6,16 +6,13 @@ from .reloader import Reloader
 
 
 class DagsterGraphQLContext(object):
-    def __init__(
-        self, handle, execution_manager, instance, reloader=None, raise_on_error=False, version=None
-    ):
+    def __init__(self, handle, execution_manager, instance, reloader=None, version=None):
         self._handle = check.inst_param(handle, 'handle', ExecutionTargetHandle)
         self.instance = check.inst_param(instance, 'instance', DagsterInstance)
         self.reloader = check.opt_inst_param(reloader, 'reloader', Reloader)
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
         )
-        self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
         self.version = version
         self.repository_definition = self.get_handle().build_repository_definition()
 

@@ -106,7 +106,6 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
         graphene_info.context.get_handle(),
         dauphin_pipeline.get_dagster_pipeline(),
         run,
-        raise_on_error=graphene_info.context.raise_on_error,
         instance=instance,
     )
 

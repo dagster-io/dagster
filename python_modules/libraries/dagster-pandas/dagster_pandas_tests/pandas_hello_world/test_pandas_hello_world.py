@@ -1,6 +1,5 @@
 import os
 
-import pytest
 from dagster_pandas.examples.pandas_hello_world.pipeline import (
     pandas_hello_world,
     pandas_hello_world_fails,
@@ -8,7 +7,6 @@ from dagster_pandas.examples.pandas_hello_world.pipeline import (
 
 from dagster import execute_pipeline
 from dagster.cli.pipeline import do_execute_command
-from dagster.core.errors import DagsterExecutionStepExecutionError
 from dagster.utils import script_relative_path
 
 
@@ -61,19 +59,22 @@ def test_cli_execute_failure():
 
     # currently paths in env files have to be relative to where the
     # script has launched so we have to simulate that
-    with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
-        cwd = os.getcwd()
-        try:
+    # with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
+    cwd = os.getcwd()
+    try:
 
-            os.chdir(script_relative_path('../..'))
+        os.chdir(script_relative_path('../..'))
 
-            do_execute_command(
-                pipeline=pandas_hello_world_fails,
-                env_file_list=[
-                    script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yaml')
-                ],
-            )
-        finally:
-            # restore cwd
-            os.chdir(cwd)
-    assert 'I am a programmer and I make error' in str(e_info.value.__cause__)
+        result = do_execute_command(
+            pipeline=pandas_hello_world_fails,
+            env_file_list=[
+                script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yaml')
+            ],
+        )
+        failures = [event for event in result.step_event_list if event.is_failure]
+    finally:
+        # restore cwd
+        os.chdir(cwd)
+
+    assert len(failures) == 1
+    assert 'I am a programmer and I make error' in failures[0].step_failure_data.error.message

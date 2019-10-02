@@ -300,7 +300,9 @@ def execute_execute_command_with_preset(preset_name, cli_args, _mode):
     pipeline = handle_for_pipeline_cli_args(cli_args).build_pipeline_definition()
     cli_args.pop('pipeline_name')
 
-    return execute_pipeline_with_preset(pipeline, preset_name, instance=DagsterInstance.get())
+    return execute_pipeline_with_preset(
+        pipeline, preset_name, instance=DagsterInstance.get(), raise_on_error=False
+    )
 
 
 def do_execute_command(pipeline, env_file_list, mode=None):
@@ -314,6 +316,7 @@ def do_execute_command(pipeline, env_file_list, mode=None):
         environment_dict=environment_dict,
         run_config=RunConfig(mode=mode),
         instance=DagsterInstance.get(),
+        raise_on_error=False,
     )
 
 

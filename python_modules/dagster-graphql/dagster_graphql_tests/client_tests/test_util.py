@@ -90,10 +90,7 @@ def define_test_events_pipeline():
 
 def test_pipeline():
     '''just a sanity check to ensure the above pipeline works without layering on graphql'''
-    result = execute_pipeline(
-        define_test_events_pipeline(),
-        environment_dict={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
-    )
+    result = execute_pipeline(define_test_events_pipeline(), raise_on_error=False)
     assert result.result_for_solid('materialization_and_expectation').success
     assert not result.result_for_solid('should_fail').success
     assert result.result_for_solid('should_be_skipped').skipped

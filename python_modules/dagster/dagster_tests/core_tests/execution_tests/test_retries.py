@@ -40,14 +40,11 @@ def test_retries():
         downstream_of_failed(fail_first_times(start_fail))
         will_be_skipped(start_skip)
 
-    env = {
-        'storage': {'filesystem': {}},
-        'execution': {'in_process': {'config': {'raise_on_error': False}}},
-    }
+    env = {'storage': {'filesystem': {}}}
 
     instance = DagsterInstance.ephemeral()
 
-    result = execute_pipeline(pipe, environment_dict=env, instance=instance)
+    result = execute_pipeline(pipe, environment_dict=env, instance=instance, raise_on_error=False)
 
     second_result = execute_pipeline(
         pipe,

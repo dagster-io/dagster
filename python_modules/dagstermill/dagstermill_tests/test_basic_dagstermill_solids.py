@@ -36,7 +36,7 @@ def cleanup_result_notebook(result):
 
 
 @contextmanager
-def exec_for_test(fn_name, env=None, **kwargs):
+def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
     result = None
 
     handle = handle_for_pipeline_cli_args(
@@ -46,7 +46,13 @@ def exec_for_test(fn_name, env=None, **kwargs):
     pipeline = handle.build_pipeline_definition()
 
     try:
-        result = execute_pipeline(pipeline, env, instance=DagsterInstance.local_temp(), **kwargs)
+        result = execute_pipeline(
+            pipeline,
+            env,
+            instance=DagsterInstance.local_temp(),
+            raise_on_error=raise_on_error,
+            **kwargs
+        )
         yield result
     finally:
         if result:
@@ -127,10 +133,7 @@ def test_error_notebook():
 
     assert 'Someone set up us the bomb' in exc.value.original_exc_info[1].args[0]
 
-    with exec_for_test(
-        'define_error_pipeline',
-        env={'execution': {'in_process': {'config': {'raise_on_error': False}}}},
-    ) as result:
+    with exec_for_test('define_error_pipeline', raise_on_error=False) as result:
         assert not result.success
         assert result.step_event_list[1].event_type.value == 'STEP_MATERIALIZATION'
         assert result.step_event_list[2].event_type.value == 'STEP_FAILURE'
@@ -225,10 +228,8 @@ def test_resources_notebook_with_exception():
     with safe_tempfile_path() as path:
         with exec_for_test(
             'define_resource_with_exception_pipeline',
-            {
-                'resources': {'list': {'config': path}},
-                'execution': {'in_process': {'config': {'raise_on_error': False}}},
-            },
+            {'resources': {'list': {'config': path}}},
+            raise_on_error=False,
         ) as result:
             assert not result.success
             assert result.step_event_list[6].event_type.value == 'STEP_FAILURE'

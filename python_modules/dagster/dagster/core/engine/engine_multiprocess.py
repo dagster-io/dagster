@@ -28,12 +28,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
 
         run_config = self.run_config.with_tags(pid=str(os.getpid()))
 
-        environment_dict = dict(
-            self.environment_dict,
-            execution={
-                'in_process': {'config': {'raise_on_error': self.executor_config.raise_on_error}}
-            },
-        )
+        environment_dict = dict(self.environment_dict, execution={'in_process': {}})
         execution_plan = create_execution_plan(pipeline_def, environment_dict, run_config)
 
         for step_event in execute_plan_iterator(

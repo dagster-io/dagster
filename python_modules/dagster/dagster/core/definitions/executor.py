@@ -1,6 +1,6 @@
 from dagster import check
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
-from dagster.core.types import Bool, Field, Int
+from dagster.core.types import Field, Int
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
 
 from .config import resolve_config_field
@@ -76,14 +76,13 @@ class _ExecutorDecoratorCallable:
         )
 
 
-@executor(name='in_process', config={'raise_on_error': Field(Bool)})
+@executor(name='in_process')
 def in_process_executor(init_context):
     from dagster.core.engine.init import InitExecutorContext
 
     check.inst_param(init_context, 'init_context', InitExecutorContext)
-    return InProcessExecutorConfig(
-        raise_on_error=init_context.executor_config.get('raise_on_error')
-    )
+
+    return InProcessExecutorConfig()
 
 
 @executor(
