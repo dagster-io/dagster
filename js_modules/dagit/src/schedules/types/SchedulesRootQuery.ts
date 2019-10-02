@@ -9,6 +9,11 @@ import { PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
 // GraphQL query operation: SchedulesRootQuery
 // ====================================================
 
+export interface SchedulesRootQuery_scheduler_SchedulerNotDefinedError {
+  __typename: "SchedulerNotDefinedError";
+  message: string;
+}
+
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition {
   __typename: "ScheduleDefinition";
   name: string;
@@ -48,12 +53,7 @@ export interface SchedulesRootQuery_scheduler_Scheduler {
   runningSchedules: SchedulesRootQuery_scheduler_Scheduler_runningSchedules[];
 }
 
-export interface SchedulesRootQuery_scheduler_SchedulerNotDefinedError {
-  __typename: "SchedulerNotDefinedError";
-  message: string;
-}
-
-export type SchedulesRootQuery_scheduler = SchedulesRootQuery_scheduler_Scheduler | SchedulesRootQuery_scheduler_SchedulerNotDefinedError;
+export type SchedulesRootQuery_scheduler = SchedulesRootQuery_scheduler_SchedulerNotDefinedError | SchedulesRootQuery_scheduler_Scheduler;
 
 export interface SchedulesRootQuery {
   scheduler: SchedulesRootQuery_scheduler;

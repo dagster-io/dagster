@@ -372,6 +372,10 @@ class ExecutionTargetHandle:
         )
 
     def build_scheduler_handle(self, artifacts_dir):
+        # Cannot create a scheduler handle if the target mode is not a repository
+        if self.mode != _ExecutionTargetMode.REPOSITORY:
+            return None
+
         entrypoint = self.scheduler_handle_entrypoint
         # entrypoint will be None if the repository yaml file does not define a scheduler entrypoint
         if not entrypoint:
@@ -433,13 +437,7 @@ class ExecutionTargetHandle:
 
     @property
     def scheduler_handle_entrypoint(self):
-        if self.mode == _ExecutionTargetMode.REPOSITORY:
-            return self.data.get_scheduler_entrypoint(from_handle=self)
-        else:
-            raise DagsterInvariantViolationError(
-                "Cannot construct a schedule from mode {mode}. Can only construct a schedule from "
-                "a reposistory-based ExecutionTargetHandle".format(mode=self.mode)
-            )
+        return self.data.get_scheduler_entrypoint(from_handle=self)
 
     @property
     def entrypoint(self):

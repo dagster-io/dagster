@@ -54,7 +54,7 @@ def define_scheduler(artifacts_dir, repository_name):
 
 def test_init():
     with TemporaryDirectory() as tempdir:
-        instance = DagsterInstance.local_temp(tempdir=tempdir, features=['scheduler'])
+        instance = DagsterInstance.local_temp(tempdir=tempdir)
         scheduler_handle = define_scheduler(instance.schedules_directory(), 'test_repository')
         assert scheduler_handle
 
@@ -79,7 +79,7 @@ def test_init():
 def test_start_and_stop_schedule():
     with TemporaryDirectory() as tempdir:
 
-        instance = DagsterInstance.local_temp(tempdir=tempdir, features=['scheduler'])
+        instance = DagsterInstance.local_temp(tempdir=tempdir)
         scheduler_handle = define_scheduler(instance.schedules_directory(), 'test_repository')
         assert scheduler_handle
 

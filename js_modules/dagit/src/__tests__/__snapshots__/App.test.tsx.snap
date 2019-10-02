@@ -123,6 +123,13 @@ Array [
       >
         Runs
       </a>
+      <a
+        className="sc-bnXvFD bmguhd"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        Schedule
+      </a>
       <div
         className="bp3-navbar-divider"
       />
@@ -281,6 +288,13 @@ Array [
       >
         Runs
       </a>
+      <a
+        className="sc-bnXvFD bmguhd"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        Schedule
+      </a>
       <div
         className="bp3-navbar-divider"
       />
@@ -433,6 +447,13 @@ Array [
         onClick={[Function]}
       >
         Runs
+      </a>
+      <a
+        className="sc-bnXvFD bmguhd"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        Schedule
       </a>
       <div
         className="bp3-navbar-divider"
@@ -615,6 +636,13 @@ Array [
       >
         Runs
       </a>
+      <a
+        className="sc-bnXvFD bmguhd"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        Schedule
+      </a>
       <div
         className="bp3-navbar-divider"
       />
@@ -796,6 +824,13 @@ Array [
       >
         Runs
       </a>
+      <a
+        className="sc-bnXvFD bmguhd"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        Schedule
+      </a>
       <div
         className="bp3-navbar-divider"
       />
@@ -953,6 +988,13 @@ Array [
         onClick={[Function]}
       >
         Runs
+      </a>
+      <a
+        className="sc-bnXvFD bmguhd"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        Schedule
       </a>
       <div
         className="bp3-navbar-divider"

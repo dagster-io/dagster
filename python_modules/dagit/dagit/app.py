@@ -18,7 +18,7 @@ from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 
 from dagster import ExecutionTargetHandle, check, seven
-from dagster.core.instance import DagsterFeatures, DagsterInstance
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
 from .format_error import format_error_with_stack_trace
@@ -144,17 +144,14 @@ def create_app(handle, instance, reloader=None):
         version=__version__,
     )
 
-    if context.instance.is_feature_enabled(DagsterFeatures.SCHEDULER):
-        # Automatically initialize scheduler everytime Dagit loads
-        scheduler_handle = context.scheduler_handle
+    # Automatically initialize scheduler everytime Dagit loads
+    scheduler_handle = context.scheduler_handle
+    if scheduler_handle:
+        handle = context.get_handle()
 
-        # no scheduler specified
-        if scheduler_handle:
-            handle = context.get_handle()
-
-            python_path = sys.executable
-            repository_path = handle.data.repository_yaml
-            scheduler_handle.up(python_path, repository_path)
+        python_path = sys.executable
+        repository_path = handle.data.repository_yaml
+        scheduler_handle.up(python_path, repository_path)
 
     app.add_url_rule(
         '/graphql',

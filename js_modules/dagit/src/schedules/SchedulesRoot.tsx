@@ -9,6 +9,7 @@ import {
   Menu,
   MenuItem,
   Popover,
+  NonIdealState,
   Tooltip
 } from "@blueprintjs/core";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
@@ -53,10 +54,25 @@ export default class SchedulesRoot extends React.Component {
         {(queryResult: QueryResult<SchedulesRootQuery, any>) => (
           <Loading queryResult={queryResult}>
             {result => {
+              if (result.scheduler.__typename === "SchedulerNotDefinedError") {
+                return (
+                  <ScrollContainer>
+                    <div style={{ marginTop: 100 }}>
+                      <NonIdealState
+                        icon="calendar"
+                        title="Scheduler"
+                        description="A scheduler is not defined for this repository."
+                      />
+                    </div>
+                  </ScrollContainer>
+                );
+              }
+
               let runningSchedules: SchedulesRootQuery_scheduler_Scheduler_runningSchedules[] = [];
               if (result.scheduler.__typename === "Scheduler") {
                 runningSchedules = result.scheduler.runningSchedules;
               }
+
               const sortedRunningSchedules = runningSchedules.sort((a, b) =>
                 a.scheduleDefinition.name.localeCompare(
                   b.scheduleDefinition.name
@@ -308,6 +324,10 @@ const STOP_SCHEDULE_MUTATION = gql`
 export const SCHEDULES_ROOT_QUERY = gql`
   query SchedulesRootQuery {
     scheduler {
+      __typename
+      ... on SchedulerNotDefinedError {
+        message
+      }
       ... on Scheduler {
         runningSchedules {
           scheduleId

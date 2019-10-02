@@ -39,7 +39,7 @@ def default_execution_params():
 
 @mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
 def test_get_all_schedules():
-    instance = DagsterInstance.local_temp(features=['scheduler'])
+    instance = DagsterInstance.local_temp()
     context = define_context_for_repository_yaml(instance=instance)
 
     # Initialize scheduler

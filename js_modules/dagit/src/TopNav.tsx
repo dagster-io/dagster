@@ -2,7 +2,6 @@ import * as React from "react";
 
 import { Alignment, Colors, Navbar } from "@blueprintjs/core";
 
-import FlaggedFeature from "./FlaggedFeature";
 import { Link } from "react-router-dom";
 import { PipelineJumpBar } from "./PipelineJumpComponents";
 import { Route } from "react-router";
@@ -76,14 +75,12 @@ export const TopNav = ({
               >
                 Runs
               </Tab>
-              <FlaggedFeature name="scheduler">
-                <Tab
-                  to={`/scheduler`}
-                  className={selectedTab === "schedule" ? "active" : ""}
-                >
-                  Schedule
-                </Tab>
-              </FlaggedFeature>
+              <Tab
+                to={`/scheduler`}
+                className={selectedTab === "schedule" ? "active" : ""}
+              >
+                Schedule
+              </Tab>
 
               <Navbar.Divider />
 

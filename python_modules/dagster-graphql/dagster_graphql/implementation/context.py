@@ -1,5 +1,5 @@
 from dagster import ExecutionTargetHandle, check
-from dagster.core.instance import DagsterFeatures, DagsterInstance
+from dagster.core.instance import DagsterInstance
 
 from .pipeline_execution_manager import PipelineExecutionManager
 from .reloader import Reloader
@@ -16,13 +16,12 @@ class DagsterGraphQLContext(object):
         self.version = version
         self.repository_definition = self.get_handle().build_repository_definition()
 
-        if self.instance.is_feature_enabled(DagsterFeatures.SCHEDULER):
-            self.scheduler_handle = self.get_handle().build_scheduler_handle(
-                artifacts_dir=self.instance.schedules_directory()
-            )
+        self.scheduler_handle = self.get_handle().build_scheduler_handle(
+            artifacts_dir=self.instance.schedules_directory()
+        )
 
     def get_scheduler(self):
-        return self.scheduler_handle.get_scheduler()
+        return self.scheduler_handle.get_scheduler() if self.scheduler_handle else None
 
     def get_handle(self):
         return self._handle
