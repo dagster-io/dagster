@@ -11,6 +11,7 @@ import {
   Popover,
   Tooltip
 } from "@blueprintjs/core";
+import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import {
   Header,
   Legend,
@@ -253,8 +254,13 @@ const ScheduleRow: React.FunctionComponent<{
                 icon="share"
                 onClick={() =>
                   showCustomAlert({
-                    title: "Config",
-                    body: JSON.stringify(executionParams, null, 2)
+                    title: "Execution Params",
+                    body: (
+                      <HighlightedCodeBlock
+                        value={JSON.stringify(executionParams, null, 2)}
+                        languages={["json"]}
+                      />
+                    )
                   })
                 }
               />
