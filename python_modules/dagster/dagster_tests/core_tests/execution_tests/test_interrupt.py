@@ -1,25 +1,14 @@
 import os
 import time
-from contextlib import contextmanager
 from threading import Thread
 
 from dagster import DagsterEventType, execute_pipeline_iterator, lambda_solid, pipeline
-from dagster.utils.test import get_temp_file_name
+from dagster.utils import safe_tempfile_path
 
 try:
     import _thread as thread
 except ImportError:
     import thread
-
-
-# Consolidate with implementation in dagster.utils.test once D1118 is merged
-@contextmanager
-def get_temp_file_location():
-    with get_temp_file_name() as path:
-        os.unlink(path)
-        yield path
-        if os.path.exists(path):
-            os.unlink(path)
 
 
 def _send_kbd_int(temp_file):
@@ -30,7 +19,7 @@ def _send_kbd_int(temp_file):
 
 
 def test_interrupt():
-    with get_temp_file_location() as success_tempfile:
+    with safe_tempfile_path() as success_tempfile:
 
         @lambda_solid
         def write_a_file():
