@@ -138,7 +138,7 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
 const ScheduleRow: React.FunctionComponent<{
   schedule: SchedulesRootQuery_scheduler_Scheduler_runningSchedules;
 }> = ({ schedule }) => {
-  const { status, scheduleDefinition, runs, logsPath } = schedule;
+  const { scheduleId, status, scheduleDefinition, runs, logsPath } = schedule;
   const {
     name,
     cronSchedule,
@@ -262,7 +262,14 @@ const ScheduleRow: React.FunctionComponent<{
             ))
           : "-"}
         {runs && runs.length > NUM_RUNS_TO_DISPLAY && (
-          <Link to={""}> +{runs.length - NUM_RUNS_TO_DISPLAY} more</Link>
+          <Link
+            to={`/runs?q=tag:${encodeURIComponent(
+              "dagster/schedule_id"
+            )}=${scheduleId}`}
+          >
+            {" "}
+            +{runs.length - NUM_RUNS_TO_DISPLAY} more
+          </Link>
         )}
       </RowColumn>
       <RowColumn style={{ flex: 1 }}>
