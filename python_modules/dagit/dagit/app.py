@@ -147,11 +147,14 @@ def create_app(handle, instance, reloader=None):
     if context.instance.is_feature_enabled(DagsterFeatures.SCHEDULER):
         # Automatically initialize scheduler everytime Dagit loads
         scheduler_handle = context.scheduler_handle
-        handle = context.get_handle()
 
-        python_path = sys.executable
-        repository_path = handle.data.repository_yaml
-        scheduler_handle.up(python_path, repository_path)
+        # no scheduler specified
+        if scheduler_handle:
+            handle = context.get_handle()
+
+            python_path = sys.executable
+            repository_path = handle.data.repository_yaml
+            scheduler_handle.up(python_path, repository_path)
 
     app.add_url_rule(
         '/graphql',
