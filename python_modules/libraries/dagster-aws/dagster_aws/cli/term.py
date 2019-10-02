@@ -6,6 +6,9 @@ import time
 
 import click
 
+CURSOR_UP_ONE = '\x1b[1A'
+ERASE_LINE = '\x1b[2K'
+
 
 class Spinner:
     '''Spinning CLI prompt, shown while long-running activity is in flight.
@@ -79,6 +82,11 @@ class Term:
     @staticmethod
     def warning(msg):
         click.echo(click.style(Term.WARNING_PREFIX + msg, fg='yellow'))
+
+    @staticmethod
+    def rewind():
+        sys.stdout.write(CURSOR_UP_ONE)
+        sys.stdout.write(ERASE_LINE)
 
 
 def run_remote_cmd(key_file_path, host, cmd):

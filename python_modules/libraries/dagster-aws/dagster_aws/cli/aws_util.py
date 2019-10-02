@@ -1,6 +1,7 @@
 import datetime
 import getpass
 import os
+import time
 
 import boto3
 import click
@@ -13,9 +14,6 @@ DEFAULT_REGION = 'us-west-1'
 
 # User can select an EC2 instance type if this is too small
 DEFAULT_INSTANCE_TYPE = 't3.medium'
-
-# We'll create this security group if it doesn't exist
-DEFAULT_SECURITY_GROUP = 'dagit-sg'
 
 # Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
 DEFAULT_AMI = 'ami-08fd8ae3806f09a08'
@@ -31,9 +29,13 @@ def get_all_regions():
     return sorted([r['RegionName'] for r in response['Regions']])
 
 
-def select_region():
+def select_region(prev_config):
     '''User can select the region in which to instantiate EC2 machine.
     '''
+    if prev_config and prev_config.region:
+        Term.success('Found existing region, continuing with %s' % prev_config.region)
+        return prev_config.region
+
     regions = click.Choice(get_all_regions())
 
     return click.prompt(
@@ -79,83 +81,91 @@ def select_vpc(client, ec2):
     return vpc
 
 
-def get_or_create_security_group(client, ec2, vpc):
+def create_security_group(prev_config, client, ec2, vpc):
     '''Allows the user to select a security group, otherwise we create one for the dagit host.
     '''
-    groups = [
-        g for g in client.describe_security_groups()['SecurityGroups'] if g['VpcId'] == vpc.id
+    if prev_config and prev_config.security_group_id:
+        Term.success(
+            'Found existing security group, continuing with %s' % (prev_config.security_group_id)
+        )
+        return prev_config.security_group_id
+
+    now = datetime.datetime.utcnow()
+    default_group_name = 'dagster-sg-%s-%s' % (getpass.getuser(), now.strftime("%Y%m%dT%H%M%S"))
+
+    existing_group_names = [
+        g['GroupName']
+        for g in client.describe_security_groups()['SecurityGroups']
+        if g['VpcId'] == vpc.id
     ]
 
-    for group in groups:
-        if group['GroupName'] == DEFAULT_SECURITY_GROUP:
-            Term.success(
-                'Found existing dagit security group, continuing with %s' % group['GroupId']
+    group_name = None
+    while not group_name:
+        group_name = click.prompt(
+            '\nChoose a security group name '
+            + click.style('[default is %s]' % default_group_name, fg='green'),
+            type=str,
+            default=default_group_name,
+            show_default=False,
+        )
+
+        # Ensure key doesn't already exist
+        if group_name in existing_group_names:
+            Term.error('Specified security group already exists, won\'t create')
+            group_name = None
+
+        else:
+            Term.waiting('Creating dagit security group...')
+            group = ec2.create_security_group(
+                GroupName=group_name, Description='dagit Security Group', VpcId=vpc.id
             )
-            return group['GroupId']
-
-    groups_str = ['%s (New security group)' % DEFAULT_SECURITY_GROUP] + [
-        '%s (%s)' % (g['GroupId'], g['GroupName']) for g in groups
-    ]
-
-    sg = click.prompt(
-        '\nSelect a security group ID: '
-        + click.style(
-            '[default: create new security group %s]' % DEFAULT_SECURITY_GROUP, fg='green'
-        )
-        + '\n\n'
-        + click.style('  Existing security groups:\n  ', fg='blue')
-        + '\n  '.join(groups_str),
-        type=str,
-        default=DEFAULT_SECURITY_GROUP,
-        show_default=False,
-    )
-
-    if sg == DEFAULT_SECURITY_GROUP:
-        Term.waiting('Creating dagit security group...')
-        group = ec2.create_security_group(
-            GroupName=DEFAULT_SECURITY_GROUP, Description='dagit Security Group', VpcId=vpc.id
-        )
-        group.authorize_ingress(
-            GroupName=DEFAULT_SECURITY_GROUP,
-            IpPermissions=[
-                {
-                    'IpProtocol': 'tcp',
-                    'FromPort': 3000,
-                    'ToPort': 3000,
-                    'IpRanges': [{'CidrIp': '0.0.0.0/0', 'Description': 'HTTP'}],
-                },
-                {
-                    'IpProtocol': 'tcp',
-                    'FromPort': 22,
-                    'ToPort': 22,
-                    'IpRanges': [{'CidrIp': '0.0.0.0/0', 'Description': 'SSH'}],
-                },
-            ],
-        )
-        group.create_tags(Tags=[{'Key': 'Name', 'Value': DEFAULT_SECURITY_GROUP}])
-        Term.success('Security group created!')
-
-    return sg
+            group.authorize_ingress(
+                GroupName=group_name,
+                IpPermissions=[
+                    {
+                        'IpProtocol': 'tcp',
+                        'FromPort': 3000,
+                        'ToPort': 3000,
+                        'IpRanges': [{'CidrIp': '0.0.0.0/0', 'Description': 'HTTP'}],
+                    },
+                    {
+                        'IpProtocol': 'tcp',
+                        'FromPort': 22,
+                        'ToPort': 22,
+                        'IpRanges': [{'CidrIp': '0.0.0.0/0', 'Description': 'SSH'}],
+                    },
+                ],
+            )
+            group.create_tags(Tags=[{'Key': 'Name', 'Value': group_name}])
+            Term.rewind()
+            Term.success('Security group created!')
+            return group.id
 
 
-def create_key_pair(client, dagster_home):
+def create_key_pair(prev_config, client, dagster_home):
     '''Ensures we have a key pair in place for creating EC2 instance so that the user can SSH to the
     machine once it is created.
     '''
+    if prev_config and prev_config.key_file_path and os.path.exists(prev_config.key_file_path):
+        Term.success(
+            'Found existing key pair %s, continuing with %s'
+            % (prev_config.key_pair_name, prev_config.key_file_path)
+        )
+        return prev_config.key_pair_name, prev_config.key_file_path
+
     now = datetime.datetime.utcnow()
     default_key_pair_name = 'dagster-keypair-%s-%s' % (
         getpass.getuser(),
         now.strftime("%Y%m%dT%H%M%S"),
     )
 
-    Term.waiting('Creating new key pair...')
-
     existing_key_pairs = [k['KeyName'] for k in client.describe_key_pairs()['KeyPairs']]
 
     key_pair_name = None
     while not key_pair_name:
         key_pair_name = click.prompt(
-            'Key pair name ' + click.style('[default is %s]' % default_key_pair_name, fg='green'),
+            '\nChoose a key pair name '
+            + click.style('[default is %s]' % default_key_pair_name, fg='green'),
             type=str,
             default=default_key_pair_name,
             show_default=False,
@@ -168,6 +178,7 @@ def create_key_pair(client, dagster_home):
 
         else:
             # key does not exist yet, safe to create
+            Term.waiting('Creating new key pair...')
             keypair = client.create_key_pair(KeyName=key_pair_name)
 
             key_directory = os.path.join(dagster_home, 'keys')
@@ -182,6 +193,8 @@ def create_key_pair(client, dagster_home):
                 f.write(six.ensure_binary(keypair['KeyMaterial']))
             os.chmod(key_file_path, 0o600)
 
+            time.sleep(0.3)
+            Term.rewind()
             Term.success(
                 'Key pair %s created and saved to local file %s!' % (key_pair_name, key_file_path)
             )
@@ -290,13 +303,20 @@ def create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name):
     return inst
 
 
-def create_rds_instance(region):
+def create_rds_instance(prev_config, region):
     '''Creates an RDS PostgreSQL instance.
 
     Returns:
     RDSConfig object
     '''
     from .config import RDSConfig
+
+    if prev_config and prev_config.rds_config:
+        Term.success(
+            'Found existing RDS database, continuing with %s'
+            % (prev_config.rds_config.instance_uri)
+        )
+        return prev_config.rds_config
 
     rds = boto3.client('rds', region_name=region)
 

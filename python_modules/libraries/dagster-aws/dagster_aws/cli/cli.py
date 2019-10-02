@@ -14,7 +14,7 @@ from .aws_util import (
     create_ec2_instance,
     create_key_pair,
     create_rds_instance,
-    get_or_create_security_group,
+    create_security_group,
     get_validated_ami_id,
     select_region,
     select_vpc,
@@ -94,50 +94,30 @@ def init():
     # this ensures DAGSTER_HOME exists before we continue
     dagster_home = get_dagster_home()
 
-    already_run = HostConfig.exists(dagster_home)
     prev_config = None
-    if already_run:
+    if HostConfig.exists(dagster_home):
         click.confirm(
             'dagster-aws has already been initialized! Continue?', default=False, abort=True
         )
         prev_config = HostConfig.load(dagster_home)
 
-    # Get region
-    if prev_config and prev_config.region:
-        Term.success('Found existing region, continuing with %s' % prev_config.region)
-        region = prev_config.region
-    else:
-        region = select_region()
+    region = select_region(prev_config)
 
     client = boto3.client('ec2', region_name=region)
     ec2 = boto3.resource('ec2', region_name=region)
 
     vpc = select_vpc(client, ec2)
 
-    security_group_id = get_or_create_security_group(client, ec2, vpc)
+    security_group_id = create_security_group(prev_config, client, ec2, vpc)
 
     ami_id = get_validated_ami_id(client)
 
-    if prev_config and prev_config.key_file_path and os.path.exists(prev_config.key_file_path):
-        Term.success(
-            'Found existing key pair %s, continuing with %s'
-            % (prev_config.key_pair_name, prev_config.key_file_path)
-        )
-        key_pair_name, key_file_path = prev_config.key_pair_name, prev_config.key_file_path
-    else:
-        key_pair_name, key_file_path = create_key_pair(client, dagster_home)
+    key_pair_name, key_file_path = create_key_pair(prev_config, client, dagster_home)
 
     inst = create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name)
 
     # Create an RDS instance
-    if prev_config and prev_config.rds_config:
-        Term.success(
-            'Found existing RDS database, continuing with %s'
-            % (prev_config.rds_config.instance_uri)
-        )
-        rds_config = prev_config.rds_config
-    else:
-        rds_config = create_rds_instance(region)
+    rds_config = create_rds_instance(prev_config, region)
 
     # Save host configuration for future commands
     cfg = HostConfig(
@@ -162,8 +142,7 @@ You can also open a shell on your dagster-aws instance with:
 
     dagster-aws shell
 
-For full details, see dagster-aws --help
-            ''',
+For full details, see dagster-aws --help''',
             fg='green',
         )
     )
@@ -292,8 +271,8 @@ def update_dagster():
 
 
 @main.command()
-def clear():
-    '''💥 Terminate your EC2 instance'''
+def delete():
+    '''💥 Terminate your EC2 instance (and associated resources)'''
     dagster_home = get_dagster_home()
 
     already_run = HostConfig.exists(dagster_home)
