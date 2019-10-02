@@ -1,7 +1,9 @@
 import io
 import os
+import signal
 import subprocess
 import sys
+import time
 from contextlib import contextmanager
 
 from dagster import check
@@ -74,12 +76,36 @@ def tailf(path):
         # no tail, bail
         yield
     else:
+        # unix only
         cmd = 'tail -F -n 1 {}'.format(path).split(' ')
-        p = subprocess.Popen(cmd)
-        try:
-            yield
-        finally:
-            p.terminate()
+
+        # open a subprocess to tail the file and print to stdout
+        tail_process = subprocess.Popen(cmd)
+
+        # fork a child watcher process to sleep/wait for the parent process (which yields to the
+        # compute function) to either A) complete and clean-up OR B) segfault / die silently.  In
+        # the case of B, the spawned tail process will not automatically get terminated, so we need
+        # to make sure that we terminate it explicitly and then exit.
+        watcher_pid = os.fork()
+
+        if watcher_pid == 0:
+            # this is the child watcher process, sleep until orphaned, then kill the tail process
+            # and exit
+            while True:
+                if os.getppid() == 1:  # orphaned process
+                    time.sleep(1)
+                    tail_process.terminate()
+                    sys.exit()
+                else:
+                    time.sleep(1)
+        else:
+            # this is the parent process, yield to the compute function and then terminate both the
+            # tail and watcher processes.
+            try:
+                yield
+            finally:
+                tail_process.terminate()
+                os.kill(watcher_pid, signal.SIGTERM)
 
 
 def _fileno(stream):
