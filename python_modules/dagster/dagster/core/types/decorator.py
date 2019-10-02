@@ -49,26 +49,30 @@ def dagster_type(
     the dagster type system.
 
     e.g.:
+        .. code-block:: python
 
-    # You have created an object for your own purposes within your app
-    class MyDataObject:
-        pass
+            # You have created an object for your own purposes within your app
+            class MyDataObject:
+                pass
 
 
     Now you want to be able to mark this as an input or output to solid. Without
     modification, this does not work.
 
     You must decorate it:
+        .. code-block:: python
 
-    @dagster_type
-    class MyDataObject:
-        pass
+            @dagster_type
+            class MyDataObject:
+                pass
 
     Now one can using this as an input or an output into a solid.
 
-    @lambda_solid
-    def create_myobject() -> MyDataObject:
-        return MyDataObject()
+        .. code-block:: python
+
+            @lambda_solid
+            def create_myobject() -> MyDataObject:
+                return MyDataObject()
 
     And it is viewable in dagit and so forth, and you can use the dagster type system
     for configuration, serialization, and metadata emission.

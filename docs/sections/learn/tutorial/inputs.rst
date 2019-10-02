@@ -29,7 +29,7 @@ use one of them here: per-solid configuration specified under the key ``solids``
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
     :linenos:
-    :lines: 20,22,24-26
+    :lines: 19,21,23-25
     :dedent: 8
 
 The ``solids`` dict is keyed by solid name, and each solid is configured by a dict that may have
@@ -41,7 +41,7 @@ using the python API:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
     :linenos:
-    :lines: 15-27
+    :lines: 14-26
 
 CLI
 ~~~
@@ -111,7 +111,7 @@ A user can apply types to inputs and outputs using python type annotation syntax
 built-in ``String``.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
-   :lines: 30-32
+   :lines: 29-31
    :emphasize-lines: 2
    :caption: inputs.py
 

@@ -8,7 +8,6 @@ and whose second solid concatenates two copies of its input. The output of the p
 two concatenated copies of the hardcoded string.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_dag.py
-   :lines: 1-17
    :caption: hello_dag.py
 
 This pipeline introduces a few new concepts.
@@ -29,7 +28,7 @@ This pipeline introduces a few new concepts.
     :doc:`composition functions section <composition_functions>`.
 
     .. literalinclude::  ../../../../examples/dagster_examples/intro_tutorial/hello_dag.py
-       :lines: 15-17
+       :lines: 14-16
 
     The above pipeline constructs a two solid pipeline with solid_two depending on solid_one.
 
@@ -54,7 +53,7 @@ Now run the pipeline we've just defined, either from dagit or from the command l
 
 .. code-block:: console
 
-	$ dagster pipeline execute -f hello_dag.py -n hello_dag_pipeline
+    $ dagster pipeline execute -f hello_dag.py -n hello_dag_pipeline
 
 In the next section, :doc:`An actual DAG <actual_dag>`, we'll build our first DAG with interesting
 topology and see how dagster determines the execution order of a pipeline.

@@ -16,7 +16,7 @@ solid. Put the following into a file ``resources.py``:
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_one.py
     :caption: resources.py
     :linenos:
-    :lines: 1-26
+    :lines: 1-24
 
 Provide your Slack token, and choose a channel and message. Then running this with ``python
 resources.py``, you should see a message from ``dagsterbot`` appear in your Slack channel.
@@ -39,7 +39,7 @@ a simple resource that provides the same ``.chat.post_message()`` API, using the
 decorator:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_full.py
-   :lines: 24-43
+   :lines: 22-41
    :linenos:
    :emphasize-lines: 15
 
@@ -50,7 +50,7 @@ it'll write to.
 In order to run this pipeline, we invoke it in this way:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_full.py
-   :lines: 62-68
+   :lines: 60-66
    :linenos:
    :dedent: 4
    :emphasize-lines: 3,5
@@ -60,7 +60,7 @@ implementation of ``slack`` is used. The complete example including both "local"
 modes is shown below:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources_full.py
-    :emphasize-lines: 56, 58, 64, 66
+    :emphasize-lines: 54, 56, 62, 64
     :linenos:
     :caption: resources_full.py
 

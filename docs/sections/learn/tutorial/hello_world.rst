@@ -8,7 +8,7 @@ tutorial code, at ``dagster/examples/dagster_examples/intro_tutorial``.)
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_world.py
    :linenos:
-   :lines: 1-13
+   :lines: 1-11
    :caption: hello_world.py
 
 This example introduces the core **solid** and **pipeline** concepts:
@@ -91,7 +91,7 @@ at all. Just add a few lines to ``hello_world.py`` (highlighted in yellow):
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_world.py
    :linenos:
    :caption: hello_world.py
-   :emphasize-lines: 15-17
+   :emphasize-lines: 14-16
 
 Then you can just run:
 

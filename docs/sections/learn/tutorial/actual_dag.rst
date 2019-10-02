@@ -7,7 +7,7 @@ determines the execution order of solids in a pipeline:
 .. image:: actual_dag_figure_one.png
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/actual_dag.py
-   :lines: 1-28
+   :lines: 1-27
    :caption: actual_dag.py
 
 Again, it is worth noting how we are connecting *inputs* and *outputs* rather than just *tasks*.
