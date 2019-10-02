@@ -4,8 +4,6 @@ import os
 import signal
 import subprocess
 import sys
-import time
-import webbrowser
 
 import boto3
 import click
@@ -19,11 +17,21 @@ from .aws_util import (
     select_region,
     select_vpc,
 )
-from .config import HostConfig
-from .term import Term, run_remote_cmd
+from .config import EC2Config, RDSConfig
+from .term import Spinner, Term, run_remote_cmd
 
 # Client code will be deposited here on the remote EC2 instance
 SERVER_CLIENT_CODE_HOME = '/opt/dagster/app/'
+
+COMPLETED_HELP_TEXT = '''🚀 To sync your Dagster project, in your project directory, run:
+
+    dagster-aws up
+
+You can also open a shell on your dagster-aws instance with:
+
+    dagster-aws shell
+
+For full details, see dagster-aws --help'''
 
 
 def get_dagster_home():
@@ -95,11 +103,11 @@ def init():
     dagster_home = get_dagster_home()
 
     prev_config = None
-    if HostConfig.exists(dagster_home):
+    if EC2Config.exists(dagster_home):
         click.confirm(
             'dagster-aws has already been initialized! Continue?', default=False, abort=True
         )
-        prev_config = HostConfig.load(dagster_home)
+        prev_config = EC2Config.load(dagster_home)
 
     region = select_region(prev_config)
 
@@ -116,11 +124,8 @@ def init():
 
     inst = create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name)
 
-    # Create an RDS instance
-    rds_config = create_rds_instance(prev_config, region)
-
     # Save host configuration for future commands
-    cfg = HostConfig(
+    ec2_config = EC2Config(
         remote_host=inst.public_dns_name,
         instance_id=inst.id,
         region=region,
@@ -128,31 +133,25 @@ def init():
         key_pair_name=key_pair_name,
         key_file_path=key_file_path,
         ami_id=ami_id,
-        rds_config=rds_config,
     )
-    cfg.save(dagster_home)
+    ec2_config.save(dagster_home)
 
-    click.echo(
-        click.style(
-            '''🚀 To sync your Dagster project, in your project directory, run:
+    rds_config = create_rds_instance(dagster_home, region)
 
-    dagster-aws up
+    click.echo(ec2_config.as_table() + '\n')
 
-You can also open a shell on your dagster-aws instance with:
+    if rds_config:
+        rds_config.save(dagster_home)
+        click.echo(rds_config.as_table() + '\n')
 
-    dagster-aws shell
-
-For full details, see dagster-aws --help''',
-            fg='green',
-        )
-    )
+    click.echo(click.style(COMPLETED_HELP_TEXT, fg='green'))
 
 
 @main.command()
 def shell():
     '''Open an SSH shell on the remote server'''
     dagster_home = get_dagster_home()
-    cfg = HostConfig.load(dagster_home)
+    cfg = EC2Config.load(dagster_home)
 
     # Lands us directly in /opt/dagster (app dir may not exist yet)
     run_remote_cmd(cfg.key_file_path, cfg.remote_host, 'cd /opt/dagster; bash')
@@ -168,7 +167,7 @@ def shell():
 def up(post_up_script):
     '''🌱 Sync your Dagster project to the remote server'''
     dagster_home = get_dagster_home()
-    cfg = HostConfig.load(dagster_home)
+    cfg = EC2Config.load(dagster_home)
 
     if cfg.local_path is None:
         cwd = os.getcwd()
@@ -232,19 +231,17 @@ def up(post_up_script):
 
     Term.waiting('Restarting dagit systemd service...')
     retval = run_remote_cmd(cfg.key_file_path, cfg.remote_host, 'sudo systemctl restart dagit')
-    Term.success('Synchronization succeeded. Opening in browser...')
-
-    # Open dagit in browser, but sleep for a few seconds first to give the service time to finish
-    # restarting
-    time.sleep(2)
-    webbrowser.open_new_tab('http://%s:3000' % cfg.remote_host)
+    Term.success(
+        'Synchronization succeeded. To open Dagit, visit the URL:\n\thttp://%s:3000'
+        % cfg.remote_host
+    )
 
 
 @main.command()
 def update_dagster():
     '''Update the remote copy of Dagster'''
     dagster_home = get_dagster_home()
-    cfg = HostConfig.load(dagster_home)
+    cfg = EC2Config.load(dagster_home)
 
     Term.waiting(
         'Running a git pull and make rebuild_dagit on the remote dagster, this may take a while...'
@@ -275,17 +272,19 @@ def delete():
     '''💥 Terminate your EC2 instance (and associated resources)'''
     dagster_home = get_dagster_home()
 
-    already_run = HostConfig.exists(dagster_home)
+    already_run = EC2Config.exists(dagster_home)
 
     if not already_run:
         Term.fatal('No existing configuration detected, exiting')
 
-    cfg = HostConfig.load(dagster_home)
+    ec2_config = EC2Config.load(dagster_home)
 
-    client = boto3.client('ec2', region_name=cfg.region)
-    ec2 = boto3.resource('ec2', region_name=cfg.region)
+    client = boto3.client('ec2', region_name=ec2_config.region)
+    ec2 = boto3.resource('ec2', region_name=ec2_config.region)
 
-    instances = ec2.instances.filter(InstanceIds=[cfg.instance_id])  # pylint: disable=no-member
+    instances = ec2.instances.filter(  # pylint: disable=no-member
+        InstanceIds=[ec2_config.instance_id]
+    )
 
     Term.warning('This will terminate the following: ')
     for instance in instances:
@@ -298,41 +297,72 @@ def delete():
     click.confirm('\nThis step cannot be undone. Continue?', default=False, abort=True)
 
     Term.waiting('Terminating...')
-    instances.terminate()
+    with Spinner():
+        instances.terminate()
+        waiter = client.get_waiter('instance_terminated')
+        waiter.wait(InstanceIds=[instance.id for instance in instances])
+
+    Term.rewind()
+    Term.success('Done terminating instance')
 
     # Wipe all instance-related configs
-    cfg = cfg._replace(remote_host=None, instance_id=None, ami_id=None, local_path=None)
+    ec2_config = ec2_config._replace(
+        remote_host=None, instance_id=None, ami_id=None, local_path=None
+    )
 
     # Prompt user to remove key pair
     should_delete_key_pair = click.confirm(
-        'Do you also want to remove the key pair %s?' % cfg.key_pair_name
+        'Do you also want to remove the key pair %s?' % ec2_config.key_pair_name
     )
     if should_delete_key_pair:
-        client.delete_key_pair(KeyName=cfg.key_pair_name)
-        cfg = cfg._replace(key_pair_name=None, key_file_path=None)
+        client.delete_key_pair(KeyName=ec2_config.key_pair_name)
+        ec2_config = ec2_config._replace(key_pair_name=None, key_file_path=None)
 
     # Prompt user to delete security group also
     should_remove_security_group = click.confirm(
-        'Do you also want to remove the security group %s?' % cfg.security_group_id
+        'Do you also want to remove the security group %s?' % ec2_config.security_group_id
     )
     if should_remove_security_group:
-        client.delete_security_group(GroupId=cfg.security_group_id)
-        cfg = cfg._replace(security_group_id=None)
+        client.delete_security_group(GroupId=ec2_config.security_group_id)
+        ec2_config = ec2_config._replace(security_group_id=None)
+
+    if should_delete_key_pair and should_remove_security_group:
+        # Delete entirely
+        ec2_config.delete(dagster_home)
+    else:
+        # Write out updated config
+        ec2_config.save(dagster_home)
 
     # Prompt user to delete security group also
-    Term.warning('WARNING: A "yes" below will remove all RDS PostgreSQL data!!!')
-    should_remove_rds = click.confirm(
-        'Do you also want to remove the RDS instance %s?' % cfg.rds_config.instance_name
-    )
-    if should_remove_rds:
-        rds = boto3.client('rds', region_name=cfg.region)
-        rds.delete_db_instance(
-            DBInstanceIdentifier=cfg.rds_config.instance_name,
-            SkipFinalSnapshot=True,
-            DeleteAutomatedBackups=True,
+    if RDSConfig.exists(dagster_home):
+        rds_config = RDSConfig.load(dagster_home)
+        Term.warning('WARNING: A "yes" below will remove all RDS PostgreSQL data!!!')
+        should_remove_rds = click.confirm(
+            'Do you also want to remove the RDS instance %s?' % rds_config.instance_name
         )
-
-    # Write out updated config
-    cfg.save(dagster_home)
+        if should_remove_rds:
+            rds = boto3.client('rds', region_name=ec2_config.region)
+            rds.delete_db_instance(
+                DBInstanceIdentifier=rds_config.instance_name,
+                SkipFinalSnapshot=True,
+                DeleteAutomatedBackups=True,
+            )
+            rds_config.delete(dagster_home)
 
     Term.success('Done!')
+
+
+@main.command()
+def info():
+    '''Print out tabulated EC2/RDS configuration
+    '''
+    dagster_home = get_dagster_home()
+    click.echo('\n')
+
+    if EC2Config.exists(dagster_home):
+        ec2_config = EC2Config.load(dagster_home)
+        click.echo(ec2_config.as_table() + '\n')
+
+    if RDSConfig.exists(dagster_home):
+        rds_config = RDSConfig.load(dagster_home)
+        click.echo(rds_config.as_table() + '\n')

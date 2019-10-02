@@ -193,7 +193,7 @@ def create_key_pair(prev_config, client, dagster_home):
                 f.write(six.ensure_binary(keypair['KeyMaterial']))
             os.chmod(key_file_path, 0o600)
 
-            time.sleep(0.3)
+            time.sleep(0.4)
             Term.rewind()
             Term.success(
                 'Key pair %s created and saved to local file %s!' % (key_pair_name, key_file_path)
@@ -260,22 +260,8 @@ def create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name):
 
     init_script_name = 'init.sh' if use_master else 'init-stable.sh'
 
-    Term.waiting('Creating dagit EC2 instance. This can take a couple of minutes...')
-    click.echo(
-        '  '
-        + '\n  '.join(
-            [
-                'Name: %s' % ec2_instance_name,
-                'AMI: %s' % ami_id,
-                'Instance Type: %s' % instance_type,
-                'Security Group: %s' % security_group_id,
-                'Key Pair: %s' % key_pair_name,
-                'Install from Github master? %s' % use_master,
-            ]
-        )
-    )
-
     # Here we actually create the EC2 instance
+    Term.waiting('Creating dagit EC2 instance. This can take a couple of minutes...')
     with Spinner():
         with open(os.path.join(os.path.dirname(__file__), 'shell', init_script_name), 'rb') as f:
             init_script = six.ensure_str(f.read())
@@ -299,11 +285,13 @@ def create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name):
         # Load details like public DNS name, etc.
         inst.reload()
 
+    Term.rewind()
     Term.success('dagit EC2 instance %s launched!' % inst.id)
+
     return inst
 
 
-def create_rds_instance(prev_config, region):
+def create_rds_instance(dagster_home, region):
     '''Creates an RDS PostgreSQL instance.
 
     Returns:
@@ -311,12 +299,10 @@ def create_rds_instance(prev_config, region):
     '''
     from .config import RDSConfig
 
-    if prev_config and prev_config.rds_config:
-        Term.success(
-            'Found existing RDS database, continuing with %s'
-            % (prev_config.rds_config.instance_uri)
-        )
-        return prev_config.rds_config
+    if RDSConfig.exists(dagster_home):
+        prev_config = RDSConfig.load(dagster_home)
+        Term.success('Found existing RDS database, continuing with %s' % (prev_config.instance_uri))
+        return prev_config
 
     rds = boto3.client('rds', region_name=region)
 
@@ -344,8 +330,6 @@ def create_rds_instance(prev_config, region):
         show_default=False,
     )
 
-    password = generate_password()
-
     default_name = 'dagster-rds-%s' % getpass.getuser()
     instance_name = click.prompt(
         '\nChoose an RDS instance name '
@@ -355,39 +339,31 @@ def create_rds_instance(prev_config, region):
         show_default=False,
     )
 
+    rds_config = RDSConfig(
+        instance_name=instance_name, instance_type=instance_type, password=generate_password()
+    )
+
     Term.waiting(
         u'Creating Dagster RDS instance. This unfortunately takes quite a while, 5+ minutes, so '
         u'grab some 🍿...'
     )
     with Spinner():
         rds.create_db_instance(
-            AllocatedStorage=20,
-            DBInstanceClass=instance_type,
-            DBInstanceIdentifier=instance_name,
-            DBName='dagster',
-            Engine='postgres',
-            EngineVersion='11.5',
-            MasterUsername='dagster',
-            MasterUserPassword=password,
+            AllocatedStorage=rds_config.storage_size_gb,
+            DBInstanceClass=rds_config.instance_type,
+            DBInstanceIdentifier=rds_config.instance_name,
+            DBName=rds_config.db_name,
+            Engine=rds_config.db_engine,
+            EngineVersion=rds_config.db_engine_version,
+            MasterUsername=rds_config.username,
+            MasterUserPassword=rds_config.password,
         )
         waiter_rds = rds.get_waiter('db_instance_available')
         waiter_rds.wait(DBInstanceIdentifier=instance_name)
         response = rds.describe_db_instances(DBInstanceIdentifier=instance_name)
         instance_uri = response['DBInstances'][0]['Endpoint']['Address']
 
-        click.echo(
-            '  '
-            + '\n  '.join(
-                [
-                    'Name: %s' % instance_name,
-                    'Instance Type: %s' % instance_type,
-                    'DBName: dagster',
-                    'Engine: PostgreSQL 11.5',
-                    'MasterUsername: dagster',
-                    'MasterUserPassword: <not shown>',
-                    'Instance URI: %s' % instance_uri,
-                ]
-            )
-        )
+    Term.rewind()
+    Term.success('Dagster RDS instance %s launched!' % instance_uri)
 
-    return RDSConfig(instance_name, instance_uri, password)
+    return rds_config._replace(instance_uri=instance_uri)
