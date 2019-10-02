@@ -62,8 +62,10 @@ def select_vpc(client, ec2):
         vpc_names.append('%s (%s)' % (vpc.id, name[0]) if name else vpc.id)
 
     vpc = click.prompt(
-        '\nSelect a VPC '
+        '\nSelect an existing VPC to use. '
         + click.style('[default: %s]' % default_vpc.id, fg='green')
+        + '\nNote that this script will not create a VPC on your behalf. Also, if you'
+        '\ndon\'t know what this is, the default is almost certainly what you want. '
         + '\n\n'
         + click.style('  Existing VPCs:\n  ', fg='blue')
         + '\n  '.join(vpc_names),
