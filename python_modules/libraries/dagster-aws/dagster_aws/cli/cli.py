@@ -126,7 +126,7 @@ def init():
     else:
         key_pair_name, key_file_path = create_key_pair(client, dagster_home)
 
-    inst = create_ec2_instance(ec2, security_group_id, ami_id, key_pair_name)
+    inst = create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name)
 
     # Save host configuration for future commands
     cfg = HostConfig(

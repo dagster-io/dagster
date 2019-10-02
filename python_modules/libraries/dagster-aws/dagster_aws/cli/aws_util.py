@@ -213,7 +213,7 @@ def get_validated_ami_id(_client):
     # return ami_id
 
 
-def create_ec2_instance(ec2, security_group_id, ami_id, key_pair_name):
+def create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name):
     '''Actually create the EC2 instance given the provided configuration.
     '''
     click.echo('\n🌱 Provisioning an EC2 instance for dagit')
@@ -244,7 +244,7 @@ def create_ec2_instance(ec2, security_group_id, ami_id, key_pair_name):
 
     init_script_name = 'init.sh' if use_master else 'init-stable.sh'
 
-    Term.waiting('Creating dagit EC2 instance...')
+    Term.waiting('Creating dagit EC2 instance. This can take a couple of minutes...')
     click.echo(
         '  '
         + '\n  '.join(
@@ -274,7 +274,8 @@ def create_ec2_instance(ec2, security_group_id, ami_id, key_pair_name):
             UserData=init_script,
         )
         inst = instances[0]
-        inst.wait_until_running()
+        waiter = client.get_waiter('instance_status_ok')
+        waiter.wait(InstanceIds=[inst.id])
 
         # Add name tag to instance after creation
         ec2.create_tags(Resources=[inst.id], Tags=[{'Key': 'Name', 'Value': ec2_instance_name}])
