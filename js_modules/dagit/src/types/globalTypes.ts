@@ -73,6 +73,14 @@ export interface ExecutionTag {
   value: string;
 }
 
+export interface PipelineRunsSelector {
+  runId?: string | null;
+  pipeline?: string | null;
+  tagKey?: string | null;
+  tagValue?: string | null;
+  status?: PipelineRunStatus | null;
+}
+
 export interface ReexecutionConfig {
   previousRunId: string;
   stepOutputHandles: StepOutputHandle[];

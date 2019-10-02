@@ -25,6 +25,7 @@ export interface TokenizingFieldValue {
 
 interface TokenizingFieldProps {
   values: TokenizingFieldValue[];
+  maxValues: number | undefined;
   onChange: (values: TokenizingFieldValue[]) => void;
   suggestionProviders: SuggestionProvider[];
 }
@@ -52,6 +53,13 @@ export function tokenizedValueFromString(
   return { value: str };
 }
 
+export function stringFromValue(value: TokenizingFieldValue[]) {
+  return value
+    .filter(v => v.value !== "")
+    .map(v => (v.token ? `${v.token}:${v.value}` : v.value))
+    .join(",");
+}
+
 /** Provides a text field with typeahead autocompletion for key value pairs,
 where the key is one of a known set of "suggestion provider tokens". Provide
 one or more SuggestionProviders to build the tree of autocompletions. The
@@ -59,11 +67,14 @@ input also allows for freeform typing (`value` items with no token value) */
 export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   suggestionProviders,
   values,
+  maxValues,
   onChange
 }) => {
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [inputValue, setInputValue] = React.useState<string>("");
+  const atMaxValues =
+    maxValues === undefined || values.filter(v => v.token).length >= maxValues;
 
   // Build the set of suggestions that should be displayed for the current input value.
   // Note: inputValue is the text that has not yet been submitted, separate from values[].
@@ -132,6 +143,8 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   }, [active, suggestions]);
 
   const onConfirmSuggestion = (suggestion: Suggestion) => {
+    if (atMaxValues) return;
+
     if (suggestion.final) {
       // The user has finished a key-value pair
       onConfirmText(suggestion.completion);
@@ -145,6 +158,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   };
 
   const onConfirmText = (str: string) => {
+    if (atMaxValues) return;
     if (str.endsWith(":")) return;
     if (str === "") return;
 
@@ -153,6 +167,11 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   };
 
   const onKeyDown = (e: React.KeyboardEvent<any>) => {
+    if (atMaxValues && e.key !== "Delete" && e.key !== "Backspace") {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     // Enter and Return confirm the currently selected suggestion or
     // confirm the freeform text you've typed if no suggestions are shown.
     if (e.key === "Enter" || e.key === "Return") {
@@ -199,7 +218,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   return (
     <Popover
       minimal={true}
-      isOpen={open && suggestions.length > 0}
+      isOpen={open && suggestions.length > 0 && !atMaxValues}
       position={"bottom"}
       content={
         suggestions.length > 0 ? (

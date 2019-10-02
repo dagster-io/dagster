@@ -352,6 +352,11 @@ type InvalidOutputError {
   invalidOutputName: String!
 }
 
+type InvalidPipelineRunsSelectorError implements Error {
+  message: String!
+  stack: [String!]!
+}
+
 type InvalidStepError {
   invalidStepKey: String!
 }
@@ -681,7 +686,7 @@ type PipelineRun {
   stepKeysToExecute: [String!]
   environmentConfigYaml: String!
   mode: String!
-  tags: [PipelineTag!]
+  tags: [PipelineTag!]!
 }
 
 union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineProcessExitedEvent | PipelineProcessStartedEvent | PipelineProcessStartEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent
@@ -705,6 +710,20 @@ type PipelineRunNotFoundError implements Error {
 }
 
 union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError
+
+type PipelineRuns {
+  results: [PipelineRun!]!
+}
+
+union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsSelectorError
+
+input PipelineRunsSelector {
+  runId: String
+  pipeline: String
+  tagKey: String
+  tagValue: String
+  status: PipelineRunStatus
+}
 
 type PipelineRunStatsSnapshot {
   runId: String!
@@ -749,6 +768,11 @@ type PipelineTag {
   value: String!
 }
 
+type PipelineTagAndValues {
+  key: String!
+  values: [String!]!
+}
+
 type PresetNotFoundError implements Error {
   message: String!
   stack: [String!]!
@@ -770,8 +794,9 @@ type Query {
   configTypeOrError(pipelineName: String!, configTypeName: String!, mode: String!): ConfigTypeOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   scheduler: SchedulerOrError!
-  pipelineRuns: [PipelineRun!]!
+  pipelineRunsOrError(params: PipelineRunsSelector!, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
+  pipelineRunTags: [PipelineTagAndValues!]!
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
   environmentSchemaOrError(selector: ExecutionSelector!, mode: String): EnvironmentSchemaOrError!
