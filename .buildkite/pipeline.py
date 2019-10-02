@@ -41,7 +41,7 @@ def python_modules_tox_tests(directory):
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
-            .on_python_image(
+            .on_integration_image(
                 version, ['AWS_DEFAULT_REGION', 'TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN']
             )
             .build()
@@ -223,7 +223,7 @@ def gcp_tests():
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
-            .on_python_image(version, ['BUILDKITE_SECRETS_BUCKET', 'GCP_PROJECT_ID'])
+            .on_integration_image(version, ['BUILDKITE_SECRETS_BUCKET', 'GCP_PROJECT_ID'])
             .build()
         )
 
@@ -369,7 +369,7 @@ def coverage_step():
             "coveralls-lcov -v -n lcov.* > coverage.js.json",
             "coveralls",  # add '--merge=coverage.js.json' to report JS coverage
         )
-        .on_python_image(
+        .on_integration_image(
             SupportedPython.V3_7,
             [
                 'COVERALLS_REPO_TOKEN',  # exported by /env in ManagedSecretsBucket
@@ -431,7 +431,7 @@ if __name__ == "__main__":
         .run(
             "pip install isort>=4.3.21", "isort -rc examples python_modules", "git diff --exit-code"
         )
-        .on_python_image(SupportedPython.V3_7)
+        .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("black")
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
@@ -439,7 +439,7 @@ if __name__ == "__main__":
         # python versions, but currently doesn't know what to do with from __future__ import
         # print_function -- see https://github.com/ambv/black/issues/768
         .run("pip install black==18.9b0", "make check_black")
-        .on_python_image(SupportedPython.V3_7)
+        .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("docs snapshot test")
         .run(

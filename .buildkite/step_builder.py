@@ -14,9 +14,6 @@ TIMEOUT_IN_MIN = 20
 DOCKER_PLUGIN = "docker#v3.2.0"
 ECR_PLUGIN = "ecr#v2.0.0"
 
-
-PY_IMAGE_MAP = {ver: "python:{}-stretch".format(ver) for ver in SupportedPythons}
-
 # Update this when releasing a new version of our integration image
 INTEGRATION_IMAGE_VERSION = "v5"
 
@@ -60,15 +57,6 @@ class StepBuilder:
 
     def _base_docker_settings(self):
         return {"shell": ["/bin/bash", "-xeuc"], "always-pull": True, "mount-ssh-agent": True}
-
-    def on_python_image(self, ver, env=None):
-        settings = self._base_docker_settings()
-        settings["image"] = PY_IMAGE_MAP[ver]
-        settings["environment"] = ["BUILDKITE"] + (env or [])
-
-        self._step["plugins"] = [{DOCKER_PLUGIN: settings}]
-
-        return self
 
     def on_integration_image(self, ver, env=None):
         if ver not in SupportedPythons:
