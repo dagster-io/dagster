@@ -54,7 +54,9 @@ export default class SchedulesRoot extends React.Component {
         {(queryResult: QueryResult<SchedulesRootQuery, any>) => (
           <Loading queryResult={queryResult}>
             {result => {
-              if (result.scheduler.__typename === "SchedulerNotDefinedError") {
+              const { scheduler } = result;
+
+              if (scheduler.__typename === "SchedulerNotDefinedError") {
                 return (
                   <ScrollContainer>
                     <div style={{ marginTop: 100 }}>
@@ -66,17 +68,25 @@ export default class SchedulesRoot extends React.Component {
                     </div>
                   </ScrollContainer>
                 );
+              } else if (scheduler.runningSchedules.length === 0) {
+                return (
+                  <ScrollContainer>
+                    <div style={{ marginTop: 100 }}>
+                      <NonIdealState
+                        icon="calendar"
+                        title="Scheduler"
+                        description="No schedules to display."
+                      />
+                    </div>
+                  </ScrollContainer>
+                );
               }
 
-              let runningSchedules: SchedulesRootQuery_scheduler_Scheduler_runningSchedules[] = [];
-              if (result.scheduler.__typename === "Scheduler") {
-                runningSchedules = result.scheduler.runningSchedules;
-              }
-
-              const sortedRunningSchedules = runningSchedules.sort((a, b) =>
-                a.scheduleDefinition.name.localeCompare(
-                  b.scheduleDefinition.name
-                )
+              const sortedRunningSchedules = scheduler.runningSchedules.sort(
+                (a, b) =>
+                  a.scheduleDefinition.name.localeCompare(
+                    b.scheduleDefinition.name
+                  )
               );
 
               return (
