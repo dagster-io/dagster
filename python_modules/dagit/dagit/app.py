@@ -4,7 +4,6 @@ import io
 import os
 import sys
 import uuid
-from typing import Any, Dict
 
 import nbformat
 from dagster_graphql.implementation.context import DagsterGraphQLContext
@@ -15,41 +14,17 @@ from flask import Flask, request, send_file, send_from_directory
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
-from graphql.error.base import GraphQLError
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
-from six import text_type
 
 from dagster import ExecutionTargetHandle, check, seven
 from dagster.core.instance import DagsterFeatures, DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.utils.log import get_stack_trace_array
 
+from .format_error import format_error_with_stack_trace
 from .subscription_server import DagsterSubscriptionServer
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 from .version import __version__
-
-
-# based on default_format_error copied and pasted from graphql_server 1.1.1
-def format_error_with_stack_trace(error):
-
-    # type: (Exception) -> Dict[str, Any]
-
-    formatted_error = {'message': text_type(error)}  # type: Dict[str, Any]
-    if isinstance(error, GraphQLError):
-        if error.locations is not None:
-            formatted_error['locations'] = [
-                {'line': loc.line, 'column': loc.column} for loc in error.locations
-            ]
-        if error.path is not None:
-            formatted_error['path'] = error.path
-
-        # this is what is different about this implementation
-        # we print out stack traces to ease debugging
-        if hasattr(error, 'original_error') and error.original_error:
-            formatted_error['stack_trace'] = get_stack_trace_array(error.original_error)
-
-    return formatted_error
 
 
 class DagsterGraphQLView(GraphQLView):

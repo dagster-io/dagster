@@ -1,10 +1,16 @@
+from collections import OrderedDict
+
 from graphql_ws.constants import GQL_COMPLETE, GQL_DATA
 from graphql_ws.gevent import GeventSubscriptionServer, SubscriptionObserver
 from rx import Observable
 
+from .format_error import format_error_with_stack_trace
+
 
 class DagsterSubscriptionServer(GeventSubscriptionServer):
     '''Subscription server that is able to handle non-subscription commands'''
+
+    format_error = staticmethod(format_error_with_stack_trace)
 
     def __init__(self, middleware=None, **kwargs):
         self.middleware = middleware or []
@@ -70,3 +76,14 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
                 operation.dispose()
             connection_context.remove_operation(op_id)
         self.on_operation_complete(connection_context, op_id)
+
+    # overrides graphql_ws.base.BaseSubscriptionServer.execution_result_to_dict because, unlike
+    # the implementation in GraphQLView, format_error is not pluggable (cf.
+    # dagit.app.DagsterGraphQLView)
+    def execution_result_to_dict(self, execution_result):
+        result = OrderedDict()
+        if execution_result.data:
+            result['data'] = execution_result.data
+        if execution_result.errors:
+            result['errors'] = [self.format_error(error) for error in execution_result.errors]
+        return result
