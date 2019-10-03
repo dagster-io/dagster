@@ -3,31 +3,31 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { PipelineRunsFilter, PipelineRunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: RunsRootQuery
 // ====================================================
 
-export interface RunsRootQuery_pipelineRuns_pipeline_UnknownPipeline {
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_UnknownPipeline {
   __typename: "UnknownPipeline";
   name: string;
 }
 
-export interface RunsRootQuery_pipelineRuns_pipeline_Pipeline_solids {
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline_solids {
   __typename: "Solid";
   name: string;
 }
 
-export interface RunsRootQuery_pipelineRuns_pipeline_Pipeline {
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline {
   __typename: "Pipeline";
   name: string;
-  solids: RunsRootQuery_pipelineRuns_pipeline_Pipeline_solids[];
+  solids: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline_solids[];
 }
 
-export type RunsRootQuery_pipelineRuns_pipeline = RunsRootQuery_pipelineRuns_pipeline_UnknownPipeline | RunsRootQuery_pipelineRuns_pipeline_Pipeline;
+export type RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline = RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_UnknownPipeline | RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline;
 
-export interface RunsRootQuery_pipelineRuns_stats {
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats {
   __typename: "PipelineRunStatsSnapshot";
   stepsSucceeded: number;
   stepsFailed: number;
@@ -37,28 +37,53 @@ export interface RunsRootQuery_pipelineRuns_stats {
   materializations: number;
 }
 
-export interface RunsRootQuery_pipelineRuns_executionPlan_steps {
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps {
   __typename: "ExecutionStep";
   key: string;
 }
 
-export interface RunsRootQuery_pipelineRuns_executionPlan {
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan {
   __typename: "ExecutionPlan";
-  steps: RunsRootQuery_pipelineRuns_executionPlan_steps[];
+  steps: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps[];
 }
 
-export interface RunsRootQuery_pipelineRuns {
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
   stepKeysToExecute: string[] | null;
   mode: string;
   environmentConfigYaml: string;
-  pipeline: RunsRootQuery_pipelineRuns_pipeline;
-  stats: RunsRootQuery_pipelineRuns_stats;
-  executionPlan: RunsRootQuery_pipelineRuns_executionPlan | null;
+  pipeline: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline;
+  stats: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats;
+  tags: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
+  executionPlan: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan | null;
 }
 
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns {
+  __typename: "PipelineRuns";
+  results: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results[];
+}
+
+export interface RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError {
+  __typename: "InvalidPipelineRunsFilterError";
+  message: string;
+}
+
+export type RunsRootQuery_pipelineRunsOrError = RunsRootQuery_pipelineRunsOrError_PipelineRuns | RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError;
+
 export interface RunsRootQuery {
-  pipelineRuns: RunsRootQuery_pipelineRuns[];
+  pipelineRunsOrError: RunsRootQuery_pipelineRunsOrError;
+}
+
+export interface RunsRootQueryVariables {
+  limit?: number | null;
+  cursor?: string | null;
+  filter: PipelineRunsFilter;
 }

@@ -80,6 +80,14 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         '''
 
     @abstractmethod
+    def get_run_tags(self):
+        '''Get a list of tag keys and the values that have been associated with them.
+
+        Returns:
+            List[Tuple[string, List[string]]]
+        '''
+
+    @abstractmethod
     def has_run(self, run_id):
         pass
 

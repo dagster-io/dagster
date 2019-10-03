@@ -83,7 +83,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     stepKeysToExecute = dauphin.List(dauphin.NonNull(dauphin.String))
     environmentConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
-    tags = dauphin.List(dauphin.NonNull('PipelineTag'))
+    tags = dauphin.non_null_list('PipelineTag')
     canCancel = dauphin.NonNull(dauphin.Boolean)
 
     def __init__(self, pipeline_run):

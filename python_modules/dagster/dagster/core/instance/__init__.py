@@ -260,6 +260,9 @@ class DagsterInstance(RunStorage):
     def get_run_stats(self, run_id):
         return self._event_storage.get_stats_for_run(run_id)
 
+    def get_run_tags(self):
+        return self._run_storage.get_run_tags()
+
     def create_empty_run(self, run_id, pipeline_name):
         return self.create_run(PipelineRun.create_empty_run(pipeline_name, run_id))
 
@@ -290,7 +293,7 @@ class DagsterInstance(RunStorage):
         return self._run_storage.has_run(run_id)
 
     def all_runs(self, cursor=None, limit=None):
-        return self._run_storage.all_runs()
+        return self._run_storage.all_runs(cursor, limit)
 
     def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
         return self._run_storage.get_runs_with_pipeline_name(pipeline_name, cursor, limit)
@@ -299,7 +302,7 @@ class DagsterInstance(RunStorage):
         return self._run_storage.get_runs_with_matching_tag(key, value, cursor, limit)
 
     def get_runs_with_status(self, run_status, cursor=None, limit=None):
-        return self._run_storage.all_runs_for_storage(run_status, cursor, limit)
+        return self._run_storage.get_runs_with_status(run_status, cursor, limit)
 
     def wipe(self):
         self._run_storage.wipe()

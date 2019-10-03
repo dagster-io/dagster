@@ -73,6 +73,16 @@ class InMemoryRunStorage(RunStorage):
         check.str_param(run_id, 'run_id')
         return self._runs.get(run_id)
 
+    def get_run_tags(self):
+        result = dict()
+        for r in self.all_runs():
+            for k, v in r.tags:
+                if k not in result:
+                    result[k] = [v]
+                else:
+                    result[k].append(v)
+        return result.items()
+
     def get_runs_with_status(self, run_status, cursor=None, limit=None):
         check.inst_param(run_status, 'run_status', PipelineRunStatus)
         matching_runs = list(
@@ -196,7 +206,6 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
         Returns:
             List[PipelineRun]: Tuples of run_id, pipeline_run.
         '''
-
         query = self._build_query(db.select([RunsTable.c.run_body]), cursor, limit)
         rows = self.connect().execute(query).fetchall()
         return self._rows_to_runs(rows)
@@ -251,6 +260,17 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
         query = db.select([RunsTable.c.run_body]).where(RunsTable.c.run_id == run_id)
         rows = self.connect().execute(query).fetchall()
         return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
+
+    def get_run_tags(self):
+        result = dict()
+        query = db.select([RunTagsTable.c.key, RunTagsTable.c.value])
+        rows = self.connect().execute(query).fetchall()
+        for r in rows:
+            if r[0] not in result:
+                result[r[0]] = [r[1]]
+            else:
+                result[r[0]].append(r[1])
+        return result.items()
 
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')

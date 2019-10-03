@@ -486,3 +486,18 @@ class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
             if solid_subset is None
             else check.list_param(solid_subset, 'solid_subset', of_type=str),
         )
+
+
+@whitelist_for_serdes
+class PipelineRunsFilter(
+    namedtuple('_PipelineRunsFilter', 'run_id tag_key tag_value pipeline status')
+):
+    def __new__(cls, run_id=None, pipeline=None, status=None, tag_key=None, tag_value=None):
+        return super(PipelineRunsFilter, cls).__new__(
+            cls,
+            run_id=check.opt_str_param(run_id, 'run_id'),
+            tag_key=check.opt_str_param(tag_key, 'tag_key'),
+            tag_value=check.opt_str_param(tag_value, 'tag_value'),
+            pipeline=check.opt_str_param(pipeline, 'pipeline'),
+            status=status,
+        )

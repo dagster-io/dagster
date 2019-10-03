@@ -25,6 +25,7 @@ from dagster_graphql.implementation.fetch_pipelines import (
 from dagster_graphql.implementation.fetch_runs import (
     get_execution_plan,
     get_run,
+    get_run_tags,
     get_runs,
     validate_pipeline_config,
 )
@@ -32,8 +33,9 @@ from dagster_graphql.implementation.fetch_types import get_config_type, get_runt
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 
 from dagster import check
-from dagster.core.definitions.pipeline import ExecutionSelector
+from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
 from dagster.core.instance import DagsterFeatures
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 
 from .config_types import to_dauphin_config_type
 from .run_schedule import (
@@ -41,6 +43,7 @@ from .run_schedule import (
     DauphinStopRunningScheduleMutation,
     get_scheduler_or_error,
 )
+from .runs import DauphinPipelineRunStatus
 
 
 class DauphinQuery(dauphin.ObjectType):
@@ -74,11 +77,18 @@ class DauphinQuery(dauphin.ObjectType):
 
     scheduler = dauphin.Field(dauphin.NonNull('SchedulerOrError'))
 
-    pipelineRuns = dauphin.non_null_list('PipelineRun')
+    pipelineRunsOrError = dauphin.Field(
+        dauphin.NonNull('PipelineRunsOrError'),
+        filter=dauphin.Argument(dauphin.NonNull('PipelineRunsFilter')),
+        cursor=dauphin.String(),
+        limit=dauphin.Int(),
+    )
 
     pipelineRunOrError = dauphin.Field(
         dauphin.NonNull('PipelineRunOrError'), runId=dauphin.NonNull(dauphin.ID)
     )
+
+    pipelineRunTags = dauphin.non_null_list('PipelineTagAndValues')
 
     isPipelineConfigValid = dauphin.Field(
         dauphin.NonNull('PipelineConfigValidationResult'),
@@ -139,11 +149,26 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_pipelines(self, graphene_info):
         return get_pipelines_or_raise(graphene_info)
 
-    def resolve_pipelineRuns(self, graphene_info):
-        return get_runs(graphene_info)
+    def resolve_pipelineRunsOrError(self, graphene_info, **kwargs):
+        filters = kwargs['filter'].to_selector()
+        provided = [
+            i for i in [filters.run_id, filters.pipeline, filters.tag_key, filters.status] if i
+        ]
+
+        if len(provided) > 1:
+            return graphene_info.schema.type_named('InvalidPipelineRunsFilterError')(
+                message="You may only provide one of the filter options."
+            )
+
+        return graphene_info.schema.type_named('PipelineRuns')(
+            results=get_runs(graphene_info, filters, kwargs.get('cursor'), kwargs.get('limit'))
+        )
 
     def resolve_pipelineRunOrError(self, graphene_info, runId):
         return get_run(graphene_info, runId)
+
+    def resolve_pipelineRunTags(self, graphene_info):
+        return get_run_tags(graphene_info)
 
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, **kwargs):
         return validate_pipeline_config(
@@ -492,6 +517,43 @@ class DauphinExecutionSelector(dauphin.InputObjectType):
 
     def to_selector(self):
         return ExecutionSelector(self.name, self.solidSubset)
+
+
+class DauphinPipelineRunsFilter(dauphin.InputObjectType):
+    class Meta:
+        name = 'PipelineRunsFilter'
+        description = '''This type represents a filter on pipeline runs.
+        Currently, you may only pass one of the filter options.'''
+
+    # Currently you may choose one of the following
+    runId = dauphin.Field(dauphin.String)
+    pipeline = dauphin.Field(dauphin.String)
+    tagKey = dauphin.Field(dauphin.String)
+    tagValue = dauphin.Field(dauphin.String)
+    status = dauphin.Field(DauphinPipelineRunStatus)
+
+    def to_selector(self):
+        if self.status:
+            status = PipelineRunStatus[self.status]
+        else:
+            status = None
+        return PipelineRunsFilter(
+            run_id=self.runId,
+            pipeline=self.pipeline,
+            tag_key=self.tagKey,
+            tag_value=self.tagValue,
+            status=status,
+        )
+
+
+class DauphinPipelineTagAndValues(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineTagAndValues'
+        description = '''A run tag and the free-form values that have been associated
+        with it so far.'''
+
+    key = dauphin.NonNull(dauphin.String)
+    values = dauphin.non_null_list(dauphin.String)
 
 
 class DauphinEnvironmentSchema(dauphin.ObjectType):
