@@ -4,19 +4,32 @@
 
 - **New**
 
+  This major release includes features for scheduling, operating, and executing pipelines
+  that elevate dagit and dagster from a local development tool to a deployable service.
+
   - `DagsterInstance` introduced as centralized system to control run, event, compute log,
     and local intermediates storage.
   - A `Scheduler` abstraction has been introduced along side an initial implementation of
     `SystemCronScheduler` in `dagster-cron`.
-  - `dagster-aws` has been extended with a CLI for deploying dagster to AWS.
-  - stdout and stderr from individual execution steps are now made available as "compute logs".
-    These are surfaced in dagit and persisted based on the `DagsterInstance`.
-  - A "Reload" button in the top right in dagit restarts the web-server process and updates
-    the UI to reflect repo changes, including DAG structure, solid names, type names, etc.
+  - `dagster-aws` has been extended with a CLI for deploying dagster to AWS. This can spin
+    up a Dagit node and all the supporting infrastructure—security group, RDS PostgreSQL
+    instance, etc.—without having to touch the AWS console, and for deploying your code
+    to that instance.
+  - **Dagit**
+    - `Runs`: a completely overhauled Runs history page. Includes the ability to `Retry`,
+      `Cancel`, and `Delete` pipeline runs from the new runs page.
+    - `Scheduler`: a page for viewing and interacting with schedules.
+    - `Compute Logs`: stdout and stderr are now viewable on a per execution step basis in each run.
+      This is available in real time for currently executing runs and for historical runs.
+    - A `Reload` button in the top right in dagit restarts the web-server process and updates
+      the UI to reflect repo changes, including DAG structure, solid names, type names, etc.
+      This replaces the previous file system watching behavior.
 
-- **BREAKING CHANGES**
+* **Breaking Changes**
   - `--log` and `--log-dir` no longer supported as CLI args. Existing runs and events stored
     via these flags are no longer compatible with current storage.
+  - `raise_on_error` moved from in process executor config to argument to arguments in
+    python API methods such as `execute_pipeline`
 
 ## 0.5.9
 
