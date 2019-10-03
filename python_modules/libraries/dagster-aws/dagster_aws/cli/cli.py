@@ -7,6 +7,9 @@ import sys
 
 import boto3
 import click
+import six
+
+from dagster import seven
 
 from .aws_util import (
     create_ec2_instance,
@@ -23,6 +26,10 @@ from .term import Spinner, Term, run_remote_cmd
 # Client code will be deposited here on the remote EC2 instance
 SERVER_CLIENT_CODE_HOME = '/opt/dagster/app/'
 
+# DAGSTER_HOME on the remote instance
+SERVER_DAGSTER_HOME = '/opt/dagster/dagster_home'
+
+# Help text shown upon sync completion
 COMPLETED_HELP_TEXT = '''🚀 To sync your Dagster project, in your project directory, run:
 
     dagster-aws up
@@ -87,6 +94,28 @@ def rsync_to_remote(key_file_path, local_path, remote_host, remote_path):
     Term.info('rsyncing local path %s to %s:%s' % (local_path, remote_host, remote_path))
     click.echo('\n' + ' '.join(rsync_command) + '\n')
     subprocess.call(' '.join(rsync_command), shell=True)
+
+
+def sync_dagster_yaml(ec2_config, rds_config):
+    '''Configure Dagster instance to use PG storage by putting a dagster.yaml file in the remote
+    DAGSTER_HOME directory
+    '''
+    with open(os.path.join(os.path.dirname(__file__), 'env', 'dagster.template.yaml'), 'rb') as f:
+        dagster_yaml = six.ensure_str(f.read())
+
+    dagster_yaml = (
+        dagster_yaml.replace('{username}', rds_config.username)
+        .replace('{password}', rds_config.password)
+        .replace('{host}', rds_config.instance_uri)
+        .replace('{database}', rds_config.db_name)
+    )
+
+    tmp_file = os.path.join(seven.get_system_temp_directory(), 'dagster.yaml')
+
+    with open(tmp_file, 'wb') as f:
+        f.write(six.ensure_binary(dagster_yaml))
+
+    rsync_to_remote(ec2_config.key_file_path, tmp_file, ec2_config.remote_host, SERVER_DAGSTER_HOME)
 
 
 @click.group()
@@ -168,6 +197,13 @@ def up(post_up_script):
     '''🌱 Sync your Dagster project to the remote server'''
     dagster_home = get_dagster_home()
     cfg = EC2Config.load(dagster_home)
+
+    if not cfg:
+        Term.fatal('No EC2 config found; run dagster-aws init first!')
+
+    if RDSConfig.exists(dagster_home):
+        rds_config = RDSConfig.load(dagster_home)
+        sync_dagster_yaml(cfg, rds_config)
 
     if cfg.local_path is None:
         cwd = os.getcwd()
@@ -259,7 +295,8 @@ def update_dagster():
         cfg.remote_host,
         'source /opt/dagster/venv/bin/activate && '
         'cd /opt/dagster/dagster/ && '
-        'make rebuild_dagit',
+        'make rebuild_dagit &&'
+        'sudo service dagit restart',
     )
     if retval == 0:
         Term.success('Updating complete!')
