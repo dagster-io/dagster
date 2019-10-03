@@ -177,9 +177,26 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
             </div>
           )}
           <div>
-            {run.tags.map((t, idx) => (
-              <Tag key={idx}>{`${t.key}=${t.value}`}</Tag>
-            ))}
+            {run.tags.map((t, idx) => {
+              // Manually hide 'dagster/schedule_id` tags
+              if (t.key === "dagster/schedule_id") {
+                return;
+              }
+
+              const truncatedKey =
+                t.value.length < 22 ? t.key : t.key.slice(0, 22) + "...";
+
+              const truncatedValue =
+                t.value.length < 10 ? t.value : t.value.slice(0, 10) + "...";
+
+              return (
+                <Tooltip content={`${t.key}=${t.value}`} key={idx}>
+                  <Tag
+                    style={{ margin: 1 }}
+                  >{`${truncatedKey}=${truncatedValue}`}</Tag>
+                </Tooltip>
+              );
+            })}
           </div>
         </div>
       </RowColumn>
