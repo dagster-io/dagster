@@ -108,14 +108,16 @@ class InProcessEngine(IEngine):  # pylint: disable=no-init
                         yield DagsterEvent.step_skipped_event(step_context)
                         continue
 
-                    for step_event in check.generator(
-                        dagster_event_sequence_for_step(step_context)
-                    ):
-                        check.inst(step_event, DagsterEvent)
-                        if step_event.is_step_failure:
-                            failed_or_skipped_steps.add(step.key)
+                    with mirror_step_io(step_context):
+                        # capture all of the logs for this step
+                        for step_event in check.generator(
+                            dagster_event_sequence_for_step(step_context)
+                        ):
+                            check.inst(step_event, DagsterEvent)
+                            if step_event.is_step_failure:
+                                failed_or_skipped_steps.add(step.key)
 
-                        yield step_event
+                            yield step_event
 
         yield DagsterEvent.engine_event(
             pipeline_context,
@@ -603,9 +605,8 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
         solid_name=step_context.solid.name,
     ):
 
-        with mirror_step_io(step_context):
-            gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
+        gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
 
-            if gen is not None:
-                for event in gen:
-                    yield event
+        if gen is not None:
+            for event in gen:
+                yield event
