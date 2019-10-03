@@ -53,10 +53,12 @@ class ConfigMixin:
     def load(cls, base_path):
         '''Deserialize the configuration from the YAML config file.
         '''
-        if not os.path.exists(base_path):
-            return None
+        filepath = os.path.join(base_path, HOST_CONFIG_FILE)
 
-        with open(os.path.join(base_path, HOST_CONFIG_FILE), 'rb') as f:
+        if not os.path.exists(filepath):
+            Term.fatal('No configuration found, run `dagster-aws init` to get started.')
+
+        with open(filepath, 'rb') as f:
             raw_cfg = yaml.load(f)
         return cls.__new__(cls, **raw_cfg.get(cls.KEY, {}))
 
