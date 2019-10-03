@@ -132,7 +132,7 @@ class ConfigurableClassData(
 ):
     '''Serializable tuple describing where to find a class and the config fragment that should
     be used to instantiate it.
-    
+
     Classes serialized in this way should implement dagster.serdes.ConfigurableClass.
     '''
 
@@ -142,6 +142,16 @@ class ConfigurableClassData(
             check.str_param(module_name, 'module_name'),
             check.str_param(class_name, 'class_name'),
             check.str_param(config_yaml, 'config_yaml'),
+        )
+
+    def info_str(self, prefix=''):
+        return (
+            '{p}module: {module}\n'
+            '{p}class: {cls}\n'
+            '{p}config:\n'
+            '{p}  {config}'.format(
+                p=prefix, module=self.module_name, cls=self.class_name, config=self.config_yaml
+            )
         )
 
     def rehydrate(self, **constructor_kwargs):

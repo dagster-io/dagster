@@ -11,7 +11,7 @@ from rx import Observable
 from dagster import check, seven
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
-from dagster.core.serdes import whitelist_for_serdes
+from dagster.core.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.run_storage_abc import RunStorage
 from dagster.core.types import Field, PermissiveDict, String
@@ -219,6 +219,26 @@ class DagsterInstance(RunStorage):
 
     def root_directory(self):
         return self._local_artifact_storage.base_dir
+
+    def info_str(self):
+        def _info(component):
+            if isinstance(component, ConfigurableClass):
+                return component.inst_data.info_str(prefix='    ')
+            return '    {}'.format(component.__class__.__name__)
+
+        return (
+            'DagsterInstance components:\n\n'
+            '  Local Artifacts Storage:\n{artifact}\n'
+            '  Run Storage:\n{run}\n'
+            '  Event Log Storage:\n{event}\n'
+            '  Compute Log Manager:\n{compute}\n'
+            ''.format(
+                artifact=_info(self._local_artifact_storage),
+                run=_info(self._run_storage),
+                event=_info(self._event_storage),
+                compute=_info(self._compute_log_manager),
+            )
+        )
 
     # features
 
