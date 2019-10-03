@@ -32,7 +32,7 @@ def define_scheduler():
                     "solids": {
                         "sum_solid": {
                             "inputs": {
-                                "num": {
+                                "num_df": {
                                     "csv": {
                                         "path": file_relative_path(
                                             __file__, "pandas_hello_world/data/num.csv"
@@ -43,7 +43,7 @@ def define_scheduler():
                         }
                     }
                 },
-                "selector": {"name": "pandas_hello_world", "solidSubset": None},
+                "selector": {"name": "pandas_hello_world_pipeline", "solidSubset": None},
                 "mode": "default",
             },
         ),
