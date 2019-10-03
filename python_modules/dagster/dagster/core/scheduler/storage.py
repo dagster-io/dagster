@@ -68,30 +68,28 @@ class FilesystemScheduleStorage(ScheduleStorage):
 
     def add_schedule(self, schedule):
         check.inst_param(schedule, 'schedule', Schedule)
-        self._schedules[schedule.schedule_definition.name] = schedule
+        self._schedules[schedule.name] = schedule
         self._write_schedule_to_file(schedule)
 
     def update_schedule(self, schedule):
         check.inst_param(schedule, 'schedule', Schedule)
-        if schedule.schedule_definition.name not in self._schedules:
+        if schedule.name not in self._schedules:
             raise DagsterInvariantViolationError(
-                'Schedule {name} is not present in storage'.format(
-                    name=schedule.schedule_definition.name
-                )
+                'Schedule {name} is not present in storage'.format(name=schedule.name)
             )
 
         self.add_schedule(schedule)
 
     def delete_schedule(self, schedule):
         check.inst_param(schedule, 'schedule', Schedule)
-        self._schedules.pop(schedule.schedule_definition.name)
+        self._schedules.pop(schedule.name)
         self._delete_schedule_file(schedule)
 
     def _write_schedule_to_file(self, schedule):
         metadata_file = os.path.join(
             self._base_dir,
             self._repository_name,
-            '{}_{}.json'.format(schedule.schedule_definition.name, schedule.schedule_id),
+            '{}_{}.json'.format(schedule.name, schedule.schedule_id),
         )
         with io.open(metadata_file, 'w', encoding='utf-8') as f:
             f.write(six.text_type(serialize_dagster_namedtuple(schedule)))
@@ -102,7 +100,7 @@ class FilesystemScheduleStorage(ScheduleStorage):
         metadata_file = os.path.join(
             self._base_dir,
             self._repository_name,
-            '{}_{}.json'.format(schedule.schedule_definition.name, schedule.schedule_id),
+            '{}_{}.json'.format(schedule.name, schedule.schedule_id),
         )
 
         os.remove(metadata_file)
@@ -118,7 +116,7 @@ class FilesystemScheduleStorage(ScheduleStorage):
             with open(file_path) as data:
                 try:
                     schedule = deserialize_json_to_dagster_namedtuple(data.read())
-                    self._schedules[schedule.schedule_definition.name] = schedule
+                    self._schedules[schedule.name] = schedule
 
                 except Exception as ex:  # pylint: disable=broad-except
                     raise DagsterInvariantViolationError(

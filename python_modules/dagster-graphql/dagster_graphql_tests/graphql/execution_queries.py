@@ -147,6 +147,10 @@ mutation (
         ...on SchedulerNotDefinedError {
             message
         }
+        ...on ScheduledExecutionBlocked {
+            __typename
+            message
+        }
         ...startPipelineExecutionResultFragment
     }
 }

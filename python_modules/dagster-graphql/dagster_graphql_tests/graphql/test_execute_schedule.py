@@ -65,3 +65,25 @@ def test_start_scheduled_execution_with_predefined_schedule_id_tag():
             str(exc.value) == 'Invariant failed. Description: Tag dagster/schedule_id tag is '
             'already defined in executionMetadata.tags'
         )
+
+
+def test_start_scheduled_execution_with_should_execute():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance.local_temp(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=script_relative_path('../repository.yaml'), instance=instance
+        )
+
+        scheduler_handle = context.scheduler_handle
+        scheduler_handle.up(python_path=sys.executable, repository_path=script_relative_path('../'))
+
+        result = execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'no_config_should_execute'},
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert result.data['startScheduledExecution']['__typename'] == 'ScheduledExecutionBlocked'

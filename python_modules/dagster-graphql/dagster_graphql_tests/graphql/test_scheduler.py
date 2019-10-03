@@ -63,7 +63,7 @@ def test_get_all_schedules():
     assert scheduler_result.data
     assert scheduler_result.data['scheduler']
     assert scheduler_result.data['scheduler']['runningSchedules']
-    assert len(scheduler_result.data['scheduler']['runningSchedules']) == 2
+    assert len(scheduler_result.data['scheduler']['runningSchedules']) == 3
 
     assert (
         scheduler_result.data['scheduler']['runningSchedules'][0]['scheduleId']
@@ -80,10 +80,10 @@ def test_scheduler_change_set_adding_schedule():
     modified_schedule_2 = ScheduleDefinition('schedule_2', "0****", {'new_key': "new_value"})
     renamed_schedule_3 = ScheduleDefinition('renamed_schedule_3', "*****", {})
 
-    running_1 = Schedule("1", schedule_1, ScheduleStatus.RUNNING, "", "")
-    running_2 = Schedule("2", schedule_2, ScheduleStatus.RUNNING, "", "")
-    running_3 = Schedule("3", schedule_3, ScheduleStatus.RUNNING, "", "")
-    running_4 = Schedule("4", schedule_4, ScheduleStatus.RUNNING, "", "")
+    running_1 = Schedule("1", schedule_1.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
+    running_2 = Schedule("2", schedule_2.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
+    running_3 = Schedule("3", schedule_3.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
+    running_4 = Schedule("4", schedule_4.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
 
     # Add initial schedules
     change_set_1 = get_schedule_change_set([], [schedule_1, schedule_2])
@@ -100,13 +100,7 @@ def test_scheduler_change_set_adding_schedule():
         [running_1, running_2, running_3, running_4],
         [schedule_1, modified_schedule_2, schedule_3, schedule_4],
     )
-    assert change_set_3 == [
-        (
-            'change',
-            'schedule_2',
-            [('cron_schedule', ('*****', '0****')), ('execution_params', '[modified]')],
-        )
-    ]
+    assert change_set_3 == [('change', 'schedule_2', [('cron_schedule', ('*****', '0****'))])]
 
     # Delete schedules
     change_set_3 = get_schedule_change_set(

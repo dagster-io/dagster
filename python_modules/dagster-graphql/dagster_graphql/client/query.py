@@ -230,6 +230,9 @@ mutation(
     ...on SchedulerNotDefinedError {
       message
     }
+    ...on ScheduledExecutionBlocked {
+        message
+    }
     ...startPipelineExecutionResultFragment
   }
 }

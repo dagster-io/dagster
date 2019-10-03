@@ -27,7 +27,7 @@ from .fetch_pipelines import (
     get_dauphin_pipeline_reference_from_selector,
 )
 from .fetch_runs import get_validated_config, validate_config
-from .fetch_schedules import get_dagster_schedule
+from .fetch_schedules import get_dagster_schedule, get_dagster_schedule_def
 from .pipeline_run_storage import PipelineRunObservableSubscribe
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
@@ -88,10 +88,19 @@ def start_scheduled_execution(graphene_info, schedule_name):
     check.str_param(schedule_name, 'schedule_name')
 
     schedule = get_dagster_schedule(graphene_info, schedule_name)
+    schedule_def = get_dagster_schedule_def(graphene_info, schedule_name)
+
+    # Run should_execute and halt if it returns False
+    should_execute = schedule_def.should_execute
+    if should_execute() != True:
+        return graphene_info.schema.type_named('ScheduledExecutionBlocked')(
+            message='Schedule {schedule_name} did not run because the should_execute did not return '
+            'True'
+        )
 
     # Add dagster/schedule_id tag to executionMetadata
     execution_params = merge_dicts(
-        {'executionMetadata': {'tags': []}}, schedule.schedule_definition.execution_params
+        {'executionMetadata': {'tags': []}}, schedule_def.execution_params
     )
 
     # Check that the dagster/schedule_id tag is not already set

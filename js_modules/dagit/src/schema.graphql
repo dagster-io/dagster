@@ -918,6 +918,10 @@ type ScheduleDefinition {
   environmentConfigYaml: String!
 }
 
+type ScheduledExecutionBlocked {
+  message: String!
+}
+
 type ScheduleNotFoundError implements Error {
   message: String!
   stack: [String!]!
@@ -982,7 +986,7 @@ type StartPipelineExecutionSuccess {
   run: PipelineRun!
 }
 
-union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess
+union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess
 
 interface StepEvent {
   step: ExecutionStep

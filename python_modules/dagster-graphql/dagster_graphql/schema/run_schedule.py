@@ -1,5 +1,6 @@
 import yaml
 from dagster_graphql import dauphin
+from dagster_graphql.implementation.fetch_schedules import get_dagster_schedule_def
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 from dagster_graphql.schema.errors import DauphinSchedulerNotDefinedError
 
@@ -79,7 +80,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         super(DauphinRunningSchedule, self).__init__(
             schedule_id=schedule.schedule_id,
             schedule_definition=graphene_info.schema.type_named('ScheduleDefinition')(
-                schedule.schedule_definition
+                get_dagster_schedule_def(graphene_info, schedule.name)
             ),
             status=schedule.status,
             python_path=schedule.python_path,
@@ -88,7 +89,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
 
     def resolve_logs_path(self, graphene_info):
         scheduler = graphene_info.context.get_scheduler()
-        return scheduler.log_path_for_schedule(self._schedule.schedule_definition.name)
+        return scheduler.log_path_for_schedule(self._schedule.name)
 
     def resolve_runs(self, graphene_info):
         return [

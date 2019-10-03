@@ -6,7 +6,7 @@ from enum import Enum
 import six
 
 from dagster import check
-from dagster.core.definitions.schedule import ScheduleDefinition
+from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleDefinitionData
 from dagster.core.serdes import whitelist_for_serdes
 
 
@@ -22,7 +22,7 @@ def get_schedule_change_set(old_schedules, new_schedule_defs):
     check.list_param(new_schedule_defs, 'new_schedule_defs', ScheduleDefinition)
 
     new_schedules_defs_dict = {s.name: s for s in new_schedule_defs}
-    old_schedules_dict = {s.schedule_definition.name: s for s in old_schedules}
+    old_schedules_dict = {s.name: s for s in old_schedules}
 
     new_schedule_defs_names = set(new_schedules_defs_dict.keys())
     old_schedules_names = set(old_schedules_dict.keys())
@@ -39,16 +39,13 @@ def get_schedule_change_set(old_schedules, new_schedule_defs):
     for schedule_name in changed_schedules:
         changes = []
 
-        old_schedule_def = old_schedules_dict[schedule_name].schedule_definition
+        old_schedule_def = old_schedules_dict[schedule_name].schedule_definition_data
         new_schedule_def = new_schedules_defs_dict[schedule_name]
 
         if old_schedule_def.cron_schedule != new_schedule_def.cron_schedule:
             changes.append(
                 ("cron_schedule", (old_schedule_def.cron_schedule, new_schedule_def.cron_schedule))
             )
-
-        if old_schedule_def.execution_params != new_schedule_def.execution_params:
-            changes.append(("execution_params", '[modified]'))
 
         if len(changes) > 0:
             changeset.append(("change", schedule_name, changes))
@@ -102,7 +99,7 @@ class SchedulerHandle(object):
                 # python_path, and repository_path
                 schedule = Schedule(
                     existing_schedule.schedule_id,
-                    schedule_def,
+                    schedule_def.schedule_definition_data,
                     existing_schedule.status,
                     python_path,
                     repository_path,
@@ -112,16 +109,18 @@ class SchedulerHandle(object):
             else:
                 schedule_id = str(uuid.uuid4())
                 schedule = Schedule(
-                    schedule_id, schedule_def, ScheduleStatus.STOPPED, python_path, repository_path
+                    schedule_id,
+                    schedule_def.schedule_definition_data,
+                    ScheduleStatus.STOPPED,
+                    python_path,
+                    repository_path,
                 )
 
                 self._schedule_storage.add_schedule(schedule)
 
         # Delete all existing schedules that are not in schedule_defs
         schedule_def_names = {s.name for s in self._schedule_defs}
-        existing_schedule_names = set(
-            [s.schedule_definition.name for s in self._schedule_storage.all_schedules()]
-        )
+        existing_schedule_names = set([s.name for s in self._schedule_storage.all_schedules()])
         schedule_names_to_delete = existing_schedule_names - schedule_def_names
 
         TempScheduler = self._Scheduler(self._artifacts_dir, self._schedule_storage)
@@ -135,6 +134,11 @@ class SchedulerHandle(object):
 
     def all_schedule_defs(self):
         return self._schedule_defs
+
+    def get_schedule_def_by_name(self, name):
+        return next(
+            schedule_def for schedule_def in self._schedule_defs if schedule_def.name == name
+        )
 
     def get_scheduler(self):
         return self._Scheduler(self._artifacts_dir, self._schedule_storage)
@@ -195,27 +199,43 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
 
 @whitelist_for_serdes
 class Schedule(
-    namedtuple('Schedule', 'schedule_id schedule_definition status python_path repository_path')
+    namedtuple(
+        'Schedule', 'schedule_id schedule_definition_data status python_path repository_path'
+    )
 ):
     def __new__(
-        cls, schedule_id, schedule_definition, status, python_path=None, repository_path=None
+        cls, schedule_id, schedule_definition_data, status, python_path=None, repository_path=None
     ):
 
         return super(Schedule, cls).__new__(
             cls,
             check.str_param(schedule_id, 'schedule_id'),
-            check.inst_param(schedule_definition, 'schedule_definition', ScheduleDefinition),
+            check.inst_param(
+                schedule_definition_data, 'schedule_definition_data', ScheduleDefinitionData
+            ),
             check.inst_param(status, 'status', ScheduleStatus),
             check.opt_str_param(python_path, 'python_path'),
             check.opt_str_param(repository_path, 'repository_path'),
         )
+
+    @property
+    def name(self):
+        return self.schedule_definition_data.name
+
+    @property
+    def cron_schedule(self):
+        return self.schedule_definition_data.cron_schedule
+
+    @property
+    def environment_vars(self):
+        return self.schedule_definition_data.environment_vars
 
     def with_status(self, status):
         check.inst_param(status, 'status', ScheduleStatus)
 
         return Schedule(
             self.schedule_id,
-            self.schedule_definition,
+            self.schedule_definition_data,
             status=status,
             python_path=self.python_path,
             repository_path=self.repository_path,

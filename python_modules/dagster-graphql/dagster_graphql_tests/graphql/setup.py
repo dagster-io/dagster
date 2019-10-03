@@ -224,9 +224,22 @@ def define_scheduler():
         },
     )
 
+    no_config_should_execute = ScheduleDefinition(
+        name="no_config_should_execute",
+        cron_schedule="0 0 * * *",
+        execution_params={
+            "environmentConfigData": {"storage": {"filesystem": None}},
+            "selector": {"name": "no_config_pipeline", "solidSubset": None},
+            "executionMetadata": {"tags": [{"key": "dagster/schedule_id", "value": "1234"}]},
+            "mode": "default",
+        },
+        should_execute=lambda: False,
+    )
+
     return [
         no_config_pipeline_hourly_schedule,
         no_config_pipeline_hourly_schedule_with_schedule_id_tag,
+        no_config_should_execute,
     ]
 
 

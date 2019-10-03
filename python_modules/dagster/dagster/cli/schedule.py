@@ -188,7 +188,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, verbose, c
         schedules = scheduler.all_schedules()
 
     for schedule in schedules:
-        schedule_def = schedule.schedule_definition
+        schedule_def = schedule_handle.get_schedule_def_by_name(schedule.name)
 
         # If --name filter is present, only print the schedule name
         if name_filter:
@@ -249,7 +249,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
     if all_flag:
         for schedule in scheduler.all_schedules:
             try:
-                schedule = scheduler.start_schedule(schedule.schedule_definition.name)
+                schedule = scheduler.start_schedule(schedule.name)
             except DagsterInvariantViolationError as ex:
                 continue
 

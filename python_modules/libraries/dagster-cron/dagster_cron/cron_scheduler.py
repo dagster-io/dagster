@@ -92,8 +92,7 @@ class SystemCronScheduler(Scheduler):
 
     def _get_file_prefix(self, schedule):
         return os.path.join(
-            self._artifacts_dir,
-            '{}_{}'.format(schedule.schedule_definition.name, schedule.schedule_id),
+            self._artifacts_dir, '{}_{}'.format(schedule.name, schedule.schedule_id)
         )
 
     def _get_bash_script_file_path(self, schedule):
@@ -109,7 +108,7 @@ class SystemCronScheduler(Scheduler):
 
         my_cron = CronTab(user=True)
         job = my_cron.new(command=script_file, comment=schedule.schedule_id)
-        job.setall(schedule.schedule_definition.cron_schedule)
+        job.setall(schedule.cron_schedule)
         my_cron.write()
 
     def _end_cron_job(self, schedule):
@@ -130,8 +129,6 @@ class SystemCronScheduler(Scheduler):
         )
         dagster_home = os.getenv('DAGSTER_HOME')
 
-        schedule_name = schedule.schedule_definition.name
-
         script_contents = '''
             #!/bin/bash
             export DAGSTER_HOME={dagster_home}
@@ -142,13 +139,13 @@ class SystemCronScheduler(Scheduler):
         '''.format(
             dagster_graphql_path=dagster_graphql_path,
             repo_path=schedule.repository_path,
-            variables=seven.json.dumps({"scheduleName": schedule_name}),
+            variables=seven.json.dumps({"scheduleName": schedule.name}),
             log_file=log_file,
             dagster_home=dagster_home,
             env_vars="\n".join(
                 [
                     "export {key}={value}".format(key=key, value=value)
-                    for key, value in schedule.schedule_definition.environment_vars.items()
+                    for key, value in schedule.environment_vars.items()
                 ]
             ),
         )

@@ -666,3 +666,9 @@ def str_elem(ddict, key):
     if not _is_str(value):
         raise_with_traceback(_element_check_error(key, value, ddict, str))
     return value
+
+
+def fn_param(obj, param_name):
+    if not callable(obj):
+        raise_with_traceback(_param_type_mismatch_exception(obj, type(lambda: None), param_name))
+    return obj

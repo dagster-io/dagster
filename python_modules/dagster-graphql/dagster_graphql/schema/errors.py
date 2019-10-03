@@ -440,12 +440,20 @@ class DauphinStartPipelineExecutionResult(dauphin.Union):
         types = start_pipeline_execution_result_types
 
 
+class DauphinScheduledExecutionBlocked(dauphin.ObjectType):
+    class Meta:
+        name = 'ScheduledExecutionBlocked'
+
+    message = dauphin.NonNull(dauphin.String)
+
+
 class DauphinStartScheduledExecutionResult(dauphin.Union):
     class Meta:
         name = 'StartScheduledExecutionResult'
         types = (
             DauphinScheduleNotFoundError,
             DauphinSchedulerNotDefinedError,
+            DauphinScheduledExecutionBlocked,
         ) + start_pipeline_execution_result_types
 
 

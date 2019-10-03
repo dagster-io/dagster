@@ -70,8 +70,7 @@ def test_init():
         for schedule in schedules:
             assert "/bin/python" in schedule.python_path
 
-            schedule_def = schedule.schedule_definition
-            assert "{}_{}.json".format(schedule_def.name, schedule.schedule_id) in os.listdir(
+            assert "{}_{}.json".format(schedule.name, schedule.schedule_id) in os.listdir(
                 os.path.join(tempdir, 'schedules', 'test_repository')
             )
 
@@ -86,10 +85,12 @@ def test_start_and_stop_schedule():
         # Initialize scheduler
         scheduler_handle.up(python_path=sys.executable, repository_path="")
         scheduler = scheduler_handle.get_scheduler()
+        schedule_def = scheduler_handle.get_schedule_def_by_name(
+            "no_config_pipeline_every_min_schedule"
+        )
 
         # Start schedule
         schedule = scheduler.start_schedule("no_config_pipeline_every_min_schedule")
-        schedule_def = schedule.schedule_definition
 
         check.inst_param(schedule, 'schedule', Schedule)
         assert "/bin/python" in schedule.python_path
