@@ -17,7 +17,7 @@ from .aws_util import (
     select_region,
     select_vpc,
 )
-from .config import EC2Config, RDSConfig
+from .config import HOST_CONFIG_FILE, EC2Config, RDSConfig
 from .term import Spinner, Term, run_remote_cmd
 
 # Client code will be deposited here on the remote EC2 instance
@@ -104,9 +104,9 @@ def init():
 
     prev_config = None
     if EC2Config.exists(dagster_home):
-        click.confirm(
-            'dagster-aws has already been initialized! Continue?', default=False, abort=True
-        )
+        cfg_filepath = os.path.join(dagster_home, HOST_CONFIG_FILE)
+        Term.warning('dagster-aws has already been initialized!\nState file:\n\t%s' % cfg_filepath)
+        click.confirm('Continue?', default=False, abort=True)
         prev_config = EC2Config.load(dagster_home)
 
     region = select_region(prev_config)
