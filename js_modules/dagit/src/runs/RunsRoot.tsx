@@ -17,11 +17,11 @@ import {
   TokenizingField,
   TokenizingFieldValue,
   SuggestionProvider,
-  tokenizedValuesListFromString,
+  tokenizedValuesFromString,
   stringFromValue
 } from "../TokenizingField";
 import styled from "styled-components";
-import { PipelineRunsSelector, PipelineRunStatus } from "../types/globalTypes";
+import { PipelineRunsFilter, PipelineRunStatus } from "../types/globalTypes";
 
 const PAGE_SIZE = 50;
 
@@ -64,10 +64,10 @@ function searchSuggestionsForRuns(
   ];
 }
 
-function runsSelectorForSearchTokens(search: TokenizingFieldValue[]) {
+function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
   if (!search[0]) return {};
 
-  const obj: PipelineRunsSelector = {};
+  const obj: PipelineRunsFilter = {};
 
   for (const item of search) {
     if (item.token === "pipeline") {
@@ -89,7 +89,7 @@ function runsSelectorForSearchTokens(search: TokenizingFieldValue[]) {
 export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
   location
 }) => {
-  const router = React.useContext(RouterContext);
+  const { history } = React.useContext(RouterContext);
   const qs = querystring.parse(location.search);
 
   const suggestions = searchSuggestionsForRuns(
@@ -98,25 +98,28 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
     })
   );
 
-  const search = tokenizedValuesListFromString(
-    (qs.q as string) || "",
-    searchSuggestionsForRuns()
-  );
+  const [cursorStack, setCursorStack] = React.useState<string[]>([]);
+  const cursor = (qs.cursor as string) || undefined;
+
+  const setCursor = (cursor: string | undefined) => {
+    history.push({ search: `?${querystring.stringify({ ...qs, cursor })}` });
+  };
+  const popCursor = () => {
+    const nextStack = [...cursorStack];
+    setCursor(nextStack.pop());
+    setCursorStack(nextStack);
+  };
+  const pushCursor = (nextCursor: string) => {
+    if (cursor) setCursorStack([...cursorStack, cursor]);
+    setCursor(nextCursor);
+  };
+
+  const search = tokenizedValuesFromString((qs.q as string) || "", suggestions);
   const setSearch = (search: TokenizingFieldValue[]) => {
     // Note: changing search also clears the cursor so you're back on page 1
-    router.history.push({
-      search: `?${querystring.stringify({
-        ...qs,
-        q: stringFromValue(search),
-        cursor: undefined
-      })}`
-    });
-  };
-  const cursor = (qs.cursor as string) || undefined;
-  const setCursor = (cursor: string) => {
-    router.history.push({
-      search: `?${querystring.stringify({ ...qs, cursor })}`
-    });
+    setCursorStack([]);
+    const params = { ...qs, q: stringFromValue(search), cursor: undefined };
+    history.push({ search: `?${querystring.stringify(params)}` });
   };
 
   const queryResult = useQuery<RunsRootQuery, RunsRootQueryVariables>(
@@ -128,7 +131,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
       variables: {
         cursor: cursor,
         limit: PAGE_SIZE + 1,
-        selector: runsSelectorForSearchTokens(search)
+        filter: runsFilterForSearchTokens(search)
       }
     }
   );
@@ -156,8 +159,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
       <Loading queryResult={queryResult}>
         {({ pipelineRunsOrError }) => {
           if (
-            pipelineRunsOrError.__typename ===
-            "InvalidPipelineRunsSelectorError"
+            pipelineRunsOrError.__typename === "InvalidPipelineRunsFilterError"
           ) {
             return (
               <NonIdealState
@@ -170,22 +172,34 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
 
           const runs = pipelineRunsOrError.results;
           const displayed = runs.slice(0, PAGE_SIZE);
+          const hasPrevPage = !!cursor;
           const hasNextPage = runs.length === PAGE_SIZE + 1;
-
           return (
             <>
               <RunTable runs={displayed} />
               <div style={{ textAlign: "center" }}>
-                {hasNextPage && (
-                  <Button
-                    rightIcon={IconNames.ARROW_RIGHT}
-                    onClick={() =>
-                      setCursor(displayed[displayed.length - 1].runId)
-                    }
-                  >
-                    Show More
-                  </Button>
-                )}
+                <Button
+                  style={{
+                    visibility: hasPrevPage ? "initial" : "hidden",
+                    marginRight: 4
+                  }}
+                  icon={IconNames.ARROW_LEFT}
+                  onClick={() => popCursor()}
+                >
+                  Prev Page
+                </Button>
+                <Button
+                  style={{
+                    visibility: hasNextPage ? "initial" : "hidden",
+                    marginLeft: 4
+                  }}
+                  rightIcon={IconNames.ARROW_RIGHT}
+                  onClick={() =>
+                    pushCursor(displayed[displayed.length - 1].runId)
+                  }
+                >
+                  Next Page
+                </Button>
               </div>
             </>
           );
@@ -216,15 +230,15 @@ export const RUNS_ROOT_QUERY = gql`
   query RunsRootQuery(
     $limit: Int
     $cursor: String
-    $selector: PipelineRunsSelector!
+    $filter: PipelineRunsFilter!
   ) {
-    pipelineRunsOrError(limit: $limit, cursor: $cursor, params: $selector) {
+    pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on PipelineRuns {
         results {
           ...RunTableRunFragment
         }
       }
-      ... on InvalidPipelineRunsSelectorError {
+      ... on InvalidPipelineRunsFilterError {
         message
       }
     }

@@ -95,13 +95,13 @@ class DauphinPipelineRunNotFoundError(dauphin.ObjectType):
         self.message = 'Pipeline run {run_id} could not be found.'.format(run_id=run_id)
 
 
-class DauphinInvalidPipelineRunsSelectorError(dauphin.ObjectType):
+class DauphinInvalidPipelineRunsFilterError(dauphin.ObjectType):
     class Meta:
-        name = 'InvalidPipelineRunsSelectorError'
+        name = 'InvalidPipelineRunsFilterError'
         interfaces = (DauphinError,)
 
     def __init__(self, message):
-        super(DauphinInvalidPipelineRunsSelectorError, self).__init__()
+        super(DauphinInvalidPipelineRunsFilterError, self).__init__()
         self.message = check.str_param(message, 'message')
 
 
@@ -527,4 +527,4 @@ class DauphinPipelineRuns(dauphin.ObjectType):
 class DauphinPipelineRunsOrError(dauphin.Union):
     class Meta:
         name = 'PipelineRunsOrError'
-        types = (DauphinPipelineRuns, DauphinInvalidPipelineRunsSelectorError)
+        types = (DauphinPipelineRuns, DauphinInvalidPipelineRunsFilterError)

@@ -489,11 +489,11 @@ class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
 
 
 @whitelist_for_serdes
-class PipelineRunsSelector(
-    namedtuple('_PipelineRunsSelector', 'run_id tag_key tag_value pipeline status')
+class PipelineRunsFilter(
+    namedtuple('_PipelineRunsFilter', 'run_id tag_key tag_value pipeline status')
 ):
     def __new__(cls, run_id=None, pipeline=None, status=None, tag_key=None, tag_value=None):
-        return super(PipelineRunsSelector, cls).__new__(
+        return super(PipelineRunsFilter, cls).__new__(
             cls,
             run_id=check.opt_str_param(run_id, 'run_id'),
             tag_key=check.opt_str_param(tag_key, 'tag_key'),
