@@ -70,7 +70,7 @@ class InstanceType(Enum):
     EPHEMERAL = 'EPHEMERAL'
 
 
-class DagsterInstance(RunStorage):
+class DagsterInstance:
     _PROCESS_TEMPDIR = None
 
     def __init__(

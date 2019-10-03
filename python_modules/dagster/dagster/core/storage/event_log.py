@@ -38,7 +38,12 @@ class EventLogSequence(pyrsistent.CheckedPVector):
     __type__ = EventRecord
 
 
-class EventLogStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+class EventLogStorage(six.with_metaclass(ABCMeta)):
+    def __init__(self, *args, **kwargs):
+        '''EventLogStorage.__init__ should idempotently ensure that any necessary one-time setup
+        for the EventLogStorage is performed, or raise if this setup has not been performed and
+        cannot be performed withim the context of this function.'''
+
     @abstractmethod
     def get_logs_for_run(self, run_id, cursor=-1):
         '''Get all of the logs corresponding to a run.
@@ -86,6 +91,7 @@ class InMemoryEventLogStorage(EventLogStorage):
     def __init__(self):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
+        super(InMemoryEventLogStorage, self).__init__()
 
     def get_logs_for_run(self, run_id, cursor=-1):
         check.str_param(run_id, 'run_id')
@@ -139,6 +145,8 @@ INSERT INTO event_logs (event, dagster_event_type, timestamp) VALUES (?, ?, ?)
 
 class SqliteEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
     def __init__(self, base_dir, inst_data=None):
+        '''Note that idempotent initialization of the SQLite database is done on a per-run_id
+        basis in the body of store_event, since each run is stored in a separate database.'''
         self._base_dir = check.str_param(base_dir, 'base_dir')
         mkdir_p(self._base_dir)
 

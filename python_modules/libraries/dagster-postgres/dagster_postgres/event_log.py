@@ -46,6 +46,8 @@ class PostgresEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
     def __init__(self, postgres_url, inst_data=None):
         self.conn_string = check.str_param(postgres_url, 'postgres_url')
         self._event_watcher = create_event_watcher(self.conn_string)
+        conn = get_conn(self.conn_string)
+        conn.cursor().execute(CREATE_EVENT_LOG_SQL)
         super(PostgresEventLogStorage, self).__init__(inst_data=inst_data)
 
     @classmethod
@@ -54,7 +56,7 @@ class PostgresEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
 
     @staticmethod
     def from_config_value(config_value, **kwargs):
-        return PostgresEventLogStorage.from_url(**dict(config_value, **kwargs))
+        return PostgresEventLogStorage(**dict(config_value, **kwargs))
 
     @staticmethod
     def create_clean_storage(conn_string):
@@ -62,7 +64,7 @@ class PostgresEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
 
         conn = get_conn(conn_string)
         conn.cursor().execute(DROP_EVENT_LOG_SQL)
-        return PostgresEventLogStorage.from_url(conn_string)
+        return PostgresEventLogStorage(conn_string)
 
     def get_logs_for_run(self, run_id, cursor=-1):
         '''Get all of the logs corresponding to a run.
@@ -120,12 +122,6 @@ class PostgresEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
 
     def end_watch(self, run_id, handler):
         self._event_watcher.unwatch_run(run_id, handler)
-
-    @staticmethod
-    def from_url(postgres_url, inst_data=None):
-        conn = get_conn(postgres_url)
-        conn.cursor().execute(CREATE_EVENT_LOG_SQL)
-        return PostgresEventLogStorage(postgres_url, inst_data)
 
     @property
     def event_watcher(self):
