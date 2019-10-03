@@ -12,7 +12,8 @@ import {
   MenuDivider,
   Tooltip,
   NonIdealState,
-  Tag
+  Tag,
+  Intent
 } from "@blueprintjs/core";
 import {
   Details,
@@ -24,16 +25,19 @@ import {
 import {
   RunStatus,
   titleForRun,
-  REEXECUTE_MUTATION,
   handleStartExecutionResult,
-  unixTimestampToString
+  unixTimestampToString,
+  REEXECUTE_MUTATION,
+  DELETE_MUTATION,
+  CANCEL_MUTATION
 } from "./RunUtils";
-import { formatElapsedTime } from "../Util";
+import { formatElapsedTime, SharedToaster } from "../Util";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { Link } from "react-router-dom";
 import { RunTableRunFragment } from "./types/RunTableRunFragment";
 import { showCustomAlert } from "../CustomAlertProvider";
 import { useMutation } from "react-apollo";
+import { RUNS_ROOT_QUERY, RunsQueryVariablesContext } from "./RunsRoot";
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
@@ -46,6 +50,7 @@ export class RunTable extends React.Component<RunTableProps> {
         runId
         status
         stepKeysToExecute
+        canCancel
         mode
         environmentConfigYaml
         pipeline {
@@ -208,7 +213,14 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
 const RunActionsMenu: React.FunctionComponent<{
   run: RunTableRunFragment;
 }> = ({ run }) => {
+  const variables = React.useContext(RunsQueryVariablesContext);
   const [reexecute] = useMutation(REEXECUTE_MUTATION);
+  const [cancel] = useMutation(CANCEL_MUTATION, {
+    refetchQueries: [{ query: RUNS_ROOT_QUERY, variables }]
+  });
+  const [destroy] = useMutation(DELETE_MUTATION, {
+    refetchQueries: [{ query: RUNS_ROOT_QUERY, variables }]
+  });
 
   return (
     <Popover
@@ -269,6 +281,25 @@ const RunActionsMenu: React.FunctionComponent<{
               });
             }}
           />
+          <MenuItem
+            text="Cancel"
+            icon="stop"
+            disabled={!run.canCancel}
+            onClick={async () => {
+              const result = await cancel({ variables: { runId: run.runId } });
+              showToastFor(result.data, "Run cancelled.");
+            }}
+          />
+          <MenuDivider />
+          <MenuItem
+            text="Delete"
+            icon="trash"
+            disabled={run.canCancel}
+            onClick={async () => {
+              const result = await destroy({ variables: { runId: run.runId } });
+              showToastFor(result.data, "Run deleted.");
+            }}
+          />
         </Menu>
       }
       position={"bottom"}
@@ -312,5 +343,24 @@ class RunTime extends React.Component<{
         <Icon icon="time" /> {start ? formatElapsedTime(end - start) : ""}
       </div>
     );
+  }
+}
+
+function showToastFor(
+  possibleError: { __typename: string; message?: string },
+  successMessage: string
+) {
+  if ("message" in possibleError) {
+    SharedToaster.show({
+      message: possibleError.message,
+      icon: "error",
+      intent: Intent.DANGER
+    });
+  } else {
+    SharedToaster.show({
+      message: successMessage,
+      icon: "confirm",
+      intent: Intent.SUCCESS
+    });
   }
 }

@@ -25,6 +25,10 @@ import { PipelineRunsFilter, PipelineRunStatus } from "../types/globalTypes";
 
 const PAGE_SIZE = 50;
 
+export const RunsQueryVariablesContext = React.createContext<
+  RunsRootQueryVariables
+>({ filter: {} });
+
 function searchSuggestionsForRuns(
   result?: QueryResult<RunsSearchSpaceQuery>
 ): SuggestionProvider[] {
@@ -122,90 +126,94 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
     history.push({ search: `?${querystring.stringify(params)}` });
   };
 
+  const queryVars: RunsRootQueryVariables = {
+    cursor: cursor,
+    limit: PAGE_SIZE + 1,
+    filter: runsFilterForSearchTokens(search)
+  };
   const queryResult = useQuery<RunsRootQuery, RunsRootQueryVariables>(
     RUNS_ROOT_QUERY,
     {
       fetchPolicy: "cache-and-network",
       pollInterval: 15 * 1000,
       partialRefetch: true,
-      variables: {
-        cursor: cursor,
-        limit: PAGE_SIZE + 1,
-        filter: runsFilterForSearchTokens(search)
-      }
+      variables: queryVars
     }
   );
 
   return (
-    <ScrollContainer>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between"
-        }}
-      >
-        <Header>{`Runs`}</Header>
-        <Filters>
-          <TokenizingField
-            values={search}
-            maxValues={1}
-            onChange={search => setSearch(search)}
-            suggestionProviders={suggestions}
-          />
-        </Filters>
-      </div>
+    <RunsQueryVariablesContext.Provider value={queryVars}>
+      <ScrollContainer>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between"
+          }}
+        >
+          <Header>{`Runs`}</Header>
+          <Filters>
+            <TokenizingField
+              values={search}
+              maxValues={1}
+              onChange={search => setSearch(search)}
+              suggestionProviders={suggestions}
+            />
+          </Filters>
+        </div>
 
-      <Loading queryResult={queryResult}>
-        {({ pipelineRunsOrError }) => {
-          if (
-            pipelineRunsOrError.__typename === "InvalidPipelineRunsFilterError"
-          ) {
+        <Loading queryResult={queryResult}>
+          {({ pipelineRunsOrError }) => {
+            if (
+              pipelineRunsOrError.__typename ===
+              "InvalidPipelineRunsFilterError"
+            ) {
+              return (
+                <NonIdealState
+                  icon={IconNames.ERROR}
+                  title="Query Error"
+                  description={pipelineRunsOrError.message}
+                />
+              );
+            }
+
+            const runs = pipelineRunsOrError.results;
+            const displayed = runs.slice(0, PAGE_SIZE);
+            const hasPrevPage = !!cursor;
+            const hasNextPage = runs.length === PAGE_SIZE + 1;
             return (
-              <NonIdealState
-                icon={IconNames.ERROR}
-                title="Query Error"
-                description={pipelineRunsOrError.message}
-              />
+              <>
+                <RunTable runs={displayed} />
+                <div style={{ textAlign: "center" }}>
+                  <Button
+                    style={{
+                      visibility: hasPrevPage ? "initial" : "hidden",
+                      marginRight: 4
+                    }}
+                    icon={IconNames.ARROW_LEFT}
+                    onClick={() => popCursor()}
+                  >
+                    Prev Page
+                  </Button>
+                  <Button
+                    style={{
+                      visibility: hasNextPage ? "initial" : "hidden",
+                      marginLeft: 4
+                    }}
+                    rightIcon={IconNames.ARROW_RIGHT}
+                    onClick={() =>
+                      pushCursor(displayed[displayed.length - 1].runId)
+                    }
+                  >
+                    Next Page
+                  </Button>
+                </div>
+              </>
             );
-          }
-
-          const runs = pipelineRunsOrError.results;
-          const displayed = runs.slice(0, PAGE_SIZE);
-          const hasPrevPage = !!cursor;
-          const hasNextPage = runs.length === PAGE_SIZE + 1;
-          return (
-            <>
-              <RunTable runs={displayed} />
-              <div style={{ textAlign: "center" }}>
-                <Button
-                  style={{
-                    visibility: hasPrevPage ? "initial" : "hidden",
-                    marginRight: 4
-                  }}
-                  icon={IconNames.ARROW_LEFT}
-                  onClick={() => popCursor()}
-                >
-                  Prev Page
-                </Button>
-                <Button
-                  style={{
-                    visibility: hasNextPage ? "initial" : "hidden",
-                    marginLeft: 4
-                  }}
-                  rightIcon={IconNames.ARROW_RIGHT}
-                  onClick={() =>
-                    pushCursor(displayed[displayed.length - 1].runId)
-                  }
-                >
-                  Next Page
-                </Button>
-              </div>
-            </>
-          );
-        }}
-      </Loading>
-    </ScrollContainer>
+          }}
+        </Loading>
+      </ScrollContainer>
+    </RunsQueryVariablesContext.Provider>
   );
 };
 

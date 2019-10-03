@@ -58,6 +58,7 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results {
   runId: string;
   status: PipelineRunStatus;
   stepKeysToExecute: string[] | null;
+  canCancel: boolean;
   mode: string;
   environmentConfigYaml: string;
   pipeline: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline;

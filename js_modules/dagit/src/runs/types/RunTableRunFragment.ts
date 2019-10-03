@@ -58,6 +58,7 @@ export interface RunTableRunFragment {
   runId: string;
   status: PipelineRunStatus;
   stepKeysToExecute: string[] | null;
+  canCancel: boolean;
   mode: string;
   environmentConfigYaml: string;
   pipeline: RunTableRunFragment_pipeline;
