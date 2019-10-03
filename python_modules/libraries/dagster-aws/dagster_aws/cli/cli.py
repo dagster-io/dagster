@@ -100,7 +100,7 @@ def sync_dagster_yaml(ec2_config, rds_config):
     '''Configure Dagster instance to use PG storage by putting a dagster.yaml file in the remote
     DAGSTER_HOME directory
     '''
-    with open(os.path.join(os.path.dirname(__file__), 'env', 'dagster.template.yaml'), 'rb') as f:
+    with open(os.path.join(os.path.dirname(__file__), 'conf', 'dagster.template.yaml'), 'rb') as f:
         dagster_yaml = six.ensure_str(f.read())
 
     dagster_yaml = (
