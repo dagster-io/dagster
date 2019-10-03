@@ -17,9 +17,10 @@ Tutorial
   types
   expectations
   multiple_outputs
-  reusing_solids 
+  reusing_solids
   composite_solids
   composition_functions
+  scheduler
 
 
 You can find all of the tutorial code checked into the dagster repository at
