@@ -44,7 +44,7 @@ watch_tempdir = seven.TemporaryDirectory()
 
 
 def main():
-    # Build the dagit-cli command, omitting the --no-watch arg if present
+    # Build the dagit-cli command
     watch_for_reload = True
     fallback_set = False
     command = ['dagit-cli']

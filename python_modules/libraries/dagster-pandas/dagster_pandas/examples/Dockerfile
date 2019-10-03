@@ -17,6 +17,6 @@ RUN pip install --upgrade pip && pip install dagster && pip install dagit && pip
 
 ADD . .
 
-ENTRYPOINT [ "dagit", "--no-watch" ]
+ENTRYPOINT [ "dagit" ]
 
 EXPOSE 3000
