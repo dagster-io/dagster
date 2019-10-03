@@ -135,3 +135,31 @@ export const REEXECUTE_MUTATION = gql`
 
   ${HANDLE_START_EXECUTION_FRAGMENT}
 `;
+
+export const DELETE_MUTATION = gql`
+  mutation Delete($runId: String!) {
+    deletePipelineRun(runId: $runId) {
+      __typename
+      ... on PythonError {
+        message
+      }
+      ... on PipelineRunNotFoundError {
+        message
+      }
+    }
+  }
+`;
+
+export const CANCEL_MUTATION = gql`
+  mutation Cancel($runId: String!) {
+    cancelPipelineExecution(runId: $runId) {
+      __typename
+      ... on CancelPipelineExecutionFailure {
+        message
+      }
+      ... on PipelineRunNotFoundError {
+        message
+      }
+    }
+  }
+`;
