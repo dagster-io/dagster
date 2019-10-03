@@ -33,10 +33,15 @@ export const ComputeLogLink = ({
     return null;
   }
 
+  const open = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    setOpen(true);
+  };
   const close = () => setOpen(false);
+
   return (
     <>
-      <LogLink onClick={() => setOpen(true)}>{children}</LogLink>
+      <LogLink onClick={open}>{children}</LogLink>
       <Dialog
         onClose={close}
         style={{
