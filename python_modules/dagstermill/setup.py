@@ -44,8 +44,6 @@ def _do_setup(name='dagstermill'):
             'ipykernel>=4.9.0',
             'nteract-scrapbook>=0.2.0',
             'papermill>=1.0.0',
-            'prompt-toolkit<2.0.10; python_version>="3"',  # downstream dependency of ipykernel -> ipython -> prompt-toolkit
-            'prompt-toolkit<1.0.17; python_version<"3"',  # downstream dependency of ipykernel -> ipython -> prompt-toolkit
             'scikit-learn==0.20.3',
             'six>=1.11.0',
         ],

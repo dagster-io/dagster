@@ -45,8 +45,6 @@ def _do_setup(name='dagster-ge'):
             'future>=0.16.0',
             'dagster=={ver}'.format(ver=ver),
             'great-expectations<=0.7.6',
-            'prompt-toolkit<2.0.10; python_version>="3"',  # downstream dependency of great-expectations -> ipywidgets -> ipykernel -> ipython -> prompt-toolkit
-            'prompt-toolkit<1.0.17; python_version<"3"',  # downstream dependency of great-expectations -> ipywidgets -> ipykernel -> ipython -> prompt-toolkit
         ],
     )
 
