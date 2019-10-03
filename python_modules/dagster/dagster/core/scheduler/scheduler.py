@@ -84,12 +84,14 @@ class SchedulerHandle(object):
 
         For every previously existing ScheduleDefinition (where schedule_name is the primary key),
         any changes to the definition are persisted in the corresponding Schedule and the status is
-        left unchanged.
+        left unchanged. The schedule is also restarted to make sure the external articfacts (such
+        as a cron job) are up to date.
 
         For every ScheduleDefinitions that is removed, the corresponding Schedule is removed from
-        the storage.
+        the storage and the corresponding Schedule is ended.
         '''
 
+        schedules_to_restart = []
         for schedule_def in self._schedule_defs:
             # If a schedule already exists for schedule_def, overwrite bash script and
             # metadata file
@@ -106,6 +108,7 @@ class SchedulerHandle(object):
                 )
 
                 self._schedule_storage.update_schedule(schedule)
+                schedules_to_restart.append(schedule)
             else:
                 schedule_id = str(uuid.uuid4())
                 schedule = Schedule(
@@ -123,7 +126,15 @@ class SchedulerHandle(object):
         existing_schedule_names = set([s.name for s in self._schedule_storage.all_schedules()])
         schedule_names_to_delete = existing_schedule_names - schedule_def_names
 
+        # End and restart schedules as appropriate
         TempScheduler = self._Scheduler(self._artifacts_dir, self._schedule_storage)
+
+        for schedule in schedules_to_restart:
+            # Restart is only needed if the schedule was previously running
+            if schedule.status == ScheduleStatus.RUNNING:
+                TempScheduler.stop_schedule(schedule.name)
+                TempScheduler.start_schedule(schedule.name)
+
         for schedule_name in schedule_names_to_delete:
             TempScheduler.end_schedule(schedule_name)
 
