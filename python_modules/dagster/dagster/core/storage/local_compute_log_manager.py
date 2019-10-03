@@ -8,7 +8,7 @@ from dagster import check
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass
 from dagster.core.types import Field, String
-from dagster.utils import touch_file
+from dagster.utils import ensure_dir, touch_file
 
 from .compute_log_manager import (
     MAX_BYTES_FILE_READ,
@@ -159,6 +159,7 @@ class LocalComputeLogSubscriptionManager(object):
             self._manager.get_local_path(run_id, step_key, ComputeIOType.STDERR)
         )
 
+        ensure_dir(directory)
         self._watchers[key] = self._observer.schedule(
             LocalComputeLogFilesystemEventHandler(
                 self, run_id, step_key, update_paths, complete_paths

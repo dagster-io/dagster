@@ -1,6 +1,8 @@
 import os
 
-from dagster import check
+from dagster import check, seven
+from dagster.core.definitions.environment_configs import SystemNamedDict
+from dagster.core.serdes import ConfigurableClass
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
@@ -9,19 +11,35 @@ from dagster.core.storage.compute_log_manager import (
     ComputeLogManager,
 )
 from dagster.core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, LocalComputeLogManager
+from dagster.core.types import Field, String
 from dagster.utils import ensure_dir, ensure_file
 
 from .utils import create_s3_session
 
 
-class S3ComputeLogManager(ComputeLogManager):
-    def __init__(self, local_dir, bucket=''):
+class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
+    def __init__(self, bucket, local_dir=None, inst_data=None):
         self._s3_session = create_s3_session()
         self._s3_bucket = check.str_param(bucket, 'bucket')
         self._download_urls = {}
 
         # proxy calls to local compute log manager (for subscriptions, etc)
+        if not local_dir:
+            local_dir = seven.get_system_temp_directory()
+
         self.local_manager = LocalComputeLogManager(local_dir)
+        super(S3ComputeLogManager, self).__init__(inst_data=inst_data)
+
+    @classmethod
+    def config_type(cls):
+        return SystemNamedDict(
+            'S3ComputeLogManagerConfig',
+            {'bucket': Field(String), 'local_dir': Field(String, is_optional=True)},
+        )
+
+    @staticmethod
+    def from_config_value(config_value, **kwargs):
+        return S3ComputeLogManager(**dict(config_value, **kwargs))
 
     def get_local_path(self, run_id, step_key, io_type):
         return self.local_manager.get_local_path(run_id, step_key, io_type)
