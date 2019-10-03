@@ -246,7 +246,7 @@ def get_validated_ami_id(_client):
     # return ami_id
 
 
-def create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name):
+def create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name, use_master):
     '''Actually create the EC2 instance given the provided configuration.
     '''
     click.echo('\n🌱 Provisioning an EC2 instance for dagit')
@@ -265,13 +265,6 @@ def create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name):
         + click.style('[default is %s]' % ec2_default_name, fg='green'),
         type=str,
         default=ec2_default_name,
-        show_default=False,
-    )
-
-    use_master = click.confirm(
-        '\nDo you want to install Dagster / Dagit from Github? (default: use stable from PyPI) '
-        + click.style('[y/N]', fg='green'),
-        default=False,
         show_default=False,
     )
 

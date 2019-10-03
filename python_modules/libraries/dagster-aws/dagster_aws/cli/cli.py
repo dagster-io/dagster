@@ -118,13 +118,34 @@ def sync_dagster_yaml(ec2_config, rds_config):
     rsync_to_remote(ec2_config.key_file_path, tmp_file, ec2_config.remote_host, SERVER_DAGSTER_HOME)
 
 
+def ensure_requirements(base_path):
+    '''Check that the user has provided a requirements.txt, and if not, create one.
+    '''
+    requirements_file = os.path.join(base_path, 'requirements.txt')
+    if os.path.exists(requirements_file):
+        Term.info('Found existing requirements.txt')
+        with open(requirements_file, 'rb') as f:
+            reqs = six.ensure_str(f.read()).strip().split('\n')
+        if not any([req.startswith('dagster') for req in reqs]):
+            Term.warning('Could not find dagster in your requirements.txt')
+            click.confirm('Continue?', default=False, abort=True)
+        if not any([req.startswith('dagit') for req in reqs]):
+            Term.warning('Could not find dagit in your requirements.txt')
+            click.confirm('Continue?', default=False, abort=True)
+    else:
+        Term.waiting('No requirements.txt found, creating...')
+        with open(requirements_file, 'wb') as f:
+            f.write(six.ensure_binary('\n'.join(['dagster', 'dagit'])))
+
+
 @click.group()
 def main():
     signal.signal(signal.SIGINT, exit_gracefully)
 
 
 @main.command()
-def init():
+@click.option('--use-master', is_flag=True, default=False)
+def init(use_master):
     '''🚀 Initialize an EC2 VM to host Dagit'''
     click.echo('\n🌈 Welcome to Dagit + AWS quickstart cloud init!\n')
 
@@ -151,7 +172,7 @@ def init():
 
     key_pair_name, key_file_path = create_key_pair(prev_config, client, dagster_home)
 
-    inst = create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name)
+    inst = create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name, use_master)
 
     # Save host configuration for future commands
     ec2_config = EC2Config(
@@ -194,7 +215,11 @@ def shell():
     help='Specify a path to a script with post-init actions',
 )
 def up(post_up_script):
-    '''🌱 Sync your Dagster project to the remote server'''
+    '''🌱 Sync your Dagster project to the remote server.
+
+    This command will rsync the current folder to the remote host as /opt/dagster/app, and if there
+    is a requirements.txt file provided in the current folder, it will install those requirements.
+    '''
     dagster_home = get_dagster_home()
     cfg = EC2Config.load(dagster_home)
 
@@ -214,6 +239,8 @@ def up(post_up_script):
     if not os.path.exists(os.path.join(cfg.local_path, 'repository.yaml')):
         Term.fatal('No repository.yaml found in %s, create before continuing.' % cfg.local_path)
 
+    ensure_requirements(cfg.local_path)
+
     rsync_to_remote(
         cfg.key_file_path,
         cfg.local_path + '/*',  # sync all files/directories in local_path
@@ -221,18 +248,18 @@ def up(post_up_script):
         SERVER_CLIENT_CODE_HOME,
     )
 
-    # If user has supplied a requirements.txt, install after syncing
-    if os.path.exists(os.path.join(cfg.local_path, 'requirements.txt')):
-        Term.waiting(
-            'Found a requirements.txt, ensuring dependencies are installed on remote host...'
-        )
-        retval = run_remote_cmd(
-            cfg.key_file_path,
-            cfg.remote_host,
-            'export PYTHONPATH=$PYTHONPATH:/opt/dagster/app && '
-            'source /opt/dagster/venv/bin/activate && '
-            'cd %s && pip install -r requirements.txt' % SERVER_CLIENT_CODE_HOME,
-        )
+    Term.waiting('Found a requirements.txt, ensuring dependencies are installed on remote host...')
+    retval = run_remote_cmd(
+        cfg.key_file_path,
+        cfg.remote_host,
+        'export PYTHONPATH=$PYTHONPATH:/opt/dagster/app && '
+        'source /opt/dagster/venv/bin/activate && '
+        'cd %s && pip install -r requirements.txt' % SERVER_CLIENT_CODE_HOME,
+    )
+    if retval == 0:
+        Term.success('Install requirements.txt completed')
+    else:
+        Term.fatal('Error: could not install requirements.txt')
 
     if post_up_script is not None:
         post_up_script = os.path.expanduser(post_up_script)
