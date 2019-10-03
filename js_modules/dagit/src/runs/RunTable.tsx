@@ -180,7 +180,7 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
             {run.tags.map((t, idx) => {
               // Manually hide 'dagster/schedule_id` tags
               if (t.key === "dagster/schedule_id") {
-                return;
+                return null;
               }
 
               const truncatedKey =
