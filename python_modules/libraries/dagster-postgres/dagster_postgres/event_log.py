@@ -79,7 +79,9 @@ class PostgresEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
         check.invariant(cursor >= -1, 'Cursor must be -1 or greater')
 
         with get_conn(self.conn_string).cursor() as curs:
-            FETCH_SQL = 'SELECT event_body FROM event_log WHERE run_id = %s OFFSET %s;'
+            FETCH_SQL = (
+                'SELECT event_body FROM event_log WHERE run_id = %s ORDER BY id ASC OFFSET %s;'
+            )
             curs.execute(FETCH_SQL, (run_id, cursor + 1))
 
             rows = curs.fetchall()
