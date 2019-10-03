@@ -34,7 +34,7 @@ from dagster_graphql.implementation.utils import UserFacingGraphQLError
 
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
-from dagster.core.instance import DagsterFeatures
+from dagster.core.instance import DagsterFeatures, DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 
 from .config_types import to_dauphin_config_type
@@ -118,7 +118,7 @@ class DauphinQuery(dauphin.ObjectType):
         See the descripton on EnvironmentSchema for more information.''',
     )
 
-    enabledFeatures = dauphin.non_null_list(dauphin.String)
+    instance = dauphin.NonNull('Instance')
 
     def resolve_configTypeOrError(self, graphene_info, **kwargs):
         return get_config_type(
@@ -191,12 +191,8 @@ class DauphinQuery(dauphin.ObjectType):
             graphene_info, kwargs['selector'].to_selector(), kwargs.get('mode')
         )
 
-    def resolve_enabledFeatures(self, graphene_info):
-        return [
-            entry.name
-            for entry in DagsterFeatures
-            if graphene_info.context.instance.is_feature_enabled(entry)
-        ]
+    def resolve_instance(self, graphene_info):
+        return graphene_info.schema.type_named('Instance')(graphene_info.context.instance)
 
 
 class DauphinStepOutputHandle(dauphin.InputObjectType):
@@ -641,3 +637,20 @@ class DauphinEnvironmentSchemaOrError(dauphin.Union):
             'InvalidSubsetError',
             'ModeNotFoundError',
         )
+
+
+class DauhphinInstance(dauphin.ObjectType):
+    class Meta:
+        name = 'Instance'
+
+    enabledFeatures = dauphin.non_null_list(dauphin.String)
+    info = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, instance):
+        self._instance = check.inst_param(instance, 'instance', DagsterInstance)
+
+    def resolve_enabledFeatures(self, _graphene_info):
+        return [entry.name for entry in DagsterFeatures if self._instance.is_feature_enabled(entry)]
+
+    def resolve_info(self, _graphene_info):
+        return self._instance.info_str()

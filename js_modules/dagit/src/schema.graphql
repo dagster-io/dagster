@@ -359,6 +359,11 @@ type InputMapping {
   definition: InputDefinition!
 }
 
+type Instance {
+  enabledFeatures: [String!]!
+  info: String!
+}
+
 type InvalidDefinitionError implements Error {
   message: String!
   stack: [String!]!
@@ -821,7 +826,7 @@ type Query {
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
   environmentSchemaOrError(selector: ExecutionSelector!, mode: String): EnvironmentSchemaOrError!
-  enabledFeatures: [String!]!
+  instance: Instance!
 }
 
 input ReexecutionConfig {

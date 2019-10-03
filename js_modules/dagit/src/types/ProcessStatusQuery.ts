@@ -7,7 +7,13 @@
 // GraphQL query operation: ProcessStatusQuery
 // ====================================================
 
+export interface ProcessStatusQuery_instance {
+  __typename: "Instance";
+  info: string;
+}
+
 export interface ProcessStatusQuery {
   version: string;
   reloadSupported: boolean;
+  instance: ProcessStatusQuery_instance;
 }

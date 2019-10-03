@@ -23,7 +23,9 @@ class FlaggedFeature extends React.Component {
 
 export const ENABLED_FEATURES_ROOT_QUERY = gql`
   query EnabledFeaturesRootQuery {
-    enabledFeatures
+    instance {
+      enabledFeatures
+    }
   }
 `;
 

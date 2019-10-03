@@ -46,7 +46,18 @@ export default () => {
 
   return (
     <Label>
-      {data.version}
+      {data.instance && data.instance.info ? (
+        <Tooltip
+          hoverOpenDelay={500}
+          content={
+            <div style={{ whiteSpace: "pre-wrap" }}>{data.instance.info}</div>
+          }
+        >
+          {data.version}
+        </Tooltip>
+      ) : (
+        data.version
+      )}
       {data.reloadSupported && (
         <Tooltip
           hoverOpenDelay={500}
@@ -81,6 +92,9 @@ export const PROCESS_STATUS_QUERY = gql`
   query ProcessStatusQuery {
     version
     reloadSupported
+    instance {
+      info
+    }
   }
 `;
 
