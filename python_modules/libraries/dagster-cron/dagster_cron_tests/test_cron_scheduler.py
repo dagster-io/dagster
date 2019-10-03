@@ -27,21 +27,15 @@ def define_scheduler(artifacts_dir, repository_name):
     no_config_pipeline_daily_schedule = ScheduleDefinition(
         name="no_config_pipeline_daily_schedule",
         cron_schedule="0 0 * * *",
-        execution_params={
-            "environmentConfigData": {"storage": {"filesystem": None}},
-            "selector": {"name": "no_config_pipeline", "solidSubset": None},
-            "mode": "default",
-        },
+        pipeline_name="no_config_pipeline",
+        environment_dict={"storage": {"filesystem": None}},
     )
 
     no_config_pipeline_every_min_schedule = ScheduleDefinition(
         name="no_config_pipeline_every_min_schedule",
         cron_schedule="* * * * *",
-        execution_params={
-            "environmentConfigData": {"storage": {"filesystem": None}},
-            "selector": {"name": "no_config_pipeline", "solidSubset": None},
-            "mode": "default",
-        },
+        pipeline_name="no_config_pipeline",
+        environment_dict={"storage": {"filesystem": None}},
     )
 
     return SchedulerHandle(

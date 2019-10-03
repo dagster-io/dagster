@@ -72,13 +72,16 @@ def test_get_all_schedules():
 
 
 def test_scheduler_change_set_adding_schedule():
-    schedule_1 = ScheduleDefinition('schedule_1', "*****", {})
-    schedule_2 = ScheduleDefinition('schedule_2', "*****", {})
-    schedule_3 = ScheduleDefinition('schedule_3', "*****", {})
-    schedule_4 = ScheduleDefinition('schedule_4', "*****", {})
 
-    modified_schedule_2 = ScheduleDefinition('schedule_2', "0****", {'new_key': "new_value"})
-    renamed_schedule_3 = ScheduleDefinition('renamed_schedule_3', "*****", {})
+    schedule_1 = ScheduleDefinition('schedule_1', "*****", "pipeline_name", {})
+    schedule_2 = ScheduleDefinition('schedule_2', "*****", "pipeline_name", {})
+    schedule_3 = ScheduleDefinition('schedule_3', "*****", "pipeline_name", {})
+    schedule_4 = ScheduleDefinition('schedule_4', "*****", "pipeline_name", {})
+
+    modified_schedule_2 = ScheduleDefinition(
+        'schedule_2', "0****", "pipeline_name", {'new_key': "new_value"}
+    )
+    renamed_schedule_3 = ScheduleDefinition('renamed_schedule_3', "*****", "pipeline_name", {})
 
     running_1 = Schedule("1", schedule_1.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
     running_2 = Schedule("2", schedule_2.schedule_definition_data, ScheduleStatus.RUNNING, "", "")

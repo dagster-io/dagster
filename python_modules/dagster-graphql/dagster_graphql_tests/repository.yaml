@@ -2,5 +2,5 @@ repository:
   file: graphql/setup.py
   fn: define_repository
 scheduler:
-  file: graphql/setup.py
+  file: graphql/setup_scheduler.py
   fn: define_scheduler

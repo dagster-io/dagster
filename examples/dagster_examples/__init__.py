@@ -9,42 +9,33 @@ def define_scheduler():
         ScheduleDefinition(
             name="many_events_every_min",
             cron_schedule="* * * * *",
-            execution_params={
-                "environmentConfigData": {"storage": {"filesystem": {}}},
-                "selector": {"name": "many_events", "solidSubset": None},
-                "mode": "default",
-            },
+            pipeline_name='many_events',
+            environment_dict={"storage": {"filesystem": {}}},
         ),
         ScheduleDefinition(
             name="log_spew_hourly",
             cron_schedule="0 * * * *",
-            execution_params={
-                "environmentConfigData": {"storage": {"filesystem": {}}},
-                "selector": {"name": "log_spew", "solidSubset": None},
-                "mode": "default",
-            },
+            pipeline_name="log_spew",
+            environment_dict={"storage": {"filesystem": {}}},
         ),
         ScheduleDefinition(
             name="pandas_hello_world_hourly",
             cron_schedule="0 * * * *",
-            execution_params={
-                "environmentConfigData": {
-                    "solids": {
-                        "sum_solid": {
-                            "inputs": {
-                                "num_df": {
-                                    "csv": {
-                                        "path": file_relative_path(
-                                            __file__, "pandas_hello_world/data/num.csv"
-                                        )
-                                    }
+            pipeline_name="pandas_hello_world_pipeline",
+            environment_dict={
+                "solids": {
+                    "sum_solid": {
+                        "inputs": {
+                            "num": {
+                                "csv": {
+                                    "path": file_relative_path(
+                                        __file__, "../pandas_hello_world/data/num.csv"
+                                    )
                                 }
                             }
                         }
                     }
-                },
-                "selector": {"name": "pandas_hello_world_pipeline", "solidSubset": None},
-                "mode": "default",
+                }
             },
         ),
     ]

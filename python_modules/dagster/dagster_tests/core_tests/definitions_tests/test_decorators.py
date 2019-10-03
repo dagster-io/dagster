@@ -304,5 +304,10 @@ def test_scheduler():
     @schedules(scheduler=FilesytemTestScheduler)
     def define_scheduler():
         return [
-            ScheduleDefinition(name="my_schedule", cron_schedule="* * * * *", execution_params={})
+            ScheduleDefinition(
+                name="my_schedule",
+                cron_schedule="* * * * *",
+                pipeline_name="test_pipeline",
+                environment_dict={},
+            )
         ]

@@ -544,7 +544,14 @@ def test_run_wipe():
 
 @schedules(scheduler=FilesytemTestScheduler)
 def define_bar_scheduler():
-    return [ScheduleDefinition("foo_schedule", cron_schedule="* * * * *", execution_params={})]
+    return [
+        ScheduleDefinition(
+            "foo_schedule",
+            cron_schedule="* * * * *",
+            pipeline_name="test_pipeline",
+            environment_dict={},
+        )
+    ]
 
 
 def test_schedules_list():

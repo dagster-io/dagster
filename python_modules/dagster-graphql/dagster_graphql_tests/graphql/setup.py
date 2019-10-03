@@ -9,7 +9,6 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
     SubprocessExecutionManager,
     SynchronousExecutionManager,
 )
-from dagster_tests.utils import FilesytemTestScheduler
 
 from dagster import (
     Any,
@@ -32,7 +31,6 @@ from dagster import (
     Path,
     PresetDefinition,
     RepositoryDefinition,
-    ScheduleDefinition,
     SolidDefinition,
     String,
     as_dagster_type,
@@ -43,7 +41,6 @@ from dagster import (
     output_materialization_config,
     pipeline,
     resource,
-    schedules,
     solid,
 )
 from dagster.core.instance import DagsterInstance
@@ -199,48 +196,6 @@ def define_repository():
             noop_pipeline,
         ],
     )
-
-
-@schedules(scheduler=FilesytemTestScheduler)
-def define_scheduler():
-    no_config_pipeline_hourly_schedule = ScheduleDefinition(
-        name="no_config_pipeline_hourly_schedule",
-        cron_schedule="0 0 * * *",
-        execution_params={
-            "environmentConfigData": {"storage": {"filesystem": None}},
-            "selector": {"name": "no_config_pipeline", "solidSubset": None},
-            "mode": "default",
-        },
-    )
-
-    no_config_pipeline_hourly_schedule_with_schedule_id_tag = ScheduleDefinition(
-        name="no_config_pipeline_hourly_schedule_with_schedule_id_tag",
-        cron_schedule="0 0 * * *",
-        execution_params={
-            "environmentConfigData": {"storage": {"filesystem": None}},
-            "selector": {"name": "no_config_pipeline", "solidSubset": None},
-            "executionMetadata": {"tags": [{"key": "dagster/schedule_id", "value": "1234"}]},
-            "mode": "default",
-        },
-    )
-
-    no_config_should_execute = ScheduleDefinition(
-        name="no_config_should_execute",
-        cron_schedule="0 0 * * *",
-        execution_params={
-            "environmentConfigData": {"storage": {"filesystem": None}},
-            "selector": {"name": "no_config_pipeline", "solidSubset": None},
-            "executionMetadata": {"tags": [{"key": "dagster/schedule_id", "value": "1234"}]},
-            "mode": "default",
-        },
-        should_execute=lambda: False,
-    )
-
-    return [
-        no_config_pipeline_hourly_schedule,
-        no_config_pipeline_hourly_schedule_with_schedule_id_tag,
-        no_config_should_execute,
-    ]
 
 
 @pipeline

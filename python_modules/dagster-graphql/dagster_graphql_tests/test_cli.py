@@ -47,11 +47,8 @@ def define_schedules():
     math_hourly_schedule = ScheduleDefinition(
         name="math_hourly_schedule",
         cron_schedule="0 0 * * *",
-        execution_params={
-            'selector': {'name': 'math', 'solidSubset': None},
-            'environmentConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
-            'mode': 'default',
-        },
+        pipeline_name="math",
+        environment_dict={'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
     )
 
     return [math_hourly_schedule]

@@ -34,7 +34,10 @@ class ScheduleDefinition(object):
         self,
         name,
         cron_schedule,
-        execution_params,
+        pipeline_name,
+        environment_dict,
+        tags=None,
+        mode="default",
         should_execute=lambda: True,
         environment_vars=None,
     ):
@@ -44,7 +47,18 @@ class ScheduleDefinition(object):
             environment_vars=check.opt_dict_param(environment_vars, 'environment_vars'),
         )
 
-        self._execution_params = check.dict_param(execution_params, 'execution_params')
+        check.str_param(pipeline_name, 'pipeline_name')
+        environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
+        tags = check.opt_list_param(tags, 'tags')
+        check.str_param(mode, 'mode')
+
+        self._execution_params = {
+            'environmentConfigData': environment_dict,
+            'selector': {'name': pipeline_name},
+            'executionMetadata': {"tags": tags},
+            'mode': mode,
+        }
+
         self._should_execute = check.fn_param(should_execute, 'should_execute')
 
     @property
