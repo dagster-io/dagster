@@ -6,6 +6,7 @@ import time
 import boto3
 import click
 import six
+import terminaltables
 
 from .term import Spinner, Term
 
@@ -36,14 +37,20 @@ def select_region(prev_config):
         Term.success('Found existing region, continuing with %s' % prev_config.region)
         return prev_config.region
 
-    regions = click.Choice(get_all_regions())
+    all_regions = get_all_regions()
+
+    table = terminaltables.SingleTable(
+        [[r] for r in all_regions], title=click.style('Regions', fg='blue')
+    )
+    table.inner_heading_row_border = False
+    click.echo('\n' + table.table)
 
     return click.prompt(
         'Select an AWS region ' + click.style('[default: %s]' % DEFAULT_REGION, fg='green'),
-        type=regions,
+        type=click.Choice(all_regions),
         default=DEFAULT_REGION,
         show_default=False,
-        show_choices=True,
+        show_choices=False,
     )
 
 
@@ -58,26 +65,36 @@ def select_vpc(client, ec2):
     elif len(default_vpcs) > 1:
         Term.fatal('AWS account has multiple default VPCs; needs manual setup')
 
-    default_vpc = default_vpcs[0]
+    default_vpc = default_vpcs[0].id
 
-    vpc_names = []
+    vpcs = []
     for vpc in ec2.vpcs.iterator():
         response = client.describe_vpcs(VpcIds=[vpc.id])
         name = [tag['Value'] for tag in response['Vpcs'][0].get('Tags', []) if tag['Key'] == 'Name']
-        vpc_names.append('%s (%s)' % (vpc.id, name[0]) if name else vpc.id)
+        if vpc.id == default_vpc:
+            name = ['default']
+        vpcs.append([vpc.id, name[0] if name else '<none>'])
 
-    vpc = click.prompt(
-        '\nSelect an existing VPC to use. '
-        + click.style('[default: %s]' % default_vpc.id, fg='green')
-        + '\nNote that this script will not create a VPC on your behalf. Also, if you'
-        '\ndon\'t know what this is, the default is almost certainly what you want. '
-        + '\n\n'
-        + click.style('  Existing VPCs:\n  ', fg='blue')
-        + '\n  '.join(vpc_names),
-        type=str,
-        default=default_vpc,
-        show_default=False,
+    table = terminaltables.SingleTable(vpcs, title=click.style('Existing VPCs', fg='blue'))
+    table.inner_heading_row_border = False
+    click.echo('\n' + table.table)
+
+    vpc = None
+    vpc_ids = [vpc[0] for vpc in vpcs]
+
+    Term.info(
+        'Note that this script will not create a VPC\non your behalf. Also, if you '
+        'don\'t know what this\nis, the default is almost certainly what you want'
     )
+
+    while vpc not in vpc_ids:
+        vpc = click.prompt(
+            '\nSelect an existing VPC ID to use. '
+            + click.style('[default: %s]' % default_vpc, fg='green'),
+            type=str,
+            default=default_vpc,
+            show_default=False,
+        )
     return vpc
 
 
@@ -96,7 +113,7 @@ def create_security_group(prev_config, client, ec2, vpc):
     existing_group_names = [
         g['GroupName']
         for g in client.describe_security_groups()['SecurityGroups']
-        if g['VpcId'] == vpc.id
+        if g['VpcId'] == vpc
     ]
 
     group_name = None
@@ -117,7 +134,7 @@ def create_security_group(prev_config, client, ec2, vpc):
         else:
             Term.waiting('Creating dagit security group...')
             group = ec2.create_security_group(
-                GroupName=group_name, Description='dagit Security Group', VpcId=vpc.id
+                GroupName=group_name, Description='dagit Security Group', VpcId=vpc
             )
             group.authorize_ingress(
                 GroupName=group_name,
