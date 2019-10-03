@@ -114,7 +114,7 @@ interface ScheduleTableProps {
 const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
   return (
     <div>
-      <Header>{`Schedule Definitions (${props.schedules.length})`}</Header>
+      <Header>{`Schedule (${props.schedules.length})`}</Header>
       {props.schedules.length > 0 && (
         <Legend>
           <LegendColumn

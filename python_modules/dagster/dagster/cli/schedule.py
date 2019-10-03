@@ -49,14 +49,24 @@ def repository_target_argument(f):
     )
 
 
-def print_changes(scheduler_handle, print_fn=print):
+def print_changes(scheduler_handle, print_fn=print, preview=False):
     changeset = scheduler_handle.get_change_set()
     if len(changeset) == 0:
-        print_fn(click.style('No changes to schedules.', fg='magenta', bold=True))
-        print_fn('{num} schedules unchanged'.format(num=len(scheduler_handle.all_schedule_defs())))
+        if preview:
+            print_fn(click.style('No planned changes to schedules.', fg='magenta', bold=True))
+            print_fn(
+                '{num} schedules will remain unchanged'.format(
+                    num=len(scheduler_handle.all_schedule_defs())
+                )
+            )
+        else:
+            print_fn(click.style('No changes to schedules.', fg='magenta', bold=True))
+            print_fn(
+                '{num} schedules unchanged'.format(num=len(scheduler_handle.all_schedule_defs()))
+            )
         return
 
-    print_fn(click.style('Changes:', fg='magenta', bold=True))
+    print_fn(click.style('Planned Changes:' if preview else 'Changes:', fg='magenta', bold=True))
 
     for change in changeset:
         change_type, schedule_name, changes = change
@@ -104,7 +114,7 @@ def execute_preview_command(cli_args, print_fn):
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    print_changes(scheduler_handle, print_fn)
+    print_changes(scheduler_handle, print_fn, preview=True)
 
 
 @click.command(
@@ -135,8 +145,8 @@ def execute_up_command(preview, cli_args, print_fn):
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
+    print_changes(scheduler_handle, print_fn, preview=preview)
     if preview:
-        print_changes(scheduler_handle, print_fn)
         return
 
     try:
