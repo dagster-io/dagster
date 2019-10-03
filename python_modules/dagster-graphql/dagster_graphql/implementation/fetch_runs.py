@@ -2,7 +2,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import RunConfig, check
 from dagster.core.definitions import create_environment_schema
-from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsSelector
+from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.types.evaluator import evaluate_config
 
@@ -61,26 +61,26 @@ def get_run_tags(graphene_info):
     ]
 
 
-def get_runs(graphene_info, selector, cursor=None, limit=None):
-    check.inst_param(selector, 'selector', PipelineRunsSelector)
+def get_runs(graphene_info, filters, cursor=None, limit=None):
+    check.inst_param(filters, 'filters', PipelineRunsFilter)
     check.opt_str_param(cursor, 'cursor')
     check.opt_int_param(limit, 'limit')
 
     instance = graphene_info.context.instance
     runs = []
 
-    if selector.run_id:
-        run = instance.get_run_by_id(selector.run_id)
+    if filters.run_id:
+        run = instance.get_run_by_id(filters.run_id)
         if run:
             runs = [run]
-    elif selector.pipeline:
-        runs = instance.get_runs_with_pipeline_name(selector.pipeline, cursor=cursor, limit=limit)
-    elif selector.tag_key:
+    elif filters.pipeline:
+        runs = instance.get_runs_with_pipeline_name(filters.pipeline, cursor=cursor, limit=limit)
+    elif filters.tag_key:
         runs = instance.get_runs_with_matching_tag(
-            selector.tag_key, selector.tag_value, cursor=cursor, limit=limit
+            filters.tag_key, filters.tag_value, cursor=cursor, limit=limit
         )
-    elif selector.status:
-        runs = instance.get_runs_with_status(selector.status, cursor=cursor, limit=limit)
+    elif filters.status:
+        runs = instance.get_runs_with_status(filters.status, cursor=cursor, limit=limit)
     else:
         runs = instance.all_runs(cursor=cursor, limit=limit)
 

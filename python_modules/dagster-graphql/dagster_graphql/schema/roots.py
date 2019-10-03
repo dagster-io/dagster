@@ -30,7 +30,7 @@ from dagster_graphql.implementation.fetch_types import get_config_type, get_runt
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 
 from dagster import check
-from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsSelector
+from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
 from dagster.core.instance import DagsterFeatures
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 
@@ -76,7 +76,7 @@ class DauphinQuery(dauphin.ObjectType):
 
     pipelineRunsOrError = dauphin.Field(
         dauphin.NonNull('PipelineRunsOrError'),
-        params=dauphin.Argument(dauphin.NonNull('PipelineRunsSelector')),
+        filter=dauphin.Argument(dauphin.NonNull('PipelineRunsFilter')),
         cursor=dauphin.String(),
         limit=dauphin.Int(),
     )
@@ -147,16 +147,18 @@ class DauphinQuery(dauphin.ObjectType):
         return get_pipelines_or_raise(graphene_info)
 
     def resolve_pipelineRunsOrError(self, graphene_info, **kwargs):
-        sel = kwargs['params'].to_selector()
-        provided = [i for i in [sel.run_id, sel.pipeline, sel.tag_key, sel.status] if i]
+        filters = kwargs['filter'].to_selector()
+        provided = [
+            i for i in [filters.run_id, filters.pipeline, filters.tag_key, filters.status] if i
+        ]
 
         if len(provided) > 1:
-            return graphene_info.schema.type_named('InvalidPipelineRunsSelectorError')(
+            return graphene_info.schema.type_named('InvalidPipelineRunsFilterError')(
                 message="You may only provide one of the filter options."
             )
 
         return graphene_info.schema.type_named('PipelineRuns')(
-            results=get_runs(graphene_info, sel, kwargs.get('cursor'), kwargs.get('limit'))
+            results=get_runs(graphene_info, filters, kwargs.get('cursor'), kwargs.get('limit'))
         )
 
     def resolve_pipelineRunOrError(self, graphene_info, runId):
@@ -433,9 +435,9 @@ class DauphinExecutionSelector(dauphin.InputObjectType):
         return ExecutionSelector(self.name, self.solidSubset)
 
 
-class DauphinPipelineRunsSelector(dauphin.InputObjectType):
+class DauphinPipelineRunsFilter(dauphin.InputObjectType):
     class Meta:
-        name = 'PipelineRunsSelector'
+        name = 'PipelineRunsFilter'
         description = '''This type represents a filter on pipeline runs.
         Currently, you may only pass one of the filter options.'''
 
@@ -451,7 +453,7 @@ class DauphinPipelineRunsSelector(dauphin.InputObjectType):
             status = PipelineRunStatus[self.status]
         else:
             status = None
-        return PipelineRunsSelector(
+        return PipelineRunsFilter(
             run_id=self.runId,
             pipeline=self.pipeline,
             tag_key=self.tagKey,

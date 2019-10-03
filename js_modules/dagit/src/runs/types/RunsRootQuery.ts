@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunsSelector, PipelineRunStatus } from "./../../types/globalTypes";
+import { PipelineRunsFilter, PipelineRunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: RunsRootQuery
@@ -71,12 +71,12 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns {
   results: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results[];
 }
 
-export interface RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsSelectorError {
-  __typename: "InvalidPipelineRunsSelectorError";
+export interface RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError {
+  __typename: "InvalidPipelineRunsFilterError";
   message: string;
 }
 
-export type RunsRootQuery_pipelineRunsOrError = RunsRootQuery_pipelineRunsOrError_PipelineRuns | RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsSelectorError;
+export type RunsRootQuery_pipelineRunsOrError = RunsRootQuery_pipelineRunsOrError_PipelineRuns | RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError;
 
 export interface RunsRootQuery {
   pipelineRunsOrError: RunsRootQuery_pipelineRunsOrError;
@@ -85,5 +85,5 @@ export interface RunsRootQuery {
 export interface RunsRootQueryVariables {
   limit?: number | null;
   cursor?: string | null;
-  selector: PipelineRunsSelector;
+  filter: PipelineRunsFilter;
 }

@@ -34,7 +34,7 @@ function findProviderByToken(token: string, providers: SuggestionProvider[]) {
   return providers.find(p => p.token.toLowerCase() === token.toLowerCase());
 }
 
-export function tokenizedValuesListFromString(
+export function tokenizedValuesFromString(
   str: string,
   providers: SuggestionProvider[]
 ) {
@@ -174,16 +174,18 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     }
     // Enter and Return confirm the currently selected suggestion or
     // confirm the freeform text you've typed if no suggestions are shown.
-    if (e.key === "Enter" || e.key === "Return") {
+    if (e.key === "Enter" || e.key === "Return" || e.key === "Tab") {
       if (active) {
         const picked = suggestions.find(s => s.text === active.text);
         if (!picked) throw new Error("Selection out of sync with suggestions");
         onConfirmSuggestion(picked);
-      } else {
+        e.preventDefault();
+        e.stopPropagation();
+      } else if (inputValue.length) {
         onConfirmText(inputValue);
+        e.preventDefault();
+        e.stopPropagation();
       }
-      e.preventDefault();
-      e.stopPropagation();
       return;
     }
 

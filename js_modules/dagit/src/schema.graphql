@@ -352,7 +352,7 @@ type InvalidOutputError {
   invalidOutputName: String!
 }
 
-type InvalidPipelineRunsSelectorError implements Error {
+type InvalidPipelineRunsFilterError implements Error {
   message: String!
   stack: [String!]!
 }
@@ -715,15 +715,15 @@ type PipelineRuns {
   results: [PipelineRun!]!
 }
 
-union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsSelectorError
-
-input PipelineRunsSelector {
+input PipelineRunsFilter {
   runId: String
   pipeline: String
   tagKey: String
   tagValue: String
   status: PipelineRunStatus
 }
+
+union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsFilterError
 
 type PipelineRunStatsSnapshot {
   runId: String!
@@ -794,7 +794,7 @@ type Query {
   configTypeOrError(pipelineName: String!, configTypeName: String!, mode: String!): ConfigTypeOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   scheduler: SchedulerOrError!
-  pipelineRunsOrError(params: PipelineRunsSelector!, cursor: String, limit: Int): PipelineRunsOrError!
+  pipelineRunsOrError(filter: PipelineRunsFilter!, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!

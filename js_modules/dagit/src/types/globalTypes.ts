@@ -73,7 +73,7 @@ export interface ExecutionTag {
   value: string;
 }
 
-export interface PipelineRunsSelector {
+export interface PipelineRunsFilter {
   runId?: string | null;
   pipeline?: string | null;
   tagKey?: string | null;
