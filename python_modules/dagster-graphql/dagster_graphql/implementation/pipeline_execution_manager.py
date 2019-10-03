@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import abc
 import logging
 import os
+import signal
 import sys
 import time
 
@@ -276,7 +277,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         if not process.is_alive():
             return False
 
-        process.terminate()
+        os.kill(process.pid, signal.SIGINT)
         process.join()
         return True
 

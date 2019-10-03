@@ -415,6 +415,7 @@ def test_has_run_query_and_terminate():
 
         assert execution_manager.is_process_running(run_id_one)
         assert execution_manager.terminate(run_id_one)
+        assert instance.get_run_by_id(run_id_one).is_finished
         assert not execution_manager.is_process_running(run_id_one)
         assert not execution_manager.terminate(run_id_one)
 
