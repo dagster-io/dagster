@@ -39,11 +39,6 @@ class EventLogSequence(pyrsistent.CheckedPVector):
 
 
 class EventLogStorage(six.with_metaclass(ABCMeta)):
-    def __init__(self, *args, **kwargs):
-        '''EventLogStorage.__init__ should idempotently ensure that any necessary one-time setup
-        for the EventLogStorage is performed, or raise if this setup has not been performed and
-        cannot be performed withim the context of this function.'''
-
     @abstractmethod
     def get_logs_for_run(self, run_id, cursor=-1):
         '''Get all of the logs corresponding to a run.
@@ -91,7 +86,6 @@ class InMemoryEventLogStorage(EventLogStorage):
     def __init__(self):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
-        super(InMemoryEventLogStorage, self).__init__()
 
     def get_logs_for_run(self, run_id, cursor=-1):
         check.str_param(run_id, 'run_id')

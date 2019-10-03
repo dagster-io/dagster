@@ -15,7 +15,6 @@ from .run_storage_abc import RunStorage
 class InMemoryRunStorage(RunStorage):
     def __init__(self):
         self._runs = OrderedDict()
-        super(InMemoryRunStorage, self).__init__()
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)

@@ -4,11 +4,6 @@ import six
 
 
 class RunStorage(six.with_metaclass(ABCMeta)):
-    def __init__(self, *args, **kwargs):
-        '''EventLogStorage.__init__ should idempotently ensure that any necessary one-time setup
-        for the RunStorage is performed, or raise if this setup has not been performed and
-        cannot be performed withim the context of this function.'''
-
     @abstractmethod
     def add_run(self, pipeline_run):
         '''Add a run to storage.
