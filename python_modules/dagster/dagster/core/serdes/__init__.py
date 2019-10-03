@@ -197,7 +197,40 @@ class ConfigurableClassData(
 
 
 class ConfigurableClass(six.with_metaclass(ABCMeta)):
+    '''Abstract mixin for classes that can be rehydrated from config.
+
+    This supports a powerful plugin pattern which avoids both a) a lengthy, hard-to-synchronize list
+    of conditional imports / optional extras_requires in dagster core and b) a magic directory or
+    file in which third parties can place plugin packages. Instead, the intention is to make, e.g.,
+    run storage, pluggable with a config chunk like:
+
+        run_storage:
+            module: very_cool_package.run_storage
+            class: SplendidRunStorage
+            config:
+                magic_word: "quux"
+    
+    This same pattern should eventually be viable for other system components, e.g. engines.
+
+    The ConfigurableClass mixin provides the necessary hooks for classes to be instantiated from
+    an instance of ConfigurableClassData.
+
+    Pieces of the Dagster system which we wish to make pluggable in this way should consume a config
+    type such as:
+
+        SystemNamedDict(
+            name,
+            {'module': Field(String), 'class': Field(String), 'config': Field(PermissiveDict())},
+        )
+    '''
+
     def __init__(self, inst_data):
+        '''Calling the superclass constructor with inst_data makes it possible to make the round
+        trip from ConfigurableClassData -> the instance of the ConfigurableClass subclass ->
+        ConfigurableClassData and is essential when constructing an instance ref.
+        
+        Called from ConfigurableClassData.rehydrate.
+        '''
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
 
     @property
@@ -208,9 +241,28 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def config_type(cls):
         '''dagster.ConfigType: The config type against which to validate a config yaml fragment
-        serialized in an instance of ConfigurableClassData.'''
+        serialized in an instance of ConfigurableClassData.
+        
+        This is usually an instance of dagster.core.definitions.environment_configs.SystemNamedDict.
+        '''
 
     @staticmethod
     @abstractmethod
     def from_config_value(config_value, **kwargs):
-        '''New up an instance of the ConfigurableClass from validated config.'''
+        '''New up an instance of the ConfigurableClass from a validated config value.
+
+        Called by ConfigurableClassData.rehydrate.
+        
+        Args:
+            config_value (dict): The validated config value to use. Typically this should be the
+                `value` attribute of a dagster.core.types.evaluator.evaluation.EvaluateValueResult.
+
+
+        A common pattern is for the implementation to splat the config_value with the kwargs, to
+        align with the signature of the ConfigurableClass's constructor and allow overrides:
+
+            @staticmethod
+            def from_config_value(config_value, **kwargs):
+                return MyConfigurableClass(**dict(config_value, **kwargs))
+
+        '''
