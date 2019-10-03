@@ -112,8 +112,21 @@ def start_scheduled_execution(graphene_info, schedule_name):
         "Tag dagster/schedule_id tag is already defined in executionMetadata.tags",
     )
 
+    # Check that the dagster/schedule_name tag is not already set
+    check.invariant(
+        not any(
+            tag['key'] == 'dagster/schedule_name'
+            for tag in execution_params['executionMetadata']['tags']
+        ),
+        "Tag dagster/schedule_name tag is already defined in executionMetadata.tags",
+    )
+
     execution_params['executionMetadata']['tags'].append(
         {'key': 'dagster/schedule_id', 'value': schedule.schedule_id}
+    )
+
+    execution_params['executionMetadata']['tags'].append(
+        {'key': 'dagster/schedule_name', 'value': schedule.name}
     )
 
     selector = execution_params['selector']

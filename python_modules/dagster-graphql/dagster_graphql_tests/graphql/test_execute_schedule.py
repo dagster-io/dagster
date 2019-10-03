@@ -35,10 +35,17 @@ def test_basic_start_scheduled_execution():
         assert (
             result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
         )
+
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (
             result.data['startScheduledExecution']['run']['pipeline']['name']
             == 'no_config_pipeline'
+        )
+
+        assert any(
+            tag['key'] == 'dagster/schedule_name'
+            and tag['value'] == 'no_config_pipeline_hourly_schedule'
+            for tag in result.data['startScheduledExecution']['run']['tags']
         )
 
 
