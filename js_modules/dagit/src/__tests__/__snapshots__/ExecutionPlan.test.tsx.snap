@@ -2,28 +2,28 @@
 
 exports[`renders given an execution plan 1`] = `
 <div
-  className="sc-cMljjf bdChzR"
+  className="sc-gPEVay dqfDSs"
 >
   <div
-    className="sc-jAaTju fhdOvU"
+    className="sc-iRbamj gFahqd"
   >
     <div
-      className="sc-gPEVay jWLNVS"
+      className="sc-gipzik fHuHVs"
     />
     <div
-      className="sc-jDwBTQ ifQzkt"
+      className="sc-jlyJG hWPNrL"
     >
       <div
-        className="sc-iRbamj egegbq"
+        className="sc-csuQGl gTDFOn"
       />
        
     </div>
     <div>
       <div
-        className="sc-kEYyzF cVfeXb"
+        className="sc-hSdWYo dehZzu"
       >
         <div
-          className="waiting sc-kkGfuU iGDGJC"
+          className="waiting sc-eHgmQL jmkMGW"
           onClick={[Function]}
           style={
             Object {
@@ -32,7 +32,7 @@ exports[`renders given an execution plan 1`] = `
           }
         >
           <div
-            className="sc-hMqMXs iuzQNU"
+            className="sc-iAyFgw lfuIeJ"
             style={
               Object {
                 "transitionDelay": "-100ms",
@@ -48,7 +48,7 @@ exports[`renders given an execution plan 1`] = `
             }
           >
             <div
-              className="sc-dxgOiQ gNkogV"
+              className="sc-eNQAEJ cUpgIn"
               onClick={[Function]}
             >
               <div
@@ -69,7 +69,7 @@ exports[`renders given an execution plan 1`] = `
               />
             </div>
             <div
-              className="sc-eNQAEJ gaGFvV"
+              className="sc-kkGfuU iFdxDN"
               title="raw_file_event_admins.compute"
             >
               raw_file_event_admins.compute

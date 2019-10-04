@@ -1,4 +1,6 @@
 import * as React from "react";
+import { Colors, Icon } from "@blueprintjs/core";
+import { IconNames } from "@blueprintjs/icons";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import * as sc from "styled-components";
@@ -14,7 +16,10 @@ interface IComputeLogContentProps {
   onRequestClose: () => void;
   stdout: ComputeLogContentFileFragment;
   stderr: ComputeLogContentFileFragment;
+  maxBytes: number;
 }
+
+const TRUNCATE_PREFIX = "\u001b[33m...logs truncated...\u001b[39m\n";
 
 export class ComputeLogContent extends React.Component<
   IComputeLogContentProps
@@ -39,6 +44,17 @@ export class ComputeLogContent extends React.Component<
     this.props.onRequestClose();
   };
 
+  getDownloadUrl() {
+    const { stdout, stderr } = this.props;
+    const { selected } = this.state;
+    const logData = selected === "stdout" ? stdout : stderr;
+    const { downloadUrl } = logData;
+    const isRelativeUrl = (x?: string) => x && x.startsWith("/");
+    return isRelativeUrl(downloadUrl)
+      ? ROOT_SERVER_URI + downloadUrl
+      : downloadUrl;
+  }
+
   renderStatus() {
     const { runState } = this.props;
     if (runState === IStepState.RUNNING) {
@@ -52,6 +68,41 @@ export class ComputeLogContent extends React.Component<
     );
   }
 
+  renderContent(content: string, isSelected: boolean) {
+    const isTruncated =
+      Buffer.byteLength(content, "utf8") >= this.props.maxBytes;
+
+    if (isTruncated) {
+      const nextLine = content.indexOf("\n") + 1;
+      const truncated =
+        nextLine < content.length ? content.slice(nextLine) : content;
+      content = TRUNCATE_PREFIX + truncated;
+    }
+
+    const warning = isTruncated ? (
+      <FileWarning>
+        <Icon
+          icon={IconNames.WARNING_SIGN}
+          style={{ marginRight: 10, color: Colors.ORANGE5 }}
+        />
+        This log has exceeded the 5MB limit.{" "}
+        <a href={this.getDownloadUrl()} download>
+          Download the full log file
+        </a>
+        .
+      </FileWarning>
+    ) : null;
+
+    return (
+      <FileContent isSelected={isSelected}>
+        {warning}
+        <RelativeContainer>
+          <LogContent content={content} />
+        </RelativeContainer>
+      </FileContent>
+    );
+  }
+
   render() {
     const { stdout, stderr } = this.props;
     const { selected } = this.state;
@@ -60,12 +111,6 @@ export class ComputeLogContent extends React.Component<
     if (!logData) {
       return null;
     }
-
-    const { path, downloadUrl } = logData;
-    const isRelativeUrl = (x?: string) => x && x.startsWith("/");
-    const url = isRelativeUrl(downloadUrl)
-      ? ROOT_SERVER_URI + downloadUrl
-      : downloadUrl;
 
     return (
       <Container>
@@ -90,7 +135,7 @@ export class ComputeLogContent extends React.Component<
               <Link
                 aria-label="Download link"
                 className="bp3-button bp3-minimal bp3-icon-download"
-                href={url}
+                href={this.getDownloadUrl()}
                 download
               >
                 <LinkText>Download {selected}</LinkText>
@@ -101,15 +146,15 @@ export class ComputeLogContent extends React.Component<
               ></button>
             </Row>
           </FileHeader>
-          <FileContent
-            content={(stdout && stdout.data) || ""}
-            selected={selected === "stdout"}
-          />
-          <FileContent
-            content={(stderr && stderr.data) || ""}
-            selected={selected === "stderr"}
-          />
-          <FileFooter>{path}</FileFooter>
+          {this.renderContent(
+            (stdout && stdout.data) || "",
+            selected === "stdout"
+          )}
+          {this.renderContent(
+            (stderr && stderr.data) || "",
+            selected === "stderr"
+          )}
+          <FileFooter>{logData.path}</FileFooter>
         </FileContainer>
       </Container>
     );
@@ -245,19 +290,6 @@ const FileHeader = styled.div`
   left: 0;
   right: 0;
 `;
-const FileContent = styled(ScrollContainer)`
-  position: absolute;
-  top: 40px;
-  bottom: 30px;
-  left: 0;
-  right: 0;
-  color: #eeeeee;
-  font-family: Consolas, Menlo, monospace;
-  white-space: pre;
-  overflow: auto;
-  ${({ selected }: { selected: boolean }) =>
-    selected ? null : "visibility: hidden;"}
-`;
 const FileFooter = styled.div`
   display: flex;
   flex-direction: row;
@@ -348,4 +380,37 @@ const Tab = styled.div`
     height: ${({ selected }: { selected: boolean }) =>
       selected ? "30px" : "28px"};
   }
+`;
+
+const FileContent = styled.div`
+  position: absolute;
+  top: 40px;
+  bottom: 30px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  ${({ isSelected }: { isSelected: boolean }) =>
+    isSelected ? null : "visibility: hidden;"}
+`;
+const RelativeContainer = styled.div`
+  flex: 1;
+  position: relative;
+`;
+const LogContent = styled(ScrollContainer)`
+  color: #eeeeee;
+  font-family: Consolas, Menlo, monospace;
+  white-space: pre;
+  overflow: auto;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+`;
+const FileWarning = styled.div`
+  background-color: #fffae3;
+  padding: 10px 20px;
+  margin: 20px 70px;
+  border-radius: 5px;
 `;

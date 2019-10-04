@@ -11,6 +11,8 @@ import { ComputeLogsSubscriptionFragment } from "./types/ComputeLogsSubscription
 import { ComputeLogContentFileFragment } from "./types/ComputeLogContentFileFragment";
 import { ComputeIOType } from "../types/globalTypes";
 
+const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
+
 interface IComputeLogLink {
   children: React.ReactNode;
   runState: IStepState;
@@ -86,8 +88,12 @@ export const ComputeLogModal = ({
   runState
 }: ComputeLogModalProps) => {
   return (
-    <ComputeLogsProvider runId={runId} stepKey={stepKey}>
-      {({ isLoading, stdout, stderr }) => {
+    <ComputeLogsProvider
+      runId={runId}
+      stepKey={stepKey}
+      maxBytes={MAX_STREAMING_LOG_BYTES}
+    >
+      {({ isLoading, stdout, stderr, maxBytes }) => {
         if (isLoading || !stdout || !stderr) {
           return (
             <LoadingContainer>
@@ -102,6 +108,7 @@ export const ComputeLogModal = ({
             onRequestClose={onRequestClose}
             stdout={stdout}
             stderr={stderr}
+            maxBytes={maxBytes}
           />
         );
       }}
@@ -114,9 +121,11 @@ interface IComputeLogsProviderProps {
     isLoading: boolean;
     stdout: ComputeLogsSubscriptionFragment | null;
     stderr: ComputeLogsSubscriptionFragment | null;
+    maxBytes: number;
   }) => React.ReactChild;
   runId: string;
   stepKey: string;
+  maxBytes: number;
 }
 interface IComputeLogsProviderState {
   stdout: ComputeLogsSubscriptionFragment | null;
@@ -189,29 +198,20 @@ export class ComputeLogsProvider extends React.Component<
     }
   }
 
-  onStdout = (
-    messages: ComputeLogsSubscription[],
-    _isFirstResponse: boolean
-  ) => {
+  onStdout = (messages: ComputeLogsSubscription[], _: boolean) => {
     this.onMessages("stdout", messages);
   };
 
-  onStderr = (
-    messages: ComputeLogsSubscription[],
-    _isFirstResponse: boolean
-  ) => {
+  onStderr = (messages: ComputeLogsSubscription[], _: boolean) => {
     this.onMessages("stderr", messages);
   };
 
   onMessages = (ioType: string, messages: ComputeLogsSubscription[]) => {
     let computeLogs = this.state[ioType];
     messages.forEach((subscription: ComputeLogsSubscription) => {
-      if (!computeLogs) {
-        computeLogs = subscription.computeLogs;
-      } else {
-        computeLogs = this.merge(computeLogs, subscription.computeLogs);
-      }
+      computeLogs = this.merge(computeLogs, subscription.computeLogs);
     });
+
     if (ioType === "stdout") {
       this.setState({ stdout: computeLogs, isLoading: false });
     } else {
@@ -223,20 +223,27 @@ export class ComputeLogsProvider extends React.Component<
     a: ComputeLogContentFileFragment | null,
     b: ComputeLogContentFileFragment | null
   ) {
-    if (!a) return b;
     if (!b) return a;
     return {
       __typename: b.__typename,
       path: b.path,
       downloadUrl: b.downloadUrl,
-      data: a.data + b.data,
+      data: this.slice((a ? a.data : "") + b.data),
       cursor: b.cursor
     };
   }
 
+  slice(s: string) {
+    if (s.length < MAX_STREAMING_LOG_BYTES) {
+      return s;
+    }
+    return s.slice(-MAX_STREAMING_LOG_BYTES);
+  }
+
   render() {
     const { isLoading, stdout, stderr } = this.state;
-    return this.props.children({ isLoading, stdout, stderr });
+    const { maxBytes } = this.props;
+    return this.props.children({ isLoading, stdout, stderr, maxBytes });
   }
 }
 
