@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
+from collections import OrderedDict
 
 import six
 
@@ -22,8 +23,12 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
         self._metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self._input_defs = frozenlist(input_defs)
         self._input_dict = frozendict({input_def.name: input_def for input_def in input_defs})
+        check.invariant(len(self._input_defs) == len(self._input_dict), 'Duplicate input def names')
         self._output_defs = frozenlist(output_defs)
         self._output_dict = frozendict({output_def.name: output_def for output_def in output_defs})
+        check.invariant(
+            len(self._output_defs) == len(self._output_dict), 'Duplicate output def names'
+        )
 
     @property
     def name(self):
@@ -301,7 +306,15 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         self._solid_dict = pipeline_solid_dict
         self._dependency_structure = dependency_structure
 
-        input_defs = [input_mapping.definition for input_mapping in self._input_mappings]
+        input_dict = OrderedDict()
+        for input_mapping in self._input_mappings:
+            if input_dict.get(input_mapping.definition.name):
+                check.invariant(
+                    input_dict[input_mapping.definition.name] == input_mapping.definition,
+                    'Multiple input mappings with same definition name but different definitions',
+                )
+            else:
+                input_dict[input_mapping.definition.name] = input_mapping.definition
 
         output_defs = [output_mapping.definition for output_mapping in self._output_mappings]
 
@@ -309,7 +322,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
 
         super(CompositeSolidDefinition, self).__init__(
             name=name,
-            input_defs=input_defs,
+            input_defs=input_dict.values(),
             output_defs=output_defs,
             description=description,
             metadata=metadata,

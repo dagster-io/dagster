@@ -1,4 +1,4 @@
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -55,7 +55,7 @@ class InProgressCompositionContext:
 
 class CompleteCompositionContext(
     namedtuple(
-        '_CompositionContext', 'name solid_defs dependencies input_mapping_dict output_mapping_dict'
+        '_CompositionContext', 'name solid_defs dependencies input_mappings output_mapping_dict'
     )
 ):
     '''The processed information from capturing solid invocations during a composition function.
@@ -65,7 +65,7 @@ class CompleteCompositionContext(
 
         dep_dict = {}
         solid_def_dict = {}
-        input_mapping_dict = defaultdict(list)
+        input_mappings = []
 
         for invocation in invocations.values():
             def_name = invocation.solid_def.name
@@ -94,17 +94,10 @@ class CompleteCompositionContext(
             dep_dict[SolidInvocation(invocation.solid_def.name, invocation.solid_name)] = deps
 
             for input_name, node in invocation.input_mappings.items():
-                input_mapping_dict[node.input_def.name].append(
-                    node.input_def.mapping_to(invocation.solid_name, input_name)
-                )
+                input_mappings.append(node.input_def.mapping_to(invocation.solid_name, input_name))
 
         return super(cls, CompleteCompositionContext).__new__(
-            cls,
-            name,
-            list(solid_def_dict.values()),
-            dep_dict,
-            input_mapping_dict,
-            output_mapping_dict,
+            cls, name, list(solid_def_dict.values()), dep_dict, input_mappings, output_mapping_dict
         )
 
 

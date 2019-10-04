@@ -503,3 +503,20 @@ def test_multimap():
     result = execute_pipeline(multimap_pipe)
     assert result.result_for_handle('multimap.echo_1').output_value() == 1
     assert result.result_for_handle('multimap.echo_2').output_value() == 1
+
+
+def test_reuse_inputs():
+    @composite_solid
+    def calculate(one, two):
+        adder(one, two)
+        adder.alias('adder_2')(one, two)
+
+    @pipeline
+    def calculate_pipeline():
+        one = return_one()
+        two = return_two()
+        calculate(one, two)
+
+    result = execute_pipeline(calculate_pipeline)
+    assert result.result_for_handle('calculate.adder').output_value() == 3
+    assert result.result_for_handle('calculate.adder_2').output_value() == 3

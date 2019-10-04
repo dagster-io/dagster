@@ -629,7 +629,12 @@ class _CompositeSolid(object):
         # line up mappings in definition order
         input_mappings = []
         for defn in input_defs:
-            mappings = context.input_mapping_dict.get(defn.name, [])
+            mappings = [
+                mapping
+                for mapping in context.input_mappings
+                if mapping.definition.name == defn.name
+            ]
+
             if len(mappings) == 0:
                 raise DagsterInvalidDefinitionError(
                     "@composite_solid '{solid_name}' has unmapped input '{input_name}'. "
