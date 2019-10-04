@@ -143,6 +143,7 @@ const Tabs = styled.div`
   justify-content: center;
   border-bottom: 1px solid #ccc;
 `;
+
 const Tab = styled.div<{ active: boolean }>`
   color: ${p => (p.active ? Colors.COBALT3 : Colors.GRAY2)}
   border-top: 3px solid transparent;
