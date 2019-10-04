@@ -20,9 +20,8 @@ chown -R ubuntu:ubuntu $INSTALL_PATH
 
 # Set up a virtualenv for us to use
 sudo -u ubuntu virtualenv --python=/usr/bin/python3 $INSTALL_PATH/venv
-source $INSTALL_PATH/venv/bin/activate
 
-pip install -U pip
+sudo -u ubuntu /bin/bash -c 'source /opt/dagster/venv/bin/activate && pip install -U pip'
 
 # clone as user ubuntu
 sudo -u ubuntu git clone https://github.com/dagster-io/dagster.git $INSTALL_PATH/dagster

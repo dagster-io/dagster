@@ -20,11 +20,10 @@ chown -R ubuntu:ubuntu $INSTALL_PATH
 
 # Set up a virtualenv for us to use
 sudo -u ubuntu virtualenv --python=/usr/bin/python3 $INSTALL_PATH/venv
-source $INSTALL_PATH/venv/bin/activate
 
-pip install -U pip
-
-pip install dagster dagit dagster-aws
+sudo -u ubuntu /bin/bash -c 'source /opt/dagster/venv/bin/activate && \
+    pip install -U pip && \
+    pip install dagster dagit dagster-aws'
 
 # user code will go here
 mkdir -p $INSTALL_PATH/app
