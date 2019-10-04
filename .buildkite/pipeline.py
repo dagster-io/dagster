@@ -19,7 +19,8 @@ TOX_MAP = {
 }
 
 # https://github.com/dagster-io/dagster/issues/1662
-DO_COVERAGE = False
+DO_COVERAGE = True
+
 
 def check_for_release():
     try:
@@ -37,12 +38,13 @@ def check_for_release():
 
     if git_tag == version['__version__']:
         return True
-    
+
     return False
 
 
 def wait_step():
     return "wait"
+
 
 def network_buildkite_container(network_name):
     return [
@@ -54,8 +56,9 @@ def network_buildkite_container(network_name):
         # network to make the dask containers visible...
         "docker network connect {network_name} \\${{CONTAINER_NAME}}".format(
             network_name=network_name
-        )
+        ),
     ]
+
 
 def connect_sibling_docker_container(network_name, container_name, env_variable):
     return [
@@ -67,7 +70,7 @@ def connect_sibling_docker_container(network_name, container_name, env_variable)
             "{container_name}`".format(
                 network_name=network_name, container_name=container_name, env_variable=env_variable
             )
-        ),
+        )
     ]
 
 
@@ -143,8 +146,8 @@ def airline_demo_tests():
                 *wrap_with_docker_compose_steps(
                     # Can't use host networking on buildkite and communicate via localhost
                     # between these sibling containers, so pass along the ip.
-                    network_buildkite_container('postgres') + 
-                    connect_sibling_docker_container(
+                    network_buildkite_container('postgres')
+                    + connect_sibling_docker_container(
                         'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
                     )
                     + [
@@ -223,11 +226,11 @@ def dagster_postgres_tests():
                 "cd python_modules/libraries/dagster-postgres/dagster_postgres_tests/",
                 *wrap_with_docker_compose_steps(
                     wrap_with_docker_compose_steps(
-                        network_buildkite_container('postgres') +
-                        connect_sibling_docker_container(
+                        network_buildkite_container('postgres')
+                        + connect_sibling_docker_container(
                             'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
-                        ) +
-                        network_buildkite_container('postgres_multi')
+                        )
+                        + network_buildkite_container('postgres_multi')
                         + connect_sibling_docker_container(
                             'postgres_multi',
                             'test-run-storage-db',
@@ -335,8 +338,8 @@ def dask_tests():
                 "./build.sh " + version,
                 # Run the docker-compose dask cluster
                 *wrap_with_docker_compose_steps(
-                    network_buildkite_container('dask') + 
-                    connect_sibling_docker_container('dask', 'dask-scheduler', 'DASK_ADDRESS')
+                    network_buildkite_container('dask')
+                    + connect_sibling_docker_container('dask', 'dask-scheduler', 'DASK_ADDRESS')
                     + [
                         "popd",
                         "pushd python_modules/dagster-dask/",
@@ -427,18 +430,20 @@ def pipenv_smoke_tests():
     tests = []
     for version in SupportedPythons:
         is_release = check_for_release()
-        smoke_test_steps = [
-            "pip install pipenv",
-            "mkdir /tmp/pipenv_smoke_tests",
-            "pushd /tmp/pipenv_smoke_tests",
-            "pipenv install -e /workdir/python_modules/dagster",
-            "pipenv install -e /workdir/python_modules/dagit"
-        ] if not is_release else []
+        smoke_test_steps = (
+            [
+                "pip install pipenv",
+                "mkdir /tmp/pipenv_smoke_tests",
+                "pushd /tmp/pipenv_smoke_tests",
+                "pipenv install -e /workdir/python_modules/dagster",
+                "pipenv install -e /workdir/python_modules/dagit",
+            ]
+            if not is_release
+            else []
+        )
         tests.append(
             StepBuilder("pipenv smoke tests ({ver})".format(ver=TOX_MAP[version]))
-            .run(
-                *smoke_test_steps
-            )
+            .run(*smoke_test_steps)
             .on_integration_image(version)
             .on_queue(BuildkiteQueue.MEDIUM)
             .build()
