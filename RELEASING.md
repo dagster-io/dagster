@@ -87,12 +87,6 @@ It's also prudent to release from a fresh virtualenv.
 
 9.  Check that the ReadTheDocs and PyPI versions are as you expect.
 
-10. Refresh the dagster/dagster images on Docker Hub by running:
-
-        cd .buildkite/images/docker
-        make build-public
-        make push-public
-
 ### PyPI credentials
 
 Credentials must be available to twine in order to publish to PyPI. The best way to do this is
