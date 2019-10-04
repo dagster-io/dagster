@@ -7,7 +7,9 @@ import sys
 
 import boto3
 import click
+import requests
 import six
+import terminaltables
 
 from dagster import seven
 
@@ -423,10 +425,38 @@ def info():
     dagster_home = get_dagster_home()
     click.echo('\n')
 
+    ec2_config = None
     if EC2Config.exists(dagster_home):
         ec2_config = EC2Config.load(dagster_home)
         click.echo(ec2_config.as_table() + '\n')
+    else:
+        Term.fatal('No EC2 instance configuration found; please run dagster-aws init first!')
 
     if RDSConfig.exists(dagster_home):
         rds_config = RDSConfig.load(dagster_home)
         click.echo(rds_config.as_table() + '\n')
+
+    instance_uri = 'http://%s:3000' % ec2_config.remote_host
+
+    click.echo('Instance status: ', nl=False)
+    status = True
+    try:
+        r = requests.get(instance_uri, timeout=0.1)
+        if r.status_code != 200:
+            status = False
+    except requests.RequestException:
+        status = False
+
+    if status:
+        click.echo(click.style('[AVAILABLE]', fg='green'))
+        click.echo(
+            'To connect to your host, open the following URL in a browser:\n\n'
+            + terminaltables.SingleTable(
+                [['\n' + click.style('  %s  ' % instance_uri, fg='blue') + '\n']],
+                title='Dagit Instance URI',
+            ).table
+        )
+
+    else:
+        click.echo(click.style('[DOWN]', fg='red'))
+        Term.fatal('Could not connect to remote host %s, aborting' % instance_uri)
