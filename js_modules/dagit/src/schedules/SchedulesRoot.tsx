@@ -291,26 +291,20 @@ const ScheduleRow: React.FunctionComponent<{
           content={
             <Menu>
               <MenuItem
-                text="View Execution Params..."
+                text="View Configuration..."
                 icon="share"
                 onClick={() =>
                   showCustomAlert({
-                    title: "Execution Params",
+                    title: "Config",
                     body: (
                       <HighlightedCodeBlock
-                        value={JSON.stringify(executionParams, null, 2)}
-                        languages={["json"]}
+                        value={environmentConfigYaml}
+                        languages={["yaml"]}
                       />
                     )
                   })
                 }
               />
-              <MenuItem
-                text="Copy Path to Debug Logs"
-                icon="clipboard"
-                onClick={(e: React.MouseEvent<any>) => copyValue(e, logsPath)}
-              />
-              <MenuDivider />
               <MenuItem
                 text="Open in Execute Tab..."
                 icon="edit"
@@ -322,6 +316,12 @@ const ScheduleRow: React.FunctionComponent<{
                   config: environmentConfigYaml,
                   solidSubset: executionParams.selector.solidSubset
                 })}`}
+              />
+              <MenuDivider />
+              <MenuItem
+                text="Copy Path to Debug Logs"
+                icon="clipboard"
+                onClick={(e: React.MouseEvent<any>) => copyValue(e, logsPath)}
               />
             </Menu>
           }
