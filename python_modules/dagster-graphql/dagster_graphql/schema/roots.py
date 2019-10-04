@@ -35,6 +35,7 @@ from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
 from dagster.core.instance import DagsterFeatures, DagsterInstance
+from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 
 from .config_types import to_dauphin_config_type
@@ -458,6 +459,9 @@ class DauphinMutation(dauphin.ObjectType):
     delete_pipeline_run = DauphinDeleteRunMutation.Field()
 
 
+DauphinComputeIOType = dauphin.Enum.from_enum(ComputeIOType)
+
+
 class DauphinSubscription(dauphin.ObjectType):
     class Meta:
         name = 'Subscription'
@@ -469,17 +473,21 @@ class DauphinSubscription(dauphin.ObjectType):
     )
 
     computeLogs = dauphin.Field(
-        dauphin.NonNull('ComputeLogs'),
+        dauphin.NonNull('ComputeLogFile'),
         runId=dauphin.Argument(dauphin.NonNull(dauphin.ID)),
         stepKey=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        ioType=dauphin.Argument(dauphin.NonNull('ComputeIOType')),
         cursor=dauphin.Argument(dauphin.String),
     )
 
     def resolve_pipelineRunLogs(self, graphene_info, runId, after=None):
         return get_pipeline_run_observable(graphene_info, runId, after)
 
-    def resolve_computeLogs(self, graphene_info, runId, stepKey, cursor=None):
-        return get_compute_log_observable(graphene_info, runId, stepKey, cursor)
+    def resolve_computeLogs(self, graphene_info, runId, stepKey, ioType, cursor=None):
+        check.str_param(ioType, 'ioType')  # need to resolve to enum
+        return get_compute_log_observable(
+            graphene_info, runId, stepKey, ComputeIOType(ioType), cursor
+        )
 
 
 class DauphinEnvironmentConfigData(dauphin.GenericScalar, dauphin.Scalar):

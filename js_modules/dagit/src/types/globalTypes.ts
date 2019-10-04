@@ -7,6 +7,11 @@
 // START Enums and Input Objects
 //==============================================================
 
+export enum ComputeIOType {
+  STDERR = "STDERR",
+  STDOUT = "STDOUT",
+}
+
 export enum EvaluationErrorReason {
   FIELDS_NOT_DEFINED = "FIELDS_NOT_DEFINED",
   FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",

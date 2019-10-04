@@ -6,7 +6,6 @@ from dagster.core.serdes import ConfigurableClass
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
-    ComputeLogData,
     ComputeLogFileData,
     ComputeLogManager,
 )
@@ -67,18 +66,11 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         self._download_urls[key] = url
         return url
 
-    def read_logs(self, run_id, step_key, cursor=None, max_bytes=MAX_BYTES_FILE_READ):
-        # Need to wrap the log data from the local manager to use the current manager methods
-        if self._should_download(run_id, step_key, ComputeIOType.STDOUT):
-            self._download_to_local(run_id, step_key, ComputeIOType.STDOUT)
-        if self._should_download(run_id, step_key, ComputeIOType.STDERR):
-            self._download_to_local(run_id, step_key, ComputeIOType.STDERR)
-        data = self.local_manager.read_logs(run_id, step_key, cursor, max_bytes)
-        return ComputeLogData(
-            self._from_local_file_data(run_id, step_key, ComputeIOType.STDOUT, data.stdout),
-            self._from_local_file_data(run_id, step_key, ComputeIOType.STDERR, data.stderr),
-            data.cursor,
-        )
+    def read_logs_file(self, run_id, step_key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
+        if self._should_download(run_id, step_key, io_type):
+            self._download_to_local(run_id, step_key, io_type)
+        data = self.local_manager.read_logs_file(run_id, step_key, io_type, cursor, max_bytes)
+        return self._from_local_file_data(run_id, step_key, io_type, data)
 
     def on_subscribe(self, subscription):
         self.local_manager.on_subscribe(subscription)

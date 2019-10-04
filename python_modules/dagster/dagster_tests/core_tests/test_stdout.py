@@ -3,6 +3,7 @@ import sys
 
 from dagster import DagsterEventType, execute_pipeline, lambda_solid, pipeline
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.compute_log_manager import ComputeIOType
 
 
 @lambda_solid
@@ -22,6 +23,7 @@ SEPARATOR = os.linesep if (os.name == 'nt' and sys.version_info < (3,)) else '\n
 
 def test_stdout():
     instance = DagsterInstance.local_temp()
+    manager = instance.compute_log_manager
     result = execute_pipeline(spew_pipeline, instance=instance)
     assert result.success
     compute_steps = [
@@ -31,33 +33,37 @@ def test_stdout():
     ]
     assert len(compute_steps) == 1
     step_key = compute_steps[0]
-    logs = instance.compute_log_manager.read_logs(result.run_id, step_key)
-    assert logs.stdout.data == HELLO_WORLD + SEPARATOR
+    assert manager.is_compute_completed(result.run_id, step_key)
 
-    cleaned_logs = logs.stderr.data.replace('\x1b[34m', '').replace('\x1b[0m', '')
+    stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+    assert stdout.data == HELLO_WORLD + SEPARATOR
 
+    stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+    cleaned_logs = stderr.data.replace('\x1b[34m', '').replace('\x1b[0m', '')
     assert 'dagster - DEBUG - spew_pipeline - ' in cleaned_logs
-    logs = instance.compute_log_manager.read_logs(result.run_id, step_key, cursor='0:0')
-    assert logs.stdout.data == HELLO_WORLD + SEPARATOR
-    assert 'dagster - DEBUG - spew_pipeline - ' in cleaned_logs
-    assert instance.compute_log_manager.is_compute_completed(result.run_id, step_key)
 
-    bad_logs = instance.compute_log_manager.read_logs('not_a_run_id', step_key)
-    assert bad_logs.stdout.data is None
-    assert bad_logs.stderr.data is None
-    assert not instance.compute_log_manager.is_compute_completed('not_a_run_id', step_key)
+    bad_logs = manager.read_logs_file('not_a_run_id', step_key, ComputeIOType.STDOUT)
+    assert bad_logs.data is None
+    assert not manager.is_compute_completed('not_a_run_id', step_key)
 
 
 def test_stdout_subscriptions():
     instance = DagsterInstance.local_temp()
     step_key = 'spew.compute'
     result = execute_pipeline(spew_pipeline, instance=instance)
-    observable = instance.compute_log_manager.observable(result.run_id, step_key)
-    logs = []
-    observable.subscribe(logs.append)
-    assert len(logs) == 1
-    stdout_cursor, stderr_cursor = map(int, logs[0].cursor.split(':'))
-    assert stdout_cursor == len(logs[0].stdout.data)
-    assert stdout_cursor in [12, 13]
-    assert stderr_cursor == len(logs[0].stderr.data)
-    assert stderr_cursor > 400
+    stdout_observable = instance.compute_log_manager.observable(
+        result.run_id, step_key, ComputeIOType.STDOUT
+    )
+    stderr_observable = instance.compute_log_manager.observable(
+        result.run_id, step_key, ComputeIOType.STDERR
+    )
+    stdout = []
+    stdout_observable.subscribe(stdout.append)
+    stderr = []
+    stderr_observable.subscribe(stderr.append)
+    assert len(stdout) == 1
+    assert stdout[0].data.startswith(HELLO_WORLD)
+    assert stdout[0].cursor in [12, 13]
+    assert len(stderr) == 1
+    assert stderr[0].cursor == len(stderr[0].data)
+    assert stderr[0].cursor > 400

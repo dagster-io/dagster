@@ -20,7 +20,7 @@ from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.storage.compute_log_manager import ComputeLogData, ComputeLogFileData
+from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster.core.storage.pipeline_run import (
     PipelineRun,
     PipelineRunStatsSnapshot,
@@ -103,8 +103,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return graphene_info.schema.type_named('PipelineRunStatsSnapshot')(stats)
 
     def resolve_computeLogs(self, graphene_info, stepKey):
-        update = graphene_info.context.instance.compute_log_manager.read_logs(self.run_id, stepKey)
-        return from_compute_log_update(graphene_info, self.run_id, stepKey, update)
+        return graphene_info.schema.type_named('ComputeLogs')(runId=self.run_id, stepKey=stepKey)
 
     def resolve_executionPlan(self, graphene_info):
         pipeline = self.resolve_pipeline(graphene_info)
@@ -173,7 +172,17 @@ class DauphinComputeLogs(dauphin.ObjectType):
     stepKey = dauphin.NonNull(dauphin.String)
     stdout = dauphin.Field('ComputeLogFile')
     stderr = dauphin.Field('ComputeLogFile')
-    cursor = dauphin.NonNull(dauphin.String)
+
+    def _resolve_compute_log(self, graphene_info, io_type):
+        return graphene_info.context.instance.compute_log_manager.read_logs_file(
+            self.runId, self.stepKey, io_type, 0
+        )
+
+    def resolve_stdout(self, graphene_info):
+        return self._resolve_compute_log(graphene_info, ComputeIOType.STDOUT)
+
+    def resolve_stderr(self, graphene_info):
+        return self._resolve_compute_log(graphene_info, ComputeIOType.STDERR)
 
 
 class DauphinComputeLogFile(dauphin.ObjectType):
@@ -732,19 +741,6 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
                 inner_type=dagster_event.event_type
             )
         )
-
-
-def from_compute_log_update(graphene_info, run_id, step_key, update):
-    check.str_param(run_id, 'run_id')
-    check.str_param(step_key, 'step_key')
-    check.inst_param(update, 'update', ComputeLogData)
-    return graphene_info.schema.type_named('ComputeLogs')(
-        runId=run_id,
-        stepKey=step_key,
-        stdout=from_compute_log_file(graphene_info, update.stdout),
-        stderr=from_compute_log_file(graphene_info, update.stderr),
-        cursor=update.cursor,
-    )
 
 
 def from_compute_log_file(graphene_info, file):

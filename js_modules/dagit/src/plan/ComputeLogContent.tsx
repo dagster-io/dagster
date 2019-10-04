@@ -7,12 +7,13 @@ import Ansi from "ansi-to-react";
 import { IStepState } from "../RunMetadataProvider";
 import { ExecutionStateDot } from "./ExecutionStateDot";
 import { ROOT_SERVER_URI } from "../Util";
-import { ComputeLogContentFragment } from "./types/ComputeLogContentFragment";
+import { ComputeLogContentFileFragment } from "./types/ComputeLogContentFileFragment";
 
 interface IComputeLogContentProps {
   runState: IStepState;
   onRequestClose: () => void;
-  computeLogs: ComputeLogContentFragment;
+  stdout: ComputeLogContentFileFragment;
+  stderr: ComputeLogContentFileFragment;
 }
 
 export class ComputeLogContent extends React.Component<
@@ -22,16 +23,9 @@ export class ComputeLogContent extends React.Component<
     ComputeLogContentFragment: gql`
       fragment ComputeLogContentFileFragment on ComputeLogFile {
         path
+        cursor
         data
         downloadUrl
-      }
-      fragment ComputeLogContentFragment on ComputeLogs {
-        stdout {
-          ...ComputeLogContentFileFragment
-        }
-        stderr {
-          ...ComputeLogContentFileFragment
-        }
       }
     `
   };
@@ -59,10 +53,10 @@ export class ComputeLogContent extends React.Component<
   }
 
   render() {
-    const { computeLogs } = this.props;
+    const { stdout, stderr } = this.props;
     const { selected } = this.state;
 
-    const logData = computeLogs[selected];
+    const logData = selected === "stdout" ? stdout : stderr;
     if (!logData) {
       return null;
     }
@@ -108,11 +102,11 @@ export class ComputeLogContent extends React.Component<
             </Row>
           </FileHeader>
           <FileContent
-            content={(computeLogs.stdout && computeLogs.stdout.data) || ""}
+            content={(stdout && stdout.data) || ""}
             selected={selected === "stdout"}
           />
           <FileContent
-            content={(computeLogs.stderr && computeLogs.stderr.data) || ""}
+            content={(stderr && stderr.data) || ""}
             selected={selected === "stderr"}
           />
           <FileFooter>{path}</FileFooter>

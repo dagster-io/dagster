@@ -4,7 +4,7 @@ import sys
 from collections import namedtuple
 
 from dagster_graphql.schema.runs import (
-    from_compute_log_update,
+    from_compute_log_file,
     from_dagster_event_record,
     from_event_record,
 )
@@ -17,6 +17,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.serdes import serialize_dagster_namedtuple
+from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
@@ -282,15 +283,16 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     )
 
 
-def get_compute_log_observable(graphene_info, run_id, step_key, cursor=None):
+def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=None):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(run_id, 'run_id')
     check.str_param(step_key, 'step_key')
+    check.inst_param(io_type, 'io_type', ComputeIOType)
     check.opt_str_param(cursor, 'cursor')
 
     return graphene_info.context.instance.compute_log_manager.observable(
-        run_id, step_key, cursor
-    ).map(lambda update: from_compute_log_update(graphene_info, run_id, step_key, update))
+        run_id, step_key, io_type, cursor
+    ).map(lambda update: from_compute_log_file(graphene_info, update))
 
 
 class ExecutionParams(

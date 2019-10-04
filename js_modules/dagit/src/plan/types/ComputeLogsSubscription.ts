@@ -3,29 +3,18 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { ComputeIOType } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL subscription operation: ComputeLogsSubscription
 // ====================================================
 
-export interface ComputeLogsSubscription_computeLogs_stdout {
-  __typename: "ComputeLogFile";
-  path: string;
-  data: string;
-  downloadUrl: string;
-}
-
-export interface ComputeLogsSubscription_computeLogs_stderr {
-  __typename: "ComputeLogFile";
-  path: string;
-  data: string;
-  downloadUrl: string;
-}
-
 export interface ComputeLogsSubscription_computeLogs {
-  __typename: "ComputeLogs";
-  stdout: ComputeLogsSubscription_computeLogs_stdout | null;
-  stderr: ComputeLogsSubscription_computeLogs_stderr | null;
-  cursor: string;
+  __typename: "ComputeLogFile";
+  data: string;
+  cursor: number;
+  path: string;
+  downloadUrl: string;
 }
 
 export interface ComputeLogsSubscription {
@@ -35,5 +24,6 @@ export interface ComputeLogsSubscription {
 export interface ComputeLogsSubscriptionVariables {
   runId: string;
   stepKey: string;
+  ioType: ComputeIOType;
   cursor?: string | null;
 }

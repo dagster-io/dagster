@@ -19,11 +19,9 @@ COMPUTE_LOGS_QUERY = '''
   }
 '''
 COMPUTE_LOGS_SUBSCRIPTION = '''
-  subscription ComputeLogsSubscription($runId: ID!, $stepKey: String!, $cursor: String!) {
-    computeLogs(runId: $runId, stepKey: $stepKey, cursor: $cursor) {
-      stdout {
-        data
-      }
+  subscription ComputeLogsSubscription($runId: ID!, $stepKey: String!, $ioType: ComputeIOType!, $cursor: String!) {
+    computeLogs(runId: $runId, stepKey: $stepKey, ioType: $ioType, cursor: $cursor) {
+      data
     }
   }
 '''
@@ -53,11 +51,11 @@ def test_compute_logs_subscription_graphql(snapshot):
     subscription = execute_dagster_graphql(
         define_context(instance=DagsterInstance.local_temp()),
         COMPUTE_LOGS_SUBSCRIPTION,
-        variables={'runId': run_id, 'stepKey': 'spew.compute', 'cursor': '0:0'},
+        variables={'runId': run_id, 'stepKey': 'spew.compute', 'ioType': 'STDOUT', 'cursor': '0'},
     )
     results = []
     subscription.subscribe(lambda x: results.append(x.data))
     assert len(results) == 1
     result = results[0]
-    assert result['computeLogs']['stdout']['data'] == 'HELLO WORLD\n'
+    assert result['computeLogs']['data'] == 'HELLO WORLD\n'
     snapshot.assert_match(results)
