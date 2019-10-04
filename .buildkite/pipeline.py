@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 
 import yaml
@@ -19,6 +20,25 @@ TOX_MAP = {
 
 # https://github.com/dagster-io/dagster/issues/1662
 DO_COVERAGE = False
+
+def check_for_release():
+    try:
+        git_tag = str(
+            subprocess.check_output(
+                ['git', 'describe', '--exact-match', '--abbrev=0'], stderr=subprocess.STDOUT
+            )
+        ).strip('\'b\\n')
+    except subprocess.CalledProcessError:
+        return False
+
+    version = {}
+    with open('python_modules/dagster/dagster/version.py') as fp:
+        exec(fp.read(), version)  # pylint: disable=W0122
+
+    if git_tag == version['__version__']:
+        return True
+    
+    return False
 
 
 def wait_step():
@@ -406,14 +426,18 @@ def lakehouse_tests():
 def pipenv_smoke_tests():
     tests = []
     for version in SupportedPythons:
+        is_release = check_for_release()
+        smoke_test_steps = [
+            "pip install pipenv",
+            "mkdir /tmp/pipenv_smoke_tests",
+            "pushd /tmp/pipenv_smoke_tests",
+            "pipenv install -e /workdir/python_modules/dagster",
+            "pipenv install -e /workdir/python_modules/dagit"
+        ] if not is_release else []
         tests.append(
             StepBuilder("pipenv smoke tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "pip install pipenv",
-                "mkdir /tmp/pipenv_smoke_tests",
-                "pushd /tmp/pipenv_smoke_tests",
-                "pipenv install -e /workdir/python_modules/dagster",
-                "pipenv install -e /workdir/python_modules/dagit",
+                *smoke_test_steps
             )
             .on_integration_image(version)
             .on_queue(BuildkiteQueue.MEDIUM)
