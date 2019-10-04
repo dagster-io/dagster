@@ -113,7 +113,8 @@ def python_modules_tox_tests(directory):
         tests.append(
             StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
             .run(
-                "pip install tox;",
+                "pip install tox",
+                "eval $(ssh-agent)",
                 "cd python_modules/{directory}".format(directory=directory),
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),

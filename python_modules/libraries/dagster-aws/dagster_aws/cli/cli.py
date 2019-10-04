@@ -4,6 +4,7 @@ import os
 import signal
 import subprocess
 import sys
+import uuid
 
 import boto3
 import click
@@ -138,6 +139,52 @@ def ensure_requirements(base_path):
         Term.waiting('No requirements.txt found, creating...')
         with open(requirements_file, 'wb') as f:
             f.write(six.ensure_binary('\n'.join(['dagster', 'dagit'])))
+
+
+def remove_ssh_key(key_file_path):
+    # We have to clean up after ourselves to avoid "Too many authentication failures" issue.
+    Term.waiting('Removing SSH key from authentication agent...')
+
+    # AWS only gives us the private key contents; ssh-add uses the private key for adding but the
+    # public key for removing
+    try:
+        public_keys = six.ensure_str(subprocess.check_output(['ssh-add', '-L'])).strip().split('\n')
+    except subprocess.CalledProcessError:
+        Term.rewind()
+        Term.info('No identities found, skipping')
+        return True
+
+    filtered_public_keys = [key for key in public_keys if key_file_path in key]
+    public_key = filtered_public_keys[0] if filtered_public_keys else None
+
+    if public_key:
+        tmp_pub_file = os.path.join(
+            seven.get_system_temp_directory(), uuid.uuid4().hex + '-tmp-pubkey'
+        )
+
+        with open(tmp_pub_file, 'wb') as f:
+            f.write(six.ensure_binary(public_key))
+
+        res = subprocess.Popen(
+            ['ssh-add', '-d', tmp_pub_file], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        ).communicate()
+        res = six.ensure_str(res[0])
+
+        os.unlink(tmp_pub_file)
+
+        if 'Identity removed' in res:
+            Term.rewind()
+            Term.success('key deleted successfully')
+            return True
+        else:
+            Term.warning('Could not remove key, error: %s' % res)
+            return False
+    else:
+        Term.rewind()
+        Term.info('key not found, skipping')
+        return False
+
+    return True
 
 
 @click.group()
@@ -382,6 +429,9 @@ def delete():
     )
     if should_delete_key_pair:
         client.delete_key_pair(KeyName=ec2_config.key_pair_name)
+
+        remove_ssh_key(ec2_config.key_file_path)
+
         ec2_config = ec2_config._replace(key_pair_name=None, key_file_path=None)
 
     # Prompt user to delete security group also

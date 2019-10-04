@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import datetime
 import getpass
 import os
@@ -249,7 +250,7 @@ def get_validated_ami_id(_client):
 def create_ec2_instance(client, ec2, security_group_id, ami_id, key_pair_name, use_master):
     '''Actually create the EC2 instance given the provided configuration.
     '''
-    click.echo('\n🌱 Provisioning an EC2 instance for dagit')
+    click.echo(u'\n🌱 Provisioning an EC2 instance for dagit')
 
     instance_type = click.prompt(
         '\nChoose an EC2 instance type '
