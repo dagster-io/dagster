@@ -1,7 +1,9 @@
 import os
 import subprocess
 
-from dagster_aws.cli.cli import remove_ssh_key
+import click
+from click.testing import CliRunner
+from dagster_aws.cli.cli import ensure_requirements, remove_ssh_key
 
 from dagster import seven
 
@@ -28,6 +30,46 @@ MX2voKSLY9sg9xR1yG84yg5RGcsGlVDgzKx7GAUyJfFBHQKBgB+xoOvKJRalORPxryV5g37q/0C9
 /HqpGCbVxGTuKdq9aASuOae3Lxf6b7NyLVjPLnhdOCwddi8tFbPoZa+3/EBSX1VPVxXAJ/FpkIbW
 /HUvDDKSnDcBzS1/ufsTgRO4OqtTrj9idqoyAPar4BdC1ABDbL4OOKP9QAPrvjefBZtt
 -----END RSA PRIVATE KEY-----'''
+
+
+def test_ensure_requirements():
+    runner = CliRunner()
+    with runner.isolated_filesystem() as tmp_dir:
+
+        @click.command()
+        def test():
+            ensure_requirements(tmp_dir)
+
+        result = runner.invoke(test)
+        assert 'No requirements.txt found, creating' in result.output
+
+        with open(os.path.join(tmp_dir, 'requirements.txt'), 'w') as f:
+            f.write('dagster\ndagit\n')
+
+        result = runner.invoke(test)
+        assert 'Found existing requirements.txt' in result.output
+
+        with open(os.path.join(tmp_dir, 'requirements.txt'), 'w') as f:
+            f.write('dagster\n')
+
+        result = runner.invoke(test, input='n\n')
+        assert 'Could not find dagit' in result.output
+        assert result.exit_code == 1
+
+        result = runner.invoke(test, input='y\n')
+        assert 'Could not find dagit' in result.output
+        assert result.exit_code == 0
+
+        with open(os.path.join(tmp_dir, 'requirements.txt'), 'w') as f:
+            f.write('dagit\n')
+
+        result = runner.invoke(test, input='n\n')
+        assert 'Could not find dagster' in result.output
+        assert result.exit_code == 1
+
+        result = runner.invoke(test, input='y\n')
+        assert 'Could not find dagster' in result.output
+        assert result.exit_code == 0
 
 
 def test_remove_ssh_key():
