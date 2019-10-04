@@ -10,6 +10,55 @@ interface IDividerState {
   down: boolean;
 }
 
+interface SplitPanelChildrenProps {
+  identifier: string;
+  left: React.ReactNode;
+  leftInitialPercent: number;
+  leftMinWidth?: number;
+  right: React.ReactNode;
+}
+interface SplitPanelChildrenState {
+  width: number;
+  key: string;
+}
+
+export class SplitPanelChildren extends React.Component<
+  SplitPanelChildrenProps,
+  SplitPanelChildrenState
+> {
+  constructor(props: SplitPanelChildrenProps) {
+    super(props);
+
+    const key = `dagit.panel-width.${this.props.identifier}`;
+    let width = Number(window.localStorage.getItem(key));
+    if (width === 0 || isNaN(width)) {
+      width = this.props.leftInitialPercent;
+    }
+
+    this.state = { width, key };
+  }
+
+  onChangeWidth = (vw: number) => {
+    this.setState({ width: vw });
+    window.localStorage.setItem(this.state.key, `${vw}`);
+  };
+
+  render() {
+    const { leftMinWidth, left, right } = this.props;
+    const { width } = this.state;
+
+    return (
+      <>
+        <Split width={width} style={{ flexShrink: 0, minWidth: leftMinWidth }}>
+          {left}
+        </Split>
+        <PanelDivider axis="horizontal" onMove={this.onChangeWidth} />
+        <Split>{right}</Split>
+      </>
+    );
+  }
+}
+
 export class PanelDivider extends React.Component<
   IDividerProps,
   IDividerState
@@ -84,3 +133,10 @@ const DividerHitArea = {
     top: -8px;
   `
 };
+
+const Split = styled.div<{ width?: number }>`
+  ${props => (props.width ? `width: ${props.width}vw` : `flex: 1`)};
+  position: relative;
+  flex-direction: column;
+  display: flex;
+`;

@@ -13,7 +13,7 @@ import {
   HANDLE_START_EXECUTION_FRAGMENT
 } from "../runs/RunUtils";
 import { RunPreview } from "./RunPreview";
-import { PanelDivider } from "../PanelDivider";
+import { SplitPanelChildren } from "../SplitPanelChildren";
 import SolidSelector from "./SolidSelector";
 import {
   ConfigEditor,
@@ -71,7 +71,6 @@ interface IPipelineExecutionContainerProps {
 }
 
 interface IPipelineExecutionContainerState {
-  editorVW: number;
   editorHelpContext: ConfigEditorHelpContext | null;
   preview: PreviewConfigQuery | null;
   showWhitespace: boolean;
@@ -124,7 +123,6 @@ export default class PipelineExecutionContainer extends React.Component<
   };
 
   state: IPipelineExecutionContainerState = {
-    editorVW: 75,
     preview: null,
     showWhitespace: true,
     editorHelpContext: null
@@ -299,111 +297,111 @@ export default class PipelineExecutionContainer extends React.Component<
         </Mutation>
         {currentSession ? (
           <PipelineExecutionWrapper>
-            <Split width={this.state.editorVW} style={{ flexShrink: 0 }}>
-              <ConfigEditorPresetInsertionContainer className="bp3-dark">
-                <ConfigEditorPresetsPicker
-                  pipelineName={pipelineName}
-                  solidSubset={currentSession.solidSubset}
-                  onCreateSession={this.onCreateSession}
-                />
-              </ConfigEditorPresetInsertionContainer>
-              <ConfigEditorHelp context={editorHelpContext} />
-              <ApolloConsumer>
-                {client => (
-                  <ConfigEditor
-                    readOnly={false}
-                    environmentSchema={environmentSchema}
-                    configCode={currentSession.environmentConfigYaml}
-                    onConfigChange={this.onConfigChange}
-                    onHelpContextChange={next => {
-                      if (!isHelpContextEqual(editorHelpContext, next)) {
-                        this.setState({ editorHelpContext: next });
-                      }
-                    }}
-                    showWhitespace={showWhitespace}
-                    checkConfig={async environmentConfigData => {
-                      if (!currentSession.mode || modeError) {
-                        return {
-                          isValid: false,
-                          errors: [
-                            // FIXME this should be specific -- we should have an enumerated
-                            // validation error when there is no mode provided
-                            {
-                              message: "Must specify a mode",
-                              path: ["root"],
-                              reason: "MISSING_REQUIRED_FIELD"
-                            }
-                          ]
-                        };
-                      }
-                      const { data } = await client.query<
-                        PreviewConfigQuery,
-                        PreviewConfigQueryVariables
-                      >({
-                        fetchPolicy: "no-cache",
-                        query: PREVIEW_CONFIG_QUERY,
-                        variables: {
-                          environmentConfigData,
-                          pipeline: {
-                            name: pipelineName,
-                            solidSubset: currentSession.solidSubset
-                          },
-                          mode: currentSession.mode || "default"
-                        }
-                      });
-
-                      this.setState({ preview: data });
-
-                      return responseToValidationResult(
-                        environmentConfigData,
-                        data.isPipelineConfigValid
-                      );
-                    }}
-                  />
-                )}
-              </ApolloConsumer>
-              <SessionSettingsBar className="bp3-dark">
+            <SplitPanelChildren
+              identifier={"execution"}
+              leftInitialPercent={75}
+              left={
                 <>
-                  <SolidSelector
-                    pipelineName={pipelineName}
-                    subsetError={subsetError}
-                    value={currentSession.solidSubset || null}
-                    onChange={this.onSolidSubsetChange}
-                  />
-                  {pipeline && (
-                    <ConfigEditorModePicker
-                      modes={pipeline.modes}
-                      modeError={modeError}
-                      onModeChange={this.onModeChange}
-                      modeName={currentSession.mode}
+                  <ConfigEditorPresetInsertionContainer className="bp3-dark">
+                    <ConfigEditorPresetsPicker
+                      pipelineName={pipelineName}
+                      solidSubset={currentSession.solidSubset}
+                      onCreateSession={this.onCreateSession}
                     />
-                  )}
-                  <Button
-                    icon="paragraph"
-                    small={true}
-                    active={showWhitespace}
-                    style={{ marginLeft: "auto" }}
-                    onClick={() =>
-                      this.setState({ showWhitespace: !showWhitespace })
-                    }
-                  />
+                  </ConfigEditorPresetInsertionContainer>
+                  <ConfigEditorHelp context={editorHelpContext} />
+                  <ApolloConsumer>
+                    {client => (
+                      <ConfigEditor
+                        readOnly={false}
+                        environmentSchema={environmentSchema}
+                        configCode={currentSession.environmentConfigYaml}
+                        onConfigChange={this.onConfigChange}
+                        onHelpContextChange={next => {
+                          if (!isHelpContextEqual(editorHelpContext, next)) {
+                            this.setState({ editorHelpContext: next });
+                          }
+                        }}
+                        showWhitespace={showWhitespace}
+                        checkConfig={async environmentConfigData => {
+                          if (!currentSession.mode || modeError) {
+                            return {
+                              isValid: false,
+                              errors: [
+                                // FIXME this should be specific -- we should have an enumerated
+                                // validation error when there is no mode provided
+                                {
+                                  message: "Must specify a mode",
+                                  path: ["root"],
+                                  reason: "MISSING_REQUIRED_FIELD"
+                                }
+                              ]
+                            };
+                          }
+                          const { data } = await client.query<
+                            PreviewConfigQuery,
+                            PreviewConfigQueryVariables
+                          >({
+                            fetchPolicy: "no-cache",
+                            query: PREVIEW_CONFIG_QUERY,
+                            variables: {
+                              environmentConfigData,
+                              pipeline: {
+                                name: pipelineName,
+                                solidSubset: currentSession.solidSubset
+                              },
+                              mode: currentSession.mode || "default"
+                            }
+                          });
+
+                          this.setState({ preview: data });
+
+                          return responseToValidationResult(
+                            environmentConfigData,
+                            data.isPipelineConfigValid
+                          );
+                        }}
+                      />
+                    )}
+                  </ApolloConsumer>
+                  <SessionSettingsBar className="bp3-dark">
+                    <SolidSelector
+                      pipelineName={pipelineName}
+                      subsetError={subsetError}
+                      value={currentSession.solidSubset || null}
+                      onChange={this.onSolidSubsetChange}
+                    />
+                    {pipeline && (
+                      <ConfigEditorModePicker
+                        modes={pipeline.modes}
+                        modeError={modeError}
+                        onModeChange={this.onModeChange}
+                        modeName={currentSession.mode}
+                      />
+                    )}
+                    <Button
+                      icon="paragraph"
+                      small={true}
+                      active={showWhitespace}
+                      style={{ marginLeft: "auto" }}
+                      onClick={() =>
+                        this.setState({ showWhitespace: !showWhitespace })
+                      }
+                    />
+                  </SessionSettingsBar>
                 </>
-              </SessionSettingsBar>
-            </Split>
-            <PanelDivider
-              axis="horizontal"
-              onMove={(vw: number) => this.setState({ editorVW: vw })}
+              }
+              right={
+                preview ? (
+                  <RunPreview
+                    plan={preview.executionPlan}
+                    validation={preview.isPipelineConfigValid}
+                  />
+                ) : (
+                  <RunPreview />
+                )
+              }
             />
-            <Split>
-              {preview ? (
-                <RunPreview
-                  plan={preview.executionPlan}
-                  validation={preview.isPipelineConfigValid}
-                />
-              ) : (
-                <RunPreview />
-              )}
-            </Split>
           </PipelineExecutionWrapper>
         ) : (
           <span />
@@ -487,13 +485,6 @@ const SessionSettingsBar = styled.div`
   height: 47px;
   padding: 8px;
 }
-`;
-
-const Split = styled.div<{ width?: number }>`
-  ${props => (props.width ? `width: ${props.width}vw` : `flex: 1`)};
-  position: relative;
-  flex-direction: column;
-  display: flex;
 `;
 
 const ConfigEditorPresetInsertionContainer = styled.div`
