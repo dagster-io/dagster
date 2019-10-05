@@ -20,6 +20,7 @@ interface IComputeLogContentProps {
 }
 
 const TRUNCATE_PREFIX = "\u001b[33m...logs truncated...\u001b[39m\n";
+const SCROLLER_LINK_TIMEOUT_MS = 3000;
 
 export class ComputeLogContent extends React.Component<
   IComputeLogContentProps
@@ -35,13 +36,58 @@ export class ComputeLogContent extends React.Component<
     `
   };
 
+  private timeout: number;
+  private stdout = React.createRef<ScrollContainer>();
+  private stderr = React.createRef<ScrollContainer>();
+
   state = {
-    selected: "stderr"
+    selected: "stderr",
+    showScrollToTop: false
   };
 
   close = (e: React.SyntheticEvent) => {
     e.stopPropagation();
     this.props.onRequestClose();
+  };
+
+  onScrollUp = (position: number) => {
+    this.cancelHide();
+
+    if (!position) {
+      this.hide();
+    } else {
+      this.setState({ showScrollToTop: true });
+      this.scheduleHide();
+    }
+  };
+
+  onScrollDown = (_position: number) => {
+    this.hide();
+  };
+
+  hide = () => {
+    this.setState({ showScrollToTop: false });
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = 0;
+    }
+  };
+
+  scheduleHide = () => {
+    this.timeout = window.setTimeout(this.hide, SCROLLER_LINK_TIMEOUT_MS);
+  };
+
+  cancelHide = () => {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = 0;
+    }
+  };
+
+  scrollToTop = () => {
+    const { selected } = this.state;
+    const ref = selected === "stdout" ? this.stdout : this.stderr;
+    ref.current && ref.current.scrollToTop();
   };
 
   getDownloadUrl() {
@@ -53,6 +99,27 @@ export class ComputeLogContent extends React.Component<
     return isRelativeUrl(downloadUrl)
       ? ROOT_SERVER_URI + downloadUrl
       : downloadUrl;
+  }
+
+  renderScrollToTop() {
+    const { showScrollToTop } = this.state;
+
+    if (!showScrollToTop) {
+      return null;
+    }
+
+    return (
+      <ScrollToast>
+        <ScrollToTop
+          onClick={() => this.scrollToTop()}
+          onMouseOver={this.cancelHide}
+          onMouseOut={this.scheduleHide}
+        >
+          <Icon icon={IconNames.ARROW_UP} style={{ marginRight: 10 }} />
+          Scroll to top
+        </ScrollToTop>
+      </ScrollToast>
+    );
   }
 
   renderStatus() {
@@ -68,7 +135,7 @@ export class ComputeLogContent extends React.Component<
     );
   }
 
-  renderContent(content: string, isSelected: boolean) {
+  renderContent(ioType: string, content: string) {
     const isTruncated =
       Buffer.byteLength(content, "utf8") >= this.props.maxBytes;
 
@@ -93,15 +160,28 @@ export class ComputeLogContent extends React.Component<
       </FileWarning>
     ) : null;
 
+    const ref = ioType === "stdout" ? this.stdout : this.stderr;
+    const isSelected = this.state.selected === ioType;
     return (
       <FileContent isSelected={isSelected}>
         {warning}
         <RelativeContainer>
-          <LogContent content={content} />
+          <LogContent
+            isSelected={isSelected}
+            content={content}
+            onScrollUp={this.onScrollUp}
+            onScrollDown={this.onScrollDown}
+            ref={ref}
+          />
         </RelativeContainer>
       </FileContent>
     );
   }
+
+  select = (selected: string) => {
+    this.setState({ selected });
+    this.hide();
+  };
 
   render() {
     const { stdout, stderr } = this.props;
@@ -119,13 +199,13 @@ export class ComputeLogContent extends React.Component<
             <Row>
               <Tab
                 selected={selected === "stderr"}
-                onClick={() => this.setState({ selected: "stderr" })}
+                onClick={() => this.select("stderr")}
               >
                 stderr
               </Tab>
               <Tab
                 selected={selected === "stdout"}
-                onClick={() => this.setState({ selected: "stdout" })}
+                onClick={() => this.select("stdout")}
               >
                 stdout
               </Tab>
@@ -146,14 +226,9 @@ export class ComputeLogContent extends React.Component<
               ></button>
             </Row>
           </FileHeader>
-          {this.renderContent(
-            (stdout && stdout.data) || "",
-            selected === "stdout"
-          )}
-          {this.renderContent(
-            (stderr && stderr.data) || "",
-            selected === "stderr"
-          )}
+          {this.renderScrollToTop()}
+          {this.renderContent("stdout", (stdout && stdout.data) || "")}
+          {this.renderContent("stderr", (stderr && stderr.data) || "")}
           <FileFooter>{logData.path}</FileFooter>
         </FileContainer>
       </Container>
@@ -163,11 +238,23 @@ export class ComputeLogContent extends React.Component<
 
 interface IScrollContainerProps {
   content: string;
+  isSelected?: boolean;
   className?: string;
+  onScrollUp?: (position: number) => void;
+  onScrollDown?: (position: number) => void;
 }
 
 class ScrollContainer extends React.Component<IScrollContainerProps> {
   private container = React.createRef<HTMLDivElement>();
+  private lastScroll: number = 0;
+
+  componentDidMount() {
+    this.scrollToBottom();
+    if (this.container.current) {
+      this.container.current.focus();
+      this.container.current.addEventListener("scroll", this.onScroll);
+    }
+  }
 
   getSnapshotBeforeUpdate() {
     if (!this.container.current) {
@@ -182,6 +269,34 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
     if (shouldScroll) {
       this.scrollToBottom();
     }
+    if (this.props.isSelected && !_props.isSelected) {
+      this.container.current && this.container.current.focus();
+    }
+  }
+
+  onScroll = () => {
+    if (!this.container.current || !this.props.isSelected) {
+      return;
+    }
+    const { onScrollUp, onScrollDown } = this.props;
+
+    const { scrollHeight, scrollTop, offsetHeight } = this.container.current;
+    const position = scrollTop / (scrollHeight - offsetHeight);
+    if (this.container.current.scrollTop < this.lastScroll) {
+      onScrollUp && onScrollUp(position);
+    } else {
+      onScrollDown && onScrollDown(position);
+    }
+    this.lastScroll = this.container.current.scrollTop;
+  };
+
+  focus() {
+    const node = this.container.current;
+    if (!node) {
+      return;
+    }
+
+    node.focus();
   }
 
   scrollToBottom() {
@@ -191,6 +306,16 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
     }
 
     node.scrollTop = node.scrollHeight - node.offsetHeight;
+  }
+
+  scrollToTop() {
+    const node = this.container.current;
+    if (!node) {
+      return;
+    }
+
+    node.scrollTop = 0;
+    node.focus();
   }
 
   render() {
@@ -209,7 +334,12 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
     }
 
     return (
-      <div className={className} ref={this.container}>
+      <div
+        className={className}
+        style={{ outline: "none" }}
+        ref={this.container}
+        tabIndex={0}
+      >
         <ContentContainer>
           <LineNumbers content={content} />
           <Content>
@@ -413,4 +543,30 @@ const FileWarning = styled.div`
   padding: 10px 20px;
   margin: 20px 70px;
   border-radius: 5px;
+`;
+const ScrollToast = styled.div`
+  position: absolute;
+  top: 40px;
+  height: 30px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 1;
+`;
+const ScrollToTop = styled.div`
+  background-color: black;
+  padding: 10px 20px;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
+  color: white;
+  border-bottom: 0.5px solid #5c7080;
+  border-left: 0.5px solid #5c7080;
+  border-right: 0.5px solid #5c7080;
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
 `;
