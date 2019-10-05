@@ -257,13 +257,13 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
 
     scheduler = schedule_handle.get_scheduler()
     if all_flag:
-        for schedule in scheduler.all_schedules:
+        for schedule in scheduler.all_schedules():
             try:
                 schedule = scheduler.start_schedule(schedule.name)
             except DagsterInvariantViolationError as ex:
                 continue
 
-            print_fn("Started all schedules for repository {name}".format(name=repository.name))
+        print_fn("Started all schedules for repository {name}".format(name=repository.name))
     else:
         try:
             schedule = scheduler.start_schedule(schedule_name)
