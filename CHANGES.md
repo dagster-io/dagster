@@ -4,6 +4,8 @@
 
 - Fixed an issue where Dagster public images tagged `latest` on Docker Hub were erroneously
   published with an older version of Dagster (#1814)
+- Fixed an issue where the most recent scheduled run was not displayed in dagit (#1815)
+- Fixed a bug with the `dagster schedule start --start-all` command (#1812)
 
 ## 0.6.0
 
