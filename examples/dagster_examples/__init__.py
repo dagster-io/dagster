@@ -62,11 +62,8 @@ def define_demo_repo():
     from dagster_examples.event_pipeline_demo.pipelines import event_ingest_pipeline
     from dagster_examples.pyspark_pagerank.pyspark_pagerank_pipeline import pyspark_pagerank
 
-    # https://github.com/dagster-io/dagster/issues/1806
-    # from dagster_pandas.examples import papermill_pandas_hello_world_pipeline
-
-    # https://github.com/dagster-io/dagster/issues/1807
-    # from dagster_examples.jaffle_dbt.jaffle import jaffle_pipeline
+    from dagster_pandas.examples import papermill_pandas_hello_world_pipeline
+    from dagster_examples.jaffle_dbt.jaffle import jaffle_pipeline
 
     return RepositoryDefinition(
         name='demo_repository',
@@ -82,10 +79,8 @@ def define_demo_repo():
             airline_demo_warehouse_pipeline,
             event_ingest_pipeline,
             pyspark_pagerank,
-            # https://github.com/dagster-io/dagster/issues/1806
-            # papermill_pandas_hello_world_pipeline,
-            # https://github.com/dagster-io/dagster/issues/1807
-            # jaffle_pipeline,
+            papermill_pandas_hello_world_pipeline,
+            jaffle_pipeline,
             stdout_spew_pipeline,
         ],
     )

@@ -98,10 +98,10 @@ def create_dbt_solid(project_dir, name=None, profiles_dir=None, default_dbt_exec
                 default_value=default_dbt_executable,
                 is_optional=True,
                 description=(
-                    'Path to the dbt executable to invoke, e.g., /path/to/your/venv/bin/dbt. '
+                    'Path to the dbt executable to invoke, e.g., \'/path/to/your/venv/bin/dbt\'. '
                     'Default: \'{default_dbt_executable}\''.format(
                         default_dbt_executable=default_dbt_executable
-                    ),
+                    )
                 ),
             )
         },
