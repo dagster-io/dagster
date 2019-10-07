@@ -34,6 +34,7 @@ rsync -av --exclude='*target*' --exclude='*.idea*' --exclude='*.class' $ROOT/sca
 if [ $IMAGE_TYPE == "integration" ]; then
     # Build the integration image
     docker build . \
+        --no-cache \
         --build-arg PYTHON_VERSION=$PYTHON_VERSION \
         --build-arg PYTHON_MAJOR_VERSION=$PYTHON_MAJOR_VERSION \
         --target dagster-integration-image \
@@ -41,6 +42,7 @@ if [ $IMAGE_TYPE == "integration" ]; then
 else
     # Build the public image
     docker build . \
+        --no-cache \
         --build-arg PYTHON_VERSION=$PYTHON_VERSION \
         --target dagster-public-image \
         -t "dagster/dagster-py${PYTHON_MAJMIN}"

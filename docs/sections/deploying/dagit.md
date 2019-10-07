@@ -68,7 +68,7 @@ To run Dagit, you can run something like the following:
 
 ```bash
 export DAGSTER_HOME=/some/path/to/dagster_home
-dagit --no-watch -h 0.0.0.0 -p 3000
+dagit -h 0.0.0.0 -p 3000
 ```
 
 In this configuration, Dagit will write execution logs to `$DAGSTER_HOME/logs` and listen on port
@@ -91,7 +91,6 @@ ExecStart=/bin/bash -c '\
     export LANG=C.UTF-8 && \
     source /opt/dagster/venv/bin/activate && \
     /opt/dagster/venv/bin/dagit \
-        --no-watch \
         -h 0.0.0.0 \
         -p 3000 \
         -y /opt/dagster/app/repository.yaml
@@ -127,7 +126,7 @@ ADD . /
 
 EXPOSE 3000
 
-ENTRYPOINT [ "dagit", "--no-watch", "-h", "0.0.0.0", "-p", "3000" ]
+ENTRYPOINT [ "dagit", "-h", "0.0.0.0", "-p", "3000" ]
 ```
 
 This is based on the [public Docker

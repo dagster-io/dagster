@@ -57,6 +57,7 @@ RUN set -ex \
 # Install deps
     && apt-get install -yqq --no-install-recommends \
         bzip2 \
+        cron \
         openjdk-8-jre-headless="$JAVA_DEBIAN_VERSION" \
         openjdk-8-jdk-headless="$JAVA_DEBIAN_VERSION" \
         nodejs \
