@@ -248,7 +248,7 @@ const ScheduleRow: React.FunctionComponent<{
       </RowColumn>
       <RowColumn style={{ flex: 1 }}>
         {runs && runs.length > 0
-          ? runs.slice(1, NUM_RUNS_TO_DISPLAY).map(run => (
+          ? runs.slice(0, NUM_RUNS_TO_DISPLAY).map(run => (
               <div
                 style={{ display: "inline", cursor: "pointer", marginRight: 5 }}
                 key={run.runId}
