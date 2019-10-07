@@ -6,6 +6,8 @@
   published with an older version of Dagster (#1814)
 - Fixed an issue where the most recent scheduled run was not displayed in dagit (#1815)
 - Fixed a bug with the `dagster schedule start --start-all` command (#1812)
+- Added a new scheduler command to restart a schedule: `dagster schedule restart`. Also added a
+  flag to restart all running schedules: `dagster schedule restart --all-running-schedules`.
 
 ## 0.6.0
 

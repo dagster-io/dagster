@@ -28,6 +28,7 @@ from dagster.cli.pipeline import (
 from dagster.cli.run import run_list_command, run_wipe_command
 from dagster.cli.schedule import (
     schedule_list_command,
+    schedule_restart_command,
     schedule_start_command,
     schedule_stop_command,
     schedule_up_command,
@@ -636,6 +637,51 @@ def test_schedules_start_all():
 
     assert result.exit_code == 0
     assert result.output == 'Started all schedules for repository bar\n'
+
+
+def test_schedules_restart():
+    runner = CliRunner()
+
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
+
+    result = runner.invoke(
+        schedule_start_command, ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule']
+    )
+
+    result = runner.invoke(
+        schedule_restart_command,
+        ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule'],
+    )
+
+    assert result.exit_code == 0
+    assert 'Restarted schedule foo_schedule' in result.output
+
+
+def test_schedules_restart_all():
+    runner = CliRunner()
+
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
+
+    result = runner.invoke(
+        schedule_start_command, ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule']
+    )
+
+    result = runner.invoke(
+        schedule_restart_command,
+        [
+            '-y',
+            script_relative_path('repository_file.yaml'),
+            'foo_schedule',
+            '--restart-all-running',
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.output == 'Restarted all running schedules for repository bar\n'
 
 
 def test_multiproc():
