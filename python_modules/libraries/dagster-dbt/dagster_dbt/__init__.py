@@ -1,3 +1,4 @@
+import distutils.spawn
 import io
 import os
 import re
@@ -9,11 +10,13 @@ from dagster import (
     EventMetadataEntry,
     ExpectationResult,
     Failure,
+    Field,
     InputDefinition,
     Materialization,
     Nothing,
     Output,
     OutputDefinition,
+    Path,
     check,
     solid,
 )
@@ -65,19 +68,59 @@ def try_parse_run(text):
             return mat
 
 
-def create_dbt_solid(project_dir, name=None, profiles_dir=None):
+def create_dbt_solid(project_dir, name=None, profiles_dir=None, default_dbt_executable='dbt'):
+    """Factory for solids that invoke dbt.
+
+    Args:
+        project_dir (str): Path to the project directory (will be passed to dbt as the
+            --project-dir argument).
+
+    Kwargs:
+        name (Optional[str]): The name to give the solid, or None. If None, the solid will
+            be given the `os.path.basename` of the `project_dir` argument. Note that if multiple
+            solids in a repository refer to the same project_dir, and explicit names have not been
+            passed, there will be a name collision. Default: None.
+        profiles_dir (Optional[str]): Path to the profiles directory (will be passed to dbt as the
+            --profiles-dir argument, if present). Default: None.
+        default_dbt_executable (Optional[str]): The dbt executable to invoke. Set this value if,
+            e.g., you would like to invoke dbt within a virtualenv. You may override this value for
+            individual invocations of the dbt solid in its config. Default: 'dbt'.
+    """
     check.str_param(project_dir, 'project_dir')
     check.opt_str_param(name, 'name')
     check.opt_str_param(profiles_dir, 'profiles_dir')
 
     @solid(
         name=name if name else os.path.basename(project_dir),
+        config={
+            'dbt_executable': Field(
+                Path,
+                default_value=default_dbt_executable,
+                is_optional=True,
+                description=(
+                    'Path to the dbt executable to invoke, e.g., /path/to/your/venv/bin/dbt. '
+                    'Default: \'{default_dbt_executable}\''.format(
+                        default_dbt_executable=default_dbt_executable
+                    ),
+                ),
+            )
+        },
         output_defs=[OutputDefinition(dagster_type=Nothing, name='run_complete')],
     )
-    def dbt_solid(_):
-        cmd = 'dbt run --project-dir {}'.format(project_dir)
+    def dbt_solid(context):
+        executable_path = context.solid_config['dbt_executable']
+
+        if not distutils.spawn.find_executable(executable_path):
+            raise Failure(
+                'Could not find dbt executable at "{executable_path}". Please ensure that '
+                'dbt is installed and on the PATH.'.format(executable_path=executable_path)
+            )
+
+        cmd = '{executable_path} run --project-dir {project_dir}'.format(
+            executable_path=executable_path, project_dir=project_dir
+        )
         if profiles_dir:
-            cmd += ' --profiles-dir {}'.format(profiles_dir)
+            cmd += ' --profiles-dir {profiles_dir}'.format(profiles_dir=profiles_dir)
 
         args = shlex.split(cmd)
         proc = subprocess.Popen(args, stdout=subprocess.PIPE)
@@ -103,7 +146,7 @@ def create_dbt_solid(project_dir, name=None, profiles_dir=None):
         proc.wait()
 
         if proc.returncode != 0:
-            raise Failure('Dbt invocation errored')
+            raise Failure('Dbt invocation errored.')
 
         yield Output(value=None, output_name='run_complete')
 

@@ -26,7 +26,6 @@ setup(
             'dagster-cron',
             'dagster-postgres',
             'dagster-slack',
-            'dbt-postgres',
             'descartes==1.1.0',
             'geopandas==0.4.0',
             'matplotlib==3.0.2; python_version >= "3.5"',
@@ -49,6 +48,12 @@ setup(
             'psycopg2==2.7.6.1',
             'sqlalchemy-redshift>=0.7.2',
             'SQLAlchemy-Utils==0.33.8',
+        ],
+        'dbt': [
+            'dbt-postgres',
+            # pin werkzeug pending https://github.com/fishtown-analytics/dbt/issues/1697
+            # for Flask compatibility
+            'werkzeug>=0.15.0',
         ],
         'airflow': ['dagster_airflow', 'docker-compose==1.23.2'],
     },
