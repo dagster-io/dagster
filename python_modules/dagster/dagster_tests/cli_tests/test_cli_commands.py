@@ -32,6 +32,7 @@ from dagster.cli.schedule import (
     schedule_start_command,
     schedule_stop_command,
     schedule_up_command,
+    schedule_wipe_command,
 )
 from dagster.utils import script_relative_path
 
@@ -637,6 +638,29 @@ def test_schedules_start_all():
 
     assert result.exit_code == 0
     assert result.output == 'Started all schedules for repository bar\n'
+
+
+def test_schedules_wipe():
+    runner = CliRunner()
+
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
+
+    result = runner.invoke(
+        schedule_wipe_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
+
+    assert result.exit_code == 0
+    assert result.output == 'Wiped all schedules\n'
+
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml'), '--preview']
+    )
+
+    # Verify schedules were wiped
+    assert result.exit_code == 0
+    assert result.output == 'Planned Changes:\n  + foo_schedule (add)\n'
 
 
 def test_schedules_restart():

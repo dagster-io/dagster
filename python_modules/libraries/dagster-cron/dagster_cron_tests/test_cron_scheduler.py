@@ -22,6 +22,10 @@ class MockSystemCronScheduler(SystemCronScheduler):
         if os.path.isfile(script_file):
             os.remove(script_file)
 
+    def wipe(self):
+        for schedule in self.all_schedules():
+            self.end_schedule(schedule.name)
+
 
 def define_scheduler(artifacts_dir, repository_name):
     no_config_pipeline_daily_schedule = ScheduleDefinition(
@@ -110,3 +114,24 @@ def test_start_and_stop_schedule():
         assert "{}_{}.sh".format(schedule_def.name, schedule.schedule_id) not in os.listdir(
             os.path.join(tempdir, 'schedules')
         )
+
+
+def test_wipe():
+    with TemporaryDirectory() as tempdir:
+
+        instance = DagsterInstance.local_temp(tempdir=tempdir)
+        scheduler_handle = define_scheduler(instance.schedules_directory(), 'test_repository')
+        assert scheduler_handle
+
+        # Initialize scheduler
+        scheduler_handle.up(python_path=sys.executable, repository_path="")
+        scheduler = scheduler_handle.get_scheduler()
+
+        # Start schedule
+        scheduler.start_schedule("no_config_pipeline_every_min_schedule")
+
+        # Wipe scheduler
+        scheduler.wipe()
+
+        # Check schedules are wiped
+        assert scheduler.all_schedules() == []

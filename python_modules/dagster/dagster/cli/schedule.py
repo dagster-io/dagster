@@ -20,6 +20,7 @@ def create_schedule_cli_group():
     group.add_command(schedule_start_command)
     group.add_command(schedule_stop_command)
     group.add_command(schedule_restart_command)
+    group.add_command(schedule_wipe_command)
     return group
 
 
@@ -368,3 +369,28 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 schedule_name=schedule_name, schedule_id=schedule.schedule_id
             )
         )
+
+
+@click.command(name='wipe', help="Deletes all schedules and crontabs.")
+@repository_target_argument
+def schedule_wipe_command(**kwargs):
+    return execute_wipe_command(kwargs, click.echo)
+
+
+def execute_wipe_command(cli_args, print_fn):
+
+    handle = handle_for_repo_cli_args(cli_args)
+    repository = handle.build_repository_definition()
+
+    instance = DagsterInstance.get()
+
+    schedule_handle = handle.build_scheduler_handle(artifacts_dir=instance.schedules_directory())
+
+    if not schedule_handle:
+        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
+        return
+
+    scheduler = schedule_handle.get_scheduler()
+    scheduler.wipe()
+
+    print_fn("Wiped all schedules")
