@@ -1,6 +1,7 @@
 import abc
 import io
 import os
+import warnings
 from collections import OrderedDict
 
 import six
@@ -119,9 +120,10 @@ class FilesystemScheduleStorage(ScheduleStorage):
                     self._schedules[schedule.name] = schedule
 
                 except Exception as ex:  # pylint: disable=broad-except
-                    raise DagsterInvariantViolationError(
+                    warnings.warn(
                         'Could not parse dagster schedule from {file_name} in {dir_name}. '
                         '{ex}: {msg}'.format(
                             file_name=file, dir_name=self._base_dir, ex=type(ex).__name__, msg=ex
                         )
                     )
+                    continue
