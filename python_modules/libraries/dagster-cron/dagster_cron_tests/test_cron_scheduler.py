@@ -38,9 +38,19 @@ def define_scheduler(artifacts_dir, repository_name):
         environment_dict={"storage": {"filesystem": None}},
     )
 
+    default_config_pipeline_every_min_schedule = ScheduleDefinition(
+        name="default_config_pipeline_every_min_schedule",
+        cron_schedule="* * * * *",
+        pipeline_name="no_config_pipeline",
+    )
+
     return SchedulerHandle(
         scheduler_type=MockSystemCronScheduler,
-        schedule_defs=[no_config_pipeline_daily_schedule, no_config_pipeline_every_min_schedule],
+        schedule_defs=[
+            default_config_pipeline_every_min_schedule,
+            no_config_pipeline_daily_schedule,
+            no_config_pipeline_every_min_schedule,
+        ],
         repository_name=repository_name,
         artifacts_dir=artifacts_dir,
     )
