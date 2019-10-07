@@ -66,7 +66,7 @@ def define_scheduler():
         environment_dict={"storage": {"filesystem": {}}}
     )
 
-    return [many_events_every_day]
+    return [hello_world_every_day]
 ```
 
 To point dagster to our new scheduler, we add a `scheduler` key to `repository.yaml`
@@ -110,7 +110,7 @@ If you need to define a more specific schedule than cron allows, you can pass a 
 
 For example, we can define a filter that only returns `True` on weekdays:
 
-```
+```python
 import datetime
 
 def weekday_filter():
@@ -121,7 +121,7 @@ def weekday_filter():
 
 If we combine this `should_execute` filter with a `cron_schedule` that runs at 10:00am every day, then we’ll have a schedule that runs at 10:00am only on weekdays.
 
-```
+```python
 hello_world_every_weekday = ScheduleDefinition(
     name="hello_world_every_weekday",
     cron_schedule="0 10 * * *",
