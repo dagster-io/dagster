@@ -1,10 +1,9 @@
 import sys
 import uuid
 
-import pytest
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from dagster import check, seven
+from dagster import seven
 from dagster.core.instance import DagsterInstance
 from dagster.utils import script_relative_path
 
@@ -59,19 +58,12 @@ def test_start_scheduled_execution_with_predefined_schedule_id_tag():
         scheduler_handle = context.scheduler_handle
         scheduler_handle.up(python_path=sys.executable, repository_path=script_relative_path('../'))
 
-        with pytest.raises(check.CheckError) as exc:
-            execute_dagster_graphql(
-                context,
-                START_SCHEDULED_EXECUTION_QUERY,
-                variables={
-                    'scheduleName': 'no_config_pipeline_hourly_schedule_with_schedule_id_tag'
-                },
-            )
-
-        assert (
-            str(exc.value) == 'Invariant failed. Description: Tag dagster/schedule_id tag is '
-            'already defined in executionMetadata.tags'
+        result = execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'no_config_pipeline_hourly_schedule_with_schedule_id_tag'},
         )
+        assert result.data['startScheduledExecution']['__typename'] == 'PythonError'
 
 
 def test_start_scheduled_execution_with_should_execute():

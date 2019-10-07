@@ -10,7 +10,7 @@ import { ExecutionParams, ReexecutionConfig } from "./../../types/globalTypes";
 // ====================================================
 
 export interface Reexecute_startPipelineExecution_InvalidStepError {
-  __typename: "InvalidStepError" | "InvalidOutputError";
+  __typename: "InvalidStepError" | "InvalidOutputError" | "PythonError";
 }
 
 export interface Reexecute_startPipelineExecution_StartPipelineExecutionSuccess_run_pipeline {

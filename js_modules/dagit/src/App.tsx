@@ -102,10 +102,6 @@ export const ROOT_PIPELINES_QUERY = gql`
         message
         stack
       }
-      ... on InvalidDefinitionError {
-        message
-        stack
-      }
       ... on PipelineConnection {
         nodes {
           ...TopNavPipelinesFragment

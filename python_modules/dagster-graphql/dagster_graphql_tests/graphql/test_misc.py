@@ -201,7 +201,7 @@ def test_pipelines_or_error_invalid():
     )
 
     result = execute_dagster_graphql(
-        context, '{ pipelinesOrError { ... on InvalidDefinitionError { message } } }'
+        context, '{ pipelinesOrError { ... on PythonError { message } } }'
     )
     msg = result.data['pipelinesOrError']['message']
     assert 'circular reference detected in solid "csolid"' in msg
