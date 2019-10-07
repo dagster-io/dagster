@@ -96,8 +96,7 @@ def print_changes(scheduler_handle, print_fn=print, preview=False):
 
 
 @click.command(
-    name='preview',
-    help='[Experimental] Preview changes that will be performed by `dagster schedule up',
+    name='preview', help='Preview changes that will be performed by `dagster schedule up'
 )
 @repository_target_argument
 def schedule_preview_command(**kwargs):
@@ -119,7 +118,7 @@ def execute_preview_command(cli_args, print_fn):
 
 @click.command(
     name='up',
-    help='[Experimental] Updates the internal dagster representation of schedules to match the list '
+    help='Updates the internal dagster representation of schedules to match the list '
     'of ScheduleDefinitions defined in the repository. Use `dagster schedule up --preview` or '
     '`dagster schedule preview` to preview what changes will be applied. New ScheduleDefinitions '
     'will not start running by default when `up` is called. Use `dagster schedule start` and '
@@ -157,7 +156,7 @@ def execute_up_command(preview, cli_args, print_fn):
 
 @click.command(
     name='list',
-    help="[Experimental] List all schedules that correspond to a repository. {warning}".format(
+    help="List all schedules that correspond to a repository. {warning}".format(
         warning=REPO_TARGET_WARNING
     ),
 )
@@ -235,7 +234,7 @@ def extract_schedule_name(schedule_name):
             )
 
 
-@click.command(name='start', help="[Experimental] Start an existing schedule")
+@click.command(name='start', help="Start an existing schedule")
 @click.argument('schedule_name', nargs=-1)
 @click.option('--start-all', help="start all schedules", is_flag=True, default=False)
 @repository_target_argument
@@ -277,7 +276,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
         )
 
 
-@click.command(name='stop', help="[Experimental] Stop an existing schedule")
+@click.command(name='stop', help="Stop an existing schedule")
 @click.argument('schedule_name', nargs=-1)
 @repository_target_argument
 def schedule_stop_command(schedule_name, **kwargs):
