@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.1 (Upcoming)
+## 0.6.1
 
 - Fixed an issue where Dagster public images tagged `latest` on Docker Hub were erroneously
   published with an older version of Dagster (#1814)
