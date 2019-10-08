@@ -62,6 +62,7 @@ def _do_setup(name='dagster-airflow'):
             # https://github.com/dpgaspar/Flask-AppBuilder/pull/1111
             # https://github.com/marshmallow-code/marshmallow-sqlalchemy/issues/241
             'marshmallow-sqlalchemy>=0.16.1, <0.19.0',
+            "marshmallow<2.20,>=2.18.0",
         ],
         extras_require={'kubernetes': kubernetes},
         entry_points={'console_scripts': ['dagster-airflow = dagster_airflow.cli:main']},

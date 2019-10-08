@@ -34,6 +34,11 @@ type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   outputMappings: [OutputMapping!]!
 }
 
+enum ComputeIOType {
+  STDOUT
+  STDERR
+}
+
 type ComputeLogFile {
   path: String!
   data: String!
@@ -47,7 +52,6 @@ type ComputeLogs {
   stepKey: String!
   stdout: ComputeLogFile
   stderr: ComputeLogFile
-  cursor: String!
 }
 
 interface ConfigType {
@@ -1026,7 +1030,7 @@ input StepOutputHandle {
 
 type Subscription {
   pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
-  computeLogs(runId: ID!, stepKey: String!, cursor: String): ComputeLogs!
+  computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
 }
 
 type TypeCheck implements DisplayableEvent {

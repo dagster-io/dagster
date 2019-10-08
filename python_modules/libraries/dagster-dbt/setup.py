@@ -37,7 +37,7 @@ def _do_setup(name='dagster-dbt'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster', 'dbt-core'],
+        install_requires=['dagster'],
         zip_safe=False,
     )
 

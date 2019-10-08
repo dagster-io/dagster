@@ -9,6 +9,9 @@ import { ComputeLogContent } from "./ComputeLogContent";
 import { ComputeLogsSubscription } from "./types/ComputeLogsSubscription";
 import { ComputeLogsSubscriptionFragment } from "./types/ComputeLogsSubscriptionFragment";
 import { ComputeLogContentFileFragment } from "./types/ComputeLogContentFileFragment";
+import { ComputeIOType } from "../types/globalTypes";
+
+const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 
 interface IComputeLogLink {
   children: React.ReactNode;
@@ -85,9 +88,13 @@ export const ComputeLogModal = ({
   runState
 }: ComputeLogModalProps) => {
   return (
-    <ComputeLogsProvider runId={runId} stepKey={stepKey}>
-      {({ isLoading, computeLogs }) => {
-        if (isLoading || !computeLogs) {
+    <ComputeLogsProvider
+      runId={runId}
+      stepKey={stepKey}
+      maxBytes={MAX_STREAMING_LOG_BYTES}
+    >
+      {({ isLoading, stdout, stderr, maxBytes }) => {
+        if (isLoading || !stdout || !stderr) {
           return (
             <LoadingContainer>
               <Spinner intent={Intent.NONE} size={32} />
@@ -99,7 +106,9 @@ export const ComputeLogModal = ({
           <ComputeLogContent
             runState={runState}
             onRequestClose={onRequestClose}
-            computeLogs={computeLogs}
+            stdout={stdout}
+            stderr={stderr}
+            maxBytes={maxBytes}
           />
         );
       }}
@@ -110,13 +119,17 @@ export const ComputeLogModal = ({
 interface IComputeLogsProviderProps {
   children: (props: {
     isLoading: boolean;
-    computeLogs: ComputeLogsSubscriptionFragment | null;
+    stdout: ComputeLogsSubscriptionFragment | null;
+    stderr: ComputeLogsSubscriptionFragment | null;
+    maxBytes: number;
   }) => React.ReactChild;
   runId: string;
   stepKey: string;
+  maxBytes: number;
 }
 interface IComputeLogsProviderState {
-  computeLogs: ComputeLogsSubscriptionFragment | null;
+  stdout: ComputeLogsSubscriptionFragment | null;
+  stderr: ComputeLogsSubscriptionFragment | null;
   isLoading: boolean;
 }
 
@@ -126,22 +139,22 @@ export class ComputeLogsProvider extends React.Component<
 > {
   static fragments = {
     subscription: gql`
-      fragment ComputeLogsSubscriptionFragment on ComputeLogs {
-        ...ComputeLogContentFragment
-        stdout {
-          data
-        }
-        stderr {
-          data
-        }
+      fragment ComputeLogsSubscriptionFragment on ComputeLogFile {
+        data
         cursor
+        ...ComputeLogContentFileFragment
       }
       ${ComputeLogContent.fragments.ComputeLogContentFragment}
     `
   };
 
-  _subscription: DirectGraphQLSubscription<ComputeLogsSubscription>;
-  state: IComputeLogsProviderState = { computeLogs: null, isLoading: true };
+  _stdout: DirectGraphQLSubscription<ComputeLogsSubscription>;
+  _stderr: DirectGraphQLSubscription<ComputeLogsSubscription>;
+  state: IComputeLogsProviderState = {
+    stdout: null,
+    stderr: null,
+    isLoading: true
+  };
 
   componentDidMount() {
     this.subscribe();
@@ -164,63 +177,73 @@ export class ComputeLogsProvider extends React.Component<
   subscribe() {
     const { runId, stepKey } = this.props;
     this.setState({ isLoading: true });
-    this._subscription = new DirectGraphQLSubscription<ComputeLogsSubscription>(
+    this._stdout = new DirectGraphQLSubscription<ComputeLogsSubscription>(
       COMPUTE_LOGS_SUBSCRIPTION,
-      { runId, stepKey, cursor: null },
-      this.onMessages
+      { runId, stepKey, ioType: ComputeIOType.STDOUT, cursor: null },
+      this.onStdout
+    );
+    this._stderr = new DirectGraphQLSubscription<ComputeLogsSubscription>(
+      COMPUTE_LOGS_SUBSCRIPTION,
+      { runId, stepKey, ioType: ComputeIOType.STDERR, cursor: null },
+      this.onStderr
     );
   }
 
   unsubscribe() {
-    if (this._subscription) {
-      this._subscription.close();
+    if (this._stdout) {
+      this._stdout.close();
+    }
+    if (this._stderr) {
+      this._stderr.close();
     }
   }
 
-  onMessages = (
-    messages: ComputeLogsSubscription[],
-    _isFirstResponse: boolean
-  ) => {
-    let { computeLogs } = this.state;
+  onStdout = (messages: ComputeLogsSubscription[], _: boolean) => {
+    this.onMessages("stdout", messages);
+  };
+
+  onStderr = (messages: ComputeLogsSubscription[], _: boolean) => {
+    this.onMessages("stderr", messages);
+  };
+
+  onMessages = (ioType: string, messages: ComputeLogsSubscription[]) => {
+    let computeLogs = this.state[ioType];
     messages.forEach((subscription: ComputeLogsSubscription) => {
-      if (!computeLogs) {
-        computeLogs = subscription.computeLogs;
-      } else {
-        computeLogs = this.merge(computeLogs, subscription.computeLogs);
-      }
+      computeLogs = this.merge(computeLogs, subscription.computeLogs);
     });
-    this.setState({ computeLogs, isLoading: false });
+
+    if (ioType === "stdout") {
+      this.setState({ stdout: computeLogs, isLoading: false });
+    } else {
+      this.setState({ stderr: computeLogs, isLoading: false });
+    }
   };
 
   merge(
-    a: ComputeLogsSubscriptionFragment,
-    b: ComputeLogsSubscriptionFragment
-  ) {
-    return {
-      __typename: b.__typename,
-      cursor: b.cursor,
-      stdout: this.mergeFile(a.stdout, b.stdout),
-      stderr: this.mergeFile(a.stderr, b.stderr)
-    };
-  }
-
-  mergeFile(
     a: ComputeLogContentFileFragment | null,
     b: ComputeLogContentFileFragment | null
   ) {
-    if (!a) return b;
     if (!b) return a;
     return {
       __typename: b.__typename,
       path: b.path,
       downloadUrl: b.downloadUrl,
-      data: a.data + b.data
+      data: this.slice((a ? a.data : "") + b.data),
+      cursor: b.cursor
     };
   }
 
+  slice(s: string) {
+    if (s.length < MAX_STREAMING_LOG_BYTES) {
+      return s;
+    }
+    return s.slice(-MAX_STREAMING_LOG_BYTES);
+  }
+
   render() {
-    const { isLoading, computeLogs } = this.state;
-    return this.props.children({ isLoading, computeLogs });
+    const { isLoading, stdout, stderr } = this.state;
+    const { maxBytes } = this.props;
+    return this.props.children({ isLoading, stdout, stderr, maxBytes });
   }
 }
 
@@ -228,9 +251,15 @@ const COMPUTE_LOGS_SUBSCRIPTION = gql`
   subscription ComputeLogsSubscription(
     $runId: ID!
     $stepKey: String!
+    $ioType: ComputeIOType!
     $cursor: String
   ) {
-    computeLogs(runId: $runId, stepKey: $stepKey, cursor: $cursor) {
+    computeLogs(
+      runId: $runId
+      stepKey: $stepKey
+      ioType: $ioType
+      cursor: $cursor
+    ) {
       ...ComputeLogsSubscriptionFragment
     }
   }

@@ -35,7 +35,7 @@ class ScheduleDefinition(object):
         name,
         cron_schedule,
         pipeline_name,
-        environment_dict,
+        environment_dict=None,
         tags=None,
         mode="default",
         should_execute=lambda: True,

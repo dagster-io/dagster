@@ -13,7 +13,6 @@ from dagster.utils import ensure_dir, touch_file
 from .compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
-    ComputeLogData,
     ComputeLogFileData,
     ComputeLogManager,
     ComputeLogSubscription,
@@ -21,11 +20,7 @@ from .compute_log_manager import (
 
 WATCHDOG_POLLING_TIMEOUT = 2.5
 
-IO_TYPE_EXTENSION = {
-    ComputeIOType.STDOUT: 'out',
-    ComputeIOType.STDERR: 'err',
-    ComputeIOType.COMPLETE: 'complete',
-}
+IO_TYPE_EXTENSION = {ComputeIOType.STDOUT: 'out', ComputeIOType.STDERR: 'err'}
 
 
 class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
@@ -45,42 +40,15 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     def _run_directory(self, run_id):
         return os.path.join(self._base_dir, run_id, 'compute_logs')
 
-    def _file_cursor(self, cursor, io_type):
-        check.inst_param(io_type, 'io_type', ComputeIOType)
-        if not cursor:
-            return 0
-
-        parts = cursor.split(':')
-        if io_type == ComputeIOType.STDOUT:
-            return int(parts[0])
-        elif io_type == ComputeIOType.STDERR:
-            return int(parts[1])
-        else:
-            return 0
-
-    def _build_cursor(self, out_offset, err_offset):
-        check.int_param(out_offset, 'out_offset')
-        check.int_param(err_offset, 'err_offset')
-        return '{}:{}'.format(out_offset, err_offset)
-
     def get_local_path(self, run_id, step_key, io_type):
         check.inst_param(io_type, 'io_type', ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
         return os.path.join(self._run_directory(run_id), "{}.{}".format(step_key, extension))
 
-    def read_logs(self, run_id, step_key, cursor=None, max_bytes=MAX_BYTES_FILE_READ):
-        stdout_cursor = self._file_cursor(cursor, ComputeIOType.STDOUT)
-        stderr_cursor = self._file_cursor(cursor, ComputeIOType.STDERR)
-        stdout = self.read_logs_file(
-            run_id, step_key, ComputeIOType.STDOUT, stdout_cursor, max_bytes
-        )
-        stderr = self.read_logs_file(
-            run_id, step_key, ComputeIOType.STDERR, stderr_cursor, max_bytes
-        )
-        cursor = self._build_cursor(stdout.cursor, stderr.cursor)
-        return ComputeLogData(stdout=stdout, stderr=stderr, cursor=cursor)
+    def complete_artifact_path(self, run_id, step_key):
+        return os.path.join(self._run_directory(run_id), "{}.{}".format(step_key, 'complete'))
 
-    def read_logs_file(self, run_id, step_key, io_type, cursor, max_bytes):
+    def read_logs_file(self, run_id, step_key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
         path = self.get_local_path(run_id, step_key, io_type)
 
         if not os.path.exists(path) or not os.path.isfile(path):
@@ -104,15 +72,13 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         )
 
     def is_compute_completed(self, run_id, step_key):
-        return os.path.exists(self.get_local_path(run_id, step_key, ComputeIOType.COMPLETE))
+        return os.path.exists(self.complete_artifact_path(run_id, step_key))
 
     def on_compute_start(self, step_context):
         pass
 
     def on_compute_finish(self, step_context):
-        touchpath = self.get_local_path(
-            step_context.run_id, step_context.step.key, ComputeIOType.COMPLETE
-        )
+        touchpath = self.complete_artifact_path(step_context.run_id, step_context.step.key)
         touch_file(touchpath)
 
     def download_url(self, run_id, step_key, io_type):
@@ -154,7 +120,7 @@ class LocalComputeLogSubscriptionManager(object):
             self._manager.get_local_path(run_id, step_key, ComputeIOType.STDOUT),
             self._manager.get_local_path(run_id, step_key, ComputeIOType.STDERR),
         ]
-        complete_paths = [self._manager.get_local_path(run_id, step_key, ComputeIOType.COMPLETE)]
+        complete_paths = [self._manager.complete_artifact_path(run_id, step_key)]
         directory = os.path.dirname(
             self._manager.get_local_path(run_id, step_key, ComputeIOType.STDERR)
         )

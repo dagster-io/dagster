@@ -7,23 +7,10 @@
 // GraphQL fragment: ComputeLogsSubscriptionFragment
 // ====================================================
 
-export interface ComputeLogsSubscriptionFragment_stdout {
-  __typename: "ComputeLogFile";
-  path: string;
-  data: string;
-  downloadUrl: string;
-}
-
-export interface ComputeLogsSubscriptionFragment_stderr {
-  __typename: "ComputeLogFile";
-  path: string;
-  data: string;
-  downloadUrl: string;
-}
-
 export interface ComputeLogsSubscriptionFragment {
-  __typename: "ComputeLogs";
-  stdout: ComputeLogsSubscriptionFragment_stdout | null;
-  stderr: ComputeLogsSubscriptionFragment_stderr | null;
-  cursor: string;
+  __typename: "ComputeLogFile";
+  data: string;
+  cursor: number;
+  path: string;
+  downloadUrl: string;
 }

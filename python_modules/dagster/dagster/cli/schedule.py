@@ -19,6 +19,7 @@ def create_schedule_cli_group():
     group.add_command(schedule_preview_command)
     group.add_command(schedule_start_command)
     group.add_command(schedule_stop_command)
+    group.add_command(schedule_restart_command)
     return group
 
 
@@ -96,8 +97,7 @@ def print_changes(scheduler_handle, print_fn=print, preview=False):
 
 
 @click.command(
-    name='preview',
-    help='[Experimental] Preview changes that will be performed by `dagster schedule up',
+    name='preview', help='Preview changes that will be performed by `dagster schedule up'
 )
 @repository_target_argument
 def schedule_preview_command(**kwargs):
@@ -119,7 +119,7 @@ def execute_preview_command(cli_args, print_fn):
 
 @click.command(
     name='up',
-    help='[Experimental] Updates the internal dagster representation of schedules to match the list '
+    help='Updates the internal dagster representation of schedules to match the list '
     'of ScheduleDefinitions defined in the repository. Use `dagster schedule up --preview` or '
     '`dagster schedule preview` to preview what changes will be applied. New ScheduleDefinitions '
     'will not start running by default when `up` is called. Use `dagster schedule start` and '
@@ -157,7 +157,7 @@ def execute_up_command(preview, cli_args, print_fn):
 
 @click.command(
     name='list',
-    help="[Experimental] List all schedules that correspond to a repository. {warning}".format(
+    help="List all schedules that correspond to a repository. {warning}".format(
         warning=REPO_TARGET_WARNING
     ),
 )
@@ -235,7 +235,7 @@ def extract_schedule_name(schedule_name):
             )
 
 
-@click.command(name='start', help="[Experimental] Start an existing schedule")
+@click.command(name='start', help="Start an existing schedule")
 @click.argument('schedule_name', nargs=-1)
 @click.option('--start-all', help="start all schedules", is_flag=True, default=False)
 @repository_target_argument
@@ -257,13 +257,13 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
 
     scheduler = schedule_handle.get_scheduler()
     if all_flag:
-        for schedule in scheduler.all_schedules:
+        for schedule in scheduler.all_schedules():
             try:
                 schedule = scheduler.start_schedule(schedule.name)
             except DagsterInvariantViolationError as ex:
-                continue
+                raise click.UsageError(ex)
 
-            print_fn("Started all schedules for repository {name}".format(name=repository.name))
+        print_fn("Started all schedules for repository {name}".format(name=repository.name))
     else:
         try:
             schedule = scheduler.start_schedule(schedule_name)
@@ -277,7 +277,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
         )
 
 
-@click.command(name='stop', help="[Experimental] Stop an existing schedule")
+@click.command(name='stop', help="Stop an existing schedule")
 @click.argument('schedule_name', nargs=-1)
 @repository_target_argument
 def schedule_stop_command(schedule_name, **kwargs):
@@ -308,3 +308,63 @@ def execute_stop_command(schedule_name, cli_args, print_fn):
             schedule_name=schedule_name, schedule_id=schedule.schedule_id
         )
     )
+
+
+@click.command(name='restart', help="Restart a running schedule")
+@click.argument('schedule_name', nargs=-1)
+@click.option(
+    '--restart-all-running',
+    help="restart previously running schedules",
+    is_flag=True,
+    default=False,
+)
+@repository_target_argument
+def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
+    schedule_name = extract_schedule_name(schedule_name)
+    return execute_restart_command(schedule_name, restart_all_running, kwargs, click.echo)
+
+
+def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn):
+    handle = handle_for_repo_cli_args(cli_args)
+    repository = handle.build_repository_definition()
+
+    instance = DagsterInstance.get()
+    schedule_handle = handle.build_scheduler_handle(artifacts_dir=instance.schedules_directory())
+
+    if not schedule_handle:
+        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
+        return
+
+    scheduler = schedule_handle.get_scheduler()
+    if all_running_flag:
+        for schedule in scheduler.all_schedules():
+            if schedule.status == ScheduleStatus.RUNNING:
+                try:
+                    scheduler.stop_schedule(schedule.name)
+                    scheduler.start_schedule(schedule.name)
+                except DagsterInvariantViolationError as ex:
+                    raise click.UsageError(ex)
+
+        print_fn(
+            "Restarted all running schedules for repository {name}".format(name=repository.name)
+        )
+    else:
+        schedule = scheduler.get_schedule_by_name(schedule_name)
+        if schedule.status != ScheduleStatus.RUNNING:
+            click.UsageError(
+                "Cannot restart a schedule {name} because is not currently running".format(
+                    name=schedule.name
+                )
+            )
+
+        try:
+            scheduler.stop_schedule(schedule_name)
+            scheduler.start_schedule(schedule_name)
+        except DagsterInvariantViolationError as ex:
+            raise click.UsageError(ex)
+
+        print_fn(
+            "Restarted schedule {schedule_name} with ID {schedule_id}".format(
+                schedule_name=schedule_name, schedule_id=schedule.schedule_id
+            )
+        )
