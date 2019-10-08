@@ -40,11 +40,11 @@ class DagsterInvariantViolationError(DagsterError):
 
 class DagsterExecutionStepNotFoundError(DagsterError):
     '''
-    Throw when the user specifies an execution step key that does not exist.
+    Throw when the user specifies execution step keys that do not exist.
     '''
 
     def __init__(self, *args, **kwargs):
-        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
+        self.step_keys = check.list_param(kwargs.pop('step_keys'), 'step_keys', str)
         super(DagsterExecutionStepNotFoundError, self).__init__(*args, **kwargs)
 
 

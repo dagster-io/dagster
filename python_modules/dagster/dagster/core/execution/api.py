@@ -295,7 +295,7 @@ def _check_reexecution_config(pipeline_context, execution_plan, run_config):
                     'Step {step_key} was specified as a step from a previous run. '
                     'It does not exist.'
                 ).format(step_key=step_output_handle.step_key),
-                step_key=step_output_handle.step_key,
+                step_keys=[step_output_handle.step_key],
             )
 
         step = execution_plan.get_step_by_key(step_output_handle.step_key)
@@ -424,10 +424,14 @@ def _resolve_step_keys(execution_plan, step_keys_to_execute):
     if step_keys_to_execute is None:
         step_keys_to_execute = [step.key for step in execution_plan.topological_steps()]
     else:
-        for step_key in step_keys_to_execute:
-            if not execution_plan.has_step(step_key):
-                raise DagsterExecutionStepNotFoundError(
-                    'Execution plan does not contain step \'{}\''.format(step_key),
-                    step_key=step_key,
-                )
+        missing_steps = [
+            step_key for step_key in step_keys_to_execute if not execution_plan.has_step(step_key)
+        ]
+        if missing_steps:
+            raise DagsterExecutionStepNotFoundError(
+                'Execution plan does not contain step{plural}: {steps}'.format(
+                    plural='s' if len(missing_steps) > 1 else '', steps=', '.join(missing_steps)
+                ),
+                step_keys=missing_steps,
+            )
     return step_keys_to_execute
