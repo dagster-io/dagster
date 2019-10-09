@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface HandleStartExecutionFragment_InvalidStepError {
-  __typename: "InvalidStepError" | "InvalidOutputError";
+  __typename: "InvalidStepError" | "InvalidOutputError" | "PythonError";
 }
 
 export interface HandleStartExecutionFragment_StartPipelineExecutionSuccess_run_pipeline {

@@ -270,6 +270,7 @@ class DauphinCancelPipelineExecutionResult(dauphin.Union):
             'CancelPipelineExecutionSuccess',
             'CancelPipelineExecutionFailure',
             'PipelineRunNotFoundError',
+            'PythonError',
         )
 
 
@@ -644,6 +645,7 @@ class DauphinEnvironmentSchemaOrError(dauphin.Union):
             'PipelineNotFoundError',
             'InvalidSubsetError',
             'ModeNotFoundError',
+            'PythonError',
         )
 
 

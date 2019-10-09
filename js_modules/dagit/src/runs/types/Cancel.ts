@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface Cancel_cancelPipelineExecution_CancelPipelineExecutionSuccess {
-  __typename: "CancelPipelineExecutionSuccess";
+  __typename: "CancelPipelineExecutionSuccess" | "PythonError";
 }
 
 export interface Cancel_cancelPipelineExecution_CancelPipelineExecutionFailure {
