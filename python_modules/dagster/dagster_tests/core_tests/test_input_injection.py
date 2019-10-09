@@ -4,6 +4,7 @@ from dagster import (
     DagsterInvalidConfigError,
     DependencyDefinition,
     InputDefinition,
+    List,
     OutputDefinition,
     PipelineDefinition,
     SolidInvocation,
@@ -102,3 +103,24 @@ def test_string_missing_input_collision():
     )
 
     assert 'yup' not in called
+
+
+def test_composite_input_type():
+    called = {}
+
+    @solid(input_defs=[InputDefinition('list_string_input', List[String])])
+    def str_as_input(_context, list_string_input):
+        assert list_string_input == ['foo']
+        called['yup'] = True
+
+    pipeline = PipelineDefinition(
+        name='test_string_from_inputs_pipeline', solid_defs=[str_as_input]
+    )
+
+    result = execute_pipeline(
+        pipeline,
+        {'solids': {'str_as_input': {'inputs': {'list_string_input': [{'value': 'foo'}]}}}},
+    )
+
+    assert result.success
+    assert called['yup']
