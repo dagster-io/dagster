@@ -31,7 +31,9 @@ def fs_system_storage(init_context):
     if override_dir:
         file_manager = LocalFileManager(override_dir)
         intermediate_store = FilesystemIntermediateStore(
-            override_dir, init_context.type_storage_plugin_registry
+            root_for_run_id=lambda _: override_dir,
+            run_id=init_context.run_config.run_id,
+            type_storage_plugin_registry=init_context.type_storage_plugin_registry,
         )
     else:
         file_manager = LocalFileManager.for_instance(

@@ -101,8 +101,19 @@ class S3ObjectStore(ObjectStore):
         )
 
     def cp_object(self, src, dst):
-        # https://github.com/dagster-io/dagster/issues/1455
-        raise NotImplementedError()
+        check.str_param(src, 'src')
+        check.str_param(dst, 'dst')
+
+        self.s3.copy_object(
+            Bucket=self.bucket, Key=dst, CopySource={'Bucket': self.bucket, 'Key': src}
+        )
+
+        return ObjectStoreOperation(
+            op=ObjectStoreOperationType.CP_OBJECT,
+            key=self.uri_for_key(src),
+            dest_key=self.uri_for_key(dst),
+            object_store_name=self.name,
+        )
 
     def uri_for_key(self, key, protocol=None):
         check.str_param(key, 'key')

@@ -11,11 +11,14 @@ class S3IntermediateStore(IntermediateStore):
         check.str_param(run_id, 'run_id')
 
         object_store = S3ObjectStore(s3_bucket, s3_session=s3_session)
-        root = object_store.key_for_paths(['dagster', 'storage', run_id])
+
+        def root_for_run_id(r_id):
+            return object_store.key_for_paths(['dagster', 'storage', r_id])
 
         super(S3IntermediateStore, self).__init__(
             object_store,
-            root,
+            root_for_run_id=root_for_run_id,
+            run_id=run_id,
             type_storage_plugin_registry=check.inst_param(
                 type_storage_plugin_registry
                 if type_storage_plugin_registry
@@ -24,8 +27,3 @@ class S3IntermediateStore(IntermediateStore):
                 TypeStoragePluginRegistry,
             ),
         )
-
-    def copy_object_from_prev_run(
-        self, context, previous_run_id, paths
-    ):  # pylint: disable=unused-argument
-        check.not_implemented('not supported: TODO for max. put issue number here')
