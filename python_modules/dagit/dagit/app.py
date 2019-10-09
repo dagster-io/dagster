@@ -18,6 +18,7 @@ from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 
 from dagster import ExecutionTargetHandle, check, seven
+from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
@@ -134,8 +135,9 @@ def create_app(handle, instance, reloader=None):
 
     execution_manager = SubprocessExecutionManager(instance)
 
-    print('Loading repository...')
+    warn_if_compute_logs_disabled()
 
+    print('Loading repository...')
     context = DagsterGraphQLContext(
         handle=handle,
         instance=instance,

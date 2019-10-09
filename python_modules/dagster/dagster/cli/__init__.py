@@ -9,6 +9,7 @@ from .instance import create_instance_cli_group
 from .pipeline import create_pipeline_cli_group
 from .run import create_run_cli_group
 from .schedule import create_schedule_cli_group
+from .utils import create_utils_cli_group
 
 
 def create_dagster_cli():
@@ -17,6 +18,7 @@ def create_dagster_cli():
         'run': create_run_cli_group(),
         'instance': create_instance_cli_group(),
         'schedule': create_schedule_cli_group(),
+        'utils': create_utils_cli_group(),
     }
 
     @click.group(commands=commands)
