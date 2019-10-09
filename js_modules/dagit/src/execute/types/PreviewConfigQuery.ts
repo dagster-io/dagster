@@ -10,7 +10,7 @@ import { ExecutionSelector, EvaluationErrorReason, StepKind } from "./../../type
 // ====================================================
 
 export interface PreviewConfigQuery_isPipelineConfigValid_InvalidSubsetError {
-  __typename: "InvalidSubsetError" | "PipelineConfigValidationValid" | "PipelineNotFoundError" | "PythonError";
+  __typename: "InvalidSubsetError" | "PipelineConfigValidationValid" | "PipelineNotFoundError";
 }
 
 export interface PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry_field {

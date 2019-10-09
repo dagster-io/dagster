@@ -10,7 +10,7 @@ import { EvaluationErrorReason } from "./../../types/globalTypes";
 // ====================================================
 
 export interface RunPreviewConfigValidationFragment_InvalidSubsetError {
-  __typename: "InvalidSubsetError" | "PipelineConfigValidationValid" | "PipelineNotFoundError" | "PythonError";
+  __typename: "InvalidSubsetError" | "PipelineConfigValidationValid" | "PipelineNotFoundError";
 }
 
 export interface RunPreviewConfigValidationFragment_PipelineConfigValidationInvalid_errors {

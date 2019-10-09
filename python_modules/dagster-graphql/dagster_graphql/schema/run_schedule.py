@@ -35,7 +35,7 @@ class DauphinScheduleStatus(dauphin.Enum):
 class DauphinSchedulerOrError(dauphin.Union):
     class Meta:
         name = 'SchedulerOrError'
-        types = ('Scheduler', DauphinSchedulerNotDefinedError, 'PythonError')
+        types = ('Scheduler', DauphinSchedulerNotDefinedError)
 
 
 class DauphinScheduleDefinition(dauphin.ObjectType):

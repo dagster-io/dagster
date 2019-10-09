@@ -3,7 +3,7 @@ type CancelPipelineExecutionFailure {
   message: String!
 }
 
-union CancelPipelineExecutionResult = CancelPipelineExecutionSuccess | CancelPipelineExecutionFailure | PipelineRunNotFoundError | PythonError
+union CancelPipelineExecutionResult = CancelPipelineExecutionSuccess | CancelPipelineExecutionFailure | PipelineRunNotFoundError
 
 type CancelPipelineExecutionSuccess {
   run: PipelineRun!
@@ -82,7 +82,7 @@ type ConfigTypeNotFoundError implements Error {
   configTypeName: String!
 }
 
-union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigType | PipelineNotFoundError | ConfigTypeNotFoundError | PythonError
+union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigType | PipelineNotFoundError | ConfigTypeNotFoundError
 
 scalar Cursor
 
@@ -136,7 +136,7 @@ type EnvironmentSchema {
   isEnvironmentConfigValid(environmentConfigData: EnvironmentConfigData): PipelineConfigValidationResult!
 }
 
-union EnvironmentSchemaOrError = EnvironmentSchema | PipelineNotFoundError | InvalidSubsetError | ModeNotFoundError | PythonError
+union EnvironmentSchemaOrError = EnvironmentSchema | PipelineNotFoundError | InvalidSubsetError | ModeNotFoundError
 
 interface Error {
   message: String!
@@ -366,6 +366,11 @@ type InputMapping {
 type Instance {
   enabledFeatures: [String!]!
   info: String!
+}
+
+type InvalidDefinitionError implements Error {
+  message: String!
+  stack: [String!]!
 }
 
 type InvalidOutputError {
@@ -617,7 +622,7 @@ type PipelineConfigValidationInvalid {
   errors: [PipelineConfigValidationError!]!
 }
 
-union PipelineConfigValidationResult = InvalidSubsetError | PipelineConfigValidationValid | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
+union PipelineConfigValidationResult = InvalidSubsetError | PipelineConfigValidationValid | PipelineConfigValidationInvalid | PipelineNotFoundError
 
 type PipelineConfigValidationValid {
   pipeline: Pipeline!
@@ -734,7 +739,7 @@ type PipelineRunNotFoundError implements Error {
   runId: String!
 }
 
-union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError | PythonError
+union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError
 
 type PipelineRuns {
   results: [PipelineRun!]!
@@ -748,7 +753,7 @@ input PipelineRunsFilter {
   status: PipelineRunStatus
 }
 
-union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsFilterError | PythonError
+union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsFilterError
 
 type PipelineRunStatsSnapshot {
   runId: String!
@@ -768,7 +773,7 @@ enum PipelineRunStatus {
   FAILURE
 }
 
-union PipelinesOrError = PipelineConnection | PythonError
+union PipelinesOrError = PipelineConnection | PythonError | InvalidDefinitionError
 
 type PipelineStartEvent implements MessageEvent & PipelineEvent {
   runId: String!
@@ -913,7 +918,7 @@ type RuntimeTypeNotFoundError implements Error {
   runtimeTypeName: String!
 }
 
-union RuntimeTypeOrError = RegularRuntimeType | PipelineNotFoundError | RuntimeTypeNotFoundError | PythonError
+union RuntimeTypeOrError = RegularRuntimeType | PipelineNotFoundError | RuntimeTypeNotFoundError
 
 type ScheduleDefinition {
   name: String!
@@ -941,7 +946,7 @@ type SchedulerNotDefinedError implements Error {
   stack: [String!]!
 }
 
-union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError
+union SchedulerOrError = Scheduler | SchedulerNotDefinedError
 
 enum ScheduleStatus {
   RUNNING
@@ -984,13 +989,13 @@ type SolidHandle {
   parent: SolidHandle
 }
 
-union StartPipelineExecutionResult = InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess | PythonError
+union StartPipelineExecutionResult = InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess
 
 type StartPipelineExecutionSuccess {
   run: PipelineRun!
 }
 
-union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess | PythonError
+union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess
 
 interface StepEvent {
   step: ExecutionStep

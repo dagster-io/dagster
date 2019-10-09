@@ -50,7 +50,7 @@ export interface PipelineExecutionRootQuery_pipelineOrError_InvalidSubsetError {
 export type PipelineExecutionRootQuery_pipelineOrError = PipelineExecutionRootQuery_pipelineOrError_PipelineNotFoundError | PipelineExecutionRootQuery_pipelineOrError_PythonError | PipelineExecutionRootQuery_pipelineOrError_Pipeline | PipelineExecutionRootQuery_pipelineOrError_InvalidSubsetError;
 
 export interface PipelineExecutionRootQuery_environmentSchemaOrError_PipelineNotFoundError {
-  __typename: "PipelineNotFoundError" | "InvalidSubsetError" | "PythonError";
+  __typename: "PipelineNotFoundError" | "InvalidSubsetError";
 }
 
 export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_rootEnvironmentType {

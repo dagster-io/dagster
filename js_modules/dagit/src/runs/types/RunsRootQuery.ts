@@ -77,12 +77,7 @@ export interface RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterErro
   message: string;
 }
 
-export interface RunsRootQuery_pipelineRunsOrError_PythonError {
-  __typename: "PythonError";
-  message: string;
-}
-
-export type RunsRootQuery_pipelineRunsOrError = RunsRootQuery_pipelineRunsOrError_PipelineRuns | RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | RunsRootQuery_pipelineRunsOrError_PythonError;
+export type RunsRootQuery_pipelineRunsOrError = RunsRootQuery_pipelineRunsOrError_PipelineRuns | RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError;
 
 export interface RunsRootQuery {
   pipelineRunsOrError: RunsRootQuery_pipelineRunsOrError;

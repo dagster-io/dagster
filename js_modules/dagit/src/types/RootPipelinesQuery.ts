@@ -13,6 +13,12 @@ export interface RootPipelinesQuery_pipelinesOrError_PythonError {
   stack: string[];
 }
 
+export interface RootPipelinesQuery_pipelinesOrError_InvalidDefinitionError {
+  __typename: "InvalidDefinitionError";
+  message: string;
+  stack: string[];
+}
+
 export interface RootPipelinesQuery_pipelinesOrError_PipelineConnection_nodes {
   __typename: "Pipeline";
   name: string;
@@ -23,7 +29,7 @@ export interface RootPipelinesQuery_pipelinesOrError_PipelineConnection {
   nodes: RootPipelinesQuery_pipelinesOrError_PipelineConnection_nodes[];
 }
 
-export type RootPipelinesQuery_pipelinesOrError = RootPipelinesQuery_pipelinesOrError_PythonError | RootPipelinesQuery_pipelinesOrError_PipelineConnection;
+export type RootPipelinesQuery_pipelinesOrError = RootPipelinesQuery_pipelinesOrError_PythonError | RootPipelinesQuery_pipelinesOrError_InvalidDefinitionError | RootPipelinesQuery_pipelinesOrError_PipelineConnection;
 
 export interface RootPipelinesQuery {
   pipelinesOrError: RootPipelinesQuery_pipelinesOrError;

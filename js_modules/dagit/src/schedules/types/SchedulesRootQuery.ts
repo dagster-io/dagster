@@ -54,12 +54,7 @@ export interface SchedulesRootQuery_scheduler_Scheduler {
   runningSchedules: SchedulesRootQuery_scheduler_Scheduler_runningSchedules[];
 }
 
-export interface SchedulesRootQuery_scheduler_PythonError {
-  __typename: "PythonError";
-  message: string;
-}
-
-export type SchedulesRootQuery_scheduler = SchedulesRootQuery_scheduler_SchedulerNotDefinedError | SchedulesRootQuery_scheduler_Scheduler | SchedulesRootQuery_scheduler_PythonError;
+export type SchedulesRootQuery_scheduler = SchedulesRootQuery_scheduler_SchedulerNotDefinedError | SchedulesRootQuery_scheduler_Scheduler;
 
 export interface SchedulesRootQuery {
   scheduler: SchedulesRootQuery_scheduler;

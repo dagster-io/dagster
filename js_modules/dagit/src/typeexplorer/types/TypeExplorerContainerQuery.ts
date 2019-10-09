@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface TypeExplorerContainerQuery_runtimeTypeOrError_PipelineNotFoundError {
-  __typename: "PipelineNotFoundError" | "RuntimeTypeNotFoundError" | "PythonError";
+  __typename: "PipelineNotFoundError" | "RuntimeTypeNotFoundError";
 }
 
 export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {

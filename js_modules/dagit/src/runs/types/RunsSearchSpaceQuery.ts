@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface RunsSearchSpaceQuery_pipelinesOrError_PythonError {
-  __typename: "PythonError";
+  __typename: "PythonError" | "InvalidDefinitionError";
 }
 
 export interface RunsSearchSpaceQuery_pipelinesOrError_PipelineConnection_nodes {

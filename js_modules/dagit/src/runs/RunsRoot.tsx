@@ -164,7 +164,10 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
 
         <Loading queryResult={queryResult}>
           {({ pipelineRunsOrError }) => {
-            if (pipelineRunsOrError.__typename !== "PipelineRuns") {
+            if (
+              pipelineRunsOrError.__typename ===
+              "InvalidPipelineRunsFilterError"
+            ) {
               return (
                 <NonIdealState
                   icon={IconNames.ERROR}
@@ -244,9 +247,6 @@ export const RUNS_ROOT_QUERY = gql`
         }
       }
       ... on InvalidPipelineRunsFilterError {
-        message
-      }
-      ... on PythonError {
         message
       }
     }

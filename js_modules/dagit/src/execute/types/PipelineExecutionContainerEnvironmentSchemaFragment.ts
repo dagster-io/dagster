@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface PipelineExecutionContainerEnvironmentSchemaFragment_PipelineNotFoundError {
-  __typename: "PipelineNotFoundError" | "InvalidSubsetError" | "PythonError";
+  __typename: "PipelineNotFoundError" | "InvalidSubsetError";
 }
 
 export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_rootEnvironmentType {

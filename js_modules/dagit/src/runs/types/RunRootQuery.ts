@@ -10,7 +10,7 @@ import { PipelineRunStatus, StepKind } from "./../../types/globalTypes";
 // ====================================================
 
 export interface RunRootQuery_pipelineRunOrError_PipelineRunNotFoundError {
-  __typename: "PipelineRunNotFoundError" | "PythonError";
+  __typename: "PipelineRunNotFoundError";
 }
 
 export interface RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_UnknownPipeline {

@@ -146,6 +146,18 @@ class DauphinModeNotFoundError(dauphin.ObjectType):
         )
 
 
+class DauphinInvalidDefinitionError(dauphin.ObjectType):
+    class Meta:
+        name = 'InvalidDefinitionError'
+        interfaces = (DauphinError,)
+
+    def __init__(self, error_info):
+        super(DauphinInvalidDefinitionError, self).__init__()
+        check.inst_param(error_info, 'error_info', SerializableErrorInfo)
+        self.message = error_info.message
+        self.stack = error_info.stack
+
+
 class DauphinPipelineConfigValidationValid(dauphin.ObjectType):
     class Meta:
         name = 'PipelineConfigValidationValid'
@@ -169,7 +181,6 @@ class DauphinPipelineConfigValidationResult(dauphin.Union):
             DauphinPipelineConfigValidationValid,
             DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
-            DauphinPythonError,
         )
 
 
@@ -378,7 +389,7 @@ class DauphinEvaluationStack(dauphin.ObjectType):
 class DauphinPipelinesOrError(dauphin.Union):
     class Meta:
         name = 'PipelinesOrError'
-        types = ('PipelineConnection', DauphinPythonError)
+        types = ('PipelineConnection', DauphinPythonError, DauphinInvalidDefinitionError)
 
 
 class DauphinExecutionPlanResult(dauphin.Union):
@@ -420,7 +431,6 @@ start_pipeline_execution_result_types = (
     DauphinPipelineConfigValidationInvalid,
     DauphinPipelineNotFoundError,
     DauphinStartPipelineExecutionSuccess,
-    DauphinPythonError,
 )
 
 
@@ -496,7 +506,6 @@ class DauphinConfigTypeOrError(dauphin.Union):
             'RegularConfigType',
             DauphinPipelineNotFoundError,
             DauphinConfigTypeNotFoundError,
-            DauphinPythonError,
         )
 
 
@@ -507,14 +516,13 @@ class DauphinRuntimeTypeOrError(dauphin.Union):
             'RegularRuntimeType',
             DauphinPipelineNotFoundError,
             DauphinRuntimeTypeNotFoundError,
-            DauphinPythonError,
         )
 
 
 class DauphinPipelineRunOrError(dauphin.Union):
     class Meta:
         name = 'PipelineRunOrError'
-        types = ('PipelineRun', DauphinPipelineRunNotFoundError, DauphinPythonError)
+        types = ('PipelineRun', DauphinPipelineRunNotFoundError)
 
 
 class DauphinPipelineRuns(dauphin.ObjectType):
@@ -527,4 +535,4 @@ class DauphinPipelineRuns(dauphin.ObjectType):
 class DauphinPipelineRunsOrError(dauphin.Union):
     class Meta:
         name = 'PipelineRunsOrError'
-        types = (DauphinPipelineRuns, DauphinInvalidPipelineRunsFilterError, DauphinPythonError)
+        types = (DauphinPipelineRuns, DauphinInvalidPipelineRunsFilterError)
