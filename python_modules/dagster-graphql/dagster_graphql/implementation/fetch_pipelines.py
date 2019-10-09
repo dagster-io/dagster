@@ -45,25 +45,12 @@ def _get_pipelines(graphene_info):
 
     repository = graphene_info.context.get_repository()
 
-    try:
-        pipeline_instances = []
-        for pipeline_def in repository.get_all_pipelines():
-            pipeline_instances.append(graphene_info.schema.type_named('Pipeline')(pipeline_def))
-        return graphene_info.schema.type_named('PipelineConnection')(
-            nodes=sorted(pipeline_instances, key=lambda pipeline: pipeline.name)
-        )
-    except DagsterInvalidDefinitionError:
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('InvalidDefinitionError')(
-                serializable_error_info_from_exc_info(sys.exc_info())
-            )
-        )
-    except Exception:  # pylint: disable=broad-except
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('PythonError')(
-                serializable_error_info_from_exc_info(sys.exc_info())
-            )
-        )
+    pipeline_instances = []
+    for pipeline_def in repository.get_all_pipelines():
+        pipeline_instances.append(graphene_info.schema.type_named('Pipeline')(pipeline_def))
+    return graphene_info.schema.type_named('PipelineConnection')(
+        nodes=sorted(pipeline_instances, key=lambda pipeline: pipeline.name)
+    )
 
 
 def get_dagster_pipeline_from_selector(graphene_info, selector):

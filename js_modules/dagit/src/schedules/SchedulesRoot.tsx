@@ -70,6 +70,18 @@ export default class SchedulesRoot extends React.Component {
                     </div>
                   </ScrollContainer>
                 );
+              } else if (scheduler.__typename === "PythonError") {
+                return (
+                  <ScrollContainer>
+                    <div style={{ marginTop: 100 }}>
+                      <NonIdealState
+                        icon="error"
+                        title="PythonError"
+                        description={scheduler.message}
+                      />
+                    </div>
+                  </ScrollContainer>
+                );
               } else if (scheduler.runningSchedules.length === 0) {
                 return (
                   <ScrollContainer>
@@ -389,6 +401,9 @@ export const SCHEDULES_ROOT_QUERY = gql`
         }
       }
       ... on SchedulerNotDefinedError {
+        message
+      }
+      ... on PythonError {
         message
       }
     }

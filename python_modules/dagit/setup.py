@@ -57,7 +57,7 @@ def _do_setup(name='dagit'):
             # https://github.com/docker/compose/blob/master/setup.py#L35
             'PyYAML>=3.10,<5',
             # cli
-            'click>=6.7',
+            'click>=7.0',
             'dagster=={ver}'.format(ver=ver),
             'dagster-graphql=={ver}'.format(ver=ver),
             # graphql
