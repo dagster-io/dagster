@@ -123,10 +123,7 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
         <RunStatus status={run.status} />
       </RowColumn>
       <RowColumn style={{ flex: 2.4 }}>
-        <Link
-          style={{ display: "block" }}
-          to={`/p/${run.pipeline.name}/runs/${run.runId}`}
-        >
+        <Link to={`/p/${run.pipeline.name}/runs/${run.runId}`}>
           {titleForRun(run)}
         </Link>
         <Details>
@@ -149,10 +146,7 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
       </RowColumn>
       <RowColumn>
         {run.pipeline.__typename === "Pipeline" ? (
-          <Link
-            style={{ display: "block" }}
-            to={`/p/${run.pipeline.name}/explore/`}
-          >
+          <Link to={`/p/${run.pipeline.name}/explore/`}>
             <Icon icon="diagram-tree" /> {run.pipeline.name}
           </Link>
         ) : (
@@ -183,17 +177,14 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
                 return null;
               }
 
-              const truncatedKey =
-                t.value.length < 22 ? t.key : t.key.slice(0, 22) + "...";
-
-              const truncatedValue =
-                t.value.length < 10 ? t.value : t.value.slice(0, 10) + "...";
-
               return (
-                <Tooltip content={`${t.key}=${t.value}`} key={idx}>
-                  <Tag
-                    style={{ margin: 1 }}
-                  >{`${truncatedKey}=${truncatedValue}`}</Tag>
+                <Tooltip
+                  content={`${t.key}=${t.value}`}
+                  key={idx}
+                  wrapperTagName="div"
+                  targetTagName="div"
+                >
+                  <Tag style={{ margin: 1 }}>{`${t.key}=${t.value}`}</Tag>
                 </Tooltip>
               );
             })}
