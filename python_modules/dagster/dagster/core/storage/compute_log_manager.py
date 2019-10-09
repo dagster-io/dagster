@@ -82,6 +82,8 @@ class ComputeLogSubscription(object):
     def __call__(self, observer):
         self.observer = observer
         self.fetch()
+        if self.manager.is_compute_completed(self.run_id, self.step_key):
+            self.complete()
 
     def fetch(self):
         if not self.observer:
