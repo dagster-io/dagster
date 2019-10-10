@@ -12,6 +12,7 @@ from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.events.log import EventRecord
 from dagster.core.serdes import (
     ConfigurableClass,
+    ConfigurableClassData,
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
 )
@@ -48,15 +49,19 @@ class PostgresEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
         self._event_watcher = create_event_watcher(self.conn_string)
         conn = get_conn(self.conn_string)
         conn.cursor().execute(CREATE_EVENT_LOG_SQL)
-        super(PostgresEventLogStorage, self).__init__(inst_data=inst_data)
+        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+
+    @property
+    def inst_data(self):
+        return self._inst_data
 
     @classmethod
     def config_type(cls):
         return SystemNamedDict('PostgresRunStorageConfig', {'postgres_url': Field(String)})
 
     @staticmethod
-    def from_config_value(config_value, **kwargs):
-        return PostgresEventLogStorage(**dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value, **kwargs):
+        return PostgresEventLogStorage(inst_data=inst_data, **dict(config_value, **kwargs))
 
     @staticmethod
     def create_clean_storage(conn_string):
