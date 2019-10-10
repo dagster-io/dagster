@@ -150,9 +150,16 @@ def test_execute_step_wrong_step_key():
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(execution_plan, instance, step_keys_to_execute=['nope'])
 
-    assert exc_info.value.step_key == 'nope'
+    assert exc_info.value.step_keys == ['nope']
 
-    assert str(exc_info.value) == 'Execution plan does not contain step \'nope\''
+    assert str(exc_info.value) == 'Execution plan does not contain step: nope'
+
+    with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
+        execute_plan(execution_plan, instance, step_keys_to_execute=['nope', 'nuh_uh'])
+
+    assert exc_info.value.step_keys == ['nope', 'nuh_uh']
+
+    assert str(exc_info.value) == 'Execution plan does not contain steps: nope, nuh_uh'
 
 
 def test_using_file_system_for_subplan_missing_input():

@@ -282,5 +282,6 @@ const RunWrapper = styled.div`
 const LogsContainer = styled.div`
   display: flex;
   flex-direction: column;
+  height: 100%;
   background: ${Colors.LIGHT_GRAY5};
 `;

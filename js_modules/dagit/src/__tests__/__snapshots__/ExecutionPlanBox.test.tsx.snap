@@ -2,10 +2,10 @@
 
 exports[`renders given materializations and passing expectations 1`] = `
 <div
-  className="sc-hSdWYo dehZzu"
+  className="sc-cvbbAY hfeZiW"
 >
   <div
-    className="succeeded sc-eHgmQL bCBKIj"
+    className="succeeded sc-jWBwVP hWwbFH"
     onClick={[Function]}
     style={
       Object {
@@ -14,7 +14,7 @@ exports[`renders given materializations and passing expectations 1`] = `
     }
   >
     <div
-      className="sc-iAyFgw ewVIbQ"
+      className="sc-eHgmQL cqcnQe"
       style={
         Object {
           "transitionDelay": "200ms",
@@ -30,7 +30,7 @@ exports[`renders given materializations and passing expectations 1`] = `
       }
     >
       <div
-        className="sc-eNQAEJ cUpgIn"
+        className="sc-kEYyzF cqxKEW"
         onClick={[Function]}
       >
         <div
@@ -50,18 +50,18 @@ exports[`renders given materializations and passing expectations 1`] = `
           }
         />
         <div
-          className="sc-hMqMXs cEorvI"
+          className="sc-kkGfuU jBLgdJ"
           onClick={[Function]}
         />
       </div>
       <div
-        className="sc-kkGfuU iFdxDN"
+        className="sc-hSdWYo ehFkqL"
         title="many_materializations_and_passing_expectations"
       >
         many_materializations_and_passing_expectations
       </div>
       <div
-        className="sc-kEYyzF knKrhm"
+        className="sc-iAyFgw cwQFkd"
         style={
           Object {
             "minWidth": 47.6,
@@ -77,10 +77,10 @@ exports[`renders given materializations and passing expectations 1`] = `
 
 exports[`renders given materializations and passing expectations 2`] = `
 <div
-  className="sc-hSdWYo dehZzu"
+  className="sc-cvbbAY hfeZiW"
 >
   <div
-    className="succeeded sc-eHgmQL bCBKIj"
+    className="succeeded sc-jWBwVP hWwbFH"
     onClick={[Function]}
     style={
       Object {
@@ -89,7 +89,7 @@ exports[`renders given materializations and passing expectations 2`] = `
     }
   >
     <div
-      className="sc-iAyFgw ewVIbQ"
+      className="sc-eHgmQL cqcnQe"
       style={
         Object {
           "transitionDelay": "200ms",
@@ -105,7 +105,7 @@ exports[`renders given materializations and passing expectations 2`] = `
       }
     >
       <div
-        className="sc-eNQAEJ cUpgIn"
+        className="sc-kEYyzF cqxKEW"
         onClick={[Function]}
       >
         <div
@@ -125,18 +125,18 @@ exports[`renders given materializations and passing expectations 2`] = `
           }
         />
         <div
-          className="sc-hMqMXs cEorvI"
+          className="sc-kkGfuU jBLgdJ"
           onClick={[Function]}
         />
       </div>
       <div
-        className="sc-kkGfuU iFdxDN"
+        className="sc-hSdWYo ehFkqL"
         title="many_materializations_and_passing_expectations"
       >
         many_materializations_and_passing_expectations
       </div>
       <div
-        className="sc-kEYyzF knKrhm"
+        className="sc-iAyFgw cwQFkd"
         style={
           Object {
             "minWidth": 47.6,
