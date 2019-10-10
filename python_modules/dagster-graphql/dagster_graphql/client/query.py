@@ -215,14 +215,14 @@ mutation(
     + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
 )
 
-START_SCHEDULED_EXECUTION_MUTATION = (
-    '''
+START_SCHEDULED_EXECUTION_MUTATION = '''
 mutation(
   $scheduleName: String!
 ) {
   startScheduledExecution(
     scheduleName: $scheduleName,
   ) {
+    __typename
     ...on ScheduleNotFoundError {
       message
       scheduleName
@@ -233,12 +233,41 @@ mutation(
     ...on ScheduledExecutionBlocked {
         message
     }
-    ...startPipelineExecutionResultFragment
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
+    }
+    ... on PipelineConfigValidationInvalid {
+      pipeline {
+        name
+      }
+      errors {
+        __typename
+        message
+        path
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+      message
+      pipelineName
+    }
+    ... on StartPipelineExecutionSuccess {
+      run {
+        runId
+        status
+        pipeline {
+          name
+        }
+      }
+    }
+
   }
 }
 '''
-    + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
-)
 
 EXECUTE_PLAN_MUTATION = (
     '''

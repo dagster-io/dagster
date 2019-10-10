@@ -54,6 +54,11 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
         '''Delete all schedules from storage
         '''
 
+    @abc.abstractmethod
+    def get_log_path(self, schedule):
+        '''Get path to store logs for schedule
+        '''
+
 
 class FilesystemScheduleStorage(ScheduleStorage):
     def __init__(self, base_dir, repository_name=None):
@@ -94,6 +99,15 @@ class FilesystemScheduleStorage(ScheduleStorage):
 
     def wipe(self):
         shutil.rmtree(self._base_dir)
+
+    def get_log_path(self, schedule):
+        check.inst_param(schedule, 'schedule', Schedule)
+        return os.path.join(
+            self._base_dir,
+            self._repository_name,
+            'logs',
+            '{}_{}'.format(schedule.name, schedule.schedule_id),
+        )
 
     def _write_schedule_to_file(self, schedule):
         metadata_file = os.path.join(

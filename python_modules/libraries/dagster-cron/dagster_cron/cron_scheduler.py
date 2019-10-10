@@ -5,7 +5,7 @@ import stat
 import six
 from crontab import CronTab
 
-from dagster import DagsterInvariantViolationError, check, seven
+from dagster import DagsterInvariantViolationError, check, seven, utils
 from dagster.core.scheduler import ScheduleStatus, Scheduler
 from dagster.core.scheduler.storage import ScheduleStorage
 
@@ -88,7 +88,8 @@ class SystemCronScheduler(Scheduler):
                 'running'.format(name=schedule_name)
             )
 
-        return self._get_logs_file_path(schedule)
+        log_dir = self._storage.get_log_path(schedule)
+        return log_dir
 
     def wipe(self):
         self._storage.wipe()
@@ -110,10 +111,6 @@ class SystemCronScheduler(Scheduler):
         file_prefix = self._get_file_prefix(schedule)
         return '{}.sh'.format(file_prefix)
 
-    def _get_logs_file_path(self, schedule):
-        file_prefix = self._get_file_prefix(schedule)
-        return '{}.log'.format(file_prefix)
-
     def _start_cron_job(self, schedule):
         script_file = self._write_bash_script_to_file(schedule)
 
@@ -134,7 +131,12 @@ class SystemCronScheduler(Scheduler):
 
     def _write_bash_script_to_file(self, schedule):
         script_file = self._get_bash_script_file_path(schedule)
-        log_file = self._get_logs_file_path(schedule)
+
+        log_dir = self.log_path_for_schedule(schedule.name)
+        utils.mkdir_p(log_dir)
+        result_file = os.path.join(
+            log_dir, "{}_{}_{}.result".format("${RUN_DATE}", schedule.name, schedule.schedule_id)
+        )
 
         dagster_graphql_path = os.path.join(
             os.path.dirname(schedule.python_path), 'dagster-graphql'
@@ -147,12 +149,14 @@ class SystemCronScheduler(Scheduler):
             export LANG=en_US.UTF-8
             {env_vars}
 
-            {dagster_graphql_path} -p startScheduledExecution -v '{variables}' -y "{repo_path}" >> {log_file} 2>&1
+            export RUN_DATE=$(date "+%Y%m%dT%H%M%S")
+
+            {dagster_graphql_path} -p startScheduledExecution -v '{variables}' -y "{repo_path}" --output "{result_file}"
         '''.format(
             dagster_graphql_path=dagster_graphql_path,
             repo_path=schedule.repository_path,
             variables=seven.json.dumps({"scheduleName": schedule.name}),
-            log_file=log_file,
+            result_file=result_file,
             dagster_home=dagster_home,
             env_vars="\n".join(
                 [

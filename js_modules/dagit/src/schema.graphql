@@ -874,6 +874,7 @@ type RunningSchedule {
   status: ScheduleStatus!
   runs(limit: Int): [PipelineRun!]!
   runsCount: Int!
+  attempts(limit: Int): [ScheduleAttempt!]!
   logsPath: String!
 }
 
@@ -912,6 +913,19 @@ type RuntimeTypeNotFoundError implements Error {
 }
 
 union RuntimeTypeOrError = RegularRuntimeType | PipelineNotFoundError | RuntimeTypeNotFoundError | PythonError
+
+type ScheduleAttempt {
+  time: String!
+  jsonResult: String!
+  status: ScheduleAttemptStatus!
+  run: PipelineRun
+}
+
+enum ScheduleAttemptStatus {
+  SUCCESS
+  ERROR
+  SKIPPED
+}
 
 type ScheduleDefinition {
   name: String!

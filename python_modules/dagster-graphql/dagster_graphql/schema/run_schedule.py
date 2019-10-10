@@ -1,3 +1,8 @@
+import glob
+import heapq
+import json
+import os
+
 import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_schedules import get_dagster_schedule_def
@@ -62,6 +67,25 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
         )
 
 
+class DauphinScheduleAttemptStatus(dauphin.Enum):
+    class Meta:
+        name = 'ScheduleAttemptStatus'
+
+    SUCCESS = 'SUCCESS'
+    ERROR = 'ERROR'
+    SKIPPED = 'SKIPPED'
+
+
+class DauphinScheduleAttempt(dauphin.ObjectType):
+    class Meta:
+        name = 'ScheduleAttempt'
+
+    time = dauphin.NonNull(dauphin.String)
+    json_result = dauphin.NonNull(dauphin.String)
+    status = dauphin.NonNull('ScheduleAttemptStatus')
+    run = dauphin.Field('PipelineRun')
+
+
 class DauphinRunningSchedule(dauphin.ObjectType):
     class Meta:
         name = 'RunningSchedule'
@@ -73,6 +97,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     status = dauphin.NonNull('ScheduleStatus')
     runs = dauphin.Field(dauphin.non_null_list('PipelineRun'), limit=dauphin.Int())
     runs_count = dauphin.NonNull(dauphin.Int)
+    attempts = dauphin.Field(dauphin.non_null_list('ScheduleAttempt'), limit=dauphin.Int())
     logs_path = dauphin.NonNull(dauphin.String)
 
     def __init__(self, graphene_info, schedule):
@@ -87,6 +112,51 @@ class DauphinRunningSchedule(dauphin.ObjectType):
             python_path=schedule.python_path,
             repository_path=schedule.repository_path,
         )
+
+    def resolve_attempts(self, graphene_info, **kwargs):
+        limit = kwargs.get('limit')
+
+        scheduler = graphene_info.context.get_scheduler()
+        log_dir = scheduler.log_path_for_schedule(self._schedule.name)
+
+        results = glob.glob(os.path.join(log_dir, "*.result"))
+        latest_results = heapq.nlargest(limit, results, key=os.path.getctime)
+
+        attempts = []
+        for result_path in latest_results:
+            with open(result_path, 'r') as f:
+                line = f.readline()
+                if not line:
+                    continue  # File is empty
+
+                start_scheduled_execution_response = json.loads(line)
+                json_result = start_scheduled_execution_response['data']['startScheduledExecution']
+                typename = json_result['__typename']
+
+                if typename == 'StartPipelineExecutionSuccess':
+                    status = DauphinScheduleAttemptStatus.SUCCESS
+                elif typename == 'ScheduleExecutionBlocked':
+                    status = DauphinScheduleAttemptStatus.SKIPPED
+                else:
+                    status = DauphinScheduleAttemptStatus.ERROR
+
+                run = None
+                if typename == 'StartPipelineExecutionSuccess':
+                    run_id = json_result['run']['runId']
+                    run = graphene_info.schema.type_named('PipelineRun')(
+                        graphene_info.context.instance.get_run_by_id(run_id)
+                    )
+
+                attempts.append(
+                    graphene_info.schema.type_named('ScheduleAttempt')(
+                        time=os.path.getctime,
+                        json_result=json.dumps(json_result),
+                        status=status,
+                        run=run,
+                    )
+                )
+
+        return attempts
 
     def resolve_logs_path(self, graphene_info):
         scheduler = graphene_info.context.get_scheduler()
