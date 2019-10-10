@@ -78,8 +78,8 @@ def sleepy_pipeline():
     giver_res = giver()
 
     total(
-        in_1=sleeper.alias('sleeper_1')(units=giver_res.out_1),
-        in_2=sleeper.alias('sleeper_2')(units=giver_res.out_2),
-        in_3=sleeper.alias('sleeper_3')(units=giver_res.out_3),
-        in_4=sleeper.alias('sleeper_4')(units=giver_res.out_4),
+        in_1=sleeper(units=giver_res.out_1),
+        in_2=sleeper(units=giver_res.out_2),
+        in_3=sleeper(units=giver_res.out_3),
+        in_4=sleeper(units=giver_res.out_4),
     )

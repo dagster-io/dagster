@@ -13,17 +13,17 @@ def div_two(_, num):
 
 @composite_solid
 def add_two(num):
-    return add_one.alias('adder_2')(num=add_one.alias('adder_1')(num))
+    return add_one(num=add_one(num))
 
 
 @composite_solid
 def add_four(num):
-    return add_two.alias('adder_2')(num=add_two.alias('adder_1')(num))
+    return add_two(num=add_two(num))
 
 
 @composite_solid
 def div_four(num):
-    return div_two.alias('div_2')(num=div_two.alias('div_1')(num))
+    return div_two(num=div_two(num))
 
 
 @pipeline

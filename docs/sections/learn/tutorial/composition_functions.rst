@@ -26,15 +26,24 @@ Solids that have multiple outputs return a named tuple representing the outputs.
 Aliases
 ^^^^^^^
 
-While you can directly invoke solids and add them to the computation graph by their definition name,
-its often preferable to give them more useful names. This is especially true when invoking a solid
-multiple times. The ``alias`` function returns an instance of the solid with the provided name which
-can then be invoked.
+If the same solid is invoked multiple times, we need to give each invocation a unique name. This is done
+automatically using a simple integer suffix.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/composition.py
    :linenos:
    :lines: 27-32
    :emphasize-lines: 5
+   :caption: composition.py
+
+
+While the automatic aliasing is useful for getting started, it is often preferable to give the invocations
+more useful names. The ``alias`` function returns an instance of the solid with the provided name which
+can then be invoked.
+
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/composition.py
+   :linenos:
+   :lines: 135-140
+   :emphasize-lines: 4-5
    :caption: composition.py
 
 

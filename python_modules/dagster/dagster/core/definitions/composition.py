@@ -40,12 +40,33 @@ class InProgressCompositionContext:
         self.name = check.str_param(name, 'name')
         self.source = check.str_param(source, 'source')
         self._invocations = {}
+        self._collisions = {}
 
-    def has_seen_invocation(self, name):
-        return name in self._invocations
+    def observe_invocation(self, given_alias, solid_def, input_bindings, input_mappings):
 
-    def observe_invocation(self, invocation):
-        self._invocations[invocation.solid_name] = invocation
+        if given_alias is None:
+            solid_name = solid_def.name
+            if self._collisions.get(solid_name):
+                self._collisions[solid_name] += 1
+                solid_name = '{solid_name}_{n}'.format(
+                    solid_name=solid_name, n=self._collisions[solid_name]
+                )
+            else:
+                self._collisions[solid_name] = 1
+        else:
+            solid_name = given_alias
+
+        if self._invocations.get(solid_name):
+            raise DagsterInvalidDefinitionError(
+                '{source} {name} invoked the same solid ({solid_name}) twice without aliasing.'.format(
+                    source=self.source, name=self.name, solid_name=solid_name
+                )
+            )
+
+        self._invocations[solid_name] = InvokedSolidNode(
+            solid_name, solid_def, input_bindings, input_mappings
+        )
+        return solid_name
 
     def complete(self, output):
         return CompleteCompositionContext(
@@ -106,12 +127,13 @@ class CallableSolidNode:
     an alias before invoking.
     '''
 
-    def __init__(self, solid_def, solid_name=None):
+    def __init__(self, solid_def, given_alias=None):
         self.solid_def = solid_def
-        self.solid_name = check.opt_str_param(solid_name, 'solid_name', solid_def.name)
+        self.given_alias = check.opt_str_param(given_alias, 'given_alias')
 
     def __call__(self, *args, **kwargs):
-        assert_in_composition(self.solid_name)
+        solid_name = self.given_alias if self.given_alias else self.solid_def.name
+        assert_in_composition(solid_name)
 
         input_bindings = {}
         input_mappings = {}
@@ -124,7 +146,7 @@ class CallableSolidNode:
                     'invocation {solid_name}. Only {def_num} defined, received {arg_num}'.format(
                         source=current_context().source,
                         name=current_context().name,
-                        solid_name=self.solid_name,
+                        solid_name=solid_name,
                         def_num=len(self.solid_def.input_defs),
                         arg_num=len(args),
                     )
@@ -133,6 +155,7 @@ class CallableSolidNode:
             input_name = self.solid_def.input_defs[idx].name
 
             self._process_argument_node(
+                solid_name,
                 output_node,
                 input_name,
                 input_mappings,
@@ -143,20 +166,16 @@ class CallableSolidNode:
         # then **kwargs
         for input_name, output_node in kwargs.items():
             self._process_argument_node(
-                output_node, input_name, input_mappings, input_bindings, '(passed by keyword)'
+                solid_name,
+                output_node,
+                input_name,
+                input_mappings,
+                input_bindings,
+                '(passed by keyword)',
             )
 
-        if current_context().has_seen_invocation(self.solid_name):
-            raise DagsterInvalidDefinitionError(
-                '{source} {name} invoked the same solid ({solid_name}) twice without aliasing.'.format(
-                    source=current_context().source,
-                    name=current_context().name,
-                    solid_name=self.solid_name,
-                )
-            )
-
-        current_context().observe_invocation(
-            InvokedSolidNode(self.solid_name, self.solid_def, input_bindings, input_mappings)
+        solid_name = current_context().observe_invocation(
+            self.given_alias, self.solid_def, input_bindings, input_mappings
         )
 
         if len(self.solid_def.output_defs) == 0:
@@ -164,15 +183,15 @@ class CallableSolidNode:
 
         if len(self.solid_def.output_defs) == 1:
             output_name = self.solid_def.output_defs[0].name
-            return InvokedSolidOutputHandle(self.solid_name, output_name)
+            return InvokedSolidOutputHandle(solid_name, output_name)
 
         outputs = [output_def.name for output_def in self.solid_def.output_defs]
         return namedtuple('_{solid_def}_outputs'.format(solid_def=self.solid_def.name), outputs)(
-            **{output: InvokedSolidOutputHandle(self.solid_name, output) for output in outputs}
+            **{output: InvokedSolidOutputHandle(solid_name, output) for output in outputs}
         )
 
     def _process_argument_node(
-        self, output_node, input_name, input_mappings, input_bindings, arg_desc
+        self, solid_name, output_node, input_name, input_mappings, input_bindings, arg_desc
     ):
 
         if isinstance(output_node, InvokedSolidOutputHandle):
@@ -192,7 +211,7 @@ class CallableSolidNode:
                         name=current_context().name,
                         arg_desc=arg_desc,
                         input_name=input_name,
-                        solid_name=self.solid_name,
+                        solid_name=solid_name,
                     )
                 )
 
@@ -207,7 +226,7 @@ class CallableSolidNode:
                     name=current_context().name,
                     arg_desc=arg_desc,
                     input_name=input_name,
-                    solid_name=self.solid_name,
+                    solid_name=solid_name,
                     options=output_node._fields,
                 )
             )
@@ -223,7 +242,7 @@ class CallableSolidNode:
                     type=type(output_node),
                     arg_desc=arg_desc,
                     input_name=input_name,
-                    solid_name=self.solid_name,
+                    solid_name=solid_name,
                 )
             )
 

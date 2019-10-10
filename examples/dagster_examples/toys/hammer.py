@@ -105,8 +105,8 @@ def hammer_pipeline():
 
     out_1, out_2, out_3, out_4 = chase_giver()
     return reducer(
-        in_1=hammer.alias('hammer_1')(chase_duration=out_1),
-        in_2=hammer.alias('hammer_2')(chase_duration=out_2),
-        in_3=hammer.alias('hammer_3')(chase_duration=out_3),
-        in_4=hammer.alias('hammer_4')(chase_duration=out_4),
+        in_1=hammer(chase_duration=out_1),
+        in_2=hammer(chase_duration=out_2),
+        in_3=hammer(chase_duration=out_3),
+        in_4=hammer(chase_duration=out_4),
     )

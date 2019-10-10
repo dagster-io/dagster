@@ -19,10 +19,10 @@ def test_compile():
     res = coalesce_execution_steps(plan)
 
     assert set(res.keys()) == {
-        'add_four.adder_1.adder_1',
-        'add_four.adder_1.adder_2',
-        'add_four.adder_2.adder_1',
-        'add_four.adder_2.adder_2',
-        'div_four.div_1',
-        'div_four.div_2',
+        'add_four.add_two.add_one',
+        'add_four.add_two.add_one_2',
+        'add_four.add_two_2.add_one',
+        'add_four.add_two_2.add_one_2',
+        'div_four.div_two',
+        'div_four.div_two_2',
     }
