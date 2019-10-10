@@ -6,6 +6,7 @@
   aliases with an incrementing integer suffix when there are conflicts. This removes to the need
   to manually alias solid definitions that are used multiple times.
 - `execute_solid` test util now works on composite solids.
+- Added `--remote` flag to `dagster-graphql` for querying remote dagit servers.
 
 ## 0.6.1
 
