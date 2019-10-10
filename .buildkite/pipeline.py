@@ -387,8 +387,6 @@ def dagit_tests():
         tests.append(
             StepBuilder("dagit tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "apt-get update",
-                "apt-get install -y xdg-utils",
                 "pushd python_modules",
                 "make rebuild_dagit",
                 "popd",
