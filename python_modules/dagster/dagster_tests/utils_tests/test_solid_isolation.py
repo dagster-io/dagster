@@ -7,6 +7,7 @@ from dagster import (
     Int,
     ModeDefinition,
     OutputDefinition,
+    composite_solid,
     lambda_solid,
     resource,
     solid,
@@ -131,3 +132,21 @@ def test_failing_solid_in_isolation():
         execute_solid(throw_an_error)
 
     assert isinstance(e_info.value.__cause__, ThisException)
+
+
+def test_compostites():
+    @lambda_solid
+    def hello():
+        return 'hello'
+
+    @composite_solid
+    def hello_composite():
+        return hello()
+
+    result = execute_solid(hello)
+    assert result.success
+    assert result.output_value() == 'hello'
+
+    result = execute_solid(hello_composite)
+    assert result.success
+    assert result.output_value() == 'hello'

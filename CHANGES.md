@@ -5,6 +5,7 @@
 - Changed composition functions `@pipeline` and `@composite_solid` to automatically give solids
   aliases with an incrementing integer suffix when there are conflicts. This removes to the need
   to manually alias solid definitions that are used multiple times.
+- `execute_solid` test util now works on composite solids.
 
 ## 0.6.1
 

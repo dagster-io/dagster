@@ -12,6 +12,7 @@ from dagster import (
     composite_solid,
     dagster_type,
     execute_pipeline,
+    execute_solid,
     lambda_solid,
     pipeline,
     solid,
@@ -37,12 +38,7 @@ def test_composite_basic_execution():
         a = node_a(a_source())
         node_d(B=node_b(a), C=node_c(a))
 
-    @pipeline
-    def test_pipeline_single():
-        diamond_composite()
-
-    result = execute_pipeline(test_pipeline_single)
-    assert result.success
+    assert execute_solid(diamond_composite).success
 
     @pipeline
     def test_pipeline_double():

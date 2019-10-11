@@ -1,7 +1,7 @@
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 
 from dagster import check
-from dagster.core.definitions import PipelineDefinition, Solid
+from dagster.core.definitions import PipelineDefinition, Solid, SolidHandle
 from dagster.core.definitions.events import ObjectStoreOperation
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
@@ -19,12 +19,6 @@ class PipelineExecutionResult(object):
         self.event_list = check.list_param(event_list, 'step_event_list', of_type=DagsterEvent)
         self.reconstruct_context = check.callable_param(reconstruct_context, 'reconstruct_context')
 
-        # Dict[string: solid_name, SolidExecutionResult]
-        solid_result_dict = self._context_solid_result_dict(event_list)
-
-        self.solid_result_dict = solid_result_dict
-        self.solid_result_list = list(self.solid_result_dict.values())
-
         self._events_by_step_key = self._construct_events_by_step_key(event_list)
 
     def _construct_events_by_step_key(self, event_list):
@@ -33,29 +27,6 @@ class PipelineExecutionResult(object):
             events_by_step_key[event.step_key].append(event)
 
         return dict(events_by_step_key)
-
-    def _context_solid_result_dict(self, event_list):
-        solid_set = set()
-        solid_order = []
-        step_events_by_solid_by_kind = defaultdict(lambda: defaultdict(list))
-        step_event_list = [event for event in event_list if event.is_step_event]
-        for step_event in step_event_list:
-            solid_handle = step_event.solid_handle
-            if solid_handle not in solid_set:
-                solid_order.append(solid_handle)
-                solid_set.add(solid_handle)
-
-            step_events_by_solid_by_kind[solid_handle][step_event.step_kind].append(step_event)
-
-        solid_result_dict = OrderedDict()
-
-        for solid_handle in solid_order:
-            solid_result_dict[solid_handle] = SolidExecutionResult(
-                self.pipeline.get_solid(solid_handle),
-                dict(step_events_by_solid_by_kind[solid_handle]),
-                self.reconstruct_context,
-            )
-        return solid_result_dict
 
     @property
     def success(self):
@@ -74,45 +45,39 @@ class PipelineExecutionResult(object):
     def result_for_solid(self, name):
         '''Get a :py:class:`SolidExecutionResult` for a given top level solid name.
         '''
-        check.str_param(name, 'name')
-
         if not self.pipeline.has_solid_named(name):
             raise DagsterInvariantViolationError(
-                'Try to get result for solid {name} in {pipeline}. No such solid.'.format(
+                'Tried to get result for solid {name} in {pipeline}. No such top level solid.'.format(
                     name=name, pipeline=self.pipeline.display_name
                 )
             )
-        top_level_results = {
-            solid_id.name: result
-            for solid_id, result in self.solid_result_dict.items()
-            if solid_id.parent is None
-        }
-        if name not in top_level_results:
-            raise DagsterInvariantViolationError(
-                'Did not find result for solid {name} in pipeline execution result'.format(
-                    name=name
-                )
-            )
 
-        return top_level_results[name]
+        return self.result_for_handle(name)
+
+    @property
+    def solid_result_list(self):
+        '''Get a list of :py:class:`SolidExecutionResult`, one for each top level solid.
+        '''
+        return [self.result_for_solid(solid.name) for solid in self.pipeline.solids]
 
     def result_for_handle(self, handle):
         '''Get a :py:class:`SolidExecutionResult` for a given solid handle string.
         '''
         check.str_param(handle, 'handle')
-        results = {
-            solid_id.to_string(): result for solid_id, result in self.solid_result_dict.items()
-        }
 
-        if handle not in results:
+        solid_def = self.pipeline.get_solid(SolidHandle.from_string(handle))
+        if not solid_def:
             raise DagsterInvariantViolationError(
-                (
-                    'Did not find result for solid handle {handle} in pipeline execution result. '
-                    'Available handles: {handles}'
-                ).format(handle=handle, handles=list(results.keys()))
+                'Cant not find solid handle {handle} in pipeline.'.format(handle=handle)
             )
 
-        return results[handle]
+        events_by_kind = defaultdict(list)
+        for event in self.event_list:
+            if event.is_step_event:
+                if event.solid_handle.is_or_descends_from(handle):
+                    events_by_kind[event.step_kind].append(event)
+
+        return SolidExecutionResult(solid_def, events_by_kind, self.reconstruct_context)
 
 
 class SolidExecutionResult(object):
