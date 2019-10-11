@@ -57,7 +57,9 @@ const ErrorWrapper = styled.div`
   border: 1px solid #d17257;
   border-radius: 3px;
   max-width: 90vw;
+  max-height: 80vh;
   padding: 1em 2em;
+  overflow: auto;
 `;
 
 const ErrorWrapperCentered = styled(ErrorWrapper)`
