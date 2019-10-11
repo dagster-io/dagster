@@ -1,7 +1,5 @@
 Learn
-=======================
-
-Here we provide several resources for learning how to use Dagster.
+=====
 
 If you're brand new to the Dagster system, we recommend starting with the tutorial, which will walk
 you through the most important concepts in Dagster from the beginning.

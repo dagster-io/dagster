@@ -20,16 +20,14 @@ so the first argument will be named ``context`` instead of ``_``.
    :lines: 1-19
    :caption: config.py
 
-We will be exploring the :py:func:`@solid <dagster.solid>` API in much more detail as this tutorial
-proceeds. For now, the salient differences are:
+Note that we pass the parameter ``config`` to :py:func:`@solid <dagster.solid>` in order to define
+the structure and type of configuration values that can be set on each execution of the solid. This
+parameter should be a Dict of string names to :py:func:`Field <dagster.Field>`, which tells the
+dagster machinery how to translate config values into runtime values available to the solid.
 
-1. The :py:func:`@solid <dagster.solid>` API takes a parameter, ``config``, which
-   defines the structure and type of configuration values that can be set on each execution of the
-   solid. This parameter should be a Dict of string names to :py:func:`Field <dagster.Field>`, which tells the dagster
-   machinery how to translate config values into runtime values available to the solid.
-2. The function annotated by the :py:func:`@solid <dagster.solid>` API receives an additional first
-   parameter, ``context``, of type :py:class:`ComputeExecutionContext <dagster.ComputeExecutionContext>`.
-   The configuration passed into each solid is available to the annotated function as ``context.solid_config``.
+The ``context`` parameter to the function annotated by :py:func:`@solid <dagster.solid>` is a
+:py:class:`ComputeExecutionContext <dagster.ComputeExecutionContext>`. The configuration passed
+into each solid is available to the annotated function as ``context.solid_config``.
 
 Configuration values are passed in a dict as the second argument to
 :py:func:`execute_pipeline <dagster.execute_pipeline>`. This dict specifies *all* of the

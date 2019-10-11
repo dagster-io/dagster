@@ -28,7 +28,9 @@ raw_files = [
 def create_raw_file_solid(name):
     def do_expectation(_context, _value):
         return ExpectationResult(
-            success=True, label='output_table_exists', description='Checked {name} exists'
+            success=True,
+            label='output_table_exists',
+            description='Checked {name} exists'.format(name=name),
         )
 
     @solid(

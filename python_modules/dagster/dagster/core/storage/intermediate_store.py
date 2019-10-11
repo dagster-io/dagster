@@ -1,5 +1,4 @@
-import os
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
 import six
 
@@ -13,12 +12,17 @@ from .type_storage import TypeStoragePluginRegistry
 
 
 class IntermediateStore(six.with_metaclass(ABCMeta)):
-    def __init__(self, object_store, root, type_storage_plugin_registry):
-        self.root = check.str_param(root, 'root')
+    def __init__(self, object_store, root_for_run_id, run_id, type_storage_plugin_registry):
+        self.root_for_run_id = check.callable_param(root_for_run_id, 'root_for_run_id')
+        self.run_id = check.str_param(run_id, 'run_id')
         self.object_store = check.inst_param(object_store, 'object_store', ObjectStore)
         self.type_storage_plugin_registry = check.inst_param(
             type_storage_plugin_registry, 'type_storage_plugin_registry', TypeStoragePluginRegistry
         )
+
+    @property
+    def root(self):
+        return self.root_for_run_id(self.run_id)
 
     def uri_for_paths(self, paths, protocol=None):
         check.list_param(paths, 'paths', of_type=str)
@@ -63,11 +67,15 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
         key = self.object_store.key_for_paths([self.root] + paths)
         self.object_store.rm_object(key)
 
-    @abstractmethod
-    def copy_object_from_prev_run(self, context, previous_run_id, paths):
-        '''Copy an object from a previous run into storage for the current run.
+    def copy_object_from_prev_run(self, _context, previous_run_id, paths):
+        check.str_param(previous_run_id, 'previous_run_id')
+        check.list_param(paths, 'paths', of_type=str)
+        check.param_invariant(len(paths) > 0, 'paths')
 
-        Return the result from the underlying object store.'''
+        src = self.object_store.key_for_paths([self.root_for_run_id(previous_run_id)] + paths)
+        dst = self.object_store.key_for_paths([self.root] + paths)
+
+        return self.object_store.cp_object(src, dst)
 
     def set_value(self, obj, context, runtime_type, paths):
         if self.type_storage_plugin_registry.is_registered(runtime_type):
@@ -115,7 +123,7 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
 
 
 class FilesystemIntermediateStore(IntermediateStore):
-    def __init__(self, root, type_storage_plugin_registry=None):
+    def __init__(self, root_for_run_id, run_id, type_storage_plugin_registry=None):
         type_storage_plugin_registry = check.inst_param(
             type_storage_plugin_registry
             if type_storage_plugin_registry
@@ -127,27 +135,19 @@ class FilesystemIntermediateStore(IntermediateStore):
         object_store = FilesystemObjectStore()
 
         super(FilesystemIntermediateStore, self).__init__(
-            object_store, root=root, type_storage_plugin_registry=type_storage_plugin_registry
+            object_store,
+            root_for_run_id=root_for_run_id,
+            run_id=run_id,
+            type_storage_plugin_registry=type_storage_plugin_registry,
         )
 
     @staticmethod
     def for_instance(instance, run_id, type_storage_plugin_registry=None):
         check.inst_param(instance, 'instance', DagsterInstance)
         run_id = check.str_param(run_id, 'run_id')
-        root = instance.intermediates_directory(run_id)
-        return FilesystemIntermediateStore(root, type_storage_plugin_registry)
 
-    def copy_object_from_prev_run(
-        self, context, previous_run_id, paths
-    ):  # pylint: disable=unused-argument
-        check.str_param(previous_run_id, 'previous_run_id')
-        check.list_param(paths, 'paths', of_type=str)
-        check.param_invariant(len(paths) > 0, 'paths')
-
-        prev_run_files_dir = context.instance.intermediates_directory(previous_run_id)
-
-        check.invariant(os.path.isdir(prev_run_files_dir))
-
-        src = os.path.join(prev_run_files_dir, *paths)
-        dst = os.path.join(self.root, *paths)
-        self.object_store.cp_object(src, dst)
+        return FilesystemIntermediateStore(
+            root_for_run_id=instance.intermediates_directory,
+            run_id=run_id,
+            type_storage_plugin_registry=type_storage_plugin_registry,
+        )

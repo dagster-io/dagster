@@ -1,3 +1,5 @@
+.. _Contributing:
+
 Contributing
 ============
 If you are planning to contribute to Dagster, you will first need to set up a local development
@@ -7,9 +9,11 @@ Environment Setup
 ~~~~~~~~~~~~~~~~~
 
 1. Install Python. Python 3.6 or above recommended, but our CI/CD pipeline currently tests against
-the Python versions 2.7, 3.5, 3.6, and 3.7.
+   up-to-date patch versions of Python 2.7, 3.5, 3.6, and 3.7. Note that dagster is a 2/3 compatible
+   project: tests must pass against Python 2.7.
 
-2. Create and activate a virtualenv, preferably through ``pyenv``. On macOS:
+2. Create and activate a virtualenv, using the tool of your choice. E.g., on macOS you may use
+   install and use ``pyenv`` as follows with Homebrew:
 
 .. code-block:: console
 
@@ -18,21 +22,29 @@ the Python versions 2.7, 3.5, 3.6, and 3.7.
     $ pyenv virtualenv 3.7.4 dagster37
     $ pyenv activate dagster37
 
-3. Install yarn. If you are on macOS, this should be:
+3. Ensure that you have node installed by running `node -v`, and that you have
+   `yarn <https://yarnpkg.com/lang/en/>`_ installed. If you are on macOS, you can install yarn with
+   Homebrew:
 
 .. code-block:: console
 
     $ brew install yarn
 
-4. Run the ``make dev_install`` at repo root. This sets up a full dagster developer environment with
-   all modules and runs tests that do not require heavy external
-   dependencies such as docker. This will take a few minutes.
+4. Clone the dagster repository to the destination of your choice:
+
+.. code-block:: console
+
+    $ git clone git@github.com:dagster-io/dagster.git
+
+5. Run ``make dev_install`` at the root of the repository. This sets up a full dagster developer
+   environment with all modules and runs tests that do not require heavy external dependencies
+   such as docker. This will take a few minutes.
 
 .. code-block:: console
 
     $ make dev_install
 
-5. Run some tests manually to make sure things are working:
+6. Run some tests manually to make sure things are working:
 
 .. code-block:: console
 
@@ -45,8 +57,13 @@ Developing Dagster
 
 Some notes on developing in Dagster:
 
-- **Python 2**: We plan to continue supporting Python 2 for some time; it is worth testing your changes with
-  Python 2 to ensure compatibility.
+- **Python 2**: We plan to continue supporting Python 2 for some time; it is worth testing your
+  changes with Python 2 to ensure compatibility. You can use `tox` for this, from within any of
+  the Python packages:
+
+.. code-block:: console
+
+    $ PYENV=py27 tox
 
 - **Black/Pylint**: We use `black <https://github.com/python/black>`_ to enforce a consistent code
   style, along with `pylint <https://www.pylint.org/>`_. We test these in our CI/CD pipeline.

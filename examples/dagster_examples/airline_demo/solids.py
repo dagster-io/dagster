@@ -494,10 +494,7 @@ sfo_delays_by_destination = notebook_solid(
 
 
 @solid(
-    config_field=Field(
-        Dict(fields={'subsample_pct': Field(Int, description='')})
-        # description='The integer percentage of rows to sample from the input dataset.'
-    ),
+    config={'subsample_pct': Field(Int)},
     description='''
     This solid takes April, May, and June data and coalesces it into a q2 data set.
     It then joins the that origin and destination airport with the data in the

@@ -270,18 +270,29 @@ def test_s3_intermediate_store_with_custom_serializer(s3_bucket):
 @nettest
 def test_s3_intermediate_store(s3_bucket):
     run_id = str(uuid.uuid4())
+    run_id_2 = str(uuid.uuid4())
 
     # FIXME need a dedicated test bucket
     intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
     assert intermediate_store.root == '/'.join(['dagster', 'storage', run_id])
 
-    with yield_empty_pipeline_context(run_id=run_id) as context:
-        try:
+    intermediate_store_2 = S3IntermediateStore(run_id=run_id_2, s3_bucket=s3_bucket)
+    assert intermediate_store_2.root == '/'.join(['dagster', 'storage', run_id_2])
+
+    try:
+        with yield_empty_pipeline_context(run_id=run_id) as context:
+
             intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
 
             assert intermediate_store.has_object(context, ['true'])
             assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']).obj is True
             assert intermediate_store.uri_for_paths(['true']).startswith('s3://')
 
-        finally:
-            intermediate_store.rm_object(context, ['true'])
+            intermediate_store_2.copy_object_from_prev_run(context, run_id, ['true'])
+            assert intermediate_store_2.has_object(context, ['true'])
+            assert (
+                intermediate_store_2.get_object(context, RuntimeBool.inst(), ['true']).obj is True
+            )
+    finally:
+        intermediate_store.rm_object(context, ['true'])
+        intermediate_store_2.rm_object(context, ['true'])
