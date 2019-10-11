@@ -16,7 +16,7 @@ class SqliteRunStorage(SQLRunStorage, ConfigurableClass):
 
     @property
     def inst_data(self):
-        return self.inst_data
+        return self._inst_data
 
     @classmethod
     def config_type(cls):
