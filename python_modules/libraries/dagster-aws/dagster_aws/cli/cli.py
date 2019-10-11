@@ -2,9 +2,7 @@
 
 import os
 import signal
-import subprocess
 import sys
-import uuid
 
 import boto3
 import click
@@ -24,7 +22,8 @@ from .aws_util import (
     select_vpc,
 )
 from .config import HOST_CONFIG_FILE, EC2Config, RDSConfig
-from .term import Spinner, Term, run_remote_cmd
+from .service_util import restart_dagit_service, stop_dagit_service
+from .term import Spinner, Term, remove_ssh_key, rsync_to_remote, run_remote_cmd
 
 # Client code will be deposited here on the remote EC2 instance
 SERVER_CLIENT_CODE_HOME = '/opt/dagster/app/'
@@ -73,32 +72,6 @@ def exit_gracefully(_signum, _frame):
     sys.exit(1)
 
 
-def rsync_to_remote(key_file_path, local_path, remote_host, remote_path):
-    remote_user = 'ubuntu'
-
-    rsync_command = [
-        'rsync',
-        '-avL',
-        '--progress',
-        # Exclude a few common paths
-        '--exclude',
-        '\'.pytest_cache\'',
-        '--exclude',
-        '\'.git\'',
-        '--exclude',
-        '\'__pycache__\'',
-        '--exclude',
-        '\'*.pyc\'',
-        '-e',
-        '"ssh -i %s"' % key_file_path,
-        local_path,
-        '%s@%s:%s' % (remote_user, remote_host, remote_path),
-    ]
-    Term.info('rsyncing local path %s to %s:%s' % (local_path, remote_host, remote_path))
-    click.echo('\n' + ' '.join(rsync_command) + '\n')
-    subprocess.call(' '.join(rsync_command), shell=True)
-
-
 def sync_dagster_yaml(ec2_config, rds_config):
     '''Configure Dagster instance to use PG storage by putting a dagster.yaml file in the remote
     DAGSTER_HOME directory
@@ -139,52 +112,6 @@ def ensure_requirements(base_path):
         Term.waiting('No requirements.txt found, creating...')
         with open(requirements_file, 'wb') as f:
             f.write(six.ensure_binary('\n'.join(['dagster', 'dagit'])))
-
-
-def remove_ssh_key(key_file_path):
-    # We have to clean up after ourselves to avoid "Too many authentication failures" issue.
-    Term.waiting('Removing SSH key from authentication agent...')
-
-    # AWS only gives us the private key contents; ssh-add uses the private key for adding but the
-    # public key for removing
-    try:
-        public_keys = six.ensure_str(subprocess.check_output(['ssh-add', '-L'])).strip().split('\n')
-    except subprocess.CalledProcessError:
-        Term.rewind()
-        Term.info('No identities found, skipping')
-        return True
-
-    filtered_public_keys = [key for key in public_keys if key_file_path in key]
-    public_key = filtered_public_keys[0] if filtered_public_keys else None
-
-    if public_key:
-        tmp_pub_file = os.path.join(
-            seven.get_system_temp_directory(), uuid.uuid4().hex + '-tmp-pubkey'
-        )
-
-        with open(tmp_pub_file, 'wb') as f:
-            f.write(six.ensure_binary(public_key))
-
-        res = subprocess.Popen(
-            ['ssh-add', '-d', tmp_pub_file], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-        ).communicate()
-        res = six.ensure_str(res[0])
-
-        os.unlink(tmp_pub_file)
-
-        if 'Identity removed' in res:
-            Term.rewind()
-            Term.success('key deleted successfully')
-            return True
-        else:
-            Term.warning('Could not remove key, error: %s' % res)
-            return False
-    else:
-        Term.rewind()
-        Term.info('key not found, skipping')
-        return False
-
-    return True
 
 
 @click.group()
@@ -279,14 +206,27 @@ def up(post_up_script):
         rds_config = RDSConfig.load(dagster_home)
         sync_dagster_yaml(cfg, rds_config)
 
+    cwd = os.getcwd()
+
+    if not os.path.exists(os.path.join(cwd, 'repository.yaml')):
+        Term.fatal('No repository.yaml found in %s, create before continuing.' % cfg.local_path)
+
     if cfg.local_path is None:
-        cwd = os.getcwd()
         Term.info('Local path not configured; setting to %s' % cwd)
         cfg = cfg._replace(local_path=cwd)
         cfg.save(dagster_home)
-
-    if not os.path.exists(os.path.join(cfg.local_path, 'repository.yaml')):
-        Term.fatal('No repository.yaml found in %s, create before continuing.' % cfg.local_path)
+    elif cfg.local_path != cwd:
+        new_repo = click.confirm(
+            'Local path already initialized! Sync a different repository?', default=False
+        )
+        if new_repo:
+            stop_dagit_service(cfg)
+            Term.info('Removing previous deployment from remote host...')
+            run_remote_cmd(
+                cfg.key_file_path, cfg.remote_host, 'rm -rf "%s*"' % SERVER_CLIENT_CODE_HOME
+            )
+            cfg = cfg._replace(local_path=cwd)
+            cfg.save(dagster_home)
 
     ensure_requirements(cfg.local_path)
 
@@ -309,6 +249,18 @@ def up(post_up_script):
         Term.success('Install requirements.txt completed')
     else:
         Term.fatal('Error: could not install requirements.txt')
+
+    setup_py_file = os.path.join(cfg.local_path, 'setup.py')
+    if os.path.exists(setup_py_file):
+        Term.waiting('Found a setup.py, installing on remote host...')
+        with Spinner():
+            retval = run_remote_cmd(
+                cfg.key_file_path,
+                cfg.remote_host,
+                'export PYTHONPATH=$PYTHONPATH:/opt/dagster/app && '
+                'source /opt/dagster/venv/bin/activate && '
+                'cd %s && pip install .' % SERVER_CLIENT_CODE_HOME,
+            )
 
     if post_up_script is not None:
         post_up_script = os.path.expanduser(post_up_script)
@@ -341,8 +293,8 @@ def up(post_up_script):
     else:
         Term.fatal('Errors in pipeline; fix before proceeding')
 
-    Term.waiting('Restarting dagit systemd service...')
-    retval = run_remote_cmd(cfg.key_file_path, cfg.remote_host, 'sudo systemctl restart dagit')
+    restart_dagit_service(cfg)
+
     Term.success(
         'Synchronization succeeded. To open Dagit, visit the URL:\n\thttp://%s:3000'
         % cfg.remote_host

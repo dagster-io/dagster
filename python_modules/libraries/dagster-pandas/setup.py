@@ -50,6 +50,7 @@ def _do_setup(name='dagster-pandas'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['dagster_pandas_tests']),
+        include_package_data=True,
         install_requires=['dagster', 'pandas', 'matplotlib'],
     )
 
