@@ -241,7 +241,7 @@ const ScheduleRow: React.FunctionComponent<{
         <ScheduleName>{name}</ScheduleName>
       </RowColumn>
       <RowColumn>
-        <Link style={{ display: "block" }} to={`/p/${pipelineName}/explore/`}>
+        <Link to={`/p/${pipelineName}/explore/`}>
           <Icon icon="diagram-tree" /> {pipelineName}
         </Link>
       </RowColumn>
@@ -262,11 +262,20 @@ const ScheduleRow: React.FunctionComponent<{
         {runs && runs.length > 0
           ? runs.slice(0, NUM_RUNS_TO_DISPLAY).map(run => (
               <div
-                style={{ display: "inline", cursor: "pointer", marginRight: 5 }}
+                style={{
+                  display: "inline-block",
+                  cursor: "pointer",
+                  marginRight: 5
+                }}
                 key={run.runId}
               >
                 <Link to={`/p/${run.pipeline.name}/runs/${run.runId}`}>
-                  <Tooltip position={"top"} content={titleForRun(run)}>
+                  <Tooltip
+                    position={"top"}
+                    content={titleForRun(run)}
+                    wrapperTagName="div"
+                    targetTagName="div"
+                  >
                     <RunStatus status={run.status} />
                   </Tooltip>
                 </Link>
@@ -278,6 +287,7 @@ const ScheduleRow: React.FunctionComponent<{
             to={`/runs?q=tag:${encodeURIComponent(
               "dagster/schedule_id"
             )}=${scheduleId}`}
+            style={{ verticalAlign: "top" }}
           >
             {" "}
             +{runs.length - NUM_RUNS_TO_DISPLAY} more

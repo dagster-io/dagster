@@ -19,6 +19,7 @@ from dagster.core.events.log import EventRecord
 from dagster.core.execution.stats import build_stats_from_events
 from dagster.core.serdes import (
     ConfigurableClass,
+    ConfigurableClassData,
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
 )
@@ -148,16 +149,19 @@ class SqliteEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
         self._watchers = {}
         self._obs = Observer()
         self._obs.start()
+        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
 
-        super(SqliteEventLogStorage, self).__init__(inst_data=inst_data)
+    @property
+    def inst_data(self):
+        return self._inst_data
 
     @classmethod
     def config_type(cls):
         return SystemNamedDict('SqliteEventLogStorageConfig', {'base_dir': Field(String)})
 
     @staticmethod
-    def from_config_value(config_value, **kwargs):
-        return SqliteEventLogStorage(**dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value, **kwargs):
+        return SqliteEventLogStorage(inst_data=inst_data, **dict(config_value, **kwargs))
 
     @contextmanager
     def _connect(self, run_id):

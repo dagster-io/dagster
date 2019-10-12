@@ -14,7 +14,7 @@ Why not pickle?
   (in memory, not human readble, etc) just handle the json case effectively.
 '''
 import importlib
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import namedtuple
 from enum import Enum
 
@@ -161,39 +161,38 @@ class ConfigurableClassData(
         try:
             module = importlib.import_module(self.module_name)
         except seven.ModuleNotFoundError:
-            check.invariant(
-                False,
+            check.failed(
                 'Couldn\'t import module {module_name} when attempting to rehydrate the '
                 'configurable class {configurable_class}'.format(
                     module_name=self.module_name,
                     configurable_class=self.module_name + '.' + self.class_name,
-                ),
+                )
             )
         try:
             klass = getattr(module, self.class_name)
         except AttributeError:
-            check.invariant(
-                False,
+            check.failed(
                 'Couldn\'t find class {class_name} in module when attempting to rehydrate the '
                 'configurable class {configurable_class}'.format(
                     class_name=self.class_name,
                     configurable_class=self.module_name + '.' + self.class_name,
-                ),
+                )
             )
-        check.subclass_param(
-            klass,
-            'class {class_name} in module {module_name}'.format(
-                class_name=self.class_name, module_name=self.module_name
-            ),
-            ConfigurableClass,
-        )
+
+        if not issubclass(klass, ConfigurableClass):
+            raise check.CheckError(
+                klass,
+                'class {class_name} in module {module_name}'.format(
+                    class_name=self.class_name, module_name=self.module_name
+                ),
+                ConfigurableClass,
+            )
 
         config_dict = yaml.load(self.config_yaml)
         result = evaluate_config(klass.config_type().inst(), config_dict)
         if not result.success:
             raise DagsterInvalidConfigError(None, result.errors, config_dict)
-        constructor_kwargs['inst_data'] = self
-        return klass.from_config_value(result.value, **constructor_kwargs)
+        return klass.from_config_value(self, result.value, **constructor_kwargs)
 
 
 class ConfigurableClass(six.with_metaclass(ABCMeta)):
@@ -224,18 +223,12 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
         )
     '''
 
-    def __init__(self, inst_data):
-        '''Calling the superclass constructor with inst_data makes it possible to make the round
-        trip from ConfigurableClassData -> the instance of the ConfigurableClass subclass ->
-        ConfigurableClassData and is essential when constructing an instance ref.
-        
-        Called from ConfigurableClassData.rehydrate.
-        '''
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
-
-    @property
+    @abstractproperty
     def inst_data(self):
-        return self._inst_data
+        '''
+        Subclass must be able to return the inst_data as a property if it has been constructed
+        through the from_config_value code path.
+        '''
 
     @classmethod
     @abstractmethod
@@ -248,7 +241,7 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
 
     @staticmethod
     @abstractmethod
-    def from_config_value(config_value, **kwargs):
+    def from_config_value(inst_data, config_value, **kwargs):
         '''New up an instance of the ConfigurableClass from a validated config value.
 
         Called by ConfigurableClassData.rehydrate.
@@ -262,7 +255,7 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
         align with the signature of the ConfigurableClass's constructor and allow overrides:
 
             @staticmethod
-            def from_config_value(config_value, **kwargs):
-                return MyConfigurableClass(**dict(config_value, **kwargs))
+            def from_config_value(inst_data, config_value, **kwargs):
+                return MyConfigurableClass(inst_data=inst_data, **dict(config_value, **kwargs))
 
         '''

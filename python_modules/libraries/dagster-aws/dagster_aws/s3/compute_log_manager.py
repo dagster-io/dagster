@@ -2,7 +2,7 @@ import os
 
 from dagster import check, seven
 from dagster.core.definitions.environment_configs import SystemNamedDict
-from dagster.core.serdes import ConfigurableClass
+from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
@@ -27,7 +27,11 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             local_dir = seven.get_system_temp_directory()
 
         self.local_manager = LocalComputeLogManager(local_dir)
-        super(S3ComputeLogManager, self).__init__(inst_data=inst_data)
+        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+
+    @property
+    def inst_data(self):
+        return self._inst_data
 
     @classmethod
     def config_type(cls):
@@ -37,8 +41,8 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         )
 
     @staticmethod
-    def from_config_value(config_value, **kwargs):
-        return S3ComputeLogManager(**dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value, **kwargs):
+        return S3ComputeLogManager(inst_data=inst_data, **dict(config_value, **kwargs))
 
     def get_local_path(self, run_id, step_key, io_type):
         return self.local_manager.get_local_path(run_id, step_key, io_type)
