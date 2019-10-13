@@ -44,8 +44,13 @@ RUN pip install \
 	-r dagster/requirements.txt \
 	-r dagster-graphql/dev-requirements.txt \
 	-r dagstermill/requirements.txt \
-	-r dagster-aws/requirements.txt \
-	-r requirements.txt
+	-r dagster-aws/requirements.txt 
+
+# do separate install because two of the requirements files require
+# pytest and you cannot specify two (compatible) deps on the same module
+# in two different requirements.txt files.
+# See https://github.com/pypa/pip/issues/988
+RUN pip install -r requirements.txt
 
 ENTRYPOINT [ "dagster-graphql" ]
 
