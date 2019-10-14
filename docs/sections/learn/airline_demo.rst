@@ -16,6 +16,7 @@ Getting Started
 
 To run the airline demo pipelines locally, you'll need:
 
+- To be running python 3.5 or greater (the airline demo uses python 3 type annotations)
 - AWS credentials in the ordinary `boto3 credential chain <https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html>`_.
 - A running Postgres database available at ``postgresql://test:test@127.0.0.1:5432/test``. (A
   docker-compose file is provided in this repo at ``dagster/examples/``).
