@@ -1,9 +1,19 @@
+import pandas as pd
 from dagster_examples.toys.pandas_hello_world import (
     pandas_hello_world_pipeline,
     pandas_hello_world_pipeline_no_config,
+    sum_solid,
 )
 
-from dagster import execute_pipeline, file_relative_path
+from dagster import execute_pipeline, execute_solid, file_relative_path
+
+
+def test_execute_pandas_hello_world_solid():
+    result = execute_solid(
+        sum_solid, input_values={'num_df': pd.DataFrame.from_dict({'num1': [1], 'num2': [2]})}
+    )
+
+    assert result.output_value().to_dict('list') == {'num1': [1], 'num2': [2], 'sum': [3]}
 
 
 def test_execute_pandas_hello_world_pipeline():
