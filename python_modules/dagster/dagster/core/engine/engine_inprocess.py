@@ -559,33 +559,39 @@ def _set_intermediates(step_context, step_output, step_output_handle, output):
 
 def _create_output_materializations(step_context, output_name, value):
     step = step_context.step
-    solid_config = step_context.environment_config.solids.get(str(step.solid_handle))
-    if solid_config is None:
-        return
+    current_handle = step.solid_handle
 
-    for output_spec in solid_config.outputs:
-        check.invariant(len(output_spec) == 1)
-        config_output_name, output_spec = list(output_spec.items())[0]
-        if config_output_name == output_name:
-            step_output = step.step_output_named(output_name)
-            materialization = step_output.runtime_type.output_materialization_config.materialize_runtime_value(
-                step_context, output_spec, value
-            )
+    # check for output mappings at every point up the composition heirarchy
+    while current_handle:
+        solid_config = step_context.environment_config.solids.get(current_handle.to_string())
+        current_handle = current_handle.parent
 
-            if not isinstance(materialization, Materialization):
-                raise DagsterInvariantViolationError(
-                    (
-                        'materialize_runtime_value on type {type_name} has returned '
-                        'value {value} of type {python_type}. You must return a '
-                        'Materialization.'
-                    ).format(
-                        type_name=step_output.runtime_type.name,
-                        value=repr(materialization),
-                        python_type=type(materialization).__name__,
-                    )
+        if solid_config is None:
+            continue
+
+        for output_spec in solid_config.outputs:
+            check.invariant(len(output_spec) == 1)
+            config_output_name, output_spec = list(output_spec.items())[0]
+            if config_output_name == output_name:
+                step_output = step.step_output_named(output_name)
+                materialization = step_output.runtime_type.output_materialization_config.materialize_runtime_value(
+                    step_context, output_spec, value
                 )
 
-            yield DagsterEvent.step_materialization(step_context, materialization)
+                if not isinstance(materialization, Materialization):
+                    raise DagsterInvariantViolationError(
+                        (
+                            'materialize_runtime_value on type {type_name} has returned '
+                            'value {value} of type {python_type}. You must return a '
+                            'Materialization.'
+                        ).format(
+                            type_name=step_output.runtime_type.name,
+                            value=repr(materialization),
+                            python_type=type(materialization).__name__,
+                        )
+                    )
+
+                yield DagsterEvent.step_materialization(step_context, materialization)
 
 
 def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):

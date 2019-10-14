@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.3 (upcoming)
+
+- Fix output materializations done against composite solid mapped outputs.
+
 ## 0.6.2
 
 - Changed composition functions `@pipeline` and `@composite_solid` to automatically give solids

@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from dagster import (
@@ -24,6 +26,7 @@ from dagster.core.utility_solids import (
     define_stub_solid,
     input_set,
 )
+from dagster.utils.test import get_temp_file_name
 
 
 def test_composite_basic_execution():
@@ -328,3 +331,30 @@ def test_mapping_parrallel_composite():
         assert_four(result.four)  # pylint: disable=no-member
 
     assert execute_pipeline(recreate_issue_pipeline).success
+
+
+def test_composite_config_driven_materialization():
+    @lambda_solid
+    def one():
+        return 1
+
+    @composite_solid
+    def wrap_one():
+        return one()
+
+    @pipeline
+    def composite_config_driven_materialization_pipeline():
+        wrap_one()
+
+    with get_temp_file_name() as write_location:
+        os.unlink(write_location)
+        execute_pipeline(
+            composite_config_driven_materialization_pipeline,
+            environment_dict={
+                'solids': {
+                    'wrap_one': {'outputs': [{'result': {'json': {'path': write_location}}}]}
+                }
+            },
+        )
+
+        assert os.path.exists(write_location)
