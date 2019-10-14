@@ -138,6 +138,9 @@ def test_fetch_by_tag(clean_storage):
     assert len(some_runs) == 1
     assert some_runs[0].run_id == one
 
+    run_count = storage.get_run_count_with_matching_tag('mytag', 'hello')
+    assert run_count == 1
+
 
 def test_slice(clean_storage):
     storage = clean_storage

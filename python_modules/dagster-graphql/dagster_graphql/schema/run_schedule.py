@@ -71,7 +71,8 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     python_path = dauphin.Field(dauphin.String)
     repository_path = dauphin.Field(dauphin.String)
     status = dauphin.NonNull('ScheduleStatus')
-    runs = dauphin.non_null_list('PipelineRun')
+    runs = dauphin.Field(dauphin.non_null_list('PipelineRun'), limit=dauphin.Int())
+    runs_count = dauphin.NonNull(dauphin.Int)
     logs_path = dauphin.NonNull(dauphin.String)
 
     def __init__(self, graphene_info, schedule):
@@ -91,13 +92,18 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         scheduler = graphene_info.context.get_scheduler()
         return scheduler.log_path_for_schedule(self._schedule.name)
 
-    def resolve_runs(self, graphene_info):
+    def resolve_runs(self, graphene_info, **kwargs):
         return [
             graphene_info.schema.type_named('PipelineRun')(r)
             for r in graphene_info.context.instance.get_runs_with_matching_tag(
-                "dagster/schedule_id", self._schedule.schedule_id
+                "dagster/schedule_id", self._schedule.schedule_id, limit=kwargs.get('limit')
             )
         ]
+
+    def resolve_runs_count(self, graphene_info):
+        return graphene_info.context.instance.get_run_count_with_matching_tag(
+            "dagster/schedule_id", self._schedule.schedule_id
+        )
 
 
 class DauphinScheduler(dauphin.ObjectType):

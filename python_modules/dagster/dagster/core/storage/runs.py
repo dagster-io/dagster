@@ -47,6 +47,9 @@ class InMemoryRunStorage(RunStorage):
             [r for r in self.all_runs() if r.pipeline_name == pipeline_name], cursor, limit
         )
 
+    def get_run_count_with_matching_tag(self, key, value):
+        return len(self.get_runs_with_matching_tag(key, value))
+
     def get_runs_with_matching_tag(self, key, value, cursor=None, limit=None):
         check.str_param(key, 'key')
         check.str_param(value, 'value')
@@ -225,6 +228,16 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
         query = self._build_query(base_query, cursor, limit)
         rows = self.connect().execute(query).fetchall()
         return self._rows_to_runs(rows)
+
+    def get_run_count_with_matching_tag(self, key, value):
+        query = (
+            db.select([db.func.count()])
+            .select_from(RunsTable.join(RunTagsTable))
+            .where(db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value))
+        )
+        rows = self.connect().execute(query).fetchall()
+        count = rows[0][0]
+        return count
 
     def get_runs_with_matching_tag(self, key, value, cursor=None, limit=None):
         base_query = (

@@ -42,6 +42,18 @@ class RunStorage(six.with_metaclass(ABCMeta)):
         '''
 
     @abstractmethod
+    def get_run_count_with_matching_tag(self, key, value):
+        '''Return then number runs present in the storage that have a tag with key, value
+
+        Args:
+            key (str): The key to index on
+            value (str): The value to match
+
+        Returns:
+            int
+        '''
+
+    @abstractmethod
     def get_runs_with_matching_tag(self, key, value, cursor=None, limit=None):
         '''Return all the runs present in the storage that have a tag with key, value
 

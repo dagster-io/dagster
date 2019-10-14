@@ -876,7 +876,8 @@ type RunningSchedule {
   pythonPath: String
   repositoryPath: String
   status: ScheduleStatus!
-  runs: [PipelineRun!]!
+  runs(limit: Int): [PipelineRun!]!
+  runsCount: Int!
   logsPath: String!
 }
 

@@ -128,6 +128,36 @@ def test_fetch_by_tag(run_storage_factory_cm_fn):
 
 
 @run_storage_test
+def test_fetch_count_by_tag(run_storage_factory_cm_fn):
+    with run_storage_factory_cm_fn() as storage:
+        assert storage
+        one = str(uuid.uuid4())
+        two = str(uuid.uuid4())
+        three = str(uuid.uuid4())
+        storage.add_run(
+            build_run(run_id=one, pipeline_name='some_pipeline', tags={'mytag': 'hello'})
+        )
+        storage.add_run(
+            build_run(
+                run_id=two,
+                pipeline_name='some_pipeline',
+                tags={'mytag': 'hello', 'mytag2': 'goodbye'},
+            )
+        )
+        storage.add_run(build_run(run_id=three, pipeline_name='some_pipeline'))
+        assert len(storage.all_runs()) == 3
+
+        run_count = storage.get_run_count_with_matching_tag('mytag', 'hello')
+        assert run_count == 2
+
+        run_count = storage.get_run_count_with_matching_tag('mytag2', 'goodbye')
+        assert run_count == 1
+
+        run_count = storage.get_run_count_with_matching_tag('mytag2', 'other')
+        assert run_count == 0
+
+
+@run_storage_test
 def test_paginated_fetch(run_storage_factory_cm_fn):
     storage = InMemoryRunStorage()
     with run_storage_factory_cm_fn() as storage:

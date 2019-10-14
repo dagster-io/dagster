@@ -45,6 +45,7 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules {
   scheduleId: string;
   scheduleDefinition: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition;
   logsPath: string;
+  runsCount: number;
   runs: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs[];
   status: ScheduleStatus;
 }
@@ -63,4 +64,8 @@ export type SchedulesRootQuery_scheduler = SchedulesRootQuery_scheduler_Schedule
 
 export interface SchedulesRootQuery {
   scheduler: SchedulesRootQuery_scheduler;
+}
+
+export interface SchedulesRootQueryVariables {
+  limit: number;
 }
