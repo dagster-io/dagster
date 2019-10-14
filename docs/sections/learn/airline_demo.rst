@@ -29,8 +29,8 @@ To get up and running:
     git clone git@github.com:dagster-io/dagster.git
     cd dagster/examples
 
-    # Install dependencies
-    pip install -e .
+    # Install all dependencies
+    pip install -e .[full]
 
     # Start a local PostgreSQL database
     docker-compose up -d
