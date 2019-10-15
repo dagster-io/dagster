@@ -20,7 +20,7 @@ Attached to the context is set of user-defined resources. Examples of resources 
 
 ## Unit Tests in Data Application
 
-Principal: Errors that _can_ be caught by unit tests _should_ be caught by unit tests.
+Principle: Errors that _can_ be caught by unit tests _should_ be caught by unit tests.
 
 Corollary: Do _not_ attempt to unit test for errors than _cannot_ be caught by unit tests.
 
