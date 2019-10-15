@@ -148,9 +148,38 @@ class SolidHandle(namedtuple('_SolidHandle', 'name definition_name parent')):
     def __str__(self):
         return self.to_string()
 
+    @property
+    def path(self):
+        path = []
+        cur = self
+        while cur:
+            path.append(cur.name)
+            cur = cur.parent
+        path.reverse()
+        return path
+
     def to_string(self):
         # Return unique name of the solid and its lineage (omits solid definition names)
         return self.parent.to_string() + '.' + self.name if self.parent else self.name
+
+    def is_or_descends_from(self, handle_str):
+        check.str_param(handle_str, 'handle_str')
+
+        handle_path = handle_str.split('.')
+        for idx in range(len(handle_path)):
+            if idx >= len(self.path):
+                return False
+            if self.path[idx] != handle_path[idx]:
+                return False
+        return True
+
+    @staticmethod
+    def from_string(handle_str):
+        stack = handle_str.split('.')
+        cur = None
+        while len(stack) > 0:
+            cur = SolidHandle(name=stack.pop(0), parent=cur, definition_name=None)
+        return cur
 
     def camelcase(self):
         return (

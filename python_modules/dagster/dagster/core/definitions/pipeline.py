@@ -271,7 +271,7 @@ class PipelineDefinition(IContainSolids, object):
         '''Return the solid contained anywhere within the pipeline via its handle.
 
         Args:
-            handle (SolidHandle):
+            handle (Union[SolidHandle, str]):
 
         Returns:
             Solid:

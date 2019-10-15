@@ -1,4 +1,10 @@
+from future.standard_library import install_aliases  # isort:skip
+
+install_aliases()  # isort:skip
+from urllib.parse import urljoin, urlparse  # isort:skip
+
 import click
+import requests
 from graphql import graphql
 from graphql.execution.executors.gevent import GeventExecutor
 from graphql.execution.executors.sync import SyncExecutor
@@ -96,6 +102,31 @@ def execute_query_from_cli(handle, query, variables=None, log=False, log_dir=Non
     return str_res
 
 
+def execute_query_against_remote(host, query, variables):
+    parsed_url = urlparse(host)
+    if not (parsed_url.scheme and parsed_url.netloc):
+        raise click.UsageError(
+            'Host {host} is not a valid URL. Host URL should include scheme ie http://localhost'.format(
+                host=host
+            )
+        )
+
+    sanity_check = requests.get(urljoin(host, '/dagit_info'))
+    sanity_check.raise_for_status()
+    if 'dagit' not in sanity_check.text:
+        raise click.UsageError(
+            'Host {host} failed sanity check. It is not a dagit server.'.format(host=host)
+        )
+
+    response = requests.get(
+        urljoin(host, '/graphql'), params={'query': query, 'variables': variables}
+    )
+    response.raise_for_status()
+    str_res = response.json()
+    print(str_res)
+    return str_res
+
+
 PREDEFINED_QUERIES = {
     'startPipelineExecution': START_PIPELINE_EXECUTION_MUTATION,
     'startScheduledExecution': START_SCHEDULED_EXECUTION_MUTATION,
@@ -139,9 +170,13 @@ PREDEFINED_QUERIES = {
     type=click.STRING,
     help='A JSON encoded string containing the variables for GraphQL execution.',
 )
-def ui(text, file, predefined, variables, **kwargs):
-    handle = handle_for_repo_cli_args(kwargs)
-
+@click.option(
+    '--remote',
+    '-r',
+    type=click.STRING,
+    help='A URL for a remote instance running dagit server to send the GraphQL request to.',
+)
+def ui(text, file, predefined, variables, remote, **kwargs):
     query = None
     if text is not None and file is None and predefined is None:
         query = text.strip('\'" \n\t')
@@ -155,7 +190,11 @@ def ui(text, file, predefined, variables, **kwargs):
             'to select GraphQL document to execute.'
         )
 
-    execute_query_from_cli(handle, query, variables)
+    if remote:
+        execute_query_against_remote(remote, query, variables)
+    else:
+        handle = handle_for_repo_cli_args(kwargs)
+        execute_query_from_cli(handle, query, variables)
 
 
 def main():

@@ -8,7 +8,6 @@ from dagster import (
     DependencyDefinition,
     ModeDefinition,
     PipelineDefinition,
-    SolidDefinition,
     SolidInvocation,
     SystemStorageData,
     check,
@@ -17,6 +16,7 @@ from dagster import (
 )
 from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
+from dagster.core.definitions.solid import ISolidDefinition
 from dagster.core.execution.api import RunConfig, scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import (
     construct_pipeline_execution_context,
@@ -174,7 +174,7 @@ def execute_solid(
     useful for unit test cases.
 
     '''
-    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
     input_values = check.opt_dict_param(input_values, 'input_values', key_type=str)
 
@@ -193,7 +193,7 @@ def execute_solid(
         dependencies[solid_def.name][input_name] = DependencyDefinition(input_name)
         solid_defs.append(create_value_solid(input_name, input_value))
 
-    return execute_pipeline(
+    result = execute_pipeline(
         PipelineDefinition(
             name='ephemeral_{}_solid_pipeline'.format(solid_def.name),
             solid_defs=solid_defs,
@@ -202,4 +202,5 @@ def execute_solid(
         ),
         environment_dict=environment_dict,
         run_config=run_config,
-    ).result_for_solid(solid_def.name)
+    )
+    return result.result_for_handle(solid_def.name)

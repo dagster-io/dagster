@@ -25,11 +25,10 @@ def compute_two():
 
 
 @pipeline
-def compute_three():
+def compute_three_auto():
     one = return_one()
     two = adder(a=one, b=one)
-    adder_2 = adder.alias('adder_2')
-    three = adder_2(a=two, b=one)
+    three = adder(a=two, b=one)  # will be given alias adder_2
 
 
 @composite_solid
@@ -131,3 +130,10 @@ def multiple_outputs():
     a = adder(results.three, results.four)
 
     add_both(m, a)
+
+
+@pipeline
+def compute_three_explicit():
+    one = return_one()
+    two = adder.alias('adder_a')(a=one, b=one)
+    three = adder.alias('adder_b')(a=two, b=one)

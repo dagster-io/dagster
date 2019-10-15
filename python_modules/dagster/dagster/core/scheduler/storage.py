@@ -1,6 +1,7 @@
 import abc
 import io
 import os
+import shutil
 import warnings
 from collections import OrderedDict
 
@@ -48,6 +49,11 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
             schedule (Schedule): The schedule to delete
         '''
 
+    @abc.abstractmethod
+    def wipe(self):
+        '''Delete all schedules from storage
+        '''
+
 
 class FilesystemScheduleStorage(ScheduleStorage):
     def __init__(self, base_dir, repository_name=None):
@@ -85,6 +91,9 @@ class FilesystemScheduleStorage(ScheduleStorage):
         check.inst_param(schedule, 'schedule', Schedule)
         self._schedules.pop(schedule.name)
         self._delete_schedule_file(schedule)
+
+    def wipe(self):
+        shutil.rmtree(self._base_dir)
 
     def _write_schedule_to_file(self, schedule):
         metadata_file = os.path.join(

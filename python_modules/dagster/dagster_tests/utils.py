@@ -67,5 +67,8 @@ class FilesytemTestScheduler(Scheduler):
         self._storage.delete_schedule(schedule)
         return schedule
 
+    def wipe(self):
+        self._storage.wipe()
+
     def log_path_for_schedule(self, schedule_name):
         return ""

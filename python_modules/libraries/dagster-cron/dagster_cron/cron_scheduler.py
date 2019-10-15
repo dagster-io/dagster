@@ -90,6 +90,17 @@ class SystemCronScheduler(Scheduler):
 
         return self._get_logs_file_path(schedule)
 
+    def wipe(self):
+        self._storage.wipe()
+
+        # Delete any other crontabs that are from dagster
+        cron = CronTab(user=True)
+        for job in cron:
+            if 'dagster-schedule:' in job.comment:
+                cron.remove_all(comment=job.comment)
+
+        cron.write()
+
     def _get_file_prefix(self, schedule):
         return os.path.join(
             self._artifacts_dir, '{}_{}'.format(schedule.name, schedule.schedule_id)
@@ -107,13 +118,14 @@ class SystemCronScheduler(Scheduler):
         script_file = self._write_bash_script_to_file(schedule)
 
         my_cron = CronTab(user=True)
-        job = my_cron.new(command=script_file, comment=schedule.schedule_id)
+        job = my_cron.new(command=script_file, comment='dagster-schedule: ' + schedule.schedule_id)
         job.setall(schedule.cron_schedule)
         my_cron.write()
 
     def _end_cron_job(self, schedule):
         my_cron = CronTab(user=True)
-        my_cron.remove_all(comment=schedule.schedule_id)
+        my_cron.remove_all(comment='dagster-schedule: ' + schedule.schedule_id)
+        my_cron.remove_all(comment=schedule.schedule_id)  # For backwards-compatability
         my_cron.write()
 
         script_file = self._get_bash_script_file_path(schedule)

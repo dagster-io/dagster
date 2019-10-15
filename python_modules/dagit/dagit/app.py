@@ -10,14 +10,18 @@ from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
 from dagster_graphql.implementation.reloader import Reloader
 from dagster_graphql.schema import create_schema
-from flask import Flask, request, send_file, send_from_directory
+from dagster_graphql.version import __version__ as dagster_graphql_version
+from flask import Flask, jsonify, request, send_file, send_from_directory
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 
-from dagster import ExecutionTargetHandle, check, seven
+from dagster import ExecutionTargetHandle
+from dagster import __version__ as dagster_version
+from dagster import check, seven
+from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
@@ -57,6 +61,17 @@ def static_view(path, file):
 def vendor_view(path, file):
     return send_from_directory(
         os.path.join(os.path.dirname(__file__), './webapp/build/vendor/', path), file
+    )
+
+
+def info_view():
+    return (
+        jsonify(
+            dagit_version=__version__,
+            dagster_graphql_version=dagster_graphql_version,
+            dagster_version=dagster_version,
+        ),
+        200,
     )
 
 
@@ -134,8 +149,9 @@ def create_app(handle, instance, reloader=None):
 
     execution_manager = SubprocessExecutionManager(instance)
 
-    print('Loading repository...')
+    warn_if_compute_logs_disabled()
 
+    print('Loading repository...')
     context = DagsterGraphQLContext(
         handle=handle,
         instance=instance,
@@ -184,6 +200,7 @@ def create_app(handle, instance, reloader=None):
 
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)
     app.add_url_rule('/vendor/<path:path>/<string:file>', 'vendor_view', vendor_view)
+    app.add_url_rule('/dagit_info', 'sanity_view', info_view)
     app.add_url_rule('/<path:_path>', 'index_catchall', index_view)
     app.add_url_rule('/', 'index', index_view, defaults={'_path': ''})
 

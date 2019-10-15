@@ -137,7 +137,7 @@ def test_dupes_fail():
         def _test():
             one, two = return_mult()
             add_one(num=one)
-            add_one(num=two)
+            add_one.alias('add_one')(num=two)  # explicit alias disables autoalias
 
 
 def test_multiple():

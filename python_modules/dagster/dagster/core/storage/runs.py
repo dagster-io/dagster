@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from datetime import datetime
 
 import sqlalchemy as db
@@ -74,13 +74,11 @@ class InMemoryRunStorage(RunStorage):
         return self._runs.get(run_id)
 
     def get_run_tags(self):
-        result = dict()
+        result = defaultdict(set)
         for r in self.all_runs():
             for k, v in r.tags:
-                if k not in result:
-                    result[k] = [v]
-                else:
-                    result[k].append(v)
+                result[k].add(v)
+
         return result.items()
 
     def get_runs_with_status(self, run_status, cursor=None, limit=None):
@@ -263,7 +261,7 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
 
     def get_run_tags(self):
         result = dict()
-        query = db.select([RunTagsTable.c.key, RunTagsTable.c.value])
+        query = db.select([RunTagsTable.c.key, RunTagsTable.c.value]).distinct(RunTagsTable.c.value)
         rows = self.connect().execute(query).fetchall()
         for r in rows:
             if r[0] not in result:
