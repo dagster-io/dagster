@@ -443,7 +443,7 @@ def info():
     click.echo('Instance status: ', nl=False)
     status = True
     try:
-        r = requests.get(instance_uri, timeout=0.1)
+        r = requests.get(instance_uri, timeout=2.0)
         if r.status_code != 200:
             status = False
     except requests.RequestException:
