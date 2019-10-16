@@ -90,6 +90,10 @@ def start_scheduled_execution(graphene_info, schedule_name):
             'True'
         )
 
+    environment_dict_fn = schedule_def.environment_dict_fn
+    if environment_dict_fn:
+        schedule_def.execution_params['environmentConfigData'] = environment_dict_fn()
+
     # Add dagster/schedule_id tag to executionMetadata
     execution_params = merge_dicts(
         {'executionMetadata': {'tags': []}}, schedule_def.execution_params

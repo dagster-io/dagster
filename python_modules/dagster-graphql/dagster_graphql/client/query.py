@@ -231,7 +231,11 @@ mutation(
       message
     }
     ...on ScheduledExecutionBlocked {
-        message
+      message
+    }
+    ...on PythonError {
+      message
+      stack
     }
     ... on InvalidStepError {
       invalidStepKey

@@ -13,6 +13,13 @@ def define_scheduler():
         environment_dict={"storage": {"filesystem": {}}},
     )
 
+    no_config_pipeline_hourly_schedule_with_config_fn = ScheduleDefinition(
+        name="no_config_pipeline_hourly_schedule_with_config_fn",
+        cron_schedule="0 0 * * *",
+        pipeline_name="no_config_pipeline",
+        environment_dict_fn=lambda: {"storage": {"filesystem": {}}},
+    )
+
     no_config_pipeline_hourly_schedule_with_schedule_id_tag = ScheduleDefinition(
         name="no_config_pipeline_hourly_schedule_with_schedule_id_tag",
         cron_schedule="0 0 * * *",
@@ -32,5 +39,6 @@ def define_scheduler():
     return [
         no_config_pipeline_hourly_schedule,
         no_config_pipeline_hourly_schedule_with_schedule_id_tag,
+        no_config_pipeline_hourly_schedule_with_config_fn,
         no_config_should_execute,
     ]
