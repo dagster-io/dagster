@@ -35,7 +35,8 @@ def define_scheduler():
                             }
                         }
                     }
-                }
+                },
+                "storage": {"filesystem": {}},
             },
         ),
     ]

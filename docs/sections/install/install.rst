@@ -77,7 +77,7 @@ Installing Python and pip
 
 Dagster is tested on Python 3.7.4, 3.6.9, 3.5.7, and 2.7.16.
 
-Using Python 3 is strongly encouraged -- if you can, you won't regret making the switch! As a
+Using Python 3 is strongly encouraged. As a
 reminder, the `official EOL <https://www.python.org/doc/sunset-python-2/>`_ for Python 2 is
 January 1, 2020.
 

@@ -10,7 +10,7 @@ Builtin Types
 
 .. attribute:: Any
 
-    No rules. No fear. No limits.
+   Used when the type is unknown. The type is not validated at runtime.
 
 .. attribute:: Bool
 

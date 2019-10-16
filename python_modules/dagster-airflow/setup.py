@@ -44,7 +44,7 @@ def _do_setup(name='dagster-airflow'):
         packages=find_packages(exclude=['dagster_airflow_tests']),
         install_requires=[
             # standard python 2/3 compatability things
-            'enum-compat==0.0.2',
+            'enum-compat>=0.0.1',
             'future>=0.16.0, <0.17.0a0',  # pin to range for Airflow compat
             'six>=1.11.0',
             # airflow
