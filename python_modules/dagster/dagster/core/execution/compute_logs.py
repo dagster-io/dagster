@@ -31,7 +31,7 @@ def mirror_step_io(step_context):
     )
 
     manager.on_compute_start(step_context)
-    with mirror_io(outpath, errpath):
+    with mirror_io(outpath, errpath, step_context.log):
         # compute function executed here
         yield
     manager.on_compute_finish(step_context)
@@ -53,17 +53,17 @@ def warn_if_compute_logs_disabled():
 
 
 @contextmanager
-def mirror_io(outpath, errpath, buffering=1):
-    with mirror_stream(outpath, ComputeIOType.STDOUT, buffering):
-        with mirror_stream(errpath, ComputeIOType.STDERR, buffering):
+def mirror_io(outpath, errpath, logger=None, buffering=1):
+    with mirror_stream(outpath, ComputeIOType.STDOUT, logger, buffering):
+        with mirror_stream(errpath, ComputeIOType.STDERR, logger, buffering):
             yield
 
 
 @contextmanager
-def mirror_stream(path, io_type, buffering=1):
+def mirror_stream(path, io_type, logger=None, buffering=1):
     ensure_file(path)
     from_stream = sys.stderr if io_type == ComputeIOType.STDERR else sys.stdout
-    with tailf(path, io_type):
+    with tailf(path, io_type, logger):
         with open(path, 'a+', buffering=buffering) as to_stream:
             with redirect_stream(to_stream=to_stream, from_stream=from_stream):
                 yield
@@ -99,20 +99,26 @@ POLLING_INTERVAL = 0.1
 
 
 @contextmanager
-def tailf(path, io_type=ComputeIOType.STDOUT):
+def tailf(path, io_type=ComputeIOType.STDOUT, logger=None):
+    tail_process = None
     # Cannot use multiprocessing here because we already may be in a daemonized process
     # Instead, invoke a thin wrapper around tail_polling/tail_posix using the dagster cli
-    cmd = 'dagster utils tail {} --parent-pid {} --io-type {}'.format(
-        path, os.getpid(), io_type
-    ).split(' ')
-    tail_process = subprocess.Popen(cmd)
+    try:
+        cmd = '{} -m dagster utils tail {} --parent-pid {} --io-type {}'.format(
+            sys.executable, path, os.getpid(), io_type
+        ).split(' ')
+        tail_process = subprocess.Popen(cmd)
+    except:  # pylint: disable=bare-except
+        if logger:
+            logger.error('Error encountered while watching compute logs')
 
     try:
         yield
     finally:
-        if should_compute_log_tail_poll():
-            time.sleep(2 * POLLING_INTERVAL)  # allow tail to belch output before killing it
-        tail_process.terminate()
+        if tail_process:
+            if should_compute_log_tail_poll():
+                time.sleep(2 * POLLING_INTERVAL)  # allow tail to belch output before killing it
+            tail_process.terminate()
 
 
 def should_compute_log_tail_poll():

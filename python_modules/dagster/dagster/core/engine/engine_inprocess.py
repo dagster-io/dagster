@@ -74,42 +74,45 @@ class InProcessEngine(IEngine):  # pylint: disable=no-init
 
                     step_context = pipeline_context.for_step(step)
 
-                    failed_inputs = []
-                    for step_input in step.step_inputs:
-                        failed_inputs.extend(
-                            failed_or_skipped_steps.intersection(step_input.dependency_keys)
-                        )
-
-                    if failed_inputs:
-                        step_context.log.info(
-                            (
-                                'Dependencies for step {step} failed: {failed_inputs}. Not executing.'
-                            ).format(step=step.key, failed_inputs=failed_inputs)
-                        )
-                        failed_or_skipped_steps.add(step.key)
-                        yield DagsterEvent.step_skipped_event(step_context)
-                        continue
-
-                    uncovered_inputs = pipeline_context.intermediates_manager.uncovered_inputs(
-                        step_context, step
-                    )
-                    if uncovered_inputs:
-                        # In partial pipeline execution, we may end up here without having validated the
-                        # missing dependent outputs were optional
-                        _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step.key)
-
-                        step_context.log.info(
-                            (
-                                'Not all inputs covered for {step}. Not executing. Output missing for '
-                                'inputs: {uncovered_inputs}'
-                            ).format(uncovered_inputs=uncovered_inputs, step=step.key)
-                        )
-                        failed_or_skipped_steps.add(step.key)
-                        yield DagsterEvent.step_skipped_event(step_context)
-                        continue
-
                     with mirror_step_io(step_context):
                         # capture all of the logs for this step
+
+                        failed_inputs = []
+                        for step_input in step.step_inputs:
+                            failed_inputs.extend(
+                                failed_or_skipped_steps.intersection(step_input.dependency_keys)
+                            )
+
+                        if failed_inputs:
+                            step_context.log.info(
+                                (
+                                    'Dependencies for step {step} failed: {failed_inputs}. Not executing.'
+                                ).format(step=step.key, failed_inputs=failed_inputs)
+                            )
+                            failed_or_skipped_steps.add(step.key)
+                            yield DagsterEvent.step_skipped_event(step_context)
+                            continue
+
+                        uncovered_inputs = pipeline_context.intermediates_manager.uncovered_inputs(
+                            step_context, step
+                        )
+                        if uncovered_inputs:
+                            # In partial pipeline execution, we may end up here without having validated the
+                            # missing dependent outputs were optional
+                            _assert_missing_inputs_optional(
+                                uncovered_inputs, execution_plan, step.key
+                            )
+
+                            step_context.log.info(
+                                (
+                                    'Not all inputs covered for {step}. Not executing. Output missing for '
+                                    'inputs: {uncovered_inputs}'
+                                ).format(uncovered_inputs=uncovered_inputs, step=step.key)
+                            )
+                            failed_or_skipped_steps.add(step.key)
+                            yield DagsterEvent.step_skipped_event(step_context)
+                            continue
+
                         for step_event in check.generator(
                             dagster_event_sequence_for_step(step_context)
                         ):

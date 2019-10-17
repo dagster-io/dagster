@@ -54,7 +54,7 @@ def define_demo_repo():
     from dagster_examples.toys.composition import composition
     from dagster_examples.toys.pandas_hello_world import (
         pandas_hello_world_pipeline,
-        pandas_hello_world_pipeline_no_config,
+        pandas_hello_world_pipeline_with_read_csv,
     )
     from dagster_examples.airline_demo.pipelines import (
         airline_demo_ingest_pipeline,
@@ -69,7 +69,7 @@ def define_demo_repo():
     return RepositoryDefinition(
         name='demo_repository',
         pipeline_defs=[
-            pandas_hello_world_pipeline_no_config,
+            pandas_hello_world_pipeline_with_read_csv,
             pandas_hello_world_pipeline,
             sleepy_pipeline,
             error_monster,

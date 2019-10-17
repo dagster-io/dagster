@@ -5,6 +5,11 @@ from dagster import Path, PresetDefinition, file_relative_path, pipeline, solid
 
 
 @solid
+def read_csv(_, path: Path) -> DataFrame:
+    return pd.read_csv(path)
+
+
+@solid
 def sum_solid(_, num_df: DataFrame) -> DataFrame:
     sum_df = num_df.copy()
     sum_df['sum'] = sum_df['num1'] + sum_df['num2']
@@ -38,11 +43,6 @@ def pandas_hello_world_pipeline():
     return sum_sq_solid(sum_solid())
 
 
-@solid
-def read_csv(_, path: Path) -> DataFrame:
-    return pd.read_csv(path)
-
-
 @pipeline
-def pandas_hello_world_pipeline_no_config():
+def pandas_hello_world_pipeline_with_read_csv():
     return sum_sq_solid(sum_solid(read_csv()))

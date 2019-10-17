@@ -92,7 +92,6 @@ def _pipeline_execution_iterator(
     yield DagsterEvent.pipeline_start(pipeline_context)
 
     pipeline_success = True
-
     try:
         for event in _steps_execution_iterator(
             pipeline_context,
@@ -103,6 +102,9 @@ def _pipeline_execution_iterator(
             if event.is_step_failure:
                 pipeline_success = False
             yield event
+    except (Exception, KeyboardInterrupt):
+        pipeline_success = False
+        raise  # finally block will run before this is re-raised
     finally:
         if pipeline_success:
             yield DagsterEvent.pipeline_success(pipeline_context)
@@ -325,8 +327,8 @@ def _steps_execution_iterator(pipeline_context, execution_plan, run_config, step
 
     if (
         isinstance(pipeline_context, DagsterEvent)
-        and pipeline_context.event_type  # pylint: disable=no-member
-        == DagsterEventType.PIPELINE_INIT_FAILURE
+        # pylint: disable=no-member
+        and pipeline_context.event_type == DagsterEventType.PIPELINE_INIT_FAILURE
     ):
         return ensure_gen(pipeline_context)
 
