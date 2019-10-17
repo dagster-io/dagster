@@ -399,7 +399,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
         )
 
 
-@click.command(name='wipe', help="Deletes all schedules and crontabs.")
+@click.command(name='wipe', help="Deletes all schedules and schedule cron jobs.")
 @repository_target_argument
 def schedule_wipe_command(**kwargs):
     return execute_wipe_command(kwargs, click.echo)
@@ -418,7 +418,12 @@ def execute_wipe_command(cli_args, print_fn):
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    scheduler = schedule_handle.get_scheduler()
-    scheduler.wipe()
-
-    print_fn("Wiped all schedules")
+    confirmation = click.prompt(
+        'Are you sure you want to delete all schedules and schedule cron jobs? Type DELETE'
+    )
+    if confirmation == 'DELETE':
+        scheduler = schedule_handle.get_scheduler()
+        scheduler.wipe()
+        print_fn("Wiped all schedules and schedule cron jobs")
+    else:
+        click.echo('Exiting without deleting all schedules and schedule cron jobs')
