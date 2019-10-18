@@ -124,12 +124,12 @@ export class PipelineGraphContents extends React.PureComponent<
         {solids.map(solid => (
           <SolidNode
             key={solid.name}
-            solid={solid}
-            parentSolid={parentSolid}
+            invocation={solid}
+            definition={solid.definition}
             minified={minified}
-            onClick={name => onClickSolid({ name })}
-            onDoubleClick={name => onDoubleClickSolid({ name })}
-            onEnterComposite={name => onEnterCompositeSolid({ name })}
+            onClick={() => onClickSolid({ name: solid.name })}
+            onDoubleClick={() => onDoubleClickSolid({ name: solid.name })}
+            onEnterComposite={() => onEnterCompositeSolid({ name: solid.name })}
             onHighlightEdges={this.onHighlightEdges}
             layout={layout.solids[solid.name]}
             selected={selectedSolid === solid}
@@ -160,13 +160,15 @@ export default class PipelineGraph extends React.Component<
     PipelineGraphSolidFragment: gql`
       fragment PipelineGraphSolidFragment on Solid {
         name
+        ...SolidNodeInvocationFragment
         definition {
           name
+          ...SolidNodeDefinitionFragment
         }
-        ...SolidNodeFragment
       }
 
-      ${SolidNode.fragments.SolidNodeFragment}
+      ${SolidNode.fragments.SolidNodeInvocationFragment}
+      ${SolidNode.fragments.SolidNodeDefinitionFragment}
     `
   };
 

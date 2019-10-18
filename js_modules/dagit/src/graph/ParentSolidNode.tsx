@@ -92,11 +92,15 @@ export const ParentSolidNode: React.FunctionComponent<
           />
         );
       })}
-      {solid.inputs.map((input, idx) => {
-        const metadata = metadataForCompositeParentIO(solid, input);
+      {solid.definition.inputDefinitions.map((input, idx) => {
+        const metadata = metadataForCompositeParentIO(solid.definition, input);
+        const invocationInput = solid.inputs.find(
+          i => i.definition.name === input.name
+        )!;
+
         return (
           <React.Fragment key={idx}>
-            {input.dependsOn.map((dependsOn, iidx) => (
+            {invocationInput.dependsOn.map((dependsOn, iidx) => (
               <ExternalConnectionNode
                 {...highlightingProps}
                 {...metadata}
@@ -105,7 +109,7 @@ export const ParentSolidNode: React.FunctionComponent<
                 label={titleOfIO(dependsOn)}
                 minified={minified}
                 layout={parentLayout.dependsOn[titleOfIO(dependsOn)]}
-                target={parentLayout.inputs[input.definition.name].port}
+                target={parentLayout.inputs[input.name].port}
                 onDoubleClickLabel={() =>
                   props.onClickSolid({ path: ["..", dependsOn.solid.name] })
                 }
@@ -117,16 +121,20 @@ export const ParentSolidNode: React.FunctionComponent<
               minified={minified}
               colorKey="input"
               item={input}
-              layout={parentLayout.inputs[input.definition.name].layout}
+              layout={parentLayout.inputs[input.name].layout}
             />
           </React.Fragment>
         );
       })}
-      {solid.outputs.map((output, idx) => {
-        const metadata = metadataForCompositeParentIO(solid, output);
+      {solid.definition.outputDefinitions.map((output, idx) => {
+        const metadata = metadataForCompositeParentIO(solid.definition, output);
+        const invocationOutput = solid.outputs.find(
+          i => i.definition.name === output.name
+        )!;
+
         return (
           <React.Fragment key={idx}>
-            {output.dependedBy.map((dependedBy, iidx) => (
+            {invocationOutput.dependedBy.map((dependedBy, iidx) => (
               <ExternalConnectionNode
                 {...highlightingProps}
                 {...metadata}
@@ -135,7 +143,7 @@ export const ParentSolidNode: React.FunctionComponent<
                 label={titleOfIO(dependedBy)}
                 minified={minified}
                 layout={parentLayout.dependedBy[titleOfIO(dependedBy)]}
-                target={parentLayout.outputs[output.definition.name].port}
+                target={parentLayout.outputs[output.name].port}
                 onDoubleClickLabel={() =>
                   props.onClickSolid({ path: ["..", dependedBy.solid.name] })
                 }
@@ -147,7 +155,7 @@ export const ParentSolidNode: React.FunctionComponent<
               minified={minified}
               colorKey="output"
               item={output}
-              layout={parentLayout.outputs[output.definition.name].layout}
+              layout={parentLayout.outputs[output.name].layout}
             />
           </React.Fragment>
         );

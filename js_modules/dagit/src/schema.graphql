@@ -827,6 +827,7 @@ type Query {
   pipelineRunsOrError(filter: PipelineRunsFilter!, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!
+  solids: [SolidUsage!]!
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
   environmentSchemaOrError(selector: ExecutionSelector!, mode: String): EnvironmentSchemaOrError!
@@ -987,6 +988,16 @@ type SolidHandle {
   handleID: String!
   solid: Solid!
   parent: SolidHandle
+}
+
+type SolidUsage {
+  definition: ISolidDefinition!
+  invocations: [SolidUsageInvocation!]!
+}
+
+type SolidUsageInvocation {
+  pipeline: Pipeline!
+  solidHandle: SolidHandle!
 }
 
 union StartPipelineExecutionResult = InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess
