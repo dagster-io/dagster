@@ -1,12 +1,16 @@
 # Changelog
 
-## 0.6.2 (Upcoming)
+## 0.6.2
 
 - Changed composition functions `@pipeline` and `@composite_solid` to automatically give solids
   aliases with an incrementing integer suffix when there are conflicts. This removes to the need
   to manually alias solid definitions that are used multiple times.
+- Add `dagster schedule wipe` command to delete all schedules and remove all schedule cron jobs
 - `execute_solid` test util now works on composite solids.
+- Docs and example improvements: https://dagster.readthedocs.io/
 - Added `--remote` flag to `dagster-graphql` for querying remote dagit servers.
+- Fixed issue with duplicate run tag autocomplete suggestions in dagit (#1839)
+- Fixed Windows 10 / py3.6+ bug causing pipeline execution failures
 
 ## 0.6.1
 

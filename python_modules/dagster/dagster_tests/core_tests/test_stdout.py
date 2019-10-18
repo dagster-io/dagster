@@ -1,7 +1,10 @@
 import os
 import sys
 
+import pytest
+
 from dagster import DagsterEventType, execute_pipeline, lambda_solid, pipeline
+from dagster.core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
@@ -21,6 +24,9 @@ HELLO_WORLD = 'Hello World'
 SEPARATOR = os.linesep if (os.name == 'nt' and sys.version_info < (3,)) else '\n'
 
 
+@pytest.mark.skipif(
+    should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
+)
 def test_stdout():
     instance = DagsterInstance.local_temp()
     manager = instance.compute_log_manager
@@ -47,6 +53,9 @@ def test_stdout():
     assert not manager.is_compute_completed('not_a_run_id', step_key)
 
 
+@pytest.mark.skipif(
+    should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
+)
 def test_stdout_subscriptions():
     instance = DagsterInstance.local_temp()
     step_key = 'spew.compute'
