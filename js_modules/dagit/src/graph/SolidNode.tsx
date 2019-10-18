@@ -2,7 +2,8 @@ import * as React from "react";
 import gql from "graphql-tag";
 import PipelineColorScale from "./PipelineColorScale";
 import { IFullSolidLayout } from "./getFullSolidLayout";
-import { SolidNodeFragment } from "./types/SolidNodeFragment";
+import { SolidNodeInvocationFragment } from "./types/SolidNodeInvocationFragment";
+import { SolidNodeDefinitionFragment } from "./types/SolidNodeDefinitionFragment";
 import { SVGFlowLayoutRect, SVGMonospaceText } from "./SVGComponents";
 
 import SolidTags, { ISolidTag } from "./SolidTags";
@@ -12,72 +13,26 @@ import { Edge } from "./highlighting";
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
-  solid: SolidNodeFragment;
-  parentSolid?: SolidNodeFragment;
+  invocation?: SolidNodeInvocationFragment;
+  definition: SolidNodeDefinitionFragment;
   highlightedEdges: Edge[];
   minified: boolean;
   selected: boolean;
   dim: boolean;
-  onClick: (solidName: string) => void;
-  onDoubleClick: (solidName: string) => void;
-  onEnterComposite: (solidName: string) => void;
+  onClick: () => void;
+  onDoubleClick: () => void;
+  onEnterComposite: () => void;
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
 export default class SolidNode extends React.Component<ISolidNodeProps> {
   static fragments = {
-    SolidNodeFragment: gql`
-      fragment SolidNodeFragment on Solid {
+    SolidNodeInvocationFragment: gql`
+      fragment SolidNodeInvocationFragment on Solid {
         name
-        definition {
-          __typename
-          metadata {
-            key
-            value
-          }
-          ... on SolidDefinition {
-            configDefinition {
-              configType {
-                name
-                description
-              }
-            }
-          }
-          ... on CompositeSolidDefinition {
-            inputMappings {
-              definition {
-                name
-              }
-              mappedInput {
-                definition {
-                  name
-                }
-                solid {
-                  name
-                }
-              }
-            }
-            outputMappings {
-              definition {
-                name
-              }
-              mappedOutput {
-                definition {
-                  name
-                }
-                solid {
-                  name
-                }
-              }
-            }
-          }
-        }
         inputs {
           definition {
             name
-            type {
-              displayName
-            }
           }
           dependsOn {
             definition {
@@ -94,9 +49,6 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         outputs {
           definition {
             name
-            type {
-              displayName
-            }
           }
           dependedBy {
             solid {
@@ -111,6 +63,64 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           }
         }
       }
+    `,
+    SolidNodeDefinitionFragment: gql`
+      fragment SolidNodeDefinitionFragment on ISolidDefinition {
+        __typename
+        name
+        metadata {
+          key
+          value
+        }
+        inputDefinitions {
+          name
+          type {
+            displayName
+          }
+        }
+        outputDefinitions {
+          name
+          type {
+            displayName
+          }
+        }
+        ... on SolidDefinition {
+          configDefinition {
+            configType {
+              name
+              description
+            }
+          }
+        }
+        ... on CompositeSolidDefinition {
+          inputMappings {
+            definition {
+              name
+            }
+            mappedInput {
+              definition {
+                name
+              }
+              solid {
+                name
+              }
+            }
+          }
+          outputMappings {
+            definition {
+              name
+            }
+            mappedOutput {
+              definition {
+                name
+              }
+              solid {
+                name
+              }
+            }
+          }
+        }
+      }
     `
   };
 
@@ -119,26 +129,30 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     if (prevProps.selected !== this.props.selected) return true;
     if (prevProps.minified !== this.props.minified) return true;
     if (prevProps.highlightedEdges !== this.props.highlightedEdges) return true;
-    if (prevProps.solid.name !== this.props.solid.name) return true;
+    if (
+      (prevProps.invocation && prevProps.invocation.name) !==
+      (this.props.invocation && this.props.invocation.name)
+    )
+      return true;
     return false;
   }
 
   handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    this.props.onClick(this.props.solid.name);
+    this.props.onClick();
   };
 
   handleDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    this.props.onDoubleClick(this.props.solid.name);
+    this.props.onDoubleClick();
   };
 
   handleEnterComposite = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    this.props.onEnterComposite(this.props.solid.name);
+    this.props.onEnterComposite();
   };
 
   handleKindClicked = (e: React.MouseEvent) => {
@@ -155,7 +169,10 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         x={x - 10}
         y={y - 10}
         width={width + 20}
-        height={height + (this.props.solid.outputs.length > 0 ? 20 : 30)}
+        height={
+          height +
+          (this.props.definition.outputDefinitions.length > 0 ? 20 : 30)
+        }
         stroke="rgba(255, 69, 0, 1)"
         fill="rgba(255, 69, 0, 0.2)"
         strokeWidth={this.props.minified ? 5 : 3}
@@ -165,9 +182,8 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   renderSolid() {
-    const { solid, layout, minified } = this.props;
-    const composite =
-      solid.definition.__typename === "CompositeSolidDefinition";
+    const { invocation, definition, layout, minified } = this.props;
+    const composite = definition.__typename === "CompositeSolidDefinition";
 
     return (
       <SVGFlowLayoutRect
@@ -180,7 +196,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       >
         <SVGMonospaceText
           size={minified ? 30 : 16}
-          text={solid.name}
+          text={invocation ? invocation.name : definition.name}
           fill={"#222"}
         />
       </SVGFlowLayoutRect>
@@ -214,20 +230,26 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   public render() {
-    const { solid, layout, dim, selected, minified } = this.props;
-    const { metadata } = solid.definition;
+    const {
+      definition,
+      invocation,
+      layout,
+      dim,
+      selected,
+      minified
+    } = this.props;
+    const { metadata } = definition;
     const { x, y, width, height } = layout.solid;
 
     let configDefinition = null;
-    if (solid.definition.__typename === "SolidDefinition") {
-      configDefinition = solid.definition.configDefinition;
+    if (definition.__typename === "SolidDefinition") {
+      configDefinition = definition.configDefinition;
     }
 
     const tags: ISolidTag[] = [];
 
     const kind = metadata.find(m => m.key === "kind");
-    const composite =
-      solid.definition.__typename === "CompositeSolidDefinition";
+    const composite = definition.__typename === "CompositeSolidDefinition";
 
     if (kind) {
       tags.push({ label: kind.value, onClick: this.handleKindClicked });
@@ -247,24 +269,24 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
 
         {this.renderSolid()}
 
-        {solid.inputs.map((item, idx) => (
+        {definition.inputDefinitions.map((item, idx) => (
           <SolidIOBox
             {...this.props}
-            {...metadataForIO(solid, item)}
+            {...metadataForIO(item, invocation)}
             key={idx}
             item={item}
-            layout={layout.inputs[item.definition.name].layout}
+            layout={layout.inputs[item.name].layout}
             colorKey="input"
           />
         ))}
 
-        {solid.outputs.map((item, idx) => (
+        {definition.outputDefinitions.map((item, idx) => (
           <SolidIOBox
             {...this.props}
-            {...metadataForIO(solid, item)}
+            {...metadataForIO(item, invocation)}
             key={idx}
             item={item}
-            layout={layout.outputs[item.definition.name].layout}
+            layout={layout.outputs[item.name].layout}
             colorKey="output"
           />
         ))}
