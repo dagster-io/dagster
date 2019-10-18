@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
-from collections import namedtuple
-
+from dagster_graphql.client.util import pipeline_run_from_execution_params
 from dagster_graphql.schema.runs import (
     from_compute_log_file,
     from_dagster_event_record,
@@ -17,8 +16,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.serdes import serialize_dagster_namedtuple
 from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.utils import make_new_run_id
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils import merge_dicts
 
 from .fetch_pipelines import (
@@ -28,7 +26,7 @@ from .fetch_pipelines import (
 from .fetch_runs import get_validated_config, validate_config
 from .fetch_schedules import get_dagster_schedule, get_dagster_schedule_def
 from .pipeline_run_storage import PipelineRunObservableSubscribe
-from .utils import UserFacingGraphQLError, capture_dauphin_error
+from .utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error
@@ -163,19 +161,7 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
     )
 
     run = instance.create_run(
-        PipelineRun(
-            pipeline_name=dauphin_pipeline.get_dagster_pipeline().name,
-            run_id=execution_params.execution_metadata.run_id
-            if execution_params.execution_metadata.run_id
-            else make_new_run_id(),
-            selector=execution_params.selector,
-            environment_dict=execution_params.environment_dict,
-            mode=execution_params.mode,
-            reexecution_config=reexecution_config,
-            step_keys_to_execute=execution_params.step_keys,
-            tags=execution_params.execution_metadata.tags,
-            status=PipelineRunStatus.NOT_STARTED,
-        )
+        pipeline_run_from_execution_params(execution_params, reexecution_config)
     )
 
     graphene_info.context.execution_manager.execute_pipeline(
@@ -284,34 +270,6 @@ def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=
     return graphene_info.context.instance.compute_log_manager.observable(
         run_id, step_key, io_type, cursor
     ).map(lambda update: from_compute_log_file(graphene_info, update))
-
-
-class ExecutionParams(
-    namedtuple('_ExecutionParams', 'selector environment_dict mode execution_metadata step_keys')
-):
-    def __new__(cls, selector, environment_dict, mode, execution_metadata, step_keys):
-        check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
-        check.opt_list_param(step_keys, 'step_keys', of_type=str)
-
-        return super(ExecutionParams, cls).__new__(
-            cls,
-            selector=check.inst_param(selector, 'selector', ExecutionSelector),
-            environment_dict=environment_dict,
-            mode=check.str_param(mode, 'mode'),
-            execution_metadata=check.inst_param(
-                execution_metadata, 'execution_metadata', ExecutionMetadata
-            ),
-            step_keys=step_keys,
-        )
-
-
-class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags')):
-    def __new__(cls, run_id, tags):
-        return super(ExecutionMetadata, cls).__new__(
-            cls,
-            check.opt_str_param(run_id, 'run_id'),
-            check.dict_param(tags, 'tags', key_type=str, value_type=str),
-        )
 
 
 @capture_dauphin_error

@@ -1,3 +1,5 @@
+from dagster_graphql.implementation.utils import ExecutionMetadata, ExecutionParams
+
 from dagster import EventMetadataEntry, check, seven
 from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
 from dagster.core.events import (
@@ -7,6 +9,7 @@ from dagster.core.events import (
     StepExpectationResultData,
     StepMaterializationData,
 )
+from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.execution.plan.objects import (
     StepFailureData,
     StepInputData,
@@ -16,6 +19,8 @@ from dagster.core.execution.plan.objects import (
     TypeCheckData,
     UserFailureData,
 )
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.utils import make_new_run_id
 from dagster.utils.error import SerializableErrorInfo
 
 HANDLED_EVENTS = {
@@ -177,4 +182,35 @@ def dagster_event_from_dict(event_dict, pipeline_name):
         step_kind_value=step_kind_value,
         logging_tags=None,
         event_specific_data=event_specific_data,
+    )
+
+
+def pipeline_run_from_execution_params(execution_params, reexecution_config=None):
+    check.inst_param(execution_params, 'execution_params', ExecutionParams)
+    check.opt_inst_param(reexecution_config, 'reexecution_config', ReexecutionConfig)
+
+    return PipelineRun(
+        pipeline_name=execution_params.selector.name,
+        run_id=execution_params.execution_metadata.run_id
+        if execution_params.execution_metadata.run_id
+        else make_new_run_id(),
+        selector=execution_params.selector,
+        environment_dict=execution_params.environment_dict,
+        mode=execution_params.mode,
+        reexecution_config=reexecution_config,
+        step_keys_to_execute=execution_params.step_keys,
+        tags=execution_params.execution_metadata.tags,
+        status=PipelineRunStatus.NOT_STARTED,
+    )
+
+
+def execution_params_from_pipeline_run(run):
+    check.inst_param(run, 'run', PipelineRun)
+
+    return ExecutionParams(
+        mode=run.mode,
+        step_keys=run.step_keys_to_execute,
+        environment_dict=run.environment_dict,
+        selector=run.selector,
+        execution_metadata=ExecutionMetadata(run_id=run.run_id, tags=run.tags),
     )
