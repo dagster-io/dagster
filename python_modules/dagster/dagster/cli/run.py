@@ -18,8 +18,16 @@ def run_list_command():
         click.echo('     Pipeline: {}'.format(run.pipeline_name))
 
 
-@click.command(name='wipe', help='Eliminate all run history. Warning: Cannot be undone')
+@click.command(
+    name='wipe', help='Eliminate all run history and event logs. Warning: Cannot be undone'
+)
 def run_wipe_command():
-    instance = DagsterInstance.get()
-    instance.wipe()
-    click.echo('Deleted all run history')
+    confirmation = click.prompt(
+        'Are you sure you want to delete all run history and event logs? Type DELETE'
+    )
+    if confirmation == 'DELETE':
+        instance = DagsterInstance.get()
+        instance.wipe()
+        click.echo('Deleted all run history and event logs')
+    else:
+        click.echo('Exiting without deleting all run history and event logs')
