@@ -546,9 +546,17 @@ def test_run_list():
     assert result.exit_code == 0
 
 
-def test_run_wipe():
+def test_run_wipe_correct_delete_message():
     runner = CliRunner()
-    result = runner.invoke(run_wipe_command)
+    result = runner.invoke(run_wipe_command, input="DELETE\n")
+    assert 'Deleted all run history and event logs' in result.output
+    assert result.exit_code == 0
+
+
+def test_run_wipe_incorrect_delete_message():
+    runner = CliRunner()
+    result = runner.invoke(run_wipe_command, input="WRONG\n")
+    assert 'Exiting without deleting all run history and event logs' in result.output
     assert result.exit_code == 0
 
 
@@ -666,7 +674,7 @@ def test_schedules_start_all():
             assert result.output == 'Started all schedules for repository bar\n'
 
 
-def test_schedules_wipe():
+def test_schedules_wipe_correct_delete_message():
     runner = CliRunner()
 
     with seven.TemporaryDirectory() as temp_dir:
@@ -676,11 +684,13 @@ def test_schedules_wipe():
             )
 
             result = runner.invoke(
-                schedule_wipe_command, ['-y', script_relative_path('repository_file.yaml')]
+                schedule_wipe_command,
+                ['-y', script_relative_path('repository_file.yaml')],
+                input="DELETE\n",
             )
 
             assert result.exit_code == 0
-            assert result.output == 'Wiped all schedules\n'
+            assert 'Wiped all schedules and schedule cron jobs' in result.output
 
             result = runner.invoke(
                 schedule_up_command,
@@ -690,6 +700,37 @@ def test_schedules_wipe():
             # Verify schedules were wiped
             assert result.exit_code == 0
             assert result.output == 'Planned Changes:\n  + foo_schedule (add)\n'
+
+
+def test_schedules_wipe_incorrect_delete_message():
+    runner = CliRunner()
+
+    with seven.TemporaryDirectory() as temp_dir:
+        with mock.patch.dict(os.environ, {"DAGSTER_HOME": temp_dir}):
+            result = runner.invoke(
+                schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
+            )
+
+            result = runner.invoke(
+                schedule_wipe_command,
+                ['-y', script_relative_path('repository_file.yaml')],
+                input="WRONG\n",
+            )
+
+            assert result.exit_code == 0
+            assert 'Exiting without deleting all schedules and schedule cron jobs' in result.output
+
+            result = runner.invoke(
+                schedule_up_command,
+                ['-y', script_relative_path('repository_file.yaml'), '--preview'],
+            )
+
+            # Verify schedules were not wiped
+            assert result.exit_code == 0
+            assert (
+                result.output
+                == 'No planned changes to schedules.\n1 schedules will remain unchanged\n'
+            )
 
 
 def test_schedules_restart():
