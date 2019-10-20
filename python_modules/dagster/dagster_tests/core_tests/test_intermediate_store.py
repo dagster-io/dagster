@@ -5,7 +5,7 @@ import pytest
 
 from dagster import Bool, List, Optional, String, check
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediate_store import FilesystemIntermediateStore
+from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.runtime import Bool as RuntimeBool
@@ -41,20 +41,20 @@ class FancyStringFilesystemTypeStoragePlugin(TypeStoragePlugin):  # pylint:disab
 
     @classmethod
     def set_object(cls, intermediate_store, obj, context, runtime_type, paths):
-        check.inst_param(intermediate_store, 'intermediate_store', FilesystemIntermediateStore)
         paths.append(obj)
         mkdir_p(os.path.join(intermediate_store.root, *paths))
 
     @classmethod
     def get_object(cls, intermediate_store, context, runtime_type, paths):
-        check.inst_param(intermediate_store, 'intermediate_store', FilesystemIntermediateStore)
         return os.listdir(os.path.join(intermediate_store.root, *paths))[0]
 
 
 def test_file_system_intermediate_store():
     run_id = str(uuid.uuid4())
     instance = DagsterInstance.ephemeral()
-    intermediate_store = FilesystemIntermediateStore.for_instance(instance, run_id=run_id)
+    intermediate_store = build_fs_intermediate_store(
+        instance.intermediates_directory, run_id=run_id
+    )
 
     with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
         intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
@@ -70,7 +70,9 @@ def test_file_system_intermediate_store_composite_types():
     run_id = str(uuid.uuid4())
     instance = DagsterInstance.ephemeral()
 
-    intermediate_store = FilesystemIntermediateStore.for_instance(instance=instance, run_id=run_id)
+    intermediate_store = build_fs_intermediate_store(
+        instance.intermediates_directory, run_id=run_id
+    )
 
     with yield_empty_pipeline_context(instance=instance, run_id=run_id) as context:
         intermediate_store.set_object(
@@ -85,7 +87,9 @@ def test_file_system_intermediate_store_composite_types():
 def test_file_system_intermediate_store_with_custom_serializer():
     run_id = str(uuid.uuid4())
     instance = DagsterInstance.ephemeral()
-    intermediate_store = FilesystemIntermediateStore.for_instance(instance, run_id=run_id)
+    intermediate_store = build_fs_intermediate_store(
+        instance.intermediates_directory, run_id=run_id
+    )
 
     with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
 
@@ -101,7 +105,9 @@ def test_file_system_intermediate_store_with_custom_serializer():
 def test_file_system_intermediate_store_composite_types_with_custom_serializer_for_inner_type():
     run_id = str(uuid.uuid4())
     instance = DagsterInstance.ephemeral()
-    intermediate_store = FilesystemIntermediateStore.for_instance(instance, run_id=run_id)
+    intermediate_store = build_fs_intermediate_store(
+        instance.intermediates_directory, run_id=run_id
+    )
 
     with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
 
@@ -118,8 +124,8 @@ def test_file_system_intermediate_store_with_type_storage_plugin():
     run_id = str(uuid.uuid4())
     instance = DagsterInstance.ephemeral()
     # FIXME need a dedicated test bucket
-    intermediate_store = FilesystemIntermediateStore.for_instance(
-        instance,
+    intermediate_store = build_fs_intermediate_store(
+        instance.intermediates_directory,
         run_id=run_id,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
             {RuntimeString.inst(): FancyStringFilesystemTypeStoragePlugin}
@@ -143,8 +149,8 @@ def test_file_system_intermediate_store_with_composite_type_storage_plugin():
     run_id = str(uuid.uuid4())
 
     # FIXME need a dedicated test bucket
-    intermediate_store = FilesystemIntermediateStore.for_instance(
-        DagsterInstance.ephemeral(),
+    intermediate_store = build_fs_intermediate_store(
+        DagsterInstance.ephemeral().intermediates_directory,
         run_id=run_id,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
             {RuntimeString.inst(): FancyStringFilesystemTypeStoragePlugin}

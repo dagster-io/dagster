@@ -2,7 +2,7 @@ from dagster import Field, String
 from dagster.core.definitions.system_storage import SystemStorageData, system_storage
 
 from .file_manager import LocalFileManager
-from .intermediate_store import FilesystemIntermediateStore
+from .intermediate_store import build_fs_intermediate_store
 from .intermediates_manager import (
     InMemoryIntermediatesManager,
     IntermediateStoreIntermediatesManager,
@@ -30,7 +30,7 @@ def fs_system_storage(init_context):
     override_dir = init_context.system_storage_config.get('base_dir')
     if override_dir:
         file_manager = LocalFileManager(override_dir)
-        intermediate_store = FilesystemIntermediateStore(
+        intermediate_store = build_fs_intermediate_store(
             root_for_run_id=lambda _: override_dir,
             run_id=init_context.run_config.run_id,
             type_storage_plugin_registry=init_context.type_storage_plugin_registry,
@@ -39,8 +39,8 @@ def fs_system_storage(init_context):
         file_manager = LocalFileManager.for_instance(
             init_context.instance, init_context.run_config.run_id
         )
-        intermediate_store = FilesystemIntermediateStore.for_instance(
-            init_context.instance,
+        intermediate_store = build_fs_intermediate_store(
+            init_context.instance.intermediates_directory,
             run_id=init_context.run_config.run_id,
             type_storage_plugin_registry=init_context.type_storage_plugin_registry,
         )
