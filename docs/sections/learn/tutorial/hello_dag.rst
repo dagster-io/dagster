@@ -1,6 +1,6 @@
 Hello, DAG
 ----------
-One of the core capabitilies of dagster is the ability to express data pipelines as arbitrary
+One of the core capabilities of dagster is the ability to express data pipelines as arbitrary
 directed acyclic graphs (DAGs) of solids.
 
 We'll define a very simple two-solid pipeline whose first solid returns a hardcoded string,
