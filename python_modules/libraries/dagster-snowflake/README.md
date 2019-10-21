@@ -1,4 +1,4 @@
-# dagster-slack
+# dagster-snowflake
 
 ##Introduction
 This library provides an integration with the [Snowflake](https://www.snowflake.com/) data warehouse.
