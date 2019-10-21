@@ -1,55 +1,35 @@
-import datetime
+import os
+from datetime import date, timedelta
 
 from dagster_cron import SystemCronScheduler
 
 from dagster import ScheduleDefinition, schedules
-from dagster.utils import file_relative_path
 
 
 @schedules(scheduler=SystemCronScheduler)
 def define_scheduler():
-    def many_events_every_minute_filter():
-        weekno = datetime.datetime.today().weekday()
-        # Returns true if current day is a weekday
-        return weekno < 5
+    def dash_stats_datetime_partition_config():
 
-    def many_events_every_minute_fn():
-        return {"storage": {"filesystem": {}}}
+        yesterday = date.today() - timedelta(days=1)
+        d = yesterday.strftime("%Y-%m-%d")
 
-    many_events_every_minute = ScheduleDefinition(
-        name="many_events_every_min",
-        cron_schedule="* * * * *",
-        pipeline_name="many_events",
-        environment_dict_fn=many_events_every_minute_fn,
-        should_execute=many_events_every_minute_filter,
-    )
+        return {
+            'resources': {
+                'bigquery': None,
+                'slack': {'config': {'token': os.getenv('SLACK_TOKEN')}},
+            },
+            'solids': {'bq_solid': {'config': {'date': d}}},
+        }
 
-    log_spew_hourly = ScheduleDefinition(
-        name="log_spew_hourly",
-        cron_schedule="0 * * * *",
-        pipeline_name="log_spew",
-        environment_dict={"storage": {"filesystem": {}}},
-    )
-
-    pandas_hello_world_hourly = ScheduleDefinition(
-        name="pandas_hello_world_hourly",
-        cron_schedule="0 * * * *",
-        pipeline_name="pandas_hello_world",
-        environment_dict={
-            "solids": {
-                "sum_solid": {
-                    "inputs": {
-                        "num": {
-                            "csv": {
-                                "path": file_relative_path(
-                                    __file__, "../pandas_hello_world/data/num.csv"
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+    dash_stats_datetime_partition = ScheduleDefinition(
+        name='dash_stats_datetime_partition',
+        cron_schedule='* * * * *',
+        pipeline_name='dash_stats',
+        environment_dict_fn=dash_stats_datetime_partition_config,
+        environment_vars={
+            'GOOGLE_APPLICATION_CREDENTIALS': os.getenv('GOOGLE_APPLICATION_CREDENTIALS'),
+            'SLACK_TOKEN': os.getenv('SLACK_TOKEN'),
         },
     )
 
-    return [many_events_every_minute, log_spew_hourly, pandas_hello_world_hourly]
+    return [dash_stats_datetime_partition]
