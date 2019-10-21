@@ -1,18 +1,14 @@
-from dagster_snowflake import snowflake_resource
+from dagster_snowflake import snowflake_resource, snowflake_solid_for_query
 
-from dagster import ModeDefinition, execute_solid, solid
+from dagster import ModeDefinition, execute_solid
 from dagster.seven import mock
 
 from .utils import create_mock_connector
 
 
 @mock.patch('snowflake.connector.connect', new_callable=create_mock_connector)
-def test_snowflake_resource(snowflake_connect):
-    @solid(required_resource_keys={'snowflake'})
-    def snowflake_solid(context):
-        assert context.resources.snowflake
-        with context.resources.snowflake.get_connection() as _:
-            pass
+def test_snowflake_solid(snowflake_connect):
+    snowflake_solid = snowflake_solid_for_query('SELECT 1')
 
     result = execute_solid(
         snowflake_solid,

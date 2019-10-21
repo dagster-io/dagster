@@ -163,9 +163,7 @@ def event_ingest_pipeline():
     def snowflake_load(context):
         # TODO: express dependency of this solid on event_ingest
         context.resources.snowflake.load_table_from_local_parquet(
-            src='file:///tmp/dagster/events/data/output/2019/01/01/*.parquet',
-            table='events',
-            logger=context.log,
+            src='file:///tmp/dagster/events/data/output/2019/01/01/*.parquet', table='events'
         )
 
     snowflake_load(event_ingest(spark_inputs=gunzipper(gzip_file=download_from_s3_to_file())))

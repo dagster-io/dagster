@@ -37,6 +37,7 @@ class SnowflakeConnection:
         }
 
         self.autocommit = self.conn_args.get('autocommit', False)
+        self.log = context.log_manager
 
     @contextmanager
     def get_connection(self):
@@ -46,7 +47,7 @@ class SnowflakeConnection:
             conn.commit()
         conn.close()
 
-    def execute_query(self, sql, logger, parameters=None, fetch_results=False):
+    def execute_query(self, sql, parameters=None, fetch_results=False):
         check.str_param(sql, 'sql')
         check.opt_dict_param(parameters, 'parameters')
         check.bool_param(fetch_results, 'fetch_results')
@@ -56,16 +57,13 @@ class SnowflakeConnection:
                 if sys.version_info[0] < 3:
                     sql = sql.encode('utf-8')
 
-                logger.info('[snowflake] Executing query: ' + sql)
+                self.log.info('[snowflake] Executing query: ' + sql)
                 cursor.execute(sql, parameters)  # pylint: disable=E1101
                 if fetch_results:
                     return cursor.fetchall()  # pylint: disable=E1101
 
-    def execute_queries(self, sql_queries, logger, parameters=None, fetch_results=False):
-        from dagster.core.log_manager import DagsterLogManager
-
+    def execute_queries(self, sql_queries, parameters=None, fetch_results=False):
         check.list_param(sql_queries, 'sql_queries', of_type=str)
-        check.inst_param(logger, 'logger', DagsterLogManager)
         check.opt_dict_param(parameters, 'parameters')
         check.bool_param(fetch_results, 'fetch_results')
 
@@ -75,19 +73,16 @@ class SnowflakeConnection:
                 for sql in sql_queries:
                     if sys.version_info[0] < 3:
                         sql = sql.encode('utf-8')
-                    logger.info('[snowflake] Executing query: ' + sql)
+                    self.log.info('[snowflake] Executing query: ' + sql)
                     cursor.execute(sql, parameters)  # pylint: disable=E1101
                     if fetch_results:
                         results.append(cursor.fetchall())  # pylint: disable=E1101
 
         return results if fetch_results else None
 
-    def load_table_from_local_parquet(self, src, table, logger):
-        from dagster.core.log_manager import DagsterLogManager
-
+    def load_table_from_local_parquet(self, src, table):
         check.str_param(src, 'src')
         check.str_param(table, 'table')
-        check.inst_param(logger, 'logger', DagsterLogManager)
 
         sql_queries = [
             'CREATE OR REPLACE TABLE {table} ( data VARIANT DEFAULT NULL);'.format(table=table),
@@ -98,7 +93,7 @@ class SnowflakeConnection:
             ),
         ]
 
-        self.execute_queries(sql_queries, logger)
+        self.execute_queries(sql_queries)
 
 
 @resource(
