@@ -118,7 +118,9 @@ def _unpack_value(val, enum_map, tuple_map):
 
 def deserialize_json_to_dagster_namedtuple(json_str):
     return _deserialize_json_to_dagster_namedtuple(
-        json_str, enum_map=_WHITELISTED_ENUM_MAP, tuple_map=_WHITELISTED_TUPLE_MAP
+        check.str_param(json_str, 'json_str'),
+        enum_map=_WHITELISTED_ENUM_MAP,
+        tuple_map=_WHITELISTED_TUPLE_MAP,
     )
 
 
