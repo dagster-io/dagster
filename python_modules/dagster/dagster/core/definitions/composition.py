@@ -101,8 +101,7 @@ class CompleteCompositionContext(
             deps = {}
             for input_name, node in invocation.input_bindings.items():
                 if isinstance(node, InvokedSolidOutputHandle):
-                    solid_name, output_name = node
-                    deps[input_name] = DependencyDefinition(solid_name, output_name)
+                    deps[input_name] = DependencyDefinition(node.solid_name, node.output_name)
                 elif isinstance(node, list) and all(
                     map(lambda item: isinstance(item, InvokedSolidOutputHandle), node)
                 ):
@@ -265,15 +264,30 @@ class InvokedSolidNode(
         )
 
 
-class InvokedSolidOutputHandle(namedtuple('_InvokedSolidOutputHandle', 'solid_name output_name')):
+class InvokedSolidOutputHandle(object):
     '''The return value for an output when invoking a solid in a composition function.
     '''
 
-    def __new__(cls, solid_name, output_name):
-        return super(cls, InvokedSolidOutputHandle).__new__(
-            cls,
-            check.str_param(solid_name, 'solid_name'),
-            check.str_param(output_name, 'output_name'),
+    def __init__(self, solid_name, output_name):
+        self.solid_name = check.str_param(solid_name, 'solid_name')
+        self.output_name = check.str_param(output_name, 'output_name')
+
+    def __iter__(self):
+        raise DagsterInvariantViolationError(
+            'Attempted to iterate over an {cls}. This object represents the output "{out}" '
+            'from the solid "{solid}". Consider yielding multiple Outputs if you seek to pass '
+            'different parts of this output to different solids.'.format(
+                cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
+            )
+        )
+
+    def __getitem__(self, idx):
+        raise DagsterInvariantViolationError(
+            'Attempted to index in to an {cls}. This object represents the output "{out}" '
+            'from the solid "{solid}". Consider yielding multiple Outputs if you seek to pass '
+            'different parts of this output to different solids.'.format(
+                cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
+            )
         )
 
 

@@ -38,6 +38,11 @@ def return_two():
     return 2
 
 
+@lambda_solid
+def return_tuple():
+    return (1, 2)
+
+
 @lambda_solid(input_defs=[InputDefinition('num')])
 def add_one(num):
     return num + 1
@@ -520,3 +525,18 @@ def test_reuse_inputs():
     result = execute_pipeline(calculate_pipeline)
     assert result.result_for_handle('calculate.adder').output_value() == 3
     assert result.result_for_handle('calculate.adder_2').output_value() == 3
+
+
+def test_output_node_error():
+    with pytest.raises(DagsterInvariantViolationError):
+
+        @pipeline
+        def _bad_destructure():
+            _a, _b = return_tuple()
+
+    with pytest.raises(DagsterInvariantViolationError):
+
+        @pipeline
+        def _bad_index():
+            out = return_tuple()
+            add_one(out[0])
