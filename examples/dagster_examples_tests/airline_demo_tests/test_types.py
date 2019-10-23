@@ -20,7 +20,7 @@ from dagster import (
     solid,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediate_store import FilesystemIntermediateStore
+from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 
 from .test_solids import spark_mode
 
@@ -37,7 +37,9 @@ def test_spark_data_frame_serialization_file_system_file_handle():
 
     run_id = str(uuid.uuid4())
     instance = DagsterInstance.ephemeral()
-    intermediate_store = FilesystemIntermediateStore.for_instance(instance, run_id=run_id)
+    intermediate_store = build_fs_intermediate_store(
+        instance.intermediates_directory, run_id=run_id
+    )
 
     result = execute_pipeline(
         spark_df_test_pipeline,

@@ -5,7 +5,6 @@ from dagster_graphql.implementation.environment_schema import (
     resolve_is_environment_config_valid,
 )
 from dagster_graphql.implementation.execution import (
-    ExecutionMetadata,
     ExecutionParams,
     cancel_pipeline_execution,
     delete_pipeline_run,
@@ -30,7 +29,7 @@ from dagster_graphql.implementation.fetch_runs import (
     validate_pipeline_config,
 )
 from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
-from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGraphQLError
 
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter

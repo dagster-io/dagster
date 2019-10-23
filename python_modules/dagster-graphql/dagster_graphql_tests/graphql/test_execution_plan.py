@@ -4,7 +4,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import check
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediate_store import FilesystemIntermediateStore
+from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 from dagster.utils import merge_dicts, script_relative_path
 from dagster.utils.test import get_temp_file_name
 
@@ -152,7 +152,7 @@ def test_success_whole_execution_plan(snapshot):
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(result.data)
-    store = FilesystemIntermediateStore.for_instance(instance, run_id)
+    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
 
@@ -190,7 +190,7 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(result.data)
-    store = FilesystemIntermediateStore.for_instance(instance, run_id)
+    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
 
@@ -228,7 +228,7 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(result.data)
-    store = FilesystemIntermediateStore.for_instance(instance, run_id)
+    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
     assert not store.has_intermediate(None, 'sum_solid.compute')
     assert not store.has_intermediate(None, 'sum_sq_solid.compute')
 
@@ -281,7 +281,7 @@ def test_successful_one_part_execute_plan(snapshot):
 
     snapshot.assert_match(result.data)
 
-    store = FilesystemIntermediateStore.for_instance(instance, run_id)
+    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert (
         str(store.get_intermediate(None, 'sum_solid.compute', PoorMansDataFrame).obj)
@@ -354,7 +354,7 @@ def test_successful_two_part_execute_plan(snapshot):
         '''('sum_sq', 49)])]'''
     )
 
-    store = FilesystemIntermediateStore.for_instance(instance, run_id)
+    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
     assert (
         str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame).obj)

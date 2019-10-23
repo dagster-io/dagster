@@ -4,7 +4,6 @@ import six
 
 from dagster import check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.instance import DagsterInstance
 from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
 
 from .object_store import FilesystemObjectStore, ObjectStore
@@ -122,32 +121,12 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
         )
 
 
-class FilesystemIntermediateStore(IntermediateStore):
-    def __init__(self, root_for_run_id, run_id, type_storage_plugin_registry=None):
-        type_storage_plugin_registry = check.inst_param(
-            type_storage_plugin_registry
-            if type_storage_plugin_registry
-            else TypeStoragePluginRegistry(types_to_register={}),
-            'type_storage_plugin_registry',
-            TypeStoragePluginRegistry,
-        )
-
-        object_store = FilesystemObjectStore()
-
-        super(FilesystemIntermediateStore, self).__init__(
-            object_store,
-            root_for_run_id=root_for_run_id,
-            run_id=run_id,
-            type_storage_plugin_registry=type_storage_plugin_registry,
-        )
-
-    @staticmethod
-    def for_instance(instance, run_id, type_storage_plugin_registry=None):
-        check.inst_param(instance, 'instance', DagsterInstance)
-        run_id = check.str_param(run_id, 'run_id')
-
-        return FilesystemIntermediateStore(
-            root_for_run_id=instance.intermediates_directory,
-            run_id=run_id,
-            type_storage_plugin_registry=type_storage_plugin_registry,
-        )
+def build_fs_intermediate_store(root_for_run_id, run_id, type_storage_plugin_registry=None):
+    return IntermediateStore(
+        FilesystemObjectStore(),
+        root_for_run_id,
+        run_id,
+        type_storage_plugin_registry
+        if type_storage_plugin_registry
+        else TypeStoragePluginRegistry(types_to_register={}),
+    )

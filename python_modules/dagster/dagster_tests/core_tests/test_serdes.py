@@ -4,13 +4,27 @@ from enum import Enum
 
 import pytest
 
+from dagster.check import ParameterCheckError
 from dagster.core.serdes import (
     _deserialize_json_to_dagster_namedtuple,
     _pack_value,
     _serialize_dagster_namedtuple,
     _unpack_value,
     _whitelist_for_serdes,
+    deserialize_json_to_dagster_namedtuple,
 )
+
+
+def test_deserialize_json_to_dagster_namedtuple_types_ok():
+    unpacked_tuple = deserialize_json_to_dagster_namedtuple('{"foo": "bar"}')
+    assert unpacked_tuple
+    assert unpacked_tuple['foo'] == 'bar'
+
+
+@pytest.mark.parametrize('bad_obj', [1, None, False])
+def test_deserialize_json_to_dagster_namedtyple_invalid_types(bad_obj):
+    with pytest.raises(ParameterCheckError):
+        deserialize_json_to_dagster_namedtuple(bad_obj)
 
 
 def test_forward_compat_serdes_new_field_with_default():

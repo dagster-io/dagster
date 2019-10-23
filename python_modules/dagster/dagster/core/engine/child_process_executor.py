@@ -21,13 +21,13 @@ ChildProcessEvents = (ChildProcessStartEvent, ChildProcessDoneEvent, ChildProces
 
 class ChildProcessCommand(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     '''Inherit from this class in order to use this library.
-    
+
     The object must be picklable; instantiate it and pass it to _execute_command_in_child_process.'''
 
     @abstractmethod
     def execute(self):
         ''' This method is invoked in the child process.
-        
+
         Yields a sequence of events to be handled by _execute_command_in_child_process.'''
 
 
@@ -47,7 +47,7 @@ class ChildProcessCrashException(Exception):
 
 def _execute_command_in_child_process(queue, command):
     '''Wraps the execution of a ChildProcessCommand.
-    
+
     Handles errors and communicates across a queue with the parent process.'''
 
     check.inst_param(command, 'command', ChildProcessCommand)
