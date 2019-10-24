@@ -12,6 +12,11 @@ export type SolidLinkInfo = {
   definition: { name: string };
 };
 
+export interface SidebarSolidInvocationInfo {
+  handleID: string;
+  pipelineName?: string;
+}
+
 export type SolidMappingTable = {
   [key: string]: SolidLinkInfo[];
 };
@@ -56,12 +61,16 @@ export const SolidLinks = (props: { title: string; items: SolidLinkInfo[] }) =>
   ) : null;
 
 export const Invocation = (props: {
+  invocation: SidebarSolidInvocationInfo;
   onClick: () => void;
-  handleID: string;
 }) => {
-  const handlePath = props.handleID.split(".");
+  const { handleID, pipelineName } = props.invocation;
+  const handlePath = handleID.split(".");
   return (
     <InvocationContainer onClick={props.onClick}>
+      {pipelineName && (
+        <div style={{ color: Colors.BLUE1 }}>{pipelineName}</div>
+      )}
       <SolidColumn stepKey={handlePath.join(".")} />
     </InvocationContainer>
   );

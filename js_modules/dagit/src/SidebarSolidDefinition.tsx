@@ -16,7 +16,6 @@ import {
 import Description from "./Description";
 import ConfigTypeSchema from "./ConfigTypeSchema";
 import { SidebarSolidDefinitionFragment } from "./types/SidebarSolidDefinitionFragment";
-import { SolidNameOrPath } from "./PipelineExplorer";
 import {
   SolidMappingTable,
   ResourceContainer,
@@ -24,22 +23,21 @@ import {
   TypeWrapper,
   SolidLinks,
   Invocation,
-  ShowAllButton
+  ShowAllButton,
+  SidebarSolidInvocationInfo
 } from "./SidebarSolidHelpers";
 
-interface ISidebarSolidDefinitionProps {
+interface SidebarSolidDefinitionProps {
   definition: SidebarSolidDefinitionFragment;
-  definitionInvocations?: {
-    handleID: string;
-  }[];
+  definitionInvocations?: SidebarSolidInvocationInfo[];
   showingSubsolids: boolean;
-  onClickSolid: (arg: SolidNameOrPath) => void;
+  onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
 }
 
 const DEFAULT_INVOCATIONS_SHOWN = 20;
 
 export class SidebarSolidDefinition extends React.Component<
-  ISidebarSolidDefinitionProps,
+  SidebarSolidDefinitionProps,
   { showingAllInvocations: boolean }
 > {
   static fragments = {
@@ -122,7 +120,7 @@ export class SidebarSolidDefinition extends React.Component<
       definition,
       definitionInvocations,
       showingSubsolids,
-      onClickSolid
+      onClickInvocation
     } = this.props;
     const { showingAllInvocations } = this.state;
     const Plugin = pluginForMetadata(definition.metadata);
@@ -231,11 +229,11 @@ export class SidebarSolidDefinition extends React.Component<
             {(showingAllInvocations
               ? definitionInvocations
               : definitionInvocations.slice(0, DEFAULT_INVOCATIONS_SHOWN)
-            ).map(({ handleID }, idx) => (
+            ).map((invocation, idx) => (
               <Invocation
                 key={idx}
-                handleID={handleID}
-                onClick={() => onClickSolid({ path: handleID.split(".") })}
+                invocation={invocation}
+                onClick={() => onClickInvocation(invocation)}
               />
             ))}
             {definitionInvocations.length > DEFAULT_INVOCATIONS_SHOWN &&

@@ -25,9 +25,10 @@ export interface TokenizingFieldValue {
 
 interface TokenizingFieldProps {
   values: TokenizingFieldValue[];
-  maxValues: number | undefined;
+  maxValues?: number;
   onChange: (values: TokenizingFieldValue[]) => void;
   suggestionProviders: SuggestionProvider[];
+  placeholder?: string;
 }
 
 function findProviderByToken(token: string, providers: SuggestionProvider[]) {
@@ -68,13 +69,14 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   suggestionProviders,
   values,
   maxValues,
-  onChange
+  onChange,
+  placeholder
 }) => {
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [inputValue, setInputValue] = React.useState<string>("");
   const atMaxValues =
-    maxValues === undefined || values.filter(v => v.token).length >= maxValues;
+    maxValues !== undefined && values.filter(v => v.token).length >= maxValues;
 
   // Build the set of suggestions that should be displayed for the current input value.
   // Note: inputValue is the text that has not yet been submitted, separate from values[].
@@ -225,7 +227,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
       content={
         suggestions.length > 0 ? (
           <StyledMenu>
-            {suggestions.map((suggestion, idx) => (
+            {suggestions.slice(0, 20).map((suggestion, idx) => (
               <StyledMenuItem
                 key={suggestion.text}
                 text={suggestion.text}
@@ -261,7 +263,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
         onAdd={() => false}
         onKeyDown={onKeyDown}
         tagProps={{ minimal: true }}
-        placeholder="Filter..."
+        placeholder={placeholder || "Filter..."}
       />
     </Popover>
   );
