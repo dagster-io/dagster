@@ -81,12 +81,11 @@ def execute_query(handle, query, variables=None, use_sync_executor=False, instan
     return result_dict
 
 
-def execute_query_from_cli(handle, query, variables=None, log=False, log_dir=None):
+def execute_query_from_cli(handle, query, variables=None, output=None):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.str_param(query, 'query')
     check.opt_str_param(variables, 'variables')
-    check.bool_param(log, 'log')
-    check.opt_str_param(log_dir, 'log_dir')
+    check.opt_str_param(output, 'output')
 
     query = query.strip('\'" \n\t')
 
@@ -97,7 +96,12 @@ def execute_query_from_cli(handle, query, variables=None, log=False, log_dir=Non
 
     # Since this the entry point for CLI execution, some tests depend on us putting the result on
     # stdout
-    print(str_res)
+    if output:
+        check.str_param(output, 'output')
+        with open(output, 'w') as f:
+            f.write(str_res + '\n')
+    else:
+        print(str_res)
 
     return str_res
 
@@ -176,7 +180,14 @@ PREDEFINED_QUERIES = {
     type=click.STRING,
     help='A URL for a remote instance running dagit server to send the GraphQL request to.',
 )
-def ui(text, file, predefined, variables, remote, **kwargs):
+@click.option(
+    '--output',
+    '-o',
+    type=click.STRING,
+    help='A file path to store the GraphQL response to. This flag is useful when making pipeline '
+    'execution queries, since pipeline execution causes logs to print to stdout and stderr.',
+)
+def ui(text, file, predefined, variables, remote, output, **kwargs):
     query = None
     if text is not None and file is None and predefined is None:
         query = text.strip('\'" \n\t')
@@ -194,7 +205,7 @@ def ui(text, file, predefined, variables, remote, **kwargs):
         execute_query_against_remote(remote, query, variables)
     else:
         handle = handle_for_repo_cli_args(kwargs)
-        execute_query_from_cli(handle, query, variables)
+        execute_query_from_cli(handle, query, variables, output)
 
 
 def main():

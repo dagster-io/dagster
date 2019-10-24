@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import time
 
@@ -187,6 +188,55 @@ def test_start_execution_file():
         result_data['data']['startPipelineExecution']['__typename']
         == 'StartPipelineExecutionSuccess'
     )
+
+
+def test_start_execution_save_output():
+    '''
+    Test that the --output flag saves the GraphQL response to the specified file
+    '''
+
+    variables = seven.json.dumps(
+        {
+            'executionParams': {
+                'selector': {'name': 'math'},
+                'environmentConfigData': {
+                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
+                },
+                'mode': 'default',
+            }
+        }
+    )
+
+    repo_path = script_relative_path('./cli_test_repository.yaml')
+    runner = CliRunner(env={'DAGSTER_HOME': None})
+
+    with seven.TemporaryDirectory() as temp_dir:
+        file_name = os.path.join(temp_dir, 'output_file')
+
+        result = runner.invoke(
+            ui,
+            [
+                '-y',
+                repo_path,
+                '-v',
+                variables,
+                '--file',
+                script_relative_path('./execute.graphql'),
+                '--output',
+                file_name,
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        assert os.path.isfile(file_name)
+        with open(file_name, 'r') as f:
+            lines = f.readlines()
+            result_data = json.loads(lines[-1])
+            assert (
+                result_data['data']['startPipelineExecution']['__typename']
+                == 'StartPipelineExecutionSuccess'
+            )
 
 
 def test_start_execution_predefined():
