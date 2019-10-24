@@ -88,7 +88,9 @@ const PipelineExplorerRoot: React.FunctionComponent<
                     s.solid.definition.name ===
                     selectedHandle.solid.definition.name
                 )
-                .map(s => ({ handleID: s.handleID }));
+                .map(s => ({
+                  handleID: s.handleID
+                }));
 
             return (
               <PipelineExplorer

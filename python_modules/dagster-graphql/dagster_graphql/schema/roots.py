@@ -39,13 +39,13 @@ from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 
 from .config_types import to_dauphin_config_type
-from .solids import build_dauphin_solid_handles
 from .run_schedule import (
     DauphinStartScheduleMutation,
     DauphinStopRunningScheduleMutation,
     get_scheduler_or_error,
 )
 from .runs import DauphinPipelineRunStatus
+from .solids import build_dauphin_solid_handles
 
 
 class DauphinQuery(dauphin.ObjectType):
@@ -176,24 +176,25 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_solids(self, graphene_info):
         repository = graphene_info.context.repository_definition
-        inv_by_solid_name = dict()
-        solids = []
+        inv_by_def_name = dict()
+        definitions = []
 
         for pipeline in repository.get_all_pipelines():
             for handle in build_dauphin_solid_handles(pipeline):
-                if handle.solid.name not in inv_by_solid_name:
-                    inv_by_solid_name[handle.solid.name] = []
-                inv_by_solid_name[handle.solid.name].append(
+                definition = handle.solid.resolve_definition(graphene_info)
+                if definition.name not in inv_by_def_name:
+                    inv_by_def_name[definition.name] = []
+                    definitions.append(definition)
+                inv_by_def_name[definition.name].append(
                     DauphinSolidUsageInvocation(pipeline=pipeline, solidHandle=handle)
                 )
-                solids.append(handle.solid)
 
         results = []
-        for solid in solids:
+        for definition in definitions:
             results.append(
                 DauphinSolidUsage(
-                    definition=solid.resolve_definition(graphene_info),
-                    invocations=inv_by_solid_name[solid.name],
+                    definition=definition,
+                    invocations=inv_by_def_name[definition.name],
                 )
             )
         return results

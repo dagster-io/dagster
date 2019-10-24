@@ -32,7 +32,7 @@ const AppRoutes = () => (
   <Switch>
     <Route path="/runs/:runId" component={RunRoot} />
     <Route path="/runs" component={RunsRoot} exact={true} />
-    <Route path="/solids" component={SolidsRoot} exact={true} />
+    <Route path="/solids/:name?" component={SolidsRoot} />
     <Route path="/p/:pipelineName/runs/:runId" component={RunRoot} />
     <Redirect
       from="/p/:pipelineName"

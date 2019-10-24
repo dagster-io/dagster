@@ -110,10 +110,12 @@ export default class SidebarTabbedContainer extends React.Component<
           />
           <SidebarSolidDefinition
             key={`${solid.name}-def`}
+            showingSubsolids={false}
             definition={solid.definition}
             definitionInvocations={solidDefinitionInvocations}
-            onClickSolid={this.props.onClickSolid}
-            showingSubsolids={false}
+            onClickInvocation={({ handleID }) =>
+              this.props.onClickSolid({ path: handleID.split(".") })
+            }
           />
         </>
       );
@@ -126,10 +128,12 @@ export default class SidebarTabbedContainer extends React.Component<
           />
           <SidebarSolidDefinition
             key={`${parentSolid.name}-def`}
+            showingSubsolids={true}
             definition={parentSolid.definition}
             definitionInvocations={solidDefinitionInvocations}
-            onClickSolid={this.props.onClickSolid}
-            showingSubsolids={true}
+            onClickInvocation={({ handleID }) =>
+              this.props.onClickSolid({ path: handleID.split(".") })
+            }
           />
         </>
       );
