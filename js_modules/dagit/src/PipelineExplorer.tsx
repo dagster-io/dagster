@@ -28,7 +28,7 @@ interface IPipelineExplorerProps {
   pipeline: PipelineExplorerFragment;
   handles: PipelineExplorerSolidHandleFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
-  selectedDefinitionInvocations?: PipelineExplorerSolidHandleFragment[];
+  selectedDefinitionInvocations?: { handleID: string }[];
   parentHandle?: PipelineExplorerSolidHandleFragment;
 }
 

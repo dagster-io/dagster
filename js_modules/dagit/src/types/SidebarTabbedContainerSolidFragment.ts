@@ -7,6 +7,42 @@
 // GraphQL fragment: SidebarTabbedContainerSolidFragment
 // ====================================================
 
+export interface SidebarTabbedContainerSolidFragment_inputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+  displayName: string;
+  description: string | null;
+}
+
+export interface SidebarTabbedContainerSolidFragment_inputs_definition {
+  __typename: "InputDefinition";
+  name: string;
+  description: string | null;
+  type: SidebarTabbedContainerSolidFragment_inputs_definition_type;
+}
+
+export interface SidebarTabbedContainerSolidFragment_inputs_dependsOn_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface SidebarTabbedContainerSolidFragment_inputs_dependsOn_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface SidebarTabbedContainerSolidFragment_inputs_dependsOn {
+  __typename: "Output";
+  definition: SidebarTabbedContainerSolidFragment_inputs_dependsOn_definition;
+  solid: SidebarTabbedContainerSolidFragment_inputs_dependsOn_solid;
+}
+
+export interface SidebarTabbedContainerSolidFragment_inputs {
+  __typename: "Input";
+  definition: SidebarTabbedContainerSolidFragment_inputs_definition;
+  dependsOn: SidebarTabbedContainerSolidFragment_inputs_dependsOn[];
+}
+
 export interface SidebarTabbedContainerSolidFragment_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
@@ -17,8 +53,8 @@ export interface SidebarTabbedContainerSolidFragment_outputs_definition_type {
 export interface SidebarTabbedContainerSolidFragment_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
-  type: SidebarTabbedContainerSolidFragment_outputs_definition_type;
   description: string | null;
+  type: SidebarTabbedContainerSolidFragment_outputs_definition_type;
 }
 
 export interface SidebarTabbedContainerSolidFragment_outputs_dependedBy_definition {
@@ -43,40 +79,32 @@ export interface SidebarTabbedContainerSolidFragment_outputs {
   dependedBy: SidebarTabbedContainerSolidFragment_outputs_dependedBy[];
 }
 
-export interface SidebarTabbedContainerSolidFragment_inputs_definition_type {
+export interface SidebarTabbedContainerSolidFragment_definition_SolidDefinition_outputDefinitions_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
   displayName: string;
   description: string | null;
 }
 
-export interface SidebarTabbedContainerSolidFragment_inputs_definition {
-  __typename: "InputDefinition";
+export interface SidebarTabbedContainerSolidFragment_definition_SolidDefinition_outputDefinitions {
+  __typename: "OutputDefinition";
   name: string;
-  type: SidebarTabbedContainerSolidFragment_inputs_definition_type;
+  type: SidebarTabbedContainerSolidFragment_definition_SolidDefinition_outputDefinitions_type;
   description: string | null;
 }
 
-export interface SidebarTabbedContainerSolidFragment_inputs_dependsOn_definition {
-  __typename: "OutputDefinition";
+export interface SidebarTabbedContainerSolidFragment_definition_SolidDefinition_inputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+  displayName: string;
+  description: string | null;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_SolidDefinition_inputDefinitions {
+  __typename: "InputDefinition";
   name: string;
-}
-
-export interface SidebarTabbedContainerSolidFragment_inputs_dependsOn_solid {
-  __typename: "Solid";
-  name: string;
-}
-
-export interface SidebarTabbedContainerSolidFragment_inputs_dependsOn {
-  __typename: "Output";
-  definition: SidebarTabbedContainerSolidFragment_inputs_dependsOn_definition;
-  solid: SidebarTabbedContainerSolidFragment_inputs_dependsOn_solid;
-}
-
-export interface SidebarTabbedContainerSolidFragment_inputs {
-  __typename: "Input";
-  definition: SidebarTabbedContainerSolidFragment_inputs_definition;
-  dependsOn: SidebarTabbedContainerSolidFragment_inputs_dependsOn[];
+  type: SidebarTabbedContainerSolidFragment_definition_SolidDefinition_inputDefinitions_type;
+  description: string | null;
 }
 
 export interface SidebarTabbedContainerSolidFragment_definition_SolidDefinition_metadata {
@@ -231,11 +259,41 @@ export interface SidebarTabbedContainerSolidFragment_definition_SolidDefinition_
 
 export interface SidebarTabbedContainerSolidFragment_definition_SolidDefinition {
   __typename: "SolidDefinition";
+  outputDefinitions: SidebarTabbedContainerSolidFragment_definition_SolidDefinition_outputDefinitions[];
+  inputDefinitions: SidebarTabbedContainerSolidFragment_definition_SolidDefinition_inputDefinitions[];
   name: string;
   description: string | null;
   metadata: SidebarTabbedContainerSolidFragment_definition_SolidDefinition_metadata[];
   requiredResources: SidebarTabbedContainerSolidFragment_definition_SolidDefinition_requiredResources[];
   configDefinition: SidebarTabbedContainerSolidFragment_definition_SolidDefinition_configDefinition | null;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+  displayName: string;
+  description: string | null;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputDefinitions {
+  __typename: "OutputDefinition";
+  name: string;
+  type: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputDefinitions_type;
+  description: string | null;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+  displayName: string;
+  description: string | null;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputDefinitions {
+  __typename: "InputDefinition";
+  name: string;
+  type: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputDefinitions_type;
+  description: string | null;
 }
 
 export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_metadata {
@@ -305,6 +363,8 @@ export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDe
 
 export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
+  outputDefinitions: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputDefinitions[];
+  inputDefinitions: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputDefinitions[];
   name: string;
   description: string | null;
   metadata: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_metadata[];
@@ -317,8 +377,8 @@ export type SidebarTabbedContainerSolidFragment_definition = SidebarTabbedContai
 
 export interface SidebarTabbedContainerSolidFragment {
   __typename: "Solid";
-  outputs: SidebarTabbedContainerSolidFragment_outputs[];
-  inputs: SidebarTabbedContainerSolidFragment_inputs[];
   name: string;
+  inputs: SidebarTabbedContainerSolidFragment_inputs[];
+  outputs: SidebarTabbedContainerSolidFragment_outputs[];
   definition: SidebarTabbedContainerSolidFragment_definition;
 }
