@@ -1,4 +1,4 @@
-import { SidebarSolidInfoFragment } from "../types/SidebarSolidInfoFragment";
+import { SidebarSolidDefinitionFragment } from "../types/SidebarSolidDefinitionFragment";
 
 import * as ipynb from "./ipynb";
 import * as sql from "./sql";
@@ -11,7 +11,7 @@ const plugins = {
 };
 
 export interface IPluginSidebarProps {
-  solid: SidebarSolidInfoFragment;
+  definition: SidebarSolidDefinitionFragment;
 }
 
 export interface IPluginInterface {

@@ -23,7 +23,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
   };
 
   render() {
-    const metadata = this.props.solid.definition.metadata;
+    const metadata = this.props.definition.metadata;
     const sql = metadata.find(m => m.key === "sql");
     if (!sql) return <span />;
 
@@ -40,7 +40,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
             })
           }
           style={{ width: "80vw", maxWidth: 900, height: 615 }}
-          title={`SQL: ${this.props.solid.name}`}
+          title={`SQL: ${this.props.definition.name}`}
           usePortal={true}
           isOpen={this.state.open}
         >
