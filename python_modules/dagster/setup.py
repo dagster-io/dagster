@@ -72,16 +72,12 @@ def _do_setup(name='dagster'):
             'six>=1.11.0',
             'sqlalchemy>=1.0',
             'typing; python_version<"3"',
+            'backports.tempfile; python_version<"3"',
             'toposort>=1.0',
             'watchdog>=0.8.3',
             'psutil >= 1.0; platform_system=="Windows"',
         ],
         tests_require=['mock'],
-        extras_require={
-            'aws': ['boto3>=1.9.117'],
-            ':python_version>"3"': ['reloader>=0.6'],
-            ':python_version<"3"': ['backports.tempfile'],
-        },
         entry_points={'console_scripts': ['dagster = dagster.cli:main']},
     )
 
