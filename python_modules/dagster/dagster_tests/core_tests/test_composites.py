@@ -26,7 +26,7 @@ from dagster.core.utility_solids import (
     define_stub_solid,
     input_set,
 )
-from dagster.utils.test import get_temp_file_name
+from dagster.utils.test import get_temp_dir
 
 
 def test_composite_basic_execution():
@@ -346,8 +346,8 @@ def test_composite_config_driven_materialization():
     def composite_config_driven_materialization_pipeline():
         wrap_one()
 
-    with get_temp_file_name() as write_location:
-        os.unlink(write_location)
+    with get_temp_dir() as write_directory:
+        write_location = os.path.join(write_directory, 'wrap_one.json')
         execute_pipeline(
             composite_config_driven_materialization_pipeline,
             environment_dict={
