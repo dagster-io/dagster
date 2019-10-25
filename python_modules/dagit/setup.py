@@ -52,7 +52,7 @@ def _do_setup(name='dagit'):
         install_requires=[
             # standard python 2/3 compatability things
             'enum-compat>=0.0.1',
-            'future>=0.16.0, <0.17.0a0',
+            'future',
             # pyyaml pinned for compatibility with docker-compose
             # https://github.com/docker/compose/blob/master/setup.py#L35
             'PyYAML>=3.10,<5',

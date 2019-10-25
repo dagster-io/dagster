@@ -54,8 +54,8 @@ def _do_setup(name='dagster'):
         install_requires=[
             # standard python 2/3 compatability things
             'enum-compat>=0.0.1',
-            'future>=0.16.0, <0.17a0',  # pinned to range for compatibility with Airflow
-            'funcsigs==1.0.0',  # pinned for compatibility with existing Airflow installs
+            'future',
+            'funcsigs',
             'contextlib2>=0.5.4',
             'pathlib2>=2.3.4; python_version<"3"',
             # cli
