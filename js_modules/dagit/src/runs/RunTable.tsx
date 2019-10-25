@@ -295,7 +295,10 @@ const RunActionsMenu: React.FunctionComponent<{
             disabled={!run.canCancel}
             onClick={async () => {
               const result = await cancel({ variables: { runId: run.runId } });
-              showToastFor(result.data, "Run cancelled.");
+              showToastFor(
+                result.data.cancelPipelineExecution,
+                "Run cancelled."
+              );
             }}
           />
           <MenuDivider />
@@ -305,7 +308,7 @@ const RunActionsMenu: React.FunctionComponent<{
             disabled={run.canCancel}
             onClick={async () => {
               const result = await destroy({ variables: { runId: run.runId } });
-              showToastFor(result.data, "Run deleted.");
+              showToastFor(result.data.deletePipelineRun, "Run deleted.");
             }}
           />
         </Menu>

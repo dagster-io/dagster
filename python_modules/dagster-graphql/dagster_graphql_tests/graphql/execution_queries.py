@@ -214,7 +214,9 @@ subscription subscribeTest($runId: ID!) {
     pipelineRunLogs(runId: $runId) {
         __typename
         ... on PipelineRunLogsSubscriptionSuccess {
-            runId,
+            run {
+                runId
+            },
             messages {
                 __typename
                 ...stepEventFragment

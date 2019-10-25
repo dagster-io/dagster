@@ -3,8 +3,8 @@ import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { IconNames } from "@blueprintjs/icons";
-import { Colors } from "@blueprintjs/core";
-import { MutationFunction, Mutation } from "react-apollo";
+import { Colors, Button, Intent } from "@blueprintjs/core";
+import { MutationFunction, Mutation, useMutation } from "react-apollo";
 import ApolloClient from "apollo-client";
 
 import { ILogFilter, LogsProvider, GetDefaultLogFilter } from "./LogsProvider";
@@ -21,10 +21,13 @@ import ExecutionStartButton from "../execute/ExecutionStartButton";
 import InfoModal from "../InfoModal";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { RunContext } from "./RunContext";
+
 import {
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
   RunPipelineRunEventFragment
 } from "./types/RunPipelineRunEventFragment";
+import { CANCEL_MUTATION } from "./RunUtils";
+import { SharedToaster } from "../Util";
 
 interface IRunProps {
   client: ApolloClient<any>;
@@ -36,6 +39,36 @@ interface IRunState {
   highlightedError?: { message: string; stack: string[] };
 }
 
+const CancelRunButton: React.FunctionComponent<{ run: RunFragment }> = ({
+  run
+}) => {
+  const [cancel] = useMutation(CANCEL_MUTATION);
+  return (
+    <Button
+      icon={IconNames.STOP}
+      text={"Cancel"}
+      small={true}
+      intent="danger"
+      onClick={async () => {
+        const res = await cancel({
+          variables: { runId: run.runId }
+        });
+        if (
+          res.data &&
+          res.data.cancelPipelineExecution &&
+          res.data.cancelPipelineExecution.message
+        ) {
+          SharedToaster.show({
+            message: res.data.cancelPipelineExecution.message,
+            icon: "error",
+            intent: Intent.DANGER
+          });
+        }
+      }}
+    />
+  );
+};
+
 export class Run extends React.Component<IRunProps, IRunState> {
   static fragments = {
     RunFragment: gql`
@@ -44,6 +77,8 @@ export class Run extends React.Component<IRunProps, IRunState> {
 
         environmentConfigYaml
         runId
+        canCancel
+        status
         mode
         pipeline {
           __typename
@@ -217,6 +252,12 @@ export class Run extends React.Component<IRunProps, IRunState> {
                             small={true}
                             onClick={() => this.onReexecute(reexecuteMutation)}
                           />
+                          {run && run.canCancel ? (
+                            <>
+                              <div style={{ minWidth: 6 }} />
+                              <CancelRunButton run={run} />
+                            </>
+                          ) : null}
                         </LogsToolbar>
                         <LogsScrollingTable
                           nodes={filteredNodes}

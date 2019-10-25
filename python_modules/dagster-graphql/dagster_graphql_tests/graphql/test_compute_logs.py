@@ -31,7 +31,7 @@ def test_get_compute_logs_over_graphql(snapshot):
     payload = sync_execute_get_run_log_data(
         {'executionParams': {'selector': {'name': 'spew_pipeline'}, 'mode': 'default'}}
     )
-    run_id = payload['runId']
+    run_id = payload['run']['runId']
 
     result = execute_dagster_graphql(
         define_context(instance=DagsterInstance.local_temp()),
@@ -46,7 +46,7 @@ def test_compute_logs_subscription_graphql(snapshot):
     payload = sync_execute_get_run_log_data(
         {'executionParams': {'selector': {'name': 'spew_pipeline'}, 'mode': 'default'}}
     )
-    run_id = payload['runId']
+    run_id = payload['run']['runId']
 
     subscription = execute_dagster_graphql(
         define_context(instance=DagsterInstance.local_temp()),

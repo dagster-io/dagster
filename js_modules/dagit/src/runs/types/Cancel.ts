@@ -7,8 +7,8 @@
 // GraphQL mutation operation: Cancel
 // ====================================================
 
-export interface Cancel_cancelPipelineExecution_CancelPipelineExecutionSuccess {
-  __typename: "CancelPipelineExecutionSuccess" | "PythonError";
+export interface Cancel_cancelPipelineExecution_PythonError {
+  __typename: "PythonError";
 }
 
 export interface Cancel_cancelPipelineExecution_CancelPipelineExecutionFailure {
@@ -21,7 +21,18 @@ export interface Cancel_cancelPipelineExecution_PipelineRunNotFoundError {
   message: string;
 }
 
-export type Cancel_cancelPipelineExecution = Cancel_cancelPipelineExecution_CancelPipelineExecutionSuccess | Cancel_cancelPipelineExecution_CancelPipelineExecutionFailure | Cancel_cancelPipelineExecution_PipelineRunNotFoundError;
+export interface Cancel_cancelPipelineExecution_CancelPipelineExecutionSuccess_run {
+  __typename: "PipelineRun";
+  runId: string;
+  canCancel: boolean;
+}
+
+export interface Cancel_cancelPipelineExecution_CancelPipelineExecutionSuccess {
+  __typename: "CancelPipelineExecutionSuccess";
+  run: Cancel_cancelPipelineExecution_CancelPipelineExecutionSuccess_run;
+}
+
+export type Cancel_cancelPipelineExecution = Cancel_cancelPipelineExecution_PythonError | Cancel_cancelPipelineExecution_CancelPipelineExecutionFailure | Cancel_cancelPipelineExecution_PipelineRunNotFoundError | Cancel_cancelPipelineExecution_CancelPipelineExecutionSuccess;
 
 export interface Cancel {
   cancelPipelineExecution: Cancel_cancelPipelineExecution;

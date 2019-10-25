@@ -114,7 +114,6 @@ export class LogsProvider extends React.Component<
     const nextNodes = isFirstResponse ? [] : [...this.state.nodes];
 
     let nextPipelineStatus: PipelineRunStatus | null = null;
-
     for (const msg of messages) {
       if (
         msg.pipelineRunLogs.__typename === "PipelineRunLogsSubscriptionFailure"
@@ -216,6 +215,10 @@ export const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
             runId
           }
           ...RunPipelineRunEventFragment
+        }
+        run {
+          runId
+          canCancel
         }
       }
       ... on PipelineRunLogsSubscriptionFailure {

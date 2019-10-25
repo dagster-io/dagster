@@ -133,8 +133,8 @@ class DauphinPipelineRun(dauphin.ObjectType):
     def run_id(self):
         return self.runId
 
-    def resolve_canCancel(self, _graphene_info):
-        return self._pipeline_run.can_cancel
+    def resolve_canCancel(self, graphene_info):
+        return graphene_info.context.execution_manager.can_terminate(self.run_id)
 
 
 class DauphinLogLevel(dauphin.Enum):
@@ -272,7 +272,7 @@ class DauphinPipelineRunLogsSubscriptionSuccess(dauphin.ObjectType):
     class Meta:
         name = 'PipelineRunLogsSubscriptionSuccess'
 
-    runId = dauphin.NonNull(dauphin.String)
+    run = dauphin.NonNull('PipelineRun')
     messages = dauphin.non_null_list('PipelineRunEvent')
 
 

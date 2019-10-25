@@ -724,7 +724,7 @@ type PipelineRunLogsSubscriptionFailure {
 union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscriptionFailure
 
 type PipelineRunLogsSubscriptionSuccess {
-  runId: String!
+  run: PipelineRun!
   messages: [PipelineRunEvent!]!
 }
 
