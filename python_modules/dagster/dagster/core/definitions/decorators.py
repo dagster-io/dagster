@@ -4,6 +4,12 @@ from functools import wraps
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
+from ..decorator_utils import (
+    InvalidDecoratedFunctionInfo,
+    split_function_parameters,
+    validate_decorated_fn_non_positionals,
+    validate_decorated_fn_positionals,
+)
 from ..scheduler import Scheduler, SchedulerHandle
 from .composition import (
     InputMappingNode,
@@ -27,11 +33,6 @@ from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
 from .schedule import ScheduleDefinition
 from .solid import CompositeSolidDefinition, SolidDefinition
-
-if hasattr(inspect, 'signature'):
-    funcsigs = inspect
-else:
-    import funcsigs
 
 # Error messages are long
 # pylint: disable=C0301
@@ -121,7 +122,7 @@ class _Solid(object):
             else infer_output_definitions('@solid', self.name, fn)
         )
 
-        validate_solid_fn('@solid', self.name, fn, input_defs, [('context',)])
+        validate_solid_fn('@solid', self.name, fn, input_defs, ['context'])
         compute_fn = _create_solid_compute_wrapper(fn, input_defs, output_defs)
 
         return SolidDefinition(
@@ -427,16 +428,6 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
     return compute
 
 
-class FunctionValidationError(Exception):
-    TYPES = {'vararg': 1, 'missing_name': 2, 'missing_positional': 3, 'extra': 4}
-
-    def __init__(self, error_type, param=None, missing_names=None, **kwargs):
-        super(FunctionValidationError, self).__init__(**kwargs)
-        self.error_type = error_type
-        self.param = param
-        self.missing_names = missing_names
-
-
 def validate_solid_fn(
     decorator_name, fn_name, compute_fn, input_defs, expected_positionals=None, exclude_nothing=True
 ):
@@ -445,7 +436,7 @@ def validate_solid_fn(
     check.callable_param(compute_fn, 'compute_fn')
     check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
     expected_positionals = check.opt_list_param(
-        expected_positionals, 'expected_positionals', of_type=(str, tuple)
+        expected_positionals, 'expected_positionals', of_type=str
     )
     if exclude_nothing:
         names = set(inp.name for inp in input_defs if not inp.runtime_type.is_nothing)
@@ -455,44 +446,55 @@ def validate_solid_fn(
         nothing_names = set()
 
     # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
-    try:
-        _validate_decorated_fn(compute_fn, names, expected_positionals)
-    except FunctionValidationError as e:
-        if e.error_type == FunctionValidationError.TYPES['vararg']:
+    fn_positionals, fn_non_positionals = split_function_parameters(compute_fn, expected_positionals)
+
+    # Validate Positional Parameters
+    missing_positional = validate_decorated_fn_positionals(fn_positionals, expected_positionals)
+    if missing_positional:
+        raise DagsterInvalidDefinitionError(
+            "{decorator_name} '{solid_name}' decorated function does not have required positional "
+            "parameter '{missing_param}'. Solid functions should only have keyword arguments "
+            "that match input names and a first positional parameter named 'context'.".format(
+                decorator_name=decorator_name, solid_name=fn_name, missing_param=missing_positional
+            )
+        )
+
+    # Validate non positional parameters
+    invalid_function_info = validate_decorated_fn_non_positionals(names, fn_non_positionals)
+    if invalid_function_info:
+        if invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES['vararg']:
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{solid_name}' decorated function has positional vararg parameter "
-                "'{e.param}'. Solid functions should only have keyword arguments that match "
+                "'{param}'. Solid functions should only have keyword arguments that match "
                 "input names and a first positional parameter named 'context'.".format(
-                    decorator_name=decorator_name, solid_name=fn_name, e=e
+                    decorator_name=decorator_name,
+                    solid_name=fn_name,
+                    param=invalid_function_info.param,
                 )
             )
-        elif e.error_type == FunctionValidationError.TYPES['missing_name']:
-            if e.param in nothing_names:
+        elif invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES['missing_name']:
+            if invalid_function_info.param in nothing_names:
                 raise DagsterInvalidDefinitionError(
-                    "{decorator_name} '{solid_name}' decorated function has parameter '{e.param}' that is "
+                    "{decorator_name} '{solid_name}' decorated function has parameter '{param}' that is "
                     "one of the solid input_defs of type 'Nothing' which should not be included since "
                     "no data will be passed for it. ".format(
-                        decorator_name=decorator_name, solid_name=fn_name, e=e
+                        decorator_name=decorator_name,
+                        solid_name=fn_name,
+                        param=invalid_function_info.param,
                     )
                 )
             else:
                 raise DagsterInvalidDefinitionError(
-                    "{decorator_name} '{solid_name}' decorated function has parameter '{e.param}' that is not "
+                    "{decorator_name} '{solid_name}' decorated function has parameter '{param}' that is not "
                     "one of the solid input_defs. Solid functions should only have keyword arguments "
                     "that match input names and a first positional parameter named 'context'.".format(
-                        decorator_name=decorator_name, solid_name=fn_name, e=e
+                        decorator_name=decorator_name,
+                        solid_name=fn_name,
+                        param=invalid_function_info.param,
                     )
                 )
-        elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
-            raise DagsterInvalidDefinitionError(
-                "{decorator_name} '{solid_name}' decorated function does not have required positional "
-                "parameter '{e.param}'. Solid functions should only have keyword arguments "
-                "that match input names and a first positional parameter named 'context'.".format(
-                    decorator_name=decorator_name, solid_name=fn_name, e=e
-                )
-            )
-        elif e.error_type == FunctionValidationError.TYPES['extra']:
-            undeclared_inputs_printed = ", '".join(e.missing_names)
+        elif invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES['extra']:
+            undeclared_inputs_printed = ", '".join(invalid_function_info.missing_names)
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{solid_name}' decorated function does not have parameter(s) "
                 "'{undeclared_inputs_printed}', which are in solid's input_defs. Solid functions "
@@ -503,69 +505,6 @@ def validate_solid_fn(
                     undeclared_inputs_printed=undeclared_inputs_printed,
                 )
             )
-        else:
-            raise e
-
-
-def _validate_decorated_fn(fn, names, expected_positionals):
-    used_inputs = set()
-    has_kwargs = False
-
-    signature = funcsigs.signature(fn)
-    params = list(signature.parameters.values())
-
-    expected_positional_params = params[0 : len(expected_positionals)]
-    other_params = params[len(expected_positionals) :]
-
-    if len(expected_positional_params) < len(expected_positionals):
-        raise FunctionValidationError(
-            FunctionValidationError.TYPES['missing_positional'],
-            param=(
-                expected_positionals[0]
-                if isinstance(expected_positionals[0], str)
-                else expected_positionals[0][0]  # tuple
-            ),
-        )
-
-    for expected_names, actual in zip(expected_positionals, expected_positional_params):
-        possible_names = []
-        for expected in expected_names:
-            possible_names.extend(
-                [
-                    '_',
-                    expected,
-                    '_{expected}'.format(expected=expected),
-                    '{expected}_'.format(expected=expected),
-                ]
-            )
-
-        if (
-            actual.kind
-            not in [funcsigs.Parameter.POSITIONAL_OR_KEYWORD, funcsigs.Parameter.POSITIONAL_ONLY]
-        ) or (actual.name not in possible_names):
-            raise FunctionValidationError(
-                FunctionValidationError.TYPES['missing_positional'], param=expected_names
-            )
-
-    for param in other_params:
-        if param.kind == funcsigs.Parameter.VAR_KEYWORD:
-            has_kwargs = True
-        elif param.kind == funcsigs.Parameter.VAR_POSITIONAL:
-            raise FunctionValidationError(error_type=FunctionValidationError.TYPES['vararg'])
-
-        else:
-            if param.name not in names:
-                raise FunctionValidationError(
-                    FunctionValidationError.TYPES['missing_name'], param=param.name
-                )
-            else:
-                used_inputs.add(param.name)
-
-    undeclared_inputs = names - used_inputs
-    if not has_kwargs and undeclared_inputs:
-        raise FunctionValidationError(
-            FunctionValidationError.TYPES['extra'], missing_names=undeclared_inputs
-        )
 
 
 class _CompositeSolid(object):
