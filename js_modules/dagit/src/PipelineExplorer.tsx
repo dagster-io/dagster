@@ -36,19 +36,32 @@ interface IPipelineExplorerState {
   filter: string;
 }
 
-function createAdjacencyMatrix(solids: PipelineExplorerSolidHandleFragment_solid[]) {
-  let adjacencyMatrix = Array(solids.length).fill(
-      Array(solids.length).fill(0)
+export function createAdjacencyMatrix(
+  solids: PipelineExplorerSolidHandleFragment_solid[]
+) {
+  // TODO: Consider alternatives to making this sparse because this will blow up if solids.length is large.
+  let adjacencyMatrix = Array.from(Array(solids.length), _ =>
+    Array(solids.length).fill(0)
   );
   let indexMap = new Map();
-
   solids.forEach((solid, index) => {
-    indexMap.set(solid, index);
+    indexMap.set(solid.name, index);
   });
 
   solids.forEach((solid, index) => {
-    
+    let dependencySet = new Set<number>();
+    solid.inputs.forEach(input => {
+      input.dependsOn.forEach(dependency => {
+        if (dependency.solid.name) {
+          dependencySet.add(indexMap.get(dependency.solid.name));
+        }
+      });
+    });
+    dependencySet.forEach(dependencyIndex => {
+      adjacencyMatrix[index][dependencyIndex] = 1;
+    });
   });
+  return adjacencyMatrix;
 }
 
 export type SolidNameOrPath = { name: string } | { path: string[] };
@@ -176,6 +189,7 @@ export default class PipelineExplorer extends React.Component<
     const solids = this.props.handles.map(h => h.solid);
 
     const solidAdjacencyMatrix = createAdjacencyMatrix(solids);
+    console.log(solidAdjacencyMatrix);
 
     const backgroundColor = parentHandle
       ? Colors.LIGHT_GRAY3
