@@ -68,6 +68,7 @@ export interface RunFragment {
   status: PipelineRunStatus;
   pipeline: RunFragment_pipeline;
   environmentConfigYaml: string;
+  canCancel: boolean;
   mode: string;
   executionPlan: RunFragment_executionPlan | null;
   stepKeysToExecute: string[] | null;

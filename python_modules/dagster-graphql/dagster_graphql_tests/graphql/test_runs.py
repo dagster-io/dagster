@@ -77,7 +77,7 @@ def test_get_runs_over_graphql():
             }
         }
     )
-    run_id_one = payload_one['runId']
+    run_id_one = payload_one['run']['runId']
 
     payload_two = sync_execute_get_run_log_data(
         {
@@ -89,7 +89,7 @@ def test_get_runs_over_graphql():
         }
     )
 
-    run_id_two = payload_two['runId']
+    run_id_two = payload_two['run']['runId']
 
     read_context = define_context(instance=DagsterInstance.local_temp())
 

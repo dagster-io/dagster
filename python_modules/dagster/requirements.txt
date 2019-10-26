@@ -2,10 +2,8 @@ click>=5.0
 coloredlogs>=6.1
 contextlib2>=0.5.4
 enum-compat>=0.0.1
-# funcsigs pinned for compatibility with existing Airflow installs
-funcsigs==1.0.0
-# future pinned to range for compatibility with Airflow
-future>=0.16.0, <0.17.0a0
+funcsigs
+future
 graphviz>=0.8.4
 # pyyaml pinned for compatibility with docker-compose
 pyyaml==4.2b1

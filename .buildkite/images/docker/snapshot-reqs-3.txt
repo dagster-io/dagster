@@ -228,7 +228,6 @@ PyYAML==3.13
 pyzmq==18.1.0
 readme-renderer==24.0
 recommonmark==0.4.0
-reloader==0.6
 requests==2.22.0
 requests-toolbelt==0.9.1
 responses==0.10.6

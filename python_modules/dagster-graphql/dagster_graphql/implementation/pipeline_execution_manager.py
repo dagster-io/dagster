@@ -30,6 +30,14 @@ class PipelineExecutionManager(six.with_metaclass(abc.ABCMeta)):
     def execute_pipeline(self, handle, pipeline, pipeline_run, instance):
         '''Subclasses must implement this method.'''
 
+    @abc.abstractmethod
+    def terminate(self, run_id):
+        '''Attempt to terminate a run if possible. Return False if unable to, True if it can.'''
+
+    @abc.abstractmethod
+    def can_terminate(self, run_id):
+        '''Whether or not this execution manager can terminate the given run_id'''
+
 
 def build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name):
     check.str_param(run_id, 'run_id')
@@ -144,6 +152,12 @@ class SynchronousExecutionManager(PipelineExecutionManager):
         for event in execute_run_iterator(pipeline, pipeline_run, instance):
             event_list.append(event)
         return PipelineExecutionResult(pipeline, pipeline_run.run_id, event_list, lambda: None)
+
+    def can_terminate(self, run_id):
+        return False
+
+    def terminate(self, run_id):
+        return False
 
 
 SUBPROCESS_TICK = 0.5
@@ -265,6 +279,19 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         check.str_param(run_id, 'run_id')
         process = self._get_process(run_id)
         return process.is_alive() if process else False
+
+    def can_terminate(self, run_id):
+        check.str_param(run_id, 'run_id')
+
+        process = self._get_process(run_id)
+
+        if not process:
+            return False
+
+        if not process.is_alive():
+            return False
+
+        return True
 
     def terminate(self, run_id):
         check.str_param(run_id, 'run_id')

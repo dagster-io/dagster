@@ -1,35 +1,40 @@
 jobs:
-  - job: 'dagster'
+  - job: "dagster"
     pool:
-      vmImage: 'vs2017-win2016'
+      vmImage: "vs2017-win2016"
     strategy:
       matrix:
         py27:
-          TOXENV: 'py27'
-          python.version: '2.7'
+          TOXENV: "py27"
+          python.version: "2.7"
         py35:
-          TOXENV: 'py35'
-          python.version: '3.5'
+          TOXENV: "py35"
+          python.version: "3.5"
         py36:
-          TOXENV: 'py36'
-          python.version: '3.6'
+          TOXENV: "py36"
+          python.version: "3.6"
         py37:
-          TOXENV: 'py37'
-          python.version: '3.7'
+          TOXENV: "py37"
+          python.version: "3.7"
+    variables:
+      PYTHONLEGACYWINDOWSSTDIO: "1"
     steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '$(python.version)'
-        architecture: 'x64'
-    - script: pip install tox
-      displayName: 'Install tox'
-    - script: cd python_modules\dagster && tox -e %TOXENV% && cd ..\.. 
-      displayName: 'Run tests'
-    - task: PublishTestResults@2
-      inputs:
-        testResultsFiles: '**/test_results.xml'
-        testRunTitle: 'dagster $(TOXENV)'
-      condition: succeededOrFailed()
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "$(python.version)"
+          architecture: "x64"
+      - script: choco install vcpython27 --yes
+        condition: eq(variables['python.version'], '2.7')
+        displayName: "Install vcpython27"
+      - script: pip install tox
+        displayName: "Install tox"
+      - script: cd python_modules\dagster && tox -e %TOXENV% && cd ..\..
+        displayName: "Run tests"
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFiles: "**/test_results.xml"
+          testRunTitle: "dagster $(TOXENV)"
+        condition: succeededOrFailed()
 #   - job: 'dagit'
 #     pool:
 #       vmImage: 'vs2017-win2016'
@@ -54,7 +59,7 @@ jobs:
 #         architecture: 'x64'
 #     - script: pip install tox
 #       displayName: 'Install tox'
-#     - script: cd python_modules\dagit && tox -e %TOXENV% && cd ..\.. 
+#     - script: cd python_modules\dagit && tox -e %TOXENV% && cd ..\..
 #       displayName: 'Run tests'
 #     - task: PublishTestResults@2
 #       inputs:
@@ -85,7 +90,7 @@ jobs:
 #         architecture: 'x64'
 #     - script: pip install tox
 #       displayName: 'Install tox'
-#     - script: cd python_modules\dagstermill && tox -e %TOXENV% && cd ..\.. 
+#     - script: cd python_modules\dagstermill && tox -e %TOXENV% && cd ..\..
 #       displayName: 'Run tests'
 #     - task: PublishTestResults@2
 #       inputs:

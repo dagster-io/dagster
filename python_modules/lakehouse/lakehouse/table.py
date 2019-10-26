@@ -76,7 +76,7 @@ def create_lakehouse_table_def(
 
     table_input_dict = {input_table.name: input_table for input_table in input_tables}
     input_defs = input_tables + other_input_defs
-    validate_solid_fn('@solid', name, lakehouse_fn, input_defs, [('context',)])
+    validate_solid_fn('@solid', name, lakehouse_fn, input_defs, ['context'])
 
     def _compute(context, inputs):
         '''

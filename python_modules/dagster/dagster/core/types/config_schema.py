@@ -1,4 +1,9 @@
 from dagster import check
+from dagster.core.decorator_utils import (
+    split_function_parameters,
+    validate_decorated_fn_positionals,
+)
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import ensure_single_item
 
 from .builtin_enum import BuiltinEnum
@@ -79,7 +84,22 @@ def input_hydration_config(config_cls):
         config_cls (Any):
     '''
     config_type = resolve_config_cls_arg(config_cls)
-    return lambda func: _create_input_schema(config_type, func)
+    EXPECTED_POSITIONALS = ['context', '*']
+
+    def wrapper(func):
+        fn_positionals, _ = split_function_parameters(func, EXPECTED_POSITIONALS)
+        missing_positional = validate_decorated_fn_positionals(fn_positionals, EXPECTED_POSITIONALS)
+        if missing_positional:
+            raise DagsterInvalidDefinitionError(
+                "@input_hydration_config '{solid_name}' decorated function does not have required positional "
+                "parameter '{missing_param}'. Solid functions should only have keyword arguments "
+                "that match input names and a first positional parameter named 'context'.".format(
+                    solid_name=func.__name__, missing_param=missing_positional
+                )
+            )
+        return _create_input_schema(config_type, func)
+
+    return wrapper
 
 
 def input_selector_schema(config_cls):

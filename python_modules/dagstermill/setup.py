@@ -40,7 +40,7 @@ def _do_setup(name='dagstermill'):
             'dagster',
             'dagster-pandas',
             'enum-compat>=0.0.1',
-            'future>=0.16.0, <0.17.0a0',
+            'future',
             'ipykernel>=4.9.0',
             'nteract-scrapbook>=0.2.0',
             'papermill>=1.0.0',

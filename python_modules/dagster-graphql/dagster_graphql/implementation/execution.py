@@ -251,7 +251,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         PipelineRunObservableSubscribe(instance, run_id, after_cursor=after)
     ).map(
         lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
-            runId=run_id,
+            run=graphene_info.schema.type_named('PipelineRun')(run),
             messages=[
                 from_event_record(graphene_info, event, pipeline, execution_plan)
                 for event in events

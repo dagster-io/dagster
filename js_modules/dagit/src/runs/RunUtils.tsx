@@ -160,6 +160,12 @@ export const CANCEL_MUTATION = gql`
       ... on PipelineRunNotFoundError {
         message
       }
+      ... on CancelPipelineExecutionSuccess {
+        run {
+          runId
+          canCancel
+        }
+      }
     }
   }
 `;

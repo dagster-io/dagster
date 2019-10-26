@@ -31,6 +31,7 @@ from dagster.core.utility_solids import define_stub_solid
 
 # pylint: disable=unused-import
 from .temp_file import (
+    get_temp_dir,
     get_temp_file_handle,
     get_temp_file_handle_with_data,
     get_temp_file_name,
