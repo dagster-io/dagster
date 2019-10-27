@@ -15,17 +15,19 @@ from dagster.utils import mkdir_p
 from .temp_file_manager import TempfileManager
 
 
-@dagster_type(
-    description='''A file handle a reference to a file, which could be resident in the local file
-    system, an object store, or any arbitrary place where file can be stored.
+# pylint: disable=no-init
+@dagster_type
+class FileHandle(six.with_metaclass(ABCMeta)):
+    '''A file handle is a reference to a file.
+    
+    Files can be be resident in the local file system, an object store, or any arbitrary place
+    where a file can be stored.
 
     This exists to handle the very common case where you wish to write a computation that reads,
-    transforms, and writes files, but is written in a way where the same code could work in local
-    developement as well as in a cluster where the files would be stored in globally available
-    object store such as s3.
+    transforms, and writes files, but where the same code can work in local developement as well
+    as in a cluster where the files would be stored in globally available object store such as s3.
     '''
-)  # pylint: disable=no-init
-class FileHandle(six.with_metaclass(ABCMeta)):
+
     @abstractproperty
     def path_desc(self):
         ''' This is a properly to return a *representation* of the path for
@@ -34,6 +36,7 @@ class FileHandle(six.with_metaclass(ABCMeta)):
         raise NotImplementedError()
 
 
+@dagster_type
 class LocalFileHandle(FileHandle):
     def __init__(self, path):
         self._path = check.str_param(path, 'path')

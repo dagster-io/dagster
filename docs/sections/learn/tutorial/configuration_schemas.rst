@@ -9,8 +9,9 @@ Let's see how the configuration schema can prevent errors and improve pipeline d
 consider a simple pipeline that replicates a word several times, then counts the number of resulting
 characters:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas_basic.py
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas.py
    :linenos:
+   :lines: 1-20
    :caption: configuration_schemas.py
 
 The configuration YAML file works as before -- note that we are providing both ``inputs`` and
@@ -68,7 +69,8 @@ require an integer field ``factor`` in its configuration:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/configuration_schemas.py
    :linenos:
-   :emphasize-lines: 8
+   :emphasize-lines: 1
+   :lines: 23-30
    :caption: configuration_schemas.py
 
 Now, if we run the pipeline with the same incorrect configuration:
@@ -77,7 +79,7 @@ Now, if we run the pipeline with the same incorrect configuration:
 
     $ dagster pipeline execute \
         -f configuration_schemas.py \
-        -n configuration_schema_pipeline \
+        -n typed_configuration_schema_pipeline \
         -e configuration_schemas_bad_config.yaml
 
 We'll get a nice error *prior* to execution:
@@ -107,7 +109,7 @@ And then run the pipeline:
 
     $ dagster pipeline execute \
         -f configuration_schemas.py \
-        -n configuration_schema_pipeline \
+        -n typed_configuration_schema_pipeline \
         -e configuration_schemas_wrong_field.yaml
 
     ...

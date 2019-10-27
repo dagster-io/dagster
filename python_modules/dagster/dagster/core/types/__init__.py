@@ -1,5 +1,7 @@
 from .builtin_enum import BuiltinEnum
 from .config_schema import (
+    InputHydrationConfig,
+    OutputMaterializationConfig,
     input_hydration_config,
     input_selector_schema,
     output_materialization_config,

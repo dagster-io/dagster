@@ -32,13 +32,26 @@ def test_python_object_type():
 
     assert type_bar.name == 'Bar'
     assert type_bar.description == 'A bar.'
-    assert_type_check(type_bar.type_check(BarObj()))
+    assert_success(type_bar, BarObj())
 
-    with pytest.raises(Failure):
-        assert type_bar.type_check(None)
+    assert_failure(type_bar, None)
 
-    with pytest.raises(Failure):
-        type_bar.type_check('not_a_bar')
+    assert_failure(type_bar, 'not_a_bar')
+
+
+def test_python_object_type_with_custom_type_check():
+    def eq_3(value):
+        if value != 3:
+            raise Failure()
+
+    class Int3(PythonObjectType):
+        def __init__(self):
+            super(Int3, self).__init__(int, type_check=eq_3)
+
+    type_int_3 = Int3.inst()
+    assert type_int_3.name == 'Int3'
+    assert_success(type_int_3, 3)
+    assert_failure(type_int_3, 5)
 
 
 def test_nullable_python_object_type():

@@ -3,7 +3,6 @@ import pickle
 import uuid
 
 import dagstermill
-import pandas as pd
 from dagster_pandas import DataFrame
 
 from dagster import (
@@ -17,11 +16,9 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
     ResourceDefinition,
-    SerializationStrategy,
     SolidDefinition,
     SolidInvocation,
     String,
-    as_dagster_type,
     check,
     lambda_solid,
     resource,
@@ -213,23 +210,6 @@ def define_tutorial_pipeline():
             SolidInvocation('random_forest_regression'): {'df': DependencyDefinition('clean_data')},
         },
     )
-
-
-# Placeholder class to cause the unregistered notebook solid to fail -- custom serialization
-# strategies require repository registration
-class ComplexSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
-    def serialize(self, value, write_file_obj):
-        pass  # pragma: nocover
-
-    def deserialize(self, read_file_obj):
-        pass  # pragma: nocover
-
-
-complex_serialization_strategy = ComplexSerializationStrategy('complex')
-
-ComplexDagsterType = as_dagster_type(
-    pd.DataFrame, serialization_strategy=complex_serialization_strategy
-)
 
 
 @solid('resource_solid', required_resource_keys={'list'})

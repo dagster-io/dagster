@@ -1,7 +1,16 @@
 import inspect
+import sys
 
 from future.utils import raise_with_traceback
 from six import integer_types, string_types
+
+if sys.version_info[0] >= 3:
+    type_types = type
+else:
+    # These shenanigans are to support old-style classes in py27
+    import new  # pylint: disable=import-error
+
+    type_types = (type, new.classobj)  # pylint: disable=undefined-variable
 
 
 class CheckError(Exception):
@@ -505,7 +514,7 @@ def opt_two_dim_dict_param(obj, param_name, key_type=string_types, value_type=No
 
 
 def type_param(obj, param_name):
-    if not isinstance(obj, type):
+    if not isinstance(obj, type_types):
         raise_with_traceback(_not_type_param_subclass_mismatch_exception(obj, param_name))
     return obj
 

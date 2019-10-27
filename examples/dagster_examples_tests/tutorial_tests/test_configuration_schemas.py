@@ -1,9 +1,7 @@
 import pytest
 from dagster_examples.intro_tutorial.configuration_schemas import (
-    configuration_schema_pipeline as typed_configuration_schema_pipeline,
-)
-from dagster_examples.intro_tutorial.configuration_schemas_basic import (
     configuration_schema_pipeline,
+    typed_configuration_schema_pipeline,
 )
 
 from dagster import DagsterInvalidConfigError, execute_pipeline
@@ -64,14 +62,15 @@ def test_typed_demo_configuration_schema_pipeline_correct_yaml():
     assert set(count_letters_result.keys()) == set(expected_value.keys())
     for key, value in expected_value.items():
         assert count_letters_result[key] == value
-    assert result.result_for_solid('multiply_the_word').output_value() == 'quuxquux'
+    assert result.result_for_solid('typed_multiply_the_word').output_value() == 'quuxquux'
 
 
 def test_typed_demo_configuration_schema_type_mismatch_error():
     with pytest.raises(
         DagsterInvalidConfigError,
         match=(
-            'Type failure at path "root:solids:multiply_the_word:config:factor" on type ' '"Int"'
+            'Type failure at path "root:solids:typed_multiply_the_word:config:factor" on type '
+            '"Int"'
         ),
     ):
         execute_pipeline(
@@ -80,7 +79,7 @@ def test_typed_demo_configuration_schema_type_mismatch_error():
                 script_relative_path(
                     (
                         '../../dagster_examples/intro_tutorial/'
-                        'configuration_schemas_bad_config.yaml'
+                        'configuration_schemas_typed_bad_config.yaml'
                     )
                 )
             ),
