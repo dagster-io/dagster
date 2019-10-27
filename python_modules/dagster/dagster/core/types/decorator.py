@@ -1,7 +1,7 @@
 from dagster import check
 
 from .mapping import register_python_type
-from .runtime import define_python_dagster_type
+from .runtime import PYTHON_DAGSTER_TYPE_ARGS_DOCSTRING, define_python_dagster_type
 
 
 def _decorate_as_dagster_type(
@@ -13,6 +13,7 @@ def _decorate_as_dagster_type(
     serialization_strategy=None,
     auto_plugins=None,
     typecheck_metadata_fn=None,
+    type_check=None,
 ):
     dagster_type_cls = define_python_dagster_type(
         name=name,
@@ -23,6 +24,7 @@ def _decorate_as_dagster_type(
         serialization_strategy=serialization_strategy,
         auto_plugins=auto_plugins,
         typecheck_metadata_fn=typecheck_metadata_fn,
+        type_check=type_check,
     )
 
     register_python_type(bare_cls, dagster_type_cls)
@@ -38,12 +40,11 @@ def dagster_type(
     serialization_strategy=None,
     auto_plugins=None,
     typecheck_metadata_fn=None,
+    type_check=None,
 ):
     '''
-    Decorator version of as_dagster_type. See documentation for :py:func:`as_dagster_type` .
-
-    See documentation for :py:func:`define_python_dagster_type` for parameters.
-
+    Decorator version of as_dagster_type.
+    
     This allows for the straightforward creation of your own classes for use in your
     business logic, and then annotating them to make those same classes compatible with
     the dagster type system.
@@ -77,9 +78,10 @@ def dagster_type(
     And it is viewable in dagit and so forth, and you can use the dagster type system
     for configuration, serialization, and metadata emission.
 
-    Decorator version of as_dagster_type. See :py:func:`as_dagster_type` for parameter
-    documentation.
-    '''
+    {args_docstring}
+    '''.format(
+        args_docstring=PYTHON_DAGSTER_TYPE_ARGS_DOCSTRING
+    )
 
     def _with_args(bare_cls):
         check.type_param(bare_cls, 'bare_cls')
@@ -93,6 +95,7 @@ def dagster_type(
             serialization_strategy=serialization_strategy,
             auto_plugins=auto_plugins,
             typecheck_metadata_fn=typecheck_metadata_fn,
+            type_check=type_check,
         )
 
     # check for no args, no parens case
@@ -112,6 +115,7 @@ def as_dagster_type(
     serialization_strategy=None,
     auto_plugins=None,
     typecheck_metadata_fn=None,
+    type_check=None,
 ):
     '''
     See documentation for :py:func:`define_python_dagster_type` for parameters.
@@ -130,7 +134,11 @@ def as_dagster_type(
     recommend using the object returned by as_dagster_type to avoid an import-order-based bugs.
 
     See dagster_pandas for an example of how to do this.
-    '''
+
+    {args_docstring}
+    '''.format(
+        args_docstring=PYTHON_DAGSTER_TYPE_ARGS_DOCSTRING
+    )
 
     return _decorate_as_dagster_type(
         bare_cls=check.type_param(existing_type, 'existing_type'),
@@ -141,4 +149,5 @@ def as_dagster_type(
         serialization_strategy=serialization_strategy,
         auto_plugins=auto_plugins,
         typecheck_metadata_fn=typecheck_metadata_fn,
+        type_check=type_check,
     )
