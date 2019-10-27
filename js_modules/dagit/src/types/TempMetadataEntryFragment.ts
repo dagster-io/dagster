@@ -39,7 +39,7 @@ export interface TempMetadataEntryFragment_EventMarkdownMetadataEntry {
   __typename: "EventMarkdownMetadataEntry";
   label: string;
   description: string | null;
-  mdString: string;
+  mdStr: string;
 }
 
 export type TempMetadataEntryFragment = TempMetadataEntryFragment_EventPathMetadataEntry | TempMetadataEntryFragment_EventJsonMetadataEntry | TempMetadataEntryFragment_EventUrlMetadataEntry | TempMetadataEntryFragment_EventTextMetadataEntry | TempMetadataEntryFragment_EventMarkdownMetadataEntry;

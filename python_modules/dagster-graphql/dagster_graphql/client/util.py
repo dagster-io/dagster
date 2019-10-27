@@ -74,9 +74,7 @@ def event_metadata_entries(metadata_entry_datas):
             )
         elif typename == 'EventMarkdownMetadataEntry':
             yield EventMetadataEntry.md(
-                label=label,
-                description=description,
-                mdString=metadata_entry_data.get('mdString', ''),
+                label=label, description=description, md_str=metadata_entry_data.get('md_str', '')
             )
         elif typename == 'EventTextMetadataEntry':
             yield EventMetadataEntry.text(

@@ -52,3 +52,14 @@ def fs_system_storage(init_context):
 
 
 default_system_storage_defs = [mem_system_storage, fs_system_storage]
+'''The default 'in_memory' and 'filesystem' system storage definitions.
+
+Framework authors seeking to add their own system storage definitions can extend this list as follows:
+
+.. code-block:: python
+
+    custom_storage_mode = ModeDefinition(
+        ...,
+        system_storage_defs=default_system_storage_defs + [custom_system_storage_def]
+    )
+'''

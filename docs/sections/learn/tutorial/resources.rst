@@ -38,8 +38,8 @@ To implement a resource and specify its config schema, we use the
 object you wish to make available under the specific resource's slot in ``context.resources``.
 Resource constructor functions have access to their own ``context`` argument, which gives access to
 resource-specific config. (Unlike the contexts we've seen so far, which are instances of
-:py:class:`ComputeExecutionContext <dagster.ComputeExecutionContext>`, this context is an
-instance of :py:class:`InitResourceContext <dagster.InitResourceContext>`.)
+:py:class:`SystemComputeExecutionContext <dagster.SystemComputeExecutionContext>`, this context is
+an instance of :py:class:`InitResourceContext <dagster.InitResourceContext>`.)
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
     :caption: resources.py

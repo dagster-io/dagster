@@ -45,32 +45,40 @@ def _check_solids_arg(pipeline_name, solid_defs):
 
 
 class PipelineDefinition(IContainSolids, object):
-    '''A instance of a PipelineDefinition represents a pipeline in dagster.
+    '''Defines a Dagster pipeline.
 
-    A pipeline is comprised of:
+    A pipeline is made up of
 
-    - Solids:
-        Each solid represents a functional unit of data computation.
-
-    - Dependencies:
-        Solids within a pipeline are arranged as a DAG (directed, acyclic graph). Dependencies
-        determine how the values produced by solids flow through the DAG.
+    - Solids, each of which is a single functional unit of data computation.
+    - Dependencies, which determine how the values produced by solids as their outputs flow from
+      one solid to another. This tells Dagster how to arrange solids, and potentially multiple
+      aliased instances of solids, into a directed, acyclic graph (DAG) of compute. 
+    - Modes, which can be used to attach resources, custom loggers, custom system storage
+      options, and custom executors to a pipeline, and to switch between them.
+    - Presets, which can be used to ship common combinations of pipeline config options in Python
+      code, and to switch between them.
 
     Args:
-        solid_defs (List[SolidDefinition]):
-            The set of solid definitions used in this pipeline.
-        name (Optional[str])
-        description (Optional[str])
+        solid_defs (List[SolidDefinition]): The set of solids used in this pipeline.
+        name (Optional[str]): The name of the pipeline. Must be unique within any
+            :py:class:`RepositoryDefinition` containing the pipeline.
+        description (Optional[str]): A human-readable description of the pipeline.
         dependencies (Optional[Dict[Union[str, SolidInvocation], Dict[str, DependencyDefinition]]]):
-            A structure that declares where each solid gets its inputs. The keys at the top
-            level dict are either string names of solids or SolidInvocations. The values
-            are dicts that map input names to DependencyDefinitions.
-        mode_defs (Optional[List[ModeDefinition]]):
-            The set of modes this pipeline can operate in. Modes can be used for example to vary
-            resources and logging implementations for local testing and running in production.
-        preset_defs (Optional[List[PresetDefinition]]):
-            Given the different ways a pipeline may execute, presets give you a way to provide
-            specific valid collections of configuration.
+            A structure that declares the dependencies of each solid's inputs on the outputs of
+            other solids in the pipeline. Keys of the top level dict are either the string names of
+            solids in the pipeline or, in the case of aliased solids,
+            :py:class:`SolidInvocations <SolidInvocation>`. Values of the top level dict are
+            themselves dicts, which map input names belonging to the solid or aliased solid to
+            :py:class:`DependencyDefinitions <DependencyDefinition>`.
+        mode_defs (Optional[List[ModeDefinition]]): The set of modes in which this pipeline can
+            operate. Modes are used to attach resources, custom loggers, custom system storage
+            options, and custom executors to a pipeline. Modes can be used, e.g., to vary available
+            resource and logging implementations between local test and production runs.
+        preset_defs (Optional[List[PresetDefinition]]): A set of preset collections of configuration
+            options that may be used to execute a pipeline. A preset consists of an environment
+            dict, an optional subset of solids to execute, and a mode selection. Presets can be used
+            to ship common combinations of options to pipeline end users in Python code, and can
+            be selected by tools like Dagit.
     '''
 
     def __init__(
@@ -220,20 +228,16 @@ class PipelineDefinition(IContainSolids, object):
 
     @property
     def display_name(self):
-        '''Name suitable for exception messages, logging etc. If pipeline
-        is unnamed the method with return "<<unnamed>>".
-
-        Returns:
-            str: Display name of pipeline
+        '''str: Display name of pipeline.
+        
+        Name suitable for exception messages, logging etc. If pipeline
+        is unnamed the method will return "<<unnamed>>".
         '''
         return self._name if self._name else '<<unnamed>>'
 
     @property
     def solids(self):
-        '''Return the top level solids in the pipeline.
-
-        Returns:
-            List[Solid]: List of solids.
+        '''List[Solid]: Top-level solids in the pipeline.
         '''
         return list(set(self._solid_dict.values()))
 

@@ -11,17 +11,16 @@ class InitResourceContext(
         'InitResourceContext', 'resource_config pipeline_def resource_def run_id log_manager'
     )
 ):
-    '''
-    Resource-specific initialization context.
+    '''Resource-specific initialization context.
 
     Attributes:
-        resource_config (Any):
-            The configuration data provided by the environment config. The schema for this
-            data is defined by ``config_field`` on the :py:class:`ResourceDefinition`
-        pipeline_def (PipelineDefinition): The pipeline definition currently being executed.
-        resource_def (ResourceDefinition): The resource definition for the resource being
+        resource_config (Any): The configuration data provided by the environment config. The schema
+            for this data is defined by the ``config_field`` argument to
+            :py:class:`ResourceDefinition`.
+        pipeline_def (PipelineDefinition): The definition of the pipeline currently being executed.
+        resource_def (ResourceDefinition): The definition of the resource currently being
             constructed.
-        run_id (str): The ID for this run of the pipeline.
+        run_id (str): The id for this run of the pipeline.
         log_manager (DagsterLogManager): The log manager for this run of the pipeline
     '''
 

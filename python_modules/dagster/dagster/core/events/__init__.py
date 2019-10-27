@@ -23,6 +23,8 @@ from dagster.utils.timing import format_duration
 
 
 class DagsterEventType(Enum):
+    '''The types of events that may be yielded by solid and pipeline execution.'''
+
     STEP_OUTPUT = 'STEP_OUTPUT'
     STEP_INPUT = 'STEP_INPUT'
     STEP_FAILURE = 'STEP_FAILURE'
@@ -148,6 +150,10 @@ class DagsterEvent(
         'logging_tags event_specific_data message',
     )
 ):
+    '''Events yielded by solid and pipeline execution.
+    
+    Users should not instantiate this class.'''
+
     @staticmethod
     def from_step(event_type, step_context, event_specific_data=None, message=None):
 
@@ -218,6 +224,7 @@ class DagsterEvent(
 
     @property
     def event_type(self):
+        '''DagsterEventType: The type of this event.'''
         return DagsterEventType(self.event_type_value)
 
     @property

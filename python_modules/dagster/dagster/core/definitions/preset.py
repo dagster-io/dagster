@@ -13,28 +13,48 @@ from .mode import DEFAULT_MODE_NAME
 
 
 class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict solid_subset mode')):
-    '''Defines a preset configuration that a pipeline can execute in. Presets can be used in Dagit to
-    load the predefined configuration in to the tool, or in a script or test as follows:
+    '''Defines a preset configuration in which a pipeline can execute.
+    
+    
+    Presets can be used in Dagit to load predefined configurations into the tool.
+    
+    Presets may also be used from the Python API (in a script, or in test) as follows:
 
     .. code-block:: python
 
-        execute_pipeline_with_preset(pipeline_def, 'example')
+        execute_pipeline_with_preset(pipeline_def, 'example_preset')
 
+    Presets may also be used with the command line tools:
+
+    .. code-block:: shell
+
+        $ dagster pipeline execute example_pipeline --preset example_preset
+        $ dagster pipeline execute example_pipeline -p example_preset
 
     Args:
-        name (str):
-            Name of this preset, must be unique amongst presets for a pipeline.
-        environment_files (Optional[List[str]]):
-            List of paths or glob patterns for yaml files to load and parse as the enivornment
-            config for this preset.
-        solid_subset (Optional[List[str]]):
-            The list of names of solid invocations to execute for this preset.
-        mode (Optional[str]):
-            The mode to apply when executing this preset. Defaults to 'default'.
+        name (str): The name of this preset. Must be unique in the presets defined on a given
+            pipeline.
+        environment_dict (Optional[dict]): A dict representing the config to set with the preset.
+            This is equivalent to the ``environment_dict`` argument to :py:func:`execute_pipeline`.
+        solid_subset (Optional[List[str]]): The list of names of solid invocations (i.e., of
+            unaliased solids or of their aliases if aliased) to execute with this preset.
+        mode (Optional[str]): The mode to apply when executing this preset. (default: 'default')
     '''
 
     @staticmethod
     def from_files(name, environment_files=None, solid_subset=None, mode=None):
+        '''Static constructor for presets from YAML files.
+
+        Args:
+            name (str): The name of this preset. Must be unique in the presets defined on a given
+                pipeline.
+            environment_files (Optional[List[str]]): List of paths or glob patterns for yaml files
+                to load and parse as the environment config for this preset.
+            solid_subset (Optional[List[str]]): The list of names of solid invocations (i.e., of
+                unaliased solids or of their aliases if aliased) to execute with this preset.
+            mode (Optional[str]): The mode to apply when executing this preset. (default:
+                'default')
+        '''
         check.str_param(name, 'name')
         environment_files = check.opt_list_param(environment_files, 'environment_files')
         solid_subset = check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
@@ -76,4 +96,9 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
         )
 
     def get_environment_yaml(self):
+        '''Get the environment dict set on a preset as YAML.
+
+        Returns:
+            str: The environment dict as YAML.
+        '''
         return yaml.dump(self.environment_dict, default_flow_style=False)

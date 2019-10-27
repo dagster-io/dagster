@@ -43,12 +43,11 @@ class IRunConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 class RunConfig(
     namedtuple('_RunConfig', 'run_id tags reexecution_config step_keys_to_execute mode'), IRunConfig
 ):
-    '''
-    Configuration that controls the details of how Dagster will execute a pipeline.
+    '''Configuration for pipeline execution.
 
     Args:
         run_id (Optional[str]): The ID to use for this run. If not provided a new UUID will
-            be created using `uuid4`.
+            be created (using :py:func:`python:uuid4.uuid4`).
         tags (Optional[dict[str, str]]): Key value pairs that will be added to logs.
         rexecution_config (Optional[RexecutionConfig]): Information about a previous run to allow
             for subset rexecution.
@@ -82,13 +81,37 @@ class RunConfig(
         )
 
     def with_tags(self, **new_tags):
+        '''Extend an existing RunConfig with additional logging tags.
+
+        Args:
+            **new_tags: Values should be strings. The logging tags to add.
+
+        Returns:
+            RunConfig: The extended RunConfig.
+        '''
         new_tags = merge_dicts(self.tags, new_tags)
         return RunConfig(**merge_dicts(self._asdict(), {'tags': new_tags}))
 
     def with_mode(self, mode):
+        '''Extend an existing RunConfig with a different mode.
+        
+        Args:
+            mode (str): The new mode to use.
+            
+        Returns:
+            RunConfig: The extended RunConfig.
+        '''
         return RunConfig(**merge_dicts(self._asdict(), {'mode': mode}))
 
     def with_step_keys_to_execute(self, step_keys_to_execute):
+        '''Extend an existing run config with different step keys to execute.
+
+        Args:
+            step_keys_to_execute (List[str]): The step keys to execute.
+        
+        Returns:
+            RunConfig: The extended RunConfig.
+        '''
         return RunConfig(
             **merge_dicts(self._asdict(), {'step_keys_to_execute': step_keys_to_execute})
         )
@@ -97,11 +120,18 @@ class RunConfig(
 class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
     def check_requirements(self, instance, system_storage_def):
-        '''(void): Whether this executor config is valid given the instance and system storage'''
+        '''Check whether this executor config is valid given the instance and system storage.
+
+        Args:
+            instance (DagsterInstance): The available Dagster instance.
+            system_storage_def (SystemStorageDefinition): The available system storage.
+        
+        Raises if the executor config is not valid.
+        '''
 
     @abstractmethod
     def get_engine(self):
-        '''(IEngine): Return the configured engine.'''
+        '''(Engine): Return the corresponding engine class.'''
 
 
 class InProcessExecutorConfig(ExecutorConfig):

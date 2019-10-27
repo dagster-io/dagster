@@ -10,7 +10,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.utils.timing import format_duration, time_execution_scope
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
-from .engine_base import IEngine
+from .engine_base import Engine
 
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
@@ -75,7 +75,7 @@ def bounded_parallel_executor(step_contexts, limit):
             del active_iters[key]
 
 
-class MultiprocessEngine(IEngine):  # pylint: disable=no-init
+class MultiprocessEngine(Engine):  # pylint: disable=no-init
     @staticmethod
     def execute(pipeline_context, execution_plan, step_keys_to_execute=None):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)

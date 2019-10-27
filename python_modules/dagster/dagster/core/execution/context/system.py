@@ -231,6 +231,15 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
 
 
 class SystemComputeExecutionContext(SystemStepExecutionContext):
+    '''The ``context`` object available to solid compute logic.
+    
+    Attributes:
+        solid_config (Any): The parsed config specific to this solid.
+        log (DagsterLogManager): Centralized log dispatch from user code.
+        resources (Any): An object whose attributes contain the resources available to this solid.
+        run_id (str): The id of this pipeline run.
+    '''
+
     @property
     def solid_config(self):
         solid_config = self.environment_config.solids.get(str(self.solid_handle))

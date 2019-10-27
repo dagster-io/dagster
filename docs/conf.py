@@ -46,6 +46,7 @@ release = ''
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.ifconfig',
+    'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
     'nbsphinx',
     'sphinx.ext.autosectionlabel',
@@ -54,6 +55,8 @@ extensions = [
 
 # https://stackoverflow.com/a/54843636/324449
 autosectionlabel_prefix_document = True
+
+intersphinx_mapping = {'python': ('https://docs.python.org/3', 'objects.inv')}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

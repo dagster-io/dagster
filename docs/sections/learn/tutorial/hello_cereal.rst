@@ -38,7 +38,7 @@ and logs the number of rows it finds.
    :caption: hello_cereal.py
 
 In this simplest case, our solid takes no inputs except for the
-:py:class:`context <dagster.ComputeExecutionContext>` in which it executes
+:py:class:`context <dagster.SystemComputeExecutionContext>` in which it executes
 (provided by the Dagster framework as the first argument to every solid), and also returns no
 outputs. Don't worry, we'll soon encounter solids that are much more dynamic.
 

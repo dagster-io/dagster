@@ -30,8 +30,8 @@ Nothing = BuiltinEnum.NOTHING
 # for schematizing config. However, we wish to avoid exposing the differences
 # to users, so here we are. From their standpoint there is just one thing to
 # deal with. That is why, for example, there are actually *three* different types
-# of Lists in this submodule. One is the config version of "List; another is the
-# runtime version of "List"; and the last is the user-facing version of List, that
+# of Lists in this submodule. One is the config version of List; another is the
+# runtime version of List; and the last is the user-facing version of List, that
 # -- depending on context -- is converted (resolved, in the parlance) to either
 # a config or a runtime type depending on whether it was, say passed into a Field
 # (in which case it would be config version) or a InputDefinition (in which case it would be

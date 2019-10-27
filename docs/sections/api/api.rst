@@ -3,14 +3,15 @@ API Docs
 
 
 .. toctree::
-  :maxdepth: 1
+  :maxdepth: 2
   :name: API Reference
 
   apidocs/solids
-  apidocs/events
   apidocs/pipeline
   apidocs/execution
   apidocs/types
   apidocs/errors
   apidocs/utilities
   apidocs/dagstermill
+
+  apidocs/internals

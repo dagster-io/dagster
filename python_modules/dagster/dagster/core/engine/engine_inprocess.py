@@ -33,10 +33,10 @@ from dagster.core.storage.object_store import ObjectStoreOperation
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration, time_execution_scope
 
-from .engine_base import IEngine
+from .engine_base import Engine
 
 
-class InProcessEngine(IEngine):  # pylint: disable=no-init
+class InProcessEngine(Engine):  # pylint: disable=no-init
     @staticmethod
     def execute(pipeline_context, execution_plan, step_keys_to_execute=None):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)

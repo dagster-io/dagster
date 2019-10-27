@@ -79,7 +79,7 @@ def input_name_for_raw_file(raw_file):
 )
 def many_table_materializations(_context):
     with open(file_relative_path(__file__, MARKDOWN_EXAMPLE), 'r') as f:
-        mdString = f.read()
+        md_str = f.read()
         for table in raw_tables:
             yield Materialization(
                 label='table_info',
@@ -90,7 +90,7 @@ def many_table_materializations(_context):
                     EventMetadataEntry.url(
                         url='https://bigty.pe/{}'.format(table), label='table_name_big'
                     ),
-                    EventMetadataEntry.md(mdString=mdString, label='table_blurb'),
+                    EventMetadataEntry.md(md_str=md_str, label='table_blurb'),
                 ],
             )
 

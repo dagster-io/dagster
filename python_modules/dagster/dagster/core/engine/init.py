@@ -12,6 +12,19 @@ class InitExecutorContext(
         'pipeline_def mode_def executor_def pipeline_run environment_config executor_config',
     )
 ):
+    '''Executor-specific initialization context.
+
+    Attributes:
+        pipeline_def (PipelineDefinition): The pipeline definition in scope for execution.
+        mode_def (ModeDefinition): The mode in which the pipeline is to be executed.
+        executor_def (ExecutorDefinition): The definition of the executor currently being
+            constructed.
+        run_config (RunConfig): Configuration for this pipeline run.
+        environment_config (EnvironmentConfig): The parsed environment configuration for this
+            pipeline run.
+        executor_config (dict): The parsed config passed to the executor.
+    '''
+
     def __new__(
         cls, pipeline_def, mode_def, executor_def, pipeline_run, environment_config, executor_config
     ):
