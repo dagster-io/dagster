@@ -1,6 +1,7 @@
 from dagster import check
 
-from .runtime import RuntimeType, define_python_dagster_type
+from .mapping import register_python_type
+from .runtime import define_python_dagster_type
 
 
 def _decorate_as_dagster_type(
@@ -24,9 +25,8 @@ def _decorate_as_dagster_type(
         typecheck_metadata_fn=typecheck_metadata_fn,
     )
 
-    type_inst = dagster_type_cls.inst()
+    register_python_type(bare_cls, dagster_type_cls)
 
-    make_klass_runtime_type_decorated_klass(bare_cls, type_inst)
     return bare_cls
 
 
@@ -103,25 +103,6 @@ def dagster_type(
     return _with_args
 
 
-MAGIC_RUNTIME_TYPE_NAME = '__runtime_type'
-
-
-def is_runtime_type_decorated_klass(klass):
-    check.type_param(klass, 'klass')
-    return hasattr(klass, MAGIC_RUNTIME_TYPE_NAME)
-
-
-def get_runtime_type_on_decorated_klass(klass):
-    check.type_param(klass, 'klass')
-    return getattr(klass, MAGIC_RUNTIME_TYPE_NAME)
-
-
-def make_klass_runtime_type_decorated_klass(klass, runtime_type):
-    check.type_param(klass, 'klass')
-    check.inst_param(runtime_type, 'runtime_type', RuntimeType)
-    setattr(klass, MAGIC_RUNTIME_TYPE_NAME, runtime_type)
-
-
 def as_dagster_type(
     existing_type,
     name=None,
@@ -141,17 +122,12 @@ def as_dagster_type(
     directly in solid definitions. To support this dagster has this facility
     that allows one to annotate *existing* classes as dagster type.
 
-    Note: It does this by setting a magical property (current "__runtime_type") on the
-    class itself pointing to the dagster type associated with the python class
-
-    e.g.
-
     from existing_library import FancyDataType as ExistingFancyDataType
 
     FancyDataType = as_dagster_type(existing_type=ExistingFancyDataType, name='FancyDataType')
 
     While one *could* use the existing type directly from the original library, we would
-    recommend using the object retrned by as_dagster_type to avoid an import-order-based bugs.
+    recommend using the object returned by as_dagster_type to avoid an import-order-based bugs.
 
     See dagster_pandas for an example of how to do this.
     '''

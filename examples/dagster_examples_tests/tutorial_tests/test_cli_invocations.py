@@ -155,7 +155,7 @@ def test_dagster_pipeline_execute_configuration_schema_pipeline():
 
 # dagster pipeline execute \
 #   -f configuration_schemas.py \
-#   -n configuration_schema_pipeline \
+#   -n typed_configuration_schema_pipeline \
 #   -e configuration_schemas_bad_config.yaml
 def test_dagster_pipeline_execute_configuration_schema_pipeline_bad_config():
     dagster_pipeline_execute(
@@ -163,7 +163,7 @@ def test_dagster_pipeline_execute_configuration_schema_pipeline_bad_config():
             '-f',
             path_to_tutorial_file('configuration_schemas.py'),
             '-n',
-            'configuration_schema_pipeline',
+            'typed_configuration_schema_pipeline',
             '-e',
             path_to_tutorial_file('configuration_schemas_bad_config.yaml'),
         ],

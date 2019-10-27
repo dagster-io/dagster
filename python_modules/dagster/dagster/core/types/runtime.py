@@ -311,17 +311,17 @@ def define_python_dagster_type(
     auto_plugins=None,
     typecheck_metadata_fn=None,
 ):
-    '''
-    The dagster typesystem is very flexible, and the body of a typecheck can be
-    a function that does *anything*. (For that level of flexiblity one should inherit
-    from RuntimeType directly)  However its very common to want to generate a dagster
-    type whose only typecheck is against a python type:
+    '''Define a dagster type corresponding to an existing python type.
 
-    DateTime = define_python_dagster_type(datetime.datetime, name='DateTime')
+    It's very common to want to generate a dagster type corresponding to an existing Python type.
+    Typically this is done using the @dagster_type decorator or using as_dagster_type, each of
+    which defer to this function as a workhorse.
+
+        DateTime = define_python_dagster_type(datetime.datetime, name='DateTime')
 
     Args:
         python_type (cls)
-            The python type you want check against.
+            The python type against which you want to check types.
         name (Optional[str]):
             Name of the dagster type. Defaults to the name of the python_type.
         description (Optiona[str]):
@@ -540,7 +540,6 @@ _RUNTIME_MAP = {
 
 def resolve_to_runtime_type(dagster_type):
     # circular dep
-    from .decorator import is_runtime_type_decorated_klass, get_runtime_type_on_decorated_klass
     from .mapping import remap_python_type
     from .python_dict import PythonDict, create_typed_runtime_dict
     from .python_set import PythonSet, create_typed_runtime_set
@@ -575,8 +574,6 @@ def resolve_to_runtime_type(dagster_type):
         return resolve_to_runtime_list(dagster_type)
     if isinstance(dagster_type, WrappingNullableType):
         return resolve_to_runtime_nullable(dagster_type)
-    if is_runtime_type_decorated_klass(dagster_type):
-        return get_runtime_type_on_decorated_klass(dagster_type)
     if issubclass(dagster_type, RuntimeType):
         return dagster_type.inst()
 
