@@ -1,0 +1,13 @@
+solids:
+  load_cereals:
+    solids:
+      read_cereals:
+        inputs:
+          csv_path:
+            value: "cereal.csv"
+      read_manufacturers:
+        config:
+          delimiter: ";"
+        inputs:
+          csv_path:
+            value: "manufacturers.csv"

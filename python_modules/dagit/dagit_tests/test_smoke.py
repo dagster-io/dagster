@@ -19,9 +19,9 @@ def test_smoke_app():
 
     result = client.post('/graphql', data={'query': 'query { pipelines { nodes { name }}}'})
     data = json.loads(result.data.decode('utf-8'))
-    assert len(data['data']['pipelines']['nodes']) == 1
+    assert len(data['data']['pipelines']['nodes']) == 2
     assert {node_data['name'] for node_data in data['data']['pipelines']['nodes']} == set(
-        ['repo_demo_pipeline']
+        ['hello_cereal_pipeline', 'complex_pipeline']
     )
 
     result = client.get('/graphql')

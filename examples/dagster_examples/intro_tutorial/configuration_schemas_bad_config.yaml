@@ -1,7 +1,0 @@
-solids:
-  multiply_the_word:
-    inputs:
-      word:
-        value: "kj"
-    config:
-      factor: "not_a_number"

@@ -9,7 +9,7 @@ likely to be the responsibility of individuals with more or less clearly disting
 
 Use the airline demo to familiarize yourself with the features of Dagster in a more
 fleshed-out context than the introductory tutorial, and as a reference when building your own
-first production pipelines in the system. Comments and suggestions are enthusiastically encouraged!
+first production pipelines in the system. Comments and suggestions are enthusiastically encouraged.
 
 Getting Started
 ^^^^^^^^^^^^^^^
@@ -190,7 +190,7 @@ Using Modes for Production Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Don't worry, we've got plenty of big(gish) data to run through this pipeline. Instead of the
-``local_fast_ingest.yaml`` config fragment, use ``local_full_ingest.yaml``—but be prepared to wait!
+``local_fast_ingest.yaml`` config fragment, use ``local_full_ingest.yaml``—but be prepared to wait.
 You can use this pattern to run your Dagster pipelines against synthetic, anonymized, or subsampled
 datasets in test and development environments.
 

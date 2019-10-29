@@ -57,6 +57,8 @@ builtin types above.
 
 .. autofunction:: Dict
 
+.. autofunction:: Selector
+
 -----
 
 Making New Types
@@ -77,3 +79,5 @@ Making New Types
 .. autofunction:: input_hydration_config
 
 .. autofunction:: output_materialization_config
+
+.. autoclass:: ConfigScalar

@@ -1,82 +1,55 @@
-from dagster import (
-    EventMetadataEntry,
-    Materialization,
-    PresetDefinition,
-    String,
-    TypeCheck,
-    dagster_type,
-    input_hydration_config,
-    output_materialization_config,
-    pipeline,
-    solid,
-)
-from dagster.utils import script_relative_path
+import csv
 
-
-@dagster_type
-class Empty:
-    pass
-
-
-@input_hydration_config(String)
-def read_sauce(_context, path):
-    with open(script_relative_path(path), 'r') as fd:
-        return Sauce(fd.read())
-
-
-@output_materialization_config(String)
-def write_sauce(_context, path, sauce):
-    with open(path, 'w+') as fd:
-        fd.write(sauce.flavor)
-    return Materialization.file(path)
+from dagster import dagster_type, execute_pipeline, pipeline, solid
 
 
 @dagster_type(
-    input_hydration_config=read_sauce,  # how to create an instance from config
-    output_materialization_config=write_sauce,  # how to materialize an instance
-    typecheck_metadata_fn=lambda sauce: TypeCheck(
-        metadata_entries=[
-            EventMetadataEntry.text(
-                label='is_spicy', text='yes' if 'spicy' in sauce.flavor else 'no'
-            )
-        ]
+    name='SimpleDataFrame',
+    description=(
+        'A naive representation of a data frame, e.g., as returned by '
+        'csv.DictReader.'
     ),
 )
-class Sauce:
-    def __init__(self, flavor='tangy'):
-        self.flavor = flavor
+class SimpleDataFrame(list):
+    pass
 
 
 @solid
-def make_burger(_):
-    return 'cheese burger'
+def read_csv(context, csv_path: str) -> SimpleDataFrame:
+    with open(csv_path, 'r') as fd:
+        lines = [row for row in csv.DictReader(fd)]
+
+    context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
+    return SimpleDataFrame(lines)
 
 
 @solid
-def add_sauce(_, food, sauce: Sauce):
-    return '{food} with {flavor} sauce'.format(food=food, flavor=sauce.flavor)
+def sort_by_calories(context, cereals: SimpleDataFrame):
+    sorted_cereals = sorted(cereals, key=lambda cereal: cereal['calories'])
+    context.log.info(
+        'Least caloric cereal: {least_caloric}'.format(
+            least_caloric=sorted_cereals[0]['name']
+        )
+    )
+    context.log.info(
+        'Most caloric cereal: {most_caloric}'.format(
+            most_caloric=sorted_cereals[-1]['name']
+        )
+    )
 
 
-@solid
-def inspect_sauce(context, sauce: Sauce) -> Sauce:
-    context.log.info('The sauce tastes {flavor}'.format(flavor=sauce.flavor))
-    return sauce
+@pipeline
+def custom_type_pipeline():
+    sort_by_calories(read_csv())
 
 
-@pipeline(
-    preset_defs=[
-        PresetDefinition.from_files(
-            'test_input', [script_relative_path('./custom_type_input.yaml')]
-        ),
-        PresetDefinition.from_files(
-            'test_output',
-            [
-                script_relative_path('./custom_type_output.yaml'),
-                script_relative_path('./custom_type_input.yaml'),
-            ],
-        ),
-    ]
-)
-def burger_time():
-    inspected_sauce = inspect_sauce()
-    add_sauce(make_burger(), inspected_sauce)
+if __name__ == '__main__':
+    environment_dict = {
+        'solids': {
+            'read_csv': {'inputs': {'csv_path': {'value': 'cereal.csv'}}}
+        }
+    }
+    result = execute_pipeline(
+        custom_type_pipeline, environment_dict=environment_dict
+    )
+    assert result.success

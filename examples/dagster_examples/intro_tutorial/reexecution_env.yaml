@@ -1,0 +1,6 @@
+solids:
+  read_csv:
+    inputs:
+      csv_path:
+        pickle:
+          path: "/dagster_home/storage/2584d954-a30f-4be6-bbfc-c919e4bee84b/intermediates/read_csv.compute/result"

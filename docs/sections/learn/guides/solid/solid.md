@@ -85,7 +85,7 @@ Every Solid is passed a context object representing the environment in which the
 
 Dagster manages the construction of that context and attaches resources (such as a Spark context, a database connection, or a custom API for specific use cases) to it. It also provides a first-class facility (modes; see `ModeDefintion`) to switch out the implementation of those resources based on configuration. This means one has the means to execute a Solid in the context of, for example, a unit test mode, an integration test mode, and a production mode with multiple configurations within each mode, which leaving the core of the business logic unchanged.
 
-Please seeing our testing guide for more detail! (TODO: link to yet-to-be-written guide)
+Please see our testing guide for more detail.
  
 ## Relationship to Airflow
 

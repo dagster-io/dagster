@@ -1,0 +1,9 @@
+solids:
+  read_csv:
+    inputs:
+      csv_path:
+        value: "cereal.csv"
+  sort_cold_cereals:
+    config: "cold"
+  sort_hot_cereals:
+    config: "hot"

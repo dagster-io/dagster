@@ -10,6 +10,11 @@ Execution Functions
 
 .. autofunction:: execute_pipeline_iterator
 
+Context
+-------
+
+.. autoclass:: ComputeExecutionContext
+
 Results
 -------
 

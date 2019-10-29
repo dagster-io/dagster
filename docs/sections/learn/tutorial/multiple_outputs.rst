@@ -1,106 +1,88 @@
-Multiple Outputs
-----------------
+Multiple and conditional outputs
+--------------------------------
 
-So far all of our examples have been solids that have a single output. But
-solids can have an arbitrary number of outputs. Downstream solids can
-depend on any number of these outputs. Additionally, these outputs do
-not *necessarily* have to be fired, therefore unlocking the ability for
-downstream solids to be invoked conditionally based on something that
-happened during the computation.
+Solids can have arbitrarily many outputs, and downstream solids can depends on any number of these.
 
-Example
-~~~~~~~
+What's more, outputs don't necessarily have to be yielded by solids, which lets us write pipelines
+where some solids conditionally execute based on the presence of an upstream output.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs_yield.py
+Suppose we're interested in splitting hot and cold cereals into separate datasets and processing
+them separately, based on config.
+
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
    :linenos:
+   :lineno-start: 31
    :caption: multiple_outputs.py
-   :lines: 5-13
+   :lines: 31-55
+   :emphasize-lines: 6-13, 20, 25
 
-Above is an example of a solid that returns multiple outputs. It does so by yielding two Output objects.
+Solids that yield multiple outputs must declare, and name, their outputs (passing ``output_defs``
+to the :py:func:`@solid <dagster.solid>` decorator). Output names must be unique and each
+:py:func:`Output <dagster.Output>` yielded by a solid's compute function must have a name that
+corresponds to one of these declared outputs.
 
-Notice how ``return_dict_results`` has two outputs. For the first time
-we have provided the name argument to an :py:class:`OutputDefinition <dagster.OutputDefinition>`.
-Output names must be unique and each result returned by a solid's compute function must have a name
-that corresponds to one of these outputs.
+We'll define two downstream solids and hook them up to the multiple outputs from ``split_cereals``.
 
-With this we can run the pipeline (condensed here for brevity):
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
+   :linenos:
+   :lineno-start: 58
+   :caption: multiple_outputs.py
+   :lines: 58-82
+   :emphasize-lines: 23-25
 
-.. code-block:: console
+As usual, we can visualize this in Dagit:
 
-    $ dagster pipeline execute \
-        -f multiple_outputs_yield.py \
-        -n multiple_outputs_yield_pipeline
+.. thumbnail:: multiple_outputs.png
 
-    2019-07-03 15:19:54 - dagster - INFO -
-            orig_message = "Solid 'yield_outputs' emitted output 'out_one' value 23"
-          log_message_id = "3e223b44-3b1d-436a-bda3-4b36421893ca"
-           log_timestamp = "2019-07-03T22:19:54.854159"
-                  run_id = "68fd5aa6-a788-4ad9-922d-c288050c0c1f"
-                pipeline = "multiple_outputs_yield_pipeline"
-    execution_epoch_time = 1562192394.848578
-                step_key = "yield_outputs.compute"
-                   solid = "yield_outputs"
-        solid_definition = "yield_outputs"
-    2019-07-03 15:19:54 - dagster - INFO -
-            orig_message = "Solid 'yield_outputs' emitted output 'out_two' value 45"
-          log_message_id = "ec12d827-efc3-4db1-ade7-2821bbd99133"
-           log_timestamp = "2019-07-03T22:19:54.854632"
-                  run_id = "68fd5aa6-a788-4ad9-922d-c288050c0c1f"
-                pipeline = "multiple_outputs_yield_pipeline"
-    execution_epoch_time = 1562192394.848578
-                step_key = "yield_outputs.compute"
-                   solid = "yield_outputs"
-        solid_definition = "yield_outputs"
+Notice that the logical DAG corresponding to the pipeline definition includes both dependencies --
+we won't know about the conditionality in the pipeline until runtime, when one of the outputs
+is not yielded by ``split_cereal``.
+
+.. thumbnail:: multiple_outputs_zoom.png
+
+Zooming in, Dagit shows us the details of the multiple outputs from ``split_cereals`` and their
+downstream dependencies.
+
+When we execute this pipeline with the following config, we'll see that the cold cereals output is
+omitted and that the execution step corresponding to the downstream solid is marked skipped in the
+right hand pane.
+
+.. thumbnail:: conditional_outputs.png
 
 
-Conditional Outputs
-^^^^^^^^^^^^^^^^^^^
+Reusable solids
+---------------
 
-Multiple outputs are the mechanism by which we implement branching or conditional execution. Let's
-modify the first solid above to conditionally emit one output or the other based on config
-and then execute that pipeline.
+Solids are intended to abstract chunks of business logic, but abstractions aren't very meaningful
+unless they can be reused. 
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs_conditional.py
-    :linenos:
-    :caption: multiple_outputs_conditional.py
+Our conditional outputs pipeline included a lot of repeated code -- ``sort_hot_cereals_by_calories``
+and ``sort_cold_cereals_by_calories``, for instance. In general, it's preferable to build pipelines
+out of a relatively restricted set of well-tested library solids, using config liberally to
+parametrize them. (You'll certainly have your own version of ``read_csv``, for instance, and
+Dagster includes libraries like ``dagster_aws`` and ``dagster_spark`` to wrap and abstract
+interfaces with common third party tools.)
 
-You must create a config file
+Let's replace ``sort_hot_cereals_by_calories`` and ``sort_cold_cereals_by_calories`` by two aliases
+of the same library solid:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/conditional_outputs.yaml
-    :linenos:
-    :caption: conditional_outputs.yaml
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusable_solids.py
+   :linenos:
+   :lineno-start: 59
+   :lines: 59-76
+   :emphasize-lines: 15-16
+   :caption: reusable_solids.py
 
-And then run it.
+You'll see that Dagit distinguishes between the two invocations of the single library solid and the
+solid's definition. The invocation is named and bound via a dependency graph to other invocations
+of other solids. The definition is the generic, resuable piece of logic that is invoked many times
+within this pipeline.
 
-.. code-block:: console
+.. thumbnail:: reusable_solids.png
 
-    $ dagster pipeline execute -f multiple_outputs_conditional.py \
-    -n multiple_outputs_conditional_pipeline \
-    -e conditional_outputs.yaml
+Configuring solids also uses the aliases, as in the following YAML:
 
-    2019-07-03 15:22:55 - dagster - INFO -
-            orig_message = "Solid 'conditional' emitted output 'out_two' value 45"
-          log_message_id = "c3baeee8-f642-4f67-a649-50e2e0985782"
-           log_timestamp = "2019-07-03T22:22:55.173293"
-                  run_id = "16a7f229-ed66-46ba-ab47-d3725639662c"
-                pipeline = "multiple_outputs_conditional_pipeline"
-    execution_epoch_time = 1562192575.166923
-                step_key = "conditional.compute"
-                   solid = "conditional"
-        solid_definition = "conditional"
-    2019-07-03 15:22:55 - dagster - INFO -
-            orig_message = "Solid conditional did not fire outputs {'out_one'}"
-          log_message_id = "e07b2b81-708d-4b83-9c0c-69698bb8eb26"
-           log_timestamp = "2019-07-03T22:22:55.173857"
-                  run_id = "16a7f229-ed66-46ba-ab47-d3725639662c"
-                pipeline = "multiple_outputs_conditional_pipeline"
-    execution_epoch_time = 1562192575.166923
-                step_key = "conditional.compute"
-                   solid = "conditional"
-        solid_definition = "conditional"
-
-Note that we are configuring this solid to *only* emit ``out_two`` which will end up
-only triggering ``log_num_squared``. The solid ``log_num`` will never be executed.
-
-Next, let's look at :doc:`Reusing Solids <reusing_solids>` so we can avoid duplicating
-common data pipeline work.
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusable_solids.yaml
+   :linenos:
+   :emphasize-lines: 6, 8
+   :caption: reusable_solids.yaml

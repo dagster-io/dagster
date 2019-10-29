@@ -121,4 +121,4 @@ non-Dask contexts, this key will be ignored.
 - Dagster logs are not yet retrieved from Dask workers; this will be addressed in follow-up work.
 
 While this library is still nascent, we're working to improve it, and we are happy to accept
-contributions!
+contributions.

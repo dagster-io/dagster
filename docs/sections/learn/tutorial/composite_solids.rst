@@ -1,56 +1,50 @@
-Composing Solids
+Composing solids
 ----------------
 
-To help manage the level of complexity that data applications tend to reach,
-dagster provides a unit of abstraction for composing a solid from other solids. We call this type
-of solid a **Composite Solid**.
+Abstracting business logic into reusable, configurable solids is one important step towards making
+data applications like other software applications. The other basic facility that we expect from
+software in other domains is composability -- the ability to combine building blocks into larger
+functional units.
 
-This ability to compose solids can be used to:
-    - organize large or complicated graphs
-    - abstract away complexity
-    - wrap re-usable solids with domain specific information
+Composite solids can be used to organize and refactor large or complicated pipelines, abstracting
+away complexity, as well as to wrap reusable general-purpose solids together with domain-specific
+logic.
 
-Refactoring a DAG of solids using composites is a very familiar experience to refactoring code
-with functions.
+As an example, let's compose two instances of a complex, general-purpose ``read_csv`` solid along
+with some domain-specific logic for the specific purpose of joining our cereal dataset with a
+lookup table providing human-readable names for the cereal manufacturers.
 
-Defining a composite solid is similar to defining a pipeline, but can also provide mapping
-information to control how data and configuration flows in and out of its inner graph of solids.
-
-For examples, lets take this pipeline that performs the same work over two different sources:
-
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/composition.py
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/composite_solids.py
    :linenos:
-   :lines: 83-93
-   :caption: composition.py
+   :lines: 126-130
+   :lineno-start: 126
+   :caption: composite_solids.py
 
-.. image:: complex_pipeline.png
+Defining a composite solid is similar to defining a pipeline, except that we use the
+:py:func:`@composite_solid <dagster.composite_solid>` decorator instead of
+:py:func:`@pipeline <dagster.pipeline>`.
 
-While this is a contrived example, it's clear how given the ability to refactor we could
-remove the redundancy.
+Dagit has sophisticated facilities for visualizing composite solids:
 
-We can define a composite solid to perform the redundant work and then invoke it for each of our two
-inputs.
+.. thumbnail:: composite_solids.png
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/composition.py
+All of the complexity of the composite solid is hidden by default, but we can expand it at will by
+clicking into the solid (or on the "Expand" button in the right-hand pane):
+
+.. thumbnail:: composite_solids_expanded.png
+
+Note the line indicating that the output of ``join_cereal`` is returned as the output of the
+composite solid as a whole.
+
+Config for the individual solids making up the composite is nested, as follows:
+
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/composite_solids.yaml
    :linenos:
-   :lines: 97-101
-   :caption: composition.py
+   :language: YAML
+   :caption: composite_solids.yaml
+   :emphasize-lines: 1-3
 
-A composite solid presents an interface of inputs and outputs like any other solid. To do this you may optionally
-map inputs and outputs from its constituent solids. In the example above, we map the input to the ``extract``
-soild and then return the output of the ``load`` solid allowing us to pass it to ``analysis``.
+When we execute this pipeline, Dagit includes information about the nesting of individual execution
+steps within the composite:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/composition.py
-   :linenos:
-   :lines: 104-108
-   :caption: composition.py
-
-
-This gives us a slightly cleaner pipeline:
-
-.. image:: composed_pipeline.png
-
-We can open the composite instances in dagit to see the inner solids, as well as how inputs and outputs
-are mapped.
-
-.. image:: composite_solid.png
+.. thumbnail:: composite_solids_expanded.png

@@ -215,8 +215,14 @@ def all_none(kwargs):
     return True
 
 
-def check_script(path):
-    subprocess.check_output(['python', path])
+def check_script(path, return_code=0):
+    try:
+        subprocess.check_output(['python', path])
+    except subprocess.CalledProcessError as exc:
+        if return_code != 0:
+            if exc.returncode == return_code:
+                return
+        raise
 
 
 def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):

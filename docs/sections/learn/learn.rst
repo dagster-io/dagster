@@ -10,7 +10,7 @@ Finally, the guides section provides deep dives into major areas of the system, 
 data engineering and data science workflows.
 
 .. toctree::
-  :maxdepth: 1
+  :maxdepth: 2
 
   tutorial/index
   airline_demo

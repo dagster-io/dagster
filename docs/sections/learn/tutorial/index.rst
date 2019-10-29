@@ -4,22 +4,17 @@ Tutorial
 .. toctree::
   :maxdepth: 1
 
-  hello_world
+  hello_cereal
   hello_dag
-  actual_dag
   inputs
   config
-  configuration_schemas
-  execution_context
+  types
+  multiple_outputs
+  composite_solids
+  materializations
+  intermediates
   resources
   repos
-  pipeline_cli_execution
-  types
-  expectations
-  multiple_outputs
-  reusing_solids
-  composite_solids
-  composition_functions
   scheduler
 
 

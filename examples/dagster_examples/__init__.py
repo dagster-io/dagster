@@ -67,7 +67,7 @@ def define_demo_repo():
     # from dagster_examples.jaffle_dbt.jaffle import jaffle_pipeline
 
     return RepositoryDefinition(
-        name='demo_repository',
+        name='hello_cereal_repository',
         pipeline_defs=[
             pandas_hello_world_pipeline_with_read_csv,
             pandas_hello_world_pipeline,

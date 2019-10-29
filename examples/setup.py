@@ -57,4 +57,5 @@ setup(
         ],
         'airflow': ['dagster_airflow', 'docker-compose==1.23.2'],
     },
+    include_package_data=True,
 )

@@ -1,0 +1,10 @@
+solids:
+  sort_by_calories:
+    inputs:
+      cereals:
+        csv: "cereal.csv"
+    outputs:
+      - result:
+          csv:
+            path: "sorted_cereals.csv"
+            sep: ";"

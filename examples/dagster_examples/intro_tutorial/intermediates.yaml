@@ -1,0 +1,7 @@
+solids:
+  read_csv:
+    inputs:
+      csv_path:
+        value: "cereal.csv"
+storage:
+  filesystem:

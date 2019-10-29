@@ -1,4 +1,5 @@
 solids:
-  inspect_sauce:
+  sort_by_calories:
     inputs:
-      sauce: "./recipe.txt"
+      cereals:
+        csv: "cereal.csv"

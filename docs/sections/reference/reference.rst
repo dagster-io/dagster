@@ -8,7 +8,7 @@ from other workflow systems to facilitate operating at a higher level of abstrac
 Solid
 ^^^^^
 
-.. image:: solid.png
+.. thumbnail:: solid.png
     :scale: 40 %
     :align: center
 
@@ -36,7 +36,7 @@ solids and how they can be used.
 Compute Function
 ^^^^^^^^^^^^^^^^
 
-.. image:: compute_fn.png
+.. thumbnail:: compute_fn.png
     :scale: 40 %
     :align: center
 
@@ -48,7 +48,7 @@ solid is invoked by the Dagster engine.
 Outputs
 ^^^^^^^
 
-.. image:: outputs.png
+.. thumbnail:: outputs.png
     :scale: 40 %
     :align: center
 
@@ -83,7 +83,7 @@ to just return a value instead of yielding it, and will automatically wrap the r
 Pipelines & DAGs
 ^^^^^^^^^^^^^^^^
 
-.. image:: pipeline.png
+.. thumbnail:: pipeline.png
     :scale: 40 %
     :align: center
 
@@ -118,7 +118,7 @@ you can combine resources and modes in pipeline execution.
 Dependencies
 ^^^^^^^^^^^^
 
-.. image:: dependency.png
+.. thumbnail:: dependency.png
     :scale: 40 %
     :align: center
 
@@ -137,7 +137,7 @@ dependencies.
 Resources
 ^^^^^^^^^
 
-.. image:: resource.png
+.. thumbnail:: resource.png
     :scale: 40 %
     :align: center
 
@@ -150,7 +150,7 @@ They are typically defined using the :func:`@resource <dagster.resource>` decora
 Repository
 ^^^^^^^^^^
 
-.. image:: repository.png
+.. thumbnail:: repository.png
     :scale: 40 %
     :align: center
 
@@ -163,7 +163,7 @@ repository definition.
 Composite Solids
 ^^^^^^^^^^^^^^^^
 
-.. image:: composites.png
+.. thumbnail:: composites.png
     :scale: 40 %
     :align: center
 
