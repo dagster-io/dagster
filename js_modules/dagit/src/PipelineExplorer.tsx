@@ -35,7 +35,6 @@ interface IPipelineExplorerProps {
 
 interface IPipelineExplorerState {
   filter: string;
-  searchQuery: string;
 }
 
 class AdjacencyMatrix {
@@ -165,8 +164,7 @@ export default class PipelineExplorer extends React.Component<
   };
 
   state = {
-    filter: "",
-    searchQuery: ""
+    filter: ""
   };
 
   adjacencyMatrixComputer = memoize(solids => createAdjacencyMatrix(solids));
