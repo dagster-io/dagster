@@ -822,7 +822,7 @@ type Query {
   pipelineRunsOrError(filter: PipelineRunsFilter!, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!
-  solids: [UsedSolid!]!
+  usedSolids: [UsedSolid!]!
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
   environmentSchemaOrError(selector: ExecutionSelector!, mode: String): EnvironmentSchemaOrError!
@@ -985,11 +985,6 @@ type SolidHandle {
   parent: SolidHandle
 }
 
-type UsedSolid {
-  definition: ISolidDefinition!
-  invocations: [SolidInvocationSite!]!
-}
-
 type SolidInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
@@ -1048,6 +1043,11 @@ type TypeCheck implements DisplayableEvent {
 
 type UnknownPipeline implements PipelineReference {
   name: String!
+}
+
+type UsedSolid {
+  definition: ISolidDefinition!
+  invocations: [SolidInvocationSite!]!
 }
 
 interface WrappingConfigType {

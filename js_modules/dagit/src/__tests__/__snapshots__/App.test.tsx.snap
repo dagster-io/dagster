@@ -49,8 +49,7 @@ Array [
               onKeyDown={[Function]}
             >
               <button
-                className="bp3-button bp3-disabled"
-                disabled={true}
+                className="bp3-button"
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
                 style={
@@ -59,13 +58,12 @@ Array [
                     "minWidth": 230,
                   }
                 }
-                tabIndex={-1}
                 type="button"
               >
                 <span
                   className="bp3-button-text"
                 >
-                  pandas_hello_world
+                  Select a pipeline...
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
@@ -90,45 +88,31 @@ Array [
             </div>
           </span>
         </span>
-        <div
-          className="bp3-navbar-divider"
-        />
-        <div
-          className="sc-jzgbtB iCyiRV"
-        >
-          <a
-            className="active sc-gJWqzi hQitKQ"
-            href="/p/pandas_hello_world/explore"
-            onClick={[Function]}
-          >
-            Explore
-          </a>
-          <a
-            className="sc-gJWqzi hQitKQ"
-            href="/p/pandas_hello_world/execute"
-            onClick={[Function]}
-          >
-            Execute
-          </a>
-        </div>
       </div>
     </div>
     <div
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-gJWqzi hQitKQ"
+        className="sc-TFwJa fXBWgB"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-gJWqzi hQitKQ"
+        className="sc-TFwJa fXBWgB"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
+      </a>
+      <a
+        className="active sc-TFwJa fXBWgB"
+        href="/solids"
+        onClick={[Function]}
+      >
+        Solids
       </a>
       <div
         className="bp3-navbar-divider"
@@ -282,18 +266,25 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-gJWqzi hQitKQ"
+        className="sc-TFwJa fXBWgB"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-gJWqzi hQitKQ"
+        className="sc-TFwJa fXBWgB"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
+      </a>
+      <a
+        className="sc-TFwJa fXBWgB"
+        href="/solids"
+        onClick={[Function]}
+      >
+        Solids
       </a>
       <div
         className="bp3-navbar-divider"
@@ -390,7 +381,7 @@ Array [
                 <span
                   className="bp3-button-text"
                 >
-                  pandas_hello_world
+                  airline_demo_ingest_pipeline
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
@@ -419,18 +410,18 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-jzgbtB iCyiRV"
+          className="sc-fjmCvl bshhVc"
         >
           <a
-            className="active sc-gJWqzi hQitKQ"
-            href="/p/pandas_hello_world/explore"
+            className="active sc-TFwJa fXBWgB"
+            href="/p/airline_demo_ingest_pipeline/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-gJWqzi hQitKQ"
-            href="/p/pandas_hello_world/execute"
+            className="sc-TFwJa fXBWgB"
+            href="/p/airline_demo_ingest_pipeline/execute"
             onClick={[Function]}
           >
             Execute
@@ -442,18 +433,220 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-gJWqzi hQitKQ"
+        className="sc-TFwJa fXBWgB"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-gJWqzi hQitKQ"
+        className="sc-TFwJa fXBWgB"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
+      </a>
+      <a
+        className="sc-TFwJa fXBWgB"
+        href="/solids"
+        onClick={[Function]}
+      >
+        Solids
+      </a>
+      <div
+        className="bp3-navbar-divider"
+      />
+      <div
+        className="sc-bwzfXH iUsTio"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
+      <span />
+    </div>
+  </div>,
+  <div
+    className="sc-hqyNC hzxUhc"
+  >
+    <div
+      className="sc-jbKcbu fljSCP"
+    >
+      <div
+        className="bp3-non-ideal-state"
+      >
+        <div
+          className="bp3-non-ideal-state-visual"
+        >
+          <span
+            className="bp3-icon bp3-icon-error"
+            icon="error"
+          >
+            <svg
+              data-icon="error"
+              height={60}
+              viewBox="0 0 20 20"
+              width={60}
+            >
+              <desc>
+                error
+              </desc>
+              <path
+                d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 16H9v-2h2v2zm0-3H9V4h2v9z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
+        </div>
+        <h4
+          className="bp3-heading"
+        >
+          GraphQL Error - see console for details
+        </h4>
+      </div>
+    </div>
+  </div>,
+]
+`;
+
+exports[`renders solids explorer 1`] = `
+Array [
+  <div
+    className="bp3-navbar"
+  >
+    <div
+      className="bp3-navbar-group bp3-align-left"
+    >
+      <div
+        className="bp3-navbar-heading"
+        onClick={[Function]}
+      >
+        <img
+          alt="logo"
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
+          style={
+            Object {
+              "height": 34,
+            }
+          }
+        />
+      </div>
+      <div
+        className="bp3-navbar-divider"
+      />
+      <div
+        style={
+          Object {
+            "alignItems": "center",
+            "display": "flex",
+          }
+        }
+      >
+        <span
+          className="bp3-popover-wrapper"
+        >
+          <span
+            className="bp3-popover-target"
+            onClick={[Function]}
+          >
+            <div
+              className=""
+              onKeyDown={[Function]}
+            >
+              <button
+                className="bp3-button bp3-disabled"
+                disabled={true}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                style={
+                  Object {
+                    "justifyContent": "space-between",
+                    "minWidth": 230,
+                  }
+                }
+                tabIndex={-1}
+                type="button"
+              >
+                <span
+                  className="bp3-button-text"
+                >
+                  airline_demo_ingest_pipeline
+                </span>
+                <span
+                  className="bp3-icon bp3-icon-double-caret-vertical"
+                  icon="double-caret-vertical"
+                >
+                  <svg
+                    data-icon="double-caret-vertical"
+                    height={16}
+                    viewBox="0 0 16 16"
+                    width={16}
+                  >
+                    <desc>
+                      double-caret-vertical
+                    </desc>
+                    <path
+                      d="M5 7h6a1.003 1.003 0 0 0 .71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 0 0 5 7zm6 2H5a1.003 1.003 0 0 0-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0 0 11 9z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </div>
+          </span>
+        </span>
+        <div
+          className="bp3-navbar-divider"
+        />
+        <div
+          className="sc-fjmCvl bshhVc"
+        >
+          <a
+            className="active sc-TFwJa fXBWgB"
+            href="/p/airline_demo_ingest_pipeline/explore"
+            onClick={[Function]}
+          >
+            Explore
+          </a>
+          <a
+            className="sc-TFwJa fXBWgB"
+            href="/p/airline_demo_ingest_pipeline/execute"
+            onClick={[Function]}
+          >
+            Execute
+          </a>
+        </div>
+      </div>
+    </div>
+    <div
+      className="bp3-navbar-group bp3-align-right"
+    >
+      <a
+        className="sc-TFwJa fXBWgB"
+        href="/runs"
+        onClick={[Function]}
+      >
+        Runs
+      </a>
+      <a
+        className="sc-TFwJa fXBWgB"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        Schedule
+      </a>
+      <a
+        className="sc-TFwJa fXBWgB"
+        href="/solids"
+        onClick={[Function]}
+      >
+        Solids
       </a>
       <div
         className="bp3-navbar-divider"
@@ -578,7 +771,7 @@ Array [
                 <span
                   className="bp3-button-text"
                 >
-                  pandas_hello_world
+                  airline_demo_ingest_pipeline
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
@@ -607,18 +800,18 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-jzgbtB iCyiRV"
+          className="sc-fjmCvl bshhVc"
         >
           <a
-            className="active sc-gJWqzi hQitKQ"
-            href="/p/pandas_hello_world/explore"
+            className="active sc-TFwJa fXBWgB"
+            href="/p/airline_demo_ingest_pipeline/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-gJWqzi hQitKQ"
-            href="/p/pandas_hello_world/execute"
+            className="sc-TFwJa fXBWgB"
+            href="/p/airline_demo_ingest_pipeline/execute"
             onClick={[Function]}
           >
             Execute
@@ -630,18 +823,25 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-gJWqzi hQitKQ"
+        className="sc-TFwJa fXBWgB"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-gJWqzi hQitKQ"
+        className="sc-TFwJa fXBWgB"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
+      </a>
+      <a
+        className="sc-TFwJa fXBWgB"
+        href="/solids"
+        onClick={[Function]}
+      >
+        Solids
       </a>
       <div
         className="bp3-navbar-divider"
@@ -766,7 +966,7 @@ Array [
                 <span
                   className="bp3-button-text"
                 >
-                  pandas_hello_world
+                  airline_demo_ingest_pipeline
                 </span>
                 <span
                   className="bp3-icon bp3-icon-double-caret-vertical"
@@ -795,18 +995,18 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-jzgbtB iCyiRV"
+          className="sc-fjmCvl bshhVc"
         >
           <a
-            className="active sc-gJWqzi hQitKQ"
-            href="/p/pandas_hello_world/explore"
+            className="active sc-TFwJa fXBWgB"
+            href="/p/airline_demo_ingest_pipeline/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-gJWqzi hQitKQ"
-            href="/p/pandas_hello_world/execute"
+            className="sc-TFwJa fXBWgB"
+            href="/p/airline_demo_ingest_pipeline/execute"
             onClick={[Function]}
           >
             Execute
@@ -818,18 +1018,25 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-gJWqzi hQitKQ"
+        className="sc-TFwJa fXBWgB"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-gJWqzi hQitKQ"
+        className="sc-TFwJa fXBWgB"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
+      </a>
+      <a
+        className="sc-TFwJa fXBWgB"
+        href="/solids"
+        onClick={[Function]}
+      >
+        Solids
       </a>
       <div
         className="bp3-navbar-divider"
@@ -983,18 +1190,25 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-gJWqzi hQitKQ"
+        className="sc-TFwJa fXBWgB"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-gJWqzi hQitKQ"
+        className="sc-TFwJa fXBWgB"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
+      </a>
+      <a
+        className="sc-TFwJa fXBWgB"
+        href="/solids"
+        onClick={[Function]}
+      >
+        Solids
       </a>
       <div
         className="bp3-navbar-divider"

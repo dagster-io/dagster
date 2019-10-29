@@ -99,7 +99,7 @@ export const DependencyRow = ({
         )}
       </td>
       <td>
-        <img src={require("./images/icon-dependency-arrow.svg")} />
+        <img alt="arrow" src={require("./images/icon-dependency-arrow.svg")} />
       </td>
       <td
         style={{

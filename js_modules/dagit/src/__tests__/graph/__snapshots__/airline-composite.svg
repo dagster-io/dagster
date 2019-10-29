@@ -67,13 +67,13 @@
     <path class="vx-link vx-link-vertical-diagonal" d="M85,960C85,873,85,873,85,786" style="stroke:#C7CBCD;stroke-width:6"></path>
   </g>
   <g>
-    <title>result: DataFrame</title>
-    <rect x="70" y="768" width="123.12" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+    <title>result: PySparkDataFrame</title>
+    <rect x="70" y="768" width="183.88" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
       <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
-      <rect width="86.12" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="78.12" dominant-baseline="hanging">DataFrame</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="78.12" dominant-baseline="hanging">DataFrame</text>
+      <rect width="146.88" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text>
     </rect>
     <ellipse cx="85" cy="786" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
-    <rect x="99" y="772.5" width="86.12" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="78.12" dominant-baseline="hanging">DataFrame</text></rect><text fill="#222" x="103" y="779" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="78.12" dominant-baseline="hanging">DataFrame</text>
+    <rect x="99" y="772.5" width="146.88" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text></rect><text fill="#222" x="103" y="779" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text>
   </g>
   <g opacity="0.2">
     <g>
@@ -119,13 +119,13 @@
       <rect x="314.88" y="616.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="318.88" y="623" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
     </g>
     <g>
-      <title>result: DataFrame</title>
-      <rect x="140" y="708" width="123.12" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
+      <title>result: PySparkDataFrame</title>
+      <rect x="140" y="708" width="183.88" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
         <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
-        <rect width="86.12" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="78.12" dominant-baseline="hanging">DataFrame</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="78.12" dominant-baseline="hanging">DataFrame</text>
+        <rect width="146.88" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text>
       </rect>
       <ellipse cx="155" cy="726" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
-      <rect x="169" y="712.5" width="86.12" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="78.12" dominant-baseline="hanging">DataFrame</text></rect><text fill="#222" x="173" y="719" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="78.12" dominant-baseline="hanging">DataFrame</text>
+      <rect x="169" y="712.5" width="146.88" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text></rect><text fill="#222" x="173" y="719" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text>
     </g>
   </g>
   <g>

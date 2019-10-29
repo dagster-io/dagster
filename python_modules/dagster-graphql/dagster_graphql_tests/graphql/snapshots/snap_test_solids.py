@@ -7,7 +7,7 @@ from snapshottest import Snapshot
 snapshots = Snapshot()
 
 snapshots['test_query_all_solids 1'] = {
-    'solids': [
+    'usedSolids': [
         {
             '__typename': 'UsedSolid',
             'definition': {
@@ -27,7 +27,7 @@ snapshots['test_query_all_solids 1'] = {
                         'name': 'composites_pipeline'
                     },
                     'solidHandle': {
-                        'handleID': 'add_four.adder_1'
+                        'handleID': 'add_four.adder_1.adder_2'
                     }
                 },
                 {
@@ -37,22 +37,6 @@ snapshots['test_query_all_solids 1'] = {
                     'solidHandle': {
                         'handleID': 'add_four.adder_2.adder_1'
                     }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'add_one'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'composites_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'add_four.adder_1.adder_2'
-                    }
                 },
                 {
                     'pipeline': {
@@ -60,14 +44,6 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     'solidHandle': {
                         'handleID': 'add_four.adder_2.adder_2'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'composites_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'add_four.adder_2'
                     }
                 }
             ]
@@ -83,111 +59,7 @@ snapshots['test_query_all_solids 1'] = {
                         'name': 'composites_pipeline'
                     },
                     'solidHandle': {
-                        'handleID': 'add_four.adder_1.adder_1'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'composites_pipeline'
-                    },
-                    'solidHandle': {
                         'handleID': 'add_four.adder_1'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'composites_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'add_four.adder_2.adder_1'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'add_one'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'composites_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'add_four.adder_1.adder_1'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'composites_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'add_four.adder_1'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'composites_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'add_four.adder_2.adder_1'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'add_one'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'composites_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'add_four.adder_1.adder_2'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'composites_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'add_four.adder_2.adder_2'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'composites_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'add_four.adder_2'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'add_two'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'composites_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'add_four.adder_1.adder_2'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'composites_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'add_four.adder_2.adder_2'
                     }
                 },
                 {
@@ -229,15 +101,7 @@ snapshots['test_query_all_solids 1'] = {
                     'solidHandle': {
                         'handleID': 'div_four.div_1'
                     }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'div_two'
-            },
-            'invocations': [
+                },
                 {
                     'pipeline': {
                         'name': 'composites_pipeline'
@@ -267,38 +131,6 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
-                'name': 'sum_sq_solid'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_sq_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_df_input'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_sq_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_with_expectations'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_sq_solid'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
                 'name': 'sum_solid'
             },
             'invocations': [
@@ -364,86 +196,6 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     'solidHandle': {
                         'handleID': 'sum_sq_solid'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'sum_solid'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_df_input'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_two'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_with_expectations'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_solid'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'sum_solid'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_df_input'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_two'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_with_expectations'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_solid'
                     }
                 }
             ]
@@ -460,78 +212,6 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     'solidHandle': {
                         'handleID': 'df_expectations_solid'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'sum_solid'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_df_input'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_two'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_with_expectations'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_solid'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'sum_sq_solid'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_sq_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_df_input'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_sq_solid'
-                    }
-                },
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_with_expectations'
-                    },
-                    'solidHandle': {
-                        'handleID': 'sum_sq_solid'
                     }
                 }
             ]
@@ -699,7 +379,7 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
-                'name': 'emit_successful_expectation'
+                'name': 'emit_failed_expectation'
             },
             'invocations': [
                 {
@@ -707,7 +387,7 @@ snapshots['test_query_all_solids 1'] = {
                         'name': 'pipeline_with_expectations'
                     },
                     'solidHandle': {
-                        'handleID': 'emit_successful_expectation'
+                        'handleID': 'emit_failed_expectation'
                     }
                 }
             ]
@@ -731,7 +411,7 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
-                'name': 'emit_failed_expectation'
+                'name': 'emit_successful_expectation'
             },
             'invocations': [
                 {
@@ -739,7 +419,7 @@ snapshots['test_query_all_solids 1'] = {
                         'name': 'pipeline_with_expectations'
                     },
                     'solidHandle': {
-                        'handleID': 'emit_failed_expectation'
+                        'handleID': 'emit_successful_expectation'
                     }
                 }
             ]
@@ -795,7 +475,7 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
-                'name': 'return_int'
+                'name': 'return_any'
             },
             'invocations': [
                 {
@@ -803,7 +483,7 @@ snapshots['test_query_all_solids 1'] = {
                         'name': 'scalar_output_pipeline'
                     },
                     'solidHandle': {
-                        'handleID': 'return_int'
+                        'handleID': 'return_any'
                     }
                 }
             ]
@@ -843,7 +523,7 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
-                'name': 'return_any'
+                'name': 'return_int'
             },
             'invocations': [
                 {
@@ -851,7 +531,7 @@ snapshots['test_query_all_solids 1'] = {
                         'name': 'scalar_output_pipeline'
                     },
                     'solidHandle': {
-                        'handleID': 'return_any'
+                        'handleID': 'return_int'
                     }
                 }
             ]

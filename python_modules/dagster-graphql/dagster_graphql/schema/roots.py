@@ -1,4 +1,5 @@
 from collections import defaultdict
+
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.environment_schema import (
     resolve_config_type_or_error,
@@ -92,7 +93,7 @@ class DauphinQuery(dauphin.ObjectType):
 
     pipelineRunTags = dauphin.non_null_list('PipelineTagAndValues')
 
-    solids = dauphin.Field(dauphin.non_null_list('UsedSolid'))
+    usedSolids = dauphin.Field(dauphin.non_null_list('UsedSolid'))
 
     isPipelineConfigValid = dauphin.Field(
         dauphin.NonNull('PipelineConfigValidationResult'),
@@ -174,7 +175,7 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_pipelineRunTags(self, graphene_info):
         return get_run_tags(graphene_info)
 
-    def resolve_solids(self, graphene_info):
+    def resolve_usedSolids(self, graphene_info):
         repository = graphene_info.context.repository_definition
         inv_by_def_name = defaultdict(list)
         definitions = []

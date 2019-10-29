@@ -10,7 +10,7 @@ import styled from "styled-components";
 import { SolidCard } from "./SolidCard";
 import {
   SolidsRootQuery,
-  SolidsRootQuery_solids
+  SolidsRootQuery_usedSolids
 } from "./types/SolidsRootQuery";
 import { SplitPanelChildren } from "../SplitPanelChildren";
 import { Colors, NonIdealState } from "@blueprintjs/core";
@@ -35,7 +35,7 @@ function flatUniq(arrs: string[][]) {
 }
 
 function searchSuggestionsForSolids(
-  solids: SolidsRootQuery_solids[]
+  solids: SolidsRootQuery_usedSolids[]
 ): SuggestionProvider[] {
   return [
     {
@@ -69,7 +69,7 @@ function searchSuggestionsForSolids(
 }
 
 function filterSolidsWithSearch(
-  solids: SolidsRootQuery_solids[],
+  solids: SolidsRootQuery_usedSolids[],
   search: TokenizingFieldValue[]
 ) {
   return solids.filter(s => {
@@ -113,20 +113,24 @@ export const SolidsRoot: React.FunctionComponent<
   const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY);
   return (
     <Loading queryResult={queryResult}>
-      {({ solids }) => <SolidsRootWithData solids={solids} route={route} />}
+      {({ usedSolids }) => (
+        <SolidsRootWithData usedSolids={usedSolids} route={route} />
+      )}
     </Loading>
   );
 };
 
 const SolidsRootWithData: React.FunctionComponent<{
   route: RouteComponentProps;
-  solids: SolidsRootQuery_solids[];
-}> = ({ route: { location, match, history }, solids }) => {
+  usedSolids: SolidsRootQuery_usedSolids[];
+}> = ({ route: { location, match, history }, usedSolids }) => {
   const { q, typeExplorer } = querystring.parse(location.search);
-  const suggestions = searchSuggestionsForSolids(solids);
+  const suggestions = searchSuggestionsForSolids(usedSolids);
   const search = tokenizedValuesFromString((q as string) || "", suggestions);
-  const selected = solids.find(s => s.definition.name === match.params["name"]);
-  const filtered = filterSolidsWithSearch(solids, search);
+  const filtered = filterSolidsWithSearch(usedSolids, search);
+  const selected = usedSolids.find(
+    s => s.definition.name === match.params["name"]
+  );
 
   const onSearch = (search: TokenizingFieldValue[]) => {
     history.push({
@@ -229,7 +233,7 @@ const SolidsRootWithData: React.FunctionComponent<{
 
 export const SOLIDS_ROOT_QUERY = gql`
   query SolidsRootQuery {
-    solids {
+    usedSolids {
       __typename
       definition {
         ...SolidCardSolidDefinitionFragment
