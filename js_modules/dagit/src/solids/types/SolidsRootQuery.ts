@@ -314,13 +314,13 @@ export interface SolidsRootQuery_solids_invocations_solidHandle {
 }
 
 export interface SolidsRootQuery_solids_invocations {
-  __typename: "SolidUsageInvocation";
+  __typename: "SolidInvocationSite";
   pipeline: SolidsRootQuery_solids_invocations_pipeline;
   solidHandle: SolidsRootQuery_solids_invocations_solidHandle;
 }
 
 export interface SolidsRootQuery_solids {
-  __typename: "SolidUsage";
+  __typename: "UsedSolid";
   definition: SolidsRootQuery_solids_definition;
   invocations: SolidsRootQuery_solids_invocations[];
 }

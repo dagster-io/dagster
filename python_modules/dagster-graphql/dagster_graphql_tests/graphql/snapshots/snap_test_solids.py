@@ -9,7 +9,7 @@ snapshots = Snapshot()
 snapshots['test_query_all_solids 1'] = {
     'solids': [
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'add_one'
             },
@@ -41,7 +41,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'add_one'
             },
@@ -73,7 +73,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'add_two'
             },
@@ -105,7 +105,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'add_one'
             },
@@ -137,7 +137,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'add_one'
             },
@@ -169,7 +169,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'add_two'
             },
@@ -201,7 +201,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'add_four'
             },
@@ -217,7 +217,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'div_two'
             },
@@ -233,7 +233,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'div_two'
             },
@@ -249,7 +249,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'div_four'
             },
@@ -265,7 +265,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'sum_sq_solid'
             },
@@ -297,7 +297,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'sum_solid'
             },
@@ -337,7 +337,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'sum_sq_solid'
             },
@@ -369,7 +369,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'sum_solid'
             },
@@ -409,7 +409,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'sum_solid'
             },
@@ -449,7 +449,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'df_expectations_solid'
             },
@@ -465,7 +465,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'sum_solid'
             },
@@ -505,7 +505,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'sum_sq_solid'
             },
@@ -537,7 +537,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'loop'
             },
@@ -553,7 +553,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'materialize'
             },
@@ -569,7 +569,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'a_solid_with_three_field_config'
             },
@@ -585,7 +585,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'a_solid_with_multilayered_config'
             },
@@ -601,7 +601,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'return_six'
             },
@@ -617,7 +617,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'apply_to_three'
             },
@@ -633,7 +633,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'throw_a_thing'
             },
@@ -649,7 +649,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'return_hello'
             },
@@ -665,7 +665,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'noop_solid'
             },
@@ -681,7 +681,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'takes_an_enum'
             },
@@ -697,7 +697,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'emit_successful_expectation'
             },
@@ -713,7 +713,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'emit_successful_expectation_no_metadata'
             },
@@ -729,7 +729,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'emit_failed_expectation'
             },
@@ -745,7 +745,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'solid_with_list'
             },
@@ -761,7 +761,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'solid_metadata_creation'
             },
@@ -777,7 +777,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'solid_with_required_resource'
             },
@@ -793,7 +793,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'return_int'
             },
@@ -809,7 +809,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'return_bool'
             },
@@ -825,7 +825,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'return_str'
             },
@@ -841,7 +841,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'return_any'
             },
@@ -857,7 +857,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'solid_with_secret'
             },
@@ -873,7 +873,7 @@ snapshots['test_query_all_solids 1'] = {
             ]
         },
         {
-            '__typename': 'SolidUsage',
+            '__typename': 'UsedSolid',
             'definition': {
                 'name': 'spew'
             },

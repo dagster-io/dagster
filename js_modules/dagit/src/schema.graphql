@@ -822,7 +822,7 @@ type Query {
   pipelineRunsOrError(filter: PipelineRunsFilter!, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!
-  solids: [SolidUsage!]!
+  solids: [UsedSolid!]!
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
   environmentSchemaOrError(selector: ExecutionSelector!, mode: String): EnvironmentSchemaOrError!
@@ -985,12 +985,12 @@ type SolidHandle {
   parent: SolidHandle
 }
 
-type SolidUsage {
+type UsedSolid {
   definition: ISolidDefinition!
-  invocations: [SolidUsageInvocation!]!
+  invocations: [SolidInvocationSite!]!
 }
 
-type SolidUsageInvocation {
+type SolidInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
 }

@@ -111,10 +111,6 @@ export class SidebarSolidDefinition extends React.Component<
     `
   };
 
-  state = {
-    showingAllInvocations: false
-  };
-
   public render() {
     const {
       definition,
@@ -122,7 +118,6 @@ export class SidebarSolidDefinition extends React.Component<
       showingSubsolids,
       onClickInvocation
     } = this.props;
-    const { showingAllInvocations } = this.state;
     const Plugin = pluginForMetadata(definition.metadata);
     const isComposite = definition.__typename === "CompositeSolidDefinition";
     const configDefinition =
@@ -156,6 +151,7 @@ export class SidebarSolidDefinition extends React.Component<
     const hasRequiredResources = !!(
       definition.requiredResources && definition.requiredResources.length
     );
+
     return (
       <div>
         <SidebarSection title={"Definition"}>
@@ -226,28 +222,40 @@ export class SidebarSolidDefinition extends React.Component<
         </SidebarSection>
         {definitionInvocations && (
           <SidebarSection title={"All Invocations"}>
-            {(showingAllInvocations
-              ? definitionInvocations
-              : definitionInvocations.slice(0, DEFAULT_INVOCATIONS_SHOWN)
-            ).map((invocation, idx) => (
-              <Invocation
-                key={idx}
-                invocation={invocation}
-                onClick={() => onClickInvocation(invocation)}
-              />
-            ))}
-            {definitionInvocations.length > DEFAULT_INVOCATIONS_SHOWN &&
-              !showingAllInvocations && (
-                <ShowAllButton
-                  onClick={() => this.setState({ showingAllInvocations: true })}
-                >
-                  {`Show ${definitionInvocations.length -
-                    DEFAULT_INVOCATIONS_SHOWN} More Invocations`}
-                </ShowAllButton>
-              )}
+            <InvocationList
+              invocations={definitionInvocations}
+              onClickInvocation={onClickInvocation}
+            />
           </SidebarSection>
         )}
       </div>
     );
   }
 }
+
+const InvocationList: React.FunctionComponent<{
+  invocations: SidebarSolidInvocationInfo[];
+  onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
+}> = ({ invocations, onClickInvocation }) => {
+  const [showAll, setShowAll] = React.useState<boolean>(false);
+  const displayed = showAll
+    ? invocations
+    : invocations.slice(0, DEFAULT_INVOCATIONS_SHOWN);
+
+  return (
+    <>
+      {displayed.map((invocation, idx) => (
+        <Invocation
+          key={idx}
+          invocation={invocation}
+          onClick={() => onClickInvocation(invocation)}
+        />
+      ))}
+      {displayed.length < invocations.length && (
+        <ShowAllButton onClick={() => setShowAll(true)}>
+          {`Show ${invocations.length - displayed.length} More Invocations`}
+        </ShowAllButton>
+      )}
+    </>
+  );
+};

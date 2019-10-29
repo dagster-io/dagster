@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.environment_schema import (
     resolve_config_type_or_error,
@@ -91,7 +92,7 @@ class DauphinQuery(dauphin.ObjectType):
 
     pipelineRunTags = dauphin.non_null_list('PipelineTagAndValues')
 
-    solids = dauphin.Field(dauphin.non_null_list('SolidUsage'))
+    solids = dauphin.Field(dauphin.non_null_list('UsedSolid'))
 
     isPipelineConfigValid = dauphin.Field(
         dauphin.NonNull('PipelineConfigValidationResult'),
@@ -175,27 +176,22 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_solids(self, graphene_info):
         repository = graphene_info.context.repository_definition
-        inv_by_def_name = dict()
+        inv_by_def_name = defaultdict(list)
         definitions = []
 
         for pipeline in repository.get_all_pipelines():
             for handle in build_dauphin_solid_handles(pipeline):
                 definition = handle.solid.resolve_definition(graphene_info)
                 if definition.name not in inv_by_def_name:
-                    inv_by_def_name[definition.name] = []
                     definitions.append(definition)
                 inv_by_def_name[definition.name].append(
-                    DauphinSolidUsageInvocation(pipeline=pipeline, solidHandle=handle)
+                    DauphinSolidInvocationSite(pipeline=pipeline, solidHandle=handle)
                 )
 
-        results = []
-        for definition in definitions:
-            results.append(
-                DauphinSolidUsage(
-                    definition=definition, invocations=inv_by_def_name[definition.name]
-                )
-            )
-        return results
+        return map(
+            lambda d: DauphinUsedSolid(definition=d, invocations=inv_by_def_name[d.name]),
+            definitions,
+        )
 
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, **kwargs):
         return validate_pipeline_config(
@@ -577,18 +573,18 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
         )
 
 
-class DauphinSolidUsage(dauphin.ObjectType):
+class DauphinUsedSolid(dauphin.ObjectType):
     class Meta:
-        name = 'SolidUsage'
+        name = 'UsedSolid'
         description = '''A solid definition and it's invocations within the repo.'''
 
     definition = dauphin.NonNull('ISolidDefinition')
-    invocations = dauphin.non_null_list('SolidUsageInvocation')
+    invocations = dauphin.non_null_list('SolidInvocationSite')
 
 
-class DauphinSolidUsageInvocation(dauphin.ObjectType):
+class DauphinSolidInvocationSite(dauphin.ObjectType):
     class Meta:
-        name = 'SolidUsageInvocation'
+        name = 'SolidInvocationSite'
         description = '''An invocation of a solid within a repo.'''
 
     pipeline = dauphin.NonNull('Pipeline')

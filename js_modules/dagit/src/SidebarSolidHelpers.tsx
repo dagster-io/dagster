@@ -98,7 +98,9 @@ export const DependencyRow = ({
           <SolidLink {...from} />
         )}
       </td>
-      <td>{DependencyArrow}</td>
+      <td>
+        <img src={require("./images/icon-dependency-arrow.svg")} />
+      </td>
       <td
         style={{
           textOverflow: "ellipsis",
@@ -159,19 +161,3 @@ export const InvocationContainer = styled.div`
   }
   font-family: monospace;
 `;
-
-export const DependencyArrow = (
-  <svg width="36px" height="9px" viewBox="0 0 36 9" version="1.1">
-    <g opacity="0.682756696">
-      <g
-        transform="translate(-1127.000000, -300.000000)"
-        fill="#979797"
-        fillRule="nonzero"
-      >
-        <g transform="translate(120.000000, 200.000000)">
-          <path d="M1033.16987,105 L1007.67526,105 L1007.67526,104 L1033.16987,104 L1033.16987,100 L1042.16987,104.5 L1033.16987,109 L1033.16987,105 Z" />
-        </g>
-      </g>
-    </g>
-  </svg>
-);
