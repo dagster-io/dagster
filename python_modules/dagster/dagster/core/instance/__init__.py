@@ -292,11 +292,11 @@ class DagsterInstance:
     def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
         return self._run_storage.get_runs_with_pipeline_name(pipeline_name, cursor, limit)
 
-    def get_run_count_with_matching_tag(self, key, value):
-        return self._run_storage.get_run_count_with_matching_tag(key, value)
+    def get_run_count_with_matching_tags(self, tags):
+        return self._run_storage.get_run_count_with_matching_tags(tags)
 
-    def get_runs_with_matching_tag(self, key, value, cursor=None, limit=None):
-        return self._run_storage.get_runs_with_matching_tag(key, value, cursor, limit)
+    def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
+        return self._run_storage.get_runs_with_matching_tags(tags, cursor, limit)
 
     def get_runs_with_status(self, run_status, cursor=None, limit=None):
         return self._run_storage.get_runs_with_status(run_status, cursor, limit)

@@ -42,24 +42,21 @@ class RunStorage(six.with_metaclass(ABCMeta)):
         '''
 
     @abstractmethod
-    def get_run_count_with_matching_tag(self, key, value):
-        '''Return then number runs present in the storage that have a tag with key, value
+    def get_run_count_with_matching_tags(self, tags):
+        '''Return then number runs present in the storage that have the given tags
 
         Args:
-            key (str): The key to index on
-            value (str): The value to match
+            tags (List[Tuple[str, str]]): List of (key, value) tags
 
         Returns:
             int
         '''
 
-    @abstractmethod
-    def get_runs_with_matching_tag(self, key, value, cursor=None, limit=None):
-        '''Return all the runs present in the storage that have a tag with key, value
+    def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
+        '''Return all the runs present in the storage that have the given tags
 
         Args:
-            key (str): The key to index on
-            value (str): The value to match
+            tags (List[Tuple[str, str]]): List of (key, value) tags
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
 
