@@ -11,6 +11,54 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
+                'name': 'a_solid_with_multilayered_config'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'more_complicated_nested_config'
+                    },
+                    'solidHandle': {
+                        'handleID': 'a_solid_with_multilayered_config'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'a_solid_with_three_field_config'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'more_complicated_config'
+                    },
+                    'solidHandle': {
+                        'handleID': 'a_solid_with_three_field_config'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'add_four'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'composites_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'add_four'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
                 'name': 'add_one'
             },
             'invocations': [
@@ -27,7 +75,7 @@ snapshots['test_query_all_solids 1'] = {
                         'name': 'composites_pipeline'
                     },
                     'solidHandle': {
-                        'handleID': 'add_four.adder_1.adder_2'
+                        'handleID': 'add_four.adder_2.adder_1'
                     }
                 },
                 {
@@ -35,7 +83,7 @@ snapshots['test_query_all_solids 1'] = {
                         'name': 'composites_pipeline'
                     },
                     'solidHandle': {
-                        'handleID': 'add_four.adder_2.adder_1'
+                        'handleID': 'add_four.adder_1.adder_2'
                     }
                 },
                 {
@@ -75,7 +123,39 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
-                'name': 'add_four'
+                'name': 'apply_to_three'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'multi_mode_with_resources'
+                    },
+                    'solidHandle': {
+                        'handleID': 'apply_to_three'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'df_expectations_solid'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'csv_hello_world_with_expectations'
+                    },
+                    'solidHandle': {
+                        'handleID': 'df_expectations_solid'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'div_four'
             },
             'invocations': [
                 {
@@ -83,7 +163,7 @@ snapshots['test_query_all_solids 1'] = {
                         'name': 'composites_pipeline'
                     },
                     'solidHandle': {
-                        'handleID': 'add_four'
+                        'handleID': 'div_four'
                     }
                 }
             ]
@@ -115,15 +195,271 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
-                'name': 'div_four'
+                'name': 'emit_failed_expectation'
             },
             'invocations': [
                 {
                     'pipeline': {
-                        'name': 'composites_pipeline'
+                        'name': 'pipeline_with_expectations'
                     },
                     'solidHandle': {
-                        'handleID': 'div_four'
+                        'handleID': 'emit_failed_expectation'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'emit_successful_expectation'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'pipeline_with_expectations'
+                    },
+                    'solidHandle': {
+                        'handleID': 'emit_successful_expectation'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'emit_successful_expectation_no_metadata'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'pipeline_with_expectations'
+                    },
+                    'solidHandle': {
+                        'handleID': 'emit_successful_expectation_no_metadata'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'loop'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'infinite_loop_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'loop'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'materialize'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'materialization_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'materialize'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'noop_solid'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'noop_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'noop_solid'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'return_any'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'scalar_output_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'return_any'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'return_bool'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'scalar_output_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'return_bool'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'return_hello'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'no_config_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'return_hello'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'return_int'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'scalar_output_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'return_int'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'return_six'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'multi_mode_with_loggers'
+                    },
+                    'solidHandle': {
+                        'handleID': 'return_six'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'return_str'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'scalar_output_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'return_str'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'solid_metadata_creation'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'pipeline_with_step_metadata'
+                    },
+                    'solidHandle': {
+                        'handleID': 'solid_metadata_creation'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'solid_with_list'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'pipeline_with_list'
+                    },
+                    'solidHandle': {
+                        'handleID': 'solid_with_list'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'solid_with_required_resource'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'required_resource_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'solid_with_required_resource'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'solid_with_secret'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'secret_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'solid_with_secret'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'spew'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'spew_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'spew'
                     }
                 }
             ]
@@ -203,166 +539,6 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
-                'name': 'df_expectations_solid'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'csv_hello_world_with_expectations'
-                    },
-                    'solidHandle': {
-                        'handleID': 'df_expectations_solid'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'loop'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'infinite_loop_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'loop'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'materialize'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'materialization_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'materialize'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'a_solid_with_three_field_config'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'more_complicated_config'
-                    },
-                    'solidHandle': {
-                        'handleID': 'a_solid_with_three_field_config'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'a_solid_with_multilayered_config'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'more_complicated_nested_config'
-                    },
-                    'solidHandle': {
-                        'handleID': 'a_solid_with_multilayered_config'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'return_six'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'multi_mode_with_loggers'
-                    },
-                    'solidHandle': {
-                        'handleID': 'return_six'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'apply_to_three'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'multi_mode_with_resources'
-                    },
-                    'solidHandle': {
-                        'handleID': 'apply_to_three'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'throw_a_thing'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'naughty_programmer_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'throw_a_thing'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'return_hello'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'no_config_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'return_hello'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'noop_solid'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'noop_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'noop_solid'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
                 'name': 'takes_an_enum'
             },
             'invocations': [
@@ -379,191 +555,15 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
-                'name': 'emit_failed_expectation'
+                'name': 'throw_a_thing'
             },
             'invocations': [
                 {
                     'pipeline': {
-                        'name': 'pipeline_with_expectations'
+                        'name': 'naughty_programmer_pipeline'
                     },
                     'solidHandle': {
-                        'handleID': 'emit_failed_expectation'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'emit_successful_expectation_no_metadata'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'pipeline_with_expectations'
-                    },
-                    'solidHandle': {
-                        'handleID': 'emit_successful_expectation_no_metadata'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'emit_successful_expectation'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'pipeline_with_expectations'
-                    },
-                    'solidHandle': {
-                        'handleID': 'emit_successful_expectation'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'solid_with_list'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'pipeline_with_list'
-                    },
-                    'solidHandle': {
-                        'handleID': 'solid_with_list'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'solid_metadata_creation'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'pipeline_with_step_metadata'
-                    },
-                    'solidHandle': {
-                        'handleID': 'solid_metadata_creation'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'solid_with_required_resource'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'required_resource_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'solid_with_required_resource'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'return_any'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'scalar_output_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'return_any'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'return_bool'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'scalar_output_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'return_bool'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'return_str'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'scalar_output_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'return_str'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'return_int'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'scalar_output_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'return_int'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'solid_with_secret'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'secret_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'solid_with_secret'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
-                'name': 'spew'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'spew_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'spew'
+                        'handleID': 'throw_a_thing'
                     }
                 }
             ]

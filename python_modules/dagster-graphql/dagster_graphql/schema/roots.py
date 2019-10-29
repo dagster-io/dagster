@@ -190,8 +190,11 @@ class DauphinQuery(dauphin.ObjectType):
                 )
 
         return map(
-            lambda d: DauphinUsedSolid(definition=d, invocations=inv_by_def_name[d.name]),
-            definitions,
+            lambda d: DauphinUsedSolid(
+                definition=d,
+                invocations=sorted(inv_by_def_name[d.name], key=lambda i: i.solidHandle.handleID),
+            ),
+            sorted(definitions, key=lambda d: d.name),
         )
 
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, **kwargs):
