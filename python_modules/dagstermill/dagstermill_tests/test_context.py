@@ -18,7 +18,7 @@ def test_tags():
 
 def test_run_id():
     assert BARE_OUT_OF_PIPELINE_CONTEXT.run_id is not None
-    assert BARE_OUT_OF_PIPELINE_CONTEXT.run_config.run_id == BARE_OUT_OF_PIPELINE_CONTEXT.run_id
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_run.run_id == BARE_OUT_OF_PIPELINE_CONTEXT.run_id
 
 
 def test_environment_dict():

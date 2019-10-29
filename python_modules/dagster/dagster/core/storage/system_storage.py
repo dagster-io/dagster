@@ -13,7 +13,7 @@ def create_mem_system_storage_data(init_context):
     return SystemStorageData(
         intermediates_manager=InMemoryIntermediatesManager(),
         file_manager=LocalFileManager.for_instance(
-            init_context.instance, init_context.run_config.run_id
+            init_context.instance, init_context.pipeline_run.run_id
         ),
     )
 
@@ -32,16 +32,16 @@ def fs_system_storage(init_context):
         file_manager = LocalFileManager(override_dir)
         intermediate_store = build_fs_intermediate_store(
             root_for_run_id=lambda _: override_dir,
-            run_id=init_context.run_config.run_id,
+            run_id=init_context.pipeline_run.run_id,
             type_storage_plugin_registry=init_context.type_storage_plugin_registry,
         )
     else:
         file_manager = LocalFileManager.for_instance(
-            init_context.instance, init_context.run_config.run_id
+            init_context.instance, init_context.pipeline_run.run_id
         )
         intermediate_store = build_fs_intermediate_store(
             init_context.instance.intermediates_directory,
-            run_id=init_context.run_config.run_id,
+            run_id=init_context.pipeline_run.run_id,
             type_storage_plugin_registry=init_context.type_storage_plugin_registry,
         )
 

@@ -7,7 +7,7 @@ RESERVED_INPUT_NAMES = [
     '__dm_dagstermill',
     '__dm_handle_kwargs',
     '__dm_json',
-    '__dm_run_config_kwargs',
+    '__dm_pipeline_run_dict',
     '__dm_solid_handle_kwargs',
     '__dm_solid_subset',
     '__dm_instance_ref_dict',
@@ -17,7 +17,7 @@ INJECTED_BOILERPLATE = '''
 # Injected parameters
 from dagster import seven as __dm_seven
 import dagstermill as __dm_dagstermill
-context = __dm_dagstermill._reconstitute_pipeline_context(**__dm_seven.json.loads('{pipeline_context_args}'));
+context = __dm_dagstermill._reconstitute_pipeline_context(**__dm_seven.json.loads('{pipeline_context_args}'))
 '''
 
 
@@ -26,7 +26,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
     def codify(cls, parameters):
         assert '__dm_context' in parameters
         assert '__dm_handle_kwargs' in parameters
-        assert '__dm_run_config_kwargs' in parameters
+        assert '__dm_pipeline_run_dict' in parameters
         assert '__dm_solid_handle_kwargs' in parameters
         assert '__dm_solid_subset' in parameters
         assert '__dm_instance_ref_dict' in parameters
@@ -34,7 +34,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
         context_args = parameters['__dm_context']
         pipeline_context_args = dict(
             handle_kwargs=parameters['__dm_handle_kwargs'],
-            run_config_kwargs=parameters['__dm_run_config_kwargs'],
+            pipeline_run_dict=parameters['__dm_pipeline_run_dict'],
             solid_handle_kwargs=parameters['__dm_solid_handle_kwargs'],
             solid_subset=parameters['__dm_solid_subset'],
             instance_ref_dict=parameters['__dm_instance_ref_dict'],

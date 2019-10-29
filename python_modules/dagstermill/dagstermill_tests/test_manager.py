@@ -21,6 +21,7 @@ from dagster import (
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.serdes import pack_value
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.utils import safe_tempfile_path
 
 
@@ -29,6 +30,7 @@ def in_pipeline_manager(
     pipeline_name='hello_world_pipeline',
     solid_handle=SolidHandle('hello_world', 'hello_world', None),
     handle_kwargs=None,
+    mode=None,
     **kwargs
 ):
     manager = Manager()
@@ -44,10 +46,23 @@ def in_pipeline_manager(
             'fn_name': 'define_hello_world_pipeline',
         }
 
+    pipeline_run_dict = pack_value(
+        PipelineRun(
+            pipeline_name=pipeline_name,
+            run_id=run_id,
+            mode=mode or 'default',
+            environment_dict=None,
+            selector=None,
+            reexecution_config=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
+    )
+
     try:
         with safe_tempfile_path() as output_log_file_path:
             context_dict = {
-                'run_config_kwargs': dict(run_id=run_id, mode='default'),
+                'pipeline_run_dict': pipeline_run_dict,
                 'solid_handle_kwargs': solid_handle._asdict(),
                 'handle_kwargs': handle_kwargs,
                 'marshal_dir': marshal_dir,
@@ -175,7 +190,7 @@ def test_in_pipeline_manager_with_resources():
             },
             solid_handle=SolidHandle('hello_world_resource', 'hello_world_resource', None),
             environment_dict={'resources': {'list': {'config': path}}},
-            run_config_kwargs=dict(mode='prod'),
+            mode='prod',
         ) as manager:
             assert len(manager.context.resources._asdict()) == 1
 

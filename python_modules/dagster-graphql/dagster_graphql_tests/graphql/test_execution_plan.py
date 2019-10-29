@@ -160,6 +160,7 @@ def test_success_whole_execution_plan(snapshot):
 def test_success_whole_execution_plan_with_filesystem_config(snapshot):
     run_id = str(uuid.uuid4())
     instance = DagsterInstance.ephemeral()
+    instance.create_empty_run(run_id, 'csv_hello_world')
     result = execute_dagster_graphql(
         define_context(instance=instance),
         EXECUTE_PLAN_QUERY,
@@ -198,6 +199,7 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
 def test_success_whole_execution_plan_with_in_memory_config(snapshot):
     run_id = str(uuid.uuid4())
     instance = DagsterInstance.ephemeral()
+    instance.create_empty_run(run_id, 'csv_hello_world')
     result = execute_dagster_graphql(
         define_context(instance=instance),
         EXECUTE_PLAN_QUERY,
@@ -236,6 +238,8 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
 def test_successful_one_part_execute_plan(snapshot):
     run_id = str(uuid.uuid4())
     instance = DagsterInstance.ephemeral()
+    instance.create_empty_run(run_id, 'csv_hello_world')
+
     result = execute_dagster_graphql(
         define_context(instance=instance),
         EXECUTE_PLAN_QUERY,
@@ -479,8 +483,10 @@ def test_basic_execute_plan_with_materialization():
             }
         }
 
+        instance = DagsterInstance.ephemeral()
+
         result = execute_dagster_graphql(
-            define_context(),
+            define_context(instance=instance),
             EXECUTION_PLAN_QUERY,
             variables={
                 'pipeline': {'name': 'csv_hello_world'},
@@ -496,15 +502,18 @@ def test_basic_execute_plan_with_materialization():
             'sum_sq_solid.compute',
         ]
 
+        run_id = str(uuid.uuid4())
+        instance.create_empty_run(run_id, 'csv_hello_world')
+
         result = execute_dagster_graphql(
-            define_context(),
+            define_context(instance=instance),
             EXECUTE_PLAN_QUERY,
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
                     'environmentConfigData': environment_dict,
                     'stepKeys': ['sum_solid.compute', 'sum_sq_solid.compute'],
-                    'executionMetadata': {'runId': 'kdjkfjdfd'},
+                    'executionMetadata': {'runId': run_id},
                     'mode': 'default',
                 }
             },

@@ -3,7 +3,7 @@ import os
 from dagster import check
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster.core.execution.config import MultiprocessExecutorConfig, RunConfig
+from dagster.core.execution.config import MultiprocessExecutorConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
@@ -14,27 +14,24 @@ from .engine_base import IEngine
 
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
-    def __init__(self, environment_dict, run_config, executor_config, step_key, instance_ref):
+    def __init__(self, environment_dict, pipeline_run, executor_config, step_key, instance_ref):
         self.environment_dict = environment_dict
         self.executor_config = executor_config
-        self.run_config = run_config
+        self.pipeline_run = pipeline_run
         self.step_key = step_key
         self.instance_ref = instance_ref
 
     def execute(self):
-
         check.inst(self.executor_config, MultiprocessExecutorConfig)
         pipeline_def = self.executor_config.handle.build_pipeline_definition()
-
-        run_config = self.run_config.with_tags(pid=str(os.getpid()))
-
         environment_dict = dict(self.environment_dict, execution={'in_process': {}})
-        execution_plan = create_execution_plan(pipeline_def, environment_dict, run_config)
+
+        execution_plan = create_execution_plan(pipeline_def, environment_dict, self.pipeline_run)
 
         for step_event in execute_plan_iterator(
             execution_plan,
-            environment_dict,
-            run_config,
+            self.pipeline_run,
+            environment_dict=environment_dict,
             step_keys_to_execute=[self.step_key],
             instance=DagsterInstance.from_ref(self.instance_ref),
         ):
@@ -42,17 +39,9 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
 
 
 def execute_step_out_of_process(step_context, step):
-    child_run_id = step_context.run_config.run_id
-
-    child_run_config = RunConfig(
-        run_id=child_run_id,
-        tags=step_context.run_config.tags,
-        step_keys_to_execute=step_context.run_config.step_keys_to_execute,
-        mode=step_context.run_config.mode,
-    )
     command = InProcessExecutorChildProcessCommand(
         step_context.environment_dict,
-        child_run_config,
+        step_context.pipeline_run,
         step_context.executor_config,
         step.key,
         step_context.instance.get_ref(),

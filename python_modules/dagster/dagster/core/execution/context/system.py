@@ -12,17 +12,16 @@ from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileManager
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.utils import merge_dicts
-
-from ..config import RunConfig
 
 
 class SystemPipelineExecutionContextData(
     namedtuple(
         '_SystemPipelineExecutionContextData',
         (
-            'run_config scoped_resources_builder environment_config pipeline_def '
+            'pipeline_run scoped_resources_builder environment_config pipeline_def '
             'mode_def system_storage_def instance intermediates_manager file_manager '
             'execution_target_handle executor_config raise_on_error'
         ),
@@ -35,7 +34,7 @@ class SystemPipelineExecutionContextData(
 
     def __new__(
         cls,
-        run_config,
+        pipeline_run,
         scoped_resources_builder,
         environment_config,
         pipeline_def,
@@ -56,7 +55,7 @@ class SystemPipelineExecutionContextData(
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
             cls,
-            run_config=check.inst_param(run_config, 'run_config', RunConfig),
+            pipeline_run=check.inst_param(pipeline_run, 'pipeline_run', PipelineRun),
             scoped_resources_builder=check.inst_param(
                 scoped_resources_builder, 'scoped_resources_builder', ScopedResourcesBuilder
             ),
@@ -82,7 +81,7 @@ class SystemPipelineExecutionContextData(
 
     @property
     def run_id(self):
-        return self.run_config.run_id
+        return self.pipeline_run.run_id
 
     @property
     def environment_dict(self):
@@ -117,7 +116,13 @@ class SystemPipelineExecutionContext(object):
 
     @property
     def run_config(self):
-        return self._pipeline_context_data.run_config
+        # backwards-compatability... should remove in 0.7.0
+        # https://github.com/dagster-io/dagster/issues/1874
+        return self._pipeline_context_data.pipeline_run
+
+    @property
+    def pipeline_run(self):
+        return self._pipeline_context_data.pipeline_run
 
     @property
     def scoped_resources_builder(self):

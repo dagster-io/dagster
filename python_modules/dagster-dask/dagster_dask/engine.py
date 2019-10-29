@@ -98,7 +98,7 @@ class DaskEngine(IEngine):  # pylint: disable=no-init
                             'selector': {'name': pipeline_name},
                             'environmentConfigData': environment_dict,
                             'mode': pipeline_context.mode_def.name,
-                            'executionMetadata': {'runId': pipeline_context.run_config.run_id},
+                            'executionMetadata': {'runId': pipeline_context.pipeline_run.run_id},
                             'stepKeys': [step.key],
                         }
                     }

@@ -4,7 +4,7 @@ import uuid
 import pytest
 
 from dagster import PipelineDefinition, RunConfig, execute_pipeline, solid
-from dagster.core.execution.config import EXECUTION_TIME_KEY
+from dagster.core.execution.api import EXECUTION_TIME_KEY
 
 EPS = 0.001
 

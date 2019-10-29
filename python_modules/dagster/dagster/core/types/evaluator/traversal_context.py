@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.definitions.environment_configs import is_solid_container_config
 from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.execution.config import RunConfig
+from dagster.core.execution.config import IRunConfig
 from dagster.core.types.field_utils import FieldImpl
 
 from ..config import ConfigType
@@ -25,7 +25,9 @@ class TraversalContext(
             config_value,  # arbitrary value, can't check
             check.inst_param(stack, 'stack', EvaluationStack),
             check.opt_inst_param(pipeline, 'pipeline', PipelineDefinition),
-            check.opt_inst_param(run_config, 'run_config', RunConfig),
+            check.opt_inst_param(
+                run_config, 'run_config', IRunConfig
+            ),  # Can be either RunConfig or PipelineRun
             check.opt_list_param(seen_handles, 'seen_handles'),
         )
 

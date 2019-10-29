@@ -74,9 +74,9 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return self._pipeline_context.scoped_resources_builder.build()
 
     @property
-    def run_config(self):
-        ''':class:`dagster.RunConfig`: The run config for the context.'''
-        return self._pipeline_context.run_config
+    def pipeline_run(self):
+        ''':class:`dagster.PipelineRun`: The pipeline run for the context.'''
+        return self._pipeline_context.pipeline_run
 
     @property
     def log(self):

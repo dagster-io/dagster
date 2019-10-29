@@ -38,7 +38,7 @@ def output_paths(context, start) -> List[String]:  # pylint: disable=unused-argu
 
 
 def events_dataproc_fn(context, cfg):
-    dt = datetime.datetime.fromtimestamp(context.run_config.tags['execution_epoch_time'])
+    dt = datetime.datetime.fromtimestamp(context.pipeline_run.tags['execution_epoch_time'])
 
     return {
         'dataproc_solid': {
@@ -94,7 +94,7 @@ def events_dataproc() -> List[String]:
 
 
 def bq_load_events_fn(context, cfg):
-    dt = datetime.datetime.fromtimestamp(context.run_config.tags['execution_epoch_time'])
+    dt = datetime.datetime.fromtimestamp(context.pipeline_run.tags['execution_epoch_time'])
 
     table = cfg.get('table')
 

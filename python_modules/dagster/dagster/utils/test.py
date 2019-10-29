@@ -27,6 +27,7 @@ from dagster.core.execution.context_creation_pipeline import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileManager
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.utility_solids import define_stub_solid
 
 # pylint: disable=unused-import
@@ -40,9 +41,7 @@ from .temp_file import (
 )
 
 
-def create_test_pipeline_execution_context(
-    logger_defs=None, scoped_resources_builder=None, tags=None
-):
+def create_test_pipeline_execution_context(logger_defs=None):
     run_id = str(uuid.uuid4())
     loggers = check.opt_dict_param(
         logger_defs, 'logger_defs', key_type=str, value_type=LoggerDefinition
@@ -51,19 +50,14 @@ def create_test_pipeline_execution_context(
     pipeline_def = PipelineDefinition(
         name='test_legacy_context', solid_defs=[], mode_defs=[mode_def]
     )
-    run_config = RunConfig(run_id, tags=tags)
     environment_dict = {'loggers': {key: {} for key in loggers}}
+    pipeline_run = PipelineRun.create_empty_run('test_legacy_context', run_id, environment_dict)
     instance = DagsterInstance.ephemeral()
     creation_data = create_context_creation_data(
-        pipeline_def, environment_dict, run_config, instance
+        pipeline_def, environment_dict, pipeline_run, instance
     )
     log_manager = create_log_manager(creation_data)
-    scoped_resources_builder = check.opt_inst_param(
-        scoped_resources_builder,
-        'scoped_resources_builder',
-        ScopedResourcesBuilder,
-        default=ScopedResourcesBuilder(),
-    )
+    scoped_resources_builder = ScopedResourcesBuilder()
     executor_config = create_executor_config(creation_data)
     return construct_pipeline_execution_context(
         context_creation_data=creation_data,
@@ -160,7 +154,7 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
     with scoped_pipeline_context(
         PipelineDefinition([]),
         {},
-        RunConfig(run_id=run_id),
+        PipelineRun.create_empty_run('empty', run_id=run_id),
         instance or DagsterInstance.ephemeral(),
     ) as context:
         yield context
