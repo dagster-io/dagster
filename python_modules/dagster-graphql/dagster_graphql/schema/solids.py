@@ -65,6 +65,16 @@ class ISolidDefinitionMixin:
         ]
 
 
+def build_dauphin_solid_definition(graphene_info, solid_definition):
+    if isinstance(solid_definition, SolidDefinition):
+        return graphene_info.schema.type_named('SolidDefinition')(solid_definition)
+
+    if isinstance(solid_definition, CompositeSolidDefinition):
+        return graphene_info.schema.type_named('CompositeSolidDefinition')(solid_definition)
+
+    check.failed('Unknown solid definition type {type}'.format(type=type(solid_definition)))
+
+
 class DauphinSolid(dauphin.ObjectType):
     class Meta:
         name = 'Solid'
@@ -98,17 +108,7 @@ class DauphinSolid(dauphin.ObjectType):
             self.depended_by = {}
 
     def resolve_definition(self, graphene_info):
-        if isinstance(self._solid.definition, SolidDefinition):
-            return graphene_info.schema.type_named('SolidDefinition')(self._solid.definition)
-
-        if isinstance(self._solid.definition, CompositeSolidDefinition):
-            return graphene_info.schema.type_named('CompositeSolidDefinition')(
-                self._solid.definition
-            )
-
-        check.invariant(
-            False, 'Unknown solid definition type {type}'.format(type=type(self._solid.definition))
-        )
+        return build_dauphin_solid_definition(graphene_info, self._solid.definition)
 
     def resolve_inputs(self, graphene_info):
         return [

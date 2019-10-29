@@ -39,6 +39,8 @@ async function testApp() {
     { createNodeMock }
   );
 
+  // wait for the graphql promises to settle. Usually one tick is enough for us,
+  // except when a query resolves and triggers another query lower in the tree.
   await new Promise(resolve => setTimeout(resolve, 1000));
 
   const tree = component.toJSON();
@@ -51,7 +53,7 @@ it("renders without error", async () => {
 
 it("renders pipeline page", async () => {
   beforeEach(() => {
-    window.history.pushState({}, "", "/p/pandas_hello_world/explore");
+    window.history.pushState({}, "", "/p/airline_demo_ingest_pipeline/explore");
   });
   await testApp();
 });
@@ -61,7 +63,7 @@ it("renders pipeline solid page", async () => {
     window.history.pushState(
       {},
       "",
-      "/p/pandas_hello_world/explore/load_num_csv"
+      "/p/airline_demo_ingest_pipeline/explore/download_q2_sfo_weather"
     );
   });
   await testApp();
@@ -72,7 +74,7 @@ it("renders type page", async () => {
     window.history.pushState(
       {},
       "",
-      "/p/pandas_hello_world/explore/load_num_csv?types=true"
+      "/p/airline_demo_ingest_pipeline/explore/download_q2_sfo_weather?types=true"
     );
   });
   await testApp();
@@ -83,15 +85,22 @@ it("renders type page", async () => {
     window.history.pushState(
       {},
       "",
-      "/p/pandas_hello_world/explore/load_num_csv?typeExplorer=PandasDataFrame"
+      "/p/airline_demo_ingest_pipeline/explore/download_q2_sfo_weather?typeExplorer=PandasDataFrame"
     );
+  });
+  await testApp();
+});
+
+it("renders solids explorer", async () => {
+  beforeEach(() => {
+    window.history.pushState({}, "", "/solids/s3_to_df");
   });
   await testApp();
 });
 
 it("renders execution", async () => {
   beforeEach(() => {
-    window.history.pushState({}, "", "/p/pandas_hello_world/execute");
+    window.history.pushState({}, "", "/p/airline_demo_ingest_pipeline/execute");
   });
   await testApp();
 });

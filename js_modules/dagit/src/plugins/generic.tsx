@@ -23,7 +23,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
   };
 
   render() {
-    const metadata = this.props.solid.definition.metadata.sort((a, b) =>
+    const metadata = this.props.definition.metadata.sort((a, b) =>
       a.key.localeCompare(b.key)
     );
 
@@ -37,7 +37,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
           View Metadata
         </Button>
         <Dialog
-          title={`Metadata: ${this.props.solid.name}`}
+          title={`Metadata: ${this.props.definition.name}`}
           isOpen={this.state.open}
           onClose={() =>
             this.setState({

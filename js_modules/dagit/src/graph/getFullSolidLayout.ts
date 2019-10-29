@@ -402,7 +402,10 @@ function layoutExternalConnections(
   return result;
 }
 
-function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {
+export function layoutSolid(
+  solid: ILayoutSolid,
+  root: IPoint
+): IFullSolidLayout {
   // Starting at the root (top left) X,Y, return the layout information for a solid with
   // input blocks, then the main block, then output blocks (arranged vertically)
   let accY = root.y;

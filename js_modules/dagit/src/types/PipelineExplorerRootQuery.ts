@@ -321,10 +321,122 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
   handleID: string;
 }
 
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+  displayName: string;
+  description: string | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_definition {
+  __typename: "InputDefinition";
+  name: string;
+  description: string | null;
+  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_definition_type;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn_definition {
+  __typename: "OutputDefinition";
+  name: string;
+  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn_definition_type;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn {
+  __typename: "Output";
+  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn_definition;
+  solid: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn_solid;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs {
+  __typename: "Input";
+  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_definition;
+  dependsOn: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+  displayName: string;
+  description: string | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_definition {
+  __typename: "OutputDefinition";
+  name: string;
+  description: string | null;
+  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_definition_type;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy_definition {
+  __typename: "InputDefinition";
+  name: string;
+  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy_definition_type;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy {
+  __typename: "Input";
+  solid: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy_solid;
+  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy_definition;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs {
+  __typename: "Output";
+  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_definition;
+  dependedBy: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy[];
+}
+
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_inputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+  name: string | null;
+  description: string | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_inputDefinitions {
+  __typename: "InputDefinition";
+  name: string;
+  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_inputDefinitions_type;
+  description: string | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_outputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+  name: string | null;
+  description: string | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_outputDefinitions {
+  __typename: "OutputDefinition";
+  name: string;
+  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_outputDefinitions_type;
+  description: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
@@ -475,6 +587,8 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
   __typename: "SolidDefinition";
   name: string;
   metadata: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_metadata[];
+  inputDefinitions: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_inputDefinitions[];
+  outputDefinitions: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_outputDefinitions[];
   configDefinition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_configDefinition | null;
   description: string | null;
   requiredResources: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_requiredResources[];
@@ -484,6 +598,34 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+  name: string | null;
+  description: string | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions {
+  __typename: "InputDefinition";
+  name: string;
+  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions_type;
+  description: string | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+  name: string | null;
+  description: string | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions {
+  __typename: "OutputDefinition";
+  name: string;
+  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions_type;
+  description: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings_definition {
@@ -549,6 +691,8 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
   __typename: "CompositeSolidDefinition";
   name: string;
   metadata: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_metadata[];
+  inputDefinitions: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions[];
+  outputDefinitions: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions[];
   inputMappings: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings[];
   description: string | null;
@@ -557,96 +701,12 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
 
 export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition = PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition | PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition;
 
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_definition_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-  name: string | null;
-  description: string | null;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_definition {
-  __typename: "InputDefinition";
-  name: string;
-  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_definition_type;
-  description: string | null;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn_definition_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn_definition {
-  __typename: "OutputDefinition";
-  name: string;
-  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn_definition_type;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn_solid {
-  __typename: "Solid";
-  name: string;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn {
-  __typename: "Output";
-  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn_definition;
-  solid: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn_solid;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs {
-  __typename: "Input";
-  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_definition;
-  dependsOn: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs_dependsOn[];
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_definition_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-  name: string | null;
-  description: string | null;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_definition {
-  __typename: "OutputDefinition";
-  name: string;
-  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_definition_type;
-  description: string | null;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy_solid {
-  __typename: "Solid";
-  name: string;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy_definition_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy_definition {
-  __typename: "InputDefinition";
-  name: string;
-  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy_definition_type;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy {
-  __typename: "Input";
-  solid: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy_solid;
-  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy_definition;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs {
-  __typename: "Output";
-  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_definition;
-  dependedBy: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy[];
-}
-
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid {
   __typename: "Solid";
   name: string;
-  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition;
   inputs: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_inputs[];
   outputs: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs[];
+  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition;
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles {

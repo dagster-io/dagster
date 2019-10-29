@@ -6,7 +6,7 @@ import TypeWithTooltip from "./TypeWithTooltip";
 import { SolidTypeSignatureFragment } from "./types/SolidTypeSignatureFragment";
 
 interface ISolidTypeSignature {
-  solid: SolidTypeSignatureFragment;
+  definition: SolidTypeSignatureFragment;
 }
 
 export default class SolidTypeSignature extends React.Component<
@@ -14,21 +14,17 @@ export default class SolidTypeSignature extends React.Component<
 > {
   static fragments = {
     SolidTypeSignatureFragment: gql`
-      fragment SolidTypeSignatureFragment on Solid {
-        outputs {
-          definition {
-            name
-            type {
-              ...RuntimeTypeWithTooltipFragment
-            }
+      fragment SolidTypeSignatureFragment on ISolidDefinition {
+        outputDefinitions {
+          name
+          type {
+            ...RuntimeTypeWithTooltipFragment
           }
         }
-        inputs {
-          definition {
-            name
-            type {
-              ...RuntimeTypeWithTooltipFragment
-            }
+        inputDefinitions {
+          name
+          type {
+            ...RuntimeTypeWithTooltipFragment
           }
         }
       }
@@ -38,18 +34,18 @@ export default class SolidTypeSignature extends React.Component<
   };
 
   render() {
-    const inputSide = this.props.solid.inputs.map((input, i) => (
+    const { inputDefinitions, outputDefinitions } = this.props.definition;
+
+    const inputSide = inputDefinitions.map((input, i) => (
       <span key={i}>
-        {input.definition.name}:{" "}
-        <TypeWithTooltip type={input.definition.type} />
-        {i < this.props.solid.inputs.length - 1 ? ", " : ""}
+        {input.name}: <TypeWithTooltip type={input.type} />
+        {i < inputDefinitions.length - 1 ? ", " : ""}
       </span>
     ));
-    const outputSide = this.props.solid.outputs.map((output, i) => (
+    const outputSide = outputDefinitions.map((output, i) => (
       <span key={i}>
-        {output.definition.name}:{" "}
-        <TypeWithTooltip type={output.definition.type} />
-        {i < this.props.solid.outputs.length - 1 ? ", " : ""}
+        {output.name}: <TypeWithTooltip type={output.type} />
+        {i < outputDefinitions.length - 1 ? ", " : ""}
       </span>
     ));
     return (
