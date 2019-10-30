@@ -36,6 +36,104 @@ interface IPipelineExplorerState {
   filter: string;
 }
 
+class AdjacencyMatrix {
+  adjacencyMatrix: Array<Array<boolean>>;
+  // TODO: One reason doing DFS on the client side is sub optimal.
+  // javascript is tail end recursive tho so we could go for ever without worrying about
+  // stack overflow problems?
+
+  constructor(adjacencyMatrix: Array<Array<boolean>>) {
+    this.adjacencyMatrix = adjacencyMatrix;
+  }
+
+  getParents(index: number) {
+    let parents = new Array<number>();
+    // It is impossible to specify yourself as an input dependency because this is a DAG so X[i, i]
+    // will always be 0.
+    this.adjacencyMatrix[index].forEach((candidateParent, index) => {
+      if (candidateParent) {
+        parents.push(index);
+      }
+    });
+    return parents;
+  }
+
+  getChildren(index: number) {
+    let children = new Array<number>();
+    this.adjacencyMatrix
+      .map(row => row[index])
+      .forEach((candidateChild, index) => {
+        if (candidateChild) {
+          children.push(index);
+        }
+      });
+    return children;
+  }
+
+  search(includeParents: boolean, initialCandidates: number[]) {
+    let results = new Set<number>();
+    let stack = [...initialCandidates];
+    while (stack.length !== 0) {
+      // pop off stack and add to upstreamDependency list
+      let node = stack.shift();
+      if (node !== undefined) {
+        results.add(node);
+        let next = includeParents
+          ? this.getParents(node)
+          : this.getChildren(node);
+        next.forEach(element => {
+          stack.unshift(element);
+        });
+      }
+    }
+    return Array.from(results);
+  }
+
+  fetchUpstream(index: number) {
+    return Array.from(this.search(true, this.getParents(index)));
+  }
+
+  fetchDownstream(index: number) {
+    return Array.from(this.search(false, this.getChildren(index)));
+  }
+}
+
+export function createAdjacencyMatrix(
+  solids: PipelineExplorerSolidHandleFragment_solid[],
+  memo: WeakMap<PipelineExplorerSolidHandleFragment_solid[], AdjacencyMatrix>
+) {
+  // Done because typescript was not autoresolving .has
+  let memoizedMatrix = memo.get(solids);
+  if (memoizedMatrix !== undefined) {
+    return memoizedMatrix;
+  }
+  // TODO: Consider alternatives to making this sparse because this will blow up if solids.length is large.
+  let adjacencyMatrix = Array.from(Array(solids.length), _ =>
+    Array(solids.length).fill(false)
+  );
+  let indexMap = new Map();
+  solids.forEach((solid, index) => {
+    indexMap.set(solid.name, index);
+  });
+
+  solids.forEach((solid, index) => {
+    let dependencySet = new Set<number>();
+    solid.inputs.forEach(input => {
+      input.dependsOn.forEach(dependency => {
+        if (dependency.solid.name) {
+          dependencySet.add(indexMap.get(dependency.solid.name));
+        }
+      });
+    });
+    dependencySet.forEach(dependencyIndex => {
+      adjacencyMatrix[index][dependencyIndex] = true;
+    });
+  });
+  const matrix = new AdjacencyMatrix(adjacencyMatrix);
+  memo.set(solids, matrix);
+  return matrix;
+}
+
 export type SolidNameOrPath = { name: string } | { path: string[] };
 
 export default class PipelineExplorer extends React.Component<
@@ -70,6 +168,8 @@ export default class PipelineExplorer extends React.Component<
   state = {
     filter: ""
   };
+
+  memo = new WeakMap();
 
   handleAdjustPath = (fn: (solidNames: string[]) => void) => {
     const { history, pipeline, path } = this.props;
@@ -132,6 +232,63 @@ export default class PipelineExplorer extends React.Component<
     this.handleClickSolid({ name: "" });
   };
 
+  selectSolidsByFilter = (
+    solids: PipelineExplorerSolidHandleFragment_solid[],
+    filter: string,
+    solidAdjacencyMatrix: AdjacencyMatrix
+  ) => {
+    let searchResults = new Array<PipelineExplorerSolidHandleFragment_solid>();
+    searchResults = solids.filter(s => s.name.includes(filter));
+    if (filter && filter.includes("+")) {
+      let includeParents = false,
+        includeChildren = false,
+        invalidQuery = false,
+        newFilterStart = 0,
+        newFilterEnd = filter.length;
+
+      for (var i = 0; i < filter.length; i++) {
+        if (filter[i] === "+") {
+          if (i !== 0 && i !== filter.length - 1) {
+            // Can't have + inside the search term
+            invalidQuery = true;
+          }
+          if (i === 0) {
+            includeParents = true;
+            newFilterStart = 1;
+          }
+          if (i === filter.length - 1) {
+            includeChildren = true;
+            newFilterEnd = -1;
+          }
+        }
+      }
+      if (!invalidQuery) {
+        const solidFilter = filter.slice(newFilterStart, newFilterEnd);
+        let candidateSolidIndexSet = new Set<number>();
+        solids.forEach((solid, index) => {
+          if (solidFilter && solid.name.includes(solidFilter)) {
+            candidateSolidIndexSet.add(index);
+            if (includeParents) {
+              solidAdjacencyMatrix
+                .fetchUpstream(index)
+                .forEach(item => candidateSolidIndexSet.add(item));
+            }
+            if (includeChildren) {
+              solidAdjacencyMatrix
+                .fetchDownstream(index)
+                .forEach(item => candidateSolidIndexSet.add(item));
+            }
+          }
+        });
+        searchResults.length = 0;
+        candidateSolidIndexSet.forEach(index =>
+          searchResults.push(solids[index])
+        );
+      }
+    }
+    return searchResults;
+  };
+
   _layoutCacheKey: string | undefined;
   _layoutCache: IFullPipelineLayout | undefined;
 
@@ -159,6 +316,8 @@ export default class PipelineExplorer extends React.Component<
     const { filter } = this.state;
 
     const solids = this.props.handles.map(h => h.solid);
+
+    const solidAdjacencyMatrix = createAdjacencyMatrix(solids, this.memo);
 
     const backgroundColor = parentHandle
       ? Colors.LIGHT_GRAY3
@@ -205,6 +364,7 @@ export default class PipelineExplorer extends React.Component<
                 <SolidSearchInput
                   type="text"
                   placeholder="Filter..."
+                  name="filter"
                   value={filter}
                   onChange={e => this.setState({ filter: e.target.value })}
                 />
@@ -225,8 +385,10 @@ export default class PipelineExplorer extends React.Component<
                   solids,
                   parentHandle && parentHandle.solid
                 )}
-                highlightedSolids={solids.filter(
-                  s => filter && s.name.includes(filter)
+                highlightedSolids={this.selectSolidsByFilter(
+                  solids,
+                  this.state.filter,
+                  solidAdjacencyMatrix
                 )}
               />
             </>
