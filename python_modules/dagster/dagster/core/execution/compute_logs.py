@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import io
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -149,6 +150,14 @@ def tail_posix(filepath, stream=sys.stdout, parent_pid=None):
     '''
     cmd = 'tail -F {}'.format(filepath).split(' ')
     tail_process = subprocess.Popen(cmd, stdout=stream)
+
+    def kill_tail(*_args):
+        if tail_process:
+            tail_process.terminate()
+        return
+
+    signal.signal(signal.SIGTERM, kill_tail)
+
     try:
         while True:
             if parent_pid and current_process_is_orphaned(parent_pid):
