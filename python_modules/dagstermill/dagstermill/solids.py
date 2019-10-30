@@ -117,8 +117,6 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
         'environment_dict': compute_context.environment_dict,
     }
 
-    dm_run_config_kwargs = {'run_id': run_id, 'mode': compute_context.mode_def.name}
-
     dm_solid_handle_kwargs = compute_context.solid_handle._asdict()
 
     parameters = {}
@@ -136,7 +134,7 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
 
     parameters['__dm_context'] = dm_context_dict
     parameters['__dm_handle_kwargs'] = dm_handle_kwargs
-    parameters['__dm_run_config_kwargs'] = dm_run_config_kwargs
+    parameters['__dm_pipeline_run_dict'] = pack_value(compute_context.pipeline_run)
     parameters['__dm_solid_handle_kwargs'] = dm_solid_handle_kwargs
     parameters['__dm_solid_subset'] = solid_subset
     parameters['__dm_instance_ref_dict'] = pack_value(compute_context.instance.get_ref())

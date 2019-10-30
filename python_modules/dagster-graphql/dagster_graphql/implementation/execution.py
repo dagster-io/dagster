@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import time
+
 from dagster_graphql.client.util import pipeline_run_from_execution_params
 from dagster_graphql.schema.runs import (
     from_compute_log_file,
@@ -13,10 +15,10 @@ from dagster import RunConfig, check
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.config import ReexecutionConfig
+from dagster.core.execution.config import EXECUTION_TIME_KEY, ReexecutionConfig
 from dagster.core.serdes import serialize_dagster_namedtuple
 from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.utils import merge_dicts
 
 from .fetch_pipelines import (
@@ -297,15 +299,26 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
+    pipeline = dauphin_pipeline.get_dagster_pipeline()
     run_id = execution_params.execution_metadata.run_id
-    run_config = RunConfig(
-        run_id=run_id, mode=execution_params.mode, tags=execution_params.execution_metadata.tags
-    )
+
+    pipeline_run = graphene_info.context.instance.get_run_by_id(run_id)
+    if not pipeline_run:
+        # TODO switch to raising a UserFacingError if the run_id cannot be found
+        # https://github.com/dagster-io/dagster/issues/1876
+        tags = {EXECUTION_TIME_KEY: time.time()}
+        pipeline_run = PipelineRun(
+            pipeline_name=pipeline.name,
+            run_id=run_id,
+            environment_dict=execution_params.environment_dict,
+            mode=execution_params.mode or pipeline.get_default_mode_name(),
+            tags=tags.update(execution_params.execution_metadata.tags or {}),
+        )
 
     execution_plan = create_execution_plan(
-        pipeline=dauphin_pipeline.get_dagster_pipeline(),
+        pipeline=pipeline,
         environment_dict=execution_params.environment_dict,
-        run_config=run_config,
+        run_config=pipeline_run,
     )
 
     if execution_params.step_keys:
@@ -326,7 +339,7 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
     execute_plan(
         execution_plan=execution_plan,
         environment_dict=execution_params.environment_dict,
-        run_config=run_config,
+        pipeline_run=pipeline_run,
         step_keys_to_execute=execution_params.step_keys,
         instance=graphene_info.context.instance,
     )

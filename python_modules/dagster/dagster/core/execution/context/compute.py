@@ -58,5 +58,5 @@ class ComputeExecutionContext(StepExecutionContext, AbstractComputeExecutionCont
         return self._system_compute_execution_context.solid_config
 
     @property
-    def run_config(self):
-        return self._system_compute_execution_context.run_config
+    def pipeline_run(self):
+        return self._system_compute_execution_context.pipeline_run

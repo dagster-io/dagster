@@ -7,7 +7,7 @@ from dagster.core.definitions.config import ConfigMappingContext
 from dagster.core.definitions.environment_configs import is_solid_container_config
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.solid import CompositeSolidDefinition
-from dagster.core.execution.config import RunConfig
+from dagster.core.execution.config import IRunConfig, RunConfig
 from dagster.core.types.config import ConfigType
 from dagster.utils import ensure_single_item, frozendict
 from dagster.utils.merger import dict_merge
@@ -43,7 +43,7 @@ def evaluate_config(config_type, config_value, pipeline=None, run_config=None, s
             stack=EvaluationStack(config_type=config_type, entries=[]),
             pipeline=check.opt_inst_param(pipeline, 'pipeline', PipelineDefinition),
             run_config=check.opt_inst_param(
-                run_config, 'run_config', RunConfig, default=RunConfig()
+                run_config, 'run_config', IRunConfig, default=RunConfig()
             ),
             seen_handles=check.opt_list_param(seen_handles, 'seen_handles'),
         )

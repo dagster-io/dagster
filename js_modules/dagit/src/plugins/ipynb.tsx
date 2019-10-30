@@ -23,7 +23,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
   };
 
   render() {
-    const metadata = this.props.solid.definition.metadata;
+    const metadata = this.props.definition.metadata;
     const notebookPath = metadata.find(m => m.key === "notebook_path");
     if (!notebookPath) return <span />;
 

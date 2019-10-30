@@ -1,3 +1,5 @@
+import uuid
+
 from dagster import (
     DependencyDefinition,
     InputDefinition,
@@ -5,12 +7,12 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineDefinition,
-    RunConfig,
     lambda_solid,
     solid,
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import PipelineRun
 
 
 def define_two_int_pipeline():
@@ -39,7 +41,10 @@ def test_execution_plan_simple_two_steps():
     assert execution_plan.get_step_by_key('return_one.compute')
     assert execution_plan.get_step_by_key('add_one.compute')
 
-    events = execute_plan(execution_plan, instance=DagsterInstance.ephemeral())
+    pipeline_run = PipelineRun.create_empty_run(pipeline_def.name, str(uuid.uuid4()))
+    events = execute_plan(
+        execution_plan, pipeline_run=pipeline_run, instance=DagsterInstance.ephemeral()
+    )
     # start, out, success, start, input, out, success
     assert [e.event_type_value for e in events] == [
         'ENGINE_EVENT',
@@ -72,7 +77,10 @@ def test_execution_plan_two_outputs():
 
     execution_plan = create_execution_plan(pipeline_def)
 
-    step_events = execute_plan(execution_plan, instance=DagsterInstance.ephemeral())
+    pipeline_run = PipelineRun.create_empty_run(pipeline_def.name, str(uuid.uuid4()))
+    step_events = execute_plan(
+        execution_plan, pipeline_run=pipeline_run, instance=DagsterInstance.ephemeral()
+    )
 
     assert step_events[2].step_key == 'return_one_two.compute'
     assert step_events[2].step_output_data.output_name == 'num_one'
@@ -92,10 +100,12 @@ def test_reentrant_execute_plan():
     pipeline_def = PipelineDefinition(name='has_tag_pipeline', solid_defs=[has_tag])
     execution_plan = create_execution_plan(pipeline_def)
 
+    pipeline_run = PipelineRun.create_empty_run(
+        pipeline_def.name, str(uuid.uuid4()), tags={'foo': 'bar'}
+    )
+
     step_events = execute_plan(
-        execution_plan,
-        run_config=RunConfig(tags={'foo': 'bar'}),
-        instance=DagsterInstance.ephemeral(),
+        execution_plan, pipeline_run=pipeline_run, instance=DagsterInstance.ephemeral()
     )
 
     assert called['yup']

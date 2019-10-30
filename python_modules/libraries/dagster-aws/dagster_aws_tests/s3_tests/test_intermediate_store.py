@@ -23,6 +23,7 @@ from dagster import (
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan, scoped_pipeline_context
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.runtime import Bool as RuntimeBool
 from dagster.core.types.runtime import RuntimeType
@@ -109,21 +110,22 @@ def test_using_s3_for_subplan(s3_bucket):
 
     step_keys = ['return_one.compute']
     instance = DagsterInstance.ephemeral()
+    pipeline_run = PipelineRun.create_empty_run(
+        pipeline_def.name, run_id=run_id, environment_dict=environment_dict
+    )
 
     return_one_step_events = list(
         execute_plan(
             execution_plan,
             environment_dict=environment_dict,
-            run_config=RunConfig(run_id=run_id),
+            pipeline_run=pipeline_run,
             step_keys_to_execute=step_keys,
             instance=instance,
         )
     )
 
     assert get_step_output(return_one_step_events, 'return_one.compute')
-    with scoped_pipeline_context(
-        pipeline_def, environment_dict, RunConfig(run_id=run_id), instance
-    ) as context:
+    with scoped_pipeline_context(pipeline_def, environment_dict, pipeline_run, instance) as context:
         store = S3IntermediateStore(
             s3_bucket, run_id, s3_session=context.scoped_resources_builder.build().s3.session
         )
@@ -134,16 +136,14 @@ def test_using_s3_for_subplan(s3_bucket):
         execute_plan(
             execution_plan,
             environment_dict=environment_dict,
-            run_config=RunConfig(run_id=run_id),
+            pipeline_run=pipeline_run,
             step_keys_to_execute=['add_one.compute'],
             instance=instance,
         )
     )
 
     assert get_step_output(add_one_step_events, 'add_one.compute')
-    with scoped_pipeline_context(
-        pipeline_def, environment_dict, RunConfig(run_id=run_id), instance
-    ) as context:
+    with scoped_pipeline_context(pipeline_def, environment_dict, pipeline_run, instance) as context:
         assert store.has_intermediate(context, 'add_one.compute')
         assert store.get_intermediate(context, 'add_one.compute', Int).obj == 2
 

@@ -6,7 +6,7 @@ from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.definitions.environment_schema import create_environment_type
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.execution.config import RunConfig
+from dagster.core.execution.config import IRunConfig, RunConfig
 from dagster.core.types.evaluator import evaluate_config
 from dagster.utils import ensure_single_item
 
@@ -103,7 +103,7 @@ class EnvironmentConfig(
     def build(pipeline, environment_dict=None, run_config=None):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         check.opt_dict_param(environment_dict, 'environment')
-        run_config = check.opt_inst_param(run_config, 'run_config', RunConfig, default=RunConfig())
+        run_config = check.opt_inst_param(run_config, 'run_config', IRunConfig, default=RunConfig())
 
         mode = run_config.mode or pipeline.get_default_mode_name()
         environment_type = create_environment_type(pipeline, mode)

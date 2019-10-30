@@ -1,6 +1,5 @@
 import multiprocessing
-import time
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import namedtuple
 
 import six
@@ -14,8 +13,35 @@ from dagster.utils import merge_dicts
 EXECUTION_TIME_KEY = 'execution_epoch_time'
 
 
+class IRunConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    '''
+    Interface for a container for RunConfig-like (e.g. RunConfig and PipelineRun) properties.
+    Implementation should be left to the respective `namedtuple` superclass.
+    '''
+
+    @abstractproperty
+    def run_id(self):
+        pass
+
+    @abstractproperty
+    def tags(self):
+        pass
+
+    @abstractproperty
+    def reexecution_config(self):
+        pass
+
+    @abstractproperty
+    def step_keys_to_execute(self):
+        pass
+
+    @abstractproperty
+    def mode(self):
+        pass
+
+
 class RunConfig(
-    namedtuple('_RunConfig', 'run_id tags reexecution_config step_keys_to_execute mode')
+    namedtuple('_RunConfig', 'run_id tags reexecution_config step_keys_to_execute mode'), IRunConfig
 ):
     '''
     Configuration that controls the details of how Dagster will execute a pipeline.
@@ -40,9 +66,9 @@ class RunConfig(
         tags = check.opt_dict_param(tags, 'tags', key_type=str)
 
         if EXECUTION_TIME_KEY in tags:
+            # execution_epoch_time expected to be able to be cast to float
+            # can be passed in as a string from airflow integration
             tags[EXECUTION_TIME_KEY] = float(tags[EXECUTION_TIME_KEY])
-        else:
-            tags[EXECUTION_TIME_KEY] = time.time()
 
         return super(RunConfig, cls).__new__(
             cls,
@@ -61,6 +87,11 @@ class RunConfig(
 
     def with_mode(self, mode):
         return RunConfig(**merge_dicts(self._asdict(), {'mode': mode}))
+
+    def with_step_keys_to_execute(self, step_keys_to_execute):
+        return RunConfig(
+            **merge_dicts(self._asdict(), {'step_keys_to_execute': step_keys_to_execute})
+        )
 
 
 class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init

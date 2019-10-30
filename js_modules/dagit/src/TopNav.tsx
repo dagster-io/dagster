@@ -81,6 +81,12 @@ export const TopNav = ({
               >
                 Schedule
               </Tab>
+              <Tab
+                to={`/solids`}
+                className={selectedTab === "solids" ? "active" : ""}
+              >
+                Solids
+              </Tab>
 
               <Navbar.Divider />
 

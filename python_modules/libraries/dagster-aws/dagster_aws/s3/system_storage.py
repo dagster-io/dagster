@@ -14,7 +14,7 @@ from .intermediate_store import S3IntermediateStore
 )
 def s3_system_storage(init_context):
     s3_session = init_context.resources.s3.session
-    s3_key = 'dagster/storage/{run_id}/files'.format(run_id=init_context.run_config.run_id)
+    s3_key = 'dagster/storage/{run_id}/files'.format(run_id=init_context.pipeline_run.run_id)
     return SystemStorageData(
         file_manager=S3FileManager(
             s3_session=s3_session,
@@ -25,7 +25,7 @@ def s3_system_storage(init_context):
             S3IntermediateStore(
                 s3_session=s3_session,
                 s3_bucket=init_context.system_storage_config['s3_bucket'],
-                run_id=init_context.run_config.run_id,
+                run_id=init_context.pipeline_run.run_id,
                 type_storage_plugin_registry=init_context.type_storage_plugin_registry,
             )
         ),

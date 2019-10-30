@@ -107,7 +107,7 @@ EntryDataUnion = (
 )
 
 
-class Output(namedtuple('_Result', 'value output_name')):
+class Output(namedtuple('_Output', 'value output_name')):
     '''A value produced by a solid compute function for downstream consumption. An implementer
     of a SolidDefinition directly must provide a compute function that yields objects of this type.
 

@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.execution.config import RunConfig
+from dagster.core.execution.config import IRunConfig
 from dagster.core.types import Dict, Field
 
 
@@ -48,5 +48,5 @@ class ConfigMappingContext(namedtuple('ConfigMappingContext', 'run_config')):
 
     def __new__(cls, run_config=None):
         return super(ConfigMappingContext, cls).__new__(
-            cls, check.inst_param(run_config, 'run_config', RunConfig)
+            cls, check.inst_param(run_config, 'run_config', IRunConfig)
         )

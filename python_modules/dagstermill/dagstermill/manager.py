@@ -11,7 +11,6 @@ from dagster import (
     Materialization,
     ModeDefinition,
     PipelineDefinition,
-    RunConfig,
     SolidDefinition,
     TypeCheck,
     check,
@@ -22,6 +21,7 @@ from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import ResourcesStack
 from dagster.core.instance import DagsterInstance
 from dagster.core.serdes import unpack_value
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.loggers import colored_console_logger
 
 from .context import DagstermillExecutionContext
@@ -40,7 +40,7 @@ class Manager:
         self.resources_stack = None
 
     @contextmanager
-    def _setup_resources(self, pipeline_def, environment_config, run_config, log_manager):
+    def _setup_resources(self, pipeline_def, environment_config, pipeline_run, log_manager):
         '''This context manager is a drop-in replacement for
         dagster.core.execution.context_creation_pipeline.create_resources. It uses the Manager's
         instance of ResourceStack to create resources, but does not tear them down when the
@@ -49,7 +49,7 @@ class Manager:
 
         # pylint: disable=protected-access
         self.resources_stack = ResourcesStack(
-            pipeline_def, environment_config, run_config, log_manager
+            pipeline_def, environment_config, pipeline_run, log_manager
         )
         yield self.resources_stack.create()
 
@@ -59,7 +59,7 @@ class Manager:
         marshal_dir=None,
         environment_dict=None,
         handle_kwargs=None,
-        run_config_kwargs=None,
+        pipeline_run_dict=None,
         solid_subset=None,
         solid_handle_kwargs=None,
         instance_ref_dict=None,
@@ -78,7 +78,7 @@ class Manager:
         check.opt_str_param(output_log_path, 'output_log_path')
         check.opt_str_param(marshal_dir, 'marshal_dir')
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
-        check.dict_param(run_config_kwargs, 'run_config_kwargs')
+        check.dict_param(pipeline_run_dict, 'pipeline_run_dict')
         check.dict_param(handle_kwargs, 'handle_kwargs')
         check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
         check.dict_param(solid_handle_kwargs, 'solid_handle_kwargs')
@@ -119,7 +119,7 @@ class Manager:
         solid_handle = SolidHandle.from_dict(solid_handle_kwargs)
         solid_def = pipeline_def.get_solid(solid_handle)
 
-        run_config = RunConfig(**run_config_kwargs)
+        pipeline_run = unpack_value(pipeline_run_dict)
 
         self.marshal_dir = marshal_dir
         self.in_pipeline = True
@@ -129,7 +129,7 @@ class Manager:
         with scoped_pipeline_context(
             self.pipeline_def,
             environment_dict,
-            run_config,
+            pipeline_run,
             instance=instance,
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
@@ -172,7 +172,22 @@ class Manager:
             [solid_def], mode_defs=[mode_def], name='ephemeral_dagstermill_pipeline'
         )
 
-        run_config = RunConfig(mode=mode_def.name)
+        run_id = str(uuid.uuid4())
+
+        # construct stubbed PipelineRun for notebook exploration...
+        # The actual pipeline run during pipeline execution will be serialized and reconstituted
+        # in the `reconstitute_pipeline_context` call
+        pipeline_run = PipelineRun(
+            pipeline_name=pipeline_def.name,
+            run_id=run_id,
+            environment_dict=environment_dict,
+            mode=mode_def.name,
+            reexecution_config=None,
+            selector=None,
+            step_keys_to_execute=None,
+            status=PipelineRunStatus.NOT_STARTED,
+            tags=None,
+        )
 
         self.in_pipeline = False
         self.solid_def = solid_def
@@ -181,7 +196,7 @@ class Manager:
         with scoped_pipeline_context(
             self.pipeline_def,
             environment_dict,
-            run_config,
+            pipeline_run,
             instance=DagsterInstance.ephemeral(),
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:

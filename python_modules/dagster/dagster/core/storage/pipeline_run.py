@@ -2,6 +2,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
+from dagster.core.execution.config import IRunConfig
 from dagster.core.serdes import whitelist_for_serdes
 
 
@@ -54,10 +55,11 @@ class PipelineRun(
             'pipeline_name run_id environment_dict mode selector reexecution_config '
             'step_keys_to_execute status tags'
         ),
-    )
+    ),
+    IRunConfig,
 ):
     @staticmethod
-    def create_empty_run(pipeline_name, run_id, environment_dict=None):
+    def create_empty_run(pipeline_name, run_id, environment_dict=None, tags=None):
         from dagster.core.definitions.pipeline import ExecutionSelector
 
         return PipelineRun(
@@ -68,7 +70,7 @@ class PipelineRun(
             selector=ExecutionSelector(pipeline_name),
             reexecution_config=None,
             step_keys_to_execute=None,
-            tags=None,
+            tags=tags,
             status=PipelineRunStatus.NOT_STARTED,
         )
 
@@ -78,14 +80,22 @@ class PipelineRun(
         run_id,
         environment_dict,
         mode,
-        selector,
-        reexecution_config,
-        step_keys_to_execute,
-        status,
+        selector=None,
+        reexecution_config=None,
+        step_keys_to_execute=None,
+        status=None,
         tags=None,
     ):
         from dagster.core.definitions.pipeline import ExecutionSelector
         from dagster.core.execution.config import ReexecutionConfig
+
+        tags = check.opt_dict_param(tags, 'tags', key_type=str)
+        selector = check.opt_inst_param(selector, 'selector', ExecutionSelector)
+        if not selector:
+            selector = ExecutionSelector(pipeline_name)
+
+        if not status:
+            status = PipelineRunStatus.NOT_STARTED
 
         return super(PipelineRun, cls).__new__(
             cls,
@@ -95,7 +105,7 @@ class PipelineRun(
                 environment_dict, 'environment_dict', key_type=str
             ),
             mode=check.str_param(mode, 'mode'),
-            selector=check.inst_param(selector, 'selector', ExecutionSelector),
+            selector=selector,
             reexecution_config=check.opt_inst_param(
                 reexecution_config, 'reexecution_config', ReexecutionConfig
             ),

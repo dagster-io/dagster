@@ -11,12 +11,12 @@ from dagster import (
     Int,
     OutputDefinition,
     PipelineDefinition,
-    RunConfig,
     lambda_solid,
 )
 from dagster.core.execution.api import DagsterEventType, create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
+from dagster.core.storage.pipeline_run import PipelineRun
 
 
 def define_inty_pipeline():
@@ -63,13 +63,14 @@ def test_using_file_system_for_subplan():
     step_keys = ['return_one.compute']
 
     run_id = str(uuid.uuid4())
+    pipeline_run = PipelineRun.create_empty_run(pipeline.name, run_id)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan,
             instance,
             environment_dict=environment_dict,
-            run_config=RunConfig(run_id=run_id),
+            pipeline_run=pipeline_run,
             step_keys_to_execute=step_keys,
         )
     )
@@ -84,7 +85,7 @@ def test_using_file_system_for_subplan():
             execution_plan,
             instance,
             environment_dict=environment_dict,
-            run_config=RunConfig(run_id=run_id),
+            pipeline_run=pipeline_run,
             step_keys_to_execute=['add_one.compute'],
         )
     )
@@ -109,14 +110,14 @@ def test_using_file_system_for_subplan_multiprocessing():
     step_keys = ['return_one.compute']
 
     run_id = str(uuid.uuid4())
-    instance.create_empty_run(run_id, execution_plan.pipeline_def.name)
+    run = instance.create_empty_run(run_id, execution_plan.pipeline_def.name)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan,
             instance,
             environment_dict=dict(environment_dict, execution={'multiprocess': {}}),
-            run_config=RunConfig(run_id=run_id),
+            pipeline_run=run,
             step_keys_to_execute=step_keys,
         )
     )
@@ -132,7 +133,7 @@ def test_using_file_system_for_subplan_multiprocessing():
             execution_plan,
             instance,
             environment_dict=dict(environment_dict, execution={'multiprocess': {}}),
-            run_config=RunConfig(run_id=run_id),
+            pipeline_run=run,
             step_keys_to_execute=['add_one.compute'],
         )
     )
@@ -146,16 +147,24 @@ def test_execute_step_wrong_step_key():
     pipeline = define_inty_pipeline()
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline)
+    pipeline_run = PipelineRun.create_empty_run(pipeline.name, str(uuid.uuid4()))
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
-        execute_plan(execution_plan, instance, step_keys_to_execute=['nope'])
+        execute_plan(
+            execution_plan, instance, pipeline_run=pipeline_run, step_keys_to_execute=['nope']
+        )
 
     assert exc_info.value.step_keys == ['nope']
 
     assert str(exc_info.value) == 'Execution plan does not contain step: nope'
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
-        execute_plan(execution_plan, instance, step_keys_to_execute=['nope', 'nuh_uh'])
+        execute_plan(
+            execution_plan,
+            instance,
+            pipeline_run=pipeline_run,
+            step_keys_to_execute=['nope', 'nuh_uh'],
+        )
 
     assert exc_info.value.step_keys == ['nope', 'nuh_uh']
 
@@ -168,14 +177,14 @@ def test_using_file_system_for_subplan_missing_input():
 
     execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
 
-    run_id = str(uuid.uuid4())
+    pipeline_run = PipelineRun.create_empty_run(pipeline.name, str(uuid.uuid4()))
 
     with pytest.raises(DagsterStepOutputNotFoundError):
         execute_plan(
             execution_plan,
             DagsterInstance.ephemeral(),
             environment_dict=environment_dict,
-            run_config=RunConfig(run_id=run_id),
+            pipeline_run=pipeline_run,
             step_keys_to_execute=['add_one.compute'],
         )
 
@@ -187,13 +196,13 @@ def test_using_file_system_for_subplan_invalid_step():
 
     execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
 
-    run_id = str(uuid.uuid4())
+    pipeline_run = PipelineRun.create_empty_run(pipeline.name, str(uuid.uuid4()))
 
     with pytest.raises(DagsterExecutionStepNotFoundError):
         execute_plan(
             execution_plan,
             DagsterInstance.ephemeral(),
             environment_dict=environment_dict,
-            run_config=RunConfig(run_id=run_id),
+            pipeline_run=pipeline_run,
             step_keys_to_execute=['nope'],
         )

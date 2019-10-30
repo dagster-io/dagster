@@ -11,6 +11,7 @@ import PythonErrorInfo from "./PythonErrorInfo";
 import { RootPipelinesQuery } from "./types/RootPipelinesQuery";
 import { RunRoot } from "./runs/RunRoot";
 import { RunsRoot } from "./runs/RunsRoot";
+import { SolidsRoot } from "./solids/SolidsRoot";
 import SchedulesRoot from "./schedules/SchedulesRoot";
 import { TopNav } from "./TopNav";
 import gql from "graphql-tag";
@@ -31,6 +32,7 @@ const AppRoutes = () => (
   <Switch>
     <Route path="/runs/:runId" component={RunRoot} />
     <Route path="/runs" component={RunsRoot} exact={true} />
+    <Route path="/solids/:name?" component={SolidsRoot} />
     <Route path="/p/:pipelineName/runs/:runId" component={RunRoot} />
     <Redirect
       from="/p/:pipelineName"

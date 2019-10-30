@@ -82,11 +82,15 @@ const PipelineExplorerRoot: React.FunctionComponent<
             );
             const selectedDefinitionInvocations =
               selectedHandle &&
-              pipeline.solidHandles.filter(
-                s =>
-                  s.solid.definition.name ===
-                  selectedHandle.solid.definition.name
-              );
+              pipeline.solidHandles
+                .filter(
+                  s =>
+                    s.solid.definition.name ===
+                    selectedHandle.solid.definition.name
+                )
+                .map(s => ({
+                  handleID: s.handleID
+                }));
 
             return (
               <PipelineExplorer

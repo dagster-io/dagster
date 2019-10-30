@@ -44,11 +44,16 @@ import styled from "styled-components";
 import { DataProxy } from "apollo-cache";
 import { copyValue } from "../Util";
 
+const NUM_RUNS_TO_DISPLAY = 10;
+
 export default class SchedulesRoot extends React.Component {
   render() {
     return (
       <Query
         query={SCHEDULES_ROOT_QUERY}
+        variables={{
+          limit: NUM_RUNS_TO_DISPLAY
+        }}
         fetchPolicy="cache-and-network"
         pollInterval={15 * 1000}
         partialRefetch={true}
@@ -150,7 +155,14 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
 const ScheduleRow: React.FunctionComponent<{
   schedule: SchedulesRootQuery_scheduler_Scheduler_runningSchedules;
 }> = ({ schedule }) => {
-  const { scheduleId, status, scheduleDefinition, runs, logsPath } = schedule;
+  const {
+    scheduleId,
+    status,
+    scheduleDefinition,
+    runs,
+    runsCount,
+    logsPath
+  } = schedule;
   const {
     name,
     cronSchedule,
@@ -171,7 +183,6 @@ const ScheduleRow: React.FunctionComponent<{
       return "Invalid cron string";
     }
   };
-  const NUM_RUNS_TO_DISPLAY = 10;
 
   const sortRuns = (
     runs: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs[]
@@ -282,7 +293,7 @@ const ScheduleRow: React.FunctionComponent<{
               </div>
             ))
           : "-"}
-        {runs && runs.length > NUM_RUNS_TO_DISPLAY && (
+        {runsCount > NUM_RUNS_TO_DISPLAY && (
           <Link
             to={`/runs?q=tag:${encodeURIComponent(
               "dagster/schedule_id"
@@ -290,7 +301,7 @@ const ScheduleRow: React.FunctionComponent<{
             style={{ verticalAlign: "top" }}
           >
             {" "}
-            +{runs.length - NUM_RUNS_TO_DISPLAY} more
+            +{runsCount - NUM_RUNS_TO_DISPLAY} more
           </Link>
         )}
       </RowColumn>
@@ -381,7 +392,7 @@ const STOP_SCHEDULE_MUTATION = gql`
   }
 `;
 export const SCHEDULES_ROOT_QUERY = gql`
-  query SchedulesRootQuery {
+  query SchedulesRootQuery($limit: Int!) {
     scheduler {
       __typename
       ... on SchedulerNotDefinedError {
@@ -397,7 +408,8 @@ export const SCHEDULES_ROOT_QUERY = gql`
             cronSchedule
           }
           logsPath
-          runs {
+          runsCount
+          runs(limit: $limit) {
             runId
             pipeline {
               name
