@@ -46,9 +46,9 @@ const CancelRunButton: React.FunctionComponent<{ run: RunFragment }> = ({
   return (
     <Button
       icon={IconNames.STOP}
-      text={"Cancel"}
       small={true}
-      intent="danger"
+      text="Terminate"
+      intent="warning"
       onClick={async () => {
         const res = await cancel({
           variables: { runId: run.runId }
