@@ -10,6 +10,7 @@ def create_typed_tuple(*dagster_type_args):
 
     class _TypedPythonTuple(RuntimeType):
         def __init__(self):
+            self.runtime_types = runtime_types
             super(_TypedPythonTuple, self).__init__(
                 key='TypedPythonTuple' + '.'.join(map(lambda t: t.key, runtime_types)),
                 name=None,
@@ -22,14 +23,20 @@ def create_typed_tuple(*dagster_type_args):
             if not isinstance(value, tuple):
                 raise Failure('Value {value} should be a python tuple'.format(value=value))
 
-            if len(value) != len(runtime_types):
+            if len(value) != len(self.runtime_types):
                 raise Failure(
                     'Tuple with key {key} requires {n} entries. Received tuple with {m} values'.format(
-                        key=self.key, n=len(runtime_types), m=len(value)
+                        key=self.key, n=len(self.runtime_types), m=len(value)
                     )
                 )
 
-            for item, runtime_type in zip(value, runtime_types):
+            for item, runtime_type in zip(value, self.runtime_types):
                 runtime_type.type_check(item)
+
+        @property
+        def display_name(self):
+            return 'Tuple[{}]'.format(
+                ','.join([inner_type.display_name for inner_type in self.runtime_types])
+            )
 
     return _TypedPythonTuple

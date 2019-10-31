@@ -22,13 +22,13 @@ def create_typed_runtime_dict(key_dagster_type, value_dagster_type):
 
     class _TypedPythonDict(RuntimeType):
         def __init__(self):
+            self.key_type = key_type
+            self.value_type = value_type
             super(_TypedPythonDict, self).__init__(
                 key='TypedPythonDict.{}.{}'.format(key_type.key, value_type.key),
                 name=None,
                 is_builtin=True,
             )
-            self.key_type = key_type
-            self.value_type = value_type
 
         def type_check(self, value):
             from dagster.core.definitions.events import Failure
@@ -39,5 +39,11 @@ def create_typed_runtime_dict(key_dagster_type, value_dagster_type):
             for key, value in value.items():
                 key_type.type_check(key)
                 value_type.type_check(value)
+
+        @property
+        def display_name(self):
+            return 'Dict[{key},{value}]'.format(
+                key=self.key_type.display_name, value=self.value_type.display_name
+            )
 
     return _TypedPythonDict

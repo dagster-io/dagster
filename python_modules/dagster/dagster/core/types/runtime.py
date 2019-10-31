@@ -78,6 +78,10 @@ class RuntimeType(object):
         self.auto_plugins = auto_plugins
 
         self.is_builtin = check.bool_param(is_builtin, 'is_builtin')
+        check.invariant(
+            self.display_name is not None,
+            'All types must have a valid display name, got None for key {}'.format(key),
+        )
 
     __cache = {}
 
@@ -323,13 +327,13 @@ PYTHON_DAGSTER_TYPE_ARGS_DOCSTRING = '''Args:
     input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that inherits
         from :py:class:`InputHydrationConfig <dagster.InputHydrationConfig>` and can map config
         data to a value of this type. Specify this argument if you will need to shim values of this
-        type using the config machinery. As a rule, you should use the 
+        type using the config machinery. As a rule, you should use the
         :py:func:`@input_hydration_config <dagster.InputHydrationConfig>` decorator to construct
         these arguments. Default: None
     output_materialization_config (Optiona[OutputMaterializationConfig]): An instance of a class
         that inherits from
         :py:class:`OutputMaterializationConfig <dagster.OutputMaterializationConfig>` that can
-        persist values of this type. As a rule, you should use the 
+        persist values of this type. As a rule, you should use the
         :py:func:`@output_materialization_config <dagster.output_materialization_config>` decorator
         to construct these arguments. Default: None
     serialization_strategy (Optional[SerializationStrategy]): An instance of a class that inherits
@@ -372,7 +376,7 @@ def define_python_dagster_type(
     Usage:
 
         DateTime = define_python_dagster_type(datetime.datetime, name='DateTime')
-    
+
     {args_docstring}
     '''.format(
         args_docstring=PYTHON_DAGSTER_TYPE_ARGS_DOCSTRING
@@ -442,10 +446,10 @@ def _create_nullable_input_schema(inner_type):
 class NullableType(RuntimeType):
     def __init__(self, inner_type):
         key = 'Optional.' + inner_type.key
+        self.inner_type = inner_type
         super(NullableType, self).__init__(
             key=key, name=None, input_hydration_config=_create_nullable_input_schema(inner_type)
         )
-        self.inner_type = inner_type
 
     @property
     def display_name(self):
@@ -486,10 +490,10 @@ def _create_list_input_schema(inner_type):
 class ListType(RuntimeType):
     def __init__(self, inner_type):
         key = 'List.' + inner_type.key
+        self.inner_type = inner_type
         super(ListType, self).__init__(
             key=key, name=None, input_hydration_config=_create_list_input_schema(inner_type)
         )
-        self.inner_type = inner_type
 
     @property
     def display_name(self):
