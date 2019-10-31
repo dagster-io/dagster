@@ -270,9 +270,19 @@ def examples_tests():
             .run(
                 "pushd examples",
                 "pip install tox",
-                "tox -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
+                *wrap_with_docker_compose_steps(
+                    # Can't use host networking on buildkite and communicate via localhost
+                    # between these sibling containers, so pass along the ip.
+                    network_buildkite_container('postgres')
+                    + connect_sibling_docker_container(
+                        'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
+                    )
+                    + [
+                        "tox -e {ver}".format(ver=TOX_MAP[version]),
+                        "mv .coverage {file}".format(file=coverage),
+                        "buildkite-agent artifact upload {file}".format(file=coverage),
+                    ]
+                )
             )
             .on_integration_image(version)
             .on_queue(BuildkiteQueue.MEDIUM)
@@ -527,7 +537,10 @@ if __name__ == "__main__":
     steps = pylint_steps() + [
         StepBuilder("isort")
         .run(
-            "pip install isort>=4.3.21", "isort -rc examples python_modules", "git diff --exit-code"
+            "pip install isort>=4.3.21",
+            "isort -rc examples python_modules",  # -sg seems to be broken
+            "isort -rc -l 78 examples/dagster_examples/intro_tutorial",
+            "git diff --exit-code"
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),

@@ -50,7 +50,6 @@ Environment Setup
 
     $ python -m pytest python_modules/dagster/dagster_tests
 
-Have fun coding!
 
 Developing Dagster
 ~~~~~~~~~~~~~~~~~~~~~

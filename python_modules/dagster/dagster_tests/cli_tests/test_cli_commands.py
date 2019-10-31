@@ -120,11 +120,18 @@ def test_list_command():
     )
     assert result.exit_code == 0
     assert result.output == (
-        'Repository demo_repository\n'
-        '**************************\n'
-        'Pipeline: repo_demo_pipeline\n'
+        'Repository hello_cereal_repository\n'
+        '**********************************\n'
+        'Pipeline: complex_pipeline\n'
         'Solids: (Execution Order)\n'
-        '    hello_world\n'
+        '    load_cereals\n'
+        '    sort_by_calories\n'
+        '    sort_by_protein\n'
+        '    display_results\n'
+        '*******************************\n'
+        'Pipeline: hello_cereal_pipeline\n'
+        'Solids: (Execution Order)\n'
+        '    hello_cereal\n'
     )
 
     execute_list_command(
@@ -142,11 +149,18 @@ def test_list_command():
     )
     assert result.exit_code == 0
     assert result.output == (
-        'Repository demo_repository\n'
-        '**************************\n'
-        'Pipeline: repo_demo_pipeline\n'
+        'Repository hello_cereal_repository\n'
+        '**********************************\n'
+        'Pipeline: complex_pipeline\n'
         'Solids: (Execution Order)\n'
-        '    hello_world\n'
+        '    load_cereals\n'
+        '    sort_by_calories\n'
+        '    sort_by_protein\n'
+        '    display_results\n'
+        '*******************************\n'
+        'Pipeline: hello_cereal_pipeline\n'
+        'Solids: (Execution Order)\n'
+        '    hello_cereal\n'
     )
 
     with pytest.raises(UsageError):
@@ -208,7 +222,7 @@ def valid_execute_args():
         },
         {
             'repository_yaml': script_relative_path('repository_module.yaml'),
-            'pipeline_name': ('repo_demo_pipeline',),
+            'pipeline_name': ('hello_cereal_pipeline',),
             'python_file': None,
             'module_name': None,
             'fn_name': None,
@@ -222,7 +236,7 @@ def valid_execute_args():
         },
         {
             'repository_yaml': None,
-            'pipeline_name': ('repo_demo_pipeline',),
+            'pipeline_name': ('hello_cereal_pipeline',),
             'python_file': None,
             'module_name': 'dagster_examples.intro_tutorial.repos',
             'fn_name': 'define_repo',
@@ -232,7 +246,7 @@ def valid_execute_args():
             'pipeline_name': (),
             'python_file': None,
             'module_name': 'dagster_examples.intro_tutorial.repos',
-            'fn_name': 'repo_demo_pipeline',
+            'fn_name': 'hello_cereal_pipeline',
         },
         {
             'repository_yaml': None,
@@ -254,10 +268,16 @@ def valid_execute_args():
 def valid_cli_args():
     return [
         ['-y', script_relative_path('repository_file.yaml'), 'foo'],
-        ['-y', script_relative_path('repository_module.yaml'), 'repo_demo_pipeline'],
+        ['-y', script_relative_path('repository_module.yaml'), 'hello_cereal_pipeline'],
         ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_bar_repo', 'foo'],
-        ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo', 'repo_demo_pipeline'],
-        ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'repo_demo_pipeline'],
+        [
+            '-m',
+            'dagster_examples.intro_tutorial.repos',
+            '-n',
+            'define_repo',
+            'hello_cereal_pipeline',
+        ],
+        ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'hello_cereal_pipeline'],
         ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_foo_pipeline'],
     ]
 
@@ -396,7 +416,7 @@ def test_execute_command():
 
     res = runner.invoke(
         pipeline_execute_command,
-        ['-y', script_relative_path('repository_module.yaml'), 'repo_demo_pipeline', 'foo'],
+        ['-y', script_relative_path('repository_module.yaml'), 'hello_cereal_pipeline', 'foo'],
     )
     assert res.exit_code == 1
     assert isinstance(res.exception, CheckError)

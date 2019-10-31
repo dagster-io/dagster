@@ -47,11 +47,11 @@ def test_wrong_multiple_output():
         yield Output(output_name='mismatch', value='foo')
 
     @pipeline
-    def wrong_muptiple_outputs_pipeline():
+    def wrong_multiple_outputs_pipeline():
         multiple_outputs()
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline(wrong_muptiple_outputs_pipeline)
+        execute_pipeline(wrong_multiple_outputs_pipeline)
 
 
 def test_multiple_outputs_of_same_name_disallowed():

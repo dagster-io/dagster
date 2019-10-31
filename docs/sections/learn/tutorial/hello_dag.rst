@@ -1,59 +1,77 @@
-Hello, DAG
-----------
-One of the core capabilities of dagster is the ability to express data pipelines as arbitrary
-directed acyclic graphs (DAGs) of solids.
+Connecting solids together
+--------------------------
 
-We'll define a very simple two-solid pipeline whose first solid returns a hardcoded string,
-and whose second solid concatenates two copies of its input. The output of the pipeline should be
-two concatenated copies of the hardcoded string.
-
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_dag.py
-   :caption: hello_dag.py
-
-This pipeline introduces a few new concepts.
-
-1.  Solids can have **inputs**. Inputs let us connect solids to each other by specifying solids'
-    dependencies on each other. As we'll see later, we can optionally also have dagster check the
-    types of the inputs at runtime.
-
-    In this case, the system has introspected the function signature of `solid_two` to create an
-    instance of :py:class:`InputDefinition <dagster.InputDefinition>`. You are free to construct
-    these explicitly.
+Our pipelines wouldn't be very interesting if they were limited to solids acting in isolation
+from each other. Pipelines are useful because they let us connect solids into arbitrary DAGs
+(`directed acyclic graphs <https://en.wikipedia.org/wiki/Directed_acyclic_graph>`_) of computation.
 
 
-2.  Solids' **dependencies** are expressed in the body of the pipeline function. You use traditional
-    function calls to construct a representation of the dependency graph. These functions are
-    invoked at pipeline construction time and do *not* actually execute the body of the solid.
-    You can learn more about these in the
-    :doc:`composition functions section <composition_functions>`.
+Let's get serial
+^^^^^^^^^^^^^^^^
 
-    .. literalinclude::  ../../../../examples/dagster_examples/intro_tutorial/hello_dag.py
-       :lines: 14-16
+We'll add a second solid to the pipeline we worked with in the first section of the tutorial.
 
-    The above pipeline constructs a two solid pipeline with solid_two depending on solid_one.
+This new solid will consume the output of the first solid, which read the cereal dataset in from
+disk, and in turn will sort the list of cereals by their calorie content per serving.
+
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/serial_pipeline.py
+   :linenos:
+   :lines: 1-37
+   :emphasize-lines: 15, 19, 37
+   :caption: serial_pipeline.py
+
+You'll see that we've modified our existing ``load_cereals`` solid to return an output, in this
+case the list of dicts into which ``csv.DictReader`` reads the cereals dataset.
+
+We've defined our new solid, ``sort_by_calories``, to take a user-defined input, ``cereals``, in
+addition to the system-provided :py:class:`context <dagster.ComputeExecutionContext>` object.
+
+We can use inputs and outputs to connect solids to each other. Here we tell Dagster that
+although ``load_cereals`` doesn't depend on the output of any other solid, ``sort_by_calories``
+does -- it depends on the output of ``load_cereals``.
 
 Let's visualize the DAG we've just defined in dagit.
 
 .. code-block:: console
 
-   $ dagit -f hello_dag.py -n hello_dag_pipeline
+   $ dagit -f serial_pipeline.py -n serial_pipeline
 
-Navigate to http://127.0.0.1:3000/hello_dag_pipeline/explore or choose the hello_dag_pipeline
+Navigate to http://127.0.0.1:3000/p/serial_pipeline/explore or choose "serial_pipeline"
 from the dropdown:
 
-.. image:: hello_dag_figure_one.png
+.. thumbnail:: serial_pipeline_figure_one.png
 
-One of the distinguishing features of dagster that separates it from many workflow engines is that
-dependencies connect *inputs* and *outputs* rather than just *tasks*. An author of a dagster
-pipeline defines the flow of execution by defining the flow of *data* within that
-execution. This is core to the programming model of dagster, where each step in the pipeline
--- the solid -- is a *functional* unit of computation.
+A more complex DAG
+^^^^^^^^^^^^^^^^^^
 
-Now run the pipeline we've just defined, either from dagit or from the command line:
+Solids don't need to be wired together serially. The output of one solid can be consumed by any
+number of other solids, and the outputs of several different solids can be consumed by a single
+solid.
 
-.. code-block:: console
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/complex_pipeline.py
+   :linenos:
+   :lines: 6-64
+   :lineno-start: 6
+   :emphasize-lines: 55-59
+   :caption: complex_pipeline.py
 
-    $ dagster pipeline execute -f hello_dag.py -n hello_dag_pipeline
+First we introduce the intermediate variable ``cereals`` into our pipeline definition to
+represent the output of the ``load_cereals`` solid. Then we make both ``sort_by_calories`` and
+``sort_by_protein`` consume this output. Their outputs are in turn both consumed by
+``display_results``.
 
-In the next section, :doc:`An actual DAG <actual_dag>`, we'll build our first DAG with interesting
-topology and see how dagster determines the execution order of a pipeline.
+Let's visualize this pipeline in Dagit (``dagit -f complex_pipeline.py -n complex_pipeline``):
+
+.. thumbnail:: complex_pipeline_figure_one.png
+
+When you execute this example from Dagit, you'll see that ``load_cereals`` executes first,
+followed by ``sort_by_calories`` and ``sort_by_protein`` -- in any order -- and that
+``display_results`` executes last, only after ``sort_by_calories`` and ``sort_by_protein`` have
+both executed.
+
+In more sophisticated execution environments, ``sort_by_calories`` and ``sort_by_protein`` could
+execute not just in any order, but at the same time, since they don't depend on each other's
+outputs -- but both would still have to execute after ``load_cereals`` (because they depend on its
+output) and before ``display_results`` (because ``display_results`` depends on both of
+their outputs).
+

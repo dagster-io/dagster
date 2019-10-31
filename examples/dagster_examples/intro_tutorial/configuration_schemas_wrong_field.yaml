@@ -1,7 +1,0 @@
-solids:
-  multiply_the_word_with_typed_config:
-    config:
-      wrong_factor: 1
-    inputs:
-      word:
-        value: "bkjdf"

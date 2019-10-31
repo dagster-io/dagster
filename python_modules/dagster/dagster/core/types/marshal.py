@@ -13,12 +13,22 @@ class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-
     supported.
     '''
 
-    def __init__(self, name):
+    def __init__(self, name, write_mode='wb', read_mode='rb'):
         self._name = name
+        self._write_mode = write_mode
+        self._read_mode = read_mode
 
     @property
     def name(self):
         return self._name
+
+    @property
+    def read_mode(self):
+        return self._read_mode
+
+    @property
+    def write_mode(self):
+        return self._write_mode
 
     @abstractmethod
     def serialize(self, value, write_file_obj):
@@ -31,13 +41,13 @@ class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-
     def serialize_to_file(self, value, write_path):
         check.str_param(write_path, 'write_path')
 
-        with open(write_path, 'wb') as write_obj:
+        with open(write_path, self.write_mode) as write_obj:
             return self.serialize(value, write_obj)
 
     def deserialize_from_file(self, read_path):
         check.str_param(read_path, 'read_path')
 
-        with open(read_path, 'rb') as read_obj:
+        with open(read_path, self.read_mode) as read_obj:
             return self.deserialize(read_obj)
 
 

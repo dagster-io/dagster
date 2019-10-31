@@ -56,6 +56,7 @@ from dagster.core.execution.api import (
     execute_pipeline_with_preset,
 )
 from dagster.core.execution.config import RunConfig
+from dagster.core.execution.context.compute import ComputeExecutionContext
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.plan.objects import StepKind
@@ -75,6 +76,7 @@ from dagster.core.types import (
     Optional,
     Path,
     PermissiveDict,
+    Selector,
     String,
     input_hydration_config,
     output_materialization_config,
@@ -125,6 +127,7 @@ __all__ = [
     # Execution
     'execute_pipeline_iterator',
     'execute_pipeline',
+    'ComputeExecutionContext',
     'DagsterEventType',
     'InitExecutorContext',
     'InitLoggerContext',

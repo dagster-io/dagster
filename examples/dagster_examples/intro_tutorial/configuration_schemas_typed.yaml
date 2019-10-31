@@ -1,7 +1,0 @@
-solids:
-  typed_multiply_the_word:
-    config:
-      factor: 2
-    inputs:
-      word:
-        value: quux

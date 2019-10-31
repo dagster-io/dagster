@@ -1,5 +1,5 @@
 solids:
-  add_hello_to_word:
+  read_csv:
     inputs:
-      word:
+      csv_path:
         value: 2343

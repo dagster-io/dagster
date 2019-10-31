@@ -1,3 +1,9 @@
 solids:
-  conditional:
-    config: out_two
+  read_csv:
+    inputs:
+      csv_path:
+        value: "cereal.csv"
+  split_cereals:
+    config:
+      process_cold: false
+      process_hot: true

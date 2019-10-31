@@ -159,14 +159,14 @@ def test_load_from_repository_module():
     handle = handle_for_pipeline_cli_args(
         {
             'module_name': 'dagster_examples.intro_tutorial.repos',
-            'pipeline_name': 'repo_demo_pipeline',
+            'pipeline_name': 'hello_cereal_pipeline',
             'fn_name': 'define_repo',
         }
     )
     pipeline = handle.build_pipeline_definition()
 
     assert isinstance(pipeline, PipelineDefinition)
-    assert pipeline.name == 'repo_demo_pipeline'
+    assert pipeline.name == 'hello_cereal_pipeline'
     assert ExecutionTargetHandle.get_handle(pipeline) == (handle, None)
 
 
@@ -183,26 +183,26 @@ def test_load_from_pipeline_file():
 
 def test_load_from_pipeline_module():
     handle = handle_for_pipeline_cli_args(
-        {'module_name': 'dagster_examples.intro_tutorial.repos', 'fn_name': 'repo_demo_pipeline'}
+        {'module_name': 'dagster_examples.intro_tutorial.repos', 'fn_name': 'hello_cereal_pipeline'}
     )
     pipeline = handle.build_pipeline_definition()
 
     assert isinstance(pipeline, PipelineDefinition)
-    assert pipeline.name == 'repo_demo_pipeline'
+    assert pipeline.name == 'hello_cereal_pipeline'
     assert ExecutionTargetHandle.get_handle(pipeline) == (handle, None)
 
 
 def test_loader_from_default_repository_module_yaml():
     handle = handle_for_pipeline_cli_args(
         {
-            'pipeline_name': 'repo_demo_pipeline',
+            'pipeline_name': 'hello_cereal_pipeline',
             'repository_yaml': script_relative_path('repository_module.yaml'),
         }
     )
     pipeline = handle.build_pipeline_definition()
 
     assert isinstance(pipeline, PipelineDefinition)
-    assert pipeline.name == 'repo_demo_pipeline'
+    assert pipeline.name == 'hello_cereal_pipeline'
     assert ExecutionTargetHandle.get_handle(pipeline) == (handle, None)
 
 

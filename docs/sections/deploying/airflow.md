@@ -91,7 +91,7 @@ layer available to the Dagster containers.
 Presently, we support S3 for persisting this intermediate state. To use it, you'll just need to set
 up an S3 bucket and expose AWS credentials via the usual Boto credentials chain. We plan on
 supporting other persistence targets like GCS, HDFS, and NFS in the future—please reach out to us if
-you require a different intermediate store for your use case!
+you require a different intermediate store for your use case.
 
 We use the `DagsterDockerOperator` to define an Airflow DAG that can run in completely isolated
 containers corresponding to your Dagster solids. To run containerized, you'll first need to
