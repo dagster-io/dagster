@@ -3,9 +3,6 @@ resources:
     config:
       throw_on_resource_init: false
 
-expectations:
-  evaluate: false
-
 solids:
   end:
     config:

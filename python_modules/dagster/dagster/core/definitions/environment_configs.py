@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from dagster.core.definitions import SolidHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector
+from dagster.core.types import Field, List, NamedDict, NamedSelector
 from dagster.core.types.config import ALL_CONFIG_BUILTINS, ConfigType, ConfigTypeAttributes
 from dagster.core.types.field_utils import FieldImpl, _ConfigComposite, check_opt_field_param
 from dagster.core.types.iterate_types import iterate_config_types
@@ -202,11 +202,6 @@ def define_environment_cls(creation_data):
                         creation_data.pipeline_name,
                     )
                 ),
-                'expectations': Field(
-                    define_expectations_config_cls(
-                        '{pipeline_name}.ExpectationsConfig'.format(pipeline_name=pipeline_name)
-                    )
-                ),
                 'storage': Field(
                     define_storage_config_cls(
                         '{pipeline_name}.{mode_name}.StorageConfig'.format(
@@ -240,14 +235,6 @@ def define_environment_cls(creation_data):
                 ),
             }
         ),
-    )
-
-
-def define_expectations_config_cls(name):
-    check.str_param(name, 'name')
-
-    return SystemNamedDict(
-        name, fields={'evaluate': Field(Bool, is_optional=True, default_value=True)}
     )
 
 

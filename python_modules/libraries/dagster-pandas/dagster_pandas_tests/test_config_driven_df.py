@@ -135,7 +135,7 @@ def test_dataframe_csv_missing_inputs():
 
     assert exc_info.value.errors[0].message == (
         '''Missing required field "solids" at document config root. '''
-        '''Available Fields: "['execution', 'expectations', 'loggers', '''
+        '''Available Fields: "['execution', 'loggers', '''
         ''''resources', 'solids', 'storage']".'''
     )
 
