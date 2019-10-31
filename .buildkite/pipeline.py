@@ -4,7 +4,7 @@ import sys
 
 import yaml
 from defines import SupportedPython, SupportedPython3s, SupportedPythons
-from step_builder import BuildkiteQueue, StepBuilder
+from step_builder import StepBuilder
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -103,7 +103,7 @@ def wrap_with_docker_compose_steps(
     )
 
 
-def python_modules_tox_tests(directory, queue=BuildkiteQueue.MICRO):
+def python_modules_tox_tests(directory):
     label = directory.replace("/", "-")
     tests = []
     for version in SupportedPythons:
@@ -123,7 +123,6 @@ def python_modules_tox_tests(directory, queue=BuildkiteQueue.MICRO):
             .on_integration_image(
                 version, ['AWS_DEFAULT_REGION', 'TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN']
             )
-            .on_queue(queue)
             .build()
         )
 
@@ -137,7 +136,6 @@ def airline_demo_tests():
         tests.append(
             StepBuilder('airline-demo tests ({version})'.format(version=TOX_MAP[version]))
             .on_integration_image(version)
-            .on_queue(BuildkiteQueue.MEDIUM)
             .run(
                 "cd examples",
                 # Build the image we use for airflow in the demo tests
@@ -174,7 +172,6 @@ def events_demo_tests():
             .on_integration_image(
                 version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
             )
-            .on_queue(BuildkiteQueue.MEDIUM)
             .run(
                 "mkdir -p /tmp/dagster/events",
                 "pushd scala_modules",
@@ -210,7 +207,6 @@ def airflow_tests():
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(version, ['AIRFLOW_HOME'])
-            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
     return tests
@@ -286,7 +282,6 @@ def examples_tests():
                 )
             )
             .on_integration_image(version)
-            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
     return tests
@@ -367,7 +362,6 @@ def dask_tests():
             .on_integration_image(
                 version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
             )
-            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
     return tests
@@ -408,7 +402,6 @@ def dagit_tests():
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(version)
-            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
 
@@ -429,7 +422,6 @@ def lakehouse_tests():
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(version)
-            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
 
@@ -455,7 +447,6 @@ def pipenv_smoke_tests():
             StepBuilder("pipenv smoke tests ({ver})".format(ver=TOX_MAP[version]))
             .run(*smoke_test_steps)
             .on_integration_image(version)
-            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
 
@@ -510,7 +501,6 @@ def pylint_steps():
             "pylint -j 0 `git ls-files %s` --rcfile=.pylintrc" % ' '.join(base_paths_ext),
         )
         .on_integration_image(SupportedPython.V3_7)
-        .on_queue(BuildkiteQueue.MEDIUM)
         .build()
     )
 
@@ -528,7 +518,6 @@ def pylint_steps():
                 "pylint -j 0 `git ls-files '%s/*.py'` --rcfile=.pylintrc" % path,
             )
             .on_integration_image(SupportedPython.V3_7)
-            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
     return res
@@ -585,7 +574,6 @@ if __name__ == "__main__":
             "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
         )
         .on_integration_image(SupportedPython.V3_7)
-        .on_queue(BuildkiteQueue.MEDIUM)
         .build(),
     ]
     steps += airline_demo_tests()
@@ -602,7 +590,7 @@ if __name__ == "__main__":
 
     steps += python_modules_tox_tests("dagster")
     steps += python_modules_tox_tests("dagster-graphql")
-    steps += python_modules_tox_tests("dagstermill", BuildkiteQueue.MEDIUM)
+    steps += python_modules_tox_tests("dagstermill")
     steps += library_tests()
 
     if DO_COVERAGE:
