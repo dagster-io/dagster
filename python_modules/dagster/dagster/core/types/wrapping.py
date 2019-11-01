@@ -4,7 +4,13 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .builtin_enum import BuiltinEnum
-from .typing_api import get_optional_inner_type, is_closed_python_optional_type, is_python_list_type
+from .typing_api import (
+    get_optional_inner_type,
+    is_closed_python_optional_type,
+    is_python_list_type,
+    is_python_set_type,
+    is_python_tuple_type,
+)
 
 
 class WrappingType(object):
@@ -23,6 +29,14 @@ class WrappingListType(WrappingType):
     pass
 
 
+class WrappingSetType(WrappingType):
+    pass
+
+
+class WrappingTupleType(WrappingType):
+    pass
+
+
 class WrappingNullableType(WrappingType):
     pass
 
@@ -32,6 +46,20 @@ def remap_to_dagster_list_type(ttype):
     if ttype == list or ttype == typing.List:
         return WrappingListType(BuiltinEnum.ANY)
     return WrappingListType(ttype.__args__[0])
+
+
+def remap_to_dagster_set_type(ttype):
+    check.invariant(is_python_set_type(ttype), 'type must pass is_python_set_type check')
+    if ttype == set or ttype == typing.Set:
+        return WrappingSetType(BuiltinEnum.ANY)
+    return WrappingSetType(ttype.__args__[0])
+
+
+def remap_to_dagster_tuple_type(ttype):
+    check.invariant(is_python_tuple_type(ttype), 'type must pass is_python_tuple_type check')
+    if ttype == tuple or ttype == typing.Tuple:
+        return WrappingTupleType(None)
+    return WrappingTupleType(ttype.__args__)
 
 
 def remap_to_dagster_optional_type(ttype):

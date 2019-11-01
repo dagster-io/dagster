@@ -87,7 +87,9 @@ from dagster.core.types import (
     Path,
     PermissiveDict,
     Selector,
+    Set,
     String,
+    Tuple,
     input_hydration_config,
     output_materialization_config,
 )

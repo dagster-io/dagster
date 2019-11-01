@@ -91,6 +91,14 @@ class ConfigType(object):
         return False
 
     @property
+    def is_tuple(self):
+        return False
+
+    @property
+    def is_set(self):
+        return False
+
+    @property
     def inner_types(self):
         return []
 
@@ -125,6 +133,36 @@ class ConfigList(ConfigType):
         return [self.inner_type] + self.inner_type.inner_types
 
 
+class ConfigSet(ConfigType):
+    def __init__(self, inner_type, *args, **kwargs):
+        self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
+        super(ConfigSet, self).__init__(*args, **kwargs)
+
+    @property
+    def is_set(self):
+        return True
+
+    @property
+    def inner_types(self):
+        return [self.inner_type] + self.inner_type.inner_types
+
+
+class ConfigTuple(ConfigType):
+    def __init__(self, inner_type, *args, **kwargs):
+        self.inner_type = check.list_param(inner_type, 'inner_type', of_type=ConfigType)
+        super(ConfigTuple, self).__init__(*args, **kwargs)
+
+    @property
+    def is_tuple(self):
+        return True
+
+    @property
+    def inner_types(self):
+        return self.inner_type + [
+            t for inner_type in self.inner_type for t in inner_type.inner_types
+        ]
+
+
 class ConfigNullable(ConfigType):
     def __init__(self, inner_type, *args, **kwargs):
         self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
@@ -143,6 +181,16 @@ class ConfigAny(ConfigType):
     @property
     def is_any(self):
         return True
+
+
+class BuiltinConfigAny(ConfigAny):
+    def __init__(self, description=None):
+        super(BuiltinConfigAny, self).__init__(
+            key=type(self).__name__,
+            name=type(self).__name__,
+            description=description,
+            type_attributes=ConfigTypeAttributes(is_builtin=True),
+        )
 
 
 class BuiltinConfigScalar(ConfigScalar):
@@ -237,6 +285,50 @@ def List(inner_type):
             )
 
     return _List
+
+
+def Set(inner_type):
+    check.inst_param(inner_type, 'inner_type', ConfigType)
+
+    class _Set(ConfigSet):
+        def __init__(self):
+
+            name = 'Set[{inner_type}]'.format(inner_type=inner_type)
+
+            super(_Set, self).__init__(
+                key='Set.{inner_type}'.format(inner_type=inner_type.key),
+                name=name,
+                type_attributes=ConfigTypeAttributes(is_builtin=True),
+                inner_type=inner_type,
+            )
+
+            self.description = name
+
+    return _Set
+
+
+def Tuple(inner_types):
+    check.list_param(inner_types, 'inner_types', ConfigType)
+
+    class _Tuple(ConfigTuple):
+        def __init__(self):
+
+            name = 'Tuple[{inner_types}]'.format(
+                inner_types=', '.join([inner_type.name for inner_type in inner_types])
+            )
+
+            super(_Tuple, self).__init__(
+                key='Tuple.{inner_types}'.format(
+                    inner_types='-'.join([inner_type.key for inner_type in inner_types])
+                ),
+                name=name,
+                type_attributes=ConfigTypeAttributes(is_builtin=True),
+                inner_type=inner_types,
+            )
+
+            self.description = name
+
+    return _Tuple
 
 
 class EnumValue:

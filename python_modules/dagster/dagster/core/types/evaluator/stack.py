@@ -46,6 +46,23 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
             entries=self.entries + [EvaluationStackListItemEntry(list_type.inner_type, list_index)],
         )
 
+    def for_set_index(self, set_index):
+        set_type = self.type_in_context
+        check.invariant(set_type.is_set)
+        return EvaluationStack(
+            config_type=self.config_type,
+            entries=self.entries + [EvaluationStackListItemEntry(set_type.inner_type, set_index)],
+        )
+
+    def for_tuple_index(self, tuple_index):
+        tuple_type = self.type_in_context
+        check.invariant(tuple_type.is_tuple)
+        return EvaluationStack(
+            config_type=self.config_type,
+            entries=self.entries
+            + [EvaluationStackListItemEntry(tuple_type.inner_type[tuple_index], tuple_index)],
+        )
+
 
 class EvaluationStackEntry:  # marker interface
     pass

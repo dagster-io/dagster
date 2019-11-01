@@ -4,8 +4,18 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types import Bool, Float, Int, PythonDict, PythonSet, PythonTuple, String
 
 from .builtin_enum import BuiltinEnum
-from .typing_api import is_closed_python_optional_type, is_python_list_type
-from .wrapping import remap_to_dagster_list_type, remap_to_dagster_optional_type
+from .typing_api import (
+    is_closed_python_optional_type,
+    is_python_list_type,
+    is_python_set_type,
+    is_python_tuple_type,
+)
+from .wrapping import (
+    remap_to_dagster_list_type,
+    remap_to_dagster_optional_type,
+    remap_to_dagster_set_type,
+    remap_to_dagster_tuple_type,
+)
 
 __RUNTIME_TYPE_REGISTRY = {}
 '''Python types corresponding to user-defined RunTime types created using @dagster_type or
@@ -87,6 +97,10 @@ def remap_python_type(ttype):
 
     if is_python_list_type(ttype):
         return remap_to_dagster_list_type(ttype)
+    if is_python_tuple_type(ttype):
+        return remap_to_dagster_tuple_type(ttype)
+    if is_python_set_type(ttype):
+        return remap_to_dagster_set_type(ttype)
     if is_closed_python_optional_type(ttype):
         return remap_to_dagster_optional_type(ttype)
 

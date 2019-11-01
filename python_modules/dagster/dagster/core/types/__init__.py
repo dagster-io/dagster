@@ -1,3 +1,5 @@
+import typing
+
 from .builtin_enum import BuiltinEnum
 from .config_schema import (
     InputHydrationConfig,
@@ -23,6 +25,8 @@ Path = BuiltinEnum.PATH
 Float = BuiltinEnum.FLOAT
 Nothing = BuiltinEnum.NOTHING
 
+Set = typing.Set
+Tuple = typing.Tuple
 
 # What sort of witchcraft is this?
 
