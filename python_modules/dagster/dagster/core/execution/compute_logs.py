@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import io
 import os
-import signal
 import subprocess
 import sys
 import time
@@ -123,7 +122,11 @@ def tailf(path, io_type=ComputeIOType.STDOUT, logger=None):
 
 
 def should_compute_log_tail_poll():
-    return sys.platform == 'win32'
+    # TODO investigate test flakiness and switch back on posix implementation, but for now switch
+    # to polling implementation to avoid orphaning child tail processes
+    # https://github.com/dagster-io/dagster/issues/1887
+    return True
+    # return sys.platform == 'win32'
 
 
 def tail_polling(filepath, stream=sys.stdout, parent_pid=None):
@@ -148,16 +151,9 @@ def tail_posix(filepath, stream=sys.stdout, parent_pid=None):
     The pid of the parent process (if provided) is checked to see if the tail process should be
     terminated, in case the parent is hard-killed / segfaults
     '''
+
     cmd = 'tail -F {}'.format(filepath).split(' ')
     tail_process = subprocess.Popen(cmd, stdout=stream)
-
-    def kill_tail(*_args):
-        if tail_process:
-            tail_process.terminate()
-        return
-
-    signal.signal(signal.SIGTERM, kill_tail)
-
     try:
         while True:
             if parent_pid and current_process_is_orphaned(parent_pid):
