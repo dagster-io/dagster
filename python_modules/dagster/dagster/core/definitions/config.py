@@ -23,11 +23,20 @@ def resolve_config_field(config_field, config, source):
 
 
 class ConfigMapping(namedtuple('_ConfigMapping', 'config_fn config_field')):
-    '''By specifying a config mapping, you can override the configuration for child solids
-    contained within this composite solid. Config mappings require both a configuration field to be
-    specified, which is exposed as the configuration for this composite solid, and a configuration
-    mapping function, which maps the parent configuration of this solid into a configuration that is
-    applied to any child solids.
+    '''Defines a config mapping for a composite solid.
+
+    By specifying a config mapping function, you can override the configuration for the child
+    solids contained within a composite solid.
+            
+    Config mappings require the configuration field to be specified as ``config``, which will be
+    exposed as the configuration field for the composite solid, as well as a configuration mapping
+    function, ``config_fn``, which maps the config provided to the composite solid to the config
+    that will be provided to the child solids.
+    
+    Args:
+        config_fn (Callable[[ConfigMappingContext, dict], dict]): The function that will be called
+            to map the composite config to a config appropriate for the child solids.
+        config_field (Field): The schema of the composite config.
     '''
 
     def __new__(cls, config_fn, config):
@@ -42,8 +51,10 @@ class ConfigMapping(namedtuple('_ConfigMapping', 'config_fn config_field')):
 
 
 class ConfigMappingContext(namedtuple('ConfigMappingContext', 'run_config')):
-    '''
-    Config mapping context provided as input to config mapping functions.
+    '''Config mapping-specific context.
+
+    Attributes:
+        run_config (RunConfig): The run config belonging to this pipeline run.
     '''
 
     def __new__(cls, run_config=None):

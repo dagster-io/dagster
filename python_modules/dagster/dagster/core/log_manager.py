@@ -108,30 +108,26 @@ def coerce_valid_log_level(log_level):
 
 
 class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags loggers')):
-    '''Centralized dispatch for logging through the execution context.
+    '''Centralized dispatch for logging from user code.
 
-    Handles the construction of uniform structured log messages and passes through to the underlying
-    loggers.
+    Handles the construction of uniform structured log messages and passes them through to the
+    underlying loggers.
 
-    An instance of the log manager is made available to solids as context.log.
+    An instance of the log manager is made available to solids as ``context.log``. Users should not
+    initialize instances of DagsterLogManager directly.
 
-    The log manager supports standard convenience methods like those built into the Python logging
-    library (i.e., ``DagsterLogManager.{debug, info, warning, error, critical}``, expects
+    The log manager supports standard convenience methods like Python :py:mod:`python:logging`
+    (i.e., ``DagsterLogManager.{debug, info, warning, error, critical}``, expects
     corresponding methods to be defined on the loggers passed to its constructor, and will delegate
     to those methods on each logger.
 
     The underlying integer API can also be called directly using, e.g.,
-    ``DagsterLogManager.log(5, msg)``, and the log manager will delegate to the `log` method defined
-    on each of the loggers it manages.
+    ``DagsterLogManager.log(5, msg)``, and the log manager will delegate to the ``log`` method
+    defined on each of the loggers it manages.
 
     User-defined custom log levels are not supported, and calls to, e.g.,
-    ``DagsterLogManager.trace()`` or ``DagsterLogManager.notice`` will result in hard exceptions at
+    ``DagsterLogManager.trace`` or ``DagsterLogManager.notice`` will result in hard exceptions at
     runtime.
-
-    Args:
-        run_id (str): The run_id.
-        tags (dict): Tags for the run
-        loggers (List[logging.Logger]): Loggers to invoke.
     '''
 
     def __new__(cls, run_id, logging_tags, loggers):
@@ -210,54 +206,36 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
             logger_.log(level, message, extra=extra)
 
     def debug(self, msg, **kwargs):
-        '''
-        Debug level logging directive. Ends up invoking loggers with DEBUG error level.
+        '''Log at the DEBUG level.
 
-        The message will be automatically adorned with context information about the name
-        of the pipeline, the name of the solid, and so forth. The use can also add
-        context values during execution using the value() method of ExecutionContext.
-        Therefore it is generally unnecessary to include this type of information
-        (solid name, pipeline name, etc) in the log message unless it is critical
-        for the readability/fluency of the log message text itself.
+        The message will be automatically adorned with contextual information about the name
+        of the pipeline, the name of the solid, etc., so it is generally unnecessary to include
+        this type of information in the log message.
 
-        You can optionally additional context key-value pairs to an individual log
-        message using the keyword args to this message
+        You can optionally additional key-value pairs to an individual log message using the kwargs
+        to this method.
 
         Args:
             msg (str): The message to log.
-
-        Kwargs:
-            Additional context values for only this log message.
+            **kwargs (Optional[Any]): Any additional key-value pairs for only this log message.
         '''
 
         check.str_param(msg, 'msg')
         return self._log(logging.DEBUG, msg, kwargs)
 
     def info(self, msg, **kwargs):
-        '''Log at INFO level
+        '''Log at the INFO level.
 
-        See ``debug()``.
-
-        Args:
-            msg (str): The message to log.
-
-        Kwargs:
-            Additional context values for only this log message.
+        See :py:meth:`~DagsterLogManager.debug`.
         '''
 
         check.str_param(msg, 'msg')
         return self._log(logging.INFO, msg, kwargs)
 
     def warning(self, msg, **kwargs):
-        '''Log at WARNING level
+        '''Log at the WARNING level.
 
-        See ``debug()``.
-
-        Args:
-            msg (str): The message to log.
-
-        Kwargs:
-            Additional context values for only this log message.
+        See :py:meth:`~DagsterLogManager.debug`.
         '''
 
         check.str_param(msg, 'msg')
@@ -267,30 +245,18 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
     warn = warning
 
     def error(self, msg, **kwargs):
-        '''Log at ERROR level
+        '''Log at the ERROR level.
 
-        See ``debug()``.
-
-        Args:
-            msg (str): The message to log.
-
-        Kwargs:
-            Additional context values for only this log message.
+        See :py:meth:`~DagsterLogManager.debug`.
         '''
 
         check.str_param(msg, 'msg')
         return self._log(logging.ERROR, msg, kwargs)
 
     def critical(self, msg, **kwargs):
-        '''Log at CRITICAL level
+        '''Log at the CRITICAL level.
 
-        See ``debug()``.
-
-        Args:
-            msg (str): The message to log.
-
-        Kwargs:
-            Additional context values for only this log message.
+        See :py:meth:`~DagsterLogManager.debug`.
         '''
         check.str_param(msg, 'msg')
         return self._log(logging.CRITICAL, msg, kwargs)

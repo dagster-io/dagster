@@ -24,7 +24,7 @@ You'll see that we've modified our existing ``load_cereals`` solid to return an 
 case the list of dicts into which ``csv.DictReader`` reads the cereals dataset.
 
 We've defined our new solid, ``sort_by_calories``, to take a user-defined input, ``cereals``, in
-addition to the system-provided :py:class:`context <dagster.ComputeExecutionContext>` object.
+addition to the system-provided :py:class:`context <dagster.SystemComputeExecutionContext>` object.
 
 We can use inputs and outputs to connect solids to each other. Here we tell Dagster that
 although ``load_cereals`` doesn't depend on the output of any other solid, ``sort_by_calories``

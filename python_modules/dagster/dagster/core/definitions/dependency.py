@@ -14,15 +14,18 @@ from .utils import DEFAULT_OUTPUT, struct_to_string
 
 
 class SolidInvocation(namedtuple('Solid', 'name alias resource_mapper_fn')):
-    '''
-    A solid identifier in a dependency structure. Allows supplying parameters to the solid,
-    like the alias.
+    '''Identifies an instance of a solid in a pipeline dependency structure.
 
     Args:
-        name (str): Name of the solid in the pipeline to instance.
-        alias (Optional[str]):
-            Name for this instance of the solid. Necessary when there are multiple instances
-            of the same solid.
+        name (str): Name of the solid of which this is an instance.
+        alias (Optional[str]): Name specific to this instance of the solid. Necessary when there are
+            multiple instances of the same solid.
+        resource_mapper_fn (Optional[Callable]): Provide this function to remap resources available
+            in this pipeline to the resource keys required by the solid definition, e.g., when
+            using a library solid that expects a resource to have a different name than the name of
+            the compatible resource available in this pipeline. Should take a dictionary whose
+            keys are the resource keys provided by the pipeline and return a dictionary whose keys
+            are the resource keys required by the solid definition, interchanging the values.
 
     Example:
 
@@ -434,20 +437,16 @@ class IDependencyDefinition(six.with_metaclass(ABCMeta)):  # pylint: disable=no-
 class DependencyDefinition(
     namedtuple('_DependencyDefinition', 'solid output description'), IDependencyDefinition
 ):
-    '''Dependency definitions represent an edge in the DAG of solids. This object is
-    used with a dictionary structure (whose keys represent solid/input where the dependency
-    comes from) so this object only contains the target dependency information.
+    '''Represents an edge in the DAG of solid instances forming a pipeline.
+
+    This object is used at the leaves of a dictionary structure whose keys represent the dependent
+    solid and dependent input, so this object only contains information about the dependee.
 
     Args:
-        solid (str):
-            The name of the solid that is the target of the dependency.
-            This is the solid where the value passed between the solids
-            comes from.
-        output (str):
-            The name of the output that is the target of the dependency.
-            Defaults to "result", the default output name of solids with a single output.
-        description (str):
-            Description of this dependency. Optional.
+        solid (str): The name of the solid that is depended on, that is, from which the value
+            passed between the two solids originates.
+        output (Optional[str]): The name of the output that is depended on. (default: "result")
+        description (Optional[str]): Human-readable description of this dependency.
     '''
 
     def __new__(cls, solid, output=DEFAULT_OUTPUT, description=None):

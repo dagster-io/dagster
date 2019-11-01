@@ -1,5 +1,7 @@
 from dagster.core.definitions import (
     CompositeSolidDefinition,
+    ConfigMapping,
+    ConfigMappingContext,
     DependencyDefinition,
     EventMetadataEntry,
     ExecutionTargetHandle,
@@ -7,13 +9,16 @@ from dagster.core.definitions import (
     ExpectationResult,
     Failure,
     InputDefinition,
+    InputMapping,
     JsonMetadataEntryData,
     LoggerDefinition,
+    MarkdownMetadataEntryData,
     Materialization,
     ModeDefinition,
     MultiDependencyDefinition,
     Output,
     OutputDefinition,
+    OutputMapping,
     PathMetadataEntryData,
     PipelineDefinition,
     PresetDefinition,
@@ -37,30 +42,35 @@ from dagster.core.definitions import (
     solid,
     system_storage,
 )
+from dagster.core.engine import Engine
 from dagster.core.engine.init import InitExecutorContext
 from dagster.core.errors import (
+    DagsterError,
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
+    DagsterRunNotFoundError,
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckError,
+    DagsterUnmetExecutorRequirementsError,
     DagsterUserCodeExecutionError,
 )
-from dagster.core.events import DagsterEventType
+from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.api import (
     execute_pipeline,
     execute_pipeline_iterator,
     execute_pipeline_with_preset,
 )
-from dagster.core.execution.config import RunConfig
-from dagster.core.execution.context.compute import ComputeExecutionContext
+from dagster.core.execution.config import ExecutorConfig, RunConfig
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.logger import InitLoggerContext
+from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.execution.plan.objects import StepKind
 from dagster.core.execution.results import PipelineExecutionResult, SolidExecutionResult
+from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
 from dagster.core.storage.init import InitSystemStorageContext
 from dagster.core.types import (
@@ -92,6 +102,8 @@ from .version import __version__
 
 __all__ = [
     # Definition
+    'ConfigMapping',
+    'ConfigMappingContext',
     'CompositeSolidDefinition',
     'DependencyDefinition',
     'EventMetadataEntry',
@@ -104,10 +116,12 @@ __all__ = [
     'Failure',
     'Field',
     'InputDefinition',
+    'InputMapping',
     'LoggerDefinition',
     'Materialization',
     'ModeDefinition',
     'OutputDefinition',
+    'OutputMapping',
     'PipelineDefinition',
     'RepositoryDefinition',
     'ResourceDefinition',
@@ -127,8 +141,10 @@ __all__ = [
     # Execution
     'execute_pipeline_iterator',
     'execute_pipeline',
-    'ComputeExecutionContext',
+    'DagsterEvent',
     'DagsterEventType',
+    'Engine',
+    'ExecutorConfig',
     'InitExecutorContext',
     'InitLoggerContext',
     'InitResourceContext',
@@ -136,6 +152,7 @@ __all__ = [
     'PipelineExecutionResult',
     'RunConfig',
     'SolidExecutionResult',
+    'SystemComputeExecutionContext',
     'SystemStorageData',
     # Errors
     'DagsterExecutionStepExecutionError',
@@ -147,6 +164,8 @@ __all__ = [
     'DagsterTypeCheckError',
     'DagsterUserCodeExecutionError',
     'DagsterStepOutputNotFoundError',
+    # Logging
+    'DagsterLogManager',
     # Utilities
     'execute_solid',
     'execute_solids_within_pipeline',

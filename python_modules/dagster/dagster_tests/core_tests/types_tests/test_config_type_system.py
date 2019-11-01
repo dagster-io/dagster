@@ -569,7 +569,7 @@ def test_no_env_missing_required_error_handling():
 
     assert pe.errors[0].message == (
         '''Missing required field "solids" at document config root. '''
-        '''Available Fields: "['execution', 'expectations', 'loggers', '''
+        '''Available Fields: "['execution', 'loggers', '''
         ''''resources', 'solids', 'storage']".'''
     )
 

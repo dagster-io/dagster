@@ -5,16 +5,17 @@ from dagster_cron import SystemCronScheduler
 from dagster import (
     RepositoryDefinition,
     ScheduleDefinition,
-    execute_pipeline,
     pipeline,
     schedules,
     solid,
 )
+from dagster.utils import file_relative_path
 
 
 @solid
-def scheduled_cereal(context):
-    dataset_path = 'cereal.csv'
+def hello_cereal(context):
+    dataset_path = file_relative_path(__file__, "cereal.csv")
+    context.log.info(dataset_path)
     with open(dataset_path, 'r') as fd:
         cereals = [row for row in csv.DictReader(fd)]
 
@@ -24,13 +25,13 @@ def scheduled_cereal(context):
 
 
 @pipeline
-def scheduled_cereal_pipeline():
-    scheduled_cereal()
+def hello_cereal_pipeline():
+    hello_cereal()
 
 
-def scheduled_cereal_repository():
+def cereal_repository():
     return RepositoryDefinition(
-        'scheduled_cereal', pipeline_defs=[scheduled_cereal_pipeline]
+        'hello_cereal_repository', pipeline_defs=[hello_cereal_pipeline]
     )
 
 
@@ -40,12 +41,7 @@ def cereal_schedules():
         ScheduleDefinition(
             name='good_morning',
             cron_schedule='45 6 * * *',
-            pipeline_name='scheduled_cereal_pipeline',
+            pipeline_name='hello_cereal_pipeline',
             environment_dict={'storage': {'filesystem': {}}},
         )
     ]
-
-
-if __name__ == '__main__':
-    result = execute_pipeline(scheduled_cereal_pipeline)
-    assert result.success

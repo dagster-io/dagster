@@ -14,15 +14,17 @@ def last_file_comp(path):
 
 @whitelist_for_serdes
 class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description entry_data')):
-    '''A structure for describing metadata for Dagster events.
+    '''The standard structure for describing metadata for Dagster events.
+
+    Lists of objects of this type can be passed as arguments to Dagster events and will be displayed
+    in Dagit and other tooling.
 
     Args:
-        label (str):
-        description (Optional[str]):
-        entry_data (List[EntryDataUnion]):
-            A list of typed metadata entries. The different types allow for customized display in
-            tools like dagit.
-
+        label (str): Short display label for this metadata entry.
+        description (Optional[str]): A human-readable description of this metadata entry.
+        entry_data (Union[TextMetadataEntryData, UrlMetadataEntryData, PathMetadataEntryData, JsonMetadataEntryData, MarkdownMetadataEntryData]):
+            Typed metadata entry data. The different types allow for customized display in tools
+            like dagit.
     '''
 
     def __new__(cls, label, description, entry_data):
@@ -35,55 +37,123 @@ class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description en
 
     @staticmethod
     def text(text, label, description=None):
-        'A EventMetadataEntry with a single TextMetadataEntryData entry'
+        '''Static constructor for a metadata entry containing text as
+        :py:class:`TextMetadataEntryData`.
+
+        Args:
+            text (str): The text of this metadata entry.
+            label (str): Short display label for this metadata entry.
+            description (Optional[str]): A human-readable description of this metadata entry.
+        '''
         return EventMetadataEntry(label, description, TextMetadataEntryData(text))
 
     @staticmethod
     def url(url, label, description=None):
-        'A EventMetadataEntry with a single UrlMetadataEntryData entry'
+        '''Static constructor for a metadata entry containing a URL as
+        :py:class:`UrlMetadataEntryData`.
+
+        Args:
+            url (str): The URL contained by this metadata entry.
+            label (str): Short display label for this metadata entry.
+            description (Optional[str]): A human-readable description of this metadata entry.
+        '''
         return EventMetadataEntry(label, description, UrlMetadataEntryData(url))
 
     @staticmethod
     def path(path, label, description=None):
-        'A EventMetadataEntry with a single PathMetadataEntryData entry'
+        '''Static constructor for a metadata entry containing a path as
+        :py:class:`PathMetadataEntryData`.
+
+        Args:
+            path (str): The path contained by this metadata entry.
+            label (str): Short display label for this metadata entry.
+            description (Optional[str]): A human-readable description of this metadata entry.
+        '''
         return EventMetadataEntry(label, description, PathMetadataEntryData(path))
 
     @staticmethod
     def fspath(path, label=None, description=None):
-        'Just like path, but makes label last path component if None'
+        '''Static constructor for a metadata entry containing a filesystem path as
+        :py:class:`PathMetadataEntryData`.
+
+        Args:
+            path (str): The path contained by this metadata entry.
+            label (Optional[str]): Short display label for this metadata entry. Defaults to the
+                base name of the path.
+            description (Optional[str]): A human-readable description of this metadata entry.
+        '''
         return EventMetadataEntry.path(
             path, label if label is not None else last_file_comp(path), description
         )
 
     @staticmethod
     def json(data, label, description=None):
+        '''Static constructor for a metadata entry containing JSON data as
+        :py:class:`JsonMetadataEntryData`.
+
+        Args:
+            data (str): The JSON data contained by this metadata entry.
+            label (str): Short display label for this metadata entry.
+            description (Optional[str]): A human-readable description of this metadata entry.
+        '''
         return EventMetadataEntry(label, description, JsonMetadataEntryData(data))
 
     @staticmethod
-    def md(mdString, label, description=None):
-        return EventMetadataEntry(label, description, MarkdownMetadataEntryData(mdString))
+    def md(md_str, label, description=None):
+        '''Static constructor for a metadata entry containing markdown.
+
+        Args:
+            md_str (str): The markdown contained by this metadata entry.
+            label (str): Short display label for this metadata entry.
+            description (Optional[str]): A human-readable description of this metadata entry.
+        '''
+        return EventMetadataEntry(label, description, MarkdownMetadataEntryData(md_str))
 
 
 @whitelist_for_serdes
 class TextMetadataEntryData(namedtuple('_TextMetadataEntryData', 'text')):
+    '''Container class for text metadata entry data.
+    
+    Args:
+        text (str): The text data.
+    '''
+
     def __new__(cls, text):
         return super(TextMetadataEntryData, cls).__new__(cls, check.str_param(text, 'text'))
 
 
 @whitelist_for_serdes
 class UrlMetadataEntryData(namedtuple('_UrlMetadataEntryData', 'url')):
+    '''Container class for URL metadata entry data.
+    
+    Args:
+        url (str): The URL as a string.
+    '''
+
     def __new__(cls, url):
         return super(UrlMetadataEntryData, cls).__new__(cls, check.str_param(url, 'url'))
 
 
 @whitelist_for_serdes
 class PathMetadataEntryData(namedtuple('_PathMetadataEntryData', 'path')):
+    '''Container class for path metadata entry data.
+    
+    Args:
+        path (str): The path as a string.
+    '''
+
     def __new__(cls, path):
         return super(PathMetadataEntryData, cls).__new__(cls, check.str_param(path, 'path'))
 
 
 @whitelist_for_serdes
 class JsonMetadataEntryData(namedtuple('_JsonMetadataEntryData', 'data')):
+    '''Container class for JSON metadata entry data.
+    
+    Args:
+        data (str): The JSON data.
+    '''
+
     def __new__(cls, data):
         return super(JsonMetadataEntryData, cls).__new__(
             cls, check.dict_param(data, 'data', key_type=str)
@@ -91,11 +161,15 @@ class JsonMetadataEntryData(namedtuple('_JsonMetadataEntryData', 'data')):
 
 
 @whitelist_for_serdes
-class MarkdownMetadataEntryData(namedtuple('_MarkdownMetadataEntryData', 'mdString')):
-    def __new__(cls, mdString):
-        return super(MarkdownMetadataEntryData, cls).__new__(
-            cls, check.str_param(mdString, 'mdString')
-        )
+class MarkdownMetadataEntryData(namedtuple('_MarkdownMetadataEntryData', 'md_str')):
+    '''Container class for markdown metadata entry data.
+    
+    Args:
+        md_str (str): The markdown as a string.
+    '''
+
+    def __new__(cls, md_str):
+        return super(MarkdownMetadataEntryData, cls).__new__(cls, check.str_param(md_str, 'md_str'))
 
 
 EntryDataUnion = (
@@ -108,13 +182,21 @@ EntryDataUnion = (
 
 
 class Output(namedtuple('_Output', 'value output_name')):
-    '''A value produced by a solid compute function for downstream consumption. An implementer
-    of a SolidDefinition directly must provide a compute function that yields objects of this type.
+    '''Event corresponding to one of a solid's outputs.
+
+    Solid compute functions must explicitly yield events of this type when they have more than
+    one output, or when they also yield events of other types, or when defining a solid using the
+    :py:class:`SolidDefinition` API directly.
+
+    Outputs are values produced by solids that will be consumed by downstream solids in a pipeline.
+    They are type-checked at solid boundaries when their corresponding :py:class:`OutputDefinition`
+    or the downstream :py:class:`InputDefinition` is typed.
 
     Args:
-        value (Any): Value returned by the compute function.
-        output_name (str): Name of the output returns. Defaults to "result"
-'''
+        value (Any): The value returned by the compute function.
+        output_name (Optional[str]): Name of the corresponding output definition. (default:
+            "result")
+    '''
 
     def __new__(cls, value, output_name=DEFAULT_OUTPUT):
         return super(Output, cls).__new__(cls, value, check.str_param(output_name, 'output_name'))
@@ -122,21 +204,31 @@ class Output(namedtuple('_Output', 'value output_name')):
 
 @whitelist_for_serdes
 class Materialization(namedtuple('_Materialization', 'label description metadata_entries')):
-    '''A value materialized by a solid compute function.
+    '''Event indicating that a solid has materialized a value.
 
-    As opposed to Outputs, Materializations can not be passed to other solids and persistence
-    is not controlled by dagster. They are a useful way to communicate side effects to the system
-    and display them to the end user.
+    Solid compute functions may yield events of this type whenever they wish to indicate to the
+    Dagster framework (and the end user) that they have produced a materialized value as a
+    side effect of computation. Unlike outputs, materializations can not be passed to other solids,
+    and their persistence is controlled by solid logic, rather than by the Dagster framework.
+
+    Solid authors should use these events to organize metadata about the side effects of their
+    computations to enable downstream tooling like artifact catalogues and diff tools.
 
     Args:
         label (str): A short display name for the materialized value.
-        description (Optional[str]): A longer description of the materialized value.
-        metadata_entries (Optional[List[EventMetadataEntry]]):
-            Arbitrary metadata about the materialized value.
+        description (Optional[str]): A longer human-radable description of the materialized value.
+        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
+            materialized value.
     '''
 
     @staticmethod
     def file(path, description=None):
+        '''Static constructor for standard materializations corresponding to files on disk.
+        
+        Args:
+            path (str): The path to the file.
+            description (Optional[str]): A human-readable description of the materialization.
+        '''
         return Materialization(
             label=last_file_comp(path),
             description=description,
@@ -158,16 +250,18 @@ class Materialization(namedtuple('_Materialization', 'label description metadata
 class ExpectationResult(
     namedtuple('_ExpectationResult', 'success label description metadata_entries')
 ):
-    '''The result of a data quality test.
+    '''Event corresponding to a data quality test.
 
-    ExpectationResults can be yielded from solids just like Outputs and Materializations.
+    Solid compute functions may yield events of this type whenever they wish to indicate to the
+    Dagster framework (and the end user) that a data quality test has produced a (positive or
+    negative) result.
 
     Args:
         success (bool): Whether the expectation passed or not.
         label (Optional[str]): Short display name for expectation. Defaults to "result".
-        description (Optional[str]): A longer description of the data quality test.
-        metadata_entries (Optional[List[EventMetadataEntry]]):
-            Arbitrary metadata about the expectation.
+        description (Optional[str]): A longer human-readable description of the expectation.
+        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
+            expectation.
     '''
 
     def __new__(cls, success, label=None, description=None, metadata_entries=None):
@@ -184,8 +278,19 @@ class ExpectationResult(
 
 @whitelist_for_serdes
 class TypeCheck(namedtuple('_TypeCheck', 'description metadata_entries')):
-    '''Used to communicate metadata about a value as it is evaluated against
-    a declared expected type.
+    '''Event corresponding to a successful typecheck.
+    
+    Events of this type should be returned by the ``typecheck_metadata_fn`` set on a custom
+    Dagster type to encapsulate additional metadata after successful user-defined type checks have
+    passed. (i.e., when using :py:func:`as_dagster_type`, :py:func:`@dagster_type <dagster_type>`,
+    or the underlying :py:func:`define_python_dagster_type` API.)
+
+    Solid compute functions should generally avoid yielding events of this type to avoid confusion.
+
+    Args:
+        description (Optional[str]): A human-readable description of the type check.
+        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
+            type check.
     '''
 
     def __new__(cls, description=None, metadata_entries=None):
@@ -199,8 +304,16 @@ class TypeCheck(namedtuple('_TypeCheck', 'description metadata_entries')):
 
 
 class Failure(Exception):
-    '''Can be raised from a solid compute function to return structured metadata
-    about the failure.
+    '''Event indicating solid failure.
+
+    Raise events of this type from within solid compute functions or custom type checks in order to
+    indicate an unrecoverable failure in user code to the Dagster machinery and return
+    structured metadata about the failure.
+    
+    Args:
+        description (Optional[str]): A human-readable description of the failure.
+        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
+            failure.
     '''
 
     def __init__(self, description=None, metadata_entries=None):
@@ -224,8 +337,10 @@ class ObjectStoreOperation(
         'op key dest_key obj serialization_strategy_name object_store_name value_name',
     )
 ):
-    '''Used internally by Dagster machinery when values are written to and read from an
-    ObjectStore.
+    '''This event is used internally by Dagster machinery when values are written to and read from
+    an ObjectStore.
+
+    Users should not import this class or yield events of this type from user code.
 
     Args:
         op (ObjectStoreOperationType): The type of the operation on the object store.

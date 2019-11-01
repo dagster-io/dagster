@@ -23,14 +23,12 @@ from dagster import (
 from dagster.core.definitions import create_environment_schema, create_environment_type
 from dagster.core.definitions.environment_configs import (
     EnvironmentClassCreationData,
-    define_expectations_config_cls,
     define_resource_cls,
     define_solid_config_cls,
     define_solid_dictionary_cls,
 )
 from dagster.core.system_config.objects import (
     EnvironmentConfig,
-    ExpectationsConfig,
     SolidConfig,
     construct_solid_dictionary,
 )
@@ -58,18 +56,6 @@ def test_resource_config_any():
     assert resource_type.type_attributes.is_system_config
 
     assert throwing_evaluate_config_value(resource_type, {'config': 1}) == {'config': 1}
-
-
-def test_default_expectations():
-    expect_config_type = define_expectations_config_cls('some_name').inst()
-    assert (
-        ExpectationsConfig(**throwing_evaluate_config_value(expect_config_type, {})).evaluate
-        is True
-    )
-    assert (
-        ExpectationsConfig(**throwing_evaluate_config_value(expect_config_type, None)).evaluate
-        is True
-    )
 
 
 def test_all_types_provided():
@@ -160,11 +146,9 @@ def test_default_environment():
     def pipeline_def():
         some_solid()
 
-    env_obj = EnvironmentConfig.from_config_value(
+    EnvironmentConfig.from_config_value(
         throwing_evaluate_config_value(create_environment_type(pipeline_def), {}), {}
     )
-
-    assert env_obj.expectations.evaluate is True
 
 
 def test_resource_def_config_errors():
@@ -186,20 +170,6 @@ def test_solid_config():
     solid_inst = throwing_evaluate_config_value(solid_config_type, {'config': 1})
     assert solid_inst['config'] == 1
     assert solid_config_type.inst().type_attributes.is_system_config
-
-
-def test_expectations_config():
-    expectations_config_type = define_expectations_config_cls('ksjdfkd').inst()
-    expectations = ExpectationsConfig(
-        **throwing_evaluate_config_value(expectations_config_type, {'evaluate': True})
-    )
-
-    assert isinstance(expectations, ExpectationsConfig)
-    assert expectations.evaluate is True
-
-    assert ExpectationsConfig(
-        **throwing_evaluate_config_value(expectations_config_type, {'evaluate': False})
-    ) == ExpectationsConfig(evaluate=False)
 
 
 def test_solid_dictionary_type():
@@ -345,10 +315,6 @@ def test_whole_environment():
         solids_type.fields['int_config_solid'].config_type.name
         == 'SomePipeline.SolidConfig.IntConfigSolid'
     )
-    assert (
-        environment_type.fields['expectations'].config_type.name
-        == 'SomePipeline.ExpectationsConfig'
-    )
 
     env = EnvironmentConfig.from_config_value(
         throwing_evaluate_config_value(
@@ -366,7 +332,6 @@ def test_whole_environment():
 
     assert isinstance(env, EnvironmentConfig)
     assert env.solids == {'int_config_solid': SolidConfig(123)}
-    assert env.expectations == ExpectationsConfig(evaluate=True)
     assert env.resources == {'test_resource': {'config': 1}}
 
 
@@ -506,7 +471,6 @@ def test_required_solid_with_required_subfield():
     assert int_config_solid_type.fields['config'].is_optional is False
 
     assert env_type.fields['execution'].is_optional
-    assert env_type.fields['expectations'].is_optional
 
     env_obj = EnvironmentConfig.from_config_value(
         throwing_evaluate_config_value(
@@ -543,7 +507,6 @@ def test_optional_solid_with_optional_subfield():
     env_type = create_environment_type(pipeline_def)
     assert env_type.fields['solids'].is_optional
     assert env_type.fields['execution'].is_optional
-    assert env_type.fields['expectations'].is_optional
 
 
 def nested_field(config_type, *field_names):
@@ -576,7 +539,6 @@ def test_required_resource_with_required_subfield():
     env_type = create_environment_type(pipeline_def)
     assert env_type.fields['solids'].is_optional
     assert env_type.fields['execution'].is_optional
-    assert env_type.fields['expectations'].is_optional
     assert env_type.fields['resources'].is_required
     assert nested_field(env_type, 'resources', 'with_required').is_required
     assert nested_field(env_type, 'resources', 'with_required', 'config').is_required
@@ -606,7 +568,6 @@ def test_all_optional_field_on_single_resource():
     env_type = create_environment_type(pipeline_def)
     assert env_type.fields['solids'].is_optional
     assert env_type.fields['execution'].is_optional
-    assert env_type.fields['expectations'].is_optional
     assert env_type.fields['resources'].is_optional
     assert nested_field(env_type, 'resources', 'with_optional').is_optional
     assert nested_field(env_type, 'resources', 'with_optional', 'config').is_optional
@@ -646,7 +607,6 @@ def test_optional_and_required_context():
     assert env_type.fields['solids'].is_optional
 
     assert env_type.fields['execution'].is_optional
-    assert env_type.fields['expectations'].is_optional
 
     assert nested_field(env_type, 'resources').is_required
     assert nested_field(env_type, 'resources', 'optional_resource').is_optional
@@ -756,5 +716,4 @@ def test_storage_in_memory_config():
 
 
 def test_directly_init_environment_config():
-    config = EnvironmentConfig()
-    assert isinstance(config.expectations, ExpectationsConfig)
+    EnvironmentConfig()

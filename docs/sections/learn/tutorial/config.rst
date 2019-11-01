@@ -56,7 +56,7 @@ making it optional, and setting a human-readable description.
 
 Finally, inside the body of the solid function, we access the config value set by the
 user using the ``solid_config`` field on the familiar
-:py:class:`context <dagster.ComputeExecutionContext>` object. When Dagster executes our pipeline,
+:py:class:`context <dagster.SystemComputeExecutionContext>` object. When Dagster executes our pipeline,
 the framework will make validated config for each solid available on this object.
 
 Let's see how all of this looks in dagit. As usual, run:

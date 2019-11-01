@@ -143,9 +143,6 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': 'MultiModeWithResources.ApplyToThree.Outputs'
             },
             {
-                'name': 'MultiModeWithResources.ExpectationsConfig'
-            },
-            {
                 'name': 'MultiModeWithResources.LoggerConfig'
             },
             {
@@ -187,11 +184,6 @@ snapshots['test_query_multi_mode 1'] = {
                 {
                     'configType': {
                         'name': 'MultiModeWithResources.AddMode.ExecutionConfig'
-                    }
-                },
-                {
-                    'configType': {
-                        'name': 'MultiModeWithResources.ExpectationsConfig'
                     }
                 },
                 {

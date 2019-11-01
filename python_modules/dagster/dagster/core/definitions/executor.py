@@ -7,7 +7,17 @@ from .config import resolve_config_field
 
 
 class ExecutorDefinition:
-    '''Defines an executor.'''
+    '''
+    Args:
+        name (Optional[str]): The name of the executor.
+        config_field (Optional[Field]): Used in the rare case of a top level config type other than
+            a dictionary. Only one of ``config`` or ``config_field`` may be set.
+        executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
+            and return an instance of :py:class:`ExecutorConfig`.
+        required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
+            executor.
+
+    '''
 
     def __init__(
         self, name, config_field=None, executor_creation_fn=None, required_resource_keys=None
@@ -43,6 +53,20 @@ class ExecutorDefinition:
 
 
 def executor(name=None, config_field=None, config=None, required_resource_keys=None):
+    '''Define an executor.
+    
+    The decorated function should accept an :py:class:`InitExecutorContext` and return an instance
+    of :py:class:`ExecutorConfig`.
+
+    Args:
+        name (Optional[str]): The name of the executor.
+        config (Dict[str, Field]): The schema for the configuration data to be made available to
+            the decorated function.
+        config_field (Optional[Field]): Used in the rare case of a top level config type other than
+            a dictionary. Only one of ``config`` or ``config_field`` may be set.
+        required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
+            executor.
+    '''
     if callable(name):
         check.invariant(config_field is None)
         check.invariant(config is None)

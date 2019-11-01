@@ -16,9 +16,6 @@ snapshots['test_basic_solids_config 1'] = {
             }
         }
     },
-    'expectations': {
-        'evaluate': True
-    },
     'loggers': {
         'console': {
             'config': {
@@ -67,9 +64,6 @@ snapshots['test_two_modes 2'] = {
             }
         }
     },
-    'expectations': {
-        'evaluate': True
-    },
     'loggers': {
         'console': {
             'config': {
@@ -117,9 +111,6 @@ snapshots['test_two_modes 4'] = {
                 'max_concurrent': 0
             }
         }
-    },
-    'expectations': {
-        'evaluate': True
     },
     'loggers': {
         'console': {

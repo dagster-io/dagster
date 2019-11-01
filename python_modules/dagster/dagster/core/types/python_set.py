@@ -10,11 +10,10 @@ def create_typed_runtime_set(item_dagster_type):
 
     class _TypedPythonSet(RuntimeType):
         def __init__(self):
+            self.item_type = item_runtime_type
             super(_TypedPythonSet, self).__init__(
                 key='TypedPythonSet.{}'.format(item_runtime_type.key), name=None, is_builtin=True
             )
-
-            self.item_type = item_runtime_type
 
         def type_check(self, value):
             from dagster.core.definitions.events import Failure
@@ -24,5 +23,9 @@ def create_typed_runtime_set(item_dagster_type):
 
             for item in value:
                 item_runtime_type.type_check(item)
+
+        @property
+        def display_name(self):
+            return 'Set[{}]'.format(self.item_type.display_name)
 
     return _TypedPythonSet

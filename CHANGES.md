@@ -1,8 +1,35 @@
 # Changelog
 
-## 0.6.3 (upcoming)
+## 0.6.3
 
-- Fix output materializations done against composite solid mapped outputs.
+- Adds a `type_check` parameter to `PythonObjectType`, `as_dagster_type`, and `@as_dagster_type` to enable custom
+  type checks in place of default `isinstance` checks. 
+  See documentation here: https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/types.html#custom-type-checks
+- Improved the type inference experience by automatically wrapping bare python types as dagster types.
+- Reworked our tutorial (now with more compelling/scary breakfast cereal examples) and public API documentation.
+  See the new tutorial here: https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/index.html
+- New solids explorer in Dagit allows you to browse and search for solids used across the repository.
+
+    ![Solid Explorer](./screenshots/solid_explorer.png)
+    ![Solid Explorer](./screenshots/solid_explorer_input.png)
+
+- Enabled solid dependency selection in the Dagit search filter. 
+       
+    + To select a solid and its upstream dependencies, search `+{solid_name}`.
+    + To select a solid and its downstream dependents, search `{solid_name}+`.
+    + For both search `+{solid_name}+`.
+
+  For example. In the Airline demo, searching `+join_q2_data` will get the following:
+  
+  ![Screenshot](./screenshots/airline_join_parent_filter.png)
+
+- Added a terminate button in Dagit to terminate an active run.
+
+  ![Stop Button](./screenshots/stop_button.png)
+ 
+- Added an `--output` flag to `dagster-graphql` CLI.
+- Added confirmation step for `dagster run wipe` and `dagster schedule wipe` commands (Thanks @shahvineet98).
+- Fixed a wrong title in the `dagster-snowflake` library README (Thanks @Step2Web).
 
 ## 0.6.2
 

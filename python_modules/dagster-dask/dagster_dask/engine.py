@@ -3,7 +3,7 @@ import dask.distributed
 from dagster_graphql.client.mutations import execute_execute_plan_mutation
 
 from dagster import check
-from dagster.core.engine.engine_base import IEngine
+from dagster.core.engine.engine_base import Engine
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
@@ -23,7 +23,7 @@ def query_on_dask_worker(
     return execute_execute_plan_mutation(handle, variables, instance_ref=instance_ref)
 
 
-class DaskEngine(IEngine):  # pylint: disable=no-init
+class DaskEngine(Engine):  # pylint: disable=no-init
     @staticmethod
     def execute(pipeline_context, execution_plan, step_keys_to_execute=None):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)

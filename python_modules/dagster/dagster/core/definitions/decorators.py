@@ -103,7 +103,7 @@ class _Solid(object):
         # metadata will be checked within ISolidDefinition
         self.metadata = metadata
 
-        self.step_metadata_fn = step_metadata_fn
+        self.step_metadata_fn = check.opt_callable_param(step_metadata_fn, 'step_metadata_fn')
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -173,37 +173,48 @@ def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
     '''Create a simple solid from the decorated function.
 
     This shortcut allows the creation of simple solids that do not require
-    configuration and whose implementations do not require a context.
+    configuration and whose implementations do not require a
+    :py:class:`context <SystemComputeExecutionContext>`.
 
-    Lambda solids take input_defs and produce a single output. The body of the function
-    should return a single value.
+    Lambda solids take any number of inputs and produce a single output.
+    
+    Inputs can be defined using :class:`InputDefinition` and passed to the ``input_defs`` argument
+    of this decorator, or inferred from the type signature of the decorated function.
+
+    The single output can be defined using :class:`OutputDefinition` and passed as the
+    ``output_def`` argument of this decorator, or its type can be inferred from the type signature
+    of the decorated function.
+    
+    The body of the decorated function should return a single value, which will be yielded as the
+    solid's output.
 
     Args:
         name (str): Name of solid.
         description (str): Solid description.
         input_defs (List[InputDefinition]): List of input_defs.
-        output_def (OutputDefinition): The output of the solid. Defaults to ``OutputDefinition()``.
+        output_def (OutputDefinition): The output of the solid. Defaults to
+            :class:`OutputDefinition() <OutputDefinition>`.
 
     Examples:
 
-        .. code-block:: python
+    .. code-block:: python
 
-            @lambda_solid
-            def hello_world():
-                return 'hello'
+        @lambda_solid
+        def hello_world():
+            return 'hello'
 
-            @lambda_solid(
-                input_defs=[InputDefinition(name='foo', str)],
-                output_def=OutputDefinition(str)
-            )
-            def hello_world(foo):
-                # explictly type and name inputs and outputs
-                return foo
+        @lambda_solid(
+            input_defs=[InputDefinition(name='foo', str)],
+            output_def=OutputDefinition(str)
+        )
+        def hello_world(foo):
+            # explictly type and name inputs and outputs
+            return foo
 
-            @lambda_solid
-            def hello_world(foo: str) -> str:
-                # same as above inferred from signature
-                return foo
+        @lambda_solid
+        def hello_world(foo: str) -> str:
+            # same as above inferred from signature
+            return foo
 
     '''
     if callable(name):
@@ -227,45 +238,50 @@ def solid(
     metadata=None,
     step_metadata_fn=None,
 ):
-    '''Create a solid with specified parameters from the decorated function.
+    '''Create a solid with the specified parameters from the decorated function.
 
-    This shortcut simplifies the core solid API by exploding arguments into kwargs of the
-    compute function and omitting additional parameters when they are not needed. Input
-    and output definitions will be inferred from the type signature of the decorated
-    function if not explicitly provided.
+    This shortcut simplifies the core :class:`SolidDefinition` API by exploding arguments into
+    kwargs of the decorated compute function and omitting additional parameters when they are not
+    needed.
+    
+    Input and output definitions will be inferred from the type signature of the decorated function
+    if not explicitly provided.
 
-    The decorated function will be used as the solid's compute function. Unlike in the core API,
-        the expectations for the compute function are more flexible, it can:
+    The decorated function will be used as the solid's compute function. The signature of the
+    decorated function is more flexible than that of the ``compute_fn`` in the core API; it may:
 
-    1. Return a value. This is returned as an :py:class:`Output` for a single output solid.
-    2. Return an :py:class:`Output`. Works like yielding that :py:class:`Output` .
-    3. Yield :py:class:`Output` or other event objects. Same as default compute behaviour.
+    1. Return a value. This value will be wrapped in an :py:class:`Output` and yielded by the
+        compute function.
+    2. Return an :py:class:`Output`. This output will be yielded by the compute function.
+    3. Yield :py:class:`Output` or other `event objects <events>`_. Same as default compute
+        behaviour.
+
+    Note that options 1) and 2) are incompatible with yielding other events -- if you would like
+    to decorate a function that yields events, it must also wrap its eventual output in an
+    :py:class:`Output` and yield it.
 
     Args:
-        name (str): Name of solid.
-        description (str): Description of this solid.
+        name (str): Name of solid. Must be unique within any :py:class:`PipelineDefinition`
+            using the solid.
+        description (str): Human-readable description of this solid.
         input_defs (Optiona[List[InputDefinition]]):
-            List of input_defs. Inferred from typehints if not provided.
+            List of input definitions. Inferred from typehints if not provided.
         output_defs (Optional[List[OutputDefinition]]):
-            List of output_defs. Inferred from typehints if not provided.
-        config (Dict[str, Field]):
-            Defines the schema of configuration data provided to the solid via context.
-        config_field (Field):
-            Used in the rare case of a top level config type other than a dictionary.
+            List of output definitions. Inferred from typehints if not provided.
+        config (Optional[Dict[str, Field]]):
+            Defines the schema of the configuration dict provided to the solid via context.
+        config_field (Optional[Field]): Used in the rare case when a solid's top level config type
+            is other than a dictionary.
 
-            Only one of config or config_field can be provided.
-        required_resource_keys (set[str]):
-            Set of resource handles required by this solid.
+            A :class:`DagsterInvalidDefinitionError` will be raised if both ``config`` and
+            ``config_field`` are set.
+        required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
 
     Examples:
 
         .. code-block:: python
 
             @solid
-            def hello_world(_context):
-                print('hello')
-
-            @solid()
             def hello_world(_context):
                 print('hello')
 
@@ -639,33 +655,44 @@ def _get_validated_config_mapping(name, config, config_fn):
 def composite_solid(
     name=None, input_defs=None, output_defs=None, description=None, config=None, config_fn=None
 ):
-    '''Create a composite solid with specified parameters from the decorated
-    `composition function <../../learn/tutorial/composition_functions.html>`_ .
+    '''Create a composite solid with the specified parameters from the decorated composition
+    function.
 
     Using this decorator allows you to build up the dependency graph of the composite by writing a
-    function that invokes solids and passes the output to other solids.
+    function that invokes solids and passes the output to other solids. This is similar to the use
+    of the :py:func:`@pipeline <pipeline>` decorator, with the additional ability to remap inputs,
+    outputs, and config across the composite boundary.
 
     Args:
-        name (Optional[str])
-        description (Optional[str])
-        input_defs (Optional[List[InputDefinition]]):
-            The set of input_defs, inferred from typehints if not provided.
+        name (Optional[str]): Name for the new composite solid. Must be unique within any
+            :py:class:`PipelineDefinition` using the solid.
+        description (Optional[str]): Human-readable description of the new composite solid.
+        input_defs (Optional[List[InputDefinition]]): Input definitions for the composite solid.
+            If not provided explicitly, these will be inferred from typehints.
 
-            Where these input_defs get used in the body of the decorated function create the
-            InputMappings for the CompositeSolidDefinition
-        output_defs (Optional[List[OutputDefinition]]):
-            The set of output_defs, inferred from typehints if not provided.
+            Uses of these inputs in the body of the decorated composition function will be used to
+            infer the appropriate set of :py:class:`InputMappings <InputMapping>` passed to the
+            underlying :py:class:`CompositeSolidDefinition`.
+        output_defs (Optional[List[OutputDefinition]]): Output definitions for the composite solid.
+            If not provided explicitly, these will be inferred from typehints.
 
-            These output_defs are combined with the return value of the decorated function to
-            create the OutputMappings for the CompositeSolidDefinition.
+            Uses of these outputs in the body of the decorated composition function, as well as the
+            return value of the decorated function, will be used to infer the appropriat set of
+            :py:class:`OutputMappings <OutputMapping>` for the underlying
+            :py:class:`CompositeSolidDefinition`.
 
-            A dictionary is returned from the function to map multiple output_defs.
-        config/config_fn:
-            By specifying a config mapping, you can override the configuration for child solids
-            contained within this composite solid. Config mappings require both a configuration
-            field to be specified, which is exposed as the configuration for this composite solid,
-            and a configuration mapping function, which maps the parent configuration of this solid
-            into a configuration that is applied to any child solids.
+            To map multiple outputs, return a dictionary from the composition function.
+        config (Optional[Dict[str, Field]]):
+            Defines the schema of the configuration dict provided to the composite solid via context.
+            If you specify ``config``, you must also specify ``config_fn``.
+        config_fn (Callable[[ConfigMappingContext, dict], dict]): By specifying a config mapping
+            function, you can override the configuration for the child solids contained within this
+            composite solid.
+            
+            Config mappings require the configuration field to be specified as ``config``, which
+            will be exposed as the configuration field for the composite solid, as well as a
+            configuration mapping function, ``config_fn``, which maps the config provided to the
+            composite solid to the config that will be provided to the child solids.
 
     Examples:
 
@@ -731,21 +758,24 @@ class _Pipeline:
 
 
 def pipeline(name=None, description=None, mode_defs=None, preset_defs=None):
-    '''Create a pipeline with specified parameters from the decorated
-    `composition function <../../learn/tutorial/composition_functions.html>`_ .
+    '''Create a pipeline with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up the dependency graph of the pipeline by writing a
     function that invokes solids and passes the output to other solids.
 
     Args:
-        name (Optional[str])
-        description (Optional[str])
-        mode_defs (Optional[List[ModeDefinition]]):
-            The set of modes this pipeline can operate in. Modes can be used for example to vary
-            resources and logging implementations for local testing and running in production.
-        preset_defs (Optional[List[PresetDefinition]]):
-            Given the different ways a pipeline may execute, presets give you a way to provide
-            specific valid collections of configuration.
+        name (Optional[str]): The name of the pipeline. Must be unique within any
+            :py:class:`RepositoryDefinition` containing the pipeline.
+        description (Optional[str]): A human-readable description of the pipeline.
+        mode_defs (Optional[List[ModeDefinition]]): The set of modes in which this pipeline can
+            operate. Modes are used to attach resources, custom loggers, custom system storage
+            options, and custom executors to a pipeline. Modes can be used, e.g., to vary
+            available resource and logging implementations between local test and production runs.
+        preset_defs (Optional[List[PresetDefinition]]): A set of preset collections of configuration
+            options that may be used to execute a pipeline. A preset consists of an environment
+            dict, an optional subset of solids to execute, and a mode selection. Presets can be used
+            to ship common combinations of options to pipeline end users in Python code, and can
+            be selected by tools like Dagit.
 
     Examples:
 

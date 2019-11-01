@@ -120,32 +120,31 @@ class SolidDefinition(ISolidDefinition):
     '''
     The definition of a Solid that peforms a user defined computation.
 
-    For more details on what a solid is, reference the
+    For more details on what a solid is, refer to the
     `Solid Guide <../../learn/guides/solid/solid.html>`_ .
 
-    End users should prefer the :py:func:`solid` and :py:func:`lambda_solid`
-    decorators. SolidDefinition is generally used by framework authors.
+    End users should prefer the :func:`@solid <solid>` and :func:`@lambda_solid <lambda_solid>`
+    decorators. SolidDefinition is generally intended to be used by framework authors.
 
     Args:
-        name (str): Name of the solid.
+        name (str): Name of the solid. Must be unique within any :py:class:`PipelineDefinition`
+            using the solid.
         input_defs (List[InputDefinition]): Inputs of the solid.
+        compute_fn (Callable): The core of the solid, the function that does the actual
+            computation. The signature of this function is determined by ``input_defs``, with
+            an additional injected first argument, ``context``, a collection of information provided
+            by the system.
 
-        compute_fn (Callable):
-            The core of the solid, the function that does the actual computation. The signature of
-            this function is determined by ``input_defs``, with the first argument always being
-            ``context``, a collection of information provided by the system.
-
-            This function must return a Generator, yielding :py:class:`Output` according to its
-            ``output_defs`` and may yield other types of dagster events including
-            :py:class:`Materialization` and :py:class:`ExpectationResult`.
-
+            This function must return a generator, which must yield one :py:class:`Output` for each
+            of the solid's ``output_defs``, and additionally may yield other types of Dagster
+            events, including :py:class:`Materialization` and :py:class:`ExpectationResult`.
         output_defs (List[OutputDefinition]): Outputs of the solid.
-        config_field (Optional[Field]): How the solid configured.
-        description (Optional[str]): Description of the solid.
-        metadata (Optional[Dict[Any, Any]]):
-            Arbitrary metadata for the solid. Some frameworks expect and require
-            certain metadata to be attached to a solid.
-        required_resource_keys (Optional[Set[str]]): List of resources handles required by this solid.
+        config_field (Optional[Field]): Defines how the solid may be configured.
+        description (Optional[str]): Human-readable description of the solid.
+        metadata (Optional[Dict[Any, Any]]): Arbitrary metadata for the solid. Frameworks may
+            expect and require certain metadata to be attached to a solid.
+        required_resource_keys (Optional[Set[str]]): Set of resources handles required by this
+            solid.
 
     Examples:
         .. code-block:: python
@@ -182,7 +181,7 @@ class SolidDefinition(ISolidDefinition):
         self._required_resource_keys = check.opt_set_param(
             required_resource_keys, 'required_resource_keys', of_type=str
         )
-        self._step_metadata_fn = step_metadata_fn
+        self._step_metadata_fn = check.opt_callable_param(step_metadata_fn, 'step_metadata_fn')
 
         super(SolidDefinition, self).__init__(
             name=name,
@@ -224,35 +223,34 @@ class SolidDefinition(ISolidDefinition):
 
 
 class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
-    '''
-    The core unit of composition and abstraction, composite solids allow you to
+    '''The core unit of composition and abstraction, composite solids allow you to
     define a solid from a graph of solids.
 
     In the same way you would refactor a block of code in to a function to deduplicate, organize,
     or manage complexity - you can refactor solids in a pipeline in to a composite solid.
 
     Args:
-        name (str)
-        solid_defs (List[ISolidDefinition]):
-            The set of solid definitions used in this composite
-        input_mappings (List[InputMapping]):
-            Define inputs and how they map to the constituent solids within.
-        output_mappings (List[OutputMapping]):
-            Define outputs and how they map from the constituent solids within.
-        config_mapping (ConfigMapping):
-            By specifying a config mapping, you can override the configuration for child solids
-            contained within this composite solid. Config mappings require both a configuration
-            field to be specified, which is exposed as the configuration for this composite solid,
-            and a configuration mapping function, which maps the parent configuration of this solid
-            into a configuration that is applied to any child solids.
+        name (str): The name of this composite solid. Must be unique within any
+            :py:class:`PipelineDefinition` using the solid.
+        solid_defs (List[Union[SolidDefinition, CompositeSolidDefinition]]): The set of solid
+            definitions used in this composite solid. Composites may be arbitrarily nested.
+        input_mappings (Optional[List[InputMapping]]): Define the inputs to the composite solid,
+            and how they map to the inputs of its constituent solids.
+        output_mappings (Optional[List[OutputMapping]]): Define the outputs of the composite solid,
+            and how they map from the outputs of its constituent solids.
+        config_mapping (Optional[ConfigMapping]): By specifying a config mapping, you can override
+            the configuration for the child solids contained within this composite solid. Config
+            mappings require both a configuration field to be specified, which is exposed as the
+            configuration for the composite solid, and a configuration mapping function, which
+            is called to map the configuration of the composite solid into the configuration that
+            is applied to any child solids.
         dependencies (Optional[Dict[Union[str, SolidInvocation], Dict[str, DependencyDefinition]]]):
             A structure that declares where each solid gets its inputs. The keys at the top
             level dict are either string names of solids or SolidInvocations. The values
             are dicts that map input names to DependencyDefinitions.
-        description (Optional[str])
-        metadata (Optional[Dict[Any, Any]]):
-            Arbitrary metadata for the solid. Some frameworks expect and require
-            certain metadata to be attached to a solid.
+        description (Optional[str]): Human readable description of this composite solid.
+        metadata (Optional[Dict[Any, Any]]): Arbitrary metadata for the composite solid. Frameworks
+            may expect and require certain metadata to be attached to a solid.
 
     Examples:
 
@@ -341,7 +339,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         return self._config_mapping
 
     @property
-    def depencencies(self):
+    def dependencies(self):
         return self._dependencies
 
     def iterate_solid_defs(self):

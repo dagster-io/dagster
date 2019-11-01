@@ -6,7 +6,7 @@ Suppose that we need to run our simple cereal pipeline every morning before brea
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/scheduler.py
    :linenos:
-   :lines: 1-34
+   :lines: 1-26
    :caption: scheduler.py
 
 As before, we've defined some solids, a pipeline, and a repository.
@@ -26,8 +26,8 @@ This is pluggable (and you can write your own), but for now the only implemented
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/scheduler.py
    :linenos:
-   :lines: 37-46
-   :lineno-start: 37
+   :lines: 28-38
+   :lineno-start: 28
    :caption: scheduler.py
 
 To complete the picture, we'll need to extend the ``repository.yaml`` structure we've met before
@@ -48,7 +48,7 @@ To preview the changes, first run:
 
 .. code-block:: console
 
-    $ dagster schedule up -y scheduler.yaml --preview
+    $ dagster schedule up --preview -y scheduler.yaml
     Planned Changes:
       + good_morning (add)
 
@@ -58,7 +58,7 @@ After confirming schedule changes are as expected, run:
 
     $ dagster schedule up -y scheduler.yaml
     Changes:
-      + hello_world_every_day (add)
+      + good_morning (add)
 
 Now, we can load dagit to view the schedule and monitor runs:
 
@@ -93,7 +93,7 @@ then we’ll have a schedule that runs at 6:45am only on weekdays.
     good_weekday_morning = ScheduleDefinition(
         name="good_weekday_morning",
         cron_schedule="45 6 * * *",
-        pipeline_name="scheduled_cereal_pipeline",
+        pipeline_name="hello_cereal_pipeline",
         environment_dict={"storage": {"filesystem": {}}},
         should_execute=weekday_filter,
     )

@@ -175,7 +175,7 @@ type EventJsonMetadataEntry implements EventMetadataEntry {
 type EventMarkdownMetadataEntry implements EventMetadataEntry {
   label: String!
   description: String
-  mdString: String!
+  mdStr: String!
 }
 
 interface EventMetadataEntry {

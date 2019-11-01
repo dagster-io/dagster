@@ -133,7 +133,7 @@ cli_args = [
         0,
         None,
     ),
-    ('scheduler.py', 'scheduled_cereal_pipeline', None, None, None, 0, None),
+    ('scheduler.py', 'hello_cereal_pipeline', None, None, None, 0, None),
 ]
 
 

@@ -103,7 +103,7 @@ def wrap_with_docker_compose_steps(
     )
 
 
-def python_modules_tox_tests(directory):
+def python_modules_tox_tests(directory, queue=BuildkiteQueue.MICRO):
     label = directory.replace("/", "-")
     tests = []
     for version in SupportedPythons:
@@ -123,6 +123,7 @@ def python_modules_tox_tests(directory):
             .on_integration_image(
                 version, ['AWS_DEFAULT_REGION', 'TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN']
             )
+            .on_queue(queue)
             .build()
         )
 
@@ -540,7 +541,7 @@ if __name__ == "__main__":
             "pip install isort>=4.3.21",
             "isort -rc examples python_modules",  # -sg seems to be broken
             "isort -rc -l 78 examples/dagster_examples/intro_tutorial",
-            "git diff --exit-code"
+            "git diff --exit-code",
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
@@ -601,7 +602,7 @@ if __name__ == "__main__":
 
     steps += python_modules_tox_tests("dagster")
     steps += python_modules_tox_tests("dagster-graphql")
-    steps += python_modules_tox_tests("dagstermill")
+    steps += python_modules_tox_tests("dagstermill", BuildkiteQueue.MEDIUM)
     steps += library_tests()
 
     if DO_COVERAGE:

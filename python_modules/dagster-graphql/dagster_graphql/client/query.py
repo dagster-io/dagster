@@ -16,7 +16,7 @@ fragment eventMetadataEntryFragment on EventMetadataEntry {
       text
   }
   ... on EventMarkdownMetadataEntry {
-      mdString
+      mdStr
   }
 }
 

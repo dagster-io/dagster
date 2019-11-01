@@ -9,20 +9,26 @@ DEFAULT_MODE_NAME = 'default'
 
 
 class ModeDefinition:
-    '''Defines a "mode" in which a pipeline can operate.
-    A mode provides a set of resource implementations as well as configuration for logging.
+    '''Define a mode in which a pipeline can operate.
+
+    A mode provides pipelines with a set of resource implementations, loggers, system storages,
+    and executors.
 
     Args:
-        name (Optional[str]): The name of the mode, defaults to 'default'.
-        resource_defs (Optional[Dict[str, ResourceDefinition]]):
-            The set of resources for this mode keyed by unique identifiers.
-        logger_defs (Optional[Dict[str, LoggerDefinition]]):
-            The set of loggers to use in this mode keyed by unique identifiers.
+        name (Optional[str]): The name of the mode. Must be unique within the
+            :py:class:`PipelineDefinition` to which the mode is attached. (default: "default").
+        resource_defs (Optional[Dict[str, ResourceDefinition]]): A dictionary of string resource
+            keys to their implementations. Individual solids may require resources to be present by
+            these keys.
+        logger_defs (Optional[Dict[str, LoggerDefinition]]): A ditionary of string logger
+            identifiers to their implementations.
         system_storage_defs (Optional[List[SystemStorageDefinition]]): The set of system storage
-            options available when executing in this mode. Defaults to 'in_memory' and 'filesystem'.
+            options available when executing in this mode. By default, this will be the 'in_memory'
+            and 'filesystem' system storages.
         executor_defs (Optional[List[ExecutorDefinition]]): The set of executors available when
-            executing in this mode. Defaults to 'in_process' and 'multiprocess'.
-        description (Optional[str])
+            executing in this mode. By default, this will be the 'in_process' and 'multiprocess'
+            executors.
+        description (Optional[str]): A human-readable description of the mode.
     '''
 
     def __init__(

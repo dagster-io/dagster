@@ -7,22 +7,23 @@ from .utils import DEFAULT_OUTPUT, check_valid_name
 
 
 class OutputDefinition(object):
-    '''An OutputDefinition represents an output from a solid. Solids can have multiple
-    outputs. In those cases the outputs must be named. Frequently solids have only one
-    output, and so the user can construct a single OutputDefinition that will have
-    the default name of "result".
+    '''Defines an output from a solid's compute function.
+    
+    Solids can have multiple outputs, in which case outputs cannot be anonymous.
+    
+    Many solids have only one output, in which case the user can provide a single output definition
+    that will be given the default name, "result".
+
+    Output definitions may be typed using the Dagster type system.
 
     Args:
-        dagster_type (DagsterType):
-            Type of the output. Defaults to :py:class:`Any` . Basic python types will be
-            mapped to the appropriate DagsterType.
-        name (Optional[str]): Name of the output. Defaults to "result".
-        expectations List[IOExpectationDefinition]:
-            **Deprecated**: Expectations for this output.
-
-            Prefer yielding :py:class:`ExpectationResult` directly from solid compute function.
-        description (str): Description of the output. Optional.
-        is_optional (bool): If this output is optional. Optional, defaults to false.
+        dagster_type (Optional[Any]): An object that Dagster can resolve to a
+            :py:class:`RuntimeType` for the output.  Defaults to :py:class:`Any`. Python types from
+            :py:mod:`typing <python:typing>` will be automatically mapped to an appropriate
+            Dagster type.
+        name (Optional[str]): Name of the output. (default: "result")
+        description (Optional[str]): Human-readable description of the output.
+        is_optional (Optional[bool]): Set if this output is optional. (default: False)
     '''
 
     def __init__(self, dagster_type=None, name=None, description=None, is_optional=False):
@@ -50,15 +51,34 @@ class OutputDefinition(object):
     def optional(self):
         return self._optional
 
-    @property
-    def descriptive_key(self):
-        return 'output'
-
     def mapping_from(self, solid_name, output_name=None):
+        '''Create an output mapping from an output of a child solid.
+
+        In a CompositeSolidDefinition, you can use this helper function to construct
+        an :py:class:`OutputMapping` from the output of a child solid.
+
+        Args:
+            solid_name (str): The name of the child solid from which to map this output.
+            input_name (str): The name of the child solid's output from which to map this output.
+
+        Examples:
+
+            .. code-block:: python
+
+                output_mapping = OutputDefinition(Int).mapping_from('child_solid')
+        '''
         return OutputMapping(self, solid_name, output_name)
 
 
 class OutputMapping(namedtuple('_OutputMapping', 'definition solid_name output_name')):
+    '''Defines an output mapping for a composite solid.
+
+    Args:
+        definition (OutputDefinition): Defines the output of the composite solid.
+        solid_name (str): The name of the child solid from which to map the output.
+        output_name (str): The name of the child solid's output from which to map the output.
+    '''
+
     def __new__(cls, definition, solid_name, output_name=None):
         return super(OutputMapping, cls).__new__(
             cls,

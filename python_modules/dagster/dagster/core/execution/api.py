@@ -1,14 +1,3 @@
-'''
-Naming conventions:
-
-For public functions:
-
-execute_*
-
-These represent functions which do purely in-memory compute. They will evaluate expectations the
-core compute function, and exercise all logging and metrics tracking (outside of outputs), but they
-will not invoke *any* outputs (and their APIs don't allow the user to).
-'''
 import time
 
 from dagster import check
@@ -148,19 +137,26 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
 
 
 def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None, instance=None):
-    '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
-    solid executed in the pipeline.
+    '''Execute a pipeline iteratively.
 
-    This is intended to allow the caller to do things between each executed
-    node. For the 'synchronous' API, see :py:func:`execute_pipeline`.
+    Rather than package up the result of running a pipeline into a single object, like
+    :py:func:`execute_pipeline`, this function yields the stream of events resulting from pipeline
+    execution.
+
+    This is intended to allow the caller to handle these events on a streaming basis in whatever
+    way is appropriate.
 
     Parameters:
-      pipeline (PipelineDefinition): Pipeline to run
-      environment_dict (dict): The enviroment configuration that parameterizes this run
-      run_config (RunConfig): Configuration for how this pipeline will be executed
+        pipeline (PipelineDefinition): The pipeline to execute.
+        environment_dict (Optional[dict]): The enviroment configuration that parameterizes this run,
+            as a dict.
+        run_config (Optional[RunConfig]): Optionally specifies additional config options for
+            pipeline execution.
+        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
+            an ephemeral instance will be used, and no artifacts will be persisted from the run.
 
     Returns:
-      Iterator[DagsterEvent]
+      Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
@@ -177,26 +173,29 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None, 
 def execute_pipeline(
     pipeline, environment_dict=None, run_config=None, instance=None, raise_on_error=True
 ):
-    '''
-    "Synchronous" version of :py:func:`execute_pipeline_iterator`.
+    '''Execute a pipeline synchronously.
 
-    This is the entry point for dagster CLI and dagit execution. For the dagster-graphql entry
-    point, see execute_plan() below.
+    Users will typically call this API when testing pipeline execution, or running standalone
+    scripts.
 
     Parameters:
-        pipeline (PipelineDefinition): Pipeline to run
-        environment_dict (dict):
-            The enviroment configuration that parameterizes this run
-        run_config (RunConfig):
-            Configuration for how this pipeline will be executed
-        instance (DagsterInstance):
-            The instance to execute against, defaults to ephemeral (no artifacts persisted)
-        raise_on_error (Bool):
-            Whether or not to raise exceptions when they occur. Defaults to True
-            since this behavior is useful in tests which is the most common use of this API.
+        pipeline (PipelineDefinition): The pipeline to execute.
+        environment_dict (Optional[dict]): The enviroment configuration that parameterizes this run,
+            as a dict.
+        run_config (Optional[RunConfig]): Optionally specifies additional config options for
+            pipeline execution.
+        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
+            an ephemeral instance will be used, and no artifacts will be persisted from the run.
+        raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
+            Defaults to ``True``, since this is the most useful behavior in test.
 
     Returns:
-      :py:class:`PipelineExecutionResult`
+      :py:class:`PipelineExecutionResult`: The result of pipeline execution.
+
+    For the asynchronous version, see :py:func:`execute_pipeline_iterator`.
+
+    This is the entrypoint for dagster CLI execution. For the dagster-graphql entrypoint, see
+    ``dagster.core.execution.api.execute_plan()``.
     '''
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -243,11 +242,21 @@ def execute_pipeline(
 def execute_pipeline_with_preset(
     pipeline, preset_name, run_config=None, instance=None, raise_on_error=True
 ):
-    '''Runs :py:func:`execute_pipeline` with the given preset for the pipeline.
+    '''Execute a pipeline synchronously, with the given preset.
 
-    The preset will optionally provide environment_dict and/or build a pipeline from
-    a solid subset. If a run_config is not provied, one which only sets the
-    mode as defined by the preset will be used.
+    Parameters:
+        pipeline (PipelineDefinition): The pipeline to execute.
+        preset_name (str): The preset to use.
+        run_config (Optional[RunConfig]): Optionally specifies additional config options for
+            pipeline execution. (default: ``None``)
+        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
+            an ephemeral instance will be used, and no artifacts will be persisted from the run.
+            (default: ``None``)
+        raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
+            Default is ``True``, since this is the most useful behavior in test.
+
+    Returns:
+      :py:class:`PipelineExecutionResult`: The result of pipeline execution.
     '''
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)

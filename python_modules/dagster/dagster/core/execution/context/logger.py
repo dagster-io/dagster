@@ -8,8 +8,12 @@ from dagster.core.definitions.pipeline import PipelineDefinition
 class InitLoggerContext(
     namedtuple('InitLoggerContext', 'logger_config pipeline_def logger_def run_id')
 ):
-    '''
-    Logger-specific initialization context.
+    '''Logger-specific initialization context.
+
+    An instance of this class is made available as the first argument to the ``logger_fn`` decorated
+    by :py:func:`@logger <logger>` or set on a :py:class:`LoggerDefinition`.
+
+    Users should not instantiate this class.
 
     Attributes:
         logger_config (Any): The configuration data provided by the environment config. The

@@ -8,17 +8,27 @@ from .config import resolve_config_field
 
 
 class ResourceDefinition(object):
-    '''Resources are pipeline-scoped ways to make external resources (like database connections)
-    available to solids during pipeline execution and clean up after execution resolves.
+    '''Core class for defining resources.
+    
+    Resources are scoped ways to make external resources (like database connections) available to
+    solids during pipeline execution and to clean up after execution resolves.
+
+    If resource_fn yields once rather than returning (in the manner of functions decorable with
+    :py:func:`@contextlib.contextmanager <python:contextlib.contextmanager>`) then the body of the
+    function after the yield will be run after execution resolves, allowing users to write their
+    own teardown/cleanup logic.
+
+    Depending on your executor, resources may be instantiated and cleaned up more than once in a
+    pipeline execution.
 
     Args:
-        resource_fn (Callable[[InitResourceContext], Any]):
-            User provided function to instantiate the resource. This resource will be available to
-            solids via ``context.resources``
-        config_field (Field):
-            The type for the configuration data for this resource, passed to ``resource_fn`` via
-            ``init_context.resource_config``
-        description (str)
+        resource_fn (Callable[[InitResourceContext], Any]): User-provided function to instantiate
+            the resource, which will be made available to solid executions keyed on the
+            ``context.resources`` object.
+        config_field (Optional[Field]): The type for the configuration data for this resource, which
+            will be available on the ``init_context`` passed to `resource_fn`` as
+            ``init_context.resource_config``.
+        description (Optional[str]): A human-readable description of the resource.
     '''
 
     def __init__(self, resource_fn, config_field=None, description=None):
@@ -58,17 +68,24 @@ class ResourceDefinition(object):
 
 
 def resource(config=None, config_field=None, description=None):
-    '''A decorator for creating a resource. The decorated function will be used as the
-    resource_fn in a ResourceDefinition.
+    '''Define a resource.
+    
+    The decorated function should accept an :py:class:`InitResourceContext` and return an instance of
+    the resource. This function will become the ``resource_fn`` of an underlying
+    :py:class:`ResourceDefinition`.
+
+    If the decorated function yields once rather than returning (in the manner of functions
+    decorable with :py:func:`@contextlib.contextmanager <python:contextlib.contextmanager>`) then
+    the body of the function after the yield will be run after execution resolves, allowing users
+    to write their own teardown/cleanup logic.
 
     Args:
-        config (Dict[str, Field]):
-            The schema for the configuration data to be made available to the resource_fn
-        config_field (Field):
-            Used in the rare case of a top level config type other than a dictionary.
-
-            Only one of config or config_field can be provided.
-        description(str)
+        config (Optional[Dict[str, Field]]): The schema for the configuration data made available
+            on the ``init_context`` passed to the decorated function (as
+            ``init_context.resource_config``).
+        config_field (Optional[Field]): Used in the rare case of a top level config type other than
+            a dictionary. Only one of ``config`` or ``config_field`` may be set.
+        description(Optional[str]): A human-readable description of the resource.
     '''
 
     # This case is for when decorator is used bare, without arguments.

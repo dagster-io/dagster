@@ -46,28 +46,22 @@ class SolidConfig(namedtuple('_SolidConfig', 'config inputs outputs')):
 
 class EnvironmentConfig(
     namedtuple(
-        '_EnvironmentConfig',
-        'solids expectations execution storage resources loggers original_config_dict',
+        '_EnvironmentConfig', 'solids execution storage resources loggers original_config_dict'
     )
 ):
     def __new__(
         cls,
         solids=None,
-        expectations=None,
         execution=None,
         storage=None,
         resources=None,
         loggers=None,
         original_config_dict=None,
     ):
-        check.opt_inst_param(expectations, 'expectations', ExpectationsConfig)
         check.opt_inst_param(execution, 'execution', ExecutionConfig)
         check.opt_inst_param(storage, 'storage', StorageConfig)
         check.opt_dict_param(original_config_dict, 'original_config_dict')
         check.opt_dict_param(resources, 'resources', key_type=str)
-
-        if expectations is None:
-            expectations = ExpectationsConfig(evaluate=True)
 
         if execution is None:
             execution = ExecutionConfig(None, None)
@@ -75,7 +69,6 @@ class EnvironmentConfig(
         return super(EnvironmentConfig, cls).__new__(
             cls,
             solids=check.opt_dict_param(solids, 'solids', key_type=str, value_type=SolidConfig),
-            expectations=expectations,
             execution=execution,
             storage=storage,
             resources=resources,
@@ -92,7 +85,6 @@ class EnvironmentConfig(
         return EnvironmentConfig(
             solids=construct_solid_dictionary(config_value['solids']),
             execution=ExecutionConfig.from_dict(config_value.get('execution')),
-            expectations=ExpectationsConfig(**config_value['expectations']),
             storage=StorageConfig.from_dict(config_value.get('storage')),
             loggers=config_value.get('loggers'),
             original_config_dict=original_config_dict,
@@ -114,13 +106,6 @@ class EnvironmentConfig(
             raise DagsterInvalidConfigError(pipeline, result.errors, environment_dict)
 
         return EnvironmentConfig.from_config_value(result.value, environment_dict)
-
-
-class ExpectationsConfig(namedtuple('_ExpecationsConfig', 'evaluate')):
-    def __new__(cls, evaluate):
-        return super(ExpectationsConfig, cls).__new__(
-            cls, evaluate=check.bool_param(evaluate, 'evaluate')
-        )
 
 
 class ExecutionConfig(

@@ -118,6 +118,24 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
 def execute_solids_within_pipeline(
     pipeline_def, solid_names, inputs=None, environment_dict=None, run_config=None
 ):
+    '''Execute a set of solids within an existing pipeline.
+
+    Intended to support tests. Input values may be passed directly.
+
+    Args:
+        pipeline_def (PipelineDefinition): The pipeline within which to execute the solid.
+        solid_name (str): The name of the solid, or the aliased solid, to execute.
+        inputs (Optional[Dict[str, Dict[str, Any]]]): A dict keyed on solid names, whose values are
+            dicts of input names to input values, used to pass input values to the solids directly.
+            You may also use the ``environment_dict`` to configure any inputs that are configurable.
+        environment_dict (Optional[dict]): The enviroment configuration that parameterizes this
+            execution, as a dict.
+        run_config (Optional[RunConfig]): Optionally specifies additional config options for
+            pipeline execution.
+    
+    Returns:
+        Dict[str, SolidExecutionResult]: The results of executing the solids, keyed by solid name.
+    '''
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.list_param(solid_names, 'solid_names', of_type=str)
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str, value_type=dict)
@@ -134,6 +152,24 @@ def execute_solids_within_pipeline(
 def execute_solid_within_pipeline(
     pipeline_def, solid_name, inputs=None, environment_dict=None, run_config=None
 ):
+    '''Execute a single solid within an existing pipeline.
+
+    Intended to support tests. Input values may be passed directly.
+
+    Args:
+        pipeline_def (PipelineDefinition): The pipeline within which to execute the solid.
+        solid_name (str): The name of the solid, or the aliased solid, to execute.
+        inputs (Optional[Dict[str, Any]]): A dict of input names to input values, used to
+            pass input values to the solid directly. You may also use the ``environment_dict`` to
+            configure any inputs that are configurable.
+        environment_dict (Optional[dict]): The enviroment configuration that parameterizes this
+            execution, as a dict.
+        run_config (Optional[RunConfig]): Optionally specifies additional config options for
+            pipeline execution.
+    
+    Returns:
+        SolidExecutionResult: The result of executing the solid.
+    '''
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.str_param(solid_name, 'solid_name')
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str)
@@ -163,11 +199,25 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
 def execute_solid(
     solid_def, mode_def=None, input_values=None, environment_dict=None, run_config=None
 ):
-    '''
-    Independently execute an individual solid without having to specify a pipeline. This
-    also allows one to directly pass in in-memory input values. This is very
-    useful for unit test cases.
+    '''Execute a single solid in an ephemeral pipeline.
 
+    Intended to support unit tests. Input values may be passed directly, and no pipeline need be
+    specified -- an ephemeral pipeline will be constructed.
+
+    Args:
+        solid_def (SolidDefinition): The solid to execute.
+        mode_def (Optional[ModeDefinition]): The mode within which to execute the solid. Use this
+            if, e.g., custom resources, loggers, or executors are desired.
+        input_values (Optional[Dict[str, Any]]): A dict of input names to input values, used to
+            pass inputs to the solid directly. You may also use the ``environment_dict`` to
+            configure any inputs that are configurable.
+        environment_dict (Optional[dict]): The enviroment configuration that parameterizes this
+            execution, as a dict.
+        run_config (Optional[RunConfig]): Optionally specifies additional config options for
+            pipeline execution.
+    
+    Returns:
+        SolidExecutionResult: The result of executing the solid.
     '''
     check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)

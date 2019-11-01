@@ -40,6 +40,8 @@ class EventLogSequence(pyrsistent.CheckedPVector):
 
 
 class EventLogStorage(six.with_metaclass(ABCMeta)):
+    '''Abstract base class for storing structured event logs from pipeline runs.'''
+
     @abstractmethod
     def get_logs_for_run(self, run_id, cursor=-1):
         '''Get all of the logs corresponding to a run.

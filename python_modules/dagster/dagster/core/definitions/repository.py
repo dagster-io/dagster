@@ -9,17 +9,20 @@ class RepositoryDefinition(object):
 
     Args:
         name (str): The name of the pipeline.
-        pipeline_dict (Dict[str, callable]):
-            An dictionary of pipelines. The value of the dictionary is a function that takes
-            no parameters and returns a PipelineDefiniton.
+        pipeline_dict (Optional[Dict[str, Callable[[], PipelineDefinition]]]):
+            An dictionary of pipeline names to callables that take no parameters and return a
+            :py:class:`PipelineDefinition`.
 
-            We pass callables instead of the PipelineDefinitions itself so that they can be
-            created on demand when accessed by name.
+            This allows pipeline definitions to be created lazily when accessed by name, which can
+            be helpful for performance when there are many pipelines in a repository, or when
+            constructing the pipeline definitions is costly.
 
-            As the pipelines are retrieved it ensures that the keys of the dictionary and the
-            name of the pipeline are the same.
-        pipeline_defs (List[PipelineDefinition]):
-            A list of instantiated pipeline definitions.
+            The name of the constructed pipeline must match its key in this dictionary, or
+            a :py:class:`DagsterInvariantViolationError` will be thrown at retrieval time.
+        pipeline_defs (Optional[List[PipelineDefinition]]): A list of instantiated pipeline
+            definitions. You may provided both a ``pipeline_dict`` and ``pipeline_defs``, but the
+            names of the instantiated definitions may not collide with the keys of the lazily
+            evaluated dict.
     '''
 
     def __init__(self, name, pipeline_dict=None, pipeline_defs=None):
@@ -59,13 +62,17 @@ class RepositoryDefinition(object):
         return name in self._pipeline_names
 
     def get_pipeline(self, name):
-        '''Get a pipeline by name. Only constructs that pipeline and caches it.
+        '''Get a pipeline by name.
+        
+        If this pipeline is present in the lazily evaluated ``pipeline_dict`` passed to the
+        constructor, but has not yet been constructed, only this pipeline is constructed, and will
+        be cached for future calls.
 
         Args:
-            name (str): Name of the pipeline to retriever
+            name (str): Name of the pipeline to retrieve.
 
         Returns:
-            PipelineDefinition: Instance of PipelineDefinition with that name.
+            PipelineDefinition: The pipeline definition corresponding to the given name.
         '''
         check.str_param(name, 'name')
 
@@ -105,11 +112,13 @@ class RepositoryDefinition(object):
         return pipeline
 
     def get_all_pipelines(self):
-        '''Return all pipelines as a list
+        '''Return all pipelines in the repository as a list.
+
+        Note that this will construct any pipeline in the lazily evaluated ``pipeline_dict`` that
+        has not yet been constructed.
 
         Returns:
-            List[PipelineDefinition]:
-
+            List[PipelineDefinition]: All pipelines in the repository.
         '''
         if self._all_pipelines is not None:
             return self._all_pipelines

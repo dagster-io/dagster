@@ -420,7 +420,7 @@ class DauphinEventMarkdownMetadataEntry(dauphin.ObjectType):
         name = 'EventMarkdownMetadataEntry'
         interfaces = (DauphinEventMetadataEntry,)
 
-    mdString = dauphin.NonNull(dauphin.String)
+    md_str = dauphin.NonNull(dauphin.String)
 
 
 def iterate_metadata_entries(metadata_entries):
@@ -454,7 +454,7 @@ def iterate_metadata_entries(metadata_entries):
             yield DauphinEventMarkdownMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
-                mdString=metadata_entry.entry_data.mdString,
+                md_str=metadata_entry.entry_data.md_str,
             )
         else:
             # skip rest for now

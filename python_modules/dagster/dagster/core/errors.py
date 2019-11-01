@@ -1,16 +1,16 @@
-'''
-Errors in Dagster:
+'''Dagster error classes.
 
-All errors thrown by the Dagster framework inherit from DagsterError. Users should not inherit their
-own exceptions from DagsterError. This how dagster communicates errors like definition errors and
-invariant violations.
+All errors thrown by the Dagster framework inherit from :class:`DagsterError <dagster.DagsterError>`.
+Users should not subclass this base class for their own exceptions.
 
-There is another exception base class, DagsterUserCodeExecutionError, which is meant to be used in
-concert with the user_code_error_boundary. Dagster calls into user code which can be arbitrary
-computation and can itself throw. The pattern here is to use the error boundary to catch this
-exception, and then rethrow that exception wrapped in a DagsterUserCodeExecutionError-derived
-exception. This new exception is there to embellish the original error with additional context that
-the dagster runtime is aware of.
+There is another exception base class,
+:class:`DagsterUserCodeExecutionError <dagster.DagsterUserCodeExecutionError>`, which is meant to
+be used in concert with the :func:`dagster.core.errors.user_code_error_boundary`. Dagster calls into
+user code which can be arbitrary computation and can itself throw. The pattern here is to use the
+error boundary to catch this exception, and then rethrow that exception wrapped in a
+:class:`DagsterUserCodeExecutionError <dagster.DagsterUserCodeExecutionError>`-derived exception.
+This new exception is there to embellish the original error with additional context that the
+Dagster runtime is aware of.
 '''
 
 import sys
@@ -23,25 +23,27 @@ from dagster import check
 
 
 class DagsterError(Exception):
+    '''Base class for all errors thrown by the Dagster framework.
+    
+    Users should not subclass this base class for their own exceptions.'''
+
     @property
     def is_user_code_error(self):
+        '''Returns true if this error is attributable to user code.'''
         return False
 
 
 class DagsterInvalidDefinitionError(DagsterError):
-    '''Indicates that some violation of the definition rules has been violated by the user'''
+    '''Indicates that the rules for a definition have been violated by the user.'''
 
 
 class DagsterInvariantViolationError(DagsterError):
-    '''Indicates the user has violated a well-defined invariant that can only be deteremined
-    at runtime.
-    '''
+    '''Indicates the user has violated a well-defined invariant that can only be enforced
+    at runtime.'''
 
 
 class DagsterExecutionStepNotFoundError(DagsterError):
-    '''
-    Throw when the user specifies execution step keys that do not exist.
-    '''
+    '''Thrown when the user specifies execution step keys that do not exist.'''
 
     def __init__(self, *args, **kwargs):
         self.step_keys = check.list_param(kwargs.pop('step_keys'), 'step_keys', str)
@@ -49,12 +51,17 @@ class DagsterExecutionStepNotFoundError(DagsterError):
 
 
 class DagsterRunNotFoundError(DagsterError):
+    '''Thrown when re-execution is attempted but the original run cannot be found.'''
+
     def __init__(self, *args, **kwargs):
         self.invalid_run_id = check.str_param(kwargs.pop('invalid_run_id'), 'invalid_run_id')
         super(DagsterRunNotFoundError, self).__init__(*args, **kwargs)
 
 
 class DagsterStepOutputNotFoundError(DagsterError):
+    '''Indicates that previous step outputs required for an execution step to proceed are not
+    available.'''
+
     def __init__(self, *args, **kwargs):
         self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
         self.output_name = check.str_param(kwargs.pop('output_name'), 'output_name')
@@ -86,16 +93,19 @@ def user_code_error_boundary(error_cls, msg_fn, **kwargs):
 
     Example:
 
-    with user_code_error_boundary(
-        # Pass a class that inherits from DagsterUserCodeExecutionError
-        DagstermillExecutionError,
-        # Pass a function that produces a message
-        lambda: 'Error occurred during the execution of Dagstermill solid '
-        '{solid_name}: {notebook_path}'.format(
-            solid_name=name, notebook_path=notebook_path
-        ),
-    ):
-        call_user_provided_function()
+    .. code-block:: python
+
+        with user_code_error_boundary(
+            # Pass a class that inherits from DagsterUserCodeExecutionError
+            DagstermillExecutionError,
+            # Pass a function that produces a message
+            lambda: 'Error occurred during the execution of Dagstermill solid '
+            '{solid_name}: {notebook_path}'.format(
+                solid_name=name, notebook_path=notebook_path
+            ),
+        ):
+            call_user_provided_function()
+
     '''
     check.callable_param(msg_fn, 'msg_fn')
     check.subclass_param(error_cls, 'error_cls', DagsterUserCodeExecutionError)
@@ -115,9 +125,10 @@ def user_code_error_boundary(error_cls, msg_fn, **kwargs):
 
 class DagsterUserCodeExecutionError(DagsterError):
     '''
-    This is the base class for any exception that is meant to wrap an Exception thrown by user code.
-    It wraps that existing user code. The original_exc_info argument to the ctor is meant to be a
-    sys.exc_info at the site of constructor.
+    This is the base class for any exception that is meant to wrap an
+    :class:`Exception <python:Exception>` thrown by user code. It wraps that existing user code.
+    The ``original_exc_info`` argument to the constructor is meant to be a tuple of the type
+    returned by :func:`sys.exc_info <python:sys.exc_info>` at the call site of the constructor.
     '''
 
     def __init__(self, *args, **kwargs):
@@ -167,7 +178,7 @@ class DagsterTypeCheckError(DagsterUserCodeExecutionError):
 
 
 class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
-    '''Indicates an error occured during the body of execution step execution'''
+    '''Indicates an error occured while executing the body of an execution step.'''
 
     def __init__(self, *args, **kwargs):
         self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
@@ -177,10 +188,16 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
 
 
 class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
-    '''Indicates an error occured during the body of resource_fn in a ResourceDefinition'''
+    '''
+    Indicates an error occured while executing the body of the ``resource_fn`` in a 
+    :class:`ResourceDefinition <dagster.ResourceDefinition>` during resource initialization.
+    '''
 
 
 class DagsterInvalidConfigError(DagsterError):
+    '''Thrown when provided config is invalid (does not type check against the relevant config
+    schema).'''
+
     def __init__(self, pipeline, errors, config_value, *args, **kwargs):
         from dagster.core.definitions import PipelineDefinition
         from dagster.core.types.evaluator.errors import friendly_string_for_error, EvaluationError
@@ -212,5 +229,5 @@ class DagsterInvalidConfigError(DagsterError):
 
 class DagsterUnmetExecutorRequirementsError(DagsterError):
     '''Indicates the resolved executor is incompatible with the state of other systems
-    such as the DagsterInstance or system storage configuration.
+    such as the :class:`DagsterInstance <dagster.DagsterInstance>` or system storage configuration.
     '''
