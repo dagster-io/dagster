@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 
 from ..config import ConfigType
-from ..field_utils import check_field_param
+from ..field import check_field_param
 
 
 class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):

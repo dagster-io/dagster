@@ -4,7 +4,8 @@ from dagster.core.definitions import SolidHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types import Field, List, NamedDict, NamedSelector
 from dagster.core.types.config import ALL_CONFIG_BUILTINS, ConfigType, ConfigTypeAttributes
-from dagster.core.types.field_utils import FieldImpl, _ConfigComposite, check_opt_field_param
+from dagster.core.types.field import check_opt_field_param
+from dagster.core.types.field_utils import _ConfigComposite
 from dagster.core.types.iterate_types import iterate_config_types
 from dagster.core.types.runtime import construct_runtime_type_dictionary
 from dagster.utils import camelcase, check, ensure_single_item
@@ -26,7 +27,7 @@ class _SolidContainerConfigDict(_ConfigComposite):
     def __init__(self, name, fields, description=None, handle=None, child_solids_config_field=None):
         self._handle = check.opt_inst_param(handle, 'handle', SolidHandle)
         self._child_solids_config_field = check.opt_inst_param(
-            child_solids_config_field, 'child_solids_config_field', FieldImpl
+            child_solids_config_field, 'child_solids_config_field', Field
         )
 
         super(_SolidContainerConfigDict, self).__init__(
@@ -294,7 +295,7 @@ def get_inputs_field(solid, handle, dependency_structure, pipeline_name):
             if not dependency_structure.has_deps(inp_handle) and not solid.container_maps_input(
                 name
             ):
-                inputs_field_fields[name] = FieldImpl(
+                inputs_field_fields[name] = Field(
                     inp.runtime_type.input_hydration_config.schema_type
                 )
 

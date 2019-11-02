@@ -5,7 +5,7 @@ from dagster import check
 from dagster.core.errors import DagsterError
 
 from ..config import ConfigType
-from ..field_utils import check_field_param
+from ..field import check_field_param
 from ..type_printer import print_config_type_to_string
 from .stack import EvaluationStack, get_friendly_path_info, get_friendly_path_msg
 from .traversal_context import TraversalContext
