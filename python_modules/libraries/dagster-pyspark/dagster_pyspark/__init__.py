@@ -1,10 +1,7 @@
 import os
 
-from dagster_spark.configs_spark import spark_config
-from dagster_spark.utils import flatten_dict
 from pyspark.rdd import RDD
 from pyspark.sql import DataFrame as NativeSparkDataFrame
-from pyspark.sql import SparkSession
 
 from dagster import (
     Bool,
@@ -21,6 +18,14 @@ from dagster.core.storage.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types import Selector, input_selector_schema, output_selector_schema
 from dagster.core.types.runtime import define_any_type
+
+from .decorators import pyspark_solid
+from .resources import (
+    PySparkResourceDefinition,
+    pyspark_resource,
+    spark_session_from_config,
+    spark_session_resource,
+)
 
 
 @input_selector_schema(
@@ -76,25 +81,6 @@ def write_rdd(context, file_type, file_options, spark_rdd):
 SparkRDD = as_dagster_type(
     RDD, 'SparkRDD', input_hydration_config=load_rdd, output_materialization_config=write_rdd
 )
-
-
-def spark_session_from_config(spark_conf=None):
-    spark_conf = check.opt_dict_param(spark_conf, 'spark_conf')
-    builder = SparkSession.builder
-    flat = flatten_dict(spark_conf)
-    for key, value in flat:
-        builder = builder.config(key, value)
-
-    return builder.getOrCreate()
-
-
-@resource({'spark_conf': spark_config()})
-def spark_session_resource(init_context):
-    spark = spark_session_from_config(init_context.resource_config['spark_conf'])
-    try:
-        yield spark
-    finally:
-        spark.stop()
 
 
 @output_selector_schema(

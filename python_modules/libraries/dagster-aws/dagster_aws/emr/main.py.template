@@ -1,0 +1,21 @@
+import sys
+
+from pyspark import SparkFiles
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+sc = spark.sparkContext
+sys.path.insert(0, SparkFiles.getRootDirectory())
+
+from dagster import RunConfig
+from dagster.utils.test import execute_solid_within_pipeline
+
+from {pipeline_file} import {pipeline_fn_name}
+
+if __name__ == '__main__':
+    execute_solid_within_pipeline(
+        {pipeline_fn_name},
+        '{solid_name}',
+        environment_dict={environment_dict},
+        run_config=RunConfig(mode='{mode_name}'),
+    )

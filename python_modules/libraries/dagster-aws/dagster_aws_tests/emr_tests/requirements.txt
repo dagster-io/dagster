@@ -1,0 +1,8 @@
+boto3
+dagster
+dagit
+dagster_aws
+dagster_pyspark
+dagster_spark
+moto
+pytest
