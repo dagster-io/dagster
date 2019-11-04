@@ -150,3 +150,20 @@ def test_compostites():
     result = execute_solid(hello_composite)
     assert result.success
     assert result.output_value() == 'hello'
+
+
+def test_single_solid_with_bad_inputs():
+    @lambda_solid(input_defs=[InputDefinition('num_one', int), InputDefinition('num_two', int)])
+    def add_solid(num_one, num_two):
+        return num_one + num_two
+
+    result = execute_solid(
+        add_solid,
+        input_values={'num_one': 2, 'num_two': 'three'},
+        environment_dict={'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}},
+        raise_on_error=False,
+    )
+
+    assert not result.success
+    assert result.failure_data.error.cls_name == 'Failure'
+    assert 'must be a int' in result.failure_data.error.message

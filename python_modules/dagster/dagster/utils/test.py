@@ -132,7 +132,7 @@ def execute_solids_within_pipeline(
             execution, as a dict.
         run_config (Optional[RunConfig]): Optionally specifies additional config options for
             pipeline execution.
-    
+
     Returns:
         Dict[str, SolidExecutionResult]: The results of executing the solids, keyed by solid name.
     '''
@@ -166,7 +166,7 @@ def execute_solid_within_pipeline(
             execution, as a dict.
         run_config (Optional[RunConfig]): Optionally specifies additional config options for
             pipeline execution.
-    
+
     Returns:
         SolidExecutionResult: The result of executing the solid.
     '''
@@ -197,7 +197,12 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
 
 
 def execute_solid(
-    solid_def, mode_def=None, input_values=None, environment_dict=None, run_config=None
+    solid_def,
+    mode_def=None,
+    input_values=None,
+    environment_dict=None,
+    run_config=None,
+    raise_on_error=True,
 ):
     '''Execute a single solid in an ephemeral pipeline.
 
@@ -215,7 +220,9 @@ def execute_solid(
             execution, as a dict.
         run_config (Optional[RunConfig]): Optionally specifies additional config options for
             pipeline execution.
-    
+        raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
+            Defaults to ``True``, since this is the most useful behavior in test.
+
     Returns:
         SolidExecutionResult: The result of executing the solid.
     '''
@@ -247,5 +254,6 @@ def execute_solid(
         ),
         environment_dict=environment_dict,
         run_config=run_config,
+        raise_on_error=raise_on_error,
     )
     return result.result_for_handle(solid_def.name)
