@@ -1,7 +1,7 @@
 from dagster import check
 
 from .mapping import register_python_type
-from .runtime import PYTHON_DAGSTER_TYPE_ARGS_DOCSTRING, define_python_dagster_type
+from .runtime import define_python_dagster_type
 
 
 def _decorate_as_dagster_type(
@@ -42,46 +42,74 @@ def dagster_type(
     typecheck_metadata_fn=None,
     type_check=None,
 ):
-    '''
-    Decorator version of as_dagster_type.
+    '''Decorate a Python class to turn it into a Dagster type.
     
-    This allows for the straightforward creation of your own classes for use in your
-    business logic, and then annotating them to make those same classes compatible with
-    the dagster type system.
+    This is intended to make it straightforward to annotate existing business logic classes to
+    make them compatible with the Dagster type system and to add any additional facilities, such
+    as input schemas, that they may need to be useful in your pipelines.
 
-    e.g.:
-        .. code-block:: python
+    Args:
+        python_type (cls): The python type to wrap as a Dagster type.
+        name (Optional[str]): Name of the new Dagster type. If ``None``, the name (``__name__``) of
+            the ``python_type`` will be used.
+        description (Optional[str]): A user-readable description of the type.
+        input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
+            inherits from :py:class:`InputHydrationConfig` and can map config data to a value of
+            this type. Specify this argument if you will need to shim values of this type using the
+            config machinery. As a rule, you should use the
+            :py:func:`@input_hydration_config <dagster.InputHydrationConfig>` decorator to construct
+            these arguments.
+        output_materialization_config (Optiona[OutputMaterializationConfig]): An instance of a class
+            that inherits from :py:class:`OutputMaterializationConfig` and can persist values of
+            this type. As a rule, you should use the
+            :py:func:`@output_materialization_config <dagster.output_materialization_config>`
+            decorator to construct these arguments.
+        serialization_strategy (Optional[SerializationStrategy]): An instance of a class that
+            inherits from :py:class:`SerializationStrategy`. The default strategy for serializing
+            this value when automatically persisting it between execution steps. You should set
+            this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
+            for this type.
+        auto_plugins (Optional[List[TypeStoragePlugin]]): If types must be serialized differently
+            depending on the storage being used for intermediates, they should specify this
+            argument. In these cases the serialization_strategy argument is not sufficient because
+            serialization requires specialized API calls, e.g. to call an S3 API directly instead
+            of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
+        typecheck_metadata_fn (Optional[Callable[[Any], TypeCheck]]): If specified, this function
+            will be called to emit metadata when you successfully check a type. The
+            typecheck_metadata_fn will be passed the value being type-checked and should return an
+            instance of :py:class:`TypeCheck`. See ``dagster_pandas.DataFrame`` for an example.
+        type_check (Optional[Callable[[Any], Any]]): If specified, this function will be called in
+            place of the default isinstance type check. This function should raise
+            :py:class:`Failure` if the type check fails, and otherwise pass. Its return value will
+            be ignored.
 
-            # You have created an object for your own purposes within your app
-            class MyDataObject:
-                pass
+    **Examples**:
 
+    .. code-block:: python
 
-    Now you want to be able to mark this as an input or output to solid. Without
-    modification, this does not work.
+        # dagster_aws.s3.file_manager.S3FileHandle
+        @dagster_type
+        class S3FileHandle(FileHandle):
+            def __init__(self, s3_bucket, s3_key):
+                self._s3_bucket = check.str_param(s3_bucket, 's3_bucket')
+                self._s3_key = check.str_param(s3_key, 's3_key')
 
-    You must decorate it:
-        .. code-block:: python
+            @property
+            def s3_bucket(self):
+                return self._s3_bucket
 
-            @dagster_type
-            class MyDataObject:
-                pass
+            @property
+            def s3_key(self):
+                return self._s3_key
 
-    Now one can using this as an input or an output into a solid.
+            @property
+            def path_desc(self):
+                return self.s3_path
 
-        .. code-block:: python
-
-            @lambda_solid
-            def create_myobject() -> MyDataObject:
-                return MyDataObject()
-
-    And it is viewable in dagit and so forth, and you can use the dagster type system
-    for configuration, serialization, and metadata emission.
-
-    {args_docstring}
-    '''.format(
-        args_docstring=PYTHON_DAGSTER_TYPE_ARGS_DOCSTRING
-    )
+            @property
+            def s3_path(self):
+                return 's3://{bucket}/{key}'.format(bucket=self.s3_bucket, key=self.s3_key)
+        '''
 
     def _with_args(bare_cls):
         check.type_param(bare_cls, 'bare_cls')
@@ -117,28 +145,75 @@ def as_dagster_type(
     typecheck_metadata_fn=None,
     type_check=None,
 ):
+    '''Create a Dagster type corresponding to an existing Python type.
+
+    This function allows you to explicitly wrap existing types in a new Dagster type, and is
+    especially useful when using library types (e.g., from a data processing library) that might
+    require additional functionality such as input config to be useful in your pipelines.
+
+    Args:
+        python_type (cls): The python type to wrap as a Dagster type.
+        name (Optional[str]): Name of the new Dagster type. If ``None``, the name (``__name__``) of
+            the ``python_type`` will be used.
+        description (Optional[str]): A user-readable description of the type.
+        input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
+            inherits from :py:class:`InputHydrationConfig` and can map config data to a value of
+            this type. Specify this argument if you will need to shim values of this type using the
+            config machinery. As a rule, you should use the
+            :py:func:`@input_hydration_config <dagster.InputHydrationConfig>` decorator to construct
+            these arguments.
+        output_materialization_config (Optiona[OutputMaterializationConfig]): An instance of a class
+            that inherits from :py:class:`OutputMaterializationConfig` and can persist values of
+            this type. As a rule, you should use the
+            :py:func:`@output_materialization_config <dagster.output_materialization_config>`
+            decorator to construct these arguments.
+        serialization_strategy (Optional[SerializationStrategy]): An instance of a class that
+            inherits from :py:class:`SerializationStrategy`. The default strategy for serializing
+            this value when automatically persisting it between execution steps. You should set
+            this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
+            for this type.
+        auto_plugins (Optional[List[TypeStoragePlugin]]): If types must be serialized differently
+            depending on the storage being used for intermediates, they should specify this
+            argument. In these cases the serialization_strategy argument is not sufficient because
+            serialization requires specialized API calls, e.g. to call an S3 API directly instead
+            of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
+        typecheck_metadata_fn (Optional[Callable[[Any], TypeCheck]]): If specified, this function
+            will be called to emit metadata when you successfully check a type. The
+            typecheck_metadata_fn will be passed the value being type-checked and should return an
+            instance of :py:class:`TypeCheck`. See ``dagster_pandas.DataFrame`` for an example.
+        type_check (Optional[Callable[[Any], Any]]): If specified, this function will be called in
+            place of the default isinstance type check. This function should raise
+            :py:class:`Failure` if the type check fails, and otherwise pass. Its return value will
+            be ignored.
+    
+    **Example**:
+
+    .. code-block:: python
+
+        # Partial example drawn from dagster_pandas.DataFrame
+
+        DataFrame = as_dagster_type(
+            pd.DataFrame,
+            name='PandasDataFrame',
+            description=\'\'\'Two-dimensional size-mutable, potentially heterogeneous
+            tabular data structure with labeled axes (rows and columns).
+            See http://pandas.pydata.org/\'\'\',
+            input_hydration_config=dataframe_input_schema,
+            output_materialization_config=dataframe_output_schema,
+            typecheck_metadata_fn=lambda value: TypeCheck(
+                metadata_entries=[
+                    EventMetadataEntry.text(
+                        str(len(value)), 'row_count', 'Number of rows in DataFrame'
+                    ),
+                    # string cast columns since they may be things like datetime
+                    EventMetadataEntry.json({'columns': list(map(str, value.columns))}, 'metadata'),
+                ]
+            ),
+        )
+
+    See, e.g., ``dagster_pandas.DataFrame`` and ``dagster_pyspark.SparkRDD`` for fuller worked
+    examples.
     '''
-    See documentation for :py:func:`define_python_dagster_type` for parameters.
-
-    Takes a python cls and creates a type for it in the Dagster domain.
-
-    Frequently you want to import a data processing library and use its types
-    directly in solid definitions. To support this dagster has this facility
-    that allows one to annotate *existing* classes as dagster type.
-
-    from existing_library import FancyDataType as ExistingFancyDataType
-
-    FancyDataType = as_dagster_type(existing_type=ExistingFancyDataType, name='FancyDataType')
-
-    While one *could* use the existing type directly from the original library, we would
-    recommend using the object returned by as_dagster_type to avoid an import-order-based bugs.
-
-    See dagster_pandas for an example of how to do this.
-
-    {args_docstring}
-    '''.format(
-        args_docstring=PYTHON_DAGSTER_TYPE_ARGS_DOCSTRING
-    )
 
     return _decorate_as_dagster_type(
         bare_cls=check.type_param(existing_type, 'existing_type'),

@@ -17,10 +17,10 @@ class OutputDefinition(object):
     Output definitions may be typed using the Dagster type system.
 
     Args:
-        dagster_type (Optional[Any]): An object that Dagster can resolve to a
-            :py:class:`RuntimeType` for the output.  Defaults to :py:class:`Any`. Python types from
-            :py:mod:`typing <python:typing>` will be automatically mapped to an appropriate
-            Dagster type.
+        dagster_type (Optional[Any]): The type of this output. Users should provide one of the
+            :ref:`built-in types <builtin>`, a dagster type explicitly constructed with
+            :py:func:`as_dagster_type`, :py:func:`@dagster_type <dagster_type`, or
+            :py:func:`define_python_dagster_type`, or a Python type. Defaults to :py:class:`Any`. 
         name (Optional[str]): Name of the output. (default: "result")
         description (Optional[str]): Human-readable description of the output.
         is_optional (Optional[bool]): Set if this output is optional. (default: False)

@@ -8,7 +8,6 @@ from dagster import (
     InputDefinition,
     Int,
     ModeDefinition,
-    NamedDict,
     OutputDefinition,
     PipelineDefinition,
     ResourceDefinition,
@@ -35,6 +34,7 @@ from dagster.core.system_config.objects import (
 from dagster.core.test_utils import throwing_evaluate_config_value
 from dagster.core.types.evaluator import evaluate_config
 from dagster.core.types.evaluator.errors import DagsterEvaluateConfigValueError
+from dagster.core.types.field_utils import NamedDict
 from dagster.loggers import default_loggers
 
 

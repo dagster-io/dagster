@@ -1,14 +1,12 @@
 import pytest
 
 from dagster import (
-    ConfigType,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     Dict,
     Field,
     InputDefinition,
     Int,
-    NamedDict,
     OutputDefinition,
     PermissiveDict,
     PipelineDefinition,
@@ -19,6 +17,8 @@ from dagster import (
 )
 from dagster.core.definitions import create_environment_schema
 from dagster.core.types import NamedSelector, Selector
+from dagster.core.types.config import ConfigType
+from dagster.core.types.field_utils import NamedDict
 from dagster.core.utility_solids import define_stub_solid
 
 
@@ -240,7 +240,7 @@ def test_pass_incorrect_thing_to_field():
 
     assert str(exc_info.value) == (
         'Attempted to pass \'nope\' to a Field that expects a valid dagster type '
-        'usable in config (e.g. Dict, NamedDict, Int, String et al).'
+        'usable in config (e.g. Dict, Int, String et al).'
     )
 
 

@@ -22,8 +22,8 @@ from dagster import (
     OutputDefinition,
     Path,
     PresetDefinition,
-    RuntimeType,
     String,
+    dagster_type,
     file_relative_path,
     pipeline,
     solid,
@@ -31,26 +31,27 @@ from dagster import (
 from dagster.utils import mkdir_p, safe_isfile
 
 
-class FileExistsAtPath(RuntimeType):
-    def __init__(self):
-        super(FileExistsAtPath, self).__init__(
-            name='FileExistsAtPath',
-            key='FileExistsAtPath',
-            description='A path at which a file actually exists',
+def file_exists_at_path_type_check(value):
+    if not isinstance(value, six.string_types):
+        raise Failure(
+            'FileExistsAtPath must be a string in memory. Got {value}'.format(value=repr(value))
+        )
+    if not safe_isfile(value):
+        raise Failure(
+            (
+                'FileExistsAtPath must be a path that points to a file that '
+                'exists. "{value}" does not exist on disk'
+            ).format(value=value)
         )
 
-    def type_check(self, value):
-        if not isinstance(value, six.string_types):
-            raise Failure(
-                'FileExistsAtPath must be a string in memory. Got {value}'.format(value=repr(value))
-            )
-        if not safe_isfile(value):
-            raise Failure(
-                (
-                    'FileExistsAtPath must be a path that points to a file that '
-                    'exists. "{value}" does not exist on disk'
-                ).format(value=value)
-            )
+
+@dagster_type(
+    name='FileExistsAtPath',
+    description='A path at which a file actually exists',
+    type_check=file_exists_at_path_type_check,
+)
+class FileExistsAtPath(str):
+    pass
 
 
 def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip_if_present):

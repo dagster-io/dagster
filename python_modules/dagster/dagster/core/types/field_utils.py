@@ -1,3 +1,4 @@
+# encoding: utf-8
 import re
 
 from dagster import check
@@ -9,7 +10,7 @@ from .config import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttributes
 def all_optional_type(config_type):
     check.inst_param(config_type, 'config_type', ConfigType)
 
-    if config_type.is_composite or config_type.is_selector:
+    if config_type.is_composite:
         for field in config_type.fields.values():
             if not field.is_optional:
                 return False
@@ -262,9 +263,22 @@ def build_config_dict(fields):
 
 
 def PermissiveDict(fields=None):
-    '''A permissive dict will permit the user to partially specify the permitted fields. Any fields
-    that are specified and passed in will be type checked. Other fields will be allowed, but
-    will be ignored by the type checker.
+    '''Defines a config dict with a partially specified schema.
+    
+    A permissive dict allows partial specification of the config schema. Any fields with a
+    specified schema will be type checked. Other fields will be allowed, but will be ignored by
+    the type checker.
+
+    Args:
+        fields (Dict[str, Field]): The partial specification of the config dict.
+    
+    **Examples**
+
+    .. code-block:: python
+
+        @solid(config_field=Field(PermissiveDict({'required': Field(String)})))
+        def partially_specified_config(context) -> List:
+            return sorted(list(context.solid_config.items()))
     '''
 
     if fields:
@@ -289,16 +303,51 @@ def PermissiveDict(fields=None):
 
 
 def Selector(fields):
-    '''Selectors are used when you want to be able present several different options to the user but
-    force them to select one. For example, it would not make much sense to allow them
-    to say that a single input should be sourced from a csv and a parquet file: They must choose.
+    '''Define a config field requiring the user to select one option.
+    
+    Selectors are used when you want to be able to present several different options in config but
+    allow only one to be selected. For example, a single input might be read in from either a csv
+    file or a parquet file, but not both at once.
 
-    Note that in other type systems this might be called an "input union."
+    Note that in some other type systems this might be called an 'input union'.
+
+    Functionally, a selector is like a :py:class:`Dict`, except that only one key from the dict can
+    be specified in valid config.
 
     Args:
-        fields (Dict[str, Field]):
-    '''
+        fields (Dict[str, Field]): The fields from which the user must select.
+    
+    **Examples**:
 
+    .. code-block:: python
+
+        @solid(
+            config_field=Field(
+                Selector(
+                    {
+                        'haw': Field(
+                            Dict({'whom': Field(String, default_value='honua', is_optional=True)})
+                        ),
+                        'cn': Field(
+                            Dict({'whom': Field(String, default_value='世界', is_optional=True)})
+                        ),
+                        'en': Field(
+                            Dict({'whom': Field(String, default_value='world', is_optional=True)})
+                        )
+                    }
+                ),
+                is_optional=True,
+                default_value={'en': {'whom': 'world'}},
+            )
+        )
+        def hello_world_with_default(context):
+            if 'haw' in context.solid_config:
+                return 'Aloha {whom}!'.format(whom=context.solid_config['haw']['whom'])
+            if 'cn' in context.solid_config:
+                return '你好，{whom}!'.format(whom=context.solid_config['cn']['whom'])
+            if 'en' in context.solid_config:
+                return 'Hello, {whom}!'.format(whom=context.solid_config['en']['whom'])
+    '''
     check_user_facing_fields_dict(fields, 'Selector')
 
     class _Selector(_ConfigSelector):

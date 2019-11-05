@@ -81,7 +81,6 @@ from dagster.core.types import (
     Float,
     Int,
     List,
-    NamedDict,
     Nothing,
     Optional,
     Path,
@@ -93,12 +92,16 @@ from dagster.core.types import (
     input_hydration_config,
     output_materialization_config,
 )
-from dagster.core.types.config import ConfigScalar, ConfigType, Enum, EnumValue
+from dagster.core.types.config import Enum, EnumValue
 from dagster.core.types.decorator import as_dagster_type, dagster_type
 from dagster.core.types.marshal import SerializationStrategy
-from dagster.core.types.runtime import RuntimeType, define_python_dagster_type
+from dagster.core.types.runtime import define_python_dagster_type
 from dagster.utils import file_relative_path
-from dagster.utils.test import execute_solid, execute_solids_within_pipeline
+from dagster.utils.test import (
+    execute_solid,
+    execute_solid_within_pipeline,
+    execute_solids_within_pipeline,
+)
 
 from .version import __version__
 
@@ -182,7 +185,6 @@ __all__ = [
     'Float',
     'Int',
     'List',
-    'NamedDict',
     'Optional',
     'output_materialization_config',
     'Path',
@@ -194,9 +196,6 @@ __all__ = [
     'as_dagster_type',
     'dagster_type',
     'define_python_dagster_type',
-    'RuntimeType',
-    'ConfigType',
-    'ConfigScalar',
     # file things
     'FileHandle',
     'LocalFileHandle',

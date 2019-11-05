@@ -125,7 +125,7 @@ class SolidExecutionResult(object):
 
     @property
     def compute_output_event_dict(self):
-        '''Dict[str, DagsterEvent]: All events of type ``STEP_OUTPUT`, keyed by output name'''
+        '''Dict[str, DagsterEvent]: All events of type ``STEP_OUTPUT``, keyed by output name'''
         return {se.event_specific_data.output_name: se for se in self.output_events_during_compute}
 
     def get_output_event_for_compute(self, output_name='result'):

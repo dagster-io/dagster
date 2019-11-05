@@ -19,6 +19,8 @@ from dagster import (
     Nothing,
     Optional,
     Path,
+    PermissiveDict,
+    Selector,
     Set,
     String,
     Tuple,
@@ -380,6 +382,48 @@ def set_string_config(context) -> list:
     return sorted([x for x in context.solid_config])
 
 
+@solid(
+    config_field=Field(
+        Selector({'haw': Field(Dict({})), 'cn': Field(Dict({})), 'en': Field(Dict({}))})
+    )
+)
+def hello_world(context) -> str:
+    if 'haw' in context.solid_config:
+        return 'Aloha honua!'
+    if 'cn' in context.solid_config:
+        return '你好，世界!'
+    return 'Hello, world!'
+
+
+@solid(
+    config_field=Field(
+        Selector(
+            {
+                'haw': Field(
+                    Dict({'whom': Field(String, default_value='honua', is_optional=True)})
+                ),
+                'cn': Field(Dict({'whom': Field(String, default_value='世界', is_optional=True)})),
+                'en': Field(Dict({'whom': Field(String, default_value='world', is_optional=True)})),
+            }
+        ),
+        is_optional=True,
+        default_value={'en': {'whom': 'world'}},
+    )
+)
+def hello_world_default(context) -> str:
+    if 'haw' in context.solid_config:
+        return 'Aloha {whom}!'.format(whom=context.solid_config['haw']['whom'])
+    if 'cn' in context.solid_config:
+        return '你好，{whom}!'.format(whom=context.solid_config['cn']['whom'])
+    if 'en' in context.solid_config:
+        return 'Hello, {whom}!'.format(whom=context.solid_config['en']['whom'])
+
+
+@solid(config_field=Field(PermissiveDict({'required': Field(String)})))
+def partially_specified_config(context) -> List:
+    return sorted(list(context.solid_config.items()))
+
+
 def test_any_config():
     res = execute_solid(any_config, environment_dict={'solids': {'any_config': {'config': 'foo'}}})
     assert res.output_value() == 'foo'
@@ -557,3 +601,39 @@ def test_set_string_config():
             set_string_config,
             environment_dict={'solids': {'set_string_config': {'config': ['foo', 'foo', 3]}}},
         )
+
+
+def test_selector_config():
+    res = execute_solid(
+        hello_world, environment_dict={'solids': {'hello_world': {'config': {'haw': {}}}}}
+    )
+    assert res.output_value() == 'Aloha honua!'
+
+
+def test_selector_config_default():
+    res = execute_solid(hello_world_default)
+    assert res.output_value() == 'Hello, world!'
+
+    res = execute_solid(
+        hello_world_default,
+        environment_dict={'solids': {'hello_world_default': {'config': {'haw': {}}}}},
+    )
+    assert res.output_value() == 'Aloha honua!'
+
+    res = execute_solid(
+        hello_world_default,
+        environment_dict={'solids': {'hello_world_default': {'config': {'haw': {'whom': 'Max'}}}}},
+    )
+    assert res.output_value() == 'Aloha Max!'
+
+
+def test_permissive_config():
+    res = execute_solid(
+        partially_specified_config,
+        environment_dict={
+            'solids': {
+                'partially_specified_config': {'config': {'required': 'yes', 'also': 'this'}}
+            }
+        },
+    )
+    assert res.output_value() == sorted([('required', 'yes'), ('also', 'this')])

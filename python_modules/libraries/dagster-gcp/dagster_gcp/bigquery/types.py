@@ -11,7 +11,8 @@ from google.cloud.bigquery.job import (
     WriteDisposition,
 )
 
-from dagster import ConfigScalar, Enum, EnumValue
+from dagster import Enum, EnumValue
+from dagster.core.types.config import ConfigScalar
 
 
 class BigQueryLoadSource(PyEnum):

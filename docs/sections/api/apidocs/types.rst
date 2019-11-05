@@ -7,6 +7,8 @@ Dagster includes facilities for typing the input and output values of solids ("r
 well as for writing strongly typed config schemas to support tools like Dagit's config editor
 ("config" types).
 
+.. _builtin:
+
 Built-in types
 --------------
 
@@ -435,18 +437,10 @@ Making New Types
 
 .. autofunction:: as_dagster_type
 
-.. autofunction:: dagster_type
+.. autodecorator:: dagster_type
 
 .. autofunction:: define_python_dagster_type
-
-.. autoclass:: RuntimeType
-
-.. autoclass:: ConfigType
-
-.. autofunction:: NamedDict
 
 .. autofunction:: input_hydration_config
 
 .. autofunction:: output_materialization_config
-
-.. autoclass:: ConfigScalar
