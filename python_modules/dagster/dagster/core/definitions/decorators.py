@@ -276,6 +276,9 @@ def solid(
             A :class:`DagsterInvalidDefinitionError` will be raised if both ``config`` and
             ``config_field`` are set.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
+        metadata (Optional[Dict[Any, Any]]): Arbitrary metadata for the solid. Frameworks may
+            expect and require certain metadata to be attached to a solid. Users should generally
+            not set metadata directly.
 
     Examples:
 
