@@ -25,12 +25,9 @@ def query_on_dask_worker(
 
 class DaskEngine(Engine):  # pylint: disable=no-init
     @staticmethod
-    def execute(pipeline_context, execution_plan, step_keys_to_execute=None):
+    def execute(pipeline_context, execution_plan):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
-
-        step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
 
         dask_config = pipeline_context.executor_config
 
@@ -68,7 +65,7 @@ class DaskEngine(Engine):  # pylint: disable=no-init
                 'Cannot use in-memory storage with Dask, use filesystem or S3',
             )
 
-        step_levels = execution_plan.topological_step_levels()
+        step_levels = execution_plan.execution_step_levels()
 
         pipeline_name = pipeline_context.pipeline_def.name
 
@@ -80,9 +77,6 @@ class DaskEngine(Engine):  # pylint: disable=no-init
 
             for step_level in step_levels:
                 for step in step_level:
-                    if step_key_set and step.key not in step_key_set:
-                        continue
-
                     # We ensure correctness in sequencing by letting Dask schedule futures and
                     # awaiting dependencies within each step.
                     dependencies = []

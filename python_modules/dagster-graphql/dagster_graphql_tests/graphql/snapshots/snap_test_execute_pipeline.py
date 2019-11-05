@@ -187,6 +187,23 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                         'level': 'DEBUG'
                     },
                     {
+                        '__typename': 'ObjectStoreOperationEvent',
+                        'level': 'DEBUG',
+                        'operationResult': {
+                            'metadataEntries': [
+                                {
+                                    'description': None,
+                                    'label': 'key',
+                                    'path': 'DUMMY_PATH'
+                                }
+                            ],
+                            'op': 'CP_OBJECT'
+                        },
+                        'step': {
+                            'key': 'sum_solid.compute'
+                        }
+                    },
+                    {
                         '__typename': 'ExecutionStepStartEvent',
                         'level': 'DEBUG',
                         'step': {

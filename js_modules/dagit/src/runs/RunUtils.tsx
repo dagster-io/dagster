@@ -121,14 +121,8 @@ export const HANDLE_START_EXECUTION_FRAGMENT = gql`
 `;
 
 export const REEXECUTE_MUTATION = gql`
-  mutation Reexecute(
-    $executionParams: ExecutionParams!
-    $reexecutionConfig: ReexecutionConfig
-  ) {
-    startPipelineExecution(
-      executionParams: $executionParams
-      reexecutionConfig: $reexecutionConfig
-    ) {
+  mutation Reexecute($executionParams: ExecutionParams!) {
+    startPipelineExecution(executionParams: $executionParams) {
       ...HandleStartExecutionFragment
     }
   }

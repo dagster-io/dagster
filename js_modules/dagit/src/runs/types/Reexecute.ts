@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ExecutionParams, ReexecutionConfig } from "./../../types/globalTypes";
+import { ExecutionParams } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: Reexecute
@@ -52,5 +52,4 @@ export interface Reexecute {
 
 export interface ReexecuteVariables {
   executionParams: ExecutionParams;
-  reexecutionConfig?: ReexecutionConfig | null;
 }

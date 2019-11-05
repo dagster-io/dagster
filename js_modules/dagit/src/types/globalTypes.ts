@@ -66,6 +66,7 @@ export interface ExecutionParams {
   executionMetadata?: ExecutionMetadata | null;
   stepKeys?: string[] | null;
   preset?: string | null;
+  retryRunId?: string | null;
 }
 
 export interface ExecutionSelector {
@@ -84,16 +85,6 @@ export interface PipelineRunsFilter {
   tagKey?: string | null;
   tagValue?: string | null;
   status?: PipelineRunStatus | null;
-}
-
-export interface ReexecutionConfig {
-  previousRunId: string;
-  stepOutputHandles: StepOutputHandle[];
-}
-
-export interface StepOutputHandle {
-  stepKey: string;
-  outputName: string;
 }
 
 //==============================================================

@@ -53,7 +53,7 @@ class PipelineRun(
         '_PipelineRun',
         (
             'pipeline_name run_id environment_dict mode selector reexecution_config '
-            'step_keys_to_execute status tags'
+            'step_keys_to_execute status tags previous_run_id'
         ),
     ),
     IRunConfig,
@@ -85,9 +85,9 @@ class PipelineRun(
         step_keys_to_execute=None,
         status=None,
         tags=None,
+        previous_run_id=None,
     ):
         from dagster.core.definitions.pipeline import ExecutionSelector
-        from dagster.core.execution.config import ReexecutionConfig
 
         tags = check.opt_dict_param(tags, 'tags', key_type=str)
         selector = check.opt_inst_param(selector, 'selector', ExecutionSelector)
@@ -106,14 +106,13 @@ class PipelineRun(
             ),
             mode=check.str_param(mode, 'mode'),
             selector=selector,
-            reexecution_config=check.opt_inst_param(
-                reexecution_config, 'reexecution_config', ReexecutionConfig
-            ),
+            reexecution_config=reexecution_config,  # deprecated
             step_keys_to_execute=None
             if step_keys_to_execute is None
             else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
             status=status,
             tags=check.opt_dict_param(tags, 'tags', key_type=str),
+            previous_run_id=check.opt_str_param(previous_run_id, 'previous_run_id'),
         )
 
     def run_with_status(self, status):
@@ -127,6 +126,7 @@ class PipelineRun(
             step_keys_to_execute=self.step_keys_to_execute,
             tags=self.tags,
             status=status,
+            previous_run_id=self.previous_run_id,
         )
 
     @property

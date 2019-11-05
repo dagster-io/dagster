@@ -2,14 +2,10 @@ import time
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, SystemStorageData
-from dagster.core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvariantViolationError,
-    DagsterRunNotFoundError,
-    DagsterStepOutputNotFoundError,
-)
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.memoization import validate_retry_memoization
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -61,14 +57,10 @@ def create_execution_plan(pipeline, environment_dict=None, run_config=None):
 
     environment_config = EnvironmentConfig.build(pipeline, environment_dict, run_config)
 
-    return ExecutionPlan.build(
-        pipeline, environment_config, pipeline.get_mode_definition(run_config.mode)
-    )
+    return ExecutionPlan.build(pipeline, environment_config, run_config)
 
 
-def _pipeline_execution_iterator(
-    pipeline_context, execution_plan, pipeline_run, step_keys_to_execute
-):
+def _pipeline_execution_iterator(pipeline_context, execution_plan, pipeline_run):
     '''A complete execution of a pipeline. Yields pipeline start, success,
     and failure events. Defers to _steps_execution_iterator for step execution.
     '''
@@ -85,10 +77,7 @@ def _pipeline_execution_iterator(
     pipeline_success = True
     try:
         for event in _steps_execution_iterator(
-            pipeline_context,
-            execution_plan=execution_plan,
-            pipeline_run=pipeline_run,
-            step_keys_to_execute=step_keys_to_execute,
+            pipeline_context, execution_plan=execution_plan, pipeline_run=pipeline_run
         ):
             if event.is_step_failure:
                 pipeline_success = False
@@ -109,30 +98,14 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     instance = check.inst_param(instance, 'instance', DagsterInstance)
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
-    # https://github.com/dagster-io/dagster/issues/1745
-    run_config = RunConfig(
-        run_id=pipeline_run.run_id,
-        tags=pipeline_run.tags,
-        reexecution_config=pipeline_run.reexecution_config,
-        step_keys_to_execute=pipeline_run.step_keys_to_execute,
-        mode=pipeline_run.mode,
-    )
-
     execution_plan = create_execution_plan(
-        pipeline, environment_dict=pipeline_run.environment_dict, run_config=run_config
+        pipeline, environment_dict=pipeline_run.environment_dict, run_config=pipeline_run
     )
-    step_keys_to_execute = _resolve_step_keys(execution_plan, pipeline_run.step_keys_to_execute)
 
     with scoped_pipeline_context(
         pipeline, pipeline_run.environment_dict, pipeline_run, instance
     ) as pipeline_context:
-
-        for event in _pipeline_execution_iterator(
-            pipeline_context,
-            execution_plan,
-            pipeline_run=pipeline_run,
-            step_keys_to_execute=step_keys_to_execute,
-        ):
+        for event in _pipeline_execution_iterator(pipeline_context, execution_plan, pipeline_run):
             yield event
 
 
@@ -206,7 +179,6 @@ def execute_pipeline(
     instance = instance or DagsterInstance.ephemeral()
 
     execution_plan = create_execution_plan(pipeline, environment_dict, run_config)
-    step_keys_to_execute = _resolve_step_keys(execution_plan, run_config.step_keys_to_execute)
 
     pipeline_run = _create_run(instance, pipeline, run_config, environment_dict)
 
@@ -214,12 +186,7 @@ def execute_pipeline(
         pipeline, environment_dict, pipeline_run, instance, raise_on_error=raise_on_error
     ) as pipeline_context:
         event_list = list(
-            _pipeline_execution_iterator(
-                pipeline_context,
-                execution_plan=execution_plan,
-                pipeline_run=pipeline_run,
-                step_keys_to_execute=step_keys_to_execute,
-            )
+            _pipeline_execution_iterator(pipeline_context, execution_plan, pipeline_run)
         )
 
         return PipelineExecutionResult(
@@ -280,59 +247,14 @@ def execute_pipeline_with_preset(
     )
 
 
-def _check_reexecution_config(pipeline_context, execution_plan, pipeline_run):
-    if not pipeline_context.intermediates_manager.is_persistent:
-        raise DagsterInvariantViolationError(
-            'Cannot perform reexecution with non persistent intermediates manager.'
-        )
-
-    previous_run_id = pipeline_run.reexecution_config.previous_run_id
-
-    if not pipeline_context.instance.has_run(previous_run_id):
-        raise DagsterRunNotFoundError(
-            'Run id {} set as previous run id was not found in instance'.format(previous_run_id),
-            invalid_run_id=previous_run_id,
-        )
-
-    check.invariant(
-        pipeline_run.run_id != previous_run_id,
-        'Run id {} is identical to previous run id'.format(pipeline_run.run_id),
-    )
-
-    for step_output_handle in pipeline_run.reexecution_config.step_output_handles:
-        if not execution_plan.has_step(step_output_handle.step_key):
-            raise DagsterExecutionStepNotFoundError(
-                (
-                    'Step {step_key} was specified as a step from a previous run. '
-                    'It does not exist.'
-                ).format(step_key=step_output_handle.step_key),
-                step_keys=[step_output_handle.step_key],
-            )
-
-        step = execution_plan.get_step_by_key(step_output_handle.step_key)
-        if not step.has_step_output(step_output_handle.output_name):
-            raise DagsterStepOutputNotFoundError(
-                (
-                    'You specified a step_output_handle in the ReexecutionConfig that does '
-                    'not exist: Step {step_key} does not have output {output_name}.'
-                ).format(
-                    step_key=step_output_handle.step_key, output_name=step_output_handle.output_name
-                ),
-                step_key=step_output_handle.step_key,
-                output_name=step_output_handle.output_name,
-            )
-
-
-def _steps_execution_iterator(pipeline_context, execution_plan, pipeline_run, step_keys_to_execute):
+def _steps_execution_iterator(pipeline_context, execution_plan, pipeline_run):
     '''Iterates over execution of individual steps yielding the associated events.
-    Does not yield pipeline level events asside from init failure when the context fails to construct.
     '''
     check.inst_param(
         pipeline_context, 'pipeline_context', (DagsterEvent, SystemPipelineExecutionContext)
     )
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-    check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
     if (
         isinstance(pipeline_context, DagsterEvent)
@@ -341,43 +263,29 @@ def _steps_execution_iterator(pipeline_context, execution_plan, pipeline_run, st
     ):
         return ensure_gen(pipeline_context)
 
-    _setup_reexecution(pipeline_run, pipeline_context, execution_plan)
+    if execution_plan.previous_run_id:
+        validate_retry_memoization(pipeline_context, execution_plan)
 
-    # Engine execution returns a generator of yielded events, so returning here means this function
-    # also returns a generator
-
-    return pipeline_context.executor_config.get_engine().execute(
-        pipeline_context, execution_plan, step_keys_to_execute
-    )
+    return pipeline_context.executor_config.get_engine().execute(pipeline_context, execution_plan)
 
 
-def execute_plan_iterator(
-    execution_plan, pipeline_run, environment_dict=None, step_keys_to_execute=None, instance=None
-):
+def execute_plan_iterator(execution_plan, pipeline_run, environment_dict=None, instance=None):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
     instance = check.inst_param(instance, 'instance', DagsterInstance)
-
-    step_keys_to_execute = _resolve_step_keys(execution_plan, step_keys_to_execute)
 
     with scoped_pipeline_context(
         execution_plan.pipeline_def, environment_dict, pipeline_run, instance
     ) as pipeline_context:
         return _steps_execution_iterator(
-            pipeline_context,
-            execution_plan=execution_plan,
-            pipeline_run=pipeline_run,
-            step_keys_to_execute=step_keys_to_execute,
+            pipeline_context, execution_plan=execution_plan, pipeline_run=pipeline_run
         )
 
     check.failed('Unexpected state, should be unreachable')
 
 
-def execute_plan(
-    execution_plan, instance, pipeline_run, environment_dict=None, step_keys_to_execute=None
-):
+def execute_plan(execution_plan, instance, pipeline_run, environment_dict=None):
     '''This is the entry point of dagster-graphql executions. For the dagster CLI entry point, see
     execute_pipeline() above.
     '''
@@ -385,29 +293,15 @@ def execute_plan(
     check.inst_param(instance, 'instance', DagsterInstance)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
     return list(
         execute_plan_iterator(
             execution_plan=execution_plan,
             environment_dict=environment_dict,
             pipeline_run=pipeline_run,
-            step_keys_to_execute=step_keys_to_execute,
             instance=instance,
         )
     )
-
-
-def _setup_reexecution(pipeline_run, pipeline_context, execution_plan):
-    if pipeline_run.reexecution_config:
-        _check_reexecution_config(pipeline_context, execution_plan, pipeline_run)
-
-        for step_output_handle in pipeline_run.reexecution_config.step_output_handles:
-            pipeline_context.intermediates_manager.copy_intermediate_from_prev_run(
-                pipeline_context,
-                pipeline_run.reexecution_config.previous_run_id,
-                step_output_handle,
-            )
 
 
 def step_output_event_filter(pipe_iterator):
@@ -429,6 +323,7 @@ def _create_run(instance, pipeline_def, run_config, environment_dict):
             step_keys_to_execute=run_config.step_keys_to_execute,
             tags=tags,
             status=PipelineRunStatus.NOT_STARTED,
+            previous_run_id=run_config.previous_run_id,
         )
     )
 
@@ -445,20 +340,3 @@ def _add_execution_time_tag(tags):
         execution_time = time.time()
 
     return merge_dicts(tags, {EXECUTION_TIME_KEY: execution_time})
-
-
-def _resolve_step_keys(execution_plan, step_keys_to_execute):
-    if step_keys_to_execute is None:
-        step_keys_to_execute = [step.key for step in execution_plan.topological_steps()]
-    else:
-        missing_steps = [
-            step_key for step_key in step_keys_to_execute if not execution_plan.has_step(step_key)
-        ]
-        if missing_steps:
-            raise DagsterExecutionStepNotFoundError(
-                'Execution plan does not contain step{plural}: {steps}'.format(
-                    plural='s' if len(missing_steps) > 1 else '', steps=', '.join(missing_steps)
-                ),
-                step_keys=missing_steps,
-            )
-    return step_keys_to_execute

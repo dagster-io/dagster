@@ -418,11 +418,8 @@ def test_successful_pipeline_reexecution(snapshot):
                 'stepKeys': ['sum_sq_solid.compute'],
                 'executionMetadata': {'runId': new_run_id},
                 'mode': 'default',
-            },
-            'reexecutionConfig': {
-                'previousRunId': run_id,
-                'stepOutputHandles': [{'stepKey': 'sum_solid.compute', 'outputName': 'result'}],
-            },
+                'retryRunId': run_id,
+            }
         },
     )
 
@@ -478,11 +475,8 @@ def test_pipeline_reexecution_info_query(snapshot):
                 'stepKeys': ['sum_sq_solid.compute'],
                 'executionMetadata': {'runId': new_run_id},
                 'mode': 'default',
-            },
-            'reexecutionConfig': {
-                'previousRunId': run_id,
-                'stepOutputHandles': [{'stepKey': 'sum_solid.compute', 'outputName': 'result'}],
-            },
+                'retryRunId': run_id,
+            }
         },
     )
 
@@ -531,59 +525,14 @@ def test_pipeline_reexecution_invalid_step_in_subset():
                 'stepKeys': ['nope'],
                 'executionMetadata': {'runId': new_run_id},
                 'mode': 'default',
-            },
-            'reexecutionConfig': {
-                'previousRunId': run_id,
-                'stepOutputHandles': [{'stepKey': 'sum_solid.compute', 'outputName': 'result'}],
-            },
+                'retryRunId': run_id,
+            }
         },
     )
 
     query_result = result_two.data['startPipelineExecution']
     assert query_result['__typename'] == 'InvalidStepError'
     assert query_result['invalidStepKey'] == 'nope'
-
-
-def test_pipeline_reexecution_invalid_step_in_step_output_handle():
-    run_id = str(uuid.uuid4())
-    execute_dagster_graphql(
-        define_context(),
-        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
-                'environmentConfigData': csv_hello_world_solids_config(),
-                'executionMetadata': {'runId': run_id},
-                'mode': 'default',
-            }
-        },
-    )
-
-    new_run_id = str(uuid.uuid4())
-
-    result_two = execute_dagster_graphql(
-        define_context(),
-        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
-                'environmentConfigData': csv_hello_world_solids_config(),
-                'stepKeys': ['sum_sq_solid.compute'],
-                'executionMetadata': {'runId': new_run_id},
-                'mode': 'default',
-            },
-            'reexecutionConfig': {
-                'previousRunId': run_id,
-                'stepOutputHandles': [
-                    {'stepKey': 'invalid_in_step_output_handle', 'outputName': 'result'}
-                ],
-            },
-        },
-    )
-
-    query_result = result_two.data['startPipelineExecution']
-    assert query_result['__typename'] == 'InvalidStepError'
-    assert query_result['invalidStepKey'] == 'invalid_in_step_output_handle'
 
 
 def test_basic_start_pipeline_execution_with_tags():
@@ -614,49 +563,6 @@ def test_basic_start_pipeline_execution_with_tags():
     runs_with_tag = instance.get_runs_with_matching_tags([('dagster/test_key', 'test_value')])
     assert len(runs_with_tag) == 1
     assert runs_with_tag[0].run_id == run_id
-
-
-def test_pipeline_reexecution_invalid_output_in_step_output_handle():
-    run_id = str(uuid.uuid4())
-    execute_dagster_graphql(
-        define_context(),
-        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
-                'environmentConfigData': csv_hello_world_solids_config(),
-                'executionMetadata': {'runId': run_id},
-                'mode': 'default',
-            }
-        },
-    )
-
-    new_run_id = str(uuid.uuid4())
-
-    result_two = execute_dagster_graphql(
-        define_context(),
-        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
-                'environmentConfigData': csv_hello_world_solids_config(),
-                'stepKeys': ['sum_sq_solid.compute'],
-                'executionMetadata': {'runId': new_run_id},
-                'mode': 'default',
-            },
-            'reexecutionConfig': {
-                'previousRunId': run_id,
-                'stepOutputHandles': [
-                    {'stepKey': 'sum_solid.compute', 'outputName': 'invalid_output'}
-                ],
-            },
-        },
-    )
-
-    query_result = result_two.data['startPipelineExecution']
-    assert query_result['__typename'] == 'InvalidOutputError'
-    assert query_result['stepKey'] == 'sum_solid.compute'
-    assert query_result['invalidOutputName'] == 'invalid_output'
 
 
 def test_basic_start_pipeline_execution_with_materialization():

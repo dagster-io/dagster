@@ -4,7 +4,6 @@ from dagster import check
 from dagster.core.definitions import (
     CompositeSolidDefinition,
     InputDefinition,
-    ModeDefinition,
     PipelineDefinition,
     Solid,
     SolidDefinition,
@@ -13,7 +12,8 @@ from dagster.core.definitions import (
     solids_in_topological_order,
 )
 from dagster.core.definitions.dependency import DependencyStructure
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster.core.execution.config import IRunConfig
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import toposort
 
@@ -32,12 +32,13 @@ class _PlanBuilder:
     execution.
     '''
 
-    def __init__(self, pipeline_def, environment_config, mode_definition):
+    def __init__(self, pipeline_def, environment_config, run_config):
         self.pipeline_def = check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         self.environment_config = check.inst_param(
             environment_config, 'environment_config', EnvironmentConfig
         )
-        self.mode_definition = check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
+        self.run_config = check.inst_param(run_config, 'run_config', IRunConfig)
+        self.mode_definition = pipeline_def.get_mode_definition(run_config.mode)
         self._steps = dict()
         self.step_output_map = dict()
         self._seen_keys = set()
@@ -97,7 +98,17 @@ class _PlanBuilder:
             self.environment_config.storage.system_storage_name
         )
 
-        return ExecutionPlan(self.pipeline_def, step_dict, deps, system_storage_def.is_persistent)
+        previous_run_id = self.run_config.previous_run_id
+        step_keys_to_execute = self.run_config.step_keys_to_execute or list(step_dict.keys())
+
+        return ExecutionPlan(
+            self.pipeline_def,
+            step_dict,
+            deps,
+            system_storage_def.is_persistent,
+            previous_run_id,
+            step_keys_to_execute,
+        )
 
     def _build_from_sorted_solids(
         self, solids, dependency_structure, parent_handle=None, parent_step_inputs=None
@@ -245,9 +256,29 @@ def get_step_input(
 
 
 class ExecutionPlan(
-    namedtuple('_ExecutionPlan', 'pipeline_def step_dict deps steps artifacts_persisted')
+    namedtuple(
+        '_ExecutionPlan',
+        'pipeline_def step_dict deps steps artifacts_persisted previous_run_id step_keys_to_execute',
+    )
 ):
-    def __new__(cls, pipeline_def, step_dict, deps, artifacts_persisted):
+    def __new__(
+        cls,
+        pipeline_def,
+        step_dict,
+        deps,
+        artifacts_persisted,
+        previous_run_id,
+        step_keys_to_execute,
+    ):
+        missing_steps = [step_key for step_key in step_keys_to_execute if step_key not in step_dict]
+        if missing_steps:
+            raise DagsterExecutionStepNotFoundError(
+                'Execution plan does not contain step{plural}: {steps}'.format(
+                    plural='s' if len(missing_steps) > 1 else '', steps=', '.join(missing_steps)
+                ),
+                step_keys=missing_steps,
+            )
+
         return super(ExecutionPlan, cls).__new__(
             cls,
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
@@ -257,6 +288,10 @@ class ExecutionPlan(
             deps=check.dict_param(deps, 'deps', key_type=str, value_type=set),
             steps=list(step_dict.values()),
             artifacts_persisted=check.bool_param(artifacts_persisted, 'artifacts_persisted'),
+            previous_run_id=check.opt_str_param(previous_run_id, 'previous_run_id'),
+            step_keys_to_execute=check.list_param(
+                step_keys_to_execute, 'step_keys_to_execute', of_type=str
+            ),
         )
 
     def get_step_output(self, step_output_handle):
@@ -281,8 +316,41 @@ class ExecutionPlan(
             for step_key_level in toposort(self.deps)
         ]
 
+    def execution_steps(self):
+        return [step for step_level in self.execution_step_levels() for step in step_level]
+
+    def execution_step_levels(self):
+        return [
+            [self.step_dict[step_key] for step_key in sorted(step_key_level)]
+            for step_key_level in toposort(self._execution_deps())
+        ]
+
+    def missing_steps(self):
+        return [step_key for step_key in self.step_keys_to_execute if not self.has_step(step_key)]
+
+    def _execution_deps(self):
+        step_dict = {k: v for k, v in self.step_dict.items() if k in self.step_keys_to_execute}
+        deps = {step.key: set() for step in step_dict.values()}
+        for step in step_dict.values():
+            for step_input in step.step_inputs:
+                deps[step.key].update(
+                    step_input.dependency_keys.intersection(self.step_keys_to_execute)
+                )
+        return deps
+
+    def build_subset_plan(self, step_keys_to_execute):
+        check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+        return ExecutionPlan(
+            self.pipeline_def,
+            self.step_dict,
+            self.deps,
+            self.artifacts_persisted,
+            self.previous_run_id,
+            step_keys_to_execute,
+        )
+
     @staticmethod
-    def build(pipeline_def, environment_config, mode_definition):
+    def build(pipeline_def, environment_config, run_config):
         '''Here we build a new ExecutionPlan from a pipeline definition and the environment config.
 
         To do this, we iterate through the pipeline's solids in topological order, and hand off the
@@ -293,8 +361,9 @@ class ExecutionPlan(
         '''
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
+        check.inst_param(run_config, 'run_config', IRunConfig)
 
-        plan_builder = _PlanBuilder(pipeline_def, environment_config, mode_definition)
+        plan_builder = _PlanBuilder(pipeline_def, environment_config, run_config)
 
         # Finally, we build and return the execution plan
         return plan_builder.build()

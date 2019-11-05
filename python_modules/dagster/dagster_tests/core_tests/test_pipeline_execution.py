@@ -25,10 +25,8 @@ from dagster.core.definitions import Solid, solids_in_topological_order
 from dagster.core.definitions.container import _create_adjacency_lists
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.execution.api import step_output_event_filter
-from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.execution.results import SolidExecutionResult
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediates_manager import StepOutputHandle
 from dagster.core.utility_solids import (
     create_root_solid,
     create_solid_with_deps,
@@ -577,12 +575,7 @@ def test_reexecution():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').output_value() == 2
 
-    reexecution_run_config = RunConfig(
-        reexecution_config=ReexecutionConfig(
-            previous_run_id=pipeline_result.run_id,
-            step_output_handles=[StepOutputHandle('return_one.compute')],
-        )
-    )
+    reexecution_run_config = RunConfig(previous_run_id=pipeline_result.run_id)
     reexecution_result = execute_pipeline(
         pipeline_def,
         environment_dict={'storage': {'filesystem': {}}},
@@ -593,6 +586,40 @@ def test_reexecution():
     assert reexecution_result.success
     assert len(reexecution_result.solid_result_list) == 2
     assert reexecution_result.result_for_solid('return_one').output_value() == 1
+    assert reexecution_result.result_for_solid('add_one').output_value() == 2
+
+
+def test_single_step_reexecution():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid
+    def add_one(num):
+        return num + 1
+
+    pipeline_def = PipelineDefinition(
+        solid_defs=[return_one, add_one],
+        dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
+    )
+    instance = DagsterInstance.ephemeral()
+    pipeline_result = execute_pipeline(
+        pipeline_def, environment_dict={'storage': {'filesystem': {}}}, instance=instance
+    )
+    assert pipeline_result.success
+    assert pipeline_result.result_for_solid('add_one').output_value() == 2
+
+    reexecution_result = execute_pipeline(
+        pipeline_def,
+        environment_dict={'storage': {'filesystem': {}}},
+        run_config=RunConfig(
+            previous_run_id=pipeline_result.run_id, step_keys_to_execute=['add_one.compute']
+        ),
+        instance=instance,
+    )
+
+    assert reexecution_result.success
+    assert reexecution_result.result_for_solid('return_one').output_value() == None
     assert reexecution_result.result_for_solid('add_one').output_value() == 2
 
 

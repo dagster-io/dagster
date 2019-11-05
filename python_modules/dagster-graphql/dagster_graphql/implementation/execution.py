@@ -15,7 +15,7 @@ from dagster import RunConfig, check
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.config import EXECUTION_TIME_KEY, ReexecutionConfig
+from dagster.core.execution.config import EXECUTION_TIME_KEY
 from dagster.core.serdes import serialize_dagster_namedtuple
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -128,16 +128,16 @@ def start_scheduled_execution(graphene_info, schedule_name):
         mode=execution_params.get('mode'),
         execution_metadata=create_execution_metadata(execution_params.get('executionMetadata')),
         step_keys=execution_params.get('stepKeys'),
+        previous_run_id=None,
     )
 
-    return start_pipeline_execution(graphene_info, execution_params, reexecution_config=None)
+    return start_pipeline_execution(graphene_info, execution_params)
 
 
 @capture_dauphin_error
-def start_pipeline_execution(graphene_info, execution_params, reexecution_config):
+def start_pipeline_execution(graphene_info, execution_params):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
-    check.opt_inst_param(reexecution_config, 'reexecution_config', ReexecutionConfig)
 
     instance = graphene_info.context.instance
 
@@ -158,13 +158,9 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
         run_config=RunConfig(mode=execution_params.mode),
     )
 
-    _check_start_pipeline_execution_errors(
-        graphene_info, execution_params, execution_plan, reexecution_config
-    )
+    _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
 
-    run = instance.create_run(
-        pipeline_run_from_execution_params(execution_params, reexecution_config)
-    )
+    run = instance.create_run(pipeline_run_from_execution_params(execution_params))
 
     graphene_info.context.execution_manager.execute_pipeline(
         graphene_info.context.get_handle(),
@@ -178,33 +174,12 @@ def start_pipeline_execution(graphene_info, execution_params, reexecution_config
     )
 
 
-def _check_start_pipeline_execution_errors(
-    graphene_info, execution_params, execution_plan, reexecution_config
-):
+def _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan):
     if execution_params.step_keys:
         for step_key in execution_params.step_keys:
             if not execution_plan.has_step(step_key):
                 raise UserFacingGraphQLError(
                     graphene_info.schema.type_named('InvalidStepError')(invalid_step_key=step_key)
-                )
-
-    if reexecution_config and reexecution_config.step_output_handles:
-        for step_output_handle in reexecution_config.step_output_handles:
-            if not execution_plan.has_step(step_output_handle.step_key):
-                raise UserFacingGraphQLError(
-                    graphene_info.schema.type_named('InvalidStepError')(
-                        invalid_step_key=step_output_handle.step_key
-                    )
-                )
-
-            step = execution_plan.get_step_by_key(step_output_handle.step_key)
-
-            if not step.has_step_output(step_output_handle.output_name):
-                raise UserFacingGraphQLError(
-                    graphene_info.schema.type_named('InvalidOutputError')(
-                        step_key=step_output_handle.step_key,
-                        invalid_output_name=step_output_handle.output_name,
-                    )
                 )
 
 
@@ -328,6 +303,8 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
                     graphene_info.schema.type_named('InvalidStepError')(invalid_step_key=step_key)
                 )
 
+        execution_plan = execution_plan.build_subset_plan(execution_params.step_keys)
+
     event_logs = []
 
     def _on_event_record(record):
@@ -340,7 +317,6 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
         execution_plan=execution_plan,
         environment_dict=execution_params.environment_dict,
         pipeline_run=pipeline_run,
-        step_keys_to_execute=execution_params.step_keys,
         instance=graphene_info.context.instance,
     )
 
