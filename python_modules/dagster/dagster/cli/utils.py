@@ -46,3 +46,6 @@ def tail_command(filepath, parent_pid, io_type):
         tail_polling(filepath, stream, parent_pid)
     else:
         tail_posix(filepath, stream, parent_pid)
+
+
+utils_cli = create_utils_cli_group()

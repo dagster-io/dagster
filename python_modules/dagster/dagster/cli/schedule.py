@@ -427,3 +427,6 @@ def execute_wipe_command(cli_args, print_fn):
         print_fn("Wiped all schedules and schedule cron jobs")
     else:
         click.echo('Exiting without deleting all schedules and schedule cron jobs')
+
+
+schedule_cli = create_schedule_cli_group()

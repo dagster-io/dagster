@@ -12,6 +12,7 @@ API Docs
   apidocs/types
   apidocs/errors
   apidocs/utilities
+  apidocs/cli
   apidocs/dagstermill
 
   apidocs/internals

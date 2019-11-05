@@ -346,3 +346,6 @@ def do_scaffold_command(pipeline, printer, skip_optional):
     config_dict = scaffold_pipeline_config(pipeline, skip_optional=skip_optional)
     yaml_string = yaml.dump(config_dict, default_flow_style=False)
     printer(yaml_string)
+
+
+pipeline_cli = create_pipeline_cli_group()
