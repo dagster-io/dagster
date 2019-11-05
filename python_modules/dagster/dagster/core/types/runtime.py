@@ -14,12 +14,8 @@ from .config_schema import InputHydrationConfig, OutputMaterializationConfig
 from .dagster_type import check_dagster_type_param
 from .field_utils import Dict
 from .marshal import PickleSerializationStrategy, SerializationStrategy
-from .typing_api import (
-    is_closed_python_dict_type,
-    is_closed_python_set_type,
-    is_closed_python_tuple_type,
-)
-from .wrapping import WrappingListType, WrappingNullableType
+from .typing_api import is_closed_python_dict_type
+from .wrapping import WrappingListType, WrappingNullableType, WrappingSetType, WrappingTupleType
 
 
 class RuntimeType(object):
@@ -572,20 +568,14 @@ def resolve_to_runtime_type(dagster_type):
     # circular dep
     from .mapping import remap_python_type
     from .python_dict import PythonDict, create_typed_runtime_dict
-    from .python_set import PythonSet, create_typed_runtime_set
-    from .python_tuple import PythonTuple, create_typed_tuple
+    from .python_set import PythonSet
+    from .python_tuple import PythonTuple
 
     dagster_type = remap_python_type(dagster_type)
 
     # do not do in remap because this is runtime system only.
     if is_closed_python_dict_type(dagster_type):
         return create_typed_runtime_dict(dagster_type.__args__[0], dagster_type.__args__[1]).inst()
-
-    if is_closed_python_tuple_type(dagster_type):
-        return create_typed_tuple(*dagster_type.__args__).inst()
-
-    if is_closed_python_set_type(dagster_type):
-        return create_typed_runtime_set(dagster_type.__args__[0]).inst()
 
     check_dagster_type_param(dagster_type, 'dagster_type', RuntimeType)
 
@@ -602,6 +592,10 @@ def resolve_to_runtime_type(dagster_type):
         return RuntimeType.from_builtin_enum(dagster_type)
     if isinstance(dagster_type, WrappingListType):
         return resolve_to_runtime_list(dagster_type)
+    if isinstance(dagster_type, WrappingSetType):
+        return resolve_to_runtime_set(dagster_type)
+    if isinstance(dagster_type, WrappingTupleType):
+        return resolve_to_runtime_tuple(dagster_type)
     if isinstance(dagster_type, WrappingNullableType):
         return resolve_to_runtime_nullable(dagster_type)
     if issubclass(dagster_type, RuntimeType):
@@ -613,6 +607,22 @@ def resolve_to_runtime_type(dagster_type):
 def resolve_to_runtime_list(list_type):
     check.inst_param(list_type, 'list_type', WrappingListType)
     return List(resolve_to_runtime_type(list_type.inner_type))
+
+
+def resolve_to_runtime_set(set_type):
+    from .python_set import create_typed_runtime_set
+
+    check.inst_param(set_type, 'set_type', WrappingSetType)
+    return create_typed_runtime_set(set_type.inner_type).inst()
+
+
+def resolve_to_runtime_tuple(tuple_type):
+    from .python_tuple import create_typed_tuple, PythonTuple
+
+    check.inst_param(tuple_type, 'tuple_type', WrappingTupleType)
+    if tuple_type.inner_type is None:
+        return PythonTuple.inst()
+    return create_typed_tuple(*tuple_type.inner_type).inst()
 
 
 def resolve_to_runtime_nullable(nullable_type):

@@ -162,6 +162,12 @@ export class LogsProvider extends React.Component<
 
     if (local) {
       local.status = status;
+      if (
+        status === PipelineRunStatus.FAILURE ||
+        status === PipelineRunStatus.SUCCESS
+      ) {
+        local.canCancel = false;
+      }
       this.props.client.writeFragment({
         fragmentName: "PipelineRunLogsSubscriptionStatusFragment",
         fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
@@ -216,10 +222,6 @@ export const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
           }
           ...RunPipelineRunEventFragment
         }
-        run {
-          runId
-          canCancel
-        }
       }
       ... on PipelineRunLogsSubscriptionFailure {
         missingRunId
@@ -235,5 +237,6 @@ export const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
   fragment PipelineRunLogsSubscriptionStatusFragment on PipelineRun {
     runId
     status
+    canCancel
   }
 `;

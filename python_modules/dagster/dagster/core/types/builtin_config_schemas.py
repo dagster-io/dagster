@@ -4,7 +4,8 @@ from dagster import check, seven
 
 from .config import Any, Bool, ConfigTypeAttributes, Float, Int, Path, String
 from .config_schema import input_selector_schema, make_bare_input_schema, output_selector_schema
-from .field_utils import Dict, FieldImpl, NamedSelector
+from .field import Field
+from .field_utils import Dict, NamedSelector
 
 
 def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
@@ -14,7 +15,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
         NamedSelector(
             scalar_name + '.InputHydrationConfig',
             {
-                'value': FieldImpl(config_scalar_type),
+                'value': Field(config_scalar_type),
                 'json': define_path_dict_field(),
                 'pickle': define_path_dict_field(),
             },
@@ -38,7 +39,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
 
 
 def define_path_dict_field():
-    return FieldImpl(Dict({'path': FieldImpl(Path.inst())}).inst())
+    return Field(Dict({'path': Field(Path.inst())}).inst())
 
 
 def define_builtin_scalar_output_schema(scalar_name):

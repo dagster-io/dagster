@@ -2,7 +2,7 @@ from dagster_graphql import dauphin
 
 from dagster import check
 from dagster.core.types.config import ConfigType
-from dagster.core.types.field_utils import FieldImpl
+from dagster.core.types.field import Field
 
 
 def to_dauphin_config_type(config_type):
@@ -191,7 +191,7 @@ class DauphinConfigTypeField(dauphin.ObjectType):
 
     def __init__(self, name, field):
         check.str_param(name, 'name')
-        check.inst_param(field, 'field', FieldImpl)
+        check.inst_param(field, 'field', Field)
 
         super(DauphinConfigTypeField, self).__init__(
             name=name,

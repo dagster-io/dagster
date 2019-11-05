@@ -39,8 +39,8 @@ class BuildkiteQueue(Enum):
 class StepBuilder:
     def __init__(self, label):
         self._step = {
-            # use Pulumi-managed micro queue by default
-            "agents": {"queue": BuildkiteQueue.MICRO.value},
+            # use Pulumi-managed medium queue by default
+            "agents": {"queue": BuildkiteQueue.MEDIUM.value},
             "label": label,
             "timeout_in_minutes": TIMEOUT_IN_MIN,
             "retry": {

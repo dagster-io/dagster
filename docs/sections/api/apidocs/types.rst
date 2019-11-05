@@ -248,7 +248,7 @@ Built-in types
             ],
             output_defs=[OutputDefinition(dagster_type=String)]
         )
-        def nullable_concat_py2(_, x, y) -> String:
+        def nullable_concat_py2(_, x, y):
             return x + (y or '')
 
 .. attribute:: List
@@ -333,6 +333,85 @@ Built-in types
         def repeat_config(context) -> str:
             return context.solid_config['word'] * context.solid_config['times']
 
+
+.. attribute:: Set
+
+    Use this type for inputs, outputs, or config values that are sets. Alias for
+    :py:class:`python:typing.Set`.
+
+    You may optionally specify the inner type using the square brackets syntax for Python typing.
+
+    Config values should be passed as a list (in YAML or the Python config dict). Duplicate
+    entries will be silently coalesced.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        @solid
+        def set_solid(_, set_input: Set[String]) -> List[String]:
+            return sorted([x for x in set_input])
+
+        # Python 2
+        @solid(
+            input_defs=[InputDefinition('set_input', dagster_type=Set[String])],
+            output_defs=[OutputDefinition(List[String])],
+        )
+        def set_solid_py2(_, set_input):
+            return sorted([x for x in set_input])
+
+        @solid(config_field=Field(Set))
+        def set_config(context) -> list:
+            return sorted([str(x) for x in context.solid_config])
+
+
+        @solid(config_field=Field(Set[Any]))
+        def set_any_config(context) -> list:
+            return sorted([str(x) for x in context.solid_config])
+
+
+        @solid(config_field=Field(Set[str]))
+        def set_string_config(context) -> list:
+            return sorted([x for x in context.solid_config])
+
+
+.. attribute:: Tuple
+
+    Use this type for inputs, outputs, or config fields that are tuples. Alias for
+    :py:class:`python:typing.Tuple`.
+
+    You may optionally specify the inner types using the square brackets syntax for Python typing.
+
+    Config values should be passed as a list (in YAML or the Python config dict).
+
+    **Examples:**
+
+    .. code-block:: python
+
+        @solid
+        def tuple_solid(_, tuple_input: Tuple[String, Int, Float]) -> List:
+            return [x for x in tuple_input]
+
+        # Python 2
+        @solid(
+            input_defs=[InputDefinition('tuple_input', dagster_type=Tuple[String, Int, Float])],
+            output_defs=[OutputDefinition(List)],
+        )
+        def tuple_solid_py2(_, tuple_input):
+            return [x for x in tuple_input]
+
+        @solid(config_field=Field(Tuple))
+        def tuple_config(context) -> str:
+            return ':'.join([str(x) for x in context.solid_config])
+
+
+        @solid(config_field=Field(Tuple[Any, Any]))
+        def any_tuple_config(context) -> str:
+            return ':'.join([str(x) for x in context.solid_config])
+
+        @solid(config_field=Field(Tuple[String, Int, Float]))
+        def heterogeneous_tuple_config(context) -> str:
+            return ':'.join([str(x) for x in context.solid_config])
 
 -----
 

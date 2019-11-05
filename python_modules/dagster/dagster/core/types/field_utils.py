@@ -4,7 +4,6 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .config import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttributes
-from .default_applier import apply_default_values
 
 
 def all_optional_type(config_type):
@@ -33,13 +32,14 @@ INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
 
 
 def check_using_facing_field_param(obj, param_name, error_context_str):
+    from dagster.core.types.field import Field, resolve_to_config_type
+
     check.str_param(param_name, 'param_name')
     check.str_param(error_context_str, 'error_context_str')
 
-    if isinstance(obj, FieldImpl):
+    if isinstance(obj, Field):
         return obj
 
-    from dagster.core.types.field import resolve_to_config_type
     from .type_printer import print_config_type_to_string
 
     config_type = resolve_to_config_type(obj)
@@ -78,116 +78,11 @@ def check_user_facing_opt_field_param(obj, param_name, error_context_str):
     return check_using_facing_field_param(obj, param_name, error_context_str)
 
 
-def check_field_param(obj, param_name):
-    return check.inst_param(obj, param_name, FieldImpl)
-
-
-def check_opt_field_param(obj, param_name):
-    return check.opt_inst_param(obj, param_name, FieldImpl)
-
-
-class FieldImpl:
-    '''
-    A field in a config object.
-
-    Attributes:
-        config_type (ConfigType): The type of the field.
-        default_value (Any):
-            If the Field is optional, a default value can be provided when the field value
-            is not specified.
-        is_optional (bool): Is the field optional.
-        description (str): Description of the field.
-    '''
-
-    def __init__(
-        self,
-        config_type,
-        default_value=FIELD_NO_DEFAULT_PROVIDED,
-        is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
-        is_secret=False,
-        description=None,
-    ):
-        self.config_type = check.inst_param(config_type, 'config_type', ConfigType)
-
-        self.description = check.opt_str_param(description, 'description')
-        if is_optional == INFER_OPTIONAL_COMPOSITE_FIELD:
-            is_optional = all_optional_type(self.config_type)
-            if is_optional is True:
-                self._default_value = apply_default_values(self.config_type, None)
-            else:
-                self._default_value = default_value
-        else:
-            is_optional = check.bool_param(is_optional, 'is_optional')
-            self._default_value = default_value
-
-        if is_optional is False:
-            check.param_invariant(
-                default_value == FIELD_NO_DEFAULT_PROVIDED,
-                'default_value',
-                'required arguments should not specify default values',
-            )
-
-        if config_type.is_scalar and self._default_value != FIELD_NO_DEFAULT_PROVIDED:
-            check.param_invariant(
-                config_type.is_config_scalar_valid(self._default_value),
-                'default_value',
-                'default value not valid for config type {name}, got value {val} of type {type}'.format(
-                    name=config_type.name, val=self._default_value, type=type(self._default_value)
-                ),
-            )
-
-        self.is_optional = is_optional
-
-        self.is_secret = check.bool_param(is_secret, 'is_secret')
-
-    @property
-    def is_required(self):
-        return not self.is_optional
-
-    @property
-    def default_provided(self):
-        '''Was a default value provided
-
-        Returns:
-            bool: Yes or no
-        '''
-        return self._default_value != FIELD_NO_DEFAULT_PROVIDED
-
-    @property
-    def default_value(self):
-        check.invariant(self.default_provided, 'Asking for default value when none was provided')
-
-        if callable(self._default_value):
-            return self._default_value()
-
-        return self._default_value
-
-    @property
-    def default_value_as_str(self):
-        check.invariant(self.default_provided, 'Asking for default value when none was provided')
-
-        if callable(self._default_value):
-            return repr(self._default_value)
-
-        return str(self._default_value)
-
-    def __repr__(self):
-        return (
-            'Field({config_type}, default={default}, is_optional={is_optional}, '
-            'is_secret={is_secret})'
-        ).format(
-            config_type=self.config_type,
-            default='@'
-            if self._default_value == FIELD_NO_DEFAULT_PROVIDED
-            else self._default_value,
-            is_optional=self.is_optional,
-            is_secret=self.is_secret,
-        )
-
-
 class _ConfigHasFields(ConfigType):
     def __init__(self, fields, *args, **kwargs):
-        self.fields = check.dict_param(fields, 'fields', key_type=str, value_type=FieldImpl)
+        from dagster.core.types.field import Field
+
+        self.fields = check.dict_param(fields, 'fields', key_type=str, value_type=Field)
         super(_ConfigHasFields, self).__init__(*args, **kwargs)
 
     @property

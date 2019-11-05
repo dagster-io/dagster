@@ -475,7 +475,7 @@ def _validate_inputs(dependency_structure, solid_dict):
                         '  * connect "{input_name}" to the output of another solid\n'.format(
                             solid_name=solid.name,
                             input_name=handle.input_def.name,
-                            runtime_type=handle.input_def.runtime_type.name,
+                            runtime_type=handle.input_def.runtime_type.display_name,
                         )
                     )
 

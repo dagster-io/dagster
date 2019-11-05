@@ -4,7 +4,7 @@ from dagster import check
 from dagster.core.definitions.environment_configs import is_solid_container_config
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.execution.config import IRunConfig
-from dagster.core.types.field_utils import FieldImpl
+from dagster.core.types.field import Field
 
 from ..config import ConfigType
 
@@ -39,8 +39,23 @@ class TraversalContext(
             stack=self.stack.for_list_index(index),
         )
 
+    def for_set(self, index, item):
+        check.int_param(index, 'index')
+        return self._replace(
+            config_type=self.config_type.inner_type,
+            config_value=item,
+            stack=self.stack.for_set_index(index),
+        )
+
+    def for_tuple(self, index, item):
+        return self._replace(
+            config_type=self.config_type.inner_type[index],
+            config_value=item,
+            stack=self.stack.for_tuple_index(index),
+        )
+
     def for_field(self, field_def, key, value):
-        check.inst_param(field_def, 'field_def', FieldImpl)
+        check.inst_param(field_def, 'field_def', Field)
         check.str_param(key, 'key')
         return self._replace(
             config_type=field_def.config_type,

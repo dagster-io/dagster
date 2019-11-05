@@ -29,6 +29,8 @@ from .errors import (
     create_selector_multiple_fields_no_field_selected_error,
     create_selector_type_error,
     create_selector_unspecified_value_error,
+    create_set_error,
+    create_tuple_error,
 )
 from .evaluate_value_result import EvaluateValueResult
 from .stack import EvaluationStack, get_friendly_path_msg
@@ -69,6 +71,12 @@ def _evaluate_config(context):
 
     elif context.config_type.is_list:
         return evaluate_list_config(context)
+
+    elif context.config_type.is_set:
+        return evaluate_set_config(context)
+
+    elif context.config_type.is_tuple:
+        return evaluate_tuple_config(context)
 
     elif context.config_type.is_nullable:
         if context.config_value is not None:
@@ -307,8 +315,6 @@ def _evaluate_composite_solid_config(context):
 
 
 ## Lists
-
-
 def evaluate_list_config(context):
     check.inst_param(context, 'context', TraversalContext)
     check.param_invariant(context.config_type.is_list, 'list_type')
@@ -320,6 +326,62 @@ def evaluate_list_config(context):
 
     evaluation_results = [
         _evaluate_config(context.for_list(index, item)) for index, item in enumerate(config_value)
+    ]
+
+    success = True
+    values = []
+    errors = []
+    for result in evaluation_results:
+        if result.success:
+            values.append(result.value)
+        else:
+            success = False
+            errors += result.errors
+
+    return EvaluateValueResult(success, values, errors)
+
+
+def evaluate_set_config(context):
+    check.inst_param(context, 'context', TraversalContext)
+    check.param_invariant(context.config_type.is_set, 'set_type')
+
+    config_value = context.config_value
+
+    if not isinstance(config_value, list):
+        return EvaluateValueResult.for_error(create_set_error(context))
+
+    evaluation_results = [
+        _evaluate_config(context.for_set(index, item)) for index, item in enumerate(config_value)
+    ]
+
+    success = True
+    values = set()
+    errors = []
+    for result in evaluation_results:
+        if result.success:
+            values.add(result.value)
+        else:
+            success = False
+            errors += result.errors
+
+    return EvaluateValueResult(success, values, errors)
+
+
+## Tuples
+def evaluate_tuple_config(context):
+    check.inst_param(context, 'context', TraversalContext)
+    check.param_invariant(context.config_type.is_tuple, 'tuple_type')
+
+    config_value = context.config_value
+
+    if not isinstance(config_value, list):
+        return EvaluateValueResult.for_error(create_list_error(context))
+
+    if len(context.config_type.inner_type) != len(config_value):
+        return EvaluateValueResult.for_error(create_tuple_error(context))
+
+    evaluation_results = [
+        _evaluate_config(context.for_tuple(index, item)) for index, item in enumerate(config_value)
     ]
 
     success = True

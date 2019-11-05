@@ -10,7 +10,7 @@ def sanitize(logs):
     for log in res:
         if 'message' in log:
             log['message'] = re.sub('(pid: [0-9]*)', '(pid: *****)', log['message'])
-            log['message'] = re.sub('in [0-9.]*m?s', 'in ***.**ms', log['message'])
+            log['message'] = re.sub('in [0-9.]*ms', 'in ***.**ms', log['message'])
 
     return res
 
