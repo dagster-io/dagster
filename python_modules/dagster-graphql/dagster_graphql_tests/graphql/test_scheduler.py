@@ -7,7 +7,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster import ScheduleDefinition
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import Schedule, ScheduleStatus, get_schedule_change_set
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 from .setup import define_context_for_repository_yaml
 
@@ -42,7 +42,7 @@ def default_execution_params():
 def test_get_all_schedules():
     instance = DagsterInstance.local_temp()
     context = define_context_for_repository_yaml(
-        path=script_relative_path('../repository.yaml'), instance=instance
+        path=file_relative_path(__file__, '../repository.yaml'), instance=instance
     )
 
     # Initialize scheduler

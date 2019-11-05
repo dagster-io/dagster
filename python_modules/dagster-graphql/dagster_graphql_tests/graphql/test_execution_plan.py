@@ -5,7 +5,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster import check
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
-from dagster.utils import merge_dicts, script_relative_path
+from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
 from .setup import (
@@ -477,7 +477,7 @@ def test_basic_execute_plan_with_materialization():
         environment_dict = {
             'solids': {
                 'sum_solid': {
-                    'inputs': {'num': script_relative_path('../data/num.csv')},
+                    'inputs': {'num': file_relative_path(__file__, '../data/num.csv')},
                     'outputs': [{'result': out_csv_path}],
                 }
             }

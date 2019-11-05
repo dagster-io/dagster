@@ -21,7 +21,7 @@ from dagster import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 
 @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
@@ -58,7 +58,7 @@ def define_schedules():
 def test_basic_introspection():
     query = '{ __schema { types { name } } }'
 
-    repo_path = script_relative_path('./cli_test_repository.yaml')
+    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
     runner = CliRunner(env={'DAGSTER_HOME': None})
     result = runner.invoke(ui, ['-y', repo_path, '-t', query])
@@ -72,7 +72,7 @@ def test_basic_introspection():
 def test_basic_pipelines():
     query = '{ pipelines { nodes { name } } }'
 
-    repo_path = script_relative_path('./cli_test_repository.yaml')
+    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
     runner = CliRunner(env={'DAGSTER_HOME': None})
     result = runner.invoke(ui, ['-y', repo_path, '-t', query])
@@ -86,7 +86,7 @@ def test_basic_pipelines():
 def test_basic_variables():
     query = 'query FooBar($pipelineName: String!){ pipeline(params:{name: $pipelineName}){ name} }'
     variables = '{"pipelineName": "math"}'
-    repo_path = script_relative_path('./cli_test_repository.yaml')
+    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
     runner = CliRunner(env={'DAGSTER_HOME': None})
     result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-t', query])
@@ -144,7 +144,7 @@ def test_start_execution_text():
         }
     )
 
-    repo_path = script_relative_path('./cli_test_repository.yaml')
+    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
     runner = CliRunner(env={'DAGSTER_HOME': None})
     result = runner.invoke(
@@ -176,10 +176,18 @@ def test_start_execution_file():
         }
     )
 
-    repo_path = script_relative_path('./cli_test_repository.yaml')
+    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
     runner = CliRunner(env={'DAGSTER_HOME': None})
     result = runner.invoke(
-        ui, ['-y', repo_path, '-v', variables, '--file', script_relative_path('./execute.graphql')]
+        ui,
+        [
+            '-y',
+            repo_path,
+            '-v',
+            variables,
+            '--file',
+            file_relative_path(__file__, './execute.graphql'),
+        ],
     )
 
     assert result.exit_code == 0
@@ -207,7 +215,7 @@ def test_start_execution_save_output():
         }
     )
 
-    repo_path = script_relative_path('./cli_test_repository.yaml')
+    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
     runner = CliRunner(env={'DAGSTER_HOME': None})
 
     with seven.TemporaryDirectory() as temp_dir:
@@ -221,7 +229,7 @@ def test_start_execution_save_output():
                 '-v',
                 variables,
                 '--file',
-                script_relative_path('./execute.graphql'),
+                file_relative_path(__file__, './execute.graphql'),
                 '--output',
                 file_name,
             ],
@@ -252,7 +260,7 @@ def test_start_execution_predefined():
         }
     )
 
-    repo_path = script_relative_path('./cli_test_repository.yaml')
+    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
     runner = CliRunner(env={'DAGSTER_HOME': None})
     result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution'])
@@ -269,14 +277,16 @@ def test_start_scheduled_execution_predefined():
         instance = DagsterInstance.local_temp(temp_dir)
         runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
 
-        repo_path = script_relative_path('./cli_test_repository.yaml')
+        repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
         # Initialize scheduler
         context = define_context_for_repository_yaml(
-            path=script_relative_path('./cli_test_repository.yaml'), instance=instance
+            path=file_relative_path(__file__, './cli_test_repository.yaml'), instance=instance
         )
         scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(python_path=sys.executable, repository_path=script_relative_path('./'))
+        scheduler_handle.up(
+            python_path=sys.executable, repository_path=file_relative_path(__file__, './')
+        )
 
         # Run command
         variables = seven.json.dumps({'scheduleName': 'math_hourly_schedule'})
@@ -306,7 +316,7 @@ def test_start_execution_predefined_with_logs():
         }
     )
 
-    repo_path = script_relative_path('./cli_test_repository.yaml')
+    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 

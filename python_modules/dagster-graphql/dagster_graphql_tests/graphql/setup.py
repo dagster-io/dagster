@@ -45,7 +45,7 @@ from dagster import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import coerce_valid_log_level
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 
 class PoorMansDataFrame_(list):
@@ -134,12 +134,18 @@ def df_expectations_solid(_context, sum_df):
 
 
 def csv_hello_world_solids_config():
-    return {'solids': {'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}}}
+    return {
+        'solids': {
+            'sum_solid': {'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}}
+        }
+    }
 
 
 def csv_hello_world_solids_config_fs_storage():
     return {
-        'solids': {'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}},
+        'solids': {
+            'sum_solid': {'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}}
+        },
         'storage': {'filesystem': {}},
     }
 
@@ -296,17 +302,23 @@ def more_complicated_nested_config():
     preset_defs=[
         PresetDefinition.from_files(
             name='prod',
-            environment_files=[script_relative_path('../environments/csv_hello_world_prod.yaml')],
+            environment_files=[
+                file_relative_path(__file__, '../environments/csv_hello_world_prod.yaml')
+            ],
         ),
         PresetDefinition.from_files(
             name='test',
-            environment_files=[script_relative_path('../environments/csv_hello_world_test.yaml')],
+            environment_files=[
+                file_relative_path(__file__, '../environments/csv_hello_world_test.yaml')
+            ],
         ),
         PresetDefinition(
             name='test_inline',
             environment_dict={
                 'solids': {
-                    'sum_solid': {'inputs': {'num': script_relative_path("../data/num.csv")}}
+                    'sum_solid': {
+                        'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}
+                    }
                 }
             },
         ),

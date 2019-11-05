@@ -1,6 +1,6 @@
 import json
 
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 from .utils import sync_execute_get_events
 
@@ -89,7 +89,9 @@ def test_basic_input_output_expectations(snapshot):
                 'selector': {'name': 'csv_hello_world_with_expectations'},
                 'environmentConfigData': {
                     'solids': {
-                        'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}
+                        'sum_solid': {
+                            'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}
+                        }
                     }
                 },
                 'mode': 'default',

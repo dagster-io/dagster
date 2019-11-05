@@ -28,7 +28,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
-from dagster.utils import safe_tempfile_path, script_relative_path
+from dagster.utils import file_relative_path, safe_tempfile_path
 
 
 class PoorMansDataFrame_(list):
@@ -72,7 +72,7 @@ def test_running():
     run_id = make_new_run_id()
     handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'passing_pipeline')
     environment_dict = {
-        'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
+        'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
     selector = ExecutionSelector('csv_hello_world')
 
@@ -111,7 +111,7 @@ def test_failing():
     run_id = make_new_run_id()
     handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'failing_pipeline')
     environment_dict = {
-        'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
+        'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
     selector = ExecutionSelector('csv_hello_world')
 
@@ -140,7 +140,7 @@ def test_execution_crash():
     run_id = make_new_run_id()
     handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'crashy_pipeline')
     environment_dict = {
-        'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
+        'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
     selector = ExecutionSelector('csv_hello_world')
 

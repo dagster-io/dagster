@@ -8,7 +8,7 @@ from graphql import parse
 from dagster import check
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
-from dagster.utils import merge_dicts, script_relative_path
+from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
 from .execution_queries import (
@@ -172,7 +172,9 @@ def test_basic_start_pipeline_execution_and_subscribe():
                 'selector': {'name': 'csv_hello_world'},
                 'environmentConfigData': {
                     'solids': {
-                        'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}
+                        'sum_solid': {
+                            'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}
+                        }
                     }
                 },
                 'mode': 'default',
@@ -664,7 +666,7 @@ def test_basic_start_pipeline_execution_with_materialization():
         environment_dict = {
             'solids': {
                 'sum_solid': {
-                    'inputs': {'num': script_relative_path('../data/num.csv')},
+                    'inputs': {'num': file_relative_path(__file__, '../data/num.csv')},
                     'outputs': [{'result': out_csv_path}],
                 }
             }
