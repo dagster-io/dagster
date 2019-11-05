@@ -13,4 +13,8 @@ class BuiltinEnum:
 
     @classmethod
     def contains(cls, value):
-        return any(value == getattr(cls, key) for key in dir(cls))
+        for ttype in [cls.ANY, cls.BOOL, cls.FLOAT, cls.INT, cls.PATH, cls.STRING, cls.NOTHING]:
+            if value == ttype:
+                return True
+
+        return False
