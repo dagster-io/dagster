@@ -43,6 +43,7 @@ def _do_setup(name='dagster-gcp'):
             'dagster_pandas',
             'google-api-python-client',
             'google-cloud-bigquery>=1.19.*',
+            'google-cloud-storage',
             'oauth2client',
         ],
         extras_require={'pyarrow': ['pyarrow']},

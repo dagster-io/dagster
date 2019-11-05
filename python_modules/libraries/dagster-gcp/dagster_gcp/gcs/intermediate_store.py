@@ -1,0 +1,29 @@
+from dagster import check
+from dagster.core.storage.intermediate_store import IntermediateStore
+from dagster.core.storage.type_storage import TypeStoragePluginRegistry
+
+from .object_store import GCSObjectStore
+
+
+class GCSIntermediateStore(IntermediateStore):
+    def __init__(self, gcs_bucket, run_id, client=None, type_storage_plugin_registry=None):
+        check.str_param(gcs_bucket, 'gcs_bucket')
+        check.str_param(run_id, 'run_id')
+
+        object_store = GCSObjectStore(gcs_bucket, client=client)
+
+        def root_for_run_id(r_id):
+            return object_store.key_for_paths(['dagster', 'storage', r_id])
+
+        super(GCSIntermediateStore, self).__init__(
+            object_store,
+            root_for_run_id=root_for_run_id,
+            run_id=run_id,
+            type_storage_plugin_registry=check.inst_param(
+                type_storage_plugin_registry
+                if type_storage_plugin_registry
+                else TypeStoragePluginRegistry(types_to_register={}),
+                'type_storage_plugin_registry',
+                TypeStoragePluginRegistry,
+            ),
+        )
