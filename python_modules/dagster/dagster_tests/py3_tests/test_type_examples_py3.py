@@ -1,7 +1,6 @@
 import os
 import pickle
 import re
-import tempfile
 import time
 
 import pytest
@@ -28,6 +27,7 @@ from dagster import (
     execute_pipeline,
     execute_solid,
     pipeline,
+    seven,
     solid,
 )
 
@@ -473,11 +473,12 @@ def test_hello():
 
 
 def test_unpickle():
-    with tempfile.NamedTemporaryFile() as fd:
-        pickle.dump('foo', fd)
-        fd.seek(0)
+    with seven.TemporaryDirectory() as tmpdir:
+        filename = os.path.join(tmpdir, 'foo.pickle')
+        with open(filename, 'wb') as f:
+            pickle.dump('foo', f)
         res = execute_solid(
-            unpickle, environment_dict={'solids': {'unpickle': {'config': fd.name}}}
+            unpickle, environment_dict={'solids': {'unpickle': {'config': filename}}}
         )
         assert res.output_value() == 'foo'
 
