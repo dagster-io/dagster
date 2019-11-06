@@ -523,6 +523,24 @@ def pylint_steps():
     return res
 
 
+def releasability_tests():
+    tests = []
+    for version in [SupportedPython.V3_7]:
+        tests.append(
+            StepBuilder("releasibility tests ({ver})".format(ver=TOX_MAP[version]))
+            .run(
+                "pip install -r bin/requirements.txt",
+                "pip install -r bin/dev-requirements.txt",
+                "cd bin",
+                "SLACK_RELEASE_BOT_TOKEN='dummy' pytest"
+            )
+            .on_integration_image(version)
+            .build()
+        )
+
+    return tests
+
+
 if __name__ == "__main__":
     steps = pylint_steps() + [
         StepBuilder("isort")
@@ -592,6 +610,8 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("dagster-graphql")
     steps += python_modules_tox_tests("dagstermill")
     steps += library_tests()
+
+    steps += releasability_tests()
 
     if DO_COVERAGE:
         steps += [wait_step(), coverage_step(), wait_step(), deploy_trigger_step()]
