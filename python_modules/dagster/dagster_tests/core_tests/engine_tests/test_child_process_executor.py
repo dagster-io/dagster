@@ -7,8 +7,9 @@ from dagster.core.engine.child_process_executor import (
     ChildProcessCommand,
     ChildProcessCrashException,
     ChildProcessDoneEvent,
-    ChildProcessException,
+    ChildProcessEvent,
     ChildProcessStartEvent,
+    ChildProcessSystemErrorEvent,
     execute_child_process_command,
 )
 
@@ -44,19 +45,17 @@ class LongRunningCommand(ChildProcessCommand):  # pylint: disable=no-init
 
 def test_basic_child_process_command():
     events = list(
-        filter(lambda x: x, execute_child_process_command(DoubleAStringChildProcessCommand('aa')))
+        filter(
+            lambda x: x and not isinstance(x, ChildProcessEvent),
+            execute_child_process_command(DoubleAStringChildProcessCommand('aa')),
+        )
     )
     assert events == ['aaaa']
 
 
 def test_basic_child_process_command_with_process_events():
     events = list(
-        filter(
-            lambda x: x,
-            execute_child_process_command(
-                DoubleAStringChildProcessCommand('aa'), return_process_events=True
-            ),
-        )
+        filter(lambda x: x, execute_child_process_command(DoubleAStringChildProcessCommand('aa')))
     )
     assert len(events) == 3
 
@@ -69,10 +68,15 @@ def test_basic_child_process_command_with_process_events():
 
 
 def test_child_process_uncaught_exception():
-    with pytest.raises(ChildProcessException) as excinfo:
-        list(execute_child_process_command(ThrowAnErrorCommand()))
+    results = list(
+        filter(
+            lambda x: x and isinstance(x, ChildProcessSystemErrorEvent),
+            execute_child_process_command(ThrowAnErrorCommand()),
+        )
+    )
+    assert len(results) == 1
 
-    assert 'AnError' in str(excinfo.value)
+    assert 'AnError' in str(results[0].error_info.message)
 
 
 def test_child_process_crashy_process():

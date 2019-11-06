@@ -11,6 +11,7 @@ import gevent
 import six
 
 from dagster import ExecutionTargetHandle, PipelineDefinition, PipelineExecutionResult, check
+from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import (
     DagsterEvent,
     DagsterEventType,
@@ -340,6 +341,17 @@ def _in_mp_process(handle, pipeline_run, instance_ref):
         ):
             event_list.append(event)
         return PipelineExecutionResult(pipeline_def, run_id, event_list, lambda: None)
+
+    # Add a DagsterEvent for unexpected exceptions
+    # Explicitly ignore KeyboardInterrupts since they are used for termination
+    except DagsterSubprocessError as err:
+        if not all(
+            [err_info.cls_name == 'KeyboardInterrupt' for err_info in err.subprocess_error_infos]
+        ):
+            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            instance.handle_new_event(
+                build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name)
+            )
     except Exception:  # pylint: disable=broad-except
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         instance.handle_new_event(

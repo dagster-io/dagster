@@ -6,7 +6,10 @@ from dagster.core.serdes import whitelist_for_serdes
 
 @whitelist_for_serdes
 class SerializableErrorInfo(namedtuple('SerializableErrorInfo', 'message stack cls_name')):
-    pass
+    def to_string(self):
+        return '({err.cls_name}) - {err.message}\nStack Trace: \n{stack}'.format(
+            err=self, stack=''.join(self.stack)
+        )
 
 
 def serializable_error_info_from_exc_info(exc_info):

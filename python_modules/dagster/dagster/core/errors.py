@@ -24,7 +24,7 @@ from dagster import check
 
 class DagsterError(Exception):
     '''Base class for all errors thrown by the Dagster framework.
-    
+
     Users should not subclass this base class for their own exceptions.'''
 
     @property
@@ -189,7 +189,7 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
 
 class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
     '''
-    Indicates an error occured while executing the body of the ``resource_fn`` in a 
+    Indicates an error occured while executing the body of the ``resource_fn`` in a
     :class:`ResourceDefinition <dagster.ResourceDefinition>` during resource initialization.
     '''
 
@@ -231,3 +231,17 @@ class DagsterUnmetExecutorRequirementsError(DagsterError):
     '''Indicates the resolved executor is incompatible with the state of other systems
     such as the :class:`DagsterInstance <dagster.DagsterInstance>` or system storage configuration.
     '''
+
+
+class DagsterSubprocessError(DagsterError):
+    '''An exception has occurred in one or more of the child processes dagster manages.
+    This error forwards the message and stack trace for all of the collected errors.
+    '''
+
+    def __init__(self, *args, **kwargs):
+        from dagster.utils.error import SerializableErrorInfo
+
+        self.subprocess_error_infos = check.list_param(
+            kwargs.pop('subprocess_error_infos'), 'subprocess_error_infos', SerializableErrorInfo
+        )
+        super(DagsterSubprocessError, self).__init__(*args, **kwargs)
