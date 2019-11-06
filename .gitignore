@@ -115,6 +115,8 @@ dagit_run_logs
 python_modules/dagit/node_modules/
 python_modules/dagit/yarn.lock
 
+# Data
+data
 
 # Dask
 dask-worker-space

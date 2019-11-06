@@ -5,7 +5,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import seven
 from dagster.core.instance import DagsterInstance
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 from .execution_queries import START_SCHEDULED_EXECUTION_QUERY
 from .setup import define_context_for_repository_yaml
@@ -15,11 +15,13 @@ def test_basic_start_scheduled_execution():
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
         context = define_context_for_repository_yaml(
-            path=script_relative_path('../repository.yaml'), instance=instance
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
 
         scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(python_path=sys.executable, repository_path=script_relative_path('../'))
+        scheduler_handle.up(
+            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
+        )
 
         result = execute_dagster_graphql(
             context,
@@ -52,11 +54,13 @@ def test_start_scheduled_execution_with_predefined_schedule_id_tag():
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
         context = define_context_for_repository_yaml(
-            path=script_relative_path('../repository.yaml'), instance=instance
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
 
         scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(python_path=sys.executable, repository_path=script_relative_path('../'))
+        scheduler_handle.up(
+            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
+        )
 
         result = execute_dagster_graphql(
             context,
@@ -70,11 +74,13 @@ def test_start_scheduled_execution_with_should_execute():
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
         context = define_context_for_repository_yaml(
-            path=script_relative_path('../repository.yaml'), instance=instance
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
 
         scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(python_path=sys.executable, repository_path=script_relative_path('../'))
+        scheduler_handle.up(
+            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
+        )
 
         result = execute_dagster_graphql(
             context,

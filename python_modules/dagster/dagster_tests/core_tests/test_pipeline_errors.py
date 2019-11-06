@@ -15,6 +15,7 @@ from dagster import (
     SolidDefinition,
     check,
     execute_pipeline,
+    execute_solid,
     lambda_solid,
     pipeline,
     solid,
@@ -182,12 +183,6 @@ def test_failure_propagation():
     assert pipeline_result.result_for_solid('F').skipped
 
 
-def execute_isolated_solid(solid_def, environment_dict=None):
-    return execute_pipeline(
-        PipelineDefinition(name='test', solid_defs=[solid_def]), environment_dict=environment_dict
-    )
-
-
 def test_do_not_yield_result():
     solid_inst = SolidDefinition(
         name='do_not_yield_result',
@@ -200,7 +195,7 @@ def test_do_not_yield_result():
         DagsterInvariantViolationError,
         match='Compute function for solid do_not_yield_result returned a Output',
     ):
-        execute_isolated_solid(solid_inst)
+        execute_solid(solid_inst)
 
 
 def test_yield_non_result():
@@ -212,7 +207,7 @@ def test_yield_non_result():
         DagsterInvariantViolationError,
         match="Compute function for solid yield_wrong_thing yielded 'foo'",
     ):
-        execute_isolated_solid(yield_wrong_thing)
+        execute_solid(yield_wrong_thing)
 
 
 def test_single_compute_fn_returning_result():
@@ -224,7 +219,7 @@ def test_single_compute_fn_returning_result():
     )
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_isolated_solid(solid_inst)
+        execute_solid(solid_inst)
 
 
 def test_user_error_propogation():

@@ -76,12 +76,23 @@ def _create_input_schema(config_type, func):
 
 
 def input_hydration_config(config_cls):
-    '''
-    A decorator for annotating a function that can turn a ``config_value`` in to
-    an instance of a custom type.
+    '''Create an input hydration config that maps config data to a runtime value.
+
+    The decorated function should take the execution context and parsed config value and return the
+    appropriate runtime value.
 
     Args:
-        config_cls (Any):
+        config_cls (Any): The type of the config data expected by the decorated function. Users
+            should provide one of the :ref:`built-in types <builtin>`, or a composite constructed
+            using :py:func:`Selector` or :py:func:`PermissiveDict`.
+    
+    **Examples**:
+
+    .. code-block:: python
+
+        @input_hydration_config(PermissiveDict())
+        def _dict_input(_context, value):
+            return value
     '''
     config_type = resolve_config_cls_arg(config_cls)
     EXPECTED_POSITIONALS = ['context', '*']
@@ -136,12 +147,33 @@ def _create_output_schema(config_type, func):
 
 
 def output_materialization_config(config_cls):
-    '''
-    A decorator for a annotating a function that can take a ``config_value``
-    and an instance of a custom type and materialize it.
+    '''Create an output materialization hydration config that configurably materializes a runtime
+    value.
+
+    The decorated function should take the execution context, the parsed config value, and the
+    runtime value and the parsed config data, should materialize the runtime value, and should
+    return an appropriate :py:class:`Materialization`.
 
     Args:
-        config_cls (Any):
+        config_cls (Any): The type of the config data expected by the decorated function. Users
+            should provide one of the :ref:`built-in types <builtin>`, or a composite constructed
+            using :py:func:`Selector` or :py:func:`PermissiveDict`.
+
+    **Examples**:
+
+    .. code-block:: python
+
+        # Takes a list of dicts such as might be read in using csv.DictReader, as well as a config
+        value, and writes 
+        @output_materialization_config(Path)
+        def df_output_schema(_context, path, value):
+            with open(path, 'w') as fd:
+                writer = csv.DictWriter(fd, fieldnames=value[0].keys())
+                writer.writeheader()
+                writer.writerows(rowdicts=value)
+
+            return Materialization.file(path)
+
     '''
     config_type = resolve_config_cls_arg(config_cls)
     return lambda func: _create_output_schema(config_type, func)

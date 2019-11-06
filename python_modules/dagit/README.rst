@@ -17,7 +17,7 @@ Running dev ui:
 
 Updating mock GraphQL requests / responses used in tests:
 
-.. codeblock:: sh
+.. code-block:: sh
 
   yarn run download-mocks
 

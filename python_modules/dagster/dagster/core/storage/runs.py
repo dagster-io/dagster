@@ -47,13 +47,18 @@ class InMemoryRunStorage(RunStorage):
             [r for r in self.all_runs() if r.pipeline_name == pipeline_name], cursor, limit
         )
 
-    def get_run_count_with_matching_tag(self, key, value):
-        return len(self.get_runs_with_matching_tag(key, value))
+    def get_run_count_with_matching_tags(self, tags):
+        check.list_param(tags, 'tags', tuple)
+        return len(self.get_runs_with_matching_tags(tags))
 
-    def get_runs_with_matching_tag(self, key, value, cursor=None, limit=None):
-        check.str_param(key, 'key')
-        check.str_param(value, 'value')
-        return self._slice([r for r in self.all_runs() if r.tags.get(key) == value], cursor, limit)
+    def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
+        check.list_param(tags, 'tags', tuple)
+
+        return self._slice(
+            [r for r in self.all_runs() if all(r.tags.get(key) == value for key, value in tags)],
+            cursor,
+            limit,
+        )
 
     def _slice(self, runs, cursor, limit):
         if cursor:
@@ -229,24 +234,54 @@ class SQLRunStorage(RunStorage):  # pylint: disable=no-init
         rows = self.connect().execute(query).fetchall()
         return self._rows_to_runs(rows)
 
-    def get_run_count_with_matching_tag(self, key, value):
-        query = (
-            db.select([db.func.count()])
-            .select_from(RunsTable.join(RunTagsTable))
-            .where(db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value))
+    def get_run_count_with_matching_tags(self, tags):
+        sub_query = db.select([1]).select_from(
+            RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
         )
+
+        sub_query = sub_query.where(
+            db.or_(
+                *(
+                    db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
+                    for key, value in tags
+                )
+            )
+        ).group_by(RunsTable.c.run_id)
+
+        if len(tags) > 0:
+            sub_query = sub_query.having(db.func.count(RunsTable.c.run_id) == len(tags))
+
+        sub_query = sub_query.alias("matching_runs")
+
+        query = db.select([db.func.count()]).select_from(sub_query)
+
         rows = self.connect().execute(query).fetchall()
+
         count = rows[0][0]
         return count
 
-    def get_runs_with_matching_tag(self, key, value, cursor=None, limit=None):
-        base_query = (
-            db.select([RunsTable.c.run_body])
-            .select_from(RunsTable.join(RunTagsTable))
-            .where(db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value))
+    def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
+        check.list_param(tags, 'tags', tuple)
+
+        base_query = db.select([RunsTable.c.run_body]).select_from(
+            RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
         )
+
+        base_query = base_query.where(
+            db.or_(
+                *(
+                    db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
+                    for key, value in tags
+                )
+            )
+        ).group_by(RunsTable.c.run_body, RunsTable.c.id)
+
+        if len(tags) > 0:
+            base_query = base_query.having(db.func.count(RunsTable.c.run_id) == len(tags))
+
         query = self._build_query(base_query, cursor, limit)
         rows = self.connect().execute(query).fetchall()
+
         return self._rows_to_runs(rows)
 
     def get_runs_with_status(self, run_status, cursor=None, limit=None):

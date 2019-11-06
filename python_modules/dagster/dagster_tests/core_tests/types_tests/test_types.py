@@ -7,7 +7,6 @@ from dagster import (
     Failure,
     InputDefinition,
     OutputDefinition,
-    RuntimeType,
     TypeCheck,
     execute_pipeline,
     lambda_solid,
@@ -15,7 +14,7 @@ from dagster import (
     solid,
 )
 from dagster.core.types import Int, List, Optional, PythonObjectType
-from dagster.core.types.runtime import resolve_to_runtime_type
+from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
 
 
 class BarObj(object):

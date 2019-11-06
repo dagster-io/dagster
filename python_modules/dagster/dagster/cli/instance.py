@@ -32,3 +32,6 @@ def info_command():
     click.echo('$DAGSTER_HOME: {}\n'.format(home))
 
     click.echo(instance.info_str())
+
+
+instance_cli = create_instance_cli_group()

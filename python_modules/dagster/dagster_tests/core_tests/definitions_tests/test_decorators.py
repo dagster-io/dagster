@@ -15,6 +15,7 @@ from dagster import (
     PipelineDefinition,
     ScheduleDefinition,
     execute_pipeline,
+    execute_solid,
     lambda_solid,
     schedules,
     solid,
@@ -26,12 +27,6 @@ from dagster.core.utility_solids import define_stub_solid
 # pylint: disable=unused-variable, unused-argument
 
 
-def execute_isolated_solid(solid_def, environment_dict=None):
-    return execute_pipeline(
-        PipelineDefinition(name='test', solid_defs=[solid_def]), environment_dict=environment_dict
-    )
-
-
 def test_no_parens_solid():
     called = {}
 
@@ -39,7 +34,7 @@ def test_no_parens_solid():
     def hello_world():
         called['yup'] = True
 
-    result = execute_isolated_solid(hello_world)
+    result = execute_solid(hello_world)
 
     assert called['yup']
 
@@ -51,7 +46,7 @@ def test_empty_solid():
     def hello_world():
         called['yup'] = True
 
-    result = execute_isolated_solid(hello_world)
+    result = execute_solid(hello_world)
 
     assert called['yup']
 
@@ -61,11 +56,10 @@ def test_solid():
     def hello_world(_context):
         return {'foo': 'bar'}
 
-    result = execute_isolated_solid(hello_world)
+    result = execute_solid(hello_world)
 
     assert result.success
-    assert len(result.solid_result_list) == 1
-    assert result.solid_result_list[0].output_value()['foo'] == 'bar'
+    assert result.output_value()['foo'] == 'bar'
 
 
 def test_solid_one_output():
@@ -73,11 +67,10 @@ def test_solid_one_output():
     def hello_world():
         return {'foo': 'bar'}
 
-    result = execute_isolated_solid(hello_world)
+    result = execute_solid(hello_world)
 
     assert result.success
-    assert len(result.solid_result_list) == 1
-    assert result.solid_result_list[0].output_value()['foo'] == 'bar'
+    assert result.output_value()['foo'] == 'bar'
 
 
 def test_solid_yield():
@@ -85,11 +78,10 @@ def test_solid_yield():
     def hello_world(_context):
         yield Output(value={'foo': 'bar'})
 
-    result = execute_isolated_solid(hello_world)
+    result = execute_solid(hello_world)
 
     assert result.success
-    assert len(result.solid_result_list) == 1
-    assert result.solid_result_list[0].output_value()['foo'] == 'bar'
+    assert result.output_value()['foo'] == 'bar'
 
 
 def test_solid_result_return():
@@ -97,11 +89,10 @@ def test_solid_result_return():
     def hello_world(_context):
         return Output(value={'foo': 'bar'})
 
-    result = execute_isolated_solid(hello_world)
+    result = execute_solid(hello_world)
 
     assert result.success
-    assert len(result.solid_result_list) == 1
-    assert result.solid_result_list[0].output_value()['foo'] == 'bar'
+    assert result.output_value()['foo'] == 'bar'
 
 
 def test_solid_with_explicit_empty_outputs():
@@ -110,7 +101,7 @@ def test_solid_with_explicit_empty_outputs():
         return 'foo'
 
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        result = execute_isolated_solid(hello_world)
+        result = execute_solid(hello_world)
 
     assert (
         'Error in solid hello_world: Unexpectedly returned output foo of type '
@@ -128,12 +119,10 @@ def test_solid_with_implicit_single_output():
     def hello_world(_context):
         return 'foo'
 
-    result = execute_isolated_solid(hello_world)
+    result = execute_solid(hello_world)
 
     assert result.success
-    assert len(result.solid_result_list) == 1
-    solid_result = result.solid_result_list[0]
-    assert solid_result.output_value() == 'foo'
+    assert result.output_value() == 'foo'
 
 
 def test_solid_return_list_instead_of_multiple_results():
@@ -142,7 +131,7 @@ def test_solid_return_list_instead_of_multiple_results():
         return ['foo', 'bar']
 
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        result = execute_isolated_solid(hello_world)
+        result = execute_solid(hello_world)
 
     assert 'unexpectedly returned output [\'foo\', \'bar\']' in str(exc_info.value)
 
@@ -152,11 +141,10 @@ def test_lambda_solid_with_name():
     def hello_world():
         return {'foo': 'bar'}
 
-    result = execute_isolated_solid(hello_world)
+    result = execute_solid(hello_world)
 
     assert result.success
-    assert len(result.solid_result_list) == 1
-    assert result.solid_result_list[0].output_value()['foo'] == 'bar'
+    assert result.output_value()['foo'] == 'bar'
 
 
 def test_solid_with_name():
@@ -164,11 +152,10 @@ def test_solid_with_name():
     def hello_world(_context):
         return {'foo': 'bar'}
 
-    result = execute_isolated_solid(hello_world)
+    result = execute_solid(hello_world)
 
     assert result.success
-    assert len(result.solid_result_list) == 1
-    assert result.solid_result_list[0].output_value()['foo'] == 'bar'
+    assert result.output_value()['foo'] == 'bar'
 
 
 def test_solid_with_input():
@@ -282,7 +269,7 @@ def test_any_config_field():
         assert context.solid_config == conf_value
         called['yup'] = True
 
-    result = execute_isolated_solid(
+    result = execute_solid(
         hello_world, environment_dict={'solids': {'hello_world': {'config': conf_value}}}
     )
 

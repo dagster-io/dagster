@@ -10,7 +10,6 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineDefinition,
-    RuntimeType,
     StepKind,
     String,
     execute_pipeline,
@@ -20,6 +19,7 @@ from dagster import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.types.runtime import RuntimeType
 from dagster.utils.test import get_temp_file_name, get_temp_file_names
 
 

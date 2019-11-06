@@ -31,3 +31,6 @@ def run_wipe_command():
         click.echo('Deleted all run history and event logs')
     else:
         click.echo('Exiting without deleting all run history and event logs')
+
+
+run_cli = create_run_cli_group()

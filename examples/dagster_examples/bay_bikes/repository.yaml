@@ -1,0 +1,3 @@
+repository:
+  module: dagster_examples.bay_bikes.repository
+  fn: define_repo
