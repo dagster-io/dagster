@@ -69,7 +69,7 @@ def test_download_csv_locally_pipeline(mocker, tmpdir, pipeline_config_dict):
 
     # execute tests
     result = execute_pipeline(download_csv_pipeline, environment_dict=pipeline_config_dict)
-    target_files = set(os.listdir(csv_target_directory))
+    target_files = set(os.listdir(csv_target_directory.strpath))
     assert result.success
     assert len(target_files) == 3
     assert all([target_file in target_files for target_file in target_files])

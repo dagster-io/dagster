@@ -10,10 +10,10 @@ PROFILES_DIR = file_relative_path(__file__, 'profiles')
 JAFFLE_EXE_ENV = 'JAFFLE_PIPELINE_VENV_PYTHON_PATH'
 
 jaffle_solid = create_dbt_run_solid(
-    PROJECT_DIR, profiles_dir=PROFILES_DIR, dbt_executable=os.getenv(JAFFLE_EXE_ENV)
+    PROJECT_DIR, profiles_dir=PROFILES_DIR, dbt_executable=os.getenv(JAFFLE_EXE_ENV, 'dbt')
 )
 jaffle_test_solid = create_dbt_test_solid(
-    PROJECT_DIR, profiles_dir=PROFILES_DIR, dbt_executable=os.getenv(JAFFLE_EXE_ENV)
+    PROJECT_DIR, profiles_dir=PROFILES_DIR, dbt_executable=os.getenv(JAFFLE_EXE_ENV, 'dbt')
 )
 
 
