@@ -18,7 +18,6 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.check import CheckError
 
 
 # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
@@ -664,19 +663,21 @@ def test_timestamp_in_run_config():
 
 
 def test_empty_config():
-    with pytest.raises(CheckError) as exc_info:
-
-        @composite_solid(
-            config_fn=lambda context, _: {'scalar_config_solid': {'config': 'an input'}},
-            # This is not permitted:
-            config={},
-        )
-        def wrap_solid():  # pylint: disable=unused-variable
-            scalar_config_solid()
-
-    assert 'Invariant failed. Description: Cannot specify empty config for ConfigMapping' in str(
-        exc_info
+    # Testing that this definition does *not* raise
+    # See: https://github.com/dagster-io/dagster/issues/1606
+    @composite_solid(
+        config_fn=lambda context, _: {'scalar_config_solid': {'config': 'an input'}}, config={}
     )
+    def wrap_solid():  # pylint: disable=unused-variable
+        return scalar_config_solid()
+
+    @pipeline
+    def wrap_pipeline():
+        return wrap_solid()
+
+    res = execute_pipeline(wrap_pipeline, environment_dict={'solids': {}})
+
+    assert res.result_for_solid('wrap_solid').output_values == {'result': 'an input'}
 
 
 def test_bad_solid_def():

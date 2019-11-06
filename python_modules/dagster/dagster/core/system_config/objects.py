@@ -39,8 +39,8 @@ class SolidConfig(namedtuple('_SolidConfig', 'config inputs outputs')):
 
         return SolidConfig(
             config=config.get('config'),
-            inputs=config.get('inputs', {}),
-            outputs=config.get('outputs', []),
+            inputs=config.get('inputs') or {},
+            outputs=config.get('outputs') or [],
         )
 
 

@@ -366,7 +366,14 @@ def define_isolid_field(solid, handle, dependency_structure, pipeline_name):
 
         # Mask solid config for solids beneath this level if config mapping is provided
         if composite_def.has_config_mapping:
-            composite_config_dict['config'] = composite_def.config_mapping.config_field
+            composite_config_dict['config'] = composite_def.config_mapping.config_field or Field(
+                NamedDict(
+                    '{pipeline_name}.CompositeSolidsConfig.{solid_handle}'.format(
+                        pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
+                    ),
+                    {},
+                )
+            )
         else:
             composite_config_dict['solids'] = child_solids_config_field
 

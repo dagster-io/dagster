@@ -39,9 +39,8 @@ class ConfigMapping(namedtuple('_ConfigMapping', 'config_fn config_field')):
         config_field (Field): The schema of the composite config.
     '''
 
-    def __new__(cls, config_fn, config):
-        check.dict_param(config, 'config')
-        check.invariant(config, 'Cannot specify empty config for ConfigMapping')
+    def __new__(cls, config_fn, config=None):
+        config = check.opt_dict_param(config, 'config')
 
         return super(ConfigMapping, cls).__new__(
             cls,

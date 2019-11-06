@@ -677,7 +677,7 @@ def composite_solid(
             If not provided explicitly, these will be inferred from typehints.
 
             Uses of these outputs in the body of the decorated composition function, as well as the
-            return value of the decorated function, will be used to infer the appropriat set of
+            return value of the decorated function, will be used to infer the appropriate set of
             :py:class:`OutputMappings <OutputMapping>` for the underlying
             :py:class:`CompositeSolidDefinition`.
 
