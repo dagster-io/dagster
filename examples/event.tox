@@ -3,6 +3,10 @@ envlist = py37,py36,py35
 
 [testenv]
 passenv = CI_* COVERALLS_REPO_TOKEN TOXENV AWS_SECRET_ACCESS_KEY AWS_ACCESS_KEY_ID SLUGIFY_USES_TEXT_UNIDECODE
+platform =
+  linux: linux
+  osx: darwin
+  win: win32
 deps =
   -e ../python_modules/dagster
   -r ../python_modules/dagster/dev-requirements.txt
@@ -21,7 +25,7 @@ deps =
 
 usedevelop = true
 commands =
-  /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
+  linux,osx: /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
   coverage erase
   pytest dagster_examples_tests/event_pipeline_demo_tests/ -vv --junitxml=test_results.xml --cov=dagster_examples --cov=../python_modules --cov-append --cov-report=
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered

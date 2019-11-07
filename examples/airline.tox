@@ -2,6 +2,10 @@
 envlist = py36,py35
 
 [testenv]
+platform =
+  linux: linux
+  osx: darwin
+  win: win32
 deps =
   -e ../python_modules/dagster
   -e ../python_modules/libraries/dagster-pandas
@@ -20,7 +24,7 @@ deps =
 
 passenv = CI_* COVERALLS_REPO_TOKEN TOXENV SLUGIFY_USES_TEXT_UNIDECODE AWS_SECRET_ACCESS_KEY AWS_ACCESS_KEY_ID AIRFLOW_HOME JAVA_HOME POSTGRES_TEST_DB_HOST
 commands =
-  /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
+  linux,osx: /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
   coverage erase
   ipython kernel install --name "dagster" --user
   pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov=../python_modules --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow"
@@ -32,7 +36,7 @@ whitelist_externals = /bin/bash
 
 [testenv:py37]
 commands =
-  /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
+  linux,osx: /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
   coverage erase
   pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov=../python_modules --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow and not airflow"
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered
