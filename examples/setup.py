@@ -32,6 +32,7 @@ setup(
             'matplotlib==3.0.2; python_version >= "3.5"',
             'matplotlib==2.2.4; python_version < "3.5"',
             'mock==2.0.0',
+            'pytest-mock',
             # pyproj is required by geopandas, but something is wrong with the
             # wheel for 2.0.2
             'pyproj==2.0.1',
