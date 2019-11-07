@@ -5,7 +5,7 @@ exports[`renders given materializations and passing expectations 1`] = `
   className="sc-cvbbAY hfeZiW"
 >
   <div
-    className="succeeded sc-jWBwVP hWwbFH"
+    className="sc-jWBwVP hWwbFH succeeded"
     onClick={[Function]}
     style={
       Object {
@@ -80,7 +80,7 @@ exports[`renders given materializations and passing expectations 2`] = `
   className="sc-cvbbAY hfeZiW"
 >
   <div
-    className="succeeded sc-jWBwVP hWwbFH"
+    className="sc-jWBwVP hWwbFH succeeded"
     onClick={[Function]}
     style={
       Object {

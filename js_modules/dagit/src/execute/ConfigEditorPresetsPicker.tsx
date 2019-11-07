@@ -21,71 +21,75 @@ interface ConfigEditorPresetsPickerProps {
   onCreateSession: (initial: Partial<IExecutionSession>) => void;
 }
 
-export const ConfigEditorPresetsPicker: React.FunctionComponent<
-  ConfigEditorPresetsPickerProps
-> = React.memo(props => {
-  const { pipelineName, onCreateSession } = props;
+export const ConfigEditorPresetsPicker: React.FunctionComponent<ConfigEditorPresetsPickerProps> = React.memo(
+  props => {
+    const { pipelineName, onCreateSession } = props;
 
-  const onPresetSelect = async (
-    preset: ConfigPresetsQuery_pipeline_presets,
-    pipelineName: string,
-    client: ApolloClient<any>
-  ) => {
-    const { data } = await client.query({
-      query: CONFIG_PRESETS_QUERY,
-      variables: { pipelineName },
-      fetchPolicy: "network-only"
-    });
-    let updatedPreset = preset;
-    for (const p of data.pipeline.presets) {
-      if (p.name === preset.name) {
-        updatedPreset = p;
-        break;
-      }
-    }
-    onCreateSession({
-      name: updatedPreset.name,
-      environmentConfigYaml: updatedPreset.environmentConfigYaml || "",
-      solidSubset: updatedPreset.solidSubset,
-      mode: updatedPreset.mode
-    });
-  };
-
-  const { data, client } = useQuery<ConfigPresetsQuery>(CONFIG_PRESETS_QUERY, {
-    fetchPolicy: "network-only",
-    variables: { pipelineName }
-  });
-  const presets = (
-    (data &&
-      data.pipeline &&
-      data.pipeline.__typename === "Pipeline" &&
-      data.pipeline.presets) ||
-    []
-  ).sort((a, b) => a.name.localeCompare(b.name));
-
-  return (
-    <div>
-      <PresetSelect
-        items={presets}
-        itemPredicate={(query, preset) =>
-          query.length === 0 || preset.name.includes(query)
+    const onPresetSelect = async (
+      preset: ConfigPresetsQuery_pipeline_presets,
+      pipelineName: string,
+      client: ApolloClient<any>
+    ) => {
+      const { data } = await client.query({
+        query: CONFIG_PRESETS_QUERY,
+        variables: { pipelineName },
+        fetchPolicy: "network-only"
+      });
+      let updatedPreset = preset;
+      for (const p of data.pipeline.presets) {
+        if (p.name === preset.name) {
+          updatedPreset = p;
+          break;
         }
-        itemRenderer={(preset, props) => (
-          <Menu.Item
-            active={props.modifiers.active}
-            onClick={props.handleClick}
-            key={preset.name}
-            text={preset.name}
-          />
-        )}
-        noResults={<Menu.Item disabled={true} text="No presets." />}
-        onItemSelect={preset => onPresetSelect(preset, pipelineName, client)}
-      >
-        <Button text={""} icon="insert" rightIcon="caret-down" />
-      </PresetSelect>
-    </div>
-  );
-}, isEqual);
+      }
+      onCreateSession({
+        name: updatedPreset.name,
+        environmentConfigYaml: updatedPreset.environmentConfigYaml || "",
+        solidSubset: updatedPreset.solidSubset,
+        mode: updatedPreset.mode
+      });
+    };
+
+    const { data, client } = useQuery<ConfigPresetsQuery>(
+      CONFIG_PRESETS_QUERY,
+      {
+        fetchPolicy: "network-only",
+        variables: { pipelineName }
+      }
+    );
+    const presets = (
+      (data &&
+        data.pipeline &&
+        data.pipeline.__typename === "Pipeline" &&
+        data.pipeline.presets) ||
+      []
+    ).sort((a, b) => a.name.localeCompare(b.name));
+
+    return (
+      <div>
+        <PresetSelect
+          items={presets}
+          itemPredicate={(query, preset) =>
+            query.length === 0 || preset.name.includes(query)
+          }
+          itemRenderer={(preset, props) => (
+            <Menu.Item
+              active={props.modifiers.active}
+              onClick={props.handleClick}
+              key={preset.name}
+              text={preset.name}
+            />
+          )}
+          noResults={<Menu.Item disabled={true} text="No presets." />}
+          onItemSelect={preset => onPresetSelect(preset, pipelineName, client)}
+        >
+          <Button text={""} icon="insert" rightIcon="caret-down" />
+        </PresetSelect>
+      </div>
+    );
+  },
+  isEqual
+);
 
 export const CONFIG_PRESETS_QUERY = gql`
   query ConfigPresetsQuery($pipelineName: String!) {

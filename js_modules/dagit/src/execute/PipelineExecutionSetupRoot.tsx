@@ -11,9 +11,9 @@ interface PipelineExecutionSetupRootProps {
   match: match<{ pipelineName: string }>;
 }
 
-export const PipelineExecutionSetupRoot: React.FunctionComponent<
-  PipelineExecutionSetupRootProps
-> = ({ match: { params } }) => {
+export const PipelineExecutionSetupRoot: React.FunctionComponent<PipelineExecutionSetupRootProps> = ({
+  match: { params }
+}) => {
   const [data, onSave] = useStorage({ namespace: params.pipelineName });
   const qs = querystring.parse(window.location.search);
 

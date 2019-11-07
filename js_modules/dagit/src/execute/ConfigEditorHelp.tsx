@@ -12,9 +12,7 @@ interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;
 }
 
-export const ConfigEditorHelp: React.FunctionComponent<
-  ConfigEditorHelpProps
-> = React.memo(
+export const ConfigEditorHelp: React.FunctionComponent<ConfigEditorHelpProps> = React.memo(
   ({ context }) => {
     if (!context) {
       return <span />;

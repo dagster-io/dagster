@@ -12,9 +12,9 @@ interface IPipelineExecutionRootProps {
   match: match<{ pipelineName: string }>;
 }
 
-export const PipelineExecutionRoot: React.FunctionComponent<
-  IPipelineExecutionRootProps
-> = ({ match: { params } }) => {
+export const PipelineExecutionRoot: React.FunctionComponent<IPipelineExecutionRootProps> = ({
+  match: { params }
+}) => {
   const [data, onSave] = useStorage({ namespace: params.pipelineName });
   const vars = {
     name: params.pipelineName,

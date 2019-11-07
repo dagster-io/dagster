@@ -32,13 +32,9 @@ export const RunsQueryVariablesContext = React.createContext<
 function searchSuggestionsForRuns(
   result?: QueryResult<RunsSearchSpaceQuery>
 ): SuggestionProvider[] {
-  // optional chaining cannot come soon enough
   const tags = (result && result.data && result.data.pipelineRunTags) || [];
   const pipelineNames =
-    (result &&
-      result.data &&
-      result.data.pipelinesOrError &&
-      result.data.pipelinesOrError.__typename === "PipelineConnection" &&
+    (result?.data?.pipelinesOrError?.__typename === "PipelineConnection" &&
       result.data.pipelinesOrError.nodes.map(n => n.name)) ||
     [];
 

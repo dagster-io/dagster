@@ -10,9 +10,9 @@ interface ITypeListContainerProps {
   pipelineName: string;
 }
 
-export const TypeListContainer: React.FunctionComponent<
-  ITypeListContainerProps
-> = ({ pipelineName }) => {
+export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps> = ({
+  pipelineName
+}) => {
   const queryResult = useQuery<TypeListContainerQuery>(
     TYPE_LIST_CONTAINER_QUERY,
     {

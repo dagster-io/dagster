@@ -201,8 +201,9 @@ function getDagrePipelineLayoutHeavy(
     .sort((a, b) => a - b);
 
   const firstRow = nodesInRows[`${rows[0]}`];
-  const firstRowCenterX =
-    firstRow.reduce((s, n) => s + n.x + n.width / 2, 0) / firstRow.length;
+  const firstRowCenterX = firstRow
+    ? firstRow.reduce((s, n) => s + n.x + n.width / 2, 0) / firstRow.length
+    : 0;
 
   for (let ii = 0; ii < rows.length; ii++) {
     const rowKey = `${rows[ii]}`;

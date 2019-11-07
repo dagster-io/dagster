@@ -9,9 +9,12 @@ interface DisplayEventProps {
   event: IStepDisplayEvent;
 }
 
-const DisplayEventItem: React.FunctionComponent<
-  IStepDisplayEvent["items"][0]
-> = ({ action, actionText, actionValue, text }) => {
+const DisplayEventItem: React.FunctionComponent<IStepDisplayEvent["items"][0]> = ({
+  action,
+  actionText,
+  actionValue,
+  text
+}) => {
   let actionEl: React.ReactNode = actionText;
 
   if (action === "copy") {

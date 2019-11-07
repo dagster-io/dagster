@@ -4,5 +4,5 @@ module.exports = {
     "@babel/preset-typescript",
     "react-app"
   ],
-  plugins: ["graphql-tag"]
+  plugins: ["graphql-tag", "@babel/plugin-proposal-optional-chaining"]
 };
