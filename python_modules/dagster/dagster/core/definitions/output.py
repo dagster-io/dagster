@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
+from dagster.core.types.runtime import resolve_to_runtime_type
 
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
@@ -28,11 +28,8 @@ class OutputDefinition(object):
 
     def __init__(self, dagster_type=None, name=None, description=None, is_optional=False):
         self._name = check_valid_name(check.opt_str_param(name, 'name', DEFAULT_OUTPUT))
-
-        self._runtime_type = check.inst(resolve_to_runtime_type(dagster_type), RuntimeType)
-
+        self._runtime_type = resolve_to_runtime_type(dagster_type)
         self._description = check.opt_str_param(description, 'description')
-
         self._optional = check.bool_param(is_optional, 'is_optional')
 
     @property

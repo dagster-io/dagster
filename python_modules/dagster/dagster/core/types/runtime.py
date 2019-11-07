@@ -598,6 +598,13 @@ def create_anonymous_type(ttype):
     return dagster_type
 
 
+DAGSTER_INVALID_TYPE_ERROR_MESSAGE = (
+    'Invalid type: dagster_type must be a Python type, a type constructed using '
+    'python.typing, a type imported from the dagster module, or a class annotated using '
+    'as_dagster_type or @dagster_type: got {dagster_type}{additional_msg}'
+)
+
+
 def resolve_to_runtime_type(dagster_type):
     # circular dep
     from .config import ConfigType
@@ -610,6 +617,21 @@ def resolve_to_runtime_type(dagster_type):
         not (isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType)),
         'Cannot resolve a config type to a runtime type',
     )
+
+    # Test for unhashable objects -- this is if, for instance, someone has passed us an instance of
+    # a dict where they meant to pass dict or Dict, etc.
+    try:
+        hash(dagster_type)
+    except TypeError:
+        raise DagsterInvalidDefinitionError(
+            DAGSTER_INVALID_TYPE_ERROR_MESSAGE.format(
+                additional_msg=(
+                    ', which isn\'t hashable. Did you pass an instance of a type instead of '
+                    'the type?'
+                ),
+                dagster_type=str(dagster_type),
+            )
+        )
 
     dagster_type = remap_python_type(dagster_type)
 
@@ -640,7 +662,14 @@ def resolve_to_runtime_type(dagster_type):
     if isinstance(dagster_type, WrappingNullableType):
         return resolve_to_runtime_nullable(dagster_type)
 
-    check.inst(dagster_type, type, 'Invalid dagster_type')
+    if not isinstance(dagster_type, type):
+        raise DagsterInvalidDefinitionError(
+            DAGSTER_INVALID_TYPE_ERROR_MESSAGE.format(
+                dagster_type=str(dagster_type), additional_msg='.'
+            )
+        )
+
+    check.inst(dagster_type, type)
 
     if issubclass(dagster_type, RuntimeType):
         return dagster_type.inst()

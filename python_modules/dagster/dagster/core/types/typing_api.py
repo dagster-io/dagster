@@ -43,7 +43,7 @@ def is_closed_python_optional_type(ttype):
 def is_python_dict_type(ttype):
     if ttype is dict or ttype is typing.Dict:
         return True
-    if not ttype:
+    if ttype is None:
         return False
 
     origin = _get_origin(ttype)
@@ -61,7 +61,7 @@ def is_closed_python_dict_type(ttype):
 
     Returns true for typing.Dict[int, str] but not for typing.Dict
     '''
-    if not ttype:
+    if ttype is None:
         return False
     if ttype is typing.Dict:
         return False
@@ -91,7 +91,7 @@ def is_closed_python_tuple_type(ttype):
 
     Returns true for Tuple[int] or Tuple[str, int] but false for Tuple or tuple
     '''
-    if not ttype:
+    if ttype is None:
         return False
     if ttype is typing.Tuple:
         return False
@@ -113,7 +113,7 @@ def is_closed_python_set_type(ttype):
 
     Returns true for Set[string] but false for Set or set
     '''
-    if not ttype:
+    if ttype is None:
         return False
     if ttype is typing.Set:
         return False
