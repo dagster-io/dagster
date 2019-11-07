@@ -329,7 +329,7 @@ def test_bad_output_definition():
     ):
         _output = OutputDefinition({'foo': 'bar'})
 
-    # Test the case where the object throws in __nonzero__
+    # Test the case where the object throws in __nonzero__, e.g. pandas.DataFrame
     class Exotic(object):
         def __nonzero__(self):
             raise ValueError('Love too break the core Python APIs in widely-used libraries')

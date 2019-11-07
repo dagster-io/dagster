@@ -10,6 +10,7 @@ from dagster import (
     PipelineDefinition,
     SolidInvocation,
     SystemStorageData,
+    TypeCheck,
     check,
     execute_pipeline,
     lambda_solid,
@@ -28,6 +29,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileManager
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.types.runtime import resolve_to_runtime_type
 from dagster.core.utility_solids import define_stub_solid
 
 # pylint: disable=unused-import
@@ -257,3 +259,37 @@ def execute_solid(
         raise_on_error=raise_on_error,
     )
     return result.result_for_handle(solid_def.name)
+
+
+def check_dagster_type(dagster_type, value):
+    '''Test a custom Dagster type.
+
+    Args:
+        dagster_type (Any): The Dagster type to test. Should be one of the
+            :ref:`built-in types <builtin>`, a dagster type explicitly constructed with
+            :py:func:`as_dagster_type`, :py:func:`@dagster_type <dagster_type>`, or
+            :py:func:`define_python_dagster_type`, or a Python type.
+        value (Any): The runtime value to test.
+
+    Returns:
+        Optional[TypeCheck]: The result of the type check.
+    
+    Raises:
+        Failure: If the type check fails.
+
+    **Examples**:
+
+        .. code-block:: python
+
+            assert check_dagster_type(Dict[Any, Any], {'foo': 'bar'}) is None
+    '''
+    runtime_type = resolve_to_runtime_type(dagster_type)
+    type_check = runtime_type.type_check(value)
+    if type_check is not None and not isinstance(type_check, TypeCheck):
+        raise DagsterInvariantViolationError(
+            (
+                'Type checks can only return None or TypeCheck. Type '
+                '{type_name} returned {value}.'
+            ).format(type_name=runtime_type.name, value=repr(type_check))
+        )
+    return type_check
