@@ -33,6 +33,12 @@ def resolve_to_config_nullable(nullable_type):
 
 def resolve_to_config_type(dagster_type):
     from .mapping import remap_python_type
+    from .runtime import RuntimeType
+
+    check.invariant(
+        not (isinstance(dagster_type, type) and issubclass(dagster_type, RuntimeType)),
+        'Cannot resolve a runtime type to a config type',
+    )
 
     dagster_type = remap_python_type(dagster_type)
 

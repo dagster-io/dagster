@@ -1,7 +1,6 @@
 from dagster import check
 
-from .mapping import register_python_type
-from .runtime import define_python_dagster_type
+from .runtime import define_python_dagster_type, register_python_type
 
 
 def _decorate_as_dagster_type(
