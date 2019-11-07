@@ -90,7 +90,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     class Meta:
         name = 'RunningSchedule'
 
-    schedule_id = dauphin.NonNull(dauphin.String)
+    id = dauphin.NonNull(dauphin.String)
     schedule_definition = dauphin.NonNull('ScheduleDefinition')
     python_path = dauphin.Field(dauphin.String)
     repository_path = dauphin.Field(dauphin.String)
@@ -104,7 +104,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         self._schedule = check.inst_param(schedule, 'schedule', Schedule)
 
         super(DauphinRunningSchedule, self).__init__(
-            schedule_id=schedule.schedule_id,
+            id=schedule.schedule_id,
             schedule_definition=graphene_info.schema.type_named('ScheduleDefinition')(
                 get_dagster_schedule_def(graphene_info, schedule.name)
             ),

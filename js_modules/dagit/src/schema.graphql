@@ -867,7 +867,7 @@ type ResourceRequirement {
 }
 
 type RunningSchedule {
-  scheduleId: String!
+  id: String!
   scheduleDefinition: ScheduleDefinition!
   pythonPath: String
   repositoryPath: String
