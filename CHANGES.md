@@ -1,32 +1,45 @@
 # Changelog
 
+## 0.6.4
+
+- Scheduler errors are now visible in dagit
+- Run termination button no longer persists past execution completion
+- Fixes run termination for multiprocess execution
+- Fixes run termination on Windows
+- `dagit` no longer prematurely returns control to terminal on Windows
+- `raise_on_error` is now available on the `execute_solid` test utility
+- `check_dagster_type` added as a utility to help test type checks on custom types
+- Improved support in the type system for `Set` and `Tuple` types
+- Allow composite solids with config mapping to expose an empty config schema
+- Simplified graphql API arguments to single-step re-execution to use `retryRunId`, `stepKeys` execution parameters instead of a `reexecutionConfig` input object
+
 ## 0.6.3
 
 - Adds a `type_check` parameter to `PythonObjectType`, `as_dagster_type`, and `@as_dagster_type` to enable custom
-  type checks in place of default `isinstance` checks. 
+  type checks in place of default `isinstance` checks.
   See documentation here: https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/types.html#custom-type-checks
 - Improved the type inference experience by automatically wrapping bare python types as dagster types.
 - Reworked our tutorial (now with more compelling/scary breakfast cereal examples) and public API documentation.
   See the new tutorial here: https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/index.html
 - New solids explorer in Dagit allows you to browse and search for solids used across the repository.
 
-    ![Solid Explorer](./screenshots/solid_explorer.png)
-    ![Solid Explorer](./screenshots/solid_explorer_input.png)
+  ![Solid Explorer](./screenshots/solid_explorer.png)
+  ![Solid Explorer](./screenshots/solid_explorer_input.png)
 
-- Enabled solid dependency selection in the Dagit search filter. 
-       
-    + To select a solid and its upstream dependencies, search `+{solid_name}`.
-    + To select a solid and its downstream dependents, search `{solid_name}+`.
-    + For both search `+{solid_name}+`.
+- Enabled solid dependency selection in the Dagit search filter.
+
+  - To select a solid and its upstream dependencies, search `+{solid_name}`.
+  - To select a solid and its downstream dependents, search `{solid_name}+`.
+  - For both search `+{solid_name}+`.
 
   For example. In the Airline demo, searching `+join_q2_data` will get the following:
-  
+
   ![Screenshot](./screenshots/airline_join_parent_filter.png)
 
 - Added a terminate button in Dagit to terminate an active run.
 
   ![Stop Button](./screenshots/stop_button.png)
- 
+
 - Added an `--output` flag to `dagster-graphql` CLI.
 - Added confirmation step for `dagster run wipe` and `dagster schedule wipe` commands (Thanks @shahvineet98).
 - Fixed a wrong title in the `dagster-snowflake` library README (Thanks @Step2Web).
