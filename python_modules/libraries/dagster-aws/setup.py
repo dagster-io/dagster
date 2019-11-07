@@ -39,10 +39,7 @@ def _do_setup(name='dagster-aws'):
         packages=find_packages(exclude=['test']),
         include_package_data=True,
         install_requires=['boto3==1.9.*', 'dagster', 'requests', 'terminaltables'],
-        tests_require=[
-            'moto==1.3.*',
-            'ecdsa<0.14',
-        ],  # pin ecdsa, which is a failing dep from moto (trouble resolving import from six)
+        tests_require=['moto==1.3.*'],
         extras_require={':python_version<"3"': ['backports.tempfile']},
         entry_points={'console_scripts': ['dagster-aws = dagster_aws.cli.cli:main']},
         zip_safe=False,
