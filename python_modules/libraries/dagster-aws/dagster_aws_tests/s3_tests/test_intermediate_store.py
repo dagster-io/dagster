@@ -116,10 +116,9 @@ def test_using_s3_for_subplan(s3_bucket):
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan,
+            execution_plan.build_subset_plan(step_keys),
             environment_dict=environment_dict,
             pipeline_run=pipeline_run,
-            step_keys_to_execute=step_keys,
             instance=instance,
         )
     )
@@ -134,10 +133,9 @@ def test_using_s3_for_subplan(s3_bucket):
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan,
+            execution_plan.build_subset_plan(['add_one.compute']),
             environment_dict=environment_dict,
             pipeline_run=pipeline_run,
-            step_keys_to_execute=['add_one.compute'],
             instance=instance,
         )
     )

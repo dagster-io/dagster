@@ -24,8 +24,11 @@ import click
 import packaging.version
 import slackclient
 import virtualenv
-from git_tag import get_git_tag, get_most_recent_git_tag, set_git_tag
-from pypirc import ConfigFileError, RCParser
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+
+from git_tag import get_git_tag, get_most_recent_git_tag, set_git_tag  # isort: skip
+from pypirc import ConfigFileError, RCParser  # isort: skip
 
 assert os.getenv('SLACK_RELEASE_BOT_TOKEN'), 'No SLACK_RELEASE_BOT_TOKEN env variable found.'
 slack_client = slackclient.SlackClient(os.environ['SLACK_RELEASE_BOT_TOKEN'])

@@ -449,10 +449,7 @@ def test_resource_init_failure():
     pipeline_run = PipelineRun.create_empty_run(pipeline.name, run_id)
 
     step_events = execute_plan(
-        execution_plan,
-        pipeline_run=pipeline_run,
-        step_keys_to_execute=[step.key for step in execution_plan.topological_steps()],
-        instance=DagsterInstance.ephemeral(),
+        execution_plan, pipeline_run=pipeline_run, instance=DagsterInstance.ephemeral()
     )
 
     assert step_events[0].event_type_value == 'PIPELINE_INIT_FAILURE'

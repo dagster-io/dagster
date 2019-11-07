@@ -5,6 +5,7 @@ from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.config import MultiprocessExecutorConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.memoization import copy_required_intermediates_for_execution
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.utils.timing import format_duration, time_execution_scope
@@ -26,13 +27,14 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         pipeline_def = self.executor_config.handle.build_pipeline_definition()
         environment_dict = dict(self.environment_dict, execution={'in_process': {}})
 
-        execution_plan = create_execution_plan(pipeline_def, environment_dict, self.pipeline_run)
+        execution_plan = create_execution_plan(
+            pipeline_def, environment_dict, self.pipeline_run
+        ).build_subset_plan([self.step_key])
 
         for step_event in execute_plan_iterator(
             execution_plan,
             self.pipeline_run,
             environment_dict=environment_dict,
-            step_keys_to_execute=[self.step_key],
             instance=DagsterInstance.from_ref(self.instance_ref),
         ):
             yield step_event
@@ -77,18 +79,17 @@ def bounded_parallel_executor(step_contexts, limit):
 
 class MultiprocessEngine(Engine):  # pylint: disable=no-init
     @staticmethod
-    def execute(pipeline_context, execution_plan, step_keys_to_execute=None):
+    def execute(pipeline_context, execution_plan):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
-        step_levels = execution_plan.topological_step_levels()
+        step_levels = execution_plan.execution_step_levels()
 
         intermediates_manager = pipeline_context.intermediates_manager
 
         limit = pipeline_context.executor_config.max_concurrent
 
-        step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
+        step_key_set = set(step.key for step in execution_plan.execution_steps())
 
         yield DagsterEvent.engine_event(
             pipeline_context,
@@ -104,12 +105,14 @@ class MultiprocessEngine(Engine):  # pylint: disable=no-init
         # garbage collection results that are no longer needed by any steps
         # https://github.com/dagster-io/dagster/issues/811
         with time_execution_scope() as timer_result:
+            for event in copy_required_intermediates_for_execution(
+                pipeline_context, execution_plan
+            ):
+                yield event
+
             for step_level in step_levels:
                 step_contexts_to_execute = []
                 for step in step_level:
-                    if step_key_set and step.key not in step_key_set:
-                        continue
-
                     step_context = pipeline_context.for_step(step)
 
                     if not intermediates_manager.all_inputs_covered(step_context, step):

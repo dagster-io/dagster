@@ -204,8 +204,17 @@ def evaluate_composite_config(context):
                 output_config_value[key] = evaluate_value_result.value
 
         elif field_def.is_optional:
-            if field_def.default_provided:
-                output_config_value[key] = field_def.default_value
+            # Try to see if this is a composite solid
+            speculative_composite_solid_result = _evaluate_composite_solid_config(
+                context.for_field(
+                    field_def, key, field_def.default_value if field_def.default_provided else {}
+                )
+            )
+            if speculative_composite_solid_result.value is not None:
+                output_config_value[key] = speculative_composite_solid_result.value
+            else:
+                if field_def.default_provided:
+                    output_config_value[key] = field_def.default_value
 
         else:
             check.invariant(not field_def.default_provided)
@@ -257,7 +266,7 @@ def _evaluate_composite_solid_config(context):
         mapped_config_value = solid_def.config_mapping.config_fn(
             ConfigMappingContext(run_config=context.run_config),
             # ensure we don't mutate the source environment dict
-            frozendict(evaluate_value_result.value.get('config')),
+            frozendict(evaluate_value_result.value.get('config') or {}),
         )
     except Exception:  # pylint: disable=W0703
         return EvaluateValueResult.for_error(

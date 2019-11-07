@@ -149,6 +149,11 @@ def tuple_solid(_, tuple_input: Tuple[String, Int, Float]) -> List:
     return [x for x in tuple_input]
 
 
+@solid
+def dict_return_solid(_) -> Dict[str, str]:
+    return {'foo': 'bar'}
+
+
 def test_identity():
     res = execute_solid(identity, input_values={'x': 'foo'})
     assert res.output_value() == 'foo'
@@ -296,6 +301,11 @@ def test_tuple_solid_configable_input_bad():
                 'solids': {'tuple_solid': {'inputs': {'tuple_input': ['foo', 1, 3.1]}}}
             },
         )
+
+
+def test_dict_return_solid():
+    res = execute_solid(dict_return_solid)
+    assert res.output_value() == {'foo': 'bar'}
 
 
 ######

@@ -117,11 +117,9 @@ START_PIPELINE_EXECUTION_QUERY = (
 
 mutation (
     $executionParams: ExecutionParams!
-    $reexecutionConfig: ReexecutionConfig
 ) {
     startPipelineExecution(
         executionParams: $executionParams
-        reexecutionConfig: $reexecutionConfig
     ) {
         ...startPipelineExecutionResultFragment
     }
@@ -163,11 +161,9 @@ START_PIPELINE_EXECUTION_SNAPSHOT_QUERY = (
     + '''
 mutation (
     $executionParams: ExecutionParams!
-    $reexecutionConfig: ReexecutionConfig
 ) {
     startPipelineExecution(
         executionParams: $executionParams
-        reexecutionConfig: $reexecutionConfig
     ) {
         __typename
         ... on StartPipelineExecutionSuccess {

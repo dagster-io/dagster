@@ -60,18 +60,15 @@ def test_using_file_system_for_subplan():
     instance = DagsterInstance.ephemeral()
     assert execution_plan.get_step_by_key('return_one.compute')
 
-    step_keys = ['return_one.compute']
-
     run_id = str(uuid.uuid4())
     pipeline_run = PipelineRun.create_empty_run(pipeline.name, run_id)
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan,
+            execution_plan.build_subset_plan(['return_one.compute']),
             instance,
             environment_dict=environment_dict,
             pipeline_run=pipeline_run,
-            step_keys_to_execute=step_keys,
         )
     )
 
@@ -82,11 +79,10 @@ def test_using_file_system_for_subplan():
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan,
+            execution_plan.build_subset_plan(['add_one.compute']),
             instance,
             environment_dict=environment_dict,
             pipeline_run=pipeline_run,
-            step_keys_to_execute=['add_one.compute'],
         )
     )
 
@@ -107,18 +103,15 @@ def test_using_file_system_for_subplan_multiprocessing():
 
     assert execution_plan.get_step_by_key('return_one.compute')
 
-    step_keys = ['return_one.compute']
-
     run_id = str(uuid.uuid4())
     run = instance.create_empty_run(run_id, execution_plan.pipeline_def.name)
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan,
+            execution_plan.build_subset_plan(['return_one.compute']),
             instance,
             environment_dict=dict(environment_dict, execution={'multiprocess': {}}),
             pipeline_run=run,
-            step_keys_to_execute=step_keys,
         )
     )
 
@@ -130,11 +123,10 @@ def test_using_file_system_for_subplan_multiprocessing():
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan,
+            execution_plan.build_subset_plan(['add_one.compute']),
             instance,
             environment_dict=dict(environment_dict, execution={'multiprocess': {}}),
             pipeline_run=run,
-            step_keys_to_execute=['add_one.compute'],
         )
     )
 
@@ -151,7 +143,7 @@ def test_execute_step_wrong_step_key():
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
-            execution_plan, instance, pipeline_run=pipeline_run, step_keys_to_execute=['nope']
+            execution_plan.build_subset_plan(['nope']), instance, pipeline_run=pipeline_run
         )
 
     assert exc_info.value.step_keys == ['nope']
@@ -160,10 +152,9 @@ def test_execute_step_wrong_step_key():
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
-            execution_plan,
+            execution_plan.build_subset_plan(['nope', 'nuh_uh']),
             instance,
             pipeline_run=pipeline_run,
-            step_keys_to_execute=['nope', 'nuh_uh'],
         )
 
     assert exc_info.value.step_keys == ['nope', 'nuh_uh']
@@ -181,11 +172,10 @@ def test_using_file_system_for_subplan_missing_input():
 
     with pytest.raises(DagsterStepOutputNotFoundError):
         execute_plan(
-            execution_plan,
+            execution_plan.build_subset_plan(['add_one.compute']),
             DagsterInstance.ephemeral(),
             environment_dict=environment_dict,
             pipeline_run=pipeline_run,
-            step_keys_to_execute=['add_one.compute'],
         )
 
 
@@ -200,9 +190,8 @@ def test_using_file_system_for_subplan_invalid_step():
 
     with pytest.raises(DagsterExecutionStepNotFoundError):
         execute_plan(
-            execution_plan,
+            execution_plan.build_subset_plan(['nope']),
             DagsterInstance.ephemeral(),
             environment_dict=environment_dict,
             pipeline_run=pipeline_run,
-            step_keys_to_execute=['nope'],
         )

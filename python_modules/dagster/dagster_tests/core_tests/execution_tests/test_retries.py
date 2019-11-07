@@ -1,7 +1,6 @@
 # pylint: disable=no-value-for-parameter
 
 from dagster import Output, OutputDefinition, RunConfig, execute_pipeline, pipeline, solid
-from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.instance import DagsterInstance
 
 
@@ -49,7 +48,7 @@ def test_retries():
     second_result = execute_pipeline(
         pipe,
         environment_dict=env,
-        run_config=RunConfig(reexecution_config=ReexecutionConfig.from_previous_run(result)),
+        run_config=RunConfig(previous_run_id=result.run_id),
         instance=instance,
     )
 

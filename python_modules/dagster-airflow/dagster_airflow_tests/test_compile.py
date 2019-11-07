@@ -12,9 +12,7 @@ def test_compile():
         composition, {'solids': {'add_four': {'inputs': {'num': {'value': 1}}}}}, run_config=None
     )
 
-    plan = ExecutionPlan.build(
-        composition, environment_config, composition.get_mode_definition(run_config.mode)
-    )
+    plan = ExecutionPlan.build(composition, environment_config, run_config)
 
     res = coalesce_execution_steps(plan)
 

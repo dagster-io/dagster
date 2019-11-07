@@ -222,6 +222,7 @@ input ExecutionParams {
   executionMetadata: ExecutionMetadata
   stepKeys: [String!]
   preset: String
+  retryRunId: String
 }
 
 type ExecutionPlan {
@@ -505,7 +506,7 @@ type ModeNotFoundError implements Error {
 }
 
 type Mutation {
-  startPipelineExecution(executionParams: ExecutionParams!, reexecutionConfig: ReexecutionConfig): StartPipelineExecutionResult!
+  startPipelineExecution(executionParams: ExecutionParams!): StartPipelineExecutionResult!
   startScheduledExecution(scheduleName: String!): StartScheduledExecutionResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
   startSchedule(scheduleName: String!): RunningScheduleResult!
@@ -829,11 +830,6 @@ type Query {
   instance: Instance!
 }
 
-input ReexecutionConfig {
-  previousRunId: String!
-  stepOutputHandles: [StepOutputHandle!]!
-}
-
 type RegularConfigType implements ConfigType {
   key: String!
   name: String
@@ -1023,11 +1019,6 @@ type StepMaterializationEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   step: ExecutionStep
   materialization: Materialization!
-}
-
-input StepOutputHandle {
-  stepKey: String!
-  outputName: String!
 }
 
 type Subscription {

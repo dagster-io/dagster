@@ -551,6 +551,17 @@ class DagsterEvent(
                 object_store_name=object_store_name,
                 serialization_strategy_modifier=serialization_strategy_modifier,
             )
+        elif (
+            ObjectStoreOperationType(object_store_operation_result.op)
+            == ObjectStoreOperationType.CP_OBJECT
+        ):
+            message = (
+                'Copied intermediate object for input {value_name} from {key} to {dest_key}'
+            ).format(
+                value_name=value_name,
+                key=object_store_operation_result.key,
+                dest_key=object_store_operation_result.dest_key,
+            )
         else:
             message = ''
 

@@ -39,9 +39,16 @@ class IRunConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     def mode(self):
         pass
 
+    @abstractproperty
+    def previous_run_id(self):
+        pass
+
 
 class RunConfig(
-    namedtuple('_RunConfig', 'run_id tags reexecution_config step_keys_to_execute mode'), IRunConfig
+    namedtuple(
+        '_RunConfig', 'run_id tags reexecution_config step_keys_to_execute mode previous_run_id'
+    ),
+    IRunConfig,
 ):
     '''Configuration for pipeline execution.
 
@@ -57,7 +64,13 @@ class RunConfig(
     '''
 
     def __new__(
-        cls, run_id=None, tags=None, reexecution_config=None, step_keys_to_execute=None, mode=None
+        cls,
+        run_id=None,
+        tags=None,
+        reexecution_config=None,
+        step_keys_to_execute=None,
+        mode=None,
+        previous_run_id=None,
     ):
 
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
@@ -78,6 +91,7 @@ class RunConfig(
             ),
             step_keys_to_execute=step_keys_to_execute,
             mode=check.opt_str_param(mode, 'mode'),
+            previous_run_id=check.opt_str_param(previous_run_id, 'previous_run_id'),
         )
 
     def with_tags(self, **new_tags):
@@ -174,28 +188,7 @@ class MultiprocessExecutorConfig(ExecutorConfig):
 
 @whitelist_for_serdes
 class ReexecutionConfig(namedtuple('_ReexecutionConfig', 'previous_run_id step_output_handles')):
-    @staticmethod
-    def from_previous_run(previous_run_result):
-        from .results import PipelineExecutionResult
-        from .plan.objects import StepOutputHandle
-        from dagster.core.events import DagsterEventType, ObjectStoreOperationType
-
-        check.opt_inst_param(previous_run_result, 'previous_run_result', PipelineExecutionResult)
-
-        step_output_handles = []
-        for step_key, events in previous_run_result.events_by_step_key.items():
-            if not events or not any([e.is_step_success for e in events]):
-                continue
-
-            step_output_handles += [
-                StepOutputHandle(step_key, event.event_specific_data.value_name)
-                for event in events
-                if (
-                    event.event_type_value == DagsterEventType.OBJECT_STORE_OPERATION.value
-                    and event.event_specific_data.op == ObjectStoreOperationType.SET_OBJECT.value
-                )
-            ]
-        return ReexecutionConfig(previous_run_result.run_id, step_output_handles)
+    pass
 
 
 def check_persistent_storage_requirement(system_storage_def):

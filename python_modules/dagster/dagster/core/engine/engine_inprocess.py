@@ -19,6 +19,7 @@ from dagster.core.execution.context.system import (
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
+from dagster.core.execution.memoization import copy_required_intermediates_for_execution
 from dagster.core.execution.plan.objects import (
     StepFailureData,
     StepInputData,
@@ -38,13 +39,11 @@ from .engine_base import Engine
 
 class InProcessEngine(Engine):  # pylint: disable=no-init
     @staticmethod
-    def execute(pipeline_context, execution_plan, step_keys_to_execute=None):
+    def execute(pipeline_context, execution_plan):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
-        step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
-
+        step_key_set = set(step.key for step in execution_plan.execution_steps())
         yield DagsterEvent.engine_event(
             pipeline_context,
             'Executing steps in process (pid: {pid})'.format(pid=os.getpid()),
@@ -60,18 +59,20 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
                 ),
             )
 
+            for event in copy_required_intermediates_for_execution(
+                pipeline_context, execution_plan
+            ):
+                yield event
+
             failed_or_skipped_steps = set()
 
-            step_levels = execution_plan.topological_step_levels()
+            step_levels = execution_plan.execution_step_levels()
 
             # It would be good to implement a reference tracking algorithm here to
             # garbage collect results that are no longer needed by any steps
             # https://github.com/dagster-io/dagster/issues/811
             for step_level in step_levels:
                 for step in step_level:
-                    if step_key_set and step.key not in step_key_set:
-                        continue
-
                     step_context = pipeline_context.for_step(step)
 
                     with mirror_step_io(step_context):

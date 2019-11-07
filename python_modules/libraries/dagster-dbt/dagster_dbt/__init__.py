@@ -68,7 +68,7 @@ def try_parse_run(text):
             return mat
 
 
-def create_dbt_solid(project_dir, name=None, profiles_dir=None, default_dbt_executable='dbt'):
+def create_dbt_run_solid(project_dir, name=None, profiles_dir=None, dbt_executable='dbt'):
     """Factory for solids that invoke dbt.
 
     Args:
@@ -82,26 +82,25 @@ def create_dbt_solid(project_dir, name=None, profiles_dir=None, default_dbt_exec
             passed, there will be a name collision. Default: None.
         profiles_dir (Optional[str]): Path to the profiles directory (will be passed to dbt as the
             --profiles-dir argument, if present). Default: None.
-        default_dbt_executable (Optional[str]): The dbt executable to invoke. Set this value if,
+        dbt_executable (Optional[str]): The dbt executable to invoke. Set this value if,
             e.g., you would like to invoke dbt within a virtualenv. You may override this value for
             individual invocations of the dbt solid in its config. Default: 'dbt'.
     """
     check.str_param(project_dir, 'project_dir')
     check.opt_str_param(name, 'name')
     check.opt_str_param(profiles_dir, 'profiles_dir')
+    check.str_param(dbt_executable, 'dbt_executable')
 
     @solid(
         name=name if name else os.path.basename(project_dir),
         config={
             'dbt_executable': Field(
                 Path,
-                default_value=default_dbt_executable,
+                default_value=dbt_executable,
                 is_optional=True,
                 description=(
                     'Path to the dbt executable to invoke, e.g., \'/path/to/your/venv/bin/dbt\'. '
-                    'Default: \'{default_dbt_executable}\''.format(
-                        default_dbt_executable=default_dbt_executable
-                    )
+                    'Default: \'{dbt_executable}\''.format(dbt_executable=dbt_executable)
                 ),
             )
         },
@@ -196,7 +195,7 @@ def try_parse_test(text):
             return expect
 
 
-def create_dbt_test_solid(project_dir, name=None, profiles_dir=None):
+def create_dbt_test_solid(project_dir, name=None, profiles_dir=None, dbt_executable='dbt'):
     check.str_param(project_dir, 'project_dir')
     check.opt_str_param(name, 'name')
     check.opt_str_param(profiles_dir, 'profiles_dir')
@@ -205,9 +204,30 @@ def create_dbt_test_solid(project_dir, name=None, profiles_dir=None):
         name=name if name else os.path.basename(project_dir) + '_test',
         input_defs=[InputDefinition('test_start', Nothing)],
         output_defs=[OutputDefinition(dagster_type=Nothing, name='test_complete')],
+        config={
+            'dbt_executable': Field(
+                Path,
+                default_value=dbt_executable,
+                is_optional=True,
+                description=(
+                    'Path to the dbt executable to invoke, e.g., \'/path/to/your/venv/bin/dbt\'. '
+                    'Default: \'{dbt_executable}\''.format(dbt_executable=dbt_executable)
+                ),
+            )
+        },
     )
-    def dbt_test_solid(_):
-        cmd = 'dbt test --project-dir {}'.format(project_dir)
+    def dbt_test_solid(context):
+        executable_path = context.solid_config['dbt_executable']
+
+        if not distutils.spawn.find_executable(executable_path):
+            raise Failure(
+                'Could not find dbt executable at "{executable_path}". Please ensure that '
+                'dbt is installed and on the PATH.'.format(executable_path=executable_path)
+            )
+
+        cmd = '{executable_path} test --project-dir {project_dir}'.format(
+            executable_path=executable_path, project_dir=project_dir
+        )
         if profiles_dir:
             cmd += ' --profiles-dir {}'.format(profiles_dir)
         args = shlex.split(cmd)

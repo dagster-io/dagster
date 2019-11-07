@@ -64,7 +64,7 @@ def define_demo_repo():
     from dagster_examples.pyspark_pagerank.pyspark_pagerank_pipeline import pyspark_pagerank
 
     # from dagster_pandas.examples import papermill_pandas_hello_world_pipeline
-    # from dagster_examples.jaffle_dbt.jaffle import jaffle_pipeline
+    from dagster_examples.jaffle_dbt.jaffle import jaffle_pipeline
 
     return RepositoryDefinition(
         name='hello_cereal_repository',
@@ -81,7 +81,7 @@ def define_demo_repo():
             event_ingest_pipeline,
             pyspark_pagerank,
             # papermill_pandas_hello_world_pipeline,
-            # jaffle_pipeline,
+            jaffle_pipeline,
             stdout_spew_pipeline,
         ],
     )

@@ -17,6 +17,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.seven.abc import Mapping
 
+from .subprocess_pdb import ForkedPdb
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
 if sys.version_info > (3,):
@@ -290,3 +291,6 @@ def touch_file(path):
     ensure_dir(os.path.dirname(path))
     with open(path, 'a'):
         os.utime(path, None)
+
+
+pdb = ForkedPdb()

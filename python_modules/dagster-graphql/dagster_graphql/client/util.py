@@ -9,7 +9,6 @@ from dagster.core.events import (
     StepExpectationResultData,
     StepMaterializationData,
 )
-from dagster.core.execution.config import ReexecutionConfig
 from dagster.core.execution.plan.objects import (
     StepFailureData,
     StepInputData,
@@ -183,9 +182,8 @@ def dagster_event_from_dict(event_dict, pipeline_name):
     )
 
 
-def pipeline_run_from_execution_params(execution_params, reexecution_config=None):
+def pipeline_run_from_execution_params(execution_params):
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
-    check.opt_inst_param(reexecution_config, 'reexecution_config', ReexecutionConfig)
 
     return PipelineRun(
         pipeline_name=execution_params.selector.name,
@@ -195,10 +193,10 @@ def pipeline_run_from_execution_params(execution_params, reexecution_config=None
         selector=execution_params.selector,
         environment_dict=execution_params.environment_dict,
         mode=execution_params.mode,
-        reexecution_config=reexecution_config,
         step_keys_to_execute=execution_params.step_keys,
         tags=execution_params.execution_metadata.tags,
         status=PipelineRunStatus.NOT_STARTED,
+        previous_run_id=execution_params.previous_run_id,
     )
 
 
@@ -211,4 +209,5 @@ def execution_params_from_pipeline_run(run):
         environment_dict=run.environment_dict,
         selector=run.selector,
         execution_metadata=ExecutionMetadata(run_id=run.run_id, tags=run.tags),
+        previous_run_id=run.previous_run_id,
     )
