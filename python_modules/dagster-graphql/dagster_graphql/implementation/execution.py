@@ -16,6 +16,7 @@ from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.config import EXECUTION_TIME_KEY
+from dagster.core.execution.memoization import get_retry_steps_from_execution_plan
 from dagster.core.serdes import serialize_dagster_namedtuple
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -156,15 +157,17 @@ def start_pipeline_execution(graphene_info, execution_params):
         mode=execution_params.mode,
     )
 
+    pipeline = dauphin_pipeline.get_dagster_pipeline()
     execution_plan = create_execution_plan(
-        dauphin_pipeline.get_dagster_pipeline(),
+        pipeline,
         execution_params.environment_dict,
-        run_config=RunConfig(mode=execution_params.mode),
+        run_config=RunConfig(
+            mode=execution_params.mode, previous_run_id=execution_params.previous_run_id
+        ),
     )
 
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
-
-    run = instance.create_run(pipeline_run_from_execution_params(execution_params))
+    run = instance.create_run(_create_pipeline_run(instance, pipeline, execution_params))
 
     graphene_info.context.execution_manager.execute_pipeline(
         graphene_info.context.get_handle(),
@@ -176,6 +179,20 @@ def start_pipeline_execution(graphene_info, execution_params):
     return graphene_info.schema.type_named('StartPipelineExecutionSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(run)
     )
+
+
+def _create_pipeline_run(instance, pipeline, execution_params):
+    step_keys_to_execute = execution_params.step_keys
+    if not execution_params.step_keys and execution_params.previous_run_id:
+        execution_plan = create_execution_plan(
+            pipeline,
+            execution_params.environment_dict,
+            run_config=RunConfig(
+                mode=execution_params.mode, previous_run_id=execution_params.previous_run_id
+            ),
+        )
+        step_keys_to_execute = get_retry_steps_from_execution_plan(instance, execution_plan)
+    return pipeline_run_from_execution_params(execution_params, step_keys_to_execute)
 
 
 def _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan):

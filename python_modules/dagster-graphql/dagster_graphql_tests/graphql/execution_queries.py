@@ -18,7 +18,10 @@ fragment metadataEntryFragment on EventMetadataEntry {
 
 fragment stepEventFragment on StepEvent {
     ... on ExecutionStepStartEvent {
-        step { kind }
+        step { key kind }
+    }
+    ... on ExecutionStepSuccessEvent {
+        step { key }
     }
     ... on ExecutionStepFailureEvent {
         step { key kind }
@@ -32,6 +35,9 @@ fragment stepEventFragment on StepEvent {
                 ...metadataEntryFragment
             }
         }
+    }
+    ... on ExecutionStepSkippedEvent {
+        step { key }
     }
     ... on ExecutionStepInputEvent {
         step { key kind }
@@ -106,6 +112,9 @@ START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
         }
         ... on PipelineNotFoundError {
             pipelineName
+        }
+        ... on PythonError {
+            message
         }
     }
 '''

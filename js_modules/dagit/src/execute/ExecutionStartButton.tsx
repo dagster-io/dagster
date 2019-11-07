@@ -65,7 +65,9 @@ export default class ExecutionStartButton extends React.Component<
   };
 
   render() {
-    const style = this.props.small ? { height: 24, width: 120 } : {};
+    const style = this.props.small
+      ? { height: 24, minWidth: 120, paddingLeft: 15, paddingRight: 15 }
+      : {};
     const iconSize = this.props.small ? 12 : 17;
 
     return (
@@ -129,7 +131,7 @@ export default class ExecutionStartButton extends React.Component<
 }
 
 const Wrapper = styled.div<{ state: ExecutionButtonStatus }>`
-  width: 150px;
+  min-width: 150px;
   height: 30px;
   border-radius: 3px;
   margin-left: 6px;

@@ -183,6 +183,7 @@ def define_repository():
             csv_hello_world_df_input,
             csv_hello_world_two,
             csv_hello_world_with_expectations,
+            eventually_successful,
             infinite_loop_pipeline,
             materialization_pipeline,
             more_complicated_config,
@@ -590,3 +591,35 @@ def spew_pipeline():
         print('HELLO WORLD')
 
     spew()
+
+
+def retry_config(count):
+    return {
+        'resources': {'retry_count': {'config': {'count': count}}},
+        'storage': {'filesystem': {}},
+    }
+
+
+@resource(config={'count': Field(Int, is_optional=True, default_value=0)})
+def retry_config_resource(context):
+    return context.resource_config['count']
+
+
+@pipeline(mode_defs=[ModeDefinition(resource_defs={'retry_count': retry_config_resource})])
+def eventually_successful():
+    @solid(output_defs=[OutputDefinition(Int)])
+    def spawn(_):
+        return 0
+
+    @solid(input_defs=[InputDefinition('depth', Int)], output_defs=[OutputDefinition(Int)])
+    def fail(context, depth):
+        if context.resources.retry_count <= depth:
+            raise Exception('fail')
+
+        return depth + 1
+
+    @solid
+    def reset(_, depth):
+        return depth
+
+    reset(fail(fail(fail(spawn()))))

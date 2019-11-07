@@ -24,6 +24,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         '__typename': 'ExecutionStepStartEvent',
                         'level': 'DEBUG',
                         'step': {
+                            'key': 'sum_solid.compute',
                             'kind': 'COMPUTE'
                         }
                     },
@@ -76,12 +77,16 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepSuccessEvent',
-                        'level': 'DEBUG'
+                        'level': 'DEBUG',
+                        'step': {
+                            'key': 'sum_solid.compute'
+                        }
                     },
                     {
                         '__typename': 'ExecutionStepStartEvent',
                         'level': 'DEBUG',
                         'step': {
+                            'key': 'sum_sq_solid.compute',
                             'kind': 'COMPUTE'
                         }
                     },
@@ -151,7 +156,10 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepSuccessEvent',
-                        'level': 'DEBUG'
+                        'level': 'DEBUG',
+                        'step': {
+                            'key': 'sum_sq_solid.compute'
+                        }
                     },
                     {
                         '__typename': 'EngineEvent',
@@ -207,6 +215,7 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                         '__typename': 'ExecutionStepStartEvent',
                         'level': 'DEBUG',
                         'step': {
+                            'key': 'sum_sq_solid.compute',
                             'kind': 'COMPUTE'
                         }
                     },
@@ -276,7 +285,10 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                     },
                     {
                         '__typename': 'ExecutionStepSuccessEvent',
-                        'level': 'DEBUG'
+                        'level': 'DEBUG',
+                        'step': {
+                            'key': 'sum_sq_solid.compute'
+                        }
                     },
                     {
                         '__typename': 'EngineEvent',
