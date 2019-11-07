@@ -14,7 +14,7 @@ def load_cereals(_):
 @solid
 def sort_by_calories(_, cereals):
     sorted_cereals = list(
-        sorted(cereals, key=lambda cereal: cereal['calories'])
+        sorted(cereals, key=lambda cereal: int(cereal['calories']))
     )
     least_caloric = sorted_cereals[0]['name']
     most_caloric = sorted_cereals[-1]['name']
@@ -24,7 +24,7 @@ def sort_by_calories(_, cereals):
 @solid
 def sort_by_protein(_, cereals):
     sorted_cereals = list(
-        sorted(cereals, key=lambda cereal: cereal['protein'])
+        sorted(cereals, key=lambda cereal: int(cereal['protein']))
     )
     least_protein = sorted_cereals[0]['name']
     most_protein = sorted_cereals[-1]['name']

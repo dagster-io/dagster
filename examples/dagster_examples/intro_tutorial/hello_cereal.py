@@ -15,6 +15,8 @@ def hello_cereal(context):
         'Found {n_cereals} cereals'.format(n_cereals=len(cereals))
     )
 
+    return cereals
+
 
 @pipeline
 def hello_cereal_pipeline():

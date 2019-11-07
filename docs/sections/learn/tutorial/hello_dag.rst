@@ -1,3 +1,5 @@
+.. py:currentmodule:: dagster
+
 Connecting solids together
 --------------------------
 
@@ -21,10 +23,11 @@ disk, and in turn will sort the list of cereals by their calorie content per ser
    :caption: serial_pipeline.py
 
 You'll see that we've modified our existing ``load_cereals`` solid to return an output, in this
-case the list of dicts into which ``csv.DictReader`` reads the cereals dataset.
+case the list of dicts into which :py:class:``csv.DictReader <python:csv.DictReader>`` reads the
+cereals dataset.
 
 We've defined our new solid, ``sort_by_calories``, to take a user-defined input, ``cereals``, in
-addition to the system-provided :py:class:`context <dagster.SystemComputeExecutionContext>` object.
+addition to the system-provided :py:class:`context <SystemComputeExecutionContext>` object.
 
 We can use inputs and outputs to connect solids to each other. Here we tell Dagster that
 although ``load_cereals`` doesn't depend on the output of any other solid, ``sort_by_calories``
@@ -75,3 +78,11 @@ outputs -- but both would still have to execute after ``load_cereals`` (because 
 output) and before ``display_results`` (because ``display_results`` depends on both of
 their outputs).
 
+We'll write a simple test for this pipeline showing how we can assert that all four of its solids
+executed successfully.
+
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/test_complex_pipeline.py
+   :linenos:
+   :lines: 6-11
+   :lineno-start: 6
+   :caption: test_complex_pipeline.py

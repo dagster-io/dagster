@@ -1,3 +1,5 @@
+.. py:currentmodule:: dagster
+
 Hello, cereal!
 ---------------
 In this tutorial, we'll explore the feature set of Dagster with small examples that are intended to
@@ -27,18 +29,18 @@ Let's write our first Dagster solid and save it as ``hello_cereal.py``.
 or, if you've cloned the git repo, at ``dagster/examples/dagster_examples/intro_tutorial/``.)
 
 A solid is a unit of computation in a data pipeline. Typically, you'll define solids by
-annotating ordinary Python functions with the :py:func:`@solid <dagster.solid>` decorator.
+annotating ordinary Python functions with the :py:func:`@solid <solid>` decorator.
 
 The logic in our first solid is very straightforward: it just reads in the csv from a hardcoded path
 and logs the number of rows it finds.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_cereal.py
    :linenos:
-   :lines: 1-16
+   :lines: 1-18
    :caption: hello_cereal.py
 
 In this simplest case, our solid takes no inputs except for the
-:py:class:`context <dagster.SystemComputeExecutionContext>` in which it executes
+:py:class:`context <SystemComputeExecutionContext>` in which it executes
 (provided by the Dagster framework as the first argument to every solid), and also returns no
 outputs. Don't worry, we'll soon encounter solids that are much more dynamic.
 
@@ -50,17 +52,17 @@ To execute our solid, we'll embed it in an equally simple pipeline.
 A pipeline is a set of solids arranged into a DAG (or
 `directed acyclic graph <https://en.wikipedia.org/wiki/Directed_acyclic_graph>`_) of computation.
 You'll typically define pipelines by annotating ordinary Python functions with the
-:py:func:`@pipeline <dagster.pipeline>` decorator.
+:py:func:`@pipeline <pipeline>` decorator.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_cereal.py
    :linenos:
-   :lineno-start: 19
-   :lines: 19-21
+   :lineno-start: 21
+   :lines: 21-23
    :caption: hello_cereal.py
 
 
 Here you'll see that we call ``hello_cereal()``. This call doesn't actually execute the solid
--- within the body of functions decorated with :py:func:`@pipeline <dagster.pipeline>`, we use
+-- within the body of functions decorated with :py:func:`@pipeline <pipeline>`, we use
 function calls to indicate the dependency structure of the solids making up the pipeline. Here,
 we indicate that the execution of ``hello_cereal`` doesn't depend on any other solids by calling
 it with no arguments.
@@ -75,8 +77,8 @@ different mechanisms:
 2. From a rich graphical interface, using the ``dagit`` GUI tool.
 3. From arbitrary Python scripts, using dagster's Python API.
 
-Using the dagster CLI
-^^^^^^^^^^^^^^^^^^^^^
+Using the dagster CLI to execute a pipeline
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 From the directory in which you've saved the pipeline file, just run:
 
@@ -97,8 +99,8 @@ call to the logging machinery, which will look like:
 
 Success!
 
-Using dagit
-^^^^^^^^^^^
+Using dagit to execute a pipeline
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To visualize your pipeline (which only has one node) in dagit, from the directory in which you've
 saved the pipeline file, just run run:
@@ -142,16 +144,16 @@ the left-hand pane.
 
 In this view, you can filter and search through the logs corresponding to your pipeline run.
 
-Using the Python API
-^^^^^^^^^^^^^^^^^^^^
+Using the Python API to execute a pipeline
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you'd rather execute your pipelines as a script, you can do that without using the dagster CLI
 at all. Just add a few lines to ``hello_cereal.py``:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_cereal.py
    :linenos:
-   :lineno-start: 24
-   :lines: 24-26
+   :lineno-start: 26
+   :lines: 26-28
    :caption: hello_cereal.py
 
 Now you can just run:
@@ -160,5 +162,36 @@ Now you can just run:
 
     $ python hello_cereal.py
 
-The :py:func:`execute_pipeline <dagster.execute_pipeline>` function called here is the core
-Python API for executing Dagster pipelines from code.
+The :py:func:`execute_pipeline` function called here is the core Python API for executing Dagster
+pipelines from code.
+
+
+Testing solids and pipelines
+----------------------------
+
+Our first solid and pipeline wouldn't be complete without some tests to ensure they're working as
+expected. We'll use :py:func:`execute_pipeline` to test our pipeline, as well as
+:py:func:`execute_solid` to test our solid in isolation.
+
+These functions synchronously execute a pipeline or solid and return results objects (the
+:py:class:`SolidExecutionResult` and :py:class:`PipelineExecutionResult`) whose methods let us
+investigate, in detail, the success or failure of execution, the outputs produced by solids, and
+(as we'll see later) other events associated with execution.
+
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/test_hello_cereal.py
+   :linenos:
+   :caption: test_hello_cereal.py
+
+Now you can use pytest, or your test runner of choice, to run unit tests as you develop your
+data applications.
+
+.. code-block:: console
+
+    $ pytest
+
+Obviously, in production we'll often execute pipelines in a parallel, streaming way that doesn't
+admit this kind of API, which is intended to enable local tests like this.
+
+Dagster is written to make testing easy in a domain where it has historically been very difficult.
+Throughout the rest of this tutorial, we'll explore the writing of unit tests for each piece of
+the framework as we learn about it.

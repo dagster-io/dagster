@@ -45,6 +45,9 @@ Pipeline and solid results
 
 Pipeline configuration
 ----------------------
+
+.. _config_schema:
+
 Environment Dict Schema
 ^^^^^^^^^^^^^^^^^^^^^^^
   The ``environment_dict`` used by :py:func:`execute_pipeline` and
