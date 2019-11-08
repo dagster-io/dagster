@@ -166,6 +166,31 @@ class _SchedulerHandle(object):
 
 
 def schedules(scheduler):
+    '''
+    Create a scheduler with a ``Scheduler`` implementation and set of ``ScheduleDefinitions``.
+
+    Decorate a function that returns a list of ``ScheduleDefinitions``. The
+    decorator has an argument that takes a ``Scheduler`` implementation, such as
+    ``SystemCronScheduler``.
+
+    Args:
+        scheduler (Scheduler): The ``Scheduler`` implementation to use
+
+    Examples:
+
+    .. code-block:: python
+
+        from dagster_cron import SystemCronScheduler
+
+        @schedules(scheduler=SystemCronScheduler)
+        def define_scheduler():
+            hello_world_schedule = ScheduleDefinition(
+                name='hello_world_schedule',
+                cron_string='* * * * *'
+            )
+
+            return [hello_world_schedule]
+    '''
     return _SchedulerHandle(scheduler)
 
 
@@ -177,14 +202,14 @@ def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
     :py:class:`context <SystemComputeExecutionContext>`.
 
     Lambda solids take any number of inputs and produce a single output.
-    
+
     Inputs can be defined using :class:`InputDefinition` and passed to the ``input_defs`` argument
     of this decorator, or inferred from the type signature of the decorated function.
 
     The single output can be defined using :class:`OutputDefinition` and passed as the
     ``output_def`` argument of this decorator, or its type can be inferred from the type signature
     of the decorated function.
-    
+
     The body of the decorated function should return a single value, which will be yielded as the
     solid's output.
 
@@ -243,7 +268,7 @@ def solid(
     This shortcut simplifies the core :class:`SolidDefinition` API by exploding arguments into
     kwargs of the decorated compute function and omitting additional parameters when they are not
     needed.
-    
+
     Input and output definitions will be inferred from the type signature of the decorated function
     if not explicitly provided.
 
@@ -691,7 +716,7 @@ def composite_solid(
         config_fn (Callable[[ConfigMappingContext, dict], dict]): By specifying a config mapping
             function, you can override the configuration for the child solids contained within this
             composite solid.
-            
+
             Config mappings require the configuration field to be specified as ``config``, which
             will be exposed as the configuration field for the composite solid, as well as a
             configuration mapping function, ``config_fn``, which maps the config provided to the

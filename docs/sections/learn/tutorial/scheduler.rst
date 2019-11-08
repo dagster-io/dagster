@@ -6,7 +6,7 @@ Suppose that we need to run our simple cereal pipeline every morning before brea
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/scheduler.py
    :linenos:
-   :lines: 1-26
+   :lines: 1-36
    :caption: scheduler.py
 
 As before, we've defined some solids, a pipeline, and a repository.
@@ -26,8 +26,8 @@ This is pluggable (and you can write your own), but for now the only implemented
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/scheduler.py
    :linenos:
-   :lines: 28-38
-   :lineno-start: 28
+   :lines: 38-48
+   :lineno-start: 38
    :caption: scheduler.py
 
 To complete the picture, we'll need to extend the ``repository.yaml`` structure we've met before
