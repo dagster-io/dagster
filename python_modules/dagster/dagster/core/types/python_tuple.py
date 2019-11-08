@@ -60,20 +60,30 @@ def create_typed_tuple(*dagster_type_args):
             )
 
         def type_check(self, value):
-            from dagster.core.definitions.events import Failure
+            from dagster.core.definitions.events import TypeCheck
 
             if not isinstance(value, tuple):
-                raise Failure('Value {value} should be a python tuple'.format(value=value))
+                return TypeCheck(
+                    success=False,
+                    description='Value should be a tuple, got a {value_type}'.format(
+                        value_type=type(value)
+                    ),
+                )
 
             if len(value) != len(self.runtime_types):
-                raise Failure(
-                    'Tuple with key {key} requires {n} entries. Received tuple with {m} values'.format(
-                        key=self.key, n=len(self.runtime_types), m=len(value)
-                    )
+                return TypeCheck(
+                    success=False,
+                    description=(
+                        'Tuple with key {key} requires {n} entries, received {m} ' 'values'
+                    ).format(key=self.key, n=len(self.runtime_types), m=len(value)),
                 )
 
             for item, runtime_type in zip(value, self.runtime_types):
-                runtime_type.type_check(item)
+                item_check = runtime_type.type_check(item)
+                if not item_check.success:
+                    return item_check
+
+            return TypeCheck(success=True)
 
         @property
         def display_name(self):

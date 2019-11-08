@@ -1,6 +1,4 @@
-import pytest
-
-from dagster import Failure, InputDefinition, Int, List, Optional, PipelineDefinition, lambda_solid
+from dagster import InputDefinition, Int, List, Optional, PipelineDefinition, lambda_solid
 from dagster.core.types.runtime import ALL_RUNTIME_BUILTINS, resolve_to_runtime_type
 
 
@@ -64,10 +62,10 @@ def test_python_mapping():
 
     runtime = resolve_to_runtime_type(float)
     runtime.type_check(1.0)
-    with pytest.raises(Failure):
-        runtime.type_check(1)
+    res = runtime.type_check(1)
+    assert not res.success
 
     runtime = resolve_to_runtime_type(bool)
     runtime.type_check(True)
-    with pytest.raises(Failure):
-        runtime.type_check(1)
+    res = runtime.type_check(1)
+    assert not res.success

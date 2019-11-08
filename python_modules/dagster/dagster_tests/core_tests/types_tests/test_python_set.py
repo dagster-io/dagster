@@ -4,7 +4,6 @@ import pytest
 
 from dagster import (
     DagsterTypeCheckError,
-    Failure,
     InputDefinition,
     Optional,
     OutputDefinition,
@@ -89,14 +88,14 @@ def test_runtime_set_of_int():
     set_runtime_type.type_check({1})
     set_runtime_type.type_check(set())
 
-    with pytest.raises(Failure):
-        set_runtime_type.type_check(None)
+    res = set_runtime_type.type_check(None)
+    assert not res.success
 
-    with pytest.raises(Failure):
-        set_runtime_type.type_check('nope')
+    res = set_runtime_type.type_check('nope')
+    assert not res.success
 
-    with pytest.raises(Failure):
-        set_runtime_type.type_check({'nope'})
+    res = set_runtime_type.type_check({'nope'})
+    assert not res.success
 
 
 def test_runtime_optional_set():
@@ -106,11 +105,11 @@ def test_runtime_optional_set():
     set_runtime_type.type_check(set())
     set_runtime_type.type_check(None)
 
-    with pytest.raises(Failure):
-        set_runtime_type.type_check('nope')
+    res = set_runtime_type.type_check('nope')
+    assert not res.success
 
-    with pytest.raises(Failure):
-        set_runtime_type.type_check({'nope'})
+    res = set_runtime_type.type_check({'nope'})
+    assert not res.success
 
 
 def test_closed_typing_set_input():

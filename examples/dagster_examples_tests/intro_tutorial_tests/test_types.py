@@ -1,7 +1,6 @@
 import csv
 from collections import OrderedDict
 
-import pytest
 from dagster_examples.intro_tutorial.custom_types_2 import (
     less_simple_data_frame_type_check as lsdftc2,
 )
@@ -17,29 +16,27 @@ from dagster_examples.intro_tutorial.custom_types_5 import (
     less_simple_data_frame_type_check as lsdftc5,
 )
 
-from dagster import ExpectationResult, Failure, execute_solid
+from dagster import ExpectationResult, execute_solid
 from dagster.utils import script_relative_path
 
 
 def test_type_check():
     for less_simple_data_frame_type_check in [lsdftc2, lsdftc3, lsdftc4, lsdftc5]:
-        with pytest.raises(Failure):
-            less_simple_data_frame_type_check('foo')
+        res = less_simple_data_frame_type_check('foo')
+        assert res is False or res.success is False
 
-        assert (
-            less_simple_data_frame_type_check(
-                [OrderedDict([('foo', 1)]), OrderedDict([('foo', 2)])]
-            )
-            is None
+        res = less_simple_data_frame_type_check(
+            [OrderedDict([('foo', 1)]), OrderedDict([('foo', 2)])]
         )
+        assert res is True or res.success is True
 
-        with pytest.raises(Failure):
-            less_simple_data_frame_type_check(
-                [OrderedDict([('foo', 1)]), OrderedDict([('bar', 2)])]
-            )
+        res = less_simple_data_frame_type_check(
+            [OrderedDict([('foo', 1)]), OrderedDict([('bar', 2)])]
+        )
+        assert res is False or res.success is False
 
-        with pytest.raises(Failure):
-            less_simple_data_frame_type_check([OrderedDict([('foo', 1)]), 2])
+        res = less_simple_data_frame_type_check([OrderedDict([('foo', 1)]), 2])
+        assert res is False or res.success is False
 
 
 def test_sort():

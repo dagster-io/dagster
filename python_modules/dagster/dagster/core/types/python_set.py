@@ -53,13 +53,22 @@ def create_typed_runtime_set(item_dagster_type):
             )
 
         def type_check(self, value):
-            from dagster.core.definitions.events import Failure
+            from dagster.core.definitions.events import TypeCheck
 
             if not isinstance(value, set):
-                raise Failure('Value {value} should be a set'.format(value=value))
+                return TypeCheck(
+                    success=False,
+                    description='Value should be a set, got a{value_type}'.format(
+                        value_type=type(value)
+                    ),
+                )
 
             for item in value:
-                item_runtime_type.type_check(item)
+                item_check = item_runtime_type.type_check(item)
+                if not item_check.success:
+                    return item_check
+
+            return TypeCheck(success=True)
 
         @property
         def display_name(self):

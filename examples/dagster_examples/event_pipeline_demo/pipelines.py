@@ -13,7 +13,6 @@ from dagster_spark import SparkSolidDefinition
 from dagster import (
     Bool,
     Dict,
-    Failure,
     Field,
     InputDefinition,
     List,
@@ -23,6 +22,7 @@ from dagster import (
     Path,
     PresetDefinition,
     String,
+    TypeCheck,
     dagster_type,
     file_relative_path,
     pipeline,
@@ -33,16 +33,22 @@ from dagster.utils import mkdir_p, safe_isfile
 
 def file_exists_at_path_type_check(value):
     if not isinstance(value, six.string_types):
-        raise Failure(
-            'FileExistsAtPath must be a string in memory. Got {value}'.format(value=repr(value))
+        return TypeCheck(
+            success=False,
+            description='FileExistsAtPath must be a string in memory. Got {value}'.format(
+                value=repr(value)
+            ),
         )
     if not safe_isfile(value):
-        raise Failure(
-            (
+        return TypeCheck(
+            success=False,
+            description=(
                 'FileExistsAtPath must be a path that points to a file that '
                 'exists. "{value}" does not exist on disk'
-            ).format(value=value)
+            ).format(value=value),
         )
+
+    return True
 
 
 @dagster_type(

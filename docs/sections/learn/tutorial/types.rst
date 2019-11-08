@@ -88,20 +88,19 @@ The :py:func:`@dagster_type <dagster.dagster_type>` decorator lets us specify cu
 like this.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_2.py
-   :lines: 3-40
+   :lines: 6-29
    :linenos:
-   :lineno-start: 3
-   :emphasize-lines: 4, 35
+   :lineno-start: 6
+   :emphasize-lines: 1, 21
    :caption: custom_types_2.py
 
 Now, if our solid logic fails to return the right type, we'll see a type check failure. Let's
 replace our ``read_csv`` solid with the following bad logic:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_2.py
-   :lines: 43-49
+   :lines: 32-38
    :linenos:
-   :lineno-start: 43
-   :emphasize-lines: 7
+   :lineno-start: 32
    :caption: custom_types_2.py
 
 When we run the pipeline with this solid, we'll see an error like:
@@ -150,9 +149,9 @@ into an input of the correct ``LessSimpleDataFrame`` value, we need to write wha
 input hydration config. 
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_3.py
-   :lines: 44-50
+   :lines: 31-37
    :linenos:
-   :lineno-start: 44
+   :lineno-start: 31
    :caption: custom_types_3.py
    :emphasize-lines: 1
 
@@ -170,20 +169,19 @@ other formats and sources, and might have a selector with fields like ``parquet`
 Then insert this into the original declaration:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_3.py
-   :lines: 53-60
+   :lines: 40-47
    :emphasize-lines: 5
    :linenos:
-   :lineno-start: 53
+   :lineno-start: 40
    :caption: custom_types_3.py
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
 these inputs via config:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_3.py
-   :lines: 86-92
+   :lines: 73-79
    :linenos:
-   :dedent: 8
-   :lineno-start: 86
+   :lineno-start: 73
    :caption: custom_types_3.py
 
 
@@ -191,25 +189,26 @@ Metadata and data quality checks
 --------------------------------
 
 Custom types can also yield metadata about the type check. For example, in the case of our data
-frame, we might want to record the number of rows and columns in the dataset.
+frame, we might want to record the number of rows and columns in the dataset when our type checks
+succeed, and provide more information about why type checks failed when they fail.
 
-User-defined types can provide a metadata function that takes the value being type-checked and
-returns a :py:class:`TypeCheck <dagster.TypeCheck>` object containing metadata entries about the
-instance of the type that has successfully passed its typecheck.
+User-defined type check functions can optionally return a :py:class:`TypeCheck <dagster.TypeCheck>`
+object that contains metadata about the success or failure of the type check.
 
 Let's see how to use this to emit some summary statistics about our DataFrame type:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_4.py
-   :lines: 55-86
+   :lines: 17-69
    :linenos:
-   :lineno-start: 55
-   :emphasize-lines: 1, 29
+   :lineno-start: 17
+   :emphasize-lines: 3-9, 33-63
    :caption: custom_types_4.py
 
-A :py:class:`TypeCheck <dagster.TypeCheck>` is constructed out of a list of
+A :py:class:`TypeCheck <dagster.TypeCheck>` must include a ``success`` argument describing whether
+the check passed or failed, and may include a description and/or a list of
 :py:class:`EventMetadataEntry <dagster.EventMetadataEntry>` objects. You should use the
-static constructors on :py:class:`EventMetadataEntry <dagster.EventMetadataEntry>`, which are
-flexible enough to support arbitrary metadata in JSON or Markdown format.
+static constructors on :py:class:`EventMetadataEntry <dagster.EventMetadataEntry>` to construct
+these objects, which are flexible enough to support arbitrary metadata in JSON or Markdown format.
 
 Dagit knows how to display and archive structured metadata of this kind for future review:
 
@@ -240,9 +239,9 @@ To support this kind of assertion, Dagster includes support for expressing your 
 data in solid logic.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_5.py
-   :lines: 91-133
+   :lines: 93-135
    :linenos:
-   :lineno-start: 91
+   :lineno-start: 93
    :emphasize-lines: 1-3, 31
    :caption: custom_types_5.py
 

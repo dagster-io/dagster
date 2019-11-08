@@ -3,7 +3,6 @@ import csv
 from dagster import (
     EventMetadataEntry,
     ExpectationResult,
-    Failure,
     Field,
     Output,
     Selector,
@@ -19,9 +18,12 @@ from dagster import (
 
 def less_simple_data_frame_type_check(value):
     if not isinstance(value, list):
-        raise Failure(
-            'LessSimpleDataFrame should be a list of dicts, got '
-            '{type_}'.format(type_=type(value))
+        return TypeCheck(
+            success=False,
+            description=(
+                'LessSimpleDataFrame should be a list of dicts, got '
+                '{type_}'
+            ).format(type_=type(value)),
         )
 
     fields = [field for field in value[0].keys()]
@@ -29,35 +31,27 @@ def less_simple_data_frame_type_check(value):
     for i in range(len(value)):
         row = value[i]
         if not isinstance(row, dict):
-            raise Failure(
-                'LessSimpleDataFrame should be a list of dicts, '
-                'got {type_} for row {idx}'.format(
-                    type_=type(row), idx=(i + 1)
-                )
+            return TypeCheck(
+                success=False,
+                description=(
+                    'LessSimpleDataFrame should be a list of dicts, '
+                    'got {type_} for row {idx}'
+                ).format(type_=type(row), idx=(i + 1)),
             )
         row_fields = [field for field in row.keys()]
         if fields != row_fields:
-            raise Failure(
-                'Rows in LessSimpleDataFrame should have the same fields, '
-                'got {actual} for row {idx}, expected {expected}'.format(
-                    actual=row_fields, idx=(i + 1), expected=fields
-                )
+            return TypeCheck(
+                success=False,
+                description=(
+                    'Rows in LessSimpleDataFrame should have the same fields, '
+                    'got {actual} for row {idx}, expected {expected}'
+                ).format(actual=row_fields, idx=(i + 1), expected=fields),
             )
 
-
-@input_hydration_config(Selector({'csv': Field(String)}))
-def less_simple_data_frame_input_hydration_config(context, selector):
-    with open(selector['csv'], 'r') as fd:
-        lines = [row for row in csv.DictReader(fd)]
-
-    context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
-    return LessSimpleDataFrame(lines)
-
-
-def less_simple_data_frame_typecheck_metadata_fn(value) -> TypeCheck:
     return TypeCheck(
-        'LessSimpleDataFrame summary statistics',
-        [
+        success=True,
+        description='LessSimpleDataFrame summary statistics',
+        metadata_entries=[
             EventMetadataEntry.text(
                 str(len(value)),
                 'n_rows',
@@ -77,12 +71,20 @@ def less_simple_data_frame_typecheck_metadata_fn(value) -> TypeCheck:
     )
 
 
+@input_hydration_config(Selector({'csv': Field(String)}))
+def less_simple_data_frame_input_hydration_config(context, selector):
+    with open(selector['csv'], 'r') as fd:
+        lines = [row for row in csv.DictReader(fd)]
+
+    context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
+    return LessSimpleDataFrame(lines)
+
+
 @dagster_type(
     name='LessSimpleDataFrame',
     description='A more sophisticated data frame that type checks its structure.',
     type_check=less_simple_data_frame_type_check,
     input_hydration_config=less_simple_data_frame_input_hydration_config,
-    typecheck_metadata_fn=less_simple_data_frame_typecheck_metadata_fn,
 )
 class LessSimpleDataFrame(list):
     pass

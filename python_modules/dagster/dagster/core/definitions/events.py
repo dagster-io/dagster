@@ -277,25 +277,27 @@ class ExpectationResult(
 
 
 @whitelist_for_serdes
-class TypeCheck(namedtuple('_TypeCheck', 'description metadata_entries')):
+class TypeCheck(namedtuple('_TypeCheck', 'success description metadata_entries')):
     '''Event corresponding to a successful typecheck.
     
-    Events of this type should be returned by the ``typecheck_metadata_fn`` set on a custom
-    Dagster type to encapsulate additional metadata after successful user-defined type checks have
-    passed. (i.e., when using :py:func:`as_dagster_type`, :py:func:`@dagster_type <dagster_type>`,
-    or the underlying :py:func:`define_python_dagster_type` API.)
+    Events of this type should be returned by user-defined type checks when they need to encapsulate
+    additional metadata about a type check's success or failure. (i.e., when using
+    :py:func:`as_dagster_type`, :py:func:`@dagster_type <dagster_type>`, or the underlying
+    :py:func:`define_python_dagster_type` API.)
 
     Solid compute functions should generally avoid yielding events of this type to avoid confusion.
 
     Args:
+        success (bool): ``True`` if the type check succeeded, ``False`` otherwise.
         description (Optional[str]): A human-readable description of the type check.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
             type check.
     '''
 
-    def __new__(cls, description=None, metadata_entries=None):
+    def __new__(cls, success, description=None, metadata_entries=None):
         return super(TypeCheck, cls).__new__(
             cls,
+            success=check.bool_param(success, 'success'),
             description=check.opt_str_param(description, 'description'),
             metadata_entries=check.opt_list_param(
                 metadata_entries, metadata_entries, of_type=EventMetadataEntry

@@ -31,14 +31,25 @@ def create_typed_runtime_dict(key_dagster_type, value_dagster_type):
             )
 
         def type_check(self, value):
-            from dagster.core.definitions.events import Failure
+            from dagster.core.definitions.events import TypeCheck
 
             if not isinstance(value, dict):
-                raise Failure('Value {value} should be a dict'.format(value=value))
+                return TypeCheck(
+                    success=False,
+                    description='Value should be a dict, got a {value_type}'.format(
+                        value_type=type(value)
+                    ),
+                )
 
             for key, value in value.items():
-                key_type.type_check(key)
-                value_type.type_check(value)
+                key_check = key_type.type_check(key)
+                if not key_check.success:
+                    return key_check
+                value_check = value_type.type_check(value)
+                if not value_check.success:
+                    return value_check
+
+            return TypeCheck(success=True)
 
         @property
         def display_name(self):

@@ -84,6 +84,19 @@ def dataframe_input_schema(_context, file_type, file_options):
         )
 
 
+def df_type_check(value):
+    if not isinstance(value, pd.DataFrame):
+        return TypeCheck(success=False)
+    return TypeCheck(
+        success=True,
+        metadata_entries=[
+            EventMetadataEntry.text(str(len(value)), 'row_count', 'Number of rows in DataFrame'),
+            # string cast columns since they may be things like datetime
+            EventMetadataEntry.json({'columns': list(map(str, value.columns))}, 'metadata'),
+        ],
+    )
+
+
 DataFrame = as_dagster_type(
     pd.DataFrame,
     name='PandasDataFrame',
@@ -92,11 +105,5 @@ DataFrame = as_dagster_type(
     See http://pandas.pydata.org/''',
     input_hydration_config=dataframe_input_schema,
     output_materialization_config=dataframe_output_schema,
-    typecheck_metadata_fn=lambda value: TypeCheck(
-        metadata_entries=[
-            EventMetadataEntry.text(str(len(value)), 'row_count', 'Number of rows in DataFrame'),
-            # string cast columns since they may be things like datetime
-            EventMetadataEntry.json({'columns': list(map(str, value.columns))}, 'metadata'),
-        ]
-    ),
+    type_check=df_type_check,
 )
