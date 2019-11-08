@@ -40,7 +40,7 @@ def display_results(context, calorie_results, protein_results):
     )
     context.log.info(
         'Most caloric cereal: {most_caloric}'.format(
-            most_caloric=calorie_results[1]
+            most_caloric=calorie_results[-1]
         )
     )
     context.log.info(
@@ -50,7 +50,7 @@ def display_results(context, calorie_results, protein_results):
     )
     context.log.info(
         'Most protein-rich cereal: {most_protein}'.format(
-            most_protein=protein_results[1]
+            most_protein=protein_results[-1]
         )
     )
 
