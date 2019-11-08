@@ -12,7 +12,9 @@ import {
   MenuDivider,
   Popover,
   NonIdealState,
-  Tooltip
+  Tooltip,
+  Tag,
+  Intent
 } from "@blueprintjs/core";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import {
@@ -34,7 +36,7 @@ import {
   SchedulesRootQuery_scheduler_Scheduler_runningSchedules,
   SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs
 } from "./types/SchedulesRootQuery";
-import { ScheduleStatus } from "../types/globalTypes";
+import { ScheduleStatus, ScheduleAttemptStatus } from "../types/globalTypes";
 import { Link } from "react-router-dom";
 import Loading from "../Loading";
 import cronstrue from "cronstrue";
@@ -161,7 +163,8 @@ const ScheduleRow: React.FunctionComponent<{
     scheduleDefinition,
     runs,
     runsCount,
-    logsPath
+    logsPath,
+    attempts
   } = schedule;
   const {
     name,
@@ -175,6 +178,11 @@ const ScheduleRow: React.FunctionComponent<{
 
   const [startSchedule] = useMutation(START_SCHEDULE_MUTATION);
   const [stopSchedule] = useMutation(STOP_SCHEDULE_MUTATION);
+
+  const mostRecentAttempt = attempts.length > 0 ? attempts[0] : null;
+  const mostRecentAttemptLogError = mostRecentAttempt
+    ? JSON.parse(mostRecentAttempt.jsonResult)
+    : null;
 
   const getNaturalLanguageCronString = (cronSchedule: string) => {
     try {
@@ -309,6 +317,41 @@ const ScheduleRow: React.FunctionComponent<{
         {mostRecentRun
           ? unixTimestampToString(mostRecentRun.stats.startTime)
           : "No previous runs"}
+
+        {mostRecentAttempt &&
+          mostRecentAttempt.status === ScheduleAttemptStatus.ERROR && (
+            <ErrorTag>
+              <Tag intent={Intent.WARNING}>
+                Latest run failed:
+                <ErrorLink
+                  onClick={() =>
+                    showCustomAlert({
+                      title: "Error",
+                      body: (
+                        <>
+                          <ErrorHeader>
+                            {mostRecentAttemptLogError.__typename}
+                          </ErrorHeader>
+                          <ErrorWrapper>
+                            <HighlightedCodeBlock
+                              value={JSON.stringify(
+                                mostRecentAttemptLogError,
+                                null,
+                                2
+                              )}
+                              languages={["json"]}
+                            />
+                          </ErrorWrapper>
+                        </>
+                      )
+                    })
+                  }
+                >
+                  View Error
+                </ErrorLink>
+              </Tag>
+            </ErrorTag>
+          )}
       </RowColumn>
       <RowColumn
         style={{
@@ -371,6 +414,31 @@ const ScheduleName = styled.pre`
   margin: 0;
 `;
 
+const ErrorHeader = styled.h3`
+  color: #b05c47;
+  font-weight: 400;
+  margin: 0.5em 0 0.25em;
+`;
+
+const ErrorWrapper = styled.pre`
+  background-color: rgba(206, 17, 38, 0.05);
+  border: 1px solid #d17257;
+  border-radius: 3px;
+  max-width: 90vw;
+  padding: 1em 2em;
+`;
+
+const ErrorTag = styled.div`
+  display: block;
+  margin-top: 5px;
+`;
+
+const ErrorLink = styled.a`
+  color: white;
+  text-decoration: underline;
+  margin-left: 10px;
+`;
+
 const START_SCHEDULE_MUTATION = gql`
   mutation StartSchedule($scheduleName: String!) {
     startSchedule(scheduleName: $scheduleName) {
@@ -409,6 +477,11 @@ export const SCHEDULES_ROOT_QUERY = gql`
           }
           logsPath
           runsCount
+          attempts(limit: 1) {
+            time
+            jsonResult
+            status
+          }
           runs(limit: $limit) {
             runId
             pipeline {

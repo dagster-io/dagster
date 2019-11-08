@@ -50,7 +50,7 @@ RUN pip install \
 # pytest and you cannot specify two (compatible) deps on the same module
 # in two different requirements.txt files.
 # See https://github.com/pypa/pip/issues/988
-RUN pip install -r requirements.txt
+RUN pip install -e .[full]
 
 ENTRYPOINT [ "dagster-graphql" ]
 

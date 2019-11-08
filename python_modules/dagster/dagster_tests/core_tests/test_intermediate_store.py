@@ -123,7 +123,7 @@ def test_file_system_intermediate_store_composite_types_with_custom_serializer_f
 def test_file_system_intermediate_store_with_type_storage_plugin():
     run_id = str(uuid.uuid4())
     instance = DagsterInstance.ephemeral()
-    # FIXME need a dedicated test bucket
+
     intermediate_store = build_fs_intermediate_store(
         instance.intermediates_directory,
         run_id=run_id,
@@ -148,7 +148,6 @@ def test_file_system_intermediate_store_with_type_storage_plugin():
 def test_file_system_intermediate_store_with_composite_type_storage_plugin():
     run_id = str(uuid.uuid4())
 
-    # FIXME need a dedicated test bucket
     intermediate_store = build_fs_intermediate_store(
         DagsterInstance.ephemeral().intermediates_directory,
         run_id=run_id,

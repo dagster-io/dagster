@@ -1,10 +1,10 @@
-import os
 import uuid
+from io import BytesIO
 
 import pytest
-from dagster_aws.s3.intermediate_store import S3IntermediateStore
-from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+from dagster_gcp.gcs.intermediate_store import GCSIntermediateStore
+from dagster_gcp.gcs.resources import gcs_resource
+from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
 
 from dagster import (
     Bool,
@@ -49,10 +49,6 @@ class LowercaseString(RuntimeType):
         )
 
 
-def aws_credentials_present():
-    return os.getenv('AWS_ACCESS_KEY_ID') and os.getenv('AWS_SECRET_ACCESS_KEY')
-
-
 nettest = pytest.mark.nettest
 
 
@@ -72,7 +68,8 @@ def define_inty_pipeline():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                system_storage_defs=s3_plus_default_storage_defs, resource_defs={'s3': s3_resource}
+                system_storage_defs=gcs_plus_default_storage_defs,
+                resource_defs={'gcs': gcs_resource},
             )
         ]
     )
@@ -95,10 +92,10 @@ def get_step_output(step_events, step_key, output_name='result'):
 
 
 @nettest
-def test_using_s3_for_subplan(s3_bucket):
+def test_using_gcs_for_subplan(gcs_bucket):
     pipeline_def = define_inty_pipeline()
 
-    environment_dict = {'storage': {'s3': {'config': {'s3_bucket': s3_bucket}}}}
+    environment_dict = {'storage': {'gcs': {'config': {'gcs_bucket': gcs_bucket}}}}
 
     run_id = str(uuid.uuid4())
 
@@ -125,8 +122,8 @@ def test_using_s3_for_subplan(s3_bucket):
 
     assert get_step_output(return_one_step_events, 'return_one.compute')
     with scoped_pipeline_context(pipeline_def, environment_dict, pipeline_run, instance) as context:
-        store = S3IntermediateStore(
-            s3_bucket, run_id, s3_session=context.scoped_resources_builder.build().s3.session
+        store = GCSIntermediateStore(
+            gcs_bucket, run_id, client=context.scoped_resources_builder.build().gcs.client
         )
         assert store.has_intermediate(context, 'return_one.compute')
         assert store.get_intermediate(context, 'return_one.compute', Int).obj == 1
@@ -146,7 +143,7 @@ def test_using_s3_for_subplan(s3_bucket):
         assert store.get_intermediate(context, 'add_one.compute', Int).obj == 2
 
 
-class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
+class FancyStringGCSTypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
     @classmethod
     def compatible_with_storage_def(cls, _):
         # Not needed for these tests
@@ -154,29 +151,31 @@ class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-in
 
     @classmethod
     def set_object(cls, intermediate_store, obj, context, runtime_type, paths):
-        check.inst_param(intermediate_store, 'intermediate_store', S3IntermediateStore)
+        check.inst_param(intermediate_store, 'intermediate_store', GCSIntermediateStore)
         paths.append(obj)
         return intermediate_store.set_object('', context, runtime_type, paths)
 
     @classmethod
     def get_object(cls, intermediate_store, _context, _runtime_type, paths):
-        check.inst_param(intermediate_store, 'intermediate_store', S3IntermediateStore)
-        res = intermediate_store.object_store.s3.list_objects(
-            Bucket=intermediate_store.object_store.bucket,
-            Prefix=intermediate_store.key_for_paths(paths),
+        check.inst_param(intermediate_store, 'intermediate_store', GCSIntermediateStore)
+        res = list(
+            intermediate_store.object_store.client.list_blobs(
+                intermediate_store.object_store.bucket,
+                prefix=intermediate_store.key_for_paths(paths),
+            )
         )
-        return res['Contents'][0]['Key'].split('/')[-1]
+        return res[0].name.split('/')[-1]
 
 
 @nettest
-def test_s3_intermediate_store_with_type_storage_plugin(s3_bucket):
+def test_gcs_intermediate_store_with_type_storage_plugin(gcs_bucket):
     run_id = str(uuid.uuid4())
 
-    intermediate_store = S3IntermediateStore(
+    intermediate_store = GCSIntermediateStore(
         run_id=run_id,
-        s3_bucket=s3_bucket,
+        gcs_bucket=gcs_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString.inst(): FancyStringS3TypeStoragePlugin}
+            {RuntimeString.inst(): FancyStringGCSTypeStoragePlugin}
         ),
     )
 
@@ -194,14 +193,14 @@ def test_s3_intermediate_store_with_type_storage_plugin(s3_bucket):
 
 
 @nettest
-def test_s3_intermediate_store_with_composite_type_storage_plugin(s3_bucket):
+def test_gcs_intermediate_store_with_composite_type_storage_plugin(gcs_bucket):
     run_id = str(uuid.uuid4())
 
-    intermediate_store = S3IntermediateStore(
+    intermediate_store = GCSIntermediateStore(
         run_id=run_id,
-        s3_bucket=s3_bucket,
+        gcs_bucket=gcs_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString.inst(): FancyStringS3TypeStoragePlugin}
+            {RuntimeString.inst(): FancyStringGCSTypeStoragePlugin}
         ),
     )
 
@@ -213,10 +212,10 @@ def test_s3_intermediate_store_with_composite_type_storage_plugin(s3_bucket):
 
 
 @nettest
-def test_s3_intermediate_store_composite_types_with_custom_serializer_for_inner_type(s3_bucket):
+def test_gcs_intermediate_store_composite_types_with_custom_serializer_for_inner_type(gcs_bucket):
     run_id = str(uuid.uuid4())
 
-    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
+    intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             intermediate_store.set_object(
@@ -235,24 +234,24 @@ def test_s3_intermediate_store_composite_types_with_custom_serializer_for_inner_
 
 
 @nettest
-def test_s3_intermediate_store_with_custom_serializer(s3_bucket):
+def test_gcs_intermediate_store_with_custom_serializer(gcs_bucket):
     run_id = str(uuid.uuid4())
 
-    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
+    intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             intermediate_store.set_object('foo', context, LowercaseString.inst(), ['foo'])
 
-            assert (
-                intermediate_store.object_store.s3.get_object(
-                    Bucket=intermediate_store.object_store.bucket,
-                    Key='/'.join([intermediate_store.root] + ['foo']),
-                )['Body']
-                .read()
-                .decode('utf-8')
-                == 'FOO'
+            bucket_obj = intermediate_store.object_store.client.get_bucket(
+                intermediate_store.object_store.bucket
             )
+            blob = bucket_obj.blob('/'.join([intermediate_store.root] + ['foo']))
+            file_obj = BytesIO()
+            blob.download_to_file(file_obj)
+            file_obj.seek(0)
+
+            assert file_obj.read().decode('utf-8') == 'FOO'
 
             assert intermediate_store.has_object(context, ['foo'])
             assert (
@@ -263,14 +262,14 @@ def test_s3_intermediate_store_with_custom_serializer(s3_bucket):
 
 
 @nettest
-def test_s3_intermediate_store(s3_bucket):
+def test_gcs_intermediate_store(gcs_bucket):
     run_id = str(uuid.uuid4())
     run_id_2 = str(uuid.uuid4())
 
-    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
+    intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
     assert intermediate_store.root == '/'.join(['dagster', 'storage', run_id])
 
-    intermediate_store_2 = S3IntermediateStore(run_id=run_id_2, s3_bucket=s3_bucket)
+    intermediate_store_2 = GCSIntermediateStore(run_id=run_id_2, gcs_bucket=gcs_bucket)
     assert intermediate_store_2.root == '/'.join(['dagster', 'storage', run_id_2])
 
     try:
@@ -280,7 +279,7 @@ def test_s3_intermediate_store(s3_bucket):
 
             assert intermediate_store.has_object(context, ['true'])
             assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']).obj is True
-            assert intermediate_store.uri_for_paths(['true']).startswith('s3://')
+            assert intermediate_store.uri_for_paths(['true']).startswith('gs://')
 
             intermediate_store_2.copy_object_from_prev_run(context, run_id, ['true'])
             assert intermediate_store_2.has_object(context, ['true'])

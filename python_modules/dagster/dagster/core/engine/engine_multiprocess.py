@@ -1,6 +1,8 @@
 import os
+import signal
 
 from dagster import check
+from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.config import MultiprocessExecutorConfig
@@ -10,7 +12,14 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.utils.timing import format_duration, time_execution_scope
 
-from .child_process_executor import ChildProcessCommand, execute_child_process_command
+from .child_process_executor import (
+    ChildProcessCommand,
+    ChildProcessDoneEvent,
+    ChildProcessEvent,
+    ChildProcessStartEvent,
+    ChildProcessSystemErrorEvent,
+    execute_child_process_command,
+)
 from .engine_base import Engine
 
 
@@ -40,7 +49,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
             yield step_event
 
 
-def execute_step_out_of_process(step_context, step):
+def execute_step_out_of_process(step_context, step, pid_tracker):
     command = InProcessExecutorChildProcessCommand(
         step_context.environment_dict,
         step_context.pipeline_run,
@@ -49,19 +58,35 @@ def execute_step_out_of_process(step_context, step):
         step_context.instance.get_ref(),
     )
 
-    for event_or_none in execute_child_process_command(command):
-        yield event_or_none
+    for ret in execute_child_process_command(command):
+        if ret is None or isinstance(ret, DagsterEvent):
+            yield ret
+        elif isinstance(ret, ChildProcessEvent):
+            if isinstance(ret, ChildProcessStartEvent):
+                pid_tracker[ret.pid] = None
+            elif isinstance(ret, ChildProcessDoneEvent):
+                del pid_tracker[ret.pid]
+            elif isinstance(ret, ChildProcessSystemErrorEvent):
+                pid_tracker[ret.pid] = ret.error_info
+        # an interrupt occured during polling this process
+        elif isinstance(ret, KeyboardInterrupt):
+            # forward the interrupt to all known processes
+            for pid in pid_tracker.keys():
+                os.kill(pid, signal.SIGINT)
+        else:
+            check.failed('Unexpected return value from child process {}'.format(type(ret)))
 
 
 def bounded_parallel_executor(step_contexts, limit):
     pending_execution = list(step_contexts)
     active_iters = {}
+    pid_tracker = {}
 
     while pending_execution or active_iters:
         while len(active_iters) < limit and pending_execution:
             step_context = pending_execution.pop()
             step = step_context.step
-            active_iters[step.key] = execute_step_out_of_process(step_context, step)
+            active_iters[step.key] = execute_step_out_of_process(step_context, step, pid_tracker)
 
         empty_iters = []
         for key, step_iter in active_iters.items():
@@ -69,12 +94,28 @@ def bounded_parallel_executor(step_contexts, limit):
                 event_or_none = next(step_iter)
                 if event_or_none is None:
                     continue
-                yield event_or_none
+                else:
+                    yield event_or_none
+
             except StopIteration:
                 empty_iters.append(key)
 
         for key in empty_iters:
             del active_iters[key]
+
+    errs = {pid: err for pid, err in pid_tracker.items() if err}
+    if errs:
+        raise DagsterSubprocessError(
+            'During multiprocess execution errors occured in child processes:\n{error_list}'.format(
+                error_list='\n'.join(
+                    [
+                        'In process {pid}: {err}'.format(pid=pid, err=err.to_string())
+                        for pid, err in errs.items()
+                    ]
+                )
+            ),
+            subprocess_error_infos=list(errs.values()),
+        )
 
 
 class MultiprocessEngine(Engine):  # pylint: disable=no-init

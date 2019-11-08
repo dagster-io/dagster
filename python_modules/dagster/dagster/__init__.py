@@ -54,6 +54,7 @@ from dagster.core.errors import (
     DagsterResourceFunctionError,
     DagsterRunNotFoundError,
     DagsterStepOutputNotFoundError,
+    DagsterSubprocessError,
     DagsterTypeCheckError,
     DagsterUnmetExecutorRequirementsError,
     DagsterUserCodeExecutionError,
@@ -169,6 +170,7 @@ __all__ = [
     'DagsterTypeCheckError',
     'DagsterUserCodeExecutionError',
     'DagsterStepOutputNotFoundError',
+    'DagsterSubprocessError',
     # Logging
     'DagsterLogManager',
     # Utilities

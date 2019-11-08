@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { ScheduleAttemptStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulesRootQuery
@@ -20,6 +20,13 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_schedul
   executionParamsString: string;
   environmentConfigYaml: string;
   cronSchedule: string;
+}
+
+export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempts {
+  __typename: "ScheduleAttempt";
+  time: string;
+  jsonResult: string;
+  status: ScheduleAttemptStatus;
 }
 
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_pipeline {
@@ -46,6 +53,7 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules {
   scheduleDefinition: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition;
   logsPath: string;
   runsCount: number;
+  attempts: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempts[];
   runs: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs[];
   status: ScheduleStatus;
 }
