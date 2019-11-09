@@ -11,6 +11,7 @@ import { ScheduleStatus } from "./../../types/globalTypes";
 
 export interface StartSchedule_startSchedule_schedule {
   __typename: "RunningSchedule";
+  id: string;
   status: ScheduleStatus;
 }
 

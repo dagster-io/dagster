@@ -43,7 +43,7 @@ class SystemCronScheduler(Scheduler):
         self._storage.update_schedule(started_schedule)
         self._start_cron_job(started_schedule)
 
-        return schedule
+        return started_schedule
 
     def stop_schedule(self, schedule_name):
         schedule = self.get_schedule_by_name(schedule_name)

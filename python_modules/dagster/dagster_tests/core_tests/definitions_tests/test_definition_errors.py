@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from dagster import (
@@ -302,3 +304,47 @@ def test_invalid_named_selector_field():
         '"some_selector" with fields [\'val\']. You '
         'have likely forgot to wrap this type in a Field.'
     )
+
+
+def test_bad_output_definition():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape(
+            'Invalid type: dagster_type must be a Python type, a type constructed using '
+            'python.typing, a type imported from the dagster module, or a class annotated using '
+            'as_dagster_type or @dagster_type: got foo'
+        ),
+    ):
+        _output = OutputDefinition('foo')
+
+    # Test the case where the object is not hashable
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape(
+            'Invalid type: dagster_type must be a Python type, a type constructed using '
+            'python.typing, a type imported from the dagster module, or a class annotated using '
+            'as_dagster_type or @dagster_type: got {\'foo\': \'bar\'}, which isn\'t hashable. '
+            'Did you pass an instance of a type instead of the type?'
+        ),
+    ):
+        _output = OutputDefinition({'foo': 'bar'})
+
+    # Test the case where the object throws in __nonzero__
+    class Exotic(object):
+        def __nonzero__(self):
+            raise ValueError('Love too break the core Python APIs in widely-used libraries')
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape(
+            'Invalid type: dagster_type must be a Python type, a type constructed using '
+            'python.typing, a type imported from the dagster module, or a class annotated using '
+            'as_dagster_type or @dagster_type: got '
+            '<dagster_tests.core_tests.definitions_tests.test_definition_errors'
+        )
+        + '('  # py27
+        + re.escape('.test_bad_output_definition.<locals>')
+        + ')?'
+        + re.escape('.Exotic object'),
+    ):
+        _output = OutputDefinition(Exotic())

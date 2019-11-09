@@ -105,7 +105,7 @@ saved the pipeline file, just run run:
 
 .. code-block:: console
 
-   $ dagit -f hello_world.py -n hello_world_pipeline
+   $ dagit -f hello_cereal.py -n hello_cereal_pipeline
 
 You'll see output like
 

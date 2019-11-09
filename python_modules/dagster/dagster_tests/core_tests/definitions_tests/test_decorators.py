@@ -1,6 +1,8 @@
 # encoding: utf-8
 # py27 compat
 
+import re
+
 import pytest
 from dagster_tests.utils import FilesytemTestScheduler
 
@@ -298,3 +300,18 @@ def test_scheduler():
                 environment_dict={},
             )
         ]
+
+
+def test_solid_bad_output_type():
+    @solid
+    def bad_output_solid(_):
+        yield 'foo'
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=re.escape(
+            'Compute function for solid bad_output_solid yielded \'foo\' rather than an instance '
+            'of the Output or Materialization class.'
+        ),
+    ):
+        execute_solid(bad_output_solid)

@@ -16,7 +16,7 @@ GET_SCHEDULES_QUERY = '''
     scheduler {
       ... on Scheduler {
         runningSchedules {
-          scheduleId
+          id
           scheduleDefinition {
             name
           }
@@ -65,10 +65,7 @@ def test_get_all_schedules():
     assert scheduler_result.data['scheduler']['runningSchedules']
     assert len(scheduler_result.data['scheduler']['runningSchedules']) == 3
 
-    assert (
-        scheduler_result.data['scheduler']['runningSchedules'][0]['scheduleId']
-        == schedule.schedule_id
-    )
+    assert scheduler_result.data['scheduler']['runningSchedules'][0]['id'] == schedule.schedule_id
 
 
 def test_scheduler_change_set_adding_schedule():
