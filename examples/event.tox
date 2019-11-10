@@ -22,6 +22,7 @@ deps =
   -e ../python_modules/dagit
   -e ../python_modules/dagster-airflow
   -e .[full]
+  -r ./dev-requirements.txt
 
 usedevelop = true
 commands =
