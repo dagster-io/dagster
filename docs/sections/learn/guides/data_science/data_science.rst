@@ -64,7 +64,6 @@ What's more, every time we run the notebook from Dagit, a copy of the notebook `
 be written to disk and the path of this output notebook will be made available in Dagit:
 
 .. thumbnail:: iris_output_notebook.png
-   :scale: 50 %
 
 The output notebook is both a rich log of notebook computations as they actually occurred, including
 all inline plots and results, and also an important tool for interactive debugging. When a notebook
@@ -121,7 +120,6 @@ and may need to turn the display of cell tags on (select *View > Cell Toolbar > 
 Jupyter menu).
 
 .. thumbnail:: tags.png
-   :scale: 35 %
 
 Tag the cell you want Dagstermill to replace at runtime with the tag ``parameters``.
 
@@ -136,7 +134,6 @@ Now we are ready to execute a pipeline that flows the output of arbitrary Python
 notebook:
 
 .. thumbnail:: iris_pipeline.png
-   :scale: 40 %
 
 We'll use the following config:
 

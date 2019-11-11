@@ -44,6 +44,8 @@ def _do_setup(name='dagster-airflow'):
         install_requires=[
             'six>=1.11.0',
             'dagster=={ver}'.format(ver=ver),
+            'dagster-graphql=={ver}'.format(ver=ver),
+            # docker api
             'docker==3.7.0',
             'python-dateutil>=2.8.0',
         ],

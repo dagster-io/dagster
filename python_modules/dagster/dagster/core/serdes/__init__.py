@@ -97,14 +97,18 @@ def _unpack_value(val, enum_map, tuple_map):
     if isinstance(val, dict) and val.get('__class__'):
         klass_name = val.pop('__class__')
         klass = tuple_map[klass_name]
-        val = {key: _unpack_value(value, enum_map, tuple_map) for key, value in val.items()}
+        unpacked_val = {
+            key: _unpack_value(value, enum_map, tuple_map) for key, value in val.items()
+        }
 
         # Naively implements backwards compatibility by filtering arguments that aren't present in
         # the constructor. If a property is present in the serialized object, but doesn't exist in
         # the version of the class loaded into memory, that property will be completely ignored.
         args_for_class = seven.get_args(klass)
         filtered_val = (
-            {k: v for k, v in val.items() if k in args_for_class} if args_for_class else val
+            {k: v for k, v in unpacked_val.items() if k in args_for_class}
+            if args_for_class
+            else unpacked_val
         )
         return klass(**filtered_val)
     if isinstance(val, dict) and val.get('__enum__'):

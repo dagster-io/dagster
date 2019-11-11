@@ -9,7 +9,6 @@ Solid
 ^^^^^
 
 .. thumbnail:: solid.png
-    :scale: 40 %
     :align: center
 
 A solid is a functional unit of computation with defined inputs and outputs. Solids can be strung
@@ -37,7 +36,6 @@ Compute Function
 ^^^^^^^^^^^^^^^^
 
 .. thumbnail:: compute_fn.png
-    :scale: 40 %
     :align: center
 
 The user-supplied function which forms the heart of a solid definition. The compute functions are
@@ -49,7 +47,6 @@ Outputs
 ^^^^^^^
 
 .. thumbnail:: outputs.png
-    :scale: 40 %
     :align: center
 
 An output is how a solid's compute function communicates the name and value of an output to Dagster.
@@ -84,7 +81,6 @@ Pipelines & DAGs
 ^^^^^^^^^^^^^^^^
 
 .. thumbnail:: pipeline.png
-    :scale: 40 %
     :align: center
 
 DAG is short for `directed acyclic graph`. In this context, we are concerned with graphs where the
@@ -119,7 +115,6 @@ Dependencies
 ^^^^^^^^^^^^
 
 .. thumbnail:: dependency.png
-    :scale: 40 %
     :align: center
 
 Solids are linked together into `pipelines <#pipeline>`__ by defining the dependencies between
@@ -138,7 +133,6 @@ Resources
 ^^^^^^^^^
 
 .. thumbnail:: resource.png
-    :scale: 40 %
     :align: center
 
 Resources are pipeline-scoped, and are typically used to expose features of the execution
@@ -151,7 +145,6 @@ Repository
 ^^^^^^^^^^
 
 .. thumbnail:: repository.png
-    :scale: 40 %
     :align: center
 
 A repository is a collection of pipelines that can be made available to the Dagit UI and other
@@ -164,7 +157,6 @@ Composite Solids
 ^^^^^^^^^^^^^^^^
 
 .. thumbnail:: composites.png
-    :scale: 40 %
     :align: center
 
 To help manage the level of complexity that data applications tend to reach, dagster provides a unit

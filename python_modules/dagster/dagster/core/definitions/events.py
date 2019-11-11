@@ -387,6 +387,7 @@ class ObjectStoreOperation(
                     'obj': None,
                     'serialization_strategy_name': inst.serialization_strategy_name,
                     'object_store_name': inst.object_store_name,
+                    'value_name': inst.value_name,
                 },
                 **kwargs
             )

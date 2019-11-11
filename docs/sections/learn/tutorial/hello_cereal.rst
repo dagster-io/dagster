@@ -67,6 +67,8 @@ function calls to indicate the dependency structure of the solids making up the 
 we indicate that the execution of ``hello_cereal`` doesn't depend on any other solids by calling
 it with no arguments.
 
+.. _executing-our-first-pipeline:
+
 Executing our first pipeline
 ----------------------------
 
