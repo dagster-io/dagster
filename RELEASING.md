@@ -67,7 +67,7 @@ It's also prudent to release from a fresh virtualenv.
 
 7.  Publish the new version to PyPI.
 
-         python bin/publish.py publish
+        python bin/publish.py publish
 
 8.  Manually switch the default ReadTheDocs version to the newly built docs:
     [https://readthedocs.org/projects/dagster/versions/](https://readthedocs.org/projects/dagster/versions/)
@@ -86,6 +86,8 @@ It's also prudent to release from a fresh virtualenv.
     button.
 
 9.  Check that the ReadTheDocs and PyPI versions are as you expect.
+
+        python bin/publish.py audit 0.4.3rc0
 
 ### PyPI credentials
 

@@ -29,9 +29,8 @@ import virtualenv
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
-from git_tag import get_git_tag, get_most_recent_git_tag, set_git_tag  # isort: skip
-from pypirc import ConfigFileError, RCParser  # isort: skip
-
+from git_tag import get_git_tag, get_most_recent_git_tag, set_git_tag  # isort:skip
+from pypirc import ConfigFileError, RCParser  # isort:skip
 
 
 assert os.getenv('SLACK_RELEASE_BOT_TOKEN'), 'No SLACK_RELEASE_BOT_TOKEN env variable found.'
@@ -177,10 +176,11 @@ def publish_module(module, nightly=False, library=False, additional_steps='', dr
                 )
                 for line in iter(process.stdout.readline, b''):
                     click.echo(line.decode('utf-8'))
-                assert process.returncode == 0, \
-                    'Something went wrong while attempting to publish module {module_name}!'.format(
-                        module_name=module
-                    )
+                assert (
+                    process.returncode == 0
+                ), 'Something went wrong while attempting to publish module {module_name}!'.format(
+                    module_name=module
+                )
 
 
 def publish_all(nightly, dry_run=True):
@@ -742,13 +742,14 @@ def audit(version):  # pylint: disable=redefined-outer-name
             )
         )
         module_json = res.json()
-        assert module_json['info']['version'] == version, \
-            'Version does not match for module {module_name}, expected {expected}, got {received}'.format(
-                module_name=module, expected=version, received=module_json['info']['version']
-            )
+        assert (
+            version in module_json['releases']
+        ), 'Version not available for module {module_name}, expected {expected}, released version is {received}'.format(
+            module_name=module, expected=version, received=module_json['info']['version']
+        )
 
     bootstrap_text = '''
-def after_install(options, home_dir): 
+def after_install(options, home_dir):
     for module_name in [{module_names}]:
         subprocess.check_output([
             os.path.join(home_dir, 'bin', 'pip'), 'install', '{{module}}=={version}'.format(
