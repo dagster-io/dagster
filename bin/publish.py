@@ -15,6 +15,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import urllib
 from collections import defaultdict
 # https://github.com/PyCQA/pylint/issues/73
 from distutils import spawn  # pylint: disable=no-name-in-module
@@ -22,6 +23,7 @@ from itertools import groupby
 
 import click
 import packaging.version
+import requests
 import slackclient
 import virtualenv
 
@@ -29,6 +31,8 @@ sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
 from git_tag import get_git_tag, get_most_recent_git_tag, set_git_tag  # isort: skip
 from pypirc import ConfigFileError, RCParser  # isort: skip
+
+
 
 assert os.getenv('SLACK_RELEASE_BOT_TOKEN'), 'No SLACK_RELEASE_BOT_TOKEN env variable found.'
 slack_client = slackclient.SlackClient(os.environ['SLACK_RELEASE_BOT_TOKEN'])
@@ -173,6 +177,10 @@ def publish_module(module, nightly=False, library=False, additional_steps='', dr
                 )
                 for line in iter(process.stdout.readline, b''):
                     click.echo(line.decode('utf-8'))
+                assert process.returncode == 0, \
+                    'Something went wrong while attempting to publish module {module_name}!'.format(
+                        module_name=module
+                    )
 
 
 def publish_all(nightly, dry_run=True):
@@ -724,11 +732,23 @@ def version():
 
 @cli.command()
 @click.argument('version')
-def audit(ver):
+def audit(version):  # pylint: disable=redefined-outer-name
     """Checks that the given version is installable from PyPI in a new virtualenv."""
 
+    for module in MODULE_NAMES + LIBRARY_MODULES:
+        res = requests.get(
+            urllib.parse.urlunparse(
+                ('https', 'pypi.org', '/'.join(['pypi', module, 'json']), None, None, None)
+            )
+        )
+        module_json = res.json()
+        assert module_json['info']['version'] == version, \
+            'Version does not match for module {module_name}, expected {expected}, got {received}'.format(
+                module_name=module, expected=version, received=module_json['info']['version']
+            )
+
     bootstrap_text = '''
-def after_install(options, home_dir):
+def after_install(options, home_dir): 
     for module_name in [{module_names}]:
         subprocess.check_output([
             os.path.join(home_dir, 'bin', 'pip'), 'install', '{{module}}=={version}'.format(
@@ -743,7 +763,7 @@ def after_install(options, home_dir):
                 for module_name in MODULE_NAMES + LIBRARY_MODULES
             ]
         ),
-        version=ver,
+        version=version,
     )
 
     bootstrap_script = virtualenv.create_bootstrap_script(bootstrap_text)

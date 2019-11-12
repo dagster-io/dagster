@@ -1,1 +1,2 @@
 pytest==4.6.3
+requests
