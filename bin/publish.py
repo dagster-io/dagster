@@ -17,6 +17,7 @@ import sys
 import tempfile
 import urllib
 from collections import defaultdict
+
 # https://github.com/PyCQA/pylint/issues/73
 from distutils import spawn  # pylint: disable=no-name-in-module
 from itertools import groupby
@@ -75,7 +76,7 @@ def which_(exe):
 def construct_publish_comands(additional_steps=None, nightly=False):
     '''Get the shell commands we'll use to actually build and publish a package to PyPI.'''
     publish_commands = (
-        ['rm -rf dist']
+        ['rm -rf dist || true']
         + (additional_steps if additional_steps else [])
         + [
             'python setup.py sdist bdist_wheel{nightly}'.format(
