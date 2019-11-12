@@ -36,9 +36,17 @@ def define_scheduler():
         should_execute=lambda: False,
     )
 
+    dynamic_config = ScheduleDefinition(
+        name="dynamic_config",
+        cron_schedule="0 0 * * *",
+        pipeline_name="no_config_pipeline",
+        environment_dict_fn=lambda: {"storage": {"filesystem": {}}},
+    )
+
     return [
         no_config_pipeline_hourly_schedule,
         no_config_pipeline_hourly_schedule_with_schedule_id_tag,
         no_config_pipeline_hourly_schedule_with_config_fn,
         no_config_should_execute,
+        dynamic_config,
     ]
