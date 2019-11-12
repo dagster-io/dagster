@@ -1,3 +1,4 @@
+apache-airflow>=1.10.6
 pyspark==2.4.4
 mock==2.0.0
 docker-compose==1.23.2

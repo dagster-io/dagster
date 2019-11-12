@@ -98,9 +98,10 @@ Now, if our solid logic fails to return the right type, we'll see a type check f
 replace our ``read_csv`` solid with the following bad logic:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_2.py
-   :lines: 43-38
+   :lines: 43-49
    :linenos:
    :lineno-start: 43
+   :emphasize-lines: 7
    :caption: custom_types_2.py
 
 When we run the pipeline with this solid, we'll see an error like:

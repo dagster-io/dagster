@@ -63,7 +63,7 @@ def test_get_all_schedules():
     assert scheduler_result.data
     assert scheduler_result.data['scheduler']
     assert scheduler_result.data['scheduler']['runningSchedules']
-    assert len(scheduler_result.data['scheduler']['runningSchedules']) == 3
+    assert len(scheduler_result.data['scheduler']['runningSchedules']) == 4
 
     assert scheduler_result.data['scheduler']['runningSchedules'][0]['id'] == schedule.schedule_id
 

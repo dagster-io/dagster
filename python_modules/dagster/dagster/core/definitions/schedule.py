@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.serdes import whitelist_for_serdes
 
 
@@ -18,17 +19,25 @@ class ScheduleDefinitionData(
 
 
 class ScheduleDefinition(object):
-    '''Define a schedule that targets a repository
+    '''Define a schedule that targets a pipeline
 
     Args:
         name (str): The name of the schedule.
-        cron_schedule (str): The cron schedule for the schedule
-        execution_params (dict): The execution params for the schedule
-        should_execute (function): Function that returns True/False
-        environment_vars (dict): The environment variables to set for the schedule
+        cron_schedule (str): A valid cron string for the schedule
+        environment_dict (Optional[dict]): The enviroment configuration that parameterizes this
+            execution, as a dict.
+        should_execute (Optional[function]): Function that runs at schedule execution time that
+            determines whether a schedule should execute. Defaults to a function that always returns
+            ``True``.
+        environment_vars (Optional[dict]): The environment variables to set for the schedule
     '''
 
-    __slots__ = ['_schedule_definition_data', '_execution_params', '_should_execute']
+    __slots__ = [
+        '_schedule_definition_data',
+        '_execution_params',
+        '_environment_dict_fn',
+        '_should_execute',
+    ]
 
     def __init__(
         self,
@@ -36,6 +45,7 @@ class ScheduleDefinition(object):
         cron_schedule,
         pipeline_name,
         environment_dict=None,
+        environment_dict_fn=None,
         tags=None,
         mode="default",
         should_execute=lambda: True,
@@ -52,14 +62,23 @@ class ScheduleDefinition(object):
         tags = check.opt_list_param(tags, 'tags')
         check.str_param(mode, 'mode')
 
+        self._environment_dict_fn = check.opt_callable_param(
+            environment_dict_fn, 'environment_dict_fn'
+        )
+        self._should_execute = check.callable_param(should_execute, 'should_execute')
+
+        if self._environment_dict_fn and environment_dict:
+            raise DagsterInvalidDefinitionError(
+                'Attempted to provide both environment_dict_fn and environment_dict as arguments'
+                ' to ScheduleDefinition. Must provide only one of the two.'
+            )
+
         self._execution_params = {
             'environmentConfigData': environment_dict,
             'selector': {'name': pipeline_name},
             'executionMetadata': {"tags": tags},
             'mode': mode,
         }
-
-        self._should_execute = check.fn_param(should_execute, 'should_execute')
 
     @property
     def schedule_definition_data(self):
@@ -80,6 +99,10 @@ class ScheduleDefinition(object):
     @property
     def execution_params(self):
         return self._execution_params
+
+    @property
+    def environment_dict_fn(self):
+        return self._environment_dict_fn
 
     @property
     def should_execute(self):

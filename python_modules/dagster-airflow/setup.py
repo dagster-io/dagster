@@ -36,36 +36,25 @@ def _do_setup(name='dagster-airflow'):
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
-            # https://github.com/apache/airflow/pull/3723
-            # 'Programming Language :: Python :: 3.7',
+            'Programming Language :: Python :: 3.7',
             'License :: OSI Approved :: Apache Software License',
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['dagster_airflow_tests']),
         install_requires=[
-            # standard python 2/3 compatability things
-            'enum-compat>=0.0.1',
-            'future>=0.16.0, <0.17.0a0',  # pin to range for Airflow compat
             'six>=1.11.0',
-            # airflow
-            'apache-airflow>=1.10.2; python_version<"3.7"',
-            'apache-airflow>=1.10.3; python_version>="3.7"',
-            # dagster
             'dagster=={ver}'.format(ver=ver),
-            # docker api
             'docker==3.7.0',
-            # aws
-            'boto3==1.9.*',
             'python-dateutil>=2.8.0',
-            # transitive dependency issue
-            # https://issues.apache.org/jira/browse/AIRFLOW-5430
-            # https://github.com/dpgaspar/Flask-AppBuilder/pull/1111
-            # https://github.com/marshmallow-code/marshmallow-sqlalchemy/issues/241
-            'marshmallow-sqlalchemy>=0.16.1, <0.19.0',
-            "marshmallow<2.20,>=2.18.0",
         ],
         extras_require={'kubernetes': kubernetes},
         entry_points={'console_scripts': ['dagster-airflow = dagster_airflow.cli:main']},
+        tests_require=[
+            # Airflow should be provided by the end user, not us. For example, GCP Cloud Composer
+            # ships a fork of Airflow; we don't want to override it with our install.
+            'apache-airflow>=1.10.6',
+            'boto3==1.9.*',
+        ],
     )
 
 

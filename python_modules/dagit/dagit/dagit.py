@@ -9,6 +9,8 @@ from watchdog.tricks import AutoRestartTrick
 
 from dagster import seven
 
+from .cli import ui
+
 
 # Use watchdog's python API to auto-restart the dagit-cli process when
 # python files in the current directory change. This is a slightly modified
@@ -72,7 +74,7 @@ def main():
 
     # If not using watch mode, just call the command.
     if not watch_for_reload:
-        os.execvp(command[0], command)
+        ui(command[1:])  # pylint: disable=no-value-for-parameter
         return
 
     signal.signal(signal.SIGTERM, handle_sigterm)
