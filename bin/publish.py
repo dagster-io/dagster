@@ -76,7 +76,7 @@ def which_(exe):
 def construct_publish_comands(additional_steps=None, nightly=False):
     '''Get the shell commands we'll use to actually build and publish a package to PyPI.'''
     publish_commands = (
-        ['rm -rf dist || true']
+        ['rm -rf dist']
         + (additional_steps if additional_steps else [])
         + [
             'python setup.py sdist bdist_wheel{nightly}'.format(
@@ -177,10 +177,13 @@ def publish_module(module, nightly=False, library=False, additional_steps='', dr
                 )
                 for line in iter(process.stdout.readline, b''):
                     click.echo(line.decode('utf-8'))
-                assert (
-                    process.returncode == 0
-                ), 'Something went wrong while attempting to publish module {module_name}!'.format(
-                    module_name=module
+
+                process.wait()
+                assert process.returncode == 0, (
+                    'Something went wrong while attempting to publish module {module_name}! '
+                    'Got code {code} from command "{command}" in cwd {cwd}'.format(
+                        module_name=module, code=process.returncode, command=command, cwd=cwd
+                    )
                 )
 
 
