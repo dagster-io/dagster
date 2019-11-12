@@ -43,16 +43,20 @@ const CancelRunButton: React.FunctionComponent<{ run: RunFragment }> = ({
   run
 }) => {
   const [cancel] = useMutation(CANCEL_MUTATION);
+  const [inFlight, setInFlight] = React.useState(false);
   return (
     <Button
       icon={IconNames.STOP}
       small={true}
       text="Terminate"
       intent="warning"
+      disabled={inFlight}
       onClick={async () => {
+        setInFlight(true);
         const res = await cancel({
           variables: { runId: run.runId }
         });
+        setInFlight(false);
         if (
           res.data &&
           res.data.cancelPipelineExecution &&

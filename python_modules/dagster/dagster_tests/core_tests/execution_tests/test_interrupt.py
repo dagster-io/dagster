@@ -16,17 +16,11 @@ from dagster import (
 from dagster.core.instance import DagsterInstance
 from dagster.utils import safe_tempfile_path
 
-try:
-    import _thread as thread
-except ImportError:
-    import thread
-
 
 def _send_kbd_int(temp_files):
     while not all([os.path.exists(temp_file) for temp_file in temp_files]):
         time.sleep(0.1)
-
-    thread.interrupt_main()
+    seven.thread.interrupt_main()
 
 
 @solid(config={'tempfile': Field(String)})
@@ -109,7 +103,7 @@ def test_interrupt_multiproc():
             ):
                 results.append(result.event_type)
             assert False  # should never reach
-        except DagsterSubprocessError:
+        except (DagsterSubprocessError, KeyboardInterrupt):
             pass
 
         assert results.count(DagsterEventType.STEP_FAILURE) == 4

@@ -151,7 +151,7 @@ class DagsterEvent(
     )
 ):
     '''Events yielded by solid and pipeline execution.
-    
+
     Users should not instantiate this class.'''
 
     @staticmethod
@@ -638,6 +638,13 @@ class EngineEventData(namedtuple('_EngineEventData', 'metadata_entries')):
                 if step_keys_to_execute
                 else []
             )
+        )
+
+    @staticmethod
+    def interrupted(steps_interrupted):
+        check.list_param(steps_interrupted, 'steps_interrupted', str)
+        return EngineEventData(
+            metadata_entries=[EventMetadataEntry.text(str(steps_interrupted), 'steps_interrupted')]
         )
 
 
