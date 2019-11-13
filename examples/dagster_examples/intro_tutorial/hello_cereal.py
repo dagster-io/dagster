@@ -1,6 +1,6 @@
 import csv
 
-from dagster import execute_pipeline, pipeline, solid
+from dagster import execute_pipeline, execute_solid, pipeline, solid
 
 
 @solid
@@ -26,3 +26,15 @@ def hello_cereal_pipeline():
 if __name__ == '__main__':
     result = execute_pipeline(hello_cereal_pipeline)
     assert result.success
+
+
+def test_hello_cereal_solid():
+    res = execute_solid(hello_cereal)
+    assert res.success
+    assert len(res.output_value()) == 77
+
+
+def test_hello_cereal_pipeline():
+    res = execute_pipeline(hello_cereal_pipeline)
+    assert res.success
+    assert len(res.result_for_solid('hello_cereal').output_value()) == 77

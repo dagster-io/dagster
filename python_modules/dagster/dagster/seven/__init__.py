@@ -2,6 +2,7 @@
 
 import inspect
 import os
+import signal
 import sys
 import time
 
@@ -30,6 +31,12 @@ try:
 except NameError:
     ModuleNotFoundError = ImportError
 
+try:
+    import _thread as thread
+except ImportError:
+    import thread
+
+IS_WINDOWS = os.name == 'nt'
 
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
 
@@ -75,7 +82,7 @@ def is_ascii(str_):
 
 if sys.version_info.major >= 3 and sys.version_info.minor >= 3:
     time_fn = time.perf_counter
-elif os.name == 'nt':
+elif IS_WINDOWS:
     time_fn = time.clock
 else:
     time_fn = time.time

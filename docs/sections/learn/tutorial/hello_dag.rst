@@ -81,8 +81,8 @@ their outputs).
 We'll write a simple test for this pipeline showing how we can assert that all four of its solids
 executed successfully.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/test_complex_pipeline.py
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/complex_pipeline.py
    :linenos:
-   :lines: 6-11
-   :lineno-start: 6
-   :caption: test_complex_pipeline.py
+   :lines: 57-63
+   :lineno-start: 57
+   :caption: complex_pipeline.py

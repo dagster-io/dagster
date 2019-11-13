@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import abc
 import logging
 import os
-import signal
 import sys
 import time
 
@@ -22,7 +21,7 @@ from dagster.core.events import (
 from dagster.core.events.log import DagsterEventRecord
 from dagster.core.execution.api import execute_run_iterator
 from dagster.core.instance import DagsterInstance
-from dagster.utils import get_multiprocessing_context
+from dagster.utils import get_multiprocessing_context, start_termination_thread
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
@@ -183,6 +182,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         self._multiprocessing_context = get_multiprocessing_context()
         self._instance = instance
         self._living_process_by_run_id = {}
+        self._term_events = {}
         self._processes_lock = self._multiprocessing_context.Lock()
 
         gevent.spawn(self._check_for_zombies)
@@ -245,13 +245,14 @@ class SubprocessExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, handle, pipeline, pipeline_run, instance):
         '''Subclasses must implement this method.'''
         check.inst_param(handle, 'handle', ExecutionTargetHandle)
-
+        term_event = self._multiprocessing_context.Event()
         mp_process = self._multiprocessing_context.Process(
             target=_in_mp_process,
             kwargs={
                 'handle': handle,
                 'pipeline_run': pipeline_run,
                 'instance_ref': instance.get_ref(),
+                'term_event': term_event,
             },
         )
 
@@ -260,6 +261,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
 
         with self._processes_lock:
             self._living_process_by_run_id[pipeline_run.run_id] = mp_process
+            self._term_events[pipeline_run.run_id] = term_event
 
     def join(self):
         with self._processes_lock:
@@ -305,12 +307,12 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         if not process.is_alive():
             return False
 
-        os.kill(process.pid, signal.SIGINT)
+        self._term_events[run_id].set()
         process.join()
         return True
 
 
-def _in_mp_process(handle, pipeline_run, instance_ref):
+def _in_mp_process(handle, pipeline_run, instance_ref, term_event):
     """
     Execute pipeline using message queue as a transport
     """
@@ -319,6 +321,8 @@ def _in_mp_process(handle, pipeline_run, instance_ref):
 
     instance = DagsterInstance.from_ref(instance_ref)
     instance.handle_new_event(build_process_started_event(run_id, pipeline_name, os.getpid()))
+
+    start_termination_thread(term_event)
 
     try:
         handle.build_repository_definition()

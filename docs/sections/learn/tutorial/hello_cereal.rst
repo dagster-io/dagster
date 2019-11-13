@@ -178,16 +178,21 @@ These functions synchronously execute a pipeline or solid and return results obj
 investigate, in detail, the success or failure of execution, the outputs produced by solids, and
 (as we'll see later) other events associated with execution.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/test_hello_cereal.py
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_cereal.py
    :linenos:
-   :caption: test_hello_cereal.py
+   :caption: hello_cereal.py
+   :lineno-start: 31
+   :lines: 31-41
 
 Now you can use pytest, or your test runner of choice, to run unit tests as you develop your
 data applications.
 
 .. code-block:: console
 
-    $ pytest
+    $ pytest hello_cereal.py
+
+Note: pytest tests are typically in files prefixed with `test_`. However in order to simplify
+the tutorial we have them in the same file.
 
 Obviously, in production we'll often execute pipelines in a parallel, streaming way that doesn't
 admit this kind of API, which is intended to enable local tests like this.

@@ -234,7 +234,9 @@ class SolidSelector extends React.PureComponent<
                   );
                 }
               }}
-              layout={getDagrePipelineLayout(pipeline ? pipeline.solids : [])}
+              layout={getDagrePipelineLayout(
+                pipeline && pipeline.solids ? pipeline.solids : []
+              )}
               highlightedSolids={
                 pipeline
                   ? pipeline.solids.filter(
@@ -297,7 +299,9 @@ export default (props: ISolidSelectorProps) => {
         <SolidSelector
           {...props}
           pipeline={
-            result.pipeline.__typename === "Pipeline" ? result.pipeline : null
+            result.pipeline && result.pipeline.__typename === "Pipeline"
+              ? result.pipeline
+              : null
           }
         />
       )}
