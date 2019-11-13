@@ -68,7 +68,7 @@ solid are indeed instances of SimpleDataFrame. As usual, run:
 
    $ dagit -f custom_types.py -n custom_type_pipeline
 
-.. thumbnail:: config_figure_two.png
+.. thumbnail:: custom_types_figure_one.png
 
 You can see that the output of ``read_csv`` (which by default has the name ``result``) is marked
 to be of type ``SimpleDataFrame``.
