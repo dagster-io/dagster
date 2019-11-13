@@ -41,7 +41,8 @@ def test_composite_basic_execution():
         a = node_a(a_source())
         node_d(B=node_b(a), C=node_c(a))
 
-    assert execute_solid(diamond_composite).success
+    res = execute_solid(diamond_composite)
+    assert res.success
 
     @pipeline
     def test_pipeline_double():

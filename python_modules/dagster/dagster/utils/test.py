@@ -136,7 +136,8 @@ def execute_solids_within_pipeline(
             pipeline execution.
 
     Returns:
-        Dict[str, SolidExecutionResult]: The results of executing the solids, keyed by solid name.
+        Dict[str, Union[CompositeSolidExecutionResult, SolidExecutionResult]]: The results of
+        executing the solids, keyed by solid name.
     '''
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.list_param(solid_names, 'solid_names', of_type=str)
@@ -170,7 +171,8 @@ def execute_solid_within_pipeline(
             pipeline execution.
 
     Returns:
-        SolidExecutionResult: The result of executing the solid.
+        Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of executing the
+        solid.
     '''
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.str_param(solid_name, 'solid_name')
@@ -226,7 +228,8 @@ def execute_solid(
             Defaults to ``True``, since this is the most useful behavior in test.
 
     Returns:
-        SolidExecutionResult: The result of executing the solid.
+        Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of executing the
+        solid.
     '''
     check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)

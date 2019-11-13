@@ -70,7 +70,11 @@ from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.execution.plan.objects import StepKind
-from dagster.core.execution.results import PipelineExecutionResult, SolidExecutionResult
+from dagster.core.execution.results import (
+    CompositeSolidExecutionResult,
+    PipelineExecutionResult,
+    SolidExecutionResult,
+)
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
 from dagster.core.storage.init import InitSystemStorageContext
