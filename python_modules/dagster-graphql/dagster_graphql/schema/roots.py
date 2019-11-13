@@ -35,7 +35,7 @@ from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGr
 
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
-from dagster.core.instance import DagsterFeatures, DagsterInstance
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 
@@ -679,14 +679,10 @@ class DauhphinInstance(dauphin.ObjectType):
     class Meta:
         name = 'Instance'
 
-    enabledFeatures = dauphin.non_null_list(dauphin.String)
     info = dauphin.NonNull(dauphin.String)
 
     def __init__(self, instance):
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)
-
-    def resolve_enabledFeatures(self, _graphene_info):
-        return [entry.name for entry in DagsterFeatures if self._instance.is_feature_enabled(entry)]
 
     def resolve_info(self, _graphene_info):
         return self._instance.info_str()

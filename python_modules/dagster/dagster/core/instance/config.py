@@ -18,13 +18,6 @@ def dagster_instance_config(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENA
     return dagster_config.value
 
 
-def dagster_feature_set(base_dir):
-    config = dagster_instance_config(base_dir)
-    if 'features' in config:
-        return [k for k in config['features']]
-    return None
-
-
 def config_field_for_configurable_class(name, **field_opts):
     return Field(
         SystemNamedDict(
@@ -39,7 +32,6 @@ def define_dagster_config_cls():
     return SystemNamedDict(
         'DagsterInstanceConfig',
         {
-            'features': Field(PermissiveDict(), is_optional=True),
             'local_artifact_storage': config_field_for_configurable_class(
                 'DagsterInstanceLocalArtifactStorageConfig', is_optional=True
             ),

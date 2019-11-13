@@ -18,8 +18,7 @@ from dagster.core.types import Field, PermissiveDict, String
 from dagster.core.types.evaluator import evaluate_config
 from dagster.utils.yaml_utils import load_yaml_from_globs
 
-from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_feature_set
-from .features import DagsterFeatures
+from .config import DAGSTER_CONFIG_YAML_FILENAME
 from .ref import InstanceRef, _compute_logs_directory
 
 
@@ -71,8 +70,8 @@ class InstanceType(Enum):
 
 
 class DagsterInstance:
-    '''Core abstraction for managing Dagster's access to storage, event handling, and feature set.
-    
+    '''Core abstraction for managing Dagster's access to storage and other resources.
+
     Users should not directly instantiate this class. Configuration of this class should be done
     using the ``dagster.yaml`` file in ``$DAGSTER_HOME``.
 
@@ -84,7 +83,6 @@ class DagsterInstance:
             pipeline runs.
         run_storage (RunStorage): Used to store metadata about ongoing and past pipeline runs.
         compute_log_manager (ComputeLogManager): Centralized dispatch for logging from user code.
-        feature_set (Optional[List[str]]): Used for feature-flagging.
         ref (Optional[InstanceRef]): Used by internal machinery to pass instances across process
             boundaries.
     '''
@@ -98,7 +96,6 @@ class DagsterInstance:
         run_storage,
         event_storage,
         compute_log_manager,
-        feature_set=None,
         ref=None,
     ):
         from dagster.core.storage.event_log import EventLogStorage
@@ -115,7 +112,6 @@ class DagsterInstance:
         self._compute_log_manager = check.inst_param(
             compute_log_manager, 'compute_log_manager', ComputeLogManager
         )
-        self._feature_set = check.opt_list_param(feature_set, 'feature_set', of_type=str)
         self._ref = check.opt_inst_param(ref, 'ref', InstanceRef)
 
         self._subscribers = defaultdict(list)
@@ -130,15 +126,12 @@ class DagsterInstance:
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
 
-        feature_set = dagster_feature_set(tempdir)
-
         return DagsterInstance(
             InstanceType.EPHEMERAL,
             local_artifact_storage=LocalArtifactStorage(tempdir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
             compute_log_manager=NoOpComputeLogManager(_compute_logs_directory(tempdir)),
-            feature_set=feature_set,
         )
 
     @staticmethod
@@ -158,12 +151,11 @@ class DagsterInstance:
             return DagsterInstance.ephemeral(fallback_storage)
 
     @staticmethod
-    def local_temp(tempdir=None, features=None):
-        features = check.opt_list_param(features, 'features', str)
+    def local_temp(tempdir=None):
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
 
-        return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir), features)
+        return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir))
 
     @staticmethod
     def from_config(config_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME):
@@ -171,15 +163,13 @@ class DagsterInstance:
         return DagsterInstance.from_ref(instance_ref)
 
     @staticmethod
-    def from_ref(instance_ref, fallback_feature_set=None):
+    def from_ref(instance_ref):
         check.inst_param(instance_ref, 'instance_ref', InstanceRef)
-        check.opt_list_param(fallback_feature_set, 'fallback_feature_set', of_type=str)
 
         local_artifact_storage = instance_ref.local_artifact_storage_data.rehydrate()
         run_storage = instance_ref.run_storage_data.rehydrate()
         event_storage = instance_ref.event_storage_data.rehydrate()
         compute_log_manager = instance_ref.compute_logs_data.rehydrate()
-        feature_set = instance_ref.feature_set or fallback_feature_set
 
         return DagsterInstance(
             instance_type=InstanceType.PERSISTENT,
@@ -187,7 +177,6 @@ class DagsterInstance:
             run_storage=run_storage,
             event_storage=event_storage,
             compute_log_manager=compute_log_manager,
-            feature_set=feature_set,
             ref=instance_ref,
         )
 
@@ -233,12 +222,6 @@ class DagsterInstance:
                 compute=_info(self._compute_log_manager),
             )
         )
-
-    # features
-
-    def is_feature_enabled(self, feature):
-        check.inst_param(feature, 'feature', DagsterFeatures)
-        return feature.value in self._feature_set
 
     # compute logs
 
