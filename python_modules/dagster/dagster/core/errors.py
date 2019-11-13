@@ -91,7 +91,7 @@ def user_code_error_boundary(error_cls, msg_fn, **kwargs):
     context.
 
 
-    Example:
+    Examples:
 
     .. code-block:: python
 

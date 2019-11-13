@@ -27,7 +27,7 @@ def single_output_solid(name, input_defs, compute_fn, output_def, description=No
     Returns:
         SolidDefinition:
 
-    Example:
+    Examples:
 
         .. code-block:: python
 

@@ -27,21 +27,33 @@ class SolidInvocation(namedtuple('Solid', 'name alias resource_mapper_fn')):
             keys are the resource keys provided by the pipeline and return a dictionary whose keys
             are the resource keys required by the solid definition, interchanging the values.
 
-    Example:
+    Examples:
 
         .. code-block:: python
 
-            pipeline = Pipeline(
+            pipeline = PipelineDefinition(
                 solid_defs=[solid_1, solid_2]
                 dependencies={
-                    SolidInvocation('solid_2', alias='other_name') : {
-                        'input_name' : DependencyDefinition('solid_2'),
+                    SolidInvocation('solid_1', alias='other_name') : {
+                        'input_name' : DependencyDefinition('solid_1'),
                     },
-                    'solid_1' : {
+                    'solid_2' : {
                         'input_name': DependencyDefinition('other_name'),
                     },
                 }
             )
+
+    In general, users should prefer not to construct this class directly or use the
+    :py:class:`PipelineDefinition` API that requires instances of this class. Instead, use the
+    :py:func:`@pipeline <pipeline>` API:
+
+    .. code-block:: python
+
+        @pipeline
+        def pipeline():
+            other_name = solid_1.alias('other_name')
+            solid_2(other_name(solid_1))
+
     '''
 
     def __new__(cls, name, alias=None, resource_mapper_fn=None):
@@ -439,8 +451,31 @@ class DependencyDefinition(
 ):
     '''Represents an edge in the DAG of solid instances forming a pipeline.
 
-    This object is used at the leaves of a dictionary structure whose keys represent the dependent
-    solid and dependent input, so this object only contains information about the dependee.
+    This object is used at the leaves of a dictionary structure that represents the complete
+    dependency structure of a pipeline whose keys represent the dependent solid and dependent
+    input, so this object only contains information about the dependee.
+
+    Concretely, if the input named 'input' of solid_b depends on the output named 'result' of
+    solid_a, this structure will look as follows:
+
+    .. code-block:: python
+
+        dependency_structure = {
+            'solid_b': {
+                'input': DependencyDefinition('solid_a', 'result')
+            }
+        }
+
+    In general, users should prefer not to construct this class directly or use the
+    :py:class:`PipelineDefinition` API that requires instances of this class. Instead, use the
+    :py:func:`@pipeline <pipeline>` API:
+
+    .. code-block:: python
+
+        @pipeline
+        def pipeline():
+            solid_b(solid_a())
+
 
     Args:
         solid (str): The name of the solid that is depended on, that is, from which the value
@@ -467,6 +502,46 @@ class DependencyDefinition(
 class MultiDependencyDefinition(
     namedtuple('_MultiDependencyDefinition', 'dependencies'), IDependencyDefinition
 ):
+    '''Represents a fan-in edge in the DAG of solid instances forming a pipeline.
+
+    This object is used only when an input of type ``List[T]`` is assembled by fanning-in multiple
+    upstream outputs of type ``T``.
+
+    This object is used at the leaves of a dictionary structure that represents the complete
+    dependency structure of a pipeline whose keys represent the dependent solid and dependent
+    input, so this object only contains information about the dependee.
+
+    Concretely, if the input named 'input' of solid_c depends on the outputs named 'result' of
+    solid_a and solid_b, this structure will look as follows:
+
+    .. code-block:: python
+
+        dependency_structure = {
+            'solid_c': {
+                'input': MultiDependencyDefiniition(
+                    DependencyDefinition('solid_a', 'result'),
+                    DependencyDefinition('solid_b', 'result')
+                )
+            }
+        }
+
+    In general, users should prefer not to construct this class directly or use the
+    :py:class:`PipelineDefinition` API that requires instances of this class. Instead, use the
+    :py:func:`@pipeline <pipeline>` API:
+
+    .. code-block:: python
+
+        @pipeline
+        def pipeline():
+            solid_c(solid_a(), solid_b())
+
+    Args:
+        solid (str): The name of the solid that is depended on, that is, from which the value
+            passed between the two solids originates.
+        output (Optional[str]): The name of the output that is depended on. (default: "result")
+        description (Optional[str]): Human-readable description of this dependency.
+    '''
+
     def __new__(cls, dependencies):
         deps = check.list_param(dependencies, 'dependencies', of_type=DependencyDefinition)
         seen = {}
