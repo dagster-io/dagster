@@ -29,9 +29,9 @@ test csv file. And we can use the output of another upstream solid to determine 
 Let's rebuild a pipeline we've seen before, but this time using our newly parametrized solid.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
-   :lines: 1-35
+   :lines: 1-36
    :linenos:
-   :emphasize-lines: 35
+   :emphasize-lines: 36
    :caption: inputs.py
 
 As you can see above, what's missing from this setup is a way to specify the ``csv_path``
@@ -40,7 +40,7 @@ rely on.
 
 Dagster provides the ability to stub inputs to solids that aren't satisfied by the pipeline
 topology as part of its flexible configuration facility. We can specify config for a pipeline
-execution regardless of which modality we use to execute the pipline -- the Python API, the Dagit
+execution regardless of which modality we use to execute the pipeline -- the Python API, the Dagit
 GUI, or the command line.
 
 
@@ -56,8 +56,8 @@ per-solid configuration, which is specified under the key ``solids``:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
     :linenos:
-    :lineno-start: 39
-    :lines: 39-43
+    :lineno-start: 40
+    :lines: 40-44
     :dedent: 4
     :caption: inputs.py
 
@@ -69,9 +69,9 @@ Now you can pass this environment dict to :py:func:`execute_pipeline`:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
     :linenos:
-    :lines: 44-46
+    :lines: 45-47
     :dedent: 4
-    :lineno-start: 44
+    :lineno-start: 45
     :caption: inputs.py
 
 
