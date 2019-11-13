@@ -12,6 +12,7 @@
 - Improved support in the type system for `Set` and `Tuple` types
 - Allow composite solids with config mapping to expose an empty config schema
 - Simplified graphql API arguments to single-step re-execution to use `retryRunId`, `stepKeys` execution parameters instead of a `reexecutionConfig` input object
+- Fixes missing step-level stdout/stderr from dagster CLI
 
 ## 0.6.3
 
