@@ -6,11 +6,7 @@ import click
 import six
 
 from dagster import check
-from dagster.core.execution.compute_logs import (
-    should_compute_log_tail_poll,
-    tail_polling,
-    tail_posix,
-)
+from dagster.core.execution.compute_logs import tail_polling
 
 
 def create_utils_cli_group():
@@ -41,11 +37,7 @@ def tail_command(filepath, parent_pid, io_type):
     parent_pid = extract_string_param('parent_pid', parent_pid)
     io_type = extract_string_param('io_type', io_type)
     stream = sys.stdout if io_type == 'stdout' else sys.stderr
-
-    if should_compute_log_tail_poll():
-        tail_polling(filepath, stream, parent_pid)
-    else:
-        tail_posix(filepath, stream, parent_pid)
+    tail_polling(filepath, stream, parent_pid)
 
 
 utils_cli = create_utils_cli_group()

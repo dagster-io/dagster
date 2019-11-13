@@ -16,6 +16,7 @@ from dagster import (
     pipeline,
     schedules,
     seven,
+    solid,
 )
 from dagster.check import CheckError
 from dagster.cli.pipeline import (
@@ -70,6 +71,26 @@ def baz_pipeline():
 
 def define_bar_repo():
     return RepositoryDefinition('bar', {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline})
+
+
+@solid
+def spew(context):
+    context.log.info('HELLO WORLD')
+
+
+@solid
+def fail(context):
+    raise Exception('I AM SUPPOSED TO FAIL')
+
+
+@pipeline
+def stdout_pipeline():
+    spew()
+
+
+@pipeline
+def stderr_pipeline():
+    fail()
 
 
 def test_list_command():
@@ -421,6 +442,22 @@ def test_execute_command():
     assert res.exit_code == 1
     assert isinstance(res.exception, CheckError)
     assert 'Can only handle zero or one pipeline args.' in str(res.exception)
+
+
+def test_stdout_execute_command():
+    runner = CliRunner()
+    result = runner_pipeline_execute(
+        runner, ['-f', script_relative_path('test_cli_commands.py'), '-n', 'stdout_pipeline']
+    )
+    assert 'HELLO WORLD' in result.output
+
+
+def test_stderr_execute_command():
+    runner = CliRunner()
+    result = runner_pipeline_execute(
+        runner, ['-f', script_relative_path('test_cli_commands.py'), '-n', 'stderr_pipeline']
+    )
+    assert 'I AM SUPPOSED TO FAIL' in result.output
 
 
 def test_fn_not_found_execute():
