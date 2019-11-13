@@ -1,16 +1,21 @@
 import os
 
+from dagster import check
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.types import Field, PermissiveDict, String
 from dagster.core.types.evaluator import evaluate_config
+from dagster.utils import merge_dicts
 from dagster.utils.yaml_utils import load_yaml_from_globs
 
 DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
 
 
-def dagster_instance_config(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME):
-    dagster_config_dict = load_yaml_from_globs(os.path.join(base_dir, config_filename))
+def dagster_instance_config(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME, overrides=None):
+    overrides = check.opt_dict_param(overrides, 'overrides')
+    dagster_config_dict = merge_dicts(
+        load_yaml_from_globs(os.path.join(base_dir, config_filename)), overrides
+    )
     dagster_config_type = define_dagster_config_cls().inst()
     dagster_config = evaluate_config(dagster_config_type, dagster_config_dict)
     if not dagster_config.success:
