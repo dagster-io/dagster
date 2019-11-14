@@ -1,0 +1,21 @@
+solids:
+  consolidate_csv_files:
+    inputs:
+      source_dir:
+        value: csv_target
+      target_name:
+        value: main.csv
+  download_zipfiles_from_urls:
+    inputs:
+      target_dir:
+        value: zip_target
+  unzip_files:
+    inputs:
+      source_dir:
+        value: zip_target
+      target_dir:
+        value: csv_target
+  upload_file_to_bucket:
+    inputs:
+      key:
+        value: main.csv
