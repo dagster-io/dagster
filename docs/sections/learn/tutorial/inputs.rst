@@ -12,7 +12,7 @@ So far, we've only seen solids whose behavior is the same every time they're run
    :caption: serial_pipeline.py
 
 In general, though, rather than relying on hardcoded values like ``dataset_path``, we'd like to be
-able to parametrize our solid logic. Appropriately parametrized solids are more testable, and
+able to parametrize our solid logic. Appropriately parameterized solids are more testable, and
 also more reusable. Consider the following more generic solid:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
@@ -26,7 +26,7 @@ easy to see why this is better. We can reuse the same solid in all the different
 might need to read in a .csv from a filepath. We can test the solid by pointing it at some known
 test csv file. And we can use the output of another upstream solid to determine which file to load.
 
-Let's rebuild a pipeline we've seen before, but this time using our newly parametrized solid.
+Let's rebuild a pipeline we've seen before, but this time using our newly parameterized solid.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
    :lines: 1-36
@@ -103,7 +103,7 @@ Using the Dagit config editor
 -----------------------------
 
 Dagit provides a powerful, schema-aware, typeahead-enabled config editor to enable rapid
-experimentation with and debugging of parametrized pipeline executions. As always, run:
+experimentation with and debugging of parameterized pipeline executions. As always, run:
 
 .. code-block:: console
 

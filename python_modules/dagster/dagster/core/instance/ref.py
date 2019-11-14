@@ -6,7 +6,7 @@ import yaml
 from dagster import check
 from dagster.core.serdes import ConfigurableClassData, whitelist_for_serdes
 
-from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_feature_set, dagster_instance_config
+from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 
 
 def _runs_directory(base):
@@ -35,20 +35,14 @@ def configurable_class_data_or_default(config_value, field_name, default):
 class InstanceRef(
     namedtuple(
         '_InstanceRef',
-        'feature_set local_artifact_storage_data run_storage_data event_storage_data compute_logs_data',
+        'local_artifact_storage_data run_storage_data event_storage_data compute_logs_data',
     )
 ):
     def __new__(
-        self,
-        feature_set,
-        local_artifact_storage_data,
-        run_storage_data,
-        event_storage_data,
-        compute_logs_data=None,
+        self, local_artifact_storage_data, run_storage_data, event_storage_data, compute_logs_data
     ):
         return super(self, InstanceRef).__new__(
             self,
-            feature_set=check.opt_list_param(feature_set, 'feature_set'),
             local_artifact_storage_data=check.inst_param(
                 local_artifact_storage_data, 'local_artifact_storage_data', ConfigurableClassData
             ),
@@ -111,7 +105,6 @@ class InstanceRef(
         )
 
         return InstanceRef(
-            feature_set=dagster_feature_set(base_dir),
             local_artifact_storage_data=local_artifact_storage_data,
             run_storage_data=run_storage_data,
             event_storage_data=event_storage_data,

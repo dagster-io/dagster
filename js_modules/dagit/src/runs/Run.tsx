@@ -3,7 +3,7 @@ import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { IconNames } from "@blueprintjs/icons";
-import { Colors, Button, Intent } from "@blueprintjs/core";
+import { Colors, Button, Intent, Tooltip, Position } from "@blueprintjs/core";
 import { MutationFunction, Mutation, useMutation } from "react-apollo";
 import ApolloClient from "apollo-client";
 
@@ -21,6 +21,7 @@ import ExecutionStartButton from "../execute/ExecutionStartButton";
 import InfoModal from "../InfoModal";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { RunContext } from "./RunContext";
+import { PipelineRunStatus } from "../types/globalTypes";
 
 import {
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
@@ -28,6 +29,10 @@ import {
 } from "./types/RunPipelineRunEventFragment";
 import { CANCEL_MUTATION } from "./RunUtils";
 import { SharedToaster } from "../Util";
+
+const REEXECUTE_DESCRIPTION = "Re-execute the pipeline run from scratch";
+const RETRY_DESCRIPTION =
+  "Retries the pipeline run, skipping steps that completed successfully";
 
 interface IRunProps {
   client: ApolloClient<any>;
@@ -166,7 +171,8 @@ export class Run extends React.Component<IRunProps, IRunState> {
 
   onReexecute = async (
     mutation: MutationFunction<Reexecute, ReexecuteVariables>,
-    stepKey?: string
+    stepKey?: string,
+    resumeRetry?: boolean
   ) => {
     const { run } = this.props;
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
@@ -186,6 +192,8 @@ export class Run extends React.Component<IRunProps, IRunState> {
       const step = run.executionPlan.steps.find(s => s.key === stepKey);
       if (!step) return;
       variables.executionParams.stepKeys = [stepKey];
+      variables.executionParams.retryRunId = run.runId;
+    } else if (resumeRetry) {
       variables.executionParams.retryRunId = run.runId;
     }
 
@@ -234,17 +242,45 @@ export class Run extends React.Component<IRunProps, IRunState> {
                             this.setState({ logsFilter: filter })
                           }
                         >
-                          <ExecutionStartButton
-                            title="Re-execute"
-                            icon={IconNames.REPEAT}
-                            small={true}
-                            onClick={() => this.onReexecute(reexecuteMutation)}
-                          />
+                          <Tooltip
+                            hoverOpenDelay={300}
+                            content={REEXECUTE_DESCRIPTION}
+                            position={Position.BOTTOM}
+                          >
+                            <ExecutionStartButton
+                              title="Re-execute"
+                              icon={IconNames.REPEAT}
+                              small={true}
+                              onClick={() =>
+                                this.onReexecute(reexecuteMutation)
+                              }
+                            />
+                          </Tooltip>
                           {run && run.canCancel ? (
                             <>
                               <div style={{ minWidth: 6 }} />
                               <CancelRunButton run={run} />
                             </>
+                          ) : null}
+                          {run && run.status === PipelineRunStatus.FAILURE ? (
+                            <Tooltip
+                              hoverOpenDelay={300}
+                              content={RETRY_DESCRIPTION}
+                              position={Position.BOTTOM}
+                            >
+                              <ExecutionStartButton
+                                title="Resume / Retry"
+                                icon={IconNames.REPEAT}
+                                small={true}
+                                onClick={() =>
+                                  this.onReexecute(
+                                    reexecuteMutation,
+                                    undefined,
+                                    true
+                                  )
+                                }
+                              />
+                            </Tooltip>
                           ) : null}
                         </LogsToolbar>
                         <LogsScrollingTable

@@ -1,7 +1,6 @@
 import csv
 
 from dagster import (
-    Failure,
     Field,
     Selector,
     String,
@@ -15,30 +14,18 @@ from dagster import (
 
 def less_simple_data_frame_type_check(value):
     if not isinstance(value, list):
-        raise Failure(
-            'LessSimpleDataFrame should be a list of dicts, got '
-            '{type_}'.format(type_=type(value))
-        )
+        return False
 
     fields = [field for field in value[0].keys()]
 
     for i in range(len(value)):
         row = value[i]
         if not isinstance(row, dict):
-            raise Failure(
-                'LessSimpleDataFrame should be a list of dicts, '
-                'got {type_} for row {idx}'.format(
-                    type_=type(row), idx=(i + 1)
-                )
-            )
+            return False
         row_fields = [field for field in row.keys()]
         if fields != row_fields:
-            raise Failure(
-                'Rows in LessSimpleDataFrame should have the same fields, '
-                'got {actual} for row {idx}, expected {expected}'.format(
-                    actual=row_fields, idx=(i + 1), expected=fields
-                )
-            )
+            return False
+    return True
 
 
 @input_hydration_config(Selector({'csv': Field(String)}))

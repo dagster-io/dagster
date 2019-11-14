@@ -1,3 +1,5 @@
+.. _scheduler:
+
 Scheduling pipeline runs
 ------------------------
 

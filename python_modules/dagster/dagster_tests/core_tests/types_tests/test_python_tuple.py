@@ -4,7 +4,6 @@ import pytest
 
 from dagster import (
     DagsterTypeCheckError,
-    Failure,
     InputDefinition,
     OutputDefinition,
     execute_solid,
@@ -86,17 +85,17 @@ def test_typed_python_tuple_directly():
 
     int_str_tuple.type_check((1, 'foo'))
 
-    with pytest.raises(Failure):
-        int_str_tuple.type_check(None)
+    res = int_str_tuple.type_check(None)
+    assert not res.success
 
-    with pytest.raises(Failure):
-        int_str_tuple.type_check('bar')
+    res = int_str_tuple.type_check('bar')
+    assert not res.success
 
-    with pytest.raises(Failure):
-        int_str_tuple.type_check((1, 2, 3))
+    res = int_str_tuple.type_check((1, 2, 3))
+    assert not res.success
 
-    with pytest.raises(Failure):
-        int_str_tuple.type_check(('1', 2))
+    res = int_str_tuple.type_check(('1', 2))
+    assert not res.success
 
 
 def test_nested_python_tuple_directly():
@@ -106,14 +105,14 @@ def test_nested_python_tuple_directly():
 
     nested_tuple.type_check((True, [1], (1, 'foo')))
 
-    with pytest.raises(Failure):
-        nested_tuple.type_check(None)
+    res = nested_tuple.type_check(None)
+    assert not res.success
 
-    with pytest.raises(Failure):
-        nested_tuple.type_check('bar')
+    res = nested_tuple.type_check('bar')
+    assert not res.success
 
-    with pytest.raises(Failure):
-        nested_tuple.type_check((True, [1], (1, 2)))
+    res = nested_tuple.type_check((True, [1], (1, 2)))
+    assert not res.success
 
 
 def test_closed_typing_tuple_output():

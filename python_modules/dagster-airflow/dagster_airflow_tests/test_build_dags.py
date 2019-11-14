@@ -43,5 +43,9 @@ def test_build_dags(clean_airflow_home):
     # This forces Airflow to refresh DAGs; see https://stackoverflow.com/a/50356956/11295366
     from airflow.models import DagBag
 
+    dag_bag = DagBag()
+
     # If Airflow hits an import error, it will add an entry to this dict.
-    assert not DagBag().import_errors
+    assert not dag_bag.import_errors
+
+    assert args[-1] in dag_bag.dags

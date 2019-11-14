@@ -11,7 +11,6 @@ def _decorate_as_dagster_type(
     output_materialization_config=None,
     serialization_strategy=None,
     auto_plugins=None,
-    typecheck_metadata_fn=None,
     type_check=None,
 ):
     dagster_type_cls = define_python_dagster_type(
@@ -22,7 +21,6 @@ def _decorate_as_dagster_type(
         output_materialization_config=output_materialization_config,
         serialization_strategy=serialization_strategy,
         auto_plugins=auto_plugins,
-        typecheck_metadata_fn=typecheck_metadata_fn,
         type_check=type_check,
     )
 
@@ -38,7 +36,6 @@ def dagster_type(
     output_materialization_config=None,
     serialization_strategy=None,
     auto_plugins=None,
-    typecheck_metadata_fn=None,
     type_check=None,
 ):
     '''Decorate a Python class to turn it into a Dagster type.
@@ -73,14 +70,11 @@ def dagster_type(
             argument. In these cases the serialization_strategy argument is not sufficient because
             serialization requires specialized API calls, e.g. to call an S3 API directly instead
             of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
-        typecheck_metadata_fn (Optional[Callable[[Any], TypeCheck]]): If specified, this function
-            will be called to emit metadata when you successfully check a type. The
-            typecheck_metadata_fn will be passed the value being type-checked and should return an
-            instance of :py:class:`TypeCheck`. See ``dagster_pandas.DataFrame`` for an example.
-        type_check (Optional[Callable[[Any], Any]]): If specified, this function will be called in
-            place of the default isinstance type check. This function should raise
-            :py:class:`Failure` if the type check fails, and otherwise pass. Its return value will
-            be ignored.
+        type_check (Optional[Callable[[Any], Union[bool, TypeCheck]]]): If specified, this function
+            will be called in place of the default isinstance type check. This function should
+            return ``True`` if the type check succeds, ``False`` if it fails, or, if additional
+            metadata should be emitted along with the type check success or failure, an instance of
+            :py:class:`TypeCheck` with the ``success`` field set appropriately.
 
     **Examples**:
 
@@ -121,7 +115,6 @@ def dagster_type(
             output_materialization_config=output_materialization_config,
             serialization_strategy=serialization_strategy,
             auto_plugins=auto_plugins,
-            typecheck_metadata_fn=typecheck_metadata_fn,
             type_check=type_check,
         )
 
@@ -141,7 +134,6 @@ def as_dagster_type(
     output_materialization_config=None,
     serialization_strategy=None,
     auto_plugins=None,
-    typecheck_metadata_fn=None,
     type_check=None,
 ):
     '''Create a Dagster type corresponding to an existing Python type.
@@ -176,14 +168,11 @@ def as_dagster_type(
             argument. In these cases the serialization_strategy argument is not sufficient because
             serialization requires specialized API calls, e.g. to call an S3 API directly instead
             of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
-        typecheck_metadata_fn (Optional[Callable[[Any], TypeCheck]]): If specified, this function
-            will be called to emit metadata when you successfully check a type. The
-            typecheck_metadata_fn will be passed the value being type-checked and should return an
-            instance of :py:class:`TypeCheck`. See ``dagster_pandas.DataFrame`` for an example.
-        type_check (Optional[Callable[[Any], Any]]): If specified, this function will be called in
-            place of the default isinstance type check. This function should raise
-            :py:class:`Failure` if the type check fails, and otherwise pass. Its return value will
-            be ignored.
+        type_check (Optional[Callable[[Any], Union[bool, TypeCheck]]]): If specified, this function
+            will be called in place of the default isinstance type check. This function should
+            return ``True`` if the type check succeds, ``False`` if it fails, or, if additional
+            metadata should be emitted along with the type check success or failure, an instance of
+            :py:class:`TypeCheck` with the ``success`` field set appropriately.
     
     **Example**:
 
@@ -199,15 +188,7 @@ def as_dagster_type(
             See http://pandas.pydata.org/\'\'\',
             input_hydration_config=dataframe_input_schema,
             output_materialization_config=dataframe_output_schema,
-            typecheck_metadata_fn=lambda value: TypeCheck(
-                metadata_entries=[
-                    EventMetadataEntry.text(
-                        str(len(value)), 'row_count', 'Number of rows in DataFrame'
-                    ),
-                    # string cast columns since they may be things like datetime
-                    EventMetadataEntry.json({'columns': list(map(str, value.columns))}, 'metadata'),
-                ]
-            ),
+            type_check=df_type_check
         )
 
     See, e.g., ``dagster_pandas.DataFrame`` and ``dagster_pyspark.SparkRDD`` for fuller worked
@@ -222,6 +203,5 @@ def as_dagster_type(
         output_materialization_config=output_materialization_config,
         serialization_strategy=serialization_strategy,
         auto_plugins=auto_plugins,
-        typecheck_metadata_fn=typecheck_metadata_fn,
         type_check=type_check,
     )

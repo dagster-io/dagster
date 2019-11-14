@@ -60,25 +60,25 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
         solid_subset = check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
         mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
 
-        file_set = set()
+        filenames = []
         for file_glob in environment_files or []:
-            files = glob(file_glob)
-            if not files:
+            globbed_files = glob(file_glob)
+            if not globbed_files:
                 raise DagsterInvalidDefinitionError(
                     'File or glob pattern "{file_glob}" for "environment_files" in preset '
                     '"{name}" produced no results.'.format(name=name, file_glob=file_glob)
                 )
 
-            file_set.update(map(os.path.realpath, files))
+            filenames += [os.path.realpath(globbed_file) for globbed_file in globbed_files]
 
         try:
-            merged = merge_yamls(list(file_set))
+            merged = merge_yamls(filenames)
         except yaml.YAMLError as err:
             six.raise_from(
                 DagsterInvariantViolationError(
                     'Encountered error attempting to parse yaml. Parsing files {file_set} '
                     'loaded by file/patterns {files} on preset "{name}".'.format(
-                        file_set=file_set, files=environment_files, name=name
+                        file_set=filenames, files=environment_files, name=name
                     )
                 ),
                 err,

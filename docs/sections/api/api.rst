@@ -17,3 +17,4 @@ API Docs
   apidocs/dagstermill
 
   apidocs/internals
+  apidocs/dagster_airflow

@@ -443,3 +443,11 @@ snapshots['test_presets_on_examples 13'] = {
         ]
     }
 }
+
+snapshots['test_presets_on_examples 14'] = {
+    'pipeline': {
+        'name': 'unreliable_pipeline',
+        'presets': [
+        ]
+    }
+}

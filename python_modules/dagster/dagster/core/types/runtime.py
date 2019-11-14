@@ -94,8 +94,10 @@ class RuntimeType(object):
     def display_name(self):
         return self.name
 
-    def type_check(self, value):
-        pass
+    def type_check(self, _value):
+        from dagster.core.events import TypeCheck
+
+        return TypeCheck(success=True)
 
     @property
     def is_any(self):
@@ -142,10 +144,7 @@ class Int(BuiltinScalarRuntimeType):
         )
 
     def type_check(self, value):
-        from dagster.core.definitions.events import Failure
-
-        if not isinstance(value, six.integer_types):
-            raise Failure(_typemismatch_error_str(value, 'int'))
+        return _fail_if_not_of_type(value, six.integer_types, 'int')
 
 
 def _typemismatch_error_str(value, expected_type_desc):
@@ -154,11 +153,13 @@ def _typemismatch_error_str(value, expected_type_desc):
     )
 
 
-def _throw_if_not_string(value):
-    from dagster.core.definitions.events import Failure
+def _fail_if_not_of_type(value, value_type, value_type_desc):
+    from dagster.core.definitions.events import TypeCheck
 
-    if not isinstance(value, six.string_types):
-        raise Failure(_typemismatch_error_str(value, 'string'))
+    if not isinstance(value, value_type):
+        return TypeCheck(success=False, description=_typemismatch_error_str(value, value_type_desc))
+
+    return TypeCheck(success=True)
 
 
 class String(BuiltinScalarRuntimeType):
@@ -169,7 +170,7 @@ class String(BuiltinScalarRuntimeType):
         )
 
     def type_check(self, value):
-        _throw_if_not_string(value)
+        return _fail_if_not_of_type(value, six.string_types, 'string')
 
 
 class Path(BuiltinScalarRuntimeType):
@@ -180,7 +181,7 @@ class Path(BuiltinScalarRuntimeType):
         )
 
     def type_check(self, value):
-        _throw_if_not_string(value)
+        return _fail_if_not_of_type(value, six.string_types, 'string')
 
 
 class Float(BuiltinScalarRuntimeType):
@@ -191,10 +192,7 @@ class Float(BuiltinScalarRuntimeType):
         )
 
     def type_check(self, value):
-        from dagster.core.definitions.events import Failure
-
-        if not isinstance(value, float):
-            raise Failure(_typemismatch_error_str(value, 'float'))
+        return _fail_if_not_of_type(value, float, 'float')
 
 
 class Bool(BuiltinScalarRuntimeType):
@@ -205,10 +203,7 @@ class Bool(BuiltinScalarRuntimeType):
         )
 
     def type_check(self, value):
-        from dagster.core.definitions.events import Failure
-
-        if not isinstance(value, bool):
-            raise Failure(_typemismatch_error_str(value, 'bool'))
+        return _fail_if_not_of_type(value, bool, 'bool')
 
 
 class Anyish(RuntimeType):
@@ -269,48 +264,59 @@ class Nothing(RuntimeType):
         return True
 
     def type_check(self, value):
-        from dagster.core.definitions.events import Failure
+        from dagster.core.definitions.events import TypeCheck
 
         if value is not None:
-            raise Failure('Value {value} must be None.')
+            return TypeCheck(
+                success=False,
+                description='Value must be None, got a {value_type}'.format(value_type=type(value)),
+            )
+
+        return TypeCheck(success=True)
 
 
 class PythonObjectType(RuntimeType):
-    def __init__(
-        self,
-        python_type=None,
-        key=None,
-        name=None,
-        typecheck_metadata_fn=None,
-        type_check=None,
-        **kwargs
-    ):
+    def __init__(self, python_type=None, key=None, name=None, type_check=None, **kwargs):
         name = check.opt_str_param(name, 'name', type(self).__name__)
         key = check.opt_str_param(key, 'key', name)
         super(PythonObjectType, self).__init__(key=key, name=name, **kwargs)
         self.python_type = check.type_param(python_type, 'python_type')
-        self.typecheck_metadata_fn = check.opt_callable_param(
-            typecheck_metadata_fn, 'typecheck_metadata_fn'
-        )
         self._user_type_check = check.opt_callable_param(type_check, 'type_check')
 
     def type_check(self, value):
-        from dagster.core.definitions.events import Failure
+        from dagster.core.definitions.events import TypeCheck
 
         if self._user_type_check is not None:
-            self._user_type_check(value)
+            res = self._user_type_check(value)
+            check.invariant(
+                isinstance(res, bool) or isinstance(res, TypeCheck),
+                'Invalid return type from user-defined type check on Dagster type {dagster_type} '
+                'when evaluated on value of type {value_type}: expected bool or TypeCheck, got '
+                '{return_type}'.format(
+                    dagster_type=self.name, value_type=type(value), return_type=type(res)
+                ),
+            )
+            if res is False:
+                return TypeCheck(success=False)
+            elif res is True:
+                return TypeCheck(success=True)
+
+            return res
+
         elif not isinstance(value, self.python_type):
-            raise Failure(
-                'Value of type {value_type} failed type check for Dagster type {dagster_type}, '
-                'expected value to be of Python type {expected_type}.'.format(
+            return TypeCheck(
+                success=False,
+                description=(
+                    'Value of type {value_type} failed type check for Dagster type {dagster_type}, '
+                    'expected value to be of Python type {expected_type}.'
+                ).format(
                     value_type=type(value),
                     dagster_type=self.name,
                     expected_type=self.python_type.__name__,
-                )
+                ),
             )
 
-        if self.typecheck_metadata_fn:
-            return self.typecheck_metadata_fn(value)
+        return TypeCheck(success=True)
 
 
 def define_python_dagster_type(
@@ -321,7 +327,6 @@ def define_python_dagster_type(
     output_materialization_config=None,
     serialization_strategy=None,
     auto_plugins=None,
-    typecheck_metadata_fn=None,
     type_check=None,
 ):
     '''Core machinery for defining a Dagster type corresponding to an existing python type.
@@ -351,14 +356,11 @@ def define_python_dagster_type(
             argument. In these cases the serialization_strategy argument is not sufficient because
             serialization requires specialized API calls, e.g. to call an S3 API directly instead
             of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
-        typecheck_metadata_fn (Optional[Callable[[Any], TypeCheck]]): If specified, this function
-            will be called to emit metadata when you successfully check a type. The
-            typecheck_metadata_fn will be passed the value being type-checked and should return an
-            instance of :py:class:`TypeCheck`. See ``dagster_pandas.DataFrame`` for an example.
-        type_check (Optional[Callable[[Any], Any]]): If specified, this function will be called in
-            place of the default isinstance type check. This function should raise
-            :py:class:`Failure` if the type check fails, and otherwise pass. Its return value will
-            be ignored.
+        type_check (Optional[Callable[[Any], Union[bool, TypeCheck]]]): If specified, this function
+            will be called in place of the default isinstance type check. This function should
+            return ``True`` if the type check succeds, ``False`` if it fails, or, if additional
+            metadata should be emitted along with the type check success or failure, an instance of
+            :py:class:`TypeCheck` with the ``success`` field set appropriately.
     '''
 
     check.type_param(python_type, 'python_type')
@@ -381,7 +383,6 @@ def define_python_dagster_type(
         'auto_plugins',
     )
 
-    check.opt_callable_param(typecheck_metadata_fn, 'typecheck_metadata_fn')
     check.opt_callable_param(type_check, 'type_check')
 
     class _ObjectType(PythonObjectType):
@@ -394,7 +395,6 @@ def define_python_dagster_type(
                 output_materialization_config=output_materialization_config,
                 serialization_strategy=serialization_strategy,
                 auto_plugins=auto_plugins,
-                typecheck_metadata_fn=typecheck_metadata_fn,
                 type_check=type_check,
             )
 
@@ -435,7 +435,9 @@ class NullableType(RuntimeType):
         return self.inner_type.display_name + '?'
 
     def type_check(self, value):
-        return None if value is None else self.inner_type.type_check(value)
+        from dagster.core.events import TypeCheck
+
+        return TypeCheck(success=True) if value is None else self.inner_type.type_check(value)
 
     @property
     def is_nullable(self):
@@ -479,13 +481,18 @@ class ListType(RuntimeType):
         return '[' + self.inner_type.display_name + ']'
 
     def type_check(self, value):
-        from dagster.core.definitions.events import Failure
+        from dagster.core.events import TypeCheck
 
-        if not isinstance(value, list):
-            raise Failure('Value must be a list, got {value}'.format(value=value))
+        value_check = _fail_if_not_of_type(value, list, 'list')
+        if not value_check.success:
+            return value_check
 
         for item in value:
-            self.inner_type.type_check(item)
+            item_check = self.inner_type.type_check(item)
+            if not item_check.success:
+                return item_check
+
+        return TypeCheck(success=True)
 
     @property
     def is_list(self):
@@ -533,7 +540,7 @@ class Stringish(RuntimeType):
         return True
 
     def type_check(self, value):
-        return _throw_if_not_string(value)
+        return _fail_if_not_of_type(value, six.string_types, 'string')
 
 
 _RUNTIME_MAP = {

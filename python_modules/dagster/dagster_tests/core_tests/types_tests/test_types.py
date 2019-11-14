@@ -1,10 +1,10 @@
+import re
+
 import pytest
 
 from dagster import (
-    DagsterInvariantViolationError,
     DagsterTypeCheckError,
     EventMetadataEntry,
-    Failure,
     InputDefinition,
     OutputDefinition,
     TypeCheck,
@@ -41,7 +41,8 @@ def test_python_object_type():
 def test_python_object_type_with_custom_type_check():
     def eq_3(value):
         if value != 3:
-            raise Failure()
+            return False
+        return True
 
     class Int3(PythonObjectType):
         def __init__(self):
@@ -59,16 +60,16 @@ def test_nullable_python_object_type():
     assert_type_check(nullable_type_bar.type_check(BarObj()))
     assert_type_check(nullable_type_bar.type_check(None))
 
-    with pytest.raises(Failure):
-        nullable_type_bar.type_check('not_a_bar')
+    res = nullable_type_bar.type_check('not_a_bar')
+    assert not res.success
 
 
 def test_nullable_int_coercion():
     int_type = resolve_to_runtime_type(Int)
     assert_type_check(int_type.type_check(1))
 
-    with pytest.raises(Failure):
-        int_type.type_check(None)
+    res = int_type.type_check(None)
+    assert not res.success
 
     nullable_int_type = resolve_to_runtime_type(Optional[Int])
     assert_type_check(nullable_int_type.type_check(1))
@@ -76,7 +77,7 @@ def test_nullable_int_coercion():
 
 
 def assert_type_check(type_check):
-    assert type_check is None or isinstance(type_check, TypeCheck)
+    assert isinstance(type_check, TypeCheck) and type_check.success
 
 
 def assert_success(runtime_type, value):
@@ -85,8 +86,8 @@ def assert_success(runtime_type, value):
 
 
 def assert_failure(runtime_type, value):
-    with pytest.raises(Failure):
-        runtime_type.type_check(value)
+    res = runtime_type.type_check(value)
+    assert not res.success
 
 
 def test_nullable_list_combos_coerciion():
@@ -255,7 +256,7 @@ class BadType(RuntimeType):
     def __init__(self):
         super(BadType, self).__init__(key='BadType', name='BadType')
 
-    def type_check(self, value):
+    def type_check(self, _value):
         return 'kdjfkjd'
 
 
@@ -272,7 +273,17 @@ def test_input_type_returns_wrong_thing():
     def pipe():
         return take_bad_thing(return_one())
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(
+        DagsterTypeCheckError,
+        match=re.escape(
+            'In solid "take_bad_thing" the input "value" received value 1 of Python type <'
+        )
+        + '(class|type)'
+        + re.escape(
+            ' \'int\'> which does not pass the typecheck for Dagster type BadType. Step '
+            'take_bad_thing.compute.'
+        ),
+    ):
         execute_pipeline(pipe)
 
     pipeline_result = execute_no_throw(pipe)
@@ -281,14 +292,21 @@ def test_input_type_returns_wrong_thing():
     solid_result = pipeline_result.result_for_solid('take_bad_thing')
     type_check_data = _type_check_data_for_input(solid_result, 'value')
     assert not type_check_data.success
-    assert (
-        type_check_data.description
-        == "Type checks can only return None or TypeCheck. Type BadType returned 'kdjfkjd'."
+    assert re.match(
+        re.escape(
+            'Type checks must return TypeCheck. Type check for type BadType returned value of '
+            'type <'
+        )
+        + '(class|type)'
+        + re.escape(' \'str\'> when checking runtime value of type <')
+        + '(class|type)'
+        + re.escape(' \'int\'>.'),
+        type_check_data.description,
     )
     assert not type_check_data.metadata_entries
 
     step_failure_event = solid_result.compute_step_failure_event
-    assert step_failure_event.event_specific_data.error.cls_name == 'DagsterInvariantViolationError'
+    assert step_failure_event.event_specific_data.error.cls_name == 'Failure'
 
 
 def test_output_type_returns_wrong_thing():
@@ -300,7 +318,17 @@ def test_output_type_returns_wrong_thing():
     def pipe():
         return return_one_bad_thing()
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(
+        DagsterTypeCheckError,
+        match=re.escape(
+            'In solid "return_one_bad_thing" the output "result" received value 1 of Python type <'
+        )
+        + '(class|type)'
+        + re.escape(
+            ' \'int\'> which does not pass the typecheck for Dagster type BadType. Step '
+            'return_one_bad_thing.compute.'
+        ),
+    ):
         execute_pipeline(pipe)
 
     pipeline_result = execute_no_throw(pipe)
@@ -311,13 +339,20 @@ def test_output_type_returns_wrong_thing():
     type_check_data = output_event.event_specific_data.type_check_data
     assert not type_check_data.success
 
-    assert (
-        type_check_data.description
-        == "Type checks can only return None or TypeCheck. Type BadType returned 'kdjfkjd'."
+    assert re.match(
+        re.escape(
+            'Type checks must return TypeCheck. Type check for type BadType returned value of '
+            'type <'
+        )
+        + '(class|type)'
+        + re.escape(' \'str\'> when checking runtime value of type <')
+        + '(class|type)'
+        + re.escape(' \'int\'>.'),
+        type_check_data.description,
     )
 
     step_failure_event = solid_result.compute_step_failure_event
-    assert step_failure_event.event_specific_data.error.cls_name == 'DagsterInvariantViolationError'
+    assert step_failure_event.event_specific_data.error.cls_name == 'Failure'
 
 
 def test_input_type_throw_arbitrary_exception():
@@ -343,7 +378,7 @@ def test_input_type_throw_arbitrary_exception():
     assert not type_check_data.success
 
     step_failure_event = solid_result.compute_step_failure_event
-    assert step_failure_event.event_specific_data.error.cls_name == 'Exception'
+    assert step_failure_event.event_specific_data.error.cls_name == 'Failure'
 
 
 def test_output_type_throw_arbitrary_exception():
@@ -366,13 +401,10 @@ def test_output_type_throw_arbitrary_exception():
     type_check_data = output_event.event_specific_data.type_check_data
     assert not type_check_data.success
 
-    assert (
-        'In solid "return_one_throws" the output "result" received value'
-        in type_check_data.description
-    )
+    assert 'kdjfkjd' == type_check_data.description
 
     step_failure_event = solid_result.compute_step_failure_event
-    assert step_failure_event.event_specific_data.error.cls_name == 'Exception'
+    assert step_failure_event.event_specific_data.error.cls_name == 'Failure'
 
 
 def define_custom_dict(name, permitted_key_names):
@@ -382,23 +414,27 @@ def define_custom_dict(name, permitted_key_names):
 
         def type_check(self, value):
             if not isinstance(value, dict):
-                raise Failure(
-                    'Value {value} should be of type {type_name}.'.format(
+                return TypeCheck(
+                    False,
+                    description='Value {value} should be of type {type_name}.'.format(
                         value=value, type_name=self.name
-                    )
+                    ),
                 )
             for key in value:
                 if not key in permitted_key_names:
-                    raise Failure(
-                        'Key {name} is not a permitted value, values can only be of: {name_list}'.format(
-                            name=value.name, name_list=permitted_key_names
-                        )
+                    return TypeCheck(
+                        False,
+                        description=(
+                            'Key {name} is not a permitted value, values can only be of: '
+                            '{name_list}'
+                        ).format(name=value.name, name_list=permitted_key_names),
                     )
             return TypeCheck(
+                True,
                 metadata_entries=[
                     EventMetadataEntry.text(label='row_count', text=str(len(value))),
                     EventMetadataEntry.text(label='series_names', text=', '.join(value.keys())),
-                ]
+                ],
             )
 
     return _CustomDict

@@ -21,7 +21,10 @@ def test_execute_pandas_hello_world_pipeline():
         'solids': {
             'sum_solid': {
                 'inputs': {'num_df': {'csv': {'path': file_relative_path(__file__, 'num.csv')}}}
-            }
+            },
+            'mult_solid': {
+                'inputs': {'num_df': {'csv': {'path': file_relative_path(__file__, 'num.csv')}}}
+            },
         }
     }
 
@@ -39,6 +42,7 @@ def test_execute_pandas_hello_world_pipeline():
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
+        'sum_mult_sq': [6, 84],
         'sum_sq': [9, 49],
     }
 
@@ -64,5 +68,6 @@ def test_execute_pandas_hello_world_pipeline_with_read_csv():
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
+        'sum_mult_sq': [6, 84],
         'sum_sq': [9, 49],
     }

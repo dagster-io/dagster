@@ -3,7 +3,6 @@ import pytest
 from dagster import (
     DagsterTypeCheckError,
     Dict,
-    Failure,
     InputDefinition,
     OutputDefinition,
     execute_solid,
@@ -20,8 +19,8 @@ def test_typed_python_dict():
 def test_typed_python_dict_failure():
     int_to_int = Dict[int, int].inst()
 
-    with pytest.raises(Failure):
-        int_to_int.type_check({1: '1'})
+    res = int_to_int.type_check({1: '1'})
+    assert not res.success
 
 
 def test_basic_solid_dict_int_int_output():

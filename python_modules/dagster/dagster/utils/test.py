@@ -272,24 +272,21 @@ def check_dagster_type(dagster_type, value):
         value (Any): The runtime value to test.
 
     Returns:
-        Optional[TypeCheck]: The result of the type check.
+        TypeCheck: The result of the type check.
     
-    Raises:
-        Failure: If the type check fails.
 
     **Examples**:
 
         .. code-block:: python
 
-            assert check_dagster_type(Dict[Any, Any], {'foo': 'bar'}) is None
+            assert check_dagster_type(Dict[Any, Any], {'foo': 'bar'}).success
     '''
     runtime_type = resolve_to_runtime_type(dagster_type)
     type_check = runtime_type.type_check(value)
-    if type_check is not None and not isinstance(type_check, TypeCheck):
+    if not isinstance(type_check, TypeCheck):
         raise DagsterInvariantViolationError(
-            (
-                'Type checks can only return None or TypeCheck. Type '
-                '{type_name} returned {value}.'
-            ).format(type_name=runtime_type.name, value=repr(type_check))
+            ('Type checks can only return TypeCheck. Type ' '{type_name} returned {value}.').format(
+                type_name=runtime_type.name, value=repr(type_check)
+            )
         )
     return type_check

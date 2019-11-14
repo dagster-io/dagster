@@ -161,6 +161,42 @@ def make_airflow_dag(
     dag_kwargs=None,
     op_kwargs=None,
 ):
+    '''Construct an Airflow DAG corresponding to a given Dagster pipeline.
+
+    Tasks in the resulting DAG will execute the Dagster logic they encapsulate as a Python
+    callable, run by an underlying :py:class:`PythonOperator <airflow:PythonOperator>`. As a
+    consequence, both dagster, any Python dependencies required by your solid logic, and the module
+    containing your pipeline definition must be available in the Python environment within which
+    your Airflow tasks execute. If you cannot install requirements into this environment, or you
+    are looking for a containerized solution to provide better isolation, see instead
+    :py:func:`make_airflow_dag_containerized`.
+
+    This function should be invoked in an Airflow DAG definition file, such as that created by an
+    invocation of the dagster-airflow scaffold CLI tool.
+    
+    Args:
+        module_name (str): The name of the importable module in which the pipeline definition can be
+            found.
+        pipeline_name (str): The name of the pipeline definition.
+        environment_dict (Optional[dict]): The environment config, if any, with which to compile
+            the pipeline to an execution plan, as a Python dict.
+        mode (Optional[str]): The mode in which to execute the pipeline.
+        instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline.
+        dag_id (Optional[str]): The id to use for the compiled Airflow DAG (passed through to
+            :py:class:`DAG <airflow:airflow.models.DAG>`).
+        dag_description (Optional[str]): The description to use for the compiled Airflow DAG
+            (passed through to :py:class:`DAG <airflow:airflow.models.DAG>`)
+        dag_kwargs (Optional[dict]): Any additional kwargs to pass to the Airflow
+            :py:class:`DAG <airflow:airflow.models.DAG>` constructor, including ``default_args``.
+        op_kwargs (Optional[dict]): Any additional kwargs to pass to the underlying Airflow
+            operator (a subclass of
+            :py:class:`PythonOperator <airflow:airflow.operators.python_operator.PythonOperator>`).
+
+    Returns:
+        (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
+        list of its constituent tasks.
+
+    '''
     check.str_param(module_name, 'module_name')
 
     handle = ExecutionTargetHandle.for_pipeline_module(module_name, pipeline_name)
@@ -211,6 +247,42 @@ def make_airflow_dag_containerized(
     dag_kwargs=None,
     op_kwargs=None,
 ):
+    '''Construct a containerized Airflow DAG corresponding to a given Dagster pipeline.
+
+    Tasks in the resulting DAG will execute the Dagster logic they encapsulate by calling the
+    dagster-graphql API exposed by a container run using a subclass of
+    :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`. As a
+    consequence, both dagster, any Python dependencies required by your solid logic, and the module
+    containing your pipeline definition must be available in the container spun up by this operator.
+    Typically you'll want to install these requirements onto the image you're using.
+
+    This function should be invoked in an Airflow DAG definition file, such as that created by an
+    invocation of the dagster-airflow scaffold CLI tool.
+    
+    Args:
+        module_name (str): The name of the importable module in which the pipeline definition can be
+            found.
+        pipeline_name (str): The name of the pipeline definition.
+        image (str): The name of the Docker image to use for execution (passed through to
+            :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`).
+        environment_dict (Optional[dict]): The environment config, if any, with which to compile
+            the pipeline to an execution plan, as a Python dict.
+        mode (Optional[str]): The mode in which to execute the pipeline.
+        instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline.
+        dag_id (Optional[str]): The id to use for the compiled Airflow DAG (passed through to
+            :py:class:`DAG <airflow:airflow.models.DAG>`).
+        dag_description (Optional[str]): The description to use for the compiled Airflow DAG
+            (passed through to :py:class:`DAG <airflow:airflow.models.DAG>`)
+        dag_kwargs (Optional[dict]): Any additional kwargs to pass to the Airflow
+            :py:class:`DAG <airflow:airflow.models.DAG>` constructor, including ``default_args``.
+        op_kwargs (Optional[dict]): Any additional kwargs to pass to the underlying Airflow
+            operator (a subclass of
+            :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`).
+
+    Returns:
+        (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
+        list of its constituent tasks.
+    '''
     check.str_param(module_name, 'module_name')
 
     handle = ExecutionTargetHandle.for_pipeline_module(module_name, pipeline_name)

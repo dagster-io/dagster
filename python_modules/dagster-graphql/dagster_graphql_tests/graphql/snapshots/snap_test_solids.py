@@ -243,6 +243,38 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
+                'name': 'fail'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'eventually_successful'
+                    },
+                    'solidHandle': {
+                        'handleID': 'fail'
+                    }
+                },
+                {
+                    'pipeline': {
+                        'name': 'eventually_successful'
+                    },
+                    'solidHandle': {
+                        'handleID': 'fail_2'
+                    }
+                },
+                {
+                    'pipeline': {
+                        'name': 'eventually_successful'
+                    },
+                    'solidHandle': {
+                        'handleID': 'fail_3'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
                 'name': 'loop'
             },
             'invocations': [
@@ -284,6 +316,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     'solidHandle': {
                         'handleID': 'noop_solid'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'reset'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'eventually_successful'
+                    },
+                    'solidHandle': {
+                        'handleID': 'reset'
                     }
                 }
             ]
@@ -444,6 +492,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     'solidHandle': {
                         'handleID': 'solid_with_secret'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'spawn'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'eventually_successful'
+                    },
+                    'solidHandle': {
+                        'handleID': 'spawn'
                     }
                 }
             ]

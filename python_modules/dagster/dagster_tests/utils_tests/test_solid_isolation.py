@@ -166,4 +166,6 @@ def test_single_solid_with_bad_inputs():
 
     assert not result.success
     assert result.failure_data.error.cls_name == 'Failure'
-    assert 'must be a int' in result.failure_data.error.message
+    assert (
+        'Type check failed for step input num_two of type Int' in result.failure_data.error.message
+    )

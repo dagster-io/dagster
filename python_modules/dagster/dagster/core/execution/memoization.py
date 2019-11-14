@@ -7,6 +7,7 @@ from dagster.core.events.log import EventRecord
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.object_store import ObjectStoreOperation, ObjectStoreOperationType
 
 
@@ -124,3 +125,38 @@ def output_handles_from_execution_plan(execution_plan):
             if step_input.source_handles:
                 output_handles_for_current_run.update(step_input.source_handles)
     return output_handles_for_current_run
+
+
+def get_retry_steps_from_execution_plan(instance, execution_plan):
+    check.inst_param(instance, 'instance', DagsterInstance)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+
+    if not execution_plan.previous_run_id:
+        return execution_plan.step_keys_to_execute
+
+    previous_run = instance.get_run_by_id(execution_plan.previous_run_id)
+    previous_run_logs = instance.all_logs(execution_plan.previous_run_id)
+    failed_step_keys = set(
+        record.dagster_event.step_key
+        for record in previous_run_logs
+        if is_step_failure_event(record)
+    )
+    previous_run_output_handles = output_handles_from_event_logs(previous_run_logs)
+    previous_run_output_names_by_step = defaultdict(set)
+    for handle in previous_run_output_handles:
+        previous_run_output_names_by_step[handle.step_key].add(handle.output_name)
+
+    to_retry = []
+    for step in execution_plan.topological_steps():
+        if previous_run.step_keys_to_execute and step.key not in previous_run.step_keys_to_execute:
+            continue
+
+        if step.key in failed_step_keys:
+            to_retry.append(step.key)
+            continue
+
+        step_output_names = set(step_output.name for step_output in step.step_outputs)
+        if step_output_names.difference(previous_run_output_names_by_step[step.key]):
+            to_retry.append(step.key)
+
+    return to_retry

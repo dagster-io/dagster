@@ -365,7 +365,6 @@ type InputMapping {
 }
 
 type Instance {
-  enabledFeatures: [String!]!
   info: String!
 }
 
