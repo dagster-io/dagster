@@ -42,11 +42,8 @@ def _do_setup(name='dagster-gcp'):
             'dagster',
             'dagster_pandas',
             'google-api-python-client',
-            # versions of google-cloud-python libraries until
-            # https://github.com/googleapis/google-cloud-python/issues/9786 is resolved
-            'google-cloud-bigquery>=1.19.*,<=1.21.0',
-            'google-cloud-storage<1.23.0',
-            'google-resumable-media >= 0.3.1, != 0.4.0, < 0.5dev',
+            'google-cloud-bigquery>=1.19.*',
+            'google-cloud-storage',
             'oauth2client',
         ],
         extras_require={'pyarrow': ['pyarrow']},
