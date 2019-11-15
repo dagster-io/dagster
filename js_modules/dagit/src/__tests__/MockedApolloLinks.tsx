@@ -35,12 +35,12 @@ export interface MockedSubscription {
 }
 
 export class MockLink extends ApolloLink {
-  public addTypename: boolean = true;
+  public addTypename = true;
   private mockedResponsesByKey: { [key: string]: MockedResponse[] } = {};
 
   constructor(
     mockedResponses: ReadonlyArray<MockedResponse>,
-    addTypename: boolean = true
+    addTypename = true
   ) {
     super();
     this.addTypename = addTypename;
@@ -100,7 +100,7 @@ export class MockLink extends ApolloLink {
     }
 
     return new Observable<FetchResult>(observer => {
-      let timer = setTimeout(
+      const timer = setTimeout(
         () => {
           if (error) {
             observer.error(error);

@@ -25,7 +25,7 @@ it("renders given a basic type", () => {
 });
 
 it("renders given a complex type", () => {
-  let complexConfigData: ConfigTypeSchemaFragment = {
+  const complexConfigData: ConfigTypeSchemaFragment = {
     __typename: "CompositeConfigType",
     key: "Dict.4",
     name: "Dict.4",

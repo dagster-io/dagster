@@ -98,6 +98,7 @@
     "test": "yarn run ts && yarn run jest && yarn run check-prettier",
     "jest": "jest -w 1",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix",
+    "check-lint": "eslint src/ --ext=.tsx,.ts,.js",
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
     "ts": "tsc -p .",
     "download-mocks": "jest -i --collectCoverage=false --testRegex='src/scripts/DownloadMocks.ts'",

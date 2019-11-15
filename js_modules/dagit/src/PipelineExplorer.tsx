@@ -47,7 +47,7 @@ class AdjacencyMatrix {
   }
 
   getParents(index: number) {
-    let parents = new Array<number>();
+    const parents = new Array<number>();
     // It is impossible to specify yourself as an input dependency because this is a DAG so X[i, i]
     // will always be 0.
     this.adjacencyMatrix[index].forEach((candidateParent, index) => {
@@ -59,7 +59,7 @@ class AdjacencyMatrix {
   }
 
   getChildren(index: number) {
-    let children = new Array<number>();
+    const children = new Array<number>();
     this.adjacencyMatrix
       .map(row => row[index])
       .forEach((candidateChild, index) => {
@@ -71,14 +71,14 @@ class AdjacencyMatrix {
   }
 
   search(includeParents: boolean, initialCandidates: number[]) {
-    let results = new Set<number>();
-    let stack = [...initialCandidates];
+    const results = new Set<number>();
+    const stack = [...initialCandidates];
     while (stack.length !== 0) {
       // pop off stack and add to upstreamDependency list
-      let node = stack.shift();
+      const node = stack.shift();
       if (node !== undefined) {
         results.add(node);
-        let next = includeParents
+        const next = includeParents
           ? this.getParents(node)
           : this.getChildren(node);
         next.forEach(element => {
@@ -103,21 +103,21 @@ export function createAdjacencyMatrix(
   memo: WeakMap<PipelineExplorerSolidHandleFragment_solid[], AdjacencyMatrix>
 ) {
   // Done because typescript was not autoresolving .has
-  let memoizedMatrix = memo.get(solids);
+  const memoizedMatrix = memo.get(solids);
   if (memoizedMatrix !== undefined) {
     return memoizedMatrix;
   }
   // TODO: Consider alternatives to making this sparse because this will blow up if solids.length is large.
-  let adjacencyMatrix = Array.from(Array(solids.length), _ =>
+  const adjacencyMatrix = Array.from(Array(solids.length), _ =>
     Array(solids.length).fill(false)
   );
-  let indexMap = new Map();
+  const indexMap = new Map();
   solids.forEach((solid, index) => {
     indexMap.set(solid.name, index);
   });
 
   solids.forEach((solid, index) => {
-    let dependencySet = new Set<number>();
+    const dependencySet = new Set<number>();
     solid.inputs.forEach(input => {
       input.dependsOn.forEach(dependency => {
         if (dependency.solid.name) {
@@ -173,7 +173,7 @@ export default class PipelineExplorer extends React.Component<
 
   handleAdjustPath = (fn: (solidNames: string[]) => void) => {
     const { history, pipeline, path } = this.props;
-    let next = [...path];
+    const next = [...path];
     const retValue = fn(next);
     if (retValue !== undefined) {
       throw new Error(
@@ -246,7 +246,7 @@ export default class PipelineExplorer extends React.Component<
         newFilterStart = 0,
         newFilterEnd = filter.length;
 
-      for (var i = 0; i < filter.length; i++) {
+      for (let i = 0; i < filter.length; i++) {
         if (filter[i] === "+") {
           if (i !== 0 && i !== filter.length - 1) {
             // Can't have + inside the search term
@@ -264,7 +264,7 @@ export default class PipelineExplorer extends React.Component<
       }
       if (!invalidQuery) {
         const solidFilter = filter.slice(newFilterStart, newFilterEnd);
-        let candidateSolidIndexSet = new Set<number>();
+        const candidateSolidIndexSet = new Set<number>();
         solids.forEach((solid, index) => {
           if (solidFilter && solid.name.includes(solidFilter)) {
             candidateSolidIndexSet.add(index);

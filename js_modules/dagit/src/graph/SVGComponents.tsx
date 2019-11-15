@@ -104,7 +104,7 @@ interface SVGFlowLayoutChildLayout {
 }
 
 function reactChildrenToArray(children: React.ReactNode) {
-  let flattened: React.ReactNodeArray = [];
+  const flattened: React.ReactNodeArray = [];
 
   const appendChildren = (arr: React.ReactNodeArray) => {
     arr.forEach(item => {
@@ -147,7 +147,7 @@ export class SVGFlowLayoutRect extends React.Component<
     height: number;
     childLayouts: Array<SVGFlowLayoutChildLayout>;
   } {
-    let { children, spacing, padding, height } = props;
+    const { children, spacing, padding, height } = props;
 
     const childLayouts = reactChildrenToArray(children).map(
       (el: React.ReactElement<any>) => {

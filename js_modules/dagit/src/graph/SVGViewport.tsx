@@ -99,8 +99,8 @@ export default class SVGViewport extends React.Component<
   panzoom: any;
 
   _animation: any = null;
-  _lastWheelTime: number = 0;
-  _lastWheelDir: number = 0;
+  _lastWheelTime = 0;
+  _lastWheelDir = 0;
 
   state = {
     x: 0,
@@ -113,13 +113,13 @@ export default class SVGViewport extends React.Component<
     this.autocenter();
   }
 
-  autocenter(animate: boolean = false) {
+  autocenter(animate = false) {
     const el = this.element.current!;
     const ownerRect = el.getBoundingClientRect();
 
-    var dw = ownerRect.width / this.props.graphWidth;
-    var dh = ownerRect.height / this.props.graphHeight;
-    var scale = Math.min(dw, dh, MAX_OVERVIEW_ZOOM);
+    const dw = ownerRect.width / this.props.graphWidth;
+    const dh = ownerRect.height / this.props.graphHeight;
+    const scale = Math.min(dw, dh, MAX_OVERVIEW_ZOOM);
 
     const target = {
       x: -(this.props.graphWidth / 2) * scale + ownerRect.width / 2,
@@ -136,7 +136,7 @@ export default class SVGViewport extends React.Component<
 
   screenToSVGCoords({ x, y }: Point): Point {
     const el = this.element.current!;
-    var { width, height } = el.getBoundingClientRect();
+    const { width, height } = el.getBoundingClientRect();
     return {
       x: (-(this.state.x - width / 2) + x - width / 2) / this.state.scale,
       y: (-(this.state.y - height / 2) + y - height / 2) / this.state.scale
@@ -145,13 +145,13 @@ export default class SVGViewport extends React.Component<
 
   getOffsetXY(e: MouseEvent | React.MouseEvent): Point {
     const el = this.element.current!;
-    var ownerRect = el.getBoundingClientRect();
+    const ownerRect = el.getBoundingClientRect();
     return { x: e.clientX - ownerRect.left, y: e.clientY - ownerRect.top };
   }
 
   public smoothZoomToSVGCoords(x: number, y: number, scale: number) {
     const el = this.element.current!;
-    var ownerRect = el.getBoundingClientRect();
+    const ownerRect = el.getBoundingClientRect();
     x = -x * scale + ownerRect.width / 2;
     y = -y * scale + ownerRect.height / 2;
 
@@ -159,7 +159,7 @@ export default class SVGViewport extends React.Component<
   }
 
   public smoothZoom(to: { x: number; y: number; scale: number }) {
-    var from = { scale: this.state.scale, x: this.state.x, y: this.state.y };
+    const from = { scale: this.state.scale, x: this.state.x, y: this.state.y };
 
     if (this._animation) {
       this._animation.cancel();
@@ -181,7 +181,7 @@ export default class SVGViewport extends React.Component<
   }
 
   onZoomAndCenter = (event: React.MouseEvent<HTMLDivElement>) => {
-    var offset = this.screenToSVGCoords(this.getOffsetXY(event));
+    const offset = this.screenToSVGCoords(this.getOffsetXY(event));
     if (Math.abs(DETAIL_ZOOM - this.state.scale) < 0.01) {
       this.smoothZoomToSVGCoords(offset.x, offset.y, this.state.minScale);
     } else {

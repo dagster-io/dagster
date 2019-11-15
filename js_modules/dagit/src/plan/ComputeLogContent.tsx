@@ -246,7 +246,7 @@ interface IScrollContainerProps {
 
 class ScrollContainer extends React.Component<IScrollContainerProps> {
   private container = React.createRef<HTMLDivElement>();
-  private lastScroll: number = 0;
+  private lastScroll = 0;
 
   componentDidMount() {
     this.scrollToBottom();

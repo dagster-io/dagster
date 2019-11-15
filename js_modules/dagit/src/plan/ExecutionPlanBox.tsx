@@ -199,7 +199,7 @@ export const DisclosureTriangle = styled.div<{ expanded: boolean }>`
 `;
 
 const ExecutionTime = ({ elapsed }: { elapsed: number }) => {
-  let text = formatElapsedTime(elapsed);
+  const text = formatElapsedTime(elapsed);
   // Note: Adding a min-width prevents the size of the execution plan box from
   // shifting /slightly/ as the elapsed time increments.
   return (
