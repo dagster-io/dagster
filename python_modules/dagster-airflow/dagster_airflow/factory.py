@@ -173,7 +173,7 @@ def make_airflow_dag(
 
     This function should be invoked in an Airflow DAG definition file, such as that created by an
     invocation of the dagster-airflow scaffold CLI tool.
-    
+
     Args:
         module_name (str): The name of the importable module in which the pipeline definition can be
             found.
@@ -258,7 +258,7 @@ def make_airflow_dag_containerized(
 
     This function should be invoked in an Airflow DAG definition file, such as that created by an
     invocation of the dagster-airflow scaffold CLI tool.
-    
+
     Args:
         module_name (str): The name of the importable module in which the pipeline definition can be
             found.
@@ -315,6 +315,7 @@ def make_airflow_dag_containerized_for_handle(
 ):
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
     op_kwargs['image'] = image
+
     return _make_airflow_dag(
         handle=handle,
         pipeline_name=pipeline_name,
@@ -328,8 +329,8 @@ def make_airflow_dag_containerized_for_handle(
     )
 
 
-def make_airflow_dag_kubernetized(
-    module_name,
+def make_airflow_dag_kubernetized_for_handle(
+    handle,
     pipeline_name,
     image,
     namespace,
@@ -341,10 +342,6 @@ def make_airflow_dag_kubernetized(
     op_kwargs=None,
 ):
     from .operators.kubernetes_operator import DagsterKubernetesPodOperator
-
-    check.str_param(module_name, 'module_name')
-
-    handle = ExecutionTargetHandle.for_pipeline_module(module_name, pipeline_name)
 
     # See: https://github.com/dagster-io/dagster/issues/1663
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)

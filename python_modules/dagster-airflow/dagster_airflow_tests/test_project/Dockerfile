@@ -1,7 +1,6 @@
-# This is a container with all of the requirements to execute a Dagster execution step using the
-# DagsterDockerOperator.
-
-FROM dagster/buildkite-integration:py3.7.3-v4
+# Making this image as minimal as possible to speed up build & pull times; k8s (kind) has a 2 min
+# pull timeout
+FROM python:3.7.4-slim-stretch
 
 ADD dagster dagster
 ADD dagster-graphql dagster-graphql

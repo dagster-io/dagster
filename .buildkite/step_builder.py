@@ -37,7 +37,7 @@ class BuildkiteQueue(Enum):
 
 
 class StepBuilder:
-    def __init__(self, label):
+    def __init__(self, label, key=None):
         self._step = {
             # use Pulumi-managed medium queue by default
             "agents": {"queue": BuildkiteQueue.MEDIUM.value},
@@ -50,6 +50,8 @@ class StepBuilder:
                 ]
             },
         }
+        if key is not None:
+            self._step["key"] = key
 
     def run(self, *argc):
         self._step["commands"] = map(lambda cmd: "time " + cmd, argc)
@@ -99,6 +101,10 @@ class StepBuilder:
         assert BuildkiteQueue.contains(queue)
 
         self._step["agents"]["queue"] = queue.value
+        return self
+
+    def depends_on(self, step_keys):
+        self._step["depends_on"] = step_keys
         return self
 
     def build(self):

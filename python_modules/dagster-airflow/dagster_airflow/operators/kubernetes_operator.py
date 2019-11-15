@@ -1,13 +1,24 @@
+import sys
+
 from airflow.contrib.kubernetes import kube_client, pod_generator, pod_launcher
 from airflow.exceptions import AirflowException
 from airflow.utils.state import State
 from dagster_airflow.vendor.kubernetes_pod_operator import KubernetesPodOperator
-from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
+from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
 
 from dagster import __version__ as dagster_version
 from dagster import check, seven
+from dagster.core.definitions.pipeline import ExecutionSelector
+from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .util import check_events_for_skips, construct_variables, get_aws_environment, parse_raw_res
+from .util import (
+    check_raw_events_for_skips,
+    construct_variables,
+    get_aws_environment,
+    parse_raw_res,
+)
 
 
 class DagsterKubernetesPodOperator(KubernetesPodOperator):
@@ -16,20 +27,32 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
     Wraps a modified KubernetesPodOperator.
     '''
 
-    def __init__(self, task_id, *args, **kwargs):
-        pipeline_name = check.str_param(kwargs.get('pipeline_name', None), 'pipeline_name')
-        step_keys = check.opt_list_param(kwargs.get('step_keys'), 'step_keys', of_type=str)
-        self.environment_dict = check.opt_dict_param(
-            kwargs.get('environment_dict'), 'environment_dict', key_type=str
-        )
+    # py2 compat
+    # pylint: disable=keyword-arg-before-vararg
+    def __init__(
+        self,
+        task_id,
+        environment_dict=None,
+        pipeline_name=None,
+        mode=None,
+        step_keys=None,
+        dag=None,
+        instance_ref=None,
+        *args,
+        **kwargs
+    ):
+        check.str_param(pipeline_name, 'pipeline_name')
+        step_keys = check.opt_list_param(step_keys, 'step_keys', of_type=str)
+        environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
+        check.opt_inst_param(instance_ref, 'instance_ref', InstanceRef)
 
         kwargs['name'] = 'dagster.{pipeline_name}.{task_id}'.format(
-            pipeline_name=kwargs['pipeline_name'], task_id=task_id
+            pipeline_name=pipeline_name, task_id=task_id
         ).replace(
             '_', '-'  # underscores are not permissible DNS names
         )
 
-        if 'storage' not in self.environment_dict:
+        if 'storage' not in environment_dict:
             raise AirflowException(
                 'No storage config found -- must configure either filesystem or s3 storage for '
                 'the DagsterKubernetesPodOperator. Ex.: \n'
@@ -43,14 +66,18 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             )
 
         check.invariant(
-            'in_memory' not in self.environment_dict.get('storage', {}),
+            'in_memory' not in environment_dict.get('storage', {}),
             'Cannot use in-memory storage with Airflow, must use S3',
         )
 
+        self.environment_dict = environment_dict
         self.pipeline_name = pipeline_name
-        self.mode = check.str_param(kwargs.get('mode'), 'mode')
+        self.mode = mode
         self.step_keys = step_keys
         self._run_id = None
+        # self.instance might be None in, for instance, a unit test setting where the operator
+        # was being directly instantiated without passing through make_airflow_dag
+        self.instance = DagsterInstance.from_ref(instance_ref) if instance_ref else None
 
         # Store Airflow DAG run timestamp so that we can pass along via execution metadata
         self.airflow_ts = kwargs.get('ts')
@@ -78,7 +105,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
         kwargs['xcom_push'] = False
 
         super(DagsterKubernetesPodOperator, self).__init__(
-            task_id=task_id, dag=kwargs.get('dag'), *args, **kwargs
+            task_id=task_id, dag=dag, *args, **kwargs
         )
 
     @property
@@ -92,7 +119,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             self.mode, 'REDACTED', self.pipeline_name, self.run_id, self.airflow_ts, self.step_keys
         )
         self.log.info(
-            'Executing GraphQL query: {query}\n'.format(query=EXECUTE_PLAN_MUTATION)
+            'Executing GraphQL query: {query}\n'.format(query=RAW_EXECUTE_PLAN_MUTATION)
             + 'with variables:\n'
             + seven.json.dumps(redacted, indent=2)
         )
@@ -106,13 +133,22 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             self.step_keys,
         )
 
-        return ['-v', '{}'.format(seven.json.dumps(variables)), '{}'.format(EXECUTE_PLAN_MUTATION)]
+        return [
+            '-v',
+            '{}'.format(seven.json.dumps(variables)),
+            '-t',
+            '{}'.format(RAW_EXECUTE_PLAN_MUTATION),
+        ]
 
     def execute(self, context):
         try:
+            from dagster_graphql.implementation.pipeline_execution_manager import (
+                build_synthetic_pipeline_error_record,
+            )
             from dagster_graphql.client.mutations import (
-                handle_start_pipeline_execution_errors,
-                handle_start_pipeline_execution_result,
+                DagsterGraphQLClientError,
+                handle_execution_errors,
+                handle_execute_plan_result_raw,
             )
 
         except ImportError:
@@ -120,6 +156,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                 'To use the DagsterKubernetesPodOperator, dagster and dagster_graphql must be'
                 ' installed in your Airflow environment.'
             )
+
         if 'run_id' in self.params:
             self._run_id = self.params['run_id']
         elif 'dag_run' in context and context['dag_run'] is not None:
@@ -164,6 +201,21 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
 
             launcher = pod_launcher.PodLauncher(kube_client=client, extract_xcom=self.xcom_push)
             try:
+                if self.instance:
+                    self.instance.get_or_create_run(
+                        PipelineRun(
+                            pipeline_name=self.pipeline_name,
+                            run_id=self.run_id,
+                            environment_dict=self.environment_dict,
+                            mode=self.mode,
+                            selector=ExecutionSelector(self.pipeline_name),
+                            reexecution_config=None,
+                            step_keys_to_execute=None,
+                            tags=None,
+                            status=PipelineRunStatus.MANAGED,
+                        )
+                    )
+
                 # we won't use the "result", which is the pod's xcom json file
                 (final_state, _) = launcher.run_pod(
                     pod, startup_timeout=self.startup_timeout_seconds, get_logs=self.get_logs
@@ -177,13 +229,27 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                     name=pod.name, namespace=pod.namespace, container='base', tail_lines=5
                 )
 
-                # find the relevant line
-                # TODO: raise sensible exception on garbage API string responses
-                res = parse_raw_res(raw_res)
-                handle_start_pipeline_execution_errors(res)
-                events = handle_start_pipeline_execution_result(res)
+                res = parse_raw_res(raw_res.split('\n'))
 
-                check_events_for_skips(events)
+                try:
+                    handle_execution_errors(res, 'executePlan')
+                except DagsterGraphQLClientError:
+                    event = build_synthetic_pipeline_error_record(
+                        self.run_id,
+                        serializable_error_info_from_exc_info(sys.exc_info()),
+                        self.pipeline_name,
+                    )
+                    if self.instance:
+                        self.instance.handle_new_event(event)
+                    raise
+
+                events = handle_execute_plan_result_raw(res)
+
+                if self.instance:
+                    for event in events:
+                        self.instance.handle_new_event(event)
+
+                check_raw_events_for_skips(events)
 
                 return events
 
