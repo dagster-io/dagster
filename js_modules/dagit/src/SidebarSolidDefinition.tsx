@@ -69,7 +69,7 @@ export class SidebarSolidDefinition extends React.Component<
           }
         }
         ... on SolidDefinition {
-          configDefinition {
+          configField {
             configType {
               ...ConfigTypeSchemaFragment
             }
@@ -120,9 +120,9 @@ export class SidebarSolidDefinition extends React.Component<
     } = this.props;
     const Plugin = pluginForMetadata(definition.metadata);
     const isComposite = definition.__typename === "CompositeSolidDefinition";
-    const configDefinition =
+    const configField =
       definition.__typename === "SolidDefinition"
-        ? definition.configDefinition
+        ? definition.configField
         : null;
 
     const inputMappings: SolidMappingTable = {};
@@ -171,9 +171,9 @@ export class SidebarSolidDefinition extends React.Component<
             <Plugin.SidebarComponent definition={definition} />
           </SidebarSection>
         )}
-        {configDefinition && (
+        {configField && (
           <SidebarSection title={"Config"}>
-            <ConfigTypeSchema type={configDefinition.configType} />
+            <ConfigTypeSchema type={configField.configType} />
           </SidebarSection>
         )}
         {hasRequiredResources && (

@@ -984,7 +984,7 @@ type SolidDefinition implements ISolidDefinition {
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   requiredResources: [ResourceRequirement!]!
-  configDefinition: ConfigTypeField
+  configField: ConfigTypeField
 }
 
 type SolidHandle {

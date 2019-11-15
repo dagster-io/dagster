@@ -85,7 +85,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           }
         }
         ... on SolidDefinition {
-          configDefinition {
+          configField {
             configType {
               name
               description
@@ -241,9 +241,9 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     const { metadata } = definition;
     const { x, y, width, height } = layout.solid;
 
-    let configDefinition = null;
+    let configField = null;
     if (definition.__typename === "SolidDefinition") {
-      configDefinition = definition.configDefinition;
+      configField = definition.configField;
     }
 
     const tags: ISolidTag[] = [];
@@ -291,7 +291,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           />
         ))}
 
-        {configDefinition && (
+        {configField && (
           <SolidConfigPort x={x + width - 33} y={y - 13} minified={minified} />
         )}
 

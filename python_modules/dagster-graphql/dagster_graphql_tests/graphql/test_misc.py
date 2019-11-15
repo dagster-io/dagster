@@ -124,7 +124,7 @@ fragment innerInfo on ConfigType {
         name
         definition {
           ... on SolidDefinition {
-            configDefinition {
+            configField {
               configType {
                 ...innerInfo
                 innerTypes {

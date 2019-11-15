@@ -35,15 +35,15 @@ export interface SolidCardSolidDefinitionFragment_SolidDefinition_outputDefiniti
   type: SolidCardSolidDefinitionFragment_SolidDefinition_outputDefinitions_type;
 }
 
-export interface SolidCardSolidDefinitionFragment_SolidDefinition_configDefinition_configType {
+export interface SolidCardSolidDefinitionFragment_SolidDefinition_configField_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   name: string | null;
   description: string | null;
 }
 
-export interface SolidCardSolidDefinitionFragment_SolidDefinition_configDefinition {
+export interface SolidCardSolidDefinitionFragment_SolidDefinition_configField {
   __typename: "ConfigTypeField";
-  configType: SolidCardSolidDefinitionFragment_SolidDefinition_configDefinition_configType;
+  configType: SolidCardSolidDefinitionFragment_SolidDefinition_configField_configType;
 }
 
 export interface SolidCardSolidDefinitionFragment_SolidDefinition {
@@ -52,7 +52,7 @@ export interface SolidCardSolidDefinitionFragment_SolidDefinition {
   metadata: SolidCardSolidDefinitionFragment_SolidDefinition_metadata[];
   inputDefinitions: SolidCardSolidDefinitionFragment_SolidDefinition_inputDefinitions[];
   outputDefinitions: SolidCardSolidDefinitionFragment_SolidDefinition_outputDefinitions[];
-  configDefinition: SolidCardSolidDefinitionFragment_SolidDefinition_configDefinition | null;
+  configField: SolidCardSolidDefinitionFragment_SolidDefinition_configField | null;
   description: string | null;
 }
 
