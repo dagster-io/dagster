@@ -83,6 +83,6 @@ executed successfully.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/complex_pipeline.py
    :linenos:
-   :lines: 57-63
-   :lineno-start: 57
+   :lines: 72-77
+   :lineno-start: 72
    :caption: complex_pipeline.py
