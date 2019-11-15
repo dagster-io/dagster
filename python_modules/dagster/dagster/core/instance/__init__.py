@@ -11,7 +11,6 @@ from rx import Observable
 from dagster import check, seven
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
-from dagster.core.launcher import RunLauncher
 from dagster.core.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types import Field, PermissiveDict, String
@@ -103,6 +102,7 @@ class DagsterInstance:
         from dagster.core.storage.event_log import EventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import RunStorage
+        from dagster.core.launcher import RunLauncher
 
         self._instance_type = check.inst_param(instance_type, 'instance_type', InstanceType)
         self._local_artifact_storage = check.inst_param(

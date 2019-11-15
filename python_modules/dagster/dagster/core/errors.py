@@ -245,3 +245,8 @@ class DagsterSubprocessError(DagsterError):
             kwargs.pop('subprocess_error_infos'), 'subprocess_error_infos', SerializableErrorInfo
         )
         super(DagsterSubprocessError, self).__init__(*args, **kwargs)
+
+
+class DagsterLaunchFailedError(DagsterError):
+    '''Indicates an error while attempting to launch a pipeline run.
+    '''

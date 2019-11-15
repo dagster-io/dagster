@@ -52,7 +52,7 @@ class PipelineDefinition(IContainSolids, object):
     - Solids, each of which is a single functional unit of data computation.
     - Dependencies, which determine how the values produced by solids as their outputs flow from
       one solid to another. This tells Dagster how to arrange solids, and potentially multiple
-      aliased instances of solids, into a directed, acyclic graph (DAG) of compute. 
+      aliased instances of solids, into a directed, acyclic graph (DAG) of compute.
     - Modes, which can be used to attach resources, custom loggers, custom system storage
       options, and custom executors to a pipeline, and to switch between them.
     - Presets, which can be used to ship common combinations of pipeline config options in Python
@@ -79,7 +79,7 @@ class PipelineDefinition(IContainSolids, object):
             dict, an optional subset of solids to execute, and a mode selection. Presets can be used
             to ship common combinations of options to pipeline end users in Python code, and can
             be selected by tools like Dagit.
-        
+
     Examples:
 
         .. code-block:: python
@@ -269,7 +269,7 @@ class PipelineDefinition(IContainSolids, object):
     @property
     def display_name(self):
         '''str: Display name of pipeline.
-        
+
         Name suitable for exception messages, logging etc. If pipeline
         is unnamed the method will return "<<unnamed>>".
         '''
@@ -530,6 +530,9 @@ class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
             if solid_subset is None
             else check.list_param(solid_subset, 'solid_subset', of_type=str),
         )
+
+    def to_graphql_input(self):
+        return {'name': self.name, 'solidSubset': self.solid_subset}
 
 
 @whitelist_for_serdes
