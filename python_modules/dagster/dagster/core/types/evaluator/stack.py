@@ -60,7 +60,7 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
         return EvaluationStack(
             config_type=self.config_type,
             entries=self.entries
-            + [EvaluationStackListItemEntry(tuple_type.inner_type[tuple_index], tuple_index)],
+            + [EvaluationStackListItemEntry(tuple_type.tuple_types[tuple_index], tuple_index)],
         )
 
 

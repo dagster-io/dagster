@@ -386,7 +386,7 @@ def evaluate_tuple_config(context):
     if not isinstance(config_value, list):
         return EvaluateValueResult.for_error(create_list_error(context))
 
-    if len(context.config_type.inner_type) != len(config_value):
+    if len(context.config_type.tuple_types) != len(config_value):
         return EvaluateValueResult.for_error(create_tuple_error(context))
 
     evaluation_results = [

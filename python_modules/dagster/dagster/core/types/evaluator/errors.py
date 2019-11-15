@@ -255,7 +255,7 @@ def create_tuple_error(context):
             'Value {path_msg} must be a tuple with {n_values} values. Expected: '
             '{type_name}'.format(
                 path_msg=get_friendly_path_msg(context.stack),
-                n_values=len(context.config_type.inner_type),
+                n_values=len(context.config_type.tuple_types),
                 type_name=print_config_type_to_string(context.config_type, with_lines=False),
             )
         ),
