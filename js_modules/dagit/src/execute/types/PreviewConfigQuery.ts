@@ -50,7 +50,7 @@ export interface PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidati
 export type PreviewConfigQuery_isPipelineConfigValid = PreviewConfigQuery_isPipelineConfigValid_InvalidSubsetError | PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid;
 
 export interface PreviewConfigQuery_executionPlan_PipelineConfigValidationInvalid {
-  __typename: "PipelineConfigValidationInvalid";
+  __typename: "PipelineConfigValidationInvalid" | "PythonError";
 }
 
 export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps {

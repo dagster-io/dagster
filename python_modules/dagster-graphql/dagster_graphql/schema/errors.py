@@ -389,6 +389,7 @@ class DauphinExecutionPlanResult(dauphin.Union):
             DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
             DauphinInvalidSubsetError,
+            DauphinPythonError,
         )
 
 
