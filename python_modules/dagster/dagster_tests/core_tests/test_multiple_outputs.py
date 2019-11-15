@@ -1,5 +1,3 @@
-import re
-
 import pytest
 
 from dagster import (
@@ -37,10 +35,7 @@ def test_multiple_outputs():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape(
-            'Output \'not_defined\' not defined in solid \'multiple_outputs\': '
-            'found outputs [\'output_one\', \'output_two\']'
-        ),
+        match="Output 'not_defined' not defined in solid 'multiple_outputs'",
     ):
         solid_result.output_value('not_defined')
 
@@ -117,10 +112,7 @@ def test_multiple_outputs_only_emit_one():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape(
-            'Output \'not_defined\' not defined in solid \'multiple_outputs\': '
-            'found outputs [\'output_one\', \'output_two\']'
-        ),
+        match="Output 'not_defined' not defined in solid 'multiple_outputs'",
     ):
         solid_result.output_value('not_defined')
 
