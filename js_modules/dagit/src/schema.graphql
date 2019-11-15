@@ -596,8 +596,6 @@ type Pipeline implements SolidContainer & PipelineReference {
   solids: [Solid!]!
   name: String!
   description: String
-  environmentType(mode: String): ConfigType!
-  configTypes(mode: String): [ConfigType!]!
   runtimeTypes: [RuntimeType!]!
   runs: [PipelineRun!]!
   modes: [Mode!]!

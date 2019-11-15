@@ -57,25 +57,23 @@ PoorMansDataFrame = as_dagster_type(
 
 def test_enum_query():
     ENUM_QUERY = '''{
-  pipeline(params: { name:"pipeline_with_enum_config" }){
-    __typename
-    ... on Pipeline {
-      name
-      configTypes {
-        __typename
-        name
-        ... on EnumConfigType {
-          values
-          {
-            value
-            description
+    environmentSchemaOrError(selector: {name: "pipeline_with_enum_config" } ) {
+      ... on EnvironmentSchema {
+        allConfigTypes {
+          __typename
+          name
+          ... on EnumConfigType {
+            values
+            {
+              value
+              description
+            }
           }
         }
       }
     }
   }
-}
-'''
+  '''
 
     result = execute_dagster_graphql(define_context(), ENUM_QUERY)
 
@@ -84,7 +82,7 @@ def test_enum_query():
 
     enum_type_data = None
 
-    for td in result.data['pipeline']['configTypes']:
+    for td in result.data['environmentSchemaOrError']['allConfigTypes']:
         if td['name'] == 'TestEnum':
             enum_type_data = td
             break
@@ -277,46 +275,6 @@ def test_pipeline_or_error_by_name_not_found():
 
 def test_production_query(production_query):
     result = execute_dagster_graphql(define_context(), production_query)
-
-    assert not result.errors
-    assert result.data
-
-
-ALL_TYPES_QUERY = '''
-{
-  pipelinesOrError {
-    __typename
-    ... on PipelineConnection {
-      nodes {
-        runtimeTypes {
-          __typename
-          name
-        }
-        configTypes {
-          __typename
-          name
-          ... on CompositeConfigType {
-            fields {
-              name
-              configType {
-                name
-                __typename
-              }
-              __typename
-            }
-            __typename
-          }
-        }
-        __typename
-      }
-    }
-  }
-}
-'''
-
-
-def test_production_config_editor_query():
-    result = execute_dagster_graphql(define_context(), ALL_TYPES_QUERY)
 
     assert not result.errors
     assert result.data

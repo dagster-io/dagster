@@ -10,7 +10,6 @@ from dagster import (
     ResourceDefinition,
     check,
 )
-from dagster.core.definitions import create_environment_schema, create_environment_type
 
 from .config_types import to_dauphin_config_type
 from .runtime_types import to_dauphin_runtime_type
@@ -45,12 +44,6 @@ class DauphinPipeline(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     solids = dauphin.non_null_list('Solid')
-    environment_type = dauphin.Field(
-        dauphin.NonNull('ConfigType'), mode=dauphin.String(required=False)
-    )
-    config_types = dauphin.Field(
-        dauphin.non_null_list('ConfigType'), mode=dauphin.String(required=False)
-    )
     runtime_types = dauphin.non_null_list('RuntimeType')
     runs = dauphin.non_null_list('PipelineRun')
     modes = dauphin.non_null_list('Mode')
@@ -63,16 +56,6 @@ class DauphinPipeline(dauphin.ObjectType):
 
     def resolve_solids(self, _graphene_info):
         return build_dauphin_solids(self._pipeline)
-
-    def resolve_environment_type(self, _graphene_info, mode=None):
-        return to_dauphin_config_type(create_environment_type(self._pipeline, mode))
-
-    def resolve_config_types(self, _graphene_info, mode=None):
-        environment_schema = create_environment_schema(self._pipeline, mode)
-        return sorted(
-            list(map(to_dauphin_config_type, environment_schema.all_config_types())),
-            key=lambda config_type: config_type.key,
-        )
 
     def resolve_runtime_types(self, _graphene_info):
         return sorted(
