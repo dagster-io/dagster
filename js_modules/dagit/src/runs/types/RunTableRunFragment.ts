@@ -43,16 +43,6 @@ export interface RunTableRunFragment_tags {
   value: string;
 }
 
-export interface RunTableRunFragment_executionPlan_steps {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
-export interface RunTableRunFragment_executionPlan {
-  __typename: "ExecutionPlan";
-  steps: RunTableRunFragment_executionPlan_steps[];
-}
-
 export interface RunTableRunFragment {
   __typename: "PipelineRun";
   runId: string;
@@ -64,5 +54,4 @@ export interface RunTableRunFragment {
   pipeline: RunTableRunFragment_pipeline;
   stats: RunTableRunFragment_stats;
   tags: RunTableRunFragment_tags[];
-  executionPlan: RunTableRunFragment_executionPlan | null;
 }
