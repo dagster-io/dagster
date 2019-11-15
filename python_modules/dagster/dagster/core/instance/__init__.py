@@ -151,11 +151,11 @@ class DagsterInstance:
             return DagsterInstance.ephemeral(fallback_storage)
 
     @staticmethod
-    def local_temp(tempdir=None):
+    def local_temp(tempdir=None, overrides=None):
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
 
-        return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir))
+        return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir, overrides=overrides))
 
     @staticmethod
     def from_config(config_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME):

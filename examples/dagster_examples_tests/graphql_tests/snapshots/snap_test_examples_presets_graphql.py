@@ -367,6 +367,11 @@ snapshots['test_presets_on_examples 9'] = {
             {
                 '__typename': 'PipelinePreset',
                 'environmentConfigYaml': '''solids:
+  mult_solid:
+    inputs:
+      num_df:
+        csv:
+          path: data/num_prod.csv
   sum_solid:
     inputs:
       num_df:
@@ -380,6 +385,11 @@ snapshots['test_presets_on_examples 9'] = {
             {
                 '__typename': 'PipelinePreset',
                 'environmentConfigYaml': '''solids:
+  mult_solid:
+    inputs:
+      num_df:
+        csv:
+          path: data/num.csv
   sum_solid:
     inputs:
       num_df:

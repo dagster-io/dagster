@@ -29,6 +29,8 @@ setup(
             'dagster-snowflake',
             'descartes==1.1.0',
             'geopandas==0.4.0',
+            'google-api-python-client',
+            'google-cloud-storage',
             'matplotlib==3.0.2; python_version >= "3.5"',
             'matplotlib==2.2.4; python_version < "3.5"',
             'mock==2.0.0',

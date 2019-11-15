@@ -82,8 +82,8 @@ class Field(object):
         is_optional (bool): Whether the presence of this field is optional. If ``is_optional`` is
             ``False``, no default value should be provided.
         description (str): A human-readable description of this config field.
-
-    **Examples**:
+Examples:
+    
 
     .. code-block:: python
 

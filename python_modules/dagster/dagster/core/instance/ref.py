@@ -58,9 +58,11 @@ class InstanceRef(
         )
 
     @staticmethod
-    def from_dir(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME):
-
-        config_value = dagster_instance_config(base_dir, config_filename=config_filename)
+    def from_dir(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME, overrides=None):
+        overrides = check.opt_dict_param(overrides, 'overrides')
+        config_value = dagster_instance_config(
+            base_dir, config_filename=config_filename, overrides=overrides
+        )
 
         local_artifact_storage_data = configurable_class_data_or_default(
             config_value,

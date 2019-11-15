@@ -86,7 +86,7 @@ def input_hydration_config(config_cls):
             should provide one of the :ref:`built-in types <builtin>`, or a composite constructed
             using :py:func:`Selector` or :py:func:`PermissiveDict`.
     
-    **Examples**:
+    Examples:
 
     .. code-block:: python
 
@@ -159,7 +159,7 @@ def output_materialization_config(config_cls):
             should provide one of the :ref:`built-in types <builtin>`, or a composite constructed
             using :py:func:`Selector` or :py:func:`PermissiveDict`.
 
-    **Examples**:
+    Examples:
 
     .. code-block:: python
 

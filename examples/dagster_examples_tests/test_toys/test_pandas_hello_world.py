@@ -5,7 +5,12 @@ from dagster_examples.toys.pandas_hello_world import (
     sum_solid,
 )
 
-from dagster import execute_pipeline, execute_solid, file_relative_path
+from dagster import (
+    execute_pipeline,
+    execute_pipeline_with_preset,
+    execute_solid,
+    file_relative_path,
+)
 
 
 def test_execute_pandas_hello_world_solid():
@@ -71,3 +76,11 @@ def test_execute_pandas_hello_world_pipeline_with_read_csv():
         'sum_mult_sq': [6, 84],
         'sum_sq': [9, 49],
     }
+
+
+def test_execute_hello_world_with_preset_test():
+    assert execute_pipeline_with_preset(pandas_hello_world_pipeline, 'test').success
+
+
+def test_execute_hello_world_with_preset_prod():
+    assert execute_pipeline_with_preset(pandas_hello_world_pipeline, 'prod').success

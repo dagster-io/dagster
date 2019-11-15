@@ -275,7 +275,7 @@ def check_dagster_type(dagster_type, value):
         TypeCheck: The result of the type check.
     
 
-    **Examples**:
+    Examples:
 
         .. code-block:: python
 

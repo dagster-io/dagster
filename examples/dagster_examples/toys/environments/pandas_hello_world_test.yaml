@@ -4,3 +4,8 @@ solids:
       num_df:
         csv:
           path: "data/num.csv"
+  mult_solid:
+    inputs:
+      num_df:
+        csv:
+          path: "data/num.csv"

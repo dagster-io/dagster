@@ -317,7 +317,7 @@ def Selector(fields):
     Args:
         fields (Dict[str, Field]): The fields from which the user must select.
     
-    **Examples**:
+    Examples:
 
     .. code-block:: python
 

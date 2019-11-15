@@ -76,7 +76,7 @@ def dagster_type(
             metadata should be emitted along with the type check success or failure, an instance of
             :py:class:`TypeCheck` with the ``success`` field set appropriately.
 
-    **Examples**:
+    Examples:
 
     .. code-block:: python
 
@@ -174,7 +174,7 @@ def as_dagster_type(
             metadata should be emitted along with the type check success or failure, an instance of
             :py:class:`TypeCheck` with the ``success`` field set appropriately.
     
-    **Example**:
+    Examples:
 
     .. code-block:: python
 

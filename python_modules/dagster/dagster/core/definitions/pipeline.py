@@ -79,6 +79,46 @@ class PipelineDefinition(IContainSolids, object):
             dict, an optional subset of solids to execute, and a mode selection. Presets can be used
             to ship common combinations of options to pipeline end users in Python code, and can
             be selected by tools like Dagit.
+        
+    Examples:
+
+        .. code-block:: python
+
+            @lambda_solid
+            def return_one():
+                return 1
+
+
+            @solid(input_defs=[InputDefinition('num')])
+            def apply_op(context, num):
+                return context.resources.op(num)
+
+            @resource(config_field=Field(Int))
+            def adder_resource(init_context):
+                return lambda x: x + init_context.resource_config
+
+
+            add_mode = ModeDefinition(
+                name='add_mode',
+                resource_defs={'op': adder_resource},
+                description='Mode that adds things',
+            )
+
+
+            add_three_preset = PresetDefinition(
+                name='add_three_preset',
+                environment_dict={'resources': {'op': {'config': 3}}},
+                mode='add_mode',
+            )
+
+
+            pipeline_def = PipelineDefinition(
+                name='basic',
+                solid_defs=[return_one, apply_op_three],
+                dependencies={'apply_op_three': {'num': DependencyDefinition('return_one')}},
+                mode_defs=[add_mode],
+                preset_defs=[add_three_preset],
+            )
     '''
 
     def __init__(

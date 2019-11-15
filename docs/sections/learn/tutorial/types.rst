@@ -184,6 +184,22 @@ these inputs via config:
    :lineno-start: 73
    :caption: custom_types_3.py
 
+Testing custom types
+^^^^^^^^^^^^^^^^^^^^
+
+As you write your own custom types, you'll also want to set up unit tests that ensure your types
+are doing what you expect them to. Dagster includes a utility function,
+:py:func:`check_dagster_type <dagster.check_dagster_type>`, that lets you type check any Dagster
+type against any value.
+
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_test.py
+   :lines: 97-108
+   :linenos:
+   :lineno-start: 97
+   :caption: custom_types_test.py
+
+Well tested library types can be reused across solids and pipelines to provide standardized type
+checking within your organization's data applications.
 
 Metadata and data quality checks
 --------------------------------
