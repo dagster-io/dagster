@@ -101,7 +101,6 @@ Examples:
         dagster_type,
         default_value=FIELD_NO_DEFAULT_PROVIDED,
         is_optional=None,
-        is_secret=False,
         description=None,
     ):
         if not isinstance(dagster_type, ConfigType):
@@ -147,8 +146,6 @@ Examples:
 
         self.is_optional = is_optional
 
-        self.is_secret = check.bool_param(is_secret, 'is_secret')
-
     @property
     def is_required(self):
         return not self.is_optional
@@ -181,16 +178,12 @@ Examples:
         return str(self._default_value)
 
     def __repr__(self):
-        return (
-            'Field({config_type}, default={default}, is_optional={is_optional}, '
-            'is_secret={is_secret})'
-        ).format(
+        return ('Field({config_type}, default={default}, is_optional={is_optional})').format(
             config_type=self.config_type,
             default='@'
             if self._default_value == FIELD_NO_DEFAULT_PROVIDED
             else self._default_value,
             is_optional=self.is_optional,
-            is_secret=self.is_secret,
         )
 
 
