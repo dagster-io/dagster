@@ -75,11 +75,6 @@ export class RunTable extends React.Component<RunTableProps> {
           key
           value
         }
-        executionPlan {
-          steps {
-            key
-          }
-        }
       }
     `
   };

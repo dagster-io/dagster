@@ -355,6 +355,26 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
     def solid_named(self, name):
         return self._solid_dict[name]
 
+    def has_solid_named(self, name):
+        check.str_param(name, 'name')
+        return name in self._solid_dict
+
+    def get_solid(self, handle):
+        check.inst_param(handle, 'handle', SolidHandle)
+        current = handle
+        lineage = []
+        while current:
+            lineage.append(current.name)
+            current = current.parent
+
+        name = lineage.pop()
+        solid = self.solid_named(name)
+        while lineage:
+            name = lineage.pop()
+            solid = solid.definition.solid_named(name)
+
+        return solid
+
     @property
     def dependency_structure(self):
         return self._dependency_structure

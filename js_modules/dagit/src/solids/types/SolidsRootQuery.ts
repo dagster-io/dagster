@@ -41,12 +41,12 @@ export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_outputDef
   description: string | null;
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
   __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
@@ -54,28 +54,28 @@ export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDef
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
+  innerTypes: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
+  configType: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
@@ -83,13 +83,13 @@ export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDef
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+  innerTypes: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes = SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType | SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType;
+export type SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes = SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType | SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType {
   __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   name: string | null;
   description: string | null;
@@ -97,15 +97,15 @@ export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDef
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes[];
+  innerTypes: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes[];
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
   __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
@@ -113,28 +113,28 @@ export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDef
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
+  innerTypes: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
+  configType: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
@@ -142,26 +142,26 @@ export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDef
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
+  innerTypes: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes = SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType | SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType;
+export type SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes = SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_EnumConfigType | SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType;
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_fields_configType {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_fields_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_fields {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_fields_configType;
+  configType: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_fields_configType;
 }
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType {
   __typename: "CompositeConfigType";
   name: string | null;
   description: string | null;
@@ -169,15 +169,15 @@ export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDef
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes[];
-  fields: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_fields[];
+  innerTypes: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes[];
+  fields: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_fields[];
 }
 
-export type SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType = SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_EnumConfigType | SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType;
+export type SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType = SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType | SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType;
 
-export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition {
+export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField {
   __typename: "ConfigTypeField";
-  configType: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition_configType;
+  configType: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType;
 }
 
 export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_requiredResources {
@@ -192,7 +192,7 @@ export interface SolidsRootQuery_usedSolids_definition_SolidDefinition {
   inputDefinitions: SolidsRootQuery_usedSolids_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: SolidsRootQuery_usedSolids_definition_SolidDefinition_outputDefinitions[];
   description: string | null;
-  configDefinition: SolidsRootQuery_usedSolids_definition_SolidDefinition_configDefinition | null;
+  configField: SolidsRootQuery_usedSolids_definition_SolidDefinition_configField | null;
   requiredResources: SolidsRootQuery_usedSolids_definition_SolidDefinition_requiredResources[];
 }
 

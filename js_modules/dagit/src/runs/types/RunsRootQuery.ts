@@ -43,16 +43,6 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags {
   value: string;
 }
 
-export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
-export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan {
-  __typename: "ExecutionPlan";
-  steps: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps[];
-}
-
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results {
   __typename: "PipelineRun";
   runId: string;
@@ -64,7 +54,6 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results {
   pipeline: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline;
   stats: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats;
   tags: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
-  executionPlan: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan | null;
 }
 
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns {

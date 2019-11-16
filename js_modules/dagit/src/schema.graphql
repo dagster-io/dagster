@@ -596,8 +596,6 @@ type Pipeline implements SolidContainer & PipelineReference {
   solids: [Solid!]!
   name: String!
   description: String
-  environmentType(mode: String): ConfigType!
-  configTypes(mode: String): [ConfigType!]!
   runtimeTypes: [RuntimeType!]!
   runs: [PipelineRun!]!
   modes: [Mode!]!
@@ -986,7 +984,7 @@ type SolidDefinition implements ISolidDefinition {
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   requiredResources: [ResourceRequirement!]!
-  configDefinition: ConfigTypeField
+  configField: ConfigTypeField
 }
 
 type SolidHandle {

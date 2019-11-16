@@ -128,7 +128,7 @@ class DauphinSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
         name = 'SolidDefinition'
         interfaces = [DauphinISolidDefinition]
 
-    config_definition = dauphin.Field('ConfigTypeField')
+    config_field = dauphin.Field('ConfigTypeField')
 
     def __init__(self, solid_def):
         check.inst_param(solid_def, 'solid_def', SolidDefinition)
@@ -137,7 +137,7 @@ class DauphinSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
         )
         ISolidDefinitionMixin.__init__(self, solid_def)
 
-    def resolve_config_definition(self, graphene_info):
+    def resolve_config_field(self, graphene_info):
         return (
             graphene_info.schema.type_named('ConfigTypeField')(
                 name="config", field=self._solid_def.config_field

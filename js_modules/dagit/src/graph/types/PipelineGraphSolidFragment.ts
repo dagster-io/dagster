@@ -101,15 +101,15 @@ export interface PipelineGraphSolidFragment_definition_SolidDefinition_outputDef
   type: PipelineGraphSolidFragment_definition_SolidDefinition_outputDefinitions_type;
 }
 
-export interface PipelineGraphSolidFragment_definition_SolidDefinition_configDefinition_configType {
+export interface PipelineGraphSolidFragment_definition_SolidDefinition_configField_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   name: string | null;
   description: string | null;
 }
 
-export interface PipelineGraphSolidFragment_definition_SolidDefinition_configDefinition {
+export interface PipelineGraphSolidFragment_definition_SolidDefinition_configField {
   __typename: "ConfigTypeField";
-  configType: PipelineGraphSolidFragment_definition_SolidDefinition_configDefinition_configType;
+  configType: PipelineGraphSolidFragment_definition_SolidDefinition_configField_configType;
 }
 
 export interface PipelineGraphSolidFragment_definition_SolidDefinition {
@@ -118,7 +118,7 @@ export interface PipelineGraphSolidFragment_definition_SolidDefinition {
   metadata: PipelineGraphSolidFragment_definition_SolidDefinition_metadata[];
   inputDefinitions: PipelineGraphSolidFragment_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineGraphSolidFragment_definition_SolidDefinition_outputDefinitions[];
-  configDefinition: PipelineGraphSolidFragment_definition_SolidDefinition_configDefinition | null;
+  configField: PipelineGraphSolidFragment_definition_SolidDefinition_configField | null;
 }
 
 export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_metadata {

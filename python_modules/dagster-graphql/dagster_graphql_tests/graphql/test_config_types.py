@@ -501,16 +501,16 @@ def pipeline_named(result, name):
     check.failed('Did not find')
 
 
-def has_config_type_with_key_prefix(pipeline_data, prefix):
-    for config_type_data in pipeline_data['configTypes']:
+def has_config_type_with_key_prefix(config_types_data, prefix):
+    for config_type_data in config_types_data:
         if config_type_data['key'].startswith(prefix):
             return True
 
     return False
 
 
-def has_config_type(pipeline_data, name):
-    for config_type_data in pipeline_data['configTypes']:
+def has_config_type(config_types_data, name):
+    for config_type_data in config_types_data:
         if config_type_data['name'] == name:
             return True
 
@@ -518,21 +518,20 @@ def has_config_type(pipeline_data, name):
 
 
 def test_smoke_test_config_type_system():
-    result = execute_dagster_graphql(define_context(), ALL_CONFIG_TYPES_QUERY)
+    result = execute_dagster_graphql(
+        define_context(),
+        ALL_CONFIG_TYPES_QUERY,
+        {'pipelineName': 'more_complicated_nested_config', 'mode': 'default'},
+    )
 
-    assert not result.errors
-    assert result.data
+    config_types_data = result.data['environmentSchemaOrError']['allConfigTypes']
 
-    pipeline_data = pipeline_named(result, 'more_complicated_nested_config')
-
-    assert pipeline_data
-
-    assert has_config_type_with_key_prefix(pipeline_data, 'Dict.')
-    assert not has_config_type_with_key_prefix(pipeline_data, 'List.')
-    assert not has_config_type_with_key_prefix(pipeline_data, 'Nullable.')
+    assert has_config_type_with_key_prefix(config_types_data, 'Dict.')
+    assert not has_config_type_with_key_prefix(config_types_data, 'List.')
+    assert not has_config_type_with_key_prefix(config_types_data, 'Nullable.')
 
     for builtin_config_type in ALL_CONFIG_BUILTINS:
-        assert has_config_type(pipeline_data, builtin_config_type.name)
+        assert has_config_type(config_types_data, builtin_config_type.name)
 
 
 ALL_CONFIG_TYPES_QUERY = '''
@@ -581,11 +580,10 @@ fragment configTypeFragment on ConfigType {
   }
 }
 
-{
- 	pipelines {
-    nodes {
-      name
-      configTypes {
+query allConfigTypes($pipelineName: String!, $mode: String!) {
+  environmentSchemaOrError(selector: { name: $pipelineName }, mode: $mode ) {
+    ... on EnvironmentSchema {
+      allConfigTypes {
         ...configTypeFragment
       }
     }
@@ -703,15 +701,14 @@ def test_graphql_secret_field():
 
     assert not result.errors
     assert result.data
-    for pipeline_data in result.data['pipelines']['nodes']:
-        for config_type_data in pipeline_data['configTypes']:
-            if 'password' in get_field_names(config_type_data):
-                password_field = get_field_data(config_type_data, 'password')
-                assert password_field['isSecret']
-                notpassword_field = get_field_data(config_type_data, 'notpassword')
-                assert not notpassword_field['isSecret']
+    for config_type_data in result.data['environmentSchemaOrError']['allConfigTypes']:
+        if 'password' in get_field_names(config_type_data):
+            password_field = get_field_data(config_type_data, 'password')
+            assert password_field['isSecret']
+            notpassword_field = get_field_data(config_type_data, 'notpassword')
+            assert not notpassword_field['isSecret']
 
-                password_type_count += 1
+            password_type_count += 1
 
     assert password_type_count == 1
 

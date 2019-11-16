@@ -35,15 +35,15 @@ export interface SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions {
   type: SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions_type;
 }
 
-export interface SolidNodeDefinitionFragment_SolidDefinition_configDefinition_configType {
+export interface SolidNodeDefinitionFragment_SolidDefinition_configField_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   name: string | null;
   description: string | null;
 }
 
-export interface SolidNodeDefinitionFragment_SolidDefinition_configDefinition {
+export interface SolidNodeDefinitionFragment_SolidDefinition_configField {
   __typename: "ConfigTypeField";
-  configType: SolidNodeDefinitionFragment_SolidDefinition_configDefinition_configType;
+  configType: SolidNodeDefinitionFragment_SolidDefinition_configField_configType;
 }
 
 export interface SolidNodeDefinitionFragment_SolidDefinition {
@@ -52,7 +52,7 @@ export interface SolidNodeDefinitionFragment_SolidDefinition {
   metadata: SolidNodeDefinitionFragment_SolidDefinition_metadata[];
   inputDefinitions: SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions[];
   outputDefinitions: SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions[];
-  configDefinition: SolidNodeDefinitionFragment_SolidDefinition_configDefinition | null;
+  configField: SolidNodeDefinitionFragment_SolidDefinition_configField | null;
 }
 
 export interface SolidNodeDefinitionFragment_CompositeSolidDefinition_metadata {

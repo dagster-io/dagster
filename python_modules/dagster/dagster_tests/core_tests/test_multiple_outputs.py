@@ -34,7 +34,8 @@ def test_multiple_outputs():
     assert solid_result.output_value('output_two') == 'bar'
 
     with pytest.raises(
-        DagsterInvariantViolationError, match='not_defined not defined in solid multiple_outputs'
+        DagsterInvariantViolationError,
+        match="Output 'not_defined' not defined in solid 'multiple_outputs'",
     ):
         solid_result.output_value('not_defined')
 
@@ -110,7 +111,8 @@ def test_multiple_outputs_only_emit_one():
     assert set(solid_result.output_values.keys()) == set(['output_one'])
 
     with pytest.raises(
-        DagsterInvariantViolationError, match='not_defined not defined in solid multiple_outputs'
+        DagsterInvariantViolationError,
+        match="Output 'not_defined' not defined in solid 'multiple_outputs'",
     ):
         solid_result.output_value('not_defined')
 
@@ -119,7 +121,10 @@ def test_multiple_outputs_only_emit_one():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match='Tried to get result for solid not_present in multiple_outputs_only_emit_one_pipeline. No such top level solid.',
+        match=(
+            'Tried to get result for solid not_present in multiple_outputs_only_emit_one_pipeline. '
+            'No such top level solid.'
+        ),
     ):
         result.result_for_solid('not_present')
 

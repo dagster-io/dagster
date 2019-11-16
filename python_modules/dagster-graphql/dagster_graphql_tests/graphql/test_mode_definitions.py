@@ -52,13 +52,9 @@ def test_multi_mode_successful():
 MODE_QUERY = '''
 query ModesQuery($pipelineName: String!, $mode: String!)
 {
-  pipeline(params: { name: $pipelineName }) {
-    __typename
-    ... on Pipeline {
-      configTypes(mode: $mode) {
-        name
-      }
-      environmentType(mode: $mode){
+  environmentSchemaOrError(selector: {name: $pipelineName}, mode: $mode ) {
+    ... on EnvironmentSchema {
+      rootEnvironmentType {
         name
         ... on CompositeConfigType {
           fields {
@@ -68,45 +64,8 @@ query ModesQuery($pipelineName: String!, $mode: String!)
           }
         }
       }
-      presets {
+      allConfigTypes {
         name
-        mode
-      }
-      modes {
-        name
-        description
-        resources {
-          name
-          configField {
-            configType {
-              name
-              ... on CompositeConfigType {
-                fields {
-                  name
-                  configType {
-                    name
-                  }
-                }
-              }
-            }
-          }
-        }
-        loggers {
-          name
-          configField {
-            configType {
-              name
-              ... on CompositeConfigType {
-                fields {
-                  name
-                  configType {
-                    name
-                  }
-                }
-              }
-            }
-          }
-        }
       }
     }
   }
@@ -130,7 +89,7 @@ def get_pipeline(result, name):
 
 def test_query_multi_mode(snapshot):
     with pytest.raises(graphql.error.base.GraphQLError):
-        modeless_result = execute_modes_query('multi_mode_with_resources', mode=None)
+        execute_modes_query('multi_mode_with_resources', mode=None)
 
-    modeless_result = execute_modes_query('multi_mode_with_resources', mode='add_mode')
-    snapshot.assert_match(modeless_result.data)
+    modeful_result = execute_modes_query('multi_mode_with_resources', mode='add_mode')
+    snapshot.assert_match(modeful_result.data)

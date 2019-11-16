@@ -36,6 +36,9 @@ Pipeline and solid results
 .. autoclass:: SolidExecutionResult
    :members:
 
+.. autoclass:: CompositeSolidExecutionResult
+   :members:
+
 .. autoclass:: DagsterEvent
    :members:
 

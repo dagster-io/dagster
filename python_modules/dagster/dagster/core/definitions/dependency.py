@@ -129,6 +129,12 @@ class Solid(object):
         return self.definition.output_def_named(name)
 
     @property
+    def is_composite(self):
+        from .solid import CompositeSolidDefinition
+
+        return isinstance(self.definition, CompositeSolidDefinition)
+
+    @property
     def input_dict(self):
         return self.definition.input_dict
 
