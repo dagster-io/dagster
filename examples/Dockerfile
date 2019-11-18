@@ -41,10 +41,7 @@ RUN pip install \
 	-e dagster-postgres \
 	-e dagster-cron \
 	-e . \
-	-r dagster/requirements.txt \
-	-r dagster-graphql/dev-requirements.txt \
-	-r dagstermill/requirements.txt \
-	-r dagster-aws/requirements.txt 
+	-r dagster-graphql/dev-requirements.txt
 
 # do separate install because two of the requirements files require
 # pytest and you cannot specify two (compatible) deps on the same module
