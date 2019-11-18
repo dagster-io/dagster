@@ -553,7 +553,6 @@ fragment configTypeFragment on ConfigType {
         fields {
             name
             isOptional
-            isSecret
             description
         }
     }
@@ -571,7 +570,6 @@ fragment configTypeFragment on ConfigType {
     fields {
       name
       isOptional
-      isSecret
       description
     }
   }
@@ -688,29 +686,6 @@ def test_config_type_or_error_nested_complicated():
         == 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
     )
     assert len(result.data['configTypeOrError']['innerTypes']) == 6
-
-
-def test_graphql_secret_field():
-    result = execute_dagster_graphql(
-        define_context(),
-        ALL_CONFIG_TYPES_QUERY,
-        {'pipelineName': 'secret_pipeline', 'mode': 'default'},
-    )
-
-    password_type_count = 0
-
-    assert not result.errors
-    assert result.data
-    for config_type_data in result.data['environmentSchemaOrError']['allConfigTypes']:
-        if 'password' in get_field_names(config_type_data):
-            password_field = get_field_data(config_type_data, 'password')
-            assert password_field['isSecret']
-            notpassword_field = get_field_data(config_type_data, 'notpassword')
-            assert not notpassword_field['isSecret']
-
-            password_type_count += 1
-
-    assert password_type_count == 1
 
 
 def get_field_data(config_type_data, name):

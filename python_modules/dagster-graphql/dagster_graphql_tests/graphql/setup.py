@@ -198,7 +198,6 @@ def define_repository():
             pipeline_with_step_metadata,
             required_resource_pipeline,
             scalar_output_pipeline,
-            secret_pipeline,
             spew_pipeline,
             noop_pipeline,
         ],
@@ -236,19 +235,6 @@ def pipeline_with_expectations():
     emit_successful_expectation()
     emit_failed_expectation()
     emit_successful_expectation_no_metadata()
-
-
-@pipeline
-def secret_pipeline():
-    @solid(
-        config_field=Field(
-            Dict({'password': Field(String, is_secret=True), 'notpassword': Field(String)})
-        )
-    )
-    def solid_with_secret(_context):
-        pass
-
-    return solid_with_secret()
 
 
 @pipeline

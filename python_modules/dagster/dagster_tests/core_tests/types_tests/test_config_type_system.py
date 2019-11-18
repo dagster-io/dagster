@@ -19,7 +19,6 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions import create_environment_schema
 from dagster.core.test_utils import throwing_evaluate_config_value
 from dagster.core.types.evaluator import evaluate_config
 from dagster.core.types.evaluator.errors import (
@@ -740,30 +739,3 @@ def test_invalid_default_values():
         @solid(config_field=Field(Int, default_value='3'))
         def _solid():
             pass
-
-
-def test_secret_field():
-    @solid(
-        config_field=Field(
-            Dict({'password': Field(String, is_secret=True), 'notpassword': Field(String)})
-        )
-    )
-    def solid_with_secret(_context):
-        pass
-
-    @pipeline(name='secret_pipeline')
-    def pipeline_def():
-        solid_with_secret()
-
-    environment_schema = create_environment_schema(pipeline_def)
-    config_type = environment_schema.config_type_named('SecretPipeline.SolidConfig.SolidWithSecret')
-
-    assert config_type
-
-    password_field = config_type.fields['config'].config_type.fields['password']
-
-    assert password_field.is_secret
-
-    notpassword_field = config_type.fields['config'].config_type.fields['notpassword']
-
-    assert not notpassword_field.is_secret

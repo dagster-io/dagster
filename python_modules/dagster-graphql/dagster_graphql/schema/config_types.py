@@ -187,7 +187,6 @@ class DauphinConfigTypeField(dauphin.ObjectType):
     config_type = dauphin.NonNull('ConfigType')
     default_value = dauphin.String()
     is_optional = dauphin.NonNull(dauphin.Boolean)
-    is_secret = dauphin.NonNull(dauphin.Boolean)
 
     def __init__(self, name, field):
         check.str_param(name, 'name')
@@ -198,7 +197,6 @@ class DauphinConfigTypeField(dauphin.ObjectType):
             description=field.description,
             default_value=field.default_value_as_str if field.default_provided else None,
             is_optional=field.is_optional,
-            is_secret=field.is_secret,
         )
         self._field = field
 

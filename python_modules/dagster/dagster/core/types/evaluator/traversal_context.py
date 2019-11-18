@@ -49,7 +49,7 @@ class TraversalContext(
 
     def for_tuple(self, index, item):
         return self._replace(
-            config_type=self.config_type.inner_type[index],
+            config_type=self.config_type.tuple_types[index],
             config_value=item,
             stack=self.stack.for_tuple_index(index),
         )

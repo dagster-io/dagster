@@ -178,8 +178,8 @@ class CloudwatchLogsHandler(logging.Handler):
         'log_group_name': Field(str),
         'log_stream_name': Field(str),
         'aws_region': Field(str, is_optional=True),
-        'aws_secret_access_key': Field(str, is_optional=True, is_secret=True),
-        'aws_access_key_id': Field(str, is_optional=True, is_secret=True),
+        'aws_secret_access_key': Field(str, is_optional=True),
+        'aws_access_key_id': Field(str, is_optional=True),
     },
     description='The default colored console logger.',
 )

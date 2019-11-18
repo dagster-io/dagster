@@ -483,22 +483,6 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
-                'name': 'solid_with_secret'
-            },
-            'invocations': [
-                {
-                    'pipeline': {
-                        'name': 'secret_pipeline'
-                    },
-                    'solidHandle': {
-                        'handleID': 'solid_with_secret'
-                    }
-                }
-            ]
-        },
-        {
-            '__typename': 'UsedSolid',
-            'definition': {
                 'name': 'spawn'
             },
             'invocations': [

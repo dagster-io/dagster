@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.5
+
+- `is_secret` has been removed from `Field`. It was not being used in to any effect.
+
 ## 0.6.4
 
 - Scheduler errors are now visible in dagit

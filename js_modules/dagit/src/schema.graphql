@@ -72,7 +72,6 @@ type ConfigTypeField {
   configType: ConfigType!
   defaultValue: String
   isOptional: Boolean!
-  isSecret: Boolean!
 }
 
 type ConfigTypeNotFoundError implements Error {

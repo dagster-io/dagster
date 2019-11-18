@@ -148,8 +148,8 @@ class ConfigSet(ConfigType):
 
 
 class ConfigTuple(ConfigType):
-    def __init__(self, inner_type, *args, **kwargs):
-        self.inner_type = check.list_param(inner_type, 'inner_type', of_type=ConfigType)
+    def __init__(self, tuple_types, *args, **kwargs):
+        self.tuple_types = check.list_param(tuple_types, 'tuple_types', of_type=ConfigType)
         super(ConfigTuple, self).__init__(*args, **kwargs)
 
     @property
@@ -158,8 +158,8 @@ class ConfigTuple(ConfigType):
 
     @property
     def inner_types(self):
-        return self.inner_type + [
-            t for inner_type in self.inner_type for t in inner_type.inner_types
+        return self.tuple_types + [
+            inner_type for tuple_type in self.tuple_types for inner_type in tuple_type.inner_types
         ]
 
 
@@ -307,23 +307,23 @@ def Set(inner_type):
     return _Set
 
 
-def Tuple(inner_types):
-    check.list_param(inner_types, 'inner_types', ConfigType)
+def Tuple(tuple_types):
+    check.list_param(tuple_types, 'tuple_types', ConfigType)
 
     class _Tuple(ConfigTuple):
         def __init__(self):
 
-            name = 'Tuple[{inner_types}]'.format(
-                inner_types=', '.join([inner_type.name for inner_type in inner_types])
+            name = 'Tuple[{tuple_types}]'.format(
+                tuple_types=', '.join([tuple_type.name for tuple_type in tuple_types])
             )
 
             super(_Tuple, self).__init__(
-                key='Tuple.{inner_types}'.format(
-                    inner_types='-'.join([inner_type.key for inner_type in inner_types])
+                key='Tuple.{tuple_types}'.format(
+                    tuple_types='-'.join([tuple_type.key for tuple_type in tuple_types])
                 ),
                 name=name,
                 type_attributes=ConfigTypeAttributes(is_builtin=True),
-                inner_type=inner_types,
+                tuple_types=tuple_types,
             )
 
             self.description = name
