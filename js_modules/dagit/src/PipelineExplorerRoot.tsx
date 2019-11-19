@@ -19,9 +19,7 @@ interface IPipelineExplorerRootProps {
   history: History<any>;
 }
 
-const PipelineExplorerRoot: React.FunctionComponent<
-  IPipelineExplorerRootProps
-> = props => {
+const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> = props => {
   const queryResult = useQuery<PipelineExplorerRootQuery>(
     PIPELINE_EXPLORER_ROOT_QUERY,
     {

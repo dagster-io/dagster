@@ -6,7 +6,7 @@ from google.cloud import storage
 from google.cloud.exceptions import NotFound
 from six import with_metaclass
 
-from dagster import Field, String, check, resource, seven
+from dagster import Field, List, String, check, resource, seven
 
 
 class DagsterCloudResourceSDKException(Exception):
@@ -73,6 +73,31 @@ class GoogleCloudStorageFileTransporter(AbstractFileTransporter):
                 blob.upload_from_file(fp_to_upload)
         except Exception as e:
             raise DagsterCloudResourceSDKException(e)
+
+
+class CredentialsVault:
+    def __init__(self, credentials):
+        self.credentials = credentials
+
+    @classmethod
+    def instantiate_vault_from_environment_variables(cls, environment_variable_names):
+        '''Will clobber creds that are already in the vault'''
+        credentials = {}
+        for environment_variable_name in environment_variable_names:
+            credential = os.environ.get(environment_variable_name)
+            if not credential:
+                raise ValueError(
+                    "Global Variable {} Not Set in Environment".format(environment_variable_name)
+                )
+            credentials[environment_variable_name] = credential
+        return cls(credentials)
+
+
+@resource(config={'environment_variable_names': Field(List[str])})
+def credentials_vault(context):
+    return CredentialsVault.instantiate_vault_from_environment_variables(
+        context.resource_config['environment_variable_names']
+    )
 
 
 @resource(config={'bucket_path': Field(String)})

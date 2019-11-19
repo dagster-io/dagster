@@ -218,7 +218,7 @@ export default class PipelineGraph extends React.Component<
       return Number.NaN;
     };
 
-    let closest = Object.keys(layout.solids)
+    const closest = Object.keys(layout.solids)
       .map(name => ({ name, score: score(layout.solids[name]) }))
       .filter(e => e.name !== selectedSolid.name && !Number.isNaN(e.score))
       .sort((a, b) => b.score - a.score)

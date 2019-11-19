@@ -43,6 +43,8 @@ class DagstermillNBConvertEngine(NBConvertEngine):
         nb_man,
         kernel_name,
         log_output=False,
+        stdout_file=None,
+        stderr_file=None,
         start_timeout=60,
         execution_timeout=None,
         **kwargs

@@ -532,7 +532,7 @@ def releasability_tests():
                 "pip install -r bin/requirements.txt",
                 "pip install -r bin/dev-requirements.txt",
                 "cd bin",
-                "SLACK_RELEASE_BOT_TOKEN='dummy' pytest"
+                "SLACK_RELEASE_BOT_TOKEN='dummy' pytest",
             )
             .on_integration_image(version)
             .build()
@@ -585,6 +585,7 @@ if __name__ == "__main__":
             "yarn run ts",
             "yarn run jest",
             "yarn run check-prettier",
+            "yarn run check-lint",
             "yarn run download-schema",
             "yarn run generate-types",
             "git diff --exit-code",

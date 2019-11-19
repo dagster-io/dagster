@@ -27,9 +27,7 @@ interface ParentSolidNodeProps {
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
-export const ParentSolidNode: React.FunctionComponent<
-  ParentSolidNodeProps
-> = props => {
+export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = props => {
   const { layout, solid, minified } = props;
 
   const def = props.solid.definition;

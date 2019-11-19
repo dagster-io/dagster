@@ -23,7 +23,7 @@ exports[`renders given an execution plan 1`] = `
         className="sc-cvbbAY hfeZiW"
       >
         <div
-          className="waiting sc-jWBwVP dKDMQm"
+          className="sc-jWBwVP dKDMQm waiting"
           onClick={[Function]}
           style={
             Object {

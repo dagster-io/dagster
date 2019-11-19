@@ -1,3 +1,4 @@
+import json
 import os
 import zipfile
 from typing import List
@@ -5,7 +6,9 @@ from typing import List
 import pandas as pd
 import requests
 
-from dagster import Field, Int, String, solid
+from dagster import Field, Float, Int, String, solid
+
+DARK_SKY_BASE_URL = 'https://api.darksky.net/forecast'
 
 
 def _write_chunks_to_fp(response, output_fp, chunk_size):
@@ -98,3 +101,49 @@ def consolidate_csv_files(
 @solid(required_resource_keys={'transporter'})
 def upload_file_to_bucket(context, path_to_file: str, key: str):
     context.resources.transporter.upload_file_to_bucket(path_to_file, key)
+
+
+@solid(
+    config={
+        'latitude': Field(
+            Float,
+            default_value=37.8267,
+            is_optional=True,
+            description=('Latitude coordinate to get weather data about. Default is SF.'),
+        ),
+        'longitude': Field(
+            Float,
+            default_value=-122.4233,
+            is_optional=True,
+            description=('Longitude coordinate to get weather data about. Default is SF.'),
+        ),
+        'times_to_exclude': Field(
+            List[String],
+            default_value=['currently', 'minutely', 'hourly', 'alerts', 'flags'],
+            is_optional=True,
+            description='data granularities to exclude when making this api call',
+        ),
+        'csv_name': Field(String, description=('Path to store the csv at the end')),
+    },
+    required_resource_keys={'credentials_vault', 'volume'},
+)
+def download_weather_report_from_weather_api(context, date_file_name: str) -> str:
+    weather_report = []
+    with open(date_file_name, 'r') as fp:
+        dates = json.load(fp)
+    coordinates = '{0},{1}'.format(
+        context.solid_config['latitude'], context.solid_config['longitude']
+    )
+    weather_api_key = context.resources.credentials_vault.credentials["DARK_SKY_API_KEY"]
+    url_prefix = '/'.join([DARK_SKY_BASE_URL, weather_api_key, coordinates])
+    for date in dates:
+        url = url_prefix + ',{}?exclude={}'.format(
+            date, ','.join(context.solid_config['times_to_exclude'])
+        )
+        context.log.info("Download for date {}. URL is: {}".format(date, url))
+        response = requests.get(url)
+        response.raise_for_status()
+        weather_report.append(response.json()['daily']['data'][0])
+    csv_target = os.path.join(context.resources.volume, context.solid_config['csv_name'])
+    pd.DataFrame(weather_report).to_csv(csv_target)
+    return csv_target

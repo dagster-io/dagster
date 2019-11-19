@@ -25,7 +25,7 @@ export default class ExecutionStartButton extends React.Component<
   IExecutionStartButtonProps,
   IExecutionStartButtonState
 > {
-  _mounted: boolean = false;
+  _mounted = false;
   _startButton: React.RefObject<any> = React.createRef();
 
   state = {

@@ -32,6 +32,8 @@ ENV JAVA_VERSION 8u222
 ENV JAVA_DEBIAN_VERSION 8u222-b10-1~deb9u1
 ENV SBT_VERSION=1.2.8
 ENV PYSPARK_VERSION=2.4.4
+ENV KUBECTL_VERSION=v1.16.3
+ENV KIND_VERSION=v0.5.1
 
 # add a simple script that can auto-detect the appropriate JAVA_HOME value
 # based on whether the JDK or only the JRE is installed
@@ -122,7 +124,7 @@ RUN curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-c
     && chmod +x /usr/local/bin/docker-compose \
     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
     # Get SBT
-    && curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_VERSION.deb \
+    && curl -LO https://dl.bintray.com/sbt/debian/sbt-$SBT_VERSION.deb \
     && dpkg -i sbt-$SBT_VERSION.deb \
     && rm sbt-$SBT_VERSION.deb \
     && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
@@ -147,6 +149,14 @@ RUN curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-c
         /usr/share/doc-base \
 # Validate
     && sbt sbtVersion
+
+# Install kubectl and kind CLI utils
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl \
+    && chmod +x ./kubectl \
+    && mv ./kubectl /usr/local/bin/kubectl \
+    && curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/$KIND_VERSION/kind-linux-amd64 \
+    && chmod +x ./kind \
+    && mv ./kind /usr/local/bin/kind
 
 # Pre-load jars for scala_modules by running a compile
 ADD scala_modules scala_modules

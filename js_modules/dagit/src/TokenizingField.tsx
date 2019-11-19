@@ -137,7 +137,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     // is now at it's location if it's gone, bounded to the array.
     let nextIdx = pos !== -1 ? pos : active.idx;
     nextIdx = Math.max(0, Math.min(suggestions.length - 1, nextIdx));
-    let nextText = suggestions[nextIdx] && suggestions[nextIdx].text;
+    const nextText = suggestions[nextIdx] && suggestions[nextIdx].text;
 
     if (nextIdx !== active.idx || nextText !== active.text) {
       setActive({ text: nextText, idx: nextIdx });
@@ -204,7 +204,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
       return;
     }
 
-    if (!open && (e.key !== "Delete" && e.key !== "Backspace")) {
+    if (!open && e.key !== "Delete" && e.key !== "Backspace") {
       setOpen(true);
     }
 

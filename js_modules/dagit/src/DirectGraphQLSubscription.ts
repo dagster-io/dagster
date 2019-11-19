@@ -18,7 +18,7 @@ reset state in preparation for receiving messages again.)
 export class DirectGraphQLSubscription<T> {
   private websocket: WebSocket;
   private messageQueue: T[] = [];
-  private messagesReceived: boolean = false;
+  private messagesReceived = false;
   private onFlushMessages: FlushCallback<T>;
   private closed = false;
   private query: any;

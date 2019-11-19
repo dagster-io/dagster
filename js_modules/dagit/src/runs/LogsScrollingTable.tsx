@@ -91,7 +91,7 @@ class LogsScrollingTableSized extends React.Component<
       this.props.nodes ? this.props.nodes[rowIndex].clientsideKey : ""
   });
 
-  isAtBottomOrZero: boolean = true;
+  isAtBottomOrZero = true;
   scrollToBottomObserver: MutationObserver;
 
   componentDidMount() {

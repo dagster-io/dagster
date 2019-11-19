@@ -1,0 +1,16 @@
+resources:
+  credentials_vault:
+    config:
+      environment_variable_names:
+      - DARK_SKY_API_KEY
+solids:
+  download_weather_report_from_weather_api:
+    config:
+      csv_name: trips.csv
+    inputs:
+      date_file_name:
+        value: /tmp/dates_to_extract_weather_about.json
+  upload_weather_report:
+    inputs:
+      key:
+        value: weather.csv

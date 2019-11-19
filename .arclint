@@ -13,7 +13,8 @@
     "eslint": {
       "type": "eslint",
       "include": "(\\.(ts|tsx)$)",
-      "bin": "./js_modules/dagit/node_modules/.bin/eslint",
+      "flags": ["--resolve-plugins-relative-to", "./js_modules/dagit"],
+      "eslint.cwd": "./js_modules/dagit",
       "eslint.config": "./js_modules/dagit/.eslintrc.js"
     }
   }

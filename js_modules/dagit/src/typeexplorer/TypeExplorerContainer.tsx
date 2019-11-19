@@ -13,9 +13,10 @@ interface ITypeExplorerContainerProps {
   typeName: string;
 }
 
-export const TypeExplorerContainer: React.FunctionComponent<
-  ITypeExplorerContainerProps
-> = ({ pipelineName, typeName }) => {
+export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContainerProps> = ({
+  pipelineName,
+  typeName
+}) => {
   const queryResult = useQuery<
     TypeExplorerContainerQuery,
     TypeExplorerContainerQueryVariables

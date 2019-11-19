@@ -39,7 +39,7 @@ export async function copyValue(event: React.MouseEvent<any>, value: string) {
 
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
-  wait: number = 100
+  wait = 100
 ): T {
   let timeout: any | null = null;
   let args: any[] | null = null;
@@ -53,6 +53,7 @@ export function debounce<T extends (...args: any[]) => any>(
       timeout = setTimeout(later, wait - last);
     } else {
       timeout = null;
+      // eslint-disable-next-line
       result = func.apply(null, args);
       args = null;
     }
@@ -112,7 +113,7 @@ export function formatElapsedTime(msec: number) {
 export function weakmapMemoize<T extends object, R>(
   fn: (arg: T, ...rest: any[]) => R
 ): (arg: T, ...rest: any[]) => R {
-  let cache = new WeakMap();
+  const cache = new WeakMap();
   return (arg: T, ...rest: any[]) => {
     if (cache.has(arg)) {
       return cache.get(arg);

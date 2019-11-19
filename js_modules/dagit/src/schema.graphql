@@ -230,7 +230,7 @@ type ExecutionPlan {
   artifactsPersisted: Boolean!
 }
 
-union ExecutionPlanResult = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError
+union ExecutionPlanResult = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError | PythonError
 
 input ExecutionSelector {
   name: String!

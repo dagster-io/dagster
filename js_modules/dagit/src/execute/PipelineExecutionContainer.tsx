@@ -354,7 +354,9 @@ export default class PipelineExecutionContainer extends React.Component<
                             }
                           });
 
-                          this.setState({ preview: data });
+                          if (this.mounted) {
+                            this.setState({ preview: data });
+                          }
 
                           return responseToValidationResult(
                             environmentConfigData,

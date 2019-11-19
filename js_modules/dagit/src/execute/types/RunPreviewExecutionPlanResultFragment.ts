@@ -10,7 +10,7 @@ import { StepKind } from "./../../types/globalTypes";
 // ====================================================
 
 export interface RunPreviewExecutionPlanResultFragment_PipelineConfigValidationInvalid {
-  __typename: "PipelineConfigValidationInvalid";
+  __typename: "PipelineConfigValidationInvalid" | "PythonError";
 }
 
 export interface RunPreviewExecutionPlanResultFragment_ExecutionPlan_steps {

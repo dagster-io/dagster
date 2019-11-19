@@ -178,8 +178,8 @@ function getDagrePipelineLayoutHeavy(
     [solidName: string]: IFullSolidLayout;
   } = {};
 
-  let nodesBySolid: { [solidName: string]: dagre.Node } = {};
-  let nodesInRows: { [key: string]: dagre.Node[] } = {};
+  const nodesBySolid: { [solidName: string]: dagre.Node } = {};
+  const nodesInRows: { [key: string]: dagre.Node[] } = {};
   g.nodes().forEach(function(solidName) {
     const node = g.node(solidName);
     nodesBySolid[solidName] = node;
@@ -196,13 +196,14 @@ function getDagrePipelineLayoutHeavy(
   // - We may "compact" two groups of solids separated by horizontal
   //   whitespace on the same row into the same block.
 
-  let rows = Object.keys(nodesInRows)
+  const rows = Object.keys(nodesInRows)
     .map(a => Number(a))
     .sort((a, b) => a - b);
 
-  let firstRow = nodesInRows[`${rows[0]}`];
-  let firstRowCenterX =
-    firstRow.reduce((s, n) => s + n.x + n.width / 2, 0) / firstRow.length;
+  const firstRow = nodesInRows[`${rows[0]}`];
+  const firstRowCenterX = firstRow
+    ? firstRow.reduce((s, n) => s + n.x + n.width / 2, 0) / firstRow.length
+    : 0;
 
   for (let ii = 0; ii < rows.length; ii++) {
     const rowKey = `${rows[ii]}`;

@@ -107,9 +107,7 @@ function filterSolidsWithSearch(
   });
 }
 
-export const SolidsRoot: React.FunctionComponent<
-  RouteComponentProps
-> = route => {
+export const SolidsRoot: React.FunctionComponent<RouteComponentProps> = route => {
   const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY);
   return (
     <Loading queryResult={queryResult}>
