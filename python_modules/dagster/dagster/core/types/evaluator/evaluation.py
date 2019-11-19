@@ -14,7 +14,6 @@ from dagster.utils.merger import dict_merge
 
 from .errors import (
     create_bad_mapping_error,
-    create_bad_mapping_solids_key_error,
     create_bad_user_config_fn_error,
     create_composite_type_mismatch_error,
     create_enum_type_mismatch_error,
@@ -248,7 +247,9 @@ def _evaluate_composite_solid_config(context):
     solid_def = context.pipeline.get_solid(context.config_type.handle).definition
     solid_def_name = context.pipeline.get_solid(handle).definition.name
 
-    has_mapping = isinstance(solid_def, CompositeSolidDefinition) and solid_def.has_config_mapping
+    has_mapping = (
+        isinstance(solid_def, CompositeSolidDefinition) and solid_def.has_descendant_config_mapping
+    )
 
     # If there's no config mapping function provided for this composite solid, bail
     if not has_mapping:
@@ -263,10 +264,16 @@ def _evaluate_composite_solid_config(context):
         return evaluate_value_result
 
     try:
-        mapped_config_value = solid_def.config_mapping.config_fn(
+        if solid_def.has_config_mapping:
+            config_fn = solid_def.config_mapping.config_fn
+        else:
+            config_fn = lambda _ctx, cfg: cfg
+        mapped_config_value = config_fn(
             ConfigMappingContext(run_config=context.run_config),
             # ensure we don't mutate the source environment dict
-            frozendict(evaluate_value_result.value.get('config') or {}),
+            frozendict(
+                evaluate_value_result.value.get('config') or evaluate_value_result.value or {}
+            ),
         )
     except Exception:  # pylint: disable=W0703
         return EvaluateValueResult.for_error(
@@ -295,10 +302,9 @@ def _evaluate_composite_solid_config(context):
             )
         )
 
+    # When evaluating nested composite solids defined with config mapping functions but empty config
     if 'solids' in context.config_value:
-        return EvaluateValueResult.for_error(
-            create_bad_mapping_solids_key_error(context, solid_def_name, str(handle))
-        )
+        mapped_config_value = context.config_value.get('solids')
 
     # We've validated the composite solid config; now validate the mapping fn overrides against the
     # config schema subtree for child solids
