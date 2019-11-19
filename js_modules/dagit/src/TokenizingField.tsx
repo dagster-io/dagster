@@ -78,30 +78,34 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     maxValues !== undefined && values.filter(v => v.token).length >= maxValues;
 
   // Build the set of suggestions that should be displayed for the current input value.
-  // Note: inputValue is the text that has not yet been submitted, separate from values[].
+  // Note: "typed" is the text that has not yet been submitted, separate from values[].
   const parts = typed.split(":");
-  const lastPart = parts[parts.length - 1];
+  const lastPart = parts[parts.length - 1].toLowerCase();
   let suggestions: Suggestion[] = [];
 
-  const matchesTypedText = (s: Suggestion) =>
-    !lastPart || s.text.split(":").some(c => c.startsWith(lastPart));
+  const suggestionMatchesTypedText = (s: Suggestion) =>
+    !lastPart ||
+    s.text
+      .toLowerCase()
+      .split(":")
+      .some(c => c.startsWith(lastPart));
 
   const availableSuggestionsForProvider = (provider: SuggestionProvider) => {
-    const notAlreadyAdded = (v: string) =>
+    const suggestionNotUsed = (v: string) =>
       !values.some(e => e.token === provider.token && e.value === v);
 
     return provider
       .values()
-      .filter(notAlreadyAdded)
+      .filter(suggestionNotUsed)
       .map(v => ({ text: `${provider.token}:${v}`, final: true }))
-      .filter(matchesTypedText);
+      .filter(suggestionMatchesTypedText);
   };
 
   if (parts.length === 1) {
     // Suggest providers (eg: `pipeline:`) so users can discover the search space
     suggestions = suggestionProviders
       .map(s => ({ text: `${s.token}:`, final: false }))
-      .filter(matchesTypedText);
+      .filter(suggestionMatchesTypedText);
 
     // Suggest value completions so users can type "airline_" without the "pipeline"
     // prefix and get the correct suggestion.
@@ -123,7 +127,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   suggestions = suggestions.sort((a, b) => a.text.localeCompare(b.text));
 
   // We need to manage selection in the dropdown by ourselves. To ensure the
-  // best behavior we store the active item's index and text (the text allows)
+  // best behavior we store the active item's index and text (the text allows
   // us to relocate it if it's moved and the index allows us to keep selection
   // at the same location if the previous item is gone.)
 
@@ -131,8 +135,15 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   // are derived from the current input value.
 
   React.useEffect(() => {
-    if (!active) return;
-
+    // If suggestions are present, autoselect the first one so the user can press
+    // enter to complete their search. (Esc + enter is how you enter your raw text.)
+    if (!active && suggestions.length) {
+      setActive({ text: suggestions[0].text, idx: 0 });
+      return;
+    }
+    if (!active) {
+      return;
+    }
     if (suggestions.length === 0) {
       setActive(null);
       return;
@@ -208,6 +219,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
 
     // Escape closes the options. The options re-open if you type another char or click.
     if (e.key === "Escape") {
+      setActive(null);
       setOpen(false);
       return;
     }
