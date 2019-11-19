@@ -9,7 +9,6 @@ export interface SuggestionProvider {
 
 interface Suggestion {
   text: string;
-  completion: string;
   final: boolean;
 }
 
@@ -74,48 +73,61 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
 }) => {
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
-  const [inputValue, setInputValue] = React.useState<string>("");
+  const [typed, setTyped] = React.useState<string>("");
   const atMaxValues =
     maxValues !== undefined && values.filter(v => v.token).length >= maxValues;
 
   // Build the set of suggestions that should be displayed for the current input value.
-  // Note: inputValue is the text that has not yet been submitted, separate from values[].
-  const parts = inputValue.split(":");
+  // Note: "typed" is the text that has not yet been submitted, separate from values[].
+  const parts = typed.split(":");
+  const lastPart = parts[parts.length - 1].toLowerCase();
   let suggestions: Suggestion[] = [];
 
+  const suggestionMatchesTypedText = (s: Suggestion) =>
+    !lastPart ||
+    s.text
+      .toLowerCase()
+      .split(":")
+      .some(c => c.startsWith(lastPart));
+
+  const availableSuggestionsForProvider = (provider: SuggestionProvider) => {
+    const suggestionNotUsed = (v: string) =>
+      !values.some(e => e.token === provider.token && e.value === v);
+
+    return provider
+      .values()
+      .filter(suggestionNotUsed)
+      .map(v => ({ text: `${provider.token}:${v}`, final: true }))
+      .filter(suggestionMatchesTypedText);
+  };
+
   if (parts.length === 1) {
-    // Suggest providers (eg: `pipeline:`)
-    suggestions = suggestionProviders.map(s => ({
-      text: `${s.token}:`,
-      completion: `${s.token}:`,
-      final: false
-    }));
+    // Suggest providers (eg: `pipeline:`) so users can discover the search space
+    suggestions = suggestionProviders
+      .map(s => ({ text: `${s.token}:`, final: false }))
+      .filter(suggestionMatchesTypedText);
+
+    // Suggest value completions so users can type "airline_" without the "pipeline"
+    // prefix and get the correct suggestion.
+    if (typed.length > 0) {
+      for (const p of suggestionProviders) {
+        suggestions.push(...availableSuggestionsForProvider(p));
+      }
+    }
   }
+
   if (parts.length === 2) {
     // Suggest values from the chosen provider (eg: `pipeline:abc`)
     const provider = findProviderByToken(parts[0], suggestionProviders);
-    suggestions = provider
-      ? provider
-          .values()
-          .filter(
-            v => !values.some(e => e.token === provider.token && e.value === v)
-          )
-          .map(v => ({
-            text: v,
-            completion: `${provider.token}:${v}`,
-            final: true
-          }))
-      : [];
+    suggestions = provider ? availableSuggestionsForProvider(provider) : [];
   }
 
   // Truncate suggestions to the ones currently matching the typed text,
   // and always sort them in alphabetical order.
-  suggestions = suggestions
-    .filter(s => !inputValue || s.completion.startsWith(inputValue))
-    .sort((a, b) => a.text.localeCompare(b.text));
+  suggestions = suggestions.sort((a, b) => a.text.localeCompare(b.text));
 
   // We need to manage selection in the dropdown by ourselves. To ensure the
-  // best behavior we store the active item's index and text (the text allows)
+  // best behavior we store the active item's index and text (the text allows
   // us to relocate it if it's moved and the index allows us to keep selection
   // at the same location if the previous item is gone.)
 
@@ -123,8 +135,15 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   // are derived from the current input value.
 
   React.useEffect(() => {
-    if (!active) return;
-
+    // If suggestions are present, autoselect the first one so the user can press
+    // enter to complete their search. (Esc + enter is how you enter your raw text.)
+    if (!active && suggestions.length) {
+      setActive({ text: suggestions[0].text, idx: 0 });
+      return;
+    }
+    if (!active) {
+      return;
+    }
     if (suggestions.length === 0) {
       setActive(null);
       return;
@@ -149,13 +168,13 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
 
     if (suggestion.final) {
       // The user has finished a key-value pair
-      onConfirmText(suggestion.completion);
-      setInputValue("");
+      onConfirmText(suggestion.text);
+      setTyped("");
       setActive(null);
       setOpen(false);
     } else {
       // The user has finished a key
-      setInputValue(suggestion.completion);
+      setTyped(suggestion.text);
     }
   };
 
@@ -165,7 +184,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     if (str === "") return;
 
     onChange([...values, tokenizedValueFromString(str, suggestionProviders)]);
-    setInputValue("");
+    setTyped("");
   };
 
   const onKeyDown = (e: React.KeyboardEvent<any>) => {
@@ -183,8 +202,8 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
         onConfirmSuggestion(picked);
         e.preventDefault();
         e.stopPropagation();
-      } else if (inputValue.length) {
-        onConfirmText(inputValue);
+      } else if (typed.length) {
+        onConfirmText(typed);
         e.preventDefault();
         e.stopPropagation();
       }
@@ -194,12 +213,13 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     // Typing space confirms your freeform text
     if (e.key === " ") {
       e.preventDefault();
-      onConfirmText(inputValue);
+      onConfirmText(typed);
       return;
     }
 
     // Escape closes the options. The options re-open if you type another char or click.
     if (e.key === "Escape") {
+      setActive(null);
       setOpen(false);
       return;
     }
@@ -249,13 +269,13 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     >
       <StyledTagInput
         values={values.map(v => (v.token ? `${v.token}:${v.value}` : v.value))}
-        inputValue={inputValue}
+        inputValue={typed}
         onRemove={(_, idx) => {
           const next = [...values];
           next.splice(idx, 1);
           onChange(next);
         }}
-        onInputChange={e => setInputValue(e.currentTarget.value)}
+        onInputChange={e => setTyped(e.currentTarget.value)}
         inputProps={{
           onFocus: () => setOpen(true),
           onBlur: () => setOpen(false)
