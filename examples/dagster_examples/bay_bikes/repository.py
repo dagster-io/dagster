@@ -1,10 +1,13 @@
 from dagster import RepositoryDefinition
 
-from .pipelines import monthly_bay_bike_etl_pipeline
+from .pipelines import extract_daily_weather_data_pipeline, extract_monthly_bay_bike_pipeline
 
 
 def define_repo():
     return RepositoryDefinition(
         name='bay_bikes_demo',
-        pipeline_dict={'monthly_bay_bike_etl_pipeline': lambda: monthly_bay_bike_etl_pipeline},
+        pipeline_dict={
+            'extract_monthly_bay_bike_pipeline': lambda: extract_monthly_bay_bike_pipeline,
+            'extract_daily_weather_data_pipeline': lambda: extract_daily_weather_data_pipeline,
+        },
     )

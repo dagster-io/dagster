@@ -2,7 +2,7 @@
 import json
 
 import pandas as pd
-from dagster_examples.bay_bikes.pipelines import monthly_bay_bike_etl_pipeline
+from dagster_examples.bay_bikes.pipelines import extract_monthly_bay_bike_pipeline
 
 from dagster import RunConfig, execute_pipeline_with_preset
 
@@ -22,7 +22,7 @@ def test_download_csv_locally_pipeline(mocker):
 
     # execute tests
     result = execute_pipeline_with_preset(
-        monthly_bay_bike_etl_pipeline, preset_name='dev', run_config=RunConfig(mode='local')
+        extract_monthly_bay_bike_pipeline, preset_name='dev', run_config=RunConfig(mode='local')
     )
     assert result.success
     with open('/tmp/test_bucket/key_storage.json') as fp:
