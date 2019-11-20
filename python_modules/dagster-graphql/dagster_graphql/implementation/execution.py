@@ -195,6 +195,47 @@ def _create_pipeline_run(instance, pipeline, execution_params):
     return pipeline_run_from_execution_params(execution_params, step_keys_to_execute)
 
 
+@capture_dauphin_error
+def launch_pipeline_execution(graphene_info, execution_params):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(execution_params, 'execution_params', ExecutionParams)
+
+    instance = graphene_info.context.instance
+    run_launcher = instance.run_launcher
+
+    if run_launcher is None:
+        return graphene_info.schema.type_named('RunLauncherNotDefinedError')()
+
+    dauphin_pipeline = get_dauphin_pipeline_from_selector_or_raise(
+        graphene_info, execution_params.selector
+    )
+
+    get_validated_config(
+        graphene_info,
+        dauphin_pipeline,
+        environment_dict=execution_params.environment_dict,
+        mode=execution_params.mode,
+    )
+
+    pipeline = dauphin_pipeline.get_dagster_pipeline()
+    execution_plan = create_execution_plan(
+        pipeline,
+        execution_params.environment_dict,
+        run_config=RunConfig(
+            mode=execution_params.mode, previous_run_id=execution_params.previous_run_id
+        ),
+    )
+
+    _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
+    run = instance.create_run(_create_pipeline_run(instance, pipeline, execution_params))
+
+    run = run_launcher.launch_run(run)
+
+    return graphene_info.schema.type_named('LaunchPipelineExecutionSuccess')(
+        run=graphene_info.schema.type_named('PipelineRun')(run)
+    )
+
+
 def _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan):
     if execution_params.step_keys:
         for step_key in execution_params.step_keys:

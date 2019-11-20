@@ -35,11 +35,17 @@ def configurable_class_data_or_default(config_value, field_name, default):
 class InstanceRef(
     namedtuple(
         '_InstanceRef',
-        'local_artifact_storage_data run_storage_data event_storage_data compute_logs_data',
+        'local_artifact_storage_data run_storage_data event_storage_data compute_logs_data '
+        'run_launcher_data',
     )
 ):
     def __new__(
-        self, local_artifact_storage_data, run_storage_data, event_storage_data, compute_logs_data
+        self,
+        local_artifact_storage_data,
+        run_storage_data,
+        event_storage_data,
+        compute_logs_data,
+        run_launcher_data,
     ):
         return super(self, InstanceRef).__new__(
             self,
@@ -54,6 +60,9 @@ class InstanceRef(
             ),
             compute_logs_data=check.inst_param(
                 compute_logs_data, 'compute_logs_data', ConfigurableClassData
+            ),
+            run_launcher_data=check.opt_inst_param(
+                run_launcher_data, 'run_launcher_data', ConfigurableClassData
             ),
         )
 
@@ -106,11 +115,14 @@ class InstanceRef(
             ),
         )
 
+        run_launcher_data = configurable_class_data_or_default(config_value, 'run_launcher', None)
+
         return InstanceRef(
             local_artifact_storage_data=local_artifact_storage_data,
             run_storage_data=run_storage_data,
             event_storage_data=event_storage_data,
             compute_logs_data=compute_logs_data,
+            run_launcher_data=run_launcher_data,
         )
 
     @property
@@ -126,5 +138,9 @@ class InstanceRef(
         return self.event_storage_data.rehydrate()
 
     @property
-    def compute_logs(self):
+    def compute_log_manager(self):
         return self.compute_logs_data.rehydrate()
+
+    @property
+    def run_launcher(self):
+        return self.run_launcher_data.rehydrate() if self.run_launcher_data else None

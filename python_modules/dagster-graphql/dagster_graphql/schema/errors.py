@@ -146,6 +146,16 @@ class DauphinModeNotFoundError(dauphin.ObjectType):
         )
 
 
+class DauphinRunLauncherNotDefinedError(dauphin.ObjectType):
+    class Meta:
+        name = 'RunLauncherNotDefinedError'
+        interfaces = (DauphinError,)
+
+    def __init__(self):
+        super(DauphinRunLauncherNotDefinedError, self).__init__()
+        self.message = 'RunLauncher is not defined for the current instance.'
+
+
 class DauphinPipelineConfigValidationValid(dauphin.ObjectType):
     class Meta:
         name = 'PipelineConfigValidationValid'
@@ -400,6 +410,13 @@ class DauphinStartPipelineExecutionSuccess(dauphin.ObjectType):
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
 
+class DauphinLaunchPipelineExecutionSuccess(dauphin.ObjectType):
+    class Meta:
+        name = 'LaunchPipelineExecutionSuccess'
+
+    run = dauphin.Field(dauphin.NonNull('PipelineRun'))
+
+
 class DauphinInvalidStepError(dauphin.ObjectType):
     class Meta:
         name = 'InvalidStepError'
@@ -415,7 +432,7 @@ class DauphinInvalidOutputError(dauphin.ObjectType):
     invalid_output_name = dauphin.NonNull(dauphin.String)
 
 
-start_pipeline_execution_result_types = (
+pipeline_execution_error_types = (
     DauphinInvalidStepError,
     DauphinInvalidOutputError,
     DauphinPipelineConfigValidationInvalid,
@@ -424,11 +441,24 @@ start_pipeline_execution_result_types = (
     DauphinPythonError,
 )
 
+start_pipeline_execution_result_types = (
+    DauphinStartPipelineExecutionSuccess,
+) + pipeline_execution_error_types
+
 
 class DauphinStartPipelineExecutionResult(dauphin.Union):
     class Meta:
         name = 'StartPipelineExecutionResult'
         types = start_pipeline_execution_result_types
+
+
+class DauphinLaunchPipelineExecutionResult(dauphin.Union):
+    class Meta:
+        name = 'LaunchPipelineExecutionResult'
+        types = (
+            DauphinLaunchPipelineExecutionSuccess,
+            DauphinRunLauncherNotDefinedError,
+        ) + pipeline_execution_error_types
 
 
 class DauphinScheduledExecutionBlocked(dauphin.ObjectType):
