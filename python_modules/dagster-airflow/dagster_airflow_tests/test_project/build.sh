@@ -53,6 +53,8 @@ rm -rf \
   examples/build \
   examples/dist && \
 \
+# https://kind.sigs.k8s.io/docs/user/quick-start/#loading-an-image-into-your-cluster
+# Can't use a latest tag
 docker build -t dagster-airflow-demo . && \
 docker build -t dagster-airflow-webserver -f Dockerfile-airflow-webserver .
 

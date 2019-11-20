@@ -32,7 +32,7 @@ def publish_docker_images():
 
 
 if __name__ == "__main__":
-    steps = [
+    steps = publish_docker_images() + [
         StepBuilder('publish nightlies')
         .on_integration_image(
             SupportedPython.V3_7, ['SLACK_RELEASE_BOT_TOKEN', 'PYPI_USERNAME', 'PYPI_PASSWORD']
@@ -63,5 +63,4 @@ if __name__ == "__main__":
         .run('git tag | grep phabricator | xargs git push -d origin')
         .build(),
     ]
-
-print(yaml.dump({"env": {}, "steps": publish_docker_images() + steps}, default_flow_style=False))
+    print(yaml.dump({"env": {}, "steps": steps}, default_flow_style=False))

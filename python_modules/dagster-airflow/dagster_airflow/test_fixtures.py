@@ -8,10 +8,6 @@ from airflow.utils import timezone
 
 from dagster.utils import load_yaml_from_glob_list
 
-from .factory import make_airflow_dag_containerized_for_handle, make_airflow_dag_for_handle
-from .operators.docker_operator import DagsterDockerOperator
-from .vendor.python_operator import PythonOperator
-
 
 def execute_tasks_in_dag(dag, tasks, run_id, execution_date):
     assert isinstance(dag, DAG)
@@ -54,6 +50,9 @@ def dagster_airflow_python_operator_pipeline(request):
                 results = dagster_airflow_python_operator_pipeline
                 assert len(results) = 3
     '''
+    from .factory import make_airflow_dag_for_handle
+    from .vendor.python_operator import PythonOperator
+
     handle = getattr(request.cls, 'handle')
     pipeline_name = getattr(request.cls, 'pipeline_name')
     environment_dict = getattr(request.cls, 'environment_dict', None)
@@ -101,6 +100,8 @@ def dagster_airflow_docker_operator_pipeline(request):
                 results = dagster_airflow_docker_operator_pipeline
                 assert len(results) = 3
     '''
+    from .factory import make_airflow_dag_containerized_for_handle
+    from .operators.docker_operator import DagsterDockerOperator
 
     handle = getattr(request.cls, 'handle')
     pipeline_name = getattr(request.cls, 'pipeline_name')
@@ -120,5 +121,40 @@ def dagster_airflow_docker_operator_pipeline(request):
 
     for task in tasks:
         assert isinstance(task, DagsterDockerOperator)
+
+    return execute_tasks_in_dag(dag, tasks, run_id, execution_date)
+
+
+@pytest.fixture(scope='class')
+def dagster_airflow_k8s_operator_pipeline(request):
+    '''This is a test fixture for running Dagster pipelines on Airflow + K8s.
+    '''
+    from .factory import make_airflow_dag_kubernetized_for_handle
+    from .operators.kubernetes_operator import DagsterKubernetesPodOperator
+
+    handle = getattr(request.cls, 'handle')
+    pipeline_name = getattr(request.cls, 'pipeline_name')
+    image = getattr(request.cls, 'image')
+    namespace = getattr(request.cls, 'namespace', 'default')
+    environment_dict = getattr(request.cls, 'environment_dict', None)
+    environment_yaml = getattr(request.cls, 'environment_yaml', [])
+    op_kwargs = getattr(request.cls, 'op_kwargs', {})
+
+    if environment_dict is None and environment_yaml is not None:
+        environment_dict = load_yaml_from_glob_list(environment_yaml)
+    run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
+    execution_date = getattr(request.cls, 'execution_date', timezone.utcnow())
+
+    dag, tasks = make_airflow_dag_kubernetized_for_handle(
+        handle=handle,
+        pipeline_name=pipeline_name,
+        image=image,
+        namespace=namespace,
+        environment_dict=environment_dict,
+        op_kwargs=op_kwargs,
+    )
+
+    for task in tasks:
+        assert isinstance(task, DagsterKubernetesPodOperator)
 
     return execute_tasks_in_dag(dag, tasks, run_id, execution_date)

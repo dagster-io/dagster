@@ -189,24 +189,57 @@ def events_demo_tests():
     return tests
 
 
+def publish_airflow_images():
+    '''These images are used by the dagster-airflow tests. We build them here and not in the main
+    build pipeline to speed it up, because they change very rarely.
+    '''
+    return [
+        StepBuilder("[dagster-airflow] images", key="dagster-airflow-images")
+        .run(
+            "pip install awscli",
+            "aws ecr get-login --no-include-email --region us-west-1 | sh",
+            "export DAGSTER_AIRFLOW_DOCKER_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-airflow-demo:$${BUILDKITE_BUILD_ID}",
+            # Build and deploy dagster-airflow docker images
+            "pushd python_modules/dagster-airflow/dagster_airflow_tests/test_project",
+            "./build.sh",
+            "docker tag dagster-airflow-demo $${DAGSTER_AIRFLOW_DOCKER_IMAGE}",
+            "docker push $${DAGSTER_AIRFLOW_DOCKER_IMAGE}",
+            "popd",
+        )
+        .on_integration_image(
+            SupportedPython.V3_7,
+            [
+                'AIRFLOW_HOME',
+                'AWS_ACCOUNT_ID',
+                'AWS_ACCESS_KEY_ID',
+                'AWS_SECRET_ACCESS_KEY',
+                'BUILDKITE_SECRETS_BUCKET',
+            ],
+        )
+        .build()
+    ]
+
+
 def airflow_tests():
     tests = []
     for version in SupportedPythons:
         coverage = ".coverage.dagster-airflow.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
-            StepBuilder("dagster-airflow tests ({ver})".format(ver=TOX_MAP[version]))
+            StepBuilder("[dagster-airflow] ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "cd python_modules/dagster-airflow/dagster_airflow_tests/test_project",
-                "./build.sh",
-                "mkdir -p /airflow",
-                "export AIRFLOW_HOME=/airflow",
-                "cd ../../",
-                "pip install tox",
-                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "pip install awscli",
+                "aws ecr get-login --no-include-email --region us-west-1 | sh",
+                "./.buildkite/scripts/dagster_airflow.sh {ver}".format(ver=TOX_MAP[version]),
+                "pushd python_modules/dagster-airflow/",
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
+                "popd",
             )
-            .on_integration_image(version, ['AIRFLOW_HOME'])
+            .depends_on(["dagster-airflow-images"])
+            .on_integration_image(
+                version,
+                ['AIRFLOW_HOME', 'AWS_ACCOUNT_ID', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
+            )
             .build()
         )
     return tests
@@ -327,7 +360,15 @@ def gcp_tests():
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
-            .on_integration_image(version, ['BUILDKITE_SECRETS_BUCKET', 'GCP_PROJECT_ID'])
+            .on_integration_image(
+                version,
+                [
+                    'BUILDKITE_SECRETS_BUCKET',
+                    'AWS_ACCESS_KEY_ID',
+                    'AWS_SECRET_ACCESS_KEY',
+                    'GCP_PROJECT_ID',
+                ],
+            )
             .build()
         )
 
@@ -600,6 +641,7 @@ if __name__ == "__main__":
     steps += events_demo_tests()
     steps += examples_tests()
 
+    steps += publish_airflow_images()
     steps += airflow_tests()
     steps += dask_tests()
 
