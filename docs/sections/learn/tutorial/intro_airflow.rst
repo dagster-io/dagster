@@ -100,7 +100,7 @@ More sophisticated setups
 
 This approach requires that Dagster, all of the Python requirements of your Dagster pipelines, and
 your Dagaster pipelines themselves be importable in the environment in which your Airflow tasks
-operate, because under the hood it uses Airflow's :py:class:`airflow:PythonOperator` to define 
+operate, because under the hood it uses Airflow's :py:class:`airflow:PythonOperator` to define
 tasks.
 
 ``dagster-airflow`` also includes facilities for compiling Dagster pipelines to Airflow DAGs whose

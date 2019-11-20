@@ -1,4 +1,4 @@
-.. airflow_:
+.. _airflow:
 
 Deploying to Airflow
 --------------------

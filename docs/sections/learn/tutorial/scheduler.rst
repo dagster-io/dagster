@@ -28,7 +28,7 @@ This is pluggable (and you can write your own), but for now the only implemented
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/scheduler.py
    :linenos:
-   :lines: 38-48
+   :lines: 38-47
    :lineno-start: 38
    :caption: scheduler.py
 
