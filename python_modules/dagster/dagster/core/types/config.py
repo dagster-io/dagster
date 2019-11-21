@@ -332,6 +332,17 @@ def Tuple(tuple_types):
 
 
 class EnumValue:
+    '''Define an entry in a :py:func:`Enum`.
+
+    Args:
+        config_value (str):
+            The string representation of the config to accept when passed.
+        python_value (Optional[Any]):
+            The python value to convert the enum entry in to. Defaults to the ``config_value``.
+        description (Optional[str])
+
+    '''
+
     def __init__(self, config_value, python_value=None, description=None):
         self.config_value = check.str_param(config_value, 'config_value')
         self.python_value = config_value if python_value is None else python_value
@@ -368,6 +379,32 @@ class ConfigEnum(ConfigType):
 
 
 def Enum(name, enum_values):
+    '''
+    Defines a enum configuration type that allows one of a defined set of possible values.
+
+    Args:
+        name (str):
+        enum_values (List[EnumValue]):
+
+    Example:
+        .. code-block:: python
+
+            @solid(
+                config_field=Field(
+                    Enum(
+                        'CowboyType',
+                        [
+                            EnumValue('good'),
+                            EnumValue('bad'),
+                            EnumValue('ugly'),
+                        ]
+                    )
+                )
+            )
+            def resolve_standoff(context):
+                # ...
+    '''
+
     class _EnumType(ConfigEnum):
         def __init__(self):
             super(_EnumType, self).__init__(name=name, enum_values=enum_values)

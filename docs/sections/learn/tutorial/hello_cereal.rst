@@ -92,6 +92,7 @@ You'll see the full stream of events emitted by dagster appear in the console, i
 call to the logging machinery, which will look like:
 
 .. code-block:: console
+
   :emphasize-lines: 1
 
     2019-10-10 11:46:50 - dagster - INFO - system - a91a4cc4-d218-4c2b-800c-aac50fced1a5 - Found 77 cereals
@@ -184,7 +185,7 @@ investigate, in detail, the success or failure of execution, the outputs produce
    :linenos:
    :caption: hello_cereal.py
    :lineno-start: 31
-   :lines: 31-41
+   :lines: 31-40
 
 Now you can use pytest, or your test runner of choice, to run unit tests as you develop your
 data applications.

@@ -173,7 +173,7 @@ The first is to pass an ``environment_dict`` literal to the constructor. Because
 defined in Python, you can do arbitrary computation to construct it -- for instance, picking up
 environment variables, making a call to a secrets store like Hashicorp Vault, etc.
 
-The second is to use the ``from_files`` static constructor, and pass a list of file globs from 
+The second is to use the ``from_files`` static constructor, and pass a list of file globs from
 which to read YAML fragments. Order matters in this case, and keys from later files will overwrite
 keys from earlier files.
 
@@ -188,9 +188,9 @@ From the CLI, use ``-p`` or ``--preset``:
 From Python, you can use :py:func:`execute_pipeline_with_preset <dagster.execute_pipeline_with_preset>`:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/presets.py
-   :lines: 169
+   :lines: 170
    :dedent: 4
 
-And in Dagit, we can use the "Presets" selector. 
+And in Dagit, we can use the "Presets" selector.
 
 .. thumbnail:: presets.png

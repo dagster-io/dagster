@@ -1,4 +1,5 @@
 # encoding: utf-8
+import hashlib
 import re
 
 from dagster import check
@@ -168,26 +169,6 @@ class _ConfigSelector(_ConfigHasFields):
         return True
 
 
-# HACK HACK HACK
-#
-# This is not good and a better solution needs to be found. In order
-# for the client-side typeahead in dagit to work as currently structured,
-# dictionaries need names. While we deal with that we're going to automatically
-# name dictionaries. This will cause odd behavior and bugs is you restart
-# the server-side process, the type names changes, and you do not refresh the client.
-#
-# A possible short term mitigation would to name the dictionary based on the hash
-# of its member fields to provide stability in between process restarts.
-#
-class DictCounter:
-    _count = 0
-
-    @staticmethod
-    def get_next_count():
-        DictCounter._count += 1
-        return DictCounter._count
-
-
 def check_user_facing_fields_dict(fields, type_name_msg):
     check.dict_param(fields, 'fields', key_type=str)
     check.str_param(type_name_msg, 'type_name_msg')
@@ -239,6 +220,25 @@ class DictTypeApi:
 Dict = DictTypeApi()
 
 
+FIELD_HASH_CACHE = {}
+
+
+def _compute_fields_hash(fields):
+
+    m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
+    for field_name in sorted(list(fields.keys())):
+        field = fields[field_name]
+        m.update((':fieldname:' + field_name).encode())
+        if field.default_provided:
+            m.update((':default_value: ' + field.default_value_as_str).encode())
+        m.update((':is_optional: ' + str(field.is_optional)).encode())
+        m.update((':type_key: ' + field.config_type.key).encode())
+        if field.description:
+            m.update((':description: ' + field.description).encode())
+
+    return m.hexdigest()
+
+
 def build_config_dict(fields):
     '''
     Schema for configuration data with string keys and typed values via :py:class:`Field` .
@@ -248,9 +248,13 @@ def build_config_dict(fields):
     '''
     check_user_facing_fields_dict(fields, 'Dict')
 
+    key = 'Dict.' + _compute_fields_hash(fields)
+
+    if key in FIELD_HASH_CACHE:
+        return FIELD_HASH_CACHE[key]
+
     class _Dict(_ConfigComposite):
         def __init__(self):
-            key = 'Dict.' + str(DictCounter.get_next_count())
             super(_Dict, self).__init__(
                 name=None,
                 key=key,
@@ -258,6 +262,8 @@ def build_config_dict(fields):
                 description='A configuration dictionary with typed fields',
                 type_attributes=ConfigTypeAttributes(is_builtin=True),
             )
+
+    FIELD_HASH_CACHE[key] = _Dict
 
     return _Dict
 
@@ -284,9 +290,13 @@ def PermissiveDict(fields=None):
     if fields:
         check_user_facing_fields_dict(fields, 'PermissiveDict')
 
+    key = 'PermissiveDict.' + _compute_fields_hash(fields) if fields else 'PermissiveDict'
+
+    if key in FIELD_HASH_CACHE:
+        return FIELD_HASH_CACHE[key]
+
     class _PermissiveDict(_ConfigComposite):
         def __init__(self):
-            key = 'PermissiveDict.' + str(DictCounter.get_next_count())
             super(_PermissiveDict, self).__init__(
                 name=None,
                 key=key,
@@ -298,6 +308,8 @@ def PermissiveDict(fields=None):
         @property
         def is_permissive_composite(self):
             return True
+
+    FIELD_HASH_CACHE[key] = _PermissiveDict
 
     return _PermissiveDict
 
@@ -350,9 +362,13 @@ def Selector(fields):
     '''
     check_user_facing_fields_dict(fields, 'Selector')
 
+    key = 'Selector.' + _compute_fields_hash(fields)
+
+    if key in FIELD_HASH_CACHE:
+        return FIELD_HASH_CACHE[key]
+
     class _Selector(_ConfigSelector):
         def __init__(self):
-            key = 'Selector.' + str(DictCounter.get_next_count())
             super(_Selector, self).__init__(
                 key=key,
                 name=None,
@@ -360,6 +376,8 @@ def Selector(fields):
                 # description='A configuration dictionary with typed fields',
                 type_attributes=ConfigTypeAttributes(is_builtin=True),
             )
+
+    FIELD_HASH_CACHE[key] = _Selector
 
     return _Selector
 

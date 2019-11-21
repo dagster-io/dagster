@@ -208,9 +208,39 @@ def test_composite_config_field():
     def test_pipeline():
         return test()
 
-    assert execute_pipeline(
-        test_pipeline, {'solids': {'test': {'config': {'override': 5}}}}
-    ).success
+    res = execute_pipeline(test_pipeline, {'solids': {'test': {'config': {'override': 5}}}})
+    assert res.result_for_handle('test.inner_solid').output_value() == '5'
+    assert res.result_for_solid('test').output_value() == '5'
+
+
+def test_nested_composite_config_field():
+    @solid(config={'inner': Field(String)})
+    def inner_solid(context):
+        return context.solid_config['inner']
+
+    @composite_solid(
+        config={'override': Field(Int)},
+        config_fn=lambda _, cfg: {'inner_solid': {'config': {'inner': str(cfg['override'])}}},
+    )
+    def outer():
+        return inner_solid()
+
+    @composite_solid(
+        config={'override': Field(Int)},
+        config_fn=lambda _, cfg: {'outer': {'config': {'override': cfg['override']}}},
+    )
+    def test():
+        return outer()
+
+    @pipeline
+    def test_pipeline():
+        return test()
+
+    res = execute_pipeline(test_pipeline, {'solids': {'test': {'config': {'override': 5}}}})
+    assert res.success
+    assert res.result_for_handle('test.outer.inner_solid').output_value() == '5'
+    assert res.result_for_handle('test.outer').output_value() == '5'
+    assert res.result_for_solid('test').output_value() == '5'
 
 
 def test_nested_with_inputs():
@@ -676,8 +706,26 @@ def test_empty_config():
         return wrap_solid()
 
     res = execute_pipeline(wrap_pipeline, environment_dict={'solids': {}})
-
     assert res.result_for_solid('wrap_solid').output_values == {'result': 'an input'}
+
+
+def test_nested_empty_config():
+    @composite_solid(
+        config_fn=lambda context, _: {'scalar_config_solid': {'config': 'an input'}}, config={}
+    )
+    def wrap_solid():  # pylint: disable=unused-variable
+        return scalar_config_solid()
+
+    @composite_solid
+    def double_wrap():
+        return wrap_solid()
+
+    @pipeline
+    def wrap_pipeline():
+        return double_wrap()
+
+    res = execute_pipeline(wrap_pipeline, environment_dict={'solids': {}})
+    assert res.result_for_solid('double_wrap').output_values == {'result': 'an input'}
 
 
 def test_bad_solid_def():

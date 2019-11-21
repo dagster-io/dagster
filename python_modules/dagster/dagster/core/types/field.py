@@ -62,38 +62,42 @@ def resolve_to_config_type(dagster_type):
 
 class Field(object):
     '''Defines the schema for a configuration field.
-    
+
     Config fields are parsed according to their schemas in order to yield values available at
     pipeline execution time through the config system. Config fields can be set on solids, on custom
     data types (as the :py:func:`@input_hydration_schema <dagster.input_hydration_schema>`), and on
     other pluggable components of the system, such as resources, loggers, and executors.
 
     Args:
-        dagster_type (Any): The type of this field. Users should provide one of the
+        dagster_type (Any):
+            The type of this field. Users should provide one of the
             :ref:`built-in types <builtin>`, a composite constructed using :py:func:`Selector`
             or :py:func:`PermissiveDict`, or a dagster type constructed with
             :py:func:`as_dagster_type`, :py:func:`@dagster_type <dagster_type`, or
             :py:func:`define_python_dagster_type` that has an ``input_hydration_config`` defined.
             Note that these constructs can be nested -- i.e., a :py:class:`Dict` can itself contain
             :py:class:`Fields <Field>` of other types, etc.
-        default_value (Any): A default value for this field, conformant to the schema set by the
+        default_value (Any):
+            A default value for this field, conformant to the schema set by the
             ``dagster_type`` argument. If a default value is provided, ``is_optional`` should be
             ``True``.
-        is_optional (bool): Whether the presence of this field is optional. If ``is_optional`` is
-            ``False``, no default value should be provided.
-        description (str): A human-readable description of this config field.
-Examples:
-    
+        is_optional (bool):
+            Whether the presence of this field is optional. If ``is_optional`` is ``False``, no
+            default value should be provided.
+        description (str):
+            A human-readable description of this config field.
 
-    .. code-block:: python
+    Examples:
+        .. code-block:: python
 
-        @solid(
-            config_field=Field(
-                Dict({'word': Field(String, default_value='foo'), 'repeats': Field(Int)})
+            @solid(
+                config_field=Field(
+                    Dict({'word': Field(String, default_value='foo'), 'repeats': Field(Int)})
+                )
             )
-        )
-        def repeat_word(context):
-            return context.solid_config['word'] * context.solid_config['repeats']
+            def repeat_word(context):
+                return context.solid_config['word'] * context.solid_config['repeats']
+
     '''
 
     def __init__(

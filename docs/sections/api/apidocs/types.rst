@@ -15,8 +15,8 @@ Built-in types
 .. attribute:: Any
 
     Use this type for any input, output, or config field whose type is unconstrained
-    
-    All values are considered to be instances of ``Any``. 
+
+    All values are considered to be instances of ``Any``.
 
     **Examples:**
 
@@ -166,7 +166,7 @@ Built-in types
 
     Use this type to indicate that a string input, output, or config value represents a path. At
     runtime, this will perform an ``isinstance(value, six.string_types)`` -- that is on Python 2,
-    both ``unicode`` and ``str`` will pass this check. 
+    both ``unicode`` and ``str`` will pass this check.
 
     **Examples:**
 
@@ -197,7 +197,7 @@ Built-in types
     it is necessary to use the explicit :py:class:`InputDefinition` API to define them rather than
     the Python 3 type hint syntax.
 
-    All values are considered to be instances of ``Nothing``. 
+    All values are considered to be instances of ``Nothing``.
 
     **Examples:**
 
@@ -207,7 +207,7 @@ Built-in types
         def wait(_) -> Nothing:
             time.sleep(1)
             return
-        
+
         @solid(
             InputDefinition('ready', dagster_type=Nothing)
         )
@@ -429,6 +429,10 @@ builtin types above.
 .. autofunction:: Selector
 
 .. autofunction:: PermissiveDict
+
+.. autofunction:: Enum
+
+.. autofunction:: EnumValue
 
 -----
 

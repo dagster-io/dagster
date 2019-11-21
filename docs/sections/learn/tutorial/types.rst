@@ -55,7 +55,7 @@ Now we can annotate the rest of our pipeline with our new type:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types.py
    :lines: 17-43
-   :emphasize-lines: 2, 7, 11 
+   :emphasize-lines: 2, 7, 11
    :linenos:
    :lineno-start: 17
    :caption: custom_types.py
@@ -146,7 +146,7 @@ What we want to be able to do is write:
 
 In order for the Dagster machinery to be able to decode the config value ``{'csv': 'cereal.csv'}``
 into an input of the correct ``LessSimpleDataFrame`` value, we need to write what we call an
-input hydration config. 
+input hydration config.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_3.py
    :lines: 31-37
@@ -217,7 +217,7 @@ Let's see how to use this to emit some summary statistics about our DataFrame ty
    :lines: 17-69
    :linenos:
    :lineno-start: 17
-   :emphasize-lines: 3-9, 33-63
+   :emphasize-lines: 3-9, 33-53
    :caption: custom_types_4.py
 
 A :py:class:`TypeCheck <dagster.TypeCheck>` must include a ``success`` argument describing whether
