@@ -123,7 +123,7 @@ def execute_query_against_remote(host, query, variables):
             'Host {host} failed sanity check. It is not a dagit server.'.format(host=host)
         )
 
-    response = requests.get(
+    response = requests.post(
         urljoin(host, '/graphql'), params={'query': query, 'variables': variables}
     )
     response.raise_for_status()
