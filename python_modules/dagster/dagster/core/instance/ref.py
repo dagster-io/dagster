@@ -78,7 +78,7 @@ class InstanceRef(
             config_value,
             'run_storage',
             ConfigurableClassData(
-                'dagster.core.storage.sqlite_run_storage',
+                'dagster.core.storage.runs',
                 'SqliteRunStorage',
                 yaml.dump({'base_dir': _runs_directory(base_dir)}, default_flow_style=False),
             ),

@@ -6,8 +6,7 @@ import pytest
 from dagster import PipelineDefinition, seven
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.storage.runs import InMemoryRunStorage
-from dagster.core.storage.sqlite_run_storage import SqliteRunStorage
+from dagster.core.storage.runs import InMemoryRunStorage, SqliteRunStorage
 
 
 def do_test_single_write_read(instance):

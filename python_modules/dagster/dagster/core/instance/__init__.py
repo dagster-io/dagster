@@ -13,7 +13,6 @@ from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
 from dagster.core.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.storage.run_storage_abc import RunStorage
 from dagster.core.types import Field, PermissiveDict, String
 from dagster.core.types.evaluator import evaluate_config
 from dagster.utils.yaml_utils import load_yaml_from_globs
@@ -98,10 +97,10 @@ class DagsterInstance:
         compute_log_manager,
         ref=None,
     ):
+        from dagster.core.storage.compute_log_manager import ComputeLogManager
         from dagster.core.storage.event_log import EventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
-
-        from dagster.core.storage.compute_log_manager import ComputeLogManager
+        from dagster.core.storage.runs import RunStorage
 
         self._instance_type = check.inst_param(instance_type, 'instance_type', InstanceType)
         self._local_artifact_storage = check.inst_param(
