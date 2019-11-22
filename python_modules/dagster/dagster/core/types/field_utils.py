@@ -5,7 +5,7 @@ import re
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
-from .config import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttributes
+from .config import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttributes, ConfigTypeKind
 
 
 def all_optional_type(config_type):
@@ -81,11 +81,11 @@ def check_user_facing_opt_field_param(obj, param_name, error_context_str):
 
 
 class _ConfigHasFields(ConfigType):
-    def __init__(self, fields, *args, **kwargs):
+    def __init__(self, fields, **kwargs):
         from dagster.core.types.field import Field
 
         self.fields = check.dict_param(fields, 'fields', key_type=str, value_type=Field)
-        super(_ConfigHasFields, self).__init__(*args, **kwargs)
+        super(_ConfigHasFields, self).__init__(**kwargs)
 
     @property
     def inner_types(self):
@@ -147,28 +147,6 @@ class _ConfigHasFields(ConfigType):
         return format_fields(fields)
 
 
-class _ConfigComposite(_ConfigHasFields):
-    @property
-    def is_composite(self):
-        return True
-
-    @property
-    def is_permissive_composite(self):
-        return False
-
-
-class _CompositeSolidConfigComposite(_ConfigComposite):
-    @property
-    def handle(self):
-        return self.type_attributes.handle
-
-
-class _ConfigSelector(_ConfigHasFields):
-    @property
-    def is_selector(self):
-        return True
-
-
 def check_user_facing_fields_dict(fields, type_name_msg):
     check.dict_param(fields, 'fields', key_type=str)
     check.str_param(type_name_msg, 'type_name_msg')
@@ -193,11 +171,12 @@ def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRI
     '''
     check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
 
-    class _NamedDict(_ConfigComposite):
+    class _NamedDict(_ConfigHasFields):
         def __init__(self):
             super(_NamedDict, self).__init__(
                 key=name,
                 name=name,
+                kind=ConfigTypeKind.DICT,
                 fields=fields,
                 description=description,
                 type_attributes=type_attributes,
@@ -253,10 +232,11 @@ def build_config_dict(fields):
     if key in FIELD_HASH_CACHE:
         return FIELD_HASH_CACHE[key]
 
-    class _Dict(_ConfigComposite):
+    class _Dict(_ConfigHasFields):
         def __init__(self):
             super(_Dict, self).__init__(
                 name=None,
+                kind=ConfigTypeKind.DICT,
                 key=key,
                 fields=fields,
                 description='A configuration dictionary with typed fields',
@@ -295,11 +275,12 @@ def PermissiveDict(fields=None):
     if key in FIELD_HASH_CACHE:
         return FIELD_HASH_CACHE[key]
 
-    class _PermissiveDict(_ConfigComposite):
+    class _PermissiveDict(_ConfigHasFields):
         def __init__(self):
             super(_PermissiveDict, self).__init__(
                 name=None,
                 key=key,
+                kind=ConfigTypeKind.PERMISSIVE_DICT,
                 fields=fields or dict(),
                 description='A configuration dictionary with typed fields',
                 type_attributes=ConfigTypeAttributes(is_builtin=True),
@@ -367,13 +348,13 @@ def Selector(fields):
     if key in FIELD_HASH_CACHE:
         return FIELD_HASH_CACHE[key]
 
-    class _Selector(_ConfigSelector):
+    class _Selector(_ConfigHasFields):
         def __init__(self):
             super(_Selector, self).__init__(
                 key=key,
                 name=None,
+                kind=ConfigTypeKind.SELECTOR,
                 fields=fields,
-                # description='A configuration dictionary with typed fields',
                 type_attributes=ConfigTypeAttributes(is_builtin=True),
             )
 
@@ -393,11 +374,12 @@ def NamedSelector(name, fields, description=None, type_attributes=DEFAULT_TYPE_A
     check.str_param(name, 'name')
     check_user_facing_fields_dict(fields, 'NamedSelector named "{}"'.format(name))
 
-    class _NamedSelector(_ConfigSelector):
+    class _NamedSelector(_ConfigHasFields):
         def __init__(self):
             super(_NamedSelector, self).__init__(
                 key=name,
                 name=name,
+                kind=ConfigTypeKind.SELECTOR,
                 fields=fields,
                 description=description,
                 type_attributes=type_attributes,

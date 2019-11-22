@@ -1,10 +1,28 @@
 from collections import namedtuple
+from enum import Enum as PythonEnum
 
 import six
 
 from dagster import check
+from dagster.core.serdes import whitelist_for_serdes
 
 from .builtin_enum import BuiltinEnum
+
+
+@whitelist_for_serdes
+class ConfigTypeKind(PythonEnum):
+    REGULAR = 'REGULAR'
+    SCALAR = 'SCALAR'
+    ENUM = 'ENUM'
+
+    SELECTOR = 'SELECTOR'
+    DICT = 'DICT'
+    PERMISSIVE_DICT = 'PERMISSIVE_DICT'
+
+    LIST = 'LIST'
+    NULLABLE = 'NULLABLE'
+    SET = 'SET'
+    TUPLE = 'TUPLE'
 
 
 class ConfigTypeAttributes(namedtuple('_ConfigTypeAttributes', 'is_builtin is_system_config')):
@@ -24,7 +42,7 @@ class ConfigType(object):
     The class backing DagsterTypes as they are used processing configuration data.
     '''
 
-    def __init__(self, key, name, type_attributes=DEFAULT_TYPE_ATTRIBUTES, description=None):
+    def __init__(self, key, name, kind, type_attributes=DEFAULT_TYPE_ATTRIBUTES, description=None):
 
         type_obj = type(self)
         if type_obj in ConfigType.__cache:
@@ -36,6 +54,7 @@ class ConfigType(object):
             )
         self.key = check.str_param(key, 'key')
         self.name = check.opt_str_param(name, 'name')
+        self.kind = check.inst_param(kind, 'kind', ConfigTypeKind)
         self.description = check.opt_str_param(description, 'description')
         self.type_attributes = check.inst_param(
             type_attributes, 'type_attributes', ConfigTypeAttributes
@@ -68,23 +87,23 @@ class ConfigType(object):
 
     @property
     def is_scalar(self):
-        return False
+        return self.kind == ConfigTypeKind.SCALAR
 
     @property
     def is_list(self):
-        return False
+        return self.kind == ConfigTypeKind.LIST
 
     @property
     def is_nullable(self):
-        return False
+        return self.kind == ConfigTypeKind.NULLABLE
 
     @property
     def is_composite(self):
-        return False
+        return self.kind == ConfigTypeKind.DICT or self.kind == ConfigTypeKind.PERMISSIVE_DICT
 
     @property
     def is_selector(self):
-        return False
+        return self.kind == ConfigTypeKind.SELECTOR
 
     @property
     def is_any(self):
@@ -92,11 +111,11 @@ class ConfigType(object):
 
     @property
     def is_tuple(self):
-        return False
+        return self.kind == ConfigTypeKind.TUPLE
 
     @property
     def is_set(self):
-        return False
+        return self.kind == ConfigTypeKind.SET
 
     @property
     def inner_types(self):
@@ -104,13 +123,20 @@ class ConfigType(object):
 
     @property
     def is_enum(self):
-        return False
+        return self.kind == ConfigTypeKind.SET
+
+    @property
+    def is_permissive_composite(self):
+        return self.kind == ConfigTypeKind.PERMISSIVE_DICT
 
 
 # Scalars, Composites, Selectors, Lists, Optional, Any
 
 
 class ConfigScalar(ConfigType):
+    def __init__(self, key, name, **kwargs):
+        super(ConfigScalar, self).__init__(key, name, kind=ConfigTypeKind.SCALAR, **kwargs)
+
     @property
     def is_scalar(self):
         return True
@@ -120,13 +146,9 @@ class ConfigScalar(ConfigType):
 
 
 class ConfigList(ConfigType):
-    def __init__(self, inner_type, *args, **kwargs):
+    def __init__(self, inner_type, **kwargs):
         self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
-        super(ConfigList, self).__init__(*args, **kwargs)
-
-    @property
-    def is_list(self):
-        return True
+        super(ConfigList, self).__init__(kind=ConfigTypeKind.LIST, **kwargs)
 
     @property
     def inner_types(self):
@@ -134,13 +156,9 @@ class ConfigList(ConfigType):
 
 
 class ConfigSet(ConfigType):
-    def __init__(self, inner_type, *args, **kwargs):
+    def __init__(self, inner_type, **kwargs):
         self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
-        super(ConfigSet, self).__init__(*args, **kwargs)
-
-    @property
-    def is_set(self):
-        return True
+        super(ConfigSet, self).__init__(kind=ConfigTypeKind.SET, **kwargs)
 
     @property
     def inner_types(self):
@@ -148,13 +166,9 @@ class ConfigSet(ConfigType):
 
 
 class ConfigTuple(ConfigType):
-    def __init__(self, tuple_types, *args, **kwargs):
+    def __init__(self, tuple_types, **kwargs):
         self.tuple_types = check.list_param(tuple_types, 'tuple_types', of_type=ConfigType)
-        super(ConfigTuple, self).__init__(*args, **kwargs)
-
-    @property
-    def is_tuple(self):
-        return True
+        super(ConfigTuple, self).__init__(kind=ConfigTypeKind.TUPLE, **kwargs)
 
     @property
     def inner_types(self):
@@ -164,13 +178,9 @@ class ConfigTuple(ConfigType):
 
 
 class ConfigNullable(ConfigType):
-    def __init__(self, inner_type, *args, **kwargs):
+    def __init__(self, inner_type, **kwargs):
         self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
-        super(ConfigNullable, self).__init__(*args, **kwargs)
-
-    @property
-    def is_nullable(self):
-        return True
+        super(ConfigNullable, self).__init__(kind=ConfigTypeKind.NULLABLE, **kwargs)
 
     @property
     def inner_types(self):
@@ -188,6 +198,7 @@ class BuiltinConfigAny(ConfigAny):
         super(BuiltinConfigAny, self).__init__(
             key=type(self).__name__,
             name=type(self).__name__,
+            kind=ConfigTypeKind.REGULAR,
             description=description,
             type_attributes=ConfigTypeAttributes(is_builtin=True),
         )
@@ -245,7 +256,10 @@ class Float(BuiltinConfigScalar):
 class Any(ConfigAny):
     def __init__(self):
         super(Any, self).__init__(
-            key='Any', name='Any', type_attributes=ConfigTypeAttributes(is_builtin=True)
+            key='Any',
+            name='Any',
+            kind=ConfigTypeKind.REGULAR,
+            type_attributes=ConfigTypeAttributes(is_builtin=True),
         )
 
 
@@ -352,7 +366,7 @@ class EnumValue:
 class ConfigEnum(ConfigType):
     def __init__(self, name, enum_values):
         check.str_param(name, 'name')
-        super(ConfigEnum, self).__init__(key=name, name=name)
+        super(ConfigEnum, self).__init__(key=name, name=name, kind=ConfigTypeKind.ENUM)
         self.enum_values = check.list_param(enum_values, 'enum_values', of_type=EnumValue)
         self._valid_python_values = {ev.python_value for ev in enum_values}
         check.invariant(len(self._valid_python_values) == len(enum_values))
