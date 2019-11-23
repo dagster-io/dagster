@@ -1,26 +1,75 @@
 from dagster_graphql import dauphin
 
 from dagster import check
-from dagster.core.types.config import ConfigType
+from dagster.core.types.config import ConfigType, ConfigTypeKind
 from dagster.core.types.field import Field
+
+
+def to_dauphin_config_type_field(name, field):
+    check.str_param(name, 'name')
+    check.inst_param(field, 'field', Field)
+    return DauphinConfigTypeField(
+        config_type=to_dauphin_config_type(field.config_type),
+        name=name,
+        description=field.description,
+        default_value=field.default_value_as_str if field.default_provided else None,
+        is_optional=field.is_optional,
+    )
 
 
 def to_dauphin_config_type(config_type):
     check.inst_param(config_type, 'config_type', ConfigType)
 
-    if config_type.is_enum:
-        return DauphinEnumConfigType(config_type)
-    elif config_type.has_fields:
-        return DauphinCompositeConfigType(config_type)
-    elif config_type.is_list:
-        return DauphinListConfigType(config_type)
-    elif config_type.is_nullable:
-        return DauphinNullableConfigType(config_type)
+    # all types inherit from the DauphinConfigType interface
+    # which require the same set of fields. Passing them
+    # as kwargs into each derived type.
+    type_kwargs = _kwargs_for_dauphin_config_type_fields(config_type)
+    if config_type.kind == ConfigTypeKind.ENUM:
+        return DauphinEnumConfigType(
+            values=[
+                DauphinEnumConfigValue(value=ev.config_value, description=ev.description)
+                for ev in config_type.enum_values
+            ],
+            **type_kwargs
+        )
+    elif ConfigTypeKind.has_fields(config_type.kind):
+        return DauphinCompositeConfigType(
+            fields=sorted(
+                [
+                    to_dauphin_config_type_field(name, field)
+                    for name, field in config_type.fields.items()
+                ],
+                key=lambda field: field.name,
+            ),
+            inner_types=_resolve_inner_types(config_type),
+            **type_kwargs
+        )
+    elif config_type.kind == ConfigTypeKind.LIST:
+        return DauphinListConfigType(
+            of_type=to_dauphin_config_type(config_type.inner_type),
+            inner_types=_resolve_inner_types(config_type),
+            **type_kwargs
+        )
+    elif config_type.kind == ConfigTypeKind.NULLABLE:
+        return DauphinNullableConfigType(
+            of_type=to_dauphin_config_type(config_type.inner_type),
+            inner_types=_resolve_inner_types(config_type),
+            **type_kwargs
+        )
+    elif config_type.kind == ConfigTypeKind.SCALAR or config_type.kind == ConfigTypeKind.REGULAR:
+        return DauphinRegularConfigType(**type_kwargs)
     else:
-        return DauphinRegularConfigType(config_type)
+        # Set and Tuple unsupported in the graphql layer
+        # https://github.com/dagster-io/dagster/issues/1925
+        check.not_implemented(
+            'Unsupported kind {kind} in config_type {key}'.format(
+                kind=config_type.kind, key=config_type.key
+            )
+        )
 
 
-def _ctor_kwargs(config_type):
+def _kwargs_for_dauphin_config_type_fields(config_type):
+    check.inst_param(config_type, 'config_type', ConfigType)
     return dict(
         key=config_type.key,
         name=config_type.name,
@@ -70,16 +119,12 @@ def _resolve_inner_types(config_type):
 
 
 class DauphinRegularConfigType(dauphin.ObjectType):
-    def __init__(self, config_type):
-        self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
-        super(DauphinRegularConfigType, self).__init__(**_ctor_kwargs(config_type))
+    def __init__(self, **kwargs):
+        super(DauphinRegularConfigType, self).__init__(inner_types=[], **kwargs)
 
     class Meta:
         name = 'RegularConfigType'
         interfaces = [DauphinConfigType]
-
-    def resolve_inner_types(self, _graphene_info):
-        return _resolve_inner_types(self._config_type)
 
 
 class DauphinWrappingConfigType(dauphin.Interface):
@@ -90,58 +135,41 @@ class DauphinWrappingConfigType(dauphin.Interface):
 
 
 class DauphinListConfigType(dauphin.ObjectType):
-    def __init__(self, config_type):
-        self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
-        super(DauphinListConfigType, self).__init__(**_ctor_kwargs(config_type))
+    def __init__(self, of_type, inner_types, **kwargs):
+        super(DauphinListConfigType, self).__init__(
+            of_type=check.inst_param(of_type, 'of_type', dauphin.ObjectType),
+            inner_types=check.list_param(inner_types, 'inner_types', of_type=dauphin.ObjectType),
+            **kwargs
+        )
 
     class Meta:
         name = 'ListConfigType'
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
-    def resolve_of_type(self, _graphene_info):
-        return to_dauphin_config_type(self._config_type.inner_type)
-
-    def resolve_inner_types(self, _graphene_info):
-        return _resolve_inner_types(self._config_type)
-
 
 class DauphinNullableConfigType(dauphin.ObjectType):
-    def __init__(self, config_type):
-        self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
-        super(DauphinNullableConfigType, self).__init__(**_ctor_kwargs(config_type))
+    def __init__(self, of_type, inner_types, **kwargs):
+        super(DauphinNullableConfigType, self).__init__(
+            of_type=check.inst_param(of_type, 'of_type', dauphin.ObjectType),
+            inner_types=check.list_param(inner_types, 'inner_types', of_type=dauphin.ObjectType),
+            **kwargs
+        )
 
     class Meta:
         name = 'NullableConfigType'
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
-    def resolve_of_type(self, _graphene_info):
-        return to_dauphin_config_type(self._config_type.inner_type)
-
-    def resolve_inner_types(self, _graphene_info):
-        return _resolve_inner_types(self._config_type)
-
 
 class DauphinEnumConfigType(dauphin.ObjectType):
-    def __init__(self, config_type):
-        check.inst_param(config_type, 'config_type', ConfigType)
-        check.param_invariant(config_type.is_enum, 'config_type')
-        self._config_type = config_type
-        super(DauphinEnumConfigType, self).__init__(**_ctor_kwargs(config_type))
+    def __init__(self, values, **kwargs):
+        check.list_param(values, 'values', of_type=DauphinEnumConfigValue)
+        super(DauphinEnumConfigType, self).__init__(values=values, **kwargs)
 
     class Meta:
         name = 'EnumConfigType'
         interfaces = [DauphinConfigType]
 
     values = dauphin.non_null_list('EnumConfigValue')
-
-    def resolve_values(self, _graphene_info):
-        return [
-            DauphinEnumConfigValue(value=ev.config_value, description=ev.description)
-            for ev in self._config_type.enum_values
-        ]
-
-    def resolve_inner_types(self, _graphene_info):
-        return _resolve_inner_types(self._config_type)
 
 
 class DauphinEnumConfigValue(dauphin.ObjectType):
@@ -153,29 +181,20 @@ class DauphinEnumConfigValue(dauphin.ObjectType):
 
 
 class DauphinCompositeConfigType(dauphin.ObjectType):
-    def __init__(self, config_type):
-        check.inst_param(config_type, 'config_type', ConfigType)
-        check.param_invariant(config_type.has_fields, 'config_type')
-        self._config_type = config_type
-        super(DauphinCompositeConfigType, self).__init__(**_ctor_kwargs(config_type))
+    def __init__(self, fields, inner_types, **kwargs):
+        super(DauphinCompositeConfigType, self).__init__(
+            fields=check.list_param(fields, 'fields', of_type=DauphinConfigTypeField),
+            inner_types=check.opt_list_param(
+                inner_types, 'inner_types', of_type=dauphin.ObjectType
+            ),
+            **kwargs
+        )
 
     class Meta:
         name = 'CompositeConfigType'
         interfaces = [DauphinConfigType]
 
     fields = dauphin.non_null_list('ConfigTypeField')
-
-    def resolve_fields(self, _graphene_info):
-        return sorted(
-            [
-                DauphinConfigTypeField(name=name, field=field)
-                for name, field in self._config_type.fields.items()
-            ],
-            key=lambda field: field.name,
-        )
-
-    def resolve_inner_types(self, _graphene_info):
-        return _resolve_inner_types(self._config_type)
 
 
 class DauphinConfigTypeField(dauphin.ObjectType):
@@ -188,17 +207,11 @@ class DauphinConfigTypeField(dauphin.ObjectType):
     default_value = dauphin.String()
     is_optional = dauphin.NonNull(dauphin.Boolean)
 
-    def __init__(self, name, field):
-        check.str_param(name, 'name')
-        check.inst_param(field, 'field', Field)
-
+    def __init__(self, config_type, name, description, default_value, is_optional):
         super(DauphinConfigTypeField, self).__init__(
+            config_type=check.inst_param(config_type, 'config_type', dauphin.ObjectType),
             name=name,
-            description=field.description,
-            default_value=field.default_value_as_str if field.default_provided else None,
-            is_optional=field.is_optional,
+            description=description,
+            default_value=default_value,
+            is_optional=is_optional,
         )
-        self._field = field
-
-    def resolve_config_type(self, _graphene_info):
-        return to_dauphin_config_type(self._field.config_type)
