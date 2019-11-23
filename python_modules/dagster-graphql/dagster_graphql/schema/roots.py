@@ -31,7 +31,7 @@ from dagster_graphql.implementation.fetch_runs import (
     get_runs,
     validate_pipeline_config,
 )
-from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
+from dagster_graphql.implementation.fetch_types import get_runtime_type
 from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGraphQLError
 
 from dagster import check
@@ -40,7 +40,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 
-from .config_types import to_dauphin_config_type
+from .config_types import ConfigTypeSchema, to_dauphin_config_type_from_meta
 from .run_schedule import (
     DauphinStartScheduleMutation,
     DauphinStopRunningScheduleMutation,
@@ -66,13 +66,6 @@ class DauphinQuery(dauphin.ObjectType):
     )
     pipelinesOrError = dauphin.NonNull('PipelinesOrError')
     pipelines = dauphin.Field(dauphin.NonNull('PipelineConnection'))
-
-    configTypeOrError = dauphin.Field(
-        dauphin.NonNull('ConfigTypeOrError'),
-        pipelineName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
-        configTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
-        mode=dauphin.Argument(dauphin.NonNull(dauphin.String)),
-    )
 
     runtimeTypeOrError = dauphin.Field(
         dauphin.NonNull('RuntimeTypeOrError'),
@@ -131,11 +124,6 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     instance = dauphin.NonNull('Instance')
-
-    def resolve_configTypeOrError(self, graphene_info, **kwargs):
-        return get_config_type(
-            graphene_info, kwargs['pipelineName'], kwargs['configTypeName'], kwargs.get('mode')
-        )
 
     def resolve_runtimeTypeOrError(self, graphene_info, **kwargs):
         return get_runtime_type(graphene_info, kwargs['pipelineName'], kwargs['runtimeTypeName'])
@@ -632,6 +620,8 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
             dagster_pipeline, 'dagster_pipeline', PipelineDefinition
         )
 
+        self._config_type_schema = ConfigTypeSchema.from_environment_schema(environment_schema)
+
     class Meta:
         name = 'EnvironmentSchema'
         description = '''The environment schema represents the all the config type
@@ -671,17 +661,24 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
 
     def resolve_allConfigTypes(self, _graphene_info):
         return sorted(
-            list(map(to_dauphin_config_type, self._environment_schema.all_config_types())),
+            list(
+                map(
+                    lambda meta: to_dauphin_config_type_from_meta(self._config_type_schema, meta),
+                    self._config_type_schema.config_type_metas,
+                )
+            ),
             key=lambda ct: ct.name if ct.name else '',
         )
 
     def resolve_rootEnvironmentType(self, _graphene_info):
-        return to_dauphin_config_type(self._environment_schema.environment_type)
+        return to_dauphin_config_type_from_meta(
+            self._config_type_schema, self._config_type_schema.root_type_meta
+        )
 
     def resolve_configTypeOrError(self, graphene_info, **kwargs):
         return resolve_config_type_or_error(
             graphene_info,
-            self._environment_schema,
+            self._config_type_schema,
             self._dagster_pipeline,
             kwargs['configTypeName'],
         )

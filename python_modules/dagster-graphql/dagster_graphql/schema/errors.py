@@ -521,7 +521,6 @@ class DauphinConfigTypeOrError(dauphin.Union):
             'EnumConfigType',
             'CompositeConfigType',
             'RegularConfigType',
-            DauphinPipelineNotFoundError,
             DauphinConfigTypeNotFoundError,
             DauphinPythonError,
         )
