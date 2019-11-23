@@ -214,10 +214,10 @@ class InMemoryRunStorage(RunStorage):
         self._runs = OrderedDict()
 
 
-RunStorageSQLMetadata = db.MetaData()
+RunStorageSqlMetadata = db.MetaData()
 RunsTable = db.Table(
     'runs',
-    RunStorageSQLMetadata,
+    RunStorageSqlMetadata,
     db.Column('id', db.Integer, primary_key=True, autoincrement=True),
     db.Column('run_id', db.String(255), unique=True),
     db.Column('pipeline_name', db.String),
@@ -229,7 +229,7 @@ RunsTable = db.Table(
 
 RunTagsTable = db.Table(
     'run_tags',
-    RunStorageSQLMetadata,
+    RunStorageSqlMetadata,
     db.Column('id', db.Integer, primary_key=True, autoincrement=True),
     db.Column('run_id', None, db.ForeignKey('runs.run_id')),
     db.Column('key', db.String),
@@ -239,7 +239,7 @@ RunTagsTable = db.Table(
 create_engine = db.create_engine  # exported
 
 
-class SQLRunStorage(RunStorage):  # pylint: disable=no-init
+class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     @abstractmethod
     def connect(self):
         ''' context manager yielding a connection '''

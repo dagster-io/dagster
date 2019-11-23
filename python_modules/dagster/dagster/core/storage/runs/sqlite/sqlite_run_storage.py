@@ -6,10 +6,10 @@ from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.types import Field, String
 from dagster.utils import mkdir_p
 
-from ..runs import RunStorageSQLMetadata, SQLRunStorage, create_engine
+from ..runs import RunStorageSqlMetadata, SqlRunStorage, create_engine
 
 
-class SqliteRunStorage(SQLRunStorage, ConfigurableClass):
+class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     def __init__(self, conn_string, inst_data=None):
         check.str_param(conn_string, 'conn_string')
         self.engine = create_engine(conn_string)
@@ -33,7 +33,7 @@ class SqliteRunStorage(SQLRunStorage, ConfigurableClass):
         mkdir_p(base_dir)
         conn_string = 'sqlite:///{}'.format(os.path.join(base_dir, 'runs.db'))
         engine = create_engine(conn_string)
-        RunStorageSQLMetadata.create_all(engine)
+        RunStorageSqlMetadata.create_all(engine)
         return SqliteRunStorage(conn_string, inst_data)
 
     def connect(self):
