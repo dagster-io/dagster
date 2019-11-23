@@ -304,18 +304,7 @@ class DagsterInstance:
     def all_logs(self, run_id):
         return self._event_storage.get_logs_for_run(run_id)
 
-    def can_watch_events(self):
-        from dagster.core.storage.event_log import WatchableEventLogStorage
-
-        return isinstance(self._event_storage, WatchableEventLogStorage)
-
     def watch_event_logs(self, run_id, cursor, cb):
-        from dagster.core.storage.event_log import WatchableEventLogStorage
-
-        check.invariant(
-            isinstance(self._event_storage, WatchableEventLogStorage),
-            'In order to call watch_event_logs the event_storage must be watchable',
-        )
         return self._event_storage.watch(run_id, cursor, cb)
 
     # event subscriptions

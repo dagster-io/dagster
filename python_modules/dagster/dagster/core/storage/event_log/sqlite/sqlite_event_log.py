@@ -21,7 +21,7 @@ from dagster.core.types import Field, String
 from dagster.utils import mkdir_p
 
 from ...pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
-from ..event_log import EventLogInvalidForRun, WatchableEventLogStorage
+from ..event_log import EventLogInvalidForRun, EventLogStorage
 
 CREATE_EVENT_LOG_SQL = '''
 CREATE TABLE IF NOT EXISTS event_logs (
@@ -45,7 +45,7 @@ INSERT INTO event_logs (event, dagster_event_type, timestamp) VALUES (?, ?, ?)
 '''
 
 
-class SqliteEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
+class SqliteEventLogStorage(EventLogStorage, ConfigurableClass):
     def __init__(self, base_dir, inst_data=None):
         '''Note that idempotent initialization of the SQLite database is done on a per-run_id
         basis in the body of store_event, since each run is stored in a separate database.'''
@@ -191,7 +191,7 @@ class SqliteEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
 class EventLogStorageWatchdog(PatternMatchingEventHandler):
     def __init__(self, event_log_storage, run_id, callback, start_cursor, **kwargs):
         self._event_log_storage = check.inst_param(
-            event_log_storage, 'event_log_storage', WatchableEventLogStorage
+            event_log_storage, 'event_log_storage', EventLogStorage
         )
         self._run_id = check.str_param(run_id, 'run_id')
         self._cb = check.callable_param(callback, 'callback')

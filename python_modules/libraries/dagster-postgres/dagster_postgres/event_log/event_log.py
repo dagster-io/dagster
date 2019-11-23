@@ -16,7 +16,7 @@ from dagster.core.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
 )
-from dagster.core.storage.event_log import WatchableEventLogStorage
+from dagster.core.storage.event_log import EventLogStorage
 from dagster.core.types import Field, String
 
 from ..pynotify import await_pg_notifications
@@ -43,7 +43,7 @@ CHANNEL_NAME = 'run_events'
 WATCHER_POLL_INTERVAL = 0.2
 
 
-class PostgresEventLogStorage(WatchableEventLogStorage, ConfigurableClass):
+class PostgresEventLogStorage(EventLogStorage, ConfigurableClass):
     def __init__(self, postgres_url, inst_data=None):
         self.conn_string = check.str_param(postgres_url, 'postgres_url')
         self._event_watcher = create_event_watcher(self.conn_string)

@@ -263,17 +263,6 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
-    if not instance.can_watch_events:
-
-        def _get_error_observable(observer):
-            observer.on_next(
-                graphene_info.schema.type_named('PipelineRunLogsSubscriptionFailure')(
-                    message='Event log storage on current DagsterInstance is not watchable.'
-                )
-            )
-
-        return Observable.create(_get_error_observable)  # pylint: disable=E1101
-
     pipeline = get_dauphin_pipeline_reference_from_selector(graphene_info, run.selector)
 
     from ..schema.pipelines import DauphinPipeline
