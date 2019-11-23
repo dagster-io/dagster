@@ -396,6 +396,12 @@ interface ISolidDefinition {
   requiredResources: [ResourceRequirement!]!
 }
 
+union LaunchPipelineExecutionResult = LaunchPipelineExecutionSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess | PythonError
+
+type LaunchPipelineExecutionSuccess {
+  run: PipelineRun!
+}
+
 type ListConfigType implements ConfigType & WrappingConfigType {
   key: String!
   name: String
@@ -506,6 +512,7 @@ type ModeNotFoundError implements Error {
 type Mutation {
   startPipelineExecution(executionParams: ExecutionParams!): StartPipelineExecutionResult!
   startScheduledExecution(scheduleName: String!): StartScheduledExecutionResult!
+  launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
   startSchedule(scheduleName: String!): RunningScheduleResult!
   stopRunningSchedule(scheduleName: String!): RunningScheduleResult!
@@ -862,6 +869,11 @@ type ResourceRequirement {
   resourceKey: String!
 }
 
+type RunLauncherNotDefinedError implements Error {
+  message: String!
+  stack: [String!]!
+}
+
 type RunningSchedule {
   id: String!
   scheduleDefinition: ScheduleDefinition!
@@ -997,13 +1009,13 @@ type SolidInvocationSite {
   solidHandle: SolidHandle!
 }
 
-union StartPipelineExecutionResult = InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess | PythonError
+union StartPipelineExecutionResult = StartPipelineExecutionSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess | PythonError
 
 type StartPipelineExecutionSuccess {
   run: PipelineRun!
 }
 
-union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess | PythonError
+union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineExecutionSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess | PythonError
 
 interface StepEvent {
   step: ExecutionStep

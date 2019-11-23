@@ -169,6 +169,10 @@ fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
 		message
 		pipelineName
 	}
+  ... on PythonError {
+    message
+    stack
+  }
 	... on StartPipelineExecutionSuccess {
 		run {
 			runId
@@ -400,3 +404,55 @@ subscription subscribeTest($runId: ID!) {
 }
 '''
 )
+
+LAUNCH_PIPELINE_EXECUTION_MUTATION = '''
+mutation(
+  $executionParams: ExecutionParams!
+) {
+  launchPipelineExecution(
+    executionParams: $executionParams,
+  ) {
+    __typename
+    ... on RunLauncherNotDefinedError {
+      message
+    }
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
+    }
+    ... on PipelineConfigValidationInvalid {
+      pipeline {
+        name
+      }
+      errors {
+        __typename
+        message
+        path
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+      message
+      pipelineName
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on LaunchPipelineExecutionSuccess {
+      run {
+        runId
+        status
+        pipeline {
+          name
+        }
+        environmentConfigYaml
+        mode
+      }
+    }
+  }
+}
+'''

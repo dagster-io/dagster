@@ -6,11 +6,13 @@ from dagster import seven
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster.core.events.log import DagsterEventRecord
 from dagster.core.storage.event_log import (
-    CREATE_EVENT_LOG_SQL,
-    INSERT_EVENT_SQL,
     EventLogInvalidForRun,
     InMemoryEventLogStorage,
     SqliteEventLogStorage,
+)
+from dagster.core.storage.event_log.sqlite.sqlite_event_log import (
+    CREATE_EVENT_LOG_SQL,
+    INSERT_EVENT_SQL,
 )
 
 

@@ -1,8 +1,11 @@
 # Changelog
 
-## 0.6.5
+## Head
 
-- `is_secret` has been removed from `Field`. It was not being used in to any effect.
+- `is_secret` has been removed from `Field`. It was not being used to any effect.
+- `dagster.core.storage.sqlite_run_storage.SqliteRunStorage` has moved to
+  `dagster.core.storage.runs.SqliteRunStorage`. Any persisted `dagster.yaml` files should be updated
+  with the new classpath.
 
 ## 0.6.4
 

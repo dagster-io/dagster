@@ -2,7 +2,7 @@ import pytest
 
 from dagster import Any, Dict, Enum, EnumValue, Field, List, Optional, PermissiveDict, String
 from dagster.check import CheckError, ParameterCheckError
-from dagster.core.types.config import ConfigType
+from dagster.core.types.config import ConfigType, ConfigTypeKind
 from dagster.core.types.default_applier import apply_default_values
 from dagster.core.types.field import resolve_to_config_type
 from dagster.core.types.field_utils import Selector
@@ -106,7 +106,7 @@ def test_apply_default_values():
     assert apply_default_values(any_config_type, {'foo': 'bar'}) == {'foo': 'bar'}
 
     with pytest.raises(CheckError, match='Unsupported type'):
-        assert apply_default_values(ConfigType('gargle', 'bargle'), 3)
+        assert apply_default_values(ConfigType('gargle', 'bargle', ConfigTypeKind.REGULAR), 3)
 
     selector_config_type = resolve_to_config_type(
         Selector(

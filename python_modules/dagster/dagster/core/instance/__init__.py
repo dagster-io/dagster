@@ -13,7 +13,6 @@ from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
 from dagster.core.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.storage.run_storage_abc import RunStorage
 from dagster.core.types import Field, PermissiveDict, String
 from dagster.core.types.evaluator import evaluate_config
 from dagster.utils.yaml_utils import load_yaml_from_globs
@@ -96,12 +95,14 @@ class DagsterInstance:
         run_storage,
         event_storage,
         compute_log_manager,
+        run_launcher=None,
         ref=None,
     ):
+        from dagster.core.storage.compute_log_manager import ComputeLogManager
         from dagster.core.storage.event_log import EventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
-
-        from dagster.core.storage.compute_log_manager import ComputeLogManager
+        from dagster.core.storage.runs import RunStorage
+        from dagster.core.launcher import RunLauncher
 
         self._instance_type = check.inst_param(instance_type, 'instance_type', InstanceType)
         self._local_artifact_storage = check.inst_param(
@@ -112,6 +113,7 @@ class DagsterInstance:
         self._compute_log_manager = check.inst_param(
             compute_log_manager, 'compute_log_manager', ComputeLogManager
         )
+        self._run_launcher = check.opt_inst_param(run_launcher, 'run_launcher', RunLauncher)
         self._ref = check.opt_inst_param(ref, 'ref', InstanceRef)
 
         self._subscribers = defaultdict(list)
@@ -166,17 +168,13 @@ class DagsterInstance:
     def from_ref(instance_ref):
         check.inst_param(instance_ref, 'instance_ref', InstanceRef)
 
-        local_artifact_storage = instance_ref.local_artifact_storage_data.rehydrate()
-        run_storage = instance_ref.run_storage_data.rehydrate()
-        event_storage = instance_ref.event_storage_data.rehydrate()
-        compute_log_manager = instance_ref.compute_logs_data.rehydrate()
-
         return DagsterInstance(
             instance_type=InstanceType.PERSISTENT,
-            local_artifact_storage=local_artifact_storage,
-            run_storage=run_storage,
-            event_storage=event_storage,
-            compute_log_manager=compute_log_manager,
+            local_artifact_storage=instance_ref.local_artifact_storage,
+            run_storage=instance_ref.run_storage,
+            event_storage=instance_ref.event_storage,
+            compute_log_manager=instance_ref.compute_log_manager,
+            run_launcher=instance_ref.run_launcher,
             ref=instance_ref,
         )
 
@@ -222,6 +220,12 @@ class DagsterInstance:
                 compute=_info(self._compute_log_manager),
             )
         )
+
+    # run launcher
+
+    @property
+    def run_launcher(self):
+        return self._run_launcher
 
     # compute logs
 

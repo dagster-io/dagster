@@ -49,5 +49,8 @@ def define_dagster_config_cls():
             'event_log_storage': config_field_for_configurable_class(
                 'DagsterInstanceEventLogStorageConfig', is_optional=True
             ),
+            'run_launcher': config_field_for_configurable_class(
+                'DagsterInstanceRunLauncherConfig', is_optional=True
+            ),
         },
     )

@@ -18,7 +18,7 @@ from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root import LocalArtifactStorage
-from dagster.core.storage.sqlite_run_storage import SqliteRunStorage
+from dagster.core.storage.runs import SqliteRunStorage
 
 
 def test_fs_stores():

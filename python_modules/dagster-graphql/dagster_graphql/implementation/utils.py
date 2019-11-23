@@ -50,6 +50,15 @@ class ExecutionParams(
             previous_run_id=check.opt_str_param(previous_run_id, 'previous_run_id'),
         )
 
+    def to_graphql_input(self):
+        return {
+            'selector': self.selector.to_graphql_input(),
+            'environmentConfigData': self.environment_dict,
+            'mode': self.mode,
+            'executionMetadata': self.execution_metadata.to_graphql_input(),
+            'stepKeys': self.step_keys,
+        }
+
 
 class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags')):
     def __new__(cls, run_id, tags):
@@ -58,3 +67,6 @@ class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags')):
             check.opt_str_param(run_id, 'run_id'),
             check.dict_param(tags, 'tags', key_type=str, value_type=str),
         )
+
+    def to_graphql_input(self):
+        return {'tags': self.tags, 'runId': self.run_id}

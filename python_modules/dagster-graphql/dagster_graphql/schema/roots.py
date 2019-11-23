@@ -13,6 +13,7 @@ from dagster_graphql.implementation.execution import (
     do_execute_plan,
     get_compute_log_observable,
     get_pipeline_run_observable,
+    launch_pipeline_execution,
     start_pipeline_execution,
     start_scheduled_execution,
 )
@@ -299,6 +300,10 @@ class DauphinStartScheduledExecutionMutation(dauphin.Mutation):
 class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
     class Meta:
         name = 'StartPipelineExecutionMutation'
+        description = (
+            'Execute a pipeline run in the python environment '
+            'dagit/dagster-graphql is currently operating in.'
+        )
 
     class Arguments:
         executionParams = dauphin.NonNull('ExecutionParams')
@@ -307,6 +312,23 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
 
     def mutate(self, graphene_info, **kwargs):
         return start_pipeline_execution(
+            graphene_info,
+            execution_params=create_execution_params(graphene_info, kwargs['executionParams']),
+        )
+
+
+class DauphinLaunchPipelineExecutionMutation(dauphin.Mutation):
+    class Meta:
+        name = 'LaunchPipelineExecutionMutation'
+        description = 'Launch a pipeline run via the run launcher configured on the instance.'
+
+    class Arguments:
+        executionParams = dauphin.NonNull('ExecutionParams')
+
+    Output = dauphin.NonNull('LaunchPipelineExecutionResult')
+
+    def mutate(self, graphene_info, **kwargs):
+        return launch_pipeline_execution(
             graphene_info,
             execution_params=create_execution_params(graphene_info, kwargs['executionParams']),
         )
@@ -459,6 +481,7 @@ class DauphinMutation(dauphin.ObjectType):
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
     start_scheduled_execution = DauphinStartScheduledExecutionMutation.Field()
+    launch_pipeline_execution = DauphinLaunchPipelineExecutionMutation.Field()
     execute_plan = DauphinExecutePlan.Field()
     start_schedule = DauphinStartScheduleMutation.Field()
     stop_running_schedule = DauphinStopRunningScheduleMutation.Field()
