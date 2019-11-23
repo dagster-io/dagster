@@ -19,7 +19,7 @@ from dagster.core.serdes import (
 from dagster.core.storage.event_log import WatchableEventLogStorage
 from dagster.core.types import Field, String
 
-from .pynotify import await_pg_notifications
+from ..pynotify import await_pg_notifications
 
 CREATE_EVENT_LOG_SQL = '''
 CREATE TABLE IF NOT EXISTS event_log (
