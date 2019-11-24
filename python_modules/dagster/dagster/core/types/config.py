@@ -19,10 +19,28 @@ class ConfigTypeKind(PythonEnum):
     DICT = 'DICT'
     PERMISSIVE_DICT = 'PERMISSIVE_DICT'
 
+    @staticmethod
+    def has_fields(kind):
+        return (
+            kind == ConfigTypeKind.SELECTOR
+            or kind == ConfigTypeKind.DICT
+            or kind == ConfigTypeKind.PERMISSIVE_DICT
+        )
+
+    # Closed generic types
     LIST = 'LIST'
     NULLABLE = 'NULLABLE'
     SET = 'SET'
     TUPLE = 'TUPLE'
+
+    @staticmethod
+    def is_closed_generic(kind):
+        return (
+            kind == ConfigTypeKind.LIST
+            or kind == ConfigTypeKind.NULLABLE
+            or kind == ConfigTypeKind.SET
+            or kind == ConfigTypeKind.TUPLE
+        )
 
 
 class ConfigTypeAttributes(namedtuple('_ConfigTypeAttributes', 'is_builtin is_system_config')):
@@ -42,7 +60,15 @@ class ConfigType(object):
     The class backing DagsterTypes as they are used processing configuration data.
     '''
 
-    def __init__(self, key, name, kind, type_attributes=DEFAULT_TYPE_ATTRIBUTES, description=None):
+    def __init__(
+        self,
+        key,
+        name,
+        kind,
+        type_attributes=DEFAULT_TYPE_ATTRIBUTES,
+        description=None,
+        type_params=None,
+    ):
 
         type_obj = type(self)
         if type_obj in ConfigType.__cache:
@@ -59,6 +85,11 @@ class ConfigType(object):
         self.type_attributes = check.inst_param(
             type_attributes, 'type_attributes', ConfigTypeAttributes
         )
+        self.type_params = (
+            check.list_param(type_params, 'type_params', of_type=ConfigType)
+            if type_params
+            else None
+        )
 
     __cache = {}
 
@@ -72,6 +103,12 @@ class ConfigType(object):
     def from_builtin_enum(builtin_enum):
         check.invariant(BuiltinEnum.contains(builtin_enum), 'param must be member of BuiltinEnum')
         return _CONFIG_MAP[builtin_enum]
+
+    # An instantiated List, Tuple, Set, or Nullable
+    # e.g. List[Int] or Tuple[Int, Str]
+    @property
+    def is_closed_generic(self):
+        return ConfigTypeKind.is_closed_generic(self.kind)
 
     @property
     def is_system_config(self):
@@ -123,7 +160,7 @@ class ConfigType(object):
 
     @property
     def is_enum(self):
-        return self.kind == ConfigTypeKind.SET
+        return self.kind == ConfigTypeKind.ENUM
 
     @property
     def is_permissive_composite(self):
@@ -145,10 +182,19 @@ class ConfigScalar(ConfigType):
         check.not_implemented('must implement')
 
 
-class ConfigList(ConfigType):
+class _ConfigClosedGeneric(ConfigType):
+    def __init__(self, type_params, **kwargs):
+        super(_ConfigClosedGeneric, self).__init__(
+            type_params=check.list_param(type_params, 'type_param', of_type=ConfigType), **kwargs
+        )
+
+
+class ConfigList(_ConfigClosedGeneric):
     def __init__(self, inner_type, **kwargs):
         self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
-        super(ConfigList, self).__init__(kind=ConfigTypeKind.LIST, **kwargs)
+        super(ConfigList, self).__init__(
+            type_params=[inner_type], kind=ConfigTypeKind.LIST, **kwargs
+        )
 
     @property
     def inner_types(self):
@@ -158,7 +204,7 @@ class ConfigList(ConfigType):
 class ConfigSet(ConfigType):
     def __init__(self, inner_type, **kwargs):
         self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
-        super(ConfigSet, self).__init__(kind=ConfigTypeKind.SET, **kwargs)
+        super(ConfigSet, self).__init__(type_params=[inner_type], kind=ConfigTypeKind.SET, **kwargs)
 
     @property
     def inner_types(self):
@@ -167,12 +213,14 @@ class ConfigSet(ConfigType):
 
 class ConfigTuple(ConfigType):
     def __init__(self, tuple_types, **kwargs):
-        self.tuple_types = check.list_param(tuple_types, 'tuple_types', of_type=ConfigType)
-        super(ConfigTuple, self).__init__(kind=ConfigTypeKind.TUPLE, **kwargs)
+        self.tuple_types = tuple_types
+        super(ConfigTuple, self).__init__(
+            type_params=tuple_types, kind=ConfigTypeKind.TUPLE, **kwargs
+        )
 
     @property
     def inner_types(self):
-        return self.tuple_types + [
+        return self.type_params + [
             inner_type for tuple_type in self.tuple_types for inner_type in tuple_type.inner_types
         ]
 
@@ -180,7 +228,9 @@ class ConfigTuple(ConfigType):
 class ConfigNullable(ConfigType):
     def __init__(self, inner_type, **kwargs):
         self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
-        super(ConfigNullable, self).__init__(kind=ConfigTypeKind.NULLABLE, **kwargs)
+        super(ConfigNullable, self).__init__(
+            type_params=[inner_type], kind=ConfigTypeKind.NULLABLE, **kwargs
+        )
 
     @property
     def inner_types(self):
@@ -327,8 +377,10 @@ def Tuple(tuple_types):
     class _Tuple(ConfigTuple):
         def __init__(self):
 
+            # https://github.com/dagster-io/dagster/issues/1932
+            # TODO Naming these is a dubious decision
             name = 'Tuple[{tuple_types}]'.format(
-                tuple_types=', '.join([tuple_type.name for tuple_type in tuple_types])
+                tuple_types=', '.join([tuple_type.key for tuple_type in tuple_types])
             )
 
             super(_Tuple, self).__init__(
