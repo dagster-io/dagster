@@ -19,7 +19,7 @@ export interface ScheduleFragment_scheduleDefinition {
 
 export interface ScheduleFragment_attempts {
   __typename: "ScheduleAttempt";
-  time: string;
+  time: number;
   jsonResult: string;
   status: ScheduleAttemptStatus;
 }

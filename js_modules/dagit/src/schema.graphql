@@ -823,6 +823,7 @@ type Query {
   configTypeOrError(pipelineName: String!, configTypeName: String!, mode: String!): ConfigTypeOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   scheduler: SchedulerOrError!
+  scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
   pipelineRunsOrError(filter: PipelineRunsFilter!, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!
@@ -923,7 +924,7 @@ type RuntimeTypeNotFoundError implements Error {
 union RuntimeTypeOrError = RegularRuntimeType | PipelineNotFoundError | RuntimeTypeNotFoundError | PythonError
 
 type ScheduleAttempt {
-  time: String!
+  time: Float!
   jsonResult: String!
   status: ScheduleAttemptStatus!
   run: PipelineRun
@@ -951,6 +952,8 @@ type ScheduleNotFoundError implements Error {
   stack: [String!]!
   scheduleName: String!
 }
+
+union ScheduleOrError = RunningSchedule | ScheduleNotFoundError | PythonError
 
 type Scheduler {
   runningSchedules: [RunningSchedule!]!

@@ -13,6 +13,7 @@ import { RunRoot } from "./runs/RunRoot";
 import { RunsRoot } from "./runs/RunsRoot";
 import { SolidsRoot } from "./solids/SolidsRoot";
 import SchedulesRoot from "./schedules/SchedulesRoot";
+import { ScheduleRoot } from "./schedules/ScheduleRoot";
 import { TopNav } from "./TopNav";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
@@ -62,6 +63,7 @@ const AppRoutes = () => (
     />
     {/* Index default */}
     <Route path="/scheduler/:rest?" component={SchedulesRoot} />
+    <Route path="/schedule/:scheduleName" component={ScheduleRoot} />
     <Route
       render={() => (
         <NonIdealState

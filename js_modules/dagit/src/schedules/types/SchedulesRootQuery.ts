@@ -24,7 +24,7 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_schedul
 
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempts {
   __typename: "ScheduleAttempt";
-  time: string;
+  time: number;
   jsonResult: string;
   status: ScheduleAttemptStatus;
 }

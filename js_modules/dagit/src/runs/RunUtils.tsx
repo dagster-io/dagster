@@ -14,13 +14,6 @@ export type IRunStatus =
   | "STARTED"
   | "MANAGED";
 
-export function unixTimestampToString(unix: number | null) {
-  if (!unix) {
-    return null;
-  }
-  return new Date(unix * 1000).toLocaleString();
-}
-
 export function titleForRun(run: { runId: string }) {
   return run.runId.split("-").shift();
 }

@@ -94,21 +94,21 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
       </a>
       <a
-        className="sc-itybZL lfAfUb active"
+        className="sc-fzsDOv iebQBx active"
         href="/solids"
         onClick={[Function]}
       >
@@ -266,21 +266,21 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/solids"
         onClick={[Function]}
       >
@@ -410,17 +410,17 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-dTdPqK eSGkdk"
+          className="sc-eMigcr hSDQqF"
         >
           <a
-            className="sc-itybZL lfAfUb active"
+            className="sc-fzsDOv iebQBx active"
             href="/p/airline_demo_ingest_pipeline/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-itybZL lfAfUb"
+            className="sc-fzsDOv iebQBx"
             href="/p/airline_demo_ingest_pipeline/execute"
             onClick={[Function]}
           >
@@ -433,21 +433,21 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/solids"
         onClick={[Function]}
       >
@@ -605,17 +605,17 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-dTdPqK eSGkdk"
+          className="sc-eMigcr hSDQqF"
         >
           <a
-            className="sc-itybZL lfAfUb active"
+            className="sc-fzsDOv iebQBx active"
             href="/p/airline_demo_ingest_pipeline/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-itybZL lfAfUb"
+            className="sc-fzsDOv iebQBx"
             href="/p/airline_demo_ingest_pipeline/execute"
             onClick={[Function]}
           >
@@ -628,21 +628,21 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/solids"
         onClick={[Function]}
       >
@@ -800,17 +800,17 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-dTdPqK eSGkdk"
+          className="sc-eMigcr hSDQqF"
         >
           <a
-            className="sc-itybZL lfAfUb active"
+            className="sc-fzsDOv iebQBx active"
             href="/p/airline_demo_ingest_pipeline/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-itybZL lfAfUb"
+            className="sc-fzsDOv iebQBx"
             href="/p/airline_demo_ingest_pipeline/execute"
             onClick={[Function]}
           >
@@ -823,21 +823,21 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/solids"
         onClick={[Function]}
       >
@@ -995,17 +995,17 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-dTdPqK eSGkdk"
+          className="sc-eMigcr hSDQqF"
         >
           <a
-            className="sc-itybZL lfAfUb active"
+            className="sc-fzsDOv iebQBx active"
             href="/p/airline_demo_ingest_pipeline/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-itybZL lfAfUb"
+            className="sc-fzsDOv iebQBx"
             href="/p/airline_demo_ingest_pipeline/execute"
             onClick={[Function]}
           >
@@ -1018,21 +1018,21 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/solids"
         onClick={[Function]}
       >
@@ -1190,21 +1190,21 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/runs"
         onClick={[Function]}
       >
         Runs
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/scheduler"
         onClick={[Function]}
       >
         Schedule
       </a>
       <a
-        className="sc-itybZL lfAfUb"
+        className="sc-fzsDOv iebQBx"
         href="/solids"
         onClick={[Function]}
       >
