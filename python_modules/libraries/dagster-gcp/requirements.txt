@@ -1,2 +1,0 @@
-google-cloud-bigquery[pandas,pyarrow]>=1.19.*
-google-cloud-storage
