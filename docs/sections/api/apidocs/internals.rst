@@ -53,6 +53,6 @@ Instance
 
 .. autoclass:: EventLogStorage
 
-.. currentmodule:: dagster.core.storage.run_storage_abc
+.. currentmodule:: dagster.core.storage.run_storage
 
 .. autoclass:: RunStorage

@@ -4,5 +4,6 @@ sphinx-autobuild==0.7.1
 git+https://github.com/t-b/sphinxcontrib-images.git@c76b9c25efb249f9c5054adbb436455095c6d2f7#egg=sphinxcontrib-images
 -e ./python_modules/dagster
 -e ./python_modules/dagstermill
+-e ./python_modules/dagster-airflow
 -r ./python_modules/dagster/dev-requirements.txt
 sphinx-click==2.3.0
