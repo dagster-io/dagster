@@ -76,16 +76,10 @@ def _make_airflow_dag(
     )
     check.subclass_param(operator, 'operator', BaseOperator)
 
-    # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
-    # the trailing comma after **check.opt_dict_param...) -- black 19.3b0 supports multiple python
-    # versions, but currently doesn't know what to do with from __future__ import print_function --
-    # see https://github.com/ambv/black/issues/768
-    # fmt: off
     dag_kwargs = dict(
         {'default_args': DEFAULT_ARGS},
         **check.opt_dict_param(dag_kwargs, 'dag_kwargs', key_type=str)
     )
-    # fmt: on
 
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
 
@@ -108,11 +102,6 @@ def _make_airflow_dag(
 
         step_keys = [step.key for step in solid_steps]
 
-        # We separately construct the Airflow operators here with the appropriate args, because if
-        # Airflow gets extraneous args/kwargs it emits a warning every time it parses the DAG (and
-        # future Airflow versions will mark this a failure).
-        # see https://github.com/ambv/black/issues/768
-        # fmt: off
         if operator == DagsterPythonOperator:
             task = operator(
                 handle=handle,
@@ -136,7 +125,6 @@ def _make_airflow_dag(
                 instance_ref=instance.get_ref(),
                 **op_kwargs
             )
-        # fmt: on
 
         tasks[solid_handle] = task
 

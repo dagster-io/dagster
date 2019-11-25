@@ -594,11 +594,7 @@ if __name__ == "__main__":
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("black")
-        # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
-        # the trailing comma after **check.opt_dict_param...) -- black 19.3b0 supports multiple
-        # python versions, but currently doesn't know what to do with from __future__ import
-        # print_function -- see https://github.com/ambv/black/issues/768
-        .run("pip install black==18.9b0", "make check_black")
+        .run("pip install black==19.10b0", "make check_black")
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("docs snapshot test")

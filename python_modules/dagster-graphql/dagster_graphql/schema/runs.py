@@ -656,10 +656,7 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
         return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
             output_name=output_data.output_name,
             type_check=output_data.type_check_data,
-            # parens make black not put trailing commas, which in turn break py27
-            # fmt: off
-            **(basic_params)
-            # fmt: on
+            **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
         materialization = dagster_event.step_materialization_data.materialization
@@ -669,7 +666,7 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         expectation_result = dagster_event.event_specific_data.expectation_result
         return graphene_info.schema.type_named('StepExpectationResultEvent')(
-            expectation_result=expectation_result, **(basic_params)
+            expectation_result=expectation_result, **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
         check.inst(dagster_event.step_failure_data, StepFailureData)
@@ -677,10 +674,7 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
             error=graphene_info.schema.type_named('PythonError')(
                 dagster_event.step_failure_data.error
             ),
-            # parens make black not put trailing commas, which in turn break py27
-            # fmt: off
-            **(basic_params)
-            # fmt: on
+            **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.PIPELINE_START:
         return graphene_info.schema.type_named('PipelineStartEvent')(
@@ -718,10 +712,7 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
             error=graphene_info.schema.type_named('PythonError')(
                 dagster_event.pipeline_init_failure_data.error
             ),
-            # parens make black not put trailing commas, which in turn break py27
-            # fmt: off
-            **(basic_params)
-            # fmt: on
+            **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.OBJECT_STORE_OPERATION:
         operation_result = dagster_event.event_specific_data
