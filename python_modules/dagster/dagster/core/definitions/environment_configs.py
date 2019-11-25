@@ -79,6 +79,37 @@ def SystemNamedSelector(name, fields, description=None):
     return NamedSelector(name, fields, description, ConfigTypeAttributes(is_system_config=True))
 
 
+class _SolidConfigDict(_ConfigHasFields):
+    def __init__(self, name, fields, description):
+
+        super(_SolidConfigDict, self).__init__(
+            key=name,
+            name=name,
+            kind=ConfigTypeKind.DICT,
+            fields=fields,
+            description=description,
+            type_attributes=ConfigTypeAttributes(is_system_config=True),
+        )
+
+
+def SolidConfigDict(name, fields, description=None):
+    from dagster.core.types.field_utils import check_user_facing_fields_dict
+
+    check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
+
+    class _SolidConfigDictInternal(_SolidConfigDict):
+        def __init__(self):
+            super(_SolidConfigDictInternal, self).__init__(
+                name=name, fields=fields, description=description
+            )
+
+    return _SolidConfigDictInternal
+
+
+def is_solid_dict(obj):
+    return isinstance(obj, _SolidConfigDict)
+
+
 def is_solid_container_config(obj):
     return isinstance(obj, _SolidContainerConfigDict)
 
@@ -427,7 +458,7 @@ def define_solid_dictionary_cls(
                 pipeline_name,
             )
 
-    return SystemNamedDict(name, fields)
+    return SolidConfigDict(name, fields)
 
 
 def iterate_solid_def_types(solid_def):

@@ -708,6 +708,9 @@ def test_empty_config():
     res = execute_pipeline(wrap_pipeline, environment_dict={'solids': {}})
     assert res.result_for_solid('wrap_solid').output_values == {'result': 'an input'}
 
+    res = execute_pipeline(wrap_pipeline)
+    assert res.result_for_solid('wrap_solid').output_values == {'result': 'an input'}
+
 
 def test_nested_empty_config():
     @composite_solid(
@@ -725,6 +728,9 @@ def test_nested_empty_config():
         return double_wrap()
 
     res = execute_pipeline(wrap_pipeline, environment_dict={'solids': {}})
+    assert res.result_for_solid('double_wrap').output_values == {'result': 'an input'}
+
+    res = execute_pipeline(wrap_pipeline)
     assert res.result_for_solid('double_wrap').output_values == {'result': 'an input'}
 
 
