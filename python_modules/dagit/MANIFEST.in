@@ -1,3 +1,4 @@
 include README.rst
+include LICENSE
 recursive-include dagit/webapp/build *
 recursive-include dagit/templates/assets *

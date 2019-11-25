@@ -1,1 +1,2 @@
 recursive-include dagster_pandas *.yaml
+include LICENSE
