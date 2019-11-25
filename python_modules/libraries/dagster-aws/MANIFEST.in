@@ -1,2 +1,3 @@
 recursive-include dagster_aws *.sh
 recursive-include dagster_aws *.yaml
+include LICENSE
