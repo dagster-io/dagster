@@ -1,0 +1,17 @@
+solids:
+  produce_trip_dataset:
+    solids:
+      download_trips_dataset:
+        inputs:
+          key:
+            value: trips.csv
+          path_to_file:
+            value: trips.csv
+  produce_weather_dataset:
+    solids:
+      download_weather_dataset:
+        inputs:
+          key:
+            value: weather.csv
+          path_to_file:
+            value: weather.csv

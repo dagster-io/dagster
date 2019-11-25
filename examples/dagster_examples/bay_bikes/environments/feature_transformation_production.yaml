@@ -1,0 +1,7 @@
+resources:
+  transporter:
+    config:
+      bucket_name: dagster-scratch-ccdfe1e
+  volume:
+    config:
+      mount_location: /tmp

@@ -1,20 +1,12 @@
 import json
 import os
+import shutil
 from abc import ABCMeta, abstractmethod
 
 from google.cloud import storage
-from google.cloud.exceptions import NotFound
 from six import with_metaclass
 
-from dagster import Field, List, String, check, resource, seven
-
-
-class DagsterCloudResourceSDKException(Exception):
-    def __init__(self, inner_error):
-        check.inst_param(inner_error, 'inner_error', Exception)
-        self.inner_error = inner_error
-        message = ('Recevied error of type {}. Reason: {}.', format(type(inner_error), inner_error))
-        super(DagsterCloudResourceSDKException, self).__init__(message)
+from dagster import Field, List, String, resource, seven
 
 
 class AbstractFileTransporter(with_metaclass(ABCMeta)):
@@ -30,10 +22,6 @@ class AbstractFileTransporter(with_metaclass(ABCMeta)):
     @abstractmethod
     def upload_file_to_bucket(self, path_to_file, key):
         pass
-
-    @staticmethod
-    def path_to_file_exists(path_to_file):
-        return os.path.exists(path_to_file)
 
 
 class LocalFileTransporter(AbstractFileTransporter):
@@ -53,6 +41,15 @@ class LocalFileTransporter(AbstractFileTransporter):
         with open(self.key_storage_path, 'w') as key_storage_fp:
             json.dump(key_storage, key_storage_fp)
 
+    def download_file_from_bucket(self, key, path_to_file):
+        with open(self.key_storage_path, 'r') as key_storage_fp:
+            key_storage = json.load(key_storage_fp)
+        if key not in key_storage:
+            raise ValueError("Key {} not found in bucket {}".format(key, self.bucket_object))
+
+        shutil.copyfile(key_storage[key], path_to_file)
+        return path_to_file
+
 
 class GoogleCloudStorageFileTransporter(AbstractFileTransporter):
     """Uses google cloud storage sdk to upload/download objects"""
@@ -61,18 +58,18 @@ class GoogleCloudStorageFileTransporter(AbstractFileTransporter):
         # TODO: Eventually support custom authentication so we aren't forcing people to setup their environments
         self.client = storage.Client()
         self.bucket_name = bucket_name
-        try:
-            self.bucket_obj = self.client.get_bucket(self.bucket_name)
-        except NotFound as e:
-            raise DagsterCloudResourceSDKException(e)
+        self.bucket_obj = self.client.get_bucket(self.bucket_name)
 
     def upload_file_to_bucket(self, path_to_file, key):
         blob = self.bucket_obj.blob(key)
-        try:
-            with open(path_to_file, 'r') as fp_to_upload:
-                blob.upload_from_file(fp_to_upload)
-        except Exception as e:
-            raise DagsterCloudResourceSDKException(e)
+        with open(path_to_file, 'r') as fp_to_upload:
+            blob.upload_from_file(fp_to_upload)
+
+    def download_file_from_bucket(self, key, path_to_file):
+        blob = self.bucket_obj.blob(key)
+        with open(path_to_file, 'wb+') as path_to_file:
+            blob.download_to_file(path_to_file)
+        return path_to_file
 
 
 class CredentialsVault:
