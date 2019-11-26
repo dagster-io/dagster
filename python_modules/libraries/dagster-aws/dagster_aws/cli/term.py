@@ -15,7 +15,7 @@ CURSOR_UP_ONE = '\x1b[1A'
 ERASE_LINE = '\x1b[2K'
 
 
-class Spinner:
+class Spinner(object):
     '''Spinning CLI prompt, shown while long-running activity is in flight.
 
     From: https://stackoverflow.com/a/39504463/11295366
@@ -55,7 +55,7 @@ class Spinner:
             return False
 
 
-class Term:
+class Term(object):
     ERROR_PREFIX = u'❌  '
     FATAL_PREFIX = u'💣 '
     INFO_PREFIX = u'ℹ️  '

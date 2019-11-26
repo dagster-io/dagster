@@ -22,14 +22,14 @@ class DauphinPipelineReference(dauphin.Interface):
     that a pipeline exists/existed thanks to materialized data such as logs and run metadata, but
     where we can't look the concrete pipeline up.'''
 
-    class Meta:
+    class Meta(object):
         name = 'PipelineReference'
 
     name = dauphin.NonNull(dauphin.String)
 
 
 class DauphinUnknownPipeline(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'UnknownPipeline'
         interfaces = (DauphinPipelineReference,)
 
@@ -37,7 +37,7 @@ class DauphinUnknownPipeline(dauphin.ObjectType):
 
 
 class DauphinPipeline(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Pipeline'
         interfaces = (DauphinSolidContainer, DauphinPipelineReference)
 
@@ -107,14 +107,14 @@ class DauphinPipeline(dauphin.ObjectType):
 
 
 class DauphinPipelineConnection(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineConnection'
 
     nodes = dauphin.non_null_list('Pipeline')
 
 
 class DauphinResource(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Resource'
 
     def __init__(self, resource_name, resource):
@@ -137,7 +137,7 @@ class DauphinResource(dauphin.ObjectType):
 
 
 class DauphinLogger(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Logger'
 
     def __init__(self, logger_name, logger):
@@ -163,7 +163,7 @@ class DauphinMode(dauphin.ObjectType):
     def __init__(self, mode_definition):
         self._mode_definition = check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
 
-    class Meta:
+    class Meta(object):
         name = 'Mode'
 
     name = dauphin.NonNull(dauphin.String)
@@ -187,7 +187,7 @@ class DauphinMode(dauphin.ObjectType):
 
 
 class DauphinMetadataItemDefinition(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'MetadataItemDefinition'
 
     key = dauphin.NonNull(dauphin.String)
@@ -195,7 +195,7 @@ class DauphinMetadataItemDefinition(dauphin.ObjectType):
 
 
 class DauphinPipelinePreset(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelinePreset'
 
     name = dauphin.NonNull(dauphin.String)

@@ -8,7 +8,7 @@ from dagster import check, resource
 from .configs import define_snowflake_config
 
 
-class SnowflakeConnection:
+class SnowflakeConnection(object):
     def __init__(self, context):  # pylint: disable=too-many-locals
         # Extract parameters from resource config. Note that we can't pass None values to
         # snowflake.connector.connect() because they will override the default values set within the

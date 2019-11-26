@@ -20,7 +20,7 @@ def key_from_str(key_str):
     return result
 
 
-class SSHResource:
+class SSHResource(object):
     '''
     Based on the Airflow SSHHook:
 

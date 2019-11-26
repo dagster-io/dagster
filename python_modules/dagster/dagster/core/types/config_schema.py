@@ -11,7 +11,7 @@ from .config import ConfigType, List, Nullable
 from .wrapping import WrappingListType, WrappingNullableType
 
 
-class InputHydrationConfig:
+class InputHydrationConfig(object):
     @property
     def schema_type(self):
         check.not_implemented(
@@ -49,7 +49,7 @@ def make_bare_input_schema(config_cls):
     return _InputSchema()
 
 
-class OutputMaterializationConfig:
+class OutputMaterializationConfig(object):
     @property
     def schema_type(self):
         check.not_implemented(

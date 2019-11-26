@@ -8,7 +8,7 @@ from .resource import ResourceDefinition
 DEFAULT_MODE_NAME = 'default'
 
 
-class ModeDefinition:
+class ModeDefinition(object):
     '''Define a mode in which a pipeline can operate.
 
     A mode provides pipelines with a set of resource implementations, loggers, system storages,

@@ -13,7 +13,7 @@ from dagster.utils import get_multiprocessing_context
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
-class ChildProcessEvent:
+class ChildProcessEvent(object):
     pass
 
 

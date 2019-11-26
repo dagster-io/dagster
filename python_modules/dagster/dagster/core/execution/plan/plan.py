@@ -21,7 +21,7 @@ from .compute import create_compute_step
 from .objects import ExecutionStep, StepInput, StepInputSourceType, StepOutputHandle
 
 
-class _PlanBuilder:
+class _PlanBuilder(object):
     '''_PlanBuilder. This is the state that is built up during the execution plan build process.
 
     steps List[ExecutionStep]: a list of the execution steps that have been created.

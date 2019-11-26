@@ -113,7 +113,7 @@ def test_wrapped_input_and_output_lambda():
 
 
 def test_autowrapping_python_types():
-    class Foo:
+    class Foo(object):
         pass
 
     @lambda_solid
@@ -134,7 +134,7 @@ def test_autowrapping_python_types():
 
 def test_kitchen_sink():
     @dagster_type
-    class Custom:
+    class Custom(object):
         pass
 
     @lambda_solid

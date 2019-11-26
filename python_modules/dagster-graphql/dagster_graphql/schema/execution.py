@@ -9,7 +9,7 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 
 
 class DauphinExecutionPlan(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionPlan'
 
     steps = dauphin.non_null_list('ExecutionStep')
@@ -31,7 +31,7 @@ class DauphinExecutionPlan(dauphin.ObjectType):
 
 
 class DauphinExecutionStepOutput(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionStepOutput'
 
     name = dauphin.NonNull(dauphin.String)
@@ -49,7 +49,7 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
 
 
 class DauphinExecutionStepInput(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionStepInput'
 
     name = dauphin.NonNull(dauphin.String)
@@ -77,7 +77,7 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
 
 
 class DauphinStepKind(dauphin.Enum):
-    class Meta:
+    class Meta(object):
         name = 'StepKind'
 
     COMPUTE = 'COMPUTE'
@@ -93,7 +93,7 @@ class DauphinStepKind(dauphin.Enum):
 
 
 class DauphinExecutionStep(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionStep'
 
     key = dauphin.NonNull(dauphin.String)

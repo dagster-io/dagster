@@ -34,7 +34,7 @@ def _ctor_kwargs(config_type):
 
 
 class DauphinConfigType(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'ConfigType'
 
     key = dauphin.NonNull(dauphin.String)
@@ -74,7 +74,7 @@ class DauphinRegularConfigType(dauphin.ObjectType):
         self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
         super(DauphinRegularConfigType, self).__init__(**_ctor_kwargs(config_type))
 
-    class Meta:
+    class Meta(object):
         name = 'RegularConfigType'
         interfaces = [DauphinConfigType]
 
@@ -83,7 +83,7 @@ class DauphinRegularConfigType(dauphin.ObjectType):
 
 
 class DauphinWrappingConfigType(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'WrappingConfigType'
 
     of_type = dauphin.Field(dauphin.NonNull(DauphinConfigType))
@@ -94,7 +94,7 @@ class DauphinListConfigType(dauphin.ObjectType):
         self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
         super(DauphinListConfigType, self).__init__(**_ctor_kwargs(config_type))
 
-    class Meta:
+    class Meta(object):
         name = 'ListConfigType'
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
@@ -110,7 +110,7 @@ class DauphinNullableConfigType(dauphin.ObjectType):
         self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
         super(DauphinNullableConfigType, self).__init__(**_ctor_kwargs(config_type))
 
-    class Meta:
+    class Meta(object):
         name = 'NullableConfigType'
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
@@ -128,7 +128,7 @@ class DauphinEnumConfigType(dauphin.ObjectType):
         self._config_type = config_type
         super(DauphinEnumConfigType, self).__init__(**_ctor_kwargs(config_type))
 
-    class Meta:
+    class Meta(object):
         name = 'EnumConfigType'
         interfaces = [DauphinConfigType]
 
@@ -145,7 +145,7 @@ class DauphinEnumConfigType(dauphin.ObjectType):
 
 
 class DauphinEnumConfigValue(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'EnumConfigValue'
 
     value = dauphin.NonNull(dauphin.String)
@@ -159,7 +159,7 @@ class DauphinCompositeConfigType(dauphin.ObjectType):
         self._config_type = config_type
         super(DauphinCompositeConfigType, self).__init__(**_ctor_kwargs(config_type))
 
-    class Meta:
+    class Meta(object):
         name = 'CompositeConfigType'
         interfaces = [DauphinConfigType]
 
@@ -179,7 +179,7 @@ class DauphinCompositeConfigType(dauphin.ObjectType):
 
 
 class DauphinConfigTypeField(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ConfigTypeField'
 
     name = dauphin.NonNull(dauphin.String)

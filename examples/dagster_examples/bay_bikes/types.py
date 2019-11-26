@@ -4,14 +4,14 @@ from pandas import DataFrame, Timestamp
 from dagster import EventMetadataEntry, TypeCheck, dagster_type
 
 
-class ValidationTypes:
+class ValidationTypes(object):
     CATEGORIES = 'categories'
     EXPECTED_DTYPES = 'expected_dtypes'
     BOUNDS = 'bounds'
     NO_DUPLICATES = 'no_duplicates'
 
 
-class DataFrameValidator:
+class DataFrameValidator(object):
     def __init__(self, invariant_config):
         self.invariant_config = invariant_config
 

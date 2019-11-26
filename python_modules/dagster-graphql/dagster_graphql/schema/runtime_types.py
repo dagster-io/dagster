@@ -42,7 +42,7 @@ def _resolve_inner_types(runtime_type):
 
 
 class DauphinRuntimeType(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'RuntimeType'
 
     key = dauphin.NonNull(dauphin.String)
@@ -62,25 +62,25 @@ class DauphinRuntimeType(dauphin.Interface):
 
 
 class DauphinRegularRuntimeType(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'RegularRuntimeType'
         interfaces = [DauphinRuntimeType]
 
 
 class DauphinWrappingRuntimeType(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'WrappingRuntimeType'
 
     of_type = dauphin.Field(dauphin.NonNull(DauphinRuntimeType))
 
 
 class DauphinListRuntimeType(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ListRuntimeType'
         interfaces = [DauphinRuntimeType, DauphinWrappingRuntimeType]
 
 
 class DauphinNullableRuntimeType(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'NullableRuntimeType'
         interfaces = [DauphinRuntimeType, DauphinWrappingRuntimeType]

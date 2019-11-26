@@ -3,12 +3,12 @@ from slackclient import SlackClient
 from dagster import Field, resource, seven
 
 
-class SlackConnection:
+class SlackConnection(object):
     def __init__(self, token):
         self.token = token
         self.sc = SlackClient(self.token)
 
-        class _Chat:
+        class _Chat(object):
             @classmethod
             def post_message(
                 cls,

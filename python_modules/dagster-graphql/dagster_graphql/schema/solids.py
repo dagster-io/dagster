@@ -18,14 +18,14 @@ from .runtime_types import to_dauphin_runtime_type
 
 
 class DauphinSolidContainer(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'SolidContainer'
 
     solids = dauphin.non_null_list('Solid')
 
 
 class DauphinISolidDefinition(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'ISolidDefinition'
 
     name = dauphin.NonNull(dauphin.String)
@@ -36,7 +36,7 @@ class DauphinISolidDefinition(dauphin.Interface):
     required_resources = dauphin.non_null_list('ResourceRequirement')
 
 
-class ISolidDefinitionMixin:
+class ISolidDefinitionMixin(object):
     def __init__(self, solid_def):
         self._solid_def = check.inst_param(solid_def, 'solid_def', ISolidDefinition)
 
@@ -76,7 +76,7 @@ def build_dauphin_solid_definition(graphene_info, solid_definition):
 
 
 class DauphinSolid(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Solid'
 
     name = dauphin.NonNull(dauphin.String)
@@ -124,7 +124,7 @@ class DauphinSolid(dauphin.ObjectType):
 
 
 class DauphinSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
-    class Meta:
+    class Meta(object):
         name = 'SolidDefinition'
         interfaces = [DauphinISolidDefinition]
 
@@ -148,7 +148,7 @@ class DauphinSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
 
 
 class DauphinCompositeSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
-    class Meta:
+    class Meta(object):
         name = 'CompositeSolidDefinition'
         interfaces = [DauphinISolidDefinition, DauphinSolidContainer]
 
@@ -201,7 +201,7 @@ class DauphinCompositeSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin)
 
 
 class DauphinSolidHandle(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'SolidHandle'
 
     handleID = dauphin.NonNull(dauphin.String)
@@ -215,7 +215,7 @@ class DauphinSolidHandle(dauphin.ObjectType):
 
 
 class DauphinInputDefinition(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'InputDefinition'
 
     solid_definition = dauphin.NonNull('SolidDefinition')
@@ -240,7 +240,7 @@ class DauphinInputDefinition(dauphin.ObjectType):
 
 
 class DauphinOutputDefinition(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'OutputDefinition'
 
     solid_definition = dauphin.NonNull('SolidDefinition')
@@ -265,7 +265,7 @@ class DauphinOutputDefinition(dauphin.ObjectType):
 
 
 class DauphinInput(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Input'
 
     solid = dauphin.NonNull('Solid')
@@ -292,7 +292,7 @@ class DauphinInput(dauphin.ObjectType):
 
 
 class DauphinOutput(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Output'
 
     solid = dauphin.NonNull('Solid')
@@ -317,7 +317,7 @@ class DauphinOutput(dauphin.ObjectType):
 
 
 class DauphinInputMapping(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'InputMapping'
 
     mapped_input = dauphin.NonNull('Input')
@@ -332,7 +332,7 @@ class DauphinInputMapping(dauphin.ObjectType):
 
 
 class DauphinOutputMapping(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'OutputMapping'
 
     mapped_output = dauphin.NonNull('Output')
@@ -347,7 +347,7 @@ class DauphinOutputMapping(dauphin.ObjectType):
 
 
 class DauphinResourceRequirement(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ResourceRequirement'
 
     resource_key = dauphin.NonNull(dauphin.String)

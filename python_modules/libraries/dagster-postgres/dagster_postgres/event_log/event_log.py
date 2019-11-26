@@ -238,7 +238,7 @@ def watcher_thread(conn_string, queue, handlers_dict, dict_lock, watcher_thread_
         time.sleep(WATCHER_POLL_INTERVAL)
 
 
-class PostgresEventWatcher:
+class PostgresEventWatcher(object):
     def __init__(self, process, queue, run_id_dict, conn_string):
         self.process = check.inst_param(process, 'process', multiprocessing.Process)
         self.run_id_dict = check.inst_param(

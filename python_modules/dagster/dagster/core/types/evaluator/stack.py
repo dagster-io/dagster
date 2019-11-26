@@ -64,7 +64,7 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
         )
 
 
-class EvaluationStackEntry:  # marker interface
+class EvaluationStackEntry(object):  # marker interface
     pass
 
 

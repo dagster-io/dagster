@@ -27,7 +27,7 @@ class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         raise NotImplementedError()
 
 
-class TypeStoragePluginRegistry:
+class TypeStoragePluginRegistry(object):
     def __init__(self, types_to_register):
         from dagster.core.types.runtime import RuntimeType
 

@@ -33,13 +33,13 @@ DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
 
 
 class DauphinPipelineOrError(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'PipelineOrError'
         types = ('Pipeline', 'PipelineNotFoundError', 'InvalidSubsetError', 'PythonError')
 
 
 class DauphinPipelineRunStatsSnapshot(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineRunStatsSnapshot'
 
     runId = dauphin.NonNull(dauphin.String)
@@ -64,7 +64,7 @@ class DauphinPipelineRunStatsSnapshot(dauphin.ObjectType):
 
 
 class DauphinPipelineRun(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineRun'
 
     runId = dauphin.NonNull(dauphin.String)
@@ -138,7 +138,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
 
 class DauphinLogLevel(dauphin.Enum):
-    class Meta:
+    class Meta(object):
         name = 'LogLevel'
 
     CRITICAL = 'CRITICAL'
@@ -165,7 +165,7 @@ class DauphinLogLevel(dauphin.Enum):
 
 
 class DauphinComputeLogs(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ComputeLogs'
 
     runId = dauphin.NonNull(dauphin.String)
@@ -186,7 +186,7 @@ class DauphinComputeLogs(dauphin.ObjectType):
 
 
 class DauphinComputeLogFile(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ComputeLogFile'
 
     path = dauphin.NonNull(dauphin.String)
@@ -199,7 +199,7 @@ class DauphinComputeLogFile(dauphin.ObjectType):
 
 
 class DauphinMessageEvent(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'MessageEvent'
 
     runId = dauphin.NonNull(dauphin.String)
@@ -210,7 +210,7 @@ class DauphinMessageEvent(dauphin.Interface):
 
 
 class DauphinEventMetadataEntry(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'EventMetadataEntry'
 
     label = dauphin.NonNull(dauphin.String)
@@ -218,7 +218,7 @@ class DauphinEventMetadataEntry(dauphin.Interface):
 
 
 class DauphinDisplayableEvent(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'DisplayableEvent'
 
     label = dauphin.NonNull(dauphin.String)
@@ -227,7 +227,7 @@ class DauphinDisplayableEvent(dauphin.Interface):
 
 
 class DauphinLogMessageConnection(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'LogMessageConnection'
 
     nodes = dauphin.non_null_list('PipelineRunEvent')
@@ -269,7 +269,7 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
 
 
 class DauphinPipelineRunLogsSubscriptionSuccess(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineRunLogsSubscriptionSuccess'
 
     run = dauphin.NonNull('PipelineRun')
@@ -277,7 +277,7 @@ class DauphinPipelineRunLogsSubscriptionSuccess(dauphin.ObjectType):
 
 
 class DauphinPipelineRunLogsSubscriptionFailure(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineRunLogsSubscriptionFailure'
 
     message = dauphin.NonNull(dauphin.String)
@@ -285,7 +285,7 @@ class DauphinPipelineRunLogsSubscriptionFailure(dauphin.ObjectType):
 
 
 class DauphinPipelineRunLogsSubscriptionPayload(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'PipelineRunLogsSubscriptionPayload'
         types = (
             DauphinPipelineRunLogsSubscriptionSuccess,
@@ -294,45 +294,45 @@ class DauphinPipelineRunLogsSubscriptionPayload(dauphin.Union):
 
 
 class DauphinMissingRunIdErrorEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'MissingRunIdErrorEvent'
 
     invalidRunId = dauphin.NonNull(dauphin.String)
 
 
 class DauphinLogMessageEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'LogMessageEvent'
         interfaces = (DauphinMessageEvent,)
 
 
 class DauphinPipelineEvent(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'PipelineEvent'
 
     pipeline = dauphin.NonNull('Pipeline')
 
 
 class DauphinPipelineStartEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineStartEvent'
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
 class DauphinPipelineSuccessEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineSuccessEvent'
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
 class DauphinPipelineFailureEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineFailureEvent'
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
 class DauphinPipelineProcessStartEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineProcessStartEvent'
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
@@ -341,7 +341,7 @@ class DauphinPipelineProcessStartEvent(dauphin.ObjectType):
 
 
 class DauphinPipelineProcessStartedEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineProcessStartedEvent'
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
@@ -349,7 +349,7 @@ class DauphinPipelineProcessStartedEvent(dauphin.ObjectType):
 
 
 class DauphinPipelineProcessExitedEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineProcessExitedEvent'
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
@@ -357,7 +357,7 @@ class DauphinPipelineProcessExitedEvent(dauphin.ObjectType):
 
 
 class DauphinPipelineInitFailureEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineInitFailureEvent'
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
@@ -365,26 +365,26 @@ class DauphinPipelineInitFailureEvent(dauphin.ObjectType):
 
 
 class DauphinStepEvent(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'StepEvent'
 
     step = dauphin.Field('ExecutionStep')
 
 
 class DauphinExecutionStepStartEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionStepStartEvent'
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
 
 class DauphinExecutionStepSkippedEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionStepSkippedEvent'
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
 
 class DauphinEventPathMetadataEntry(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'EventPathMetadataEntry'
         interfaces = (DauphinEventMetadataEntry,)
 
@@ -392,7 +392,7 @@ class DauphinEventPathMetadataEntry(dauphin.ObjectType):
 
 
 class DauphinEventJsonMetadataEntry(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'EventJsonMetadataEntry'
         interfaces = (DauphinEventMetadataEntry,)
 
@@ -400,7 +400,7 @@ class DauphinEventJsonMetadataEntry(dauphin.ObjectType):
 
 
 class DauphinEventTextMetadataEntry(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'EventTextMetadataEntry'
         interfaces = (DauphinEventMetadataEntry,)
 
@@ -408,7 +408,7 @@ class DauphinEventTextMetadataEntry(dauphin.ObjectType):
 
 
 class DauphinEventUrlMetadataEntry(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'EventUrlMetadataEntry'
         interfaces = (DauphinEventMetadataEntry,)
 
@@ -416,7 +416,7 @@ class DauphinEventUrlMetadataEntry(dauphin.ObjectType):
 
 
 class DauphinEventMarkdownMetadataEntry(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'EventMarkdownMetadataEntry'
         interfaces = (DauphinEventMetadataEntry,)
 
@@ -468,7 +468,7 @@ def _to_dauphin_metadata_entries(metadata_entries):
 
 
 class DauphinObjectStoreOperationType(dauphin.Enum):
-    class Meta:
+    class Meta(object):
         name = 'ObjectStoreOperationType'
 
     SET_OBJECT = 'SET_OBJECT'
@@ -478,7 +478,7 @@ class DauphinObjectStoreOperationType(dauphin.Enum):
 
 
 class DauphinObjectStoreOperationResult(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ObjectStoreOperationResult'
         interfaces = (DauphinDisplayableEvent,)
 
@@ -489,7 +489,7 @@ class DauphinObjectStoreOperationResult(dauphin.ObjectType):
 
 
 class DauphinMaterialization(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Materialization'
         interfaces = (DauphinDisplayableEvent,)
 
@@ -498,7 +498,7 @@ class DauphinMaterialization(dauphin.ObjectType):
 
 
 class DauphinExpectationResult(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExpectationResult'
         interfaces = (DauphinDisplayableEvent,)
 
@@ -509,7 +509,7 @@ class DauphinExpectationResult(dauphin.ObjectType):
 
 
 class DauphinTypeCheck(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'TypeCheck'
         interfaces = (DauphinDisplayableEvent,)
 
@@ -520,7 +520,7 @@ class DauphinTypeCheck(dauphin.ObjectType):
 
 
 class DauphinFailureMetadata(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'FailureMetadata'
         interfaces = (DauphinDisplayableEvent,)
 
@@ -529,7 +529,7 @@ class DauphinFailureMetadata(dauphin.ObjectType):
 
 
 class DauphinExecutionStepInputEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionStepInputEvent'
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
@@ -538,7 +538,7 @@ class DauphinExecutionStepInputEvent(dauphin.ObjectType):
 
 
 class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionStepOutputEvent'
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
@@ -547,13 +547,13 @@ class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
 
 
 class DauphinExecutionStepSuccessEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionStepSuccessEvent'
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
 
 class DauphinExecutionStepFailureEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionStepFailureEvent'
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
@@ -562,7 +562,7 @@ class DauphinExecutionStepFailureEvent(dauphin.ObjectType):
 
 
 class DauphinStepMaterializationEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'StepMaterializationEvent'
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
@@ -570,7 +570,7 @@ class DauphinStepMaterializationEvent(dauphin.ObjectType):
 
 
 class DauphinObjectStoreOperationEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ObjectStoreOperationEvent'
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
@@ -578,13 +578,13 @@ class DauphinObjectStoreOperationEvent(dauphin.ObjectType):
 
 
 class DauphinEngineEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'EngineEvent'
         interfaces = (DauphinMessageEvent, DauphinDisplayableEvent, DauphinStepEvent)
 
 
 class DauphinStepExpectationResultEvent(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'StepExpectationResultEvent'
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
@@ -593,7 +593,7 @@ class DauphinStepExpectationResultEvent(dauphin.ObjectType):
 
 # Should be a union of all possible events
 class DauphinPipelineRunEvent(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'PipelineRunEvent'
         types = (
             DauphinExecutionStepFailureEvent,
@@ -618,7 +618,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
 
 
 class DauphinPipelineTag(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineTag'
 
     key = dauphin.NonNull(dauphin.String)

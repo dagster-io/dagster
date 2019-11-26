@@ -17,12 +17,12 @@ SCALAR_TYPES = {
 }
 
 
-class List:
+class List(object):
     def __init__(self, inner_type):
         self.inner_type = inner_type
 
 
-class Enum:
+class Enum(object):
     def __init__(self, name, enum_names, enum_descriptions):
         self.name = name
         self.enum_names = enum_names
@@ -46,7 +46,7 @@ class Enum:
         printer.line(')')
 
 
-class Field:
+class Field(object):
     '''Field represents a field type that we're going to write out as a dagster config field, once
     we've pre-processed all custom types
     '''
@@ -140,7 +140,7 @@ class ParsedConfig(namedtuple('_ParsedConfig', 'name configs enums')):
             f.write(self.enums)
 
 
-class ConfigParser:
+class ConfigParser(object):
     def __init__(self, schemas):
         self.schemas = schemas
 

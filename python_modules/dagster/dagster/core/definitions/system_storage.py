@@ -6,7 +6,7 @@ from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from .config import resolve_config_field
 
 
-class SystemStorageDefinition:
+class SystemStorageDefinition(object):
     '''
     Dagster stores run metadata and intermediate data on the user's behalf.
     The SystemStorageDefinition exists in order to configure and customize
@@ -59,7 +59,7 @@ class SystemStorageDefinition:
         )
 
 
-class SystemStorageData:
+class SystemStorageData(object):
     def __init__(self, intermediates_manager, file_manager):
         self.intermediates_manager = check.inst_param(
             intermediates_manager, 'intermediates_manager', IntermediatesManager
@@ -104,7 +104,7 @@ def system_storage(
     )
 
 
-class _SystemStorageDecoratorCallable:
+class _SystemStorageDecoratorCallable(object):
     def __init__(
         self, name=None, is_persistent=True, config_field=None, required_resource_keys=None
     ):

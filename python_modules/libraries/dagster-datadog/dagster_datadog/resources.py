@@ -3,7 +3,7 @@ from datadog import DogStatsd, initialize, statsd
 from dagster import Field, resource
 
 
-class DataDogResource:
+class DataDogResource(object):
     '''DataDogResource
 
     This resource is a thin wrapper over the dogstatsd library:

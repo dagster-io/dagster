@@ -29,7 +29,7 @@ from .errors import DagstermillError
 from .serialize import PICKLE_PROTOCOL, read_value, write_value
 
 
-class Manager:
+class Manager(object):
     def __init__(self):
         self.handle = None
         self.pipeline_def = None
