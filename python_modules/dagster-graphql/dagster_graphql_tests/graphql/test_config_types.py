@@ -4,12 +4,7 @@ from dagster import check
 from dagster.core.types.config import ALL_CONFIG_BUILTINS
 from dagster.utils import file_relative_path
 
-from .setup import (
-    ComplicatedConfigDict,
-    ComplicatedConfigInnerDict,
-    csv_hello_world_solids_config,
-    define_context,
-)
+from .setup import csv_hello_world_solids_config, define_context
 
 CONFIG_VALIDATION_QUERY = '''
 query PipelineQuery(
@@ -539,117 +534,91 @@ def test_smoke_test_config_type_system():
         assert has_config_type(config_types_data, builtin_config_type.name)
 
 
-RECURSIVE_FRAGMENT = '''
-fragment ConfigTypeInfoFragment on ConfigType {
+ALL_CONFIG_TYPES_QUERY = '''
+fragment configTypeFragment on ConfigType {
+  __typename
   key
   name
   description
-  isList
   isNullable
+  isList
   isSelector
   isBuiltin
   isSystemGenerated
   innerTypes {
     key
-  }
-  ... on CompositeConfigType {
-    fields {
-      name
-      description
-      isOptional
-      configType {
-        key
-      }
+    name
+    description
+    ... on CompositeConfigType {
+        fields {
+            name
+            isOptional
+            description
+        }
+    }
+    ... on WrappingConfigType {
+        ofType { key }
     }
   }
   ... on EnumConfigType {
-    name
     values {
       value
       description
     }
   }
+  ... on CompositeConfigType {
+    fields {
+      name
+      isOptional
+      description
+    }
+  }
+  ... on WrappingConfigType {
+    ofType { key }
+  }
 }
-'''
 
-
-ALL_CONFIG_TYPES_QUERY = (
-    RECURSIVE_FRAGMENT
-    + '''
 query allConfigTypes($pipelineName: String!, $mode: String!) {
   environmentSchemaOrError(selector: { name: $pipelineName }, mode: $mode ) {
     ... on EnvironmentSchema {
       allConfigTypes {
-        ...ConfigTypeInfoFragment
+        ...configTypeFragment
       }
     }
   }
 }
 '''
-)
 
-CONFIG_TYPE_QUERY = (
-    RECURSIVE_FRAGMENT
-    + '''
+CONFIG_TYPE_QUERY = '''
 query ConfigTypeQuery($pipelineName: String! $configTypeName: String! $mode: String!)
 {
-    environmentSchemaOrError(selector: { name: $pipelineName }, mode: $mode) { 
+    configTypeOrError(
+        pipelineName: $pipelineName
+        configTypeName: $configTypeName
+        mode: $mode
+    ) {
         __typename
-        ... on EnvironmentSchema {
-            configTypeOrError(configTypeName: $configTypeName) {
-                __typename
-                ... on ConfigType {
-                    ...ConfigTypeInfoFragment  
-                    innerTypes {
-                        ...ConfigTypeInfoFragment
-                    }
-                }
-                ... on ConfigTypeNotFoundError {
-                    pipeline { name }
-                    configTypeName
-                }
-
-            }
+        ... on RegularConfigType {
+            name
+        }
+        ... on CompositeConfigType {
+            name
+            innerTypes { key name }
+            fields { name configType { key name } }
+        }
+        ... on EnumConfigType {
+            name
         }
         ... on PipelineNotFoundError {
             pipelineName
         }
+        ... on ConfigTypeNotFoundError {
+            pipeline { name }
+            configTypeName
+        }
     }
 }
 '''
-)
-
-
-def _get_config_type_in_schema(result):
-    return result.data['environmentSchemaOrError']['configTypeOrError']
-
-
-def test_deeply_nested_dict():
-    config_type_name = '{pipeline_name}.SolidConfig.{solid_name}'.format(
-        pipeline_name='DeeplyNestedDictPipeline', solid_name='WithConfig'
-    )
-    config_type_name = 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
-    result = execute_dagster_graphql(
-        define_context(),
-        CONFIG_TYPE_QUERY,
-        {
-            'pipelineName': 'more_complicated_nested_config',
-            'configTypeName': config_type_name,
-            'mode': 'default',
-        },
-    )
-
-    config_type_result = _get_config_type_in_schema(result)
-    inner_type_keys = [ct['key'] for ct in config_type_result['innerTypes']]
-    expected_keys = [
-        'Int',  # only appears in the nested dict, still recurses down
-        'String',
-        'Optional.Int',
-        'List.Optional.Int',
-        ComplicatedConfigDict.inst().key,
-        ComplicatedConfigInnerDict.inst().key,
-    ]
-    assert sorted(inner_type_keys) == sorted(expected_keys)
 
 
 def test_config_type_or_error_query_success():
@@ -665,9 +634,8 @@ def test_config_type_or_error_query_success():
 
     assert not result.errors
     assert result.data
-    config_type_data = _get_config_type_in_schema(result)
-    assert config_type_data['__typename'] == 'CompositeConfigType'
-    assert config_type_data['name'] == 'CsvHelloWorld.Mode.Default.Environment'
+    assert result.data['configTypeOrError']['__typename'] == 'CompositeConfigType'
+    assert result.data['configTypeOrError']['name'] == 'CsvHelloWorld.Mode.Default.Environment'
 
 
 def test_config_type_or_error_pipeline_not_found():
@@ -679,8 +647,8 @@ def test_config_type_or_error_pipeline_not_found():
 
     assert not result.errors
     assert result.data
-    assert result.data['environmentSchemaOrError']['__typename'] == 'PipelineNotFoundError'
-    assert result.data['environmentSchemaOrError']['pipelineName'] == 'nope'
+    assert result.data['configTypeOrError']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['configTypeOrError']['pipelineName'] == 'nope'
 
 
 def test_config_type_or_error_type_not_found():
@@ -692,10 +660,9 @@ def test_config_type_or_error_type_not_found():
 
     assert not result.errors
     assert result.data
-    config_type_data = _get_config_type_in_schema(result)
-    assert config_type_data['__typename'] == 'ConfigTypeNotFoundError'
-    assert config_type_data['pipeline']['name'] == 'csv_hello_world'
-    assert config_type_data['configTypeName'] == 'nope'
+    assert result.data['configTypeOrError']['__typename'] == 'ConfigTypeNotFoundError'
+    assert result.data['configTypeOrError']['pipeline']['name'] == 'csv_hello_world'
+    assert result.data['configTypeOrError']['configTypeName'] == 'nope'
 
 
 def test_config_type_or_error_nested_complicated():
@@ -713,13 +680,12 @@ def test_config_type_or_error_nested_complicated():
 
     assert not result.errors
     assert result.data
-    config_type_data = result.data['environmentSchemaOrError']['configTypeOrError']
-    assert config_type_data['__typename'] == 'CompositeConfigType'
+    assert result.data['configTypeOrError']['__typename'] == 'CompositeConfigType'
     assert (
-        config_type_data['name']
+        result.data['configTypeOrError']['name']
         == 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
     )
-    assert len(config_type_data['innerTypes']) == 6
+    assert len(result.data['configTypeOrError']['innerTypes']) == 6
 
 
 def get_field_data(config_type_data, name):

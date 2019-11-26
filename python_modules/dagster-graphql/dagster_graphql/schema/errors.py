@@ -18,7 +18,7 @@ from dagster.core.types.evaluator.stack import (
 )
 from dagster.utils.error import SerializableErrorInfo
 
-from .config_types import to_dauphin_config_type, to_dauphin_config_type_field
+from .config_types import to_dauphin_config_type
 from .runs import DauphinStepEvent
 
 
@@ -211,7 +211,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 path=[],  # TODO: remove
                 stack=error.stack,
                 reason=error.reason,
-                field=to_dauphin_config_type_field(
+                field=graphene_info.schema.type_named('ConfigTypeField')(
                     name=error.error_data.field_name, field=error.error_data.field_def
                 ),
             )
@@ -222,7 +222,9 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 stack=error.stack,
                 reason=error.reason,
                 fields=[
-                    to_dauphin_config_type_field(name=field_name, field=field_def)
+                    graphene_info.schema.type_named('ConfigTypeField')(
+                        name=field_name, field=field_def
+                    )
                     for field_name, field_def in zip(
                         error.error_data.field_names, error.error_data.field_defs
                     )
@@ -348,8 +350,10 @@ class DauphinEvaluationStackPathEntry(dauphin.ObjectType):
 
     field = dauphin.NonNull('ConfigTypeField')
 
-    def resolve_field(self, _):
-        return to_dauphin_config_type_field(name=self._field_name, field=self._field_def)
+    def resolve_field(self, info):
+        return info.schema.type_named('ConfigTypeField')(
+            name=self._field_name, field=self._field_def
+        )  # pylint: disable=E1101
 
 
 class DauphinEvaluationStackEntry(dauphin.Union):
@@ -521,6 +525,7 @@ class DauphinConfigTypeOrError(dauphin.Union):
             'EnumConfigType',
             'CompositeConfigType',
             'RegularConfigType',
+            DauphinPipelineNotFoundError,
             DauphinConfigTypeNotFoundError,
             DauphinPythonError,
         )

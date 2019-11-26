@@ -6,6 +6,23 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
+snapshots['test_required_resources 1'] = {
+    'pipeline': {
+        'name': 'required_resource_pipeline',
+        'solids': [
+            {
+                'definition': {
+                    'requiredResources': [
+                        {
+                            'resourceKey': 'R1'
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}
+
 snapshots['test_mode_fetch_resources 1'] = {
     'pipeline': {
         '__typename': 'Pipeline',
@@ -65,23 +82,6 @@ snapshots['test_mode_fetch_resources 1'] = {
                         'name': 'op'
                     }
                 ]
-            }
-        ]
-    }
-}
-
-snapshots['test_required_resources 1'] = {
-    'pipeline': {
-        'name': 'required_resource_pipeline',
-        'solids': [
-            {
-                'definition': {
-                    'requiredResources': [
-                        {
-                            'resourceKey': 'R1'
-                        }
-                    ]
-                }
             }
         ]
     }

@@ -11,7 +11,7 @@ from dagster import (
     check,
 )
 
-from .config_types import to_dauphin_config_type, to_dauphin_config_type_field
+from .config_types import to_dauphin_config_type
 from .runtime_types import to_dauphin_runtime_type
 from .solids import DauphinSolidContainer, build_dauphin_solid_handles, build_dauphin_solids
 
@@ -126,9 +126,11 @@ class DauphinResource(dauphin.ObjectType):
     description = dauphin.String()
     configField = dauphin.Field('ConfigTypeField')
 
-    def resolve_configField(self, _):
+    def resolve_configField(self, graphene_info):
         return (
-            to_dauphin_config_type_field('config', self._resource.config_field)
+            graphene_info.schema.type_named('ConfigTypeField')(
+                name="config", field=self._resource.config_field
+            )
             if self._resource.config_field
             else None
         )
@@ -147,9 +149,11 @@ class DauphinLogger(dauphin.ObjectType):
     description = dauphin.String()
     configField = dauphin.Field('ConfigTypeField')
 
-    def resolve_configField(self, _):
+    def resolve_configField(self, graphene_info):
         return (
-            to_dauphin_config_type_field('config', self._logger.config_field)
+            graphene_info.schema.type_named('ConfigTypeField')(
+                name="config", field=self._logger.config_field
+            )
             if self._logger.config_field
             else None
         )
