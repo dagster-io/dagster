@@ -41,8 +41,8 @@ def _do_setup(name='dagster-dask'):
             'bokeh',
             'dagster',
             'dagster_graphql',
-            'dask==1.2.2',
-            'distributed==1.28.1',
+            'dask>=1.2.2',
+            'distributed>=1.28.1',
         ],
         zip_safe=False,
     )
