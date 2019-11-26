@@ -239,7 +239,6 @@ def validate_weather_dataframe(dataframe):
         'sunsetTime': {'bounds': [0, float('inf')], 'expected_dtypes': {'int64'}},
         'precipIntensity': {'bounds': [0, 1], 'expected_dtypes': {'float64'}},
         'precipIntensityMax': {'bounds': [0, 1], 'expected_dtypes': {'float64'}},
-        'precipIntensityMaxTime': {'bounds': [0, 1], 'expected_dtypes': {'float64'}},
         'precipProbability': {'bounds': [0, 1], 'expected_dtypes': {'float64'}},
         'temperatureHigh': {'bounds': [40, 100], 'expected_dtaypes': {'float64'}},
         'temperatureHighTime': {'bounds': [0, float('inf')], 'expected_dtypes': {'int64'}},

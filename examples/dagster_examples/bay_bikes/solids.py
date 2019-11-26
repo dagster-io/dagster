@@ -21,7 +21,6 @@ WEATHER_COLUMNS = [
     'sunsetTime',
     'precipIntensity',
     'precipIntensityMax',
-    'precipIntensityMaxTime',
     'precipProbability',
     'precipType',
     'temperatureHigh',
@@ -221,11 +220,26 @@ def preprocess_weather_dataset(_, dataframe: DataFrame) -> WeatherDataFrame:
     3. Convert precipType to a column that's more amenable to one hot encoding.
     '''
     dataframe = dataframe[WEATHER_COLUMNS].dropna(how='all').reindex()
+    # These are to address weird corner cases where columns are NA
+    # This fill is because the weather API fails to have a summary for certain types of clear days.
+    dataframe['summary'] = dataframe['summary'].fillna('Clear throughout the day.')
+    dataframe['icon'] = dataframe['icon'].fillna('clear-day')
+    # This happens frequently, I defaulted to the average.
+    dataframe['temperatureLow'] = dataframe['temperatureLow'].fillna(
+        dataframe.temperatureLow.mean()
+    )
+    # This happens frequently as well, I defaulted to the median since this is a time datatype
+    dataframe['temperatureLowTime'] = (
+        dataframe['temperatureLowTime']
+        .fillna(dataframe.temperatureLowTime.median())
+        .astype('int64')
+    )
+    # This happens frequently, the median felt like the appropriate statistic. Can change this over time.
+    dataframe['ozone'] = dataframe['ozone'].fillna(dataframe.ozone.median())
     dataframe['time'] = to_datetime(
         dataframe['time'].apply(lambda epoch_ts: strftime('%Y-%m-%d', gmtime(epoch_ts)))
     )
-    dataframe['ozone'] = dataframe['ozone'].fillna(0)
-    dataframe['did_rain'] = dataframe.precipType.apply(lambda x: x == 'rain')
+    dataframe['didRain'] = dataframe.precipType.apply(lambda x: x == 'rain')
     del dataframe['precipType']
     return WeatherDataFrame(dataframe)
 
