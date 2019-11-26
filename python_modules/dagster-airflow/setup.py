@@ -42,11 +42,10 @@ def _do_setup(name='dagster-airflow'):
         ],
         packages=find_packages(exclude=['dagster_airflow_tests']),
         install_requires=[
-            'six>=1.11.0',
+            'six',
             'dagster=={ver}'.format(ver=ver),
             'dagster-graphql=={ver}'.format(ver=ver),
-            # docker api
-            'docker==3.7.0',
+            'docker',
             'python-dateutil>=2.8.0',
         ],
         extras_require={'kubernetes': kubernetes},

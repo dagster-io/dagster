@@ -69,7 +69,7 @@ def _do_setup(name='dagster'):
             'gevent',
             'pyrsistent>=0.14.8',
             'rx<=1.6.1',  # 3.0 was a breaking change. No py2 compatability as well.
-            'six>=1.11.0',
+            'six',
             'sqlalchemy>=1.0',
             'typing; python_version<"3"',
             'backports.tempfile; python_version<"3"',

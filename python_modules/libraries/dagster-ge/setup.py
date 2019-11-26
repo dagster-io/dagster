@@ -39,13 +39,7 @@ def _do_setup(name='dagster-ge'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['dagster_ge_tests']),
-        install_requires=[
-            # standard python 2/3 compatability things
-            'enum-compat>=0.0.1',
-            'future>=0.16.0',
-            'dagster=={ver}'.format(ver=ver),
-            'great-expectations<=0.7.6',
-        ],
+        install_requires=['dagster=={ver}'.format(ver=ver), 'great-expectations<=0.7.6',],
     )
 
 

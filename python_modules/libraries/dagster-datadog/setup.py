@@ -37,8 +37,8 @@ def _do_setup(name='dagster-datadog'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster', 'datadog==0.28.*'],
-        tests_require=['mock==2.0.*'],
+        install_requires=['dagster', 'datadog'],
+        tests_require=['mock'],
         zip_safe=False,
     )
 
