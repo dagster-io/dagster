@@ -26,7 +26,7 @@ class DataFrameValidator:
                 )
             if ValidationTypes.CATEGORIES in mandatory_column_config:
                 valid_column_mask = dataframe[mandatory_column_name].isin(
-                    mandatory_column_config['catagories']
+                    mandatory_column_config[ValidationTypes.CATEGORIES]
                 )
                 valid_columns = dataframe.loc[valid_column_mask]
                 if len(dataframe) != len(valid_columns):
@@ -36,26 +36,27 @@ class DataFrameValidator:
                             'Dataframe column {column} expects the following buckets {valid_buckets}. '
                             'Found other values instead.'.format(
                                 column=mandatory_column_name,
-                                valid_buckets=mandatory_column_config['catagories'],
+                                valid_buckets=mandatory_column_config[ValidationTypes.CATEGORIES],
                             )
                         ),
                     )
             if ValidationTypes.EXPECTED_DTYPES in mandatory_column_config:
                 if (
                     str(dataframe[mandatory_column_name].dtype)
-                    not in mandatory_column_config['expected_dtypes']
+                    not in mandatory_column_config[ValidationTypes.EXPECTED_DTYPES]
                 ):
                     return TypeCheck(
                         success=False,
                         description='Dataframe column {column} expects {expected} dtypes. Got {received} instead'.format(
                             column=mandatory_column_name,
-                            expected=str(mandatory_column_config['expected_dtypes']),
+                            expected=str(mandatory_column_config[ValidationTypes.EXPECTED_DTYPES]),
                             received=dataframe[mandatory_column_name].dtype,
                         ),
                     )
             if ValidationTypes.BOUNDS in mandatory_column_config:
                 bounds_mask = dataframe[mandatory_column_name].between(
-                    mandatory_column_config['bounds'][0], mandatory_column_config['bounds'][1]
+                    mandatory_column_config[ValidationTypes.BOUNDS][0],
+                    mandatory_column_config[ValidationTypes.BOUNDS][1],
                 )
                 out_of_bounds_records = dataframe[mandatory_column_name][~bounds_mask]
                 if len(out_of_bounds_records) > 0:
@@ -185,7 +186,7 @@ def validate_weather_dataframe(dataframe):
     WEATHER_CONFIG = {
         'time': {
             'bounds': (Timestamp(year=2018, month=1, day=1), Timestamp(year=2020, month=1, day=1)),
-            'expected_dtypes': {'<M8[ns]'},
+            'expected_dtypes': {'<M8[ns]', 'datetime64[ns]'},
             'no_duplicates': None,
         },
         'summary': {
