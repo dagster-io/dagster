@@ -4,7 +4,7 @@ import six
 
 from dagster import check
 from dagster.core.definitions.config import ConfigMappingContext
-from dagster.core.definitions.environment_configs import is_solid_container_config
+from dagster.core.definitions.environment_configs import is_solid_container_config, is_solid_dict
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.solid import CompositeSolidDefinition
 from dagster.core.execution.config import IRunConfig, RunConfig
@@ -195,13 +195,20 @@ def evaluate_composite_config(context):
     for key, field_def in fields.items():
         if key in incoming_fields:
             evaluate_value_result = _evaluate_config(
-                context.for_field(field_def, key, context.config_value[key])
+                context.for_field(field_def, key, context.config_value.get(key, {}))
             )
             if evaluate_value_result.errors:
                 errors += evaluate_value_result.errors
             else:
                 output_config_value[key] = evaluate_value_result.value
-
+        elif is_solid_dict(field_def.config_type) and context.config_value is not None:
+            evaluate_value_result = _evaluate_config(
+                context.for_field(field_def, key, context.config_value.get(key, {}))
+            )
+            if evaluate_value_result.errors:
+                missing_fields.append(key)
+            else:
+                output_config_value[key] = evaluate_value_result.value
         elif field_def.is_optional:
             # Try to see if this is a composite solid
             speculative_composite_solid_result = _evaluate_composite_solid_config(

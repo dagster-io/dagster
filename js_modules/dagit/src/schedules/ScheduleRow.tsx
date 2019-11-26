@@ -17,11 +17,7 @@ import {
 } from "@blueprintjs/core";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { RowColumn, RowContainer } from "../ListComponents";
-import {
-  RunStatus,
-  titleForRun,
-  unixTimestampToString
-} from "../runs/RunUtils";
+import { RunStatus, titleForRun } from "../runs/RunUtils";
 import {
   ScheduleFragment,
   ScheduleFragment_runs
@@ -32,7 +28,7 @@ import cronstrue from "cronstrue";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components";
-import { copyValue } from "../Util";
+import { copyValue, unixTimestampToString } from "../Util";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 

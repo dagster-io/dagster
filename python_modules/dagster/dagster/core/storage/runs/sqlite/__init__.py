@@ -1,6 +1,6 @@
 from .sqlite_run_storage import (
-    RunStorageSQLMetadata,
-    SQLRunStorage,
+    RunStorageSqlMetadata,
+    SqlRunStorage,
     SqliteRunStorage,
     create_engine,
 )

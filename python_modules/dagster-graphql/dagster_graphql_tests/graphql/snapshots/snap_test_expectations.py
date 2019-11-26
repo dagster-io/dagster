@@ -6,41 +6,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_basic_input_output_expectations 1'] = [
-    {
-        '__typename': 'StepExpectationResultEvent',
-        'expectationResult': {
-            'description': None,
-            'label': 'some_expectation',
-            'metadataEntries': [
-            ],
-            'success': True
-        },
-        'level': 'DEBUG',
-        'message': 'Expectation some_expectation passed',
-        'step': {
-            'key': 'df_expectations_solid.compute',
-            'solidHandleID': 'df_expectations_solid'
-        }
-    },
-    {
-        '__typename': 'StepExpectationResultEvent',
-        'expectationResult': {
-            'description': None,
-            'label': 'other_expecation',
-            'metadataEntries': [
-            ],
-            'success': True
-        },
-        'level': 'DEBUG',
-        'message': 'Expectation other_expecation passed',
-        'step': {
-            'key': 'df_expectations_solid.compute',
-            'solidHandleID': 'df_expectations_solid'
-        }
-    }
-]
-
 snapshots['test_basic_expectations_within_compute_step_events 1'] = [
     {
         '__typename': 'StepExpectationResultEvent',
@@ -104,6 +69,41 @@ snapshots['test_basic_expectations_within_compute_step_events 3'] = [
         'step': {
             'key': 'emit_successful_expectation_no_metadata.compute',
             'solidHandleID': 'emit_successful_expectation_no_metadata'
+        }
+    }
+]
+
+snapshots['test_basic_input_output_expectations 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'some_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation some_expectation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
+    },
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'other_expecation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation other_expecation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
         }
     }
 ]

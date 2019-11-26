@@ -8,7 +8,8 @@ from other workflow systems to facilitate operating at a higher level of abstrac
 Solid
 ^^^^^
 
-.. thumbnail:: solid.png
+.. image:: solid.png
+    :scale: 40 %
     :align: center
 
 A solid is a functional unit of computation with defined inputs and outputs. Solids can be strung
@@ -35,7 +36,8 @@ solids and how they can be used.
 Compute Function
 ^^^^^^^^^^^^^^^^
 
-.. thumbnail:: compute_fn.png
+.. image:: compute_fn.png
+    :scale: 40 %
     :align: center
 
 The user-supplied function which forms the heart of a solid definition. The compute functions are
@@ -46,7 +48,8 @@ solid is invoked by the Dagster engine.
 Outputs
 ^^^^^^^
 
-.. thumbnail:: outputs.png
+.. image:: outputs.png
+    :scale: 40 %
     :align: center
 
 An output is how a solid's compute function communicates the name and value of an output to Dagster.
@@ -80,7 +83,8 @@ to just return a value instead of yielding it, and will automatically wrap the r
 Pipelines & DAGs
 ^^^^^^^^^^^^^^^^
 
-.. thumbnail:: pipeline.png
+.. image:: pipeline.png
+    :scale: 40 %
     :align: center
 
 DAG is short for `directed acyclic graph`. In this context, we are concerned with graphs where the
@@ -114,7 +118,8 @@ you can combine resources and modes in pipeline execution.
 Dependencies
 ^^^^^^^^^^^^
 
-.. thumbnail:: dependency.png
+.. image:: dependency.png
+    :scale: 40 %
     :align: center
 
 Solids are linked together into `pipelines <#pipeline>`__ by defining the dependencies between
@@ -132,7 +137,8 @@ dependencies.
 Resources
 ^^^^^^^^^
 
-.. thumbnail:: resource.png
+.. image:: resource.png
+    :scale: 40 %
     :align: center
 
 Resources are pipeline-scoped, and are typically used to expose features of the execution
@@ -144,7 +150,8 @@ They are typically defined using the :func:`@resource <dagster.resource>` decora
 Repository
 ^^^^^^^^^^
 
-.. thumbnail:: repository.png
+.. image:: repository.png
+    :scale: 40 %
     :align: center
 
 A repository is a collection of pipelines that can be made available to the Dagit UI and other
@@ -156,7 +163,8 @@ repository definition.
 Composite Solids
 ^^^^^^^^^^^^^^^^
 
-.. thumbnail:: composites.png
+.. image:: composites.png
+    :scale: 40 %
     :align: center
 
 To help manage the level of complexity that data applications tend to reach, dagster provides a unit

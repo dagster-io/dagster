@@ -1,14 +1,46 @@
 import json
 import os
 import zipfile
+from datetime import timedelta
+from time import gmtime, strftime
 from typing import List
 
-import pandas as pd
 import requests
+from dagster_examples.bay_bikes.types import TrafficDataFrame, TripDataFrame, WeatherDataFrame
+from pandas import DataFrame, concat, date_range, read_csv, to_datetime
 
-from dagster import Field, Float, Int, String, solid
+from dagster import Field, Float, Int, String, composite_solid, solid
 
 DARK_SKY_BASE_URL = 'https://api.darksky.net/forecast'
+
+WEATHER_COLUMNS = [
+    'time',
+    'summary',
+    'icon',
+    'sunriseTime',
+    'sunsetTime',
+    'precipIntensity',
+    'precipIntensityMax',
+    'precipIntensityMaxTime',
+    'precipProbability',
+    'precipType',
+    'temperatureHigh',
+    'temperatureHighTime',
+    'temperatureLow',
+    'temperatureLowTime',
+    'dewPoint',
+    'humidity',
+    'pressure',
+    'windSpeed',
+    'windGust',
+    'windGustTime',
+    'windBearing',
+    'cloudCover',
+    'uvIndex',
+    'uvIndexTime',
+    'visibility',
+    'ozone',
+]
 
 
 def _write_chunks_to_fp(response, output_fp, chunk_size):
@@ -84,9 +116,9 @@ def consolidate_csv_files(
     if not os.path.exists(csv_file_location):
         os.mkdir(csv_file_location)
     # There must be a header in all of these dataframes or pandas won't know how to concatinate dataframes.
-    dataset = pd.concat(
+    dataset = concat(
         [
-            pd.read_csv(
+            read_csv(
                 os.path.join(csv_file_location, file_name),
                 sep=context.solid_config['delimiter'],
                 header=0,
@@ -101,6 +133,15 @@ def consolidate_csv_files(
 @solid(required_resource_keys={'transporter'})
 def upload_file_to_bucket(context, path_to_file: str, key: str):
     context.resources.transporter.upload_file_to_bucket(path_to_file, key)
+
+
+@solid(required_resource_keys={'transporter', 'volume'})
+def download_csv_from_bucket_and_return_dataframe(
+    context, key: str, path_to_file: str
+) -> DataFrame:
+    target_csv_location = os.path.join(context.resources.volume, path_to_file)
+    context.resources.transporter.download_file_from_bucket(key, target_csv_location)
+    return read_csv(target_csv_location)
 
 
 @solid(
@@ -145,5 +186,88 @@ def download_weather_report_from_weather_api(context, date_file_name: str) -> st
         response.raise_for_status()
         weather_report.append(response.json()['daily']['data'][0])
     csv_target = os.path.join(context.resources.volume, context.solid_config['csv_name'])
-    pd.DataFrame(weather_report).to_csv(csv_target)
+    DataFrame(weather_report).to_csv(csv_target)
     return csv_target
+
+
+@solid
+def preprocess_trip_dataset(_, dataframe: DataFrame) -> TripDataFrame:
+    dataframe = dataframe[['bike_id', 'start_time', 'end_time']].dropna(how='all').reindex()
+    dataframe['bike_id'] = dataframe['bike_id'].astype('int64')
+    dataframe['start_time'] = to_datetime(dataframe['start_time'])
+    dataframe['end_time'] = to_datetime(dataframe['end_time'])
+    dataframe['interval_date'] = dataframe['start_time'].apply(lambda x: x.date())
+    return TripDataFrame(dataframe)
+
+
+@composite_solid
+def produce_trip_dataset() -> TripDataFrame:
+    download_trips_dataset = download_csv_from_bucket_and_return_dataframe.alias(
+        'download_trips_dataset'
+    )
+    return preprocess_trip_dataset(download_trips_dataset())
+
+
+@solid
+def preprocess_weather_dataset(_, dataframe: DataFrame) -> WeatherDataFrame:
+    '''
+    Steps:
+
+    1. Converts time columns to match the date types in the traffic dataset so
+    that we can join effectively.
+
+    2. Fills N/A values in ozone, so that we have the right datatypes.
+
+    3. Convert precipType to a column that's more amenable to one hot encoding.
+    '''
+    dataframe = dataframe[WEATHER_COLUMNS].dropna(how='all').reindex()
+    dataframe['time'] = to_datetime(
+        dataframe['time'].apply(lambda epoch_ts: strftime('%Y-%m-%d', gmtime(epoch_ts)))
+    )
+    dataframe['ozone'] = dataframe['ozone'].fillna(0)
+    dataframe['did_rain'] = dataframe.precipType.apply(lambda x: x == 'rain')
+    del dataframe['precipType']
+    return WeatherDataFrame(dataframe)
+
+
+@composite_solid
+def produce_weather_dataset() -> WeatherDataFrame:
+    download_weather_dataset = download_csv_from_bucket_and_return_dataframe.alias(
+        'download_weather_dataset'
+    )
+    return preprocess_weather_dataset(download_weather_dataset())
+
+
+@solid
+def transform_into_traffic_dataset(_, trip_dataset: TripDataFrame) -> TrafficDataFrame:
+    def max_traffic_load(trips):
+        interval_count = {
+            start_interval: 0 for start_interval in date_range(trips.name, periods=24, freq='h')
+        }
+        for interval in interval_count.keys():
+            upper_bound_interval = interval + timedelta(hours=1)
+            # Count number of bikes in transit during sample interval
+            interval_count[interval] = len(
+                trips[
+                    (
+                        (  # Select trip if the trip started within the sample interval
+                            (interval <= trips['start_time'])
+                            & (trips['start_time'] < upper_bound_interval)
+                        )
+                        | (  # Select trip if the trip ended within the sample interval
+                            (interval <= trips['end_time'])
+                            & (trips['end_time'] < upper_bound_interval)
+                        )
+                        | (  # Select trip if the trip started AND ended outside of the interval
+                            (trips['start_time'] < interval)
+                            & (trips['end_time'] >= upper_bound_interval)
+                        )
+                    )
+                ]
+            )
+        return max(interval_count.values())
+
+    counts = trip_dataset.groupby(['interval_date']).apply(max_traffic_load)
+    traffic_dataset = DataFrame(counts).reset_index()
+    traffic_dataset.columns = ['interval_date', 'peak_traffic_load']
+    return TrafficDataFrame(traffic_dataset)

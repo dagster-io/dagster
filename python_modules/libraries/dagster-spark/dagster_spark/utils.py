@@ -17,7 +17,8 @@ def flatten_dict(d):
                 result.append(('.'.join(new_key_path), v))
 
     result = []
-    _flatten_dict(d, result)
+    if d is not None:
+        _flatten_dict(d, result)
     return result
 
 
@@ -28,6 +29,10 @@ def parse_spark_config(spark_conf):
     '''
 
     spark_conf_list = flatten_dict(spark_conf)
+    return format_for_cli(spark_conf_list)
+
+
+def format_for_cli(spark_conf_list):
     return list(
         itertools.chain.from_iterable([('--conf', '{}={}'.format(*c)) for c in spark_conf_list])
     )

@@ -11,6 +11,9 @@ from .solids import (
     consolidate_csv_files,
     download_weather_report_from_weather_api,
     download_zipfiles_from_urls,
+    produce_trip_dataset,
+    produce_weather_dataset,
+    transform_into_traffic_dataset,
     unzip_files,
     upload_file_to_bucket,
 )
@@ -92,3 +95,38 @@ def extract_monthly_bay_bike_pipeline():
 def extract_daily_weather_data_pipeline():
     upload_weather_report = upload_file_to_bucket.alias('upload_weather_report')
     upload_weather_report(download_weather_report_from_weather_api())
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            name='local',
+            resource_defs={'transporter': local_transporter, 'volume': temporary_directory_mount},
+        ),
+        ModeDefinition(
+            name='production',
+            resource_defs={'transporter': production_transporter, 'volume': mount},
+        ),
+    ],
+    preset_defs=[
+        PresetDefinition.from_files(
+            'dev',
+            mode='local',
+            environment_files=[
+                file_relative_path(__file__, 'environments/feature_transformation_base.yaml'),
+                file_relative_path(__file__, 'environments/feature_transformation_dev.yaml'),
+            ],
+        ),
+        PresetDefinition.from_files(
+            'production',
+            mode='production',
+            environment_files=[
+                file_relative_path(__file__, 'environments/feature_transformation_base.yaml'),
+                file_relative_path(__file__, 'environments/feature_transformation_production.yaml'),
+            ],
+        ),
+    ],
+)
+def feature_transformation_pipeline():
+    transform_into_traffic_dataset(produce_trip_dataset())
+    produce_weather_dataset()

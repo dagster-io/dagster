@@ -14,6 +14,7 @@ from dagster.core.definitions import (
     SolidOutputHandle,
 )
 
+from .config_types import to_dauphin_config_type_field
 from .runtime_types import to_dauphin_runtime_type
 
 
@@ -137,11 +138,9 @@ class DauphinSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
         )
         ISolidDefinitionMixin.__init__(self, solid_def)
 
-    def resolve_config_field(self, graphene_info):
+    def resolve_config_field(self, _):
         return (
-            graphene_info.schema.type_named('ConfigTypeField')(
-                name="config", field=self._solid_def.config_field
-            )
+            to_dauphin_config_type_field('config', self._solid_def.config_field)
             if self._solid_def.config_field
             else None
         )

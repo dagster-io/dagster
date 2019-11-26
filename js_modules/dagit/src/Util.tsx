@@ -37,6 +37,13 @@ export async function copyValue(event: React.MouseEvent<any>, value: string) {
   });
 }
 
+export function unixTimestampToString(unix: number | null) {
+  if (!unix) {
+    return null;
+  }
+  return new Date(unix * 1000).toLocaleString();
+}
+
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait = 100

@@ -337,9 +337,11 @@ def parse_captured_results(captured_results):
 
 
 def test_execute_multi_mode_loggers_with_single_logger():
-    pipeline_def, foo_logger_captured_results, bar_logger_captured_results = (
-        define_multi_mode_with_loggers_pipeline()
-    )
+    (
+        pipeline_def,
+        foo_logger_captured_results,
+        bar_logger_captured_results,
+    ) = define_multi_mode_with_loggers_pipeline()
 
     execute_pipeline(
         pipeline_def,
@@ -370,9 +372,11 @@ def test_execute_multi_mode_loggers_with_single_logger_extra_config():
 
 
 def test_execute_multi_mode_loggers_with_multiple_loggers():
-    pipeline_def, foo_logger_captured_results, bar_logger_captured_results = (
-        define_multi_mode_with_loggers_pipeline()
-    )
+    (
+        pipeline_def,
+        foo_logger_captured_results,
+        bar_logger_captured_results,
+    ) = define_multi_mode_with_loggers_pipeline()
 
     execute_pipeline(
         pipeline_def,
@@ -395,9 +399,11 @@ def test_execute_multi_mode_loggers_with_multiple_loggers():
 
 
 def test_execute_multi_mode_loggers_with_multiple_loggers_single_config():
-    pipeline_def, foo_logger_captured_results, bar_logger_captured_results = (
-        define_multi_mode_with_loggers_pipeline()
-    )
+    (
+        pipeline_def,
+        foo_logger_captured_results,
+        bar_logger_captured_results,
+    ) = define_multi_mode_with_loggers_pipeline()
 
     execute_pipeline(
         pipeline_def,

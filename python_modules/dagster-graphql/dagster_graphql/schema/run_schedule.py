@@ -7,7 +7,10 @@ import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_schedules import get_dagster_schedule_def
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
-from dagster_graphql.schema.errors import DauphinSchedulerNotDefinedError
+from dagster_graphql.schema.errors import (
+    DauphinScheduleNotFoundError,
+    DauphinSchedulerNotDefinedError,
+)
 
 from dagster import check, seven
 from dagster.core.definitions import ScheduleDefinition
@@ -28,6 +31,19 @@ def get_scheduler_or_error(graphene_info):
     return graphene_info.schema.type_named('Scheduler')(runningSchedules=runningSchedules)
 
 
+@capture_dauphin_error
+def get_schedule_or_error(graphene_info, schedule_name):
+    scheduler = graphene_info.context.get_scheduler()
+    schedule = scheduler.get_schedule_by_name(schedule_name)
+
+    if not schedule:
+        raise UserFacingGraphQLError(
+            graphene_info.schema.type_named('ScheduleNotFoundError')(schedule_name=schedule_name)
+        )
+
+    return graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=schedule)
+
+
 class DauphinScheduleStatus(dauphin.Enum):
     class Meta:
         name = 'ScheduleStatus'
@@ -41,6 +57,12 @@ class DauphinSchedulerOrError(dauphin.Union):
     class Meta:
         name = 'SchedulerOrError'
         types = ('Scheduler', DauphinSchedulerNotDefinedError, 'PythonError')
+
+
+class DauphinScheduleOrError(dauphin.Union):
+    class Meta:
+        name = 'ScheduleOrError'
+        types = ('RunningSchedule', DauphinScheduleNotFoundError, 'PythonError')
 
 
 class DauphinScheduleDefinition(dauphin.ObjectType):
@@ -89,7 +111,7 @@ class DauphinScheduleAttempt(dauphin.ObjectType):
     class Meta:
         name = 'ScheduleAttempt'
 
-    time = dauphin.NonNull(dauphin.String)
+    time = dauphin.NonNull(dauphin.Float)
     json_result = dauphin.NonNull(dauphin.String)
     status = dauphin.NonNull('ScheduleAttemptStatus')
     run = dauphin.Field('PipelineRun')
@@ -129,6 +151,8 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         log_dir = scheduler.log_path_for_schedule(self._schedule.name)
 
         results = glob.glob(os.path.join(log_dir, "*.result"))
+        if limit is None:
+            limit = len(results)
         latest_results = heapq.nlargest(limit, results, key=os.path.getctime)
 
         attempts = []
@@ -158,7 +182,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
 
                 attempts.append(
                     graphene_info.schema.type_named('ScheduleAttempt')(
-                        time=os.path.getctime,
+                        time=os.path.getctime(result_path),
                         json_result=json.dumps(json_result),
                         status=status,
                         run=run,
