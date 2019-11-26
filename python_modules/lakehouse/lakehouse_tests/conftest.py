@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from dagster_pyspark import spark_session_resource
+from dagster_pyspark import pyspark_resource
 from lakehouse import Lakehouse, construct_lakehouse_pipeline
 
 from dagster import Materialization, check, execute_pipeline
@@ -16,7 +16,7 @@ class LocalOnDiskSparkCsvLakehouse(Lakehouse):
 
     def hydrate(self, context, table_type, _table_metadata, _table_handle, _dest_metadata):
         path = self._path_for_table(table_type)
-        return context.resources.spark.read.csv(path, header=True, inferSchema=True)
+        return context.resources.spark.spark_session.read.csv(path, header=True, inferSchema=True)
 
     def materialize(self, _context, table_type, _table_metadata, value):
         path = self._path_for_table(table_type)
@@ -36,7 +36,7 @@ def execute_spark_lakehouse_build():
             construct_lakehouse_pipeline(
                 name='spark_lakehouse_pipeline',
                 lakehouse_tables=tables,
-                resources={'lakehouse': lakehouse, 'spark': spark_session_resource},
+                resources={'lakehouse': lakehouse, 'spark': pyspark_resource},
             ),
             environment_dict=environment_dict,
         )

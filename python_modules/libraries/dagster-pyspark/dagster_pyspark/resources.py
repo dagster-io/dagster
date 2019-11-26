@@ -50,12 +50,3 @@ def pyspark_resource(init_context):
         yield pyspark
     finally:
         pyspark.stop()
-
-
-@resource({'spark_conf': spark_config()})
-def spark_session_resource(init_context):
-    spark = spark_session_from_config(init_context.resource_config['spark_conf'])
-    try:
-        yield spark
-    finally:
-        spark.stop()

@@ -2,7 +2,7 @@ import os
 import sys
 from datetime import datetime
 
-from dagster_pyspark import spark_session_resource
+from dagster_pyspark import pyspark_resource
 from lakehouse import (
     InMemTableHandle,
     Lakehouse,
@@ -109,7 +109,9 @@ NUMBER_TABLE_STRUCT_TYPE = spark_type_from_kwargs(id=int, number=int)
 
 @typed_pyspark_table(spark_type=NUMBER_TABLE_STRUCT_TYPE)
 def NumberTable(context) -> SparkDF:
-    return context.resources.spark.createDataFrame([Row(id=1, number=2)], NUMBER_TABLE_STRUCT_TYPE)
+    return context.resources.spark.spark_session.createDataFrame(
+        [Row(id=1, number=2)], NUMBER_TABLE_STRUCT_TYPE
+    )
 
 
 STRING_TABLE_STRUCT_TYPE = spark_type_from_kwargs(id=int, string=str)
@@ -117,7 +119,7 @@ STRING_TABLE_STRUCT_TYPE = spark_type_from_kwargs(id=int, string=str)
 
 @typed_pyspark_table(spark_type=STRING_TABLE_STRUCT_TYPE)
 def StringTable(context) -> SparkDF:
-    return context.resources.spark.createDataFrame(
+    return context.resources.spark.spark_session.createDataFrame(
         [Row(id=1, string='23')], STRING_TABLE_STRUCT_TYPE
     )
 
@@ -152,5 +154,5 @@ def test_execute_typed_in_mem_lakehouse(execute_spark_lakehouse_build):
 typed_lakehouse_pipeline = construct_lakehouse_pipeline(
     name='typed_lakehouse_pipeline',
     lakehouse_tables=[NumberTable, StringTable, JoinTable],
-    resources={'lakehouse': typed_pyspark_mem_lakehouse, 'spark': spark_session_resource},
+    resources={'lakehouse': typed_pyspark_mem_lakehouse, 'spark': pyspark_resource},
 )

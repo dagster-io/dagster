@@ -20,12 +20,7 @@ from dagster.core.types import Selector, input_selector_schema, output_selector_
 from dagster.core.types.runtime import define_any_type
 
 from .decorators import pyspark_solid
-from .resources import (
-    PySparkResourceDefinition,
-    pyspark_resource,
-    spark_session_from_config,
-    spark_session_resource,
-)
+from .resources import PySparkResourceDefinition, pyspark_resource, spark_session_from_config
 
 
 @input_selector_schema(
@@ -45,7 +40,7 @@ from .resources import (
 )
 def load_rdd(context, file_type, file_options):
     if file_type == 'csv':
-        return context.resources.spark.read.csv(
+        return context.resources.spark.spark_session.read.csv(
             file_options['path'], sep=file_options.get('sep')
         ).rdd
     else:
@@ -69,7 +64,7 @@ def load_rdd(context, file_type, file_options):
 )
 def write_rdd(context, file_type, file_options, spark_rdd):
     if file_type == 'csv':
-        df = context.resources.spark.createDataFrame(spark_rdd)
+        df = context.resources.spark.spark_session.createDataFrame(spark_rdd)
         context.log.info('DF: {}'.format(df))
         df.write.csv(
             file_options['path'], header=file_options.get('header'), sep=file_options.get('sep')
@@ -126,7 +121,7 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
 
     @classmethod
     def get_object(cls, intermediate_store, context, _runtime_type, paths):
-        return context.resources.spark.read.parquet(
+        return context.resources.spark.spark_session.read.parquet(
             intermediate_store.uri_for_paths(paths, protocol='s3a://')
         )
 
@@ -144,7 +139,9 @@ class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disab
 
     @classmethod
     def get_object(cls, intermediate_store, context, _runtime_type, paths):
-        return context.resources.spark.read.parquet(os.path.join(intermediate_store.root, *paths))
+        return context.resources.spark.spark_session.read.parquet(
+            os.path.join(intermediate_store.root, *paths)
+        )
 
 
 DataFrame = as_dagster_type(

@@ -25,7 +25,7 @@ from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 from .test_solids import spark_mode
 
 
-def test_spark_data_frame_serialization_file_system_file_handle():
+def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
     @solid
     def nonce(_):
         return LocalFileHandle(file_relative_path(__file__, 'data/test.csv'))
@@ -44,7 +44,10 @@ def test_spark_data_frame_serialization_file_system_file_handle():
     result = execute_pipeline(
         spark_df_test_pipeline,
         run_config=RunConfig(run_id=run_id, mode='spark'),
-        environment_dict={'storage': {'filesystem': {}}},
+        environment_dict={
+            'storage': {'filesystem': {}},
+            'resources': {'spark': {'config': {'spark_conf': spark_config}}},
+        },
         instance=instance,
     )
 
@@ -58,14 +61,13 @@ def test_spark_data_frame_serialization_file_system_file_handle():
 
     assert '_SUCCESS' in os.listdir(result_dir)
 
-    spark = spark_mode.resource_defs['spark'].resource_fn(None)
-
+    spark = SparkSession.builder.getOrCreate()
     df = spark.read.parquet(result_dir)
     assert isinstance(df, pyspark.sql.dataframe.DataFrame)
     assert df.head()[0] == '1'
 
 
-def test_spark_data_frame_serialization_s3_file_handle(s3_bucket):
+def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
     @solid
     def nonce(context):
         with open(os.path.join(os.path.dirname(__file__), 'data/test.csv'), 'rb') as fd:
@@ -82,7 +84,10 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket):
 
     result = execute_pipeline(
         spark_df_test_pipeline,
-        environment_dict={'storage': {'s3': {'config': {'s3_bucket': s3_bucket}}}},
+        environment_dict={
+            'storage': {'s3': {'config': {'s3_bucket': s3_bucket}}},
+            'resources': {'spark': {'config': {'spark_conf': spark_config}}},
+        },
         run_config=RunConfig(run_id=run_id, mode='spark'),
     )
 
@@ -136,7 +141,7 @@ def test_spark_dataframe_output_csv():
                     'passthrough_df': {
                         'outputs': [{'result': {'csv': {'path': file_name, 'header': True}}}]
                     }
-                }
+                },
             },
         )
 

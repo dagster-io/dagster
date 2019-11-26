@@ -1,5 +1,3 @@
-from pyspark.sql import SparkSession
-
 from dagster import Field, resource
 
 from .types import DbInfo
@@ -9,26 +7,6 @@ from .utils import (
     create_redshift_db_url,
     create_redshift_engine,
 )
-
-
-@resource
-def spark_session_local(_init_context):
-    # Need two versions of this, one for test/local and one with a
-    # configurable cluster
-    spark = (
-        SparkSession.builder.appName("AirlineDemo")
-        .config(
-            'spark.jars.packages',
-            'com.databricks:spark-avro_2.11:3.0.0,'
-            'com.databricks:spark-redshift_2.11:2.0.1,'
-            'com.databricks:spark-csv_2.11:1.5.0,'
-            'org.postgresql:postgresql:42.2.5,'
-            'org.apache.hadoop:hadoop-aws:2.6.5,'
-            'com.amazonaws:aws-java-sdk:1.7.4',
-        )
-        .getOrCreate()
-    )
-    return spark
 
 
 @resource(

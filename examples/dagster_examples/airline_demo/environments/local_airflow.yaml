@@ -1,3 +1,4 @@
 storage:
   s3:
-    s3_bucket: dagster-scratch-80542c2
+    config:
+      s3_bucket: dagster-scratch-80542c2

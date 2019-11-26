@@ -22,6 +22,12 @@ snapshots['test_presets_on_examples 1'] = {
   file_cache:
     config:
       target_folder: /tmp/dagster/airline_data/file_cache
+  spark:
+    config:
+      spark_conf:
+        spark:
+          jars:
+            packages: com.databricks:spark-avro_2.11:3.0.0,com.databricks:spark-redshift_2.11:2.0.1,com.databricks:spark-csv_2.11:1.5.0,org.postgresql:postgresql:42.2.5,org.apache.hadoop:hadoop-aws:2.6.5,com.amazonaws:aws-java-sdk:1.7.4
 solids:
   april_on_time_s3_to_df:
     inputs:
@@ -112,6 +118,12 @@ solids:
   file_cache:
     config:
       target_folder: /tmp/dagster/airline_data/file_cache
+  spark:
+    config:
+      spark_conf:
+        spark:
+          jars:
+            packages: com.databricks:spark-avro_2.11:3.0.0,com.databricks:spark-redshift_2.11:2.0.1,com.databricks:spark-csv_2.11:1.5.0,org.postgresql:postgresql:42.2.5,org.apache.hadoop:hadoop-aws:2.6.5,com.amazonaws:aws-java-sdk:1.7.4
 solids:
   process_on_time_data:
     solids:
@@ -229,6 +241,12 @@ snapshots['test_presets_on_examples 2'] = {
   file_cache:
     config:
       target_folder: /tmp/dagster/airline_data/file_cache
+  spark:
+    config:
+      spark_conf:
+        spark:
+          jars:
+            packages: com.databricks:spark-avro_2.11:3.0.0,com.databricks:spark-redshift_2.11:2.0.1,com.databricks:spark-csv_2.11:1.5.0,org.postgresql:postgresql:42.2.5,org.apache.hadoop:hadoop-aws:2.6.5,com.amazonaws:aws-java-sdk:1.7.4
 solids:
   process_delays_by_geo:
     solids:

@@ -1,7 +1,7 @@
 import re
 from operator import add
 
-from dagster_pyspark import spark_session_resource
+from dagster_pyspark import pyspark_resource
 
 from dagster import InputDefinition, ModeDefinition, Path, pipeline, solid
 
@@ -22,7 +22,7 @@ def parseNeighbors(urls):
 @solid(input_defs=[InputDefinition('pagerank_data', Path)])
 def whole_pipeline_solid_using_context(context, pagerank_data):
     # two urls per line with space in between)
-    lines = context.resources.spark.read.text(pagerank_data).rdd.map(lambda r: r[0])
+    lines = context.resources.spark.spark_session.read.text(pagerank_data).rdd.map(lambda r: r[0])
 
     # Loads all URLs from input file and initialize their neighbors.
     links = lines.map(parseNeighbors).distinct().groupByKey().cache()
@@ -49,6 +49,6 @@ def whole_pipeline_solid_using_context(context, pagerank_data):
     return ranks.collect()
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={'spark': spark_session_resource})])
+@pipeline(mode_defs=[ModeDefinition(resource_defs={'spark': pyspark_resource})])
 def pyspark_pagerank_step_three():
     whole_pipeline_solid_using_context()

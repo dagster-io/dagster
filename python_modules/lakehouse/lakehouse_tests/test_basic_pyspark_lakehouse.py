@@ -13,12 +13,12 @@ from dagster.utils.temp_file import get_temp_dir
 
 @pyspark_table(other_input_defs=[InputDefinition('num', int)])
 def TableOne(context, num) -> SparkDF:
-    return context.resources.spark.createDataFrame([Row(num=num)])
+    return context.resources.spark.spark_session.createDataFrame([Row(num=num)])
 
 
 @pyspark_table
 def TableTwo(context) -> SparkDF:
-    return context.resources.spark.createDataFrame([Row(num=2)])
+    return context.resources.spark.spark_session.createDataFrame([Row(num=2)])
 
 
 @pyspark_table(
