@@ -176,9 +176,7 @@ class EnvironmentClassCreationData(
             dependency_structure=check.inst_param(
                 dependency_structure, 'dependency_structure', DependencyStructure
             ),
-            mode_definition=check.opt_inst_param(
-                mode_definition, 'mode_definition', ModeDefinition
-            ),
+            mode_definition=check.inst_param(mode_definition, 'mode_definition', ModeDefinition),
             logger_defs=check.dict_param(
                 logger_defs, 'logger_defs', key_type=str, value_type=LoggerDefinition
             ),
@@ -225,9 +223,7 @@ def define_environment_cls(creation_data):
     return SolidContainerConfigDict(
         name='{pipeline_name}.Mode.{mode_name}.Environment'.format(
             pipeline_name=pipeline_name, mode_name=camelcase(creation_data.mode_definition.name)
-        )
-        if creation_data.mode_definition
-        else '{pipeline_name}.Environment'.format(pipeline_name=pipeline_name),
+        ),
         fields=remove_none_entries(
             {
                 'solids': Field(

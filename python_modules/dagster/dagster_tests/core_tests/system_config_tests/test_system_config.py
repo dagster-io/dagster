@@ -43,7 +43,7 @@ def create_creation_data(pipeline_def):
         pipeline_def.name,
         pipeline_def.solids,
         pipeline_def.dependency_structure,
-        mode_definition=None,
+        pipeline_def.mode_definition,
         logger_defs=default_loggers(),
     )
 
