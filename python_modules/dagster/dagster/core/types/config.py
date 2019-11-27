@@ -397,7 +397,7 @@ def Tuple(tuple_types):
     return _Tuple
 
 
-class EnumValue:
+class EnumValue(object):
     '''Define an entry in a :py:func:`Enum`.
 
     Args:

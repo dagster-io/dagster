@@ -45,7 +45,7 @@ def test_successful_host_dagit_ui():
 
 
 def _define_mock_server(fn):
-    class _Server:
+    class _Server(object):
         def __init__(self, *args, **kwargs):
             pass
 

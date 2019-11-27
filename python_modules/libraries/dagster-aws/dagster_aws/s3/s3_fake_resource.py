@@ -11,7 +11,7 @@ def create_s3_fake_resource():
     return S3Resource(S3FakeSession())
 
 
-class S3FakeSession:
+class S3FakeSession(object):
     def __init__(self, buckets=None):
         self.buckets = defaultdict(dict, buckets) if buckets else defaultdict(dict)
         self.mock_extras = mock.MagicMock()

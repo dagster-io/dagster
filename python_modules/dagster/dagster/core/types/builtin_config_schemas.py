@@ -72,7 +72,7 @@ def define_builtin_scalar_output_schema(scalar_name):
     return _builtin_output_schema
 
 
-class BuiltinSchemas:
+class BuiltinSchemas(object):
     ANY_INPUT = define_builtin_scalar_input_schema('Any', Any.inst())
     ANY_OUTPUT = define_builtin_scalar_output_schema('Any')
 

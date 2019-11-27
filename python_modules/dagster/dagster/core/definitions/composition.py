@@ -31,7 +31,7 @@ def assert_in_composition(solid_name):
         )
 
 
-class InProgressCompositionContext:
+class InProgressCompositionContext(object):
     '''This context captures invocations of solids within a
     composition function such as @composite_solid or @pipeline
     '''
@@ -121,7 +121,7 @@ class CompleteCompositionContext(
         )
 
 
-class CallableSolidNode:
+class CallableSolidNode(object):
     '''An intermediate object in solid composition to allow for binding information such as
     an alias before invoking.
     '''
@@ -291,7 +291,7 @@ class InvokedSolidOutputHandle(object):
         )
 
 
-class InputMappingNode:
+class InputMappingNode(object):
     def __init__(self, input_def):
         self.input_def = input_def
 

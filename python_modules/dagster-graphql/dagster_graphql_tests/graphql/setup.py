@@ -252,31 +252,32 @@ def more_complicated_config():
     return a_solid_with_three_field_config()
 
 
-ComplicatedConfigInnerDict = Dict(
-    {
-        'field_four_str': Field(String),
-        'field_five_int': Field(Int),
-        'field_six_nullable_int_list': Field(List[Optional[Int]], is_optional=True),
-    }
-)
-
-ComplicatedConfigDict = Dict(
-    {
-        'field_one': Field(String),
-        'field_two': Field(String, is_optional=True),
-        'field_three': Field(String, is_optional=True, default_value='some_value'),
-        'nested_field': Field(ComplicatedConfigInnerDict),
-    }
-)
-
-
 @pipeline
 def more_complicated_nested_config():
     @solid(
         name='a_solid_with_multilayered_config',
         input_defs=[],
         output_defs=[],
-        config_field=Field(ComplicatedConfigDict),
+        config_field=Field(
+            Dict(
+                {
+                    'field_one': Field(String),
+                    'field_two': Field(String, is_optional=True),
+                    'field_three': Field(String, is_optional=True, default_value='some_value'),
+                    'nested_field': Field(
+                        Dict(
+                            {
+                                'field_four_str': Field(String),
+                                'field_five_int': Field(Int),
+                                'field_six_nullable_int_list': Field(
+                                    List[Optional[Int]], is_optional=True
+                                ),
+                            }
+                        )
+                    ),
+                }
+            )
+        ),
     )
     def a_solid_with_multilayered_config(_):
         return None

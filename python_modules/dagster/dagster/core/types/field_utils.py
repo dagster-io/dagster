@@ -20,11 +20,11 @@ def all_optional_type(config_type):
     return False
 
 
-class __FieldValueSentinel:
+class __FieldValueSentinel(object):
     pass
 
 
-class __InferOptionalCompositeFieldSentinel:
+class __InferOptionalCompositeFieldSentinel(object):
     pass
 
 
@@ -185,7 +185,7 @@ def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRI
     return _NamedDict
 
 
-class DictTypeApi:
+class DictTypeApi(object):
     def __call__(self, fields):
         return build_config_dict(fields)
 

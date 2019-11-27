@@ -40,7 +40,7 @@ def _do_setup(name='dagster-aws'):
         include_package_data=True,
         install_requires=['boto3==1.9.*', 'dagster', 'requests', 'terminaltables'],
         extras_require={'pyspark': ['dagster-pyspark']},
-        tests_require=['moto==1.3.*'],
+        tests_require=['moto'],
         entry_points={'console_scripts': ['dagster-aws = dagster_aws.cli.cli:main']},
         zip_safe=False,
     )

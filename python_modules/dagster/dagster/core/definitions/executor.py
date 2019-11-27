@@ -6,7 +6,7 @@ from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from .config import resolve_config_field
 
 
-class ExecutorDefinition:
+class ExecutorDefinition(object):
     '''
     Args:
         name (Optional[str]): The name of the executor.
@@ -80,7 +80,7 @@ def executor(name=None, config_field=None, config=None, required_resource_keys=N
     )
 
 
-class _ExecutorDecoratorCallable:
+class _ExecutorDecoratorCallable(object):
     def __init__(self, name=None, config_field=None, required_resource_keys=None):
         self.name = check.opt_str_param(name, 'name')
         self.config_field = config_field  # type check in definition

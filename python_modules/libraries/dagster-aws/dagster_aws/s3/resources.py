@@ -3,7 +3,7 @@ from dagster import Field, resource
 from .utils import create_s3_session
 
 
-class S3Resource:
+class S3Resource(object):
     def __init__(self, s3_session):
         self.session = s3_session
 

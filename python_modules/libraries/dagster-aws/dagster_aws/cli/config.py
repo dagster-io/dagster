@@ -12,7 +12,7 @@ from .term import Term
 HOST_CONFIG_FILE = 'dagster-aws-config.yaml'
 
 
-class ConfigMixin:
+class ConfigMixin(object):
     @classmethod
     def exists(cls, base_path):
         '''Check that the configuration file exists and the key for this config type exists in the

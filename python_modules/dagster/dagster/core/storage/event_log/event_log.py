@@ -56,8 +56,6 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):
     def wipe(self):
         '''Clear the log storage.'''
 
-
-class WatchableEventLogStorage(EventLogStorage):
     @abstractmethod
     def watch(self, run_id, start_cursor, callback):
         '''Call this method to start watching.'''
@@ -71,6 +69,7 @@ class InMemoryEventLogStorage(EventLogStorage):
     def __init__(self):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
+        self._handlers = defaultdict(set)
 
     def get_logs_for_run(self, run_id, cursor=-1):
         check.str_param(run_id, 'run_id')
@@ -89,6 +88,8 @@ class InMemoryEventLogStorage(EventLogStorage):
         run_id = event.run_id
         with self._lock[run_id]:
             self._logs[run_id] = self._logs[run_id].append(event)
+            for handler in self._handlers[run_id]:
+                handler(event)
 
     def delete_events(self, run_id):
         with self._lock[run_id]:
@@ -98,3 +99,12 @@ class InMemoryEventLogStorage(EventLogStorage):
     def wipe(self):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
+
+    def watch(self, run_id, start_cursor, callback):
+        with self._lock[run_id]:
+            self._handlers[run_id].add(callback)
+
+    def end_watch(self, run_id, handler):
+        with self._lock[run_id]:
+            if handler in self._handlers[run_id]:
+                self._handlers[run_id].remove(handler)

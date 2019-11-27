@@ -16,7 +16,7 @@ from dagster import (
 )
 
 
-class ErrorableResource:
+class ErrorableResource(object):
     pass
 
 

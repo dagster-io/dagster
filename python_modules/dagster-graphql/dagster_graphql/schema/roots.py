@@ -31,7 +31,7 @@ from dagster_graphql.implementation.fetch_runs import (
     get_runs,
     validate_pipeline_config,
 )
-from dagster_graphql.implementation.fetch_types import get_runtime_type
+from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
 from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGraphQLError
 
 from dagster import check
@@ -40,7 +40,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 
-from .config_types import ConfigTypeSchema, to_dauphin_config_type_from_meta
+from .config_types import to_dauphin_config_type
 from .run_schedule import (
     DauphinStartScheduleMutation,
     DauphinStopRunningScheduleMutation,
@@ -52,7 +52,7 @@ from .solids import build_dauphin_solid_handles
 
 
 class DauphinQuery(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Query'
 
     version = dauphin.NonNull(dauphin.String)
@@ -66,6 +66,13 @@ class DauphinQuery(dauphin.ObjectType):
     )
     pipelinesOrError = dauphin.NonNull('PipelinesOrError')
     pipelines = dauphin.Field(dauphin.NonNull('PipelineConnection'))
+
+    configTypeOrError = dauphin.Field(
+        dauphin.NonNull('ConfigTypeOrError'),
+        pipelineName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        configTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        mode=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+    )
 
     runtimeTypeOrError = dauphin.Field(
         dauphin.NonNull('RuntimeTypeOrError'),
@@ -124,6 +131,11 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     instance = dauphin.NonNull('Instance')
+
+    def resolve_configTypeOrError(self, graphene_info, **kwargs):
+        return get_config_type(
+            graphene_info, kwargs['pipelineName'], kwargs['configTypeName'], kwargs.get('mode')
+        )
 
     def resolve_runtimeTypeOrError(self, graphene_info, **kwargs):
         return get_runtime_type(graphene_info, kwargs['pipelineName'], kwargs['runtimeTypeName'])
@@ -221,7 +233,7 @@ class DauphinQuery(dauphin.ObjectType):
 
 
 class DauphinStepOutputHandle(dauphin.InputObjectType):
-    class Meta:
+    class Meta(object):
         name = 'StepOutputHandle'
 
     stepKey = dauphin.NonNull(dauphin.String)
@@ -229,23 +241,23 @@ class DauphinStepOutputHandle(dauphin.InputObjectType):
 
 
 class DauphinDeletePipelineRunSuccess(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'DeletePipelineRunSuccess'
 
     runId = dauphin.NonNull(dauphin.String)
 
 
 class DauphinDeletePipelineRunResult(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'DeletePipelineRunResult'
         types = ('DeletePipelineRunSuccess', 'PythonError', 'PipelineRunNotFoundError')
 
 
 class DauphinDeleteRunMutation(dauphin.Mutation):
-    class Meta:
+    class Meta(object):
         name = 'DeletePipelineRun'
 
-    class Arguments:
+    class Arguments(object):
         runId = dauphin.NonNull(dauphin.String)
 
     Output = dauphin.NonNull('DeletePipelineRunResult')
@@ -256,14 +268,14 @@ class DauphinDeleteRunMutation(dauphin.Mutation):
 
 
 class DauphinCancelPipelineExecutionSuccess(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'CancelPipelineExecutionSuccess'
 
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
 
 class DauphinCancelPipelineExecutionFailure(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'CancelPipelineExecutionFailure'
 
     run = dauphin.NonNull('PipelineRun')
@@ -271,7 +283,7 @@ class DauphinCancelPipelineExecutionFailure(dauphin.ObjectType):
 
 
 class DauphinCancelPipelineExecutionResult(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'CancelPipelineExecutionResult'
         types = (
             'CancelPipelineExecutionSuccess',
@@ -282,10 +294,10 @@ class DauphinCancelPipelineExecutionResult(dauphin.Union):
 
 
 class DauphinStartScheduledExecutionMutation(dauphin.Mutation):
-    class Meta:
+    class Meta(object):
         name = 'StartScheduledExecutionMutation'
 
-    class Arguments:
+    class Arguments(object):
         scheduleName = dauphin.NonNull(dauphin.String)
 
     Output = dauphin.NonNull('StartScheduledExecutionResult')
@@ -295,14 +307,14 @@ class DauphinStartScheduledExecutionMutation(dauphin.Mutation):
 
 
 class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
-    class Meta:
+    class Meta(object):
         name = 'StartPipelineExecutionMutation'
         description = (
             'Execute a pipeline run in the python environment '
             'dagit/dagster-graphql is currently operating in.'
         )
 
-    class Arguments:
+    class Arguments(object):
         executionParams = dauphin.NonNull('ExecutionParams')
 
     Output = dauphin.NonNull('StartPipelineExecutionResult')
@@ -315,11 +327,11 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
 
 
 class DauphinLaunchPipelineExecutionMutation(dauphin.Mutation):
-    class Meta:
+    class Meta(object):
         name = 'LaunchPipelineExecutionMutation'
         description = 'Launch a pipeline run via the run launcher configured on the instance.'
 
-    class Arguments:
+    class Arguments(object):
         executionParams = dauphin.NonNull('ExecutionParams')
 
     Output = dauphin.NonNull('LaunchPipelineExecutionResult')
@@ -332,10 +344,10 @@ class DauphinLaunchPipelineExecutionMutation(dauphin.Mutation):
 
 
 class DauphinCancelPipelineExecutionMutation(dauphin.Mutation):
-    class Meta:
+    class Meta(object):
         name = 'CancelPipelineExecutionMutation'
 
-    class Arguments:
+    class Arguments(object):
         runId = dauphin.NonNull(dauphin.String)
 
     Output = dauphin.NonNull('CancelPipelineExecutionResult')
@@ -345,7 +357,7 @@ class DauphinCancelPipelineExecutionMutation(dauphin.Mutation):
 
 
 class DauphinExecutionTag(dauphin.InputObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionTag'
 
     key = dauphin.NonNull(dauphin.String)
@@ -353,7 +365,7 @@ class DauphinExecutionTag(dauphin.InputObjectType):
 
 
 class DauphinMarshalledInput(dauphin.InputObjectType):
-    class Meta:
+    class Meta(object):
         name = 'MarshalledInput'
 
     input_name = dauphin.NonNull(dauphin.String)
@@ -361,7 +373,7 @@ class DauphinMarshalledInput(dauphin.InputObjectType):
 
 
 class DauphinMarshalledOutput(dauphin.InputObjectType):
-    class Meta:
+    class Meta(object):
         name = 'MarshalledOutput'
 
     output_name = dauphin.NonNull(dauphin.String)
@@ -369,7 +381,7 @@ class DauphinMarshalledOutput(dauphin.InputObjectType):
 
 
 class DauphinStepExecution(dauphin.InputObjectType):
-    class Meta:
+    class Meta(object):
         name = 'StepExecution'
 
     stepKey = dauphin.NonNull(dauphin.String)
@@ -378,7 +390,7 @@ class DauphinStepExecution(dauphin.InputObjectType):
 
 
 class DauphinExecutionMetadata(dauphin.InputObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionMetadata'
 
     runId = dauphin.String()
@@ -448,10 +460,10 @@ def create_execution_metadata(graphql_execution_metadata):
 
 
 class DauphinExecutePlan(dauphin.Mutation):
-    class Meta:
+    class Meta(object):
         name = 'ExecutePlan'
 
-    class Arguments:
+    class Arguments(object):
         executionParams = dauphin.NonNull('ExecutionParams')
 
     Output = dauphin.NonNull('ExecutePlanResult')
@@ -463,7 +475,7 @@ class DauphinExecutePlan(dauphin.Mutation):
 
 
 class DauphinReloadDagit(dauphin.Mutation):
-    class Meta:
+    class Meta(object):
         name = 'ReloadDagit'
 
     Output = dauphin.NonNull(dauphin.Boolean)
@@ -473,7 +485,7 @@ class DauphinReloadDagit(dauphin.Mutation):
 
 
 class DauphinMutation(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Mutation'
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
@@ -491,7 +503,7 @@ DauphinComputeIOType = dauphin.Enum.from_enum(ComputeIOType)
 
 
 class DauphinSubscription(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Subscription'
 
     pipelineRunLogs = dauphin.Field(
@@ -519,7 +531,7 @@ class DauphinSubscription(dauphin.ObjectType):
 
 
 class DauphinEnvironmentConfigData(dauphin.GenericScalar, dauphin.Scalar):
-    class Meta:
+    class Meta(object):
         name = 'EnvironmentConfigData'
         description = '''This type is used when passing in a configuration object
         for pipeline configuration. This is any-typed in the GraphQL type system,
@@ -527,7 +539,7 @@ class DauphinEnvironmentConfigData(dauphin.GenericScalar, dauphin.Scalar):
 
 
 class DauphinExecutionParams(dauphin.InputObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionParams'
 
     selector = dauphin.NonNull('ExecutionSelector')
@@ -540,7 +552,7 @@ class DauphinExecutionParams(dauphin.InputObjectType):
 
 
 class DauphinExecutionSelector(dauphin.InputObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionSelector'
         description = '''This type represents the fields necessary to identify a
         pipeline or pipeline subset.'''
@@ -553,7 +565,7 @@ class DauphinExecutionSelector(dauphin.InputObjectType):
 
 
 class DauphinPipelineRunsFilter(dauphin.InputObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineRunsFilter'
         description = '''This type represents a filter on pipeline runs.
         Currently, you may only pass one of the filter options.'''
@@ -580,7 +592,7 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
 
 
 class DauphinUsedSolid(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'UsedSolid'
         description = '''A solid definition and it's invocations within the repo.'''
 
@@ -589,7 +601,7 @@ class DauphinUsedSolid(dauphin.ObjectType):
 
 
 class DauphinSolidInvocationSite(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'SolidInvocationSite'
         description = '''An invocation of a solid within a repo.'''
 
@@ -598,7 +610,7 @@ class DauphinSolidInvocationSite(dauphin.ObjectType):
 
 
 class DauphinPipelineTagAndValues(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineTagAndValues'
         description = '''A run tag and the free-form values that have been associated
         with it so far.'''
@@ -620,9 +632,7 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
             dagster_pipeline, 'dagster_pipeline', PipelineDefinition
         )
 
-        self._config_type_schema = ConfigTypeSchema.from_environment_schema(environment_schema)
-
-    class Meta:
+    class Meta(object):
         name = 'EnvironmentSchema'
         description = '''The environment schema represents the all the config type
         information given a certain execution selection and mode of execution of that
@@ -661,24 +671,17 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
 
     def resolve_allConfigTypes(self, _graphene_info):
         return sorted(
-            list(
-                map(
-                    lambda meta: to_dauphin_config_type_from_meta(self._config_type_schema, meta),
-                    self._config_type_schema.config_type_metas,
-                )
-            ),
+            list(map(to_dauphin_config_type, self._environment_schema.all_config_types())),
             key=lambda ct: ct.name if ct.name else '',
         )
 
     def resolve_rootEnvironmentType(self, _graphene_info):
-        return to_dauphin_config_type_from_meta(
-            self._config_type_schema, self._config_type_schema.root_type_meta
-        )
+        return to_dauphin_config_type(self._environment_schema.environment_type)
 
     def resolve_configTypeOrError(self, graphene_info, **kwargs):
         return resolve_config_type_or_error(
             graphene_info,
-            self._config_type_schema,
+            self._environment_schema,
             self._dagster_pipeline,
             kwargs['configTypeName'],
         )
@@ -693,7 +696,7 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
 
 
 class DauphinEnvironmentSchemaOrError(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'EnvironmentSchemaOrError'
         types = (
             'EnvironmentSchema',
@@ -705,7 +708,7 @@ class DauphinEnvironmentSchemaOrError(dauphin.Union):
 
 
 class DauhphinInstance(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Instance'
 
     info = dauphin.NonNull(dauphin.String)

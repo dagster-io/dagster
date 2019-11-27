@@ -11,7 +11,7 @@ from dagster.core.definitions.decorators import validate_solid_fn
 from .house import Lakehouse
 
 
-class ITableHandle:
+class ITableHandle(object):
     pass
 
 

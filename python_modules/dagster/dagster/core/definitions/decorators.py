@@ -756,7 +756,7 @@ def composite_solid(
     )
 
 
-class _Pipeline:
+class _Pipeline(object):
     def __init__(self, name=None, mode_defs=None, preset_defs=None, description=None):
         self.name = check.opt_str_param(name, 'name')
         self.mode_definitions = check.opt_list_param(mode_defs, 'mode_defs', ModeDefinition)

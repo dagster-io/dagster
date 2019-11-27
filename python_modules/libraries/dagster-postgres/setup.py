@@ -37,20 +37,7 @@ def _do_setup(name='dagster-postgres'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=[
-            'dagster',
-            # You can dig into why this is is necessary by digging into some of
-            # insanity in this github issue. https://github.com/psycopg/psycopg2/issues/674
-            # Essentially we are ensuring here that a version of psycopg is installed
-            # that has the binaries installed (they are removed in psycopg 2.8)
-            # We would update the dependencies ourselves but this is actually dependent
-            # on dependency management of sqlalchemy-redshift or one of its transitive
-            # dependencies. They try to install a version of psycopg2 that does
-            # not include the binaries and this whole thing breaks.
-            # For now we are pinning to a version that we know works. This is probably
-            # not flexible enough, but we will resolve that issue when we run into it.
-            'psycopg2==2.7.6.1',
-        ],
+        install_requires=['dagster', 'psycopg2-binary',],
         tests_require=[],
         zip_safe=False,
     )

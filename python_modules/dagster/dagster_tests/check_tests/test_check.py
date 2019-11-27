@@ -340,7 +340,7 @@ def test_opt_nullable_dict_param():
     ddict = {'a': 2}
     assert check.opt_nullable_dict_param(ddict, 'opt_nullable_dict_param') == ddict
 
-    class Foo:
+    class Foo(object):
         pass
 
     class Bar(Foo):

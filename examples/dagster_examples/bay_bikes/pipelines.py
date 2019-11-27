@@ -127,6 +127,6 @@ def extract_daily_weather_data_pipeline():
         ),
     ],
 )
-def feature_transformation_pipeline():
+def model_training_pipeline():
     transform_into_traffic_dataset(produce_trip_dataset())
     produce_weather_dataset()

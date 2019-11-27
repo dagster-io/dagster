@@ -72,7 +72,7 @@ class GoogleCloudStorageFileTransporter(AbstractFileTransporter):
         return path_to_file
 
 
-class CredentialsVault:
+class CredentialsVault(object):
     def __init__(self, credentials):
         self.credentials = credentials
 

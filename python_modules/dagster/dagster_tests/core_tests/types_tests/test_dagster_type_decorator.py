@@ -57,7 +57,7 @@ def test_make_dagster_type_from_builtin():
 
 
 def test_dagster_type_collision():
-    class Foo:
+    class Foo(object):
         pass
 
     _Foo_1 = as_dagster_type(Foo)

@@ -19,7 +19,7 @@ except ImportError:
 
 @pytest.mark.slow
 @pytest.mark.airflow
-class TestAirflowPython_0IngestExecution:
+class TestAirflowPython_0IngestExecution(object):
     handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_ingest_pipeline)
     pipeline_name = 'airline_demo_ingest_pipeline'
     config_yaml = [
@@ -35,7 +35,7 @@ class TestAirflowPython_0IngestExecution:
 
 @pytest.mark.slow
 @pytest.mark.airflow
-class TestAirflowPython_1WarehouseExecution:
+class TestAirflowPython_1WarehouseExecution(object):
     handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_warehouse_pipeline)
     pipeline_name = 'airline_demo_warehouse_pipeline'
     config_yaml = [

@@ -18,12 +18,12 @@ from dagster.core.types.evaluator.stack import (
 )
 from dagster.utils.error import SerializableErrorInfo
 
-from .config_types import to_dauphin_config_type, to_dauphin_config_type_field
+from .config_types import to_dauphin_config_type
 from .runs import DauphinStepEvent
 
 
 class DauphinError(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'Error'
 
     message = dauphin.String(required=True)
@@ -31,7 +31,7 @@ class DauphinError(dauphin.Interface):
 
 
 class DauphinPythonError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PythonError'
         interfaces = (DauphinError,)
 
@@ -43,7 +43,7 @@ class DauphinPythonError(dauphin.ObjectType):
 
 
 class DauphinSchedulerNotDefinedError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'SchedulerNotDefinedError'
         interfaces = (DauphinError,)
 
@@ -53,7 +53,7 @@ class DauphinSchedulerNotDefinedError(dauphin.ObjectType):
 
 
 class DauphinScheduleNotFoundError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ScheduleNotFoundError'
         interfaces = (DauphinError,)
 
@@ -68,7 +68,7 @@ class DauphinScheduleNotFoundError(dauphin.ObjectType):
 
 
 class DauphinPipelineNotFoundError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineNotFoundError'
         interfaces = (DauphinError,)
 
@@ -83,7 +83,7 @@ class DauphinPipelineNotFoundError(dauphin.ObjectType):
 
 
 class DauphinPipelineRunNotFoundError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineRunNotFoundError'
         interfaces = (DauphinError,)
 
@@ -96,7 +96,7 @@ class DauphinPipelineRunNotFoundError(dauphin.ObjectType):
 
 
 class DauphinInvalidPipelineRunsFilterError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'InvalidPipelineRunsFilterError'
         interfaces = (DauphinError,)
 
@@ -106,7 +106,7 @@ class DauphinInvalidPipelineRunsFilterError(dauphin.ObjectType):
 
 
 class DauphinInvalidSubsetError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'InvalidSubsetError'
         interfaces = (DauphinError,)
 
@@ -119,7 +119,7 @@ class DauphinInvalidSubsetError(dauphin.ObjectType):
 
 
 class DauphinPresetNotFoundError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PresetNotFoundError'
         interfaces = (DauphinError,)
 
@@ -133,7 +133,7 @@ class DauphinPresetNotFoundError(dauphin.ObjectType):
 
 
 class DauphinModeNotFoundError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ModeNotFoundError'
         interfaces = (DauphinError,)
 
@@ -147,7 +147,7 @@ class DauphinModeNotFoundError(dauphin.ObjectType):
 
 
 class DauphinRunLauncherNotDefinedError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'RunLauncherNotDefinedError'
         interfaces = (DauphinError,)
 
@@ -157,14 +157,14 @@ class DauphinRunLauncherNotDefinedError(dauphin.ObjectType):
 
 
 class DauphinPipelineConfigValidationValid(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineConfigValidationValid'
 
     pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
 
 
 class DauphinPipelineConfigValidationInvalid(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineConfigValidationInvalid'
 
     pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
@@ -172,7 +172,7 @@ class DauphinPipelineConfigValidationInvalid(dauphin.ObjectType):
 
 
 class DauphinPipelineConfigValidationResult(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'PipelineConfigValidationResult'
         types = (
             DauphinInvalidSubsetError,
@@ -184,7 +184,7 @@ class DauphinPipelineConfigValidationResult(dauphin.Union):
 
 
 class DauphinPipelineConfigValidationError(dauphin.Interface):
-    class Meta:
+    class Meta(object):
         name = 'PipelineConfigValidationError'
 
     message = dauphin.NonNull(dauphin.String)
@@ -211,7 +211,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 path=[],  # TODO: remove
                 stack=error.stack,
                 reason=error.reason,
-                field=to_dauphin_config_type_field(
+                field=graphene_info.schema.type_named('ConfigTypeField')(
                     name=error.error_data.field_name, field=error.error_data.field_def
                 ),
             )
@@ -222,7 +222,9 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 stack=error.stack,
                 reason=error.reason,
                 fields=[
-                    to_dauphin_config_type_field(name=field_name, field=field_def)
+                    graphene_info.schema.type_named('ConfigTypeField')(
+                        name=field_name, field=field_def
+                    )
                     for field_name, field_def in zip(
                         error.error_data.field_names, error.error_data.field_defs
                     )
@@ -260,7 +262,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
 
 
 class DauphinRuntimeMismatchConfigError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'RuntimeMismatchConfigError'
         interfaces = (DauphinPipelineConfigValidationError,)
 
@@ -272,7 +274,7 @@ class DauphinRuntimeMismatchConfigError(dauphin.ObjectType):
 
 
 class DauphinMissingFieldConfigError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'MissingFieldConfigError'
         interfaces = (DauphinPipelineConfigValidationError,)
 
@@ -280,7 +282,7 @@ class DauphinMissingFieldConfigError(dauphin.ObjectType):
 
 
 class DauphinMissingFieldsConfigError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'MissingFieldsConfigError'
         interfaces = (DauphinPipelineConfigValidationError,)
 
@@ -288,7 +290,7 @@ class DauphinMissingFieldsConfigError(dauphin.ObjectType):
 
 
 class DauphinFieldNotDefinedConfigError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'FieldNotDefinedConfigError'
         interfaces = (DauphinPipelineConfigValidationError,)
 
@@ -296,7 +298,7 @@ class DauphinFieldNotDefinedConfigError(dauphin.ObjectType):
 
 
 class DauphinFieldsNotDefinedConfigError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'FieldsNotDefinedConfigError'
         interfaces = (DauphinPipelineConfigValidationError,)
 
@@ -304,7 +306,7 @@ class DauphinFieldsNotDefinedConfigError(dauphin.ObjectType):
 
 
 class DauphinSelectorTypeConfigError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'SelectorTypeConfigError'
         interfaces = (DauphinPipelineConfigValidationError,)
 
@@ -312,7 +314,7 @@ class DauphinSelectorTypeConfigError(dauphin.ObjectType):
 
 
 class DauphinEvaluationErrorReason(dauphin.Enum):
-    class Meta:
+    class Meta(object):
         name = 'EvaluationErrorReason'
 
     RUNTIME_TYPE_MISMATCH = 'RUNTIME_TYPE_MISMATCH'
@@ -324,7 +326,7 @@ class DauphinEvaluationErrorReason(dauphin.Enum):
 
 
 class DauphinEvaluationStackListItemEntry(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'EvaluationStackListItemEntry'
 
     def __init__(self, list_index):
@@ -338,7 +340,7 @@ class DauphinEvaluationStackListItemEntry(dauphin.ObjectType):
 
 
 class DauphinEvaluationStackPathEntry(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'EvaluationStackPathEntry'
 
     def __init__(self, field_name, field_def):
@@ -348,12 +350,14 @@ class DauphinEvaluationStackPathEntry(dauphin.ObjectType):
 
     field = dauphin.NonNull('ConfigTypeField')
 
-    def resolve_field(self, _):
-        return to_dauphin_config_type_field(name=self._field_name, field=self._field_def)
+    def resolve_field(self, info):
+        return info.schema.type_named('ConfigTypeField')(
+            name=self._field_name, field=self._field_def
+        )  # pylint: disable=E1101
 
 
 class DauphinEvaluationStackEntry(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'EvaluationStackEntry'
         types = (DauphinEvaluationStackListItemEntry, DauphinEvaluationStackPathEntry)
 
@@ -370,7 +374,7 @@ class DauphinEvaluationStackEntry(dauphin.Union):
 
 
 class DauphinEvaluationStack(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'EvaluationStack'
 
     entries = dauphin.non_null_list('EvaluationStackEntry')
@@ -382,13 +386,13 @@ class DauphinEvaluationStack(dauphin.ObjectType):
 
 
 class DauphinPipelinesOrError(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'PipelinesOrError'
         types = ('PipelineConnection', DauphinPythonError)
 
 
 class DauphinExecutionPlanResult(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'ExecutionPlanResult'
         types = (
             'ExecutionPlan',
@@ -400,28 +404,28 @@ class DauphinExecutionPlanResult(dauphin.Union):
 
 
 class DauphinStartPipelineExecutionSuccess(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'StartPipelineExecutionSuccess'
 
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
 
 class DauphinLaunchPipelineExecutionSuccess(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'LaunchPipelineExecutionSuccess'
 
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
 
 class DauphinInvalidStepError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'InvalidStepError'
 
     invalid_step_key = dauphin.NonNull(dauphin.String)
 
 
 class DauphinInvalidOutputError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'InvalidOutputError'
 
     step_key = dauphin.NonNull(dauphin.String)
@@ -443,13 +447,13 @@ start_pipeline_execution_result_types = (
 
 
 class DauphinStartPipelineExecutionResult(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'StartPipelineExecutionResult'
         types = start_pipeline_execution_result_types
 
 
 class DauphinLaunchPipelineExecutionResult(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'LaunchPipelineExecutionResult'
         types = (
             DauphinLaunchPipelineExecutionSuccess,
@@ -458,14 +462,14 @@ class DauphinLaunchPipelineExecutionResult(dauphin.Union):
 
 
 class DauphinScheduledExecutionBlocked(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ScheduledExecutionBlocked'
 
     message = dauphin.NonNull(dauphin.String)
 
 
 class DauphinStartScheduledExecutionResult(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'StartScheduledExecutionResult'
         types = (
             DauphinScheduleNotFoundError,
@@ -475,7 +479,7 @@ class DauphinStartScheduledExecutionResult(dauphin.Union):
 
 
 class DauphinExecutePlanSuccess(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ExecutePlanSuccess'
 
     pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
@@ -485,7 +489,7 @@ class DauphinExecutePlanSuccess(dauphin.ObjectType):
 
 
 class DauphinExecutePlanResult(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'ExecutePlanResult'
         types = (
             DauphinExecutePlanSuccess,
@@ -497,7 +501,7 @@ class DauphinExecutePlanResult(dauphin.Union):
 
 
 class DauphinConfigTypeNotFoundError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ConfigTypeNotFoundError'
         interfaces = (DauphinError,)
 
@@ -506,7 +510,7 @@ class DauphinConfigTypeNotFoundError(dauphin.ObjectType):
 
 
 class DauphinRuntimeTypeNotFoundError(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'RuntimeTypeNotFoundError'
         interfaces = (DauphinError,)
 
@@ -515,19 +519,20 @@ class DauphinRuntimeTypeNotFoundError(dauphin.ObjectType):
 
 
 class DauphinConfigTypeOrError(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'ConfigTypeOrError'
         types = (
             'EnumConfigType',
             'CompositeConfigType',
             'RegularConfigType',
+            DauphinPipelineNotFoundError,
             DauphinConfigTypeNotFoundError,
             DauphinPythonError,
         )
 
 
 class DauphinRuntimeTypeOrError(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'RuntimeTypeOrError'
         types = (
             'RegularRuntimeType',
@@ -538,19 +543,19 @@ class DauphinRuntimeTypeOrError(dauphin.Union):
 
 
 class DauphinPipelineRunOrError(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'PipelineRunOrError'
         types = ('PipelineRun', DauphinPipelineRunNotFoundError, DauphinPythonError)
 
 
 class DauphinPipelineRuns(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineRuns'
 
     results = dauphin.non_null_list('PipelineRun')
 
 
 class DauphinPipelineRunsOrError(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'PipelineRunsOrError'
         types = (DauphinPipelineRuns, DauphinInvalidPipelineRunsFilterError, DauphinPythonError)

@@ -11,7 +11,7 @@ from dagster import (
     check,
 )
 
-from .config_types import to_dauphin_config_type, to_dauphin_config_type_field
+from .config_types import to_dauphin_config_type
 from .runtime_types import to_dauphin_runtime_type
 from .solids import DauphinSolidContainer, build_dauphin_solid_handles, build_dauphin_solids
 
@@ -22,14 +22,14 @@ class DauphinPipelineReference(dauphin.Interface):
     that a pipeline exists/existed thanks to materialized data such as logs and run metadata, but
     where we can't look the concrete pipeline up.'''
 
-    class Meta:
+    class Meta(object):
         name = 'PipelineReference'
 
     name = dauphin.NonNull(dauphin.String)
 
 
 class DauphinUnknownPipeline(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'UnknownPipeline'
         interfaces = (DauphinPipelineReference,)
 
@@ -37,7 +37,7 @@ class DauphinUnknownPipeline(dauphin.ObjectType):
 
 
 class DauphinPipeline(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Pipeline'
         interfaces = (DauphinSolidContainer, DauphinPipelineReference)
 
@@ -107,14 +107,14 @@ class DauphinPipeline(dauphin.ObjectType):
 
 
 class DauphinPipelineConnection(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelineConnection'
 
     nodes = dauphin.non_null_list('Pipeline')
 
 
 class DauphinResource(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Resource'
 
     def __init__(self, resource_name, resource):
@@ -126,16 +126,18 @@ class DauphinResource(dauphin.ObjectType):
     description = dauphin.String()
     configField = dauphin.Field('ConfigTypeField')
 
-    def resolve_configField(self, _):
+    def resolve_configField(self, graphene_info):
         return (
-            to_dauphin_config_type_field('config', self._resource.config_field)
+            graphene_info.schema.type_named('ConfigTypeField')(
+                name="config", field=self._resource.config_field
+            )
             if self._resource.config_field
             else None
         )
 
 
 class DauphinLogger(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Logger'
 
     def __init__(self, logger_name, logger):
@@ -147,9 +149,11 @@ class DauphinLogger(dauphin.ObjectType):
     description = dauphin.String()
     configField = dauphin.Field('ConfigTypeField')
 
-    def resolve_configField(self, _):
+    def resolve_configField(self, graphene_info):
         return (
-            to_dauphin_config_type_field('config', self._logger.config_field)
+            graphene_info.schema.type_named('ConfigTypeField')(
+                name="config", field=self._logger.config_field
+            )
             if self._logger.config_field
             else None
         )
@@ -159,7 +163,7 @@ class DauphinMode(dauphin.ObjectType):
     def __init__(self, mode_definition):
         self._mode_definition = check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
 
-    class Meta:
+    class Meta(object):
         name = 'Mode'
 
     name = dauphin.NonNull(dauphin.String)
@@ -183,7 +187,7 @@ class DauphinMode(dauphin.ObjectType):
 
 
 class DauphinMetadataItemDefinition(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'MetadataItemDefinition'
 
     key = dauphin.NonNull(dauphin.String)
@@ -191,7 +195,7 @@ class DauphinMetadataItemDefinition(dauphin.ObjectType):
 
 
 class DauphinPipelinePreset(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'PipelinePreset'
 
     name = dauphin.NonNull(dauphin.String)

@@ -188,7 +188,7 @@ class ExecutionTargetHandleCacheEntry(
         return super(ExecutionTargetHandleCacheEntry, cls).__new__(cls, handle, solid_subset)
 
 
-class ExecutionTargetHandle:
+class ExecutionTargetHandle(object):
     '''ExecutionTargetHandle represents an immutable, serializable reference to a Dagster
     RepositoryDefinition or PipelineDefinition, to support dynamically loading these in various
     contexts (e.g. across process boundaries).

@@ -45,7 +45,7 @@ def get_schedule_or_error(graphene_info, schedule_name):
 
 
 class DauphinScheduleStatus(dauphin.Enum):
-    class Meta:
+    class Meta(object):
         name = 'ScheduleStatus'
 
     RUNNING = 'RUNNING'
@@ -54,19 +54,19 @@ class DauphinScheduleStatus(dauphin.Enum):
 
 
 class DauphinSchedulerOrError(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'SchedulerOrError'
         types = ('Scheduler', DauphinSchedulerNotDefinedError, 'PythonError')
 
 
 class DauphinScheduleOrError(dauphin.Union):
-    class Meta:
+    class Meta(object):
         name = 'ScheduleOrError'
         types = ('RunningSchedule', DauphinScheduleNotFoundError, 'PythonError')
 
 
 class DauphinScheduleDefinition(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ScheduleDefinition'
 
     name = dauphin.NonNull(dauphin.String)
@@ -99,7 +99,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
 
 
 class DauphinScheduleAttemptStatus(dauphin.Enum):
-    class Meta:
+    class Meta(object):
         name = 'ScheduleAttemptStatus'
 
     SUCCESS = 'SUCCESS'
@@ -108,7 +108,7 @@ class DauphinScheduleAttemptStatus(dauphin.Enum):
 
 
 class DauphinScheduleAttempt(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'ScheduleAttempt'
 
     time = dauphin.NonNull(dauphin.Float)
@@ -118,7 +118,7 @@ class DauphinScheduleAttempt(dauphin.ObjectType):
 
 
 class DauphinRunningSchedule(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'RunningSchedule'
 
     id = dauphin.NonNull(dauphin.String)
@@ -210,24 +210,24 @@ class DauphinRunningSchedule(dauphin.ObjectType):
 
 
 class DauphinScheduler(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'Scheduler'
 
     runningSchedules = dauphin.non_null_list('RunningSchedule')
 
 
 class RunningScheduleResult(dauphin.ObjectType):
-    class Meta:
+    class Meta(object):
         name = 'RunningScheduleResult'
 
     schedule = dauphin.NonNull('RunningSchedule')
 
 
 class DauphinStartScheduleMutation(dauphin.Mutation):
-    class Meta:
+    class Meta(object):
         name = 'StartScheduleMutation'
 
-    class Arguments:
+    class Arguments(object):
         schedule_name = dauphin.NonNull(dauphin.String)
 
     Output = dauphin.NonNull('RunningScheduleResult')
@@ -245,10 +245,10 @@ class DauphinStartScheduleMutation(dauphin.Mutation):
 
 
 class DauphinStopRunningScheduleMutation(dauphin.Mutation):
-    class Meta:
+    class Meta(object):
         name = 'StopRunningScheduleMutation'
 
-    class Arguments:
+    class Arguments(object):
         schedule_name = dauphin.NonNull(dauphin.String)
 
     Output = dauphin.NonNull('RunningScheduleResult')
