@@ -1,3 +1,5 @@
+from functools import update_wrapper
+
 from dagster import check
 from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.intermediates_manager import IntermediatesManager
@@ -119,10 +121,14 @@ class _SystemStorageDecoratorCallable(object):
         if not self.name:
             self.name = fn.__name__
 
-        return SystemStorageDefinition(
+        storage_def = SystemStorageDefinition(
             name=self.name,
             is_persistent=self.is_persistent,
             config_field=self.config_field,
             system_storage_creation_fn=fn,
             required_resource_keys=self.required_resource_keys,
         )
+
+        update_wrapper(storage_def, wrapped=fn)
+
+        return storage_def

@@ -141,8 +141,24 @@ Environment Dict Schema
    :members:
 
 
+System Storage
+--------------
+.. autodata:: mem_system_storage
+  :annotation: SystemStorageDefinition
+
+.. autodata:: fs_system_storage
+  :annotation: SystemStorageDefinition
+
+.. autodata:: default_system_storage_defs
+  :annotation: List[SystemStorageDefinition]
+
+  The default system storages available on any :py:class:`ModeDefinition` that does not provide
+  custom system storages. These are currently [:py:class:`mem_system_storage`,
+  :py:class:`fs_system_storage`].
+
+
 Executors
-----------------------
+---------
 .. autodata:: in_process_executor
   :annotation: ExecutorDefinition
 

@@ -68,7 +68,7 @@ class InstanceType(Enum):
     EPHEMERAL = 'EPHEMERAL'
 
 
-class DagsterInstance(object):
+class DagsterInstance:
     '''Core abstraction for managing Dagster's access to storage and other resources.
 
     Users should not directly instantiate this class. Configuration of this class should be done

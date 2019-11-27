@@ -34,9 +34,6 @@ System Storage
 
 .. currentmodule:: dagster.core.storage.system_storage
 
-.. autodata:: default_system_storage_defs
-   :annotation: [mem_system_storage_def, fs_system_storage_def]
-
 Instance
 --------
 
@@ -56,3 +53,10 @@ Instance
 .. currentmodule:: dagster.core.storage.runs
 
 .. autoclass:: RunStorage
+
+Scheduling
+----------
+
+.. currentmodule:: dagster.core.scheduler
+
+.. autoclass:: Scheduler

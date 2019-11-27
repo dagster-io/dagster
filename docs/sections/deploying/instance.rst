@@ -1,7 +1,7 @@
 .. _instance:
 
-Instance Configuration
-----------------------
+Configuring an instance
+-----------------------
 
 A Dagster instance is composed of:
 

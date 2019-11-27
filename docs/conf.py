@@ -58,7 +58,8 @@ autosectionlabel_prefix_document = True
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', 'objects.inv'),
-    'airflow': ('https://airflow.apache.org', 'airflow.inv')
+    'airflow': ('https://airflow.apache.org', 'airflow.inv'),
+    'dask': ('https://distributed.dask.org/en/latest/', 'dask.inv'),
 }
 
 # Add any paths that contain templates here, relative to this directory.

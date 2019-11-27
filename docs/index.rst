@@ -8,5 +8,5 @@
   Learn <sections/learn/learn>
   API Docs <sections/api/api>
   Reference <sections/reference/reference>
-  Deploying <sections/deploying/deploying>
+  Deploying <sections/deploying/index>
   Community <sections/community/community>
