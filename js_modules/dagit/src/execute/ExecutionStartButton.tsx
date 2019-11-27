@@ -6,8 +6,9 @@ import { WebsocketStatusContext } from "../WebsocketStatus";
 
 interface IExecutionStartButtonProps {
   title: string;
-  icon: "repeat" | "play";
+  icon: "repeat" | "play" | "disable";
   small?: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }
 
@@ -107,6 +108,24 @@ export default class ExecutionStartButton extends React.Component<
             );
           }
 
+          if (this.props.disabled) {
+            return (
+              <Wrapper
+                role="button"
+                style={style}
+                state={ExecutionButtonStatus.Disabled}
+                title={this.props.title}
+              >
+                <Icon
+                  icon={this.props.icon}
+                  iconSize={iconSize}
+                  style={{ textAlign: "center", marginRight: 5 }}
+                />
+                {this.props.title}
+              </Wrapper>
+            );
+          }
+
           return (
             <Wrapper
               role="button"
@@ -130,7 +149,7 @@ export default class ExecutionStartButton extends React.Component<
   }
 }
 
-const Wrapper = styled.div<{ state: ExecutionButtonStatus }>`
+export const Wrapper = styled.div<{ state: ExecutionButtonStatus }>`
   min-width: 150px;
   height: 30px;
   border-radius: 3px;
