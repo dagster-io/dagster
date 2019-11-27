@@ -286,8 +286,8 @@ def list_param(obj_list, param_name, of_type=None):
 
 
 def set_param(obj_set, param_name, of_type=None):
-    if not isinstance(obj_set, set):
-        raise_with_traceback(_param_type_mismatch_exception(obj_set, set, param_name))
+    if not isinstance(obj_set, (frozenset, set)):
+        raise_with_traceback(_param_type_mismatch_exception(obj_set, (frozenset, set), param_name))
 
     if not of_type:
         return obj_set
@@ -385,8 +385,8 @@ def opt_set_param(obj_set, param_name, of_type=None):
     If the of_type argument is provided, also ensures that list items conform to the type specified
     by of_type.
     '''
-    if obj_set is not None and not isinstance(obj_set, set):
-        raise_with_traceback(_param_type_mismatch_exception(obj_set, set, param_name))
+    if obj_set is not None and not isinstance(obj_set, (frozenset, set)):
+        raise_with_traceback(_param_type_mismatch_exception(obj_set, (frozenset, set), param_name))
     if not obj_set:
         return set()
     if not of_type:
