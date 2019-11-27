@@ -647,3 +647,58 @@ def test_optional():
     result_optional = pipeline_result.result_for_solid('echo_y')
     assert not result_optional.success
     assert result_optional.skipped
+
+
+def test_basic_pipeline_selector():
+    @solid
+    def def_one(_):
+        pass
+
+    # dsl subsets the definitions appropriately
+    @pipeline
+    def pipe():
+        def_one()
+
+    assert set(pipe.selector.solid_subset) == {'def_one'}
+
+
+def test_selector_with_partial_dependency_dict():
+    executed = {}
+
+    @solid
+    def def_one(_):
+        executed['one'] = True
+
+    @solid
+    def def_two(_):
+        executed['two'] = True
+
+    pipe_two = PipelineDefinition(
+        name='pipe_two', solid_defs=[def_one, def_two], dependencies={'def_one': {}}
+    )
+
+    # if it is in solid defs it will execute even if it is not in dependencies dictionary
+    assert set(pipe_two.selector.solid_subset) == {'def_one', 'def_two'}
+
+    execute_pipeline(pipe_two)
+
+    # verify that it did execute
+    assert set(executed.keys()) == {'one', 'two'}
+
+
+def test_selector_with_build_sub_pipeline():
+    @solid
+    def def_one(_):
+        pass
+
+    @solid
+    def def_two(_):
+        pass
+
+    # dsl subsets the definitions appropriately
+    @pipeline
+    def pipe():
+        def_one()
+        def_two()
+
+    assert set(pipe.build_sub_pipeline(['def_two']).selector.solid_subset) == {'def_two'}

@@ -129,7 +129,6 @@ class PipelineDefinition(IContainSolids, object):
         dependencies=None,
         mode_defs=None,
         preset_defs=None,
-        selector=None,
     ):
         self._name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self._description = check.opt_str_param(description, 'description')
@@ -158,11 +157,11 @@ class PipelineDefinition(IContainSolids, object):
 
         self._dependencies = validate_dependency_dict(dependencies)
 
-        dependency_structure, pipeline_solid_dict = create_execution_structure(
+        dependency_structure, solid_dict = create_execution_structure(
             self._current_level_solid_defs, self._dependencies, container_definition=None
         )
 
-        self._solid_dict = pipeline_solid_dict
+        self._solid_dict = solid_dict
         self._dependency_structure = dependency_structure
 
         self._runtime_type_dict = construct_runtime_type_dictionary(self._current_level_solid_defs)
@@ -197,9 +196,7 @@ class PipelineDefinition(IContainSolids, object):
             for solid_def in current_level_solid_def.iterate_solid_defs():
                 self._all_solid_defs[solid_def.name] = solid_def
 
-        self._selector = check.opt_inst_param(
-            selector, 'selector', ExecutionSelector, ExecutionSelector(self._name)
-        )
+        self._selector = ExecutionSelector(self.name, list(solid_dict.keys()))
 
     @property
     def name(self):
@@ -452,7 +449,6 @@ def _build_sub_pipeline(pipeline_def, solid_names):
         solid_defs=list({solid.definition for solid in solids}),
         mode_defs=pipeline_def.mode_definitions,
         dependencies=deps,
-        selector=ExecutionSelector(pipeline_def.name, solid_names),
     )
     handle, _ = ExecutionTargetHandle.get_handle(pipeline_def)
     if handle:
