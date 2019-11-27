@@ -1,3 +1,5 @@
+from functools import update_wrapper
+
 from dagster import check
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
 from dagster.core.types import Field, Int
@@ -92,16 +94,32 @@ class _ExecutorDecoratorCallable(object):
         if not self.name:
             self.name = fn.__name__
 
-        return ExecutorDefinition(
+        executor_def = ExecutorDefinition(
             name=self.name,
             config_field=self.config_field,
             executor_creation_fn=fn,
             required_resource_keys=self.required_resource_keys,
         )
 
+        update_wrapper(executor_def, wrapped=fn)
+
+        return executor_def
+
 
 @executor(name='in_process')
 def in_process_executor(init_context):
+    '''The default in-process executor.
+
+    In most Dagster environments, this will be the default executor. It is available by default on
+    any :py:class:`ModeDefinition` that does not provide custom executors. To select it explicitly,
+    include the following top-level fragment in config:
+
+    .. code-block:: yaml
+
+        execution:
+          in_process:
+
+    '''
     from dagster.core.engine.init import InitExecutorContext
 
     check.inst_param(init_context, 'init_context', InitExecutorContext)
@@ -113,6 +131,23 @@ def in_process_executor(init_context):
     name='multiprocess', config={'max_concurrent': Field(Int, is_optional=True, default_value=0)}
 )
 def multiprocess_executor(init_context):
+    '''The default multiprocess executor.
+
+    This simple multiprocess executor is available by default on any :py:class:`ModeDefinition`
+    that does not provide custom executors. To select the multiprocess executor, include a fragment
+    such as the following in your config:
+
+    .. code-block:: yaml
+
+        execution:
+          multiprocess:
+            max_concurrent: 4
+    
+    The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run
+    concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of
+    :py:func:`python:multiprocessing.cpu_count`.
+
+    '''
     from dagster.core.definitions.handle import ExecutionTargetHandle
     from dagster.core.engine.init import InitExecutorContext
 

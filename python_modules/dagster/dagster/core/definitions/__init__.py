@@ -28,7 +28,13 @@ from .events import (
     TypeCheck,
     UrlMetadataEntryData,
 )
-from .executor import ExecutorDefinition, executor
+from .executor import (
+    ExecutorDefinition,
+    default_executors,
+    executor,
+    in_process_executor,
+    multiprocess_executor,
+)
 from .handle import ExecutionTargetHandle, LoaderEntrypoint
 from .input import InputDefinition, InputMapping
 from .logger import LoggerDefinition, logger

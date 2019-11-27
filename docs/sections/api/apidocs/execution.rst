@@ -139,3 +139,19 @@ Environment Dict Schema
 
 .. autoclass:: RunConfig
    :members:
+
+
+Executors
+----------------------
+.. autodata:: in_process_executor
+  :annotation: ExecutorDefinition
+
+.. autodata:: multiprocess_executor
+  :annotation: ExecutorDefinition
+
+.. autodata:: default_executors
+  :annotation: List[ExecutorDefinition]
+
+  The default executors available on any :py:class:`ModeDefinition` that does not provide custom
+  executors. These are currently [:py:class:`in_process_executor`,
+  :py:class:`multiprocess_executor`].
