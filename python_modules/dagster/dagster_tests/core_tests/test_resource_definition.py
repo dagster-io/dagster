@@ -1,11 +1,14 @@
 import uuid
 
+import pytest
+
 from dagster import (
     DagsterResourceFunctionError,
     Field,
     ModeDefinition,
     PipelineDefinition,
     ResourceDefinition,
+    SolidInvocation,
     String,
     execute_pipeline,
     execute_pipeline_iterator,
@@ -464,3 +467,91 @@ def test_resource_init_failure():
 
     assert len(events) == 1
     assert events[0].event_type_value == 'PIPELINE_INIT_FAILURE'
+
+
+# https://github.com/dagster-io/dagster/issues/1949
+@pytest.mark.xfail
+def test_with_resource_mapper_fn_with_required_keys():
+    resources_initted = {}
+
+    @resource
+    def resource_a(_):
+        resources_initted['a'] = True
+        yield 'A'
+
+    @resource
+    def resource_c_alias(_):
+        resources_initted['c'] = True
+        yield 'C'
+
+    @solid(required_resource_keys={'a'})
+    def consumes_resource_a(context):
+        assert context.resources.a == 'A'
+        return context.resources.a
+
+    @solid(required_resource_keys={'c'})
+    def consumes_resource_c(context):
+        assert context.resources.c == 'C'
+        return context.resources.c
+
+    def _resource_mapper_fn(resources, _resource_deps):
+        return {'a': resources['a'], 'c': resources['c_alias']}
+
+    pipeline_with_resource_mapper = PipelineDefinition(
+        solid_defs=[consumes_resource_a, consumes_resource_c],
+        mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'c_alias': resource_c_alias})],
+        dependencies={
+            SolidInvocation('consumes_resource_a'): {},
+            SolidInvocation(
+                'consumes_resource_c',
+                alias='consumes_resource_c',
+                resource_mapper_fn=_resource_mapper_fn,
+            ): {},
+        },
+    )
+
+    assert execute_pipeline(pipeline_with_resource_mapper).success
+
+
+# https://github.com/dagster-io/dagster/issues/1950
+@pytest.mark.xfail
+def test_with_resource_mapper_fn_without_required_keys():
+    resources_initted = {}
+
+    @resource
+    def resource_a(_):
+        resources_initted['a'] = True
+        yield 'A'
+
+    @resource
+    def resource_c_alias(_):
+        resources_initted['c'] = True
+        yield 'C'
+
+    @solid(required_resource_keys={'a'})
+    def consumes_resource_a(context):
+        assert context.resources.a == 'A'
+        return context.resources.a
+
+    @solid
+    def consumes_resource_c(context):
+        assert context.resources.c == 'C'
+        return context.resources.c
+
+    def _resource_mapper_fn(resources, _resource_deps):
+        return {'a': resources['a'], 'c': resources['c_alias']}
+
+    pipeline_with_resource_mapper = PipelineDefinition(
+        solid_defs=[consumes_resource_a, consumes_resource_c],
+        mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'c_alias': resource_c_alias})],
+        dependencies={
+            SolidInvocation('consumes_resource_a'): {},
+            SolidInvocation(
+                'consumes_resource_c',
+                alias='consumes_resource_c',
+                resource_mapper_fn=_resource_mapper_fn,
+            ): {},
+        },
+    )
+
+    assert execute_pipeline(pipeline_with_resource_mapper).success
