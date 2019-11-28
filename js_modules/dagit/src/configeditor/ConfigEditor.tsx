@@ -91,7 +91,18 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
   componentDidUpdate(prevProps: ConfigEditorProps) {
     if (!this._editor) return;
     if (prevProps.environmentSchema === this.props.environmentSchema) return;
+    this.performInitialPass();
+  }
+
+  performInitialPass() {
+    // update the gutter and redlining
     performLint(this._editor);
+
+    // update the contextual help based on the environmentSchema and content
+    const { context } = expandAutocompletionContextAtCursor(this._editor);
+    this.props.onHelpContextChange(
+      context ? { type: context.closestCompositeType } : null
+    );
   }
 
   render() {
@@ -157,7 +168,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
           }
           editorDidMount={editor => {
             this._editor = editor;
-            performLint(editor);
+            this.performInitialPass();
           }}
           onBeforeChange={(editor, data, value) => {
             this.props.onConfigChange(value);
