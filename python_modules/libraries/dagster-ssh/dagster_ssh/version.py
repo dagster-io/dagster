@@ -1,3 +1,3 @@
-__version__ = '0.6.4'
+__version__ = '0.6.5'
 
-__nightly__ = 'nightly-2019.11.27'
+__nightly__ = 'nightly-2019.11.28'

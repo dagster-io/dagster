@@ -4,13 +4,14 @@ from dagster_aws.s3.file_manager import S3FileHandle
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.solids import file_handle_to_s3
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+from dagster_pyspark import pyspark_resource
 
 from dagster import ModeDefinition, PresetDefinition, composite_solid, file_relative_path, pipeline
 from dagster.core.storage.file_cache import fs_file_cache
 from dagster.core.storage.temp_file_manager import tempfile_resource
 
 from .cache_file_from_s3 import cache_file_from_s3
-from .resources import postgres_db_info_resource, redshift_db_info_resource, spark_session_local
+from .resources import postgres_db_info_resource, redshift_db_info_resource
 from .solids import (
     average_sfo_outbound_avg_delays_by_destination,
     delays_by_geography,
@@ -32,7 +33,7 @@ from .solids import (
 test_mode = ModeDefinition(
     name='test',
     resource_defs={
-        'spark': spark_session_local,
+        'spark': pyspark_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
         's3': s3_resource,
@@ -45,7 +46,7 @@ test_mode = ModeDefinition(
 local_mode = ModeDefinition(
     name='local',
     resource_defs={
-        'spark': spark_session_local,
+        'spark': pyspark_resource,
         's3': s3_resource,
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
@@ -58,7 +59,7 @@ local_mode = ModeDefinition(
 prod_mode = ModeDefinition(
     name='prod',
     resource_defs={
-        'spark': spark_session_local,  # FIXME
+        'spark': pyspark_resource,  # FIXME
         's3': s3_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,

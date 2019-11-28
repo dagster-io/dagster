@@ -22,10 +22,27 @@ except ImportError:
 class TestAirflowPython_0IngestExecution(object):
     handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_ingest_pipeline)
     pipeline_name = 'airline_demo_ingest_pipeline'
-    config_yaml = [
-        script_relative_path(os.path.join('..', 'environments', 'local_base.yaml')),
-        script_relative_path(os.path.join('..', 'environments', 'local_airflow.yaml')),
-        script_relative_path(os.path.join('..', 'environments', 'local_fast_ingest.yaml')),
+    environment_yaml = [
+        script_relative_path(
+            os.path.join(
+                '..', '..', 'dagster_examples', 'airline_demo', 'environments', 'local_base.yaml'
+            )
+        ),
+        script_relative_path(
+            os.path.join(
+                '..', '..', 'dagster_examples', 'airline_demo', 'environments', 'local_airflow.yaml'
+            )
+        ),
+        script_relative_path(
+            os.path.join(
+                '..',
+                '..',
+                'dagster_examples',
+                'airline_demo',
+                'environments',
+                'local_fast_ingest.yaml',
+            )
+        ),
     ]
     mode = 'local'
 
@@ -38,10 +55,27 @@ class TestAirflowPython_0IngestExecution(object):
 class TestAirflowPython_1WarehouseExecution(object):
     handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_warehouse_pipeline)
     pipeline_name = 'airline_demo_warehouse_pipeline'
-    config_yaml = [
-        script_relative_path(os.path.join('..', 'environments', 'local_base.yaml')),
-        script_relative_path(os.path.join('..', 'environments', 'local_airflow.yaml')),
-        script_relative_path(os.path.join('..', 'environments', 'local_warehouse.yaml')),
+    environment_yaml = [
+        script_relative_path(
+            os.path.join(
+                '..', '..', 'dagster_examples', 'airline_demo', 'environments', 'local_base.yaml'
+            )
+        ),
+        script_relative_path(
+            os.path.join(
+                '..', '..', 'dagster_examples', 'airline_demo', 'environments', 'local_airflow.yaml'
+            )
+        ),
+        script_relative_path(
+            os.path.join(
+                '..',
+                '..',
+                'dagster_examples',
+                'airline_demo',
+                'environments',
+                'local_warehouse.yaml',
+            )
+        ),
     ]
     mode = 'local'
 

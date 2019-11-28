@@ -4,7 +4,7 @@ from pyspark.sql import SparkSession
 # download process from Maven. This allows us to run python -m airline_demo.resources in the
 # Dockerfile and avoid a long runtime delay before each containerized solid executes.
 
-# must stay in sync with airline_demo.resources.spark_session_local
+# must stay in sync with airline_demo requirements
 
 
 def spark_session():

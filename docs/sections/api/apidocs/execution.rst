@@ -139,3 +139,35 @@ Environment Dict Schema
 
 .. autoclass:: RunConfig
    :members:
+
+
+System Storage
+--------------
+.. autodata:: mem_system_storage
+  :annotation: SystemStorageDefinition
+
+.. autodata:: fs_system_storage
+  :annotation: SystemStorageDefinition
+
+.. autodata:: default_system_storage_defs
+  :annotation: List[SystemStorageDefinition]
+
+  The default system storages available on any :py:class:`ModeDefinition` that does not provide
+  custom system storages. These are currently [:py:class:`mem_system_storage`,
+  :py:class:`fs_system_storage`].
+
+
+Executors
+---------
+.. autodata:: in_process_executor
+  :annotation: ExecutorDefinition
+
+.. autodata:: multiprocess_executor
+  :annotation: ExecutorDefinition
+
+.. autodata:: default_executors
+  :annotation: List[ExecutorDefinition]
+
+  The default executors available on any :py:class:`ModeDefinition` that does not provide custom
+  executors. These are currently [:py:class:`in_process_executor`,
+  :py:class:`multiprocess_executor`].

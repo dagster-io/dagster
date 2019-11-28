@@ -6,7 +6,14 @@ from dagster_aws.emr.resources import emr_pyspark_resource
 from dagster_pyspark import pyspark_resource, pyspark_solid
 from moto import mock_emr
 
-from dagster import Field, ModeDefinition, RunConfig, execute_pipeline, pipeline
+from dagster import (
+    DagsterInvalidDefinitionError,
+    Field,
+    ModeDefinition,
+    RunConfig,
+    execute_pipeline,
+    pipeline,
+)
 from dagster.seven import mock
 
 
@@ -91,6 +98,36 @@ def test_pyspark_emr(mock_wait):
     )
     assert result.success
     assert mock_wait.called_once
+
+
+def test_bad_requirements_txt():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        execute_pipeline(
+            example_pipe,
+            environment_dict={
+                'solids': {'blah': {'config': {'foo': 'a string', 'bar': 123}}},
+                'resources': {
+                    'pyspark': {
+                        'config': {
+                            'requirements_file_path': 'DOES_NOT_EXIST',
+                            'pipeline_file': __file__,
+                            'pipeline_fn_name': 'example_pipe',
+                            'job_flow_id': 'some_job_flow_id',
+                            'staging_bucket': 'dagster-scratch-80542c2',
+                            'region_name': 'us-west-1',
+                        }
+                    }
+                },
+            },
+            run_config=RunConfig(mode='prod'),
+        )
+    assert 'The requirements.txt file that was specified does not exist' in str(exc_info.value)
+
+    # We have to manually stop the pyspark context here because we interrupted before resources
+    # were cleaned up, and so stop() was never called on the spark session.
+    from pyspark.sql import SparkSession
+
+    SparkSession.builder.getOrCreate().stop()
 
 
 @pytest.mark.skip

@@ -157,7 +157,7 @@ def ingest_csv_file_handle_to_spark(context, csv_file_handle: FileHandle) -> Dat
     # the spark APIs to load directly from whatever object store, rather
     # than using any interleaving temp files.
     data_frame = (
-        context.resources.spark.read.format('csv')
+        context.resources.spark.spark_session.read.format('csv')
         .options(
             header='true',
             # inferSchema='true',
@@ -494,6 +494,7 @@ sfo_delays_by_destination = notebook_solid(
 
 
 @solid(
+    required_resource_keys={'spark'},
     config={'subsample_pct': Field(Int)},
     description='''
     This solid takes April, May, and June data and coalesces it into a q2 data set.
@@ -547,7 +548,7 @@ def join_q2_data(
     origin_prefixed_master_cord_data = do_prefix_column_names(master_cord_data, 'ORIGIN_')
     origin_prefixed_master_cord_data.createOrReplaceTempView('origin_cord_data')
 
-    full_data = context.resources.spark.sql(
+    full_data = context.resources.spark.spark_session.sql(
         '''
         SELECT * FROM origin_cord_data
         LEFT JOIN (

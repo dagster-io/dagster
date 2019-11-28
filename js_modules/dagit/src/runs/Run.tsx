@@ -33,6 +33,8 @@ import { SharedToaster } from "../Util";
 const REEXECUTE_DESCRIPTION = "Re-execute the pipeline run from scratch";
 const RETRY_DESCRIPTION =
   "Retries the pipeline run, skipping steps that completed successfully";
+const RETRY_DISABLED =
+  "Retries are only enabled on persistent storage. Try rerunning with a different storage configuration.";
 
 interface IRunProps {
   client: ApolloClient<any>;
@@ -116,6 +118,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
               }
             }
           }
+          artifactsPersisted
         }
         stepKeysToExecute
       }
@@ -204,6 +207,52 @@ export class Run extends React.Component<IRunProps, IRunState> {
     });
   };
 
+  renderRetry(
+    reexecuteMutation: MutationFunction<Reexecute, ReexecuteVariables>
+  ) {
+    const { run } = this.props;
+    if (!run || !run.executionPlan) {
+      return null;
+    }
+
+    if (run.status !== PipelineRunStatus.FAILURE) {
+      return null;
+    }
+
+    if (!run.executionPlan.artifactsPersisted) {
+      return (
+        <Tooltip
+          hoverOpenDelay={300}
+          content={RETRY_DISABLED}
+          position={Position.BOTTOM}
+        >
+          <ExecutionStartButton
+            title="Resume / Retry"
+            icon={IconNames.DISABLE}
+            small={true}
+            disabled
+            onClick={() => null}
+          />
+        </Tooltip>
+      );
+    }
+
+    return (
+      <Tooltip
+        hoverOpenDelay={300}
+        content={RETRY_DESCRIPTION}
+        position={Position.BOTTOM}
+      >
+        <ExecutionStartButton
+          title="Resume / Retry"
+          icon={IconNames.REPEAT}
+          small={true}
+          onClick={() => this.onReexecute(reexecuteMutation, undefined, true)}
+        />
+      </Tooltip>
+    );
+  }
+
   render() {
     const { client, run } = this.props;
     const { logsFilter, highlightedError } = this.state;
@@ -262,26 +311,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
                               <CancelRunButton run={run} />
                             </>
                           ) : null}
-                          {run && run.status === PipelineRunStatus.FAILURE ? (
-                            <Tooltip
-                              hoverOpenDelay={300}
-                              content={RETRY_DESCRIPTION}
-                              position={Position.BOTTOM}
-                            >
-                              <ExecutionStartButton
-                                title="Resume / Retry"
-                                icon={IconNames.REPEAT}
-                                small={true}
-                                onClick={() =>
-                                  this.onReexecute(
-                                    reexecuteMutation,
-                                    undefined,
-                                    true
-                                  )
-                                }
-                              />
-                            </Tooltip>
-                          ) : null}
+                          {this.renderRetry(reexecuteMutation)}
                         </LogsToolbar>
                         <LogsScrollingTable
                           nodes={filteredNodes}

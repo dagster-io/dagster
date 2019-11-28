@@ -1,11 +1,38 @@
 # Changelog
 
-## Head
+## 0.6.5
 
-- `is_secret` has been removed from `Field`. It was not being used to any effect.
+**Breaking**
+- The interface for type checks has changed. Previously the `type_check_fn` on a custom type was
+  required to return None (=passed) or else raise `Failure` (=failed). Now, a `type_check_fn` may
+  return `True`/`False` to indicate success/failure in the ordinary case, or else return a
+  `TypeCheck`. The new`success` field on `TypeCheck` now indicates success/failure. This obviates
+  the need for the `typecheck_metadata_fn`, which has been removed.
+- Executions of individual composite solids (e.g. in test) now produce a
+  `CompositeSolidExecutionResult` rather than a `SolidExecutionResult`.
 - `dagster.core.storage.sqlite_run_storage.SqliteRunStorage` has moved to
   `dagster.core.storage.runs.SqliteRunStorage`. Any persisted `dagster.yaml` files should be updated
   with the new classpath.
+- `is_secret` has been removed from `Field`. It was not being used to any effect.
+- The `environmentType` and `configTypes` fields have been removed from the dagster-graphql
+  `Pipeline` type. The `configDefinition` field on `SolidDefinition` has been renamed to
+  `configField`.
+
+**Bugfix**
+- `PresetDefinition.from_files` is now guaranteed to give identical results across all Python
+  minor versions.
+- Nested composite solids with no config, but with config mapping functions, now behave as expected.
+- The dagster-airflow `DagsterKubernetesPodOperator` has been fixed.
+- Dagit is more robust to changes in repositories.
+- Improvements to Dagit interface.
+
+**New**
+- dagster_pyspark now supports remote execution on EMR with the `@pyspark_solid` decorator.
+
+**Nits**
+- Documentation has been improved.
+- The top level config field `features` in the `dagster.yaml` will no longer have any effect.
+- Third-party dependencies have been relaxed to reduce the risk of version conflicts.
 
 ## 0.6.4
 

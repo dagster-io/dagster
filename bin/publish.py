@@ -7,6 +7,8 @@ Please follow the checklist in RELEASING.md at the root of this repository.
 For detailed usage instructions, please consult the command line help,
 available by running `python publish.py --help`.
 """
+# distutils issue: https://github.com/PyCQA/pylint/issues/73
+
 import contextlib
 import datetime
 import fnmatch
@@ -17,8 +19,6 @@ import sys
 import tempfile
 import urllib
 from collections import defaultdict
-
-# https://github.com/PyCQA/pylint/issues/73
 from distutils import spawn  # pylint: disable=no-name-in-module
 from itertools import groupby
 
@@ -82,7 +82,7 @@ def construct_publish_comands(additional_steps=None, nightly=False):
             'python setup.py sdist bdist_wheel{nightly}'.format(
                 nightly=' --nightly' if nightly else ''
             ),
-            'twine upload dist/*',
+            'twine upload --verbose dist/*',
         ]
     )
 

@@ -84,6 +84,7 @@ def test_list_param():
 
 def test_set_param():
     assert check.set_param(set(), 'set_param') == set()
+    assert check.set_param(frozenset(), 'set_param') == set()
 
     with pytest.raises(ParameterCheckError):
         check.set_param(None, 'set_param')
@@ -174,6 +175,7 @@ def test_opt_list_param():
 def test_opt_set_param():
     assert check.opt_set_param(None, 'set_param') == set()
     assert check.opt_set_param(set(), 'set_param') == set()
+    assert check.opt_set_param(frozenset(), 'set_param') == set()
     assert check.opt_set_param({3}, 'set_param') == {3}
 
     with pytest.raises(ParameterCheckError):

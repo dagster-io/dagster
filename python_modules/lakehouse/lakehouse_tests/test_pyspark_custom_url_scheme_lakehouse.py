@@ -1,6 +1,6 @@
 import os
 
-from dagster_pyspark import spark_session_from_config, spark_session_resource
+from dagster_pyspark import pyspark_resource, spark_session_from_config
 from lakehouse import Lakehouse, construct_lakehouse_pipeline, input_table, pyspark_table
 from lakehouse.util import invoke_compute
 from pyspark.sql import DataFrame as SparkDF
@@ -27,12 +27,12 @@ FEATURE_TWO = 'feature_two'
 
 @this_pyspark_table(feature_area=FEATURE_ONE)
 def TableOne(context) -> SparkDF:
-    return context.resources.spark.createDataFrame([Row(num=1)])
+    return context.resources.spark.spark_session.createDataFrame([Row(num=1)])
 
 
 @this_pyspark_table(feature_area=FEATURE_ONE)
 def TableTwo(context) -> SparkDF:
-    return context.resources.spark.createDataFrame([Row(num=2)])
+    return context.resources.spark.spark_session.createDataFrame([Row(num=2)])
 
 
 @this_pyspark_table(
@@ -52,7 +52,7 @@ class ByFeatureParquetLakehouse(Lakehouse):
 
     def hydrate(self, context, table_type, table_metadata, _table_handle, _dest_metadata):
         path = self._path_for_table(table_type, table_metadata)
-        return context.resources.spark.read.parquet(path)
+        return context.resources.spark.spark_session.read.parquet(path)
 
     def materialize(self, _context, table_type, table_metadata, value):
         path = self._path_for_table(table_type, table_metadata)
@@ -66,7 +66,7 @@ def test_execute_byfeature_parquet_lakehouse():
         pipeline_def = construct_lakehouse_pipeline(
             name='test',
             lakehouse_tables=[TableOne, TableTwo, TableThree],
-            resources={'spark': spark_session_resource, 'lakehouse': lakehouse},
+            resources={'spark': pyspark_resource, 'lakehouse': lakehouse},
         )
 
         pipeline_result = execute_pipeline(pipeline_def)

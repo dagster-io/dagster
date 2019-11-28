@@ -11,6 +11,13 @@ from dagster.core.scheduler.storage import ScheduleStorage
 
 
 class SystemCronScheduler(Scheduler):
+    '''Scheduler class for system cron-backed scheduling.
+
+    Pass this class as the ``scheduler`` argument to the :py:func:`@schedules <dagster.schedules>`
+    API -- do not instantiate it directly.
+    
+    '''
+
     def __init__(self, artifacts_dir, schedule_storage):
         check.inst_param(schedule_storage, 'schedule_storage', ScheduleStorage)
         check.str_param(artifacts_dir, 'artifacts_dir')

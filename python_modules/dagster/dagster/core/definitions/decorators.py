@@ -166,15 +166,15 @@ class _SchedulerHandle(object):
 
 
 def schedules(scheduler):
-    '''
-    Create a scheduler with a ``Scheduler`` implementation and set of ``ScheduleDefinitions``.
+    '''Create a scheduler with a :py:class:`~dagster.core.scheduler.Scheduler` implementation and
+    set of :py:class:`ScheduleDefinition` instances.
 
-    Decorate a function that returns a list of ``ScheduleDefinitions``. The
-    decorator has an argument that takes a ``Scheduler`` implementation, such as
-    ``SystemCronScheduler``.
+    Decorate a function that returns a list of :py:class:`ScheduleDefinition`. The decorator has
+    an argument that takes a :py:class:`~dagster.core.scheduler.Scheduler` implementation, such as
+    :py:func:`~dagster_cron.SystemCronScheduler`.
 
     Args:
-        scheduler (Scheduler): The ``Scheduler`` implementation to use
+        scheduler (Scheduler): The scheduler implementation to use.
 
     Examples:
 

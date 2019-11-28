@@ -10,8 +10,8 @@ those tests that don't require Spark, `pytest -m "not spark"`.
 import pytest
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
-from dagster_examples.airline_demo.resources import spark_session_local
 from dagster_examples.airline_demo.solids import sql_solid
+from dagster_pyspark import pyspark_resource
 
 from dagster import ModeDefinition
 from dagster.core.storage.temp_file_manager import tempfile_resource
@@ -20,7 +20,7 @@ tempfile_mode = ModeDefinition(name='tempfile', resource_defs={'tempfile': tempf
 
 spark_mode = ModeDefinition(
     name='spark',
-    resource_defs={'spark': spark_session_local, 'tempfile': tempfile_resource, 's3': s3_resource},
+    resource_defs={'spark': pyspark_resource, 'tempfile': tempfile_resource, 's3': s3_resource},
     system_storage_defs=s3_plus_default_storage_defs,
 )
 

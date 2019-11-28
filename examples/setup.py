@@ -25,6 +25,7 @@ setup(
             'dagster-aws',
             'dagster-cron',
             'dagster-postgres',
+            'dagster-pyspark',
             'dagster-slack',
             'dagster-snowflake',
             # These two packages, descartes and geopandas, are used in the airline demo notebooks
