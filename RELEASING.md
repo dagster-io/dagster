@@ -62,14 +62,19 @@ It's also prudent to release from a fresh virtualenv.
         python bin/publish.py version
 
 6.  Push the new version to the remote. The new version tag will trigger a ReadTheDocs build.
+    If something goes wrong at this stage, don't panic! See "recovering from drift against remote"
+    below.
 
         git push && git push origin 0.4.3.pre0
 
-7.  Publish the new version to PyPI.
+7. Check that the ReadTheDocs build was successful at
+   [https://readthedocs.org/projects/dagster/builds/](https://readthedocs.org/projects/dagster/builds/).
+
+8.  Publish the new version to PyPI.
 
         python bin/publish.py publish
 
-8.  Manually switch the default ReadTheDocs version to the newly built docs:
+9.  Manually switch the default ReadTheDocs version to the newly built docs:
     [https://readthedocs.org/projects/dagster/versions/](https://readthedocs.org/projects/dagster/versions/)
 
     If the new version is a prerelease, it will be below in the "Inactive Versions" section. In
@@ -85,7 +90,7 @@ It's also prudent to release from a fresh virtualenv.
     Select the newly built version from the "Default version" dropdown and then click the "Save"
     button.
 
-9.  Check that the ReadTheDocs and PyPI versions are as you expect.
+10. Check that the ReadTheDocs and PyPI versions are as you expect.
 
         python bin/publish.py audit 0.4.3rc0
 
@@ -101,3 +106,23 @@ with a `~/.pypirc` file in the following format:
     repository: https://upload.pypi.org/legacy/
     username: <username>
     password: <password>
+
+### Recovering from drift against remote
+
+So you pushed a new version and got something like this:
+
+        15:52 $ git push && git push origin 0.6.5.pre0
+        To github.com:dagster-io/dagster.git
+        ! [rejected]          master -> master (non-fast-forward)
+        error: failed to push some refs to 'git@github.com:dagster-io/dagster.git'
+        hint: Updates were rejected because the tip of your current branch is behind
+        hint: its remote counterpart. Integrate the remote changes (e.g.
+        hint: 'git pull ...') before pushing again.
+
+Don't panic, you can recover your previous state and continue with a clean version.
+
+First, you'll want to `git reset --hard` to the commit before your new version.
+
+Then, you'll need to delete the tag you created -- `git tag -d 0.6.5.pre0`, for example.
+
+Now you are clear to `git pull` and proceed from step 1 above.
