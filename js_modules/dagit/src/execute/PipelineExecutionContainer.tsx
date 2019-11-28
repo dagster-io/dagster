@@ -21,7 +21,10 @@ import {
   isHelpContextEqual
 } from "../configeditor/ConfigEditor";
 import { ConfigEditorPresetsPicker } from "./ConfigEditorPresetsPicker";
-import ConfigEditorModePicker from "./ConfigEditorModePicker";
+import {
+  ConfigEditorModePickerPlaceholder,
+  ConfigEditorModePicker
+} from "./ConfigEditorModePicker";
 import {
   applyChangesToSession,
   applySelectSession,
@@ -373,13 +376,16 @@ export default class PipelineExecutionContainer extends React.Component<
                       value={currentSession.solidSubset || null}
                       onChange={this.onSolidSubsetChange}
                     />
-                    {pipeline && (
+                    <div style={{ width: 5 }} />
+                    {pipeline ? (
                       <ConfigEditorModePicker
                         modes={pipeline.modes}
                         modeError={modeError}
                         onModeChange={this.onModeChange}
                         modeName={currentSession.mode}
                       />
+                    ) : (
+                      <ConfigEditorModePickerPlaceholder />
                     )}
                     <Button
                       icon="paragraph"
