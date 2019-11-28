@@ -211,10 +211,12 @@ const SolidsRootWithData: React.FunctionComponent<{
                       .join("/")}`
                   )
                 }
-                definitionInvocations={selected.invocations.map(i => ({
-                  handleID: i.solidHandle.handleID,
-                  pipelineName: i.pipeline.name
-                }))}
+                getInvocations={() => {
+                  return selected.invocations.map(i => ({
+                    handleID: i.solidHandle.handleID,
+                    pipelineName: i.pipeline.name
+                  }));
+                }}
               />
             </SolidDetailScrollContainer>
           ) : (

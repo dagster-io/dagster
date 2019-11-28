@@ -17,10 +17,8 @@ interface ISidebarTabbedContainerProps {
   typeExplorer?: string;
   pipeline: SidebarTabbedContainerPipelineFragment;
   solid?: SidebarTabbedContainerSolidFragment;
-  solidDefinitionInvocations?: {
-    handleID: string;
-  }[];
   parentSolid?: SidebarTabbedContainerSolidFragment;
+  getInvocations?: (definitionName: string) => { handleID: string }[];
   onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
   onClickSolid: (arg: SolidNameOrPath) => void;
 }
@@ -77,7 +75,7 @@ export default class SidebarTabbedContainer extends React.Component<
       typeExplorer,
       types,
       solid,
-      solidDefinitionInvocations,
+      getInvocations,
       parentSolid,
       pipeline
     } = this.props;
@@ -112,7 +110,7 @@ export default class SidebarTabbedContainer extends React.Component<
             key={`${solid.name}-def`}
             showingSubsolids={false}
             definition={solid.definition}
-            definitionInvocations={solidDefinitionInvocations}
+            getInvocations={getInvocations}
             onClickInvocation={({ handleID }) =>
               this.props.onClickSolid({ path: handleID.split(".") })
             }
@@ -130,7 +128,7 @@ export default class SidebarTabbedContainer extends React.Component<
             key={`${parentSolid.name}-def`}
             showingSubsolids={true}
             definition={parentSolid.definition}
-            definitionInvocations={solidDefinitionInvocations}
+            getInvocations={getInvocations}
             onClickInvocation={({ handleID }) =>
               this.props.onClickSolid({ path: handleID.split(".") })
             }
