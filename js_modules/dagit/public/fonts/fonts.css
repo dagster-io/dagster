@@ -1,0 +1,35 @@
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Open Sans Regular'), local('OpenSans-Regular'), url('/fonts/OpenSans-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Open Sans SemiBold'), local('OpenSans-SemiBold'), url('/fonts/OpenSans-SemiBold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Source Code Pro Regular'), local('SourceCodePro-Regular'), url('/fonts/SourceCodePro-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: local('Source Code Pro Medium'), local('SourceCodePro-Medium'), url('/fonts/SourceCodePro-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Source Code Pro Bold'), local('SourceCodePro-Bold'), url('/fonts/SourceCodePro-Bold.woff2') format('woff2');
+}
