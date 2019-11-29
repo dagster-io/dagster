@@ -2,7 +2,7 @@ import * as React from "react";
 import * as TestRenderer from "react-test-renderer";
 import { BrowserRouter } from "react-router-dom";
 
-import ConfigEditorModePicker from "../execute/ConfigEditorModePicker";
+import { ConfigEditorModePicker } from "../execute/ConfigEditorModePicker";
 import { ModeNotFoundError } from "../execute/PipelineExecutionContainer";
 import { PipelineExecutionContainerFragment_Pipeline_modes } from "../execute/types/PipelineExecutionContainerFragment";
 

@@ -5,7 +5,7 @@ import { Select } from "@blueprintjs/select";
 import { PipelineDetailsFragment_modes } from "./types/PipelineDetailsFragment";
 import { ModeNotFoundError } from "./PipelineExecutionContainer";
 
-interface IConfigEditorModePickerProps {
+interface ConfigEditorModePickerProps {
   modes: PipelineDetailsFragment_modes[];
   modeError?: ModeNotFoundError;
   modeName: string | null;
@@ -18,10 +18,10 @@ interface Mode {
 
 const ModeSelect = Select.ofType<Mode>();
 
-export default class ConfigEditorModePicker extends React.PureComponent<
-  IConfigEditorModePickerProps
+export class ConfigEditorModePicker extends React.PureComponent<
+  ConfigEditorModePickerProps
 > {
-  getModeFromProps = (props: IConfigEditorModePickerProps) => {
+  getModeFromProps = (props: ConfigEditorModePickerProps) => {
     return props.modeName
       ? props.modes.find(m => m.name === props.modeName)
       : props.modes[0];
@@ -38,7 +38,7 @@ export default class ConfigEditorModePicker extends React.PureComponent<
     }
   }
 
-  componentDidUpdate(prevProps: IConfigEditorModePickerProps) {
+  componentDidUpdate(prevProps: ConfigEditorModePickerProps) {
     const currentMode = this.getCurrentMode();
     const prevMode = this.getModeFromProps(prevProps);
 
@@ -53,40 +53,38 @@ export default class ConfigEditorModePicker extends React.PureComponent<
     const valid = !this.props.modeError;
 
     return (
-      <div style={{ marginLeft: 5 }}>
-        <ModeSelect
-          activeItem={currentMode}
-          filterable={true}
-          disabled={singleMode && valid}
-          items={this.props.modes}
-          itemPredicate={(query, mode) =>
-            query.length === 0 || mode.name.includes(query)
-          }
-          itemRenderer={(mode, props) => (
-            <Menu.Item
-              active={props.modifiers.active}
-              key={mode.name}
-              text={mode.name}
-              onClick={props.handleClick}
-            />
-          )}
-          onItemSelect={this.onItemSelect}
-        >
-          <Button
-            icon={valid ? "insert" : IconNames.WARNING_SIGN}
-            intent={valid ? Intent.NONE : Intent.WARNING}
-            text={
-              valid
-                ? currentMode
-                  ? `Mode: ${currentMode.name}`
-                  : "Select Mode"
-                : "Invalid Mode Selection"
-            }
-            disabled={singleMode && valid}
-            rightIcon="caret-down"
+      <ModeSelect
+        activeItem={currentMode}
+        filterable={true}
+        disabled={singleMode && valid}
+        items={this.props.modes}
+        itemPredicate={(query, mode) =>
+          query.length === 0 || mode.name.includes(query)
+        }
+        itemRenderer={(mode, props) => (
+          <Menu.Item
+            active={props.modifiers.active}
+            key={mode.name}
+            text={mode.name}
+            onClick={props.handleClick}
           />
-        </ModeSelect>
-      </div>
+        )}
+        onItemSelect={this.onItemSelect}
+      >
+        <Button
+          icon={valid ? "insert" : IconNames.WARNING_SIGN}
+          intent={valid ? Intent.NONE : Intent.WARNING}
+          text={
+            valid
+              ? currentMode
+                ? `Mode: ${currentMode.name}`
+                : "Select Mode"
+              : "Invalid Mode Selection"
+          }
+          disabled={singleMode && valid}
+          rightIcon="caret-down"
+        />
+      </ModeSelect>
     );
   }
 
