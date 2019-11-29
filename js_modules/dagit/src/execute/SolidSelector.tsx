@@ -298,15 +298,21 @@ export const SOLID_SELECTOR_QUERY = gql`
 export default (props: ISolidSelectorProps) => {
   const { data } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
     variables: { name: props.pipelineName },
+
+    // Note: By default, useQuery does not re-run the query when variables change, it only
+    // impacts the item retrieved from the local cache, which is most likely null. fetchPolicy
+    // "cache-and-network" would work but {data} is the old pipeline until the new pipeline is
+    // returned. "network-only" ensures {data} is null or the correct server-provided result.
     fetchPolicy: "network-only"
   });
 
-  if (!data || !data.pipeline || data.pipeline.__typename !== "Pipeline") {
+  if (data?.pipeline?.__typename !== "Pipeline") {
     return (
       <Button icon={IconNames.SEARCH_AROUND} intent={Intent.NONE}>
         <Spinner size={17} />
       </Button>
     );
   }
+
   return <SolidSelector {...props} pipeline={data.pipeline} />;
 };

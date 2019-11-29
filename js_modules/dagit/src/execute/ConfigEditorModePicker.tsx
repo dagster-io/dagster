@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Button, Intent, Menu, Spinner } from "@blueprintjs/core";
+import { Button, Intent, Menu } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { Select } from "@blueprintjs/select";
 import { PipelineDetailsFragment_modes } from "./types/PipelineDetailsFragment";
@@ -92,9 +92,3 @@ export class ConfigEditorModePicker extends React.PureComponent<
     this.props.onModeChange && this.props.onModeChange(mode.name);
   };
 }
-
-export const ConfigEditorModePickerPlaceholder = () => (
-  <Button icon={"insert"} intent={Intent.NONE}>
-    <Spinner size={17} />
-  </Button>
-);
