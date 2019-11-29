@@ -1,5 +1,5 @@
 import React from "react";
-import { TagInput, Popover, Menu, MenuItem } from "@blueprintjs/core";
+import { TagInput, Popover, Menu, MenuItem, Spinner } from "@blueprintjs/core";
 import styled from "styled-components";
 
 export interface SuggestionProvider {
@@ -28,6 +28,7 @@ interface TokenizingFieldProps {
   onChange: (values: TokenizingFieldValue[]) => void;
   suggestionProviders: SuggestionProvider[];
   placeholder?: string;
+  loading?: boolean;
 }
 
 function findProviderByToken(token: string, providers: SuggestionProvider[]) {
@@ -69,7 +70,8 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   values,
   maxValues,
   onChange,
-  placeholder
+  placeholder,
+  loading
 }) => {
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
@@ -284,6 +286,15 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
         onKeyDown={onKeyDown}
         tagProps={{ minimal: true }}
         placeholder={placeholder || "Filter..."}
+        rightElement={
+          loading ? (
+            <div style={{ padding: 3 }}>
+              <Spinner size={17} />
+            </div>
+          ) : (
+            undefined
+          )
+        }
       />
     </Popover>
   );
