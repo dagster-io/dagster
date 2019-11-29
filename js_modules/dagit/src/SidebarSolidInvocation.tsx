@@ -3,7 +3,11 @@ import gql from "graphql-tag";
 import TypeWithTooltip from "./TypeWithTooltip";
 import { SidebarSection, SidebarTitle } from "./SidebarComponents";
 import { SidebarSolidInvocationFragment } from "./types/SidebarSolidInvocationFragment";
-import { DependencyTable, DependencyRow } from "./SidebarSolidHelpers";
+import {
+  DependencyTable,
+  DependencyRow,
+  DependencyHeaderRow
+} from "./SidebarSolidHelpers";
 import { Button } from "@blueprintjs/core";
 import { SolidNameOrPath } from "./PipelineExplorer";
 
@@ -72,10 +76,19 @@ export class SidebarSolidInvocation extends React.Component<
           <SidebarTitle>{solid.name}</SidebarTitle>
           <DependencyTable>
             <tbody>
+              {solid.inputs.some(o => o.dependsOn.length) && (
+                <DependencyHeaderRow label="Inputs" />
+              )}
               {solid.inputs.map(({ definition, dependsOn }) =>
                 dependsOn.map((source, idx) => (
                   <DependencyRow key={idx} from={source} to={definition.name} />
                 ))
+              )}
+              {solid.outputs.some(o => o.dependedBy.length) && (
+                <DependencyHeaderRow
+                  label="Outputs"
+                  style={{ paddingTop: 15 }}
+                />
               )}
               {solid.outputs.map(({ definition, dependedBy }) =>
                 dependedBy.map((target, idx) => (
