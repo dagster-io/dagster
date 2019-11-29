@@ -154,6 +154,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
               maxValues={1}
               onChange={search => setSearch(search)}
               suggestionProviders={suggestions}
+              loading={queryResult.loading}
             />
           </Filters>
         </div>
