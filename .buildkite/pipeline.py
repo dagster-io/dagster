@@ -523,10 +523,6 @@ def coverage_step():
     )
 
 
-def deploy_trigger_step():
-    return {'label': 'Deploy Trigger', 'trigger': 'deploy', 'branches': 'master', 'async': True}
-
-
 def pylint_steps():
     res = []
 
@@ -651,9 +647,7 @@ if __name__ == "__main__":
     steps += releasability_tests()
 
     if DO_COVERAGE:
-        steps += [wait_step(), coverage_step(), wait_step(), deploy_trigger_step()]
-    else:
-        steps += [wait_step(), deploy_trigger_step()]
+        steps += [wait_step(), coverage_step()]
 
     print(
         yaml.dump(
