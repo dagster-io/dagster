@@ -31,10 +31,14 @@ import { CANCEL_MUTATION } from "./RunUtils";
 import { SharedToaster } from "../Util";
 
 const REEXECUTE_DESCRIPTION = "Re-execute the pipeline run from scratch";
+const REEXECUTE_PIPELINE_UNKNOWN =
+  "Re-execute is unavailable because the pipeline is not present in the current repository.";
 const RETRY_DESCRIPTION =
   "Retries the pipeline run, skipping steps that completed successfully";
 const RETRY_DISABLED =
   "Retries are only enabled on persistent storage. Try rerunning with a different storage configuration.";
+const RETRY_PIPELINE_UNKNOWN =
+  "Retry is unavailable because the pipeline is not present in the current repository.";
 
 interface IRunProps {
   client: ApolloClient<any>;
@@ -215,6 +219,8 @@ export class Run extends React.Component<IRunProps, IRunState> {
       return null;
     }
 
+    const isUnknown = run.pipeline.__typename === "UnknownPipeline";
+
     if (run.status !== PipelineRunStatus.FAILURE) {
       return null;
     }
@@ -240,13 +246,14 @@ export class Run extends React.Component<IRunProps, IRunState> {
     return (
       <Tooltip
         hoverOpenDelay={300}
-        content={RETRY_DESCRIPTION}
+        content={isUnknown ? RETRY_PIPELINE_UNKNOWN : RETRY_DESCRIPTION}
         position={Position.BOTTOM}
       >
         <ExecutionStartButton
           title="Resume / Retry"
           icon={IconNames.REPEAT}
           small={true}
+          disabled={isUnknown}
           onClick={() => this.onReexecute(reexecuteMutation, undefined, true)}
         />
       </Tooltip>
@@ -261,10 +268,12 @@ export class Run extends React.Component<IRunProps, IRunState> {
       ? run.stepKeysToExecute
       : null;
 
-    const executionPlan: RunFragment_executionPlan =
-      run && run.executionPlan
-        ? run.executionPlan
-        : { __typename: "ExecutionPlan", steps: [], artifactsPersisted: false };
+    const isUnknown = run?.pipeline.__typename === "UnknownPipeline";
+    const executionPlan: RunFragment_executionPlan = run?.executionPlan || {
+      __typename: "ExecutionPlan",
+      steps: [],
+      artifactsPersisted: false
+    };
 
     return (
       <Mutation<Reexecute, ReexecuteVariables> mutation={REEXECUTE_MUTATION}>
@@ -293,13 +302,18 @@ export class Run extends React.Component<IRunProps, IRunState> {
                         >
                           <Tooltip
                             hoverOpenDelay={300}
-                            content={REEXECUTE_DESCRIPTION}
                             position={Position.BOTTOM}
+                            content={
+                              isUnknown
+                                ? REEXECUTE_PIPELINE_UNKNOWN
+                                : REEXECUTE_DESCRIPTION
+                            }
                           >
                             <ExecutionStartButton
                               title="Re-execute"
                               icon={IconNames.REPEAT}
                               small={true}
+                              disabled={isUnknown}
                               onClick={() =>
                                 this.onReexecute(reexecuteMutation)
                               }
