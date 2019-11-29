@@ -5,7 +5,6 @@ from ..utils import frozendict, frozenlist
 from future.utils import raise_with_traceback
 from six import integer_types, string_types
 
-
 if sys.version_info[0] >= 3:
     type_types = type
 else:
