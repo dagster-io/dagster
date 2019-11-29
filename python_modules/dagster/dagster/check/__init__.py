@@ -1,7 +1,7 @@
 import inspect
 import sys
 
-from ..utils import frozendict, frozenlist
+from dagster.utils import frozendict, frozenlist
 from future.utils import raise_with_traceback
 from six import integer_types, string_types
 
