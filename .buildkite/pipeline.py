@@ -414,9 +414,7 @@ def library_tests():
 
     tests = []
     for library in library_modules:
-        if library == 'dagster-pyspark':
-            continue  # no tests :'(
-        elif library == 'dagster-gcp':
+        if library == 'dagster-gcp':
             tests += gcp_tests()
         elif library == 'dagster-postgres':
             tests += dagster_postgres_tests()
