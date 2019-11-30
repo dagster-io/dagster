@@ -117,6 +117,7 @@ LIBRARY_MODULES = [
     'dagster-papertrail',
     'dagster-pandas',
     'dagster-postgres',
+    'dagster-prometheus',
     'dagster-pyspark',
     'dagster-slack',
     'dagster-snowflake',
