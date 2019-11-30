@@ -1,4 +1,11 @@
-import { Colors, Button, Classes, Dialog, Intent } from "@blueprintjs/core";
+import {
+  Colors,
+  Button,
+  Classes,
+  Dialog,
+  Intent,
+  Spinner
+} from "@blueprintjs/core";
 import * as React from "react";
 import gql from "graphql-tag";
 import PipelineGraph from "../graph/PipelineGraph";
@@ -8,7 +15,6 @@ import {
   SolidSelectorQuery_pipeline,
   SolidSelectorQuery_pipeline_solids
 } from "./types/SolidSelectorQuery";
-import Loading from "../Loading";
 import {
   getDagrePipelineLayout,
   layoutsIntersect,
@@ -290,21 +296,23 @@ export const SOLID_SELECTOR_QUERY = gql`
 `;
 
 export default (props: ISolidSelectorProps) => {
-  const queryResult = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
-    variables: { name: props.pipelineName }
+  const { data } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
+    variables: { name: props.pipelineName },
+
+    // Note: By default, useQuery does not re-run the query when variables change, it only
+    // impacts the item retrieved from the local cache, which is most likely null. fetchPolicy
+    // "cache-and-network" would work but {data} is the old pipeline until the new pipeline is
+    // returned. "network-only" ensures {data} is null or the correct server-provided result.
+    fetchPolicy: "network-only"
   });
-  return (
-    <Loading queryResult={queryResult}>
-      {result => (
-        <SolidSelector
-          {...props}
-          pipeline={
-            result.pipeline && result.pipeline.__typename === "Pipeline"
-              ? result.pipeline
-              : null
-          }
-        />
-      )}
-    </Loading>
-  );
+
+  if (data?.pipeline?.__typename !== "Pipeline") {
+    return (
+      <Button icon={IconNames.SEARCH_AROUND} intent={Intent.NONE}>
+        <Spinner size={17} />
+      </Button>
+    );
+  }
+
+  return <SolidSelector {...props} pipeline={data.pipeline} />;
 };

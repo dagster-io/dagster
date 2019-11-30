@@ -28,8 +28,8 @@ interface IPipelineExplorerProps {
   pipeline: PipelineExplorerFragment;
   handles: PipelineExplorerSolidHandleFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
-  selectedDefinitionInvocations?: { handleID: string }[];
   parentHandle?: PipelineExplorerSolidHandleFragment;
+  getInvocations?: (definitionName: string) => { handleID: string }[];
 }
 
 interface IPipelineExplorerState {
@@ -310,7 +310,7 @@ export default class PipelineExplorer extends React.Component<
       pipeline,
       parentHandle,
       selectedHandle,
-      selectedDefinitionInvocations,
+      getInvocations,
       path
     } = this.props;
     const { filter } = this.state;
@@ -401,8 +401,8 @@ export default class PipelineExplorer extends React.Component<
                   <SidebarTabbedContainer
                     pipeline={pipeline}
                     solid={selectedHandle && selectedHandle.solid}
-                    solidDefinitionInvocations={selectedDefinitionInvocations}
                     parentSolid={parentHandle && parentHandle.solid}
+                    getInvocations={getInvocations}
                     onEnterCompositeSolid={this.handleEnterCompositeSolid}
                     onClickSolid={this.handleClickSolid}
                     {...querystring.parse(location.search || "")}

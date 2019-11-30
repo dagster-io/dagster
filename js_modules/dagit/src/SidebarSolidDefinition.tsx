@@ -29,7 +29,7 @@ import {
 
 interface SidebarSolidDefinitionProps {
   definition: SidebarSolidDefinitionFragment;
-  definitionInvocations?: SidebarSolidInvocationInfo[];
+  getInvocations?: (definitionName: string) => { handleID: string }[];
   showingSubsolids: boolean;
   onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
 }
@@ -114,7 +114,7 @@ export class SidebarSolidDefinition extends React.Component<
   public render() {
     const {
       definition,
-      definitionInvocations,
+      getInvocations,
       showingSubsolids,
       onClickInvocation
     } = this.props;
@@ -220,10 +220,10 @@ export class SidebarSolidDefinition extends React.Component<
             </SectionItemContainer>
           ))}
         </SidebarSection>
-        {definitionInvocations && (
+        {getInvocations && (
           <SidebarSection title={"All Invocations"}>
             <InvocationList
-              invocations={definitionInvocations}
+              invocations={getInvocations(definition.name)}
               onClickInvocation={onClickInvocation}
             />
           </SidebarSection>
