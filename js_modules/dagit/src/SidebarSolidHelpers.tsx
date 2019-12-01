@@ -120,6 +120,20 @@ export const DependencyRow = ({
   );
 };
 
+interface DependencyHeaderRowProps {
+  label: string;
+  style?: React.CSSProperties;
+}
+
+export const DependencyHeaderRow: React.FunctionComponent<DependencyHeaderRowProps> = ({
+  label,
+  ...rest
+}) => (
+  <tr>
+    <DependencyHeaderCell {...rest}>{label}</DependencyHeaderCell>
+  </tr>
+);
+
 export const ResourceHeader = styled(SectionHeader)`
   font-size: 13px;
 `;
@@ -146,6 +160,11 @@ export const DependencyLocalIOName = styled.div`
 
 export const DependencyTable = styled.table`
   width: 100%;
+`;
+
+export const DependencyHeaderCell = styled.td`
+  font-size: 0.7rem;
+  color: ${Colors.GRAY3};
 `;
 
 export const InvocationContainer = styled.div`
