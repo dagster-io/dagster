@@ -2,7 +2,6 @@ import os
 
 import boto3
 import six
-from botocore.exceptions import WaiterError
 from dagster_pyspark import PySparkResourceDefinition
 from dagster_spark.configs_spark import spark_config
 from dagster_spark.utils import flatten_dict, format_for_cli
@@ -11,20 +10,21 @@ from dagster import Field, check, resource
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.seven import get_system_temp_directory
 
+from .emr import EmrJobRunner
 from .utils import build_main_file, build_pyspark_zip, get_install_requirements_step
 
 # On EMR, Spark is installed here
 EMR_SPARK_HOME = '/usr/lib/spark/'
 
 
-class EMRPySparkResource(PySparkResourceDefinition):
+class EmrPySparkResource(PySparkResourceDefinition):
     def __init__(self, config):
         self.config = config
-        self.emr_client = boto3.client('emr', region_name=self.config['region_name'])
+        self.emr_job_runner = EmrJobRunner(region=self.config['region_name'])
         self.s3_client = boto3.client('s3', region_name=self.config['region_name'])
 
         # Construct the SparkSession
-        super(EMRPySparkResource, self).__init__(self.config.get('spark_conf'))
+        super(EmrPySparkResource, self).__init__(self.config.get('spark_conf'))
 
     def get_compute_fn(self, fn, solid_name):
         '''Construct new compute function for EMR pyspark execution. In the scenario where we are
@@ -42,8 +42,12 @@ class EMRPySparkResource(PySparkResourceDefinition):
         def new_compute_fn(context):
             self._sync_code_to_s3(context, solid_name)
             step_defs = self._get_execute_steps(context, solid_name)
-            steps = self.add_job_flow_steps(step_defs)
-            self.wait_for_steps(context, steps['StepIds'])
+            step_ids = self.emr_job_runner.add_job_flow_steps(
+                context, self.config['cluster_id'], step_defs
+            )
+            self.emr_job_runner.wait_for_steps_to_complete(
+                context, self.config['cluster_id'], step_ids
+            )
 
         return new_compute_fn
 
@@ -168,36 +172,6 @@ class EMRPySparkResource(PySparkResourceDefinition):
         )
         return steps
 
-    def add_job_flow_steps(self, step_defs):
-        '''Submit the constructed job flow steps to EMR for execution.
-        '''
-        return self.emr_client.add_job_flow_steps(
-            JobFlowId=self.config['job_flow_id'], Steps=step_defs
-        )
-
-    def wait_for_steps(self, context, step_ids):
-        '''Uses the boto3 waiter to wait for job flow step completion.
-        '''
-        waiter = self.emr_client.get_waiter('step_complete')
-
-        try:
-            context.log.info(
-                'Waiting for steps: '
-                + str(
-                    self.emr_client.list_steps(
-                        ClusterId=self.config['job_flow_id'], StepIds=step_ids
-                    )
-                )
-            )
-            for step_id in step_ids:
-                waiter.wait(
-                    ClusterId=self.config['job_flow_id'],
-                    StepId=step_id,
-                    WaiterConfig={'Delay': 5, 'MaxAttempts': 100},
-                )
-        except WaiterError:
-            context.log.warning('Timed out waiting for EMR steps to finish')
-
     @property
     def running_on_emr(self):
         '''Detects whether we are running on the EMR cluster
@@ -212,7 +186,7 @@ class EMRPySparkResource(PySparkResourceDefinition):
         'pipeline_file': Field(str, description='Path to the file where the pipeline is defined'),
         'pipeline_fn_name': Field(str),
         'spark_config': spark_config(),
-        'job_flow_id': Field(str, description='Name of the job flow (cluster) on which to execute'),
+        'cluster_id': Field(str, description='Name of the job flow (cluster) on which to execute'),
         'region_name': Field(str),
         'action_on_failure': Field(str, is_optional=True, default_value='CANCEL_AND_WAIT'),
         'staging_bucket': Field(
@@ -230,7 +204,7 @@ class EMRPySparkResource(PySparkResourceDefinition):
     }
 )
 def emr_pyspark_resource(init_context):
-    emr_pyspark = EMRPySparkResource(init_context.resource_config)
+    emr_pyspark = EmrPySparkResource(init_context.resource_config)
     try:
         yield emr_pyspark
     finally:

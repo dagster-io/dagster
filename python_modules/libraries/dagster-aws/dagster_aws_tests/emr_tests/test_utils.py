@@ -9,7 +9,7 @@ def test_subset_environment_dict():
                 'config': {
                     'pipeline_file': 'dagster_aws_tests/emr_tests/test_pyspark.py',
                     'pipeline_fn_name': 'pipe',
-                    'job_flow_id': 'j-272P42200OZ0Q',
+                    'cluster_id': 'j-272P42200OZ0Q',
                     'staging_bucket': 'dagster-scratch-80542c2',
                     'region_name': 'us-west-1',
                 }
