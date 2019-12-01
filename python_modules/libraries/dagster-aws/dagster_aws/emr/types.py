@@ -17,6 +17,25 @@ class EmrClusterState(PyEnum):
     TerminatedWithErrors = 'TERMINATED_WITH_ERRORS'
 
 
+EMR_CLUSTER_TERMINATED_STATES = [
+    EmrClusterState.Terminating,
+    EmrClusterState.Terminated,
+    EmrClusterState.TerminatedWithErrors,
+]
+
+EMR_CLUSTER_DONE_STATES = EMR_CLUSTER_TERMINATED_STATES + [EmrClusterState.Waiting]
+
+
+class EmrStepState(PyEnum):
+    Pending = 'PENDING'
+    Running = 'RUNNING'
+    Continue = 'CONTINUE'
+    Completed = 'COMPLETED'
+    Cancelled = 'CANCELLED'
+    Failed = 'FAILED'
+    Interrupted = 'INTERRUPTED'
+
+
 EmrActionOnFailure = Enum(
     name='EmrActionOnFailure',
     enum_values=[

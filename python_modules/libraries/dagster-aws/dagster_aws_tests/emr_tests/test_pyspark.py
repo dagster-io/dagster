@@ -1,8 +1,7 @@
 import os
 
-import boto3
 import pytest
-from dagster_aws.emr.resources import emr_pyspark_resource
+from dagster_aws.emr import EmrJobRunner, emr_pyspark_resource
 from dagster_pyspark import pyspark_resource, pyspark_solid
 from moto import mock_emr
 
@@ -15,6 +14,7 @@ from dagster import (
     pipeline,
 )
 from dagster.seven import mock
+from dagster.utils.test import create_test_pipeline_execution_context
 
 
 @pyspark_solid
@@ -58,10 +58,8 @@ def test_local():
 
 
 @mock_emr
-@mock.patch('dagster_aws.emr.resources.EMRPySparkResource.wait_for_steps')
+@mock.patch('dagster_aws.emr.emr.EmrJobRunner.wait_for_steps_to_complete')
 def test_pyspark_emr(mock_wait):
-    client = boto3.client('emr', region_name='us-west-1')
-
     run_job_flow_args = dict(
         Instances={
             'InstanceCount': 1,
@@ -77,7 +75,12 @@ def test_pyspark_emr(mock_wait):
         VisibleToAllUsers=True,
     )
 
-    job_flow_id = client.run_job_flow(**run_job_flow_args)['JobFlowId']
+    # Doing cluster setup outside of a solid here, because run_job_flow is not yet plumbed through
+    # to the pyspark EMR resource.
+    job_runner = EmrJobRunner(region='us-west-1')
+    context = create_test_pipeline_execution_context()
+    cluster_id = job_runner.run_job_flow(context, run_job_flow_args)
+
     result = execute_pipeline(
         example_pipe,
         environment_dict={
@@ -87,7 +90,7 @@ def test_pyspark_emr(mock_wait):
                     'config': {
                         'pipeline_file': __file__,
                         'pipeline_fn_name': 'example_pipe',
-                        'job_flow_id': job_flow_id,
+                        'cluster_id': cluster_id,
                         'staging_bucket': 'dagster-scratch-80542c2',
                         'region_name': 'us-west-1',
                     }
@@ -112,7 +115,7 @@ def test_bad_requirements_txt():
                             'requirements_file_path': 'DOES_NOT_EXIST',
                             'pipeline_file': __file__,
                             'pipeline_fn_name': 'example_pipe',
-                            'job_flow_id': 'some_job_flow_id',
+                            'cluster_id': 'some_cluster_id',
                             'staging_bucket': 'dagster-scratch-80542c2',
                             'region_name': 'us-west-1',
                         }
@@ -141,7 +144,7 @@ def test_do_it_live_emr():
                     'config': {
                         'pipeline_file': __file__,
                         'pipeline_fn_name': 'example_pipe',
-                        'job_flow_id': os.environ.get('AWS_EMR_JOB_FLOW_ID'),
+                        'cluster_id': os.environ.get('AWS_EMR_JOB_FLOW_ID'),
                         'staging_bucket': 'dagster-scratch-80542c2',
                         'region_name': 'us-west-1',
                     }
