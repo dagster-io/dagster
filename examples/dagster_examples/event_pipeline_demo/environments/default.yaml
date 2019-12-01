@@ -17,7 +17,6 @@ solids:
       target_folder: "/tmp/dagster/events/data"
   event_ingest:
     config:
-      spark_outputs: ["/tmp/dagster/events/data"]
       application_jar: "/tmp/dagster/events/events-assembly-0.1.0-SNAPSHOT.jar"
       deploy_mode: "client"
       application_arguments: "--local-path /tmp/dagster/events/data --date 2019-01-01"

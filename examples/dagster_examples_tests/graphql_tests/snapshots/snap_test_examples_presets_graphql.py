@@ -343,8 +343,6 @@ solids:
         spark:
           app:
             name: test_app
-      spark_outputs:
-      - /tmp/dagster/events/data
 ''',
                 'mode': 'default',
                 'name': 'default',

@@ -2,7 +2,19 @@ import functools
 import os
 import subprocess
 
-from dagster import InputDefinition, List, Output, OutputDefinition, Path, SolidDefinition, check
+from dagster import (
+    Dict,
+    Field,
+    InputDefinition,
+    List,
+    Nothing,
+    Output,
+    OutputDefinition,
+    Path,
+    SolidDefinition,
+    check,
+    solid,
+)
 
 from .configs import define_spark_config
 from .types import SparkSolidError
@@ -73,7 +85,7 @@ class SparkSolidDefinition(SolidDefinition):
 
     '''
 
-    def __init__(self, name, main_class, description=None):
+    def __init__(self, name, main_class, spark_outputs=None, description=None):
         name = check.str_param(name, 'name')
         main_class = check.str_param(main_class, 'main_class')
         description = check.opt_str_param(
@@ -81,6 +93,7 @@ class SparkSolidDefinition(SolidDefinition):
             'description',
             'This solid is a generic representation of a parameterized Spark job.',
         )
+        spark_outputs = check.opt_list_param(spark_outputs, 'spark_outputs', of_type=str)
 
         def _spark_compute_fn(context, _):
             '''Define Spark execution.
@@ -96,7 +109,7 @@ class SparkSolidDefinition(SolidDefinition):
             if retcode != 0:
                 raise SparkSolidError('Spark job failed. Please consult your logs.')
 
-            yield Output(context.solid_config.get('spark_outputs'), 'paths')
+            yield Output(spark_outputs, 'paths')
 
         super(SparkSolidDefinition, self).__init__(
             name=name,
@@ -104,9 +117,29 @@ class SparkSolidDefinition(SolidDefinition):
             input_defs=[InputDefinition('spark_inputs', List[Path])],
             output_defs=[OutputDefinition(dagster_type=List[Path], name='paths')],
             compute_fn=_spark_compute_fn,
-            config_field=define_spark_config(),
+            config_field=Field(Dict(define_spark_config())),
             metadata={'kind': 'spark', 'main_class': main_class},
             step_metadata_fn=functools.partial(
                 step_metadata_fn, solid_name=name, main_class=main_class
             ),
         )
+
+
+def create_spark_solid(name, main_class, description=None):
+    check.str_param(name, 'name')
+    check.str_param(main_class, 'main_class')
+    check.opt_str_param(description, 'description', 'A parameterized Spark job.')
+
+    @solid(
+        name=name,
+        description=description,
+        config=define_spark_config(),
+        input_defs=[InputDefinition('start', Nothing)],
+        output_defs=[OutputDefinition(Nothing)],
+        metadata={'kind': 'spark', 'main_class': main_class},
+        required_resource_keys={'spark'},
+    )
+    def spark_solid(context):  # pylint: disable=unused-argument
+        context.resources.spark.run_spark_job(context.solid_config, main_class)
+
+    return spark_solid

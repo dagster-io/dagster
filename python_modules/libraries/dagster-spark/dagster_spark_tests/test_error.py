@@ -16,7 +16,6 @@ solids:
       spark_inputs: []
     config:
       spark_home: /your/spark_home
-      spark_outputs: ["/tmp/dagster/events/data"]
       application_jar: "{path}"
       deploy_mode: "client"
       application_arguments: "--local-path /tmp/dagster/events/data --date 2019-01-01"
@@ -29,7 +28,9 @@ solids:
 
 
 def test_step_metadata():
-    spark_solid = SparkSolidDefinition('spark_solid', main_class='something')
+    spark_solid = SparkSolidDefinition(
+        'spark_solid', main_class='something', spark_outputs=["/tmp/dagster/events/data"]
+    )
     pipeline = PipelineDefinition(solid_defs=[spark_solid])
     environment_dict = yaml.load(CONFIG_FILE.format(path=script_relative_path('fake.jar')))
     execution_plan = create_execution_plan(pipeline, environment_dict)
@@ -47,7 +48,9 @@ def test_step_metadata():
 
 
 def test_jar_not_found():
-    spark_solid = SparkSolidDefinition('spark_solid', main_class='something')
+    spark_solid = SparkSolidDefinition(
+        'spark_solid', main_class='something', spark_outputs=["/tmp/dagster/events/data"]
+    )
     pipeline = PipelineDefinition(solid_defs=[spark_solid])
     # guid guaranteed to not exist
     environment_dict = yaml.load(CONFIG_FILE.format(path=str(uuid.uuid4())))
@@ -64,7 +67,6 @@ solids:
     inputs:
       spark_inputs: []
     config:
-      spark_outputs: ["/tmp/dagster/events/data"]
       application_jar: "{path}"
       deploy_mode: "client"
       application_arguments: "--local-path /tmp/dagster/events/data --date 2019-01-01"
@@ -80,7 +82,9 @@ def test_no_spark_home():
     if 'SPARK_HOME' in os.environ:
         del os.environ['SPARK_HOME']
 
-    spark_solid = SparkSolidDefinition('spark_solid', main_class='something')
+    spark_solid = SparkSolidDefinition(
+        'spark_solid', main_class='something', spark_outputs=["/tmp/dagster/events/data"]
+    )
     pipeline = PipelineDefinition(solid_defs=[spark_solid])
     environment_dict = yaml.load(NO_SPARK_HOME_CONFIG_FILE.format(path=script_relative_path('.')))
 
