@@ -1,3 +1,6 @@
+import glob
+import os
+
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
@@ -44,3 +47,9 @@ def get_dagster_schedule(graphene_info, schedule_name):
         )
 
     return schedule
+
+
+def get_schedule_attempt_filenames(graphene_info, schedule_name):
+    scheduler = graphene_info.context.get_scheduler()
+    log_dir = scheduler.log_path_for_schedule(schedule_name)
+    return glob.glob(os.path.join(log_dir, "*.result"))

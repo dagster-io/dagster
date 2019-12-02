@@ -1,11 +1,13 @@
-import glob
 import heapq
 import json
 import os
 
 import yaml
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_schedules import get_dagster_schedule_def
+from dagster_graphql.implementation.fetch_schedules import (
+    get_dagster_schedule_def,
+    get_schedule_attempt_filenames,
+)
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 from dagster_graphql.schema.errors import (
     DauphinScheduleNotFoundError,
@@ -129,6 +131,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     runs = dauphin.Field(dauphin.non_null_list('PipelineRun'), limit=dauphin.Int())
     runs_count = dauphin.NonNull(dauphin.Int)
     attempts = dauphin.Field(dauphin.non_null_list('ScheduleAttempt'), limit=dauphin.Int())
+    attempts_count = dauphin.NonNull(dauphin.Int)
     logs_path = dauphin.NonNull(dauphin.String)
 
     def __init__(self, graphene_info, schedule):
@@ -147,10 +150,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     def resolve_attempts(self, graphene_info, **kwargs):
         limit = kwargs.get('limit')
 
-        scheduler = graphene_info.context.get_scheduler()
-        log_dir = scheduler.log_path_for_schedule(self._schedule.name)
-
-        results = glob.glob(os.path.join(log_dir, "*.result"))
+        results = get_schedule_attempt_filenames(graphene_info, self._schedule.name)
         if limit is None:
             limit = len(results)
         latest_results = heapq.nlargest(limit, results, key=os.path.getctime)
@@ -195,6 +195,10 @@ class DauphinRunningSchedule(dauphin.ObjectType):
                 )
 
         return attempts
+
+    def resolve_attempts_count(self, graphene_info):
+        attempt_files = get_schedule_attempt_filenames(graphene_info, self._schedule.name)
+        return len(attempt_files)
 
     def resolve_logs_path(self, graphene_info):
         scheduler = graphene_info.context.get_scheduler()

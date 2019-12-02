@@ -15,7 +15,7 @@ import {
 import Loading from "../Loading";
 import gql from "graphql-tag";
 
-import ScheduleRow, { ScheduleRowFragment } from "./ScheduleRow";
+import { ScheduleRow, ScheduleRowFragment } from "./ScheduleRow";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 
@@ -113,8 +113,8 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
           <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
           <LegendColumn>Pipeline</LegendColumn>
           <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
-          <LegendColumn style={{ flex: 1 }}>Recent Runs</LegendColumn>
-          <LegendColumn style={{ flex: 1 }}>Last Run</LegendColumn>
+          <LegendColumn style={{ flex: 1 }}>Recent Attempts</LegendColumn>
+          <LegendColumn style={{ flex: 1 }}>Last Attempt</LegendColumn>
           <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
         </Legend>
       )}

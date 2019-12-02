@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ScheduleAttemptStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { PipelineRunStatus, ScheduleAttemptStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulesRootQuery
@@ -22,29 +22,24 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_schedul
   cronSchedule: string;
 }
 
-export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempts {
-  __typename: "ScheduleAttempt";
-  time: number;
-  jsonResult: string;
-  status: ScheduleAttemptStatus;
-}
-
-export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_pipeline {
+export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempts_run_pipeline {
   __typename: "Pipeline" | "UnknownPipeline";
   name: string;
 }
 
-export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_stats {
-  __typename: "PipelineRunStatsSnapshot";
-  startTime: number | null;
-}
-
-export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs {
+export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempts_run {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_pipeline;
+  pipeline: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempts_run_pipeline;
   status: PipelineRunStatus;
-  stats: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_stats;
+}
+
+export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempts {
+  __typename: "ScheduleAttempt";
+  run: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempts_run | null;
+  time: number;
+  jsonResult: string;
+  status: ScheduleAttemptStatus;
 }
 
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules {
@@ -52,9 +47,8 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules {
   id: string;
   scheduleDefinition: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition;
   logsPath: string;
-  runsCount: number;
   attempts: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempts[];
-  runs: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs[];
+  attemptsCount: number;
   status: ScheduleStatus;
 }
 
