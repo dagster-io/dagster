@@ -33,15 +33,8 @@ FIELD_NO_DEFAULT_PROVIDED = __FieldValueSentinel
 INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
 
 
-def check_using_facing_field_param(obj, param_name, error_context_str):
-    from dagster.core.types.field import Field, resolve_to_config_type
-
-    check.str_param(param_name, 'param_name')
-    check.str_param(error_context_str, 'error_context_str')
-
-    if isinstance(obj, Field):
-        return obj
-
+def raise_bad_user_facing_field_argument(obj, param_name, error_context_str):
+    from .field import resolve_to_config_type
     from .type_printer import print_config_type_to_string
 
     config_type = resolve_to_config_type(obj)
@@ -73,11 +66,13 @@ def check_using_facing_field_param(obj, param_name, error_context_str):
 
 
 def check_user_facing_opt_field_param(obj, param_name, error_context_str):
+    from .field import Field
+
     check.str_param(param_name, 'param_name')
-    check.str_param(error_context_str, 'error_context_str')
-    if obj is None:
-        return None
-    return check_using_facing_field_param(obj, param_name, error_context_str)
+    if obj is None or isinstance(obj, Field):
+        return obj
+
+    return raise_bad_user_facing_field_argument(obj, param_name, error_context_str)
 
 
 class _ConfigHasFields(ConfigType):
@@ -150,10 +145,21 @@ class _ConfigHasFields(ConfigType):
 def check_user_facing_fields_dict(fields, type_name_msg):
     check.dict_param(fields, 'fields', key_type=str)
     check.str_param(type_name_msg, 'type_name_msg')
+    from .field import Field
+
+    # early check of all values
+    if all(map(lambda f: isinstance(f, Field), fields.values())):
+        return
+
+    # now do potentially expensive error check and string building
 
     sorted_field_names = sorted(list(fields.keys()))
+
     for field_name, potential_field in fields.items():
-        check_using_facing_field_param(
+        if isinstance(potential_field, Field):
+            continue
+
+        raise_bad_user_facing_field_argument(
             potential_field,
             'fields',
             (
