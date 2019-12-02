@@ -279,7 +279,9 @@ def list_param(obj_list, param_name, of_type=None):
     from dagster.utils import frozenlist
 
     if not isinstance(obj_list, (frozenlist, list)):
-        raise_with_traceback(_param_type_mismatch_exception(obj_list, (frozenlist, list), param_name))
+        raise_with_traceback(
+            _param_type_mismatch_exception(obj_list, (frozenlist, list), param_name)
+        )
 
     if not of_type:
         return obj_list
@@ -373,7 +375,9 @@ def opt_list_param(obj_list, param_name, of_type=None):
     from dagster.utils import frozenlist
 
     if obj_list is not None and not isinstance(obj_list, (frozenlist, list)):
-        raise_with_traceback(_param_type_mismatch_exception(obj_list, (frozenlist, list), param_name))
+        raise_with_traceback(
+            _param_type_mismatch_exception(obj_list, (frozenlist, list), param_name)
+        )
     if not obj_list:
         return []
     if not of_type:
@@ -408,7 +412,9 @@ def opt_nullable_list_param(obj_list, param_name, of_type=None):
     from dagster.utils import frozenlist
 
     if obj_list is not None and not isinstance(obj_list, (frozenlist, list)):
-        raise_with_traceback(_param_type_mismatch_exception(obj_list, (frozenlist, list), param_name))
+        raise_with_traceback(
+            _param_type_mismatch_exception(obj_list, (frozenlist, list), param_name)
+        )
     if not obj_list:
         return None if obj_list is None else []
     if not of_type:
