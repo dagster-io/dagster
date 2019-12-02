@@ -70,7 +70,8 @@ It's also prudent to release from a fresh virtualenv.
 7. Check that the ReadTheDocs build was successful at
    [https://readthedocs.org/projects/dagster/builds/](https://readthedocs.org/projects/dagster/builds/).
 
-8.  Publish the new version to PyPI.
+8.  Publish the new version to PyPI. If something goes wrong during this stage, you will probably
+    have to roll forwards to a new release, since there is no way to delete files from PyPI.
 
         python bin/publish.py publish
 
