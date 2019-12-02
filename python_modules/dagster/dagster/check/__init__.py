@@ -305,6 +305,17 @@ def tuple_param(obj, param_name):
     return obj
 
 
+def matrix_param(matrix, param_name, of_type=None):
+    matrix = list_param(matrix, param_name, of_type=list)
+    if not matrix:
+        raise_with_traceback(CheckError('You must pass a list of lists. Received an empty list.'))
+    for sublist in matrix:
+        sublist = list_param(sublist, 'sublist_{}'.format(param_name), of_type=of_type)
+        if len(sublist) != len(matrix[0]):
+            raise_with_traceback(CheckError('All sublists in matrix must have the same length'))
+    return matrix
+
+
 def opt_tuple_param(obj, param_name, default=None):
     if obj is not None and not isinstance(obj, tuple):
         raise_with_traceback(_param_type_mismatch_exception(obj, tuple, param_name))

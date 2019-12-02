@@ -749,6 +749,28 @@ def test_tuple_param():
         assert check.tuple_param('kdjfkd', 'something')
 
 
+def test_matrix_param():
+    assert check.matrix_param([[1, 2], [2, 3]], 'something')
+
+    with pytest.raises(CheckError):
+        assert check.matrix_param(None, 'something')
+
+    with pytest.raises(CheckError):
+        assert check.matrix_param([1, 2, 4], 'something')
+
+    with pytest.raises(CheckError):
+        assert check.matrix_param([], 'something')
+
+    with pytest.raises(CheckError):
+        assert check.matrix_param([[1, 2], 3], 'soemthing')
+
+    with pytest.raises(CheckError):
+        assert check.matrix_param([[1, 2], [3.0, 4.1]], 'something', of_type=int)
+
+    with pytest.raises(CheckError):
+        assert check.matrix_param([[1, 2], [2, 3, 4]], 'something')
+
+
 def test_opt_tuple_param():
     assert check.opt_tuple_param((1, 2), 'something')
     assert check.opt_tuple_param(None, 'something') is None
