@@ -122,5 +122,18 @@ def dash_stats():
     send_to_slack(bq_solid())
 
 
+@solid(config={'partition': Field(str)})
+def announce_partition(context):
+    context.log.info(str(context.pipeline_run.tags.get('dagster/partition')))
+    context.log.info(context.solid_config.get('partition'))
+
+
+@pipeline
+def log_partitions():
+    announce_partition()
+
+
 def define_repo():
-    return RepositoryDefinition(name='experimental_repository', pipeline_defs=[dash_stats])
+    return RepositoryDefinition(
+        name='experimental_repository', pipeline_defs=[dash_stats, log_partitions]
+    )

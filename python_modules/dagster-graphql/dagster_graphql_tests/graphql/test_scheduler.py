@@ -2,6 +2,7 @@ import os
 import sys
 
 import mock
+import pytest
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import ScheduleDefinition
@@ -65,7 +66,7 @@ def test_get_all_schedules():
     assert scheduler_result.data
     assert scheduler_result.data['scheduler']
     assert scheduler_result.data['scheduler']['runningSchedules']
-    assert len(scheduler_result.data['scheduler']['runningSchedules']) == 5
+    assert len(scheduler_result.data['scheduler']['runningSchedules']) == 6
 
     assert scheduler_result.data['scheduler']['runningSchedules'][0]['id'] == schedule.schedule_id
     for schedule in scheduler_result.data['scheduler']['runningSchedules']:
@@ -73,6 +74,25 @@ def test_get_all_schedules():
             schedule['scheduleDefinition']['environmentConfigYaml']
             == 'storage:\n  filesystem: {}\n'
         )
+
+
+def test_schedule_definition_deprecation_warning():
+    def load_context():
+        instance = DagsterInstance.local_temp()
+        define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+
+    with pytest.warns(
+        DeprecationWarning,
+        match='The `environment_dict` argument to ' '`ScheduleDefinition` is deprecated.',
+    ):
+        load_context()
+
+    with pytest.warns(
+        DeprecationWarning, match='The `tags` argument to `ScheduleDefinition` ' 'is deprecated.'
+    ):
+        load_context()
 
 
 def test_scheduler_change_set_adding_schedule():

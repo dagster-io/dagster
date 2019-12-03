@@ -58,6 +58,7 @@ export default class SchedulesRoot extends React.Component {
                         description={scheduler.message}
                       />
                     </div>
+                    <pre>{scheduler.stack}</pre>
                   </ScrollContainer>
                 );
               } else if (scheduler.runningSchedules.length === 0) {
@@ -142,6 +143,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
       }
       ... on PythonError {
         message
+        stack
       }
     }
   }

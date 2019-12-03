@@ -60,6 +60,7 @@ export interface SchedulesRootQuery_scheduler_Scheduler {
 export interface SchedulesRootQuery_scheduler_PythonError {
   __typename: "PythonError";
   message: string;
+  stack: string[];
 }
 
 export type SchedulesRootQuery_scheduler = SchedulesRootQuery_scheduler_SchedulerNotDefinedError | SchedulesRootQuery_scheduler_Scheduler | SchedulesRootQuery_scheduler_PythonError;

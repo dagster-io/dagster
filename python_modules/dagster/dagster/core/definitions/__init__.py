@@ -40,6 +40,14 @@ from .input import InputDefinition, InputMapping
 from .logger import LoggerDefinition, logger
 from .mode import ModeDefinition
 from .output import OutputDefinition, OutputMapping
+from .partition import (
+    FirstPartitionSelector,
+    IPartitionSelector,
+    LastPartitionSelector,
+    Partition,
+    PartitionSetDefinition,
+    repository_partitions,
+)
 from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
 from .repository import RepositoryDefinition

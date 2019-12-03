@@ -1,6 +1,5 @@
 from collections import namedtuple
 
-from dagster.core.definitions import SolidHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types import Field, List, NamedDict, Selector
 from dagster.core.types.config import (

@@ -20,12 +20,19 @@ class DagsterGraphQLContext(object):
             artifacts_dir=self.instance.schedules_directory()
         )
         self._cached_pipelines = {}
+        self.partitions_handle = self.get_handle().build_partitions_handle()
 
     def get_scheduler(self):
         return self.scheduler_handle.get_scheduler() if self.scheduler_handle else None
 
     def get_handle(self):
         return self._handle
+
+    def get_partition_set(self, partition_set_name):
+        if not self.partitions_handle:
+            return None
+
+        return self.partitions_handle.get_partition_set(partition_set_name)
 
     def get_repository(self):
         return self.repository_definition
