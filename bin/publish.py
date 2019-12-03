@@ -96,6 +96,7 @@ MODULE_NAMES = [
     'dagster-graphql',
     'dagstermill',
     'dagster-airflow',
+    'dagster-celery',
     'dagster-dask',
 ]
 

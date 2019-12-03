@@ -430,6 +430,21 @@ class ExecutionTargetHandle(object):
             is_resolved_to_pipeline=True,
         )
 
+    @staticmethod
+    def from_dict(handle_dict):
+        return ExecutionTargetHandle(
+            data=_ExecutionTargetHandleData(**handle_dict['data']),
+            mode=getattr(_ExecutionTargetMode, handle_dict['mode']),
+            is_resolved_to_pipeline=handle_dict['is_resolved_to_pipeline'],
+        )
+
+    def to_dict(self):
+        return {
+            'data': self.data._asdict(),
+            'mode': self.mode.name,
+            'is_resolved_to_pipeline': self.is_resolved_to_pipeline,
+        }
+
     def with_pipeline_name(self, pipeline_name):
         '''Returns a new ExecutionTargetHandle that references the pipeline "pipeline_name" within
         the repository.
