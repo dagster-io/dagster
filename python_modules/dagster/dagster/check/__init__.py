@@ -276,8 +276,12 @@ def is_list(obj_list, of_type=None, desc=None):
 
 
 def list_param(obj_list, param_name, of_type=None):
-    if not isinstance(obj_list, list):
-        raise_with_traceback(_param_type_mismatch_exception(obj_list, list, param_name))
+    from dagster.utils import frozenlist
+
+    if not isinstance(obj_list, (frozenlist, list)):
+        raise_with_traceback(
+            _param_type_mismatch_exception(obj_list, (frozenlist, list), param_name)
+        )
 
     if not of_type:
         return obj_list
@@ -368,8 +372,12 @@ def opt_list_param(obj_list, param_name, of_type=None):
     If the of_type argument is provided, also ensures that list items conform to the type specified
     by of_type.
     '''
-    if obj_list is not None and not isinstance(obj_list, list):
-        raise_with_traceback(_param_type_mismatch_exception(obj_list, list, param_name))
+    from dagster.utils import frozenlist
+
+    if obj_list is not None and not isinstance(obj_list, (frozenlist, list)):
+        raise_with_traceback(
+            _param_type_mismatch_exception(obj_list, (frozenlist, list), param_name)
+        )
     if not obj_list:
         return []
     if not of_type:
@@ -401,8 +409,12 @@ def opt_nullable_list_param(obj_list, param_name, of_type=None):
     If the of_type argument is provided, also ensures that list items conform to the type specified
     by of_type.
     '''
-    if obj_list is not None and not isinstance(obj_list, list):
-        raise_with_traceback(_param_type_mismatch_exception(obj_list, list, param_name))
+    from dagster.utils import frozenlist
+
+    if obj_list is not None and not isinstance(obj_list, (frozenlist, list)):
+        raise_with_traceback(
+            _param_type_mismatch_exception(obj_list, (frozenlist, list), param_name)
+        )
     if not obj_list:
         return None if obj_list is None else []
     if not of_type:
@@ -449,8 +461,10 @@ def dict_param(obj, param_name, key_type=None, value_type=None):
     '''Ensures argument obj is a native Python dictionary, raises an exception if not, and otherwise
     returns obj.
     '''
-    if not isinstance(obj, dict):
-        raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
+    from dagster.utils import frozendict
+
+    if not isinstance(obj, (frozendict, dict)):
+        raise_with_traceback(_param_type_mismatch_exception(obj, (frozendict, dict), param_name))
 
     if not (key_type or value_type):
         return obj
@@ -462,8 +476,10 @@ def opt_dict_param(obj, param_name, key_type=None, value_type=None, value_class=
     '''Ensures argument obj is either a dictionary or None; if the latter, instantiates an empty
     dictionary.
     '''
-    if obj is not None and not isinstance(obj, dict):
-        raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
+    from dagster.utils import frozendict
+
+    if obj is not None and not isinstance(obj, (frozendict, dict)):
+        raise_with_traceback(_param_type_mismatch_exception(obj, (frozendict, dict), param_name))
 
     if not obj:
         return {}
@@ -476,8 +492,10 @@ def opt_dict_param(obj, param_name, key_type=None, value_type=None, value_class=
 def opt_nullable_dict_param(obj, param_name, key_type=None, value_type=None, value_class=None):
     '''Ensures argument obj is either a dictionary or None;
     '''
-    if obj is not None and not isinstance(obj, dict):
-        raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
+    from dagster.utils import frozendict
+
+    if obj is not None and not isinstance(obj, (frozendict, dict)):
+        raise_with_traceback(_param_type_mismatch_exception(obj, (frozendict, dict), param_name))
 
     if not obj:
         return None if obj is None else {}
@@ -616,6 +634,8 @@ def opt_list_elem(ddict, key):
 
 
 def dict_elem(ddict, key):
+    from dagster.utils import frozendict
+
     dict_param(ddict, 'ddict')
     str_param(key, 'key')
 
@@ -625,12 +645,14 @@ def dict_elem(ddict, key):
         )
 
     value = ddict[key]
-    if not isinstance(value, dict):
-        raise_with_traceback(_element_check_error(key, value, ddict, dict))
+    if not isinstance(value, (frozendict, dict)):
+        raise_with_traceback(_element_check_error(key, value, ddict, (frozendict, dict)))
     return value
 
 
 def opt_dict_elem(ddict, key):
+    from dagster.utils import frozendict
+
     dict_param(ddict, 'ddict')
     str_param(key, 'key')
 
@@ -639,7 +661,7 @@ def opt_dict_elem(ddict, key):
     if value is None:
         return {}
 
-    if not isinstance(value, dict):
+    if not isinstance(value, (frozendict, dict)):
         raise_with_traceback(_element_check_error(key, value, ddict, list))
 
     return value

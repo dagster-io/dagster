@@ -11,6 +11,7 @@ from dagster.check import (
     NotImplementedCheckError,
     ParameterCheckError,
 )
+from dagster.utils import frozendict, frozenlist
 
 
 def test_int_param():
@@ -74,6 +75,7 @@ def test_opt_float_param():
 
 def test_list_param():
     assert check.list_param([], 'list_param') == []
+    assert check.list_param(frozenlist(), 'list_param') == []
 
     with pytest.raises(ParameterCheckError):
         check.list_param(None, 'list_param')
@@ -159,6 +161,7 @@ def test_typed_is_list():
 def test_opt_list_param():
     assert check.opt_list_param(None, 'list_param') == []
     assert check.opt_list_param([], 'list_param') == []
+    assert check.opt_list_param(frozenlist(), 'list_param') == []
     obj_list = [1]
     assert check.list_param(obj_list, 'list_param') == obj_list
 
@@ -191,6 +194,7 @@ def test_opt_set_param():
 def test_opt_nullable_list_param():
     assert check.opt_nullable_list_param(None, 'list_param') is None
     assert check.opt_nullable_list_param([], 'list_param') == []
+    assert check.opt_nullable_list_param(frozenlist(), 'list_param') == []
     obj_list = [1]
     assert check.opt_nullable_list_param(obj_list, 'list_param') == obj_list
 
@@ -225,6 +229,7 @@ def test_opt_typed_list_param():
 
 def test_dict_param():
     assert check.dict_param({}, 'dict_param') == {}
+    assert check.dict_param(frozendict(), 'dict_param') == {}
     ddict = {'a': 2}
     assert check.dict_param(ddict, 'dict_param') == ddict
 
@@ -317,6 +322,7 @@ def test_opt_dict_param_with_type():
 def test_opt_dict_param():
     assert check.opt_dict_param(None, 'opt_dict_param') == {}
     assert check.opt_dict_param({}, 'opt_dict_param') == {}
+    assert check.opt_dict_param(frozendict(), 'opt_dict_param') == {}
     ddict = {'a': 2}
     assert check.opt_dict_param(ddict, 'opt_dict_param') == ddict
 
@@ -339,6 +345,7 @@ def test_opt_dict_param():
 def test_opt_nullable_dict_param():
     assert check.opt_nullable_dict_param(None, 'opt_nullable_dict_param') is None
     assert check.opt_nullable_dict_param({}, 'opt_nullable_dict_param') == {}
+    assert check.opt_nullable_dict_param(frozendict(), 'opt_nullable_dict_param') == {}
     ddict = {'a': 2}
     assert check.opt_nullable_dict_param(ddict, 'opt_nullable_dict_param') == ddict
 
