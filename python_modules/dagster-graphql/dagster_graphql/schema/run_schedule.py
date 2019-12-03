@@ -163,22 +163,27 @@ class DauphinRunningSchedule(dauphin.ObjectType):
                     continue  # File is empty
 
                 start_scheduled_execution_response = json.loads(line)
-                json_result = start_scheduled_execution_response['data']['startScheduledExecution']
-                typename = json_result['__typename']
-
-                if typename == 'StartPipelineExecutionSuccess':
-                    status = DauphinScheduleAttemptStatus.SUCCESS
-                elif typename == 'ScheduleExecutionBlocked':
-                    status = DauphinScheduleAttemptStatus.SKIPPED
-                else:
-                    status = DauphinScheduleAttemptStatus.ERROR
-
                 run = None
-                if typename == 'StartPipelineExecutionSuccess':
-                    run_id = json_result['run']['runId']
-                    run = graphene_info.schema.type_named('PipelineRun')(
-                        graphene_info.context.instance.get_run_by_id(run_id)
-                    )
+
+                if 'errors' in start_scheduled_execution_response:
+                    status = DauphinScheduleAttemptStatus.ERROR
+                    json_result = start_scheduled_execution_response['errors']
+                else:
+                    json_result = start_scheduled_execution_response['data'][
+                        'startScheduledExecution'
+                    ]
+                    typename = json_result['__typename']
+
+                    if typename == 'StartPipelineExecutionSuccess':
+                        status = DauphinScheduleAttemptStatus.SUCCESS
+                        run_id = json_result['run']['runId']
+                        run = graphene_info.schema.type_named('PipelineRun')(
+                            graphene_info.context.instance.get_run_by_id(run_id)
+                        )
+                    elif typename == 'ScheduleExecutionBlocked':
+                        status = DauphinScheduleAttemptStatus.SKIPPED
+                    else:
+                        status = DauphinScheduleAttemptStatus.ERROR
 
                 attempts.append(
                     graphene_info.schema.type_named('ScheduleAttempt')(

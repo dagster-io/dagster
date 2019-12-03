@@ -668,8 +668,9 @@ def _get_validated_config_mapping(name, config, config_fn):
     else:
         if config_fn is not None:
             raise DagsterInvalidDefinitionError(
-                "@composite_solid '{solid_name}' defines a configuration function {config_fn} but "
-                "does not define a configuration schema.".format(
+                '@composite_solid \'{solid_name}\' defines a configuration function {config_fn} '
+                'but does not define a configuration schema. If you intend this composite to take '
+                'no config, you must explicitly specify config={{}}.'.format(
                     solid_name=name, config_fn=config_fn.__name__
                 )
             )

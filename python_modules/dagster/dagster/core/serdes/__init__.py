@@ -104,6 +104,8 @@ def _unpack_value(val, enum_map, tuple_map):
         # Naively implements backwards compatibility by filtering arguments that aren't present in
         # the constructor. If a property is present in the serialized object, but doesn't exist in
         # the version of the class loaded into memory, that property will be completely ignored.
+        # The call to seven.get_args turns out to be pretty expensive -- we should probably turn
+        # to, e.g., manually managing the deprecated keys on the serdes constructor.
         args_for_class = seven.get_args(klass)
         filtered_val = (
             {k: v for k, v in unpacked_val.items() if k in args_for_class}
