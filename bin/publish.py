@@ -298,12 +298,12 @@ def set_version(module_name, new_version, nightly, library=False, dry_run=True):
                 fd.write(output)
 
 
-def get_nightly_version(mod_version):
-    return mod_version + '.dev.' + datetime.datetime.utcnow().strftime('%Y%m%d')
+def get_nightly_version():
+    return datetime.datetime.utcnow().strftime('%Y.%m.%d')
 
 
 def increment_nightly_version(module_name, module_version, library=False, dry_run=True):
-    new_nightly = get_nightly_version(module_version['__version__'])
+    new_nightly = get_nightly_version()
     set_version(module_name, module_version['__version__'], new_nightly, library, dry_run=dry_run)
     return {'__version__': module_version['__version__'], '__nightly__': new_nightly}
 
@@ -321,14 +321,10 @@ def increment_nightly_versions(dry_run=True):
 
 def set_new_version(new_version, dry_run=True):
     for module_name in MODULE_NAMES:
-        set_version(module_name, new_version, get_nightly_version(new_version), dry_run=dry_run)
+        set_version(module_name, new_version, get_nightly_version(), dry_run=dry_run)
     for library_module in LIBRARY_MODULES:
         set_version(
-            library_module,
-            new_version,
-            get_nightly_version(new_version),
-            library=True,
-            dry_run=dry_run,
+            library_module, new_version, get_nightly_version(), library=True, dry_run=dry_run,
         )
 
 
