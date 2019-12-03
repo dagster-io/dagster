@@ -327,10 +327,13 @@ class MultivariateTimeseries:
         self.output_timeseries_name = check.str_param(output_sequence_name, 'output_sequence_name')
 
     def convert_to_snapshot_matrix(self, memory_length):
-        input_snapshot_matrix = transpose([
-            timeseries.convert_to_snapshot_sequence(memory_length)
-            for timeseries in self.input_timeseries_collection
-        ], (1, 2, 0))
+        input_snapshot_matrix = transpose(
+            [
+                timeseries.convert_to_snapshot_sequence(memory_length)
+                for timeseries in self.input_timeseries_collection
+            ],
+            (1, 2, 0),
+        )
         output_snapshot_sequence = self.output_timeseries.sequence[memory_length:]
         return array(input_snapshot_matrix), array(output_snapshot_sequence)
 
@@ -370,24 +373,18 @@ def produce_training_set(
             String,
             description='Activation function to use in LSTM neurons',
             is_optional=True,
-            default_value='relu'
+            default_value='relu',
         ),
         'optimizer': Field(
-            String,
-            description='Type of optimizer to use',
-            is_optional=True,
-            default_value='adam'
+            String, description='Type of optimizer to use', is_optional=True, default_value='adam'
         ),
         'loss': Field(
             String,
             description='Loss function to use when optimizing',
             is_optional=True,
-            default_value='mse'
+            default_value='mse',
         ),
-        'num_epochs': Field(
-            Int,
-            description='Number of epochs to optimize over',
-        )
+        'num_epochs': Field(Int, description='Number of epochs to optimize over',),
     }
 )
 def train_lstm_model(context, training_set: TrainingSet) -> Any:
@@ -397,7 +394,9 @@ def train_lstm_model(context, training_set: TrainingSet) -> Any:
 
     _, n_steps, n_features = X.shape
     model = Sequential()
-    model.add(LSTM(50, activation=context.solid_config['activation'], input_shape=(n_steps, n_features)))
+    model.add(
+        LSTM(50, activation=context.solid_config['activation'], input_shape=(n_steps, n_features))
+    )
     model.add(Dense(1))
     model.compile(optimizer=context.solid_config['optimizer'], loss=context.solid_config['loss'])
     model.fit(X_train, y_train, epochs=context.solid_config['num_epochs'], verbose=0)
@@ -406,4 +405,3 @@ def train_lstm_model(context, training_set: TrainingSet) -> Any:
         inp = X_test[i].reshape((1, n_steps, n_features))
         yhat = model.predict(inp, verbose=0)
         print(yhat[0][0], y_test[i])
-
