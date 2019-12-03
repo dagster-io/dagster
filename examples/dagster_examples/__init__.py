@@ -10,19 +10,19 @@ def define_scheduler():
             name="many_events_every_min",
             cron_schedule="* * * * *",
             pipeline_name='many_events',
-            environment_dict={"storage": {"filesystem": {}}},
+            environment_dict_fn=lambda: {"storage": {"filesystem": {}}},
         ),
         ScheduleDefinition(
             name="log_spew_hourly",
             cron_schedule="0 * * * *",
             pipeline_name="log_spew",
-            environment_dict={"storage": {"filesystem": {}}},
+            environment_dict_fn=lambda: {"storage": {"filesystem": {}}},
         ),
         ScheduleDefinition(
             name="pandas_hello_world_hourly",
             cron_schedule="0 * * * *",
             pipeline_name="pandas_hello_world_pipeline",
-            environment_dict={
+            environment_dict_fn=lambda: {
                 "solids": {
                     "sum_solid": {
                         "inputs": {

@@ -77,10 +77,8 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
     environment_config_yaml = dauphin.NonNull(dauphin.String)
 
     def resolve_environment_config_yaml(self, _graphene_info):
-        environment_config = (
-            self._schedule_def.execution_params['environmentConfigData']
-            or self._schedule_def.environment_dict_fn()
-        )
+        schedule_def = self._schedule_def
+        environment_config = schedule_def.environment_dict or schedule_def.environment_dict_fn()
 
         environment_config_yaml = yaml.dump(environment_config, default_flow_style=False)
         return environment_config_yaml if environment_config_yaml else ''
@@ -89,9 +87,8 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
         self._schedule_def = check.inst_param(schedule_def, 'schedule_def', ScheduleDefinition)
 
         execution_params = schedule_def.execution_params
-        environment_dict_fn = schedule_def.environment_dict_fn
-        if environment_dict_fn:
-            execution_params['environmentConfigData'] = environment_dict_fn()
+        environment_config = schedule_def.environment_dict or schedule_def.environment_dict_fn()
+        execution_params['environmentConfigData'] = environment_config
 
         super(DauphinScheduleDefinition, self).__init__(
             name=schedule_def.name,
