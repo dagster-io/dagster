@@ -3,11 +3,6 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.types.config import ConfigType
 
-from .environment_configs import (
-    EnvironmentClassCreationData,
-    construct_config_type_dictionary,
-    define_environment_cls,
-)
 from .pipeline import PipelineDefinition
 
 
@@ -53,29 +48,8 @@ class EnvironmentSchema(
 def create_environment_schema(pipeline_def, mode=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     mode = check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name())
-    mode_definition = pipeline_def.get_mode_definition(mode)
 
-    environment_cls = define_environment_cls(
-        EnvironmentClassCreationData(
-            pipeline_name=pipeline_def.name,
-            solids=pipeline_def.solids,
-            dependency_structure=pipeline_def.dependency_structure,
-            mode_definition=mode_definition,
-            logger_defs=mode_definition.loggers,
-        )
-    )
-
-    environment_type = environment_cls.inst()
-
-    config_type_dict_by_name, config_type_dict_by_key = construct_config_type_dictionary(
-        pipeline_def.all_solid_defs, environment_type
-    )
-
-    return EnvironmentSchema(
-        environment_type=environment_type,
-        config_type_dict_by_name=config_type_dict_by_name,
-        config_type_dict_by_key=config_type_dict_by_key,
-    )
+    return pipeline_def.get_environment_schema(mode)
 
 
 def create_environment_type(pipeline_def, mode=None):

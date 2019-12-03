@@ -301,8 +301,12 @@ mutation(
       }
     }
     ... on PipelineNotFoundError {
-        message
-        pipelineName
+      message
+      pipelineName
+    }
+    ... on PythonError {
+      message
+      stack
     }
     ... on ExecutePlanSuccess {
       pipeline {
