@@ -8,5 +8,6 @@ pytest-cov==2.8.1
 pytest-dependency==0.4.0
 pytest-runner==5.2
 pytest==4.6.7
+recommonmark==0.4.0
 snapshottest==0.5.1
 tox==3.14.2

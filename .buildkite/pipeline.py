@@ -52,8 +52,8 @@ def network_buildkite_container(network_name):
         # the name of the currently running container...
         "export CONTAINER_ID=`cut -c9- < /proc/1/cpuset`",
         r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
-        # then, we dynamically bind this container into the dask user-defined bridge
-        # network to make the dask containers visible...
+        # then, we dynamically bind this container into the user-defined bridge
+        # network to make the target containers visible...
         "docker network connect {network_name} \\${{CONTAINER_NAME}}".format(
             network_name=network_name
         ),
@@ -62,8 +62,8 @@ def network_buildkite_container(network_name):
 
 def connect_sibling_docker_container(network_name, container_name, env_variable):
     return [
-        # Now, we grab the IP address of the dask-scheduler container from within the dask
-        # bridge network and export it; this will let the tox tests talk to the scheduler.
+        # Now, we grab the IP address of the target container from within the target
+        # bridge network and export it; this will let the tox tests talk to the target cot.
         (
             "export {env_variable}=`docker inspect --format "
             "'{{{{ .NetworkSettings.Networks.{network_name}.IPAddress }}}}' "
@@ -258,6 +258,37 @@ def airflow_tests():
                     'BUILDKITE_SECRETS_BUCKET',
                     'GOOGLE_APPLICATION_CREDENTIALS',
                 ],
+            )
+            .build()
+        )
+    return tests
+
+
+def celery_tests():
+    tests = []
+    # See: https://github.com/dagster-io/dagster/issues/1960
+    for version in SupportedPythons + [SupportedPython.V3_8]:
+        coverage = ".coverage.dagster-celery.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        tests.append(
+            StepBuilder("[dagster-celery] ({ver})".format(ver=TOX_MAP[version]))
+            .on_integration_image(version)
+            .run(
+                "pushd python_modules/dagster-celery",
+                # Run the rabbitmq db. We are in docker running docker
+                # so this will be a sibling container.
+                *wrap_with_docker_compose_steps(
+                    # Can't use host networking on buildkite and communicate via localhost
+                    # between these sibling containers, so pass along the ip.
+                    network_buildkite_container('rabbitmq')
+                    + connect_sibling_docker_container(
+                        'rabbitmq', 'test-rabbitmq', 'DAGSTER_CELERY_BROKER_HOST'
+                    )
+                    + [
+                        "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
+                        "mv .coverage {file}".format(file=coverage),
+                        "buildkite-agent artifact upload {file}".format(file=coverage),
+                    ]
+                )
             )
             .build()
         )
@@ -643,6 +674,7 @@ if __name__ == "__main__":
 
     steps += publish_airflow_images()
     steps += airflow_tests()
+    steps += celery_tests()
     steps += dask_tests()
 
     steps += dagit_tests()

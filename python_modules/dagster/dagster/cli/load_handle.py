@@ -52,7 +52,7 @@ def handle_for_pipeline_cli_args(kwargs, use_default_repository_yaml=True):
         _cli_load_invariant(kwargs.get('repository_yaml') is None)
         _cli_load_invariant(kwargs.get('module_name') is None)
         return ExecutionTargetHandle.for_repo_python_file(
-            python_file=kwargs['python_file'], fn_name=kwargs['fn_name']
+            python_file=os.path.abspath(kwargs['python_file']), fn_name=kwargs['fn_name']
         ).with_pipeline_name(pipeline_name)
 
     # Pipeline from repository module
@@ -68,7 +68,7 @@ def handle_for_pipeline_cli_args(kwargs, use_default_repository_yaml=True):
         _cli_load_invariant(kwargs.get('repository_yaml') is None)
         _cli_load_invariant(kwargs.get('module_name') is None)
         return ExecutionTargetHandle.for_pipeline_python_file(
-            python_file=kwargs['python_file'], fn_name=kwargs['fn_name']
+            python_file=os.path.abspath(kwargs['python_file']), fn_name=kwargs['fn_name']
         )
 
     # Pipeline from pipeline module
@@ -94,7 +94,11 @@ def handle_for_repo_cli_args(kwargs):
         _cli_load_invariant(kwargs.get('module_name') is None)
         _cli_load_invariant(kwargs.get('python_file') is None)
         _cli_load_invariant(kwargs.get('fn_name') is None)
-        repo_yaml = kwargs.get('repository_yaml') or DEFAULT_REPOSITORY_YAML_FILENAME
+        repo_yaml = (
+            os.path.abspath(kwargs.get('repository_yaml'))
+            if kwargs.get('repository_yaml')
+            else DEFAULT_REPOSITORY_YAML_FILENAME
+        )
         _cli_load_invariant(
             os.path.exists(repo_yaml),
             'Expected to use file "{}" to load repository but it does not exist. '
@@ -111,7 +115,7 @@ def handle_for_repo_cli_args(kwargs):
         _cli_load_invariant(kwargs.get('repository_yaml') is None)
         _cli_load_invariant(kwargs.get('module_name') is None)
         return ExecutionTargetHandle.for_repo_python_file(
-            python_file=kwargs['python_file'], fn_name=kwargs['fn_name']
+            python_file=os.path.abspath(kwargs['python_file']), fn_name=kwargs['fn_name']
         )
     else:
         _cli_load_invariant(False)
