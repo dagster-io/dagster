@@ -198,6 +198,19 @@ class PipelineDefinition(IContainSolids, object):
 
         self._selector = ExecutionSelector(self.name, list(solid_dict.keys()))
 
+        self._cached_enviroment_schemas = {}
+
+    def get_environment_schema(self, mode=None):
+        check.str_param(mode, 'mode')
+
+        mode_def = self.get_mode_definition(mode)
+
+        if mode_def.name in self._cached_enviroment_schemas:
+            return self._cached_enviroment_schemas[mode_def.name]
+
+        self._cached_enviroment_schemas[mode_def.name] = _create_environment_schema(self, mode_def)
+        return self._cached_enviroment_schemas[mode_def.name]
+
     @property
     def name(self):
         return self._name
@@ -544,3 +557,34 @@ class PipelineRunsFilter(
             pipeline=check.opt_str_param(pipeline, 'pipeline'),
             status=status,
         )
+
+
+def _create_environment_schema(pipeline_def, mode_definition):
+    from .environment_configs import (
+        EnvironmentClassCreationData,
+        construct_config_type_dictionary,
+        define_environment_cls,
+    )
+    from .environment_schema import EnvironmentSchema
+
+    environment_cls = define_environment_cls(
+        EnvironmentClassCreationData(
+            pipeline_name=pipeline_def.name,
+            solids=pipeline_def.solids,
+            dependency_structure=pipeline_def.dependency_structure,
+            mode_definition=mode_definition,
+            logger_defs=mode_definition.loggers,
+        )
+    )
+
+    environment_type = environment_cls.inst()
+
+    config_type_dict_by_name, config_type_dict_by_key = construct_config_type_dictionary(
+        pipeline_def.all_solid_defs, environment_type
+    )
+
+    return EnvironmentSchema(
+        environment_type=environment_type,
+        config_type_dict_by_name=config_type_dict_by_name,
+        config_type_dict_by_key=config_type_dict_by_key,
+    )
