@@ -3,6 +3,8 @@ from collections import defaultdict
 
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+from dagster_gcp.gcs.resources import gcs_resource
+from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
 
 from dagster import (
     Field,
@@ -48,6 +50,17 @@ def demo_pipeline():
     count_letters(multiply_the_word())
 
 
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            system_storage_defs=gcs_plus_default_storage_defs, resource_defs={'gcs': gcs_resource},
+        )
+    ]
+)
+def demo_pipeline_gcs():
+    count_letters(multiply_the_word())
+
+
 @pipeline
 def demo_error_pipeline():
     error_solid()
@@ -80,5 +93,5 @@ def optional_outputs():
 def define_demo_execution_repo():
     return RepositoryDefinition(
         name='demo_execution_repo',
-        pipeline_defs=[demo_pipeline, demo_error_pipeline, optional_outputs],
+        pipeline_defs=[demo_pipeline, demo_pipeline_gcs, demo_error_pipeline, optional_outputs],
     )

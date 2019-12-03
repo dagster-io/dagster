@@ -21,6 +21,9 @@ TOX_MAP = {
 # https://github.com/dagster-io/dagster/issues/1662
 DO_COVERAGE = True
 
+# GCP tests need appropriate credentials
+GCP_CREDS_LOCAL_FILE = "/tmp/gcp-key-elementl-dev.json"
+
 
 def check_for_release():
     try:
@@ -198,6 +201,9 @@ def publish_airflow_images():
         .run(
             "pip install awscli",
             "aws ecr get-login --no-include-email --region us-west-1 | sh",
+            r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
+            + GCP_CREDS_LOCAL_FILE,
+            "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
             "export DAGSTER_AIRFLOW_DOCKER_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-airflow-demo:$${BUILDKITE_BUILD_ID}",
             # Build and deploy dagster-airflow docker images
             "pushd python_modules/dagster-airflow/dagster_airflow_tests/test_project",
@@ -229,6 +235,10 @@ def airflow_tests():
             .run(
                 "pip install awscli",
                 "aws ecr get-login --no-include-email --region us-west-1 | sh",
+                r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
+                + GCP_CREDS_LOCAL_FILE,
+                "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
+                "aws ecr get-login --no-include-email --region us-west-1 | sh",
                 "./.buildkite/scripts/dagster_airflow.sh {ver}".format(ver=TOX_MAP[version]),
                 "pushd python_modules/dagster-airflow/",
                 "mv .coverage {file}".format(file=coverage),
@@ -238,7 +248,14 @@ def airflow_tests():
             .depends_on(["dagster-airflow-images"])
             .on_integration_image(
                 version,
-                ['AIRFLOW_HOME', 'AWS_ACCOUNT_ID', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
+                [
+                    'AIRFLOW_HOME',
+                    'AWS_ACCOUNT_ID',
+                    'AWS_ACCESS_KEY_ID',
+                    'AWS_SECRET_ACCESS_KEY',
+                    'BUILDKITE_SECRETS_BUCKET',
+                    'GOOGLE_APPLICATION_CREDENTIALS',
+                ],
             )
             .build()
         )
@@ -340,8 +357,6 @@ def automation_tests():
 
 
 def gcp_tests():
-    # GCP tests need appropriate credentials
-    creds_local_file = "/tmp/gcp-key-elementl-dev.json"
     tests = []
     for version in SupportedPythons:
         coverage = ".coverage.libraries-dagster-gcp.{version}.$BUILDKITE_BUILD_ID".format(
@@ -352,8 +367,8 @@ def gcp_tests():
             .run(
                 "pip install awscli",
                 r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
-                + creds_local_file,
-                "export GOOGLE_APPLICATION_CREDENTIALS=" + creds_local_file,
+                + GCP_CREDS_LOCAL_FILE,
+                "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
                 "pip install tox;",
                 "cd python_modules/libraries/dagster-gcp",
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),

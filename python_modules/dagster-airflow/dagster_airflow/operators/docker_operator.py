@@ -98,7 +98,11 @@ class ModifiedDockerOperator(DockerOperator):
 
             result = self.cli.wait(self.container['Id'])
             if result['StatusCode'] != 0:
-                raise AirflowException('docker container failed: ' + repr(result))
+                raise AirflowException(
+                    'docker container failed with result: {result} and logs: {logs}'.format(
+                        result=repr(result), logs='\n'.join(res)
+                    )
+                )
 
             if self.xcom_push_flag:
                 # Try to avoid any kind of race condition?
@@ -145,12 +149,9 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         tmp_dir = kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
         host_tmp_dir = kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
 
-        if 'storage' not in environment_dict or (
-            's3' not in environment_dict['storage']
-            and 'filesystem' not in environment_dict['storage']
-        ):
+        if not environment_dict.get('storage'):
             raise AirflowException(
-                'No storage config found -- must configure either filesystem or s3 storage for '
+                'No storage config found -- must configure storage for '
                 'the DagsterDockerOperator. Ex.: \n'
                 'storage:\n'
                 '  filesystem:\n'
@@ -160,6 +161,10 @@ class DagsterDockerOperator(ModifiedDockerOperator):
                 'storage:\n'
                 '  s3:\n'
                 '    s3_bucket: \'my-s3-bucket\'\n'
+                '\n\n --or--\n\n'
+                'storage:\n'
+                '  gcs:\n'
+                '    gcs_bucket: \'my-gcs-bucket\'\n'
             )
 
         if 'filesystem' in environment_dict['storage']:
