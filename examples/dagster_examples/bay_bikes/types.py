@@ -300,7 +300,7 @@ def validate_snapshot_timeseries(training_set_data):
             ),
         )
 
-    num_timeseries, timeseries_length, snapshot_length = X.shape
+    timeseries_length, snapshot_length, num_timeseries = X.shape
     output_vector_length = y.shape[0]
     if num_timeseries == 0 or output_vector_length == 0:
         return TypeCheck(success=False, description='No empty training sets allowed',)

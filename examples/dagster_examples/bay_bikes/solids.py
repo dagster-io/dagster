@@ -18,10 +18,12 @@ from dagster_examples.bay_bikes.types import (
     TripDataFrame,
     WeatherDataFrame,
 )
-from numpy import array
+from numpy import array, transpose
 from pandas import DataFrame, concat, date_range, get_dummies, read_csv, to_datetime
+from keras.models import Sequential
+from keras.layers import LSTM, Dense
 
-from dagster import Field, Float, Int, String, check, composite_solid, solid
+from dagster import Field, Float, Int, String, check, composite_solid, solid, Any
 
 
 def _write_chunks_to_fp(response, output_fp, chunk_size):
@@ -325,10 +327,10 @@ class MultivariateTimeseries:
         self.output_timeseries_name = check.str_param(output_sequence_name, 'output_sequence_name')
 
     def convert_to_snapshot_matrix(self, memory_length):
-        input_snapshot_matrix = [
+        input_snapshot_matrix = transpose([
             timeseries.convert_to_snapshot_sequence(memory_length)
             for timeseries in self.input_timeseries_collection
-        ]
+        ], (1, 2, 0))
         output_snapshot_sequence = self.output_timeseries.sequence[memory_length:]
         return array(input_snapshot_matrix), array(output_snapshot_sequence)
 
@@ -360,3 +362,48 @@ def produce_training_set(
         context.solid_config['memory_length']
     )
     return TrainingSet((input_snapshot_matrix, output))
+
+
+@solid(
+    config={
+        'activation': Field(
+            String,
+            description='Activation function to use in LSTM neurons',
+            is_optional=True,
+            default_value='relu'
+        ),
+        'optimizer': Field(
+            String,
+            description='Type of optimizer to use',
+            is_optional=True,
+            default_value='adam'
+        ),
+        'loss': Field(
+            String,
+            description='Loss function to use when optimizing',
+            is_optional=True,
+            default_value='mse'
+        ),
+        'num_epochs': Field(
+            Int,
+            description='Number of epochs to optimize over',
+        )
+    }
+)
+def train_lstm_model(context, training_set: TrainingSet) -> Any:
+    X, y = training_set
+    X_train, X_test = X[0:500], X[500:]
+    y_train, y_test = y[0:500], y[500:]
+
+    _, n_steps, n_features = X.shape
+    model = Sequential()
+    model.add(LSTM(50, activation=context.solid_config['activation'], input_shape=(n_steps, n_features)))
+    model.add(Dense(1))
+    model.compile(optimizer=context.solid_config['optimizer'], loss=context.solid_config['loss'])
+    model.fit(X_train, y_train, epochs=context.solid_config['num_epochs'], verbose=0)
+
+    for i in range(len(X_test)):
+        inp = X_test[i].reshape((1, n_steps, n_features))
+        yhat = model.predict(inp, verbose=0)
+        print(yhat[0][0], y_test[i])
+
