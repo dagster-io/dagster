@@ -1,4 +1,4 @@
-Sphinx==2.1.2; python_version >= '3.6'
+Sphinx==2.2.2; python_version >= '3.6'
 sphinx-autobuild==0.7.1
 # https://github.com/dagster-io/dagster/issues/1858
 git+https://github.com/t-b/sphinxcontrib-images.git@c76b9c25efb249f9c5054adbb436455095c6d2f7#egg=sphinxcontrib-images
@@ -9,4 +9,4 @@ git+https://github.com/t-b/sphinxcontrib-images.git@c76b9c25efb249f9c5054adbb436
 -e ./python_modules/dagster-dask
 -e ./python_modules/libraries/dagster-cron
 -r ./python_modules/dagster/dev-requirements.txt
-sphinx-click==2.3.0
+sphinx-click==2.3.1
