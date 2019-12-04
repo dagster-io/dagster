@@ -136,10 +136,11 @@ export function createAdjacencyMatrix(
 
 export type SolidNameOrPath = { name: string } | { path: string[] };
 
+
 export default class PipelineExplorer extends React.Component<
   IPipelineExplorerProps,
   IPipelineExplorerState
-> {
+  > {
   static fragments = {
     PipelineExplorerFragment: gql`
       fragment PipelineExplorerFragment on Pipeline {
@@ -147,8 +148,6 @@ export default class PipelineExplorer extends React.Component<
         description
         ...SidebarTabbedContainerPipelineFragment
       }
-
-      ${SidebarTabbedContainer.fragments.SidebarTabbedContainerPipelineFragment}
     `,
     PipelineExplorerSolidHandleFragment: gql`
       fragment PipelineExplorerSolidHandleFragment on SolidHandle {
@@ -156,12 +155,9 @@ export default class PipelineExplorer extends React.Component<
         solid {
           name
           ...PipelineGraphSolidFragment
-          ...SidebarTabbedContainerSolidFragment
         }
       }
-
       ${PipelineGraph.fragments.PipelineGraphSolidFragment}
-      ${SidebarTabbedContainer.fragments.SidebarTabbedContainerSolidFragment}
     `
   };
 
@@ -400,8 +396,8 @@ export default class PipelineExplorer extends React.Component<
                 children={({ location }: { location: any }) => (
                   <SidebarTabbedContainer
                     pipeline={pipeline}
-                    solid={selectedHandle && selectedHandle.solid}
-                    parentSolid={parentHandle && parentHandle.solid}
+                    solidHandleID={selectedHandle && selectedHandle.handleID}
+                    parentSolidHandleID={parentHandle && parentHandle.handleID}
                     getInvocations={getInvocations}
                     onEnterCompositeSolid={this.handleEnterCompositeSolid}
                     onClickSolid={this.handleClickSolid}
@@ -464,3 +460,4 @@ const SolidSearchInput = styled.input`
   font-size: 14px;
   border: 1px solid ${Colors.GRAY4};
 `;
+
