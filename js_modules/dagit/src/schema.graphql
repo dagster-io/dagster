@@ -605,8 +605,9 @@ type Pipeline implements SolidContainer & PipelineReference {
   runtimeTypes: [RuntimeType!]!
   runs: [PipelineRun!]!
   modes: [Mode!]!
-  solidHandles: [SolidHandle!]!
+  solidHandles(parentHandleID: String): [SolidHandle!]!
   presets: [PipelinePreset!]!
+  solidHandle(handleID: String!): SolidHandle
 }
 
 interface PipelineConfigValidationError {

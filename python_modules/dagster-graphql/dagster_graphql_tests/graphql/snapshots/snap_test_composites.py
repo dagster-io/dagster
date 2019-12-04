@@ -444,3 +444,42 @@ snapshots['test_composites 1'] = {
         ]
     }
 }
+
+snapshots['test_parent_id_arg 1'] = {
+    'pipeline': {
+        '__typename': 'Pipeline',
+        'name': 'composites_pipeline',
+        'solidHandles': [
+            {
+                'handleID': 'add_four'
+            },
+            {
+                'handleID': 'add_four.adder_1'
+            },
+            {
+                'handleID': 'add_four.adder_1.adder_1'
+            },
+            {
+                'handleID': 'add_four.adder_1.adder_2'
+            },
+            {
+                'handleID': 'add_four.adder_2'
+            },
+            {
+                'handleID': 'add_four.adder_2.adder_1'
+            },
+            {
+                'handleID': 'add_four.adder_2.adder_2'
+            },
+            {
+                'handleID': 'div_four'
+            },
+            {
+                'handleID': 'div_four.div_1'
+            },
+            {
+                'handleID': 'div_four.div_2'
+            }
+        ]
+    }
+}
