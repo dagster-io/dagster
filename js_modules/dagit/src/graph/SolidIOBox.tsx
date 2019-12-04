@@ -2,7 +2,6 @@ import * as React from "react";
 import PipelineColorScale from "./PipelineColorScale";
 import { ILayout } from "./getFullSolidLayout";
 import {
-  SolidNodeDefinitionFragment,
   SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions,
   SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions
 } from "./types/SolidNodeDefinitionFragment";
@@ -15,6 +14,7 @@ import {
 import { DEFAULT_RESULT_NAME, titleOfIO } from "../Util";
 import { Edge, isHighlighted } from "./highlighting";
 import { SolidNodeInvocationFragment } from "./types/SolidNodeInvocationFragment";
+import { ParentSolidNodeDefinitionFragment } from "./types/ParentSolidNodeDefinitionFragment";
 
 export const PARENT_IN = "PARENT_IN";
 export const PARENT_OUT = "PARENT_OUT";
@@ -112,7 +112,7 @@ export const SolidIOBox: React.FunctionComponent<SolidIOBoxProps> = ({
 };
 
 export function metadataForCompositeParentIO(
-  parentDefinition: SolidNodeDefinitionFragment,
+  parentDefinition: ParentSolidNodeDefinitionFragment,
   item:
     | SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions
     | SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions

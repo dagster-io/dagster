@@ -2,7 +2,7 @@ import * as React from "react";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import { IFullPipelineLayout } from "./getFullSolidLayout";
-import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
+import { PipelineGraphParentSolidFragment } from "./types/PipelineGraphParentSolidFragment";
 import { SVGLabeledRect } from "./SVGComponents";
 import { Edge } from "./highlighting";
 import { ExternalConnectionNode } from "./ExternalConnectionNode";
@@ -18,7 +18,7 @@ import {
 
 interface ParentSolidNodeProps {
   layout: IFullPipelineLayout;
-  solid: PipelineGraphSolidFragment;
+  solid: PipelineGraphParentSolidFragment;
   minified: boolean;
 
   highlightedEdges: Edge[];
