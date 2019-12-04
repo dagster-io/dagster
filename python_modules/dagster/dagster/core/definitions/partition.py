@@ -6,6 +6,7 @@ import six
 from dagster import check
 from dagster.core.definitions.schedule import ScheduleDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.utils import merge_dicts
 
 
 def by_name(partition):
@@ -70,7 +71,9 @@ class FirstPartitionSelector(SortedPartitionSelector):
 class PartitionSetDefinition(
     namedtuple(
         '_PartitionSetDefinition',
-        ('name pipeline_name partition_fn environment_dict_fn_for_partition tags_fn_for_partition'),
+        (
+            'name pipeline_name partition_fn user_defined_environment_dict_fn_for_partition user_defined_tags_fn_for_partition'
+        ),
     )
 ):
     '''
@@ -94,8 +97,8 @@ class PartitionSetDefinition(
         name,
         pipeline_name,
         partition_fn,
-        environment_dict_fn_for_partition=lambda _: {},
-        tags_fn_for_partition=lambda _: {},
+        environment_dict_fn_for_partition=lambda _partition: {},
+        tags_fn_for_partition=lambda _partition: {},
     ):
         def _wrap(x):
             if isinstance(x, Partition):
@@ -113,12 +116,24 @@ class PartitionSetDefinition(
             partition_fn=lambda: [
                 _wrap(x) for x in check.callable_param(partition_fn, 'partition_fn')()
             ],
-            environment_dict_fn_for_partition=check.callable_param(
+            user_defined_environment_dict_fn_for_partition=check.callable_param(
                 environment_dict_fn_for_partition, 'environment_dict_fn_for_partition'
             ),
-            tags_fn_for_partition=check.callable_param(
+            user_defined_tags_fn_for_partition=check.callable_param(
                 tags_fn_for_partition, 'tags_fn_for_partition'
             ),
+        )
+
+    def environment_dict_for_partition(self, partition):
+        return self.user_defined_environment_dict_fn_for_partition(partition)
+
+    def tags_for_partition(self, partition):
+        user_tags = self.user_defined_tags_fn_for_partition(partition)
+        # TODO: Validate tags from user - Check they returned a Dict[str, str]
+        check.invariant('dagster/partition' not in user_tags)
+        check.invariant('dagster/partition_set' not in user_tags)
+        return merge_dicts(
+            {'dagster/partition': partition.name, 'dagster/partition_set': self.name}, user_tags
         )
 
     def get_partitions(self):
@@ -140,7 +155,7 @@ class PartitionSetDefinition(
 
         check.inst_param(partition_selector, 'partition_selector', IPartitionSelector)
 
-        def _user_defined_environment_dict_fn_wrapper():
+        def _environment_dict_fn_wrapper():
             selected_partition = partition_selector.select_partition(partition_set_def=self)
             if not selected_partition:
                 raise DagsterInvariantViolationError(
@@ -150,12 +165,9 @@ class PartitionSetDefinition(
                     )
                 )
 
-            user_defined_environment_dict = self.environment_dict_fn_for_partition(
-                selected_partition
-            )
-            return user_defined_environment_dict
+            return self.environment_dict_for_partition(selected_partition)
 
-        def _user_defined_tags_fn_wrapper():
+        def _tags_fn_wrapper():
             selected_partition = partition_selector.select_partition(partition_set_def=self)
             if not selected_partition:
                 raise DagsterInvariantViolationError(
@@ -165,26 +177,14 @@ class PartitionSetDefinition(
                     )
                 )
 
-            # TODO: Validate tags from user
-            # - Check they returned a Dict[str, str]
-            # - Check that 'dagster/partition' is not included
-            tags = self.tags_fn_for_partition(selected_partition)
-
-            # Add partition tags
-            check.invariant('dagster/partition_set' not in tags)
-            tags['dagster/partition_set'] = self.name
-
-            check.invariant('dagster/partition' not in tags)
-            tags['dagster/partition'] = selected_partition.name
-
-            return tags
+            return self.tags_for_partition(selected_partition)
 
         return ScheduleDefinition(
             name=schedule_name,
             cron_schedule=cron_schedule,
             pipeline_name=self.pipeline_name,
-            environment_dict_fn=_user_defined_environment_dict_fn_wrapper,
-            tags_fn=_user_defined_tags_fn_wrapper,
+            environment_dict_fn=_environment_dict_fn_wrapper,
+            tags_fn=_tags_fn_wrapper,
         )
 
 

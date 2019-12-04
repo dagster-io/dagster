@@ -69,4 +69,7 @@ class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags')):
         )
 
     def to_graphql_input(self):
-        return {'tags': self.tags, 'runId': self.run_id}
+        return {
+            'tags': [{'key': k, 'value': v} for k, v in self.tags.items()],
+            'runId': self.run_id,
+        }
