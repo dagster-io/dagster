@@ -81,7 +81,11 @@ def host_dagit_ui(handle, host, port, storage_fallback=None, reload_trigger=None
     app = create_app(handle, instance, reloader)
 
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
-    print('Serving on http://{host}:{port}'.format(host=host, port=port))
+    print(
+        'Serving on http://{host}:{port} in process {pid}'.format(
+            host=host, port=port, pid=os.getpid()
+        )
+    )
     try:
         server.serve_forever()
     except OSError as os_error:
