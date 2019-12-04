@@ -56,6 +56,7 @@ def _do_setup(name='dagster'):
             'enum-compat>=0.0.1',
             'future',
             'funcsigs',
+            'functools32; python_version<"3"',
             'contextlib2>=0.5.4',
             'pathlib2>=2.3.4; python_version<"3"',
             # cli

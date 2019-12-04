@@ -24,6 +24,10 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
+try:
+    from functools import lru_cache
+except ImportError:
+    from functools32 import lru_cache
 
 try:
     # pylint:disable=redefined-builtin,self-assigning-variable
@@ -35,6 +39,7 @@ try:
     import _thread as thread
 except ImportError:
     import thread
+
 
 IS_WINDOWS = os.name == 'nt'
 
