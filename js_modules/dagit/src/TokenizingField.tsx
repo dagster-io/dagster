@@ -90,7 +90,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     s.text
       .toLowerCase()
       .split(":")
-      .some(c => c.startsWith(lastPart));
+      .some(c => c.includes(lastPart));
 
   const availableSuggestionsForProvider = (provider: SuggestionProvider) => {
     const suggestionNotUsed = (v: string) =>
