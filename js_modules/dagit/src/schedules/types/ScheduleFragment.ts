@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ScheduleAttemptStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { PipelineRunStatus, ScheduleAttemptStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: ScheduleFragment
@@ -17,29 +17,24 @@ export interface ScheduleFragment_scheduleDefinition {
   cronSchedule: string;
 }
 
-export interface ScheduleFragment_attempts {
-  __typename: "ScheduleAttempt";
-  time: number;
-  jsonResult: string;
-  status: ScheduleAttemptStatus;
-}
-
-export interface ScheduleFragment_runs_pipeline {
+export interface ScheduleFragment_attempts_run_pipeline {
   __typename: "Pipeline" | "UnknownPipeline";
   name: string;
 }
 
-export interface ScheduleFragment_runs_stats {
-  __typename: "PipelineRunStatsSnapshot";
-  startTime: number | null;
-}
-
-export interface ScheduleFragment_runs {
+export interface ScheduleFragment_attempts_run {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: ScheduleFragment_runs_pipeline;
+  pipeline: ScheduleFragment_attempts_run_pipeline;
   status: PipelineRunStatus;
-  stats: ScheduleFragment_runs_stats;
+}
+
+export interface ScheduleFragment_attempts {
+  __typename: "ScheduleAttempt";
+  run: ScheduleFragment_attempts_run | null;
+  time: number;
+  jsonResult: string;
+  status: ScheduleAttemptStatus;
 }
 
 export interface ScheduleFragment {
@@ -47,8 +42,7 @@ export interface ScheduleFragment {
   id: string;
   scheduleDefinition: ScheduleFragment_scheduleDefinition;
   logsPath: string;
-  runsCount: number;
   attempts: ScheduleFragment_attempts[];
-  runs: ScheduleFragment_runs[];
+  attemptsCount: number;
   status: ScheduleStatus;
 }

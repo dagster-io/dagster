@@ -6,10 +6,13 @@ ADD dagster dagster
 ADD dagster-graphql dagster-graphql
 ADD dagster-aws dagster-aws
 ADD dagster-cron dagster-cron
+ADD dagster-gcp dagster-gcp
 
-RUN pip install --no-deps -e dagster -e dagster-graphql -e dagster-aws -e dagster-cron
-RUN pip install -e dagster -e dagster-graphql -e dagster-aws -e dagster-cron
+RUN pip install --no-deps -e dagster -e dagster-graphql -e dagster-aws -e dagster-cron dagster-gcp
+RUN pip install -e dagster -e dagster-graphql -e dagster-aws -e dagster-cron dagster-gcp
 
 ADD . .
+
+ENV GOOGLE_APPLICATION_CREDENTIALS="/gac.json"
 
 ENTRYPOINT [ "dagster-graphql" ]

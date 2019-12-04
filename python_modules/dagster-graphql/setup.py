@@ -23,7 +23,7 @@ parser.add_argument('--nightly', action='store_true')
 
 def _do_setup(name='dagster-graphql'):
     setup(
-        name='dagster_graphql',
+        name=name,
         version=get_version(name),
         author='Elementl',
         license='Apache-2.0',
@@ -45,6 +45,7 @@ def _do_setup(name='dagster-graphql'):
 if __name__ == '__main__':
     parsed, unparsed = parser.parse_known_args()
     sys.argv = [sys.argv[0]] + unparsed
+    print(parsed, unparsed)
     if parsed.nightly:
         _do_setup('dagster-graphql-nightly')
     else:

@@ -1,8 +1,11 @@
 import * as React from "react";
 
-import styled from "styled-components";
-import { Colors } from "@blueprintjs/core";
-import { Header, ScrollContainer } from "../ListComponents";
+import {
+  Header,
+  ScrollContainer,
+  RowColumn,
+  RowContainer
+} from "../ListComponents";
 import { Query, QueryResult } from "react-apollo";
 import {
   ScheduleRootQuery,
@@ -11,12 +14,13 @@ import {
 import Loading from "../Loading";
 import gql from "graphql-tag";
 import { match } from "react-router";
-import ScheduleRow, { ScheduleRowFragment } from "./ScheduleRow";
+import { Link } from "react-router-dom";
+import { ScheduleRow, ScheduleRowFragment, AttemptStatus } from "./ScheduleRow";
 
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { showCustomAlert } from "../CustomAlertProvider";
 import { unixTimestampToString } from "../Util";
-import { ScheduleAttemptStatus } from "../types/globalTypes";
+import { RunStatus } from "../runs/RunUtils";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 const NUM_ATTEMPTS_TO_DISPLAY = 25;
@@ -72,80 +76,71 @@ interface AttemptsTableProps {
 const AttemptsTable: React.FunctionComponent<AttemptsTableProps> = ({
   attemptList
 }) => {
+  if (!attemptList || !attemptList.length) {
+    return null;
+  }
   return (
     <>
       <Header>Attempts</Header>
       {attemptList.map((attempt, i) => (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            backgroundColor: "white",
-            padding: "5px 10px",
-            margin: "4px 0"
-          }}
-          key={i}
-        >
-          <AttemptStatus status={attempt.status} />
-          <AttemptMessage result={attempt.jsonResult} />
-          {unixTimestampToString(attempt.time)}
-        </div>
+        <RowContainer key={i} style={{ marginBottom: 0, boxShadow: "none" }}>
+          <RowColumn
+            style={{
+              maxWidth: 30,
+              borderRight: 0,
+              padding: 7
+            }}
+          >
+            {attempt.run ? (
+              <RunStatus status={attempt.run.status} />
+            ) : (
+              <AttemptStatus status={attempt.status} />
+            )}
+          </RowColumn>
+          <RowColumn style={{ textAlign: "left", borderRight: 0 }}>
+            {attempt.run ? (
+              <div>
+                <Link to={`/runs/${attempt.run.runId}`}>
+                  {attempt.run.runId}
+                </Link>
+              </div>
+            ) : (
+              <div>
+                <a
+                  onClick={() =>
+                    showCustomAlert({
+                      title: "Schedule Response",
+                      body: (
+                        <>
+                          <HighlightedCodeBlock
+                            value={JSON.stringify(
+                              JSON.parse(attempt.jsonResult),
+                              null,
+                              2
+                            )}
+                            languages={["json"]}
+                          />
+                        </>
+                      )
+                    })
+                  }
+                >
+                  {" "}
+                  View error
+                </a>
+              </div>
+            )}
+          </RowColumn>
+          <RowColumn
+            style={{ maxWidth: 200, paddingLeft: 0, textAlign: "left" }}
+          >
+            {unixTimestampToString(attempt.time)}
+          </RowColumn>
+        </RowContainer>
       ))}
     </>
   );
 };
-
-export const Link = styled.a`
-  color: ${Colors.DARK_GRAY4};
-  text-decoration: underline;
-  margin-left: 10px;
-`;
-
-const AttemptMessage = ({ result }: { result: string }) => {
-  return (
-    <div>
-      <Link
-        onClick={() =>
-          showCustomAlert({
-            body: (
-              <>
-                <HighlightedCodeBlock
-                  value={JSON.stringify(JSON.parse(result), null, 2)}
-                  languages={["json"]}
-                />
-              </>
-            )
-          })
-        }
-      >
-        View Response
-      </Link>
-    </div>
-  );
-};
-
-const AttemptStatus = styled.div<{ status: ScheduleAttemptStatus }>`
-  display: inline-block;
-  width: 11px;
-  height: 11px;
-  border-radius: 5.5px;
-  align-self: center;
-  transition: background 200ms linear;
-  background: ${({ status }) =>
-    ({
-      [ScheduleAttemptStatus.SUCCESS]: Colors.GREEN2,
-      [ScheduleAttemptStatus.ERROR]: Colors.RED3,
-      [ScheduleAttemptStatus.SKIPPED]: Colors.GOLD3
-    }[status])};
-  &:hover {
-    background: ${({ status }) =>
-      ({
-        [ScheduleAttemptStatus.SUCCESS]: Colors.GREEN2,
-        [ScheduleAttemptStatus.ERROR]: Colors.RED3,
-        [ScheduleAttemptStatus.SKIPPED]: Colors.GOLD3
-      }[status])};
-  }
-`;
 
 export const SCHEDULE_ROOT_QUERY = gql`
   query ScheduleRootQuery(
@@ -164,6 +159,10 @@ export const SCHEDULE_ROOT_QUERY = gql`
           time
           jsonResult
           status
+          run {
+            runId
+            status
+          }
         }
       }
       ... on ScheduleNotFoundError {

@@ -11,17 +11,22 @@ function cleanup {
     rm -rf dagster-graphql
     rm -rf dagster-aws
     rm -rf dagster-cron
+    rm -rf dagster-gcp
     rm -rf dagster-airflow
+    rm -rf gac.json
     rm -rf examples
     set +ux
 }
 # # ensure cleanup happens on error or normal exit
 trap cleanup INT TERM EXIT ERR
 
+cp $GOOGLE_APPLICATION_CREDENTIALS ./gac.json
+
 cp -R ../../../dagster . && \
 cp -R ../../../dagster-graphql . && \
 cp -R ../../../libraries/dagster-aws . && \
 cp -R ../../../libraries/dagster-cron . && \
+cp -R ../../../libraries/dagster-gcp . && \
 cp -R ../../../../examples . && \
 mkdir -p ./dagster-airflow && \
 cp -R ../../../dagster-airflow/setup.py ./dagster-airflow/ && \
@@ -48,6 +53,10 @@ rm -rf \
   dagster-aws/.tox \
   dagster-aws/build \
   dagster-aws/dist \
+  dagster-gcp/*.egg-info \
+  dagster-gcp/.tox \
+  dagster-gcp/build \
+  dagster-gcp/dist \
   examples/*.egg-info \
   examples/.tox \
   examples/build \
@@ -60,6 +69,9 @@ rm -rf dagster
 rm -rf dagster-graphql
 rm -rf dagster-aws
 rm -rf dagster-cron
+rm -rf dagster-gcp
 rm -rf dagster-airflow
 rm -rf examples
+rm -rf gac.json
+
 set +ux

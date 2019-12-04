@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ScheduleAttemptStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { PipelineRunStatus, ScheduleAttemptStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleRootQuery
@@ -17,29 +17,30 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefin
   cronSchedule: string;
 }
 
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts_run_pipeline {
+  __typename: "Pipeline" | "UnknownPipeline";
+  name: string;
+}
+
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts_run {
+  __typename: "PipelineRun";
+  runId: string;
+  pipeline: ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts_run_pipeline;
+  status: PipelineRunStatus;
+}
+
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts {
   __typename: "ScheduleAttempt";
+  run: ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts_run | null;
   time: number;
   jsonResult: string;
   status: ScheduleAttemptStatus;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
-  name: string;
-}
-
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_stats {
-  __typename: "PipelineRunStatsSnapshot";
-  startTime: number | null;
-}
-
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_runs {
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList_run {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_pipeline;
   status: PipelineRunStatus;
-  stats: ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_stats;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList {
@@ -47,6 +48,7 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList {
   time: number;
   jsonResult: string;
   status: ScheduleAttemptStatus;
+  run: ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList_run | null;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule {
@@ -54,9 +56,8 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule {
   id: string;
   scheduleDefinition: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition;
   logsPath: string;
-  runsCount: number;
   attempts: ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts[];
-  runs: ScheduleRootQuery_scheduleOrError_RunningSchedule_runs[];
+  attemptsCount: number;
   status: ScheduleStatus;
   attemptList: ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList[];
 }

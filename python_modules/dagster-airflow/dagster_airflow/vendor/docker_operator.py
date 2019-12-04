@@ -230,16 +230,22 @@ class DockerOperator(BaseOperator):
             )
             self.cli.start(self.container['Id'])
 
+            res = []
             line = ''
             for line in self.cli.logs(container=self.container['Id'], stream=True):
                 line = line.strip()
                 if hasattr(line, 'decode'):
                     line = line.decode('utf-8')
+                    res.append(line)
                 self.log.info(line)
 
             result = self.cli.wait(self.container['Id'])
             if result['StatusCode'] != 0:
-                raise AirflowException('docker container failed: ' + repr(result))
+                raise AirflowException(
+                    'docker container failed with result: {result} and logs: {logs}'.format(
+                        result=repr(result), logs='\n'.join(res)
+                    )
+                )
 
             if self.xcom_push_flag:
                 return self.cli.logs(container=self.container['Id']) if self.xcom_all else str(line)

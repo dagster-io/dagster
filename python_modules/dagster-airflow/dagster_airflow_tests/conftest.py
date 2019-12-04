@@ -139,3 +139,8 @@ def environment_dict(s3_bucket):
 @pytest.fixture(scope='session')
 def s3_bucket():
     yield 'dagster-scratch-80542c2'
+
+
+@pytest.fixture(scope='session')
+def gcs_bucket():
+    yield 'dagster-scratch-ccdfe1e'

@@ -11,6 +11,7 @@ from .solids import (
     consolidate_csv_files,
     download_weather_report_from_weather_api,
     download_zipfiles_from_urls,
+    produce_training_set,
     produce_trip_dataset,
     produce_weather_dataset,
     transform_into_traffic_dataset,
@@ -128,5 +129,6 @@ def extract_daily_weather_data_pipeline():
     ],
 )
 def model_training_pipeline():
-    transform_into_traffic_dataset(produce_trip_dataset())
-    produce_weather_dataset()
+    produce_training_set(
+        transform_into_traffic_dataset(produce_trip_dataset()), produce_weather_dataset(),
+    )

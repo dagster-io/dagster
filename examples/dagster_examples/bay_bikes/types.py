@@ -1,4 +1,4 @@
-from numpy import mean, median
+from numpy import mean, median, ndarray
 from pandas import DataFrame, Timestamp
 
 from dagster import EventMetadataEntry, TypeCheck, dagster_type
@@ -103,7 +103,6 @@ def validate_trip_dataframe(dataframe):
         if failed_type_check
         else TypeCheck(
             success=True,
-            description='Yay',
             metadata_entries=[
                 EventMetadataEntry.text(
                     str(min(dataframe['start_time'])),
@@ -264,7 +263,6 @@ def validate_weather_dataframe(dataframe):
         if failed_type_check
         else TypeCheck(
             success=True,
-            description='Yay',
             metadata_entries=[
                 EventMetadataEntry.text(
                     str(len(dataframe)), 'n_rows', 'Number of rows seen in the dataframe'
@@ -283,4 +281,57 @@ def validate_weather_dataframe(dataframe):
     type_check=validate_weather_dataframe,
 )
 class WeatherDataFrame(DataFrame):
+    pass
+
+
+def validate_snapshot_timeseries(training_set_data):
+    if len(training_set_data) != 2:
+        return TypeCheck(
+            success=False,
+            description='Invalid training set. The tuple must consist of a training set, output vector, and feature_names',
+        )
+    # tuple argument types
+    X, y = training_set_data
+    if not (isinstance(X, ndarray) and isinstance(y, ndarray)):
+        return TypeCheck(
+            success=False,
+            description='Both input matrix and output vector must be numpy arrays. X: {} | y: {}'.format(
+                type(X), type(y)
+            ),
+        )
+
+    num_timeseries, timeseries_length, snapshot_length = X.shape
+    output_vector_length = y.shape[0]
+    if num_timeseries == 0 or output_vector_length == 0:
+        return TypeCheck(success=False, description='No empty training sets allowed',)
+
+    if timeseries_length != output_vector_length:
+        return TypeCheck(
+            success=False, description='Every timeseries must have as many snapshots as outputs'
+        )
+
+    return TypeCheck(
+        success=True,
+        metadata_entries=[
+            EventMetadataEntry.text(
+                str(num_timeseries), 'num_ts', 'Number of parallel timeseries.'
+            ),
+            EventMetadataEntry.text(
+                str(timeseries_length), 'timeseries_length', 'Length of each timeseries.'
+            ),
+            EventMetadataEntry.text(
+                str(snapshot_length),
+                'snapshot_length',
+                'Number of past observations for each input.',
+            ),
+        ],
+    )
+
+
+@dagster_type(
+    name='TrainingSet',
+    description='Final training set ready for the ml pipeline',
+    type_check=validate_snapshot_timeseries,
+)
+class TrainingSet(tuple):
     pass

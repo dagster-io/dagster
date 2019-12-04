@@ -884,6 +884,7 @@ type RunningSchedule {
   runs(limit: Int): [PipelineRun!]!
   runsCount: Int!
   attempts(limit: Int): [ScheduleAttempt!]!
+  attemptsCount: Int!
   logsPath: String!
 }
 

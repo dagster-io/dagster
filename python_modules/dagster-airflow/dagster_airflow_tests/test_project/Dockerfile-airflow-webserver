@@ -22,12 +22,12 @@ USER root
 
 ADD dagster dagster
 ADD dagster-graphql dagster-graphql
-ADD dagster-airflow dagster-airflow
 ADD dagster-aws dagster-aws
 ADD dagster-cron dagster-cron
+ADD dagster-gcp dagster-gcp
 ADD examples examples
 
-RUN pip install --no-deps -e dagster -e dagster-graphql -e dagster-airflow -e dagster-cron -e examples
-RUN pip install -e dagster -e dagster-graphql -e dagster-airflow -e dagster-cron -e examples
+RUN pip install --no-deps -e dagster -e dagster-graphql -e dagster-airflow -e dagster-cron -e dagster-gcp -e examples
+RUN pip install -e dagster -e dagster-graphql -e dagster-airflow -e dagster-cron -e dagster-gcp -e examples
 
 USER airflow

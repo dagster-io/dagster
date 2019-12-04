@@ -5,6 +5,7 @@ import { useMutation } from "@apollo/react-hooks";
 import {
   Button,
   Classes,
+  Colors,
   Switch,
   Icon,
   Menu,
@@ -18,12 +19,9 @@ import {
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { RowColumn, RowContainer } from "../ListComponents";
 import { RunStatus, titleForRun } from "../runs/RunUtils";
-import {
-  ScheduleFragment,
-  ScheduleFragment_runs
-} from "./types/ScheduleFragment";
+import { ScheduleFragment } from "./types/ScheduleFragment";
 import { ScheduleStatus, ScheduleAttemptStatus } from "../types/globalTypes";
-import { Link } from "react-router-dom";
+import { Link, useRouteMatch } from "react-router-dom";
 import cronstrue from "cronstrue";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
@@ -32,17 +30,16 @@ import { copyValue, unixTimestampToString } from "../Util";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 
-const ScheduleRow: React.FunctionComponent<{
+export const ScheduleRow: React.FunctionComponent<{
   schedule: ScheduleFragment;
 }> = ({ schedule }) => {
   const {
     id,
     status,
     scheduleDefinition,
-    runs,
-    runsCount,
     logsPath,
-    attempts
+    attempts,
+    attemptsCount
   } = schedule;
   const {
     name,
@@ -56,6 +53,7 @@ const ScheduleRow: React.FunctionComponent<{
 
   const [startSchedule] = useMutation(START_SCHEDULE_MUTATION);
   const [stopSchedule] = useMutation(STOP_SCHEDULE_MUTATION);
+  const match = useRouteMatch("/schedule/:scheduleName");
 
   const mostRecentAttempt = attempts.length > 0 ? attempts[0] : null;
   const mostRecentAttemptLogError = mostRecentAttempt
@@ -70,18 +68,13 @@ const ScheduleRow: React.FunctionComponent<{
     }
   };
 
-  const sortRuns = (runs: ScheduleFragment_runs[]) => {
-    if (!runs) return [];
-
-    return runs.sort((a, b) => {
-      const aStart = a.stats.startTime || Number.MAX_SAFE_INTEGER;
-      const bStart = b.stats.startTime || Number.MAX_SAFE_INTEGER;
-      return bStart - aStart;
-    });
-  };
-
-  const sortedRuns = sortRuns(runs);
-  const mostRecentRun = sortedRuns[0];
+  const displayName = match ? (
+    <ScheduleName>{name}</ScheduleName>
+  ) : (
+    <Link to={`/schedule/${name}`}>
+      <ScheduleName>{name}</ScheduleName>
+    </Link>
+  );
 
   return (
     <RowContainer key={name}>
@@ -124,9 +117,7 @@ const ScheduleRow: React.FunctionComponent<{
           }}
         />
       </RowColumn>
-      <RowColumn style={{ flex: 1.4 }}>
-        <ScheduleName>{name}</ScheduleName>
-      </RowColumn>
+      <RowColumn style={{ flex: 1.4 }}>{displayName}</RowColumn>
       <RowColumn>
         <Link to={`/p/${pipelineName}/explore/`}>
           <Icon icon="diagram-tree" /> {pipelineName}
@@ -150,45 +141,78 @@ const ScheduleRow: React.FunctionComponent<{
         )}
       </RowColumn>
       <RowColumn style={{ flex: 1 }}>
-        {runs && runs.length > 0
-          ? runs.slice(0, NUM_RUNS_TO_DISPLAY).map(run => (
+        {attempts && attempts.length > 0
+          ? attempts.slice(0, NUM_RUNS_TO_DISPLAY).map((attempt, i) => (
               <div
                 style={{
                   display: "inline-block",
                   cursor: "pointer",
                   marginRight: 5
                 }}
-                key={run.runId}
+                key={i}
               >
-                <Link to={`/p/${run.pipeline.name}/runs/${run.runId}`}>
-                  <Tooltip
-                    position={"top"}
-                    content={titleForRun(run)}
-                    wrapperTagName="div"
-                    targetTagName="div"
+                {attempt.run ? (
+                  <Link
+                    to={`/p/${attempt.run.pipeline.name}/runs/${attempt.run.runId}`}
                   >
-                    <RunStatus status={run.status} />
-                  </Tooltip>
-                </Link>
+                    <Tooltip
+                      position={"top"}
+                      content={titleForRun(attempt.run)}
+                      wrapperTagName="div"
+                      targetTagName="div"
+                    >
+                      <RunStatus status={attempt.run.status} />
+                    </Tooltip>
+                  </Link>
+                ) : (
+                  <a
+                    onClick={() =>
+                      showCustomAlert({
+                        title: "Schedule Response",
+                        body: (
+                          <>
+                            <HighlightedCodeBlock
+                              value={JSON.stringify(
+                                JSON.parse(attempt.jsonResult),
+                                null,
+                                2
+                              )}
+                              languages={["json"]}
+                            />
+                          </>
+                        )
+                      })
+                    }
+                  >
+                    <Tooltip
+                      position={"top"}
+                      content="View scheduling error"
+                      wrapperTagName="div"
+                      targetTagName="div"
+                    >
+                      <AttemptStatus status={attempt.status} />
+                    </Tooltip>
+                  </a>
+                )}
               </div>
             ))
           : "-"}
-        {runsCount > NUM_RUNS_TO_DISPLAY && (
+        {attemptsCount > NUM_RUNS_TO_DISPLAY && (
           <Link
-            to={`/runs?q=tag:${encodeURIComponent(
-              "dagster/schedule_id"
-            )}=${id}`}
+            to={`/schedule/${encodeURIComponent(
+              schedule.scheduleDefinition.name
+            )}`}
             style={{ verticalAlign: "top" }}
           >
             {" "}
-            +{runsCount - NUM_RUNS_TO_DISPLAY} more
+            +{attemptsCount - NUM_RUNS_TO_DISPLAY} more
           </Link>
         )}
       </RowColumn>
       <RowColumn style={{ flex: 1 }}>
-        {mostRecentRun
-          ? unixTimestampToString(mostRecentRun.stats.startTime)
-          : "No previous runs"}
+        {mostRecentAttempt
+          ? unixTimestampToString(mostRecentAttempt.time)
+          : "-"}
 
         {mostRecentAttempt &&
           mostRecentAttempt.status === ScheduleAttemptStatus.ERROR && (
@@ -292,22 +316,19 @@ export const ScheduleRowFragment = gql`
       cronSchedule
     }
     logsPath
-    runsCount
-    attempts(limit: 1) {
+    attempts(limit: $limit) {
+      run {
+        runId
+        pipeline {
+          name
+        }
+        status
+      }
       time
       jsonResult
       status
     }
-    runs(limit: $limit) {
-      runId
-      pipeline {
-        name
-      }
-      status
-      stats {
-        startTime
-      }
-    }
+    attemptsCount
     status
   }
 `;
@@ -363,4 +384,25 @@ const STOP_SCHEDULE_MUTATION = gql`
   }
 `;
 
-export default ScheduleRow;
+export const AttemptStatus = styled.div<{ status: ScheduleAttemptStatus }>`
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 5.5px;
+  align-self: center;
+  transition: background 200ms linear;
+  background: ${({ status }) =>
+    ({
+      [ScheduleAttemptStatus.SUCCESS]: Colors.GREEN2,
+      [ScheduleAttemptStatus.ERROR]: Colors.RED3,
+      [ScheduleAttemptStatus.SKIPPED]: Colors.GOLD3
+    }[status])};
+  &:hover {
+    background: ${({ status }) =>
+      ({
+        [ScheduleAttemptStatus.SUCCESS]: Colors.GREEN2,
+        [ScheduleAttemptStatus.ERROR]: Colors.RED3,
+        [ScheduleAttemptStatus.SKIPPED]: Colors.GOLD3
+      }[status])};
+  }
+`;

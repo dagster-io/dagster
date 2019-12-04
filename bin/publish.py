@@ -671,7 +671,7 @@ def publish(nightly, autoclean, dry_run):
         commit_new_version(
             'nightly: {nightly}'.format(nightly=new_version['__nightly__']), dry_run=dry_run
         )
-        tag = set_git_tag('{nightly}'.format(nightly=new_version['__nightly__']), dry_run=dry_run)
+        tag = set_git_tag('nightly-{ver}'.format(ver=new_version['__nightly__']), dry_run=dry_run)
         git_push(dry_run=dry_run)
         git_push(tag, dry_run=dry_run)
     publish_all(nightly, dry_run=dry_run)

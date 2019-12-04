@@ -6,40 +6,22 @@ from time import gmtime, strftime
 from typing import List
 
 import requests
-from dagster_examples.bay_bikes.types import TrafficDataFrame, TripDataFrame, WeatherDataFrame
-from pandas import DataFrame, concat, date_range, read_csv, to_datetime
+from dagster_examples.bay_bikes.constants import (
+    DARK_SKY_BASE_URL,
+    FEATURE_COLUMNS,
+    LABEL_COLUMN,
+    WEATHER_COLUMNS,
+)
+from dagster_examples.bay_bikes.types import (
+    TrafficDataFrame,
+    TrainingSet,
+    TripDataFrame,
+    WeatherDataFrame,
+)
+from numpy import array
+from pandas import DataFrame, concat, date_range, get_dummies, read_csv, to_datetime
 
-from dagster import Field, Float, Int, String, composite_solid, solid
-
-DARK_SKY_BASE_URL = 'https://api.darksky.net/forecast'
-
-WEATHER_COLUMNS = [
-    'time',
-    'summary',
-    'icon',
-    'sunriseTime',
-    'sunsetTime',
-    'precipIntensity',
-    'precipIntensityMax',
-    'precipProbability',
-    'precipType',
-    'temperatureHigh',
-    'temperatureHighTime',
-    'temperatureLow',
-    'temperatureLowTime',
-    'dewPoint',
-    'humidity',
-    'pressure',
-    'windSpeed',
-    'windGust',
-    'windGustTime',
-    'windBearing',
-    'cloudCover',
-    'uvIndex',
-    'uvIndexTime',
-    'visibility',
-    'ozone',
-]
+from dagster import Field, Float, Int, String, check, composite_solid, solid
 
 
 def _write_chunks_to_fp(response, output_fp, chunk_size):
@@ -285,3 +267,96 @@ def transform_into_traffic_dataset(_, trip_dataset: TripDataFrame) -> TrafficDat
     traffic_dataset = DataFrame(counts).reset_index()
     traffic_dataset.columns = ['interval_date', 'peak_traffic_load']
     return TrafficDataFrame(traffic_dataset)
+
+
+class Timeseries:
+    def __init__(self, sequence):
+        self.sequence = check.opt_list_param(sequence, 'sequence', of_type=(int, float))
+
+    def convert_to_snapshot_sequence(self, memory_length):
+        """
+        A snapshot sequence is a transformation of a sequence into a sequence of snapshots which are the past
+        {memory_length} observations in the sequence. This looks like the following:
+
+        f([1, 2, 3, 4, 5], 2) -> [[1,2,3], [2,3,4], [3,4,5]]
+        """
+        if not self.sequence:
+            raise ValueError("Cannot produce snapshots for an empty sequence")
+        if memory_length < 1:
+            raise ValueError("Invalid snapshot length.")
+        if memory_length >= len(self.sequence):
+            raise ValueError(
+                "Unable to produce snapshots. Memory length is too large ({}) and the sequence is too small ({})".format(
+                    memory_length, len(self.sequence)
+                )
+            )
+        snapshot_sequence = []
+        for index in range(len(self.sequence)):
+            if index >= memory_length:
+                snapshot = [
+                    self.sequence[index - snapshot_delta]
+                    for snapshot_delta in range(memory_length + 1)
+                ]
+                snapshot_sequence.append(snapshot[::-1])
+        return snapshot_sequence
+
+
+class MultivariateTimeseries:
+    def __init__(
+        self,
+        input_sequences,
+        output_sequence,
+        input_sequence_names,
+        output_sequence_name,
+        elem_type=(int, float),
+    ):
+        self.input_timeseries_collection = [
+            Timeseries(input_sequence)
+            for input_sequence in check.matrix_param(
+                input_sequences, 'input_sequences', of_type=elem_type
+            )
+        ]
+        self.output_timeseries = Timeseries(check.list_param(output_sequence, 'output_sequence'))
+        if len(input_sequence_names) != len(self.input_timeseries_collection):
+            raise ValueError("Every timeseries needs a name attached to it.")
+        self.input_timeseries_names = check.list_param(
+            input_sequence_names, 'input_sequence_names', of_type=str
+        )
+        self.output_timeseries_name = check.str_param(output_sequence_name, 'output_sequence_name')
+
+    def convert_to_snapshot_matrix(self, memory_length):
+        input_snapshot_matrix = [
+            timeseries.convert_to_snapshot_sequence(memory_length)
+            for timeseries in self.input_timeseries_collection
+        ]
+        output_snapshot_sequence = self.output_timeseries.sequence[memory_length:]
+        return array(input_snapshot_matrix), array(output_snapshot_sequence)
+
+    @classmethod
+    def from_dataframe(cls, dataframe, input_sequence_names, output_sequence_name):
+        return cls(
+            input_sequences=[
+                dataframe[input_sequence_name].tolist()
+                for input_sequence_name in input_sequence_names
+            ],
+            output_sequence=dataframe[output_sequence_name].tolist(),
+            input_sequence_names=input_sequence_names,
+            output_sequence_name=output_sequence_name,
+        )
+
+
+@solid(config={'memory_length': Field(Int, description='The window memory length')})
+def produce_training_set(
+    context, traffic_dataset: TrafficDataFrame, weather_dataset: WeatherDataFrame
+) -> TrainingSet:
+    traffic_dataset['time'] = to_datetime(traffic_dataset.interval_date)
+    weather_dataset['time'] = to_datetime(weather_dataset.time)
+    dataset = traffic_dataset.join(weather_dataset.set_index('time'), on='time')
+    dataset = get_dummies(dataset, columns=['summary', 'icon', 'didRain'])
+    multivariate_timeseries = MultivariateTimeseries.from_dataframe(
+        dataset, FEATURE_COLUMNS, LABEL_COLUMN
+    )
+    input_snapshot_matrix, output = multivariate_timeseries.convert_to_snapshot_matrix(
+        context.solid_config['memory_length']
+    )
+    return TrainingSet((input_snapshot_matrix, output))

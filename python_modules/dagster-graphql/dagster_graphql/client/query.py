@@ -263,6 +263,10 @@ mutation(
       message
       pipelineName
     }
+    ... on PythonError {
+      message
+      stack
+    }
     ... on StartPipelineExecutionSuccess {
       run {
         runId
@@ -349,6 +353,10 @@ mutation(
     ... on PipelineNotFoundError {
         message
         pipelineName
+    }
+    ... on PythonError {
+      message
+      stack
     }
     ... on ExecutePlanSuccess {
       pipeline {

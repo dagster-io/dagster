@@ -1,7 +1,8 @@
 from datetime import timedelta
 
 import pytest
-from dagster_examples.bay_bikes.types import TripDataFrame, WeatherDataFrame
+from dagster_examples.bay_bikes.types import TrainingSet, TripDataFrame, WeatherDataFrame
+from numpy import array
 from pandas import DataFrame, Timestamp
 
 from dagster import check_dagster_type
@@ -55,6 +56,12 @@ def valid_weather_dataframe():
     )
 
 
+def valid_training_set():
+    X = array([[[1, 2], [2, 3]], [[4, 5], [5, 6]]])
+    y = array([3, 4])
+    return (X, y)
+
+
 def missing_column_dataframe():
     df = valid_trip_dataframe()
     return df[['bike_id', 'start_time', 'end_time']]
@@ -87,3 +94,16 @@ def test_validate_dataframe_invalid_categories():
     df = valid_weather_dataframe()
     df['icon'][0] = 'foo'
     assert not check_dagster_type(WeatherDataFrame, df).success
+
+
+def test_validate_training_data_ok():
+    data = valid_training_set()
+    assert check_dagster_type(TrainingSet, data).success
+
+
+@pytest.mark.parametrize(
+    'bad_training_data',
+    [(array([[[]], [[]]]), array([])), (array([[[1, 2], [2, 3]], [[4, 5], [5, 6]]]), array([3])),],
+)
+def test_validate_training_data_failure(bad_training_data):
+    assert not check_dagster_type(TrainingSet, bad_training_data).success

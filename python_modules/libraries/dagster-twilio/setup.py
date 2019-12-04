@@ -23,7 +23,7 @@ parser.add_argument('--nightly', action='store_true')
 
 def _do_setup(name='dagster-twilio'):
     setup(
-        name='dagster_twilio',
+        name=name,
         version=get_version(name),
         author='Elementl',
         license='Apache-2.0',

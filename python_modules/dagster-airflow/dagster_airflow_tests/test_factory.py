@@ -91,6 +91,22 @@ class TestExecuteDagPythonS3Storage(object):
         validate_pipeline_execution(dagster_airflow_python_operator_pipeline)
 
 
+class TestExecuteDagPythonGCSStorage(object):
+    pipeline_name = 'demo_pipeline_gcs'
+    handle = ExecutionTargetHandle.for_pipeline_module(
+        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
+    )
+    environment_yaml = [
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_gcs.yaml'),
+    ]
+    run_id = str(uuid.uuid4())
+
+    # pylint: disable=redefined-outer-name
+    def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
+        validate_pipeline_execution(dagster_airflow_python_operator_pipeline)
+
+
 class TestExecuteDagContainerizedFilesystemStorageNoExplicitBaseDir(object):
     pipeline_name = 'demo_pipeline'
     handle = ExecutionTargetHandle.for_pipeline_module(
@@ -126,6 +142,24 @@ class TestExecuteDagContainerizedS3Storage(object):
         validate_pipeline_execution(dagster_airflow_docker_operator_pipeline)
 
 
+@nettest
+class TestExecuteDagContainerizedGCSStorage(object):
+    pipeline_name = 'demo_pipeline_gcs'
+    handle = ExecutionTargetHandle.for_pipeline_module(
+        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
+    )
+    environment_yaml = [
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_gcs.yaml'),
+    ]
+    run_id = str(uuid.uuid4())
+    image = IMAGE
+
+    # pylint: disable=redefined-outer-name
+    def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
+        validate_pipeline_execution(dagster_airflow_docker_operator_pipeline)
+
+
 class TestExecuteDagContainerizedFilesystemStorage(object):
     pipeline_name = 'demo_pipeline'
     handle = ExecutionTargetHandle.for_pipeline_module(
@@ -152,6 +186,23 @@ class TestExecuteDagKubernetizedS3Storage(object):
     environment_yaml = [
         script_relative_path('test_project/env.yaml'),
         script_relative_path('test_project/env_s3.yaml'),
+    ]
+    run_id = str(uuid.uuid4())
+    image = IMAGE
+
+    # pylint: disable=redefined-outer-name
+    def test_execute_dag_kubernetized(self, dagster_airflow_k8s_operator_pipeline):
+        validate_pipeline_execution(dagster_airflow_k8s_operator_pipeline)
+
+
+class TestExecuteDagKubernetizedGCSStorage(object):
+    pipeline_name = 'demo_pipeline_gcs'
+    handle = ExecutionTargetHandle.for_pipeline_module(
+        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
+    )
+    environment_yaml = [
+        script_relative_path('test_project/env.yaml'),
+        script_relative_path('test_project/env_gcs.yaml'),
     ]
     run_id = str(uuid.uuid4())
     image = IMAGE
