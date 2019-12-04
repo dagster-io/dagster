@@ -230,6 +230,11 @@ export interface SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition_
   description: string | null;
 }
 
+export interface SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition_requiredResources {
+  __typename: "ResourceRequirement";
+  resourceKey: string;
+}
+
 export interface SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition_inputMappings_definition {
   __typename: "InputDefinition";
   name: string;
@@ -284,11 +289,6 @@ export interface SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition_
   mappedOutput: SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition_outputMappings_mappedOutput;
 }
 
-export interface SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition_requiredResources {
-  __typename: "ResourceRequirement";
-  resourceKey: string;
-}
-
 export interface SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
   name: string;
@@ -296,9 +296,9 @@ export interface SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition 
   inputDefinitions: SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition_outputDefinitions[];
   description: string | null;
+  requiredResources: SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition_requiredResources[];
   inputMappings: SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition_outputMappings[];
-  requiredResources: SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition_requiredResources[];
 }
 
 export type SolidsRootQuery_usedSolids_definition = SolidsRootQuery_usedSolids_definition_SolidDefinition | SolidsRootQuery_usedSolids_definition_CompositeSolidDefinition;

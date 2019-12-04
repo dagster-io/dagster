@@ -21,6 +21,7 @@ import {
   getDagrePipelineLayout,
   IFullPipelineLayout
 } from "./graph/getFullSolidLayout";
+import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
 
 interface IPipelineExplorerProps {
   history: History;
@@ -28,7 +29,7 @@ interface IPipelineExplorerProps {
   pipeline: PipelineExplorerFragment;
   handles: PipelineExplorerSolidHandleFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
-  parentHandle?: PipelineExplorerSolidHandleFragment;
+  parentHandle?: PipelineExplorerParentSolidHandleFragment;
   getInvocations?: (definitionName: string) => { handleID: string }[];
 }
 
@@ -147,7 +148,6 @@ export default class PipelineExplorer extends React.Component<
         description
         ...SidebarTabbedContainerPipelineFragment
       }
-
       ${SidebarTabbedContainer.fragments.SidebarTabbedContainerPipelineFragment}
     `,
     PipelineExplorerSolidHandleFragment: gql`
@@ -156,12 +156,19 @@ export default class PipelineExplorer extends React.Component<
         solid {
           name
           ...PipelineGraphSolidFragment
-          ...SidebarTabbedContainerSolidFragment
         }
       }
-
       ${PipelineGraph.fragments.PipelineGraphSolidFragment}
-      ${SidebarTabbedContainer.fragments.SidebarTabbedContainerSolidFragment}
+    `,
+    PipelineExplorerParentSolidHandleFragment: gql`
+      fragment PipelineExplorerParentSolidHandleFragment on SolidHandle {
+        handleID
+        solid {
+          name
+          ...PipelineGraphParentSolidFragment
+        }
+      }
+      ${PipelineGraph.fragments.PipelineGraphParentSolidFragment}
     `
   };
 
@@ -400,8 +407,8 @@ export default class PipelineExplorer extends React.Component<
                 children={({ location }: { location: any }) => (
                   <SidebarTabbedContainer
                     pipeline={pipeline}
-                    solid={selectedHandle && selectedHandle.solid}
-                    parentSolid={parentHandle && parentHandle.solid}
+                    solidHandleID={selectedHandle && selectedHandle.handleID}
+                    parentSolidHandleID={parentHandle && parentHandle.handleID}
                     getInvocations={getInvocations}
                     onEnterCompositeSolid={this.handleEnterCompositeSolid}
                     onClickSolid={this.handleClickSolid}

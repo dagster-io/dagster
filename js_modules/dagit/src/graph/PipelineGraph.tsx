@@ -7,6 +7,7 @@ import { SolidNameOrPath } from "../PipelineExplorer";
 import SolidNode from "./SolidNode";
 import { IFullPipelineLayout, IFullSolidLayout } from "./getFullSolidLayout";
 import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
+import { PipelineGraphParentSolidFragment } from "./types/PipelineGraphParentSolidFragment";
 import { SolidLinks } from "./SolidLinks";
 import { Edge, isHighlighted, isSolidHighlighted } from "./highlighting";
 import { ParentSolidNode, SVGLabeledParentRect } from "./ParentSolidNode";
@@ -19,7 +20,7 @@ interface IPipelineGraphProps {
   layout: IFullPipelineLayout;
   solids: PipelineGraphSolidFragment[];
   parentHandleID?: string;
-  parentSolid?: PipelineGraphSolidFragment;
+  parentSolid?: PipelineGraphParentSolidFragment;
   selectedHandleID?: string;
   selectedSolid?: PipelineGraphSolidFragment;
   highlightedSolids: Array<PipelineGraphSolidFragment>;
@@ -166,9 +167,20 @@ export default class PipelineGraph extends React.Component<
           ...SolidNodeDefinitionFragment
         }
       }
-
       ${SolidNode.fragments.SolidNodeInvocationFragment}
       ${SolidNode.fragments.SolidNodeDefinitionFragment}
+    `,
+    PipelineGraphParentSolidFragment: gql`
+      fragment PipelineGraphParentSolidFragment on Solid {
+        name
+        ...SolidNodeInvocationFragment
+        definition {
+          name
+          ...ParentSolidNodeDefinitionFragment
+        }
+      }
+      ${SolidNode.fragments.SolidNodeInvocationFragment}
+      ${SolidNode.fragments.ParentSolidNodeDefinitionFragment}
     `
   };
 
