@@ -73,6 +73,42 @@ export interface SolidSelectorQuery_pipeline_solids_outputs {
   dependedBy: SolidSelectorQuery_pipeline_solids_outputs_dependedBy[];
 }
 
+export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+}
+
+export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputDefinitions {
+  __typename: "InputDefinition";
+  name: string;
+  type: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputDefinitions_type;
+}
+
+export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+}
+
+export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputDefinitions {
+  __typename: "OutputDefinition";
+  name: string;
+  type: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputDefinitions_type;
+}
+
+export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition {
+  __typename: "CompositeSolidDefinition";
+  name: string;
+  metadata: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_metadata[];
+  inputDefinitions: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputDefinitions[];
+  outputDefinitions: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputDefinitions[];
+}
+
 export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
@@ -121,99 +157,7 @@ export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition {
   configField: SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_configField | null;
 }
 
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_metadata {
-  __typename: "MetadataItemDefinition";
-  key: string;
-  value: string;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputDefinitions {
-  __typename: "InputDefinition";
-  name: string;
-  type: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputDefinitions_type;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputDefinitions {
-  __typename: "OutputDefinition";
-  name: string;
-  type: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputDefinitions_type;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputMappings_definition {
-  __typename: "InputDefinition";
-  name: string;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition {
-  __typename: "InputDefinition";
-  name: string;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid {
-  __typename: "Solid";
-  name: string;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputMappings_mappedInput {
-  __typename: "Input";
-  definition: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition;
-  solid: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputMappings {
-  __typename: "InputMapping";
-  definition: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputMappings_definition;
-  mappedInput: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputMappings_mappedInput;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputMappings_definition {
-  __typename: "OutputDefinition";
-  name: string;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition {
-  __typename: "OutputDefinition";
-  name: string;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid {
-  __typename: "Solid";
-  name: string;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputMappings_mappedOutput {
-  __typename: "Output";
-  definition: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition;
-  solid: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputMappings {
-  __typename: "OutputMapping";
-  definition: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputMappings_definition;
-  mappedOutput: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputMappings_mappedOutput;
-}
-
-export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition {
-  __typename: "CompositeSolidDefinition";
-  name: string;
-  metadata: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_metadata[];
-  inputDefinitions: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputDefinitions[];
-  outputDefinitions: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputDefinitions[];
-  inputMappings: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputMappings[];
-  outputMappings: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputMappings[];
-}
-
-export type SolidSelectorQuery_pipeline_solids_definition = SolidSelectorQuery_pipeline_solids_definition_SolidDefinition | SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition;
+export type SolidSelectorQuery_pipeline_solids_definition = SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition | SolidSelectorQuery_pipeline_solids_definition_SolidDefinition;
 
 export interface SolidSelectorQuery_pipeline_solids {
   __typename: "Solid";
