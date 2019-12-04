@@ -8,7 +8,10 @@ import { IconNames } from "@blueprintjs/icons";
 
 import Loading from "./Loading";
 import PipelineExplorer from "./PipelineExplorer";
-import { PipelineExplorerRootQuery } from "./types/PipelineExplorerRootQuery";
+import {
+  PipelineExplorerRootQuery,
+  PipelineExplorerRootQueryVariables
+} from "./types/PipelineExplorerRootQuery";
 
 interface IPipelineExplorerRootProps {
   location: { pathname: string };
@@ -25,17 +28,17 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
   const parentNames = pathSolids.slice(0, pathSolids.length - 1);
   const selectedName = pathSolids[pathSolids.length - 1];
 
-  const queryResult = useQuery<PipelineExplorerRootQuery>(
-    PIPELINE_EXPLORER_ROOT_QUERY,
-    {
-      fetchPolicy: "cache-and-network",
-      partialRefetch: true,
-      variables: {
-        pipeline: props.match.params.pipelineName,
-        parentHandleID: parentNames.join(".")
-      }
+  const queryResult = useQuery<
+    PipelineExplorerRootQuery,
+    PipelineExplorerRootQueryVariables
+  >(PIPELINE_EXPLORER_ROOT_QUERY, {
+    fetchPolicy: "cache-and-network",
+    partialRefetch: true,
+    variables: {
+      pipeline: props.match.params.pipelineName,
+      parentHandleID: parentNames.join(".")
     }
-  );
+  });
 
   return (
     <Loading queryResult={queryResult}>
@@ -62,7 +65,7 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
                 path={pathSolids}
                 pipeline={pipelineOrError}
                 handles={displayedHandles}
-                parentHandle={parentSolidHandle}
+                parentHandle={parentSolidHandle ? parentSolidHandle : undefined}
                 selectedHandle={displayedHandles.find(
                   h => h.solid.name === selectedName
                 )}
@@ -80,7 +83,10 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
 };
 
 export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
-  query PipelineExplorerRootQuery($pipeline: String!, $handleID: String!) {
+  query PipelineExplorerRootQuery(
+    $pipeline: String!
+    $parentHandleID: String!
+  ) {
     pipelineOrError(params: { name: $pipeline }) {
       ... on PipelineReference {
         name
@@ -88,10 +94,10 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ... on Pipeline {
         ...PipelineExplorerFragment
 
-        solidHandle(handleID: $handleID) {
+        solidHandle(handleID: $parentHandleID) {
           ...PipelineExplorerParentSolidHandleFragment
         }
-        solidHandles(parentHandleID: { parentHandleID: $handleID }) {
+        solidHandles(parentHandleID: $parentHandleID) {
           handleID
           solid {
             name

@@ -21,6 +21,7 @@ import {
   getDagrePipelineLayout,
   IFullPipelineLayout
 } from "./graph/getFullSolidLayout";
+import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
 
 interface IPipelineExplorerProps {
   history: History;
@@ -28,7 +29,7 @@ interface IPipelineExplorerProps {
   pipeline: PipelineExplorerFragment;
   handles: PipelineExplorerSolidHandleFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
-  parentHandle?: PipelineExplorerSolidHandleFragment;
+  parentHandle?: PipelineExplorerParentSolidHandleFragment;
   getInvocations?: (definitionName: string) => { handleID: string }[];
 }
 

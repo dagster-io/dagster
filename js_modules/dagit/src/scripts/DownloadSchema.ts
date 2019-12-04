@@ -15,7 +15,7 @@ if (
 }
 
 const result = execSync(
-  `source ~/.bashrc && dagster-graphql -y ../../examples/dagster_examples/intro_tutorial/repository.yaml -t '${getIntrospectionQuery(
+  `dagster-graphql -y ../../examples/dagster_examples/intro_tutorial/repository.yaml -t '${getIntrospectionQuery(
     {
       descriptions: false
     }
@@ -35,8 +35,8 @@ const types = schemaJson.__schema.types.map(
     const { name, kind } = type;
     const possibleTypes = type.possibleTypes
       ? type.possibleTypes.map(t => ({
-        name: t.name
-      }))
+          name: t.name
+        }))
       : null;
     return { name, kind, possibleTypes };
   }

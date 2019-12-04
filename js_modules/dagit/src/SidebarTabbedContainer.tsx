@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { TypeExplorerContainer } from "./typeexplorer/TypeExplorerContainer";
 import { TypeListContainer } from "./typeexplorer/TypeListContainer";
 import { SidebarTabbedContainerPipelineFragment } from "./types/SidebarTabbedContainerPipelineFragment";
-import { SidebarSolidContainer } from './SidebarSolidContainer'
+import { SidebarSolidContainer } from "./SidebarSolidContainer";
 import SidebarPipelineInfo from "./SidebarPipelineInfo";
 import { SolidNameOrPath } from "./PipelineExplorer";
 
@@ -45,7 +45,7 @@ const TabInfo: Array<ITabInfo> = [
 
 export default class SidebarTabbedContainer extends React.Component<
   ISidebarTabbedContainerProps
-  > {
+> {
   static fragments = {
     SidebarTabbedContainerPipelineFragment: gql`
       fragment SidebarTabbedContainerPipelineFragment on Pipeline {
@@ -62,8 +62,8 @@ export default class SidebarTabbedContainer extends React.Component<
       typeExplorer,
       types,
       pipeline,
-      getInvocations,
       solidHandleID,
+      getInvocations,
       parentSolidHandleID,
       onEnterCompositeSolid,
       onClickSolid
@@ -86,9 +86,11 @@ export default class SidebarTabbedContainer extends React.Component<
     } else if (solidHandleID) {
       content = (
         <SidebarSolidContainer
+          key={solidHandleID}
           pipelineName={pipeline.name}
           handleID={solidHandleID}
           showingSubsolids={false}
+          getInvocations={getInvocations}
           onEnterCompositeSolid={onEnterCompositeSolid}
           onClickSolid={onClickSolid}
         />
@@ -96,9 +98,11 @@ export default class SidebarTabbedContainer extends React.Component<
     } else if (parentSolidHandleID) {
       content = (
         <SidebarSolidContainer
+          key={parentSolidHandleID}
           pipelineName={pipeline.name}
           handleID={parentSolidHandleID}
           showingSubsolids={true}
+          getInvocations={getInvocations}
           onEnterCompositeSolid={onEnterCompositeSolid}
           onClickSolid={onClickSolid}
         />
@@ -124,7 +128,6 @@ export default class SidebarTabbedContainer extends React.Component<
     );
   }
 }
-
 
 const Tabs = styled.div`
   width: 100%;
