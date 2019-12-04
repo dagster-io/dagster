@@ -136,11 +136,10 @@ export function createAdjacencyMatrix(
 
 export type SolidNameOrPath = { name: string } | { path: string[] };
 
-
 export default class PipelineExplorer extends React.Component<
   IPipelineExplorerProps,
   IPipelineExplorerState
-  > {
+> {
   static fragments = {
     PipelineExplorerFragment: gql`
       fragment PipelineExplorerFragment on Pipeline {
@@ -148,6 +147,7 @@ export default class PipelineExplorer extends React.Component<
         description
         ...SidebarTabbedContainerPipelineFragment
       }
+      ${SidebarTabbedContainer.fragments.SidebarTabbedContainerPipelineFragment}
     `,
     PipelineExplorerSolidHandleFragment: gql`
       fragment PipelineExplorerSolidHandleFragment on SolidHandle {
@@ -158,6 +158,16 @@ export default class PipelineExplorer extends React.Component<
         }
       }
       ${PipelineGraph.fragments.PipelineGraphSolidFragment}
+    `,
+    PipelineExplorerParentSolidHandleFragment: gql`
+      fragment PipelineExplorerParentSolidHandleFragment on SolidHandle {
+        handleID
+        solid {
+          name
+          ...PipelineGraphParentSolidFragment
+        }
+      }
+      ${PipelineGraph.fragments.PipelineGraphParentSolidFragment}
     `
   };
 
@@ -460,4 +470,3 @@ const SolidSearchInput = styled.input`
   font-size: 14px;
   border: 1px solid ${Colors.GRAY4};
 `;
-

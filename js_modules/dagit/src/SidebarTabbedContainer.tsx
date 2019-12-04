@@ -5,14 +5,10 @@ import { Icon, IconName, Colors } from "@blueprintjs/core";
 import { Link } from "react-router-dom";
 import { TypeExplorerContainer } from "./typeexplorer/TypeExplorerContainer";
 import { TypeListContainer } from "./typeexplorer/TypeListContainer";
-import SidebarPipelineInfo from "./SidebarPipelineInfo";
-import { SidebarSolidInvocation } from "./SidebarSolidInvocation";
-import { SidebarSolidDefinition } from "./SidebarSolidDefinition";
 import { SidebarTabbedContainerPipelineFragment } from "./types/SidebarTabbedContainerPipelineFragment";
-import { SidebarTabbedContainerSolidFragment } from "./types/SidebarTabbedContainerSolidFragment";
+import { SidebarSolidContainer } from './SidebarSolidContainer'
+import SidebarPipelineInfo from "./SidebarPipelineInfo";
 import { SolidNameOrPath } from "./PipelineExplorer";
-import { useQuery } from "react-apollo";
-import Loading from "./Loading";
 
 interface ISidebarTabbedContainerProps {
   types?: string;
@@ -58,17 +54,6 @@ export default class SidebarTabbedContainer extends React.Component<
       }
 
       ${SidebarPipelineInfo.fragments.SidebarPipelineInfoFragment}
-    `,
-    SidebarTabbedContainerSolidFragment: gql`
-      fragment SidebarTabbedContainerSolidFragment on Solid {
-        ...SidebarSolidInvocationFragment
-        definition {
-          __typename
-          ...SidebarSolidDefinitionFragment
-        }
-      }
-      ${SidebarSolidInvocation.fragments.SidebarSolidInvocationFragment}
-      ${SidebarSolidDefinition.fragments.SidebarSolidDefinitionFragment}
     `
   };
 
@@ -81,7 +66,7 @@ export default class SidebarTabbedContainer extends React.Component<
       solidHandleID,
       parentSolidHandleID,
       onEnterCompositeSolid,
-      onClickSolid,
+      onClickSolid
     } = this.props;
 
     let content = <div />;
@@ -90,15 +75,34 @@ export default class SidebarTabbedContainer extends React.Component<
     if (typeExplorer) {
       activeTab = "types";
       content = (
-        <TypeExplorerContainer pipelineName={pipeline.name} typeName={typeExplorer} />
+        <TypeExplorerContainer
+          pipelineName={pipeline.name}
+          typeName={typeExplorer}
+        />
       );
     } else if (types) {
       activeTab = "types";
       content = <TypeListContainer pipelineName={pipeline.name} />;
     } else if (solidHandleID) {
-      content = <SidebarSolidContainer handleID={solidHandleID} showingSubsolids={false} onEnterCompositeSolid={onEnterCompositeSolid} onClickSolid={onClickSolid} />
+      content = (
+        <SidebarSolidContainer
+          pipelineName={pipeline.name}
+          handleID={solidHandleID}
+          showingSubsolids={false}
+          onEnterCompositeSolid={onEnterCompositeSolid}
+          onClickSolid={onClickSolid}
+        />
+      );
     } else if (parentSolidHandleID) {
-      content = <SidebarSolidContainer handleID={parentSolidHandleID} showingSubsolids={true} onEnterCompositeSolid={onEnterCompositeSolid} onClickSolid={onClickSolid} />
+      content = (
+        <SidebarSolidContainer
+          pipelineName={pipeline.name}
+          handleID={parentSolidHandleID}
+          showingSubsolids={true}
+          onEnterCompositeSolid={onEnterCompositeSolid}
+          onClickSolid={onClickSolid}
+        />
+      );
     } else {
       content = <SidebarPipelineInfo pipeline={pipeline} key={pipeline.name} />;
     }
@@ -121,44 +125,6 @@ export default class SidebarTabbedContainer extends React.Component<
   }
 }
 
-interface SidebarSolidContainerProps {
-  handleID: string;
-  showingSubsolids: boolean;
-  parentSolidHandleID?: string;
-  getInvocations?: (definitionName: string) => { handleID: string }[];
-  onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
-  onClickSolid: (arg: SolidNameOrPath) => void;
-}
-
-const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContainerProps> = ({ handleID, getInvocations, showingSubsolids, onEnterCompositeSolid, onClickSolid }) => {
-  const solid = useQuery<SidebarTabbedContainerSolidFragment>();
-  return (
-    <Loading queryResult={solid}>
-      {(data) => (
-        <>
-          <SidebarSolidInvocation
-            key={`${solid.name}-inv`}
-            solid={solid}
-            onEnterCompositeSolid={
-              solid.definition.__typename === "CompositeSolidDefinition"
-                ? onEnterCompositeSolid
-                : undefined
-            }
-          />
-          <SidebarSolidDefinition
-            key={`${solid.name}-def`}
-            showingSubsolids={showingSubsolids}
-            definition={solid.definition}
-            getInvocations={getInvocations}
-            onClickInvocation={({ handleID }) =>
-              onClickSolid({ path: handleID.split(".") })
-            }
-          />
-        </>
-      )}
-    </Loading>
-  );
-}
 
 const Tabs = styled.div`
   width: 100%;
