@@ -5,62 +5,65 @@ import { SidebarTabbedContainerSolidQuery } from "./types/SidebarTabbedContainer
 import { SolidNameOrPath } from "./PipelineExplorer";
 import { useQuery } from "react-apollo";
 import Loading from "./Loading";
-
+import gql from "graphql-tag";
 
 interface SidebarSolidContainerProps {
-    handleID: string;
-    pipelineName: string;
-    showingSubsolids: boolean;
-    parentSolidHandleID?: string;
-    getInvocations?: (definitionName: string) => { handleID: string }[];
-    onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
-    onClickSolid: (arg: SolidNameOrPath) => void;
+  handleID: string;
+  pipelineName: string;
+  showingSubsolids: boolean;
+  parentSolidHandleID?: string;
+  getInvocations?: (definitionName: string) => { handleID: string }[];
+  onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
+  onClickSolid: (arg: SolidNameOrPath) => void;
 }
 
-const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContainerProps> = ({
-    handleID,
-    pipelineName,
-    getInvocations,
-    showingSubsolids,
-    onEnterCompositeSolid,
-    onClickSolid
+export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContainerProps> = ({
+  handleID,
+  pipelineName,
+  getInvocations,
+  showingSubsolids,
+  onEnterCompositeSolid,
+  onClickSolid
 }) => {
-    const queryResult = useQuery<SidebarTabbedContainerSolidQuery>(
-        SIDEBAR_TABBED_CONTAINER_SOLID_QUERY,
-        {
-            fetchPolicy: "cache-and-network",
-            partialRefetch: true,
-            variables: { pipeline: pipelineName, handleID: handleID }
-        }
-    );
+  const queryResult = useQuery<SidebarTabbedContainerSolidQuery>(
+    SIDEBAR_TABBED_CONTAINER_SOLID_QUERY,
+    {
+      variables: { pipeline: pipelineName, handleID: handleID },
+      fetchPolicy: "cache-and-network"
+    }
+  );
 
-    return (
-        <Loading queryResult={queryResult}>
-            {({ pipeline }) => (
-                <>
-                    <SidebarSolidInvocation
-                        key={`${handleID}-inv`}
-                        solid={pipeline.solidHandle.solid}
-                        onEnterCompositeSolid={
-                            pipeline.solidHandle.definition.__typename ===
-                                "CompositeSolidDefinition"
-                                ? onEnterCompositeSolid
-                                : undefined
-                        }
-                    />
-                    <SidebarSolidDefinition
-                        key={`${handleID}-def`}
-                        showingSubsolids={showingSubsolids}
-                        definition={pipeline.solidHandle.definition}
-                        getInvocations={getInvocations}
-                        onClickInvocation={({ handleID }) =>
-                            onClickSolid({ path: handleID.split(".") })
-                        }
-                    />
-                </>
-            )}
-        </Loading>
-    );
+  return (
+    <Loading queryResult={queryResult}>
+      {({ pipeline }) =>
+        pipeline ? (
+          <>
+            <SidebarSolidInvocation
+              key={`${handleID}-inv`}
+              solid={pipeline!.solidHandle!.solid}
+              onEnterCompositeSolid={
+                pipeline!.solidHandle!.solid.definition.__typename ===
+                "CompositeSolidDefinition"
+                  ? onEnterCompositeSolid
+                  : undefined
+              }
+            />
+            <SidebarSolidDefinition
+              key={`${handleID}-def`}
+              showingSubsolids={showingSubsolids}
+              definition={pipeline!.solidHandle!.solid.definition}
+              getInvocations={getInvocations}
+              onClickInvocation={({ handleID }) =>
+                onClickSolid({ path: handleID.split(".") })
+              }
+            />
+          </>
+        ) : (
+          <span />
+        )
+      }
+    </Loading>
+  );
 };
 
 export const SIDEBAR_TABBED_CONTAINER_SOLID_QUERY = gql`
@@ -70,10 +73,13 @@ export const SIDEBAR_TABBED_CONTAINER_SOLID_QUERY = gql`
   ) {
     pipeline(params: { name: $pipeline }) {
       solidHandle(handleID: $handleID) {
-        ...SidebarSolidInvocationFragment
-        definition {
-          __typename
-          ...SidebarSolidDefinitionFragment
+        solid {
+          ...SidebarSolidInvocationFragment
+
+          definition {
+            __typename
+            ...SidebarSolidDefinitionFragment
+          }
         }
       }
     }

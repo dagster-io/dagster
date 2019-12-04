@@ -23,7 +23,7 @@ interface ISidebarPipelineInfoProps {
 
 export default class SidebarPipelineInfo extends React.Component<
   ISidebarPipelineInfoProps
-  > {
+> {
   static fragments = {
     SidebarPipelineInfoFragment: gql`
       fragment SidebarPipelineInfoFragment on Pipeline {

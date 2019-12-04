@@ -62,7 +62,7 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
                 path={pathSolids}
                 pipeline={pipelineOrError}
                 handles={displayedHandles}
-                parentHandle={parentSolidHandle}
+                parentHandle={parentSolidHandle ? parentSolidHandle : undefined}
                 selectedHandle={displayedHandles.find(
                   h => h.solid.name === selectedName
                 )}
@@ -80,7 +80,10 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
 };
 
 export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
-  query PipelineExplorerRootQuery($pipeline: String!, $handleID: String!) {
+  query PipelineExplorerRootQuery(
+    $pipeline: String!
+    $parentHandleID: String!
+  ) {
     pipelineOrError(params: { name: $pipeline }) {
       ... on PipelineReference {
         name
@@ -88,10 +91,10 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ... on Pipeline {
         ...PipelineExplorerFragment
 
-        solidHandle(handleID: $handleID) {
+        solidHandle(handleID: $parentHandleID) {
           ...PipelineExplorerParentSolidHandleFragment
         }
-        solidHandles(parentHandleID: { parentHandleID: $handleID }) {
+        solidHandles(parentHandleID: $parentHandleID) {
           handleID
           solid {
             name
