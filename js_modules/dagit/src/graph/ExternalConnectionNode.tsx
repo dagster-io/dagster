@@ -64,7 +64,7 @@ export const ExternalConnectionNode: React.FunctionComponent<ExternalConnectionN
       <ellipse cx={layout.x} cy={layout.y} rx={7} ry={7} fill={color} />
       <SVGMonospaceText {...textProps} {...textSize} {...textOrigin} />
       <Link
-        style={{ stroke: color, strokeWidth: 6 }}
+        style={{ stroke: color, strokeWidth: 6, fill: "none" }}
         data={{ source: layout, target }}
       />
     </g>

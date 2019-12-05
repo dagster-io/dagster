@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { Code, Colors } from "@blueprintjs/core";
 import TypeWithTooltip from "./TypeWithTooltip";
 import { SolidTypeSignatureFragment } from "./types/SolidTypeSignatureFragment";
+import { breakOnUnderscores } from "./Util";
 
 interface ISolidTypeSignature {
   definition: SolidTypeSignatureFragment;
@@ -38,13 +39,14 @@ export default class SolidTypeSignature extends React.Component<
 
     const inputSide = inputDefinitions.map((input, i) => (
       <span key={i}>
-        {input.name}: <TypeWithTooltip type={input.type} />
+        {breakOnUnderscores(input.name)}: <TypeWithTooltip type={input.type} />
         {i < inputDefinitions.length - 1 ? ", " : ""}
       </span>
     ));
     const outputSide = outputDefinitions.map((output, i) => (
       <span key={i}>
-        {output.name}: <TypeWithTooltip type={output.type} />
+        {breakOnUnderscores(output.name)}:{" "}
+        <TypeWithTooltip type={output.type} />
         {i < outputDefinitions.length - 1 ? ", " : ""}
       </span>
     ));
@@ -60,7 +62,7 @@ const TypeSignature = styled(Code)`
   && {
     background: ${Colors.LIGHT_GRAY5};
     font-size: 12px;
-    padding: 5px 10px;
+    padding: 4px 10px;
     box-shadow: none;
     color: black;
   }

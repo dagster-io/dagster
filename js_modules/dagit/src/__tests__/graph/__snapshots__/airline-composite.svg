@@ -64,7 +64,7 @@
   <g>
     <rect width="215.76" height="12" x="-22.879999999999995" y="970" class="sc-bwzfXH kaNCfU"></rect>
     <ellipse cx="85" cy="960" rx="7" ry="7" fill="#C7CBCD"></ellipse><text height="12" x="-22.879999999999995" y="970" style="font:12px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="215.76" dominant-baseline="hanging">join_q2_data:master_cord_data</text>
-    <path class="vx-link vx-link-vertical-diagonal" d="M85,960C85,873,85,873,85,786" style="stroke:#C7CBCD;stroke-width:6"></path>
+    <path class="vx-link vx-link-vertical-diagonal" d="M85,960C85,873,85,873,85,786" style="stroke:#C7CBCD;stroke-width:6;fill:none"></path>
   </g>
   <g>
     <title>result: PySparkDataFrame</title>

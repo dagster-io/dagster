@@ -139,4 +139,5 @@ const Split = styled.div<{ width?: number }>`
   position: relative;
   flex-direction: column;
   display: flex;
+  min-width: 0;
 `;
