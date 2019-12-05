@@ -47,8 +47,13 @@ class DauphinPipeline(dauphin.ObjectType):
     runtime_types = dauphin.non_null_list('RuntimeType')
     runs = dauphin.non_null_list('PipelineRun')
     modes = dauphin.non_null_list('Mode')
-    solid_handles = dauphin.non_null_list('SolidHandle')
+    solid_handles = dauphin.Field(
+        dauphin.non_null_list('SolidHandle'), parentHandleID=dauphin.String()
+    )
     presets = dauphin.non_null_list('PipelinePreset')
+    solid_handle = dauphin.Field(
+        'SolidHandle', handleID=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+    )
 
     def __init__(self, pipeline):
         super(DauphinPipeline, self).__init__(name=pipeline.name, description=pipeline.description)
@@ -94,10 +99,26 @@ class DauphinPipeline(dauphin.ObjectType):
             )
         ]
 
-    def resolve_solid_handles(self, _graphene_info):
-        return sorted(
+    def resolve_solid_handle(self, _graphene_info, handleID):
+        handles = {str(item.handleID): item for item in build_dauphin_solid_handles(self._pipeline)}
+        return handles.get(handleID)
+
+    def resolve_solid_handles(self, _graphene_info, **kwargs):
+        handles = sorted(
             build_dauphin_solid_handles(self._pipeline), key=lambda item: str(item.handleID)
         )
+        parentHandleID = kwargs.get('parentHandleID')
+
+        if parentHandleID == None:
+            return handles
+        elif parentHandleID == "":
+            return [handle for handle in handles if not handle.parent]
+        else:
+            return [
+                handle
+                for handle in handles
+                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
+            ]
 
     def resolve_presets(self, _graphene_info):
         return [

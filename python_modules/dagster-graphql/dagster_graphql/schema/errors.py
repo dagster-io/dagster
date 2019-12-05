@@ -437,7 +437,6 @@ pipeline_execution_error_types = (
     DauphinInvalidOutputError,
     DauphinPipelineConfigValidationInvalid,
     DauphinPipelineNotFoundError,
-    DauphinStartPipelineExecutionSuccess,
     DauphinPythonError,
 )
 
