@@ -110,6 +110,10 @@ export function formatElapsedTime(msec: number) {
   return text;
 }
 
+export function breakOnUnderscores(str: string) {
+  return str.replace(/_/g, "_\u200b");
+}
+
 // Simple memoization function for methods that take a single object argument.
 // Returns a memoized copy of the provided function which retrieves the result
 // from a cache after the first invocation with a given object.

@@ -1,5 +1,6 @@
 import * as dagre from "dagre";
 import { weakmapMemoize, titleOfIO } from "../Util";
+import { uniq } from "lodash";
 
 export type ILayoutConnectionMember = {
   point: IPoint;
@@ -113,6 +114,22 @@ function flattenIO(arrays: SolidLinkInfo[][]) {
   return Object.values(map);
 }
 
+// Very basic calculation: more similar parts of the solid name = higher weight and adjacency.
+// "airline_demo_write_to_s3", "airline_demo_write_to_redshift" have similarity 4/5 = 80%
+//
+function edgeWeightForSolidSimilarity(a: string, b: string) {
+  const terms = uniq([...a.split("_"), ...b.split("_")]);
+  let matching = 0;
+  for (const t of terms) {
+    if (a.includes(t) && b.includes(t)) {
+      matching++;
+    }
+  }
+
+  // Note: It's not documented, but the weights seem to need to be integers >= 1
+  return 1 + Math.round((matching / terms.length) * 20);
+}
+
 function getDagrePipelineLayoutHeavy(
   pipelineSolids: ILayoutSolid[],
   parentSolid: ILayoutSolid | undefined
@@ -154,7 +171,10 @@ function getDagrePipelineLayoutHeavy(
     // can reference them in a single pass later
     solid.inputs.forEach(input => {
       input.dependsOn.forEach(dep => {
-        g.setEdge(dep.solid.name, solid.name);
+        g.setEdge(
+          { v: dep.solid.name, w: solid.name },
+          { weight: edgeWeightForSolidSimilarity(dep.solid.name, solid.name) }
+        );
 
         connections.push({
           from: {
