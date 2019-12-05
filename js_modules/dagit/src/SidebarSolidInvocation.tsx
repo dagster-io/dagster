@@ -10,6 +10,7 @@ import {
 } from "./SidebarSolidHelpers";
 import { Button } from "@blueprintjs/core";
 import { SolidNameOrPath } from "./PipelineExplorer";
+import { breakOnUnderscores } from "./Util";
 
 interface ISidebarSolidInvocationProps {
   solid: SidebarSolidInvocationFragment;
@@ -73,7 +74,7 @@ export class SidebarSolidInvocation extends React.Component<
     return (
       <div>
         <SidebarSection title={"Invocation"}>
-          <SidebarTitle>{solid.name}</SidebarTitle>
+          <SidebarTitle>{breakOnUnderscores(solid.name)}</SidebarTitle>
           <DependencyTable>
             <tbody>
               {solid.inputs.some(o => o.dependsOn.length) && (
