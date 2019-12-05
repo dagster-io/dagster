@@ -7,7 +7,7 @@ from dagster import Bool, List, Optional, String, check
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
-from dagster.core.types.marshal import SerializationStrategy
+from dagster.core.types.marshal import FileBasedSerializationStrategy
 from dagster.core.types.runtime import Bool as RuntimeBool
 from dagster.core.types.runtime import RuntimeType
 from dagster.core.types.runtime import String as RuntimeString
@@ -16,12 +16,18 @@ from dagster.utils import mkdir_p
 from dagster.utils.test import yield_empty_pipeline_context
 
 
-class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
-    def serialize(self, value, write_file_obj):
-        return write_file_obj.write(bytes(value.upper().encode('utf-8')))
+class UppercaseSerializationStrategy(FileBasedSerializationStrategy):  # pylint: disable=no-init
+    def serialize_to_file(self, value, write_file_path):
+        check.str_param(write_file_path, 'write_path')
 
-    def deserialize(self, read_file_obj):
-        return read_file_obj.read().decode('utf-8').lower()
+        with open(write_file_path, self.write_mode) as write_obj:
+            write_obj.write(bytes(value.upper().encode('utf-8')))
+
+    def deserialize_from_file(self, read_file_path):
+        check.str_param(read_file_path, 'read_path')
+
+        with open(read_file_path, self.read_mode) as read_obj:
+            return read_obj.read().decode('utf-8').lower()
 
 
 class LowercaseString(RuntimeType):
