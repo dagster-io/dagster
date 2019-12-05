@@ -22,6 +22,9 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': None
             },
             {
+                'name': None
+            },
+            {
                 'name': 'Any'
             },
             {

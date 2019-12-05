@@ -491,8 +491,8 @@ def _gather_all_config_types(solid_defs, environment_type):
         for runtime_type in iterate_solid_def_types(solid_def):
             yield runtime_type
 
-    for runtime_type in iterate_config_types(environment_type):
-        yield runtime_type
+    for config_type in iterate_config_types(environment_type):
+        yield config_type
 
 
 def construct_config_type_dictionary(solid_defs, environment_type):
@@ -518,18 +518,6 @@ def construct_config_type_dictionary(solid_defs, environment_type):
         elif name:
             type_dict_by_name[config_type.name] = config_type
 
-        key = config_type.key
-
-        if key in type_dict_by_key:
-            if type(config_type) is not type(type_dict_by_key[key]):
-                raise DagsterInvalidDefinitionError(
-                    (
-                        'Type keys must be unique. You have constructed two different '
-                        'instances of types with the same key "{key}".'
-                    ).format(key=key)
-                )
-
-        else:
-            type_dict_by_key[config_type.key] = config_type
+        type_dict_by_key[config_type.key] = config_type
 
     return type_dict_by_name, type_dict_by_key
