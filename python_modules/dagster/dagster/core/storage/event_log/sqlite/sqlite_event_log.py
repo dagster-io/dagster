@@ -133,7 +133,15 @@ class SqliteEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_stats_for_run(self, run_id):
         if not os.path.exists(self.filepath_for_run_id(run_id)):
-            return None
+            return PipelineRunStatsSnapshot(
+                run_id=run_id,
+                steps_succeeded=0,
+                steps_failed=0,
+                materializations=0,
+                expectations=0,
+                start_time=None,
+                end_time=None,
+            )
 
         try:
             with self._connect(run_id) as conn:
