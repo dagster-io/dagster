@@ -1,11 +1,19 @@
 import os
 
 import dateutil.parser
-from airflow.exceptions import AirflowSkipException
+from airflow.exceptions import AirflowException, AirflowSkipException
 
 from dagster import DagsterEventType, check, seven
 from dagster.core.events import DagsterEvent
-from dagster.core.events.log import DagsterEventRecord
+
+
+def check_events_for_failures(events):
+    check.list_param(events, 'events', of_type=DagsterEvent)
+    for event in events:
+        if event.event_type_value == 'STEP_FAILURE':
+            raise AirflowException(
+                'step failed with error: %s' % event.event_specific_data.error.to_string()
+            )
 
 
 # Using AirflowSkipException is a canonical way for tasks to skip themselves; see example
@@ -13,15 +21,6 @@ from dagster.core.events.log import DagsterEventRecord
 def check_events_for_skips(events):
     check.list_param(events, 'events', of_type=DagsterEvent)
     skipped = any([e.event_type_value == DagsterEventType.STEP_SKIPPED.value for e in events])
-    if skipped:
-        raise AirflowSkipException('Dagster emitted skip event, skipping execution in Airflow')
-
-
-def check_raw_events_for_skips(events):
-    check.list_param(events, 'events', of_type=DagsterEventRecord)
-    skipped = any(
-        [e.dagster_event.event_type_value == DagsterEventType.STEP_SKIPPED.value for e in events]
-    )
     if skipped:
         raise AirflowSkipException('Dagster emitted skip event, skipping execution in Airflow')
 

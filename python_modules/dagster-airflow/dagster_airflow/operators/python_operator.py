@@ -11,7 +11,7 @@ from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 
-from .util import check_events_for_skips, construct_variables
+from .util import check_events_for_failures, check_events_for_skips, construct_variables
 
 
 class DagsterPythonOperator(PythonOperator):
@@ -77,9 +77,8 @@ class DagsterPythonOperator(PythonOperator):
                 construct_variables(mode, environment_dict, pipeline_name, run_id, ts, step_keys),
                 instance_ref=instance_ref,
             )
-
+            check_events_for_failures(events)
             check_events_for_skips(events)
-
             return events
 
         super(DagsterPythonOperator, self).__init__(

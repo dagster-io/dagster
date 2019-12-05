@@ -14,7 +14,8 @@ from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .util import (
-    check_raw_events_for_skips,
+    check_events_for_failures,
+    check_events_for_skips,
     construct_variables,
     get_aws_environment,
     parse_raw_res,
@@ -249,8 +250,9 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                     for event in events:
                         self.instance.handle_new_event(event)
 
-                check_raw_events_for_skips(events)
-
+                events = [e.dagster_event for e in events]
+                check_events_for_failures(events)
+                check_events_for_skips(events)
                 return events
 
             finally:
