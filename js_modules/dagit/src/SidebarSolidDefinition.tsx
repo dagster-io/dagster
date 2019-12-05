@@ -72,6 +72,9 @@ export class SidebarSolidDefinition extends React.Component<
           configField {
             configType {
               ...ConfigTypeSchemaFragment
+              innerTypes {
+                ...ConfigTypeSchemaFragment
+              }
             }
           }
         }
@@ -173,7 +176,10 @@ export class SidebarSolidDefinition extends React.Component<
         )}
         {configField && (
           <SidebarSection title={"Config"}>
-            <ConfigTypeSchema type={configField.configType} />
+            <ConfigTypeSchema
+              type={configField.configType}
+              allInnerTypes={configField.configType.innerTypes}
+            />
           </SidebarSection>
         )}
         {hasRequiredResources && (

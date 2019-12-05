@@ -12,7 +12,21 @@ export const CONFIG_EDITOR_ENVIRONMENT_SCHEMA_FRAGMENT = gql`
       __typename
       key
       name
+      isList
       isSelector
+      isNullable
+      ...ConfigEditorHelpConfigTypeFragment
+
+      ... on ListConfigType {
+        innerTypes {
+          __typename
+          key
+        }
+        ofType {
+          __typename
+          key
+        }
+      }
       ... on EnumConfigType {
         values {
           value
@@ -27,30 +41,9 @@ export const CONFIG_EDITOR_ENVIRONMENT_SCHEMA_FRAGMENT = gql`
           configType {
             __typename
             key
-            name
-            isList
-            isNullable
-            ...ConfigEditorHelpConfigTypeFragment
-            ... on ListConfigType {
-              innerTypes {
-                __typename
-                key
-                ... on ListConfigType {
-                  ofType {
-                    __typename
-                    key
-                  }
-                }
-              }
-              ofType {
-                __typename
-                key
-              }
-            }
           }
         }
       }
-      ...ConfigEditorHelpConfigTypeFragment
     }
   }
   ${ConfigEditorHelpConfigTypeFragment}

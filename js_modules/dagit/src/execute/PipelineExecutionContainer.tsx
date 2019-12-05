@@ -309,7 +309,10 @@ export default class PipelineExecutionContainer extends React.Component<
                       onCreateSession={this.onCreateSession}
                     />
                   </ConfigEditorPresetInsertionContainer>
-                  <ConfigEditorHelp context={editorHelpContext} />
+                  <ConfigEditorHelp
+                    context={editorHelpContext}
+                    allInnerTypes={environmentSchema?.allConfigTypes || []}
+                  />
                   <ApolloConsumer>
                     {client => (
                       <ConfigEditor
