@@ -18,12 +18,27 @@ from dagster_examples.bay_bikes.types import (
     TripDataFrame,
     WeatherDataFrame,
 )
+from keras.layers import LSTM, Dense
+from keras.models import Sequential
 from numpy import array, transpose
 from pandas import DataFrame, concat, date_range, get_dummies, read_csv, to_datetime
-from keras.models import Sequential
-from keras.layers import LSTM, Dense
 
-from dagster import Field, Float, Int, String, check, composite_solid, solid, Any
+from dagster import (
+    Any,
+    Dict,
+    EventMetadataEntry,
+    Field,
+    Float,
+    Int,
+    Materialization,
+    Output,
+    String,
+    check,
+    composite_solid,
+    solid,
+)
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 def _write_chunks_to_fp(response, output_fp, chunk_size):
@@ -369,39 +384,57 @@ def produce_training_set(
 
 @solid(
     config={
-        'activation': Field(
-            String,
-            description='Activation function to use in LSTM neurons',
-            is_optional=True,
-            default_value='relu',
+        'lstm_layer_config': Field(
+            Dict({'activation': Field(String, is_optional=True, default_value='relu')})
         ),
-        'optimizer': Field(
-            String, description='Type of optimizer to use', is_optional=True, default_value='adam'
+        'model_trainig_config': Field(
+            Dict(
+                {
+                    'optimizer': Field(
+                        String,
+                        description='Type of optimizer to use',
+                        is_optional=True,
+                        default_value='adam',
+                    ),
+                    'loss': Field(String, is_optional=True, default_value='mse'),
+                    'num_epochs': Field(Int, description='Number of epochs to optimize over'),
+                }
+            )
         ),
-        'loss': Field(
-            String,
-            description='Loss function to use when optimizing',
-            is_optional=True,
-            default_value='mse',
-        ),
-        'num_epochs': Field(Int, description='Number of epochs to optimize over',),
     }
 )
 def train_lstm_model(context, training_set: TrainingSet) -> Any:
     X, y = training_set
-    X_train, X_test = X[0:500], X[500:]
-    y_train, y_test = y[0:500], y[500:]
+    X_train, X_test = X[0:550], X[550:]
+    y_train, y_test = y[0:550], y[550:]
 
     _, n_steps, n_features = X.shape
     model = Sequential()
     model.add(
-        LSTM(50, activation=context.solid_config['activation'], input_shape=(n_steps, n_features))
+        LSTM(
+            50,
+            activation=context.solid_config['lstm_layer_config']['activation'],
+            input_shape=(n_steps, n_features),
+        )
     )
     model.add(Dense(1))
-    model.compile(optimizer=context.solid_config['optimizer'], loss=context.solid_config['loss'])
-    model.fit(X_train, y_train, epochs=context.solid_config['num_epochs'], verbose=0)
-
-    for i in range(len(X_test)):
-        inp = X_test[i].reshape((1, n_steps, n_features))
-        yhat = model.predict(inp, verbose=0)
-        print(yhat[0][0], y_test[i])
+    model.compile(
+        optimizer=context.solid_config['model_trainig_config']['optimizer'],
+        loss=context.solid_config['model_trainig_config']['loss'],
+        metrics=['mae'],
+    )
+    model.fit(
+        X_train,
+        y_train,
+        epochs=context.solid_config['model_trainig_config']['num_epochs'],
+        verbose=0,
+    )
+    results = model.evaluate(X_test, y_test, verbose=0)
+    yield Materialization(
+        label='test_set_results',
+        metadata_entries=[
+            EventMetadataEntry.text(str(results[0]), 'Mean Squared Error'),
+            EventMetadataEntry.text(str(results[1]), 'Mean Absolute Error'),
+        ],
+    )
+    yield Output(model)

@@ -14,10 +14,10 @@ from .solids import (
     produce_training_set,
     produce_trip_dataset,
     produce_weather_dataset,
+    train_lstm_model,
     transform_into_traffic_dataset,
     unzip_files,
     upload_file_to_bucket,
-    train_lstm_model,
 )
 
 
