@@ -24,6 +24,7 @@ IMAGE_TYPE=$2
 
 function cleanup {
     rm -rf scala_modules
+    rm -rf pyarrow-0.15.1.dev403+gfe41a6822-cp38-cp38-linux_x86_64.whl
 }
 
 # ensure cleanup happens on error or normal exit
@@ -31,10 +32,21 @@ trap cleanup EXIT
 
 rsync -av --exclude='*target*' --exclude='*.idea*' --exclude='*.class' $ROOT/scala_modules .
 
+# pyarrow for Debian Buster
+# this was built in a Buster Docker container using the instructions here:
+# https://arrow.apache.org/docs/developers/python.html
+gsutil cp gs://elementl-deploy-artifacts-9c3ff00/pyarrow-0.15.1.dev403+gfe41a6822-cp38-cp38-linux_x86_64.whl .
+
+DEBIAN_VERSION="stretch"
+if [ $PYTHON_MAJMIN == "38" ]; then
+    DEBIAN_VERSION="buster"
+fi
+
 if [ $IMAGE_TYPE == "integration" ]; then
     # Build the integration image
     docker build . \
         --no-cache \
+        --build-arg DEBIAN_VERSION=$DEBIAN_VERSION \
         --build-arg PYTHON_VERSION=$PYTHON_VERSION \
         --build-arg PYTHON_MAJOR_VERSION=$PYTHON_MAJOR_VERSION \
         --target dagster-integration-image \
