@@ -270,6 +270,9 @@ export default class PipelineGraph extends React.Component<
     if (prevProps.parentSolid !== this.props.parentSolid) {
       this.viewportEl.current!.autocenter();
     }
+    if (prevProps.layout !== this.props.layout) {
+      this.viewportEl.current!.autocenter();
+    }
   }
 
   render() {

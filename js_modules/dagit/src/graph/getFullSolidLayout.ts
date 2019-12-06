@@ -113,6 +113,67 @@ function flattenIO(arrays: SolidLinkInfo[][]) {
   return Object.values(map);
 }
 
+// function getDagrePipelineFancy(pipelineSolids: ILayoutSolid[],
+//   parentSolid: ILayoutSolid | undefined
+// ): IFullPipelineLayout {
+//   const groups = ["sleeper_"];
+//   const g = new dagre.graphlib.Graph();
+//   const bundled: { [groupName: string]: any[] } = {};
+
+//   // First, bundle pipeline solids into groups
+//   g.setGraph({ rankdir: "TB", marginx: 100, marginy: 100 });
+//   g.setDefaultEdgeLabel(() => ({}));
+
+//   pipelineSolids.forEach(solid => {
+//     const group = groups.find(g => solid.name.includes(g));
+//     if (group) {
+//       bundled[group] = bundled[group] || [];
+//       bundled[group].push(solid);
+//     }
+//   });
+
+//   // Render the sub-dags for each bundle
+//   Object.keys(bundled).forEach(group => {
+
+//   })
+
+//   // Lay out each solid individually to get it's width and height based on it's
+//   // inputs and outputs, and then attach it to the graph. Dagre will give us it's
+//   // x,y position.
+//   const layout = layoutSolid(solid, { x: 0, y: 0 });
+//   g.setNode(solid.name, {
+//     width: layout.boundingBox.width,
+//     height: layout.boundingBox.height
+//   });
+
+//   // Give Dagre the dependency edges and build a flat set of them so we
+//   // can reference them in a single pass later
+//   solid.inputs.forEach(input => {
+//     input.dependsOn.forEach(dep => {
+//       if (solidNamesPresent[dep.solid.name] && solidNamesPresent[solid.name]) {
+//         g.setEdge(dep.solid.name, solid.name);
+
+//         connections.push({
+//           from: {
+//             point: { x: 0, y: 0 },
+//             solidName: dep.solid.name,
+//             edgeName: dep.definition.name
+//           },
+//           to: {
+//             point: { x: 0, y: 0 },
+//             solidName: solid.name,
+//             edgeName: input.definition.name
+//           }
+//         });
+//       }
+//     });
+//   });
+// });
+
+// dagre.layout(g);
+
+// }
+
 function getDagrePipelineLayoutHeavy(
   pipelineSolids: ILayoutSolid[],
   parentSolid: ILayoutSolid | undefined
@@ -139,7 +200,11 @@ function getDagrePipelineLayoutHeavy(
   g.setDefaultEdgeLabel(() => ({}));
 
   const connections: Array<ILayoutConnection> = [];
+  const solidNamesPresent: { [name: string]: boolean } = {};
 
+  pipelineSolids.forEach(solid => {
+    solidNamesPresent[solid.name] = true;
+  });
   pipelineSolids.forEach(solid => {
     // Lay out each solid individually to get it's width and height based on it's
     // inputs and outputs, and then attach it to the graph. Dagre will give us it's
@@ -154,20 +219,25 @@ function getDagrePipelineLayoutHeavy(
     // can reference them in a single pass later
     solid.inputs.forEach(input => {
       input.dependsOn.forEach(dep => {
-        g.setEdge(dep.solid.name, solid.name);
+        if (
+          solidNamesPresent[dep.solid.name] &&
+          solidNamesPresent[solid.name]
+        ) {
+          g.setEdge(dep.solid.name, solid.name);
 
-        connections.push({
-          from: {
-            point: { x: 0, y: 0 },
-            solidName: dep.solid.name,
-            edgeName: dep.definition.name
-          },
-          to: {
-            point: { x: 0, y: 0 },
-            solidName: solid.name,
-            edgeName: input.definition.name
-          }
-        });
+          connections.push({
+            from: {
+              point: { x: 0, y: 0 },
+              solidName: dep.solid.name,
+              edgeName: dep.definition.name
+            },
+            to: {
+              point: { x: 0, y: 0 },
+              solidName: solid.name,
+              edgeName: input.definition.name
+            }
+          });
+        }
       });
     });
   });
@@ -182,6 +252,7 @@ function getDagrePipelineLayoutHeavy(
   const nodesInRows: { [key: string]: dagre.Node[] } = {};
   g.nodes().forEach(function(solidName) {
     const node = g.node(solidName);
+    if (!node) return;
     nodesBySolid[solidName] = node;
     nodesInRows[`${node.y}`] = nodesInRows[`${node.y}`] || [];
     nodesInRows[`${node.y}`].push(node);

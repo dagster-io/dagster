@@ -244,8 +244,10 @@ export default class PipelineExplorer extends React.Component<
     filter: string,
     solidAdjacencyMatrix: AdjacencyMatrix
   ) => {
-    let searchResults = new Array<PipelineExplorerSolidHandleFragment_solid>();
-    searchResults = solids.filter(s => s.name.includes(filter));
+    const searchResults: PipelineExplorerSolidHandleFragment_solid[] = solids.filter(
+      s => s.name.includes(filter)
+    );
+
     if (filter && filter.includes("+")) {
       let includeParents = false,
         includeChildren = false,
@@ -323,8 +325,22 @@ export default class PipelineExplorer extends React.Component<
     const { filter } = this.state;
 
     const solids = this.props.handles.map(h => h.solid);
-
     const solidAdjacencyMatrix = createAdjacencyMatrix(solids, this.memo);
+
+    let visibleSolids: PipelineExplorerSolidHandleFragment_solid[] = [];
+
+    if (
+      this.state.filter === "*" ||
+      (!this.state.filter && solids.length < 100)
+    ) {
+      visibleSolids = solids;
+    } else if (this.state.filter.length > 3) {
+      visibleSolids = this.selectSolidsByFilter(
+        solids,
+        this.state.filter,
+        solidAdjacencyMatrix
+      );
+    }
 
     const backgroundColor = parentHandle
       ? Colors.LIGHT_GRAY3
@@ -379,7 +395,7 @@ export default class PipelineExplorer extends React.Component<
               <PipelineGraph
                 pipelineName={pipeline.name}
                 backgroundColor={backgroundColor}
-                solids={solids}
+                solids={visibleSolids}
                 selectedHandleID={selectedHandle && selectedHandle.handleID}
                 selectedSolid={selectedHandle && selectedHandle.solid}
                 parentHandleID={parentHandle && parentHandle.handleID}
@@ -389,14 +405,10 @@ export default class PipelineExplorer extends React.Component<
                 onEnterCompositeSolid={this.handleEnterCompositeSolid}
                 onLeaveCompositeSolid={this.handleLeaveCompositeSolid}
                 layout={this.getLayout(
-                  solids,
+                  visibleSolids,
                   parentHandle && parentHandle.solid
                 )}
-                highlightedSolids={this.selectSolidsByFilter(
-                  solids,
-                  this.state.filter,
-                  solidAdjacencyMatrix
-                )}
+                highlightedSolids={[]}
               />
             </>
           }
