@@ -80,7 +80,7 @@ def nesting_composite_pipeline(depth, num_children, *args, **kwargs):
         return 1
 
     def create_wrap(inner, name):
-        @composite_solid
+        @composite_solid(name=name)
         def wrap():
             for i in range(num_children):
                 solid_alias = '%s_node_%d' % (name, i)
