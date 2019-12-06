@@ -6,7 +6,7 @@ import requests
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.client.util import execution_params_from_pipeline_run
 
-from dagster import Field, String, check, seven
+from dagster import Bool, Field, String, check, seven
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.launcher import RunLauncher
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
@@ -30,20 +30,13 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
             ),
         )
 
-        sanity_check = requests.get(urljoin(address, '/dagit_info'))
-        sanity_check.raise_for_status()
-        check.invariant(
-            'dagit' in sanity_check.text,
-            'Host {host} failed sanity check. It is not a dagit server.'.format(host=self._address),
-        )
-
     @classmethod
     def config_type(cls):
-        return NamedDict('RemoteDagitExecutionServerConfig', {'address': Field(String)})
+        return NamedDict('RemoteDagitExecutionServerConfig', {'address': Field(String)},)
 
     @classmethod
     def from_config_value(cls, inst_data, config_value, **kwargs):
-        return cls(address=config_value['address'], inst_data=inst_data)
+        return cls(address=config_value['address'], inst_data=inst_data,)
 
     @property
     def inst_data(self):
@@ -56,6 +49,14 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
     def stop(self):
         self._handle = None
         self._instance = None
+
+    def validate(self):
+        sanity_check = requests.get(urljoin(self._address, '/dagit_info'))
+        sanity_check.raise_for_status()
+        check.invariant(
+            'dagit' in sanity_check.text,
+            'Host {host} failed sanity check. It is not a dagit server.'.format(host=self._address),
+        )
 
     def launch_run(self, run):
         execution_params = execution_params_from_pipeline_run(run)

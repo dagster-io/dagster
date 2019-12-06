@@ -498,10 +498,19 @@ def pipeline_backfill_command(mode, *args, **kwargs):
     partition_handle = handle.build_partitions_handle()
 
     if not pipeline:
-        raise click.UsageError('no pipeline')
+        raise click.UsageError('No pipeline found')
 
     if not partition_handle:
-        raise click.UsageError('no parititon')
+        raise click.UsageError('No partitions found')
+
+    if not instance.run_launcher:
+        raise click.UsageError(
+            'A run launcher must be configured before running a backfill. You can configure a run '
+            'launcher (e.g. dagster_graphql.launcher.RemoteDagitRunLauncher) in your instance '
+            '`dagster.yaml` settings. See '
+            'https://dagster.readthedocs.io/en/latest/sections/deploying/instance.html for more'
+            'information.'
+        )
 
     if kwargs.get('partition_set'):
         partition_set = partition_handle.get_partition_set(kwargs['partition_set'])
@@ -526,7 +535,7 @@ def pipeline_backfill_command(mode, *args, **kwargs):
             )
 
     if not partition_set:
-        raise click.UsageError('error, partition set not found')
+        raise click.UsageError('Error, partition set not found')
 
     partitions = gen_partitions_from_args(partition_set, kwargs)
 
@@ -538,9 +547,6 @@ def pipeline_backfill_command(mode, *args, **kwargs):
         'Do you want to proceed with the backfill ({} partitions)?'.format(len(partitions))
     ):
         click.echo('Launching')
-        from dagster_graphql.launcher import RemoteDagitRunLauncher
-
-        run_launcher = RemoteDagitRunLauncher('http://localhost:3333')
         for partition in partitions:
             run = PipelineRun(
                 pipeline_name=pipeline.name,
@@ -551,7 +557,7 @@ def pipeline_backfill_command(mode, *args, **kwargs):
                 tags=partition_set.tags_for_partition(partition),
                 status=PipelineRunStatus.NOT_STARTED,
             )
-            run = run_launcher.launch_run(run)
+            instance.run_launcher.launch_run(run)
     else:
         click.echo(' Aborted!')
 
