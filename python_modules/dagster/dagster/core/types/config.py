@@ -81,7 +81,7 @@ class ConfigType(object):
         self.key = check.str_param(key, 'key')
         self.name = check.opt_str_param(name, 'name')
         self.kind = check.inst_param(kind, 'kind', ConfigTypeKind)
-        self.description = check.opt_str_param(description, 'description')
+        self._description = check.opt_str_param(description, 'description')
         self.type_attributes = check.inst_param(
             type_attributes, 'type_attributes', ConfigTypeAttributes
         )
@@ -92,6 +92,10 @@ class ConfigType(object):
         )
 
     __cache = {}
+
+    @property
+    def description(self):
+        return self._description
 
     @classmethod
     def inst(cls):
@@ -327,27 +331,26 @@ class Nullable(ConfigNullable):
         return self
 
 
-def List(inner_type):
-    check.inst_param(inner_type, 'inner_type', ConfigType)
+class List(ConfigList):
+    def __init__(self, inner_type):
+        check.inst_param(inner_type, 'inner_type', ConfigType)
+        super(List, self).__init__(
+            key='List.{inner_type}'.format(inner_type=inner_type.key),
+            name=None,
+            type_attributes=ConfigTypeAttributes(is_builtin=True),
+            inner_type=inner_type,
+        )
 
-    class _List(ConfigList):
-        def __init__(self):
-            # Avoiding a very nasty circular dependency which would require us to restructure the
-            # entire module
-            from .type_printer import print_config_type_to_string
+    def inst(self):
+        return self
 
-            super(_List, self).__init__(
-                key='List.{inner_type}'.format(inner_type=inner_type.key),
-                name=None,
-                type_attributes=ConfigTypeAttributes(is_builtin=True),
-                inner_type=inner_type,
-            )
+    @property
+    def description(self):
+        from .type_printer import print_config_type_to_string
 
-            self.description = 'List of {inner_type}'.format(
-                inner_type=print_config_type_to_string(self, with_lines=False)
-            )
-
-    return _List
+        return 'List of {inner_type}'.format(
+            inner_type=print_config_type_to_string(self, with_lines=False)
+        )
 
 
 def Set(inner_type):
@@ -363,9 +366,8 @@ def Set(inner_type):
                 name=name,
                 type_attributes=ConfigTypeAttributes(is_builtin=True),
                 inner_type=inner_type,
+                description=name,
             )
-
-            self.description = name
 
     return _Set
 
@@ -389,9 +391,8 @@ def Tuple(tuple_types):
                 name=name,
                 type_attributes=ConfigTypeAttributes(is_builtin=True),
                 tuple_types=tuple_types,
+                description=name,
             )
-
-            self.description = name
 
     return _Tuple
 
