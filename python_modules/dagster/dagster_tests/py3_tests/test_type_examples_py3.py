@@ -586,6 +586,8 @@ def test_set_config():
     assert res.output_value() == sorted(['foo', '3'])
 
 
+@pytest.mark.xfail
+# https://github.com/dagster-io/dagster/issues/1932
 def test_set_any_config():
     res = execute_solid(
         set_any_config,

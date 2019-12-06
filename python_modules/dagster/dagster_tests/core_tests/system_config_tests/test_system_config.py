@@ -22,7 +22,6 @@ from dagster import (
 from dagster.core.definitions import create_environment_schema, create_environment_type
 from dagster.core.definitions.environment_configs import (
     EnvironmentClassCreationData,
-    define_resource_cls,
     define_solid_config_cls,
     define_solid_dictionary_cls,
 )
@@ -32,7 +31,6 @@ from dagster.core.system_config.objects import (
     construct_solid_dictionary,
 )
 from dagster.core.test_utils import throwing_evaluate_config_value
-from dagster.core.types.evaluator import evaluate_config
 from dagster.core.types.evaluator.errors import DagsterEvaluateConfigValueError
 from dagster.core.types.field_utils import NamedDict
 from dagster.loggers import default_loggers
@@ -46,16 +44,6 @@ def create_creation_data(pipeline_def):
         pipeline_def.mode_definition,
         logger_defs=default_loggers(),
     )
-
-
-def test_resource_config_any():
-    resource_type = define_resource_cls(
-        'Parent', 'Foo', ResourceDefinition(lambda: None, Field(Any))
-    ).inst()
-
-    assert resource_type.type_attributes.is_system_config
-
-    assert throwing_evaluate_config_value(resource_type, {'config': 1}) == {'config': 1}
 
 
 def test_all_types_provided():
@@ -89,8 +77,6 @@ def test_all_types_provided():
     all_types = list(environment_schema.all_config_types())
     type_names = set(t.name for t in all_types)
     assert 'SomeModeNamedDict' in type_names
-    assert 'Pipeline.Mode.SomeMode.Environment' in type_names
-    assert 'Pipeline.Mode.SomeMode.Resources.SomeResource' in type_names
 
 
 def test_provided_default_on_resources_config():
@@ -151,22 +137,8 @@ def test_default_environment():
     )
 
 
-def test_resource_def_config_errors():
-    takes_int_resource_def = ResourceDefinition(
-        resource_fn=lambda: None, config_field=Field(Dict({'required_int': Field(Int)}))
-    )
-
-    resource_type = define_resource_cls('Parent', 'takes_int', takes_int_resource_def).inst()
-
-    assert not evaluate_config(resource_type, 1).success
-    assert not evaluate_config(resource_type, {}).success
-    assert not evaluate_config(resource_type, {'config': {}}).success
-    assert evaluate_config(resource_type, {'config': {'required_int': 2}}).success
-    assert not evaluate_config(resource_type, {'config': {'required_int': 'kdjfkd'}}).success
-
-
 def test_solid_config():
-    solid_config_type = define_solid_config_cls('kdjfkd', Field(Int), None, None).inst()
+    solid_config_type = define_solid_config_cls(Field(Int), None, None).inst()
     solid_inst = throwing_evaluate_config_value(solid_config_type, {'config': 1})
     assert solid_inst['config'] == 1
     assert solid_config_type.inst().type_attributes.is_system_config
@@ -304,17 +276,6 @@ def test_whole_environment():
     )
 
     environment_type = create_environment_type(pipeline_def)
-
-    assert (
-        environment_type.fields['resources'].config_type.name
-        == 'SomePipeline.Mode.TestMode.Resources'
-    )
-    solids_type = environment_type.fields['solids'].config_type
-    assert solids_type.name == 'SomePipeline.SolidsConfigDictionary'
-    assert (
-        solids_type.fields['int_config_solid'].config_type.name
-        == 'SomePipeline.SolidConfig.IntConfigSolid'
-    )
 
     env = EnvironmentConfig.from_config_value(
         throwing_evaluate_config_value(
