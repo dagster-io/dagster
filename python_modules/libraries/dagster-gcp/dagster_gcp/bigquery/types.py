@@ -117,9 +117,9 @@ def _is_valid_table(config_value):
     )
 
 
-class Dataset(ConfigScalar):
+class _Dataset(ConfigScalar):
     def __init__(self):
-        super(Dataset, self).__init__(key=type(self).__name__, name=type(self).__name__)
+        super(_Dataset, self).__init__(key=type(self).__name__, name=type(self).__name__)
 
     def is_config_scalar_valid(self, config_value):
         if not isinstance(config_value, six.string_types):
@@ -128,15 +128,20 @@ class Dataset(ConfigScalar):
         return _is_valid_dataset(config_value)
 
 
-class Table(ConfigScalar):
+class _Table(ConfigScalar):
     def __init__(self):
-        super(Table, self).__init__(key=type(self).__name__, name=type(self).__name__)
+        super(_Table, self).__init__(key=type(self).__name__, name=type(self).__name__)
 
     def is_config_scalar_valid(self, config_value):
         if not isinstance(config_value, six.string_types):
             return False
 
         return _is_valid_table(config_value)
+
+
+# https://github.com/dagster-io/dagster/issues/1971
+Table = _Table()
+Dataset = _Dataset()
 
 
 class BigQueryError(Exception):
