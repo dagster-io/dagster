@@ -140,7 +140,11 @@ function getDagrePipelineLayoutHeavy(
   g.setDefaultEdgeLabel(() => ({}));
 
   const connections: Array<ILayoutConnection> = [];
+  const solidNamesPresent: { [name: string]: boolean } = {};
 
+  pipelineSolids.forEach(solid => {
+    solidNamesPresent[solid.name] = true;
+  });
   pipelineSolids.forEach(solid => {
     // Lay out each solid individually to get it's width and height based on it's
     // inputs and outputs, and then attach it to the graph. Dagre will give us it's
@@ -155,20 +159,25 @@ function getDagrePipelineLayoutHeavy(
     // can reference them in a single pass later
     solid.inputs.forEach(input => {
       input.dependsOn.forEach(dep => {
-        g.setEdge({ v: dep.solid.name, w: solid.name }, { weight: 1 });
+        if (
+          solidNamesPresent[dep.solid.name] &&
+          solidNamesPresent[solid.name]
+        ) {
+          g.setEdge({ v: dep.solid.name, w: solid.name }, { weight: 1 });
 
-        connections.push({
-          from: {
-            point: { x: 0, y: 0 },
-            solidName: dep.solid.name,
-            edgeName: dep.definition.name
-          },
-          to: {
-            point: { x: 0, y: 0 },
-            solidName: solid.name,
-            edgeName: input.definition.name
-          }
-        });
+          connections.push({
+            from: {
+              point: { x: 0, y: 0 },
+              solidName: dep.solid.name,
+              edgeName: dep.definition.name
+            },
+            to: {
+              point: { x: 0, y: 0 },
+              solidName: solid.name,
+              edgeName: input.definition.name
+            }
+          });
+        }
       });
     });
   });
@@ -178,13 +187,16 @@ function getDagrePipelineLayoutHeavy(
   const solids: { [solidName: string]: IFullSolidLayout } = {};
   const nodesBySolid: { [solidName: string]: dagre.Node } = {};
   g.nodes().forEach(function(solidName) {
-    nodesBySolid[solidName] = g.node(solidName);
+    const node = g.node(solidName);
+    if (!node) return;
+    nodesBySolid[solidName] = node;
   });
 
   if (MAX_PER_ROW_ENABLED) {
     const nodesInRows: { [key: string]: dagre.Node[] } = {};
     g.nodes().forEach(function(solidName) {
       const node = g.node(solidName);
+      if (!node) return;
       nodesInRows[`${node.y}`] = nodesInRows[`${node.y}`] || [];
       nodesInRows[`${node.y}`].push(node);
     });

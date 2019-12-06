@@ -120,7 +120,11 @@ export default class SVGViewport extends React.Component<
       MIN_OVERVIEW_ZOOM
     );
 
-    if (this.state.scale < boundedScale && desiredScale !== boundedScale) {
+    if (
+      this.state.scale < boundedScale &&
+      desiredScale !== boundedScale &&
+      boundedScale === MIN_OVERVIEW_ZOOM
+    ) {
       // If the user is zoomed out past where they're going to land, AND where they're going to land
       // is not a view of the entire DAG but instead a view of some zoomed section, autocentering is
       // undesirable and should do nothing.

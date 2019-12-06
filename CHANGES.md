@@ -11,6 +11,12 @@
   access to these logs, you should run `dagster instance migrate`. To check
   what event log storages you are using, run `dagster instance info`.
 
+**Dagit**
+
+- The Explore UI now allows you to render a subset of a large DAG via a new solid
+  query bar that accepts terms like `solid_name+*` and `+solid_name+`. When viewing
+  very large DAGs, nothing is displayed by default and `*` produces the original behavior.
+
 ## 0.6.6
 
 **Breaking**

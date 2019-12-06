@@ -78,7 +78,7 @@ export default class SidebarPipelineInfo extends React.Component<
             description={pipeline ? pipeline.description : NO_DESCRIPTION}
           />
         </SidebarSection>
-        <SidebarSection title={"Modes"}>
+        <SidebarSection title={"Modes"} collapsedByDefault={true}>
           {pipeline.modes.map(mode => (
             <SectionItemContainer key={mode.name}>
               <SectionHeader>{mode.name}</SectionHeader>

@@ -35,6 +35,7 @@ function svgForPipeline(
         minified={false}
         solids={solids}
         parentSolid={parent}
+        focusSolids={[]}
         pipelineName={name}
         layout={layout}
         backgroundColor={Colors.LIGHT_GRAY5}

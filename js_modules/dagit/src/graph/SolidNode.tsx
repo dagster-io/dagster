@@ -18,12 +18,24 @@ interface ISolidNodeProps {
   highlightedEdges: Edge[];
   minified: boolean;
   selected: boolean;
+  focused: boolean;
   dim: boolean;
   onClick: () => void;
   onDoubleClick: () => void;
   onEnterComposite: () => void;
   onHighlightEdges: (edges: Edge[]) => void;
 }
+
+const SELECTED_STYLE = {
+  stroke: "rgba(255, 69, 0, 1)",
+  fill: "rgba(255, 69, 0, 0.2)",
+  dashed: true
+};
+const FOCUSED_STYLE = {
+  stroke: "rgba(59, 141, 227, 1)",
+  fill: "rgba(59, 141, 227, 0.2)",
+  dashed: false
+};
 
 export default class SolidNode extends React.Component<ISolidNodeProps> {
   static fragments = {
@@ -157,8 +169,10 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   shouldComponentUpdate(prevProps: ISolidNodeProps) {
     if (prevProps.dim !== this.props.dim) return true;
     if (prevProps.selected !== this.props.selected) return true;
+    if (prevProps.focused !== this.props.focused) return true;
     if (prevProps.minified !== this.props.minified) return true;
     if (prevProps.highlightedEdges !== this.props.highlightedEdges) return true;
+    if (prevProps.layout !== this.props.layout) return true;
     if (
       (prevProps.invocation && prevProps.invocation.name) !==
       (this.props.invocation && this.props.invocation.name)
@@ -192,7 +206,11 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     );
   };
 
-  renderSelectedBox() {
+  renderSurroundingBox(style: {
+    stroke: string;
+    fill: string;
+    dashed: boolean;
+  }) {
     const { x, y, width, height } = this.props.layout.boundingBox;
     return (
       <rect
@@ -203,10 +221,12 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           height +
           (this.props.definition.outputDefinitions.length > 0 ? 20 : 30)
         }
-        stroke="rgba(255, 69, 0, 1)"
-        fill="rgba(255, 69, 0, 0.2)"
+        stroke={style.stroke}
+        fill={style.fill}
         strokeWidth={this.props.minified ? 5 : 3}
-        strokeDasharray={this.props.minified ? 8 : 4}
+        strokeDasharray={
+          style.dashed ? (this.props.minified ? 8 : 4) : undefined
+        }
       />
     );
   }
@@ -265,6 +285,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       invocation,
       layout,
       dim,
+      focused,
       selected,
       minified
     } = this.props;
@@ -294,7 +315,12 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         onDoubleClick={this.handleDoubleClick}
         opacity={dim ? 0.3 : undefined}
       >
-        {selected && this.renderSelectedBox()}
+        {selected
+          ? this.renderSurroundingBox(SELECTED_STYLE)
+          : focused
+          ? this.renderSurroundingBox(FOCUSED_STYLE)
+          : undefined}
+
         {composite && this.renderSolidCompositeIndicator()}
 
         {this.renderSolid()}
