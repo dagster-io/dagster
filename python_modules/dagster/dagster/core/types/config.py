@@ -353,48 +353,45 @@ class List(ConfigList):
         )
 
 
-def Set(inner_type):
-    check.inst_param(inner_type, 'inner_type', ConfigType)
+class Set(ConfigSet):
+    def __init__(self, inner_type):
+        check.inst_param(inner_type, 'inner_type', ConfigType)
+        name = 'Set[{inner_type}]'.format(inner_type=inner_type)
 
-    class _Set(ConfigSet):
-        def __init__(self):
+        super(Set, self).__init__(
+            key='Set.{inner_type}'.format(inner_type=inner_type.key),
+            name=name,
+            type_attributes=ConfigTypeAttributes(is_builtin=True),
+            inner_type=inner_type,
+            description=name,
+        )
 
-            name = 'Set[{inner_type}]'.format(inner_type=inner_type)
-
-            super(_Set, self).__init__(
-                key='Set.{inner_type}'.format(inner_type=inner_type.key),
-                name=name,
-                type_attributes=ConfigTypeAttributes(is_builtin=True),
-                inner_type=inner_type,
-                description=name,
-            )
-
-    return _Set
+    def inst(self):
+        return self
 
 
-def Tuple(tuple_types):
-    check.list_param(tuple_types, 'tuple_types', ConfigType)
+class Tuple(ConfigTuple):
+    def __init__(self, tuple_types):
+        check.list_param(tuple_types, 'tuple_types', ConfigType)
 
-    class _Tuple(ConfigTuple):
-        def __init__(self):
+        # https://github.com/dagster-io/dagster/issues/1932
+        # TODO Naming these is a dubious decision
+        name = 'Tuple[{tuple_types}]'.format(
+            tuple_types=', '.join([tuple_type.key for tuple_type in tuple_types])
+        )
 
-            # https://github.com/dagster-io/dagster/issues/1932
-            # TODO Naming these is a dubious decision
-            name = 'Tuple[{tuple_types}]'.format(
-                tuple_types=', '.join([tuple_type.key for tuple_type in tuple_types])
-            )
+        super(Tuple, self).__init__(
+            key='Tuple.{tuple_types}'.format(
+                tuple_types='-'.join([tuple_type.key for tuple_type in tuple_types])
+            ),
+            name=name,
+            type_attributes=ConfigTypeAttributes(is_builtin=True),
+            tuple_types=tuple_types,
+            description=name,
+        )
 
-            super(_Tuple, self).__init__(
-                key='Tuple.{tuple_types}'.format(
-                    tuple_types='-'.join([tuple_type.key for tuple_type in tuple_types])
-                ),
-                name=name,
-                type_attributes=ConfigTypeAttributes(is_builtin=True),
-                tuple_types=tuple_types,
-                description=name,
-            )
-
-    return _Tuple
+    def inst(self):
+        return self
 
 
 class EnumValue(object):
