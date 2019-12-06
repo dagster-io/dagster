@@ -1,0 +1,65 @@
+replicaCount: 1
+
+imagepullPolicy: IfNotPresent
+imagePullSecrets:
+  - name: element-dev-key
+
+nameOverride: ""
+fullnameOverride: ""
+
+rbacEnabled: true
+
+dagit:
+  image:
+    repository: dagster-k8s-demo
+    tag: latest
+  nameOverride: ""
+
+# Image to use for executing jobs; this is typically the same image as dagit
+job_image:
+  image:
+    repository: dagster-k8s-demo
+    tag: latest
+
+# Configuration values for postgresql
+# https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md
+postgresql:
+  enabled: true
+  postgresqlUsername: dagster
+  postgresqlPassword: test123
+  postgresqlDatabase: dagster
+  service:
+    port: 5432
+
+serviceAccount:
+  create: true
+  name: "dagit-admin"
+
+podSecurityContext:
+  {}
+
+securityContext:
+  {}
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

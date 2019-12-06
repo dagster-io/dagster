@@ -1,0 +1,15 @@
+{{- if .Values.rbacEnabled }}
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "dagster.fullname" . }}-job-runner
+  labels:
+    app: {{ template "dagster.name" . }}
+    chart: {{ template "dagster.chart" .  }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+rules:
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["create", "get", "list"]
+{{- end -}}

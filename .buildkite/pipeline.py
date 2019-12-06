@@ -163,8 +163,7 @@ def events_demo_tests():
 
 
 def publish_airflow_images():
-    '''These images are used by the dagster-airflow tests. We build them here and not in the main
-    build pipeline to speed it up, because they change very rarely.
+    '''These images are used by the dagster-airflow tests
     '''
     return [
         StepBuilder("[dagster-airflow] images", key="dagster-airflow-images")
@@ -207,7 +206,6 @@ def airflow_tests():
                 r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
                 + GCP_CREDS_LOCAL_FILE,
                 "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-                "aws ecr get-login --no-include-email --region us-west-1 | sh",
                 "./.buildkite/scripts/dagster_airflow.sh {ver}".format(ver=TOX_MAP[version]),
                 "pushd python_modules/dagster-airflow/",
                 "mv .coverage {file}".format(file=coverage),
@@ -224,6 +222,61 @@ def airflow_tests():
                     'AWS_SECRET_ACCESS_KEY',
                     'BUILDKITE_SECRETS_BUCKET',
                     'GOOGLE_APPLICATION_CREDENTIALS',
+                ],
+            )
+            .build()
+        )
+    return tests
+
+
+def publish_k8s_images():
+    return [
+        StepBuilder("[dagster-k8s] images", key="dagster-k8s-images")
+        .run(
+            "aws ecr get-login --no-include-email --region us-west-1 | sh",
+            "export DAGSTER_K8S_DOCKER_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-k8s-demo:$${BUILDKITE_BUILD_ID}",
+            # Build and deploy dagster-k8s docker images
+            "pushd python_modules/libraries/dagster-k8s/dagster_k8s_tests/test_project",
+            "./build.sh",
+            "docker tag dagster-k8s-demo $${DAGSTER_K8S_DOCKER_IMAGE}",
+            "docker push $${DAGSTER_K8S_DOCKER_IMAGE}",
+            "popd",
+        )
+        .on_integration_image(
+            SupportedPython.V3_7,
+            [
+                'AWS_ACCOUNT_ID',
+                'AWS_ACCESS_KEY_ID',
+                'AWS_SECRET_ACCESS_KEY',
+                'BUILDKITE_SECRETS_BUCKET',
+            ],
+        )
+        .build()
+    ]
+
+
+def k8s_tests():
+    tests = []
+    # See: https://github.com/dagster-io/dagster/issues/1960
+    for version in SupportedPythons + [SupportedPython.V3_8]:
+        coverage = ".coverage.dagster-k8s.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        tests.append(
+            StepBuilder("[dagster-k8s] ({ver})".format(ver=TOX_MAP[version]))
+            .run(
+                "./.buildkite/scripts/dagster_k8s.sh {ver}".format(ver=TOX_MAP[version]),
+                "pushd python_modules/libraries/dagster-k8s/",
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+                "popd",
+            )
+            .depends_on(["dagster-k8s-images"])
+            .on_integration_image(
+                version,
+                [
+                    'AWS_ACCOUNT_ID',
+                    'AWS_ACCESS_KEY_ID',
+                    'AWS_SECRET_ACCESS_KEY',
+                    'BUILDKITE_SECRETS_BUCKET',
                 ],
             )
             .build()
@@ -405,7 +458,10 @@ def library_tests():
 
     tests = []
     for library in library_modules:
-        if library == 'dagster-gcp':
+        if library == 'dagster-k8s':
+            tests += publish_k8s_images()
+            tests += k8s_tests()
+        elif library == 'dagster-gcp':
             tests += gcp_tests()
         elif library == 'dagster-postgres':
             tests += dagster_postgres_tests()
