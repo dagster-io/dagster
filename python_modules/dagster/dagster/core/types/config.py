@@ -70,14 +70,6 @@ class ConfigType(object):
         type_params=None,
     ):
 
-        type_obj = type(self)
-        if type_obj in ConfigType.__cache:
-            check.failed(
-                (
-                    '{type_obj} already in cache. You **must** use the inst() class method '
-                    'to construct ConfigTypes and not the ctor'.format(type_obj=type_obj)
-                )
-            )
         self.key = check.str_param(key, 'key')
         self.name = check.opt_str_param(name, 'name')
         self.kind = check.inst_param(kind, 'kind', ConfigTypeKind)
@@ -91,17 +83,9 @@ class ConfigType(object):
             else None
         )
 
-    __cache = {}
-
     @property
     def description(self):
         return self._description
-
-    @classmethod
-    def inst(cls):
-        if cls not in ConfigType.__cache:
-            ConfigType.__cache[cls] = cls()  # pylint: disable=E1120
-        return ConfigType.__cache[cls]
 
     @staticmethod
     def from_builtin_enum(builtin_enum):
@@ -475,13 +459,19 @@ class Enum(ConfigEnum):
         return self
 
 
+ConfigAnyInstance = Any()
+ConfigBoolInstance = Bool()
+ConfigFloatInstance = Float()
+ConfigIntInstance = Int()
+ConfigPathInstance = Path()
+ConfigStringInstance = String()
 _CONFIG_MAP = {
-    BuiltinEnum.ANY: Any.inst(),
-    BuiltinEnum.BOOL: Bool.inst(),
-    BuiltinEnum.FLOAT: Float.inst(),
-    BuiltinEnum.INT: Int.inst(),
-    BuiltinEnum.PATH: Path.inst(),
-    BuiltinEnum.STRING: String.inst(),
+    BuiltinEnum.ANY: ConfigAnyInstance,
+    BuiltinEnum.BOOL: ConfigBoolInstance,
+    BuiltinEnum.FLOAT: ConfigFloatInstance,
+    BuiltinEnum.INT: ConfigIntInstance,
+    BuiltinEnum.PATH: ConfigPathInstance,
+    BuiltinEnum.STRING: ConfigStringInstance,
 }
 
 ALL_CONFIG_BUILTINS = set(_CONFIG_MAP.values())

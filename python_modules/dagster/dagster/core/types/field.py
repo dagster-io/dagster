@@ -2,7 +2,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 from .builtin_enum import BuiltinEnum
-from .config import Any, ConfigType, List, Nullable, Set, Tuple
+from .config import ConfigAnyInstance, ConfigType, List, Nullable, Set, Tuple
 from .default_applier import apply_default_values
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
 from .typing_api import is_typing_type
@@ -61,15 +61,22 @@ def resolve_to_config_nullable(nullable_type):
     return Nullable(resolve_to_config_type(nullable_type.inner_type))
 
 
+def _is_config_type_class(obj):
+    return isinstance(obj, type) and issubclass(obj, ConfigType)
+
+
 def resolve_to_config_type(dagster_type):
     from .mapping import remap_python_builtin_for_config, is_supported_config_python_builtin
     from .runtime import RuntimeType
 
-    # We are in the midst of transition to allow instances of config types to
-    # be passed into Fields and as inner types. This is the short circuit
-    # when that happens -- schrockn (12-06-19)
-    if isinstance(dagster_type, ConfigType):
-        return dagster_type
+    if _is_config_type_class(dagster_type):
+        check.param_invariant(
+            False,
+            'dagster_type',
+            'Cannot pass a config type class to resolve_to_config_type. Got {dagster_type}'.format(
+                dagster_type=dagster_type
+            ),
+        )
 
     check.invariant(
         not (isinstance(dagster_type, type) and issubclass(dagster_type, RuntimeType)),
@@ -86,11 +93,22 @@ def resolve_to_config_type(dagster_type):
             ).format(dagster_type=dagster_type)
         )
 
+    # Short circuit if it's already a Config Type
+    if isinstance(dagster_type, ConfigType):
+        return dagster_type
+
+    # If we are passed here either:
+    #  1) We have been passed a python builtin
+    #  2) We have been a dagster wrapping type that needs to be convert its config varient
+    #     e.g. dagster.List
+    #  2) We have been passed an invalid thing. We return False to signify this. It is
+    #     up to callers to report a reasonable error.
+
     if is_supported_config_python_builtin(dagster_type):
         return remap_python_builtin_for_config(dagster_type)
 
     if dagster_type is None:
-        return Any.inst()
+        return ConfigAnyInstance
     if BuiltinEnum.contains(dagster_type):
         return ConfigType.from_builtin_enum(dagster_type)
     if isinstance(dagster_type, (WrappingListType, DagsterListApi)):
@@ -101,15 +119,15 @@ def resolve_to_config_type(dagster_type):
         return resolve_to_config_tuple(dagster_type).inst()
     if isinstance(dagster_type, WrappingNullableType):
         return resolve_to_config_nullable(dagster_type).inst()
-    if isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType):
-        return dagster_type.inst()
 
-    return None
+    # This means that this is an error and we are return False to a callsite
+    # We do the error reporting there because those callsites have more context
+    return False
 
 
 class Field(object):
     '''Defines the schema for a configuration field.
-
+ 
     Config fields are parsed according to their schemas in order to yield values available at
     pipeline execution time through the config system. Config fields can be set on solids, on custom
     data types (as the :py:func:`@input_hydration_schema <dagster.input_hydration_schema>`), and on

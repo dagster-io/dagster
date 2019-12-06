@@ -2,7 +2,15 @@ import pickle
 
 from dagster import check, seven
 
-from .config import Any, Bool, ConfigTypeAttributes, Float, Int, Path, String
+from .config import (
+    ConfigAnyInstance,
+    ConfigBoolInstance,
+    ConfigFloatInstance,
+    ConfigIntInstance,
+    ConfigPathInstance,
+    ConfigStringInstance,
+    ConfigTypeAttributes,
+)
 from .config_schema import input_selector_schema, make_bare_input_schema, output_selector_schema
 from .field import Field
 from .field_utils import NamedSelector
@@ -40,7 +48,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
 
 
 def define_path_dict_field():
-    return Field(Dict({'path': Field(Path.inst())}).inst())
+    return Field(Dict({'path': Field(ConfigPathInstance)}).inst())
 
 
 def define_builtin_scalar_output_schema(scalar_name):
@@ -74,20 +82,20 @@ def define_builtin_scalar_output_schema(scalar_name):
 
 
 class BuiltinSchemas(object):
-    ANY_INPUT = define_builtin_scalar_input_schema('Any', Any.inst())
+    ANY_INPUT = define_builtin_scalar_input_schema('Any', ConfigAnyInstance)
     ANY_OUTPUT = define_builtin_scalar_output_schema('Any')
 
-    BOOL_INPUT = define_builtin_scalar_input_schema('Bool', Bool.inst())
+    BOOL_INPUT = define_builtin_scalar_input_schema('Bool', ConfigBoolInstance)
     BOOL_OUTPUT = define_builtin_scalar_output_schema('Bool')
 
-    FLOAT_INPUT = define_builtin_scalar_input_schema('Float', Float.inst())
+    FLOAT_INPUT = define_builtin_scalar_input_schema('Float', ConfigFloatInstance)
     FLOAT_OUTPUT = define_builtin_scalar_output_schema('Float')
 
-    INT_INPUT = define_builtin_scalar_input_schema('Int', Int.inst())
+    INT_INPUT = define_builtin_scalar_input_schema('Int', ConfigIntInstance)
     INT_OUTPUT = define_builtin_scalar_output_schema('Int')
 
-    PATH_INPUT = make_bare_input_schema(Path.inst())
+    PATH_INPUT = make_bare_input_schema(ConfigPathInstance)
     PATH_OUTPUT = define_builtin_scalar_output_schema('Path')
 
-    STRING_INPUT = define_builtin_scalar_input_schema('String', String.inst())
+    STRING_INPUT = define_builtin_scalar_input_schema('String', ConfigStringInstance)
     STRING_OUTPUT = define_builtin_scalar_output_schema('String')
