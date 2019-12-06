@@ -219,36 +219,49 @@ def _compute_fields_hash(fields, description, is_system_config):
     return m.hexdigest()
 
 
-def build_config_dict(fields, description=None, is_system_config=False):
+def _define_dict_key_hash(fields, description, is_system_config):
+    return 'Dict.' + _compute_fields_hash(fields, description, is_system_config)
+
+
+class Dict(_ConfigHasFields):
     '''
     Schema for configuration data with string keys and typed values via :py:class:`Field` .
 
     Args:
         fields (Dict[str, Field])
     '''
-    check_user_facing_fields_dict(fields, 'Dict')
 
-    key = 'Dict.' + _compute_fields_hash(fields, description, is_system_config)
+    def __new__(cls, fields, description=None, is_system_config=False):
+        check_user_facing_fields_dict(fields, 'Dict')
 
-    if key in FIELD_HASH_CACHE:
-        return FIELD_HASH_CACHE[key]
+        key = _define_dict_key_hash(fields, description, is_system_config)
 
-    class _Dict(_ConfigHasFields):
-        def __init__(self):
-            super(_Dict, self).__init__(
-                name=None,
-                kind=ConfigTypeKind.DICT,
-                key=key,
-                fields=fields,
-                description='A configuration dictionary with typed fields',
-                type_attributes=ConfigTypeAttributes(
-                    is_builtin=True, is_system_config=is_system_config,
-                ),
-            )
+        if key in FIELD_HASH_CACHE:
+            return FIELD_HASH_CACHE[key]
 
-    FIELD_HASH_CACHE[key] = _Dict
+        dict_inst = super(Dict, cls).__new__(cls)
 
-    return _Dict
+        FIELD_HASH_CACHE[key] = dict_inst
+        return dict_inst
+
+    def __init__(self, fields, description=None, is_system_config=False):
+        super(Dict, self).__init__(
+            name=None,
+            kind=ConfigTypeKind.DICT,
+            key=_define_dict_key_hash(fields, description, is_system_config),
+            description=description,
+            fields=fields,
+            type_attributes=ConfigTypeAttributes(
+                is_builtin=True, is_system_config=is_system_config,
+            ),
+        )
+
+    def inst(self):
+        return self
+
+
+def build_config_dict(fields, description=None, is_system_config=False):
+    return Dict(fields, description, is_system_config)
 
 
 def _define_permissive_dict_key(fields, description):
