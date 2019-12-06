@@ -86,7 +86,7 @@ class BuiltinSchemas(object):
     INT_INPUT = define_builtin_scalar_input_schema('Int', Int.inst())
     INT_OUTPUT = define_builtin_scalar_output_schema('Int')
 
-    PATH_INPUT = make_bare_input_schema(Path)
+    PATH_INPUT = make_bare_input_schema(Path.inst())
     PATH_OUTPUT = define_builtin_scalar_output_schema('Path')
 
     STRING_INPUT = define_builtin_scalar_input_schema('String', String.inst())
