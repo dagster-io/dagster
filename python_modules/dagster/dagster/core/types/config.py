@@ -444,7 +444,7 @@ class ConfigEnum(ConfigType):
         check.failed('should never reach this. config_value should be pre-validated')
 
 
-def Enum(name, enum_values):
+class Enum(ConfigEnum):
     '''
     Defines a enum configuration type that allows one of a defined set of possible values.
 
@@ -471,11 +471,11 @@ def Enum(name, enum_values):
                 # ...
     '''
 
-    class _EnumType(ConfigEnum):
-        def __init__(self):
-            super(_EnumType, self).__init__(name=name, enum_values=enum_values)
+    def __init__(self, name, enum_values):
+        super(Enum, self).__init__(name=name, enum_values=enum_values)
 
-    return _EnumType
+    def inst(self):
+        return self
 
 
 _CONFIG_MAP = {
