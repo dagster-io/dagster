@@ -265,7 +265,16 @@ def build_config_dict(fields, description=None, is_system_config=False):
     return _Dict
 
 
-def PermissiveDict(fields=None, description=None):
+def _define_permissive_dict_key(fields, description):
+    return (
+        'PermissiveDict.'
+        + _compute_fields_hash(fields, description=description, is_system_config=False)
+        if fields
+        else 'PermissiveDict'
+    )
+
+
+class PermissiveDict(_ConfigHasFields):
     '''Defines a config dict with a partially specified schema.
     
     A permissive dict allows partial specification of the config schema. Any fields with a
@@ -284,37 +293,31 @@ def PermissiveDict(fields=None, description=None):
             return sorted(list(context.solid_config.items()))
     '''
 
-    if fields:
-        check_user_facing_fields_dict(fields, 'PermissiveDict')
+    def __new__(cls, fields=None, description=None):
+        if fields:
+            check_user_facing_fields_dict(fields, 'PermissiveDict')
 
-    key = (
-        'PermissiveDict.'
-        + _compute_fields_hash(fields, description=description, is_system_config=False)
-        if fields
-        else 'PermissiveDict'
-    )
+        key = _define_permissive_dict_key(fields, description)
 
-    if key in FIELD_HASH_CACHE:
-        return FIELD_HASH_CACHE[key]
+        if key in FIELD_HASH_CACHE:
+            return FIELD_HASH_CACHE[key]
 
-    class _PermissiveDict(_ConfigHasFields):
-        def __init__(self):
-            super(_PermissiveDict, self).__init__(
-                name=None,
-                key=key,
-                kind=ConfigTypeKind.PERMISSIVE_DICT,
-                fields=fields or dict(),
-                description='A configuration dictionary with typed fields',
-                type_attributes=ConfigTypeAttributes(is_builtin=True),
-            )
+        selector_inst = super(PermissiveDict, cls).__new__(cls)
+        FIELD_HASH_CACHE[key] = selector_inst
+        return selector_inst
 
-        @property
-        def is_permissive_composite(self):
-            return True
+    def __init__(self, fields=None, description=None):
+        super(PermissiveDict, self).__init__(
+            key=_define_permissive_dict_key(fields, description),
+            name=None,
+            kind=ConfigTypeKind.PERMISSIVE_DICT,
+            fields=fields or dict(),
+            type_attributes=ConfigTypeAttributes(is_builtin=True),
+            description=description,
+        )
 
-    FIELD_HASH_CACHE[key] = _PermissiveDict
-
-    return _PermissiveDict
+    def inst(self):
+        return self
 
 
 def _define_selector_key(fields, description, is_system_config):
