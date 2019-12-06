@@ -5,25 +5,54 @@ from .builtin_enum import BuiltinEnum
 from .config import Any, ConfigType, List, Nullable, Set, Tuple
 from .default_applier import apply_default_values
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
-from .wrapping import WrappingListType, WrappingNullableType, WrappingSetType, WrappingTupleType
+from .wrapping import (
+    DagsterListApi,
+    DagsterSetApi,
+    DagsterTupleApi,
+    WrappingListType,
+    WrappingNullableType,
+    WrappingSetType,
+    WrappingTupleType,
+)
 
 
 def resolve_to_config_list(list_type):
-    check.inst_param(list_type, 'list_type', WrappingListType)
+    check.inst_param(list_type, 'list_type', (WrappingListType, DagsterListApi))
+
+    if isinstance(list_type, DagsterListApi):
+        return List(resolve_to_config_type(BuiltinEnum.ANY))
+
     return List(resolve_to_config_type(list_type.inner_type))
 
 
 def resolve_to_config_set(set_type):
-    check.inst_param(set_type, 'set_type', WrappingSetType)
+    check.inst_param(set_type, 'set_type', (WrappingSetType, DagsterSetApi))
+
+    if isinstance(set_type, DagsterSetApi):
+        return Set(resolve_to_config_type(BuiltinEnum.ANY))
+
     return Set(resolve_to_config_type(set_type.inner_type))
 
 
 def resolve_to_config_tuple(tuple_type):
-    check.inst_param(tuple_type, 'list_type', WrappingTupleType)
+    check.inst_param(tuple_type, 'list_type', (WrappingTupleType, DagsterTupleApi))
+
+    if isinstance(tuple_type, DagsterTupleApi):
+        return List(resolve_to_config_type(BuiltinEnum.ANY))
+
     if tuple_type.inner_type is None:
-        return List(resolve_to_config_type(tuple_type.inner_type))
-    inner_types = [resolve_to_config_type(inner_type) for inner_type in tuple_type.inner_type]
-    return Tuple(inner_types)
+        return List(resolve_to_config_type(BuiltinEnum.ANY))
+
+    resolved_types = []
+    for type_param in tuple_type.inner_type:
+        resolved_type = resolve_to_config_type(type_param)
+        if resolved_type is None:
+            raise DagsterInvalidDefinitionError(
+                'Passed invalid type {type_param} to Tuple'.format(type_param=type_param)
+            )
+        resolved_types.append(resolved_type)
+
+    return Tuple(resolved_types)
 
 
 def resolve_to_config_nullable(nullable_type):
@@ -46,11 +75,11 @@ def resolve_to_config_type(dagster_type):
         return Any.inst()
     if BuiltinEnum.contains(dagster_type):
         return ConfigType.from_builtin_enum(dagster_type)
-    if isinstance(dagster_type, WrappingListType):
+    if isinstance(dagster_type, (WrappingListType, DagsterListApi)):
         return resolve_to_config_list(dagster_type).inst()
-    if isinstance(dagster_type, WrappingSetType):
+    if isinstance(dagster_type, (WrappingSetType, DagsterSetApi)):
         return resolve_to_config_set(dagster_type).inst()
-    if isinstance(dagster_type, WrappingTupleType):
+    if isinstance(dagster_type, (WrappingTupleType, DagsterTupleApi)):
         return resolve_to_config_tuple(dagster_type).inst()
     if isinstance(dagster_type, WrappingNullableType):
         return resolve_to_config_nullable(dagster_type).inst()

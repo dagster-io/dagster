@@ -15,7 +15,7 @@ from .python_dict import PythonDict
 from .python_set import PythonSet
 from .python_tuple import PythonTuple
 from .runtime import PythonObjectType, define_python_dagster_type
-from .wrapping import List, Optional
+from .wrapping import List, Optional, Set, Tuple
 
 Any = BuiltinEnum.ANY
 String = BuiltinEnum.STRING
@@ -24,9 +24,6 @@ Bool = BuiltinEnum.BOOL
 Path = BuiltinEnum.PATH
 Float = BuiltinEnum.FLOAT
 Nothing = BuiltinEnum.NOTHING
-
-Set = typing.Set
-Tuple = typing.Tuple
 
 # What sort of witchcraft is this?
 

@@ -16,7 +16,6 @@ from .typing_api import (
 class WrappingType(object):
     def __init__(self, inner_type):
         # Cannot check inner_type because of circular references and no fwd declarations
-
         if inner_type == BuiltinEnum.NOTHING:
             raise DagsterInvalidDefinitionError(
                 'Type Nothing can not be wrapped in List or Optional'
@@ -43,21 +42,21 @@ class WrappingNullableType(WrappingType):
 
 def remap_to_dagster_list_type(ttype):
     check.invariant(is_python_list_type(ttype), 'type must pass is_python_list_type check')
-    if ttype == list or ttype == typing.List:
+    if ttype == list or ttype == typing.List or isinstance(ttype, DagsterListApi):
         return WrappingListType(BuiltinEnum.ANY)
     return WrappingListType(ttype.__args__[0])
 
 
 def remap_to_dagster_set_type(ttype):
     check.invariant(is_python_set_type(ttype), 'type must pass is_python_set_type check')
-    if ttype == set or ttype == typing.Set:
+    if ttype == set or ttype == typing.Set or isinstance(ttype, DagsterSetApi):
         return WrappingSetType(BuiltinEnum.ANY)
     return WrappingSetType(ttype.__args__[0])
 
 
 def remap_to_dagster_tuple_type(ttype):
     check.invariant(is_python_tuple_type(ttype), 'type must pass is_python_tuple_type check')
-    if ttype == tuple or ttype == typing.Tuple:
+    if ttype == tuple or ttype == typing.Tuple or isinstance(ttype, DagsterTupleApi):
         return WrappingTupleType(None)
     return WrappingTupleType(ttype.__args__)
 
@@ -69,6 +68,34 @@ def remap_to_dagster_optional_type(ttype):
     return WrappingNullableType(get_optional_inner_type(ttype))
 
 
-List = typing.List
+class DagsterListApi:
+    def __getitem__(self, inner_type):
+        check.not_none_param(inner_type, 'inner_type')
+        return WrappingListType(inner_type)
 
-Optional = typing.Optional
+
+class DagsterOptionalApi:
+    def __getitem__(self, inner_type):
+        check.not_none_param(inner_type, 'inner_type')
+        return WrappingNullableType(inner_type)
+
+
+class DagsterTupleApi:
+    def __getitem__(self, tuple_types):
+        check.not_none_param(tuple_types, 'tuple_types')
+        return WrappingTupleType(tuple_types)
+
+
+class DagsterSetApi:
+    def __getitem__(self, inner_type):
+        check.not_none_param(inner_type, 'inner_type')
+        return WrappingSetType(inner_type)
+
+
+List = DagsterListApi()
+
+Optional = DagsterOptionalApi()
+
+Set = DagsterSetApi()
+
+Tuple = DagsterTupleApi()

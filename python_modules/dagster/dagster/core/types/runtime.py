@@ -15,7 +15,15 @@ from .config_schema import InputHydrationConfig, OutputMaterializationConfig
 from .field_utils import Dict
 from .marshal import PickleSerializationStrategy, SerializationStrategy
 from .typing_api import is_closed_python_dict_type
-from .wrapping import WrappingListType, WrappingNullableType, WrappingSetType, WrappingTupleType
+from .wrapping import (
+    DagsterListApi,
+    DagsterSetApi,
+    DagsterTupleApi,
+    WrappingListType,
+    WrappingNullableType,
+    WrappingSetType,
+    WrappingTupleType,
+)
 
 
 class RuntimeType(object):
@@ -654,10 +662,12 @@ def resolve_to_runtime_type(dagster_type):
 
     if dagster_type is Dict or dagster_type is typing.Dict:
         return PythonDict.inst()
-    if dagster_type is typing.Tuple:
+    if dagster_type is typing.Tuple or isinstance(dagster_type, DagsterTupleApi):
         return PythonTuple.inst()
-    if dagster_type is typing.Set:
+    if dagster_type is typing.Set or isinstance(dagster_type, DagsterSetApi):
         return PythonSet.inst()
+    if isinstance(dagster_type, DagsterListApi):
+        return resolve_to_runtime_list(WrappingListType(BuiltinEnum.ANY))
     if BuiltinEnum.contains(dagster_type):
         return RuntimeType.from_builtin_enum(dagster_type)
     if isinstance(dagster_type, WrappingListType):
