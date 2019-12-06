@@ -41,7 +41,8 @@ def test_multivariate_timeseries_transformation_ok():
     )
     matrix, output = mv_timeseries.convert_to_snapshot_matrix(2)
     assert_array_equal(
-        matrix, array([[[1, 2, 3], [2, 3, 4], [3, 4, 5]], [[0, 1, 2], [1, 2, 3], [2, 3, 4]],])
+        matrix,
+        array([[[1, 0], [2, 1], [3, 2]], [[2, 1], [3, 2], [4, 3]], [[3, 2], [4, 3], [5, 4]]]),
     )
     assert_array_equal(output, array([8, 9, 10]))
 

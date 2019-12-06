@@ -18,10 +18,28 @@ from dagster_examples.bay_bikes.types import (
     TripDataFrame,
     WeatherDataFrame,
 )
-from numpy import array
+from keras.layers import LSTM, Dense
+from keras.models import Sequential
+from numpy import array, transpose
 from pandas import DataFrame, concat, date_range, get_dummies, read_csv, to_datetime
 
-from dagster import Field, Float, Int, String, check, composite_solid, solid
+from dagster import (
+    Any,
+    Dict,
+    EventMetadataEntry,
+    Field,
+    Float,
+    Int,
+    Materialization,
+    Output,
+    String,
+    check,
+    composite_solid,
+    solid,
+)
+
+# Added this to silence tensorflow logs. They are insanely verbose.
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 def _write_chunks_to_fp(response, output_fp, chunk_size):
@@ -325,10 +343,14 @@ class MultivariateTimeseries:
         self.output_timeseries_name = check.str_param(output_sequence_name, 'output_sequence_name')
 
     def convert_to_snapshot_matrix(self, memory_length):
-        input_snapshot_matrix = [
-            timeseries.convert_to_snapshot_sequence(memory_length)
-            for timeseries in self.input_timeseries_collection
-        ]
+        # Transpose the matrix so that inputs match up with tensorflow tensor expectation
+        input_snapshot_matrix = transpose(
+            [
+                timeseries.convert_to_snapshot_sequence(memory_length)
+                for timeseries in self.input_timeseries_collection
+            ],
+            (1, 2, 0),
+        )
         output_snapshot_sequence = self.output_timeseries.sequence[memory_length:]
         return array(input_snapshot_matrix), array(output_snapshot_sequence)
 
@@ -360,3 +382,71 @@ def produce_training_set(
         context.solid_config['memory_length']
     )
     return TrainingSet((input_snapshot_matrix, output))
+
+
+@solid(
+    config={
+        'timeseries_train_test_breakpoint': Field(
+            int, description='The breakpoint between training and test set'
+        ),
+        'lstm_layer_config': Field(
+            Dict(
+                {
+                    'activation': Field(str, is_optional=True, default_value='relu'),
+                    'num_recurrant_units': Field(int, is_optional=True, default_value=50),
+                }
+            )
+        ),
+        'num_dense_layers': Field(int, is_optional=True, default_value=1),
+        'model_trainig_config': Field(
+            Dict(
+                {
+                    'optimizer': Field(
+                        str,
+                        description='Type of optimizer to use',
+                        is_optional=True,
+                        default_value='adam',
+                    ),
+                    'loss': Field(str, is_optional=True, default_value='mse'),
+                    'num_epochs': Field(int, description='Number of epochs to optimize over'),
+                }
+            )
+        ),
+    }
+)
+def train_lstm_model(context, training_set: TrainingSet) -> Any:
+    X, y = training_set
+    breakpoint = context.solid_config['timeseries_train_test_breakpoint']  # pylint: disable=W0622
+    X_train, X_test = X[0:breakpoint], X[breakpoint:]
+    y_train, y_test = y[0:breakpoint], y[breakpoint:]
+
+    _, n_steps, n_features = X.shape
+    model = Sequential()
+    model.add(
+        LSTM(
+            context.solid_config['lstm_layer_config']['num_recurrant_units'],
+            activation=context.solid_config['lstm_layer_config']['activation'],
+            input_shape=(n_steps, n_features),
+        )
+    )
+    model.add(Dense(context.solid_config['num_dense_layers']))
+    model.compile(
+        optimizer=context.solid_config['model_trainig_config']['optimizer'],
+        loss=context.solid_config['model_trainig_config']['loss'],
+        metrics=['mae'],
+    )
+    model.fit(
+        X_train,
+        y_train,
+        epochs=context.solid_config['model_trainig_config']['num_epochs'],
+        verbose=0,
+    )
+    results = model.evaluate(X_test, y_test, verbose=0)
+    yield Materialization(
+        label='test_set_results',
+        metadata_entries=[
+            EventMetadataEntry.text(str(results[0]), 'Mean Squared Error'),
+            EventMetadataEntry.text(str(results[1]), 'Mean Absolute Error'),
+        ],
+    )
+    yield Output(model)
