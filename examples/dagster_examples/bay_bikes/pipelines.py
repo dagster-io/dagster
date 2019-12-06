@@ -14,6 +14,7 @@ from .solids import (
     produce_training_set,
     produce_trip_dataset,
     produce_weather_dataset,
+    train_lstm_model,
     transform_into_traffic_dataset,
     unzip_files,
     upload_file_to_bucket,
@@ -129,6 +130,8 @@ def extract_daily_weather_data_pipeline():
     ],
 )
 def model_training_pipeline():
-    produce_training_set(
-        transform_into_traffic_dataset(produce_trip_dataset()), produce_weather_dataset(),
+    train_lstm_model(
+        produce_training_set(
+            transform_into_traffic_dataset(produce_trip_dataset()), produce_weather_dataset(),
+        )
     )

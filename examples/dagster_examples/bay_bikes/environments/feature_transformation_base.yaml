@@ -1,4 +1,7 @@
 solids:
+  produce_training_set:
+    config:
+      memory_length: 7
   produce_trip_dataset:
     solids:
       download_trips_dataset:
@@ -15,3 +18,8 @@ solids:
             value: weather.csv
           path_to_file:
             value: weather.csv
+  train_lstm_model:
+    config:
+      timeseries_train_test_breakpoint: 550
+      model_trainig_config:
+        num_epochs: 200
