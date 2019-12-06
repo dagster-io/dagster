@@ -14,10 +14,8 @@ from dagster import (
     PipelineDefinition,
     ResourceDefinition,
     SolidDefinition,
-    String,
     solid,
 )
-from dagster.core.definitions import create_environment_schema
 from dagster.core.types import NamedSelector, Selector
 from dagster.core.types.field_utils import NamedDict
 from dagster.core.utility_solids import define_stub_solid
@@ -135,24 +133,6 @@ def test_list_dependencies():
         DagsterInvalidDefinitionError, match='The expected type for "dependencies" is dict'
     ):
         PipelineDefinition(solid_defs=solid_a_b_list(), dependencies=[])
-
-
-def test_double_type_name():
-    @solid(config_field=Field(NamedDict('SomeTypeName', {'some_field': Field(String)})))
-    def solid_one(_context):
-        raise Exception('should not execute')
-
-    @solid(config_field=Field(NamedDict('SomeTypeName', {'another_field': Field(String)})))
-    def solid_two(_context):
-        raise Exception('should not execute')
-
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        create_environment_schema(PipelineDefinition(solid_defs=[solid_one, solid_two]))
-
-    assert str(exc_info.value) == (
-        'Type names must be unique. You have constructed two different instances of '
-        'types with the same name "SomeTypeName".'
-    )
 
 
 def test_pass_config_type_to_field_error_solid_definition():

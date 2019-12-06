@@ -171,24 +171,20 @@ def check_user_facing_fields_dict(fields, type_name_msg):
         )
 
 
-def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
-    '''
-    A :py:class:`Dict` with a name allowing it to be referenced by that name.
-    '''
-    check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
+class NamedDict(_ConfigHasFields):
+    def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+        check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
+        super(NamedDict, self).__init__(
+            key=name,
+            name=name,
+            kind=ConfigTypeKind.DICT,
+            fields=fields,
+            description=description,
+            type_attributes=type_attributes,
+        )
 
-    class _NamedDict(_ConfigHasFields):
-        def __init__(self):
-            super(_NamedDict, self).__init__(
-                key=name,
-                name=name,
-                kind=ConfigTypeKind.DICT,
-                fields=fields,
-                description=description,
-                type_attributes=type_attributes,
-            )
-
-    return _NamedDict
+    def inst(self):
+        return self
 
 
 FIELD_HASH_CACHE = {}
