@@ -208,23 +208,32 @@ Dict = DictTypeApi()
 FIELD_HASH_CACHE = {}
 
 
-def _compute_fields_hash(fields):
+def _add_hash(m, string):
+    m.update(string.encode())
+
+
+def _compute_fields_hash(fields, description, is_system_config):
 
     m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
+    if description:
+        _add_hash(m, ':description: ' + description)
+
+    _add_hash(m, ':is_system_config: ' + str(is_system_config))
+
     for field_name in sorted(list(fields.keys())):
         field = fields[field_name]
-        m.update((':fieldname:' + field_name).encode())
+        _add_hash(m, ':fieldname:' + field_name)
         if field.default_provided:
-            m.update((':default_value: ' + field.default_value_as_str).encode())
-        m.update((':is_optional: ' + str(field.is_optional)).encode())
-        m.update((':type_key: ' + field.config_type.key).encode())
+            _add_hash(m, ':default_value: ' + field.default_value_as_str)
+        _add_hash(m, ':is_optional: ' + str(field.is_optional))
+        _add_hash(m, ':type_key: ' + field.config_type.key)
         if field.description:
-            m.update((':description: ' + field.description).encode())
+            _add_hash(m, ':description: ' + field.description)
 
     return m.hexdigest()
 
 
-def build_config_dict(fields):
+def build_config_dict(fields, description=None, is_system_config=False):
     '''
     Schema for configuration data with string keys and typed values via :py:class:`Field` .
 
@@ -233,7 +242,7 @@ def build_config_dict(fields):
     '''
     check_user_facing_fields_dict(fields, 'Dict')
 
-    key = 'Dict.' + _compute_fields_hash(fields)
+    key = 'Dict.' + _compute_fields_hash(fields, description, is_system_config)
 
     if key in FIELD_HASH_CACHE:
         return FIELD_HASH_CACHE[key]
@@ -246,7 +255,9 @@ def build_config_dict(fields):
                 key=key,
                 fields=fields,
                 description='A configuration dictionary with typed fields',
-                type_attributes=ConfigTypeAttributes(is_builtin=True),
+                type_attributes=ConfigTypeAttributes(
+                    is_builtin=True, is_system_config=is_system_config,
+                ),
             )
 
     FIELD_HASH_CACHE[key] = _Dict
@@ -254,7 +265,7 @@ def build_config_dict(fields):
     return _Dict
 
 
-def PermissiveDict(fields=None):
+def PermissiveDict(fields=None, description=None):
     '''Defines a config dict with a partially specified schema.
     
     A permissive dict allows partial specification of the config schema. Any fields with a
@@ -276,7 +287,12 @@ def PermissiveDict(fields=None):
     if fields:
         check_user_facing_fields_dict(fields, 'PermissiveDict')
 
-    key = 'PermissiveDict.' + _compute_fields_hash(fields) if fields else 'PermissiveDict'
+    key = (
+        'PermissiveDict.'
+        + _compute_fields_hash(fields, description=description, is_system_config=False)
+        if fields
+        else 'PermissiveDict'
+    )
 
     if key in FIELD_HASH_CACHE:
         return FIELD_HASH_CACHE[key]
@@ -301,7 +317,7 @@ def PermissiveDict(fields=None):
     return _PermissiveDict
 
 
-def Selector(fields):
+def Selector(fields, description=None, is_system_config=False):
     '''Define a config field requiring the user to select one option.
     
     Selectors are used when you want to be able to present several different options in config but
@@ -349,7 +365,9 @@ def Selector(fields):
     '''
     check_user_facing_fields_dict(fields, 'Selector')
 
-    key = 'Selector.' + _compute_fields_hash(fields)
+    key = 'Selector.' + _compute_fields_hash(
+        fields, description=description, is_system_config=is_system_config
+    )
 
     if key in FIELD_HASH_CACHE:
         return FIELD_HASH_CACHE[key]

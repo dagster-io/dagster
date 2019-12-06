@@ -4,35 +4,31 @@ from dagster import Dict, Field, PermissiveDict, Selector
 from dagster.core.types.field_utils import _compute_fields_hash
 
 
+def _hash(fields):
+    return _compute_fields_hash(fields, description=None, is_system_config=False)
+
+
 def test_compute_fields_hash():
-    assert isinstance(_compute_fields_hash({'some_int': Field(int)}), string_types)
+    assert isinstance(_hash({'some_int': Field(int)}), string_types)
 
 
-def test_compute_fields_hash_diff():
+def test_hash_diff():
 
-    assert _compute_fields_hash({'some_int': Field(int)}) != _compute_fields_hash(
-        {'another_int': Field(int)}
-    )
+    assert _hash({'some_int': Field(int)}) != _hash({'another_int': Field(int)})
 
-    assert _compute_fields_hash({'same_name': Field(int)}) != _compute_fields_hash(
-        {'same_name': Field(str)}
-    )
+    assert _hash({'same_name': Field(int)}) != _hash({'same_name': Field(str)})
 
-    assert _compute_fields_hash({'same_name': Field(int)}) != _compute_fields_hash(
-        {'same_name': Field(int, is_optional=True)}
-    )
+    assert _hash({'same_name': Field(int)}) != _hash({'same_name': Field(int, is_optional=True)})
 
-    assert _compute_fields_hash({'same_name': Field(int)}) != _compute_fields_hash(
+    assert _hash({'same_name': Field(int)}) != _hash(
         {'same_name': Field(int, is_optional=True, default_value=2)}
     )
 
-    assert _compute_fields_hash(
-        {'same_name': Field(int, is_optional=True)}
-    ) != _compute_fields_hash({'same_name': Field(int, is_optional=True, default_value=2)})
-
-    assert _compute_fields_hash({'same_name': Field(int)}) != _compute_fields_hash(
-        {'same_name': Field(int, description='desc')}
+    assert _hash({'same_name': Field(int, is_optional=True)}) != _hash(
+        {'same_name': Field(int, is_optional=True, default_value=2)}
     )
+
+    assert _hash({'same_name': Field(int)}) != _hash({'same_name': Field(int, description='desc')})
 
 
 def test_construct_same_dicts():
