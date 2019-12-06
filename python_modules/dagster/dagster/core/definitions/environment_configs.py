@@ -80,7 +80,7 @@ def SolidContainerConfigDict(
 
 
 def SystemSelector(fields, description=None):
-    return Selector(fields, description, ConfigTypeAttributes(is_system_config=True))
+    return Selector(fields, description, is_system_config=True)
 
 
 class _SolidConfigDict(_ConfigHasFields):

@@ -317,7 +317,13 @@ def PermissiveDict(fields=None, description=None):
     return _PermissiveDict
 
 
-def Selector(fields, description=None, is_system_config=False):
+def _define_selector_key(fields, description, is_system_config):
+    return 'Selector.' + _compute_fields_hash(
+        fields, description=description, is_system_config=is_system_config
+    )
+
+
+class Selector(_ConfigHasFields):
     '''Define a config field requiring the user to select one option.
     
     Selectors are used when you want to be able to present several different options in config but
@@ -363,28 +369,33 @@ def Selector(fields, description=None, is_system_config=False):
             if 'en' in context.solid_config:
                 return 'Hello, {whom}!'.format(whom=context.solid_config['en']['whom'])
     '''
-    check_user_facing_fields_dict(fields, 'Selector')
 
-    key = 'Selector.' + _compute_fields_hash(
-        fields, description=description, is_system_config=is_system_config
-    )
+    def __new__(cls, fields, description=None, is_system_config=False):
+        check_user_facing_fields_dict(fields, 'Selector')
 
-    if key in FIELD_HASH_CACHE:
-        return FIELD_HASH_CACHE[key]
+        key = _define_selector_key(fields, description, is_system_config)
 
-    class _Selector(_ConfigHasFields):
-        def __init__(self):
-            super(_Selector, self).__init__(
-                key=key,
-                name=None,
-                kind=ConfigTypeKind.SELECTOR,
-                fields=fields,
-                type_attributes=ConfigTypeAttributes(is_builtin=True),
-            )
+        if key in FIELD_HASH_CACHE:
+            return FIELD_HASH_CACHE[key]
 
-    FIELD_HASH_CACHE[key] = _Selector
+        selector_inst = super(Selector, cls).__new__(cls)
+        FIELD_HASH_CACHE[key] = selector_inst
+        return selector_inst
 
-    return _Selector
+    def __init__(self, fields, description=None, is_system_config=False):
+        super(Selector, self).__init__(
+            key=_define_selector_key(fields, description, is_system_config),
+            name=None,
+            kind=ConfigTypeKind.SELECTOR,
+            fields=fields,
+            type_attributes=ConfigTypeAttributes(
+                is_builtin=True, is_system_config=is_system_config
+            ),
+            description=description,
+        )
+
+    def inst(self):
+        return self
 
 
 class NamedSelector(_ConfigHasFields):
