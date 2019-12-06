@@ -95,6 +95,7 @@ def wrap_with_docker_compose_steps(
         [
             "docker-compose {filename_arg}stop".format(filename_arg=filename_arg),
             "docker-compose {filename_arg}rm -f".format(filename_arg=filename_arg),
+            "docker system prune -f",
             "docker-compose {filename_arg}up -d{remove_orphans_arg}".format(
                 filename_arg=filename_arg, remove_orphans_arg=remove_orphans_arg
             ),
