@@ -89,13 +89,7 @@ def construct_publish_comands(additional_steps=None, nightly=False):
     return publish_commands
 
 
-# For dagit, we need to build the JS assets.
-DAGIT_ADDITIONAL_STEPS = [
-    'pushd ../../js_modules/dagit; yarn install && yarn build-for-python; popd'
-]
-
-
-'''The modules managed by this script.'''
+# The modules managed by this script
 MODULE_NAMES = [
     'dagster',
     'dagit',
@@ -169,10 +163,10 @@ def publish_module(module, nightly=False, library=False, additional_steps='', dr
             if dry_run:
                 click.echo(
                     click.style('Dry run; not running.', fg='red')
-                    + ' Would run: {}'.format(command)
+                    + ' Would run {cwd}:$ {cmd}'.format(cmd=command, cwd=cwd)
                 )
             else:
-                click.echo('About to run command: {}'.format(command))
+                click.echo('About to run command {cwd}:$ {cmd}'.format(cmd=command, cwd=cwd))
                 process = subprocess.Popen(
                     command, stderr=subprocess.PIPE, cwd=cwd, shell=True, stdout=subprocess.PIPE
                 )
@@ -191,9 +185,7 @@ def publish_module(module, nightly=False, library=False, additional_steps='', dr
 def publish_all(nightly, dry_run=True):
     for module in MODULE_NAMES:
         if module == 'dagit':
-            publish_module(
-                module, nightly, additional_steps=DAGIT_ADDITIONAL_STEPS, dry_run=dry_run
-            )
+            publish_module(module, nightly, additional_steps=['./build_js.sh'], dry_run=dry_run)
         else:
             publish_module(module, nightly, dry_run=dry_run)
 

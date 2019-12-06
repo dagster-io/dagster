@@ -19,8 +19,7 @@ from dagster import (
 )
 from dagster.core.definitions import create_environment_schema
 from dagster.core.types import NamedSelector, Selector
-from dagster.core.types.config import ConfigTypeKind
-from dagster.core.types.field_utils import NamedDict, _ConfigHasFields
+from dagster.core.types.field_utils import NamedDict
 from dagster.core.utility_solids import define_stub_solid
 
 
@@ -153,36 +152,6 @@ def test_double_type_name():
     assert str(exc_info.value) == (
         'Type names must be unique. You have constructed two different instances of '
         'types with the same name "SomeTypeName".'
-    )
-
-
-def test_double_type_key():
-    class NameOneType(_ConfigHasFields):
-        def __init__(self):
-            super(NameOneType, self).__init__(
-                key='Key', name='NameOne', kind=ConfigTypeKind.DICT, fields={'foo': Field(Int)}
-            )
-
-    class NameOneTypePrime(_ConfigHasFields):
-        def __init__(self):
-            super(NameOneTypePrime, self).__init__(
-                key='Key', name='NameOnePrime', kind=ConfigTypeKind.DICT, fields={'bar': Field(Int)}
-            )
-
-    @solid(config_field=Field(NameOneType))
-    def solid_one(_context):
-        raise Exception('should not execute')
-
-    @solid(config_field=Field(NameOneTypePrime))
-    def solid_two(_context):
-        raise Exception('should not execute')
-
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        create_environment_schema(PipelineDefinition(solid_defs=[solid_one, solid_two]))
-
-    assert str(exc_info.value) == (
-        'Type keys must be unique. You have constructed two different instances of types '
-        'with the same key "Key".'
     )
 
 

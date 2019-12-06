@@ -25,9 +25,10 @@ ADD dagster-graphql dagster-graphql
 ADD dagster-aws dagster-aws
 ADD dagster-cron dagster-cron
 ADD dagster-gcp dagster-gcp
+ADD dagster-airflow dagster-airflow
 ADD examples examples
 
-RUN pip install --no-deps -e dagster -e dagster-graphql -e dagster-airflow -e dagster-cron -e dagster-gcp -e examples
-RUN pip install -e dagster -e dagster-graphql -e dagster-airflow -e dagster-cron -e dagster-gcp -e examples
+RUN pip install --no-deps -e dagster -e dagster-graphql -e dagster-aws -e dagster-cron -e dagster-gcp -e dagster-airflow -e examples
+RUN pip install -e dagster -e dagster-graphql -e dagster-aws -e dagster-cron -e dagster-gcp -e dagster-airflow -e examples
 
 USER airflow

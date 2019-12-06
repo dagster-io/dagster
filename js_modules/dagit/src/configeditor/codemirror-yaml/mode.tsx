@@ -502,16 +502,21 @@ function findAutocompletionContext(
   if (available && parents.length > 0) {
     for (const parent of parents) {
       const parentTypeDef = available.find(({ name }) => parent.key === name);
-
       if (!parentTypeDef) {
         return null;
       }
 
-      let childTypeKey = parentTypeDef.configType.key;
+      // The current composite type's available "fields" each only have a configType key.
+      // The rest of the configType's information is in the top level schema.allConfigTypes
+      // to avoid superlinear GraphQL response size.
+      const parentConfigType = schema.allConfigTypes.find(
+        t => t.key === parentTypeDef.configType.key
+      )!;
+      let childTypeKey = parentConfigType.key;
       let childEntriesUnique = true;
 
-      if (parentTypeDef.configType.__typename === "ListConfigType") {
-        childTypeKey = parentTypeDef.configType.ofType.key;
+      if (parentConfigType.__typename === "ListConfigType") {
+        childTypeKey = parentConfigType.ofType.key;
         childEntriesUnique = false;
       }
 

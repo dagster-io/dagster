@@ -120,10 +120,11 @@ def output_handles_from_event_logs(event_logs):
 
 def output_handles_from_execution_plan(execution_plan):
     output_handles_for_current_run = set()
-    for step in execution_plan.execution_steps():
-        for step_input in step.step_inputs:
-            if step_input.source_handles:
-                output_handles_for_current_run.update(step_input.source_handles)
+    for step_level in execution_plan.execution_step_levels():
+        for step in step_level:
+            for step_input in step.step_inputs:
+                if step_input.source_handles:
+                    output_handles_for_current_run.update(step_input.source_handles)
     return output_handles_for_current_run
 
 

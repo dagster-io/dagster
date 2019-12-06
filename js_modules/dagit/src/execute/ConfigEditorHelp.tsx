@@ -7,20 +7,27 @@ import {
   isHelpContextEqual
 } from "../configeditor/ConfigEditor";
 import ConfigTypeSchema from "../ConfigTypeSchema";
+import { ConfigTypeSchemaFragment } from "../types/ConfigTypeSchemaFragment";
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;
+  allInnerTypes: ConfigTypeSchemaFragment[];
 }
 
 export const ConfigEditorHelp: React.FunctionComponent<ConfigEditorHelpProps> = React.memo(
-  ({ context }) => {
+  ({ context, allInnerTypes }) => {
     if (!context) {
       return <span />;
     }
     return (
       <Container>
         <ConfigScrollWrap>
-          <ConfigTypeSchema type={context.type} theme="dark" maxDepth={2} />
+          <ConfigTypeSchema
+            type={context.type}
+            allInnerTypes={allInnerTypes}
+            theme="dark"
+            maxDepth={2}
+          />
         </ConfigScrollWrap>
         <AutocompletionsNote>
           Ctrl+Space to show auto-completions inline.

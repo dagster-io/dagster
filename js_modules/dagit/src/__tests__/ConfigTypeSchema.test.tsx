@@ -18,13 +18,96 @@ it("renders given a basic type", () => {
   };
   const component = TestRenderer.create(
     <BrowserRouter>
-      <ConfigTypeSchema type={intConfigData} />
+      <ConfigTypeSchema type={intConfigData} allInnerTypes={[]} />
     </BrowserRouter>
   );
   expect(component.toJSON()).toMatchSnapshot();
 });
 
 it("renders given a complex type", () => {
+  const allInnerTypes: ConfigTypeSchemaFragment[] = [
+    {
+      __typename: "RegularConfigType",
+      key: "String",
+      name: "String",
+      description: "",
+      isList: false,
+      isSelector: false,
+      isNullable: false,
+      innerTypes: []
+    },
+    {
+      __typename: "RegularConfigType",
+      key: "Dict.3",
+      name: "Dict.3",
+      description: "",
+      isList: false,
+      isSelector: false,
+      isNullable: false,
+      innerTypes: [
+        {
+          __typename: "RegularConfigType",
+          key: "String"
+        },
+        {
+          __typename: "RegularConfigType",
+          key: "Int"
+        },
+        {
+          __typename: "ListConfigType",
+          key: "List.Nullable.Int"
+        },
+        {
+          __typename: "NullableConfigType",
+          key: "Nullable.Int"
+        }
+      ]
+    },
+    {
+      __typename: "RegularConfigType",
+      key: "Int",
+      name: "Int",
+      description: "",
+      isList: false,
+      isSelector: false,
+      isNullable: false,
+      innerTypes: []
+    },
+    {
+      __typename: "ListConfigType",
+      key: "List.Nullable.Int",
+      name: "List.Nullable.Int",
+      description: "",
+      isList: true,
+      isSelector: false,
+      isNullable: false,
+      innerTypes: [
+        {
+          __typename: "NullableConfigType",
+          key: "Nullable.Int"
+        },
+        {
+          __typename: "RegularConfigType",
+          key: "Int"
+        }
+      ]
+    },
+    {
+      __typename: "NullableConfigType",
+      key: "Nullable.Int",
+      name: "Nullable.Int",
+      description: "",
+      isList: false,
+      isSelector: false,
+      isNullable: true,
+      innerTypes: [
+        {
+          __typename: "RegularConfigType",
+          key: "Int"
+        }
+      ]
+    }
+  ];
   const complexConfigData: ConfigTypeSchemaFragment = {
     __typename: "CompositeConfigType",
     key: "Dict.4",
@@ -78,90 +161,32 @@ it("renders given a complex type", () => {
     innerTypes: [
       {
         __typename: "RegularConfigType",
-        key: "String",
-        name: "String",
-        description: "",
-        isList: false,
-        isSelector: false,
-        isNullable: false,
-        innerTypes: []
+        key: "String"
       },
       {
         __typename: "RegularConfigType",
-        key: "Dict.3",
-        name: "Dict.3",
-        description: "",
-        isList: false,
-        isSelector: false,
-        isNullable: false,
-        innerTypes: [
-          {
-            __typename: "RegularConfigType",
-            key: "String"
-          },
-          {
-            __typename: "RegularConfigType",
-            key: "Int"
-          },
-          {
-            __typename: "ListConfigType",
-            key: "List.Nullable.Int"
-          },
-          {
-            __typename: "NullableConfigType",
-            key: "Nullable.Int"
-          }
-        ]
+        key: "Dict.3"
       },
       {
         __typename: "RegularConfigType",
-        key: "Int",
-        name: "Int",
-        description: "",
-        isList: false,
-        isSelector: false,
-        isNullable: false,
-        innerTypes: []
+        key: "Int"
       },
       {
         __typename: "ListConfigType",
-        key: "List.Nullable.Int",
-        name: "List.Nullable.Int",
-        description: "",
-        isList: true,
-        isSelector: false,
-        isNullable: false,
-        innerTypes: [
-          {
-            __typename: "NullableConfigType",
-            key: "Nullable.Int"
-          },
-          {
-            __typename: "RegularConfigType",
-            key: "Int"
-          }
-        ]
+        key: "List.Nullable.Int"
       },
       {
         __typename: "NullableConfigType",
-        key: "Nullable.Int",
-        name: "Nullable.Int",
-        description: "",
-        isList: false,
-        isSelector: false,
-        isNullable: true,
-        innerTypes: [
-          {
-            __typename: "RegularConfigType",
-            key: "Int"
-          }
-        ]
+        key: "Nullable.Int"
       }
     ]
   };
   const component = TestRenderer.create(
     <BrowserRouter>
-      <ConfigTypeSchema type={complexConfigData} />
+      <ConfigTypeSchema
+        type={complexConfigData}
+        allInnerTypes={allInnerTypes}
+      />
     </BrowserRouter>
   );
   expect(component.toJSON()).toMatchSnapshot();

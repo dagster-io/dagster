@@ -13,15 +13,13 @@ from dagster import (
     ModeDefinition,
     Output,
     OutputDefinition,
-    RepositoryDefinition,
-    String,
     lambda_solid,
     pipeline,
     solid,
 )
 
 
-@solid(input_defs=[InputDefinition('word', String)], config={'factor': Field(Int)})
+@solid(input_defs=[InputDefinition('word', str)], config={'factor': Field(Int)})
 def multiply_the_word(context, word):
     return word * context.solid_config['factor']
 
@@ -61,13 +59,7 @@ def demo_pipeline_gcs():
     count_letters(multiply_the_word())
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            system_storage_defs=s3_plus_default_storage_defs, resource_defs={'s3': s3_resource}
-        )
-    ]
-)
+@pipeline
 def demo_error_pipeline():
     error_solid()
 
@@ -94,10 +86,3 @@ def optional_outputs():
     bar.alias('first_consumer')(input_arg=foo_res.out_1)
     bar.alias('second_consumer')(input_arg=foo_res.out_2)
     bar.alias('third_consumer')(input_arg=foo_res.out_3)
-
-
-def define_demo_execution_repo():
-    return RepositoryDefinition(
-        name='demo_execution_repo',
-        pipeline_defs=[demo_pipeline, demo_pipeline_gcs, demo_error_pipeline, optional_outputs],
-    )

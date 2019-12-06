@@ -10,6 +10,7 @@ from dagster import (
     ResourceDefinition,
     check,
 )
+from dagster.seven import lru_cache
 
 from .config_types import to_dauphin_config_type
 from .runtime_types import to_dauphin_runtime_type
@@ -100,31 +101,33 @@ class DauphinPipeline(dauphin.ObjectType):
         ]
 
     def resolve_solid_handle(self, _graphene_info, handleID):
-        handles = {str(item.handleID): item for item in build_dauphin_solid_handles(self._pipeline)}
-        return handles.get(handleID)
+        return _get_solid_handles(self._pipeline).get(handleID)
 
     def resolve_solid_handles(self, _graphene_info, **kwargs):
-        handles = sorted(
-            build_dauphin_solid_handles(self._pipeline), key=lambda item: str(item.handleID)
-        )
+        handles = _get_solid_handles(self._pipeline)
         parentHandleID = kwargs.get('parentHandleID')
 
-        if parentHandleID == None:
-            return handles
-        elif parentHandleID == "":
-            return [handle for handle in handles if not handle.parent]
-        else:
-            return [
-                handle
-                for handle in handles
+        if parentHandleID == "":
+            handles = {key: handle for key, handle in handles.items() if not handle.parent}
+        elif parentHandleID is not None:
+            handles = {
+                key: handle
+                for key, handle in handles.items()
                 if handle.parent and handle.parent.handleID.to_string() == parentHandleID
-            ]
+            }
+
+        return [handles[key] for key in sorted(handles)]
 
     def resolve_presets(self, _graphene_info):
         return [
             DauphinPipelinePreset(preset, self._pipeline.name)
             for preset in sorted(self._pipeline.get_presets(), key=lambda item: item.name)
         ]
+
+
+@lru_cache(maxsize=32)
+def _get_solid_handles(pipeline):
+    return {str(item.handleID): item for item in build_dauphin_solid_handles(pipeline)}
 
 
 class DauphinPipelineConnection(dauphin.ObjectType):

@@ -38,6 +38,9 @@ export default class SidebarPipelineInfo extends React.Component<
             configField {
               configType {
                 ...ConfigTypeSchemaFragment
+                innerTypes {
+                  ...ConfigTypeSchemaFragment
+                }
               }
             }
           }
@@ -47,6 +50,9 @@ export default class SidebarPipelineInfo extends React.Component<
             configField {
               configType {
                 ...ConfigTypeSchemaFragment
+                innerTypes {
+                  ...ConfigTypeSchemaFragment
+                }
               }
             }
           }
@@ -93,6 +99,9 @@ export default class SidebarPipelineInfo extends React.Component<
                     {resource.configField && (
                       <ConfigTypeSchema
                         type={resource.configField.configType}
+                        allInnerTypes={
+                          resource.configField.configType.innerTypes
+                        }
                       />
                     )}
                   </div>
@@ -111,7 +120,10 @@ export default class SidebarPipelineInfo extends React.Component<
                       description={logger.description || NO_DESCRIPTION}
                     />
                     {logger.configField && (
-                      <ConfigTypeSchema type={logger.configField.configType} />
+                      <ConfigTypeSchema
+                        type={logger.configField.configType}
+                        allInnerTypes={logger.configField.configType.innerTypes}
+                      />
                     )}
                   </div>
                 </ContextLoggerContainer>

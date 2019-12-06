@@ -23,9 +23,15 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
         description
         inputSchemaType {
           ...ConfigTypeSchemaFragment
+          innerTypes {
+            ...ConfigTypeSchemaFragment
+          }
         }
         outputSchemaType {
           ...ConfigTypeSchemaFragment
+          innerTypes {
+            ...ConfigTypeSchemaFragment
+          }
         }
       }
 
@@ -52,12 +58,18 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
         </SidebarSection>
         {inputSchemaType && (
           <SidebarSection title={"Input"}>
-            <ConfigTypeSchema type={inputSchemaType} />
+            <ConfigTypeSchema
+              type={inputSchemaType}
+              allInnerTypes={inputSchemaType.innerTypes}
+            />
           </SidebarSection>
         )}
         {outputSchemaType && (
           <SidebarSection title={"Output"}>
-            <ConfigTypeSchema type={outputSchemaType} />
+            <ConfigTypeSchema
+              type={outputSchemaType}
+              allInnerTypes={outputSchemaType.innerTypes}
+            />
           </SidebarSection>
         )}
       </div>

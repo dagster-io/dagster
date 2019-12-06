@@ -19,6 +19,7 @@ class DagsterGraphQLContext(object):
         self.scheduler_handle = self.get_handle().build_scheduler_handle(
             artifacts_dir=self.instance.schedules_directory()
         )
+        self._cached_pipelines = {}
 
     def get_scheduler(self):
         return self.scheduler_handle.get_scheduler() if self.scheduler_handle else None
@@ -30,6 +31,12 @@ class DagsterGraphQLContext(object):
         return self.repository_definition
 
     def get_pipeline(self, pipeline_name):
+        if not pipeline_name in self._cached_pipelines:
+            self._cached_pipelines[pipeline_name] = self._build_pipeline(pipeline_name)
+
+        return self._cached_pipelines[pipeline_name]
+
+    def _build_pipeline(self, pipeline_name):
         orig_handle = self.get_handle()
         if orig_handle.is_resolved_to_pipeline:
             pipeline_def = orig_handle.build_pipeline_definition()

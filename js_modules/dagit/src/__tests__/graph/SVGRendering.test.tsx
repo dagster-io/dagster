@@ -10,6 +10,7 @@ import { PipelineGraphContents } from "../../graph/PipelineGraph";
 import { getDagrePipelineLayout } from "../../graph/getFullSolidLayout";
 import { PipelineExplorerRootQuery_pipelineOrError_Pipeline } from "../../types/PipelineExplorerRootQuery";
 import { PipelineGraphSolidFragment } from "../../graph/types/PipelineGraphSolidFragment";
+import { PipelineGraphParentSolidFragment } from "../../graph/types/PipelineGraphParentSolidFragment";
 import { MOCKS } from "./SVGMocks";
 
 const snapshotsDir = path.join(__dirname, "__snapshots__");
@@ -22,7 +23,7 @@ function readMock(mock: { filepath: string }) {
 function svgForPipeline(
   name: string,
   solids: PipelineGraphSolidFragment[],
-  parent?: PipelineGraphSolidFragment
+  parent?: PipelineGraphParentSolidFragment
 ) {
   // render the pipeline explorer's viewport contents to SVG and capture
   // styled-component styles into a <div>
@@ -59,9 +60,7 @@ function svgForPipeline(
 MOCKS.forEach(mock => {
   it(`${mock.name}: renders the expected SVG`, () => {
     // load the GraphQL response and pull out the first layer of solids
-    const solids = readMock(mock)
-      .solidHandles.filter(h => !h.parent)
-      .map(h => h.solid);
+    const solids = readMock(mock).solidHandles.map(h => h.solid);
 
     const expectedPath = path.join(snapshotsDir, `${mock.name}.svg`);
     const actualPath = path.join(snapshotsDir, `${mock.name}.actual.svg`);
@@ -77,18 +76,14 @@ MOCKS.forEach(mock => {
 
 it(`renders the expected SVG when viewing a composite`, () => {
   // load the GraphQL response and pull out the first layer of solids
-  const pipeline = readMock(MOCKS[0]);
-  const parentId = "master_cord_s3_to_df";
-  const parent = pipeline.solidHandles.find(h => h.handleID === parentId)!
-    .solid;
-
-  const solids = pipeline.solidHandles
-    .filter(h => h.parent && h.parent.handleID === parentId)
-    .map(h => h.solid);
+  const pipeline = readMock(
+    MOCKS.find(m => m.name === "airline_demo_ingest_pipeline_composite")!
+  );
+  const solids = pipeline.solidHandles.map(h => h.solid);
 
   const expectedPath = path.join(snapshotsDir, `airline-composite.svg`);
   const actualPath = path.join(snapshotsDir, `airline-composite.actual.svg`);
-  const actual = svgForPipeline(name, solids, parent);
+  const actual = svgForPipeline(name, solids, pipeline.solidHandle?.solid);
 
   // write out the actual result for easy visual comparison and compare to existing
   fs.writeFileSync(actualPath, actual);

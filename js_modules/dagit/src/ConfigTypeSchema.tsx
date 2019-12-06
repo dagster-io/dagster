@@ -9,6 +9,7 @@ type ConfigTypeSchemaTheme = "dark" | "light";
 
 interface ConfigTypeSchemaProps {
   type: ConfigTypeSchemaFragment;
+  allInnerTypes: ConfigTypeSchemaFragment[];
   theme?: ConfigTypeSchemaTheme;
   maxDepth?: number;
 }
@@ -106,24 +107,24 @@ export default class ConfigTypeSchema extends React.Component<
       fragment ConfigTypeSchemaFragment on ConfigType {
         ...ConfigTypeInfoFragment
         innerTypes {
-          ...ConfigTypeInfoFragment
+          key
         }
       }
     `
   };
 
   public render() {
-    const { type } = this.props;
+    const { type, allInnerTypes } = this.props;
 
-    const innerTypeLookup = {};
-    for (const innerTypeData of type.innerTypes) {
-      innerTypeLookup[innerTypeData.key] = innerTypeData;
+    const allInnerTypeMap = {};
+    for (const innerType of allInnerTypes) {
+      allInnerTypeMap[innerType.key] = innerType;
     }
 
     return (
       <TypeSchemaContainer>
         <DictBlockComment content={type.description} indent="" />
-        {renderTypeRecursive(type, innerTypeLookup, 0, this.props)}
+        {renderTypeRecursive(type, allInnerTypeMap, 0, this.props)}
       </TypeSchemaContainer>
     );
   }

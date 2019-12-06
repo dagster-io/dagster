@@ -37,7 +37,7 @@ def _do_setup(name='dagster-snowflake'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster', 'snowflake-connector-python==2.0.1', 'azure-storage-blob<12'],
+        install_requires=['dagster', 'snowflake-connector-python>=2.1.0'],
         zip_safe=False,
     )
 

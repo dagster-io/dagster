@@ -92,6 +92,36 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             }
           }
         }
+      }
+    `,
+    ParentSolidNodeDefinitionFragment: gql`
+      fragment ParentSolidNodeDefinitionFragment on ISolidDefinition {
+        __typename
+        name
+        metadata {
+          key
+          value
+        }
+        inputDefinitions {
+          name
+          type {
+            displayName
+          }
+        }
+        outputDefinitions {
+          name
+          type {
+            displayName
+          }
+        }
+        ... on SolidDefinition {
+          configField {
+            configType {
+              name
+              description
+            }
+          }
+        }
         ... on CompositeSolidDefinition {
           inputMappings {
             definition {

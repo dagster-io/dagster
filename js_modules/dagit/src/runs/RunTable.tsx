@@ -47,6 +47,10 @@ interface RunTableProps {
   runs: RunTableRunFragment[];
 }
 
+const TOOLTIP_MESSAGE_PIPELINE_MISSING =
+  `This pipeline is not present in the currently loaded repository, ` +
+  `so dagit can't browse the pipeline solids, but you can still view the logs.`;
+
 export class RunTable extends React.Component<RunTableProps> {
   static fragments = {
     RunTableRunFragment: gql`
@@ -58,6 +62,8 @@ export class RunTable extends React.Component<RunTableProps> {
         mode
         environmentConfigYaml
         pipeline {
+          __typename
+
           ... on PipelineReference {
             name
           }
@@ -152,7 +158,7 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
           <>
             <Icon icon="diagram-tree" color={Colors.GRAY3} />
             &nbsp;
-            <Tooltip content="This pipeline is not present in the currently loaded repository, so dagit can't browse the pipeline solids, but you can still view the logs.">
+            <Tooltip content={TOOLTIP_MESSAGE_PIPELINE_MISSING}>
               {run.pipeline.name}
             </Tooltip>
           </>
@@ -249,8 +255,10 @@ const RunActionsMenu: React.FunctionComponent<{
             }
           />
           <MenuDivider />
+
           <MenuItem
             text="Open in Execute Tab..."
+            disabled={run.pipeline.__typename !== "Pipeline"}
             icon="edit"
             target="_blank"
             href={`/p/${run.pipeline.name}/execute/setup?${qs.stringify({
@@ -264,6 +272,7 @@ const RunActionsMenu: React.FunctionComponent<{
           />
           <MenuItem
             text="Re-execute"
+            disabled={run.pipeline.__typename !== "Pipeline"}
             icon="repeat"
             onClick={async () => {
               const result = await reexecute({
