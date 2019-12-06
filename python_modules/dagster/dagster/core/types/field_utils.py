@@ -194,6 +194,16 @@ def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRI
 FIELD_HASH_CACHE = {}
 
 
+def _memoize_inst_in_field_cache(passed_cls, defined_cls, key):
+    if key in FIELD_HASH_CACHE:
+        return FIELD_HASH_CACHE[key]
+
+    defined_cls_inst = super(defined_cls, passed_cls).__new__(defined_cls)
+
+    FIELD_HASH_CACHE[key] = defined_cls_inst
+    return defined_cls_inst
+
+
 def _add_hash(m, string):
     m.update(string.encode())
 
@@ -233,16 +243,9 @@ class Dict(_ConfigHasFields):
 
     def __new__(cls, fields, description=None, is_system_config=False):
         check_user_facing_fields_dict(fields, 'Dict')
-
-        key = _define_dict_key_hash(fields, description, is_system_config)
-
-        if key in FIELD_HASH_CACHE:
-            return FIELD_HASH_CACHE[key]
-
-        dict_inst = super(Dict, cls).__new__(cls)
-
-        FIELD_HASH_CACHE[key] = dict_inst
-        return dict_inst
+        return _memoize_inst_in_field_cache(
+            cls, Dict, _define_dict_key_hash(fields, description, is_system_config)
+        )
 
     def __init__(self, fields, description=None, is_system_config=False):
         super(Dict, self).__init__(
@@ -296,14 +299,9 @@ class PermissiveDict(_ConfigHasFields):
         if fields:
             check_user_facing_fields_dict(fields, 'PermissiveDict')
 
-        key = _define_permissive_dict_key(fields, description)
-
-        if key in FIELD_HASH_CACHE:
-            return FIELD_HASH_CACHE[key]
-
-        selector_inst = super(PermissiveDict, cls).__new__(cls)
-        FIELD_HASH_CACHE[key] = selector_inst
-        return selector_inst
+        return _memoize_inst_in_field_cache(
+            cls, PermissiveDict, _define_permissive_dict_key(fields, description)
+        )
 
     def __init__(self, fields=None, description=None):
         super(PermissiveDict, self).__init__(
@@ -374,15 +372,9 @@ class Selector(_ConfigHasFields):
 
     def __new__(cls, fields, description=None, is_system_config=False):
         check_user_facing_fields_dict(fields, 'Selector')
-
-        key = _define_selector_key(fields, description, is_system_config)
-
-        if key in FIELD_HASH_CACHE:
-            return FIELD_HASH_CACHE[key]
-
-        selector_inst = super(Selector, cls).__new__(cls)
-        FIELD_HASH_CACHE[key] = selector_inst
-        return selector_inst
+        return _memoize_inst_in_field_cache(
+            cls, Selector, _define_selector_key(fields, description, is_system_config)
+        )
 
     def __init__(self, fields, description=None, is_system_config=False):
         super(Selector, self).__init__(
