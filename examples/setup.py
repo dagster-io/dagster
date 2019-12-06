@@ -41,6 +41,7 @@ setup(
             'pyspark>=2.0.2',
             'sqlalchemy-redshift>=0.7.2',
             'SQLAlchemy-Utils==0.33.8',
+            'tensorflow',
         ],
         'dbt': [
             'dbt-postgres',
