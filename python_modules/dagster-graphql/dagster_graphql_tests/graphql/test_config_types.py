@@ -663,29 +663,6 @@ def test_config_type_or_error_type_not_found():
     assert result.data['configTypeOrError']['configTypeName'] == 'nope'
 
 
-def test_config_type_or_error_nested_complicated():
-    result = execute_dagster_graphql(
-        define_context(),
-        CONFIG_TYPE_QUERY,
-        {
-            'pipelineName': 'more_complicated_nested_config',
-            'configTypeName': (
-                'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
-            ),
-            'mode': 'default',
-        },
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['configTypeOrError']['__typename'] == 'CompositeConfigType'
-    assert (
-        result.data['configTypeOrError']['name']
-        == 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
-    )
-    assert len(result.data['configTypeOrError']['innerTypes']) == 6
-
-
 def get_field_data(config_type_data, name):
     for field_data in config_type_data['fields']:
         if field_data['name'] == name:

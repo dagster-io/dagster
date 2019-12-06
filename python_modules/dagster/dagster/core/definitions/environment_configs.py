@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from dagster.core.definitions import SolidHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types import Field, List, NamedDict, NamedSelector
+from dagster.core.types import Field, List, NamedDict, Selector
 from dagster.core.types.config import (
     ALL_CONFIG_BUILTINS,
     ConfigType,
@@ -10,7 +10,7 @@ from dagster.core.types.config import (
     ConfigTypeKind,
 )
 from dagster.core.types.field import check_opt_field_param
-from dagster.core.types.field_utils import _ConfigHasFields
+from dagster.core.types.field_utils import _ConfigHasFields, build_config_dict
 from dagster.core.types.iterate_types import iterate_config_types
 from dagster.core.types.runtime import construct_runtime_type_dictionary
 from dagster.utils import camelcase, check, ensure_single_item
@@ -22,10 +22,15 @@ from .resource import ResourceDefinition
 from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
 
 
-def SystemNamedDict(name, fields, description=None):
+# Used elsewhere
+def SystemNamedDict(_name, fields, description=None):
     '''A SystemNamedDict object is simply a NamedDict intended for internal (dagster) use.
     '''
-    return NamedDict(name, fields, description, ConfigTypeAttributes(is_system_config=True))
+    return build_config_dict(fields, description, is_system_config=True)
+
+
+def SystemDict(fields, description=None):
+    return build_config_dict(fields, description, is_system_config=True)
 
 
 class _SolidContainerConfigDict(_ConfigHasFields):
@@ -75,8 +80,8 @@ def SolidContainerConfigDict(
     return _SolidContainerConfigDictInternal
 
 
-def SystemNamedSelector(name, fields, description=None):
-    return NamedSelector(name, fields, description, ConfigTypeAttributes(is_system_config=True))
+def SystemSelector(fields, description=None):
+    return Selector(fields, description, ConfigTypeAttributes(is_system_config=True))
 
 
 class _SolidConfigDict(_ConfigHasFields):
@@ -123,39 +128,27 @@ def _is_selector_field_optional(config_type):
         return field.is_optional
 
 
-def define_resource_cls(parent_name, resource_name, resource_def):
-    return SystemNamedDict(
-        '{parent_name}.{resource_name}'.format(
-            parent_name=parent_name, resource_name=camelcase(resource_name)
-        ),
-        {'config': resource_def.config_field},
-    )
-
-
-def define_resource_dictionary_cls(name, resource_defs):
-    check.str_param(name, 'name')
+def define_resource_dictionary_cls(resource_defs):
     check.dict_param(resource_defs, 'resource_defs', key_type=str, value_type=ResourceDefinition)
 
     fields = {}
     for resource_name, resource_def in resource_defs.items():
         if resource_def.config_field:
-            fields[resource_name] = Field(define_resource_cls(name, resource_name, resource_def))
+            fields[resource_name] = Field(SystemDict({'config': resource_def.config_field}))
 
-    return SystemNamedDict(name=name, fields=fields)
+    return SystemDict(fields=fields)
 
 
 def remove_none_entries(ddict):
     return {k: v for k, v in ddict.items() if v is not None}
 
 
-def define_solid_config_cls(name, config_field, inputs_field, outputs_field):
-    check.str_param(name, 'name')
+def define_solid_config_cls(config_field, inputs_field, outputs_field):
     check_opt_field_param(config_field, 'config_field')
     check_opt_field_param(inputs_field, 'inputs_field')
     check_opt_field_param(outputs_field, 'outputs_field')
 
-    return SystemNamedDict(
-        name,
+    return SystemDict(
         remove_none_entries(
             {'config': config_field, 'inputs': inputs_field, 'outputs': outputs_field}
         ),
@@ -183,37 +176,18 @@ class EnvironmentClassCreationData(
         )
 
 
-def define_mode_resources_dictionary_cls(pipeline_name, mode_definition):
-    check.str_param(pipeline_name, 'pipeline_name')
-    check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
-
-    return define_resource_dictionary_cls(
-        '{pipeline_name}.Mode.{mode}.Resources'.format(
-            pipeline_name=pipeline_name, mode=camelcase(mode_definition.name)
-        ),
-        mode_definition.resource_defs,
-    )
-
-
-def define_logger_dictionary_cls(name, creation_data):
-    check.str_param(name, 'name')
+def define_logger_dictionary_cls(creation_data):
     check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
 
     fields = {}
 
     for logger_name, logger_definition in creation_data.logger_defs.items():
         fields[logger_name] = Field(
-            SystemNamedDict(
-                '{pipeline_name}.LoggerConfig.{logger_name}'.format(
-                    pipeline_name=camelcase(creation_data.pipeline_name),
-                    logger_name=camelcase(logger_name),
-                ),
-                remove_none_entries({'config': logger_definition.config_field}),
-            ),
+            SystemDict(remove_none_entries({'config': logger_definition.config_field}),),
             is_optional=True,
         )
 
-    return SystemNamedDict(name, fields)
+    return SystemDict(fields)
 
 
 def define_environment_cls(creation_data):
@@ -237,84 +211,54 @@ def define_environment_cls(creation_data):
                     )
                 ),
                 'storage': Field(
-                    define_storage_config_cls(
-                        '{pipeline_name}.{mode_name}.StorageConfig'.format(
-                            pipeline_name=pipeline_name,
-                            mode_name=camelcase(creation_data.mode_definition.name),
-                        ),
-                        creation_data.mode_definition,
-                    ),
-                    is_optional=True,
+                    define_storage_config_cls(creation_data.mode_definition), is_optional=True,
                 ),
                 'execution': Field(
-                    define_executor_config_cls(
-                        '{pipeline_name}.{mode_name}.ExecutionConfig'.format(
-                            pipeline_name=pipeline_name,
-                            mode_name=camelcase(creation_data.mode_definition.name),
-                        ),
-                        creation_data.mode_definition,
-                    ),
-                    is_optional=True,
+                    define_executor_config_cls(creation_data.mode_definition), is_optional=True,
                 ),
-                'loggers': Field(
-                    define_logger_dictionary_cls(
-                        '{pipeline_name}.LoggerConfig'.format(pipeline_name=pipeline_name),
-                        creation_data,
-                    )
-                ),
+                'loggers': Field(define_logger_dictionary_cls(creation_data)),
                 'resources': Field(
-                    define_mode_resources_dictionary_cls(
-                        pipeline_name, creation_data.mode_definition
-                    )
+                    define_resource_dictionary_cls(creation_data.mode_definition.resource_defs)
                 ),
             }
         ),
     )
 
 
-def define_storage_config_cls(type_name, mode_definition):
-    check.str_param(type_name, 'type_name')
+def define_storage_config_cls(mode_definition):
     check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
 
     fields = {}
 
     for storage_def in mode_definition.system_storage_defs:
         fields[storage_def.name] = Field(
-            SystemNamedDict(
-                name='{type_name}.{storage_name}'.format(
-                    type_name=type_name, storage_name=camelcase(storage_def.name)
-                ),
+            SystemDict(
                 fields={'config': storage_def.config_field} if storage_def.config_field else {},
             )
         )
 
-    return SystemNamedSelector(type_name, fields)
+    return SystemSelector(fields)
 
 
-def define_executor_config_cls(type_name, mode_definition):
-    check.str_param(type_name, 'type_name')
+def define_executor_config_cls(mode_definition):
     check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
 
     fields = {}
 
     for executor_def in mode_definition.executor_defs:
         fields[executor_def.name] = Field(
-            SystemNamedDict(
-                name='{type_name}.{executor_name}'.format(
-                    type_name=type_name, executor_name=camelcase(executor_def.name)
-                ),
+            SystemDict(
                 fields={'config': executor_def.config_field} if executor_def.config_field else {},
             )
         )
 
-    return SystemNamedSelector(type_name, fields)
+    return SystemSelector(fields)
 
 
-def get_inputs_field(solid, handle, dependency_structure, pipeline_name):
+def get_inputs_field(solid, handle, dependency_structure):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(handle, 'handle', SolidHandle)
     check.inst_param(dependency_structure, 'dependency_structure', DependencyStructure)
-    check.str_param(pipeline_name, 'pipeline_name')
 
     if not solid.definition.has_configurable_inputs:
         return None
@@ -335,20 +279,12 @@ def get_inputs_field(solid, handle, dependency_structure, pipeline_name):
     if not inputs_field_fields:
         return None
 
-    return Field(
-        SystemNamedDict(
-            '{pipeline_name}.{solid_handle}.Inputs'.format(
-                pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
-            ),
-            inputs_field_fields,
-        )
-    )
+    return Field(SystemDict(inputs_field_fields))
 
 
-def get_outputs_field(solid, handle, pipeline_name):
+def get_outputs_field(solid, handle):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(handle, 'handle', SolidHandle)
-    check.str_param(pipeline_name, 'pipeline_name')
 
     solid_def = solid.definition
 
@@ -362,12 +298,7 @@ def get_outputs_field(solid, handle, pipeline_name):
                 type(out.runtime_type.output_materialization_config.schema_type), is_optional=True
             )
 
-    output_entry_dict = SystemNamedDict(
-        '{pipeline_name}.{solid_handle}.Outputs'.format(
-            pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
-        ),
-        output_dict_fields,
-    )
+    output_entry_dict = SystemDict(output_dict_fields)
 
     return Field(List[output_entry_dict], is_optional=True)
 
@@ -393,8 +324,8 @@ def define_isolid_field(solid, handle, dependency_structure, pipeline_name):
         )
 
         composite_config_dict = {
-            'inputs': get_inputs_field(solid, handle, dependency_structure, pipeline_name),
-            'outputs': get_outputs_field(solid, handle, pipeline_name),
+            'inputs': get_inputs_field(solid, handle, dependency_structure),
+            'outputs': get_outputs_field(solid, handle),
         }
 
         # Mask solid config for solids beneath this level if config mapping is provided
@@ -421,12 +352,9 @@ def define_isolid_field(solid, handle, dependency_structure, pipeline_name):
 
     elif isinstance(solid.definition, SolidDefinition):
         solid_config_type = define_solid_config_cls(
-            '{pipeline_name}.SolidConfig.{solid_handle}'.format(
-                pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
-            ),
             solid.definition.config_field,
-            inputs_field=get_inputs_field(solid, handle, dependency_structure, pipeline_name),
-            outputs_field=get_outputs_field(solid, handle, pipeline_name),
+            inputs_field=get_inputs_field(solid, handle, dependency_structure),
+            outputs_field=get_outputs_field(solid, handle),
         )
         return Field(solid_config_type)
     else:

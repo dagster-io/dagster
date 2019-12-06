@@ -26,6 +26,39 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': None
             },
             {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
                 'name': 'Any'
             },
             {
@@ -62,43 +95,7 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'Int.MaterializationSchema'
             },
             {
-                'name': 'MultiModeWithResources.AddMode.ExecutionConfig'
-            },
-            {
-                'name': 'MultiModeWithResources.AddMode.ExecutionConfig.InProcess'
-            },
-            {
-                'name': 'MultiModeWithResources.AddMode.ExecutionConfig.Multiprocess'
-            },
-            {
-                'name': 'MultiModeWithResources.AddMode.StorageConfig'
-            },
-            {
-                'name': 'MultiModeWithResources.AddMode.StorageConfig.Filesystem'
-            },
-            {
-                'name': 'MultiModeWithResources.AddMode.StorageConfig.InMemory'
-            },
-            {
-                'name': 'MultiModeWithResources.ApplyToThree.Outputs'
-            },
-            {
-                'name': 'MultiModeWithResources.LoggerConfig'
-            },
-            {
-                'name': 'MultiModeWithResources.LoggerConfig.Console'
-            },
-            {
                 'name': 'MultiModeWithResources.Mode.AddMode.Environment'
-            },
-            {
-                'name': 'MultiModeWithResources.Mode.AddMode.Resources'
-            },
-            {
-                'name': 'MultiModeWithResources.Mode.AddMode.Resources.Op'
-            },
-            {
-                'name': 'MultiModeWithResources.SolidConfig.ApplyToThree'
             },
             {
                 'name': 'MultiModeWithResources.SolidsConfigDictionary'
@@ -163,7 +160,7 @@ snapshots['test_basic_invalid_config_on_environment_schema 1'] = {
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Field "nope" is not defined at document config root. Expected: "{ execution?: CsvHelloWorld.Default.ExecutionConfig loggers?: CsvHelloWorld.LoggerConfig resources?: CsvHelloWorld.Mode.Default.Resources solids: CsvHelloWorld.SolidsConfigDictionary storage?: CsvHelloWorld.Default.StorageConfig }"',
+                    'message': 'Field "nope" is not defined at document config root. Expected: "{ execution?: { in_process?: { } multiprocess?: { config?: { max_concurrent?: Int } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { } solids: CsvHelloWorld.SolidsConfigDictionary storage?: { filesystem?: { config?: { base_dir?: String } } in_memory?: { } } }"',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [

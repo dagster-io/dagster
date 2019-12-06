@@ -25,6 +25,39 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': None
             },
             {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
                 'name': 'Any'
             },
             {
@@ -61,43 +94,7 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': 'Int.MaterializationSchema'
             },
             {
-                'name': 'MultiModeWithResources.AddMode.ExecutionConfig'
-            },
-            {
-                'name': 'MultiModeWithResources.AddMode.ExecutionConfig.InProcess'
-            },
-            {
-                'name': 'MultiModeWithResources.AddMode.ExecutionConfig.Multiprocess'
-            },
-            {
-                'name': 'MultiModeWithResources.AddMode.StorageConfig'
-            },
-            {
-                'name': 'MultiModeWithResources.AddMode.StorageConfig.Filesystem'
-            },
-            {
-                'name': 'MultiModeWithResources.AddMode.StorageConfig.InMemory'
-            },
-            {
-                'name': 'MultiModeWithResources.ApplyToThree.Outputs'
-            },
-            {
-                'name': 'MultiModeWithResources.LoggerConfig'
-            },
-            {
-                'name': 'MultiModeWithResources.LoggerConfig.Console'
-            },
-            {
                 'name': 'MultiModeWithResources.Mode.AddMode.Environment'
-            },
-            {
-                'name': 'MultiModeWithResources.Mode.AddMode.Resources'
-            },
-            {
-                'name': 'MultiModeWithResources.Mode.AddMode.Resources.Op'
-            },
-            {
-                'name': 'MultiModeWithResources.SolidConfig.ApplyToThree'
             },
             {
                 'name': 'MultiModeWithResources.SolidsConfigDictionary'
@@ -122,17 +119,17 @@ snapshots['test_query_multi_mode 1'] = {
             'fields': [
                 {
                     'configType': {
-                        'name': 'MultiModeWithResources.AddMode.ExecutionConfig'
+                        'name': None
                     }
                 },
                 {
                     'configType': {
-                        'name': 'MultiModeWithResources.LoggerConfig'
+                        'name': None
                     }
                 },
                 {
                     'configType': {
-                        'name': 'MultiModeWithResources.Mode.AddMode.Resources'
+                        'name': None
                     }
                 },
                 {
@@ -142,7 +139,7 @@ snapshots['test_query_multi_mode 1'] = {
                 },
                 {
                     'configType': {
-                        'name': 'MultiModeWithResources.AddMode.StorageConfig'
+                        'name': None
                     }
                 }
             ],
