@@ -294,7 +294,7 @@ def get_outputs_field(solid, handle):
     for name, out in solid_def.output_dict.items():
         if out.runtime_type.output_materialization_config:
             output_dict_fields[name] = Field(
-                type(out.runtime_type.output_materialization_config.schema_type), is_optional=True
+                out.runtime_type.output_materialization_config.schema_type, is_optional=True
             )
 
     output_entry_dict = SystemDict(output_dict_fields)

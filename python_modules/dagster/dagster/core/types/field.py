@@ -65,6 +65,12 @@ def resolve_to_config_type(dagster_type):
     from .mapping import remap_python_builtin_for_config, is_supported_config_python_builtin
     from .runtime import RuntimeType
 
+    # We are in the midst of transition to allow instances of config types to
+    # be passed into Fields and as inner types. This is the short circuit
+    # when that happens -- schrockn (12-06-19)
+    if isinstance(dagster_type, ConfigType):
+        return dagster_type
+
     check.invariant(
         not (isinstance(dagster_type, type) and issubclass(dagster_type, RuntimeType)),
         'Cannot resolve a runtime type to a config type',

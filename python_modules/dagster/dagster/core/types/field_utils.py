@@ -387,26 +387,18 @@ def Selector(fields, description=None, is_system_config=False):
     return _Selector
 
 
-def NamedSelector(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
-    '''
-    A :py:class`Selector` with a name, allowing it to be referenced by that name.
+class NamedSelector(_ConfigHasFields):
+    def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+        check.str_param(name, 'name')
+        check_user_facing_fields_dict(fields, 'NamedSelector named "{}"'.format(name))
+        super(NamedSelector, self).__init__(
+            key=name,
+            name=name,
+            kind=ConfigTypeKind.SELECTOR,
+            fields=fields,
+            description=description,
+            type_attributes=type_attributes,
+        )
 
-    Args:
-        name (str):
-        fields (Dict[str, Field])
-    '''
-    check.str_param(name, 'name')
-    check_user_facing_fields_dict(fields, 'NamedSelector named "{}"'.format(name))
-
-    class _NamedSelector(_ConfigHasFields):
-        def __init__(self):
-            super(_NamedSelector, self).__init__(
-                key=name,
-                name=name,
-                kind=ConfigTypeKind.SELECTOR,
-                fields=fields,
-                description=description,
-                type_attributes=type_attributes,
-            )
-
-    return _NamedSelector
+    def inst(self):
+        return self
