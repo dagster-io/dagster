@@ -30,6 +30,9 @@ def _ctor_kwargs(config_type):
         is_nullable=config_type.is_nullable,
         is_selector=config_type.is_selector,
         is_system_generated=config_type.type_attributes.is_system_config,
+        type_param_keys=[tp.key for tp in config_type.type_params]
+        if config_type.type_params
+        else [],
     )
 
 
@@ -41,8 +44,37 @@ class DauphinConfigType(dauphin.Interface):
     name = dauphin.String()
     description = dauphin.String()
 
-    inner_types = dauphin.non_null_list('ConfigType')
+    inner_types = dauphin.Field(
+        dauphin.non_null_list('ConfigType'),
+        description='''
+This is an odd and problematic field. It recursively goes down to
+get all the types contained within a type. The case where it is horrible
+are dictionaries and it recurses all the way down to the leaves. This means
+that in a case where one is fetching all the types and then all the inner
+types keys for those types, we are returning O(N^2) type keys, which
+can cause awful performance for large schemas. When you have access
+to *all* the types, you should instead only use the type_param_keys
+field for closed generic types and manually navigate down the to
+field types client-side.
 
+Where it is useful is when you are fetching types independently and
+want to be able to render them, but without fetching the entire schema.
+
+We use this capability when rendering the sidebar.
+
+https://github.com/dagster-io/dagster/issues/1959
+    ''',
+    )
+    type_param_keys = dauphin.Field(
+        dauphin.non_null_list(dauphin.String),
+        description='''
+This returns the keys for type parameters of any closed generic type,
+(e.g. List, Optional). This should be used for reconstructing and
+navigating the full schema client-side and not innerTypes.
+
+https://github.com/dagster-io/dagster/issues/1959
+    ''',
+    )
     is_nullable = dauphin.NonNull(dauphin.Boolean)
     is_list = dauphin.NonNull(dauphin.Boolean)
     is_selector = dauphin.NonNull(dauphin.Boolean)
