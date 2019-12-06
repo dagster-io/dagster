@@ -543,6 +543,7 @@ fragment configTypeFragment on ConfigType {
   isSelector
   isBuiltin
   isSystemGenerated
+  typeParamKeys
   innerTypes {
     key
     name
