@@ -191,20 +191,6 @@ def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRI
     return _NamedDict
 
 
-class DictTypeApi(object):
-    def __call__(self, fields):
-        return build_config_dict(fields)
-
-    def __getitem__(self, *args):
-        from .python_dict import create_typed_runtime_dict
-
-        check.param_invariant(len(args[0]) == 2, 'args', 'Must be two parameters')
-        return create_typed_runtime_dict(args[0][0], args[0][1])
-
-
-Dict = DictTypeApi()
-
-
 FIELD_HASH_CACHE = {}
 
 

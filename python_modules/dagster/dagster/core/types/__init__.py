@@ -10,12 +10,12 @@ from .config_schema import (
     output_selector_schema,
 )
 from .field import Field
-from .field_utils import Dict, NamedDict, NamedSelector, PermissiveDict, Selector
+from .field_utils import NamedDict, NamedSelector, PermissiveDict, Selector
 from .python_dict import PythonDict
 from .python_set import PythonSet
 from .python_tuple import PythonTuple
 from .runtime import PythonObjectType, define_python_dagster_type
-from .wrapping import List, Optional, Set, Tuple
+from .wrapping import Dict, List, Optional, Set, Tuple
 
 Any = BuiltinEnum.ANY
 String = BuiltinEnum.STRING

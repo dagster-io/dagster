@@ -11,12 +11,12 @@ from .builtin_enum import BuiltinEnum
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
 from .config_schema import InputHydrationConfig, OutputMaterializationConfig
-from .field_utils import Dict
 from .marshal import PickleSerializationStrategy, SerializationStrategy
 from .wrapping import (
     DagsterListApi,
     DagsterSetApi,
     DagsterTupleApi,
+    Dict,
     WrappingListType,
     WrappingNullableType,
     WrappingSetType,

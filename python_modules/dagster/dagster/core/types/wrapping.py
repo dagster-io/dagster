@@ -19,9 +19,7 @@ from .typing_api import (
 
 
 def transform_typing_type(type_annotation):
-
     from .python_dict import create_typed_runtime_dict
-    from .field_utils import Dict
 
     if type_annotation is typing.List:
         return List
@@ -102,6 +100,19 @@ class DagsterSetApi:
         return WrappingSetType(inner_type)
 
 
+class DictTypeApi(object):
+    def __call__(self, fields):
+        from .field_utils import build_config_dict
+
+        return build_config_dict(fields)
+
+    def __getitem__(self, *args):
+        from .python_dict import create_typed_runtime_dict
+
+        check.param_invariant(len(args[0]) == 2, 'args', 'Must be two parameters')
+        return create_typed_runtime_dict(args[0][0], args[0][1])
+
+
 List = DagsterListApi()
 
 Optional = DagsterOptionalApi()
@@ -109,3 +120,5 @@ Optional = DagsterOptionalApi()
 Set = DagsterSetApi()
 
 Tuple = DagsterTupleApi()
+
+Dict = DictTypeApi()

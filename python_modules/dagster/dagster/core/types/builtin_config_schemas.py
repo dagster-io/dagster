@@ -5,7 +5,8 @@ from dagster import check, seven
 from .config import Any, Bool, ConfigTypeAttributes, Float, Int, Path, String
 from .config_schema import input_selector_schema, make_bare_input_schema, output_selector_schema
 from .field import Field
-from .field_utils import Dict, NamedSelector
+from .field_utils import NamedSelector
+from .wrapping import Dict
 
 
 def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
