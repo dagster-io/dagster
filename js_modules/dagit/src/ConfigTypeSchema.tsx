@@ -77,7 +77,7 @@ function renderTypeRecursive(
   return <span>{type.name || "Anonymous Type"}</span>;
 }
 
-export default class ConfigTypeSchema extends React.Component<
+export default class ConfigTypeSchema extends React.PureComponent<
   ConfigTypeSchemaProps
 > {
   static fragments = {

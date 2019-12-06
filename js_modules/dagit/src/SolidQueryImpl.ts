@@ -1,0 +1,88 @@
+import { PipelineExplorerSolidHandleFragment_solid as Solid } from "./types/PipelineExplorerSolidHandleFragment";
+
+type TraverseStepFunction = (
+  solid: Solid,
+  callback: (nextSolid: Solid) => void
+) => void;
+
+class SolidGraphTraverser {
+  solidNameMap: { [name: string]: Solid } = {};
+
+  // TODO: One reason doing DFS on the client side is sub optimal.
+  // javascript is tail end recursive tho so we could go for ever without worrying about
+  // stack overflow problems?
+
+  constructor(solids: Solid[]) {
+    solids.forEach(solid => (this.solidNameMap[solid.name] = solid));
+  }
+
+  solidNamed(name: string): Solid | undefined {
+    return this.solidNameMap[name];
+  }
+
+  traverse(solid: Solid, step: TraverseStepFunction, depth: number) {
+    const results: Solid[] = [solid];
+    if (depth > 0) {
+      step(solid, next => {
+        results.push(...this.traverse(next, step, depth - 1));
+      });
+    }
+    return results;
+  }
+
+  fetchUpstream(solid: Solid, depth: number) {
+    const step: TraverseStepFunction = (solid, callback) =>
+      solid.inputs.forEach(input =>
+        input.dependsOn.forEach(d => callback(this.solidNamed(d.solid.name)!))
+      );
+
+    return this.traverse(solid, step, depth);
+  }
+
+  fetchDownstream(solid: Solid, depth: number) {
+    const step: TraverseStepFunction = (solid, callback) =>
+      solid.outputs.forEach(output =>
+        output.dependedBy.forEach(d => callback(this.solidNamed(d.solid.name)!))
+      );
+
+    return this.traverse(solid, step, depth);
+  }
+}
+
+function expansionDepthForClause(clause: string) {
+  return clause.includes("*") ? Number.MAX_SAFE_INTEGER : clause.length;
+}
+
+export function filterSolidsByQuery(solids: Solid[], query: string) {
+  if (query === "*") {
+    return solids;
+  }
+  if (query === "") {
+    return solids.length < 100 ? solids : [];
+  }
+
+  const traverser = new SolidGraphTraverser(solids);
+  const results = new Set<Solid>();
+  const clauses = query.split(/(,| AND | and )/g);
+
+  for (const clause of clauses) {
+    const parts = /(\*?\+*)([\w\d_-]+)(\+*\*?)/.exec(clause.trim());
+    if (!parts) continue;
+    const [, parentsClause, solidName, descendentsClause] = parts;
+    const solid = traverser.solidNamed(solidName);
+    if (!solid) continue;
+
+    const upDepth = expansionDepthForClause(parentsClause);
+    const downDepth = expansionDepthForClause(descendentsClause);
+
+    results.add(solid);
+    traverser
+      .fetchUpstream(solid, upDepth)
+      .forEach(other => results.add(other));
+    traverser
+      .fetchDownstream(solid, downDepth)
+      .forEach(other => results.add(other));
+  }
+
+  return Array.from(results);
+}

@@ -70,15 +70,17 @@ export class PipelineGraphContents extends React.PureComponent<
 
     return (
       <>
-        {parentSolid && layout.parent && (
-          <SVGLabeledParentRect
-            {...layout.parent.invocationBoundingBox}
-            key={`composite-rect-${parentHandleID}`}
-            label={parentSolid.name}
-            fill={Colors.LIGHT_GRAY5}
-            minified={minified}
-          />
-        )}
+        {parentSolid &&
+          layout.parent &&
+          layout.parent.invocationBoundingBox.width > 0 && (
+            <SVGLabeledParentRect
+              {...layout.parent.invocationBoundingBox}
+              key={`composite-rect-${parentHandleID}`}
+              label={parentSolid.name}
+              fill={Colors.LIGHT_GRAY5}
+              minified={minified}
+            />
+          )}
         {selectedSolid && (
           // this rect is hidden beneath the user's selection with a React key so that
           // when they expand the composite solid React sees this component becoming
@@ -268,6 +270,9 @@ export default class PipelineGraph extends React.Component<
 
   componentDidUpdate(prevProps: IPipelineGraphProps) {
     if (prevProps.parentSolid !== this.props.parentSolid) {
+      this.viewportEl.current!.autocenter();
+    }
+    if (prevProps.layout !== this.props.layout) {
       this.viewportEl.current!.autocenter();
     }
   }

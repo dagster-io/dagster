@@ -41,7 +41,7 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
   });
 
   return (
-    <Loading queryResult={queryResult}>
+    <Loading<PipelineExplorerRootQuery> queryResult={queryResult}>
       {({ pipelineOrError }) => {
         switch (pipelineOrError.__typename) {
           case "PipelineNotFoundError":
