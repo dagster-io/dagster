@@ -7,7 +7,7 @@ from dagster import Bool, List, Optional, String, check
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
-from dagster.core.types.marshal import FileBasedSerializationStrategy
+from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.runtime import Bool as RuntimeBool
 from dagster.core.types.runtime import RuntimeType
 from dagster.core.types.runtime import String as RuntimeString
@@ -16,7 +16,7 @@ from dagster.utils import mkdir_p
 from dagster.utils.test import yield_empty_pipeline_context
 
 
-class UppercaseSerializationStrategy(FileBasedSerializationStrategy):  # pylint: disable=no-init
+class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize_to_file(self, value, write_file_path):
         check.str_param(write_file_path, 'write_path')
 
