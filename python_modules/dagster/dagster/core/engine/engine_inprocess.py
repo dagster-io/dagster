@@ -43,7 +43,9 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
-        step_key_set = set(step.key for step in execution_plan.execution_steps())
+        step_levels = execution_plan.execution_step_levels()
+        step_key_set = set(step.key for step_level in step_levels for step in step_level)
+
         yield DagsterEvent.engine_event(
             pipeline_context,
             'Executing steps in process (pid: {pid})'.format(pid=os.getpid()),
@@ -65,8 +67,6 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
                 yield event
 
             failed_or_skipped_steps = set()
-
-            step_levels = execution_plan.execution_step_levels()
 
             # It would be good to implement a reference tracking algorithm here to
             # garbage collect results that are no longer needed by any steps

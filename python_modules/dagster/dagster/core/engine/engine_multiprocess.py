@@ -145,12 +145,11 @@ class MultiprocessEngine(Engine):  # pylint: disable=no-init
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
         step_levels = execution_plan.execution_step_levels()
+        step_key_set = set(step.key for step_level in step_levels for step in step_level)
 
         intermediates_manager = pipeline_context.intermediates_manager
 
         limit = pipeline_context.executor_config.max_concurrent
-
-        step_key_set = set(step.key for step in execution_plan.execution_steps())
 
         yield DagsterEvent.engine_event(
             pipeline_context,

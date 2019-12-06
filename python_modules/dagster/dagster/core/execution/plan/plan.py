@@ -278,7 +278,6 @@ class ExecutionPlan(
                 ),
                 step_keys=missing_steps,
             )
-
         return super(ExecutionPlan, cls).__new__(
             cls,
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
@@ -315,9 +314,6 @@ class ExecutionPlan(
             [self.step_dict[step_key] for step_key in sorted(step_key_level)]
             for step_key_level in toposort(self.deps)
         ]
-
-    def execution_steps(self):
-        return [step for step_level in self.execution_step_levels() for step in step_level]
 
     def execution_step_levels(self):
         return [
