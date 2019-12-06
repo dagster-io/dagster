@@ -1,4 +1,5 @@
 import sys
+import time
 
 from airflow.contrib.kubernetes import kube_client, pod_generator, pod_launcher
 from airflow.exceptions import AirflowException
@@ -20,6 +21,10 @@ from .util import (
     get_aws_environment,
     parse_raw_res,
 )
+
+# For retries on log retrieval
+LOG_RETRIEVAL_MAX_ATTEMPTS = 5
+LOG_RETRIEVAL_WAITS_BETWEEN_ATTEMPTS_SEC = 5
 
 
 class DagsterKubernetesPodOperator(KubernetesPodOperator):
@@ -225,12 +230,15 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                 # fetch the last line independently of whether logs were read
                 # unbelievably, if you set tail_lines=1, the returned json has its double quotes
                 # turned into unparseable single quotes
-                # TODO: add retries - k8s log servers are _extremely_ flaky
-                raw_res = client.read_namespaced_pod_log(
-                    name=pod.name, namespace=pod.namespace, container='base', tail_lines=5
-                )
-
-                res = parse_raw_res(raw_res.split('\n'))
+                res = None
+                num_attempts = 0
+                while not res and num_attempts < LOG_RETRIEVAL_MAX_ATTEMPTS:
+                    raw_res = client.read_namespaced_pod_log(
+                        name=pod.name, namespace=pod.namespace, container='base', tail_lines=5
+                    )
+                    res = parse_raw_res(raw_res.split('\n'))
+                    time.sleep(LOG_RETRIEVAL_WAITS_BETWEEN_ATTEMPTS_SEC)
+                    num_attempts += 1
 
                 try:
                     handle_execution_errors(res, 'executePlan')
