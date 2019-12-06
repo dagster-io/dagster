@@ -47,6 +47,7 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-dbt \
 				-e python_modules/libraries/dagster-gcp \
 				-e python_modules/libraries/dagster-ge \
+				-e python_modules/libraries/dagster-k8s \
 				-e python_modules/libraries/dagster-pagerduty \
 				-e python_modules/libraries/dagster-papertrail \
 				-e python_modules/libraries/dagster-postgres \

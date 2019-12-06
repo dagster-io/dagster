@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dagster.dagit.fullname" . }}
+  labels:
+    {{- include "dagster.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "dagster.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "dagster.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") . | sha256sum }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "dagster.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: check-db-ready
+          image: postgres:9.6.16
+          command: ['sh', '-c',
+            "until pg_isready -h {{ template "dagster.postgresql.fullname" . }} -p {{ .Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;",
+            ]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          imagePullPolicy: {{ .Values.imagepullPolicy }}
+          image: "{{ .Values.dagit.image.repository }}:{{ .Values.dagit.image.tag }}"
+          command: ["dagit"]
+          args: ["-p", "80", "-h", "0.0.0.0"]
+          env:
+          - name: DAGSTER_HOME
+            value: "/opt/dagster/dagster_home"
+          volumeMounts:
+            - name: dagster-instance
+              mountPath: "/opt/dagster/dagster_home/dagster.yaml"
+              subPath: dagster.yaml
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      volumes:
+        - name: dagster-instance
+          configMap:
+            name: {{ template "dagster.fullname" . }}-instance
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
