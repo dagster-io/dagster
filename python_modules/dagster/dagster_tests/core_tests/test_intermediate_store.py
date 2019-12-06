@@ -17,16 +17,16 @@ from dagster.utils.test import yield_empty_pipeline_context
 
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
-    def serialize_to_file(self, value, write_file_path):
-        check.str_param(write_file_path, 'write_path')
+    def serialize_to_file(self, value, write_path):
+        check.str_param(write_path, 'write_path')
 
-        with open(write_file_path, self.write_mode) as write_obj:
+        with open(write_path, self.write_mode) as write_obj:
             write_obj.write(bytes(value.upper().encode('utf-8')))
 
-    def deserialize_from_file(self, read_file_path):
-        check.str_param(read_file_path, 'read_path')
+    def deserialize_from_file(self, read_path):
+        check.str_param(read_path, 'read_path')
 
-        with open(read_file_path, self.read_mode) as read_obj:
+        with open(read_path, self.read_mode) as read_obj:
             return read_obj.read().decode('utf-8').lower()
 
 
