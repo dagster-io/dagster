@@ -51,6 +51,20 @@ def is_python_dict_type(ttype):
     return origin == typing.Dict or origin == dict
 
 
+def is_closed_python_list_type(ttype):
+    if ttype is None:
+        return False
+    if ttype is typing.List:
+        return False
+    if not hasattr(ttype, '__args__'):
+        return False
+    if ttype.__args__ is None or len(ttype.__args__) != 1:
+        return False
+
+    origin = _get_origin(ttype)
+    return origin == typing.List or origin is list
+
+
 def is_closed_python_dict_type(ttype):
     '''
 
