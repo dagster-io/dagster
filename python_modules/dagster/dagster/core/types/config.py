@@ -11,7 +11,7 @@ from .builtin_enum import BuiltinEnum
 
 @whitelist_for_serdes
 class ConfigTypeKind(PythonEnum):
-    REGULAR = 'REGULAR'
+    ANY = 'ANY'
     SCALAR = 'SCALAR'
     ENUM = 'ENUM'
 
@@ -132,7 +132,7 @@ class ConfigType(object):
 
     @property
     def is_any(self):
-        return False
+        return self.kind == ConfigTypeKind.ANY
 
     @property
     def is_tuple(self):
@@ -224,13 +224,9 @@ class Any(ConfigType):
         super(Any, self).__init__(
             key='Any',
             name='Any',
-            kind=ConfigTypeKind.REGULAR,
+            kind=ConfigTypeKind.ANY,
             type_attributes=ConfigTypeAttributes(is_builtin=True),
         )
-
-    @property
-    def is_any(self):
-        return True
 
 
 class Nullable(ConfigType):

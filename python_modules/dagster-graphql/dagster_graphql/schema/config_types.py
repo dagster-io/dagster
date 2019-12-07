@@ -16,8 +16,10 @@ def to_dauphin_config_type(config_type):
         return DauphinListConfigType(config_type)
     elif config_type.is_nullable:
         return DauphinNullableConfigType(config_type)
-    else:
+    elif config_type.is_any or config_type.is_scalar:
         return DauphinRegularConfigType(config_type)
+    else:
+        check.failed('Should never reach')
 
 
 def _ctor_kwargs(config_type):
@@ -109,6 +111,7 @@ class DauphinRegularConfigType(dauphin.ObjectType):
     class Meta(object):
         name = 'RegularConfigType'
         interfaces = [DauphinConfigType]
+        description = 'Regular is an odd name in this context. It really means Scalar or Any.'
 
     def resolve_inner_types(self, _graphene_info):
         return _resolve_inner_types(self._config_type)

@@ -105,8 +105,7 @@ def test_apply_default_values():
 
     assert apply_default_values(any_config_type, {'foo': 'bar'}) == {'foo': 'bar'}
 
-    with pytest.raises(CheckError, match='Unsupported type'):
-        assert apply_default_values(ConfigType('gargle', 'bargle', ConfigTypeKind.REGULAR), 3)
+    assert apply_default_values(ConfigType('gargle', 'bargle', ConfigTypeKind.ANY), 3)
 
     selector_config_type = resolve_to_config_type(
         Selector(

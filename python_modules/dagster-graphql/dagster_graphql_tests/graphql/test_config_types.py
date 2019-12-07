@@ -326,6 +326,7 @@ def test_more_complicated_works():
             'solids': {
                 'a_solid_with_multilayered_config': {
                     'config': {
+                        'field_any': {'123': 123},
                         'field_one': 'foo.txt',
                         'field_two': 'yup',
                         'field_three': 'mmmhmmm',
@@ -360,7 +361,7 @@ def test_multiple_missing_fields():
     assert len(valid_data['errors']) == 1
     error_data = valid_data['errors'][0]
     missing_names = {field_data['name'] for field_data in error_data['fields']}
-    assert missing_names == {'nested_field', 'field_one'}
+    assert missing_names == {'nested_field', 'field_one', 'field_any'}
     assert field_stack(error_data) == ['solids', 'a_solid_with_multilayered_config', 'config']
 
 
@@ -371,6 +372,7 @@ def test_more_complicated_multiple_errors():
             'solids': {
                 'a_solid_with_multilayered_config': {
                     'config': {
+                        'field_any': [],
                         # 'field_one': 'foo.txt', # missing
                         'field_two': 'yup',
                         'field_three': 'mmmhmmm',

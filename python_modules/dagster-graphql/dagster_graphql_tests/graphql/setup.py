@@ -261,6 +261,7 @@ def more_complicated_nested_config():
         config_field=Field(
             Dict(
                 {
+                    'field_any': Field(Any),
                     'field_one': Field(String),
                     'field_two': Field(String, is_optional=True),
                     'field_three': Field(String, is_optional=True, default_value='some_value'),
