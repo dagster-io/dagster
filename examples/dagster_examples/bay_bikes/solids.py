@@ -3,7 +3,6 @@ import os
 import zipfile
 from datetime import timedelta
 from time import gmtime, strftime
-from typing import List
 
 import requests
 from dagster_examples.bay_bikes.constants import (
@@ -30,6 +29,7 @@ from dagster import (
     Field,
     Float,
     Int,
+    List,
     Materialization,
     Output,
     String,
