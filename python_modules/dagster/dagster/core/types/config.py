@@ -170,78 +170,6 @@ class ConfigScalar(ConfigType):
         check.not_implemented('must implement')
 
 
-class _ConfigClosedGeneric(ConfigType):
-    def __init__(self, type_params, **kwargs):
-        super(_ConfigClosedGeneric, self).__init__(
-            type_params=check.list_param(type_params, 'type_param', of_type=ConfigType), **kwargs
-        )
-
-
-class ConfigList(_ConfigClosedGeneric):
-    def __init__(self, inner_type, **kwargs):
-        self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
-        super(ConfigList, self).__init__(
-            type_params=[inner_type], kind=ConfigTypeKind.LIST, **kwargs
-        )
-
-    @property
-    def inner_types(self):
-        return [self.inner_type] + self.inner_type.inner_types
-
-
-class ConfigSet(ConfigType):
-    def __init__(self, inner_type, **kwargs):
-        self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
-        super(ConfigSet, self).__init__(type_params=[inner_type], kind=ConfigTypeKind.SET, **kwargs)
-
-    @property
-    def inner_types(self):
-        return [self.inner_type] + self.inner_type.inner_types
-
-
-class ConfigTuple(ConfigType):
-    def __init__(self, tuple_types, **kwargs):
-        self.tuple_types = tuple_types
-        super(ConfigTuple, self).__init__(
-            type_params=tuple_types, kind=ConfigTypeKind.TUPLE, **kwargs
-        )
-
-    @property
-    def inner_types(self):
-        return self.type_params + [
-            inner_type for tuple_type in self.tuple_types for inner_type in tuple_type.inner_types
-        ]
-
-
-class ConfigNullable(ConfigType):
-    def __init__(self, inner_type, **kwargs):
-        self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
-        super(ConfigNullable, self).__init__(
-            type_params=[inner_type], kind=ConfigTypeKind.NULLABLE, **kwargs
-        )
-
-    @property
-    def inner_types(self):
-        return [self.inner_type] + self.inner_type.inner_types
-
-
-class ConfigAny(ConfigType):
-    @property
-    def is_any(self):
-        return True
-
-
-class BuiltinConfigAny(ConfigAny):
-    def __init__(self, description=None):
-        super(BuiltinConfigAny, self).__init__(
-            key=type(self).__name__,
-            name=type(self).__name__,
-            kind=ConfigTypeKind.REGULAR,
-            description=description,
-            type_attributes=ConfigTypeAttributes(is_builtin=True),
-        )
-
-
 class BuiltinConfigScalar(ConfigScalar):
     def __init__(self, description=None):
         super(BuiltinConfigScalar, self).__init__(
@@ -291,7 +219,7 @@ class Float(BuiltinConfigScalar):
         return isinstance(config_value, float)
 
 
-class Any(ConfigAny):
+class Any(ConfigType):
     def __init__(self):
         super(Any, self).__init__(
             key='Any',
@@ -300,26 +228,36 @@ class Any(ConfigAny):
             type_attributes=ConfigTypeAttributes(is_builtin=True),
         )
 
+    @property
+    def is_any(self):
+        return True
 
-class Nullable(ConfigNullable):
+
+class Nullable(ConfigType):
     def __init__(self, inner_type):
-        check.inst_param(inner_type, 'inner_type', ConfigType)
+        self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
         super(Nullable, self).__init__(
             key='Optional.{inner_type}'.format(inner_type=inner_type.key),
-            name=None,
+            name='Optional[{inner_name}]'.format(inner_name=inner_type.name),
+            kind=ConfigTypeKind.NULLABLE,
+            type_params=[inner_type],
             type_attributes=ConfigTypeAttributes(is_builtin=True),
-            inner_type=inner_type,
         )
 
+    @property
+    def inner_types(self):
+        return [self.inner_type] + self.inner_type.inner_types
 
-class List(ConfigList):
+
+class List(ConfigType):
     def __init__(self, inner_type):
-        check.inst_param(inner_type, 'inner_type', ConfigType)
+        self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
         super(List, self).__init__(
             key='List.{inner_type}'.format(inner_type=inner_type.key),
-            name=None,
+            name='List[{inner_name}]'.format(inner_name=inner_type.name),
             type_attributes=ConfigTypeAttributes(is_builtin=True),
-            inner_type=inner_type,
+            type_params=[inner_type],
+            kind=ConfigTypeKind.LIST,
         )
 
     @property
@@ -330,29 +268,35 @@ class List(ConfigList):
             inner_type=print_config_type_to_string(self, with_lines=False)
         )
 
+    @property
+    def inner_types(self):
+        return [self.inner_type] + self.inner_type.inner_types
 
-class Set(ConfigSet):
+
+class Set(ConfigType):
     def __init__(self, inner_type):
-        check.inst_param(inner_type, 'inner_type', ConfigType)
+        self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
         name = 'Set[{inner_type}]'.format(inner_type=inner_type)
 
         super(Set, self).__init__(
             key='Set.{inner_type}'.format(inner_type=inner_type.key),
             name=name,
             type_attributes=ConfigTypeAttributes(is_builtin=True),
-            inner_type=inner_type,
+            kind=ConfigTypeKind.SET,
+            type_params=[inner_type],
             description=name,
         )
 
+    @property
+    def inner_types(self):
+        return [self.inner_type] + self.inner_type.inner_types
 
-class Tuple(ConfigTuple):
+
+class Tuple(ConfigType):
     def __init__(self, tuple_types):
-        check.list_param(tuple_types, 'tuple_types', ConfigType)
-
-        # https://github.com/dagster-io/dagster/issues/1932
-        # TODO Naming these is a dubious decision
+        self.tuple_types = check.list_param(tuple_types, 'tuple_types', ConfigType)
         name = 'Tuple[{tuple_types}]'.format(
-            tuple_types=', '.join([tuple_type.key for tuple_type in tuple_types])
+            tuple_types=', '.join([tuple_type.name for tuple_type in tuple_types])
         )
 
         super(Tuple, self).__init__(
@@ -361,9 +305,16 @@ class Tuple(ConfigTuple):
             ),
             name=name,
             type_attributes=ConfigTypeAttributes(is_builtin=True),
-            tuple_types=tuple_types,
+            type_params=tuple_types,
+            kind=ConfigTypeKind.TUPLE,
             description=name,
         )
+
+    @property
+    def inner_types(self):
+        return self.type_params + [
+            inner_type for tuple_type in self.tuple_types for inner_type in tuple_type.inner_types
+        ]
 
 
 class EnumValue(object):
@@ -384,36 +335,7 @@ class EnumValue(object):
         self.description = check.opt_str_param(description, 'description')
 
 
-class ConfigEnum(ConfigType):
-    def __init__(self, name, enum_values):
-        check.str_param(name, 'name')
-        super(ConfigEnum, self).__init__(key=name, name=name, kind=ConfigTypeKind.ENUM)
-        self.enum_values = check.list_param(enum_values, 'enum_values', of_type=EnumValue)
-        self._valid_python_values = {ev.python_value for ev in enum_values}
-        check.invariant(len(self._valid_python_values) == len(enum_values))
-        self._valid_config_values = {ev.config_value for ev in enum_values}
-        check.invariant(len(self._valid_config_values) == len(enum_values))
-
-    @property
-    def config_values(self):
-        return [ev.config_value for ev in self.enum_values]
-
-    @property
-    def is_enum(self):
-        return True
-
-    def is_valid_config_enum_value(self, config_value):
-        return config_value in self._valid_config_values
-
-    def to_python_value(self, config_value):
-        for ev in self.enum_values:
-            if ev.config_value == config_value:
-                return ev.python_value
-
-        check.failed('should never reach this. config_value should be pre-validated')
-
-
-class Enum(ConfigEnum):
+class Enum(ConfigType):
     '''
     Defines a enum configuration type that allows one of a defined set of possible values.
 
@@ -441,7 +363,31 @@ class Enum(ConfigEnum):
     '''
 
     def __init__(self, name, enum_values):
-        super(Enum, self).__init__(name=name, enum_values=enum_values)
+        check.str_param(name, 'name')
+        super(Enum, self).__init__(key=name, name=name, kind=ConfigTypeKind.ENUM)
+        self.enum_values = check.list_param(enum_values, 'enum_values', of_type=EnumValue)
+        self._valid_python_values = {ev.python_value for ev in enum_values}
+        check.invariant(len(self._valid_python_values) == len(enum_values))
+        self._valid_config_values = {ev.config_value for ev in enum_values}
+        check.invariant(len(self._valid_config_values) == len(enum_values))
+
+    @property
+    def config_values(self):
+        return [ev.config_value for ev in self.enum_values]
+
+    @property
+    def is_enum(self):
+        return True
+
+    def is_valid_config_enum_value(self, config_value):
+        return config_value in self._valid_config_values
+
+    def to_python_value(self, config_value):
+        for ev in self.enum_values:
+            if ev.config_value == config_value:
+                return ev.python_value
+
+        check.failed('should never reach this. config_value should be pre-validated')
 
 
 ConfigAnyInstance = Any()

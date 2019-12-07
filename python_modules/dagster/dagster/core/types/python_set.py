@@ -1,6 +1,6 @@
 from dagster import check
 
-from .config import ConfigList
+from .config import List
 from .config_schema import InputHydrationConfig
 from .runtime import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
 
@@ -22,11 +22,7 @@ def create_typed_runtime_set(item_dagster_type):
         class _TypedSetInputHydrationConfig(InputHydrationConfig):
             @property
             def schema_type(self):
-                return ConfigList(
-                    item_runtime_type.input_hydration_config.schema_type,
-                    key='TypedPythonSet.{}.ConfigType'.format(item_runtime_type.key),
-                    name='List[{inner_type}]'.format(inner_type=item_runtime_type.name),
-                )
+                return List(item_runtime_type.input_hydration_config.schema_type)
 
             def construct_from_config_value(self, context, config_value):
                 runtime_value = set()

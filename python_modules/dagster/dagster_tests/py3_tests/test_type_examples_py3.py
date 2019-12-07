@@ -256,7 +256,8 @@ def test_set_solid_configable_input_bad():
         DagsterInvalidConfigError,
         match=re.escape(
             'Type failure at path "root:solids:set_solid:inputs:set_input" on type '
-            '"List[String]". Value at path root:solids:set_solid:inputs:set_input must be list. '
+            '"List[String.InputHydrationConfig]". Value at path '
+            'root:solids:set_solid:inputs:set_input must be list. '
             'Expected: [{ json: { path: Path } pickle: { path: Path } value: String }].'
         ),
     ):

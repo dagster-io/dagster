@@ -13,7 +13,7 @@ from dagster import (
     execute_pipeline,
     solid,
 )
-from dagster.core.types.config import ConfigEnum
+from dagster.core.types.config import Enum as ConfigEnum
 from dagster.core.types.evaluator import evaluate_config
 
 

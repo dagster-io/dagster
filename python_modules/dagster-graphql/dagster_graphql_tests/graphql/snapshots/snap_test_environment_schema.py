@@ -111,9 +111,6 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': None
             },
             {
-                'name': None
-            },
-            {
                 'name': 'Any'
             },
             {
@@ -148,6 +145,9 @@ snapshots['test_successful_enviroment_schema 1'] = {
             },
             {
                 'name': 'Int.MaterializationSchema'
+            },
+            {
+                'name': 'List[None]'
             },
             {
                 'name': 'MultiModeWithResources.Mode.AddMode.Environment'
