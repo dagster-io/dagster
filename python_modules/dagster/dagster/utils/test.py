@@ -30,6 +30,7 @@ from dagster.core.storage.file_manager import LocalFileManager
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types.runtime import resolve_to_runtime_type
+from dagster.core.types.typing_api import is_typing_type
 from dagster.core.utility_solids import define_stub_solid
 
 # pylint: disable=unused-import
@@ -284,6 +285,15 @@ def check_dagster_type(dagster_type, value):
 
             assert check_dagster_type(Dict[Any, Any], {'foo': 'bar'}).success
     '''
+
+    if is_typing_type(dagster_type):
+        raise DagsterInvariantViolationError(
+            (
+                'Must pass in a type from dagster module. You passed {dagster_type} '
+                'which is part of python\'s typing module.'
+            ).format(dagster_type=dagster_type)
+        )
+
     runtime_type = resolve_to_runtime_type(dagster_type)
     type_check = runtime_type.type_check(value)
     if not isinstance(type_check, TypeCheck):

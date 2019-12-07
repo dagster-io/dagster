@@ -148,3 +148,17 @@ def get_optional_inner_type(ttype):
     )
 
     return ttype.__args__[0]
+
+
+def is_typing_type(ttype):
+    return (
+        is_closed_python_dict_type(ttype)
+        or is_closed_python_optional_type(ttype)
+        or is_closed_python_set_type(ttype)
+        or is_closed_python_tuple_type(ttype)
+        or is_closed_python_list_type(ttype)
+        or ttype is typing.Tuple
+        or ttype is typing.Set
+        or ttype is typing.Dict
+        or ttype is typing.List
+    )

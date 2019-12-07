@@ -1,5 +1,3 @@
-import typing
-
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
@@ -7,13 +5,7 @@ from .builtin_enum import BuiltinEnum
 from .config import Any, ConfigType, List, Nullable, Set, Tuple
 from .default_applier import apply_default_values
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
-from .typing_api import (
-    is_closed_python_dict_type,
-    is_closed_python_list_type,
-    is_closed_python_optional_type,
-    is_closed_python_set_type,
-    is_closed_python_tuple_type,
-)
+from .typing_api import is_typing_type
 from .wrapping import (
     DagsterListApi,
     DagsterSetApi,
@@ -23,20 +15,6 @@ from .wrapping import (
     WrappingSetType,
     WrappingTupleType,
 )
-
-
-def is_typing_type(ttype):
-    return (
-        is_closed_python_dict_type(ttype)
-        or is_closed_python_optional_type(ttype)
-        or is_closed_python_set_type(ttype)
-        or is_closed_python_tuple_type(ttype)
-        or is_closed_python_list_type(ttype)
-        or ttype is typing.Tuple
-        or ttype is typing.Set
-        or ttype is typing.Dict
-        or ttype is typing.List
-    )
 
 
 def resolve_to_config_list(list_type):
