@@ -1,10 +1,34 @@
 import inspect
 import sys
+import typing
 
 import six
 
 from dagster.check import CheckError
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.types.field_utils import Dict
+from dagster.core.types.python_dict import create_typed_runtime_dict
+from dagster.core.types.typing_api import (
+    get_dict_key_value_types,
+    get_list_inner_type,
+    get_optional_inner_type,
+    get_set_inner_type,
+    get_tuple_type_params,
+    is_closed_python_dict_type,
+    is_closed_python_list_type,
+    is_closed_python_optional_type,
+    is_closed_python_set_type,
+    is_closed_python_tuple_type,
+)
+from dagster.core.types.wrapping import (
+    List,
+    Set,
+    Tuple,
+    WrappingListType,
+    WrappingNullableType,
+    WrappingSetType,
+    WrappingTupleType,
+)
 
 from .input import InputDefinition
 from .output import OutputDefinition
@@ -21,7 +45,7 @@ def infer_output_definitions(decorator_name, solid_name, fn):
         return [
             OutputDefinition()
             if signature.return_annotation is funcsigs.Signature.empty
-            else OutputDefinition(signature.return_annotation)
+            else OutputDefinition(_transform_typing_type(signature.return_annotation))
         ]
     except CheckError as type_error:
         six.raise_from(
@@ -45,8 +69,39 @@ def has_explicit_return_type(fn):
 
 def _input_param_type(type_annotation):
     if sys.version_info.major >= 3 and type_annotation is not inspect.Parameter.empty:
-        return type_annotation
+        return _transform_typing_type(type_annotation)
     return None
+
+
+def _transform_typing_type(type_annotation):
+    if type_annotation is typing.List:
+        return List
+    elif type_annotation is typing.Set:
+        return Set
+    elif type_annotation is typing.Tuple:
+        return Tuple
+    elif type_annotation is typing.Dict:
+        return Dict
+    elif is_closed_python_list_type(type_annotation):
+        return WrappingListType(_transform_typing_type(get_list_inner_type(type_annotation)))
+    elif is_closed_python_set_type(type_annotation):
+        return WrappingSetType(_transform_typing_type(get_set_inner_type(type_annotation)))
+    elif is_closed_python_tuple_type(type_annotation):
+        transformed_types = [
+            _transform_typing_type(tt) for tt in get_tuple_type_params(type_annotation)
+        ]
+        return WrappingTupleType(tuple(transformed_types))
+    elif is_closed_python_optional_type(type_annotation):
+        return WrappingNullableType(
+            _transform_typing_type(get_optional_inner_type(type_annotation))
+        )
+    elif is_closed_python_dict_type(type_annotation):
+        key_type, value_type = get_dict_key_value_types(type_annotation)
+        return create_typed_runtime_dict(
+            _transform_typing_type(key_type), _transform_typing_type(value_type)
+        )
+    else:
+        return type_annotation
 
 
 def infer_input_definitions_for_lambda_solid(solid_name, fn):

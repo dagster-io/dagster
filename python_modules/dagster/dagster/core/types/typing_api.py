@@ -150,6 +150,26 @@ def get_optional_inner_type(ttype):
     return ttype.__args__[0]
 
 
+def get_list_inner_type(ttype):
+    check.param_invariant(is_closed_python_list_type(ttype), 'ttype')
+    return ttype.__args__[0]
+
+
+def get_set_inner_type(ttype):
+    check.param_invariant(is_closed_python_set_type(ttype), 'ttype')
+    return ttype.__args__[0]
+
+
+def get_tuple_type_params(ttype):
+    check.param_invariant(is_closed_python_tuple_type(ttype), 'ttype')
+    return ttype.__args__
+
+
+def get_dict_key_value_types(ttype):
+    check.param_invariant(is_closed_python_dict_type(ttype), 'ttype')
+    return (ttype.__args__[0], ttype.__args__[1])
+
+
 def is_typing_type(ttype):
     return (
         is_closed_python_dict_type(ttype)
