@@ -313,19 +313,18 @@ class Any(ConfigAny):
         )
 
 
-def Nullable(inner_type):
-    check.inst_param(inner_type, 'inner_type', ConfigType)
+class Nullable(ConfigNullable):
+    def __init__(self, inner_type):
+        check.inst_param(inner_type, 'inner_type', ConfigType)
+        super(Nullable, self).__init__(
+            key='Optional.{inner_type}'.format(inner_type=inner_type.key),
+            name=None,
+            type_attributes=ConfigTypeAttributes(is_builtin=True),
+            inner_type=inner_type,
+        )
 
-    class _Nullable(ConfigNullable):
-        def __init__(self):
-            super(_Nullable, self).__init__(
-                key='Optional.{inner_type}'.format(inner_type=inner_type.key),
-                name=None,
-                type_attributes=ConfigTypeAttributes(is_builtin=True),
-                inner_type=inner_type,
-            )
-
-    return _Nullable
+    def inst(self):
+        return self
 
 
 def List(inner_type):
