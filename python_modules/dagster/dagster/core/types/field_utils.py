@@ -109,25 +109,20 @@ class _ConfigHasFields(ConfigType):
                 s += "[" + typ + "] "
             elif field_value.config_type.is_selector:
                 fields = [
-                    field_to_string("-" + k, v)
-                    for k, v in field_value.config_type.inst().fields.items()
+                    field_to_string("-" + k, v) for k, v in field_value.config_type.fields.items()
                 ]
                 fields = map(lambda x: left_pad(x, 1, "|"), fields)
                 s += format_fields(fields)
             elif field_value.config_type.is_enum:
-                fields = [
-                    field_to_string(k, v) for k, v in field_value.config_type.inst().fields.items()
-                ]
+                fields = [field_to_string(k, v) for k, v in field_value.config_type.fields.items()]
                 s += format_fields(fields)
             elif field_value.config_type.is_composite:
-                fields = [
-                    field_to_string(k, v) for k, v in field_value.config_type.inst().fields.items()
-                ]
+                fields = [field_to_string(k, v) for k, v in field_value.config_type.fields.items()]
                 s += format_fields(fields)
             elif field_value.config_type.is_list:
                 fields = [
                     field_to_string(k, v)
-                    for k, v in field_value.config_type.inst().inner_type.inst().fields.items()
+                    for k, v in field_value.config_type.inner_type.fields.items()
                 ]
                 s += format_fields(fields)
             elif field_value.config_type.is_any:
@@ -182,9 +177,6 @@ class NamedDict(_ConfigHasFields):
             description=description,
             type_attributes=type_attributes,
         )
-
-    def inst(self):
-        return self
 
 
 FIELD_HASH_CACHE = {}
@@ -255,9 +247,6 @@ class Dict(_ConfigHasFields):
             ),
         )
 
-    def inst(self):
-        return self
-
 
 def build_config_dict(fields, description=None, is_system_config=False):
     return Dict(fields, description, is_system_config)
@@ -308,9 +297,6 @@ class PermissiveDict(_ConfigHasFields):
             type_attributes=ConfigTypeAttributes(is_builtin=True),
             description=description,
         )
-
-    def inst(self):
-        return self
 
 
 def _define_selector_key(fields, description, is_system_config):
@@ -384,9 +370,6 @@ class Selector(_ConfigHasFields):
             description=description,
         )
 
-    def inst(self):
-        return self
-
 
 class NamedSelector(_ConfigHasFields):
     def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
@@ -400,6 +383,3 @@ class NamedSelector(_ConfigHasFields):
             description=description,
             type_attributes=type_attributes,
         )
-
-    def inst(self):
-        return self

@@ -38,7 +38,7 @@ def test_construct_same_dicts():
     # assert identical object
     assert int_dict_1 is int_dict_2
     # assert equivalent key
-    assert int_dict_1.inst().key == int_dict_2.inst().key
+    assert int_dict_1.key == int_dict_2.key
 
 
 def test_field_order_irrelevant():
@@ -49,7 +49,7 @@ def test_field_order_irrelevant():
     # assert identical object
     assert int_dict_1 is int_dict_2
     # assert equivalent key
-    assert int_dict_1.inst().key == int_dict_2.inst().key
+    assert int_dict_1.key == int_dict_2.key
 
 
 def test_construct_different_dicts():
@@ -57,7 +57,7 @@ def test_construct_different_dicts():
     string_dict = Dict(fields={'a_string': Field(str)})
 
     assert int_dict is not string_dict
-    assert int_dict.inst().key != string_dict.inst().key
+    assert int_dict.key != string_dict.key
 
 
 def test_construct_permissive_dict_same_same():
@@ -71,7 +71,7 @@ def test_construct_same_perm_dicts():
     # assert identical object
     assert int_perm_dict_1 is int_perm_dict_2
     # assert equivalent key
-    assert int_perm_dict_1.inst().key == int_perm_dict_2.inst().key
+    assert int_perm_dict_1.key == int_perm_dict_2.key
 
 
 def test_construct_different_perm_dicts():
@@ -79,7 +79,7 @@ def test_construct_different_perm_dicts():
     string_perm_dict = PermissiveDict(fields={'a_string': Field(str)})
 
     assert int_perm_dict is not string_perm_dict
-    assert int_perm_dict.inst().key != string_perm_dict.inst().key
+    assert int_perm_dict.key != string_perm_dict.key
 
 
 def test_construct_same_selectors():
@@ -89,7 +89,7 @@ def test_construct_same_selectors():
     # assert identical object
     assert int_selector_1 is int_selector_2
     # assert equivalent key
-    assert int_selector_1.inst().key == int_selector_2.inst().key
+    assert int_selector_1.key == int_selector_2.key
 
 
 def test_construct_different_selectors():
@@ -97,7 +97,7 @@ def test_construct_different_selectors():
     string_selector = Selector(fields={'a_string': Field(str)})
 
     assert int_selector is not string_selector
-    assert int_selector.inst().key != string_selector.inst().key
+    assert int_selector.key != string_selector.key
 
 
 def test_kitchen_sink():
@@ -150,7 +150,7 @@ def test_kitchen_sink():
     )
 
     assert big_dict_1 is big_dict_2
-    assert big_dict_1.inst().key == big_dict_2.inst().key
+    assert big_dict_1.key == big_dict_2.key
 
     # differs way down in tree
     big_dict_3 = Dict(
@@ -178,4 +178,4 @@ def test_kitchen_sink():
     )
 
     assert big_dict_1 is not big_dict_3
-    assert big_dict_1.inst().key != big_dict_3.inst().key
+    assert big_dict_1.key != big_dict_3.key

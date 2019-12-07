@@ -581,7 +581,7 @@ def _create_environment_schema(pipeline_def, mode_definition):
     )
     from .environment_schema import EnvironmentSchema
 
-    environment_cls = define_environment_cls(
+    environment_type = define_environment_cls(
         EnvironmentClassCreationData(
             pipeline_name=pipeline_def.name,
             solids=pipeline_def.solids,
@@ -590,8 +590,6 @@ def _create_environment_schema(pipeline_def, mode_definition):
             logger_defs=mode_definition.loggers,
         )
     )
-
-    environment_type = environment_cls.inst()
 
     config_type_dict_by_name, config_type_dict_by_key = construct_config_type_dictionary(
         pipeline_def.all_solid_defs, environment_type

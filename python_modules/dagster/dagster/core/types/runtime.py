@@ -411,7 +411,7 @@ def _create_nullable_input_schema(inner_type):
     if not inner_type.input_hydration_config:
         return None
 
-    nullable_type = ConfigNullable(inner_type.input_hydration_config.schema_type).inst()
+    nullable_type = ConfigNullable(inner_type.input_hydration_config.schema_type)
 
     class _NullableSchema(InputHydrationConfig):
         @property
@@ -458,7 +458,7 @@ def _create_list_input_schema(inner_type):
     if not inner_type.input_hydration_config:
         return None
 
-    list_type = ConfigList(inner_type.input_hydration_config.schema_type).inst()
+    list_type = ConfigList(inner_type.input_hydration_config.schema_type)
 
     class _ListSchema(InputHydrationConfig):
         @property

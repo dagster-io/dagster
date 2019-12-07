@@ -311,9 +311,6 @@ class Nullable(ConfigNullable):
             inner_type=inner_type,
         )
 
-    def inst(self):
-        return self
-
 
 class List(ConfigList):
     def __init__(self, inner_type):
@@ -324,9 +321,6 @@ class List(ConfigList):
             type_attributes=ConfigTypeAttributes(is_builtin=True),
             inner_type=inner_type,
         )
-
-    def inst(self):
-        return self
 
     @property
     def description(self):
@@ -350,9 +344,6 @@ class Set(ConfigSet):
             description=name,
         )
 
-    def inst(self):
-        return self
-
 
 class Tuple(ConfigTuple):
     def __init__(self, tuple_types):
@@ -373,9 +364,6 @@ class Tuple(ConfigTuple):
             tuple_types=tuple_types,
             description=name,
         )
-
-    def inst(self):
-        return self
 
 
 class EnumValue(object):
@@ -454,9 +442,6 @@ class Enum(ConfigEnum):
 
     def __init__(self, name, enum_values):
         super(Enum, self).__init__(name=name, enum_values=enum_values)
-
-    def inst(self):
-        return self
 
 
 ConfigAnyInstance = Any()

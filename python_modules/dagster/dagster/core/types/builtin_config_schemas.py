@@ -48,7 +48,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
 
 
 def define_path_dict_field():
-    return Field(Dict({'path': Field(ConfigPathInstance)}).inst())
+    return Field(Dict({'path': Field(ConfigPathInstance)}))
 
 
 def define_builtin_scalar_output_schema(scalar_name):

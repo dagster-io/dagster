@@ -138,10 +138,10 @@ def test_default_environment():
 
 
 def test_solid_config():
-    solid_config_type = define_solid_config_cls(Field(Int), None, None).inst()
+    solid_config_type = define_solid_config_cls(Field(Int), None, None)
     solid_inst = throwing_evaluate_config_value(solid_config_type, {'config': 1})
     assert solid_inst['config'] == 1
-    assert solid_config_type.inst().type_attributes.is_system_config
+    assert solid_config_type.type_attributes.is_system_config
 
 
 def test_solid_dictionary_type():
@@ -149,7 +149,7 @@ def test_solid_dictionary_type():
 
     solid_dict_type = define_solid_dictionary_cls(
         'foobar', pipeline_def.solids, pipeline_def.dependency_structure, pipeline_def.name
-    ).inst()
+    )
 
     value = construct_solid_dictionary(
         throwing_evaluate_config_value(
@@ -238,7 +238,7 @@ def test_solid_dictionary_some_no_config():
 
     solid_dict_type = define_solid_dictionary_cls(
         'foobar', pipeline_def.solids, pipeline_def.dependency_structure, pipeline_def.name
-    ).inst()
+    )
 
     value = construct_solid_dictionary(
         throwing_evaluate_config_value(solid_dict_type, {'int_config_solid': {'config': 1}})
@@ -300,7 +300,7 @@ def test_solid_config_error():
     pipeline_def = define_test_solids_config_pipeline()
     solid_dict_type = define_solid_dictionary_cls(
         'slkdfjkjdsf', pipeline_def.solids, pipeline_def.dependency_structure, pipeline_def.name
-    ).inst()
+    )
 
     int_solid_config_type = solid_dict_type.fields['int_config_solid'].config_type
 

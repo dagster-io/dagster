@@ -210,7 +210,7 @@ def test_kitchen_sink_break_out():
     )
     kitchen_sink = List[dict_within_list_cls]
 
-    dict_within_list_key = dict_within_list_cls.inst().key
+    dict_within_list_key = dict_within_list_cls.key
     kitchen_sink_meta = meta_from_dagster_type(kitchen_sink)
 
     assert len(kitchen_sink_meta.type_param_refs) == 1
@@ -223,7 +223,7 @@ def test_kitchen_sink_break_out():
     assert len(dict_within_list_meta.inner_type_refs) == 5
     assert sorted([type_ref.key for type_ref in dict_within_list_meta.inner_type_refs]) == sorted(
         [
-            nested_dict_cls.inst().key,
+            nested_dict_cls.key,
             'Int',
             'List.Int',
             meta_from_dagster_type(Tuple[int, str]).key,

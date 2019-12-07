@@ -112,13 +112,13 @@ def resolve_to_config_type(dagster_type):
     if BuiltinEnum.contains(dagster_type):
         return ConfigType.from_builtin_enum(dagster_type)
     if isinstance(dagster_type, (WrappingListType, DagsterListApi)):
-        return resolve_to_config_list(dagster_type).inst()
+        return resolve_to_config_list(dagster_type)
     if isinstance(dagster_type, (WrappingSetType, DagsterSetApi)):
-        return resolve_to_config_set(dagster_type).inst()
+        return resolve_to_config_set(dagster_type)
     if isinstance(dagster_type, (WrappingTupleType, DagsterTupleApi)):
-        return resolve_to_config_tuple(dagster_type).inst()
+        return resolve_to_config_tuple(dagster_type)
     if isinstance(dagster_type, WrappingNullableType):
-        return resolve_to_config_nullable(dagster_type).inst()
+        return resolve_to_config_nullable(dagster_type)
 
     # This means that this is an error and we are return False to a callsite
     # We do the error reporting there because those callsites have more context

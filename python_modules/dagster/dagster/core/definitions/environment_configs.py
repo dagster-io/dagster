@@ -48,9 +48,6 @@ class SolidContainerConfigDict(_ConfigHasFields):
             type_attributes=ConfigTypeAttributes(is_system_config=True),
         )
 
-    def inst(self):
-        return self
-
     @property
     def handle(self):
         '''A solid handle ref to the composite solid that is associated with this config schema
@@ -84,9 +81,6 @@ class SolidConfigDict(_ConfigHasFields):
             description=description,
             type_attributes=ConfigTypeAttributes(is_system_config=True),
         )
-
-    def inst(self):
-        return self
 
 
 def is_solid_dict(obj):
