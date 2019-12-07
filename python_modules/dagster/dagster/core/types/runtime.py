@@ -407,25 +407,31 @@ def define_python_dagster_type(
     return _ObjectType
 
 
+class NullableInputSchema(InputHydrationConfig):
+    def __init__(self, inner_runtime_type):
+        self._inner_runtime_type = check.inst_param(
+            inner_runtime_type, 'inner_runtime_type', RuntimeType
+        )
+        check.param_invariant(inner_runtime_type.input_hydration_config, 'inner_runtime_type')
+        self._schema_type = ConfigNullable(inner_runtime_type.input_hydration_config.schema_type)
+
+    @property
+    def schema_type(self):
+        return self._schema_type
+
+    def construct_from_config_value(self, context, config_value):
+        if config_value is None:
+            return None
+        return self._inner_runtime_type.input_hydration_config.construct_from_config_value(
+            context, config_value
+        )
+
+
 def _create_nullable_input_schema(inner_type):
     if not inner_type.input_hydration_config:
         return None
 
-    nullable_type = ConfigNullable(inner_type.input_hydration_config.schema_type)
-
-    class _NullableSchema(InputHydrationConfig):
-        @property
-        def schema_type(self):
-            return nullable_type
-
-        def construct_from_config_value(self, context, config_value):
-            if config_value is None:
-                return None
-            return inner_type.input_hydration_config.construct_from_config_value(
-                context, config_value
-            )
-
-    return _NullableSchema()
+    return NullableInputSchema(inner_type)
 
 
 class NullableType(RuntimeType):
@@ -454,24 +460,30 @@ class NullableType(RuntimeType):
         return [self.inner_type] + self.inner_type.inner_types
 
 
+class ListInputSchema(InputHydrationConfig):
+    def __init__(self, inner_runtime_type):
+        self._inner_runtime_type = check.inst_param(
+            inner_runtime_type, 'inner_runtime_type', RuntimeType
+        )
+        check.param_invariant(inner_runtime_type.input_hydration_config, 'inner_runtime_type')
+        self._schema_type = ConfigList(inner_runtime_type.input_hydration_config.schema_type)
+
+    @property
+    def schema_type(self):
+        return self._schema_type
+
+    def construct_from_config_value(self, context, config_value):
+        convert_item = partial(
+            self._inner_runtime_type.input_hydration_config.construct_from_config_value, context
+        )
+        return list(map(convert_item, config_value))
+
+
 def _create_list_input_schema(inner_type):
     if not inner_type.input_hydration_config:
         return None
 
-    list_type = ConfigList(inner_type.input_hydration_config.schema_type)
-
-    class _ListSchema(InputHydrationConfig):
-        @property
-        def schema_type(self):
-            return list_type
-
-        def construct_from_config_value(self, context, config_value):
-            convert_item = partial(
-                inner_type.input_hydration_config.construct_from_config_value, context
-            )
-            return list(map(convert_item, config_value))
-
-    return _ListSchema()
+    return ListInputSchema(inner_type)
 
 
 class ListType(RuntimeType):

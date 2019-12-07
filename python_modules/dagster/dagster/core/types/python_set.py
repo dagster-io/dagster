@@ -9,6 +9,27 @@ PythonSet = define_python_dagster_type(
 )
 
 
+class TypedSetInputHydrationConfig(InputHydrationConfig):
+    def __init__(self, item_runtime_type):
+        self._item_runtime_type = check.inst_param(
+            item_runtime_type, 'item_runtime_type', RuntimeType
+        )
+
+    @property
+    def schema_type(self):
+        return List(self._item_runtime_type.input_hydration_config.schema_type)
+
+    def construct_from_config_value(self, context, config_value):
+        runtime_value = set()
+        for item in config_value:
+            runtime_value.add(
+                self._item_runtime_type.input_hydration_config.construct_from_config_value(
+                    context, item
+                )
+            )
+        return runtime_value
+
+
 def create_typed_runtime_set(item_dagster_type):
     item_runtime_type = resolve_to_runtime_type(item_dagster_type)
 
@@ -17,27 +38,6 @@ def create_typed_runtime_set(item_dagster_type):
         'Cannot create the runtime type Set[Nothing]. Use List type for fan-in.',
     )
 
-    if item_runtime_type.input_hydration_config:
-
-        class _TypedSetInputHydrationConfig(InputHydrationConfig):
-            @property
-            def schema_type(self):
-                return List(item_runtime_type.input_hydration_config.schema_type)
-
-            def construct_from_config_value(self, context, config_value):
-                runtime_value = set()
-                for item in config_value:
-                    runtime_value.add(
-                        item_runtime_type.input_hydration_config.construct_from_config_value(
-                            context, item
-                        )
-                    )
-                return runtime_value
-
-        _InputHydrationConfig = _TypedSetInputHydrationConfig()
-    else:
-        _InputHydrationConfig = None
-
     class _TypedPythonSet(RuntimeType):
         def __init__(self):
             self.item_type = item_runtime_type
@@ -45,7 +45,11 @@ def create_typed_runtime_set(item_dagster_type):
                 key='TypedPythonSet.{}'.format(item_runtime_type.key),
                 name=None,
                 is_builtin=True,
-                input_hydration_config=_InputHydrationConfig,
+                input_hydration_config=(
+                    TypedSetInputHydrationConfig(item_runtime_type)
+                    if item_runtime_type.input_hydration_config
+                    else None
+                ),
             )
 
         def type_check(self, value):
