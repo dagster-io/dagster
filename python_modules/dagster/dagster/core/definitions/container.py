@@ -48,7 +48,7 @@ def _create_adjacency_lists(solids, dep_structure):
 
         visit_dict[solid_name] = True
 
-        for output_handle in dep_structure.deps_of_solid(solid_name):
+        for output_handle in dep_structure.all_upstream_outputs_from_solid(solid_name):
             forward_node = output_handle.solid.name
             backward_node = solid_name
             if forward_node in forward_edges:
