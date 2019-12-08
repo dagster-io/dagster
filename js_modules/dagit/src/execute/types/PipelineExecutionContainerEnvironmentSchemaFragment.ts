@@ -16,77 +16,13 @@ export interface PipelineExecutionContainerEnvironmentSchemaFragment_Environment
   key: string;
 }
 
-export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_RegularConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
 export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_RegularConfigType {
-  __typename: "RegularConfigType" | "NullableConfigType";
+  __typename: "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
-  isList: boolean;
+  description: string | null;
   isSelector: boolean;
-  isNullable: boolean;
-  description: string | null;
-  innerTypes: PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_RegularConfigType_innerTypes[];
-}
-
-export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  configType: PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType_fields_configType;
-}
-
-export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  name: string | null;
-  isList: boolean;
-  isSelector: boolean;
-  isNullable: boolean;
-  description: string | null;
-  innerTypes: PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType_innerTypes[];
-  fields: PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType_fields[];
-}
-
-export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ListConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ListConfigType_ofType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ListConfigType {
-  __typename: "ListConfigType";
-  key: string;
-  name: string | null;
-  isList: boolean;
-  isSelector: boolean;
-  isNullable: boolean;
-  description: string | null;
-  innerTypes: PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ListConfigType_innerTypes[];
-  ofType: PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ListConfigType_ofType;
-}
-
-export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
+  typeParamKeys: string[];
 }
 
 export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType_values {
@@ -99,15 +35,31 @@ export interface PipelineExecutionContainerEnvironmentSchemaFragment_Environment
   __typename: "EnumConfigType";
   key: string;
   name: string | null;
-  isList: boolean;
-  isSelector: boolean;
-  isNullable: boolean;
   description: string | null;
-  innerTypes: PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType_innerTypes[];
+  isSelector: boolean;
+  typeParamKeys: string[];
   values: PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType_values[];
 }
 
-export type PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes = PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_RegularConfigType | PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType | PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ListConfigType | PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType;
+export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType_fields[];
+}
+
+export type PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes = PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_RegularConfigType | PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType | PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType;
 
 export interface PipelineExecutionContainerEnvironmentSchemaFragment_EnvironmentSchema {
   __typename: "EnvironmentSchema";

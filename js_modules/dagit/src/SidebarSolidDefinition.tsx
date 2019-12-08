@@ -14,7 +14,7 @@ import {
   SectionItemContainer
 } from "./SidebarComponents";
 import Description from "./Description";
-import ConfigTypeSchema from "./ConfigTypeSchema";
+import { ConfigTypeSchema } from "./ConfigTypeSchema";
 import { SidebarSolidDefinitionFragment } from "./types/SidebarSolidDefinitionFragment";
 import {
   SolidMappingTable,
@@ -179,7 +179,7 @@ export class SidebarSolidDefinition extends React.Component<
           <SidebarSection title={"Config"}>
             <ConfigTypeSchema
               type={configField.configType}
-              allInnerTypes={configField.configType.innerTypes}
+              typesInScope={configField.configType.innerTypes}
             />
           </SidebarSection>
         )}

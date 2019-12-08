@@ -7,30 +7,13 @@
 // GraphQL fragment: ConfigEditorHelpConfigTypeFragment
 // ====================================================
 
-export interface ConfigEditorHelpConfigTypeFragment_EnumConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
 export interface ConfigEditorHelpConfigTypeFragment_EnumConfigType {
   __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   description: string | null;
-  isList: boolean;
-  isNullable: boolean;
   isSelector: boolean;
-  innerTypes: ConfigEditorHelpConfigTypeFragment_EnumConfigType_innerTypes[];
-}
-
-export interface ConfigEditorHelpConfigTypeFragment_CompositeConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface ConfigEditorHelpConfigTypeFragment_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
+  typeParamKeys: string[];
 }
 
 export interface ConfigEditorHelpConfigTypeFragment_CompositeConfigType_fields {
@@ -38,7 +21,7 @@ export interface ConfigEditorHelpConfigTypeFragment_CompositeConfigType_fields {
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: ConfigEditorHelpConfigTypeFragment_CompositeConfigType_fields_configType;
+  configTypeKey: string;
 }
 
 export interface ConfigEditorHelpConfigTypeFragment_CompositeConfigType {
@@ -46,10 +29,8 @@ export interface ConfigEditorHelpConfigTypeFragment_CompositeConfigType {
   key: string;
   name: string | null;
   description: string | null;
-  isList: boolean;
-  isNullable: boolean;
   isSelector: boolean;
-  innerTypes: ConfigEditorHelpConfigTypeFragment_CompositeConfigType_innerTypes[];
+  typeParamKeys: string[];
   fields: ConfigEditorHelpConfigTypeFragment_CompositeConfigType_fields[];
 }
 

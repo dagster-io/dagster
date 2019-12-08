@@ -180,6 +180,8 @@ export default class PipelineExecutionContainer extends React.Component<
     throw new Error(`Recieved unexpected "${obj.__typename}"`);
   };
 
+  // have this return an object with prebuilt index
+  // https://github.com/dagster-io/dagster/issues/1966
   getEnvironmentSchema = ():
     | ConfigEditorEnvironmentSchemaFragment
     | undefined => {

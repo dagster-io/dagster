@@ -6,12 +6,11 @@ import {
   ConfigEditorHelpContext,
   isHelpContextEqual
 } from "../configeditor/ConfigEditor";
-import ConfigTypeSchema from "../ConfigTypeSchema";
-import { ConfigTypeSchemaFragment } from "../types/ConfigTypeSchemaFragment";
+import { ConfigTypeSchema, TypeData } from "../ConfigTypeSchema";
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;
-  allInnerTypes: ConfigTypeSchemaFragment[];
+  allInnerTypes: TypeData[];
 }
 
 export const ConfigEditorHelp: React.FunctionComponent<ConfigEditorHelpProps> = React.memo(
@@ -24,7 +23,7 @@ export const ConfigEditorHelp: React.FunctionComponent<ConfigEditorHelpProps> = 
         <ConfigScrollWrap>
           <ConfigTypeSchema
             type={context.type}
-            allInnerTypes={allInnerTypes}
+            typesInScope={allInnerTypes}
             theme="dark"
             maxDepth={2}
           />
