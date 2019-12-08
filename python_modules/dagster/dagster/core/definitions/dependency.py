@@ -341,45 +341,62 @@ def _create_handle_dict(solid_dict, dep_dict):
 class DependencyStructure(object):
     @staticmethod
     def from_definitions(solids, dep_dict):
-        return DependencyStructure(_create_handle_dict(solids, dep_dict))
+        return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))
 
-    def __init__(self, handle_dict):
+    def __init__(self, solid_names, handle_dict):
+        self._solid_names = solid_names
         self._handle_dict = check.inst_param(handle_dict, 'handle_dict', InputToOutputHandleDict)
 
-    def deps_of_solid(self, solid_name):
-        check.str_param(solid_name, 'solid_name')
+        # Building up a couple indexes here so that one can look up all the upstream output handles
+        # or downstream input handles in O(1). Without this, this can become O(N^2) where N is solid
+        # count during the GraphQL query in particular
 
-        return list(handles[1] for handles in self.__gen_deps_of_solid(solid_name))
+        # solid_name => input_handle => list[output_handle]
+        self._solid_input_index = defaultdict(dict)
 
-    def deps_of_solid_with_input(self, solid_name):
-        check.str_param(solid_name, 'solid_name')
-        result = defaultdict(list)
-        for input_handle, output_handle in self.__gen_deps_of_solid(solid_name):
-            result[input_handle].append(output_handle)
-        return result
+        # solid_name => output_handle => list[input_handle]
+        self._solid_output_index = defaultdict(lambda: defaultdict(list))
 
-    def __gen_deps_of_solid(self, solid_name):
         for input_handle, output_handle_or_list in self._handle_dict.items():
-            if input_handle.solid.name == solid_name:
-                if isinstance(output_handle_or_list, list):
-                    for output_handle in output_handle_or_list:
-                        yield (input_handle, output_handle)
-                else:
-                    yield (input_handle, output_handle_or_list)
+            output_handle_list = (
+                output_handle_or_list
+                if isinstance(output_handle_or_list, list)
+                else [output_handle_or_list]
+            )
+            self._solid_input_index[input_handle.solid.name][input_handle] = output_handle_list
+            for output_handle in output_handle_list:
+                self._solid_output_index[output_handle.solid.name][output_handle].append(
+                    input_handle
+                )
 
-    def depended_by_of_solid(self, solid_name):
+    def all_upstream_outputs_from_solid(self, solid_name):
         check.str_param(solid_name, 'solid_name')
-        result = defaultdict(list)
-        for input_handle, output_handle_or_list in self._handle_dict.items():
-            if isinstance(output_handle_or_list, list):
-                for output_handle in output_handle_or_list:
-                    if output_handle.solid.name == solid_name:
-                        result[output_handle].append(input_handle)
-            else:
-                if output_handle_or_list.solid.name == solid_name:
-                    result[output_handle_or_list].append(input_handle)
 
-        return result
+        # flatten out all outputs that feed into the inputs of this solid
+        return [
+            output_handle
+            for output_handle_list in self._solid_input_index[solid_name].values()
+            for output_handle in output_handle_list
+        ]
+
+    def input_to_upstream_outputs_for_solid(self, solid_name):
+        '''
+        Returns a Dict[SolidInputHandle, List[SolidOutputHandle]] that encodes
+        where all the the inputs are sourced from upstream. Usually the
+        List[SolidOutputHandle] will be a list of one, except for the
+        multi-dependency case.
+        '''
+        check.str_param(solid_name, 'solid_name')
+        return self._solid_input_index[solid_name]
+
+    def output_to_downstream_inputs_for_solid(self, solid_name):
+        '''
+        Returns a Dict[SolidOutputHandle, List[SolidInputHandle]] that
+        represents all the downstream inputs for each output in the
+        dictionary 
+        '''
+        check.str_param(solid_name, 'solid_name')
+        return self._solid_output_index[solid_name]
 
     def has_singular_dep(self, solid_input_handle):
         check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)

@@ -83,9 +83,18 @@ def test_solid_def():
         solid_one_solid, solid_one_solid.output_dict['result']
     )
 
-    assert len(pipeline_def.dependency_structure.deps_of_solid_with_input('solid_one')) == 1
+    assert (
+        len(pipeline_def.dependency_structure.input_to_upstream_outputs_for_solid('solid_one')) == 1
+    )
 
-    assert len(pipeline_def.dependency_structure.depended_by_of_solid('produce_string')) == 1
+    assert (
+        len(
+            pipeline_def.dependency_structure.output_to_downstream_inputs_for_solid(
+                'produce_string'
+            )
+        )
+        == 1
+    )
 
     assert len(pipeline_def.dependency_structure.input_handles()) == 1
 
