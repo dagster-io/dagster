@@ -12,77 +12,13 @@ export interface ConfigEditorEnvironmentSchemaFragment_rootEnvironmentType {
   key: string;
 }
 
-export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_RegularConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
 export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_RegularConfigType {
-  __typename: "RegularConfigType" | "NullableConfigType";
+  __typename: "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
-  isList: boolean;
+  description: string | null;
   isSelector: boolean;
-  isNullable: boolean;
-  description: string | null;
-  innerTypes: ConfigEditorEnvironmentSchemaFragment_allConfigTypes_RegularConfigType_innerTypes[];
-}
-
-export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  configType: ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType_fields_configType;
-}
-
-export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  name: string | null;
-  isList: boolean;
-  isSelector: boolean;
-  isNullable: boolean;
-  description: string | null;
-  innerTypes: ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType_innerTypes[];
-  fields: ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType_fields[];
-}
-
-export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_ListConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_ListConfigType_ofType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_ListConfigType {
-  __typename: "ListConfigType";
-  key: string;
-  name: string | null;
-  isList: boolean;
-  isSelector: boolean;
-  isNullable: boolean;
-  description: string | null;
-  innerTypes: ConfigEditorEnvironmentSchemaFragment_allConfigTypes_ListConfigType_innerTypes[];
-  ofType: ConfigEditorEnvironmentSchemaFragment_allConfigTypes_ListConfigType_ofType;
-}
-
-export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_EnumConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
+  typeParamKeys: string[];
 }
 
 export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_EnumConfigType_values {
@@ -95,15 +31,31 @@ export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_EnumConfig
   __typename: "EnumConfigType";
   key: string;
   name: string | null;
-  isList: boolean;
-  isSelector: boolean;
-  isNullable: boolean;
   description: string | null;
-  innerTypes: ConfigEditorEnvironmentSchemaFragment_allConfigTypes_EnumConfigType_innerTypes[];
+  isSelector: boolean;
+  typeParamKeys: string[];
   values: ConfigEditorEnvironmentSchemaFragment_allConfigTypes_EnumConfigType_values[];
 }
 
-export type ConfigEditorEnvironmentSchemaFragment_allConfigTypes = ConfigEditorEnvironmentSchemaFragment_allConfigTypes_RegularConfigType | ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType | ConfigEditorEnvironmentSchemaFragment_allConfigTypes_ListConfigType | ConfigEditorEnvironmentSchemaFragment_allConfigTypes_EnumConfigType;
+export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType_fields[];
+}
+
+export type ConfigEditorEnvironmentSchemaFragment_allConfigTypes = ConfigEditorEnvironmentSchemaFragment_allConfigTypes_RegularConfigType | ConfigEditorEnvironmentSchemaFragment_allConfigTypes_EnumConfigType | ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType;
 
 export interface ConfigEditorEnvironmentSchemaFragment {
   __typename: "EnvironmentSchema";

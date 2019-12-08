@@ -2,28 +2,75 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
-import { ConfigTypeSchemaFragment } from "./types/ConfigTypeSchemaFragment";
-import { ConfigTypeInfoFragment } from "./types/ConfigTypeInfoFragment";
 
 type ConfigTypeSchemaTheme = "dark" | "light";
 
 interface ConfigTypeSchemaProps {
-  type: ConfigTypeSchemaFragment;
-  allInnerTypes: ConfigTypeSchemaFragment[];
+  type: TypeData;
+  typesInScope: TypeData[];
   theme?: ConfigTypeSchemaTheme;
   maxDepth?: number;
 }
 
+interface FieldData {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+interface CommonTypeData {
+  key: string;
+  name: string | null;
+  description: string | null;
+}
+
+interface CompositeTypeData extends CommonTypeData {
+  __typename: "CompositeConfigType";
+  isSelector: boolean;
+  fields: FieldData[];
+}
+
+interface ListTypeData extends CommonTypeData {
+  __typename: "ListConfigType";
+  typeParamKeys: string[];
+}
+
+interface NullableTypeData extends CommonTypeData {
+  __typename: "NullableConfigType";
+  typeParamKeys: string[];
+}
+
+interface EnumTypeData extends CommonTypeData {
+  __typename: "EnumConfigType";
+}
+
+interface RegularTypeData extends CommonTypeData {
+  __typename: "RegularConfigType";
+  name: string | null;
+}
+
+export type TypeData =
+  | CompositeTypeData
+  | ListTypeData
+  | NullableTypeData
+  | RegularTypeData
+  | EnumTypeData;
+
 function renderTypeRecursive(
-  type: ConfigTypeInfoFragment,
-  typeLookup: { [typeName: string]: ConfigTypeInfoFragment },
+  type: TypeData,
+  typeLookup: { [typeName: string]: TypeData },
   depth: number,
   props: ConfigTypeSchemaProps
 ): React.ReactElement<HTMLElement> {
-  if ("fields" in type && props.maxDepth && depth === props.maxDepth) {
+  if (
+    type.__typename === "CompositeConfigType" &&
+    props.maxDepth &&
+    depth === props.maxDepth
+  ) {
     return <span>...</span>;
   }
-  if ("fields" in type) {
+  if (type.__typename === "CompositeConfigType") {
     const innerIndent = "  ".repeat(depth + 1);
     return (
       <>
@@ -45,7 +92,7 @@ function renderTypeRecursive(
             {fieldData.isOptional && Optional}
             {`: `}
             {renderTypeRecursive(
-              typeLookup[fieldData.configType.key],
+              typeLookup[fieldData.configTypeKey],
               typeLookup,
               depth + 1,
               props
@@ -56,19 +103,19 @@ function renderTypeRecursive(
       </>
     );
   }
-  if (type.isList) {
-    const innerType = type.innerTypes[0].key;
+  if (type.__typename === "ListConfigType") {
+    const ofTypeKey = type.typeParamKeys[0];
     return (
       <>
-        [{renderTypeRecursive(typeLookup[innerType], typeLookup, depth, props)}]
+        [{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props)}]
       </>
     );
   }
-  if (type.isNullable) {
-    const innerType = type.innerTypes[0].key;
+  if (type.__typename === "NullableConfigType") {
+    const ofTypeKey = type.typeParamKeys[0];
     return (
       <>
-        {renderTypeRecursive(typeLookup[innerType], typeLookup, depth, props)}
+        {renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props)}
         {Optional}
       </>
     );
@@ -77,54 +124,39 @@ function renderTypeRecursive(
   return <span>{type.name || "Anonymous Type"}</span>;
 }
 
-export default class ConfigTypeSchema extends React.Component<
-  ConfigTypeSchemaProps
-> {
+export class ConfigTypeSchema extends React.Component<ConfigTypeSchemaProps> {
   static fragments = {
     ConfigTypeSchemaFragment: gql`
-      fragment ConfigTypeInfoFragment on ConfigType {
+      fragment ConfigTypeSchemaFragment on ConfigType {
         key
         name
         description
-        isList
-        isNullable
         isSelector
-        innerTypes {
-          key
-        }
+        typeParamKeys
         ... on CompositeConfigType {
           fields {
             name
             description
             isOptional
-            configType {
-              key
-            }
+            configTypeKey
           }
-        }
-      }
-
-      fragment ConfigTypeSchemaFragment on ConfigType {
-        ...ConfigTypeInfoFragment
-        innerTypes {
-          key
         }
       }
     `
   };
 
   public render() {
-    const { type, allInnerTypes } = this.props;
+    const { type, typesInScope } = this.props;
 
-    const allInnerTypeMap = {};
-    for (const innerType of allInnerTypes) {
-      allInnerTypeMap[innerType.key] = innerType;
+    const typeLookup = {};
+    for (const typeInScope of typesInScope) {
+      typeLookup[typeInScope.key] = typeInScope;
     }
 
     return (
       <TypeSchemaContainer>
         <DictBlockComment content={type.description} indent="" />
-        {renderTypeRecursive(type, allInnerTypeMap, 0, this.props)}
+        {renderTypeRecursive(type, typeLookup, 0, this.props)}
       </TypeSchemaContainer>
     );
   }
