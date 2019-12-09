@@ -23,7 +23,7 @@ parser.add_argument('--nightly', action='store_true')
 
 def _do_setup(name='dagster-aws'):
     setup(
-        name='dagster_aws',
+        name=name,
         version=get_version(name),
         author='Elementl',
         license='Apache-2.0',
