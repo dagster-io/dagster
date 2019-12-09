@@ -10,30 +10,6 @@ def _get_origin(ttype):
     return getattr(ttype, '__origin__', None)
 
 
-def is_python_list_type(ttype):
-    '''Returns true for list, List, and List[T]'''
-    if ttype is list or ttype is typing.List:
-        return True
-    origin = _get_origin(ttype)
-    return origin == typing.List or origin == list
-
-
-def is_python_set_type(ttype):
-    '''Returns true for set, Set, and Set[T]'''
-    if ttype is set or ttype is typing.Set:
-        return True
-    origin = _get_origin(ttype)
-    return origin == typing.Set or origin == set
-
-
-def is_python_tuple_type(ttype):
-    '''Returns true for tuple, Tuple, and Tuple[S, T]'''
-    if ttype is tuple or ttype is typing.Tuple:
-        return True
-    origin = _get_origin(ttype)
-    return origin == typing.Tuple or origin == tuple
-
-
 def is_closed_python_optional_type(ttype):
     # Optional[X] is Union[X, NoneType] which is what we match against here
     origin = _get_origin(ttype)

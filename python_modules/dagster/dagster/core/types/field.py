@@ -62,7 +62,7 @@ def resolve_to_config_nullable(nullable_type):
 
 
 def resolve_to_config_type(dagster_type):
-    from .mapping import remap_python_type
+    from .mapping import remap_python_builtin_for_config, is_supported_config_python_builtin
     from .runtime import RuntimeType
 
     check.invariant(
@@ -80,7 +80,8 @@ def resolve_to_config_type(dagster_type):
             ).format(dagster_type=dagster_type)
         )
 
-    dagster_type = remap_python_type(dagster_type)
+    if is_supported_config_python_builtin(dagster_type):
+        return remap_python_builtin_for_config(dagster_type)
 
     if dagster_type is None:
         return Any.inst()

@@ -1,46 +1,58 @@
+from dagster import check
 from dagster.core.types import Bool, Float, Int, PythonDict, PythonSet, PythonTuple, String
 
-from .typing_api import (
-    is_closed_python_optional_type,
-    is_python_list_type,
-    is_python_set_type,
-    is_python_tuple_type,
-)
-from .wrapping import (
-    remap_to_dagster_list_type,
-    remap_to_dagster_optional_type,
-    remap_to_dagster_set_type,
-    remap_to_dagster_tuple_type,
-)
+from .builtin_enum import BuiltinEnum
+from .wrapping import WrappingListType, WrappingSetType, WrappingTupleType
+
+SUPPORTED_RUNTIME_BUILTINS = {
+    int: Int,
+    float: Float,
+    bool: Bool,
+    str: String,
+    list: WrappingListType(BuiltinEnum.ANY),
+    tuple: PythonTuple,
+    set: PythonSet,
+    dict: PythonDict,
+}
 
 
-def remap_python_type(ttype):
+def is_supported_runtime_python_builtin(ttype):
+    return ttype in SUPPORTED_RUNTIME_BUILTINS
+
+
+def remap_python_builtin_for_runtime(ttype):
+    '''This function remaps a python type to a Dagster type, or passes it through if it cannot be
+    remapped.
+    '''
+    from dagster.core.types.runtime import resolve_to_runtime_type
+
+    check.param_invariant(is_supported_runtime_python_builtin(ttype), 'ttype')
+
+    return resolve_to_runtime_type(SUPPORTED_RUNTIME_BUILTINS[ttype])
+
+
+SUPPORTED_CONFIG_BUILTINS = {
+    int: Int,
+    float: Float,
+    bool: Bool,
+    str: String,
+    list: WrappingListType(BuiltinEnum.ANY),
+    tuple: WrappingTupleType(None),
+    set: WrappingSetType(BuiltinEnum.ANY),
+}
+
+
+def is_supported_config_python_builtin(ttype):
+    return ttype in SUPPORTED_CONFIG_BUILTINS
+
+
+def remap_python_builtin_for_config(ttype):
     '''This function remaps a python type to a Dagster type, or passes it through if it cannot be
     remapped.
     '''
 
-    if ttype == int:
-        return Int
-    if ttype == float:
-        return Float
-    if ttype == bool:
-        return Bool
-    if ttype == str:
-        return String
-    if ttype == dict:
-        return PythonDict
-    if ttype == tuple:
-        return PythonTuple
-    if ttype == set:
-        return PythonSet
+    from dagster.core.types.field import resolve_to_config_type
 
-    if is_python_list_type(ttype):
-        return remap_to_dagster_list_type(ttype)
-    if is_python_tuple_type(ttype):
-        return remap_to_dagster_tuple_type(ttype)
-    if is_python_set_type(ttype):
-        return remap_to_dagster_set_type(ttype)
-    if is_closed_python_optional_type(ttype):
-        return remap_to_dagster_optional_type(ttype)
+    check.param_invariant(is_supported_config_python_builtin(ttype), 'ttype')
 
-    return ttype
+    return resolve_to_config_type(SUPPORTED_CONFIG_BUILTINS[ttype])

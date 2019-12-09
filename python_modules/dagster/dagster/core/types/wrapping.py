@@ -5,12 +5,50 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .builtin_enum import BuiltinEnum
 from .typing_api import (
+    get_dict_key_value_types,
+    get_list_inner_type,
     get_optional_inner_type,
+    get_set_inner_type,
+    get_tuple_type_params,
+    is_closed_python_dict_type,
+    is_closed_python_list_type,
     is_closed_python_optional_type,
-    is_python_list_type,
-    is_python_set_type,
-    is_python_tuple_type,
+    is_closed_python_set_type,
+    is_closed_python_tuple_type,
 )
+
+
+def transform_typing_type(type_annotation):
+
+    from .python_dict import create_typed_runtime_dict
+    from .field_utils import Dict
+
+    if type_annotation is typing.List:
+        return List
+    elif type_annotation is typing.Set:
+        return Set
+    elif type_annotation is typing.Tuple:
+        return Tuple
+    elif type_annotation is typing.Dict:
+        return Dict
+    elif is_closed_python_list_type(type_annotation):
+        return WrappingListType(transform_typing_type(get_list_inner_type(type_annotation)))
+    elif is_closed_python_set_type(type_annotation):
+        return WrappingSetType(transform_typing_type(get_set_inner_type(type_annotation)))
+    elif is_closed_python_tuple_type(type_annotation):
+        transformed_types = [
+            transform_typing_type(tt) for tt in get_tuple_type_params(type_annotation)
+        ]
+        return WrappingTupleType(tuple(transformed_types))
+    elif is_closed_python_optional_type(type_annotation):
+        return WrappingNullableType(transform_typing_type(get_optional_inner_type(type_annotation)))
+    elif is_closed_python_dict_type(type_annotation):
+        key_type, value_type = get_dict_key_value_types(type_annotation)
+        return create_typed_runtime_dict(
+            transform_typing_type(key_type), transform_typing_type(value_type)
+        )
+    else:
+        return type_annotation
 
 
 class WrappingType(object):
@@ -38,34 +76,6 @@ class WrappingTupleType(WrappingType):
 
 class WrappingNullableType(WrappingType):
     pass
-
-
-def remap_to_dagster_list_type(ttype):
-    check.invariant(is_python_list_type(ttype), 'type must pass is_python_list_type check')
-    if ttype == list or ttype == typing.List or isinstance(ttype, DagsterListApi):
-        return WrappingListType(BuiltinEnum.ANY)
-    return WrappingListType(ttype.__args__[0])
-
-
-def remap_to_dagster_set_type(ttype):
-    check.invariant(is_python_set_type(ttype), 'type must pass is_python_set_type check')
-    if ttype == set or ttype == typing.Set or isinstance(ttype, DagsterSetApi):
-        return WrappingSetType(BuiltinEnum.ANY)
-    return WrappingSetType(ttype.__args__[0])
-
-
-def remap_to_dagster_tuple_type(ttype):
-    check.invariant(is_python_tuple_type(ttype), 'type must pass is_python_tuple_type check')
-    if ttype == tuple or ttype == typing.Tuple or isinstance(ttype, DagsterTupleApi):
-        return WrappingTupleType(None)
-    return WrappingTupleType(ttype.__args__)
-
-
-def remap_to_dagster_optional_type(ttype):
-    check.invariant(
-        is_closed_python_optional_type(ttype), 'type must pass is_closed_python_optional_type check'
-    )
-    return WrappingNullableType(get_optional_inner_type(ttype))
 
 
 class DagsterListApi:
