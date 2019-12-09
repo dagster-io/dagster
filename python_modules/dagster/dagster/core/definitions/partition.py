@@ -140,14 +140,19 @@ class PartitionSetDefinition(
         return self.partition_fn()
 
     def create_schedule_definition(
-        self, schedule_name, cron_schedule, partition_selector=LastPartitionSelector()
+        self,
+        schedule_name,
+        cron_schedule,
+        partition_selector=LastPartitionSelector(),
+        environment_vars=None,
     ):
         '''Create a ScheduleDefinition from a PartitionSetDefinition
 
         Arguments:
-            name (str): The name of the schedule.
+            schedule_name (str): The name of the schedule.
             cron_schedule (str): A valid cron string for the schedule
             partition_selector (IPartitionSelector): A partition selector for the schedule
+            environment_vars (Optional[dict]): The environment variables to set for the schedule
 
         Returns:
             ScheduleDefinition -- The generated ScheduleDefinition for the IPartitionSelector
@@ -185,6 +190,7 @@ class PartitionSetDefinition(
             pipeline_name=self.pipeline_name,
             environment_dict_fn=_environment_dict_fn_wrapper,
             tags_fn=_tags_fn_wrapper,
+            environment_vars=environment_vars,
         )
 
 
