@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.6.6
+
+**Breaking**
+- The `selector` argument to `PipelineDefinition` has been removed. This API made it possible to
+  construct a `PipelineDefinition` in an invalid state. Use `PipelineDefinition.build_sub_pipeline`
+  instead.
+
+**New**
+- Added the `dagster_prometheus` library, which exposes a basic Prometheus resource.
+- Dagster Airflow DAGs may now use GCS instead of S3 for storage.
+- Expanded interface for schedule management in Dagit.
+  
+**Dagit**
+- Performance improvements when loading, displaying, and editing config for large pipelines.
+- Smooth scrolling zoom in the explore tab replaces the previous two-step zoom.
+- No longer depends on internet fonts to run, allowing fully offline dev.
+- Typeahead behavior in search has improved.
+- Invocations of composite solids remain visible in the sidebar when the solid is expanded.
+- The config schema panel now appears when the config editor is first opened.
+- Interface now includes hints for autocompletion in the config editor.
+- Improved display of solid inputs and output in the explore tab.
+- Provides visual feedback while filter results are loading.
+- Better handling of pipelines that aren't present in the currently loaded repo.
+
+**Bugfix**
+- Dagster Airflow DAGs previously could crash while handling Python errors in DAG logic.
+- Step failures when running Dagster Airflow DAGs were previously not being surfaced as task
+  failures in Airflow.
+- Dagit could previously get into an invalid state when switching pipelines in the context of a
+  solid subselection.
+- `frozenlist` and `frozendict` now pass Dagster's parameter type checks for `list` and `dict`.
+- The GraphQL playground in Dagit is now working again.
+  
+**Nits**
+- Dagit now prints its pid when it loads.
+- Third-party dependencies have been relaxed to reduce the risk of version conflicts.
+- Improvements to docs and example code.
+
+
 ## 0.6.5
 
 **Breaking**

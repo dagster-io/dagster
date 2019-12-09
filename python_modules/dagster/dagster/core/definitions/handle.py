@@ -8,6 +8,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
+from dagster.core.definitions.partition import RepositoryPartitionsHandle
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.repository import RepositoryDefinition
 from dagster.core.errors import DagsterInvariantViolationError
@@ -21,6 +22,83 @@ else:
 
 
 EPHEMERAL_NAME = '<<unnamed>>'
+
+
+class PartitionLoaderEntrypoint(
+    namedtuple('_PartitionLoaderEntrypoint', 'module module_name fn_name from_handle')
+):
+    def __new__(cls, module, module_name, fn_name, from_handle=None):
+        return super(PartitionLoaderEntrypoint, cls).__new__(
+            cls, module, module_name, fn_name, from_handle
+        )
+
+    def perform_load(self):
+        # in the decorator case the attribute will be the actual definition
+        if not hasattr(self.module, self.fn_name):
+            raise DagsterInvariantViolationError(
+                '{name} not found in module {module}.'.format(name=self.fn_name, module=self.module)
+            )
+
+        fn_partitions = getattr(self.module, self.fn_name)
+
+        if isinstance(fn_partitions, RepositoryPartitionsHandle):
+            inst = fn_partitions
+        elif callable(fn_partitions):
+            handle = fn_partitions()
+
+            if not isinstance(handle, RepositoryPartitionsHandle):
+                raise DagsterInvariantViolationError(
+                    '{fn_name} is a function but must return a RepositoryPartitionsHandle.'.format(
+                        fn_name=self.fn_name
+                    )
+                )
+
+            inst = handle
+
+        else:
+            raise DagsterInvariantViolationError(
+                '{fn_name} must be a function that returns a RepositoryPartitionstHandle.'.format(
+                    fn_name=self.fn_name
+                )
+            )
+
+        return inst
+
+    @staticmethod
+    def from_file_target(python_file, fn_name, from_handle=None):
+        file_directory = os.path.dirname(python_file)
+        if file_directory not in sys.path:
+            sys.path.append(file_directory)
+
+        module_name = os.path.splitext(os.path.basename(python_file))[0]
+        module = imp.load_source(module_name, python_file)
+
+        return PartitionLoaderEntrypoint(module, module_name, fn_name, from_handle)
+
+    @staticmethod
+    def from_module_target(module_name, fn_name, from_handle=None):
+        module = importlib.import_module(module_name)
+        return PartitionLoaderEntrypoint(module, module_name, fn_name, from_handle)
+
+    @staticmethod
+    def from_yaml(file_path, from_handle=None):
+        check.str_param(file_path, 'file_path')
+
+        config = load_yaml_from_path(file_path)
+        if not config.get('partitions'):
+            return None
+
+        partitions = check.dict_elem(config, 'partitions')
+        module_name = check.opt_str_elem(partitions, 'module')
+        file_name = check.opt_str_elem(partitions, 'file')
+        fn_name = check.str_elem(partitions, 'fn')
+
+        if module_name:
+            return PartitionLoaderEntrypoint.from_module_target(module_name, fn_name, from_handle)
+        else:
+            # rebase file in config off of the path in the config file
+            file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
+            return PartitionLoaderEntrypoint.from_file_target(file_name, fn_name, from_handle)
 
 
 class SchedulerLoaderEntrypoint(
@@ -383,6 +461,17 @@ class ExecutionTargetHandle(object):
 
         return self.scheduler_handle_entrypoint.perform_load(artifacts_dir)
 
+    def build_partitions_handle(self):
+        if self.mode != _ExecutionTargetMode.REPOSITORY:
+            return None
+
+        entrypoint = self.partition_handle_entrypoint
+
+        if not entrypoint:
+            return None
+
+        return self.partition_handle_entrypoint.perform_load()
+
     def build_repository_definition(self):
         '''Rehydrates a RepositoryDefinition from an ExecutionTargetHandle object.
 
@@ -434,6 +523,10 @@ class ExecutionTargetHandle(object):
                 )
         else:
             check.failed('Unhandled mode {mode}'.format(mode=self.mode))
+
+    @property
+    def partition_handle_entrypoint(self):
+        return self.data.get_partition_entrypoint(from_handle=self)
 
     @property
     def scheduler_handle_entrypoint(self):
@@ -510,6 +603,12 @@ class _ExecutionTargetHandleData(
             fn_name=check.opt_str_param(fn_name, 'fn_name'),
             pipeline_name=check.opt_str_param(pipeline_name, 'pipeline_name'),
         )
+
+    def get_partition_entrypoint(self, from_handle=None):
+        if self.repository_yaml:
+            return PartitionLoaderEntrypoint.from_yaml(
+                self.repository_yaml, from_handle=from_handle
+            )
 
     def get_scheduler_entrypoint(self, from_handle=None):
         if self.repository_yaml:

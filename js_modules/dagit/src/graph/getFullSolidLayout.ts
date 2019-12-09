@@ -89,6 +89,7 @@ export interface IPoint {
   y: number;
 }
 
+const MAX_PER_ROW_ENABLED = false;
 const MAX_PER_ROW = 25;
 const SOLID_WIDTH = 350;
 const SOLID_BASE_HEIGHT = 60;
@@ -154,7 +155,7 @@ function getDagrePipelineLayoutHeavy(
     // can reference them in a single pass later
     solid.inputs.forEach(input => {
       input.dependsOn.forEach(dep => {
-        g.setEdge(dep.solid.name, solid.name);
+        g.setEdge({ v: dep.solid.name, w: solid.name }, { weight: 1 });
 
         connections.push({
           from: {
@@ -174,87 +175,89 @@ function getDagrePipelineLayoutHeavy(
 
   dagre.layout(g);
 
-  const solids: {
-    [solidName: string]: IFullSolidLayout;
-  } = {};
-
+  const solids: { [solidName: string]: IFullSolidLayout } = {};
   const nodesBySolid: { [solidName: string]: dagre.Node } = {};
-  const nodesInRows: { [key: string]: dagre.Node[] } = {};
   g.nodes().forEach(function(solidName) {
-    const node = g.node(solidName);
-    nodesBySolid[solidName] = node;
-    nodesInRows[`${node.y}`] = nodesInRows[`${node.y}`] || [];
-    nodesInRows[`${node.y}`].push(node);
+    nodesBySolid[solidName] = g.node(solidName);
   });
 
-  // OK! We're going to split the nodes in long (>MAX_PER_ROW) rows into
-  // multiple rows, shift all the subsequent rows down. Note we do this
-  // repeatedly until each row has less than MAX_PER_ROW nodes. There are
-  // a few caveats to this:
-  // - We may end up making the lines betwee nodes and their children
-  //   less direct.
-  // - We may "compact" two groups of solids separated by horizontal
-  //   whitespace on the same row into the same block.
+  if (MAX_PER_ROW_ENABLED) {
+    const nodesInRows: { [key: string]: dagre.Node[] } = {};
+    g.nodes().forEach(function(solidName) {
+      const node = g.node(solidName);
+      nodesInRows[`${node.y}`] = nodesInRows[`${node.y}`] || [];
+      nodesInRows[`${node.y}`].push(node);
+    });
 
-  const rows = Object.keys(nodesInRows)
-    .map(a => Number(a))
-    .sort((a, b) => a - b);
+    // OK! We're going to split the nodes in long (>MAX_PER_ROW) rows into
+    // multiple rows, shift all the subsequent rows down. Note we do this
+    // repeatedly until each row has less than MAX_PER_ROW nodes. There are
+    // a few caveats to this:
+    // - We may end up making the lines betwee nodes and their children
+    //   less direct.
+    // - We may "compact" two groups of solids separated by horizontal
+    //   whitespace on the same row into the same block.
 
-  const firstRow = nodesInRows[`${rows[0]}`];
-  const firstRowCenterX = firstRow
-    ? firstRow.reduce((s, n) => s + n.x + n.width / 2, 0) / firstRow.length
-    : 0;
+    const rows = Object.keys(nodesInRows)
+      .map(a => Number(a))
+      .sort((a, b) => a - b);
 
-  for (let ii = 0; ii < rows.length; ii++) {
-    const rowKey = `${rows[ii]}`;
-    const rowNodes = nodesInRows[rowKey];
+    const firstRow = nodesInRows[`${rows[0]}`];
+    const firstRowCenterX = firstRow
+      ? firstRow.reduce((s, n) => s + n.x + n.width / 2, 0) / firstRow.length
+      : 0;
 
-    const desiredCount = Math.ceil(rowNodes.length / MAX_PER_ROW);
-    if (desiredCount === 1) continue;
+    for (let ii = 0; ii < rows.length; ii++) {
+      const rowKey = `${rows[ii]}`;
+      const rowNodes = nodesInRows[rowKey];
 
-    for (let r = 0; r < desiredCount; r++) {
-      const newRowNodes = rowNodes.slice(
-        r * MAX_PER_ROW,
-        (r + 1) * MAX_PER_ROW
-      );
-      const maxHeight =
-        Math.max(...newRowNodes.map(n => n.height)) + SOLID_BASE_HEIGHT;
-      const totalWidth = newRowNodes.reduce(
-        (sum, n) => sum + n.width + SOLID_BASE_HEIGHT,
-        0
-      );
+      const desiredCount = Math.ceil(rowNodes.length / MAX_PER_ROW);
+      if (desiredCount === 1) continue;
 
-      let x = firstRowCenterX - totalWidth / 2;
+      for (let r = 0; r < desiredCount; r++) {
+        const newRowNodes = rowNodes.slice(
+          r * MAX_PER_ROW,
+          (r + 1) * MAX_PER_ROW
+        );
+        const maxHeight =
+          Math.max(...newRowNodes.map(n => n.height)) + SOLID_BASE_HEIGHT;
+        const totalWidth = newRowNodes.reduce(
+          (sum, n) => sum + n.width + SOLID_BASE_HEIGHT,
+          0
+        );
 
-      // shift the nodes before the split point so they're centered nicely
-      newRowNodes.forEach(n => {
-        n.x = x;
-        x += n.width + SOLID_BASE_HEIGHT;
-      });
+        let x = firstRowCenterX - totalWidth / 2;
 
-      // shift the nodes after the split point downwards
-      const shifted = rowNodes.slice((r + 1) * MAX_PER_ROW);
-      shifted.forEach(n => (n.y += maxHeight));
+        // shift the nodes before the split point so they're centered nicely
+        newRowNodes.forEach(n => {
+          n.x = x;
+          x += n.width + SOLID_BASE_HEIGHT;
+        });
 
-      // shift all nodes in the graph beneath this row down by
-      // the height of the newly inserted row.
-      const shiftedMaxHeight =
-        Math.max(0, ...shifted.map(n => n.height)) + SOLID_BASE_HEIGHT;
+        // shift the nodes after the split point downwards
+        const shifted = rowNodes.slice((r + 1) * MAX_PER_ROW);
+        shifted.forEach(n => (n.y += maxHeight));
 
-      for (let jj = ii + 1; jj < rows.length; jj++) {
-        nodesInRows[`${rows[jj]}`].forEach(n => (n.y += shiftedMaxHeight));
+        // shift all nodes in the graph beneath this row down by
+        // the height of the newly inserted row.
+        const shiftedMaxHeight =
+          Math.max(0, ...shifted.map(n => n.height)) + SOLID_BASE_HEIGHT;
+
+        for (let jj = ii + 1; jj < rows.length; jj++) {
+          nodesInRows[`${rows[jj]}`].forEach(n => (n.y += shiftedMaxHeight));
+        }
       }
     }
+    let minX = Number.MAX_SAFE_INTEGER;
+    Object.keys(nodesBySolid).forEach(solidName => {
+      const node = nodesBySolid[solidName];
+      minX = Math.min(minX, node.x - node.width / 2 - marginx);
+    });
+    Object.keys(nodesBySolid).forEach(solidName => {
+      const node = nodesBySolid[solidName];
+      node.x -= minX;
+    });
   }
-  let minX = Number.MAX_SAFE_INTEGER;
-  Object.keys(nodesBySolid).forEach(solidName => {
-    const node = nodesBySolid[solidName];
-    minX = Math.min(minX, node.x - node.width / 2 - marginx);
-  });
-  Object.keys(nodesBySolid).forEach(solidName => {
-    const node = nodesBySolid[solidName];
-    node.x -= minX;
-  });
 
   // Due to a bug in Dagre when run without an "align" value, we need to calculate
   // the total width of the graph coordinate space ourselves. We need the height

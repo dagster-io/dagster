@@ -27,7 +27,7 @@ def execute_execute_plan_mutation(handle, variables, instance_ref=None):
 
 def handle_execution_errors(res, expected_type):
     if res is None:
-        raise DagsterGraphQLClientError('Unhandled error type. Raw response: {}'.format(res))
+        raise DagsterGraphQLClientError('Unhandled error type. Missing query response')
 
     if res.get('errors'):
         raise DagsterGraphQLClientError(

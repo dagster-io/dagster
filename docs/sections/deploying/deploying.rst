@@ -131,4 +131,4 @@ debugging and inspection, and production runs that persist to permanent cloud st
 reproducibility.
 
 Intermediate persistence is governed by subclasses of :py:class:`~dagster.SystemStorageDefinition`,
-which can be attached to a :py:class:`~dagster.ModeDefinition`. By default, the 
+which can be attached to a :py:class:`~dagster.ModeDefinition`.

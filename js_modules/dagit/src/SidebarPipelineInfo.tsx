@@ -14,6 +14,7 @@ import Description from "./Description";
 import ConfigTypeSchema from "./ConfigTypeSchema";
 import { SidebarPipelineInfoFragment } from "./types/SidebarPipelineInfoFragment";
 import { IconNames } from "@blueprintjs/icons";
+import { breakOnUnderscores } from "./Util";
 
 const NO_DESCRIPTION = "";
 
@@ -70,7 +71,7 @@ export default class SidebarPipelineInfo extends React.Component<
       <div>
         <SectionInner>
           <SidebarSubhead>Pipeline</SidebarSubhead>
-          <SidebarTitle>{pipeline.name}</SidebarTitle>
+          <SidebarTitle>{breakOnUnderscores(pipeline.name)}</SidebarTitle>
         </SectionInner>
         <SidebarSection title={"Description"}>
           <Description

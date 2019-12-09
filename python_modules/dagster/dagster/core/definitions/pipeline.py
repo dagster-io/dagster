@@ -191,10 +191,7 @@ class PipelineDefinition(IContainSolids, object):
         # Validate unsatisfied inputs can be materialized from config
         _validate_inputs(self._dependency_structure, self._solid_dict)
 
-        self._all_solid_defs = {}
-        for current_level_solid_def in self._current_level_solid_defs:
-            for solid_def in current_level_solid_def.iterate_solid_defs():
-                self._all_solid_defs[solid_def.name] = solid_def
+        self._all_solid_defs = _build_all_solid_defs(self._current_level_solid_defs)
 
         self._selector = ExecutionSelector(self.name, list(solid_dict.keys()))
 
@@ -527,6 +524,23 @@ def _validate_inputs(dependency_structure, solid_dict):
                             runtime_type=handle.input_def.runtime_type.display_name,
                         )
                     )
+
+
+def _build_all_solid_defs(solid_defs):
+    all_defs = {}
+    for current_level_solid_def in solid_defs:
+        for solid_def in current_level_solid_def.iterate_solid_defs():
+            if solid_def.name in all_defs:
+                if all_defs[solid_def.name] != solid_def:
+                    raise DagsterInvalidDefinitionError(
+                        'Detected conflicting solid definitions with the same name "{name}"'.format(
+                            name=solid_def.name
+                        )
+                    )
+            else:
+                all_defs[solid_def.name] = solid_def
+
+    return all_defs
 
 
 @whitelist_for_serdes

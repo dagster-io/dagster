@@ -26,6 +26,7 @@ import {
   ShowAllButton,
   SidebarSolidInvocationInfo
 } from "./SidebarSolidHelpers";
+import { breakOnUnderscores } from "./Util";
 
 interface SidebarSolidDefinitionProps {
   definition: SidebarSolidDefinitionFragment;
@@ -161,7 +162,7 @@ export class SidebarSolidDefinition extends React.Component<
           <SidebarSubhead>
             {isComposite ? "Composite Solid" : "Solid"}
           </SidebarSubhead>
-          <SidebarTitle>{definition.name}</SidebarTitle>
+          <SidebarTitle>{breakOnUnderscores(definition.name)}</SidebarTitle>
           <SolidTypeSignature definition={definition} />
         </SidebarSection>
         {definition.description && (
@@ -199,7 +200,9 @@ export class SidebarSolidDefinition extends React.Component<
         <SidebarSection title={"Inputs"}>
           {definition.inputDefinitions.map((inputDef, idx) => (
             <SectionItemContainer key={idx}>
-              <SectionSmallHeader>{inputDef.name}</SectionSmallHeader>
+              <SectionSmallHeader>
+                {breakOnUnderscores(inputDef.name)}
+              </SectionSmallHeader>
               <TypeWrapper>
                 <TypeWithTooltip type={inputDef.type} />
               </TypeWrapper>
@@ -214,7 +217,9 @@ export class SidebarSolidDefinition extends React.Component<
         <SidebarSection title={"Outputs"}>
           {definition.outputDefinitions.map((outputDef, idx) => (
             <SectionItemContainer key={idx}>
-              <SectionSmallHeader>{outputDef.name}</SectionSmallHeader>
+              <SectionSmallHeader>
+                {breakOnUnderscores(outputDef.name)}
+              </SectionSmallHeader>
               <TypeWrapper>
                 <TypeWithTooltip type={outputDef.type} />
               </TypeWrapper>

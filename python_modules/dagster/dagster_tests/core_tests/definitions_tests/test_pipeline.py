@@ -9,6 +9,7 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineDefinition,
+    composite_solid,
     dagster_type,
     execute_pipeline,
     lambda_solid,
@@ -190,3 +191,58 @@ def test_unconfigurable_inputs_pipeline():
         @pipeline
         def _bad_inputs():
             noop()
+
+
+def test_dupe_defs_fail():
+    @lambda_solid(name='same')
+    def noop():
+        pass
+
+    @lambda_solid(name='same')
+    def noop2():
+        pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @pipeline
+        def _dupes():
+            noop()
+            noop2()
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        PipelineDefinition(name='dupes', solid_defs=[noop, noop2])
+
+
+def test_composite_dupe_defs_fail():
+    @lambda_solid
+    def noop():
+        pass
+
+    @composite_solid(name='same')
+    def composite_noop():
+        noop()
+        noop()
+        noop()
+
+    @composite_solid(name='same')
+    def composite_noop2():
+        noop()
+
+    @composite_solid
+    def wrapper():
+        composite_noop2()
+
+    @composite_solid
+    def top():
+        wrapper()
+        composite_noop()
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @pipeline
+        def _dupes():
+            composite_noop()
+            composite_noop2()
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        PipelineDefinition(name='dupes', solid_defs=[top])

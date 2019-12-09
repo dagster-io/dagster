@@ -20,7 +20,7 @@ class LocalSQLiteWarehouse(object):
     # In practice, you'll probably want to write more generic, reusable logic on your resources
     # than this tutorial example
     def update_normalized_cereals(self, records):
-        conn = sqlite3.connect('example.db')
+        conn = sqlite3.connect(self._conn_str)
         curs = conn.cursor()
         try:
             curs.execute('DROP TABLE IF EXISTS normalized_cereals')

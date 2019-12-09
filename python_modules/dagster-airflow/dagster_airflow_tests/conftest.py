@@ -19,7 +19,7 @@ from dagster.utils import load_yaml_from_path, mkdir_p, pushd, script_relative_p
 
 # Will be set in environment by pipeline.py -> tox.ini to:
 # ${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-airflow-demo:${BUILDKITE_BUILD_ID}
-IMAGE = os.environ.get('DAGSTER_AIRFLOW_DOCKER_IMAGE')
+IMAGE = os.environ['DAGSTER_AIRFLOW_DOCKER_IMAGE']
 
 
 @pytest.fixture(scope='module')

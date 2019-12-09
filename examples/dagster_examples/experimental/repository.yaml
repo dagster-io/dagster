@@ -4,3 +4,6 @@ repository:
 scheduler:
   file: sched.py
   fn: define_scheduler
+partitions:
+  file: partitions.py
+  fn: define_repository_partitions
