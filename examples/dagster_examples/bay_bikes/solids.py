@@ -106,12 +106,9 @@ def unzip_files(context, file_names: List[str], source_dir: str, target_dir: str
     },
     required_resource_keys={'volume'},
 )
-def consolidate_csv_files(
-    context, input_file_names: List[str], source_dir: str, target_name: str
-) -> str:
+def consolidate_csv_files(context, input_file_names: List[str], source_dir: str) -> DataFrame:
     # mount dirs onto volume
     csv_file_location = os.path.join(context.resources.volume, source_dir)
-    consolidated_csv_location = os.path.join(context.resources.volume, target_name)
     if not os.path.exists(csv_file_location):
         os.mkdir(csv_file_location)
     # There must be a header in all of these dataframes or pandas won't know how to concatinate dataframes.
@@ -125,8 +122,7 @@ def consolidate_csv_files(
             for file_name in input_file_names
         ]
     )
-    dataset.to_csv(consolidated_csv_location, sep=context.solid_config['delimiter'])
-    return consolidated_csv_location
+    return dataset
 
 
 @solid(required_resource_keys={'transporter'})
@@ -201,10 +197,19 @@ def preprocess_trip_dataset(_, dataframe: DataFrame) -> TripDataFrame:
 
 @composite_solid
 def produce_trip_dataset() -> TripDataFrame:
-    download_trips_dataset = download_csv_from_bucket_and_return_dataframe.alias(
-        'download_trips_dataset'
+    download_baybike_zipfiles_from_url = download_zipfiles_from_urls.alias(
+        'download_baybike_zipfiles_from_url'
     )
-    return preprocess_trip_dataset(download_trips_dataset())
+    unzip_baybike_zipfiles = unzip_files.alias('unzip_baybike_zipfiles')
+    consolidate_baybike_data_into_trip_dataset = consolidate_csv_files.alias(
+        'consolidate_baybike_data_into_trip_dataset'
+    )
+
+    return preprocess_trip_dataset(
+        consolidate_baybike_data_into_trip_dataset(
+            unzip_baybike_zipfiles(download_baybike_zipfiles_from_url())
+        )
+    )
 
 
 @solid

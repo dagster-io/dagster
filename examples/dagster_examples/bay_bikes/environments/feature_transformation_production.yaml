@@ -5,3 +5,32 @@ resources:
   volume:
     config:
       mount_location: /tmp
+solids:
+  produce_trip_dataset:
+    solids:
+      download_baybike_zipfiles_from_url:
+        inputs:
+          base_url:
+            value: 'https://s3.amazonaws.com/baywheels-data'
+          file_names:
+              - value: 201801-fordgobike-tripdata.csv.zip
+              - value: 201802-fordgobike-tripdata.csv.zip
+              - value: 201803-fordgobike-tripdata.csv.zip
+              - value: 201804-fordgobike-tripdata.csv.zip
+              - value: 201805-fordgobike-tripdata.csv.zip
+              - value: 201806-fordgobike-tripdata.csv.zip
+              - value: 201807-fordgobike-tripdata.csv.zip
+              - value: 201808-fordgobike-tripdata.csv.zip
+              - value: 201809-fordgobike-tripdata.csv.zip
+              - value: 201810-fordgobike-tripdata.csv.zip
+              - value: 201811-fordgobike-tripdata.csv.zip
+              - value: 201812-fordgobike-tripdata.csv.zip
+              - value: 201901-fordgobike-tripdata.csv.zip
+              - value: 201902-fordgobike-tripdata.csv.zip
+              - value: 201903-fordgobike-tripdata.csv.zip
+              - value: 201904-fordgobike-tripdata.csv.zip
+              - value: 201905-baywheels-tripdata.csv.zip
+              - value: 201906-baywheels-tripdata.csv.zip
+              - value: 201907-baywheels-tripdata.csv.zip
+              - value: 201908-baywheels-tripdata.csv.zip
+              - value: 201909-baywheels-tripdata.csv.zip
