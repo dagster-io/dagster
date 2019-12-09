@@ -734,6 +734,33 @@ def test_nested_empty_config():
     assert res.result_for_solid('double_wrap').output_values == {'result': 'an input'}
 
 
+def test_nested_empty_config_input():
+    @lambda_solid
+    def number(num):
+        return num
+
+    @composite_solid(
+        config_fn=lambda context, _: {'number': {'inputs': {'num': {'value': 4}}}}, config={}
+    )
+    def wrap_solid():  # pylint: disable=unused-variable
+        return number()
+
+    @composite_solid
+    def double_wrap(num):
+        number(num)
+        return wrap_solid()
+
+    @pipeline
+    def wrap_pipeline():
+        return double_wrap()
+
+    res = execute_pipeline(
+        wrap_pipeline,
+        environment_dict={'solids': {'double_wrap': {'inputs': {'num': {'value': 2}}}}},
+    )
+    assert res.result_for_solid('double_wrap').output_values == {'result': 4}
+
+
 def test_bad_solid_def():
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 

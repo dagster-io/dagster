@@ -310,7 +310,7 @@ def _evaluate_composite_solid_config(context):
         )
 
     # When evaluating nested composite solids defined with config mapping functions but empty config
-    if 'solids' in context.config_value:
+    if 'solids' in mapped_config_value:
         mapped_config_value = context.config_value.get('solids')
 
     # We've validated the composite solid config; now validate the mapping fn overrides against the
