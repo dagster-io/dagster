@@ -24,10 +24,10 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-try:
+if sys.version_info[0] >= 3:
     from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
+else:
+    from functools32 import lru_cache  # pylint: disable=E0401
 
 try:
     # pylint:disable=redefined-builtin,self-assigning-variable
