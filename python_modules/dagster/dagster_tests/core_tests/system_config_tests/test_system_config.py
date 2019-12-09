@@ -489,8 +489,7 @@ def test_required_resource_with_required_subfield():
             ModeDefinition(
                 resource_defs={
                     'with_required': ResourceDefinition(
-                        resource_fn=lambda: None,
-                        config_field=Field(Dict({'required_field': Field(String)})),
+                        resource_fn=lambda: None, config_field={'required_field': Field(String)},
                     )
                 }
             )

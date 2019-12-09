@@ -258,27 +258,17 @@ def more_complicated_nested_config():
         name='a_solid_with_multilayered_config',
         input_defs=[],
         output_defs=[],
-        config_field=Field(
-            Dict(
-                {
-                    'field_any': Field(Any),
-                    'field_one': Field(String),
-                    'field_two': Field(String, is_optional=True),
-                    'field_three': Field(String, is_optional=True, default_value='some_value'),
-                    'nested_field': Field(
-                        Dict(
-                            {
-                                'field_four_str': Field(String),
-                                'field_five_int': Field(Int),
-                                'field_six_nullable_int_list': Field(
-                                    List[Optional[Int]], is_optional=True
-                                ),
-                            }
-                        )
-                    ),
-                }
-            )
-        ),
+        config={
+            'field_any': Any,
+            'field_one': String,
+            'field_two': Field(String, is_optional=True),
+            'field_three': Field(String, is_optional=True, default_value='some_value'),
+            'nested_field': {
+                'field_four_str': String,
+                'field_five_int': Int,
+                'field_six_nullable_int_list': Field(List[Optional[Int]], is_optional=True),
+            },
+        },
     )
     def a_solid_with_multilayered_config(_):
         return None

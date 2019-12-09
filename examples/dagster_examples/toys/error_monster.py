@@ -1,7 +1,5 @@
 from dagster import (
     Bool,
-    Dict,
-    Field,
     InputDefinition,
     Int,
     ModeDefinition,
@@ -28,13 +26,11 @@ def resource_init(init_context):
 
 def define_errorable_resource():
     return ResourceDefinition(
-        resource_fn=resource_init, config_field=Field(Dict({'throw_on_resource_init': Field(Bool)}))
+        resource_fn=resource_init, config_field={'throw_on_resource_init': Bool}
     )
 
 
-solid_throw_config = Field(
-    Dict(fields={'throw_in_solid': Field(Bool), 'return_wrong_type': Field(Bool)})
-)
+solid_throw_config = {'throw_in_solid': Bool, 'return_wrong_type': Bool}
 
 
 @solid(name='emit_num', output_defs=[OutputDefinition(Int)], config_field=solid_throw_config)

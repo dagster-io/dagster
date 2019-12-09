@@ -34,7 +34,7 @@ def bq_resource_config():
         is_optional=True,
     )
 
-    return Field(Dict(fields={'project': project, 'location': location}))
+    return {'project': project, 'location': location}
 
 
 def _define_shared_fields():
@@ -243,41 +243,30 @@ def define_bigquery_query_config():
         is_optional=True,
     )
 
-    return Field(
-        Dict(
-            fields={
-                'query_job_config': Field(
-                    Dict(
-                        fields={
-                            'allow_large_results': allow_large_results,
-                            'clustering_fields': sf['clustering_fields'],
-                            'create_disposition': sf['create_disposition'],
-                            'default_dataset': default_dataset,
-                            'destination': destination,
-                            'destination_encryption_configuration': sf[
-                                'destination_encryption_configuration'
-                            ],
-                            'dry_run': dry_run,
-                            'flatten_results': flatten_results,
-                            # TODO: labels
-                            'maximum_billing_tier': maximum_billing_tier,
-                            'maximum_bytes_billed': maximum_bytes_billed,
-                            'priority': priority,
-                            'query_parameters': query_parameters,
-                            # TODO: table_definitions
-                            'schema_update_options': sf['schema_update_options'],
-                            'time_partitioning': sf['time_partitioning'],
-                            # TODO: udf_resources
-                            'use_legacy_sql': use_legacy_sql,
-                            'use_query_cache': use_query_cache,
-                            'write_disposition': sf['write_disposition'],
-                        }
-                    )
-                )
-            }
-        ),
-        description='BigQuery query configuration',
-    )
+    return {
+        'query_job_config': {
+            'allow_large_results': allow_large_results,
+            'clustering_fields': sf['clustering_fields'],
+            'create_disposition': sf['create_disposition'],
+            'default_dataset': default_dataset,
+            'destination': destination,
+            'destination_encryption_configuration': sf['destination_encryption_configuration'],
+            'dry_run': dry_run,
+            'flatten_results': flatten_results,
+            # TODO: labels
+            'maximum_billing_tier': maximum_billing_tier,
+            'maximum_bytes_billed': maximum_bytes_billed,
+            'priority': priority,
+            'query_parameters': query_parameters,
+            # TODO: table_definitions
+            'schema_update_options': sf['schema_update_options'],
+            'time_partitioning': sf['time_partitioning'],
+            # TODO: udf_resources
+            'use_legacy_sql': use_legacy_sql,
+            'use_query_cache': use_query_cache,
+            'write_disposition': sf['write_disposition'],
+        }
+    }
 
 
 def define_bigquery_load_config():
@@ -354,43 +343,32 @@ def define_bigquery_load_config():
         is_optional=True,
     )
 
-    return Field(
-        Dict(
-            fields={
-                'destination': destination,
-                'load_job_config': Field(
-                    Dict(
-                        fields={
-                            'allow_jagged_rows': allow_jagged_rows,
-                            'allow_quoted_newlines': allow_quoted_newlines,
-                            'autodetect': autodetect,
-                            'clustering_fields': sf['clustering_fields'],
-                            'create_disposition': sf['create_disposition'],
-                            'destination_encryption_configuration': sf[
-                                'destination_encryption_configuration'
-                            ],
-                            'destination_table_description': destination_table_description,
-                            'destination_table_friendly_name': destination_table_friendly_name,
-                            'encoding': encoding,
-                            'field_delimiter': field_delimiter,
-                            'ignore_unknown_values': ignore_unknown_values,
-                            'max_bad_records': max_bad_records,
-                            'null_marker': null_marker,
-                            'quote_character': quote_character,
-                            # TODO: schema
-                            'schema_update_options': sf['schema_update_options'],
-                            'skip_leading_rows': skip_leading_rows,
-                            'source_format': source_format,
-                            'time_partitioning': sf['time_partitioning'],
-                            'use_avro_logical_types': use_avro_logical_types,
-                            'write_disposition': sf['write_disposition'],
-                        }
-                    )
-                ),
-            }
-        ),
-        description='BigQuery load configuration',
-    )
+    return {
+        'destination': destination,
+        'load_job_config': {
+            'allow_jagged_rows': allow_jagged_rows,
+            'allow_quoted_newlines': allow_quoted_newlines,
+            'autodetect': autodetect,
+            'clustering_fields': sf['clustering_fields'],
+            'create_disposition': sf['create_disposition'],
+            'destination_encryption_configuration': sf['destination_encryption_configuration'],
+            'destination_table_description': destination_table_description,
+            'destination_table_friendly_name': destination_table_friendly_name,
+            'encoding': encoding,
+            'field_delimiter': field_delimiter,
+            'ignore_unknown_values': ignore_unknown_values,
+            'max_bad_records': max_bad_records,
+            'null_marker': null_marker,
+            'quote_character': quote_character,
+            # TODO: schema
+            'schema_update_options': sf['schema_update_options'],
+            'skip_leading_rows': skip_leading_rows,
+            'source_format': source_format,
+            'time_partitioning': sf['time_partitioning'],
+            'use_avro_logical_types': use_avro_logical_types,
+            'write_disposition': sf['write_disposition'],
+        },
+    }
 
 
 def define_bigquery_create_dataset_config():
@@ -403,10 +381,7 @@ def define_bigquery_create_dataset_config():
         is_optional=True,
     )
 
-    return Field(
-        Dict(fields={'dataset': dataset, 'exists_ok': exists_ok}),
-        description='BigQuery create dataset configuration',
-    )
+    return {'dataset': dataset, 'exists_ok': exists_ok}
 
 
 def define_bigquery_delete_dataset_config():
@@ -426,13 +401,8 @@ def define_bigquery_delete_dataset_config():
         is_optional=True,
     )
 
-    return Field(
-        Dict(
-            fields={
-                'dataset': dataset,
-                'delete_contents': delete_contents,
-                'not_found_ok': not_found_ok,
-            }
-        ),
-        description='BigQuery delete dataset configuration',
-    )
+    return {
+        'dataset': dataset,
+        'delete_contents': delete_contents,
+        'not_found_ok': not_found_ok,
+    }

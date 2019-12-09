@@ -212,15 +212,11 @@ def test_nested_missing_and_not_defined():
 
 MultiLevelDictType = Dict(
     {
-        'level_one_string_field': Field(String),
-        'level_two_dict': Field(
-            Dict(
-                {
-                    'level_two_int_field': Field(Int),
-                    'level_three_dict': Field(Dict({'level_three_string': Field(String)})),
-                }
-            )
-        ),
+        'level_one_string_field': String,
+        'level_two_dict': {
+            'level_two_int_field': Int,
+            'level_three_dict': {'level_three_string': String},
+        },
     }
 )
 

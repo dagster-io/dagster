@@ -66,13 +66,17 @@ def raise_bad_user_facing_field_argument(obj, param_name, error_context_str):
 
 
 def check_user_facing_opt_field_param(obj, param_name, error_context_str):
-    from .field import Field
-
     check.str_param(param_name, 'param_name')
-    if obj is None or isinstance(obj, Field):
-        return obj
 
-    return raise_bad_user_facing_field_argument(obj, param_name, error_context_str)
+    if obj is None:
+        return None
+
+    return coerce_potential_field(
+        obj,
+        lambda _potential_field: raise_bad_user_facing_field_argument(
+            obj, param_name, error_context_str
+        ),
+    )
 
 
 class _ConfigHasFields(ConfigType):
@@ -137,21 +141,55 @@ class _ConfigHasFields(ConfigType):
         return format_fields(fields)
 
 
-def check_user_facing_fields_dict(fields, type_name_msg):
+def is_potential_field(potential_field):
+    from .field import Field, resolve_to_config_type
+
+    return isinstance(potential_field, (Field, dict)) or resolve_to_config_type(potential_field)
+
+
+def coerce_potential_field(potential_field, raise_error_callback):
+    from .field import Field, resolve_to_config_type
+
+    if not is_potential_field(potential_field):
+        raise_error_callback(potential_field)
+
+    return (
+        potential_field
+        if isinstance(potential_field, Field)
+        else Field(Dict(_process_fields_dict(potential_field, raise_error_callback)))
+        if isinstance(potential_field, dict)
+        else Field(resolve_to_config_type(potential_field))
+    )
+
+
+def _process_fields_dict(fields, throw_error_callback):
+    check.dict_param(fields, 'fields', key_type=str)
+    check.callable_param(throw_error_callback, 'throw_error_callback')
+
+    return {
+        name: coerce_potential_field(value, throw_error_callback) for name, value in fields.items()
+    }
+
+
+def process_user_facing_fields_dict(fields, type_name_msg):
     check.dict_param(fields, 'fields', key_type=str)
     check.str_param(type_name_msg, 'type_name_msg')
+
+    return {
+        name: coerce_potential_field(
+            value, lambda: _throw_for_bad_fields_dict(fields, type_name_msg)
+        )
+        for name, value in fields.items()
+    }
+
+
+def _throw_for_bad_fields_dict(fields, type_name_msg):
     from .field import Field
-
-    # early check of all values
-    if all(map(lambda f: isinstance(f, Field), fields.values())):
-        return
-
-    # now do potentially expensive error check and string building
 
     sorted_field_names = sorted(list(fields.keys()))
 
     for field_name, potential_field in fields.items():
-        if isinstance(potential_field, Field):
+        if isinstance(potential_field, (Field, dict)):
             continue
 
         raise_bad_user_facing_field_argument(
@@ -168,7 +206,7 @@ def check_user_facing_fields_dict(fields, type_name_msg):
 
 class NamedDict(_ConfigHasFields):
     def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
-        check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
+        process_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
         super(NamedDict, self).__init__(
             key=name,
             name=name,
@@ -230,12 +268,13 @@ class Dict(_ConfigHasFields):
     '''
 
     def __new__(cls, fields, description=None, is_system_config=False):
-        check_user_facing_fields_dict(fields, 'Dict')
+        fields = process_user_facing_fields_dict(fields, 'Dict')
         return _memoize_inst_in_field_cache(
             cls, Dict, _define_dict_key_hash(fields, description, is_system_config)
         )
 
     def __init__(self, fields, description=None, is_system_config=False):
+        fields = process_user_facing_fields_dict(fields, 'Dict')
         super(Dict, self).__init__(
             name=None,
             kind=ConfigTypeKind.DICT,
@@ -282,13 +321,15 @@ class PermissiveDict(_ConfigHasFields):
 
     def __new__(cls, fields=None, description=None):
         if fields:
-            check_user_facing_fields_dict(fields, 'PermissiveDict')
+            fields = process_user_facing_fields_dict(fields, 'PermissiveDict')
 
         return _memoize_inst_in_field_cache(
             cls, PermissiveDict, _define_permissive_dict_key(fields, description)
         )
 
     def __init__(self, fields=None, description=None):
+        if fields:
+            fields = process_user_facing_fields_dict(fields, 'PermissiveDict')
         super(PermissiveDict, self).__init__(
             key=_define_permissive_dict_key(fields, description),
             name=None,
@@ -353,12 +394,13 @@ class Selector(_ConfigHasFields):
     '''
 
     def __new__(cls, fields, description=None, is_system_config=False):
-        check_user_facing_fields_dict(fields, 'Selector')
+        fields = process_user_facing_fields_dict(fields, 'Selector')
         return _memoize_inst_in_field_cache(
             cls, Selector, _define_selector_key(fields, description, is_system_config)
         )
 
     def __init__(self, fields, description=None, is_system_config=False):
+        fields = process_user_facing_fields_dict(fields, 'Selector')
         super(Selector, self).__init__(
             key=_define_selector_key(fields, description, is_system_config),
             name=None,
@@ -374,7 +416,7 @@ class Selector(_ConfigHasFields):
 class NamedSelector(_ConfigHasFields):
     def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
         check.str_param(name, 'name')
-        check_user_facing_fields_dict(fields, 'NamedSelector named "{}"'.format(name))
+        fields = process_user_facing_fields_dict(fields, 'NamedSelector named "{}"'.format(name))
         super(NamedSelector, self).__init__(
             key=name,
             name=name,

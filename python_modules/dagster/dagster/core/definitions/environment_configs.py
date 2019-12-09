@@ -70,9 +70,9 @@ def SystemSelector(fields, description=None):
 
 class SolidConfigDict(_ConfigHasFields):
     def __init__(self, name, fields, description=None):
-        from dagster.core.types.config.field_utils import check_user_facing_fields_dict
+        from dagster.core.types.config.field_utils import process_user_facing_fields_dict
 
-        check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
+        process_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
 
         super(SolidConfigDict, self).__init__(
             key=name,

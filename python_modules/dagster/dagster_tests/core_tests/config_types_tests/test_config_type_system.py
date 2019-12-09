@@ -8,7 +8,6 @@ from dagster import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
-    Dict,
     Field,
     Int,
     List,
@@ -32,10 +31,19 @@ from dagster.core.types.config.evaluator.errors import (
     DagsterEvaluateConfigValueError,
     DagsterEvaluationErrorReason,
 )
+from dagster.core.types.config.field_utils import coerce_potential_field
+
+
+def _raise_error():
+    raise Exception('error in test')
 
 
 def assert_config_type_snapshot(snapshot, config_field):
     snapshot.assert_match(config_field.config_type.debug_str())
+
+
+def _to_field(ddict):
+    return coerce_potential_field(ddict, _raise_error)
 
 
 def test_noop_config():
@@ -43,7 +51,7 @@ def test_noop_config():
 
 
 def test_int_field(snapshot):
-    config_field = Field(Dict({'int_field': Field(Int)}))
+    config_field = _to_field({'int_field': Int})
     assert_config_type_snapshot(snapshot, config_field)
     assert evaluate_config(config_field.config_type, {'int_field': 1}).value == {'int_field': 1}
 
@@ -59,7 +67,7 @@ def assert_eval_failure(config_type, value):
 
 
 def test_int_fails(snapshot):
-    config_field = Field(Dict({'int_field': Field(Int)}))
+    config_field = _to_field({'int_field': Int})
 
     assert_config_type_snapshot(snapshot, config_field)
     assert_eval_failure(config_field.config_type, {'int_field': 'fjkdj'})
@@ -67,38 +75,36 @@ def test_int_fails(snapshot):
 
 
 def test_default_arg(snapshot):
-    config_field = Field(Dict({'int_field': Field(Int, default_value=2, is_optional=True)}))
+    config_field = _to_field({'int_field': Field(Int, default_value=2, is_optional=True)})
 
     assert_config_type_snapshot(snapshot, config_field)
     assert_config_value_success(config_field.config_type, {}, {'int_field': 2})
 
 
 def _single_required_string_config_dict():
-    return Field(Dict({'string_field': Field(String)}))
+    return _to_field({'string_field': String})
 
 
 def _multiple_required_fields_config_dict():
-    return Field(Dict({'field_one': Field(String), 'field_two': Field(String)}))
+    return _to_field({'field_one': String, 'field_two': String})
 
 
 def _single_optional_string_config_dict():
-    return Field(Dict({'optional_field': Field(String, is_optional=True)}))
+    return _to_field({'optional_field': Field(String, is_optional=True)})
 
 
 def _single_optional_string_field_config_dict_with_default():
     optional_field_def = Field(String, is_optional=True, default_value='some_default')
-    return Field(Dict({'optional_field': optional_field_def}))
+    return _to_field({'optional_field': optional_field_def})
 
 
 def _mixed_required_optional_string_config_dict_with_default():
-    return Field(
-        Dict(
-            {
-                'optional_arg': Field(String, is_optional=True, default_value='some_default'),
-                'required_arg': Field(String, is_optional=False),
-                'optional_arg_no_default': Field(String, is_optional=True),
-            }
-        )
+    return _to_field(
+        {
+            'optional_arg': Field(String, is_optional=True, default_value='some_default'),
+            'required_arg': Field(String, is_optional=False),
+            'optional_arg_no_default': Field(String, is_optional=True),
+        }
     )
 
 
@@ -271,18 +277,15 @@ def test_mixed_args_passing():
 
 
 def _single_nested_config():
-    return Field(Dict({'nested': Field(Dict({'int_field': Field(Int)}))}))
+    return _to_field({'nested': {'int_field': Int}})
 
 
 def _nested_optional_config_with_default():
-    return Field(
-        Dict({'nested': Field(Dict({'int_field': Field(Int, is_optional=True, default_value=3)}))})
-    )
+    return _to_field({'nested': {'int_field': Field(Int, is_optional=True, default_value=3)}})
 
 
 def _nested_optional_config_with_no_default():
-    nested_type = Dict({'int_field': Field(Int, is_optional=True)})
-    return Field(Dict({'nested': Field(dagster_type=nested_type)}))
+    return _to_field({'nested': {'int_field': Field(Int, is_optional=True)}})
 
 
 def test_single_nested_config():
@@ -432,13 +435,8 @@ def single_elem(ddict):
 
 
 def test_build_optionality():
-    optional_test_type = Field(
-        Dict(
-            {
-                'required': Field(Dict({'value': Field(String)})),
-                'optional': Field(Dict({'value': Field(String, is_optional=True)})),
-            }
-        )
+    optional_test_type = _to_field(
+        {'required': {'value': String}, 'optional': {'value': Field(String, is_optional=True)},}
     ).config_type
 
     assert optional_test_type.fields['required'].is_optional is False
@@ -515,7 +513,7 @@ def test_two_list_types():
         name='two_list_type',
         input_defs=[],
         output_defs=[],
-        config_field=Field(Dict({'list_one': Field(List[Int]), 'list_two': Field(List[Int])})),
+        config_field=_to_field({'list_one': List[Int], 'list_two': List[Int]}),
     )
     def two_list_type(_):
         return None

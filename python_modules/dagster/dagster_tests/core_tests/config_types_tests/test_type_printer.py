@@ -1,4 +1,4 @@
-from dagster import Dict, Field, Int, List, Optional, PipelineDefinition, SolidDefinition, String
+from dagster import Dict, Field, Int, List, Optional, PipelineDefinition, String, solid
 from dagster.core.types.config.field import resolve_to_config_type
 from dagster.core.types.config.type_printer import print_type_to_string
 
@@ -127,14 +127,12 @@ def test_test_type_pipeline_construction():
     assert define_test_type_pipeline()
 
 
-def define_solid_for_test_type(name, runtime_type):
-    return SolidDefinition(
-        name=name,
-        input_defs=[],
-        output_defs=[],
-        config_field=Field(runtime_type),
-        compute_fn=lambda _info, _inputs: None,
-    )
+def define_solid_for_test_type(name, config):
+    @solid(name=name, config=config, input_defs=[], output_defs=[])
+    def a_solid(_):
+        return None
+
+    return a_solid
 
 
 # launch in dagit with this command:
@@ -150,21 +148,15 @@ def define_test_type_pipeline():
             define_solid_for_test_type(
                 'nullable_list_of_nullable_int_config', Optional[List[Optional[Int]]]
             ),
-            define_solid_for_test_type(
-                'simple_dict', Dict({'int_field': Field(Int), 'string_field': Field(String)})
-            ),
+            define_solid_for_test_type('simple_dict', {'int_field': Int, 'string_field': String}),
             define_solid_for_test_type(
                 'dict_with_optional_field',
-                Dict(
-                    {
-                        'nullable_int_field': Field(Optional[Int]),
-                        'optional_int_field': Field(Int, is_optional=True),
-                        'string_list_field': Field(List[String]),
-                    }
-                ),
+                {
+                    'nullable_int_field': Optional[Int],
+                    'optional_int_field': Field(Int, is_optional=True),
+                    'string_list_field': List[String],
+                },
             ),
-            define_solid_for_test_type(
-                'nested_dict', Dict({'nested': Field(Dict({'int_field': Field(Int)}))})
-            ),
+            define_solid_for_test_type('nested_dict', {'nested': {'int_field': Int}}),
         ],
     )

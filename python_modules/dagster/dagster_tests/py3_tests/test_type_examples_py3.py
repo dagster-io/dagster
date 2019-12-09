@@ -342,16 +342,12 @@ def concat_config(context) -> String:
     return ''.join(context.solid_config)
 
 
-@solid(config_field=Field(Dict({'word': Field(String), 'times': Field(Int)})))
+@solid(config={'word': String, 'times': Int})
 def repeat_config(context) -> str:
     return context.solid_config['word'] * context.solid_config['times']
 
 
-@solid(
-    config_field=Field(
-        Selector({'haw': Field(Dict({})), 'cn': Field(Dict({})), 'en': Field(Dict({}))})
-    )
-)
+@solid(config_field=Field(Selector({'haw': {}, 'cn': {}, 'en': {}})))
 def hello_world(context) -> str:
     if 'haw' in context.solid_config:
         return 'Aloha honua!'
@@ -364,11 +360,9 @@ def hello_world(context) -> str:
     config_field=Field(
         Selector(
             {
-                'haw': Field(
-                    Dict({'whom': Field(String, default_value='honua', is_optional=True)})
-                ),
-                'cn': Field(Dict({'whom': Field(String, default_value='世界', is_optional=True)})),
-                'en': Field(Dict({'whom': Field(String, default_value='world', is_optional=True)})),
+                'haw': {'whom': Field(String, default_value='honua', is_optional=True)},
+                'cn': {'whom': Field(String, default_value='世界', is_optional=True)},
+                'en': {'whom': Field(String, default_value='world', is_optional=True)},
             }
         ),
         is_optional=True,

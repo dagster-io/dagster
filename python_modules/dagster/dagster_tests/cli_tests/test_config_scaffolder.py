@@ -34,7 +34,7 @@ def test_basic_solids_config(snapshot):
                 name='required_field_solid',
                 input_defs=[],
                 output_defs=[],
-                config_field=Field(Dict(fields={'required_int': Field(Int)})),
+                config_field={'required_int': Int},
                 compute_fn=lambda *_args: fail_me(),
             )
         ],
@@ -75,10 +75,7 @@ def test_two_modes(snapshot):
         solid_defs=[],
         mode_defs=[
             ModeDefinition(
-                'mode_one',
-                resource_defs={
-                    'value': dummy_resource(Field(Dict({'mode_one_field': Field(String)})))
-                },
+                'mode_one', resource_defs={'value': dummy_resource({'mode_one_field': String})},
             ),
             ModeDefinition(
                 'mode_two',
