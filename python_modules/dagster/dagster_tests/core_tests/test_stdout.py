@@ -1,4 +1,6 @@
 import os
+import random
+import string
 import sys
 
 import pytest
@@ -76,3 +78,37 @@ def test_stdout_subscriptions():
     assert len(stderr) == 1
     assert stderr[0].cursor == len(stderr[0].data)
     assert stderr[0].cursor > 400
+
+
+def gen_solid_name(length):
+    return ''.join(random.choice(string.ascii_lowercase) for x in range(length))
+
+
+@pytest.mark.skipif(
+    should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
+)
+def test_long_solid_names():
+    solid_name = gen_solid_name(300)
+
+    @pipeline
+    def long_pipeline():
+        spew.alias(name=solid_name)()
+
+    instance = DagsterInstance.local_temp()
+    manager = instance.compute_log_manager
+
+    result = execute_pipeline(long_pipeline, instance=instance)
+    assert result.success
+
+    compute_steps = [
+        event.step_key
+        for event in result.step_event_list
+        if event.event_type == DagsterEventType.STEP_START
+    ]
+
+    assert len(compute_steps) == 1
+    step_key = compute_steps[0]
+    assert manager.is_compute_completed(result.run_id, step_key)
+
+    stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+    assert stdout.data == HELLO_WORLD + SEPARATOR

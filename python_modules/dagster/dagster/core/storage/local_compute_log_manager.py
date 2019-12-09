@@ -1,3 +1,4 @@
+import hashlib
 import os
 from collections import defaultdict
 
@@ -21,6 +22,8 @@ from .compute_log_manager import (
 WATCHDOG_POLLING_TIMEOUT = 2.5
 
 IO_TYPE_EXTENSION = {ComputeIOType.STDOUT: 'out', ComputeIOType.STDERR: 'err'}
+
+MAX_FILENAME_LENGTH = 255
 
 
 class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
@@ -46,11 +49,16 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
 
     def get_local_path(self, run_id, step_key, io_type):
         check.inst_param(io_type, 'io_type', ComputeIOType)
-        extension = IO_TYPE_EXTENSION[io_type]
-        return os.path.join(self._run_directory(run_id), "{}.{}".format(step_key, extension))
+        return self._get_local_path(run_id, step_key, IO_TYPE_EXTENSION[io_type])
 
     def complete_artifact_path(self, run_id, step_key):
-        return os.path.join(self._run_directory(run_id), "{}.{}".format(step_key, 'complete'))
+        return self._get_local_path(run_id, step_key, 'complete')
+
+    def _get_local_path(self, run_id, step_key, extension):
+        filename = "{}.{}".format(step_key, extension)
+        if len(filename) > MAX_FILENAME_LENGTH:
+            filename = "{}.{}".format(hashlib.md5(step_key.encode('utf-8')).hexdigest(), extension)
+        return os.path.join(self._run_directory(run_id), filename)
 
     def read_logs_file(self, run_id, step_key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
         path = self.get_local_path(run_id, step_key, io_type)
