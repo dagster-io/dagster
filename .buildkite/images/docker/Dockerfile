@@ -93,10 +93,6 @@ RUN set -ex \
     && update-alternatives --query java | grep -q 'Status: manual' \
     && java -version
 
-# On buster, pyarrow wheels aren't available. Build from source.
-ADD pyarrow-0.15.1.dev403+gfe41a6822-cp38-cp38-linux_x86_64.whl .
-RUN if [ "${DEBIAN_VERSION}" = "buster" ]; then pip install pyarrow-0.15.1.dev403+gfe41a6822-cp38-cp38-linux_x86_64.whl; fi
-
 # This will frequently OOM without --no-cache-dir
 RUN pip --no-cache-dir install pyspark==$PYSPARK_VERSION
 
@@ -183,5 +179,4 @@ RUN cd scala_modules && make compile
 # Final cleanup
 RUN rm -rf /scala_modules \
     /snapshot-reqs.txt \
-    /trigger_maven.py \
-    /pyarrow-0.15.1.dev403+gfe41a6822-cp38-cp38-linux_x86_64.whl
+    /trigger_maven.py
