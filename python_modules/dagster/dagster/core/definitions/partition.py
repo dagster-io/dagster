@@ -171,6 +171,9 @@ class PartitionSetDefinition(
             tags = self.tags_fn_for_partition(selected_partition)
 
             # Add partition tags
+            check.invariant('dagster/partition_set' not in tags)
+            tags['dagster/partition_set'] = self.name
+
             check.invariant('dagster/partition' not in tags)
             tags['dagster/partition'] = selected_partition.name
 
