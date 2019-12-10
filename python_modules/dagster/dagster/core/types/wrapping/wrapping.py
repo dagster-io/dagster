@@ -100,7 +100,7 @@ class DagsterSetApi:
         return WrappingSetType(inner_type)
 
 
-class DictTypeApi(object):
+class DagsterDictApi(object):
     def __call__(self, fields):
         from dagster.core.types.config.field_utils import build_config_dict
 
@@ -121,4 +121,4 @@ Set = DagsterSetApi()
 
 Tuple = DagsterTupleApi()
 
-Dict = DictTypeApi()
+Dict = DagsterDictApi()
