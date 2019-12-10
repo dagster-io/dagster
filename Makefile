@@ -25,55 +25,44 @@ install_dev_python_modules:
 	pip --no-cache-dir install pyspark==2.4.4 $(QUIET)
 
 # Need to manually install Airflow because we no longer explicitly depend on it
-	pip install apache-airflow $(QUIET)
-
 # dagster-pandas must come before dasgtermill because of dependency
 # See https://github.com/dagster-io/dagster/issues/1485
 
-	@echo "\n\nInstalling dagster"
-	pip install -e python_modules/dagster $(QUIET)
+	pip install apache-airflow \
+				-e python_modules/dagster \
+				-e python_modules/dagster-graphql \
+				-e python_modules/dagit \
+				-e python_modules/libraries/dagster-pandas \
+				-e python_modules/dagstermill \
+				-e python_modules/libraries/dagster-aws \
+				-e python_modules/libraries/dagster-bash \
+				-e python_modules/libraries/dagster-cron \
+				-e python_modules/libraries/dagster-datadog \
+				-e python_modules/libraries/dagster-dbt \
+				-e python_modules/libraries/dagster-gcp \
+				-e python_modules/libraries/dagster-ge \
+				-e python_modules/libraries/dagster-pagerduty \
+				-e python_modules/libraries/dagster-papertrail \
+				-e python_modules/libraries/dagster-postgres \
+				-e python_modules/libraries/dagster-pyspark \
+				-e python_modules/libraries/dagster-slack \
+				-e python_modules/libraries/dagster-snowflake \
+				-e python_modules/libraries/dagster-spark \
+				-e python_modules/libraries/dagster-ssh \
+				-e python_modules/libraries/dagster-twilio \
+				-e python_modules/automation \
+				-e examples[full] \
+				-r python_modules/dagster/dev-requirements.txt \
+				-r python_modules/libraries/dagster-aws/dev-requirements.txt \
+				-r bin/requirements.txt \
+				-r scala_modules/scripts/requirements.txt $(QUIET)
 
-	@echo "\n\nInstalling dagster-graphql"
-	pip install -e python_modules/dagster-graphql $(QUIET)
-
-	@echo "\n\nInstalling dagit"
-	pip install -e python_modules/dagit $(QUIET)
-
-	@echo "\n\nInstalling dagster-pandas"
-	pip install -e python_modules/libraries/dagster-pandas $(QUIET)
-
-	@echo "\n\nInstalling dagstermill"
-	pip install -e python_modules/dagstermill $(QUIET)
-
-	@echo "\n\nInstalling dagster-airflow"
 	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow $(QUIET)
 
 	# NOTE: This installation will fail for Python 2.7 (Dask doesn't work w/ py27 on macOS)
 	-pip install -e python_modules/dagster-dask $(QUIET)
-	pip install -e python_modules/libraries/dagster-aws $(QUIET)
-	pip install -e python_modules/libraries/dagster-bash $(QUIET)
-	pip install -e python_modules/libraries/dagster-cron $(QUIET)
-	pip install -e python_modules/libraries/dagster-datadog $(QUIET)
-	pip install -e python_modules/libraries/dagster-dbt $(QUIET)
-	pip install -e python_modules/libraries/dagster-gcp $(QUIET)
-	pip install -e python_modules/libraries/dagster-ge $(QUIET)
-	pip install -e python_modules/libraries/dagster-pagerduty $(QUIET)
-	pip install -e python_modules/libraries/dagster-papertrail $(QUIET)
-	pip install -e python_modules/libraries/dagster-postgres $(QUIET)
-	pip install -e python_modules/libraries/dagster-pyspark $(QUIET)
-	pip install -e python_modules/libraries/dagster-slack $(QUIET)
-	pip install -e python_modules/libraries/dagster-snowflake $(QUIET)
-	pip install -e python_modules/libraries/dagster-spark $(QUIET)
-	pip install -e python_modules/libraries/dagster-ssh $(QUIET)
-	pip install -e python_modules/libraries/dagster-twilio $(QUIET)
-	pip install -e python_modules/automation $(QUIET)
-	pip install -e examples[full] $(QUIET)
-	pip install -r python_modules/dagster/dev-requirements.txt $(QUIET)
-	pip install -r python_modules/dagit/dev-requirements.txt $(QUIET)
-	pip install -r python_modules/libraries/dagster-aws/dev-requirements.txt $(QUIET)
-	pip install -r bin/requirements.txt $(QUIET)
-	pip install -r .read-the-docs-requirements.txt $(QUIET)
-	pip install -r scala_modules/scripts/requirements.txt $(QUIET)
+
+	pip install -r .read-the-docs-requirements.txt
 
 install_dev_python_modules_verbose:
 	make QUIET="" install_dev_python_modules

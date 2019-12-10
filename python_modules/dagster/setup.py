@@ -80,7 +80,6 @@ def _do_setup(name='dagster'):
             # https://github.com/mhammond/pywin32/issues/1439
             'pywin32 != 226; platform_system=="Windows"',
         ],
-        tests_require=['mock'],
         entry_points={'console_scripts': ['dagster = dagster.cli:main']},
     )
 

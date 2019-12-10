@@ -38,7 +38,6 @@ def _do_setup(name='dagster-papertrail'):
         ],
         packages=find_packages(exclude=['test']),
         install_requires=['dagster'],
-        tests_require=['mock'],
         zip_safe=False,
     )
 

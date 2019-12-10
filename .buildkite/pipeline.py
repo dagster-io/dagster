@@ -124,7 +124,6 @@ def python_modules_tox_tests(directory):
         tests.append(
             StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
             .run(
-                "pip install tox",
                 "eval $(ssh-agent)",
                 "cd python_modules/{directory}".format(directory=directory),
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
@@ -190,7 +189,6 @@ def events_demo_tests():
                 "cp ./events/target/scala-2.11/events-assembly-0.1.0-SNAPSHOT.jar /tmp/dagster/events/",
                 "popd",
                 "pushd examples",
-                "pip install tox",
                 "tox -vv -c event.tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
@@ -301,7 +299,6 @@ def dagster_postgres_tests():
                         )
                         + [
                             "pushd ../",
-                            "pip install tox",
                             "tox -e {ver}".format(ver=TOX_MAP[version]),
                             "mv .coverage {file}".format(file=coverage),
                             "buildkite-agent artifact upload {file}".format(file=coverage),
@@ -326,7 +323,6 @@ def examples_tests():
             StepBuilder("examples tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
                 "pushd examples",
-                "pip install tox",
                 *wrap_with_docker_compose_steps(
                     # Can't use host networking on buildkite and communicate via localhost
                     # between these sibling containers, so pass along the ip.
@@ -355,7 +351,6 @@ def automation_tests():
         StepBuilder("automation tests ({ver})".format(ver=TOX_MAP[version]))
         .run(
             "pushd python_modules/automation",
-            "pip install tox",
             "tox -e {ver}".format(ver=TOX_MAP[version]),
             "mv .coverage {file}".format(file=coverage),
             "buildkite-agent artifact upload {file}".format(file=coverage),
@@ -379,7 +374,6 @@ def gcp_tests():
                 r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
                 + GCP_CREDS_LOCAL_FILE,
                 "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-                "pip install tox;",
                 "cd python_modules/libraries/dagster-gcp",
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
@@ -416,7 +410,6 @@ def dask_tests():
                     + [
                         "popd",
                         "pushd python_modules/dagster-dask/",
-                        "pip install tox",
                         "tox -e {ver}".format(ver=TOX_MAP[version]),
                         "mv .coverage {file}".format(file=coverage),
                         "buildkite-agent artifact upload {file}".format(file=coverage),
@@ -460,7 +453,6 @@ def dagit_tests():
                 "pushd python_modules",
                 "make rebuild_dagit",
                 "popd",
-                "pip install tox;",
                 "cd python_modules/dagit",
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
@@ -480,7 +472,6 @@ def lakehouse_tests():
         tests.append(
             StepBuilder("lakehouse tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "pip install tox;",
                 "cd python_modules/lakehouse",
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
@@ -636,7 +627,6 @@ if __name__ == "__main__":
             "pip install -e python_modules/libraries/dagster-cron -qqq",
             "pip install -e python_modules/libraries/dagster-slack -qqq",
             "pip install -e python_modules/dagit -qqq",
-            "pip install -r python_modules/dagit/dev-requirements.txt -qqq",
             "pip install -e examples -qqq",
             "cd js_modules/dagit",
             "yarn install --offline",

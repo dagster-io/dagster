@@ -40,8 +40,7 @@ RUN pip install \
 	-e dagster-pyspark \
 	-e dagster-postgres \
 	-e dagster-cron \
-	-e . \
-	-r dagster-graphql/dev-requirements.txt
+	-e .
 
 # do separate install because two of the requirements files require
 # pytest and you cannot specify two (compatible) deps on the same module
