@@ -165,7 +165,7 @@ export const ScheduleRow: React.FunctionComponent<{
                     </Tooltip>
                   </Link>
                 ) : (
-                  <a
+                  <span
                     onClick={() =>
                       showCustomAlert({
                         title: "Schedule Response",
@@ -192,7 +192,7 @@ export const ScheduleRow: React.FunctionComponent<{
                     >
                       <AttemptStatus status={attempt.status} />
                     </Tooltip>
-                  </a>
+                  </span>
                 )}
               </div>
             ))
@@ -219,7 +219,7 @@ export const ScheduleRow: React.FunctionComponent<{
             <ErrorTag>
               <Tag intent={Intent.WARNING}>
                 Latest run failed:
-                <ErrorLink
+                <ButtonLink
                   onClick={() =>
                     showCustomAlert({
                       title: "Error",
@@ -244,7 +244,7 @@ export const ScheduleRow: React.FunctionComponent<{
                   }
                 >
                   View Error
-                </ErrorLink>
+                </ButtonLink>
               </Tag>
             </ErrorTag>
           )}
@@ -356,10 +356,20 @@ const ErrorTag = styled.div`
   margin-top: 5px;
 `;
 
-const ErrorLink = styled.a`
-  color: white;
-  text-decoration: underline;
+const ButtonLink = styled.button`
+  color: #ffffff;
   margin-left: 10px;
+  font-size: 12px;
+  background: none!important;
+  border: none;
+  padding: 0!important;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  &: hover {
+    color: #cccccc;
+  }
+}
 `;
 
 const START_SCHEDULE_MUTATION = gql`
