@@ -12,9 +12,11 @@ import { PipelineRunStatus, ScheduleAttemptStatus, ScheduleStatus } from "./../.
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition {
   __typename: "ScheduleDefinition";
   name: string;
-  executionParamsString: string;
-  environmentConfigYaml: string;
   cronSchedule: string;
+  pipelineName: string;
+  solidSubset: (string | null)[] | null;
+  mode: string;
+  environmentConfigYaml: string | null;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts_run_pipeline {

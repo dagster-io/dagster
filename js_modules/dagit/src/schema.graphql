@@ -962,8 +962,10 @@ enum ScheduleAttemptStatus {
 type ScheduleDefinition {
   name: String!
   cronSchedule: String!
-  executionParamsString: String!
-  environmentConfigYaml: String!
+  pipelineName: String!
+  solidSubset: [String]
+  mode: String!
+  environmentConfigYaml: String
 }
 
 type ScheduledExecutionBlocked {

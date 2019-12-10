@@ -179,12 +179,11 @@ def execute_up_command(preview, cli_args, print_fn):
 @click.option('--running', help="Filter for running schedules", is_flag=True, default=False)
 @click.option('--stopped', help="Filter for stopped schedules", is_flag=True, default=False)
 @click.option('--name', help="Only display schedule schedule names", is_flag=True, default=False)
-@click.option('--verbose', is_flag=True)
-def schedule_list_command(running, stopped, name, verbose, **kwargs):
-    return execute_list_command(running, stopped, name, verbose, kwargs, click.echo)
+def schedule_list_command(running, stopped, name, **kwargs):
+    return execute_list_command(running, stopped, name, kwargs, click.echo)
 
 
-def execute_list_command(running_filter, stopped_filter, name_filter, verbose, cli_args, print_fn):
+def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
@@ -227,13 +226,6 @@ def execute_list_command(running_filter, stopped_filter, name_filter, verbose, c
 
         print_fn(schedule_title)
         print_fn('Cron Schedule: {cron_schedule}'.format(cron_schedule=schedule_def.cron_schedule))
-
-        if verbose:
-            print_fn(
-                'Execution Params: {execution_params}'.format(
-                    execution_params=schedule_def.execution_params
-                )
-            )
 
 
 def extract_schedule_name(schedule_name):

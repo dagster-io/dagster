@@ -116,6 +116,13 @@ def define_scheduler():
     def solid_subset_weekly_decorator(_date):
         return {"storage": {"filesystem": {}}}
 
+    @daily_schedule(
+        pipeline_name='no_config_pipeline',
+        start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+    )
+    def environment_dict_error_schedule(_date):
+        return asdf  # pylint: disable=undefined-variable
+
     return [
         no_config_pipeline_hourly_schedule,
         no_config_pipeline_hourly_schedule_with_config_fn,
@@ -129,4 +136,5 @@ def define_scheduler():
         solid_subset_daily_decorator,
         solid_subset_monthly_decorator,
         solid_subset_weekly_decorator,
+        environment_dict_error_schedule,
     ]

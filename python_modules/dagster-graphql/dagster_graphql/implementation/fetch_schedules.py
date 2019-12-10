@@ -4,8 +4,10 @@ import os
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
+from dagster.core.definitions.schedule import ScheduleExecutionContext
+from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
 
-from .utils import UserFacingGraphQLError, capture_dauphin_error
+from .utils import ExecutionMetadata, ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error
@@ -35,6 +37,41 @@ def get_schedule_or_error(graphene_info, schedule_name):
         )
 
     return graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=schedule)
+
+
+def execution_params_for_schedule(graphene_info, schedule_def):
+    schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
+
+    # Get environment_dict
+    with user_code_error_boundary(
+        ScheduleExecutionError,
+        lambda: 'Error occurred during the execution of environment_dict_fn for schedule '
+        '{schedule_name}'.format(schedule_name=schedule_def.name),
+    ):
+        environment_dict = schedule_def.get_environment_dict(schedule_context)
+
+    # Get tags
+    with user_code_error_boundary(
+        ScheduleExecutionError,
+        lambda: 'Error occurred during the execution of tags_fn for schedule '
+        '{schedule_name}'.format(schedule_name=schedule_def.name),
+    ):
+        tags = schedule_def.get_tags(schedule_context)
+
+    check.invariant('dagster/schedule_name' not in tags)
+    tags['dagster/schedule_name'] = schedule_def.name
+
+    selector = schedule_def.selector
+    mode = schedule_def.mode
+
+    return ExecutionParams(
+        selector=selector,
+        environment_dict=environment_dict,
+        mode=mode,
+        execution_metadata=ExecutionMetadata(tags=tags, run_id=None),
+        step_keys=None,
+        previous_run_id=None,
+    )
 
 
 def get_scheduler_handle(graphene_info):

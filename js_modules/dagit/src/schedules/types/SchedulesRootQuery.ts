@@ -17,9 +17,11 @@ export interface SchedulesRootQuery_scheduler_SchedulerNotDefinedError {
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition {
   __typename: "ScheduleDefinition";
   name: string;
-  executionParamsString: string;
-  environmentConfigYaml: string;
   cronSchedule: string;
+  pipelineName: string;
+  solidSubset: (string | null)[] | null;
+  mode: string;
+  environmentConfigYaml: string | null;
 }
 
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempts_run_pipeline {

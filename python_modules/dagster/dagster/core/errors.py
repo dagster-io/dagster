@@ -8,7 +8,7 @@ used by the framework in concert with the :py:func:`~dagster.core.errors.user_co
 
 Dagster uses this construct to wrap user code into which it calls. User code can perform arbitrary
 computations and may itself throw exceptions. The error boundary catches these user code-generated
-exceptions, and then reraises them wrapped in a subclass of 
+exceptions, and then reraises them wrapped in a subclass of
 :py:class:`~dagster.DagsterUserCodeExecutionError`.
 
 The wrapped exceptions include additional context for the original exceptions, injected by the
@@ -55,7 +55,7 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
     '''Indicates that you have attempted to construct a config with an invalid value
 
     Acceptable values for config types are any of:
-        1. A Python primitive type that resolves to a Dagster config type 
+        1. A Python primitive type that resolves to a Dagster config type
             (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
             :py:class:`~python:str`, or :py:class:`~python:list`).
 
@@ -388,3 +388,7 @@ class DagsterEventLogInvalidForRun(DagsterError):
         super(DagsterEventLogInvalidForRun, self).__init__(
             'Event logs invalid for run id {}'.format(run_id)
         )
+
+
+class ScheduleExecutionError(DagsterUserCodeExecutionError):
+    '''Errors raised during the execution of schedule.'''

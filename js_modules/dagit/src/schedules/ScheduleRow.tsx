@@ -51,12 +51,11 @@ export const ScheduleRow: React.FunctionComponent<{
   const {
     name,
     cronSchedule,
-    executionParamsString,
+    pipelineName,
+    solidSubset,
+    mode,
     environmentConfigYaml
   } = scheduleDefinition;
-  const executionParams = JSON.parse(executionParamsString);
-  const pipelineName = executionParams.selector.name;
-  const mode = executionParams.mode;
 
   const [startSchedule] = useMutation(START_SCHEDULE_MUTATION);
   const [stopSchedule] = useMutation(STOP_SCHEDULE_MUTATION);
@@ -280,25 +279,33 @@ export const ScheduleRow: React.FunctionComponent<{
                     title: "Config",
                     body: (
                       <HighlightedCodeBlock
-                        value={environmentConfigYaml}
+                        value={
+                          environmentConfigYaml || "Unable to resolve config"
+                        }
                         languages={["yaml"]}
                       />
                     )
                   })
                 }
               />
-              <MenuItem
-                text="Open in Execute Tab..."
-                icon="edit"
-                target="_blank"
-                href={`/playground/${
-                  executionParams.selector.name
-                }/setup?${qs.stringify({
-                  mode: executionParams.mode,
-                  config: environmentConfigYaml,
-                  solidSubset: executionParams.selector.solidSubset
-                })}`}
-              />
+              {environmentConfigYaml !== null ? (
+                <MenuItem
+                  text="Open in Execute Tab..."
+                  icon="edit"
+                  target="_blank"
+                  href={`/playground/${pipelineName}/setup?${qs.stringify({
+                    mode,
+                    solidSubset,
+                    config: environmentConfigYaml
+                  })}`}
+                />
+              ) : (
+                <MenuItem
+                  text="Open in Execute Tab..."
+                  icon="edit"
+                  disabled={true}
+                />
+              )}
               <MenuDivider />
               <MenuItem
                 text="Copy Path to Debug Logs"
@@ -321,9 +328,11 @@ export const ScheduleRowFragment = gql`
     __typename
     scheduleDefinition {
       name
-      executionParamsString
-      environmentConfigYaml
       cronSchedule
+      pipelineName
+      solidSubset
+      mode
+      environmentConfigYaml
     }
     logsPath
     attempts(limit: $limit) {
