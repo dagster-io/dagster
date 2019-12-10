@@ -6,6 +6,7 @@ import pytest
 from dagster import (
     Any,
     DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     Dict,
     Field,
@@ -16,7 +17,9 @@ from dagster import (
     PermissiveDict,
     PipelineDefinition,
     ResourceDefinition,
+    Set,
     String,
+    Tuple,
     check,
     composite_solid,
     execute_pipeline,
@@ -785,3 +788,33 @@ def test_typing_types_into_config():
             @solid(config_field=Field(ttype))
             def _solid(_):
                 pass
+
+
+def test_no_set_in_config_system():
+    set_error_msg = re.escape('Cannot use Set in the context of a config field.')
+    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
+
+        @solid(config_field=Field(Set))
+        def _bare_open_set(_):
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
+
+        @solid(config_field=Field(Set[int]))
+        def _bare_closed_set(_):
+            pass
+
+
+def test_no_tuple_in_config_system():
+    tuple_error_msg = re.escape('Cannot use Tuple in the context of a config field.')
+    with pytest.raises(DagsterInvalidDefinitionError, match=tuple_error_msg):
+
+        @solid(config_field=Field(Tuple))
+        def _bare_open_tuple(_):
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError, match=tuple_error_msg):
+
+        @solid(config_field=Field(Tuple[int]))
+        def _bare_closed_set(_):
+            pass

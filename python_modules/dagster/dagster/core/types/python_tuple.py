@@ -1,6 +1,6 @@
 from dagster import check
 
-from .config import Tuple
+from .config import ConfigAnyInstance, List
 from .config_schema import InputHydrationConfig
 from .runtime import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
 
@@ -15,12 +15,7 @@ class TypedTupleInputHydrationConfig(InputHydrationConfig):
 
     @property
     def schema_type(self):
-        return Tuple(
-            [
-                runtime_type.input_hydration_config.schema_type
-                for runtime_type in self._runtime_types
-            ],
-        )
+        return List(ConfigAnyInstance)
 
     def construct_from_config_value(self, context, config_value):
         return tuple(

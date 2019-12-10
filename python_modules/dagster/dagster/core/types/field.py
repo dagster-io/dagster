@@ -2,7 +2,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 from .builtin_enum import BuiltinEnum
-from .config import ConfigAnyInstance, ConfigType, List, Nullable, Set, Tuple
+from .config import ConfigAnyInstance, ConfigType, List, Nullable
 from .default_applier import apply_default_values
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
 from .typing_api import is_typing_type
@@ -24,36 +24,6 @@ def resolve_to_config_list(list_type):
         return List(resolve_to_config_type(BuiltinEnum.ANY))
 
     return List(resolve_to_config_type(list_type.inner_type))
-
-
-def resolve_to_config_set(set_type):
-    check.inst_param(set_type, 'set_type', (WrappingSetType, DagsterSetApi))
-
-    if isinstance(set_type, DagsterSetApi):
-        return Set(resolve_to_config_type(BuiltinEnum.ANY))
-
-    return Set(resolve_to_config_type(set_type.inner_type))
-
-
-def resolve_to_config_tuple(tuple_type):
-    check.inst_param(tuple_type, 'list_type', (WrappingTupleType, DagsterTupleApi))
-
-    if isinstance(tuple_type, DagsterTupleApi):
-        return List(resolve_to_config_type(BuiltinEnum.ANY))
-
-    if tuple_type.inner_type is None:
-        return List(resolve_to_config_type(BuiltinEnum.ANY))
-
-    resolved_types = []
-    for type_param in tuple_type.inner_type:
-        resolved_type = resolve_to_config_type(type_param)
-        if resolved_type is None:
-            raise DagsterInvalidDefinitionError(
-                'Passed invalid type {type_param} to Tuple'.format(type_param=type_param)
-            )
-        resolved_types.append(resolved_type)
-
-    return Tuple(resolved_types)
 
 
 def resolve_to_config_nullable(nullable_type):
@@ -93,6 +63,15 @@ def resolve_to_config_type(dagster_type):
             ).format(dagster_type=dagster_type)
         )
 
+    if isinstance(dagster_type, (WrappingSetType, DagsterSetApi)):
+        raise DagsterInvalidDefinitionError(
+            'Cannot use Set in the context of a config field. Please use List instead.'
+        )
+    if isinstance(dagster_type, (WrappingTupleType, DagsterTupleApi)):
+        raise DagsterInvalidDefinitionError(
+            'Cannot use Tuple in the context of a config field. Please use List instead.'
+        )
+
     # Short circuit if it's already a Config Type
     if isinstance(dagster_type, ConfigType):
         return dagster_type
@@ -113,10 +92,6 @@ def resolve_to_config_type(dagster_type):
         return ConfigType.from_builtin_enum(dagster_type)
     if isinstance(dagster_type, (WrappingListType, DagsterListApi)):
         return resolve_to_config_list(dagster_type)
-    if isinstance(dagster_type, (WrappingSetType, DagsterSetApi)):
-        return resolve_to_config_set(dagster_type)
-    if isinstance(dagster_type, (WrappingTupleType, DagsterTupleApi)):
-        return resolve_to_config_tuple(dagster_type)
     if isinstance(dagster_type, WrappingNullableType):
         return resolve_to_config_nullable(dagster_type)
 

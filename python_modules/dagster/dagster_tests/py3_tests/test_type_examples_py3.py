@@ -288,22 +288,6 @@ def test_tuple_solid_configable_input():
     assert res.output_value() == ['foo', 1, 3.1]
 
 
-def test_tuple_solid_configable_input_bad():
-    with pytest.raises(
-        DagsterInvalidConfigError,
-        match=re.escape(
-            'Error 1: Type failure at path "root:solids:tuple_solid:inputs:tuple_input[0]". Value '
-            'for selector type String.InputHydrationConfig must be a dict.'
-        ),
-    ):
-        execute_solid(
-            tuple_solid,
-            environment_dict={
-                'solids': {'tuple_solid': {'inputs': {'tuple_input': ['foo', 1, 3.1]}}}
-            },
-        )
-
-
 def test_dict_return_solid():
     res = execute_solid(dict_return_solid)
     assert res.output_value() == {'foo': 'bar'}
@@ -361,41 +345,6 @@ def concat_config(context) -> String:
 @solid(config_field=Field(Dict({'word': Field(String), 'times': Field(Int)})))
 def repeat_config(context) -> str:
     return context.solid_config['word'] * context.solid_config['times']
-
-
-@solid(config_field=Field(Tuple))
-def tuple_config(context) -> str:
-    return ':'.join([str(x) for x in context.solid_config])
-
-
-@solid(config_field=Field(Tuple[Any, Any]))
-def any_tuple_config(context) -> str:
-    return ':'.join([str(x) for x in context.solid_config])
-
-
-@solid(config_field=Field(Tuple[String, Int, Float]))
-def heterogeneous_tuple_config(context) -> str:
-    return ':'.join([str(x) for x in context.solid_config])
-
-
-@solid(config_field=Field(Tuple[Tuple[String, String], Int]))
-def nested_tuple_config(context) -> str:
-    return (context.solid_config[0][0] + context.solid_config[0][1]) * context.solid_config[1]
-
-
-@solid(config_field=Field(Set))
-def set_config(context) -> list:
-    return sorted([str(x) for x in context.solid_config])
-
-
-@solid(config_field=Field(Set[Any]))
-def set_any_config(context) -> list:
-    return sorted([str(x) for x in context.solid_config])
-
-
-@solid(config_field=Field(Set[str]))
-def set_string_config(context) -> list:
-    return sorted([x for x in context.solid_config])
 
 
 @solid(
@@ -525,105 +474,12 @@ def test_repeat_config():
     assert res.output_value() == 'foofoofoo'
 
 
-def test_tuple_config():
-    res = execute_solid(
-        tuple_config, environment_dict={'solids': {'tuple_config': {'config': ['foo', 3, 3.4]}}}
-    )
-    assert res.output_value() == 'foo:3:3.4'
-
-
-def test_any_tuple_config():
-    res = execute_solid(
-        any_tuple_config, environment_dict={'solids': {'any_tuple_config': {'config': ['foo', 3]}}}
-    )
-    assert res.output_value() == 'foo:3'
-
-    with pytest.raises(
-        DagsterInvalidConfigError,
-        match=re.escape(
-            'Type failure at path "root:solids:any_tuple_config:config" on type "Tuple[Any, Any]". '
-            'Value at path root:solids:any_tuple_config:config must be a tuple with 2 values. '
-            'Expected: Tuple[Any, Any].'
-        ),
-    ):
-        execute_solid(
-            any_tuple_config,
-            environment_dict={'solids': {'any_tuple_config': {'config': ['foo', 3, 3.4]}}},
-        )
-
-
-def test_heterogeneous_tuple_config():
-    res = execute_solid(
-        heterogeneous_tuple_config,
-        environment_dict={'solids': {'heterogeneous_tuple_config': {'config': ['foo', 3, 3.1]}}},
-    )
-    assert res.output_value() == 'foo:3:3.1'
-
-    with pytest.raises(
-        DagsterInvalidConfigError,
-        match=re.escape(
-            'Error 1: Type failure at path "root:solids:heterogeneous_tuple_config:config[2]" on '
-            'type "Float". Value at path root:solids:heterogeneous_tuple_config:config[2] is not '
-            'valid. Expected "Float".'
-        ),
-    ):
-        execute_solid(
-            heterogeneous_tuple_config,
-            environment_dict={'solids': {'heterogeneous_tuple_config': {'config': ['foo', 3, 3]}}},
-        )
-
-
-def test_nested_tuple_config():
-    res = execute_solid(
-        nested_tuple_config,
-        environment_dict={'solids': {'nested_tuple_config': {'config': [['foo', 'bar'], 2]}}},
-    )
-    assert res.output_value() == 'foobarfoobar'
-
-
 def test_tuple_none_config():
     with pytest.raises(check.CheckError, match='Param tuple_types cannot be none'):
 
         @solid(config_field=Field(Tuple[None]))
         def _tuple_none_config(context) -> str:
             return ':'.join([str(x) for x in context.solid_config])
-
-
-def test_set_config():
-    res = execute_solid(
-        set_config, environment_dict={'solids': {'set_config': {'config': ['foo', 'foo', 3]}}}
-    )
-    assert res.output_value() == sorted(['foo', '3'])
-
-
-@pytest.mark.xfail
-# https://github.com/dagster-io/dagster/issues/1932
-def test_set_any_config():
-    res = execute_solid(
-        set_any_config,
-        environment_dict={'solids': {'set_any_config': {'config': ['foo', 'foo', 3]}}},
-    )
-    assert res.output_value() == sorted(['foo', '3'])
-
-
-def test_set_string_config():
-    res = execute_solid(
-        set_string_config,
-        environment_dict={'solids': {'set_string_config': {'config': ['foo', 'foo', 'bar']}}},
-    )
-    assert res.output_value() == sorted(['foo', 'bar'])
-
-    with pytest.raises(
-        DagsterInvalidConfigError,
-        match=re.escape(
-            'Type failure at path "root:solids:set_string_config:config[2]" on type "String". '
-            'Value at path root:solids:set_string_config:config[2] is not valid. Expected "String".'
-        ),
-    ):
-        res = execute_solid(
-            set_string_config,
-            environment_dict={'solids': {'set_string_config': {'config': ['foo', 'foo', 3]}}},
-        )
 
 
 def test_selector_config():

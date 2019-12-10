@@ -30,17 +30,10 @@ class ConfigTypeKind(PythonEnum):
     # Closed generic types
     LIST = 'LIST'
     NULLABLE = 'NULLABLE'
-    SET = 'SET'
-    TUPLE = 'TUPLE'
 
     @staticmethod
     def is_closed_generic(kind):
-        return (
-            kind == ConfigTypeKind.LIST
-            or kind == ConfigTypeKind.NULLABLE
-            or kind == ConfigTypeKind.SET
-            or kind == ConfigTypeKind.TUPLE
-        )
+        return kind == ConfigTypeKind.LIST or kind == ConfigTypeKind.NULLABLE
 
 
 class ConfigTypeAttributes(namedtuple('_ConfigTypeAttributes', 'is_builtin is_system_config')):
@@ -133,14 +126,6 @@ class ConfigType(object):
     @property
     def is_any(self):
         return self.kind == ConfigTypeKind.ANY
-
-    @property
-    def is_tuple(self):
-        return self.kind == ConfigTypeKind.TUPLE
-
-    @property
-    def is_set(self):
-        return self.kind == ConfigTypeKind.SET
 
     @property
     def inner_types(self):
@@ -267,50 +252,6 @@ class List(ConfigType):
     @property
     def inner_types(self):
         return [self.inner_type] + self.inner_type.inner_types
-
-
-class Set(ConfigType):
-    def __init__(self, inner_type):
-        self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
-        name = 'Set[{inner_type}]'.format(inner_type=inner_type)
-
-        super(Set, self).__init__(
-            key='Set.{inner_type}'.format(inner_type=inner_type.key),
-            name=name,
-            type_attributes=ConfigTypeAttributes(is_builtin=True),
-            kind=ConfigTypeKind.SET,
-            type_params=[inner_type],
-            description=name,
-        )
-
-    @property
-    def inner_types(self):
-        return [self.inner_type] + self.inner_type.inner_types
-
-
-class Tuple(ConfigType):
-    def __init__(self, tuple_types):
-        self.tuple_types = check.list_param(tuple_types, 'tuple_types', ConfigType)
-        name = 'Tuple[{tuple_types}]'.format(
-            tuple_types=', '.join([tuple_type.name for tuple_type in tuple_types])
-        )
-
-        super(Tuple, self).__init__(
-            key='Tuple.{tuple_types}'.format(
-                tuple_types='-'.join([tuple_type.key for tuple_type in tuple_types])
-            ),
-            name=name,
-            type_attributes=ConfigTypeAttributes(is_builtin=True),
-            type_params=tuple_types,
-            kind=ConfigTypeKind.TUPLE,
-            description=name,
-        )
-
-    @property
-    def inner_types(self):
-        return self.type_params + [
-            inner_type for tuple_type in self.tuple_types for inner_type in tuple_type.inner_types
-        ]
 
 
 class EnumValue(object):

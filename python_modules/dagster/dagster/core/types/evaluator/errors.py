@@ -214,21 +214,6 @@ def create_field_not_defined_error(context, received_field):
     )
 
 
-def create_set_error(context):
-    check.inst_param(context, 'context', TraversalContext)
-    check.param_invariant(context.config_type.is_set, 'config_type')
-
-    return EvaluationError(
-        stack=context.stack,
-        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message='Value {path_msg} must be list. Expected: {type_name}'.format(
-            path_msg=get_friendly_path_msg(context.stack),
-            type_name=print_config_type_to_string(context.config_type, with_lines=False),
-        ),
-        error_data=RuntimeMismatchErrorData(context.config_type, repr(context.config_value)),
-    )
-
-
 def create_list_error(context):
     check.inst_param(context, 'context', TraversalContext)
     check.param_invariant(context.config_type.is_list, 'config_type')
@@ -239,25 +224,6 @@ def create_list_error(context):
         message='Value {path_msg} must be list. Expected: {type_name}'.format(
             path_msg=get_friendly_path_msg(context.stack),
             type_name=print_config_type_to_string(context.config_type, with_lines=False),
-        ),
-        error_data=RuntimeMismatchErrorData(context.config_type, repr(context.config_value)),
-    )
-
-
-def create_tuple_error(context):
-    check.inst_param(context, 'context', TraversalContext)
-    check.param_invariant(context.config_type.is_tuple, 'config_type')
-
-    return EvaluationError(
-        stack=context.stack,
-        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message=(
-            'Value {path_msg} must be a tuple with {n_values} values. Expected: '
-            '{type_name}'.format(
-                path_msg=get_friendly_path_msg(context.stack),
-                n_values=len(context.config_type.tuple_types),
-                type_name=print_config_type_to_string(context.config_type, with_lines=False),
-            )
         ),
         error_data=RuntimeMismatchErrorData(context.config_type, repr(context.config_value)),
     )
