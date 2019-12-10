@@ -1,4 +1,3 @@
-import typing
 from functools import partial
 
 import six
@@ -12,10 +11,17 @@ from .builtin_enum import BuiltinEnum
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
 from .config_schema import InputHydrationConfig, OutputMaterializationConfig
-from .field_utils import Dict
 from .marshal import PickleSerializationStrategy, SerializationStrategy
-from .typing_api import is_closed_python_dict_type
-from .wrapping import WrappingListType, WrappingNullableType, WrappingSetType, WrappingTupleType
+from .wrapping import (
+    DagsterListApi,
+    DagsterSetApi,
+    DagsterTupleApi,
+    Dict,
+    WrappingListType,
+    WrappingNullableType,
+    WrappingSetType,
+    WrappingTupleType,
+)
 
 
 class RuntimeType(object):
@@ -401,25 +407,31 @@ def define_python_dagster_type(
     return _ObjectType
 
 
+class NullableInputSchema(InputHydrationConfig):
+    def __init__(self, inner_runtime_type):
+        self._inner_runtime_type = check.inst_param(
+            inner_runtime_type, 'inner_runtime_type', RuntimeType
+        )
+        check.param_invariant(inner_runtime_type.input_hydration_config, 'inner_runtime_type')
+        self._schema_type = ConfigNullable(inner_runtime_type.input_hydration_config.schema_type)
+
+    @property
+    def schema_type(self):
+        return self._schema_type
+
+    def construct_from_config_value(self, context, config_value):
+        if config_value is None:
+            return None
+        return self._inner_runtime_type.input_hydration_config.construct_from_config_value(
+            context, config_value
+        )
+
+
 def _create_nullable_input_schema(inner_type):
     if not inner_type.input_hydration_config:
         return None
 
-    nullable_type = ConfigNullable(inner_type.input_hydration_config.schema_type).inst()
-
-    class _NullableSchema(InputHydrationConfig):
-        @property
-        def schema_type(self):
-            return nullable_type
-
-        def construct_from_config_value(self, context, config_value):
-            if config_value is None:
-                return None
-            return inner_type.input_hydration_config.construct_from_config_value(
-                context, config_value
-            )
-
-    return _NullableSchema()
+    return NullableInputSchema(inner_type)
 
 
 class NullableType(RuntimeType):
@@ -448,24 +460,30 @@ class NullableType(RuntimeType):
         return [self.inner_type] + self.inner_type.inner_types
 
 
+class ListInputSchema(InputHydrationConfig):
+    def __init__(self, inner_runtime_type):
+        self._inner_runtime_type = check.inst_param(
+            inner_runtime_type, 'inner_runtime_type', RuntimeType
+        )
+        check.param_invariant(inner_runtime_type.input_hydration_config, 'inner_runtime_type')
+        self._schema_type = ConfigList(inner_runtime_type.input_hydration_config.schema_type)
+
+    @property
+    def schema_type(self):
+        return self._schema_type
+
+    def construct_from_config_value(self, context, config_value):
+        convert_item = partial(
+            self._inner_runtime_type.input_hydration_config.construct_from_config_value, context
+        )
+        return list(map(convert_item, config_value))
+
+
 def _create_list_input_schema(inner_type):
     if not inner_type.input_hydration_config:
         return None
 
-    list_type = ConfigList(inner_type.input_hydration_config.schema_type).inst()
-
-    class _ListSchema(InputHydrationConfig):
-        @property
-        def schema_type(self):
-            return list_type
-
-        def construct_from_config_value(self, context, config_value):
-            convert_item = partial(
-                inner_type.input_hydration_config.construct_from_config_value, context
-            )
-            return list(map(convert_item, config_value))
-
-    return _ListSchema()
+    return ListInputSchema(inner_type)
 
 
 class ListType(RuntimeType):
@@ -615,15 +633,22 @@ DAGSTER_INVALID_TYPE_ERROR_MESSAGE = (
 def resolve_to_runtime_type(dagster_type):
     # circular dep
     from .config import ConfigType
-    from .mapping import remap_python_type
-    from .python_dict import PythonDict, create_typed_runtime_dict
+    from .mapping import remap_python_builtin_for_runtime, is_supported_runtime_python_builtin
+    from .python_dict import PythonDict
     from .python_set import PythonSet
     from .python_tuple import PythonTuple
+    from .typing_api import is_typing_type
+    from .wrapping import transform_typing_type
 
     check.invariant(
         not (isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType)),
         'Cannot resolve a config type to a runtime type',
     )
+
+    # First check to see if it part of python's typing library
+    # Transform to our wrapping type system.
+    if is_typing_type(dagster_type):
+        dagster_type = transform_typing_type(dagster_type)
 
     # Test for unhashable objects -- this is if, for instance, someone has passed us an instance of
     # a dict where they meant to pass dict or Dict, etc.
@@ -640,11 +665,8 @@ def resolve_to_runtime_type(dagster_type):
             )
         )
 
-    dagster_type = remap_python_type(dagster_type)
-
-    # do not do in remap because this is runtime system only.
-    if is_closed_python_dict_type(dagster_type):
-        return create_typed_runtime_dict(dagster_type.__args__[0], dagster_type.__args__[1]).inst()
+    if is_supported_runtime_python_builtin(dagster_type):
+        return remap_python_builtin_for_runtime(dagster_type)
 
     if dagster_type is None:
         return Any.inst()
@@ -652,12 +674,14 @@ def resolve_to_runtime_type(dagster_type):
     if dagster_type in __RUNTIME_TYPE_REGISTRY:
         return __RUNTIME_TYPE_REGISTRY[dagster_type].inst()
 
-    if dagster_type is Dict or dagster_type is typing.Dict:
+    if dagster_type is Dict:
         return PythonDict.inst()
-    if dagster_type is typing.Tuple:
+    if isinstance(dagster_type, DagsterTupleApi):
         return PythonTuple.inst()
-    if dagster_type is typing.Set:
+    if isinstance(dagster_type, DagsterSetApi):
         return PythonSet.inst()
+    if isinstance(dagster_type, DagsterListApi):
+        return resolve_to_runtime_list(WrappingListType(BuiltinEnum.ANY))
     if BuiltinEnum.contains(dagster_type):
         return RuntimeType.from_builtin_enum(dagster_type)
     if isinstance(dagster_type, WrappingListType):

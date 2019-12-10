@@ -1,8 +1,12 @@
+import re
+import typing
+
 import pytest
 
 from dagster import (
     Any,
     DagsterInvalidConfigError,
+    DagsterInvariantViolationError,
     Dict,
     Field,
     Int,
@@ -739,3 +743,45 @@ def test_invalid_default_values():
         @solid(config_field=Field(Int, default_value='3'))
         def _solid():
             pass
+
+
+def test_typing_types_into_config():
+    match_str = re.escape(
+        'You have passed in typing.List in the config system. '
+        'Types from the typing module in python are not allowed '
+        'in the config system. You must use types that are imported '
+        'from dagster or primitive types such as bool, int, etc.'
+    )
+    with pytest.raises(DagsterInvariantViolationError, match=match_str):
+
+        @solid(config_field=Field(typing.List))
+        def _solid(_):
+            pass
+
+    match_str = re.escape(
+        'You have passed in typing.List[int] in the config system. Types '
+        'from the typing module in python are not allowed in the config system. '
+        'You must use types that are imported from dagster or primitive types '
+        'such as bool, int, etc.'
+    )
+
+    with pytest.raises(DagsterInvariantViolationError, match=match_str):
+
+        @solid(config_field=Field(typing.List[int]))
+        def _solid(_):
+            pass
+
+    for ttype in [
+        typing.Optional[int],
+        typing.Set,
+        typing.Set[int],
+        typing.Dict,
+        typing.Dict[int, str],
+        typing.Tuple,
+        typing.Tuple[int, int],
+    ]:
+        with pytest.raises(DagsterInvariantViolationError):
+
+            @solid(config_field=Field(ttype))
+            def _solid(_):
+                pass

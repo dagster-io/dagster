@@ -10,30 +10,6 @@ def _get_origin(ttype):
     return getattr(ttype, '__origin__', None)
 
 
-def is_python_list_type(ttype):
-    '''Returns true for list, List, and List[T]'''
-    if ttype is list or ttype is typing.List:
-        return True
-    origin = _get_origin(ttype)
-    return origin == typing.List or origin == list
-
-
-def is_python_set_type(ttype):
-    '''Returns true for set, Set, and Set[T]'''
-    if ttype is set or ttype is typing.Set:
-        return True
-    origin = _get_origin(ttype)
-    return origin == typing.Set or origin == set
-
-
-def is_python_tuple_type(ttype):
-    '''Returns true for tuple, Tuple, and Tuple[S, T]'''
-    if ttype is tuple or ttype is typing.Tuple:
-        return True
-    origin = _get_origin(ttype)
-    return origin == typing.Tuple or origin == tuple
-
-
 def is_closed_python_optional_type(ttype):
     # Optional[X] is Union[X, NoneType] which is what we match against here
     origin = _get_origin(ttype)
@@ -49,6 +25,20 @@ def is_python_dict_type(ttype):
     origin = _get_origin(ttype)
     # py37 origin is typing.Dict, pre-37 is dict
     return origin == typing.Dict or origin == dict
+
+
+def is_closed_python_list_type(ttype):
+    if ttype is None:
+        return False
+    if ttype is typing.List:
+        return False
+    if not hasattr(ttype, '__args__'):
+        return False
+    if ttype.__args__ is None or len(ttype.__args__) != 1:
+        return False
+
+    origin = _get_origin(ttype)
+    return origin == typing.List or origin is list
 
 
 def is_closed_python_dict_type(ttype):
@@ -134,3 +124,37 @@ def get_optional_inner_type(ttype):
     )
 
     return ttype.__args__[0]
+
+
+def get_list_inner_type(ttype):
+    check.param_invariant(is_closed_python_list_type(ttype), 'ttype')
+    return ttype.__args__[0]
+
+
+def get_set_inner_type(ttype):
+    check.param_invariant(is_closed_python_set_type(ttype), 'ttype')
+    return ttype.__args__[0]
+
+
+def get_tuple_type_params(ttype):
+    check.param_invariant(is_closed_python_tuple_type(ttype), 'ttype')
+    return ttype.__args__
+
+
+def get_dict_key_value_types(ttype):
+    check.param_invariant(is_closed_python_dict_type(ttype), 'ttype')
+    return (ttype.__args__[0], ttype.__args__[1])
+
+
+def is_typing_type(ttype):
+    return (
+        is_closed_python_dict_type(ttype)
+        or is_closed_python_optional_type(ttype)
+        or is_closed_python_set_type(ttype)
+        or is_closed_python_tuple_type(ttype)
+        or is_closed_python_list_type(ttype)
+        or ttype is typing.Tuple
+        or ttype is typing.Set
+        or ttype is typing.Dict
+        or ttype is typing.List
+    )

@@ -25,28 +25,35 @@ class InputHydrationConfig(object):
         return config_value
 
 
-def resolve_config_cls_arg(config_cls):
-    if BuiltinEnum.contains(config_cls):
-        return ConfigType.from_builtin_enum(config_cls)
-    elif isinstance(config_cls, WrappingListType):
-        return List(resolve_config_cls_arg(config_cls.inner_type))
-    elif isinstance(config_cls, WrappingNullableType):
-        return Nullable(resolve_config_cls_arg(config_cls.inner_type))
-    else:
-        check.type_param(config_cls, 'config_cls')
-        check.param_invariant(issubclass(config_cls, ConfigType), 'config_cls')
-        return config_cls.inst()
+def _resolve_config_schema_type(dagster_type):
+    # This replicates a subset of resolve_to_config_type
+    # Including resolve_to_config_type directly has a nasty circular
+    # dependency.
+    if isinstance(dagster_type, ConfigType):
+        return dagster_type
+
+    if BuiltinEnum.contains(dagster_type):
+        return ConfigType.from_builtin_enum(dagster_type)
+    elif isinstance(dagster_type, WrappingListType):
+        return List(dagster_type.inner_type)
+    elif isinstance(dagster_type, WrappingNullableType):
+        return Nullable(dagster_type.inner_type)
+
+    check.failed('should not reach. got {dagster_type}'.format(dagster_type=dagster_type))
+
+
+class BareInputSchema(InputHydrationConfig):
+    def __init__(self, config_type):
+        self.config_type = check.inst_param(config_type, 'config_type', ConfigType)
+
+    @property
+    def schema_type(self):
+        return self.config_type
 
 
 def make_bare_input_schema(config_cls):
-    config_type = resolve_config_cls_arg(config_cls)
-
-    class _InputSchema(InputHydrationConfig):
-        @property
-        def schema_type(self):
-            return config_type
-
-    return _InputSchema()
+    config_type = _resolve_config_schema_type(config_cls)
+    return BareInputSchema(config_type)
 
 
 class OutputMaterializationConfig(object):
@@ -63,16 +70,21 @@ class OutputMaterializationConfig(object):
         check.not_implemented('Must implement')
 
 
-def _create_input_schema(config_type, func):
-    class _InputSchema(InputHydrationConfig):
-        @property
-        def schema_type(self):
-            return config_type
+class InputSchemaFromDecorator(InputHydrationConfig):
+    def __init__(self, config_type, func):
+        self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
+        self._func = check.callable_param(func, 'func')
 
-        def construct_from_config_value(self, context, config_value):
-            return func(context, config_value)
+    @property
+    def schema_type(self):
+        return self._config_type
 
-    return _InputSchema()
+    def construct_from_config_value(self, context, config_value):
+        return self._func(context, config_value)
+
+
+def _create_input_schema_for_decorator(config_type, func):
+    return InputSchemaFromDecorator(config_type, func)
 
 
 def input_hydration_config(config_cls):
@@ -94,7 +106,7 @@ def input_hydration_config(config_cls):
         def _dict_input(_context, value):
             return value
     '''
-    config_type = resolve_config_cls_arg(config_cls)
+    config_type = _resolve_config_schema_type(config_cls)
     EXPECTED_POSITIONALS = ['context', '*']
 
     def wrapper(func):
@@ -108,7 +120,7 @@ def input_hydration_config(config_cls):
                     solid_name=func.__name__, missing_param=missing_positional
                 )
             )
-        return _create_input_schema(config_type, func)
+        return _create_input_schema_for_decorator(config_type, func)
 
     return wrapper
 
@@ -121,7 +133,7 @@ def input_selector_schema(config_cls):
     Args:
         config_cls (Selector)
     '''
-    config_type = resolve_config_cls_arg(config_cls)
+    config_type = _resolve_config_schema_type(config_cls)
     check.param_invariant(config_type.is_selector, 'config_cls')
 
     def _wrap(func):
@@ -129,21 +141,26 @@ def input_selector_schema(config_cls):
             selector_key, selector_value = ensure_single_item(config_value)
             return func(context, selector_key, selector_value)
 
-        return _create_input_schema(config_type, _selector)
+        return _create_input_schema_for_decorator(config_type, _selector)
 
     return _wrap
 
 
+class OutputSchemaForDecorator(OutputMaterializationConfig):
+    def __init__(self, config_type, func):
+        self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
+        self._func = check.callable_param(func, 'func')
+
+    @property
+    def schema_type(self):
+        return self._config_type
+
+    def materialize_runtime_value(self, context, config_value, runtime_value):
+        return self._func(context, config_value, runtime_value)
+
+
 def _create_output_schema(config_type, func):
-    class _OutputSchema(OutputMaterializationConfig):
-        @property
-        def schema_type(self):
-            return config_type
-
-        def materialize_runtime_value(self, context, config_value, runtime_value):
-            return func(context, config_value, runtime_value)
-
-    return _OutputSchema()
+    return OutputSchemaForDecorator(config_type, func)
 
 
 def output_materialization_config(config_cls):
@@ -175,7 +192,7 @@ def output_materialization_config(config_cls):
             return Materialization.file(path)
 
     '''
-    config_type = resolve_config_cls_arg(config_cls)
+    config_type = _resolve_config_schema_type(config_cls)
     return lambda func: _create_output_schema(config_type, func)
 
 
@@ -187,7 +204,7 @@ def output_selector_schema(config_cls):
     Args:
         config_cls (Selector):
     '''
-    config_type = resolve_config_cls_arg(config_cls)
+    config_type = _resolve_config_schema_type(config_cls)
     check.param_invariant(config_type.is_selector, 'config_cls')
 
     def _wrap(func):

@@ -32,14 +32,14 @@ def SystemDict(fields, description=None):
     return build_config_dict(fields, description, is_system_config=True)
 
 
-class _SolidContainerConfigDict(_ConfigHasFields):
+class SolidContainerConfigDict(_ConfigHasFields):
     def __init__(self, name, fields, description=None, handle=None, child_solids_config_field=None):
         self._handle = check.opt_inst_param(handle, 'handle', SolidHandle)
         self._child_solids_config_field = check.opt_inst_param(
             child_solids_config_field, 'child_solids_config_field', Field
         )
 
-        super(_SolidContainerConfigDict, self).__init__(
+        super(SolidContainerConfigDict, self).__init__(
             key=name,
             name=name,
             kind=ConfigTypeKind.DICT,
@@ -63,30 +63,17 @@ class _SolidContainerConfigDict(_ConfigHasFields):
         return self._child_solids_config_field
 
 
-def SolidContainerConfigDict(
-    name, fields, description=None, handle=None, child_solids_config_field=None
-):
-    class _SolidContainerConfigDictInternal(_SolidContainerConfigDict):
-        def __init__(self):
-            super(_SolidContainerConfigDictInternal, self).__init__(
-                name=name,
-                fields=fields,
-                description=description,
-                handle=handle,
-                child_solids_config_field=child_solids_config_field,
-            )
-
-    return _SolidContainerConfigDictInternal
-
-
 def SystemSelector(fields, description=None):
-    return Selector(fields, description, ConfigTypeAttributes(is_system_config=True))
+    return Selector(fields, description, is_system_config=True)
 
 
-class _SolidConfigDict(_ConfigHasFields):
-    def __init__(self, name, fields, description):
+class SolidConfigDict(_ConfigHasFields):
+    def __init__(self, name, fields, description=None):
+        from dagster.core.types.field_utils import check_user_facing_fields_dict
 
-        super(_SolidConfigDict, self).__init__(
+        check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
+
+        super(SolidConfigDict, self).__init__(
             key=name,
             name=name,
             kind=ConfigTypeKind.DICT,
@@ -96,26 +83,12 @@ class _SolidConfigDict(_ConfigHasFields):
         )
 
 
-def SolidConfigDict(name, fields, description=None):
-    from dagster.core.types.field_utils import check_user_facing_fields_dict
-
-    check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
-
-    class _SolidConfigDictInternal(_SolidConfigDict):
-        def __init__(self):
-            super(_SolidConfigDictInternal, self).__init__(
-                name=name, fields=fields, description=description
-            )
-
-    return _SolidConfigDictInternal
-
-
 def is_solid_dict(obj):
-    return isinstance(obj, _SolidConfigDict)
+    return isinstance(obj, SolidConfigDict)
 
 
 def is_solid_container_config(obj):
-    return isinstance(obj, _SolidContainerConfigDict)
+    return isinstance(obj, SolidContainerConfigDict)
 
 
 def _is_selector_field_optional(config_type):
@@ -294,7 +267,7 @@ def get_outputs_field(solid, handle):
     for name, out in solid_def.output_dict.items():
         if out.runtime_type.output_materialization_config:
             output_dict_fields[name] = Field(
-                type(out.runtime_type.output_materialization_config.schema_type), is_optional=True
+                out.runtime_type.output_materialization_config.schema_type, is_optional=True
             )
 
     output_entry_dict = SystemDict(output_dict_fields)

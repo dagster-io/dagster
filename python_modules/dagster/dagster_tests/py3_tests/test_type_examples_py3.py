@@ -256,7 +256,8 @@ def test_set_solid_configable_input_bad():
         DagsterInvalidConfigError,
         match=re.escape(
             'Type failure at path "root:solids:set_solid:inputs:set_input" on type '
-            '"List[String]". Value at path root:solids:set_solid:inputs:set_input must be list. '
+            '"List[String.InputHydrationConfig]". Value at path '
+            'root:solids:set_solid:inputs:set_input must be list. '
             'Expected: [{ json: { path: Path } pickle: { path: Path } value: String }].'
         ),
     ):
@@ -345,6 +346,11 @@ def hello(context) -> str:
 def unpickle(context) -> Any:
     with open(context.solid_config, 'rb') as fd:
         return pickle.load(fd)
+
+
+@solid(config_field=Field(List))
+def concat_typeless_list_config(context) -> String:
+    return ''.join(context.solid_config)
 
 
 @solid(config_field=Field(List[String]))
@@ -501,6 +507,16 @@ def test_concat_config():
     assert res.output_value() == 'foobarbaz'
 
 
+def test_concat_typeless_config():
+    res = execute_solid(
+        concat_typeless_list_config,
+        environment_dict={
+            'solids': {'concat_typeless_list_config': {'config': ['foo', 'bar', 'baz']}}
+        },
+    )
+    assert res.output_value() == 'foobarbaz'
+
+
 def test_repeat_config():
     res = execute_solid(
         repeat_config,
@@ -566,13 +582,7 @@ def test_nested_tuple_config():
 
 
 def test_tuple_none_config():
-    with pytest.raises(
-        check.CheckError,
-        match=re.escape(
-            'Member of list mismatches type. Expected <class '
-            '\'dagster.core.types.config.ConfigType\'>. Got None of type <class \'NoneType\'>'
-        ),
-    ):
+    with pytest.raises(check.CheckError, match='Param tuple_types cannot be none'):
 
         @solid(config_field=Field(Tuple[None]))
         def _tuple_none_config(context) -> str:

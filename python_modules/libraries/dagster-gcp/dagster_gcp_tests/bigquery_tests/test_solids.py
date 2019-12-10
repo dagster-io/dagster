@@ -106,12 +106,12 @@ def test_bad_config():
         (
             # Dataset must be of form project_name.dataset_name
             {'default_dataset': 'this is not a valid dataset'},
-            'Value at path root:solids:test:config:query_job_config:default_dataset is not valid. Expected "Dataset"',
+            'Value at path root:solids:test:config:query_job_config:default_dataset is not valid. Expected "_Dataset"',
         ),
         (
             # Table must be of form project_name.dataset_name.table_name
             {'destination': 'this is not a valid table'},
-            'Value at path root:solids:test:config:query_job_config:destination is not valid. Expected "Table"',
+            'Value at path root:solids:test:config:query_job_config:destination is not valid. Expected "_Table"',
         ),
         (
             # Priority must match enum values

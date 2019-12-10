@@ -1,9 +1,20 @@
 import re
-from typing import Any, Dict, List, Optional, Set, Tuple
+import typing
 
 import pytest
 
-from dagster import PipelineDefinition, String, TypeCheck, dagster_type
+from dagster import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    PipelineDefinition,
+    Set,
+    String,
+    Tuple,
+    TypeCheck,
+    dagster_type,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils.temp_file import _unlink_swallow_errors
 from dagster.utils.test import check_dagster_type, execute_solids_within_pipeline
@@ -16,6 +27,23 @@ def test_unlink_swallow_errors():
 def test_execute_isolated_solids_with_bad_solid_names():
     with pytest.raises(DagsterInvariantViolationError, match='but that solid was not found'):
         execute_solids_within_pipeline(PipelineDefinition([]), [], {'foo': {'bar': 'baz'}})
+
+
+def test_typing_invalid():
+
+    for ttype in [
+        typing.List,
+        typing.List[str],
+        typing.Optional[int],
+        typing.Set,
+        typing.Set[int],
+        typing.Dict,
+        typing.Dict[int, str],
+        typing.Tuple,
+        typing.Tuple[int, int],
+    ]:
+        with pytest.raises(DagsterInvariantViolationError):
+            check_dagster_type(ttype, None)
 
 
 def test_check_dagster_type():

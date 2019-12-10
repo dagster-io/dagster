@@ -65,8 +65,8 @@ def _evaluate_config(context):
     elif context.config_type.is_selector:
         return evaluate_selector_config(context)
 
-    elif context.config_type.is_composite:
-        return evaluate_composite_config(context)
+    elif context.config_type.is_dict:
+        return evaluate_dict_config(context)
 
     elif context.config_type.is_list:
         return evaluate_list_config(context)
@@ -150,9 +150,9 @@ def evaluate_selector_config(context):
 ## Composites
 
 
-def evaluate_composite_config(context):
+def evaluate_dict_config(context):
     check.inst_param(context, 'context', TraversalContext)
-    check.param_invariant(context.config_type.is_composite, 'composite_type')
+    check.invariant(context.config_type.is_dict)
 
     fields = context.config_type.fields
 
@@ -176,7 +176,7 @@ def evaluate_composite_config(context):
 
     # Here, we support permissive composites. In cases where we know the set of permissible keys a
     # priori, we validate against the config:
-    if not context.config_type.is_permissive_composite:
+    if not context.config_type.is_permissive_dict:
         if extra_fields:
             if len(extra_fields) == 1:
                 errors.append(create_field_not_defined_error(context, extra_fields[0]))
@@ -310,7 +310,7 @@ def _evaluate_composite_solid_config(context):
         )
 
     # When evaluating nested composite solids defined with config mapping functions but empty config
-    if 'solids' in context.config_value:
+    if 'solids' in mapped_config_value:
         mapped_config_value = context.config_value.get('solids')
 
     # We've validated the composite solid config; now validate the mapping fn overrides against the

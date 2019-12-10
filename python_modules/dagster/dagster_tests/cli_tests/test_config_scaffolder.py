@@ -19,11 +19,11 @@ def fail_me():
 
 
 def test_scalars():
-    assert scaffold_type(config.Int.inst()) == 0
-    assert scaffold_type(config.String.inst()) == ''
-    assert scaffold_type(config.Path.inst()) == 'path/to/something'
-    assert scaffold_type(config.Bool.inst()) is True
-    assert scaffold_type(config.Any.inst()) == 'AnyType'
+    assert scaffold_type(config.Int()) == 0
+    assert scaffold_type(config.String()) == ''
+    assert scaffold_type(config.Path()) == 'path/to/something'
+    assert scaffold_type(config.Bool()) is True
+    assert scaffold_type(config.Any()) == 'AnyType'
 
 
 def test_basic_solids_config(snapshot):

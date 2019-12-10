@@ -55,9 +55,6 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': None
             },
             {
-                'name': None
-            },
-            {
                 'name': 'Any'
             },
             {
@@ -92,6 +89,9 @@ snapshots['test_query_multi_mode 1'] = {
             },
             {
                 'name': 'Int.MaterializationSchema'
+            },
+            {
+                'name': 'List[None]'
             },
             {
                 'name': 'MultiModeWithResources.Mode.AddMode.Environment'

@@ -185,6 +185,6 @@ def meta_from_config_type(config_type):
         if config_type.is_enum
         else None,
         fields=[meta_from_field(name, field) for name, field in config_type.fields.items()]
-        if config_type.is_selector or config_type.is_composite
+        if config_type.has_fields
         else None,
     )

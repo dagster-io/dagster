@@ -11,7 +11,7 @@ from .config import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttributes, C
 def all_optional_type(config_type):
     check.inst_param(config_type, 'config_type', ConfigType)
 
-    if config_type.is_composite:
+    if config_type.is_dict:
         for field in config_type.fields.values():
             if not field.is_optional:
                 return False
@@ -109,25 +109,20 @@ class _ConfigHasFields(ConfigType):
                 s += "[" + typ + "] "
             elif field_value.config_type.is_selector:
                 fields = [
-                    field_to_string("-" + k, v)
-                    for k, v in field_value.config_type.inst().fields.items()
+                    field_to_string("-" + k, v) for k, v in field_value.config_type.fields.items()
                 ]
                 fields = map(lambda x: left_pad(x, 1, "|"), fields)
                 s += format_fields(fields)
             elif field_value.config_type.is_enum:
-                fields = [
-                    field_to_string(k, v) for k, v in field_value.config_type.inst().fields.items()
-                ]
+                fields = [field_to_string(k, v) for k, v in field_value.config_type.fields.items()]
                 s += format_fields(fields)
-            elif field_value.config_type.is_composite:
-                fields = [
-                    field_to_string(k, v) for k, v in field_value.config_type.inst().fields.items()
-                ]
+            elif field_value.config_type.is_dict:
+                fields = [field_to_string(k, v) for k, v in field_value.config_type.fields.items()]
                 s += format_fields(fields)
             elif field_value.config_type.is_list:
                 fields = [
                     field_to_string(k, v)
-                    for k, v in field_value.config_type.inst().inner_type.inst().fields.items()
+                    for k, v in field_value.config_type.inner_type.fields.items()
                 ]
                 s += format_fields(fields)
             elif field_value.config_type.is_any:
@@ -171,41 +166,30 @@ def check_user_facing_fields_dict(fields, type_name_msg):
         )
 
 
-def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
-    '''
-    A :py:class:`Dict` with a name allowing it to be referenced by that name.
-    '''
-    check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
-
-    class _NamedDict(_ConfigHasFields):
-        def __init__(self):
-            super(_NamedDict, self).__init__(
-                key=name,
-                name=name,
-                kind=ConfigTypeKind.DICT,
-                fields=fields,
-                description=description,
-                type_attributes=type_attributes,
-            )
-
-    return _NamedDict
-
-
-class DictTypeApi(object):
-    def __call__(self, fields):
-        return build_config_dict(fields)
-
-    def __getitem__(self, *args):
-        from .python_dict import create_typed_runtime_dict
-
-        check.param_invariant(len(args[0]) == 2, 'args', 'Must be two parameters')
-        return create_typed_runtime_dict(args[0][0], args[0][1])
-
-
-Dict = DictTypeApi()
+class NamedDict(_ConfigHasFields):
+    def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+        check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
+        super(NamedDict, self).__init__(
+            key=name,
+            name=name,
+            kind=ConfigTypeKind.DICT,
+            fields=fields,
+            description=description,
+            type_attributes=type_attributes,
+        )
 
 
 FIELD_HASH_CACHE = {}
+
+
+def _memoize_inst_in_field_cache(passed_cls, defined_cls, key):
+    if key in FIELD_HASH_CACHE:
+        return FIELD_HASH_CACHE[key]
+
+    defined_cls_inst = super(defined_cls, passed_cls).__new__(defined_cls)
+
+    FIELD_HASH_CACHE[key] = defined_cls_inst
+    return defined_cls_inst
 
 
 def _add_hash(m, string):
@@ -233,39 +217,51 @@ def _compute_fields_hash(fields, description, is_system_config):
     return m.hexdigest()
 
 
-def build_config_dict(fields, description=None, is_system_config=False):
+def _define_dict_key_hash(fields, description, is_system_config):
+    return 'Dict.' + _compute_fields_hash(fields, description, is_system_config)
+
+
+class Dict(_ConfigHasFields):
     '''
     Schema for configuration data with string keys and typed values via :py:class:`Field` .
 
     Args:
         fields (Dict[str, Field])
     '''
-    check_user_facing_fields_dict(fields, 'Dict')
 
-    key = 'Dict.' + _compute_fields_hash(fields, description, is_system_config)
+    def __new__(cls, fields, description=None, is_system_config=False):
+        check_user_facing_fields_dict(fields, 'Dict')
+        return _memoize_inst_in_field_cache(
+            cls, Dict, _define_dict_key_hash(fields, description, is_system_config)
+        )
 
-    if key in FIELD_HASH_CACHE:
-        return FIELD_HASH_CACHE[key]
-
-    class _Dict(_ConfigHasFields):
-        def __init__(self):
-            super(_Dict, self).__init__(
-                name=None,
-                kind=ConfigTypeKind.DICT,
-                key=key,
-                fields=fields,
-                description='A configuration dictionary with typed fields',
-                type_attributes=ConfigTypeAttributes(
-                    is_builtin=True, is_system_config=is_system_config,
-                ),
-            )
-
-    FIELD_HASH_CACHE[key] = _Dict
-
-    return _Dict
+    def __init__(self, fields, description=None, is_system_config=False):
+        super(Dict, self).__init__(
+            name=None,
+            kind=ConfigTypeKind.DICT,
+            key=_define_dict_key_hash(fields, description, is_system_config),
+            description=description,
+            fields=fields,
+            type_attributes=ConfigTypeAttributes(
+                is_builtin=True, is_system_config=is_system_config,
+            ),
+        )
 
 
-def PermissiveDict(fields=None, description=None):
+def build_config_dict(fields, description=None, is_system_config=False):
+    return Dict(fields, description, is_system_config)
+
+
+def _define_permissive_dict_key(fields, description):
+    return (
+        'PermissiveDict.'
+        + _compute_fields_hash(fields, description=description, is_system_config=False)
+        if fields
+        else 'PermissiveDict'
+    )
+
+
+class PermissiveDict(_ConfigHasFields):
     '''Defines a config dict with a partially specified schema.
     
     A permissive dict allows partial specification of the config schema. Any fields with a
@@ -284,40 +280,32 @@ def PermissiveDict(fields=None, description=None):
             return sorted(list(context.solid_config.items()))
     '''
 
-    if fields:
-        check_user_facing_fields_dict(fields, 'PermissiveDict')
+    def __new__(cls, fields=None, description=None):
+        if fields:
+            check_user_facing_fields_dict(fields, 'PermissiveDict')
 
-    key = (
-        'PermissiveDict.'
-        + _compute_fields_hash(fields, description=description, is_system_config=False)
-        if fields
-        else 'PermissiveDict'
+        return _memoize_inst_in_field_cache(
+            cls, PermissiveDict, _define_permissive_dict_key(fields, description)
+        )
+
+    def __init__(self, fields=None, description=None):
+        super(PermissiveDict, self).__init__(
+            key=_define_permissive_dict_key(fields, description),
+            name=None,
+            kind=ConfigTypeKind.PERMISSIVE_DICT,
+            fields=fields or dict(),
+            type_attributes=ConfigTypeAttributes(is_builtin=True),
+            description=description,
+        )
+
+
+def _define_selector_key(fields, description, is_system_config):
+    return 'Selector.' + _compute_fields_hash(
+        fields, description=description, is_system_config=is_system_config
     )
 
-    if key in FIELD_HASH_CACHE:
-        return FIELD_HASH_CACHE[key]
 
-    class _PermissiveDict(_ConfigHasFields):
-        def __init__(self):
-            super(_PermissiveDict, self).__init__(
-                name=None,
-                key=key,
-                kind=ConfigTypeKind.PERMISSIVE_DICT,
-                fields=fields or dict(),
-                description='A configuration dictionary with typed fields',
-                type_attributes=ConfigTypeAttributes(is_builtin=True),
-            )
-
-        @property
-        def is_permissive_composite(self):
-            return True
-
-    FIELD_HASH_CACHE[key] = _PermissiveDict
-
-    return _PermissiveDict
-
-
-def Selector(fields, description=None, is_system_config=False):
+class Selector(_ConfigHasFields):
     '''Define a config field requiring the user to select one option.
     
     Selectors are used when you want to be able to present several different options in config but
@@ -363,50 +351,35 @@ def Selector(fields, description=None, is_system_config=False):
             if 'en' in context.solid_config:
                 return 'Hello, {whom}!'.format(whom=context.solid_config['en']['whom'])
     '''
-    check_user_facing_fields_dict(fields, 'Selector')
 
-    key = 'Selector.' + _compute_fields_hash(
-        fields, description=description, is_system_config=is_system_config
-    )
+    def __new__(cls, fields, description=None, is_system_config=False):
+        check_user_facing_fields_dict(fields, 'Selector')
+        return _memoize_inst_in_field_cache(
+            cls, Selector, _define_selector_key(fields, description, is_system_config)
+        )
 
-    if key in FIELD_HASH_CACHE:
-        return FIELD_HASH_CACHE[key]
-
-    class _Selector(_ConfigHasFields):
-        def __init__(self):
-            super(_Selector, self).__init__(
-                key=key,
-                name=None,
-                kind=ConfigTypeKind.SELECTOR,
-                fields=fields,
-                type_attributes=ConfigTypeAttributes(is_builtin=True),
-            )
-
-    FIELD_HASH_CACHE[key] = _Selector
-
-    return _Selector
+    def __init__(self, fields, description=None, is_system_config=False):
+        super(Selector, self).__init__(
+            key=_define_selector_key(fields, description, is_system_config),
+            name=None,
+            kind=ConfigTypeKind.SELECTOR,
+            fields=fields,
+            type_attributes=ConfigTypeAttributes(
+                is_builtin=True, is_system_config=is_system_config
+            ),
+            description=description,
+        )
 
 
-def NamedSelector(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
-    '''
-    A :py:class`Selector` with a name, allowing it to be referenced by that name.
-
-    Args:
-        name (str):
-        fields (Dict[str, Field])
-    '''
-    check.str_param(name, 'name')
-    check_user_facing_fields_dict(fields, 'NamedSelector named "{}"'.format(name))
-
-    class _NamedSelector(_ConfigHasFields):
-        def __init__(self):
-            super(_NamedSelector, self).__init__(
-                key=name,
-                name=name,
-                kind=ConfigTypeKind.SELECTOR,
-                fields=fields,
-                description=description,
-                type_attributes=type_attributes,
-            )
-
-    return _NamedSelector
+class NamedSelector(_ConfigHasFields):
+    def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+        check.str_param(name, 'name')
+        check_user_facing_fields_dict(fields, 'NamedSelector named "{}"'.format(name))
+        super(NamedSelector, self).__init__(
+            key=name,
+            name=name,
+            kind=ConfigTypeKind.SELECTOR,
+            fields=fields,
+            description=description,
+            type_attributes=type_attributes,
+        )

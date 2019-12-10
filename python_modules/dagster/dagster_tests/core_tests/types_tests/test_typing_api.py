@@ -3,10 +3,10 @@ import typing
 from dagster.core.types.typing_api import (
     get_optional_inner_type,
     is_closed_python_dict_type,
+    is_closed_python_list_type,
     is_closed_python_optional_type,
     is_closed_python_set_type,
     is_closed_python_tuple_type,
-    is_python_list_type,
 )
 
 
@@ -20,15 +20,6 @@ def test_closed_python_dict():
     assert is_closed_python_dict_type('foobar') is False
     assert is_closed_python_dict_type(typing.Optional) is False
     assert is_closed_python_dict_type(typing.List) is False
-
-
-def test_is_typing_list():
-    assert is_python_list_type(typing.List[int])
-    assert is_python_list_type(typing.List)
-    assert is_python_list_type(list)
-    assert not is_python_list_type(None)
-    assert not is_python_list_type(int)
-    assert not is_python_list_type('foobar')
 
 
 def test_is_typing_optional_py_3():
@@ -67,3 +58,18 @@ def test_closed_set_type():
     assert is_closed_python_set_type(typing.Dict[int, str]) is False
     assert is_closed_python_set_type(typing.Tuple) is False
     assert is_closed_python_set_type(typing.Tuple[int, str]) is False
+
+
+def test_closed_list_type():
+    assert is_closed_python_list_type(typing.List[int]) is True
+
+    assert is_closed_python_list_type(typing.List) is False
+    assert is_closed_python_list_type(list) is False
+    assert is_closed_python_list_type(None) is False
+    assert is_closed_python_list_type(1) is False
+    assert is_closed_python_list_type('foobar') is False
+    assert is_closed_python_list_type(typing.Optional) is False
+    assert is_closed_python_list_type(typing.Dict) is False
+    assert is_closed_python_list_type(typing.Dict[int, str]) is False
+    assert is_closed_python_list_type(typing.Tuple) is False
+    assert is_closed_python_list_type(typing.Tuple[int, str]) is False

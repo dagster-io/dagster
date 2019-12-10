@@ -197,7 +197,7 @@ class ConfigurableClassData(
             )
 
         config_dict = yaml.load(self.config_yaml)
-        result = evaluate_config(klass.config_type().inst(), config_dict)
+        result = evaluate_config(klass.config_type(), config_dict)
         if not result.success:
             raise DagsterInvalidConfigError(None, result.errors, config_dict)
         return klass.from_config_value(self, result.value, **constructor_kwargs)

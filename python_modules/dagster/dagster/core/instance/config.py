@@ -16,7 +16,7 @@ def dagster_instance_config(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENA
     dagster_config_dict = merge_dicts(
         load_yaml_from_globs(os.path.join(base_dir, config_filename)), overrides
     )
-    dagster_config_type = define_dagster_config_cls().inst()
+    dagster_config_type = define_dagster_config_cls()
     dagster_config = evaluate_config(dagster_config_type, dagster_config_dict)
     if not dagster_config.success:
         raise DagsterInvalidConfigError(None, dagster_config.errors, dagster_config_dict)
