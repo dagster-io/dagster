@@ -13,8 +13,8 @@ def apply_default_values(config_type, config_value):
         return config_type.to_python_value(config_value)
     elif config_type.is_selector:
         return apply_default_values_to_selector(config_type, config_value)
-    elif config_type.is_composite:
-        return apply_defaults_to_composite_type(config_type, config_value)
+    elif config_type.is_dict:
+        return apply_defaults_to_dict_type(config_type, config_value)
     elif config_type.is_list:
         return apply_defaults_to_list_type(config_type, config_value)
     elif config_type.is_nullable:
@@ -44,11 +44,11 @@ def apply_default_values_to_selector(selector_type, config_value):
     return {field_name: field_value}
 
 
-def apply_defaults_to_composite_type(composite_type, config_value):
-    check.param_invariant(composite_type.is_composite, 'composite_type')
+def apply_defaults_to_dict_type(dict_type, config_value):
+    check.param_invariant(dict_type.is_dict, 'dict_type')
     config_value = check.opt_dict_param(config_value, 'config_value', key_type=str)
 
-    fields = composite_type.fields
+    fields = dict_type.fields
     incoming_fields = set(config_value.keys())
 
     processed_fields = {}
@@ -67,7 +67,7 @@ def apply_defaults_to_composite_type(composite_type, config_value):
 
     # For permissive composite fields, we skip applying defaults because these fields are unknown
     # to us
-    if composite_type.is_permissive_composite:
+    if dict_type.is_permissive_dict:
         defined_fields = set(fields.keys())
         extra_fields = incoming_fields - defined_fields
         for extra_field in extra_fields:

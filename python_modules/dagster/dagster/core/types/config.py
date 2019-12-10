@@ -108,7 +108,7 @@ class ConfigType(object):
 
     @property
     def has_fields(self):
-        return self.is_composite or self.is_selector
+        return ConfigTypeKind.has_fields(self.kind)
 
     @property
     def is_scalar(self):
@@ -123,7 +123,7 @@ class ConfigType(object):
         return self.kind == ConfigTypeKind.NULLABLE
 
     @property
-    def is_composite(self):
+    def is_dict(self):
         return self.kind == ConfigTypeKind.DICT or self.kind == ConfigTypeKind.PERMISSIVE_DICT
 
     @property
@@ -151,7 +151,7 @@ class ConfigType(object):
         return self.kind == ConfigTypeKind.ENUM
 
     @property
-    def is_permissive_composite(self):
+    def is_permissive_dict(self):
         return self.kind == ConfigTypeKind.PERMISSIVE_DICT
 
 

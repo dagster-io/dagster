@@ -11,7 +11,7 @@ from .config import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttributes, C
 def all_optional_type(config_type):
     check.inst_param(config_type, 'config_type', ConfigType)
 
-    if config_type.is_composite:
+    if config_type.is_dict:
         for field in config_type.fields.values():
             if not field.is_optional:
                 return False
@@ -116,7 +116,7 @@ class _ConfigHasFields(ConfigType):
             elif field_value.config_type.is_enum:
                 fields = [field_to_string(k, v) for k, v in field_value.config_type.fields.items()]
                 s += format_fields(fields)
-            elif field_value.config_type.is_composite:
+            elif field_value.config_type.is_dict:
                 fields = [field_to_string(k, v) for k, v in field_value.config_type.fields.items()]
                 s += format_fields(fields)
             elif field_value.config_type.is_list:
