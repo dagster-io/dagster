@@ -42,15 +42,16 @@ def define_multi_mode_pipeline():
 
 
 def define_multi_mode_with_resources_pipeline():
-    @resource(config_field=Field(Int))
+    # API red alert. One has to wrap a type in Field because it is callable
+    @resource(config=Field(Int))
     def adder_resource(init_context):
         return lambda x: x + init_context.resource_config
 
-    @resource(config_field=Field(Int))
+    @resource(config=Field(Int))
     def multer_resource(init_context):
         return lambda x: x * init_context.resource_config
 
-    @resource(config={'num_one': Field(Int), 'num_two': Field(Int)})
+    @resource(config={'num_one': Int, 'num_two': Int})
     def double_adder_resource(init_context):
         return (
             lambda x: x

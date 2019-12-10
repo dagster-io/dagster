@@ -52,7 +52,7 @@ def test_all_types_provided():
                 resource_defs={
                     'some_resource': ResourceDefinition(
                         lambda: None,
-                        config_field=Field(
+                        config=Field(
                             NamedDict(
                                 'SomeModeNamedDict',
                                 {
@@ -87,15 +87,9 @@ def test_provided_default_on_resources_config():
                 resource_defs={
                     'some_resource': ResourceDefinition(
                         resource_fn=lambda: None,
-                        config_field=Field(
-                            Dict(
-                                {
-                                    'with_default_int': Field(
-                                        Int, is_optional=True, default_value=23434
-                                    )
-                                }
-                            )
-                        ),
+                        config={
+                            'with_default_int': Field(Int, is_optional=True, default_value=23434)
+                        },
                     )
                 },
             )
@@ -166,17 +160,14 @@ def test_solid_dictionary_type():
 
 def define_test_solids_config_pipeline():
     @solid(
-        name='int_config_solid',
-        config_field=Field(Int, is_optional=True),
-        input_defs=[],
-        output_defs=[],
+        name='int_config_solid', config=Field(Int, is_optional=True), input_defs=[], output_defs=[],
     )
     def int_config_solid(_):
         return None
 
     @solid(
         name='string_config_solid',
-        config_field=Field(String, is_optional=True),
+        config=Field(String, is_optional=True),
         input_defs=[],
         output_defs=[],
     )
@@ -218,7 +209,7 @@ def test_solid_configs_defaults():
 
 
 def test_solid_dictionary_some_no_config():
-    @solid(name='int_config_solid', config_field=Field(Int), input_defs=[], output_defs=[])
+    @solid(name='int_config_solid', config=Field(Int), input_defs=[], output_defs=[])
     def int_config_solid(_):
         return None
 
@@ -244,16 +235,14 @@ def test_whole_environment():
             ModeDefinition(
                 name='test_mode',
                 resource_defs={
-                    'test_resource': ResourceDefinition(
-                        resource_fn=lambda: None, config_field=Field(Any)
-                    )
+                    'test_resource': ResourceDefinition(resource_fn=lambda: None, config=Any)
                 },
             )
         ],
         solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
-                config_field=Field(Int),
+                config=Field(Int),
                 input_defs=[],
                 output_defs=[],
                 compute_fn=lambda *args: None,
@@ -301,7 +290,7 @@ def test_optional_solid_with_no_config():
         solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
-                config_field=Field(Int),
+                config=Field(Int),
                 input_defs=[],
                 output_defs=[],
                 compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
@@ -327,7 +316,7 @@ def test_optional_solid_with_optional_scalar_config():
         solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
-                config_field=Field(Int, is_optional=True),
+                config=Field(Int, is_optional=True),
                 input_defs=[],
                 output_defs=[],
                 compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
@@ -357,7 +346,7 @@ def test_optional_solid_with_required_scalar_config():
         solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
-                config_field=Field(Int),
+                config=Field(Int),
                 input_defs=[],
                 output_defs=[],
                 compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
@@ -390,7 +379,7 @@ def test_required_solid_with_required_subfield():
         solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
-                config_field=Field(Dict({'required_field': Field(String)})),
+                config={'required_field': String},
                 input_defs=[],
                 output_defs=[],
                 compute_fn=lambda *_args: None,
@@ -429,7 +418,7 @@ def test_optional_solid_with_optional_subfield():
         solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
-                config_field=Field(
+                config=Field(
                     Dict({'optional_field': Field(String, is_optional=True)}), is_optional=True
                 ),
                 input_defs=[],
@@ -463,7 +452,7 @@ def test_required_resource_with_required_subfield():
             ModeDefinition(
                 resource_defs={
                     'with_required': ResourceDefinition(
-                        resource_fn=lambda: None, config_field={'required_field': Field(String)},
+                        resource_fn=lambda: None, config={'required_field': String},
                     )
                 }
             )
@@ -490,9 +479,7 @@ def test_all_optional_field_on_single_resource():
                 resource_defs={
                     'with_optional': ResourceDefinition(
                         resource_fn=lambda: None,
-                        config_field=Field(
-                            Dict({'optional_field': Field(String, is_optional=True)})
-                        ),
+                        config={'optional_field': Field(String, is_optional=True)},
                     )
                 }
             )
@@ -519,18 +506,10 @@ def test_optional_and_required_context():
                 name='mixed',
                 resource_defs={
                     'optional_resource': ResourceDefinition(
-                        lambda: None,
-                        config_field=Field(
-                            dagster_type=Dict(
-                                fields={'optional_field': Field(String, is_optional=True)}
-                            )
-                        ),
+                        lambda: None, config={'optional_field': Field(String, is_optional=True)},
                     ),
                     'required_resource': ResourceDefinition(
-                        lambda: None,
-                        config_field=Field(
-                            dagster_type=Dict(fields={'required_field': Field(String)})
-                        ),
+                        lambda: None, config={'required_field': String},
                     ),
                 },
             )

@@ -65,7 +65,7 @@ def test_single_solid_with_multiple_inputs():
 def test_single_solid_with_config():
     ran = {}
 
-    @solid(config_field=Field(Int))
+    @solid(config=Field(Int))
     def check_config_for_two(context):
         assert context.solid_config == 2
         ran['check_config_for_two'] = True
@@ -79,7 +79,7 @@ def test_single_solid_with_config():
 
 
 def test_single_solid_with_context_config():
-    @resource(config_field=Field(Int, is_optional=True, default_value=2))
+    @resource(config=Field(Int, is_optional=True, default_value=2))
     def num_resource(init_context):
         return init_context.resource_config
 

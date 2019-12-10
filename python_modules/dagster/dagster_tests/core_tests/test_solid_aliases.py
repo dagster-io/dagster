@@ -65,7 +65,7 @@ def test_only_aliased_solids():
 
 
 def test_aliased_configs():
-    @solid(input_defs=[], config_field=Field(Int))
+    @solid(input_defs=[], config=Field(Int))
     def load_constant(context):
         return context.solid_config
 

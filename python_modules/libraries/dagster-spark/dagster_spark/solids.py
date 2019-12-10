@@ -3,8 +3,6 @@ import os
 import subprocess
 
 from dagster import (
-    Dict,
-    Field,
     InputDefinition,
     List,
     Nothing,
@@ -117,7 +115,7 @@ class SparkSolidDefinition(SolidDefinition):
             input_defs=[InputDefinition('spark_inputs', List[Path])],
             output_defs=[OutputDefinition(dagster_type=List[Path], name='paths')],
             compute_fn=_spark_compute_fn,
-            config_field=Field(Dict(define_spark_config())),
+            config=define_spark_config(),
             metadata={'kind': 'spark', 'main_class': main_class},
             step_metadata_fn=functools.partial(
                 step_metadata_fn, solid_name=name, main_class=main_class

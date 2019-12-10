@@ -89,8 +89,6 @@ class BigQueryClient(bigquery.Client):
             return self.load_table_from_uri(load_input, destination, job_config=job_config)
 
 
-@resource(
-    config_field=bq_resource_config(), description='Dagster resource for connecting to BigQuery'
-)
+@resource(config=bq_resource_config(), description='Dagster resource for connecting to BigQuery')
 def bigquery_resource(context):
     return BigQueryClient(context.resource_config.get('project'))

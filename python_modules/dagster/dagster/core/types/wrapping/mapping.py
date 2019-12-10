@@ -5,7 +5,7 @@ from dagster.core.types.runtime.python_tuple import PythonTuple
 from dagster.core.types.wrapping import Bool, Float, Int, String
 
 from .builtin_enum import BuiltinEnum
-from .wrapping import WrappingListType, WrappingSetType, WrappingTupleType
+from .wrapping import WrappingListType
 
 SUPPORTED_RUNTIME_BUILTINS = {
     int: Int,
@@ -40,8 +40,6 @@ SUPPORTED_CONFIG_BUILTINS = {
     bool: Bool,
     str: String,
     list: WrappingListType(BuiltinEnum.ANY),
-    tuple: WrappingTupleType(None),
-    set: WrappingSetType(BuiltinEnum.ANY),
 }
 
 

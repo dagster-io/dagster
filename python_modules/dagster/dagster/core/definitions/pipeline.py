@@ -93,7 +93,7 @@ class PipelineDefinition(IContainSolids, object):
             def apply_op(context, num):
                 return context.resources.op(num)
 
-            @resource(config_field=Field(Int))
+            @resource(config=Field(Int))
             def adder_resource(init_context):
                 return lambda x: x + init_context.resource_config
 

@@ -4,7 +4,7 @@ from dagster import Any, Dict, Enum, EnumValue, Field, List, Optional, Permissiv
 from dagster.check import CheckError, ParameterCheckError
 from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.types.config.field import resolve_to_config_type
-from dagster.core.types.config.field_utils import Selector
+from dagster.core.types.config.field_utils import Selector, coerce_potential_field
 from dagster.core.types.config.post_process import post_process_config
 
 
@@ -37,16 +37,17 @@ def test_post_process_config():
     assert post_process_config(nullable_list_config_type, [None]) == [None]
     assert post_process_config(nullable_list_config_type, None) == []
 
-    composite_config_type = resolve_to_config_type(
-        Dict(
-            {
-                'foo': Field(String),
-                'bar': Field(Dict({'baz': Field(List[String])})),
-                'quux': Field(String, is_optional=True, default_value='zip'),
-                'quiggle': Field(String, is_optional=True),
-            }
-        )
+    composite_config_field = coerce_potential_field(
+        {
+            'foo': String,
+            'bar': {'baz': List[String]},
+            'quux': Field(String, is_optional=True, default_value='zip'),
+            'quiggle': Field(String, is_optional=True),
+        },
+        lambda: None,
     )
+
+    composite_config_type = composite_config_field.config_type
 
     with pytest.raises(CheckError, match='Missing non-optional composite member'):
         post_process_config(composite_config_type, {})

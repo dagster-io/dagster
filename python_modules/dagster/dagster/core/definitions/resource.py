@@ -2,10 +2,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.types import String
-from dagster.core.types.config import Field
-from dagster.core.types.config.field_utils import check_user_facing_opt_field_param
-
-from .config import resolve_config_field
+from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 
 
 class ResourceDefinition(object):
@@ -26,16 +23,22 @@ class ResourceDefinition(object):
         resource_fn (Callable[[InitResourceContext], Any]): User-provided function to instantiate
             the resource, which will be made available to solid executions keyed on the
             ``context.resources`` object.
-        config_field (Optional[Field]): The type for the configuration data for this resource, which
-            will be available on the ``init_context`` passed to `resource_fn`` as
-            ``init_context.resource_config``.
+        config (Optional[Any]): The schema for the config. Configuration data available in
+            `init_context.resource_config`.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
         description (Optional[str]): A human-readable description of the resource.
     '''
 
-    def __init__(self, resource_fn, config_field=None, description=None):
+    def __init__(self, resource_fn, config=None, description=None):
         self._resource_fn = check.callable_param(resource_fn, 'resource_fn')
-        self._config_field = check_user_facing_opt_field_param(
-            config_field, 'config_field', 'of a ResourceDefinition or @resource'
+        self._config_field = check_user_facing_opt_config_param(
+            config, 'config', 'of a ResourceDefinition or @resource'
         )
         self._description = check.opt_str_param(description, 'description')
 
@@ -63,12 +66,12 @@ class ResourceDefinition(object):
     def string_resource(description=None):
         return ResourceDefinition(
             resource_fn=lambda init_context: init_context.resource_config,
-            config_field=Field(String),
+            config=String,
             description=description,
         )
 
 
-def resource(config=None, config_field=None, description=None):
+def resource(config=None, description=None):
     '''Define a resource.
     
     The decorated function should accept an :py:class:`InitResourceContext` and return an instance of
@@ -81,11 +84,15 @@ def resource(config=None, config_field=None, description=None):
     to write their own teardown/cleanup logic.
 
     Args:
-        config (Optional[Dict[str, Field]]): The schema for the configuration data made available
-            on the ``init_context`` passed to the decorated function (as
-            ``init_context.resource_config``).
-        config_field (Optional[Field]): Used in the rare case of a top level config type other than
-            a dictionary. Only one of ``config`` or ``config_field`` may be set.
+        config (Optional[Any]): The schema for the config. Configuration data available in
+            `init_context.resource_config`.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
         description(Optional[str]): A human-readable description of the resource.
     '''
 
@@ -95,9 +102,7 @@ def resource(config=None, config_field=None, description=None):
         return ResourceDefinition(resource_fn=config)
 
     def _wrap(resource_fn):
-        return ResourceDefinition(
-            resource_fn, resolve_config_field(config_field, config, '@resource'), description
-        )
+        return ResourceDefinition(resource_fn, config, description)
 
     return _wrap
 

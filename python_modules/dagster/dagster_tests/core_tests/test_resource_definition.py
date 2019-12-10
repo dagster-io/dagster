@@ -22,7 +22,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 
 def define_string_resource():
     return ResourceDefinition(
-        config_field=Field(String), resource_fn=lambda init_context: init_context.resource_config
+        config=String, resource_fn=lambda init_context: init_context.resource_config
     )
 
 
@@ -57,7 +57,7 @@ def test_yield_resource():
     def _do_resource(init_context):
         yield init_context.resource_config
 
-    yield_string_resource = ResourceDefinition(config_field=Field(String), resource_fn=_do_resource)
+    yield_string_resource = ResourceDefinition(config=String, resource_fn=_do_resource)
 
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
@@ -87,7 +87,7 @@ def test_yield_multiple_resources():
         yield init_context.resource_config
         saw.append('after yield ' + init_context.resource_config)
 
-    yield_string_resource = ResourceDefinition(config_field=Field(String), resource_fn=_do_resource)
+    yield_string_resource = ResourceDefinition(config=String, resource_fn=_do_resource)
 
     pipeline_def = PipelineDefinition(
         name='with_yield_resources',
@@ -128,7 +128,8 @@ def test_resource_decorator():
         assert context.resources.string_one == 'foo'
         assert context.resources.string_two == 'bar'
 
-    @resource(config_field=Field(String))
+    # API red alert. One has to wrap a type in Field because it is callable
+    @resource(config=Field(String))
     def yielding_string_resource(init_context):
         saw.append('before yield ' + init_context.resource_config)
         yield init_context.resource_config
@@ -178,17 +179,13 @@ def test_mixed_multiple_resources():
         yield init_context.resource_config
         saw.append('after yield ' + init_context.resource_config)
 
-    yield_string_resource = ResourceDefinition(
-        config_field=Field(String), resource_fn=_do_yield_resource
-    )
+    yield_string_resource = ResourceDefinition(config=String, resource_fn=_do_yield_resource)
 
     def _do_return_resource(init_context):
         saw.append('before return ' + init_context.resource_config)
         return init_context.resource_config
 
-    return_string_resource = ResourceDefinition(
-        config_field=Field(String), resource_fn=_do_return_resource
-    )
+    return_string_resource = ResourceDefinition(config=String, resource_fn=_do_return_resource)
 
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',

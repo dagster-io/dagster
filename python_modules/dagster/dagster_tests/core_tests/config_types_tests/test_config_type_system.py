@@ -444,7 +444,7 @@ def test_build_optionality():
 
 
 def test_wrong_solid_name():
-    @solid(name='some_solid', input_defs=[], output_defs=[], config_field=Field(Int))
+    @solid(name='some_solid', input_defs=[], output_defs=[], config=Field(Int))
     def some_solid(_):
         return None
 
@@ -466,8 +466,8 @@ def fail_me():
     assert False
 
 
-def dummy_resource(config_field=None):
-    return ResourceDefinition(lambda: None, config_field=config_field)
+def dummy_resource(config=None):
+    return ResourceDefinition(lambda: None, config=config)
 
 
 def test_wrong_resources():
@@ -491,7 +491,7 @@ def test_solid_list_config():
     value = [1, 2]
     called = {}
 
-    @solid(name='solid_list_config', input_defs=[], output_defs=[], config_field=Field(List[Int]))
+    @solid(name='solid_list_config', input_defs=[], output_defs=[], config=Field(List[Int]))
     def solid_list_config(context):
         assert context.solid_config == value
         called['yup'] = True
@@ -513,7 +513,7 @@ def test_two_list_types():
         name='two_list_type',
         input_defs=[],
         output_defs=[],
-        config_field=_to_field({'list_one': List[Int], 'list_two': List[Int]}),
+        config=_to_field({'list_one': List[Int], 'list_two': List[Int]}),
     )
     def two_list_type(_):
         return None
@@ -526,7 +526,7 @@ def test_two_list_types():
 
 
 def test_multilevel_default_handling():
-    @solid(config_field=Field(Int, is_optional=True, default_value=234))
+    @solid(config=Field(Int, is_optional=True, default_value=234))
     def has_default_value(context):
         assert context.solid_config == 234
 
@@ -548,7 +548,7 @@ def test_multilevel_default_handling():
 
 
 def test_no_env_missing_required_error_handling():
-    @solid(config_field=Field(Int))
+    @solid(config=Int)
     def required_int_solid(_context):
         pass
 
@@ -574,7 +574,7 @@ def test_no_env_missing_required_error_handling():
 
 
 def test_root_extra_field():
-    @solid(config_field=Field(Int))
+    @solid(config=Int)
     def required_int_solid(_context):
         pass
 
@@ -596,7 +596,7 @@ def test_root_extra_field():
 
 
 def test_deeper_path():
-    @solid(config_field=Field(Int))
+    @solid(config=Int)
     def required_int_solid(_context):
         pass
 
@@ -618,7 +618,7 @@ def test_deeper_path():
 def test_working_list_path():
     called = {}
 
-    @solid(config_field=Field(List[Int]))
+    @solid(config=List[Int])
     def required_list_int_solid(context):
         assert context.solid_config == [1, 2]
         called['yup'] = True
@@ -638,7 +638,7 @@ def test_working_list_path():
 def test_item_error_list_path():
     called = {}
 
-    @solid(config_field=Field(List[Int]))
+    @solid(config=List[Int])
     def required_list_int_solid(context):
         assert context.solid_config == [1, 2]
         called['yup'] = True
@@ -664,7 +664,7 @@ def test_item_error_list_path():
 def test_required_resource_not_given():
     @pipeline(
         name='required_resource_not_given',
-        mode_defs=[ModeDefinition(resource_defs={'required': dummy_resource(Field(Int))})],
+        mode_defs=[ModeDefinition(resource_defs={'required': dummy_resource(Int)})],
     )
     def pipeline_def():
         pass
@@ -691,7 +691,7 @@ def test_required_resource_not_given():
 
 
 def test_multilevel_good_error_handling_solids():
-    @solid(config_field=Field(Int))
+    @solid(config=Int)
     def good_error_handling(_context):
         pass
 
@@ -718,7 +718,7 @@ def test_multilevel_good_error_handling_solids():
 
 
 def test_multilevel_good_error_handling_solid_name_solids():
-    @solid(config_field=Field(Int))
+    @solid(config=Int)
     def good_error_handling(_context):
         pass
 
@@ -737,7 +737,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
 
 
 def test_multilevel_good_error_handling_config_solids_name_solids():
-    @solid(config_field=Field(Optional[Int]))
+    @solid(config=Optional[Int])
     def good_error_handling(_context):
         pass
 
@@ -753,7 +753,7 @@ def test_multilevel_good_error_handling_config_solids_name_solids():
 def test_invalid_default_values():
     with pytest.raises(check.ParameterCheckError):
 
-        @solid(config_field=Field(Int, default_value='3'))
+        @solid(config=Field(Int, default_value='3'))
         def _solid():
             pass
 
@@ -767,7 +767,13 @@ def test_typing_types_into_config():
     )
     with pytest.raises(DagsterInvariantViolationError, match=match_str):
 
-        @solid(config_field=Field(typing.List))
+        @solid(config=Field(typing.List))
+        def _solid(_):
+            pass
+
+    with pytest.raises(DagsterInvariantViolationError, match=match_str):
+
+        @solid(config=typing.List)
         def _solid(_):
             pass
 
@@ -780,7 +786,13 @@ def test_typing_types_into_config():
 
     with pytest.raises(DagsterInvariantViolationError, match=match_str):
 
-        @solid(config_field=Field(typing.List[int]))
+        @solid(config=Field(typing.List[int]))
+        def _solid(_):
+            pass
+
+    with pytest.raises(DagsterInvariantViolationError, match=match_str):
+
+        @solid(config=typing.List[int])
         def _solid(_):
             pass
 
@@ -795,7 +807,7 @@ def test_typing_types_into_config():
     ]:
         with pytest.raises(DagsterInvariantViolationError):
 
-            @solid(config_field=Field(ttype))
+            @solid(config=Field(ttype))
             def _solid(_):
                 pass
 
@@ -804,13 +816,25 @@ def test_no_set_in_config_system():
     set_error_msg = re.escape('Cannot use Set in the context of a config field.')
     with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @solid(config_field=Field(Set))
+        @solid(config=Field(Set))
         def _bare_open_set(_):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @solid(config_field=Field(Set[int]))
+        @solid(config=Set)
+        def _bare_open_set(_):
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
+
+        @solid(config=Field(Set[int]))
+        def _bare_closed_set(_):
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
+
+        @solid(config=Set[int])
         def _bare_closed_set(_):
             pass
 
@@ -819,12 +843,12 @@ def test_no_tuple_in_config_system():
     tuple_error_msg = re.escape('Cannot use Tuple in the context of a config field.')
     with pytest.raises(DagsterInvalidDefinitionError, match=tuple_error_msg):
 
-        @solid(config_field=Field(Tuple))
+        @solid(config=Field(Tuple))
         def _bare_open_tuple(_):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError, match=tuple_error_msg):
 
-        @solid(config_field=Field(Tuple[int]))
+        @solid(config=Field(Tuple[int]))
         def _bare_closed_set(_):
             pass

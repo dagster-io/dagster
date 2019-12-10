@@ -28,7 +28,7 @@ def pipe(input_str):
     return input_str
 
 
-@solid(config_field=Field(String, is_optional=True))
+@solid(config=Field(String, is_optional=True))
 def scalar_config_solid(context):
     yield Output(context.solid_config)
 

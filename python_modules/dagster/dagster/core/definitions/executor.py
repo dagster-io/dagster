@@ -3,18 +3,23 @@ from functools import update_wrapper
 from dagster import check
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
 from dagster.core.types.config.field import Field
-from dagster.core.types.config.field_utils import check_user_facing_opt_field_param
+from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.types.wrapping import Int
-
-from .config import resolve_config_field
 
 
 class ExecutorDefinition(object):
     '''
     Args:
         name (Optional[str]): The name of the executor.
-        config_field (Optional[Field]): Used in the rare case of a top level config type other than
-            a dictionary. Only one of ``config`` or ``config_field`` may be set.
+        config (Optional[Any]): The schema for the config. Configuration data available in
+            `init_context.executor_config`.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
         executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
             and return an instance of :py:class:`ExecutorConfig`.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
@@ -22,14 +27,10 @@ class ExecutorDefinition(object):
 
     '''
 
-    def __init__(
-        self, name, config_field=None, executor_creation_fn=None, required_resource_keys=None
-    ):
+    def __init__(self, name, config=None, executor_creation_fn=None, required_resource_keys=None):
         self._name = check.str_param(name, 'name')
-        self._config_field = check_user_facing_opt_field_param(
-            config_field,
-            'config_field',
-            'of an ExecutorDefinition named {name}'.format(name=self.name),
+        self._config_field = check_user_facing_opt_config_param(
+            config, 'config', 'of an ExecutorDefinition named {name}'.format(name=self.name),
         )
         self._executor_creation_fn = check.opt_callable_param(
             executor_creation_fn, 'executor_creation_fn'
@@ -55,7 +56,7 @@ class ExecutorDefinition(object):
         return self._required_resource_keys
 
 
-def executor(name=None, config_field=None, config=None, required_resource_keys=None):
+def executor(name=None, config=None, required_resource_keys=None):
     '''Define an executor.
     
     The decorated function should accept an :py:class:`InitExecutorContext` and return an instance
@@ -63,30 +64,32 @@ def executor(name=None, config_field=None, config=None, required_resource_keys=N
 
     Args:
         name (Optional[str]): The name of the executor.
-        config (Dict[str, Field]): The schema for the configuration data to be made available to
-            the decorated function.
-        config_field (Optional[Field]): Used in the rare case of a top level config type other than
-            a dictionary. Only one of ``config`` or ``config_field`` may be set.
+        config (Optional[Any]): The schema for the config. Configuration data available in
+            `init_context.executor_config`.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
             executor.
     '''
     if callable(name):
-        check.invariant(config_field is None)
         check.invariant(config is None)
         check.invariant(required_resource_keys is None)
         return _ExecutorDecoratorCallable()(name)
 
     return _ExecutorDecoratorCallable(
-        name=name,
-        config_field=resolve_config_field(config_field, config, '@system_storage'),
-        required_resource_keys=required_resource_keys,
+        name=name, config=config, required_resource_keys=required_resource_keys,
     )
 
 
 class _ExecutorDecoratorCallable(object):
-    def __init__(self, name=None, config_field=None, required_resource_keys=None):
+    def __init__(self, name=None, config=None, required_resource_keys=None):
         self.name = check.opt_str_param(name, 'name')
-        self.config_field = config_field  # type check in definition
+        self.config = config  # type check in definition
         self.required_resource_keys = required_resource_keys  # type check in definition
 
     def __call__(self, fn):
@@ -97,7 +100,7 @@ class _ExecutorDecoratorCallable(object):
 
         executor_def = ExecutorDefinition(
             name=self.name,
-            config_field=self.config_field,
+            config=self.config,
             executor_creation_fn=fn,
             required_resource_keys=self.required_resource_keys,
         )

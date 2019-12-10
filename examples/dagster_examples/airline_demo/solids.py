@@ -9,7 +9,6 @@ from dagstermill import define_dagstermill_solid
 from sqlalchemy import text
 
 from dagster import (
-    Dict,
     EventMetadataEntry,
     ExpectationResult,
     Field,
@@ -219,16 +218,11 @@ def load_data_to_database_from_spark(context, data_frame: DataFrame):
 
 @solid(
     description='Subsample a spark dataset via the configuration option.',
-    config_field=Field(
-        Dict(
-            fields={
-                'subsample_pct': Field(
-                    Int,
-                    description='The integer percentage of rows to sample from the input dataset.',
-                )
-            }
+    config={
+        'subsample_pct': Field(
+            Int, description='The integer percentage of rows to sample from the input dataset.',
         )
-    ),
+    },
 )
 def subsample_spark_dataset(context, data_frame: DataFrame) -> DataFrame:
     return data_frame.sample(

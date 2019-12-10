@@ -140,7 +140,7 @@ def test_two_cliques():
 
 
 def test_deep_graph():
-    @solid(config_field=Field(Int))
+    @solid(config=Field(Int))
     def download_num(context):
         return context.solid_config
 

@@ -134,7 +134,7 @@ def test_pass_unrelated_type_to_field_error_solid_definition():
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
-        @solid(config_field='nope')
+        @solid(config='nope')
         def a_solid(_context):
             pass
 
@@ -142,18 +142,18 @@ def test_pass_unrelated_type_to_field_error_solid_definition():
 
     assert str(exc_info.value) == (
         'You have passed an object \'nope\' of incorrect type "str" in the parameter '
-        '"config_field" of a SolidDefinition or @solid named "a_solid" where a Field '
-        'was expected.'
+        '"config" of a SolidDefinition or @solid named "a_solid" where a Field, '
+        'dict, or type was expected.'
     )
 
 
 def test_pass_unrelated_type_to_field_error_resource_definition():
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        ResourceDefinition(resource_fn=lambda: None, config_field='wut')
+        ResourceDefinition(resource_fn=lambda: None, config='wut')
 
     assert str(exc_info.value) == (
         'You have passed an object \'wut\' of incorrect type "str" in the parameter '
-        '"config_field" of a ResourceDefinition or @resource where a Field was expected.'
+        '"config" of a ResourceDefinition or @resource where a Field, dict, or type was expected.'
     )
 
 

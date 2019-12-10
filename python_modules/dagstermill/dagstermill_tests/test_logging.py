@@ -4,16 +4,7 @@ import os
 
 from dagstermill.examples.repository import define_hello_logging_solid
 
-from dagster import (
-    Dict,
-    Field,
-    ModeDefinition,
-    PipelineDefinition,
-    String,
-    execute_pipeline,
-    logger,
-    seven,
-)
+from dagster import ModeDefinition, PipelineDefinition, String, execute_pipeline, logger, seven
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.instance import DagsterInstance
 from dagster.utils import safe_tempfile_path, script_relative_path
@@ -32,11 +23,7 @@ class LogTestFileHandler(logging.Handler):
             fd.write(seven.json.dumps(record.__dict__) + '\n')
 
 
-@logger(
-    config_field=Field(
-        Dict({'name': Field(String), 'log_level': Field(String), 'file_path': Field(String)})
-    )
-)
+@logger(config={'name': String, 'log_level': String, 'file_path': String})
 def test_file_logger(init_context):
     klass = logging.getLoggerClass()
     logger_ = klass(

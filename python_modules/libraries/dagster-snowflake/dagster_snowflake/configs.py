@@ -1,4 +1,4 @@
-from dagster import Bool, Dict, Field, Int, Path, String
+from dagster import Bool, Field, Int, Path, String
 
 
 def define_snowflake_config():
@@ -111,26 +111,21 @@ def define_snowflake_config():
         is_optional=True,
     )
 
-    return Field(
-        Dict(
-            fields={
-                'account': account,
-                'user': user,
-                'password': password,
-                'database': database,
-                'schema': schema,
-                'role': role,
-                'warehouse': warehouse,
-                'autocommit': autocommit,
-                'client_prefetch_threads': client_prefetch_threads,
-                'client_session_keep_alive': client_session_keep_alive,
-                'login_timeout': login_timeout,
-                'network_timeout': network_timeout,
-                'ocsp_response_cache_filename': ocsp_response_cache_filename,
-                'validate_default_parameters': validate_default_parameters,
-                'paramstyle': paramstyle,
-                'timezone': timezone,
-            }
-        ),
-        description='Snowflake configuration',
-    )
+    return {
+        'account': account,
+        'user': user,
+        'password': password,
+        'database': database,
+        'schema': schema,
+        'role': role,
+        'warehouse': warehouse,
+        'autocommit': autocommit,
+        'client_prefetch_threads': client_prefetch_threads,
+        'client_session_keep_alive': client_session_keep_alive,
+        'login_timeout': login_timeout,
+        'network_timeout': network_timeout,
+        'ocsp_response_cache_filename': ocsp_response_cache_filename,
+        'validate_default_parameters': validate_default_parameters,
+        'paramstyle': paramstyle,
+        'timezone': timezone,
+    }

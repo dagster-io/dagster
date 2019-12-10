@@ -39,7 +39,7 @@ Built-in types
         def identity_py2(_, x):
             return x
 
-        @solid(config_field=Field(Any))
+        @solid(config=Field(Any))
         def any_config(context):
             return context.solid_config
 
@@ -77,7 +77,7 @@ Built-in types
         def empty_string_py2(_, x):
             return len(x) == 0
 
-        @solid(config_field=Field(Bool))
+        @solid(config=Field(Bool))
         def bool_config(context):
             return 'true' if context.solid_config else 'false'
 
@@ -127,7 +127,7 @@ Built-in types
         def div_2_py_2(_, x):
             return x / 2
 
-        @solid(config_field=Field(Float))
+        @solid(config=Field(Float))
         def div_y(context, x: Float) -> float:
             return x / context.solid_config
 
@@ -157,7 +157,7 @@ Built-in types
         def concat_py_2(_, x, y):
             return x + y
 
-        @solid(config_field=Field(String))
+        @solid(config=Field(String))
         def hello(context) -> str:
             return 'Hello, {friend}!'.format(friend=context.solid_config)
 
@@ -184,7 +184,7 @@ Built-in types
         def exists_py2(_, path):
             return os.path.exists(path)
 
-        @solid(config_field=Field(Path))
+        @solid(config=Field(Path))
         def unpickle(context) -> Any:
             with open(context.solid_config, 'rb') as fd:
                 return pickle.load(fd)
@@ -276,7 +276,7 @@ Built-in types
         def concat_list_py2(_, xs) -> String:
             return ''.join(xs)
 
-        @solid(config_field=Field(List[String]))
+        @solid(config=Field(List[String]))
         def concat_config(context) -> String:
             return ''.join(context.solid_config)
 
@@ -331,7 +331,7 @@ Built-in types
         def repeat_py2(_, spec):
             return spec['word'] * spec['times']
 
-        @solid(config_field=Field(Dict({'word': Field(String), 'times': Field(Int)})))
+        @solid(config=Field(Dict({'word': Field(String), 'times': Field(Int)})))
         def repeat_config(context) -> str:
             return context.solid_config['word'] * context.solid_config['times']
 
@@ -362,17 +362,17 @@ Built-in types
         def set_solid_py2(_, set_input):
             return sorted([x for x in set_input])
 
-        @solid(config_field=Field(Set))
+        @solid(config=Field(Set))
         def set_config(context) -> list:
             return sorted([str(x) for x in context.solid_config])
 
 
-        @solid(config_field=Field(Set[Any]))
+        @solid(config=Field(Set[Any]))
         def set_any_config(context) -> list:
             return sorted([str(x) for x in context.solid_config])
 
 
-        @solid(config_field=Field(Set[str]))
+        @solid(config=Field(Set[str]))
         def set_string_config(context) -> list:
             return sorted([x for x in context.solid_config])
 
@@ -402,16 +402,16 @@ Built-in types
         def tuple_solid_py2(_, tuple_input):
             return [x for x in tuple_input]
 
-        @solid(config_field=Field(Tuple))
+        @solid(config=Field(Tuple))
         def tuple_config(context) -> str:
             return ':'.join([str(x) for x in context.solid_config])
 
 
-        @solid(config_field=Field(Tuple[Any, Any]))
+        @solid(config=Field(Tuple[Any, Any]))
         def any_tuple_config(context) -> str:
             return ':'.join([str(x) for x in context.solid_config])
 
-        @solid(config_field=Field(Tuple[String, Int, Float]))
+        @solid(config=Field(Tuple[String, Int, Float]))
         def heterogeneous_tuple_config(context) -> str:
             return ':'.join([str(x) for x in context.solid_config])
 

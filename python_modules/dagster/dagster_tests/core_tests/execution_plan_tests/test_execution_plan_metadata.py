@@ -1,4 +1,4 @@
-from dagster import Dict, Field, PipelineDefinition, SolidDefinition, String
+from dagster import PipelineDefinition, SolidDefinition, String
 from dagster.core.execution.api import create_execution_plan
 
 
@@ -8,7 +8,7 @@ def test_execution_plan_create_metadata():
         input_defs=[],
         output_defs=[],
         compute_fn=lambda *args, **kwargs: None,
-        config_field=Field(Dict({'str_value': Field(String)})),
+        config={'str_value': String},
         step_metadata_fn=lambda env_config: {
             'computed': env_config.solids['solid_metadata_creation'].config['str_value'] + '1'
         },

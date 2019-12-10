@@ -1,7 +1,5 @@
 from dagster import check
-from dagster.core.types.config.field_utils import check_user_facing_opt_field_param
-
-from .config import resolve_config_field
+from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 
 
 class LoggerDefinition(object):
@@ -14,16 +12,22 @@ class LoggerDefinition(object):
         logger_fn (Callable[[InitLoggerContext], logging.Logger]): User-provided function to
             instantiate the logger. This logger will be automatically invoked whenever the methods
             on ``context.log`` are called from within solid compute logic.
-        config_field (Optional[Field]): The type for the configuration data for this logger, if
-            any. The config data will be available on the ``init_context`` passed to ``logger_fn``
-            as ``init_context.logger_config``.
+        config (Optional[Any]): The schema for the config. Configuration data available in
+            `init_context.logger_config`.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
         description (Optional[str]): A human-readable description of this logger.
     '''
 
-    def __init__(self, logger_fn, config_field=None, description=None):
+    def __init__(self, logger_fn, config=None, description=None):
         self._logger_fn = check.callable_param(logger_fn, 'logger_fn')
-        self._config_field = check_user_facing_opt_field_param(
-            config_field, 'config_field', 'of a LoggerDefinition or @logger'
+        self._config_field = check_user_facing_opt_config_param(
+            config, 'config', 'of a LoggerDefinition or @logger'
         )
         self._description = check.opt_str_param(description, 'description')
 
@@ -40,7 +44,7 @@ class LoggerDefinition(object):
         return self._description
 
 
-def logger(config=None, config_field=None, description=None):
+def logger(config=None, description=None):
     '''Define a logger.
     
     The decorated function should accept an :py:class:`InitLoggerContext` and return an instance of
@@ -48,9 +52,15 @@ def logger(config=None, config_field=None, description=None):
     :py:class:`LoggerDefinition`.
 
     Args:
-        config (Optional[Dict[str, Field]]): The schema for the configuration data made available on
-            the ``init_context`` passed to the decorated function (as
-            ``init_context.logger_config``).
+        config (Optional[Any]): The schema for the config. Configuration data available in
+            `init_context.logger_config`.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
         config_field (Optional[Field]): Used in the rare case of a top level config type other than
             a dictionary.
 
@@ -62,9 +72,7 @@ def logger(config=None, config_field=None, description=None):
     if callable(config):
         return LoggerDefinition(logger_fn=config)
 
-    config_field = resolve_config_field(config_field, config, '@logger')
-
     def _wrap(logger_fn):
-        return LoggerDefinition(logger_fn, config_field, description)
+        return LoggerDefinition(logger_fn, config, description)
 
     return _wrap

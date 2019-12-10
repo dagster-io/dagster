@@ -13,7 +13,6 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
 from dagster import (
     Any,
     Bool,
-    Dict,
     Enum,
     EnumValue,
     EventMetadataEntry,
@@ -318,7 +317,7 @@ def csv_hello_world_two():
     return sum_solid()
 
 
-@solid(name='solid_with_list', input_defs=[], output_defs=[], config_field=Field(List[Int]))
+@solid(name='solid_with_list', input_defs=[], output_defs=[], config=Field(List[Int]))
 def solid_def(_):
     return None
 
@@ -369,7 +368,7 @@ def scalar_output_pipeline():
 @pipeline
 def pipeline_with_enum_config():
     @solid(
-        config_field=Field(
+        config=Field(
             Enum(
                 'TestEnum',
                 [
@@ -402,7 +401,7 @@ def pipeline_with_step_metadata():
         input_defs=[],
         output_defs=[],
         compute_fn=lambda *args, **kwargs: None,
-        config_field=Field(Dict({'str_value': Field(String)})),
+        config={'str_value': String},
         step_metadata_fn=lambda env_config: {
             'computed': env_config.solids['solid_metadata_creation'].config['str_value'] + '1'
         },
@@ -410,12 +409,12 @@ def pipeline_with_step_metadata():
     return solid_metadata()
 
 
-@resource(config_field=Field(Int))
+@resource(config=Field(Int))
 def adder_resource(init_context):
     return lambda x: x + init_context.resource_config
 
 
-@resource(config_field=Field(Int))
+@resource(config=Field(Int))
 def multer_resource(init_context):
     return lambda x: x * init_context.resource_config
 
@@ -457,7 +456,7 @@ def multi_mode_with_resources():
     return apply_to_three()
 
 
-@resource(config_field=Field(Int, is_optional=True))
+@resource(config=Field(Int, is_optional=True))
 def req_resource(_):
     return 1
 
@@ -471,7 +470,7 @@ def required_resource_pipeline():
     solid_with_required_resource()
 
 
-@logger(config_field=Field(str))
+@logger(config=Field(str))
 def foo_logger(init_context):
     logger_ = logging.Logger('foo')
     logger_.setLevel(coerce_valid_log_level(init_context.logger_config))

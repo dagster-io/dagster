@@ -7,7 +7,6 @@ from dagster_pandas import DataFrame
 
 from dagster import (
     DependencyDefinition,
-    Dict,
     Field,
     InputDefinition,
     Int,
@@ -44,9 +43,7 @@ def define_hello_world_config_solid():
     return dagstermill.define_dagstermill_solid(
         'hello_world_config',
         nb_test_path('hello_world_config'),
-        config_field=Field(
-            Dict({'greeting': Field(String, is_optional=True, default_value='hello')})
-        ),
+        config={'greeting': Field(String, is_optional=True, default_value='hello')},
     )
 
 
@@ -142,7 +139,7 @@ def define_add_pipeline():
     )
 
 
-@solid(input_defs=[], config_field=Field(Int))
+@solid(input_defs=[], config=Field(Int))
 def load_constant(context):
     return context.solid_config
 
@@ -273,7 +270,7 @@ class FilePickleList(object):
         self.closed = True
 
 
-@resource(config_field=Field(String))
+@resource(config=Field(String))
 def filepicklelist_resource(init_context):
     filepicklelist = FilePickleList(init_context.resource_config)
     try:
