@@ -1,17 +1,18 @@
 from collections import namedtuple
 
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types import Field, List, NamedDict, Selector
-from dagster.core.types.config import (
+from dagster.core.types import List
+from dagster.core.types.config import Field, NamedDict, Selector
+from dagster.core.types.config.config_type import (
     ALL_CONFIG_BUILTINS,
     ConfigType,
     ConfigTypeAttributes,
     ConfigTypeKind,
 )
-from dagster.core.types.field import check_opt_field_param
-from dagster.core.types.field_utils import _ConfigHasFields, build_config_dict
-from dagster.core.types.iterate_types import iterate_config_types
-from dagster.core.types.runtime import construct_runtime_type_dictionary
+from dagster.core.types.config.field import check_opt_field_param
+from dagster.core.types.config.field_utils import _ConfigHasFields, build_config_dict
+from dagster.core.types.config.iterate_types import iterate_config_types
+from dagster.core.types.runtime.runtime_type import construct_runtime_type_dictionary
 from dagster.utils import camelcase, check, ensure_single_item
 
 from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
@@ -69,7 +70,7 @@ def SystemSelector(fields, description=None):
 
 class SolidConfigDict(_ConfigHasFields):
     def __init__(self, name, fields, description=None):
-        from dagster.core.types.field_utils import check_user_facing_fields_dict
+        from dagster.core.types.config.field_utils import check_user_facing_fields_dict
 
         check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
 

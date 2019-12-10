@@ -27,8 +27,8 @@ from dagster import (
     solid,
 )
 from dagster.core.test_utils import throwing_evaluate_config_value
-from dagster.core.types.evaluator import evaluate_config
-from dagster.core.types.evaluator.errors import (
+from dagster.core.types.config.evaluator import evaluate_config
+from dagster.core.types.config.evaluator.errors import (
     DagsterEvaluateConfigValueError,
     DagsterEvaluationErrorReason,
 )

@@ -12,7 +12,7 @@ from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.launcher import RunLauncher
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.types import NamedDict
+from dagster.core.types.config.field_utils import NamedDict
 
 
 class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):

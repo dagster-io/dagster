@@ -1,5 +1,6 @@
 from dagster import check
-from dagster.core.types.config import ConfigType
+
+from .config_type import ConfigType
 
 
 def iterate_config_types(config_type):

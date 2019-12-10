@@ -1,8 +1,7 @@
-from dagster import check
+from dagster import Field, String, check
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.runs.sqlite import RunStorageSqlMetadata, SqlRunStorage, create_engine
-from dagster.core.types import Field, String
 
 
 class PostgresRunStorage(SqlRunStorage, ConfigurableClass):

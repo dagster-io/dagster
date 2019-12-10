@@ -1,8 +1,9 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.types import Field, String
-from dagster.core.types.field_utils import check_user_facing_opt_field_param
+from dagster.core.types import String
+from dagster.core.types.config import Field
+from dagster.core.types.config.field_utils import check_user_facing_opt_field_param
 
 from .config import resolve_config_field
 

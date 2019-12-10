@@ -17,7 +17,8 @@ from dagster.core.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
 )
-from dagster.core.types import Field, String
+from dagster.core.types import String
+from dagster.core.types.config import Field
 from dagster.utils import mkdir_p
 
 from ...pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus

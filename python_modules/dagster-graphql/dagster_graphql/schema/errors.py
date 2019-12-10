@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from dagster_graphql import dauphin
 
 from dagster import check
-from dagster.core.types.evaluator.errors import (
+from dagster.core.types.config.evaluator.errors import (
     EvaluationError,
     FieldNotDefinedErrorData,
     FieldsNotDefinedErrorData,
@@ -12,7 +12,7 @@ from dagster.core.types.evaluator.errors import (
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
 )
-from dagster.core.types.evaluator.stack import (
+from dagster.core.types.config.evaluator.stack import (
     EvaluationStackListItemEntry,
     EvaluationStackPathEntry,
 )

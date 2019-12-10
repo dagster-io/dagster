@@ -26,6 +26,7 @@ cp -R ../../../dagster . && \
 cp -R ../../../dagster-graphql . && \
 cp -R ../../../libraries/dagster-aws . && \
 cp -R ../../../libraries/dagster-cron . && \
+cp -R ../../../libraries/dagster-pandas . && \
 cp -R ../../../libraries/dagster-gcp . && \
 cp -R ../../../../examples . && \
 mkdir -p ./dagster-airflow && \
@@ -53,6 +54,10 @@ rm -rf \
   dagster-aws/.tox \
   dagster-aws/build \
   dagster-aws/dist \
+  dagster-pandas/*.egg-info \
+  dagster-pandas/.tox \
+  dagster-pandas/build \
+  dagster-pandas/dist \
   dagster-gcp/*.egg-info \
   dagster-gcp/.tox \
   dagster-gcp/build \
@@ -69,6 +74,7 @@ rm -rf dagster
 rm -rf dagster-graphql
 rm -rf dagster-aws
 rm -rf dagster-cron
+rm -rf dagster-pandas
 rm -rf dagster-gcp
 rm -rf dagster-airflow
 rm -rf examples

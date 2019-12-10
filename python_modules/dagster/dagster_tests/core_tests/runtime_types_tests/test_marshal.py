@@ -1,4 +1,4 @@
-from dagster.core.types.marshal import PickleSerializationStrategy
+from dagster.core.types.runtime.marshal import PickleSerializationStrategy
 from dagster.utils import safe_tempfile_path
 
 

@@ -4,11 +4,10 @@ from dagster.core.decorator_utils import (
     validate_decorated_fn_positionals,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.types.config.config_type import ConfigType, List, Nullable
+from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
+from dagster.core.types.wrapping.wrapping import WrappingListType, WrappingNullableType
 from dagster.utils import ensure_single_item
-
-from .builtin_enum import BuiltinEnum
-from .config import ConfigType, List, Nullable
-from .wrapping import WrappingListType, WrappingNullableType
 
 
 class InputHydrationConfig(object):

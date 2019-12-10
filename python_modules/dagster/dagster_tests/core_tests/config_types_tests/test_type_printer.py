@@ -1,6 +1,6 @@
 from dagster import Dict, Field, Int, List, Optional, PipelineDefinition, SolidDefinition, String
-from dagster.core.types.field import resolve_to_config_type
-from dagster.core.types.type_printer import print_type_to_string
+from dagster.core.types.config.field import resolve_to_config_type
+from dagster.core.types.config.type_printer import print_type_to_string
 
 
 def assert_inner_types(parent_type, *dagster_types):

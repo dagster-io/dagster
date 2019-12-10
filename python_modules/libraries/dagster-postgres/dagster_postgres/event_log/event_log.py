@@ -7,7 +7,7 @@ from collections import namedtuple
 from dagster_postgres.utils import get_conn
 from six.moves.queue import Empty
 
-from dagster import check
+from dagster import Field, String, check
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.events.log import EventRecord
 from dagster.core.serdes import (
@@ -17,7 +17,6 @@ from dagster.core.serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster.core.storage.event_log import EventLogStorage
-from dagster.core.types import Field, String
 
 from ..pynotify import await_pg_notifications
 

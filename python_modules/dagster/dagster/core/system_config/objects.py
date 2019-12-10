@@ -7,7 +7,7 @@ from dagster.core.definitions.environment_schema import create_environment_type
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.config import IRunConfig, RunConfig
-from dagster.core.types.evaluator import evaluate_config
+from dagster.core.types.config.evaluator import evaluate_config
 from dagster.utils import ensure_single_item
 
 

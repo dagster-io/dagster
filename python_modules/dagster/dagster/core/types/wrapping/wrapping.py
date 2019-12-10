@@ -2,9 +2,7 @@ import typing
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
-
-from .builtin_enum import BuiltinEnum
-from .typing_api import (
+from dagster.utils.typing_api import (
     get_dict_key_value_types,
     get_list_inner_type,
     get_optional_inner_type,
@@ -17,9 +15,11 @@ from .typing_api import (
     is_closed_python_tuple_type,
 )
 
+from .builtin_enum import BuiltinEnum
+
 
 def transform_typing_type(type_annotation):
-    from .python_dict import create_typed_runtime_dict
+    from dagster.core.types.runtime.python_dict import create_typed_runtime_dict
 
     if type_annotation is typing.List:
         return List
@@ -102,12 +102,12 @@ class DagsterSetApi:
 
 class DictTypeApi(object):
     def __call__(self, fields):
-        from .field_utils import build_config_dict
+        from dagster.core.types.config.field_utils import build_config_dict
 
         return build_config_dict(fields)
 
     def __getitem__(self, *args):
-        from .python_dict import create_typed_runtime_dict
+        from dagster.core.types.runtime.python_dict import create_typed_runtime_dict
 
         check.param_invariant(len(args[0]) == 2, 'args', 'Must be two parameters')
         return create_typed_runtime_dict(args[0][0], args[0][1])

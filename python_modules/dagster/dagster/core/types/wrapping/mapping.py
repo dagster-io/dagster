@@ -1,5 +1,8 @@
 from dagster import check
-from dagster.core.types import Bool, Float, Int, PythonDict, PythonSet, PythonTuple, String
+from dagster.core.types.runtime.python_dict import PythonDict
+from dagster.core.types.runtime.python_set import PythonSet
+from dagster.core.types.runtime.python_tuple import PythonTuple
+from dagster.core.types.wrapping import Bool, Float, Int, String
 
 from .builtin_enum import BuiltinEnum
 from .wrapping import WrappingListType, WrappingSetType, WrappingTupleType
@@ -24,7 +27,7 @@ def remap_python_builtin_for_runtime(ttype):
     '''This function remaps a python type to a Dagster type, or passes it through if it cannot be
     remapped.
     '''
-    from dagster.core.types.runtime import resolve_to_runtime_type
+    from dagster.core.types.runtime.runtime_type import resolve_to_runtime_type
 
     check.param_invariant(is_supported_runtime_python_builtin(ttype), 'ttype')
 
@@ -51,7 +54,7 @@ def remap_python_builtin_for_config(ttype):
     remapped.
     '''
 
-    from dagster.core.types.field import resolve_to_config_type
+    from dagster.core.types.config.field import resolve_to_config_type
 
     check.param_invariant(is_supported_config_python_builtin(ttype), 'ttype')
 

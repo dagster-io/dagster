@@ -1,8 +1,7 @@
 import pickle
 
 from dagster import check, seven
-
-from .config import (
+from dagster.core.types.config.config_type import (
     ConfigAnyInstance,
     ConfigBoolInstance,
     ConfigFloatInstance,
@@ -11,10 +10,11 @@ from .config import (
     ConfigStringInstance,
     ConfigTypeAttributes,
 )
+from dagster.core.types.config.field import Field
+from dagster.core.types.config.field_utils import NamedSelector
+from dagster.core.types.wrapping.wrapping import Dict
+
 from .config_schema import input_selector_schema, make_bare_input_schema, output_selector_schema
-from .field import Field
-from .field_utils import NamedSelector
-from .wrapping import Dict
 
 
 def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):

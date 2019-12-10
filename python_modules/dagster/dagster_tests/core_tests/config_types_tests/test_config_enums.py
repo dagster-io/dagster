@@ -14,7 +14,7 @@ from dagster import (
     solid,
 )
 from dagster.core.types.config import Enum as ConfigEnum
-from dagster.core.types.evaluator import evaluate_config
+from dagster.core.types.config.evaluator import evaluate_config
 
 
 def define_test_enum_type():

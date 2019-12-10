@@ -1,8 +1,8 @@
 from dagster import check
+from dagster.core.types.config.config_type import List
 
-from .config import List
 from .config_schema import InputHydrationConfig
-from .runtime import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
+from .runtime_type import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
 
 PythonSet = define_python_dagster_type(
     set, 'PythonSet', description='''Represents a python dictionary to pass between solids'''

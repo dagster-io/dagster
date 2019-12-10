@@ -2,8 +2,9 @@ from functools import update_wrapper
 
 from dagster import check
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
-from dagster.core.types import Field, Int
-from dagster.core.types.field_utils import check_user_facing_opt_field_param
+from dagster.core.types.config.field import Field
+from dagster.core.types.config.field_utils import check_user_facing_opt_field_param
+from dagster.core.types.wrapping import Int
 
 from .config import resolve_config_field
 

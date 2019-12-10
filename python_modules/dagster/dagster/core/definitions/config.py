@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.config import IRunConfig
-from dagster.core.types import Dict, Field
+from dagster.core.types.config import Dict, Field
 
 
 def resolve_config_field(config_field, config, source):

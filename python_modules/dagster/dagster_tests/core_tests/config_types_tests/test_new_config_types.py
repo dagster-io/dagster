@@ -1,6 +1,6 @@
 from dagster.core.types import Int, List, Optional
-from dagster.core.types.evaluator import evaluate_config
-from dagster.core.types.field import resolve_to_config_type
+from dagster.core.types.config.evaluator import evaluate_config
+from dagster.core.types.config.field import resolve_to_config_type
 
 
 def test_config_any():

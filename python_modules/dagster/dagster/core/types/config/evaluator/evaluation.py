@@ -8,7 +8,7 @@ from dagster.core.definitions.environment_configs import is_solid_container_conf
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.solid import CompositeSolidDefinition
 from dagster.core.execution.config import IRunConfig, RunConfig
-from dagster.core.types.config import ConfigType
+from dagster.core.types.config.config_type import ConfigType
 from dagster.utils import ensure_single_item, frozendict
 from dagster.utils.merger import dict_merge
 

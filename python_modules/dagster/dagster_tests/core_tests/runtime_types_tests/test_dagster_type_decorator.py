@@ -3,7 +3,7 @@ import collections
 import pytest
 
 from dagster import DagsterInvalidDefinitionError, as_dagster_type, dagster_type
-from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
+from dagster.core.types.runtime.runtime_type import RuntimeType, resolve_to_runtime_type
 
 
 def test_dagster_type_decorator():

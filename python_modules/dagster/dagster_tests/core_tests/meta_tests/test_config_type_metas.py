@@ -6,7 +6,7 @@ from dagster.core.meta.config_types import (
     meta_from_config_type,
 )
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.core.types.field import resolve_to_config_type
+from dagster.core.types.config.field import resolve_to_config_type
 
 
 def meta_from_dagster_type(dagster_type):

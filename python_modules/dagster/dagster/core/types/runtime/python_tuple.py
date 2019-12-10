@@ -1,8 +1,8 @@
 from dagster import check
+from dagster.core.types.config.config_type import ConfigAnyInstance, List
 
-from .config import ConfigAnyInstance, List
 from .config_schema import InputHydrationConfig
-from .runtime import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
+from .runtime_type import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
 
 PythonTuple = define_python_dagster_type(
     tuple, 'PythonTuple', description='Represents a python tuple'

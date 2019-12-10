@@ -4,9 +4,9 @@ from dagster import check
 from dagster.core.definitions.environment_configs import is_solid_container_config
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.execution.config import IRunConfig
-from dagster.core.types.field import Field
+from dagster.core.types.config.field import Field
 
-from ..config import ConfigType
+from ..config_type import ConfigType
 
 
 class TraversalContext(

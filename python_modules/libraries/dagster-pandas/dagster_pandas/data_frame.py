@@ -12,7 +12,8 @@ from dagster import (
     as_dagster_type,
     check,
 )
-from dagster.core.types import NamedSelector, input_selector_schema, output_selector_schema
+from dagster.core.types.config.field_utils import NamedSelector
+from dagster.core.types.runtime.config_schema import input_selector_schema, output_selector_schema
 
 
 def define_path_dict_field():

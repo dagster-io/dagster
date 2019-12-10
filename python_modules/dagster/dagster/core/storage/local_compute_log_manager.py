@@ -8,7 +8,8 @@ from watchdog.observers.polling import PollingObserver
 from dagster import check
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.core.types import Field, String
+from dagster.core.types import String
+from dagster.core.types.config import Field
 from dagster.utils import ensure_dir, touch_file
 
 from .compute_log_manager import (

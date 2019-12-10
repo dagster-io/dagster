@@ -4,7 +4,7 @@ from dagster import RunConfig, check
 from dagster.core.definitions import create_environment_schema
 from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.types.evaluator import evaluate_config
+from dagster.core.types.config.evaluator import evaluate_config
 
 from .fetch_pipelines import (
     get_dauphin_pipeline_from_selector_or_raise,

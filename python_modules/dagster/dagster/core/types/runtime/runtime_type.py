@@ -5,14 +5,10 @@ import six
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.type_storage import TypeStoragePlugin
-
-from .builtin_config_schemas import BuiltinSchemas
-from .builtin_enum import BuiltinEnum
-from .config import List as ConfigList
-from .config import Nullable as ConfigNullable
-from .config_schema import InputHydrationConfig, OutputMaterializationConfig
-from .marshal import PickleSerializationStrategy, SerializationStrategy
-from .wrapping import (
+from dagster.core.types.config.config_type import List as ConfigList
+from dagster.core.types.config.config_type import Nullable as ConfigNullable
+from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
+from dagster.core.types.wrapping.wrapping import (
     DagsterListApi,
     DagsterSetApi,
     DagsterTupleApi,
@@ -22,6 +18,10 @@ from .wrapping import (
     WrappingSetType,
     WrappingTupleType,
 )
+
+from .builtin_config_schemas import BuiltinSchemas
+from .config_schema import InputHydrationConfig, OutputMaterializationConfig
+from .marshal import PickleSerializationStrategy, SerializationStrategy
 
 
 class RuntimeType(object):
@@ -632,13 +632,16 @@ DAGSTER_INVALID_TYPE_ERROR_MESSAGE = (
 
 def resolve_to_runtime_type(dagster_type):
     # circular dep
-    from .config import ConfigType
-    from .mapping import remap_python_builtin_for_runtime, is_supported_runtime_python_builtin
     from .python_dict import PythonDict
     from .python_set import PythonSet
     from .python_tuple import PythonTuple
-    from .typing_api import is_typing_type
-    from .wrapping import transform_typing_type
+    from dagster.core.types.config.config_type import ConfigType
+    from dagster.core.types.wrapping.mapping import (
+        remap_python_builtin_for_runtime,
+        is_supported_runtime_python_builtin,
+    )
+    from dagster.core.types.wrapping.wrapping import transform_typing_type
+    from dagster.utils.typing_api import is_typing_type
 
     check.invariant(
         not (isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType)),

@@ -1,6 +1,7 @@
+from dagster.core.types.config.field_utils import PermissiveDict
+
 from .config_schema import input_hydration_config
-from .field_utils import PermissiveDict
-from .runtime import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
+from .runtime_type import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
 
 
 @input_hydration_config(PermissiveDict())

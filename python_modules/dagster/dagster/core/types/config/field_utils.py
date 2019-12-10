@@ -5,7 +5,7 @@ import re
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
-from .config import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttributes, ConfigTypeKind
+from .config_type import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttributes, ConfigTypeKind
 
 
 def all_optional_type(config_type):
@@ -77,7 +77,7 @@ def check_user_facing_opt_field_param(obj, param_name, error_context_str):
 
 class _ConfigHasFields(ConfigType):
     def __init__(self, fields, **kwargs):
-        from dagster.core.types.field import Field
+        from dagster.core.types.config.field import Field
 
         self.fields = check.dict_param(fields, 'fields', key_type=str, value_type=Field)
         super(_ConfigHasFields, self).__init__(**kwargs)

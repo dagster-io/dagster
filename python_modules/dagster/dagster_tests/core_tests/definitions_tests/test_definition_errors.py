@@ -16,8 +16,8 @@ from dagster import (
     SolidDefinition,
     solid,
 )
-from dagster.core.types import NamedSelector, Selector
-from dagster.core.types.field_utils import NamedDict
+from dagster.core.types.config import NamedSelector, Selector
+from dagster.core.types.config.field_utils import NamedDict
 from dagster.core.utility_solids import define_stub_solid
 
 

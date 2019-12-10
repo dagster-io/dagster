@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.utils import ensure_single_item
 
-from .config import ConfigType
+from .config_type import ConfigType
 
 
 def apply_default_values(config_type, config_value):

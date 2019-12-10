@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from dagster import check
 
-from ..config import ConfigType
+from ..config_type import ConfigType
 from ..field import check_field_param
 
 

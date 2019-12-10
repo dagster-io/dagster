@@ -5,8 +5,7 @@ import six
 
 from dagster import check
 from dagster.core.serdes import whitelist_for_serdes
-
-from .builtin_enum import BuiltinEnum
+from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
 
 
 @whitelist_for_serdes

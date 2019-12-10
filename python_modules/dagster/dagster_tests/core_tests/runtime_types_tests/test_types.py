@@ -13,8 +13,12 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.types import Int, List, Optional, PythonObjectType
-from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
+from dagster.core.types import Int, List, Optional
+from dagster.core.types.runtime.runtime_type import (
+    PythonObjectType,
+    RuntimeType,
+    resolve_to_runtime_type,
+)
 
 
 class BarObj(object):

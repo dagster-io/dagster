@@ -11,7 +11,7 @@ from dagster import (
 )
 from dagster.cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster.core.definitions import create_environment_type
-from dagster.core.types import config
+from dagster.core.types.config import config_type
 
 
 def fail_me():
@@ -19,11 +19,11 @@ def fail_me():
 
 
 def test_scalars():
-    assert scaffold_type(config.Int()) == 0
-    assert scaffold_type(config.String()) == ''
-    assert scaffold_type(config.Path()) == 'path/to/something'
-    assert scaffold_type(config.Bool()) is True
-    assert scaffold_type(config.Any()) == 'AnyType'
+    assert scaffold_type(config_type.Int()) == 0
+    assert scaffold_type(config_type.String()) == ''
+    assert scaffold_type(config_type.Path()) == 'path/to/something'
+    assert scaffold_type(config_type.Bool()) is True
+    assert scaffold_type(config_type.Any()) == 'AnyType'
 
 
 def test_basic_solids_config(snapshot):

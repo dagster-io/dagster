@@ -1,29 +1,4 @@
-import typing
-
-from .builtin_enum import BuiltinEnum
-from .config_schema import (
-    InputHydrationConfig,
-    OutputMaterializationConfig,
-    input_hydration_config,
-    input_selector_schema,
-    output_materialization_config,
-    output_selector_schema,
-)
-from .field import Field
-from .field_utils import NamedDict, NamedSelector, PermissiveDict, Selector
-from .python_dict import PythonDict
-from .python_set import PythonSet
-from .python_tuple import PythonTuple
-from .runtime import PythonObjectType, define_python_dagster_type
-from .wrapping import Dict, List, Optional, Set, Tuple
-
-Any = BuiltinEnum.ANY
-String = BuiltinEnum.STRING
-Int = BuiltinEnum.INT
-Bool = BuiltinEnum.BOOL
-Path = BuiltinEnum.PATH
-Float = BuiltinEnum.FLOAT
-Nothing = BuiltinEnum.NOTHING
+from .wrapping import Any, Bool, Dict, Float, Int, List, Nothing, Optional, Path, Set, String, Tuple
 
 # What sort of witchcraft is this?
 

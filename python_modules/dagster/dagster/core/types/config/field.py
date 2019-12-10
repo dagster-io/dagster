@@ -1,12 +1,7 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-
-from .builtin_enum import BuiltinEnum
-from .config import ConfigAnyInstance, ConfigType, List, Nullable
-from .default_applier import apply_default_values
-from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
-from .typing_api import is_typing_type
-from .wrapping import (
+from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
+from dagster.core.types.wrapping.wrapping import (
     DagsterListApi,
     DagsterSetApi,
     DagsterTupleApi,
@@ -15,6 +10,11 @@ from .wrapping import (
     WrappingSetType,
     WrappingTupleType,
 )
+from dagster.utils.typing_api import is_typing_type
+
+from .config_type import ConfigAnyInstance, ConfigType, List, Nullable
+from .default_applier import apply_default_values
+from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
 
 
 def resolve_to_config_list(list_type):
@@ -36,8 +36,11 @@ def _is_config_type_class(obj):
 
 
 def resolve_to_config_type(dagster_type):
-    from .mapping import remap_python_builtin_for_config, is_supported_config_python_builtin
-    from .runtime import RuntimeType
+    from dagster.core.types.wrapping.mapping import (
+        remap_python_builtin_for_config,
+        is_supported_config_python_builtin,
+    )
+    from dagster.core.types.runtime.runtime_type import RuntimeType
 
     if _is_config_type_class(dagster_type):
         check.param_invariant(

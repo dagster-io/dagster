@@ -2,10 +2,10 @@ import pytest
 
 from dagster import Any, Dict, Enum, EnumValue, Field, List, Optional, PermissiveDict, String
 from dagster.check import CheckError, ParameterCheckError
-from dagster.core.types.config import ConfigType, ConfigTypeKind
-from dagster.core.types.default_applier import apply_default_values
-from dagster.core.types.field import resolve_to_config_type
-from dagster.core.types.field_utils import Selector
+from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
+from dagster.core.types.config.default_applier import apply_default_values
+from dagster.core.types.config.field import resolve_to_config_type
+from dagster.core.types.config.field_utils import Selector
 
 
 def test_apply_default_values():

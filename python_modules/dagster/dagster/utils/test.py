@@ -29,8 +29,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileManager
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.types.runtime import resolve_to_runtime_type
-from dagster.core.types.typing_api import is_typing_type
+from dagster.core.types.runtime.runtime_type import resolve_to_runtime_type
 from dagster.core.utility_solids import define_stub_solid
 
 # pylint: disable=unused-import
@@ -42,6 +41,7 @@ from .temp_file import (
     get_temp_file_name_with_data,
     get_temp_file_names,
 )
+from .typing_api import is_typing_type
 
 
 def create_test_pipeline_execution_context(logger_defs=None):
