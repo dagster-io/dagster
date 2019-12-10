@@ -43,7 +43,6 @@ def _do_setup(name='dagster-slack'):
             # https://github.com/slackapi/python-slackclient/wiki/Migrating-to-2.x#minimum-python-versions
             'slackclient<2.0.0',
         ],
-        tests_require=['responses'],
         zip_safe=False,
     )
 

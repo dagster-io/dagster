@@ -37,8 +37,7 @@ def _do_setup(name='dagster-postgres'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster', 'psycopg2-binary',],
-        tests_require=[],
+        install_requires=['dagster', 'psycopg2-binary'],
         zip_safe=False,
     )
 

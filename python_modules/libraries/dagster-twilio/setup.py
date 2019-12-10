@@ -38,7 +38,6 @@ def _do_setup(name='dagster-twilio'):
         ],
         packages=find_packages(exclude=['test']),
         install_requires=['dagster', 'twilio'],
-        tests_require=[],
         zip_safe=False,
     )
 

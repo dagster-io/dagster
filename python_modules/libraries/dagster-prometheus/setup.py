@@ -38,7 +38,6 @@ def _do_setup(name='dagster-prometheus'):
         ],
         packages=find_packages(exclude=['test']),
         install_requires=['dagster', 'prometheus_client'],
-        tests_require=[],
         zip_safe=False,
     )
 

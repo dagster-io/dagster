@@ -1,3 +1,2 @@
 cryptography==2.6.1
-mock==2.0.0
 pytest-sftpserver==1.2.0
