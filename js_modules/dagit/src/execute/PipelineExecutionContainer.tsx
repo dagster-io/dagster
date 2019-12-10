@@ -144,8 +144,14 @@ export default class PipelineExecutionContainer extends React.Component<
     });
   };
 
-  onSolidSubsetChange = (solidSubset: string[] | null) => {
-    this.onSaveSession(this.props.currentSession.key, { solidSubset });
+  onSolidSubsetChange = (
+    solidSubset: string[] | null,
+    solidSubsetLabel: string | null
+  ) => {
+    this.onSaveSession(this.props.currentSession.key, {
+      solidSubset,
+      solidSubsetLabel
+    });
   };
 
   onModeChange = (mode: string) => {
@@ -376,6 +382,7 @@ export default class PipelineExecutionContainer extends React.Component<
                       pipelineName={pipelineName}
                       subsetError={subsetError}
                       value={currentSession.solidSubset || null}
+                      label={currentSession.solidSubsetLabel || null}
                       onChange={this.onSolidSubsetChange}
                     />
                     <div style={{ width: 5 }} />

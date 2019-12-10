@@ -28,7 +28,9 @@ interface ISolidSelectorProps {
   pipelineName: string;
   subsetError: SubsetError;
   value: string[] | null;
-  onChange: (value: string[] | null) => void;
+  label: string | null;
+  onChange: (value: string[] | null, label: string | null) => void;
+  onRequestClose?: () => void;
 }
 
 interface ISolidSelectorInnerProps extends ISolidSelectorProps {
@@ -36,9 +38,6 @@ interface ISolidSelectorInnerProps extends ISolidSelectorProps {
 }
 
 interface ISolidSelectorState {
-  // True if the modal is open
-  open: boolean;
-
   // The list of solids currently highlighted in the modal.
   // (The solidSubset value to be committed upon close.)
   highlighted: string[];
@@ -50,15 +49,16 @@ interface ISolidSelectorState {
 
 function subsetDescription(
   solidSubset: string[] | null,
-  pipeline: SolidSelectorQuery_pipeline
+  pipeline: SolidSelectorQuery_pipeline | null
 ) {
   if (
     !solidSubset ||
     solidSubset.length === 0 ||
-    solidSubset.length === pipeline.solids.length
+    (pipeline && solidSubset.length === pipeline.solids.length)
   ) {
     return "All Solids";
   }
+
   if (solidSubset.length === 1) {
     return solidSubset[0];
   }
@@ -66,33 +66,37 @@ function subsetDescription(
   // try to find a start solid that can get us to all the solids without
   // any others in the path, indicating that an range label (eg "A -> B")
   // would fit. TODO: Bidirectional A-star?!
-  const rangeDescription = solidSubset
-    .map(startName => {
-      let solidName = startName;
-      let rest = solidSubset.filter(s => s !== solidName);
+  const rangeDescription =
+    pipeline &&
+    solidSubset
+      .map(startName => {
+        let solidName = startName;
+        let rest = solidSubset.filter(s => s !== solidName);
 
-      const nameMatch = (s: SolidSelectorQuery_pipeline_solids) =>
-        s.name === solidName;
+        const nameMatch = (s: SolidSelectorQuery_pipeline_solids) =>
+          s.name === solidName;
 
-      const downstreamSolidSearch = (n: string) => rest.indexOf(n) !== -1;
+        const downstreamSolidSearch = (n: string) => rest.indexOf(n) !== -1;
 
-      while (rest.length > 0) {
-        const solid = pipeline.solids.find(nameMatch);
-        if (!solid) return false;
+        while (rest.length > 0) {
+          const solid = pipeline.solids.find(nameMatch);
+          if (!solid) return false;
 
-        const downstreamSolidNames = solid.outputs.reduce(
-          (v: string[], o) => v.concat(o.dependedBy.map(s => s.solid.name)),
-          []
-        );
+          const downstreamSolidNames = solid.outputs.reduce(
+            (v: string[], o) => v.concat(o.dependedBy.map(s => s.solid.name)),
+            []
+          );
 
-        const nextSolidName = downstreamSolidNames.find(downstreamSolidSearch);
-        if (!nextSolidName) return false;
-        rest = rest.filter(s => s !== nextSolidName);
-        solidName = nextSolidName;
-      }
-      return `${startName} → ${solidName}`;
-    })
-    .find(n => n !== false);
+          const nextSolidName = downstreamSolidNames.find(
+            downstreamSolidSearch
+          );
+          if (!nextSolidName) return false;
+          rest = rest.filter(s => s !== nextSolidName);
+          solidName = nextSolidName;
+        }
+        return `${startName} → ${solidName}`;
+      })
+      .find(n => n !== false);
 
   if (rangeDescription) {
     return rangeDescription;
@@ -100,16 +104,49 @@ function subsetDescription(
   return `${solidSubset.length} solids`;
 }
 
-class SolidSelector extends React.PureComponent<
+const SolidSelectorModalContainer = (props: ISolidSelectorProps) => {
+  const { data } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
+    variables: { name: props.pipelineName }
+  });
+
+  if (data?.pipeline?.__typename !== "Pipeline") {
+    return (
+      <div
+        style={{
+          height: `calc(100% - 85px)`,
+          display: "flex",
+          justifyContent: "center"
+        }}
+      >
+        <div style={{ alignSelf: "center" }}>
+          <Spinner size={32} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <SolidSelectorModal pipeline={data.pipeline} {...props} />
+    </>
+  );
+};
+
+class SolidSelectorModal extends React.PureComponent<
   ISolidSelectorInnerProps,
   ISolidSelectorState
 > {
   state: ISolidSelectorState = {
-    open: false,
     highlighted: [],
     toolRectStart: null,
     toolRectEnd: null
   };
+
+  componentDidMount() {
+    if (this.props.pipeline) {
+      this.handleOpen(this.props);
+    }
+  }
 
   handleSVGMouseDown = (
     viewport: SVGViewport,
@@ -173,25 +210,26 @@ class SolidSelector extends React.PureComponent<
   // Note: Having no elements highlighted means the entire pipeline executes.
   // The equivalent solidSubset is `null`, not `[]`, so we do some conversion here.
 
-  handleOpen = () => {
-    const { value, pipeline } = this.props;
+  handleOpen = (props: ISolidSelectorInnerProps) => {
+    const { value, pipeline } = props;
     const valid = (value || []).filter(
       name => pipeline && !!pipeline.solids.find(s => s.name === name)
     );
-    this.setState({ open: true, highlighted: valid });
+    this.setState({ highlighted: valid });
   };
 
   handleSave = () => {
     const { highlighted } = this.state;
-    this.props.onChange(highlighted.length > 0 ? [...highlighted] : null);
-    this.setState({ open: false, highlighted: [] });
+    this.props.onChange(
+      highlighted.length > 0 ? [...highlighted] : null,
+      subsetDescription(highlighted, this.props.pipeline)
+    );
+    this.setState({ highlighted: [] });
   };
 
   render() {
-    const { pipeline, subsetError } = this.props;
-    const { open, highlighted, toolRectEnd, toolRectStart } = this.state;
-
-    const valid = !subsetError;
+    const { pipeline } = this.props;
+    const { highlighted, toolRectEnd, toolRectStart } = this.state;
 
     const allSolidsSelected =
       !highlighted.length ||
@@ -199,87 +237,71 @@ class SolidSelector extends React.PureComponent<
       highlighted.length === pipeline.solids.length;
 
     return (
-      <div>
-        <Dialog
-          icon="info-sign"
-          onClose={() => this.setState({ open: false })}
-          style={{ width: "80vw", maxWidth: 1400, height: "80vh" }}
-          title={"Select Solids to Execute"}
-          usePortal={true}
-          isOpen={open}
+      <>
+        <div
+          className={Classes.DIALOG_BODY}
+          style={{
+            margin: 0,
+            marginBottom: 17,
+            height: `calc(100% - 85px)`
+          }}
         >
-          <div
-            className={Classes.DIALOG_BODY}
-            style={{
-              margin: 0,
-              marginBottom: 17,
-              height: `calc(100% - 85px)`
-            }}
-          >
-            <PipelineGraph
-              backgroundColor={Colors.LIGHT_GRAY5}
-              pipelineName={pipeline ? pipeline.name : ""}
-              solids={pipeline ? pipeline.solids : []}
-              interactor={{
-                onMouseDown: this.handleSVGMouseDown,
-                onWheel: () => {},
-                render: () => {
-                  if (!toolRectEnd || !toolRectStart) return null;
-                  const box = pointsToBox(toolRectEnd, toolRectStart);
-                  return (
-                    <div
-                      style={{
-                        position: "absolute",
-                        border: `1px dashed ${Colors.GRAY3}`,
-                        left: box.x,
-                        top: box.y,
-                        width: box.width,
-                        height: box.height
-                      }}
-                    />
-                  );
-                }
-              }}
-              layout={getDagrePipelineLayout(
-                pipeline && pipeline.solids ? pipeline.solids : []
-              )}
-              highlightedSolids={
-                pipeline
-                  ? pipeline.solids.filter(
-                      (s: any) => highlighted.indexOf(s.name) !== -1
-                    )
-                  : []
+          <PipelineGraph
+            backgroundColor={Colors.LIGHT_GRAY5}
+            pipelineName={pipeline ? pipeline.name : ""}
+            solids={pipeline ? pipeline.solids : []}
+            interactor={{
+              onMouseDown: this.handleSVGMouseDown,
+              onWheel: () => {},
+              render: () => {
+                if (!toolRectEnd || !toolRectStart) return null;
+                const box = pointsToBox(toolRectEnd, toolRectStart);
+                return (
+                  <div
+                    style={{
+                      position: "absolute",
+                      border: `1px dashed ${Colors.GRAY3}`,
+                      left: box.x,
+                      top: box.y,
+                      width: box.width,
+                      height: box.height
+                    }}
+                  />
+                );
               }
-            />
-          </div>
-          <div className={Classes.DIALOG_FOOTER}>
-            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <div style={{ alignSelf: "center" }}>
-                {allSolidsSelected ? "All" : highlighted.length} solid
-                {highlighted.length !== 1 || allSolidsSelected ? "s" : ""}{" "}
-                selected
-              </div>
-              <Button onClick={() => this.setState({ open: false })}>
-                Cancel
-              </Button>
-              <Button intent="primary" onClick={this.handleSave}>
-                Apply
-              </Button>
+            }}
+            layout={getDagrePipelineLayout(
+              pipeline && pipeline.solids ? pipeline.solids : []
+            )}
+            highlightedSolids={
+              pipeline
+                ? pipeline.solids.filter(
+                    (s: any) => highlighted.indexOf(s.name) !== -1
+                  )
+                : []
+            }
+          />
+        </div>
+        <div className={Classes.DIALOG_FOOTER}>
+          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+            <div style={{ alignSelf: "center" }}>
+              {allSolidsSelected ? "All" : highlighted.length} solid
+              {highlighted.length !== 1 || allSolidsSelected ? "s" : ""}{" "}
+              selected
             </div>
+            <Button onClick={this.close}>Cancel</Button>
+            <Button intent="primary" onClick={this.handleSave}>
+              Apply
+            </Button>
           </div>
-        </Dialog>
-        <Button
-          icon={valid ? IconNames.SEARCH_AROUND : IconNames.WARNING_SIGN}
-          intent={valid ? Intent.NONE : Intent.WARNING}
-          onClick={this.handleOpen}
-        >
-          {valid && this.props.pipeline
-            ? subsetDescription(this.props.value, this.props.pipeline)
-            : "Invalid Solid Selection"}
-        </Button>
-      </div>
+        </div>
+      </>
     );
   }
+
+  close = () => {
+    this.props.onRequestClose && this.props.onRequestClose();
+  };
 }
 
 export const SOLID_SELECTOR_QUERY = gql`
@@ -296,23 +318,44 @@ export const SOLID_SELECTOR_QUERY = gql`
 `;
 
 export default (props: ISolidSelectorProps) => {
-  const { data } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
-    variables: { name: props.pipelineName },
+  const { subsetError, value, label } = props;
+  const [open, setOpen] = React.useState(false);
 
-    // Note: By default, useQuery does not re-run the query when variables change, it only
-    // impacts the item retrieved from the local cache, which is most likely null. fetchPolicy
-    // "cache-and-network" would work but {data} is the old pipeline until the new pipeline is
-    // returned. "network-only" ensures {data} is null or the correct server-provided result.
-    fetchPolicy: "network-only"
-  });
+  const onRequestClose = () => setOpen(false);
 
-  if (data?.pipeline?.__typename !== "Pipeline") {
-    return (
-      <Button icon={IconNames.SEARCH_AROUND} intent={Intent.NONE}>
-        <Spinner size={17} />
-      </Button>
-    );
+  let buttonText;
+  if (subsetError) {
+    buttonText = "Invalid Solid Selection";
+  } else if (!value) {
+    buttonText = "All Solids";
+  } else if (value && label) {
+    buttonText = label;
+  } else {
+    buttonText = subsetDescription(value, null);
   }
 
-  return <SolidSelector {...props} pipeline={data.pipeline} />;
+  return (
+    <div>
+      <Dialog
+        icon="info-sign"
+        onClose={() => setOpen(false)}
+        style={{ width: "80vw", maxWidth: 1400, height: "80vh" }}
+        title={"Select Solids to Execute"}
+        usePortal={true}
+        isOpen={open}
+      >
+        <SolidSelectorModalContainer
+          {...props}
+          onRequestClose={onRequestClose}
+        />
+      </Dialog>
+      <Button
+        icon={subsetError ? IconNames.WARNING_SIGN : IconNames.SEARCH_AROUND}
+        intent={subsetError ? Intent.WARNING : Intent.NONE}
+        onClick={() => setOpen(true)}
+      >
+        {buttonText}
+      </Button>
+    </div>
+  );
 };
