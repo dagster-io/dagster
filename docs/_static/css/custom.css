@@ -97,6 +97,11 @@ div.body #reference a.image-reference {
   display: none;
 }
 
+pre {
+  background: #f9f9f9;
+  border: 1px solid #e5e5e5;
+}
+
 /* This is the "Dagster" sidebar header */
 div.sphinxsidebar h3 > a {
   -webkit-transition: color 0.3s ease-in-out;

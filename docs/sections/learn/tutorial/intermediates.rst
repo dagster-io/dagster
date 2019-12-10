@@ -1,3 +1,5 @@
+.. _tutorial-intermediates:
+
 Intermediates
 -------------
 
@@ -52,7 +54,7 @@ Once intermediates are being stored, Dagit makes it possible to individually exe
 whose outputs are satisfied by previously materialized intermediates. Click the small run button
 to the right of the ``sort_by_calories.compute`` execution step to reexecute only this step,
 using the automatically materialized intermediate output of the previous solid.
-w
+
 .. thumbnail:: reexecution.png
 
 Reexecuting individual solids can be very helpful while you're writing solids, or while you're

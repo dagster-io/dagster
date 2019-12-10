@@ -24,7 +24,7 @@ To run the airline demo pipelines locally, you'll need:
 
 To get up and running:
 
-.. code-block:: console
+.. code-block:: shell
 
     # Clone Dagster
     git clone git@github.com:dagster-io/dagster.git
@@ -117,7 +117,7 @@ that we use solid aliasing to reuse the ``s3_to_df`` solid for several ingest st
 
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/pipelines.py
-   :lines: 99-106
+   :lines: 96-103
 
 
 In general, you won't want every data science user in your organization to have to roll their own
@@ -225,7 +225,7 @@ remotely in CI/CD, with access to a production or replica environment, but where
 essence; and remotely in production on live data.
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/pipelines.py
-   :lines: 49-72
+   :lines: 46-69
 
 Here we've defined a ``db_info`` resource that exposes a unified API to our solid logic, but that
 wraps two very different underlying assets—in one case, a Postgres database, and in the other,
@@ -265,7 +265,7 @@ a proxy server, or using a different authentication schema.
 Finally, we bring it all together in the ``postgres_db_info_resource``:
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/resources.py
-   :lines: 74-113
+   :lines: 53-92
 
 By providing strongly typed configuration fields to the ``@resource`` decorator, we now have typeahead
 support in dagit and rich error messages for the configuration of our external resources. This can
@@ -311,7 +311,7 @@ The terminal nodes of this pipeline are all aliased instances of
 ``load_data_to_database_from_spark``:
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
-   :lines: 200-218
+   :lines: 199-217
 
 which abstracts the operation of loading a Spark data frame to a database—either our production
 Redshift cluster or our local Postgres in test.
@@ -361,7 +361,7 @@ metadata along with their SQL query:
 
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
-   :lines: 344-382
+   :lines: 341-379
 
 
 This kind of interface can supercharge the work of analysts who are highly skilled in SQL, but for
@@ -407,7 +407,7 @@ a notebook file:
 
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
-   :lines: 440-462
+   :lines: 437-459
 
 
 As usual, we define the inputs and outputs of the new solid. Within the notebook itself, we only
