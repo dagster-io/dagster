@@ -4,7 +4,7 @@ import sys
 
 import yaml
 from defines import SupportedPython, SupportedPython3s, SupportedPythons
-from step_builder import StepBuilder
+from step_builder import StepBuilder, wait_step
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -44,10 +44,6 @@ def check_for_release():
         return True
 
     return False
-
-
-def wait_step():
-    return "wait"
 
 
 def network_buildkite_container(network_name):

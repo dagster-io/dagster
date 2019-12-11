@@ -53,7 +53,7 @@ RUN { \
     # do some fancy footwork to create a JAVA_HOME that's cross-architecture-safe
     && ln -svT "/usr/lib/jvm/java-8-openjdk-$(dpkg --print-architecture)" /docker-java-home \
     # Pull in debian stretch stable repo so we can still get openjdk-8 on buster
-    && echo "APT::Default-Release \"stable\";" > /etc/apt/apt.conf.d/99defaultrelease \
+    && echo "APT::Default-Release \"${DEBIAN_VERSION}\";" > /etc/apt/apt.conf.d/99defaultrelease \
     && echo "deb http://http.us.debian.org/debian stretch main contrib non-free" > /etc/apt/sources.list.d/91-debian-stretch.list
 
 RUN set -ex \

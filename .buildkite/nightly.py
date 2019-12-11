@@ -20,8 +20,8 @@ def publish_docker_images():
             r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/dockerhub-creds /tmp/dockerhub-creds",
             "cat /tmp/dockerhub-creds | docker login --username elementldevtools --password-stdin",
             "pushd /workdir/.buildkite/images/",
-            "make build-public-{version}".format(version=version),
-            "make push-public-{version}".format(version=version),
+            "make VERSION=\"public\" build-public-{version}".format(version=version),
+            "make VERSION=\"public\" push-public-{version}".format(version=version),
         )
         .on_integration_image(SupportedPython.V3_7, ['BUILDKITE_SECRETS_BUCKET'])
         .on_queue(BuildkiteQueue.DOCKER)
