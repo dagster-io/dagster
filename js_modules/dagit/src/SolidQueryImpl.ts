@@ -75,20 +75,25 @@ export function filterSolidsByQuery(solids: Solid[], query: string) {
     const parts = /(\*?\+*)([\w\d_-]+)(\+*\*?)/.exec(clause.trim());
     if (!parts) continue;
     const [, parentsClause, solidName, descendentsClause] = parts;
-    const solid = traverser.solidNamed(solidName);
-    if (!solid) continue;
+    const solidsMatching = solids.filter(
+      s =>
+        solidName === s.name ||
+        (solidName.length > 3 && s.name.includes(solidName))
+    );
 
-    const upDepth = expansionDepthForClause(parentsClause);
-    const downDepth = expansionDepthForClause(descendentsClause);
+    for (const solid of solidsMatching) {
+      const upDepth = expansionDepthForClause(parentsClause);
+      const downDepth = expansionDepthForClause(descendentsClause);
 
-    focus.add(solid);
-    results.add(solid);
-    traverser
-      .fetchUpstream(solid, upDepth)
-      .forEach(other => results.add(other));
-    traverser
-      .fetchDownstream(solid, downDepth)
-      .forEach(other => results.add(other));
+      focus.add(solid);
+      results.add(solid);
+      traverser
+        .fetchUpstream(solid, upDepth)
+        .forEach(other => results.add(other));
+      traverser
+        .fetchDownstream(solid, downDepth)
+        .forEach(other => results.add(other));
+    }
   }
 
   return {

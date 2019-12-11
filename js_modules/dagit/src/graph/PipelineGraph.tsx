@@ -191,7 +191,10 @@ export default class PipelineGraph extends React.Component<
 
   viewportEl: React.RefObject<SVGViewport> = React.createRef();
 
-  focusOnSolid = (arg: SolidNameOrPath) => {
+  resolveSolidPosition = (
+    arg: SolidNameOrPath,
+    cb: (cx: number, cy: number, layout: IFullSolidLayout) => void
+  ) => {
     const lastName = "name" in arg ? arg.name : arg.path[arg.path.length - 1];
     const solidLayout = this.props.layout.solids[lastName];
     if (!solidLayout) {
@@ -199,8 +202,20 @@ export default class PipelineGraph extends React.Component<
     }
     const cx = solidLayout.boundingBox.x + solidLayout.boundingBox.width / 2;
     const cy = solidLayout.boundingBox.y + solidLayout.boundingBox.height / 2;
+    cb(cx, cy, solidLayout);
+  };
 
-    this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, DETAIL_ZOOM);
+  centerSolid = (arg: SolidNameOrPath) => {
+    this.resolveSolidPosition(arg, (cx, cy) => {
+      const viewportEl = this.viewportEl.current!;
+      viewportEl.smoothZoomToSVGCoords(cx, cy, viewportEl.state.scale);
+    });
+  };
+
+  focusOnSolid = (arg: SolidNameOrPath) => {
+    this.resolveSolidPosition(arg, (cx, cy) => {
+      this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, DETAIL_ZOOM);
+    });
   };
 
   closestSolidInDirection = (dir: string): string | undefined => {
@@ -277,6 +292,12 @@ export default class PipelineGraph extends React.Component<
     }
     if (prevProps.layout !== this.props.layout) {
       this.viewportEl.current!.autocenter();
+    }
+    if (
+      prevProps.selectedSolid !== this.props.selectedSolid &&
+      this.props.selectedSolid
+    ) {
+      this.centerSolid(this.props.selectedSolid);
     }
   }
 

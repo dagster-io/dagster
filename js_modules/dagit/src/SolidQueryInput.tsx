@@ -58,21 +58,22 @@ export const SolidQueryInput: React.FunctionComponent<SolidQueryInputProps> = pr
   let menu: JSX.Element | undefined = undefined;
 
   const [, prefix, lastSolidName, suffix] = lastClause || [];
-  const suggestions = props.solids
-    .map(s => s.name)
-    .filter(
-      n => lastSolidName && n.startsWith(lastSolidName) && n !== lastSolidName
-    );
+  const suggestions =
+    lastSolidName && !suffix
+      ? props.solids
+          .map(s => s.name)
+          .filter(n => n.startsWith(lastSolidName) && n !== lastSolidName)
+      : [];
 
   const onConfirmSuggestion = (suggestion: string) => {
-    const preceding = lastClause && props.value.substr(0, lastClause.index);
+    const preceding = lastClause ? props.value.substr(0, lastClause.index) : "";
     props.onChange(preceding + prefix + suggestion + suffix);
   };
 
   if (suggestions.length && focused) {
     menu = (
       <StyledMenu>
-        {suggestions.slice(0, 20).map(suggestion => (
+        {suggestions.slice(0, 15).map(suggestion => (
           <StyledMenuItem
             key={suggestion}
             text={suggestion}
@@ -112,7 +113,7 @@ export const SolidQueryInput: React.FunctionComponent<SolidQueryInputProps> = pr
 
   const onKeyDown = (e: React.KeyboardEvent<any>) => {
     if (e.key === "Enter" || e.key === "Return" || e.key === "Tab") {
-      if (active) {
+      if (active && active.text) {
         onConfirmSuggestion(active.text);
         e.preventDefault();
         e.stopPropagation();
@@ -158,7 +159,7 @@ export const SolidQueryInput: React.FunctionComponent<SolidQueryInputProps> = pr
 const SolidQueryInputContainer = styled.div`
   z-index: 2;
   position: absolute;
-  top: 7px;
+  bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
 `;
