@@ -118,7 +118,7 @@ A minimal skeleton Dockerfile that will run Dagit is shown below:
 
 .. code-block::
 
-    FROM dagster:dagster/py3.7.4
+    FROM dagster/dagster-py37
 
     RUN set -ex \
         && pip install -U pip setuptools wheel \
