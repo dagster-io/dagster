@@ -21,6 +21,7 @@ import {
   IFullPipelineLayout
 } from "./graph/getFullSolidLayout";
 import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
+import { SolidJumpBar } from "./PipelineJumpComponents";
 import { SolidQueryInput } from "./SolidQueryInput";
 import { filterSolidsByQuery } from "./SolidQueryImpl";
 
@@ -199,9 +200,9 @@ export default class PipelineExplorer extends React.Component<
                 <Link style={{ padding: 3 }} to={`/p/${pipeline.name}/explore`}>
                   <Icon icon="diagram-tree" />
                 </Link>
+                <Icon icon="chevron-right" />
                 {path.slice(0, path.length - 1).map((name, idx) => (
                   <React.Fragment key={idx}>
-                    <Icon icon="chevron-right" />
                     <Link
                       style={{ padding: 3 }}
                       to={`/p/${pipeline.name}/explore/${path
@@ -210,8 +211,16 @@ export default class PipelineExplorer extends React.Component<
                     >
                       {name}
                     </Link>
+                    <Icon icon="chevron-right" />
                   </React.Fragment>
                 ))}
+                <SolidJumpBar
+                  solids={queryResultSolids.all}
+                  selectedSolid={selectedHandle && selectedHandle.solid}
+                  onItemSelect={solid =>
+                    this.handleClickSolid({ name: solid.name })
+                  }
+                />
               </PathOverlay>
               {solidsQueryEnabled && (
                 <SolidQueryInput
