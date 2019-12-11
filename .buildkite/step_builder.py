@@ -21,6 +21,10 @@ AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID')
 AWS_ECR_REGION = 'us-west-1'
 
 
+def wait_step():
+    return "wait"
+
+
 class BuildkiteQueue(Enum):
     '''These are the Buildkite CloudFormation queues that we use. All queues with "-p" suffix are
     provisioned by Pulumi.
