@@ -66,6 +66,7 @@ export class SolidCard extends React.Component<SolidCardProps> {
             onHighlightEdges={() => {}}
             layout={layout}
             selected={false}
+            focused={false}
             highlightedEdges={[]}
             dim={false}
           />

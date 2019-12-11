@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import Color from "color";
 import styled from "styled-components";
 import { History } from "history";
-import { Icon, Colors } from "@blueprintjs/core";
+import { Icon, Colors, InputGroup } from "@blueprintjs/core";
 import { Route } from "react-router";
 import { Link } from "react-router-dom";
 import * as querystring from "query-string";
@@ -12,7 +12,6 @@ import { PipelineExplorerFragment } from "./types/PipelineExplorerFragment";
 import PipelineGraph from "./graph/PipelineGraph";
 import { SplitPanelChildren } from "./SplitPanelChildren";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
-import { SolidJumpBar } from "./PipelineJumpComponents";
 import {
   PipelineExplorerSolidHandleFragment,
   PipelineExplorerSolidHandleFragment_solid
@@ -22,8 +21,11 @@ import {
   IFullPipelineLayout
 } from "./graph/getFullSolidLayout";
 import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
+import { SolidJumpBar } from "./PipelineJumpComponents";
+import { SolidQueryInput } from "./SolidQueryInput";
+import { filterSolidsByQuery } from "./SolidQueryImpl";
 
-interface IPipelineExplorerProps {
+interface PipelineExplorerProps {
   history: History;
   path: string[];
   pipeline: PipelineExplorerFragment;
@@ -33,113 +35,16 @@ interface IPipelineExplorerProps {
   getInvocations?: (definitionName: string) => { handleID: string }[];
 }
 
-interface IPipelineExplorerState {
-  filter: string;
-}
-
-class AdjacencyMatrix {
-  adjacencyMatrix: Array<Array<boolean>>;
-  // TODO: One reason doing DFS on the client side is sub optimal.
-  // javascript is tail end recursive tho so we could go for ever without worrying about
-  // stack overflow problems?
-
-  constructor(adjacencyMatrix: Array<Array<boolean>>) {
-    this.adjacencyMatrix = adjacencyMatrix;
-  }
-
-  getParents(index: number) {
-    const parents = new Array<number>();
-    // It is impossible to specify yourself as an input dependency because this is a DAG so X[i, i]
-    // will always be 0.
-    this.adjacencyMatrix[index].forEach((candidateParent, index) => {
-      if (candidateParent) {
-        parents.push(index);
-      }
-    });
-    return parents;
-  }
-
-  getChildren(index: number) {
-    const children = new Array<number>();
-    this.adjacencyMatrix
-      .map(row => row[index])
-      .forEach((candidateChild, index) => {
-        if (candidateChild) {
-          children.push(index);
-        }
-      });
-    return children;
-  }
-
-  search(includeParents: boolean, initialCandidates: number[]) {
-    const results = new Set<number>();
-    const stack = [...initialCandidates];
-    while (stack.length !== 0) {
-      // pop off stack and add to upstreamDependency list
-      const node = stack.shift();
-      if (node !== undefined) {
-        results.add(node);
-        const next = includeParents
-          ? this.getParents(node)
-          : this.getChildren(node);
-        next.forEach(element => {
-          stack.unshift(element);
-        });
-      }
-    }
-    return Array.from(results);
-  }
-
-  fetchUpstream(index: number) {
-    return Array.from(this.search(true, this.getParents(index)));
-  }
-
-  fetchDownstream(index: number) {
-    return Array.from(this.search(false, this.getChildren(index)));
-  }
-}
-
-export function createAdjacencyMatrix(
-  solids: PipelineExplorerSolidHandleFragment_solid[],
-  memo: WeakMap<PipelineExplorerSolidHandleFragment_solid[], AdjacencyMatrix>
-) {
-  // Done because typescript was not autoresolving .has
-  const memoizedMatrix = memo.get(solids);
-  if (memoizedMatrix !== undefined) {
-    return memoizedMatrix;
-  }
-  // TODO: Consider alternatives to making this sparse because this will blow up if solids.length is large.
-  const adjacencyMatrix = Array.from(Array(solids.length), _ =>
-    Array(solids.length).fill(false)
-  );
-  const indexMap = new Map();
-  solids.forEach((solid, index) => {
-    indexMap.set(solid.name, index);
-  });
-
-  solids.forEach((solid, index) => {
-    const dependencySet = new Set<number>();
-    solid.inputs.forEach(input => {
-      input.dependsOn.forEach(dependency => {
-        if (dependency.solid.name) {
-          dependencySet.add(indexMap.get(dependency.solid.name));
-        }
-      });
-    });
-    dependencySet.forEach(dependencyIndex => {
-      adjacencyMatrix[index][dependencyIndex] = true;
-    });
-  });
-  const matrix = new AdjacencyMatrix(adjacencyMatrix);
-  memo.set(solids, matrix);
-  return matrix;
+interface PipelineExplorerState {
+  visibleSolidsQuery: string;
+  highlighted: string;
 }
 
 export type SolidNameOrPath = { name: string } | { path: string[] };
 
 export default class PipelineExplorer extends React.Component<
-  IPipelineExplorerProps,
-  IPipelineExplorerState
+  PipelineExplorerProps,
+  PipelineExplorerState
 > {
   static fragments = {
     PipelineExplorerFragment: gql`
@@ -173,10 +78,9 @@ export default class PipelineExplorer extends React.Component<
   };
 
   state = {
-    filter: ""
+    visibleSolidsQuery: "",
+    highlighted: ""
   };
-
-  memo = new WeakMap();
 
   handleAdjustPath = (fn: (solidNames: string[]) => void) => {
     const { history, pipeline, path } = this.props;
@@ -239,63 +143,6 @@ export default class PipelineExplorer extends React.Component<
     this.handleClickSolid({ name: "" });
   };
 
-  selectSolidsByFilter = (
-    solids: PipelineExplorerSolidHandleFragment_solid[],
-    filter: string,
-    solidAdjacencyMatrix: AdjacencyMatrix
-  ) => {
-    let searchResults = new Array<PipelineExplorerSolidHandleFragment_solid>();
-    searchResults = solids.filter(s => s.name.includes(filter));
-    if (filter && filter.includes("+")) {
-      let includeParents = false,
-        includeChildren = false,
-        invalidQuery = false,
-        newFilterStart = 0,
-        newFilterEnd = filter.length;
-
-      for (let i = 0; i < filter.length; i++) {
-        if (filter[i] === "+") {
-          if (i !== 0 && i !== filter.length - 1) {
-            // Can't have + inside the search term
-            invalidQuery = true;
-          }
-          if (i === 0) {
-            includeParents = true;
-            newFilterStart = 1;
-          }
-          if (i === filter.length - 1) {
-            includeChildren = true;
-            newFilterEnd = -1;
-          }
-        }
-      }
-      if (!invalidQuery) {
-        const solidFilter = filter.slice(newFilterStart, newFilterEnd);
-        const candidateSolidIndexSet = new Set<number>();
-        solids.forEach((solid, index) => {
-          if (solidFilter && solid.name.includes(solidFilter)) {
-            candidateSolidIndexSet.add(index);
-            if (includeParents) {
-              solidAdjacencyMatrix
-                .fetchUpstream(index)
-                .forEach(item => candidateSolidIndexSet.add(item));
-            }
-            if (includeChildren) {
-              solidAdjacencyMatrix
-                .fetchDownstream(index)
-                .forEach(item => candidateSolidIndexSet.add(item));
-            }
-          }
-        });
-        searchResults.length = 0;
-        candidateSolidIndexSet.forEach(index =>
-          searchResults.push(solids[index])
-        );
-      }
-    }
-    return searchResults;
-  };
-
   _layoutCacheKey: string | undefined;
   _layoutCache: IFullPipelineLayout | undefined;
 
@@ -313,18 +160,26 @@ export default class PipelineExplorer extends React.Component<
   };
 
   public render() {
-    const {
-      pipeline,
-      parentHandle,
-      selectedHandle,
-      getInvocations,
-      path
-    } = this.props;
-    const { filter } = this.state;
+    const { pipeline, parentHandle, path } = this.props;
+    const { visibleSolidsQuery, highlighted } = this.state;
 
     const solids = this.props.handles.map(h => h.solid);
+    const solidsQueryEnabled = !parentHandle;
+    const queryResultSolids = solidsQueryEnabled
+      ? filterSolidsByQuery(solids, visibleSolidsQuery)
+      : { all: solids, focus: [] };
 
-    const solidAdjacencyMatrix = createAdjacencyMatrix(solids, this.memo);
+    const highlightedSolids = queryResultSolids.all.filter(s =>
+      s.name.includes(highlighted)
+    );
+
+    let selectedHandle = this.props.selectedHandle;
+    if (
+      selectedHandle &&
+      !queryResultSolids.all.some(s => s.name === selectedHandle!.solid.name)
+    ) {
+      selectedHandle = undefined;
+    }
 
     const backgroundColor = parentHandle
       ? Colors.LIGHT_GRAY3
@@ -360,26 +215,40 @@ export default class PipelineExplorer extends React.Component<
                   </React.Fragment>
                 ))}
                 <SolidJumpBar
-                  solids={solids}
+                  solids={queryResultSolids.all}
                   selectedSolid={selectedHandle && selectedHandle.solid}
                   onItemSelect={solid =>
                     this.handleClickSolid({ name: solid.name })
                   }
                 />
               </PathOverlay>
+              {solidsQueryEnabled && (
+                <SolidQueryInput
+                  solids={solids}
+                  value={visibleSolidsQuery}
+                  onChange={q => this.setState({ visibleSolidsQuery: q })}
+                />
+              )}
               <SearchOverlay style={{ background: backgroundTranslucent }}>
-                <SolidSearchInput
+                <SolidHighlightInput
                   type="text"
-                  placeholder="Filter..."
-                  name="filter"
-                  value={filter}
-                  onChange={e => this.setState({ filter: e.target.value })}
+                  name="highlighted"
+                  leftIcon="search"
+                  value={highlighted}
+                  placeholder="Highlight..."
+                  onChange={(e: React.ChangeEvent<any>) =>
+                    this.setState({ highlighted: e.target.value })
+                  }
                 />
               </SearchOverlay>
+              {queryResultSolids.all.length === 0 &&
+                !visibleSolidsQuery.length && <LargeDAGNotice />}
               <PipelineGraph
                 pipelineName={pipeline.name}
                 backgroundColor={backgroundColor}
-                solids={solids}
+                solids={queryResultSolids.all}
+                focusSolids={queryResultSolids.focus}
+                highlightedSolids={highlightedSolids}
                 selectedHandleID={selectedHandle && selectedHandle.handleID}
                 selectedSolid={selectedHandle && selectedHandle.solid}
                 parentHandleID={parentHandle && parentHandle.handleID}
@@ -389,13 +258,8 @@ export default class PipelineExplorer extends React.Component<
                 onEnterCompositeSolid={this.handleEnterCompositeSolid}
                 onLeaveCompositeSolid={this.handleLeaveCompositeSolid}
                 layout={this.getLayout(
-                  solids,
+                  queryResultSolids.all,
                   parentHandle && parentHandle.solid
-                )}
-                highlightedSolids={this.selectSolidsByFilter(
-                  solids,
-                  this.state.filter,
-                  solidAdjacencyMatrix
                 )}
               />
             </>
@@ -409,7 +273,7 @@ export default class PipelineExplorer extends React.Component<
                     pipeline={pipeline}
                     solidHandleID={selectedHandle && selectedHandle.handleID}
                     parentSolidHandleID={parentHandle && parentHandle.handleID}
-                    getInvocations={getInvocations}
+                    getInvocations={this.props.getInvocations}
                     onEnterCompositeSolid={this.handleEnterCompositeSolid}
                     onClickSolid={this.handleClickSolid}
                     {...querystring.parse(location.search || "")}
@@ -465,9 +329,62 @@ const PathOverlay = styled.div`
   left: 0;
 `;
 
-const SolidSearchInput = styled.input`
+const SolidHighlightInput = styled(InputGroup)`
   margin-left: 7px;
-  padding: 5px 5px;
   font-size: 14px;
-  border: 1px solid ${Colors.GRAY4};
+  width: 220px;
+`;
+
+const LargeDAGNotice = () => (
+  <LargeDAGContainer>
+    <LargeDAGInstructionBox>
+      <p>
+        This is a large DAG that may be difficult to visualize. Type{" "}
+        <code>*</code> in the subset box above to render the entire thing, or
+        type a solid name and use:
+      </p>
+      <ul style={{ marginBottom: 0 }}>
+        <li>
+          <code>+</code> to expand a single layer before or after the solid.
+        </li>
+        <li>
+          <code>*</code> to expand recursively before or after the solid.
+        </li>
+        <li>
+          <code>AND</code> to render another disconnected fragment.
+        </li>
+      </ul>
+    </LargeDAGInstructionBox>
+    <Icon icon="arrow-down" iconSize={40} />
+  </LargeDAGContainer>
+);
+
+const LargeDAGContainer = styled.div`
+  width: 50vw;
+  position: absolute;
+  transform: translateX(-50%);
+  left: 50%;
+  bottom: 60px;
+  z-index: 2;
+  max-width: 600px;
+  text-align: center;
+  .bp3-icon {
+    color: ${Colors.LIGHT_GRAY1};
+  }
+`;
+
+const LargeDAGInstructionBox = styled.div`
+  padding: 15px 20px;
+  border: 1px solid #fff5c3;
+  margin-bottom: 20px;
+  color: ${Colors.DARK_GRAY3};
+  background: #fffbe5;
+  text-align: left;
+  line-height: 1.4rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  code {
+    background: #f8ebad;
+    font-weight: 500;
+    padding: 0 4px;
+  }
 `;

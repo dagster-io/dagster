@@ -114,6 +114,18 @@ export function breakOnUnderscores(str: string) {
   return str.replace(/_/g, "_\u200b");
 }
 
+export function patchCopyToRemoveZeroWidthUnderscores() {
+  document.addEventListener("copy", event => {
+    event.preventDefault();
+    if (event.clipboardData) {
+      const text = (window.getSelection() || "")
+        .toString()
+        .replace(/_\u200b/g, "_");
+      event.clipboardData.setData("Text", text);
+    }
+  });
+}
+
 // Simple memoization function for methods that take a single object argument.
 // Returns a memoized copy of the provided function which retrieves the result
 // from a cache after the first invocation with a given object.
