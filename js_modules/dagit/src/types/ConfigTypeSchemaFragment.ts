@@ -7,30 +7,13 @@
 // GraphQL fragment: ConfigTypeSchemaFragment
 // ====================================================
 
-export interface ConfigTypeSchemaFragment_EnumConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
 export interface ConfigTypeSchemaFragment_EnumConfigType {
   __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   description: string | null;
-  isList: boolean;
-  isNullable: boolean;
   isSelector: boolean;
-  innerTypes: ConfigTypeSchemaFragment_EnumConfigType_innerTypes[];
-}
-
-export interface ConfigTypeSchemaFragment_CompositeConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface ConfigTypeSchemaFragment_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
+  typeParamKeys: string[];
 }
 
 export interface ConfigTypeSchemaFragment_CompositeConfigType_fields {
@@ -38,7 +21,7 @@ export interface ConfigTypeSchemaFragment_CompositeConfigType_fields {
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: ConfigTypeSchemaFragment_CompositeConfigType_fields_configType;
+  configTypeKey: string;
 }
 
 export interface ConfigTypeSchemaFragment_CompositeConfigType {
@@ -46,10 +29,8 @@ export interface ConfigTypeSchemaFragment_CompositeConfigType {
   key: string;
   name: string | null;
   description: string | null;
-  isList: boolean;
-  isNullable: boolean;
   isSelector: boolean;
-  innerTypes: ConfigTypeSchemaFragment_CompositeConfigType_innerTypes[];
+  typeParamKeys: string[];
   fields: ConfigTypeSchemaFragment_CompositeConfigType_fields[];
 }
 

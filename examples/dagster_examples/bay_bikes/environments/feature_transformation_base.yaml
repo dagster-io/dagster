@@ -4,12 +4,20 @@ solids:
       memory_length: 7
   produce_trip_dataset:
     solids:
-      download_trips_dataset:
+      consolidate_baybike_data_into_trip_dataset:
         inputs:
-          key:
-            value: trips.csv
-          path_to_file:
-            value: trips.csv
+          source_dir:
+            value: csv_target
+      download_baybike_zipfiles_from_url:
+        inputs:
+          target_dir:
+            value: zip_target
+      unzip_baybike_zipfiles:
+        inputs:
+          source_dir:
+            value: zip_target
+          target_dir:
+            value: csv_target
   produce_weather_dataset:
     solids:
       download_weather_dataset:

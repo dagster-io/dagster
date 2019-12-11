@@ -23,6 +23,7 @@ export interface IExecutionSession {
   environmentConfigYaml: string;
   mode: string | null;
   solidSubset: string[] | null;
+  solidSubsetLabel: string | null;
 
   // this is set when you execute the session and freeze it
   runId?: string;
@@ -37,6 +38,7 @@ const DEFAULT_SESSION: IExecutionSession = {
   environmentConfigYaml: "",
   mode: null,
   solidSubset: null,
+  solidSubsetLabel: "All Solids",
   runId: undefined,
   configChangedSinceRun: false
 };

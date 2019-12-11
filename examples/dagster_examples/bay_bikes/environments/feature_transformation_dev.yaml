@@ -1,4 +1,0 @@
-resources:
-  transporter:
-    config:
-      bucket_path: /tmp/test_bucket

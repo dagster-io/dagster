@@ -1,8 +1,8 @@
 from dagster_graphql import dauphin
 
 from dagster import check
-from dagster.core.types.config import ConfigType
-from dagster.core.types.field import Field
+from dagster.core.types.config.config_type import ConfigType
+from dagster.core.types.config.field import Field
 
 
 def to_dauphin_config_type(config_type):
@@ -220,8 +220,12 @@ class DauphinConfigTypeField(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     config_type = dauphin.NonNull('ConfigType')
+    config_type_key = dauphin.NonNull(dauphin.String)
     default_value = dauphin.String()
     is_optional = dauphin.NonNull(dauphin.Boolean)
+
+    def resolve_config_type_key(self, _):
+        return self._field.config_type.key
 
     def __init__(self, name, field):
         check.str_param(name, 'name')

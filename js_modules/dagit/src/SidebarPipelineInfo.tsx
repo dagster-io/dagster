@@ -11,7 +11,7 @@ import {
   SectionHeader
 } from "./SidebarComponents";
 import Description from "./Description";
-import ConfigTypeSchema from "./ConfigTypeSchema";
+import { ConfigTypeSchema } from "./ConfigTypeSchema";
 import { SidebarPipelineInfoFragment } from "./types/SidebarPipelineInfoFragment";
 import { IconNames } from "@blueprintjs/icons";
 import { breakOnUnderscores } from "./Util";
@@ -100,7 +100,7 @@ export default class SidebarPipelineInfo extends React.Component<
                     {resource.configField && (
                       <ConfigTypeSchema
                         type={resource.configField.configType}
-                        allInnerTypes={
+                        typesInScope={
                           resource.configField.configType.innerTypes
                         }
                       />
@@ -123,7 +123,7 @@ export default class SidebarPipelineInfo extends React.Component<
                     {logger.configField && (
                       <ConfigTypeSchema
                         type={logger.configField.configType}
-                        allInnerTypes={logger.configField.configType.innerTypes}
+                        typesInScope={logger.configField.configType.innerTypes}
                       />
                     )}
                   </div>

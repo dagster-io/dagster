@@ -2,7 +2,6 @@ import pandas as pd
 
 from dagster import (
     DagsterInvariantViolationError,
-    Dict,
     EventMetadataEntry,
     Field,
     Materialization,
@@ -12,17 +11,8 @@ from dagster import (
     as_dagster_type,
     check,
 )
-from dagster.core.types import NamedSelector, input_selector_schema, output_selector_schema
-
-
-def define_path_dict_field():
-    return Field(Dict({'path': Field(Path)}))
-
-
-def define_csv_dict_field():
-    return Field(
-        Dict({'path': Field(Path), 'sep': Field(String, is_optional=True, default_value=',')})
-    )
+from dagster.core.types.config.field_utils import NamedSelector
+from dagster.core.types.runtime.config_schema import input_selector_schema, output_selector_schema
 
 
 def dict_without_keys(ddict, *keys):
@@ -33,9 +23,9 @@ def dict_without_keys(ddict, *keys):
     NamedSelector(
         'DataFrameOutputSchema',
         {
-            'csv': define_csv_dict_field(),
-            'parquet': define_path_dict_field(),
-            'table': define_path_dict_field(),
+            'csv': {'path': Path, 'sep': Field(String, is_optional=True, default_value=','),},
+            'parquet': {'path': Path},
+            'table': {'path': Path},
         },
     )
 )
@@ -61,9 +51,9 @@ def dataframe_output_schema(_context, file_type, file_options, pandas_df):
     NamedSelector(
         'DataFrameInputSchema',
         {
-            'csv': define_csv_dict_field(),
-            'parquet': define_path_dict_field(),
-            'table': define_path_dict_field(),
+            'csv': {'path': Path, 'sep': Field(String, is_optional=True, default_value=','),},
+            'parquet': {'path': Path},
+            'table': {'path': Path},
         },
     )
 )

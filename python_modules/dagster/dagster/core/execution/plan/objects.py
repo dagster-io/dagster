@@ -5,7 +5,7 @@ from dagster import check
 from dagster.core.definitions import Materialization, SolidHandle
 from dagster.core.definitions.events import EventMetadataEntry
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.core.types.runtime import RuntimeType
+from dagster.core.types.runtime.runtime_type import RuntimeType
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
 

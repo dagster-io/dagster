@@ -144,8 +144,14 @@ export default class PipelineExecutionContainer extends React.Component<
     });
   };
 
-  onSolidSubsetChange = (solidSubset: string[] | null) => {
-    this.onSaveSession(this.props.currentSession.key, { solidSubset });
+  onSolidSubsetChange = (
+    solidSubset: string[] | null,
+    solidSubsetLabel: string | null
+  ) => {
+    this.onSaveSession(this.props.currentSession.key, {
+      solidSubset,
+      solidSubsetLabel
+    });
   };
 
   onModeChange = (mode: string) => {
@@ -180,6 +186,8 @@ export default class PipelineExecutionContainer extends React.Component<
     throw new Error(`Recieved unexpected "${obj.__typename}"`);
   };
 
+  // have this return an object with prebuilt index
+  // https://github.com/dagster-io/dagster/issues/1966
   getEnvironmentSchema = ():
     | ConfigEditorEnvironmentSchemaFragment
     | undefined => {
@@ -374,6 +382,7 @@ export default class PipelineExecutionContainer extends React.Component<
                       pipelineName={pipelineName}
                       subsetError={subsetError}
                       value={currentSession.solidSubset || null}
+                      label={currentSession.solidSubsetLabel || null}
                       onChange={this.onSolidSubsetChange}
                     />
                     <div style={{ width: 5 }} />

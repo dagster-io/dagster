@@ -198,7 +198,7 @@ def process_sfo_weather_data(_context, sfo_weather_data: DataFrame) -> DataFrame
 
 @solid(
     output_defs=[OutputDefinition(name='table_name', dagster_type=String)],
-    config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
+    config={'table_name': String},
 )
 def load_data_to_database_from_spark(context, data_frame: DataFrame):
     context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])

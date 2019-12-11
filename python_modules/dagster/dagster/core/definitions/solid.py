@@ -6,7 +6,7 @@ import six
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.field_utils import check_user_facing_opt_field_param
+from dagster.core.types.config.field_utils import check_user_facing_opt_field_param
 from dagster.utils import frozendict, frozenlist
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict

@@ -91,29 +91,29 @@ from dagster.core.storage.system_storage import (
     fs_system_storage,
     mem_system_storage,
 )
-from dagster.core.types import (
+from dagster.core.types.config import Enum, EnumValue, Field, PermissiveDict, Selector
+from dagster.core.types.runtime import (
+    SerializationStrategy,
+    as_dagster_type,
+    dagster_type,
+    define_python_dagster_type,
+    input_hydration_config,
+    output_materialization_config,
+)
+from dagster.core.types.wrapping import (
     Any,
     Bool,
     Dict,
-    Field,
     Float,
     Int,
     List,
     Nothing,
     Optional,
     Path,
-    PermissiveDict,
-    Selector,
     Set,
     String,
     Tuple,
-    input_hydration_config,
-    output_materialization_config,
 )
-from dagster.core.types.config import Enum, EnumValue
-from dagster.core.types.decorator import as_dagster_type, dagster_type
-from dagster.core.types.marshal import SerializationStrategy
-from dagster.core.types.runtime import define_python_dagster_type
 from dagster.utils import file_relative_path
 from dagster.utils.test import (
     check_dagster_type,

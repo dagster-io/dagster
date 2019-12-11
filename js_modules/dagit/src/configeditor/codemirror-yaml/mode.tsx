@@ -375,6 +375,22 @@ CodeMirror.registerHelper(
     //   filesystem:
     //     |
 
+    const isCompOrList = (key: string): boolean => {
+      if (!options.schema) {
+        return false;
+      }
+      // Using a lookup table here seems like a good idea
+      // https://github.com/dagster-io/dagster/issues/1966
+      const type = options.schema.allConfigTypes.find(t => t.key === key);
+      if (!type) {
+        return false;
+      }
+      return (
+        type.__typename === "ListConfigType" ||
+        type.__typename === "CompositeConfigType"
+      );
+    };
+
     const formatReplacement = (
       field: any,
       start: any,
@@ -383,9 +399,7 @@ CodeMirror.registerHelper(
     ) => {
       let replacement = `${field.name}`;
 
-      const isCompositeOrList =
-        field.configType.__typename === "ListConfigType" ||
-        field.configType.__typename === "CompositeConfigType";
+      const isCompositeOrList = isCompOrList(field.configTypeKey);
 
       const tokenIsColon = token.string.startsWith(":");
 
@@ -477,7 +491,7 @@ CodeMirror.registerHelper(
  * if it is a composite type.
  */
 function findAutocompletionContext(
-  schema: ConfigEditorEnvironmentSchemaFragment,
+  schema: ConfigEditorEnvironmentSchemaFragment | null,
   parents: IParseStateParent[],
   currentIndent: number
 ) {
@@ -510,13 +524,13 @@ function findAutocompletionContext(
       // The rest of the configType's information is in the top level schema.allConfigTypes
       // to avoid superlinear GraphQL response size.
       const parentConfigType = schema.allConfigTypes.find(
-        t => t.key === parentTypeDef.configType.key
+        t => t.key === parentTypeDef.configTypeKey
       )!;
       let childTypeKey = parentConfigType.key;
       let childEntriesUnique = true;
 
       if (parentConfigType.__typename === "ListConfigType") {
-        childTypeKey = parentConfigType.ofType.key;
+        childTypeKey = parentConfigType.typeParamKeys[0];
         childEntriesUnique = false;
       }
 

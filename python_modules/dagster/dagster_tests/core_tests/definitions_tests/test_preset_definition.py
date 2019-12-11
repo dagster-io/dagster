@@ -5,8 +5,6 @@ from dagster import (
     DagsterExecutionStepExecutionError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
-    Dict,
-    Field,
     ModeDefinition,
     PipelineDefinition,
     PresetDefinition,
@@ -18,7 +16,7 @@ from dagster.utils import script_relative_path
 
 
 def test_presets():
-    @solid(config_field=Field(Dict(fields={'error': Field(Bool)})))
+    @solid(config={'error': Bool})
     def can_fail(context):
         if context.solid_config['error']:
             raise Exception('I did an error')

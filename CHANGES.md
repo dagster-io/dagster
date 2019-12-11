@@ -1,4 +1,10 @@
+
 # Changelog
+
+## 0.7.0
+
+**Breaking**
+- `Set` and `Tuple` can no longer be used within the config system.
 
 ## 0.6.6
 

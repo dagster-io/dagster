@@ -200,7 +200,10 @@ class DagsterInvalidConfigError(DagsterError):
 
     def __init__(self, pipeline, errors, config_value, *args, **kwargs):
         from dagster.core.definitions import PipelineDefinition
-        from dagster.core.types.evaluator.errors import friendly_string_for_error, EvaluationError
+        from dagster.core.types.config.evaluator.errors import (
+            friendly_string_for_error,
+            EvaluationError,
+        )
 
         self.pipeline = check.opt_inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.errors = check.list_param(errors, 'errors', of_type=EvaluationError)

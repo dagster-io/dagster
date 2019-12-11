@@ -29,7 +29,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions import create_environment_type
-from dagster.core.types.evaluator import evaluate_config
+from dagster.core.types.config.evaluator import evaluate_config
 from dagster.seven import mock
 
 

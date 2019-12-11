@@ -1,6 +1,6 @@
 import os
 
-from dagster import check, seven
+from dagster import Field, String, check, seven
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.compute_log_manager import (
@@ -10,7 +10,6 @@ from dagster.core.storage.compute_log_manager import (
     ComputeLogManager,
 )
 from dagster.core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, LocalComputeLogManager
-from dagster.core.types import Field, String
 from dagster.utils import ensure_dir, ensure_file
 
 from .utils import create_s3_session

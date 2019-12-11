@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { Link } from "react-router-dom";
-import ConfigTypeSchema from "../ConfigTypeSchema";
+import { ConfigTypeSchema } from "../ConfigTypeSchema";
 import { TypeExplorerFragment } from "./types/TypeExplorerFragment";
 import {
   SidebarSubhead,
@@ -60,7 +60,7 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
           <SidebarSection title={"Input"}>
             <ConfigTypeSchema
               type={inputSchemaType}
-              allInnerTypes={inputSchemaType.innerTypes}
+              typesInScope={inputSchemaType.innerTypes}
             />
           </SidebarSection>
         )}
@@ -68,7 +68,7 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
           <SidebarSection title={"Output"}>
             <ConfigTypeSchema
               type={outputSchemaType}
-              allInnerTypes={outputSchemaType.innerTypes}
+              typesInScope={outputSchemaType.innerTypes}
             />
           </SidebarSection>
         )}

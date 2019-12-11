@@ -21,6 +21,7 @@ import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { showCustomAlert } from "../CustomAlertProvider";
 import { unixTimestampToString } from "../Util";
 import { RunStatus } from "../runs/RunUtils";
+import styled from "styled-components";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 const NUM_ATTEMPTS_TO_DISPLAY = 25;
@@ -106,7 +107,7 @@ const AttemptsTable: React.FunctionComponent<AttemptsTableProps> = ({
               </div>
             ) : (
               <div>
-                <a
+                <ButtonLink
                   onClick={() =>
                     showCustomAlert({
                       title: "Schedule Response",
@@ -127,7 +128,7 @@ const AttemptsTable: React.FunctionComponent<AttemptsTableProps> = ({
                 >
                   {" "}
                   View error
-                </a>
+                </ButtonLink>
               </div>
             )}
           </RowColumn>
@@ -176,4 +177,19 @@ export const SCHEDULE_ROOT_QUERY = gql`
   }
 
   ${ScheduleRowFragment}
+`;
+
+const ButtonLink = styled.button`
+  color: #106ba3;
+  margin-left: 10px;
+  font-size: 14px;
+  background: none!important;
+  border: none;
+  padding: 0!important;
+  font-family: inherit;
+  cursor: pointer;
+  &: hover {
+    text-decoration: underline;
+  }
+}
 `;

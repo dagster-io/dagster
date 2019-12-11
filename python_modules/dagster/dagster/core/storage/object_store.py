@@ -7,7 +7,7 @@ import six
 
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
-from dagster.core.types.marshal import PickleSerializationStrategy, SerializationStrategy
+from dagster.core.types.runtime.marshal import PickleSerializationStrategy, SerializationStrategy
 from dagster.utils import mkdir_p
 
 

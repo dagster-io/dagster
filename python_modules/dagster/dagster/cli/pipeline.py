@@ -4,6 +4,7 @@ import re
 import textwrap
 
 import click
+import six
 import yaml
 
 from dagster import (
@@ -15,7 +16,10 @@ from dagster import (
 )
 from dagster.cli.load_handle import handle_for_pipeline_cli_args, handle_for_repo_cli_args
 from dagster.core.definitions import Solid, solids_in_topological_order
+from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.utils import make_new_run_id
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.visualize import build_graphviz_graph
@@ -29,6 +33,7 @@ def create_pipeline_cli_group():
     group.add_command(pipeline_print_command)
     group.add_command(pipeline_graphviz_command)
     group.add_command(pipeline_execute_command)
+    group.add_command(pipeline_backfill_command)
     group.add_command(pipeline_scaffold_command)
     return group
 
@@ -36,6 +41,7 @@ def create_pipeline_cli_group():
 REPO_TARGET_WARNING = (
     'Can only use ONE of --repository-yaml/-y, --python-file/-f, --module-name/-m.'
 )
+REPO_ARG_NAMES = ['repository_yaml', 'module_name', 'fn_name', 'python_file']
 
 
 def apply_click_params(command, *click_params):
@@ -147,6 +153,17 @@ def get_pipeline_instructions(command_name):
         '\n\n4. dagster {command_name} -m a_module.submodule  -n define_some_pipeline'
         '\n\n5. dagster {command_name} -f /path/to/file.py -n define_some_repo <<pipeline_name>>'
         '\n\n6. dagster {command_name} -m a_module.submodule -n define_some_repo <<pipeline_name>>'
+    ).format(command_name=command_name, default_filename=DEFAULT_REPOSITORY_YAML_FILENAME)
+
+
+def get_partitioned_pipeline_instructions(command_name):
+    return (
+        'This commands targets a partitioned pipeline. The pipeline and partition set must be '
+        'defined in a repository, which can be specified in a number of ways:'
+        '\n\n1. dagster {command_name} <<pipeline_name>> (works if .{default_filename} exists)'
+        '\n\n2. dagster {command_name} <<pipeline_name>> -y path/to/{default_filename}'
+        '\n\n3. dagster {command_name} -f /path/to/file.py -n define_some_repo <<pipeline_name>>'
+        '\n\n4. dagster {command_name} -m a_module.submodule -n define_some_repo <<pipeline_name>>'
     ).format(command_name=command_name, default_filename=DEFAULT_REPOSITORY_YAML_FILENAME)
 
 
@@ -346,6 +363,149 @@ def do_scaffold_command(pipeline, printer, skip_optional):
     config_dict = scaffold_pipeline_config(pipeline, skip_optional=skip_optional)
     yaml_string = yaml.dump(config_dict, default_flow_style=False)
     printer(yaml_string)
+
+
+def gen_partition_slice_from_args(partition_set, kwargs):
+    if kwargs.get('all') and (kwargs.get('from') or kwargs.get('to')):
+        click.echo('error, cannot use both all and from/to')
+        return []
+
+    partitions = partition_set.get_partitions()
+
+    if kwargs.get('all'):
+        return partitions
+
+    start = validate_partition_slice(partitions, 'from', kwargs.get('from'))
+    end = validate_partition_slice(partitions, 'to', kwargs.get('to'))
+
+    return partitions[start:end]
+
+
+def validate_partition_slice(partitions, name, value):
+    is_start = name == 'from'
+    if value is None:
+        return 0 if is_start else len(partitions)
+    partition_names = [partition.name for partition in partitions]
+    if value not in partition_names:
+        raise click.UsageError('invalid value {} for {}'.format(value, name))
+    index = partition_names.index(value)
+    return index if is_start else index + 1
+
+
+@click.command(
+    name='backfill',
+    help='Backfill a partitioned pipeline.\n\n{instructions}'.format(
+        instructions=get_partitioned_pipeline_instructions('backfill')
+    ),
+)
+@pipeline_target_command
+@click.option(
+    '-d', '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.'
+)
+@click.option(
+    '-p',
+    '--partition-set',
+    type=click.STRING,
+    help='The name of the partition set over which we want to backfill.',
+)
+@click.option(
+    '-a', '--all', type=click.STRING, help='Specify to select all partitions to backfill.',
+)
+@click.option(
+    '--from',
+    type=click.STRING,
+    help=(
+        'Specify a start partition for this backfill job'
+        '\n\nExample: '
+        'dagster pipeline backfill log_daily_stats --from 20191101'
+    ),
+)
+@click.option(
+    '--to',
+    type=click.STRING,
+    help=(
+        'Specify an end partition for this backfill job'
+        '\n\nExample: '
+        'dagster pipeline backfill log_daily_stats --to 20191201'
+    ),
+)
+def pipeline_backfill_command(mode, *args, **kwargs):
+    pipeline_name = kwargs.pop('pipeline_name')
+    repo_args = {k: v for k, v in kwargs.items() if k in REPO_ARG_NAMES}
+    if pipeline_name and not isinstance(pipeline_name, six.string_types):
+        if len(pipeline_name) == 1:
+            pipeline_name = pipeline_name[0]
+
+    instance = DagsterInstance.get()
+    handle = handle_for_repo_cli_args(repo_args)
+    repository = handle.build_repository_definition()
+
+    if not pipeline_name:
+        pipeline_name = click.prompt(
+            'Select a pipeline to backfill: {}'.format(', '.join(repository.pipeline_names))
+        )
+
+    pipeline = handle.with_pipeline_name(pipeline_name).build_pipeline_definition()
+
+    partition_handle = handle.build_partitions_handle()
+
+    if not pipeline:
+        raise click.UsageError('no pipeline')
+
+    if not partition_handle:
+        raise click.UsageError('no parititon')
+
+    if kwargs.get('partition_set'):
+        partition_set = partition_handle.get_partition_set(kwargs['partition_set'])
+    else:
+        all_partition_sets = [
+            x for x in partition_handle.get_all_partition_sets() if x.pipeline_name == pipeline.name
+        ]
+        if not all_partition_sets:
+            raise click.UsageError(
+                'Pipeline `{}` does not have partition sets defined'.format(pipeline.name)
+            )
+        if len(all_partition_sets) == 1:
+            partition_set = all_partition_sets[0]
+        else:
+            partition_set_name = click.prompt(
+                'Select a partition set to use for backfill: {}'.format(
+                    ', '.join(x.name for x in all_partition_sets)
+                )
+            )
+            partition_set = next(
+                (x for x in all_partition_sets if x.name == partition_set_name), None
+            )
+
+    if not partition_set:
+        raise click.UsageError('error, partition set not found')
+
+    partitions = gen_partition_slice_from_args(partition_set, kwargs)
+
+    click.echo('\n     Pipeline: {}'.format(pipeline.name))
+    click.echo('Partition set: {}'.format(partition_set.name))
+    click.echo('   Partitions: {}\n'.format(', '.join([x.name for x in partitions])))
+
+    if click.confirm(
+        'Do you want to proceed with the backfill ({} partitions)?'.format(len(partitions))
+    ):
+        click.echo('Launching')
+        from dagster_graphql.launcher import RemoteDagitRunLauncher
+
+        run_launcher = RemoteDagitRunLauncher('http://localhost:3333')
+        for partition in partitions:
+            run = PipelineRun(
+                pipeline_name=pipeline.name,
+                run_id=make_new_run_id(),
+                selector=ExecutionSelector(pipeline.name),
+                environment_dict=partition_set.environment_dict_for_partition(partition),
+                mode=mode or 'default',
+                tags=partition_set.tags_for_partition(partition),
+                status=PipelineRunStatus.NOT_STARTED,
+            )
+            run = run_launcher.launch_run(run)
+    else:
+        click.echo(' Aborted!')
 
 
 pipeline_cli = create_pipeline_cli_group()

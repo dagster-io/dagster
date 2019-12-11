@@ -6,10 +6,11 @@ ADD dagster dagster
 ADD dagster-graphql dagster-graphql
 ADD dagster-aws dagster-aws
 ADD dagster-cron dagster-cron
+ADD dagster-pandas dagster-pandas
 ADD dagster-gcp dagster-gcp
 
-RUN pip install --no-deps -e dagster -e dagster-graphql -e dagster-aws -e dagster-cron -e dagster-gcp
-RUN pip install -e dagster -e dagster-graphql -e dagster-aws -e dagster-cron -e dagster-gcp
+RUN pip install --no-deps -e dagster -e dagster-graphql -e dagster-aws -e dagster-cron -e dagster-pandas -e dagster-gcp
+RUN pip install -e dagster -e dagster-graphql -e dagster-aws -e dagster-cron -e dagster-pandas -e dagster-gcp
 
 ADD . .
 

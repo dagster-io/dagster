@@ -31,8 +31,8 @@ from dagster.core.system_config.objects import (
     construct_solid_dictionary,
 )
 from dagster.core.test_utils import throwing_evaluate_config_value
-from dagster.core.types.evaluator.errors import DagsterEvaluateConfigValueError
-from dagster.core.types.field_utils import NamedDict
+from dagster.core.types.config.evaluator.errors import DagsterEvaluateConfigValueError
+from dagster.core.types.config.field_utils import NamedDict
 from dagster.loggers import default_loggers
 
 
@@ -489,8 +489,7 @@ def test_required_resource_with_required_subfield():
             ModeDefinition(
                 resource_defs={
                     'with_required': ResourceDefinition(
-                        resource_fn=lambda: None,
-                        config_field=Field(Dict({'required_field': Field(String)})),
+                        resource_fn=lambda: None, config_field={'required_field': Field(String)},
                     )
                 }
             )

@@ -3,7 +3,7 @@ from functools import update_wrapper
 from dagster import check
 from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.intermediates_manager import IntermediatesManager
-from dagster.core.types.field_utils import check_user_facing_opt_field_param
+from dagster.core.types.config.field_utils import check_user_facing_opt_field_param
 
 from .config import resolve_config_field
 

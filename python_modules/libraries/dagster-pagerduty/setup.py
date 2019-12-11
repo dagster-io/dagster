@@ -38,7 +38,6 @@ def _do_setup(name='dagster-pagerduty'):
         ],
         packages=find_packages(exclude=['test']),
         install_requires=['dagster', 'pypd'],
-        tests_require=['responses==0.10.*'],
         zip_safe=False,
     )
 
