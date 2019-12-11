@@ -124,7 +124,9 @@ function renderTypeRecursive(
   return <span>{type.name || "Anonymous Type"}</span>;
 }
 
-export class ConfigTypeSchema extends React.Component<ConfigTypeSchemaProps> {
+export class ConfigTypeSchema extends React.PureComponent<
+  ConfigTypeSchemaProps
+> {
   static fragments = {
     ConfigTypeSchemaFragment: gql`
       fragment ConfigTypeSchemaFragment on ConfigType {

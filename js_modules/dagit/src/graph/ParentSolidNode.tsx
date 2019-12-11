@@ -48,6 +48,9 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = pr
     onClickSolid: props.onClickSolid
   };
 
+  if (boundingBox.height < 0 || boundingBox.width < 0) {
+    return <g />;
+  }
   return (
     <>
       <SVGLabeledParentRect
@@ -57,7 +60,8 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = pr
         minified={minified}
       />
       {def.inputMappings.map(({ definition, mappedInput }, idx) => {
-        const destination = layout.solids[mappedInput.solid.name]!;
+        const destination = layout.solids[mappedInput.solid.name];
+        if (!destination) return <g />;
         const sourcePort = parentLayout.inputs[definition.name].port;
         const trgtPort = destination.inputs[mappedInput.definition.name].port;
 
@@ -74,7 +78,8 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = pr
         );
       })}
       {def.outputMappings.map(({ definition, mappedOutput }, idx) => {
-        const destination = layout.solids[mappedOutput.solid.name]!;
+        const destination = layout.solids[mappedOutput.solid.name];
+        if (!destination) return <g />;
         const sourcePort = parentLayout.outputs[definition.name].port;
         const trgtPort = destination.outputs[mappedOutput.definition.name].port;
 
