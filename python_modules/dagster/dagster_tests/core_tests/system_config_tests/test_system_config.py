@@ -209,7 +209,7 @@ def test_solid_configs_defaults():
 
 
 def test_solid_dictionary_some_no_config():
-    @solid(name='int_config_solid', config=Field(Int), input_defs=[], output_defs=[])
+    @solid(name='int_config_solid', config=Int, input_defs=[], output_defs=[])
     def int_config_solid(_):
         return None
 
@@ -242,7 +242,7 @@ def test_whole_environment():
         solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
-                config=Field(Int),
+                config=Int,
                 input_defs=[],
                 output_defs=[],
                 compute_fn=lambda *args: None,
@@ -290,7 +290,7 @@ def test_optional_solid_with_no_config():
         solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
-                config=Field(Int),
+                config=Int,
                 input_defs=[],
                 output_defs=[],
                 compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
@@ -346,7 +346,7 @@ def test_optional_solid_with_required_scalar_config():
         solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
-                config=Field(Int),
+                config=Int,
                 input_defs=[],
                 output_defs=[],
                 compute_fn=lambda context, _inputs: _assert_config_none(context, 234),

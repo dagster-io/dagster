@@ -7,7 +7,6 @@ from moto import mock_emr
 
 from dagster import (
     DagsterInvalidDefinitionError,
-    Field,
     ModeDefinition,
     RunConfig,
     execute_pipeline,
@@ -26,9 +25,7 @@ def example_solid(context):
         context.log.info('%s: %d' % (name, age))
 
 
-@pyspark_solid(
-    name='blah', description='this is a test', config={'foo': Field(str), 'bar': Field(int)}
-)
+@pyspark_solid(name='blah', description='this is a test', config={'foo': str, 'bar': int})
 def other_example_solid(context):
     list_p = [('John', 19), ('Jennifer', 29), ('Adam', 35), ('Henry', 50)]
     rdd = context.resources.pyspark.spark_context.parallelize(list_p)

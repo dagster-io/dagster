@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from dagster import (
     DependencyDefinition,
-    Field,
     InputDefinition,
     Int,
     PipelineDefinition,
@@ -65,7 +64,7 @@ def test_only_aliased_solids():
 
 
 def test_aliased_configs():
-    @solid(input_defs=[], config=Field(Int))
+    @solid(input_defs=[], config=Int)
     def load_constant(context):
         return context.solid_config
 

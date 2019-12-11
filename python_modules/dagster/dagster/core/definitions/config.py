@@ -8,6 +8,8 @@ from dagster.core.types.config.field_utils import (
     coerce_potential_field,
     is_potential_field,
 )
+from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
+from dagster.core.types.wrapping.mapping import is_supported_config_python_builtin
 
 
 def resolve_config(config, source):
@@ -36,6 +38,10 @@ def resolve_config(config, source):
         )
 
     return coerce_potential_field(config, _raise_error)
+
+
+def is_callable_valid_config_arg(config):
+    return BuiltinEnum.contains(config) or is_supported_config_python_builtin(config)
 
 
 class ConfigMapping(namedtuple('_ConfigMapping', 'config_fn config_field')):

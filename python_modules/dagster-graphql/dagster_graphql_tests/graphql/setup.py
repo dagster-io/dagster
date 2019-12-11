@@ -368,15 +368,13 @@ def scalar_output_pipeline():
 @pipeline
 def pipeline_with_enum_config():
     @solid(
-        config=Field(
-            Enum(
-                'TestEnum',
-                [
-                    EnumValue(config_value='ENUM_VALUE_ONE', description='An enum value.'),
-                    EnumValue(config_value='ENUM_VALUE_TWO', description='An enum value.'),
-                    EnumValue(config_value='ENUM_VALUE_THREE', description='An enum value.'),
-                ],
-            )
+        config=Enum(
+            'TestEnum',
+            [
+                EnumValue(config_value='ENUM_VALUE_ONE', description='An enum value.'),
+                EnumValue(config_value='ENUM_VALUE_TWO', description='An enum value.'),
+                EnumValue(config_value='ENUM_VALUE_THREE', description='An enum value.'),
+            ],
         )
     )
     def takes_an_enum(_context):

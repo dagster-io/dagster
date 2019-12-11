@@ -231,7 +231,7 @@ def test_composite_config_field():
         return context.solid_config['inner']
 
     @composite_solid(
-        config={'override': Field(Int)},
+        config={'override': Int},
         config_fn=lambda _, cfg: {'inner_solid': {'config': {'inner': str(cfg['override'])}}},
     )
     def test():
@@ -252,14 +252,14 @@ def test_nested_composite_config_field():
         return context.solid_config['inner']
 
     @composite_solid(
-        config={'override': Field(Int)},
+        config={'override': Int},
         config_fn=lambda _, cfg: {'inner_solid': {'config': {'inner': str(cfg['override'])}}},
     )
     def outer():
         return inner_solid()
 
     @composite_solid(
-        config={'override': Field(Int)},
+        config={'override': Int},
         config_fn=lambda _, cfg: {'outer': {'config': {'override': cfg['override']}}},
     )
     def test():

@@ -218,7 +218,7 @@ def node_a(context):
     return context.solid_config['foo']
 
 
-@solid(config={'bar': Field(Int)})
+@solid(config={'bar': Int})
 def node_b(context, input_):
     return input_ * context.solid_config['bar']
 
@@ -238,7 +238,7 @@ def composite_pipeline():
         'node_a': {'config': {'foo': cfg['foo']}},
         'node_b': {'config': {'bar': cfg['bar']}},
     },
-    config={'foo': Field(String), 'bar': Field(Int)},
+    config={'foo': Field(String), 'bar': Int},
 )
 def composite_with_nested_config_solid_and_config_mapping():
     return node_b(node_a())

@@ -40,7 +40,7 @@ def test_nullable_list_combos():
 
 
 def test_basic_dict():
-    output = print_type_to_string(Dict({'int_field': Field(Int)}))
+    output = print_type_to_string(Dict({'int_field': Int}))
 
     expected = '''{
   int_field: Int
@@ -50,7 +50,7 @@ def test_basic_dict():
 
 
 def test_two_field_dicts():
-    two_field_dict = Dict({'int_field': Field(Int), 'string_field': Field(String)})
+    two_field_dict = Dict({'int_field': Int, 'string_field': Field(String)})
     assert_inner_types(two_field_dict, Int, String)
 
     output = print_type_to_string(two_field_dict)
@@ -64,7 +64,7 @@ def test_two_field_dicts():
 
 
 def test_two_field_dicts_same_type():
-    two_field_dict = Dict({'int_field1': Field(Int), 'int_field2': Field(Int)})
+    two_field_dict = Dict({'int_field1': Int, 'int_field2': Int})
     assert_inner_types(two_field_dict, Int)
 
     output = print_type_to_string(two_field_dict)
@@ -108,7 +108,7 @@ def test_single_level_dict_lists_and_nullable():
 
 
 def test_nested_dict():
-    nested_type = Dict({'int_field': Field(Int)})
+    nested_type = Dict({'int_field': Int})
     outer_type = Dict({'nested': Field(nested_type)})
     output = print_type_to_string(outer_type)
 

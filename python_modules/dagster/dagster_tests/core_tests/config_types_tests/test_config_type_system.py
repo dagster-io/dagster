@@ -348,12 +348,12 @@ def test_nested_optional_with_no_default():
 
 
 def test_config_defaults():
-    @solid(config={"sum": Field(Int)})
+    @solid(config={"sum": Int})
     def two(_context):
         assert _context.solid_config['sum'] == 6
         return _context.solid_config['sum']
 
-    @solid(config={"sum": Field(Int)})
+    @solid(config={"sum": Int})
     def one(_context, prev_sum):
         assert prev_sum == 6
         return prev_sum + _context.solid_config['sum']
@@ -368,7 +368,7 @@ def test_config_defaults():
         config={
             "a": Field(Int, is_optional=True, default_value=1),
             "b": Field(Int, is_optional=True, default_value=2),
-            "c": Field(Int),
+            "c": Int,
         },
     )
     def addition_composite_solid():
@@ -444,7 +444,7 @@ def test_build_optionality():
 
 
 def test_wrong_solid_name():
-    @solid(name='some_solid', input_defs=[], output_defs=[], config=Field(Int))
+    @solid(name='some_solid', input_defs=[], output_defs=[], config=Int)
     def some_solid(_):
         return None
 
@@ -491,7 +491,7 @@ def test_solid_list_config():
     value = [1, 2]
     called = {}
 
-    @solid(name='solid_list_config', input_defs=[], output_defs=[], config=Field(List[Int]))
+    @solid(name='solid_list_config', input_defs=[], output_defs=[], config=List[Int])
     def solid_list_config(context):
         assert context.solid_config == value
         called['yup'] = True

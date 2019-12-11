@@ -135,7 +135,7 @@ class Field(object):
 
             @solid(
                 config=Field(
-                    Dict({'word': Field(String, default_value='foo'), 'repeats': Field(Int)})
+                    Dict({'word': Field(String, default_value='foo'), 'repeats': Int})
                 )
             )
             def repeat_word(context):

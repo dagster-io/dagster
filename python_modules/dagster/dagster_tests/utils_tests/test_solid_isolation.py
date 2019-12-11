@@ -65,7 +65,7 @@ def test_single_solid_with_multiple_inputs():
 def test_single_solid_with_config():
     ran = {}
 
-    @solid(config=Field(Int))
+    @solid(config=Int)
     def check_config_for_two(context):
         assert context.solid_config == 2
         ran['check_config_for_two'] = True

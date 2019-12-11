@@ -3,7 +3,6 @@ import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
     DependencyDefinition,
-    Field,
     InputDefinition,
     Int,
     Output,
@@ -140,7 +139,7 @@ def test_two_cliques():
 
 
 def test_deep_graph():
-    @solid(config=Field(Int))
+    @solid(config=Int)
     def download_num(context):
         return context.solid_config
 

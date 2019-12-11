@@ -5,6 +5,7 @@ import pytest
 from dagster import (
     DagsterResourceFunctionError,
     Field,
+    Int,
     ModeDefinition,
     PipelineDefinition,
     ResourceDefinition,
@@ -552,3 +553,17 @@ def test_with_resource_mapper_fn_without_required_keys():
     )
 
     assert execute_pipeline(pipeline_with_resource_mapper).success
+
+
+def test_dagster_type_resource_decorator_config():
+    @resource(Int)
+    def dagster_type_resource_config(_):
+        raise Exception('not called')
+
+    assert dagster_type_resource_config.config_field.config_type.name == 'Int'
+
+    @resource(int)
+    def python_type_resource_config(_):
+        raise Exception('not called')
+
+    assert python_type_resource_config.config_field.config_type.name == 'Int'

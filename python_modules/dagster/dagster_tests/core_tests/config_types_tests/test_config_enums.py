@@ -6,7 +6,6 @@ from dagster import (
     DagsterInvalidConfigError,
     Enum,
     EnumValue,
-    Field,
     Int,
     PipelineDefinition,
     execute_pipeline,
@@ -84,7 +83,7 @@ def test_native_enum_dagster_enum():
 
     called = {}
 
-    @solid(config=Field(dagster_enum))
+    @solid(config=dagster_enum)
     def dagster_enum_me(context):
         assert context.solid_config == NativeEnum.BAR
         called['yup'] = True

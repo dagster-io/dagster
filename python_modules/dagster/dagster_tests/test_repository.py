@@ -3,7 +3,6 @@ Repository of test pipelines
 '''
 
 from dagster import (
-    Field,
     Int,
     ModeDefinition,
     PipelineDefinition,
@@ -43,11 +42,11 @@ def define_multi_mode_pipeline():
 
 def define_multi_mode_with_resources_pipeline():
     # API red alert. One has to wrap a type in Field because it is callable
-    @resource(config=Field(Int))
+    @resource(config=Int)
     def adder_resource(init_context):
         return lambda x: x + init_context.resource_config
 
-    @resource(config=Field(Int))
+    @resource(config=Int)
     def multer_resource(init_context):
         return lambda x: x * init_context.resource_config
 

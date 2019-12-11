@@ -56,7 +56,7 @@ def split_cereals(context, cereals):
         yield Output(cold_cereals, 'cold_cereals')
 
 
-@solid(config=Field(String))
+@solid(config=String)
 def sort_cereals_by_calories(context, cereals):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal['calories'])
     context.log.info(

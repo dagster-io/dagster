@@ -31,7 +31,7 @@ def outer_wrap_fn(_ctx, cfg):
 
 @composite_solid(
     config_fn=outer_wrap_fn,
-    config={'outer_first': Field(String), 'outer_second': Field(String), 'outer_third': Field(Int)},
+    config={'outer_first': Field(String), 'outer_second': Field(String), 'outer_third': Int},
 )
 def outer_wrap():
     return inner_wrap()

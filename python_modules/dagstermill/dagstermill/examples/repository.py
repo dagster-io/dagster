@@ -139,7 +139,7 @@ def define_add_pipeline():
     )
 
 
-@solid(input_defs=[], config=Field(Int))
+@solid(input_defs=[], config=Int)
 def load_constant(context):
     return context.solid_config
 

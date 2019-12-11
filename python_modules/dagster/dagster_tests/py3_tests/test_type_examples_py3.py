@@ -306,7 +306,7 @@ def bool_config(context):
     return 'true' if context.solid_config else 'false'
 
 
-@solid(config=Field(Int))
+@solid(config=Int)
 def add_n(context, x: Int) -> int:
     return x + context.solid_config
 

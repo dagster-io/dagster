@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.types import String
 from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 
@@ -98,7 +99,7 @@ def resource(config=None, description=None):
 
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
-    if callable(config):
+    if callable(config) and not is_callable_valid_config_arg(config):
         return ResourceDefinition(resource_fn=config)
 
     def _wrap(resource_fn):

@@ -2,7 +2,6 @@ import pytest
 
 from dagster import (
     DependencyDefinition,
-    Field,
     InputDefinition,
     Int,
     Nothing,
@@ -319,7 +318,7 @@ def test_output_map_fail():
 
 
 def test_deep_graph():
-    @solid(config=Field(Int))
+    @solid(config=Int)
     def download_num(context):
         return context.solid_config
 

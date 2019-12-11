@@ -331,7 +331,7 @@ Built-in types
         def repeat_py2(_, spec):
             return spec['word'] * spec['times']
 
-        @solid(config=Field(Dict({'word': Field(String), 'times': Field(Int)})))
+        @solid(config=Field(Dict({'word': Field(String), 'times': Int})))
         def repeat_config(context) -> str:
             return context.solid_config['word'] * context.solid_config['times']
 
