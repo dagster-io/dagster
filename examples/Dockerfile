@@ -1,6 +1,6 @@
 # Dockerfile for Airflow
 
-FROM dagster/buildkite-integration:py3.7.3-v4
+FROM dagster/dagster-py37
 
 RUN mkdir -p /tmp/results
 
