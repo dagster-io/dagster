@@ -332,11 +332,11 @@ const PathOverlay = styled.div`
 const SolidHighlightInput = styled(InputGroup)`
   margin-left: 7px;
   font-size: 14px;
+  width: 220px;
 `;
 
 const LargeDAGNotice = () => (
   <LargeDAGContainer>
-    <Icon icon="arrow-up" iconSize={40} />
     <LargeDAGInstructionBox>
       <p>
         This is a large DAG that may be difficult to visualize. Type{" "}
@@ -355,6 +355,7 @@ const LargeDAGNotice = () => (
         </li>
       </ul>
     </LargeDAGInstructionBox>
+    <Icon icon="arrow-down" iconSize={40} />
   </LargeDAGContainer>
 );
 
@@ -363,7 +364,7 @@ const LargeDAGContainer = styled.div`
   position: absolute;
   transform: translateX(-50%);
   left: 50%;
-  top: 60px;
+  bottom: 60px;
   z-index: 2;
   max-width: 600px;
   text-align: center;
@@ -375,7 +376,7 @@ const LargeDAGContainer = styled.div`
 const LargeDAGInstructionBox = styled.div`
   padding: 15px 20px;
   border: 1px solid #fff5c3;
-  margin-top: 20px;
+  margin-bottom: 20px;
   color: ${Colors.DARK_GRAY3};
   background: #fffbe5;
   text-align: left;
