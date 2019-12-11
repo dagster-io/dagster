@@ -114,8 +114,8 @@ class PipelineDefinition(IContainSolids, object):
 
             pipeline_def = PipelineDefinition(
                 name='basic',
-                solid_defs=[return_one, apply_op_three],
-                dependencies={'apply_op_three': {'num': DependencyDefinition('return_one')}},
+                solid_defs=[return_one, apply_op],
+                dependencies={'apply_op': {'num': DependencyDefinition('return_one')}},
                 mode_defs=[add_mode],
                 preset_defs=[add_three_preset],
             )
