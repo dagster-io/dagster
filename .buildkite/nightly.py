@@ -16,7 +16,6 @@ def publish_docker_images():
     return [
         StepBuilder("docker image %s" % version)
         .run(
-            "pip install awscli",
             r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/dockerhub-creds /tmp/dockerhub-creds",
             "cat /tmp/dockerhub-creds | docker login --username elementldevtools --password-stdin",
             "pushd /workdir/.buildkite/images/",

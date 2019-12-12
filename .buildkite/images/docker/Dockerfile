@@ -131,8 +131,16 @@ RUN apt-get update -yqq \
 # pip install all the downstream deps to speed up our CI jobs
 ADD snapshot-reqs-$PYTHON_MAJOR_VERSION.txt /snapshot-reqs.txt
 RUN pip install -U pip setuptools wheel \
-    && pip install tox \
+    && pip install \
+        awscli \
+        pipenv \
+        tox \
     && pip install -r /snapshot-reqs.txt
+
+# Install gcloud CLI
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | \
+    tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+    apt-key --keyring /usr/share/keyrings/cloud.google.gpg  add - && apt-get update -y && apt-get install google-cloud-sdk -y
 
 # Install Docker and other dependencies
 RUN curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
