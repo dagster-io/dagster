@@ -29,14 +29,13 @@ def publish_integration_images():
         .run(
             # See: https://buildkite.com/docs/pipelines/build-meta-data
             "export IMAGE_VERSION=$$(buildkite-agent meta-data get \"integration-image-version\")",
-            "pip install awscli",
             "aws ecr get-login --no-include-email --region us-west-1 | sh",
             "cd /workdir/.buildkite/images/",
             "make VERSION=\"$$IMAGE_VERSION\" build-integration-{python_version}".format(
                 python_version=''.join(python_version.split('.')[:2])
             ),
             "make VERSION=\"$$IMAGE_VERSION\" push-integration-{python_version}".format(
-                python_version=python_version
+                python_version=''.join(python_version.split('.')[:2])
             ),
         )
         .on_integration_image(
