@@ -36,6 +36,7 @@
     "highlight.js": "^9.16.2",
     "immer": "^5.0.0",
     "lodash": "^4.17.15",
+    "lru-cache": "^5.1.1",
     "query-string": "^6.8.3",
     "react": "^16.11.0",
     "react-apollo": "3.1.3",
@@ -47,6 +48,7 @@
     "react-virtualized": "^9.21.1",
     "styled-components": "^4.4.1",
     "subscriptions-transport-ws": "^0.9.15",
+    "worker-loader": "^2.0.0",
     "yaml": "^1.7.2",
     "yaml-language-server": "^0.5.8"
   },
@@ -81,6 +83,7 @@
     "child-process": "^1.0.2",
     "eslint": "^6.1.0",
     "eslint-config-prettier": "^6.5.0",
+    "eslint-plugin-import": "^2.19.1",
     "eslint-plugin-prettier": "^3.1.1",
     "eslint-plugin-react": "^7.16.0",
     "eslint-plugin-react-hooks": "^2.2.0",
@@ -122,6 +125,7 @@
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga|css)$": "<rootDir>/jest/fileTransformer.js"
     },
     "moduleNameMapper": {
+      "^worker-loader(.*)/workers/(.*)$": "<rootDir>/jest/mocks/$2",
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga|css)$": "<rootDir>/jest/fileTransformer.js"
     },
     "moduleFileExtensions": [
