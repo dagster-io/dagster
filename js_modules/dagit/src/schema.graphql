@@ -596,6 +596,29 @@ type PageInfo {
   totalCount: Int!
 }
 
+type Partition {
+  name: String!
+}
+
+type PartitionSet {
+  name: String!
+  pipelineName: String!
+  partitions: [Partition!]!
+}
+
+type PartitionSetNotFoundError implements Error {
+  message: String!
+  partitionSetName: String!
+}
+
+union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonError
+
+type PartitionSets {
+  results: [PartitionSet!]!
+}
+
+union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
+
 type Pipeline implements SolidContainer & PipelineReference {
   solids: [Solid!]!
   name: String!
@@ -819,6 +842,8 @@ type Query {
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
+  partitionSetsOrError(pipelineName: String): PartitionSetsOrError!
+  partitionSetOrError(partitionSetName: String): PartitionSetOrError!
   pipelineRunsOrError(filter: PipelineRunsFilter!, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!

@@ -15,6 +15,7 @@ def create_schema():
         roots,
         runs,
         schedules,
+        partition_sets,
         runtime_types,
     )
 
