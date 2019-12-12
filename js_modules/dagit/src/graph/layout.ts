@@ -1,6 +1,11 @@
 import * as dagre from "dagre";
 import { titleOfIO } from "../Util";
 
+export type IPipelineLayoutParams = {
+  solids: ILayoutSolid[];
+  parentSolid: ILayoutSolid | undefined;
+};
+
 export type ILayoutConnectionMember = {
   point: IPoint;
   solidName: string;
@@ -116,7 +121,7 @@ function flattenIO(arrays: SolidLinkInfo[][]) {
 
 export function layoutPipeline(
   pipelineSolids: ILayoutSolid[],
-  parentSolid: ILayoutSolid | undefined
+  parentSolid?: ILayoutSolid
 ): IFullPipelineLayout {
   const g = new dagre.graphlib.Graph();
 

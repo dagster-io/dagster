@@ -13,14 +13,7 @@ import { PipelineGraphContainer } from "./graph/PipelineGraphContainer";
 import PipelineGraph from "./graph/PipelineGraph";
 import { SplitPanelChildren } from "./SplitPanelChildren";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
-import {
-  PipelineExplorerSolidHandleFragment,
-  PipelineExplorerSolidHandleFragment_solid
-} from "./types/PipelineExplorerSolidHandleFragment";
-import {
-  getDagrePipelineLayout,
-  IFullPipelineLayout
-} from "./graph/getFullSolidLayout";
+import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSolidHandleFragment";
 import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
 import { SolidJumpBar } from "./PipelineJumpComponents";
 import { SolidQueryInput } from "./SolidQueryInput";
@@ -142,22 +135,6 @@ export default class PipelineExplorer extends React.Component<
 
   handleClickBackground = () => {
     this.handleClickSolid({ name: "" });
-  };
-
-  _layoutCacheKey: string | undefined;
-  _layoutCache: IFullPipelineLayout | undefined;
-
-  getLayout = (
-    solids: PipelineExplorerSolidHandleFragment_solid[],
-    parent: PipelineExplorerSolidHandleFragment_solid | undefined
-  ) => {
-    const key = solids.map(s => s.name).join("|");
-    if (this._layoutCacheKey === key && this._layoutCache) {
-      return this._layoutCache;
-    }
-    this._layoutCache = getDagrePipelineLayout(solids, parent);
-    this._layoutCacheKey = key;
-    return this._layoutCache;
   };
 
   public render() {
