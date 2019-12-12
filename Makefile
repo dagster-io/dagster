@@ -51,13 +51,15 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-ssh \
 				-e python_modules/libraries/dagster-twilio \
 				-e python_modules/automation \
-				-e examples[full] \
 				-r python_modules/dagster/dev-requirements.txt \
 				-r python_modules/libraries/dagster-aws/dev-requirements.txt \
 				-r bin/requirements.txt \
 				-r scala_modules/scripts/requirements.txt $(QUIET)
 
 	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow $(QUIET)
+
+	# This fails on Python 3.8 because TensorFlow is missing
+	-pip install -e examples[full] $(QUIET)
 
 	# NOTE: This installation will fail for Python 2.7 (Dask doesn't work w/ py27 on macOS)
 	-pip install -e python_modules/dagster-dask $(QUIET)
