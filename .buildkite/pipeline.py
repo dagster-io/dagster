@@ -74,36 +74,6 @@ def connect_sibling_docker_container(network_name, container_name, env_variable)
     ]
 
 
-def wrap_with_docker_compose_steps(
-    steps_to_execute, filename=None, remove_orphans=True
-):  # pylint:disable=keyword-arg-before-vararg
-    if filename is not None:
-        filename_arg = '-f {filename} '.format(filename=filename)
-    else:
-        filename_arg = ''
-
-    if remove_orphans:
-        remove_orphans_arg = ' --remove-orphans'
-    else:
-        remove_orphans_arg = ''
-
-    return (
-        [
-            "docker-compose {filename_arg}stop".format(filename_arg=filename_arg),
-            "docker-compose {filename_arg}rm -f".format(filename_arg=filename_arg),
-            "docker system prune -f",
-            "docker-compose {filename_arg}up -d{remove_orphans_arg}".format(
-                filename_arg=filename_arg, remove_orphans_arg=remove_orphans_arg
-            ),
-        ]
-        + steps_to_execute
-        + [
-            "docker-compose {filename_arg}stop".format(filename_arg=filename_arg),
-            "docker-compose {filename_arg}rm -f".format(filename_arg=filename_arg),
-        ]
-    )
-
-
 def python_modules_tox_tests(directory):
     label = directory.replace("/", "-")
     tests = []
@@ -150,19 +120,16 @@ def airline_demo_tests():
                 "mkdir -p /home/circleci/airflow",
                 # Run the postgres db. We are in docker running docker
                 # so this will be a sibling container.
-                *wrap_with_docker_compose_steps(
-                    # Can't use host networking on buildkite and communicate via localhost
-                    # between these sibling containers, so pass along the ip.
-                    network_buildkite_container('postgres')
-                    + connect_sibling_docker_container(
-                        'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
-                    )
-                    + [
-                        "tox -vv -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
-                        "mv .coverage {file}".format(file=coverage),
-                        "buildkite-agent artifact upload {file}".format(file=coverage),
-                    ]
-                )
+                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+                # Can't use host networking on buildkite and communicate via localhost
+                # between these sibling containers, so pass along the ip.
+                network_buildkite_container('postgres'),
+                connect_sibling_docker_container(
+                    'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
+                ),
+                "tox -vv -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .build()
         )
@@ -276,19 +243,16 @@ def celery_tests():
                 "pushd python_modules/dagster-celery",
                 # Run the rabbitmq db. We are in docker running docker
                 # so this will be a sibling container.
-                *wrap_with_docker_compose_steps(
-                    # Can't use host networking on buildkite and communicate via localhost
-                    # between these sibling containers, so pass along the ip.
-                    network_buildkite_container('rabbitmq')
-                    + connect_sibling_docker_container(
-                        'rabbitmq', 'test-rabbitmq', 'DAGSTER_CELERY_BROKER_HOST'
-                    )
-                    + [
-                        "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
-                        "mv .coverage {file}".format(file=coverage),
-                        "buildkite-agent artifact upload {file}".format(file=coverage),
-                    ]
-                )
+                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+                # Can't use host networking on buildkite and communicate via localhost
+                # between these sibling containers, so pass along the ip.
+                network_buildkite_container('rabbitmq'),
+                connect_sibling_docker_container(
+                    'rabbitmq', 'test-rabbitmq', 'DAGSTER_CELERY_BROKER_HOST'
+                ),
+                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .build()
         )
@@ -306,34 +270,26 @@ def dagster_postgres_tests():
             StepBuilder("libraries/dagster-postgres tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
                 "cd python_modules/libraries/dagster-postgres/dagster_postgres_tests/",
-                *wrap_with_docker_compose_steps(
-                    wrap_with_docker_compose_steps(
-                        network_buildkite_container('postgres')
-                        + connect_sibling_docker_container(
-                            'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
-                        )
-                        + network_buildkite_container('postgres_multi')
-                        + connect_sibling_docker_container(
-                            'postgres_multi',
-                            'test-run-storage-db',
-                            'POSTGRES_TEST_RUN_STORAGE_DB_HOST',
-                        )
-                        + connect_sibling_docker_container(
-                            'postgres_multi',
-                            'test-event-log-storage-db',
-                            'POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST',
-                        )
-                        + [
-                            "pushd ../",
-                            "tox -e {ver}".format(ver=TOX_MAP[version]),
-                            "mv .coverage {file}".format(file=coverage),
-                            "buildkite-agent artifact upload {file}".format(file=coverage),
-                            "popd",
-                        ],
-                        filename='docker-compose-multi.yml',
-                        remove_orphans=False,
-                    )
-                )
+                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+                "docker-compose -f docker-compose-multi.yml up -d",  # clean up in hooks/pre-exit,
+                network_buildkite_container('postgres'),
+                connect_sibling_docker_container(
+                    'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
+                ),
+                network_buildkite_container('postgres_multi'),
+                connect_sibling_docker_container(
+                    'postgres_multi', 'test-run-storage-db', 'POSTGRES_TEST_RUN_STORAGE_DB_HOST',
+                ),
+                connect_sibling_docker_container(
+                    'postgres_multi',
+                    'test-event-log-storage-db',
+                    'POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST',
+                ),
+                "pushd ../",
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+                "popd",
             )
             .on_integration_image(version)
             .build()
@@ -349,19 +305,16 @@ def examples_tests():
             StepBuilder("examples tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
                 "pushd examples",
-                *wrap_with_docker_compose_steps(
-                    # Can't use host networking on buildkite and communicate via localhost
-                    # between these sibling containers, so pass along the ip.
-                    network_buildkite_container('postgres')
-                    + connect_sibling_docker_container(
-                        'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
-                    )
-                    + [
-                        "tox -e {ver}".format(ver=TOX_MAP[version]),
-                        "mv .coverage {file}".format(file=coverage),
-                        "buildkite-agent artifact upload {file}".format(file=coverage),
-                    ]
-                )
+                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+                # Can't use host networking on buildkite and communicate via localhost
+                # between these sibling containers, so pass along the ip.
+                network_buildkite_container('postgres'),
+                connect_sibling_docker_container(
+                    'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
+                ),
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(version)
             .build()
@@ -429,19 +382,14 @@ def dask_tests():
                 "pushd python_modules/dagster-dask/dagster_dask_tests/dask-docker",
                 "./build.sh " + version,
                 # Run the docker-compose dask cluster
-                *wrap_with_docker_compose_steps(
-                    network_buildkite_container('dask')
-                    + connect_sibling_docker_container('dask', 'dask-scheduler', 'DASK_ADDRESS')
-                    + [
-                        "popd",
-                        "pushd python_modules/dagster-dask/",
-                        "tox -e {ver}".format(ver=TOX_MAP[version]),
-                        "mv .coverage {file}".format(file=coverage),
-                        "buildkite-agent artifact upload {file}".format(file=coverage),
-                        "popd",
-                        "pushd python_modules/dagster-dask/dagster_dask_tests/dask-docker",
-                    ]
-                )
+                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+                network_buildkite_container('dask'),
+                connect_sibling_docker_container('dask', 'dask-scheduler', 'DASK_ADDRESS'),
+                "popd",
+                "pushd python_modules/dagster-dask/",
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(
                 version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
