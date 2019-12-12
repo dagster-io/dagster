@@ -79,7 +79,6 @@ type ConfigTypeField {
 
 type ConfigTypeNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   pipeline: Pipeline!
   configTypeName: String!
 }
@@ -143,7 +142,6 @@ union EnvironmentSchemaOrError = EnvironmentSchema | PipelineNotFoundError | Inv
 
 interface Error {
   message: String!
-  stack: [String!]!
 }
 
 enum EvaluationErrorReason {
@@ -378,7 +376,6 @@ type InvalidOutputError {
 
 type InvalidPipelineRunsFilterError implements Error {
   message: String!
-  stack: [String!]!
 }
 
 type InvalidStepError {
@@ -387,7 +384,6 @@ type InvalidStepError {
 
 type InvalidSubsetError implements Error {
   message: String!
-  stack: [String!]!
   pipeline: Pipeline!
 }
 
@@ -510,7 +506,6 @@ type Mode {
 
 type ModeNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   mode: String!
 }
 
@@ -663,7 +658,6 @@ type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
 
 type PipelineNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   pipelineName: String!
 }
 
@@ -741,7 +735,6 @@ type PipelineRunLogsSubscriptionSuccess {
 
 type PipelineRunNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   runId: String!
 }
 
@@ -811,7 +804,6 @@ type PipelineTagAndValues {
 
 type PresetNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   preset: String!
 }
 
@@ -880,7 +872,6 @@ type ResourceRequirement {
 
 type RunLauncherNotDefinedError implements Error {
   message: String!
-  stack: [String!]!
 }
 
 type RunningSchedule {
@@ -925,7 +916,6 @@ interface RuntimeType {
 
 type RuntimeTypeNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   pipeline: Pipeline!
   runtimeTypeName: String!
 }
@@ -958,7 +948,6 @@ type ScheduledExecutionBlocked {
 
 type ScheduleNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   scheduleName: String!
 }
 
@@ -970,7 +959,6 @@ type Scheduler {
 
 type SchedulerNotDefinedError implements Error {
   message: String!
-  stack: [String!]!
 }
 
 union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError
