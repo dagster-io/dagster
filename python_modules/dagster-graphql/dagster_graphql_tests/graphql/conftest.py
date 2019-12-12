@@ -8,7 +8,6 @@ query AppQuery {
   pipelinesOrError {
     ... on Error {
       message
-      stack
       __typename
     }
     ... on PipelineConnection {
