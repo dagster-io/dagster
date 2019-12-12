@@ -519,7 +519,7 @@ def multi_mode_with_loggers():
 
 @pipeline
 def composites_pipeline():
-    @lambda_solid(input_defs=[InputDefinition('num', Int)])
+    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 
@@ -527,11 +527,11 @@ def composites_pipeline():
     def div_two(num):
         return num / 2
 
-    @composite_solid
+    @composite_solid(input_defs=[InputDefinition('num', Int)], output_defs=[OutputDefinition(Int)])
     def add_two(num):
         return add_one.alias('adder_2')(add_one.alias('adder_1')(num))
 
-    @composite_solid
+    @composite_solid(input_defs=[InputDefinition('num', Int)], output_defs=[OutputDefinition(Int)])
     def add_four(num):
         return add_two.alias('adder_2')(add_two.alias('adder_1')(num))
 
