@@ -58,7 +58,14 @@ class StepBuilder(object):
             self._step["key"] = key
 
     def run(self, *argc):
-        self._step["commands"] = map(lambda cmd: "time " + cmd, argc)
+        commands = []
+        for entry in argc:
+            if isinstance(entry, list):
+                commands.extend(entry)
+            else:
+                commands.append(entry)
+
+        self._step["commands"] = map(lambda cmd: "time " + cmd, commands)
         return self
 
     def _base_docker_settings(self):
