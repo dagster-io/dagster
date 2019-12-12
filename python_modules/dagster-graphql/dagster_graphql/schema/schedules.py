@@ -8,7 +8,6 @@ from dagster_graphql.implementation.fetch_schedules import (
     get_dagster_schedule_def,
     get_schedule_attempt_filenames,
 )
-from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 from dagster_graphql.schema.errors import (
     DauphinScheduleNotFoundError,
     DauphinSchedulerNotDefinedError,
@@ -17,33 +16,6 @@ from dagster_graphql.schema.errors import (
 from dagster import check, seven
 from dagster.core.definitions import ScheduleDefinition
 from dagster.core.scheduler import Schedule
-
-
-@capture_dauphin_error
-def get_scheduler_or_error(graphene_info):
-    scheduler = graphene_info.context.get_scheduler()
-    if not scheduler:
-        raise UserFacingGraphQLError(graphene_info.schema.type_named('SchedulerNotDefinedError')())
-
-    runningSchedules = [
-        graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=s)
-        for s in scheduler.all_schedules()
-    ]
-
-    return graphene_info.schema.type_named('Scheduler')(runningSchedules=runningSchedules)
-
-
-@capture_dauphin_error
-def get_schedule_or_error(graphene_info, schedule_name):
-    scheduler = graphene_info.context.get_scheduler()
-    schedule = scheduler.get_schedule_by_name(schedule_name)
-
-    if not schedule:
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('ScheduleNotFoundError')(schedule_name=schedule_name)
-        )
-
-    return graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=schedule)
 
 
 class DauphinScheduleStatus(dauphin.Enum):

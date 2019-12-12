@@ -31,6 +31,10 @@ from dagster_graphql.implementation.fetch_runs import (
     get_runs,
     validate_pipeline_config,
 )
+from dagster_graphql.implementation.fetch_schedules import (
+    get_schedule_or_error,
+    get_scheduler_or_error,
+)
 from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
 from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGraphQLError
 
@@ -41,13 +45,8 @@ from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 
 from .config_types import to_dauphin_config_type
-from .run_schedule import (
-    DauphinStartScheduleMutation,
-    DauphinStopRunningScheduleMutation,
-    get_schedule_or_error,
-    get_scheduler_or_error,
-)
 from .runs import DauphinPipelineRunStatus
+from .schedules import DauphinStartScheduleMutation, DauphinStopRunningScheduleMutation
 from .solids import build_dauphin_solid_handles
 
 

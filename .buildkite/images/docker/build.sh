@@ -49,6 +49,7 @@ else
     # Build the public image
     docker build . \
         --no-cache \
+        --build-arg DEBIAN_VERSION=$DEBIAN_VERSION \
         --build-arg PYTHON_VERSION=$PYTHON_VERSION \
         --target dagster-public-image \
         -t "dagster/dagster-py${PYTHON_MAJMIN}"
