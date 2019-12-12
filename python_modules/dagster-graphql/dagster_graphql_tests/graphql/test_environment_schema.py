@@ -85,44 +85,6 @@ query($selector: ExecutionSelector! $mode: String! $configTypeName: String!)
 '''
 
 
-def test_success_config_type_fetch(snapshot):
-    result = execute_dagster_graphql(
-        define_context(),
-        ENVIRONMENT_SCHEMA_CONFIG_TYPE_QUERY,
-        variables={
-            'selector': {'name': 'multi_mode_with_resources'},
-            'mode': 'add_mode',
-            'configTypeName': 'MultiModeWithResources.Mode.AddMode.Environment',
-        },
-    )
-    assert result.data['environmentSchemaOrError']['__typename'] == 'EnvironmentSchema'
-    assert (
-        result.data['environmentSchemaOrError']['configTypeOrError']['__typename']
-        == 'CompositeConfigType'
-    )
-
-    snapshot.assert_match(result.data)
-
-
-def test_success_config_type_not_found(snapshot):
-    result = execute_dagster_graphql(
-        define_context(),
-        ENVIRONMENT_SCHEMA_CONFIG_TYPE_QUERY,
-        variables={
-            'selector': {'name': 'multi_mode_with_resources'},
-            'mode': 'add_mode',
-            'configTypeName': 'jkdfjkdjfd',
-        },
-    )
-    assert result.data['environmentSchemaOrError']['__typename'] == 'EnvironmentSchema'
-    assert (
-        result.data['environmentSchemaOrError']['configTypeOrError']['__typename']
-        == 'ConfigTypeNotFoundError'
-    )
-
-    snapshot.assert_match(result.data)
-
-
 ENVIRONMENT_SCHEMA_CONFIG_VALIDATION_QUERY = '''
 query PipelineQuery(
     $environmentConfigData: EnvironmentConfigData,

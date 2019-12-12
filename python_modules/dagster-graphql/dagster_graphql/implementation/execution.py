@@ -26,7 +26,7 @@ from .fetch_pipelines import (
     get_dauphin_pipeline_from_selector_or_raise,
     get_dauphin_pipeline_reference_from_selector,
 )
-from .fetch_runs import get_validated_config, validate_config
+from .fetch_runs import get_validated_config
 from .fetch_schedules import get_dagster_schedule, get_dagster_schedule_def
 from .pipeline_run_storage import PipelineRunObservableSubscribe
 from .utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
@@ -306,7 +306,7 @@ def do_execute_plan(graphene_info, execution_params):
 def _execute_plan_resolve_config(graphene_info, execution_params, dauphin_pipeline):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
-    validate_config(
+    get_validated_config(
         graphene_info, dauphin_pipeline, execution_params.environment_dict, execution_params.mode
     )
     return _do_execute_plan(graphene_info, execution_params, dauphin_pipeline)

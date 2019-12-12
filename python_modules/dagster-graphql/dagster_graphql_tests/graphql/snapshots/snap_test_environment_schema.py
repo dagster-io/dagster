@@ -34,7 +34,7 @@ snapshots['test_basic_invalid_config_on_environment_schema 1'] = {
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Field "nope" is not defined at document config root. Expected: "{ execution?: { in_process?: { } multiprocess?: { config?: { max_concurrent?: Int } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { } solids: CsvHelloWorld.SolidsConfigDictionary storage?: { filesystem?: { config?: { base_dir?: String } } in_memory?: { } } }"',
+                    'message': 'Field "nope" is not defined at document config root. Expected: "{ execution?: { in_process?: { } multiprocess?: { config?: { max_concurrent?: Int } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { } solids: { sum_solid: { inputs: { num: Path } outputs?: [{ result?: Path }] } sum_sq_solid?: { outputs?: [{ result?: Path }] } } storage?: { filesystem?: { config?: { base_dir?: String } } in_memory?: { } } }"',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [
@@ -65,6 +65,12 @@ snapshots['test_successful_enviroment_schema 1'] = {
     'environmentSchemaOrError': {
         '__typename': 'EnvironmentSchema',
         'allConfigTypes': [
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
             {
                 'name': None
             },
@@ -150,12 +156,6 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'List[None]'
             },
             {
-                'name': 'MultiModeWithResources.Mode.AddMode.Environment'
-            },
-            {
-                'name': 'MultiModeWithResources.SolidsConfigDictionary'
-            },
-            {
                 'name': 'Path'
             },
             {
@@ -172,17 +172,7 @@ snapshots['test_successful_enviroment_schema 1'] = {
             }
         ],
         'rootEnvironmentType': {
-            'name': 'MultiModeWithResources.Mode.AddMode.Environment'
-        }
-    }
-}
-
-snapshots['test_success_config_type_fetch 1'] = {
-    'environmentSchemaOrError': {
-        '__typename': 'EnvironmentSchema',
-        'configTypeOrError': {
-            '__typename': 'CompositeConfigType',
-            'name': 'MultiModeWithResources.Mode.AddMode.Environment'
+            'name': None
         }
     }
 }

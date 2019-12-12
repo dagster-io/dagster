@@ -29,7 +29,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions import create_environment_type
-from dagster.core.types.config.evaluator import evaluate_config
+from dagster.core.types.config.evaluator.validate import validate_config
 from dagster.seven import mock
 
 
@@ -140,7 +140,7 @@ def test_bad_config():
     env_type = create_environment_type(test_config_pipeline)
     for config_fragment, error_message in configs_and_expected_errors:
         config = {'solids': {'test': {'config': {'query_job_config': config_fragment}}}}
-        result = evaluate_config(env_type, config, test_config_pipeline)
+        result = validate_config(env_type, config)
         assert result.errors[0].message == error_message
 
 

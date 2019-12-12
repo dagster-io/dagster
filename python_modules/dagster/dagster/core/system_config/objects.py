@@ -2,30 +2,15 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.definitions.environment_schema import create_environment_type
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.config import IRunConfig, RunConfig
-from dagster.core.types.config.evaluator import evaluate_config
 from dagster.utils import ensure_single_item
 
 
-def construct_solid_dictionary(solid_dict_value, parent_handle=None, config_map=None):
-    config_map = config_map or {}
-    for name, value in solid_dict_value.items():
-        key = SolidHandle(name, None, parent_handle)
-        config_map[str(key)] = SolidConfig.from_dict(value)
-
-        # solids implies a composite solid config
-        if value.get('solids'):
-            construct_solid_dictionary(value['solids'], key, config_map)
-
-    return config_map
-
-
 class SolidConfig(namedtuple('_SolidConfig', 'config inputs outputs')):
-    def __new__(cls, config, inputs=None, outputs=None):
+    def __new__(cls, config=None, inputs=None, outputs=None):
         return super(SolidConfig, cls).__new__(
             cls,
             config,
@@ -77,22 +62,10 @@ class EnvironmentConfig(
         )
 
     @staticmethod
-    def from_config_value(config_value, original_config_dict=None):
-        check.dict_param(config_value, 'config_value', key_type=str)
-        original_config_dict = check.opt_dict_param(
-            original_config_dict, 'original_config_dict', key_type=str
-        )
-        return EnvironmentConfig(
-            solids=construct_solid_dictionary(config_value['solids']),
-            execution=ExecutionConfig.from_dict(config_value.get('execution')),
-            storage=StorageConfig.from_dict(config_value.get('storage')),
-            loggers=config_value.get('loggers'),
-            original_config_dict=original_config_dict,
-            resources=config_value.get('resources'),
-        )
-
-    @staticmethod
     def build(pipeline, environment_dict=None, run_config=None):
+        from dagster.core.types.config.evaluator.composite_descent import composite_descent
+        from dagster.core.types.config.evaluator.validate import validate_config
+
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         check.opt_dict_param(environment_dict, 'environment')
         run_config = check.opt_inst_param(run_config, 'run_config', IRunConfig, default=RunConfig())
@@ -100,12 +73,28 @@ class EnvironmentConfig(
         mode = run_config.mode or pipeline.get_default_mode_name()
         environment_type = create_environment_type(pipeline, mode)
 
-        result = evaluate_config(environment_type, environment_dict, pipeline, run_config)
+        config_evr = validate_config(environment_type, environment_dict)
+        if not config_evr.success:
+            raise DagsterInvalidConfigError(
+                'Error in config for pipeline {}'.format(pipeline.name),
+                config_evr.errors,
+                environment_dict,
+            )
 
-        if not result.success:
-            raise DagsterInvalidConfigError(pipeline, result.errors, environment_dict)
+        validated_config_value = config_evr.value
 
-        return EnvironmentConfig.from_config_value(result.value, environment_dict)
+        solid_config_dict = composite_descent(
+            pipeline, validated_config_value.get('solids', {}), run_config
+        )
+
+        return EnvironmentConfig(
+            solids=solid_config_dict,
+            execution=ExecutionConfig.from_dict(validated_config_value.get('execution')),
+            storage=StorageConfig.from_dict(validated_config_value.get('storage')),
+            loggers=validated_config_value.get('loggers'),
+            original_config_dict=environment_dict,
+            resources=validated_config_value.get('resources'),
+        )
 
 
 class ExecutionConfig(

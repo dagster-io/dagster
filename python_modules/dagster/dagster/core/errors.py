@@ -139,8 +139,7 @@ class DagsterUserCodeExecutionError(DagsterError):
         user_exception = check.inst_param(kwargs.pop('user_exception'), 'user_exception', Exception)
         original_exc_info = check.tuple_param(kwargs.pop('original_exc_info'), 'original_exc_info')
 
-        if original_exc_info[0] is None:
-            raise Exception('bad dude {}'.format(type(self)))
+        check.invariant(original_exc_info[0] is not None)
 
         msg = _add_inner_exception_for_py2(args[0], original_exc_info)
 
@@ -194,27 +193,29 @@ class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
     '''
 
 
+class DagsterConfigMappingFunctionError(DagsterUserCodeExecutionError):
+    '''
+    Indicates that an unexpected error occured while executing the body of a config mapping
+    function defined in a :class:`CompositeSolidDefinition <dagster.CompositeSolidDefinition>`
+    during config parsing.
+    '''
+
+
 class DagsterInvalidConfigError(DagsterError):
     '''Thrown when provided config is invalid (does not type check against the relevant config
     schema).'''
 
-    def __init__(self, pipeline, errors, config_value, *args, **kwargs):
-        from dagster.core.definitions import PipelineDefinition
+    def __init__(self, preamble, errors, config_value, *args, **kwargs):
         from dagster.core.types.config.evaluator.errors import (
             friendly_string_for_error,
             EvaluationError,
         )
 
-        self.pipeline = check.opt_inst_param(pipeline, 'pipeline', PipelineDefinition)
+        check.str_param(preamble, 'preamble')
         self.errors = check.list_param(errors, 'errors', of_type=EvaluationError)
-
         self.config_value = config_value
 
-        if pipeline is not None:
-            error_msg = 'Pipeline "{pipeline}" config errors:'.format(pipeline=pipeline.name)
-        else:
-            error_msg = 'Config errors:'
-
+        error_msg = preamble
         error_messages = []
 
         for i_error, error in enumerate(self.errors):

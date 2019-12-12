@@ -55,6 +55,12 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': None
             },
             {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
                 'name': 'Any'
             },
             {
@@ -94,12 +100,6 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': 'List[None]'
             },
             {
-                'name': 'MultiModeWithResources.Mode.AddMode.Environment'
-            },
-            {
-                'name': 'MultiModeWithResources.SolidsConfigDictionary'
-            },
-            {
                 'name': 'Path'
             },
             {
@@ -134,7 +134,7 @@ snapshots['test_query_multi_mode 1'] = {
                 },
                 {
                     'configType': {
-                        'name': 'MultiModeWithResources.SolidsConfigDictionary'
+                        'name': None
                     }
                 },
                 {
@@ -143,7 +143,7 @@ snapshots['test_query_multi_mode 1'] = {
                     }
                 }
             ],
-            'name': 'MultiModeWithResources.Mode.AddMode.Environment'
+            'name': None
         }
     }
 }

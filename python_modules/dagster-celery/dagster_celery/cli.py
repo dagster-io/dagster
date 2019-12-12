@@ -7,7 +7,7 @@ from celery.utils.nodenames import default_nodename, host_format
 
 from dagster import check, seven
 from dagster.core.instance import DagsterInstance
-from dagster.core.types.config.evaluator.evaluation import evaluate_config
+from dagster.core.types.config.evaluator.validate import validate_config
 from dagster.utils import load_yaml_from_path, mkdir_p
 from dagster.utils.indenting_printer import IndentingPrinter
 
@@ -74,7 +74,7 @@ def celery_worker_config_args(config_yaml, config_module, config_file):
         mkdir_p(config_dir)
         config_path = os.path.join(config_dir, '{config_hash}.py'.format(config_hash=config_hash))
         if not os.path.exists(config_path):
-            validated_config = evaluate_config(config_type, config_value).value
+            validated_config = validate_config(config_type, config_value).value
             with open(config_path, 'w') as fd:
                 printer = IndentingPrinter(printer=fd.write)
                 if 'broker' in validated_config:

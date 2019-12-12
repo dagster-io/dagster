@@ -3,6 +3,7 @@ import time
 import pytest
 
 from dagster import (
+    DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     Field,
@@ -21,6 +22,7 @@ from dagster import (
 
 
 # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
+# no longer true? refactor these tests?
 @lambda_solid(input_defs=[InputDefinition('input_str')])
 def pipe(input_str):
     return input_str
@@ -155,18 +157,23 @@ def test_bad_override():
 
     assert len(exc_info.value.errors) == 1
 
-    assert exc_info.value.errors[0].message == (
-        '''Config override mapping function defined by solid do_stuff from definition bad_wrap at'''
-        ''' path root:solids:do_stuff caused error: Value at path '''
-        '''root:solids:do_stuff:scalar_config_solid:config is not valid. Expected "String"'''
+    message = str(exc_info.value)
+
+    assert 'Solid "do_stuff" with definition "bad_wrap" has a configuration error.' in message
+    assert (
+        'Error 1: Type failure at path "root:scalar_config_solid:config" on type "String". '
+        'Value at path root:scalar_config_solid:config is not valid. Expected "String".' in message
     )
 
 
-def test_raises_fn_override():
-    def raises_config_fn(_context, _cfg):
-        assert 0
+def test_config_mapper_throws():
+    class SomeUserException(Exception):
+        pass
 
-    @composite_solid(config={'does_not_matter': Field(String)}, config_fn=raises_config_fn)
+    def _config_fn_throws(_cxt, _cfg):
+        raise SomeUserException()
+
+    @composite_solid(config={'does_not_matter': Field(String)}, config_fn=_config_fn_throws)
     def bad_wrap():
         return scalar_config_solid()
 
@@ -174,22 +181,48 @@ def test_raises_fn_override():
     def wrap_pipeline():
         return bad_wrap.alias('do_stuff')()
 
-    with pytest.raises(DagsterInvalidConfigError) as exc_info:
+    with pytest.raises(DagsterConfigMappingFunctionError) as exc_info:
         execute_pipeline(
-            wrap_pipeline,
-            {
-                'solids': {'do_stuff': {'config': {'does_not_matter': 'foo'}}},
-                'loggers': {'console': {'config': {'log_level': 'ERROR'}}},
-            },
+            wrap_pipeline, {'solids': {'do_stuff': {'config': {'does_not_matter': 'blah'}}}},
         )
 
-    assert len(exc_info.value.errors) == 1
     assert (
-        'Exception occurred during execution of user config mapping function '
-        'raises_config_fn defined by solid do_stuff from definition bad_wrap at path '
-        'root:solids:do_stuff'
-    ) in exc_info.value.errors[0].message
-    assert 'AssertionError: assert 0' in exc_info.value.errors[0].message
+        'The config mapping function on the composite solid definition "bad_wrap" at solid '
+        '"do_stuff" in pipeline "wrap_pipeline" has thrown an unexpected error during its '
+        'execution. The definition is instantiated at stack "do_stuff"'
+    ) in str(exc_info.value)
+
+
+def test_config_mapper_throws_nested():
+    class SomeUserException(Exception):
+        pass
+
+    def _config_fn_throws(_cxt, _cfg):
+        raise SomeUserException()
+
+    @composite_solid(config={'does_not_matter': Field(String)}, config_fn=_config_fn_throws)
+    def bad_wrap():
+        return scalar_config_solid()
+
+    @composite_solid
+    def container():
+        return bad_wrap.alias('layer1')()
+
+    @pipeline
+    def wrap_pipeline():
+        return container.alias('layer0')()
+
+    with pytest.raises(DagsterConfigMappingFunctionError) as exc_info:
+        execute_pipeline(
+            wrap_pipeline,
+            {'solids': {'layer0': {'solids': {'layer1': {'config': {'does_not_matter': 'blah'}}}}}},
+        )
+
+    assert (
+        'The config mapping function on the composite solid definition "bad_wrap" '
+        'at solid "layer1" in pipeline "wrap_pipeline" has thrown an unexpected '
+        'error during its execution. The definition is instantiated at stack "layer0:layer1".'
+    ) in str(exc_info.value)
 
 
 def test_composite_config_field():
@@ -758,6 +791,7 @@ def test_nested_empty_config_input():
         wrap_pipeline,
         environment_dict={'solids': {'double_wrap': {'inputs': {'num': {'value': 2}}}}},
     )
+    assert res.result_for_handle('double_wrap.number').output_value() == 2
     assert res.result_for_solid('double_wrap').output_values == {'result': 4}
 
 
