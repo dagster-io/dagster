@@ -6,14 +6,22 @@ from .object_store import GCSObjectStore
 
 
 class GCSIntermediateStore(IntermediateStore):
-    def __init__(self, gcs_bucket, run_id, client=None, type_storage_plugin_registry=None):
+    def __init__(
+        self,
+        gcs_bucket,
+        run_id,
+        client=None,
+        type_storage_plugin_registry=None,
+        gcs_prefix='dagster',
+    ):
         check.str_param(gcs_bucket, 'gcs_bucket')
+        check.str_param(gcs_prefix, 'gcs_prefix')
         check.str_param(run_id, 'run_id')
 
         object_store = GCSObjectStore(gcs_bucket, client=client)
 
         def root_for_run_id(r_id):
-            return object_store.key_for_paths(['dagster', 'storage', r_id])
+            return object_store.key_for_paths([gcs_prefix, 'storage', r_id])
 
         super(GCSIntermediateStore, self).__init__(
             object_store,
