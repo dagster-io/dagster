@@ -16,7 +16,8 @@ import "@blueprintjs/core/lib/css/blueprint.css";
 import "@blueprintjs/table/lib/css/table.css";
 import "@blueprintjs/icons/lib/css/blueprint-icons.css";
 import "@blueprintjs/select/lib/css/blueprint-select.css";
-import { WEBSOCKET_URI, patchCopyToRemoveZeroWidthUnderscores } from "./Util";
+import { patchCopyToRemoveZeroWidthUnderscores } from "./Util";
+import { WEBSOCKET_URI } from "./DomUtils";
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
