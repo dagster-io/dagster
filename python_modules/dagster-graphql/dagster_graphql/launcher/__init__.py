@@ -1,7 +1,6 @@
 from future.standard_library import install_aliases  # isort:skip
 
 install_aliases()  # isort:skip
-from urllib.parse import urljoin, urlparse  # isort:skip
 
 import requests
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION
@@ -12,7 +11,8 @@ from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.launcher import RunLauncher
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.types import NamedDict
+from dagster.core.types.config.field_utils import NamedDict
+from dagster.seven import urljoin, urlparse
 
 
 class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):

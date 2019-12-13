@@ -1,3 +1,5 @@
+import six
+
 from dagster import check
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
@@ -5,7 +7,17 @@ from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
 
 
 def build_stats_from_events(run_id, records):
-    check.list_param(records, 'records', of_type=EventRecord)
+    try:
+        iter(records)
+    except TypeError as exc:
+        six.raise_from(
+            check.ParameterCheckError(
+                'Invariant violation for parameter \'records\'. Description: Expected iterable.'
+            ),
+            from_value=exc,
+        )
+    for i, record in enumerate(records):
+        check.inst_param(record, 'records[{i}]'.format(i=i), EventRecord)
 
     steps_succeeded = 0
     steps_failed = 0

@@ -70,7 +70,7 @@ def celery_worker_config_args(config_yaml, config_module, config_file):
         config_value = get_config_value_from_yaml(config_yaml)
         config_hash = hash(yaml.dump(config_value))
 
-        config_dir = os.path.join(instance.root_directory(), 'dagster_celery', 'config')
+        config_dir = os.path.join(instance.root_directory, 'dagster_celery', 'config')
         mkdir_p(config_dir)
         config_path = os.path.join(config_dir, '{config_hash}.py'.format(config_hash=config_hash))
         if not os.path.exists(config_path):

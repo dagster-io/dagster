@@ -137,7 +137,6 @@ def test_pipeline_types():
 def test_mapper_errors():
     @lambda_solid
     def solid_a():
-        print('a: 1')
         return 1
 
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_1:
