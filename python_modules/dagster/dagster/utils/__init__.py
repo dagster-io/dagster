@@ -3,6 +3,7 @@ import errno
 import inspect
 import multiprocessing
 import os
+import psutil
 import re
 import signal
 import subprocess
@@ -307,7 +308,16 @@ def _kill_on_event(termination_event):
         thread.interrupt_main()
     else:
         # If on unix send an os level signal to interrupt any situation we may be stuck in
-        os.kill(os.getpid(), signal.SIGINT)
+        parent = psutil.Process(os.getpid())
+        children = parent.children(recursive=True)
+
+        # Ask the unruly postgres connections to die first
+        for child in children:
+            for conn in child.connections():
+                if conn.raddr.port == 5432:
+                    os.kill(child.pid, signal.SIGINT)
+
+        os.kill(parent.pid, signal.SIGINT)
 
 
 # Function to be invoked by daemon thread in processes which seek to be cancellable.
