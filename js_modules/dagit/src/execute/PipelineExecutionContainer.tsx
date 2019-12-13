@@ -20,7 +20,7 @@ import {
   ConfigEditorHelpContext,
   isHelpContextEqual
 } from "../configeditor/ConfigEditor";
-import { ConfigEditorPresetsPicker } from "./ConfigEditorPresetsPicker";
+import { ConfigEditorConfigPicker } from "./ConfigEditorConfigPicker";
 import { ConfigEditorModePicker } from "./ConfigEditorModePicker";
 import {
   applyChangesToSession,
@@ -311,7 +311,7 @@ export default class PipelineExecutionContainer extends React.Component<
               left={
                 <>
                   <ConfigEditorPresetInsertionContainer className="bp3-dark">
-                    <ConfigEditorPresetsPicker
+                    <ConfigEditorConfigPicker
                       pipelineName={pipelineName}
                       solidSubset={currentSession.solidSubset}
                       onCreateSession={this.onCreateSession}

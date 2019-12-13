@@ -1,3 +1,4 @@
+import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.schema.errors import (
     DauphinPartitionSetNotFoundError,
@@ -6,7 +7,7 @@ from dagster_graphql.schema.errors import (
 )
 
 from dagster import check
-from dagster.core.definitions.partition import PartitionSetDefinition
+from dagster.core.definitions.partition import Partition, PartitionSetDefinition
 
 
 class DauphinPartition(dauphin.ObjectType):
@@ -14,6 +15,28 @@ class DauphinPartition(dauphin.ObjectType):
         name = 'Partition'
 
     name = dauphin.NonNull(dauphin.String)
+    partition_set_name = dauphin.NonNull(dauphin.String)
+    solid_subset = dauphin.List(dauphin.NonNull(dauphin.String))
+    mode = dauphin.NonNull(dauphin.String)
+    environmentConfigYaml = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, partition, partition_set):
+        self._partition = check.inst_param(partition, 'partition', Partition)
+
+        self._partition_set = check.inst_param(
+            partition_set, 'partition_set', PartitionSetDefinition
+        )
+
+        super(DauphinPartition, self).__init__(
+            name=partition.name,
+            partition_set_name=partition_set.name,
+            solid_subset=partition_set.solid_subset,
+            mode=partition_set.mode,
+        )
+
+    def resolve_environmentConfigYaml(self, _):
+        environment_dict = self._partition_set.environment_dict_for_partition(self._partition)
+        return yaml.dump(environment_dict, default_flow_style=False)
 
 
 class DauphinPartitionSet(dauphin.ObjectType):
@@ -38,9 +61,15 @@ class DauphinPartitionSet(dauphin.ObjectType):
             mode=partition_set.mode,
         )
 
-    def resolve_partitions(self, _):
+    def resolve_partitions(self, graphene_info):
         partitions = self._partition_set.get_partitions()
-        return partitions
+
+        return [
+            graphene_info.schema.type_named('Partition')(
+                partition=partition, partition_set=self._partition_set
+            )
+            for partition in partitions
+        ]
 
 
 class DapuphinPartitionSetOrError(dauphin.Union):
