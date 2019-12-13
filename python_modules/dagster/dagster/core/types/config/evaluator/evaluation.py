@@ -34,7 +34,7 @@ from .stack import EvaluationStack, get_friendly_path_msg
 from .traversal_context import TraversalContext
 
 
-def evaluate_config(config_type, config_value, pipeline=None, run_config=None, seen_handles=None):
+def evaluate_config(config_type, config_value, pipeline=None, run_config=None):
     return _evaluate_config(
         TraversalContext(
             config_type=check.inst_param(config_type, 'config_type', ConfigType),
@@ -44,7 +44,7 @@ def evaluate_config(config_type, config_value, pipeline=None, run_config=None, s
             run_config=check.opt_inst_param(
                 run_config, 'run_config', IRunConfig, default=RunConfig()
             ),
-            seen_handles=check.opt_list_param(seen_handles, 'seen_handles'),
+            seen_handles=[],
         )
     )
 

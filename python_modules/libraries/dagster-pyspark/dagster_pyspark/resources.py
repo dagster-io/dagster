@@ -5,7 +5,7 @@ from dagster_spark.configs_spark import spark_config
 from dagster_spark.utils import flatten_dict
 from pyspark.sql import SparkSession
 
-from dagster import check, resource
+from dagster import Field, check, resource
 
 
 def spark_session_from_config(spark_conf=None):
@@ -43,10 +43,22 @@ class SystemPySparkResource(PySparkResourceDefinition):
         return fn
 
 
-@resource({'spark_conf': spark_config()})
+@resource(
+    {
+        'spark_conf': spark_config(),
+        'stop_session': Field(
+            bool,
+            is_optional=True,
+            default_value=True,
+            description='Whether to stop the Spark session on pipeline completion. '
+            'Defaults to True.',
+        ),
+    }
+)
 def pyspark_resource(init_context):
     pyspark = SystemPySparkResource(init_context.resource_config['spark_conf'])
     try:
         yield pyspark
     finally:
-        pyspark.stop()
+        if init_context.resource_config['stop_session']:
+            pyspark.stop()

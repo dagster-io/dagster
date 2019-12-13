@@ -5,6 +5,7 @@ import logging
 import sys
 import traceback
 from collections import namedtuple
+from contextlib import contextmanager
 
 from dagster import check, seven
 from dagster.core.definitions.logger import logger
@@ -152,3 +153,14 @@ def default_format_string():
 
 def define_default_formatter():
     return logging.Formatter(default_format_string())
+
+
+@contextmanager
+def quieten(quiet=True, level=logging.WARNING):
+    if quiet:
+        logging.disable(level)
+    try:
+        yield
+    finally:
+        if quiet:
+            logging.disable(logging.NOTSET)

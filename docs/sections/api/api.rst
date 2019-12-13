@@ -18,5 +18,6 @@ API Docs
 
   apidocs/internals
   apidocs/dagster_airflow
+  apidocs/dagster_celery
   apidocs/dagster_cron
   apidocs/dagster_dask

@@ -102,12 +102,12 @@ def test_interrupt_multiproc():
                     'execution': {'multiprocess': {'config': {'max_concurrent': 4}}},
                     'storage': {'filesystem': {}},
                 },
-                instance=DagsterInstance.local_temp(),
+                instance=DagsterInstance.local_temp(tempdir=tempdir),
             ):
-                results.append(result.event_type)
+                results.append(result)
             assert False  # should never reach
         except (DagsterSubprocessError, KeyboardInterrupt):
             pass
 
-        assert results.count(DagsterEventType.STEP_FAILURE) == 4
-        assert DagsterEventType.PIPELINE_FAILURE in results
+        assert [result.event_type for result in results].count(DagsterEventType.STEP_FAILURE) == 4
+        assert DagsterEventType.PIPELINE_FAILURE in [result.event_type for result in results]

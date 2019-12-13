@@ -1,4 +1,10 @@
 import pandas as pd
+from dagster_pandas.constraints import (
+    ColumnExistsConstraint,
+    ColumnTypeConstraint,
+    ConstraintViolationException,
+)
+from dagster_pandas.validation import PandasColumn, validate_collection_schema
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -10,6 +16,7 @@ from dagster import (
     TypeCheck,
     as_dagster_type,
     check,
+    dagster_type,
 )
 from dagster.core.types.config.field_utils import NamedSelector
 from dagster.core.types.runtime.config_schema import input_selector_schema, output_selector_schema
@@ -97,3 +104,48 @@ DataFrame = as_dagster_type(
     output_materialization_config=dataframe_output_schema,
     type_check=df_type_check,
 )
+
+
+def create_dagster_pandas_dataframe_type(name=None, type_check=None, columns=None):
+    def _dagster_type_check(value):
+        if columns is not None:
+            try:
+                validate_collection_schema(columns, value)
+            except ConstraintViolationException as e:
+                return TypeCheck(success=False, description=str(e))
+        return type_check(value)
+
+    @dagster_type(  # pylint: disable=W0223
+        name=name, type_check=_dagster_type_check,
+    )
+    class _DataFrameDagsterType(DataFrame):
+        pass
+
+    # Did this instead of as_dagster_type because multiple dataframe types can be created
+    return _DataFrameDagsterType
+
+
+def create_typed_dataframe(dataframe_name, column_type_info, type_check=None):
+    column_type_info = check.dict_param(column_type_info, 'column_type_info', str, str)
+    return create_dagster_pandas_dataframe_type(
+        name=check.str_param(dataframe_name, 'dataframe_name'),
+        type_check=check.opt_callable_param(type_check, 'type_check'),
+        columns=[
+            PandasColumn(
+                name=column_name,
+                constraints=[ColumnExistsConstraint(), ColumnTypeConstraint(column_pandas_dtype)],
+            )
+            for column_name, column_pandas_dtype in column_type_info.items()
+        ],
+    )
+
+
+def create_named_dataframe(dataframe_name, column_names, type_check=None):
+    return create_dagster_pandas_dataframe_type(
+        name=check.str_param(dataframe_name, 'dataframe_name'),
+        type_check=check.opt_callable_param(type_check, 'type_check'),
+        columns=[
+            PandasColumn(name=column_name, constraints=[ColumnExistsConstraint()])
+            for column_name in check.list_param(column_names, 'column_names', of_type=str)
+        ],
+    )

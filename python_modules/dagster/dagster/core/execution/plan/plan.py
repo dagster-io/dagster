@@ -318,13 +318,13 @@ class ExecutionPlan(
     def execution_step_levels(self):
         return [
             [self.step_dict[step_key] for step_key in sorted(step_key_level)]
-            for step_key_level in toposort(self._execution_deps())
+            for step_key_level in toposort(self.execution_deps())
         ]
 
     def missing_steps(self):
         return [step_key for step_key in self.step_keys_to_execute if not self.has_step(step_key)]
 
-    def _execution_deps(self):
+    def execution_deps(self):
         step_dict = {k: v for k, v in self.step_dict.items() if k in self.step_keys_to_execute}
         deps = {step.key: set() for step in step_dict.values()}
         for step in step_dict.values():

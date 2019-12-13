@@ -27,13 +27,14 @@ class DauphinError(dauphin.Interface):
         name = 'Error'
 
     message = dauphin.String(required=True)
-    stack = dauphin.non_null_list(dauphin.String)
 
 
 class DauphinPythonError(dauphin.ObjectType):
     class Meta(object):
         name = 'PythonError'
         interfaces = (DauphinError,)
+
+    stack = dauphin.non_null_list(dauphin.String)
 
     def __init__(self, error_info):
         super(DauphinPythonError, self).__init__()

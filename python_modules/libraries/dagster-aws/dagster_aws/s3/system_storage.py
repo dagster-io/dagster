@@ -9,12 +9,18 @@ from .intermediate_store import S3IntermediateStore
 @system_storage(
     name='s3',
     is_persistent=True,
-    config={'s3_bucket': Field(String)},
+    config={
+        's3_bucket': Field(String),
+        's3_prefix': Field(String, is_optional=True, default_value='dagster'),
+    },
     required_resource_keys={'s3'},
 )
 def s3_system_storage(init_context):
     s3_session = init_context.resources.s3.session
-    s3_key = 'dagster/storage/{run_id}/files'.format(run_id=init_context.pipeline_run.run_id)
+    s3_key = '{prefix}/storage/{run_id}/files'.format(
+        prefix=init_context.system_storage_config['s3_prefix'],
+        run_id=init_context.pipeline_run.run_id,
+    )
     return SystemStorageData(
         file_manager=S3FileManager(
             s3_session=s3_session,
@@ -25,6 +31,7 @@ def s3_system_storage(init_context):
             S3IntermediateStore(
                 s3_session=s3_session,
                 s3_bucket=init_context.system_storage_config['s3_bucket'],
+                s3_prefix=init_context.system_storage_config['s3_prefix'],
                 run_id=init_context.pipeline_run.run_id,
                 type_storage_plugin_registry=init_context.type_storage_plugin_registry,
             )

@@ -1,4 +1,4 @@
-import os
+from contextlib import contextmanager
 
 from dagster import check
 from dagster.core.definitions.environment_configs import SystemNamedDict
@@ -7,7 +7,9 @@ from dagster.core.types import String
 from dagster.core.types.config import Field
 from dagster.utils import mkdir_p
 
-from ..runs import RunStorageSqlMetadata, SqlRunStorage, create_engine
+from ...sql import create_engine, get_alembic_config, stamp_alembic_rev
+from ..schema import RunStorageSqlMetadata
+from ..sql_run_storage import SqlRunStorage
 
 
 class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
@@ -32,10 +34,13 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     def from_local(base_dir, inst_data=None):
         check.str_param(base_dir, 'base_dir')
         mkdir_p(base_dir)
-        conn_string = 'sqlite:///{}'.format(os.path.join(base_dir, 'runs.db'))
+        conn_string = 'sqlite:///{}'.format('/'.join([base_dir, 'runs.db']))
         engine = create_engine(conn_string)
         RunStorageSqlMetadata.create_all(engine)
+        alembic_config = get_alembic_config(__file__)
+        stamp_alembic_rev(alembic_config, engine.connect())
         return SqliteRunStorage(conn_string, inst_data)
 
+    @contextmanager
     def connect(self):
-        return self.engine.connect()
+        yield self.engine.connect()

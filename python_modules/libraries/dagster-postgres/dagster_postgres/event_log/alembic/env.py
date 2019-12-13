@@ -5,11 +5,13 @@ from logging.config import fileConfig
 
 from alembic import context
 
+from dagster.core.storage.event_log import SqlEventLogStorageMetadata
+
 config = context.config
 
 fileConfig(config.config_file_name)
 
-target_metadata = None
+target_metadata = SqlEventLogStorageMetadata
 
 
 def run_migrations_offline():
